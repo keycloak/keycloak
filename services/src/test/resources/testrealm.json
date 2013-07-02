@@ -1,0 +1,101 @@
+{
+   "realm" : "test-realm",
+   "enabled" : true,
+   "tokenLifespan" : 6000,
+   "accessCodeLifespan" : 30,
+   "requiredCredentials" : [
+        {
+            "type" : "Password",
+            "input" : true,
+            "secret" : true
+        }
+   ],
+   "users" : [
+      {
+            "username" : "wburke",
+            "enabled" : true,
+            "attributes" : {
+                "email" : "bburke@redhat.com"
+            },
+            "credentials" : [
+                { "type" : "Password",
+                 "value" : "userpassword" }
+            ]
+      },
+      {
+            "username" : "loginclient",
+            "enabled" : true,
+            "credentials" : [
+                { "type" : "Password",
+                 "value" : "clientpassword" }
+            ]
+      },
+      {
+            "username" : "admin",
+            "enabled" : true,
+            "credentials" : [
+                { "type" : "Password",
+                 "value" : "adminpassword" }
+            ]
+      },
+      {
+            "username" : "oauthclient",
+            "enabled" : true,
+            "credentials" : [
+                { "type" : "Password",
+                 "value" : "clientpassword" }
+            ]
+      }
+   ],
+   "roleMappings" : [
+       {
+          "username" : "admin",
+          "roles" : ["admin"]
+       }
+   ],
+   "scopeMappings" : [
+       {
+          "username" : "loginclient",
+          "roles" : ["login"]
+       }
+   ],
+   "resources" : [
+       {
+          "name" : "Application",
+          "roles" : ["admin", "user"],
+          "roleMappings" : [
+             {
+                "username" : "wburke",
+                "roles" : ["user"]
+             },
+             {
+                "username" : "admin",
+                "roles" : ["admin"]
+             }
+          ],
+          "scopeMappings" : [
+             {
+                "username" : "oauthclient",
+                "roles" : ["user"]
+             }
+          ]
+       },
+              {
+                 "name" : "OtherApp",
+                 "roles" : ["admin", "user"],
+                 "roleMappings" : [
+                    {
+                       "username" : "wburke",
+                       "roles" : ["user"]
+                    },
+                    {
+                       "username" : "admin",
+                       "roles" : ["admin"]
+                    }
+                 ]
+              }
+
+   ]
+
+
+}
