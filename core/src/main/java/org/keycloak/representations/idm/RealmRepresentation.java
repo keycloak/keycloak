@@ -2,6 +2,7 @@ package org.keycloak.representations.idm;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -16,6 +17,7 @@ public class RealmRepresentation
    protected boolean enabled;
    protected boolean sslNotRequired;
    protected boolean cookieLoginAllowed;
+   protected Set<String> roles;
    protected List<RequiredCredentialRepresentation> requiredCredentials;
    protected List<UserRepresentation> users;
    protected List<RoleMappingRepresentation> roleMappings;
@@ -167,5 +169,15 @@ public class RealmRepresentation
    public void setAccessCodeLifespan(long accessCodeLifespan)
    {
       this.accessCodeLifespan = accessCodeLifespan;
+   }
+
+   public Set<String> getRoles()
+   {
+      return roles;
+   }
+
+   public void setRoles(Set<String> roles)
+   {
+      this.roles = roles;
    }
 }

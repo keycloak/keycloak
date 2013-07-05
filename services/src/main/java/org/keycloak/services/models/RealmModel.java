@@ -1,8 +1,12 @@
-package org.keycloak.services.model;
+package org.keycloak.services.models;
 
 import org.bouncycastle.openssl.PEMWriter;
 import org.jboss.resteasy.security.PemUtils;
 import org.keycloak.representations.idm.RequiredCredentialRepresentation;
+import org.keycloak.services.models.relationships.RealmAdminRelationship;
+import org.keycloak.services.models.relationships.RealmResourceRelationship;
+import org.keycloak.services.models.relationships.RequiredCredentialRelationship;
+import org.keycloak.services.models.relationships.ScopeRelationship;
 import org.picketlink.idm.IdentityManager;
 import org.picketlink.idm.credential.Password;
 import org.picketlink.idm.credential.TOTPCredential;
@@ -385,5 +389,24 @@ public class RealmModel
          if (rel.getScope().getPartition().getId().equals(realm.getId())) set.add(rel.getScope().getName());
       }
       return set;
+   }
+
+   public boolean isRealmAdmin(Agent agent)
+   {
+      IdentityManager idm = getIdm();
+      RelationshipQuery<RealmAdminRelationship> query = idm.createRelationshipQuery(RealmAdminRelationship.class);
+      query.setParameter(RealmAdminRelationship.REALM, realm);
+      query.setParameter(RealmAdminRelationship.ADMIN, agent);
+      List<RealmAdminRelationship> results = query.getResultList();
+      return results.size() > 0;
+   }
+
+   public void addRealmAdmin(Agent agent)
+   {
+      IdentityManager idm = getIdm();
+      RealmAdminRelationship relationship = new RealmAdminRelationship();
+      relationship.setAdmin(agent);
+      relationship.setRealm(realm);
+      idm.add(relationship);
    }
 }

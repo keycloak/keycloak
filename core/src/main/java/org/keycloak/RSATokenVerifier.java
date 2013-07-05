@@ -18,7 +18,11 @@ public class RSATokenVerifier
    {
       PublicKey realmKey = metadata.getRealmKey();
       String realm = metadata.getRealm();
-      String resource = metadata.getResourceName();
+      return verifyToken(tokenString, realmKey, realm);
+   }
+
+   public static SkeletonKeyToken verifyToken(String tokenString, PublicKey realmKey, String realm) throws VerificationException
+   {
       JWSInput input = new JWSInput(tokenString);
       boolean verified = false;
       try

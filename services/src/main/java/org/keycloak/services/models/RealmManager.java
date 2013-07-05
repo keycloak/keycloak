@@ -1,4 +1,4 @@
-package org.keycloak.services.model;
+package org.keycloak.services.models;
 
 import org.picketlink.idm.IdentityManager;
 import org.picketlink.idm.internal.IdentityManagerFactory;

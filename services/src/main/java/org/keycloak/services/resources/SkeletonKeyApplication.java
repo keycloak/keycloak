@@ -1,10 +1,9 @@
-package org.keycloak.services.service;
+package org.keycloak.services.resources;
 
 import org.infinispan.Cache;
 import org.infinispan.manager.DefaultCacheManager;
 import org.keycloak.SkeletonKeyContextResolver;
 
-import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,7 +14,6 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-@ApplicationPath("/")
 public class SkeletonKeyApplication extends Application
 {
    protected Set<Object> singletons = new HashSet<Object>();

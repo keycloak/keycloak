@@ -14,7 +14,6 @@ public class RoleMappingRepresentation
    protected String self; // link
    protected String username;
    protected Set<String> roles;
-   protected Set<String> surrogates;
 
    public String getSelf()
    {
@@ -40,24 +39,6 @@ public class RoleMappingRepresentation
    {
       return roles;
    }
-
-   public Set<String> getSurrogates()
-   {
-      return surrogates;
-   }
-
-   public void setSurrogates(Set<String> surrogates)
-   {
-      this.surrogates = surrogates;
-   }
-
-   public RoleMappingRepresentation surrogate(String surrogate)
-   {
-      if (this.surrogates == null) this.surrogates = new HashSet<String>();
-      this.surrogates.add(surrogate);
-      return this;
-   }
-
 
    public void setRoles(Set<String> roles)
    {
