@@ -1,4 +1,4 @@
-package org.keycloak.services.model;
+package org.keycloak.services.models;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

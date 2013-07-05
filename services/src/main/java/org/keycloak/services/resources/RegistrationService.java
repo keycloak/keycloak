@@ -1,10 +1,11 @@
-package org.keycloak.services.service;
+package org.keycloak.services.resources;
 
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.model.RealmManager;
-import org.keycloak.services.model.RealmModel;
-import org.keycloak.services.model.UserCredentialModel;
+import org.keycloak.services.models.RealmManager;
+import org.keycloak.services.models.RealmModel;
+import org.keycloak.services.models.UserCredentialModel;
 import org.picketlink.idm.model.Realm;
+import org.picketlink.idm.model.Role;
 import org.picketlink.idm.model.SimpleUser;
 import org.picketlink.idm.model.User;
 
@@ -24,6 +25,7 @@ import java.net.URI;
 @Path("/registrations")
 public class RegistrationService
 {
+   public static final String REALM_CREATOR_ROLE = "realm-creator";
    protected RealmManager adapter;
    protected RealmModel defaultRealm;
 
@@ -57,6 +59,8 @@ public class RegistrationService
          credModel.setValue(cred.getValue());
          defaultRealm.updateCredential(user, credModel);
       }
+      Role realmCreator = defaultRealm.getIdm().getRole(REALM_CREATOR_ROLE);
+      defaultRealm.getIdm().grantRole(user, realmCreator);
       URI uri = uriInfo.getBaseUriBuilder().path(RealmFactory.class).path(user.getLoginName()).build();
       return Response.created(uri).build();
    }

@@ -1,5 +1,6 @@
-package org.keycloak.services.model;
+package org.keycloak.services.models;
 
+import org.keycloak.services.models.relationships.ScopeRelationship;
 import org.picketlink.idm.IdentityManager;
 import org.picketlink.idm.internal.IdentityManagerFactory;
 import org.picketlink.idm.model.Agent;
@@ -115,7 +116,6 @@ public class ResourceModel
 
    }
 
-
    public Set<String> getScope(Agent agent)
    {
       RelationshipQuery<ScopeRelationship> query = getIdm().createRelationshipQuery(ScopeRelationship.class);
@@ -128,7 +128,4 @@ public class ResourceModel
       }
       return set;
    }
-
-
-
 }

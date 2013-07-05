@@ -30,6 +30,9 @@ public class PublishedRealmRepresentation
    @JsonProperty("grants")
    protected String grantUrl;
 
+   @JsonProperty("identity-grants")
+   protected String identityGrantUrl;
+
    @JsonIgnore
    protected volatile transient PublicKey publicKey;
 
@@ -132,5 +135,15 @@ public class PublishedRealmRepresentation
    public void setGrantUrl(String grantUrl)
    {
       this.grantUrl = grantUrl;
+   }
+
+   public String getIdentityGrantUrl()
+   {
+      return identityGrantUrl;
+   }
+
+   public void setIdentityGrantUrl(String identityGrantUrl)
+   {
+      this.identityGrantUrl = identityGrantUrl;
    }
 }

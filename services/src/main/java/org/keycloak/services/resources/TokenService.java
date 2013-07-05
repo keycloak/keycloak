@@ -1,4 +1,4 @@
-package org.keycloak.services.service;
+package org.keycloak.services.resources;
 
 import org.jboss.resteasy.jose.Base64Url;
 import org.jboss.resteasy.jose.jws.JWSBuilder;
@@ -9,10 +9,12 @@ import org.jboss.resteasy.logging.Logger;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.SkeletonKeyScope;
 import org.keycloak.representations.SkeletonKeyToken;
-import org.keycloak.services.model.RealmManager;
-import org.keycloak.services.model.RealmModel;
-import org.keycloak.services.model.RequiredCredentialModel;
-import org.keycloak.services.model.ResourceModel;
+import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.TokenManager;
+import org.keycloak.services.models.RealmManager;
+import org.keycloak.services.models.RealmModel;
+import org.keycloak.services.models.RequiredCredentialModel;
+import org.keycloak.services.models.ResourceModel;
 import org.picketlink.idm.model.User;
 
 import javax.ws.rs.Consumes;
@@ -188,7 +190,7 @@ public class TokenService
       {
          throw new NotAuthorizedException("Disabled user.");
       }
-      if (authManager.authenticate(realm, user, form))
+      if (authManager.authenticateForm(realm, user, form))
       {
          throw new NotAuthorizedException("Auth failed");
       }
@@ -239,7 +241,7 @@ public class TokenService
          return Response.ok("Your account is not enabled").type("text/html").build();
 
       }
-      boolean authenticated = authManager.authenticate(realm, user, formData);
+      boolean authenticated = authManager.authenticateForm(realm, user, formData);
       if (!authenticated) return loginForm("Unable to authenticate, try again", redirect, clientId, scopeParam, state, realm, client);
 
       SkeletonKeyToken token = null;
@@ -322,7 +324,7 @@ public class TokenService
          return Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build();
       }
 
-      boolean authenticated = authManager.authenticate(realm, client, formData);
+      boolean authenticated = authManager.authenticateForm(realm, client, formData);
       if (!authenticated)
       {
          Map<String, String> error = new HashMap<String, String>();
