@@ -1,13 +1,13 @@
-package org.keycloak.services.service;
+package org.keycloak.services.managers;
 
 import org.jboss.resteasy.jose.Base64Url;
 import org.jboss.resteasy.jose.jws.JWSBuilder;
 import org.jboss.resteasy.jwt.JsonSerialization;
 import org.keycloak.representations.SkeletonKeyScope;
 import org.keycloak.representations.SkeletonKeyToken;
-import org.keycloak.services.model.RealmManager;
-import org.keycloak.services.model.RealmModel;
-import org.keycloak.services.model.ResourceModel;
+import org.keycloak.services.models.RealmManager;
+import org.keycloak.services.models.RealmModel;
+import org.keycloak.services.models.ResourceModel;
 import org.picketlink.idm.model.User;
 
 import javax.ws.rs.ForbiddenException;

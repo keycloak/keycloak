@@ -1,30 +1,14 @@
-package org.keycloak.services.model.data;
-
-import java.io.Serializable;
+package org.keycloak.services.models;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-@Deprecated
-public class RequiredCredentialModel implements Serializable
+public class RequiredCredentialModel
 {
-   private static final long serialVersionUID = 1L;
-
-   protected String id;
    protected String type;
    protected boolean input;
    protected boolean secret;
-
-   public String getId()
-   {
-      return id;
-   }
-
-   public void setId(String id)
-   {
-      this.id = id;
-   }
 
    public String getType()
    {

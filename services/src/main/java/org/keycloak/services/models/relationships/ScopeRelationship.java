@@ -1,4 +1,4 @@
-package org.keycloak.services.model;
+package org.keycloak.services.models.relationships;
 
 import org.picketlink.idm.model.AbstractAttributedType;
 import org.picketlink.idm.model.Agent;
