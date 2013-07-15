@@ -11,7 +11,7 @@ import org.picketlink.idm.query.RelationshipQueryParameter;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class RequiredCredentialRelationship extends AbstractAttributedType implements Relationship {
+public class ResourceRelationship extends AbstractAttributedType implements Relationship {
     private static final long serialVersionUID = 1L;
 
     public static final RelationshipQueryParameter REALM_AGENT = new RelationshipQueryParameter() {
@@ -22,14 +22,11 @@ public class RequiredCredentialRelationship extends AbstractAttributedType imple
         }
     };
 
-
     protected Agent realmAgent;
-    protected String credentialType;
-    protected boolean input;
-    protected boolean secret;
-
-    public RequiredCredentialRelationship() {
-    }
+    protected String resourceId;
+    protected String resourceName;
+    protected boolean surrogateAuthRequired;
+    protected boolean enabled;
 
     @IdentityProperty
     public Agent getRealmAgent() {
@@ -41,29 +38,38 @@ public class RequiredCredentialRelationship extends AbstractAttributedType imple
     }
 
     @AttributeProperty
-    public String getCredentialType() {
-        return credentialType;
+    public String getResourceId() {
+        return resourceId;
     }
 
-    public void setCredentialType(String credentialType) {
-        this.credentialType = credentialType;
-    }
-
-    @AttributeProperty
-    public boolean isInput() {
-        return input;
-    }
-
-    public void setInput(boolean input) {
-        this.input = input;
+    public void setResourceId(String resourceId) {
+        this.resourceId = resourceId;
     }
 
     @AttributeProperty
-    public boolean isSecret() {
-        return secret;
+    public String getResourceName() {
+        return resourceName;
     }
 
-    public void setSecret(boolean secret) {
-        this.secret = secret;
+    public void setResourceName(String resourceName) {
+        this.resourceName = resourceName;
+    }
+
+    @AttributeProperty
+    public boolean getSurrogateAuthRequired() {
+        return surrogateAuthRequired;
+    }
+
+    public void setSurrogateAuthRequired(boolean surrogateAuthRequired) {
+        this.surrogateAuthRequired = surrogateAuthRequired;
+    }
+
+    @AttributeProperty
+    public boolean getEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 }

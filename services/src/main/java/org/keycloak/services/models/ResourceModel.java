@@ -1,8 +1,9 @@
 package org.keycloak.services.models;
 
+import org.keycloak.services.models.relationships.ResourceRelationship;
 import org.keycloak.services.models.relationships.ScopeRelationship;
+import org.picketlink.idm.IdentitySession;
 import org.picketlink.idm.IdentityManager;
-import org.picketlink.idm.internal.IdentityManagerFactory;
 import org.picketlink.idm.model.Agent;
 import org.picketlink.idm.model.Attribute;
 import org.picketlink.idm.model.Grant;
@@ -20,112 +21,94 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ResourceModel
-{
-   public static final String RESOURCE_AGENT_ID = "_resource_";
-   public static final String RESOURCE_NAME = "name";
-   public static final String RESOURCE_SURROGATE_AUTH = "surrogate_auth";
+public class ResourceModel {
+    public static final String RESOURCE_AGENT_ID = "_resource_";
+    public static final String RESOURCE_NAME = "name";
+    public static final String RESOURCE_SURROGATE_AUTH = "surrogate_auth";
 
-   protected Tier tier;
-   protected Agent agent;
-   protected RealmModel realm;
-   protected IdentityManagerFactory factory;
+    protected Tier tier;
+    protected ResourceRelationship agent;
+    protected RealmModel realm;
+    protected IdentitySession IdentitySession;
 
-   public ResourceModel(Tier tier, Agent agent, RealmModel realm, IdentityManagerFactory factory)
-   {
-      this.tier = tier;
-      this.agent = agent;
-      this.realm = realm;
-      this.factory = factory;
-   }
+    public ResourceModel(Tier tier, ResourceRelationship agent, RealmModel realm, IdentitySession factory) {
+        this.tier = tier;
+        this.agent = agent;
+        this.realm = realm;
+        this.IdentitySession = factory;
+    }
 
-   public IdentityManager getIdm()
-   {
-      return factory.createIdentityManager(tier);
-   }
+    public IdentityManager getIdm() {
+        return IdentitySession.createIdentityManager(tier);
+    }
 
-   public void updateResource()
-   {
-      getIdm().update(agent);
-   }
+    public void updateResource() {
+        getIdm().update(agent);
+    }
 
-   public String getId()
-   {
-      return tier.getId();
-   }
+    public String getId() {
+        return tier.getId();
+    }
 
-   public String getName()
-   {
-      return (String)agent.getAttribute(RESOURCE_NAME).getValue();
-   }
+    public String getName() {
+        return agent.getResourceName();
+    }
 
-   public void setName(String name)
-   {
-      agent.setAttribute(new Attribute<String>(RESOURCE_NAME, name));
-      getIdm().update(agent);
-   }
+    public void setName(String name) {
+        agent.setResourceName(name);
+    }
 
-   public boolean isEnabled()
-   {
-      return agent.isEnabled();
-   }
+    public boolean isEnabled() {
+        return agent.getEnabled();
+    }
 
-   public void setEnabled(boolean enabled)
-   {
-      agent.setEnabled(enabled);
-   }
+    public void setEnabled(boolean enabled) {
+        agent.setEnabled(enabled);
+    }
 
-   public boolean isSurrogateAuthRequired()
-   {
-      return (Boolean)agent.getAttribute(RESOURCE_SURROGATE_AUTH).getValue();
-   }
+    public boolean isSurrogateAuthRequired() {
+        return agent.getSurrogateAuthRequired();
+    }
 
-   public void setSurrogateAuthRequired(boolean surrogateAuthRequired)
-   {
-      agent.setAttribute(new Attribute<Boolean>(RESOURCE_SURROGATE_AUTH, surrogateAuthRequired));
-   }
+    public void setSurrogateAuthRequired(boolean surrogateAuthRequired) {
+        agent.setSurrogateAuthRequired(surrogateAuthRequired);
+    }
 
-   public List<Role> getRoles()
-   {
-      IdentityQuery<Role> query = getIdm().createIdentityQuery(Role.class);
-      query.setParameter(Role.PARTITION, tier);
-      return query.getResultList();
-   }
+    public List<Role> getRoles() {
+        IdentityQuery<Role> query = getIdm().createIdentityQuery(Role.class);
+        query.setParameter(Role.PARTITION, tier);
+        return query.getResultList();
+    }
 
-   public Set<String> getRoleMappings(User user)
-   {
-      RelationshipQuery<Grant> query = getIdm().createRelationshipQuery(Grant.class);
-      query.setParameter(Grant.ASSIGNEE, user);
-      List<Grant> grants = query.getResultList();
-      HashSet<String> set = new HashSet<String>();
-      for (Grant grant : grants)
-      {
-         if (grant.getRole().getPartition().getId().equals(tier.getId()))set.add(grant.getRole().getName());
-      }
-      return set;
-   }
+    public Set<String> getRoleMappings(User user) {
+        RelationshipQuery<Grant> query = getIdm().createRelationshipQuery(Grant.class);
+        query.setParameter(Grant.ASSIGNEE, user);
+        List<Grant> grants = query.getResultList();
+        HashSet<String> set = new HashSet<String>();
+        for (Grant grant : grants) {
+            if (grant.getRole().getPartition().getId().equals(tier.getId())) set.add(grant.getRole().getName());
+        }
+        return set;
+    }
 
-   public void addScope(Agent agent, String roleName)
-   {
-      IdentityManager idm = getIdm();
-      Role role = idm.getRole(roleName);
-      if (role == null) throw new RuntimeException("role not found");
-      ScopeRelationship scope = new ScopeRelationship();
-      scope.setClient(agent);
-      scope.setScope(role);
+    public void addScope(Agent agent, String roleName) {
+        IdentityManager idm = getIdm();
+        Role role = idm.getRole(roleName);
+        if (role == null) throw new RuntimeException("role not found");
+        ScopeRelationship scope = new ScopeRelationship();
+        scope.setClient(agent);
+        scope.setScope(role);
 
-   }
+    }
 
-   public Set<String> getScope(Agent agent)
-   {
-      RelationshipQuery<ScopeRelationship> query = getIdm().createRelationshipQuery(ScopeRelationship.class);
-      query.setParameter(ScopeRelationship.CLIENT, agent);
-      List<ScopeRelationship> scope = query.getResultList();
-      HashSet<String> set = new HashSet<String>();
-      for (ScopeRelationship rel : scope)
-      {
-         if (rel.getScope().getPartition().getId().equals(tier.getId())) set.add(rel.getScope().getName());
-      }
-      return set;
-   }
+    public Set<String> getScope(Agent agent) {
+        RelationshipQuery<ScopeRelationship> query = getIdm().createRelationshipQuery(ScopeRelationship.class);
+        query.setParameter(ScopeRelationship.CLIENT, agent);
+        List<ScopeRelationship> scope = query.getResultList();
+        HashSet<String> set = new HashSet<String>();
+        for (ScopeRelationship rel : scope) {
+            if (rel.getScope().getPartition().getId().equals(tier.getId())) set.add(rel.getScope().getName());
+        }
+        return set;
+    }
 }

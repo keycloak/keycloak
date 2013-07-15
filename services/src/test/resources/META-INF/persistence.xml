@@ -2,7 +2,7 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_1_0.xsd"
     version="1.0">
-    <persistence-unit name="identitydb" transaction-type="RESOURCE_LOCAL">
+    <persistence-unit name="keycloak-identity-store" transaction-type="RESOURCE_LOCAL">
         <provider>org.hibernate.ejb.HibernatePersistence</provider>
         
         <class>org.picketlink.idm.jpa.schema.IdentityObject</class>
