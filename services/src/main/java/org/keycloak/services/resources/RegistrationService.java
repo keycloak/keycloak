@@ -11,6 +11,7 @@ import org.picketlink.idm.model.SimpleUser;
 import org.picketlink.idm.model.User;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
@@ -32,15 +33,21 @@ public class RegistrationService {
     protected UriInfo uriInfo;
 
     @Context
-    protected IdentitySession IdentitySession;
+    protected IdentitySession identitySession;
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response register(UserRepresentation newUser) {
-        IdentitySession.getTransaction().begin();
+        identitySession.getTransaction().begin();
         try {
-            RealmManager realmManager = new RealmManager(IdentitySession);
+            RealmManager realmManager = new RealmManager(identitySession);
             RealmModel defaultRealm = realmManager.defaultRealm();
+            if (!defaultRealm.isEnabled()) {
+                throw new ForbiddenException();
+            }
+            if (!defaultRealm.isRegistrationAllowed()) {
+                throw new ForbiddenException();
+            }
             User user = defaultRealm.getIdm().getUser(newUser.getUsername());
             if (user != null) {
                 return Response.status(400).type("text/plain").entity("user exists").build();
@@ -56,12 +63,12 @@ public class RegistrationService {
             }
             Role realmCreator = defaultRealm.getIdm().getRole(REALM_CREATOR_ROLE);
             defaultRealm.getIdm().grantRole(user, realmCreator);
-            IdentitySession.getTransaction().commit();
+            identitySession.getTransaction().commit();
             URI uri = uriInfo.getBaseUriBuilder().path(RealmsResource.class).path(user.getLoginName()).build();
             return Response.created(uri).build();
         } catch (RuntimeException e) {
             logger.error("Failed to register", e);
-            IdentitySession.getTransaction().rollback();
+            identitySession.getTransaction().rollback();
             throw e;
         }
     }

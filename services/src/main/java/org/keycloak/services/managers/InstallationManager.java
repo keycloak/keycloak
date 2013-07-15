@@ -20,10 +20,14 @@ public class InstallationManager {
         defaultRealm.setAccessCodeLifespan(60);
         defaultRealm.setSslNotRequired(false);
         defaultRealm.setCookieLoginAllowed(true);
+        defaultRealm.setRegistrationAllowed(true);
         manager.generateRealmKeys(defaultRealm);
         defaultRealm.updateRealm();
         defaultRealm.addRequiredCredential(RequiredCredentialModel.PASSWORD);
         defaultRealm.getIdm().add(new SimpleRole(RegistrationService.REALM_CREATOR_ROLE));
+    }
 
+    public boolean isInstalled(RealmManager manager) {
+        return manager.defaultRealm() != null;
     }
 }

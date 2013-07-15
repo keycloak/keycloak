@@ -17,7 +17,6 @@ import org.picketlink.idm.model.Attribute;
 import org.picketlink.idm.model.Grant;
 import org.picketlink.idm.model.Realm;
 import org.picketlink.idm.model.Role;
-import org.picketlink.idm.model.SimpleAgent;
 import org.picketlink.idm.model.Tier;
 import org.picketlink.idm.model.User;
 import org.picketlink.idm.query.IdentityQuery;
@@ -48,21 +47,22 @@ public class RealmModel {
     public static final String REALM_PUBLIC_KEY = "publicKey";
     public static final String REALM_IS_SSL_NOT_REQUIRED = "isSSLNotRequired";
     public static final String REALM_IS_COOKIE_LOGIN_ALLOWED = "isCookieLoginAllowed";
+    public static final String REALM_IS_REGISTRATION_ALLOWED = "isRegistrationAllowed";
 
     protected Realm realm;
     protected Agent realmAgent;
-    protected IdentitySession IdentitySession;
+    protected IdentitySession identitySession;
     protected volatile transient PublicKey publicKey;
     protected volatile transient PrivateKey privateKey;
 
-    public RealmModel(Realm realm, IdentitySession factory) {
+    public RealmModel(Realm realm, IdentitySession session) {
         this.realm = realm;
-        this.IdentitySession = factory;
+        this.identitySession = session;
         realmAgent = getIdm().getAgent(REALM_AGENT_ID);
     }
 
     public IdentityManager getIdm() {
-        return IdentitySession.createIdentityManager(realm);
+        return identitySession.createIdentityManager(realm);
     }
 
     public void updateRealm() {
@@ -103,6 +103,14 @@ public class RealmModel {
 
     public void setCookieLoginAllowed(boolean cookieLoginAllowed) {
         realmAgent.setAttribute(new Attribute<Boolean>(REALM_IS_COOKIE_LOGIN_ALLOWED, cookieLoginAllowed));
+    }
+
+    public boolean isRegistrationAllowed() {
+        return (Boolean) realmAgent.getAttribute(REALM_IS_REGISTRATION_ALLOWED).getValue();
+    }
+
+    public void setRegistrationAllowed(boolean registrationAllowed) {
+        realmAgent.setAttribute(new Attribute<Boolean>(REALM_IS_REGISTRATION_ALLOWED, registrationAllowed));
     }
 
     public long getTokenLifespan() {
@@ -269,8 +277,8 @@ public class RealmModel {
         List<ResourceRelationship> results = query.getResultList();
         List<ResourceModel> resources = new ArrayList<ResourceModel>();
         for (ResourceRelationship relationship : results) {
-            Tier resourceTier = IdentitySession.findTier(relationship.getResourceId());
-            ResourceModel model = new ResourceModel(resourceTier,relationship, this, IdentitySession);
+            Tier resourceTier = identitySession.findTier(relationship.getResourceId());
+            ResourceModel model = new ResourceModel(resourceTier,relationship, this, identitySession);
             resources.add(model);
         }
 
@@ -278,14 +286,14 @@ public class RealmModel {
     }
 
     public ResourceModel addResource(String name) {
-        Tier newTier = IdentitySession.createTier(RealmManager.generateId());
+        Tier newTier = identitySession.createTier(RealmManager.generateId());
         IdentityManager idm = getIdm();
         ResourceRelationship relationship = new ResourceRelationship();
         relationship.setResourceName(name);
         relationship.setRealmAgent(realmAgent);
         relationship.setResourceId(newTier.getId());
         idm.add(relationship);
-        return new ResourceModel(newTier, relationship, this, IdentitySession);
+        return new ResourceModel(newTier, relationship, this, identitySession);
     }
 
     public Set<String> getRoleMappings(User user) {
@@ -322,7 +330,7 @@ public class RealmModel {
     }
 
     public boolean isRealmAdmin(Agent agent) {
-        IdentityManager idm = new RealmManager(IdentitySession).defaultRealm().getIdm();
+        IdentityManager idm = new RealmManager(identitySession).defaultRealm().getIdm();
         RelationshipQuery<RealmAdminRelationship> query = idm.createRelationshipQuery(RealmAdminRelationship.class);
         query.setParameter(RealmAdminRelationship.REALM, realm.getId());
         query.setParameter(RealmAdminRelationship.ADMIN, agent);
@@ -331,7 +339,7 @@ public class RealmModel {
     }
 
     public void addRealmAdmin(Agent agent) {
-        IdentityManager idm = new RealmManager(IdentitySession).defaultRealm().getIdm();
+        IdentityManager idm = new RealmManager(identitySession).defaultRealm().getIdm();
         RealmAdminRelationship relationship = new RealmAdminRelationship();
         relationship.setAdmin(agent);
         relationship.setRealm(realm.getId());
