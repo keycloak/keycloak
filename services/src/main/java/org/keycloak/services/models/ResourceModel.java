@@ -5,7 +5,6 @@ import org.keycloak.services.models.relationships.ScopeRelationship;
 import org.picketlink.idm.IdentitySession;
 import org.picketlink.idm.IdentityManager;
 import org.picketlink.idm.model.Agent;
-import org.picketlink.idm.model.Attribute;
 import org.picketlink.idm.model.Grant;
 import org.picketlink.idm.model.Role;
 import org.picketlink.idm.model.Tier;
@@ -22,24 +21,20 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class ResourceModel {
-    public static final String RESOURCE_AGENT_ID = "_resource_";
-    public static final String RESOURCE_NAME = "name";
-    public static final String RESOURCE_SURROGATE_AUTH = "surrogate_auth";
-
     protected Tier tier;
     protected ResourceRelationship agent;
     protected RealmModel realm;
-    protected IdentitySession IdentitySession;
+    protected IdentitySession identitySession;
 
-    public ResourceModel(Tier tier, ResourceRelationship agent, RealmModel realm, IdentitySession factory) {
+    public ResourceModel(Tier tier, ResourceRelationship agent, RealmModel realm, IdentitySession session) {
         this.tier = tier;
         this.agent = agent;
         this.realm = realm;
-        this.IdentitySession = factory;
+        this.identitySession = session;
     }
 
     public IdentityManager getIdm() {
-        return IdentitySession.createIdentityManager(tier);
+        return identitySession.createIdentityManager(tier);
     }
 
     public void updateResource() {

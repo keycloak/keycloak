@@ -7,8 +7,8 @@ import org.keycloak.representations.idm.ResourceRepresentation;
 import org.keycloak.representations.idm.RoleMappingRepresentation;
 import org.keycloak.representations.idm.ScopeMappingRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.models.RealmManager;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RequiredCredentialModel;
@@ -38,7 +38,6 @@ import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -55,23 +54,26 @@ public class RealmsResource {
     protected HttpHeaders headers;
 
     @Context
-    protected
-    IdentitySession IdentitySession;
+    protected IdentitySession identitySession;
 
     @Context
     ResourceContext resourceContext;
 
-    protected Map<String, AccessCodeEntry> accessCodes = new ConcurrentHashMap<String, AccessCodeEntry>();
+    protected TokenManager tokenManager;
+
+    public RealmsResource(TokenManager tokenManager) {
+        this.tokenManager = tokenManager;
+    }
 
     @Path("{realm}/tokens")
     public TokenService getTokenService(@PathParam("realm") String id) {
-        RealmManager realmManager = new RealmManager(IdentitySession);
+        RealmManager realmManager = new RealmManager(identitySession);
         RealmModel realm = realmManager.getRealm(id);
         if (realm == null) {
             logger.debug("realm not found");
             throw new NotFoundException();
         }
-        TokenService tokenService = new TokenService(realm, accessCodes);
+        TokenService tokenService = new TokenService(realm, tokenManager);
         resourceContext.initResource(tokenService);
         return tokenService;
 
@@ -80,7 +82,7 @@ public class RealmsResource {
 
     @Path("{realm}")
     public RealmSubResource getRealmResource(@PathParam("realm") String id) {
-        RealmManager realmManager = new RealmManager(IdentitySession);
+        RealmManager realmManager = new RealmManager(identitySession);
         RealmModel realm = realmManager.getRealm(id);
         if (realm == null) {
             logger.debug("realm not found");
@@ -96,13 +98,13 @@ public class RealmsResource {
     @POST
     @Consumes("application/json")
     public Response importRealm(RealmRepresentation rep) {
-        IdentitySession.getTransaction().begin();
+        identitySession.getTransaction().begin();
         RealmModel realm;
         try {
             realm = createRealm(rep);
-            IdentitySession.getTransaction().commit();
+            identitySession.getTransaction().commit();
         } catch (RuntimeException re) {
-            IdentitySession.getTransaction().rollback();
+            identitySession.getTransaction().rollback();
             throw re;
         }
         UriBuilder builder = uriInfo.getRequestUriBuilder().path(realm.getId());
@@ -112,7 +114,7 @@ public class RealmsResource {
     }
 
     protected RealmModel createRealm(RealmRepresentation rep) {
-        RealmManager realmManager = new RealmManager(IdentitySession);
+        RealmManager realmManager = new RealmManager(identitySession);
         RealmModel defaultRealm = realmManager.getRealm(Realm.DEFAULT_REALM);
         User realmCreator = new AuthenticationManager().authenticateToken(defaultRealm, headers);
         Role creatorRole = defaultRealm.getIdm().getRole(RegistrationService.REALM_CREATOR_ROLE);
