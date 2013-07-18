@@ -2,14 +2,14 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <name>Identity Guardener</name>
+    <name>Keycloak</name>
     <groupId>org.keycloak</groupId>
     <artifactId>keycloak-parent</artifactId>
     <version>1.0-alpha-1</version>
     <packaging>pom</packaging>
 
     <properties>
-        <resteasy.version>3.0.1.Final</resteasy.version>
+        <resteasy.version>3.0.2.Final</resteasy.version>
     </properties>
 
     <url>http://keycloak.org</url>

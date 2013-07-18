@@ -13,17 +13,51 @@ import org.picketlink.idm.model.User;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
+ * Stateful object that creates tokens and manages oauth access codes
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class TokenManager {
 
-     public SkeletonKeyToken createScopedToken(SkeletonKeyScope scope, RealmModel realm, User client, User user) {
+    protected Map<String, AccessCodeEntry> accessCodeMap = new ConcurrentHashMap<String, AccessCodeEntry>();
+
+    public void clearAccessCodes() {
+        accessCodeMap.clear();
+    }
+
+    public AccessCodeEntry pullAccessCode(String key) {
+        return accessCodeMap.remove(key);
+    }
+
+    public String createAccessCode(String scopeParam, RealmModel realm, User client, User user)
+    {
+        SkeletonKeyToken token = null;
+        if (scopeParam != null) token = createScopedToken(scopeParam, realm, client, user);
+        else token = createLoginToken(realm, client, user);
+
+        AccessCodeEntry code = new AccessCodeEntry();
+        code.setExpiration((System.currentTimeMillis() / 1000) + realm.getAccessCodeLifespan());
+        code.setToken(token);
+        code.setClient(client);
+        accessCodeMap.put(code.getId(), code);
+        String accessCode = null;
+        try {
+            accessCode = new JWSBuilder().content(code.getId().getBytes("UTF-8")).rsa256(realm.getPrivateKey());
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+        return accessCode;
+    }
+
+    public SkeletonKeyToken createScopedToken(SkeletonKeyScope scope, RealmModel realm, User client, User user) {
         SkeletonKeyToken token = new SkeletonKeyToken();
         token.id(RealmManager.generateId());
         token.principal(user.getLoginName());

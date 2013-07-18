@@ -1,15 +1,10 @@
 package org.keycloak.services.models;
 
-import org.keycloak.representations.idm.UserRepresentation;
-import org.picketlink.idm.IdentitySession;
 import org.picketlink.idm.IdentityManager;
+import org.picketlink.idm.IdentitySession;
 import org.picketlink.idm.model.Realm;
-import org.picketlink.idm.model.Role;
 import org.picketlink.idm.model.SimpleAgent;
-import org.picketlink.idm.model.SimpleUser;
-import org.picketlink.idm.model.User;
 
-import javax.ws.rs.core.Response;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -26,10 +21,10 @@ public class RealmManager {
         return counter.getAndIncrement() + "-" + System.currentTimeMillis();
     }
 
-    protected IdentitySession IdentitySession;
+    protected IdentitySession identitySession;
 
     public RealmManager(IdentitySession IdentitySession) {
-        this.IdentitySession = IdentitySession;
+        this.identitySession = IdentitySession;
     }
 
     public RealmModel defaultRealm() {
@@ -37,11 +32,11 @@ public class RealmManager {
     }
 
     public RealmModel getRealm(String id) {
-        Realm existing = IdentitySession.findRealm(id);
+        Realm existing = identitySession.findRealm(id);
         if (existing == null) {
             return null;
         }
-        return new RealmModel(existing, IdentitySession);
+        return new RealmModel(existing, identitySession);
     }
 
     public RealmModel createRealm(String name) {
@@ -49,11 +44,11 @@ public class RealmManager {
     }
 
     public RealmModel createRealm(String id, String name) {
-        Realm newRealm = IdentitySession.createRealm(id);
-        IdentityManager idm = IdentitySession.createIdentityManager(newRealm);
+        Realm newRealm = identitySession.createRealm(id);
+        IdentityManager idm = identitySession.createIdentityManager(newRealm);
         SimpleAgent agent = new SimpleAgent(RealmModel.REALM_AGENT_ID);
         idm.add(agent);
-        RealmModel realm = new RealmModel(newRealm, IdentitySession);
+        RealmModel realm = new RealmModel(newRealm, identitySession);
         return realm;
     }
 
@@ -68,4 +63,4 @@ public class RealmManager {
         realm.setPublicKey(keyPair.getPublic());
         realm.updateRealm();
     }
-    }
+}

@@ -12,7 +12,6 @@ import org.keycloak.representations.SkeletonKeyToken;
 import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.TokenManager;
-import org.keycloak.services.models.RealmManager;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RequiredCredentialModel;
 import org.keycloak.services.models.ResourceModel;
@@ -35,7 +34,6 @@ import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Providers;
-import java.io.UnsupportedEncodingException;
 import java.security.PrivateKey;
 import java.util.HashMap;
 import java.util.List;
@@ -50,7 +48,7 @@ public class TokenService {
 
 
     protected static final Logger logger = Logger.getLogger(TokenService.class);
-    protected Map<String, AccessCodeEntry> accessCodeMap;
+    //protected Map<String, AccessCodeEntry> accessCodeMap;
 
     @Context
     protected UriInfo uriInfo;
@@ -65,12 +63,12 @@ public class TokenService {
     IdentitySession IdentitySession;
 
     protected RealmModel realm;
-    protected TokenManager tokenManager = new TokenManager();
+    protected TokenManager tokenManager;
     protected AuthenticationManager authManager = new AuthenticationManager();
 
-    public TokenService(RealmModel realm, Map<String, AccessCodeEntry> accessCodeMap) {
+    public TokenService(RealmModel realm, TokenManager tokenManager) {
         this.realm = realm;
-        this.accessCodeMap = accessCodeMap;
+        this.tokenManager = tokenManager;
     }
 
     @Path("grants/identity-token")
@@ -163,23 +161,7 @@ public class TokenService {
         if (!authenticated)
             return loginForm("Unable to authenticate, try again", redirect, clientId, scopeParam, state, realm, client);
 
-        SkeletonKeyToken token = null;
-        if (scopeParam != null) token = tokenManager.createScopedToken(scopeParam, realm, client, user);
-        else token = tokenManager.createLoginToken(realm, client, user);
-
-        AccessCodeEntry code = new AccessCodeEntry();
-        code.setExpiration((System.currentTimeMillis() / 1000) + realm.getAccessCodeLifespan());
-        code.setToken(token);
-        code.setClient(client);
-        synchronized (accessCodeMap) {
-            accessCodeMap.put(code.getId(), code);
-        }
-        String accessCode = null;
-        try {
-            accessCode = new JWSBuilder().content(code.getId().getBytes("UTF-8")).rsa256(realm.getPrivateKey());
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+        String accessCode = tokenManager.createAccessCode(scopeParam, realm, client, user);
         UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam("code", accessCode);
         if (state != null) redirectUri.queryParam("state", state);
         return Response.status(302).location(redirectUri.build()).build();
@@ -249,10 +231,7 @@ public class TokenService {
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res).build();
         }
         String key = input.readContent(String.class);
-        AccessCodeEntry accessCode = null;
-        synchronized (accessCodeMap) {
-            accessCode = accessCodeMap.remove(key);
-        }
+        AccessCodeEntry accessCode = tokenManager.pullAccessCode(key);
         if (accessCode == null) {
             Map<String, String> res = new HashMap<String, String>();
             res.put("error", "invalid_grant");
