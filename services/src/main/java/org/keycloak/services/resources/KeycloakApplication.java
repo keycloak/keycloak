@@ -2,6 +2,7 @@ package org.keycloak.services.resources;
 
 import org.keycloak.SkeletonKeyContextResolver;
 import org.keycloak.services.filters.IdentitySessionFilter;
+import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.models.relationships.RealmAdminRelationship;
 import org.keycloak.services.models.relationships.ResourceRelationship;
 import org.keycloak.services.models.relationships.RequiredCredentialRelationship;
@@ -38,7 +39,7 @@ public class KeycloakApplication extends Application {
     public KeycloakApplication() {
         this.factory = createFactory();
         IdentitySessionFilter filter = new IdentitySessionFilter(factory);
-        singletons.add(new RealmsResource());
+        singletons.add(new RealmsResource(new TokenManager()));
         singletons.add(filter);
         classes.add(SkeletonKeyContextResolver.class);
         classes.add(RegistrationService.class);

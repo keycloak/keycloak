@@ -21,6 +21,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
+ * Stateless object that manages authentication
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */

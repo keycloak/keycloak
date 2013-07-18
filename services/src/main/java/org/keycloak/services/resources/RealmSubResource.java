@@ -24,7 +24,7 @@ public class RealmSubResource {
     protected UriInfo uriInfo;
 
     @Context
-    protected IdentitySession IdentitySession;
+    protected IdentitySession identitySession;
 
     protected RealmModel realm;
 
