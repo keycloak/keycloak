@@ -8,7 +8,7 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.representations.idm.RequiredCredentialRepresentation;
 import org.keycloak.services.managers.InstallationManager;
-import org.keycloak.services.models.RealmManager;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RequiredCredentialModel;
 import org.keycloak.services.models.UserCredentialModel;

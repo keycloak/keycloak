@@ -3,6 +3,7 @@ package org.keycloak.services.models;
 import org.bouncycastle.openssl.PEMWriter;
 import org.jboss.resteasy.security.PemUtils;
 import org.keycloak.representations.idm.RequiredCredentialRepresentation;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.models.relationships.RealmAdminRelationship;
 import org.keycloak.services.models.relationships.ResourceRelationship;
 import org.keycloak.services.models.relationships.RequiredCredentialRelationship;

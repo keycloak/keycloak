@@ -2,7 +2,7 @@ package org.keycloak.services.resources;
 
 import org.jboss.resteasy.logging.Logger;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.models.RealmManager;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.UserCredentialModel;
 import org.picketlink.idm.IdentitySession;
