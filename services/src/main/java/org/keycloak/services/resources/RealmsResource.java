@@ -12,11 +12,13 @@ import org.picketlink.idm.model.Role;
 import org.picketlink.idm.model.User;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
 import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
@@ -53,6 +55,7 @@ public class RealmsResource {
 
     @Path("{realm}/tokens")
     public TokenService getTokenService(@PathParam("realm") String id) {
+        logger.info("**** HERE token service****");
         RealmManager realmManager = new RealmManager(identitySession);
         RealmModel realm = realmManager.getRealm(id);
         if (realm == null) {
@@ -68,6 +71,7 @@ public class RealmsResource {
 
     @Path("{realm}")
     public RealmSubResource getRealmResource(@PathParam("realm") String id) {
+        logger.info("**** HERE @Path {realm} ****");
         RealmManager realmManager = new RealmManager(identitySession);
         RealmModel realm = realmManager.getRealm(id);
         if (realm == null) {

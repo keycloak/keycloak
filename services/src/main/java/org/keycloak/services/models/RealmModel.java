@@ -315,11 +315,12 @@ public class RealmModel {
         ScopeRelationship scope = new ScopeRelationship();
         scope.setClient(agent);
         scope.setScope(role);
+        idm.add(scope);
 
     }
 
 
-    public Set<String> getScope(Agent agent) {
+    public Set<String> getScopes(Agent agent) {
         RelationshipQuery<ScopeRelationship> query = getIdm().createRelationshipQuery(ScopeRelationship.class);
         query.setParameter(ScopeRelationship.CLIENT, agent);
         List<ScopeRelationship> scope = query.getResultList();

@@ -1,6 +1,11 @@
-package org.keycloak.example.demo;
+package org.keycloak.test;
 
-import org.jboss.resteasy.jwt.JsonSerialization;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.FixMethodOrder;
+import org.junit.Test;
+import org.junit.runners.MethodSorters;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.models.RealmModel;
@@ -9,7 +14,6 @@ import org.keycloak.services.models.relationships.RealmAdminRelationship;
 import org.keycloak.services.models.relationships.RequiredCredentialRelationship;
 import org.keycloak.services.models.relationships.ResourceRelationship;
 import org.keycloak.services.models.relationships.ScopeRelationship;
-import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.services.resources.RegistrationService;
 import org.picketlink.idm.IdentitySession;
 import org.picketlink.idm.IdentitySessionFactory;
@@ -27,34 +31,60 @@ import org.picketlink.idm.jpa.schema.RelationshipObject;
 import org.picketlink.idm.jpa.schema.RelationshipObjectAttribute;
 import org.picketlink.idm.model.Realm;
 import org.picketlink.idm.model.SimpleRole;
+import org.picketlink.idm.model.User;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Application;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.HashSet;
 import java.util.Set;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class DemoApplication extends KeycloakApplication {
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+public class ImportTest {
+    private IdentitySessionFactory factory;
+    private IdentitySession identitySession;
+    private RealmManager manager;
+    private RealmModel realmModel;
 
-    public DemoApplication() {
-        super();
-        IdentitySession session = factory.createIdentitySession();
-        session.getTransaction().begin();
-        RealmManager realmManager = new RealmManager(session);
-        if (realmManager.defaultRealm() == null) {
-            install(realmManager);
-        }
-        session.getTransaction().commit();
+    @Before
+    public void before() throws Exception {
+        factory = createFactory();
+        identitySession = factory.createIdentitySession();
+        manager = new RealmManager(identitySession);
     }
 
-    public void install(RealmManager manager) {
+    public static IdentitySessionFactory createFactory() {
+        ResourceLocalJpaIdentitySessionHandler handler = new ResourceLocalJpaIdentitySessionHandler("keycloak-identity-store");
+        IdentityConfigurationBuilder builder = new IdentityConfigurationBuilder();
+
+        builder
+                .stores()
+                .jpa()
+                .identityClass(IdentityObject.class)
+                .attributeClass(IdentityObjectAttribute.class)
+                .relationshipClass(RelationshipObject.class)
+                .relationshipIdentityClass(RelationshipIdentityObject.class)
+                .relationshipAttributeClass(RelationshipObjectAttribute.class)
+                .credentialClass(CredentialObject.class)
+                .credentialAttributeClass(CredentialObjectAttribute.class)
+                .partitionClass(PartitionObject.class)
+                .supportAllFeatures()
+                .supportRelationshipType(RealmAdminRelationship.class, ResourceRelationship.class, RequiredCredentialRelationship.class, ScopeRelationship.class)
+                .setIdentitySessionHandler(handler);
+
+        IdentityConfiguration build = builder.build();
+        return new DefaultIdentitySessionFactory(build);
+    }
+
+
+    @After
+    public void after() throws Exception {
+        identitySession.close();
+        factory.close();
+    }
+
+    @Test
+    public void install() throws Exception {
         RealmModel defaultRealm = manager.createRealm(Realm.DEFAULT_REALM, Realm.DEFAULT_REALM);
         defaultRealm.setName(Realm.DEFAULT_REALM);
         defaultRealm.setEnabled(true);
@@ -68,30 +98,19 @@ public class DemoApplication extends KeycloakApplication {
         defaultRealm.addRequiredCredential(RequiredCredentialModel.PASSWORD);
         defaultRealm.getIdm().add(new SimpleRole(RegistrationService.REALM_CREATOR_ROLE));
 
-        RealmRepresentation rep = loadJson("META-INF/testrealm.json");
+        RealmRepresentation rep = KeycloakTestBase.loadJson("testrealm.json");
         RealmModel realm = manager.createRealm("demo", rep.getRealm());
         manager.importRealm(rep, realm);
 
+        User user = realm.getIdm().getUser("loginclient");
+        Assert.assertNotNull(user);
+        Set<String> scopes = realm.getScopes(user);
+        System.out.println("Scopes size: " + scopes.size());
+        Assert.assertTrue(scopes.contains("*"));
+
     }
 
-    public static RealmRepresentation loadJson(String path)
-    {
-        InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(path);
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
-        int c;
-        try {
-            while ( (c = is.read()) != -1)
-            {
-                os.write(c);
-            }
-            byte[] bytes = os.toByteArray();
-            //System.out.println(new String(bytes));
 
-            return JsonSerialization.fromBytes(RealmRepresentation.class, bytes);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
 
 }

@@ -93,7 +93,7 @@ public class TokenManager {
     }
 
     public SkeletonKeyToken createLoginToken(RealmModel realm, User client, User user) {
-        Set<String> mapping = realm.getScope(client);
+        Set<String> mapping = realm.getScopes(client);
         if (!mapping.contains("*")) {
             throw new ForbiddenException(Response.status(403).entity("<h1>Security Alert</h1><p>Known client not authorized to request a user login.</p>").type("text/html").build());
         }

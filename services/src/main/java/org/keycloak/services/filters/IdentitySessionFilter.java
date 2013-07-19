@@ -1,5 +1,6 @@
 package org.keycloak.services.filters;
 
+import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.picketlink.idm.IdentitySession;
 import org.picketlink.idm.IdentitySessionFactory;
@@ -17,6 +18,7 @@ import java.io.IOException;
  */
 @PreMatching
 public class IdentitySessionFilter implements ContainerRequestFilter, ContainerResponseFilter {
+    protected static final Logger logger = Logger.getLogger(IdentitySessionFilter.class);
     protected IdentitySessionFactory factory;
 
     public IdentitySessionFilter(IdentitySessionFactory factory) {

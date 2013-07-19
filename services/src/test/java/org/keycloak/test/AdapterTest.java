@@ -12,13 +12,29 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RequiredCredentialModel;
 import org.keycloak.services.models.UserCredentialModel;
+import org.keycloak.services.models.relationships.RealmAdminRelationship;
+import org.keycloak.services.models.relationships.RequiredCredentialRelationship;
+import org.keycloak.services.models.relationships.ResourceRelationship;
+import org.keycloak.services.models.relationships.ScopeRelationship;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.picketlink.idm.IdentitySession;
 import org.picketlink.idm.IdentitySessionFactory;
 import org.picketlink.idm.IdentityManager;
+import org.picketlink.idm.config.IdentityConfiguration;
+import org.picketlink.idm.config.IdentityConfigurationBuilder;
 import org.picketlink.idm.credential.Credentials;
 import org.picketlink.idm.credential.Password;
 import org.picketlink.idm.credential.UsernamePasswordCredentials;
+import org.picketlink.idm.internal.DefaultIdentitySessionFactory;
+import org.picketlink.idm.jpa.internal.ResourceLocalJpaIdentitySessionHandler;
+import org.picketlink.idm.jpa.schema.CredentialObject;
+import org.picketlink.idm.jpa.schema.CredentialObjectAttribute;
+import org.picketlink.idm.jpa.schema.IdentityObject;
+import org.picketlink.idm.jpa.schema.IdentityObjectAttribute;
+import org.picketlink.idm.jpa.schema.PartitionObject;
+import org.picketlink.idm.jpa.schema.RelationshipIdentityObject;
+import org.picketlink.idm.jpa.schema.RelationshipObject;
+import org.picketlink.idm.jpa.schema.RelationshipObjectAttribute;
 import org.picketlink.idm.model.Role;
 import org.picketlink.idm.model.SimpleRole;
 import org.picketlink.idm.model.SimpleUser;
@@ -39,10 +55,34 @@ public class AdapterTest {
 
     @Before
     public void before() throws Exception {
-        factory = KeycloakApplication.createFactory();
+        factory = createFactory();
         IdentitySession = factory.createIdentitySession();
         adapter = new RealmManager(IdentitySession);
     }
+
+    public static IdentitySessionFactory createFactory() {
+        ResourceLocalJpaIdentitySessionHandler handler = new ResourceLocalJpaIdentitySessionHandler("keycloak-identity-store");
+        IdentityConfigurationBuilder builder = new IdentityConfigurationBuilder();
+
+        builder
+                .stores()
+                .jpa()
+                .identityClass(IdentityObject.class)
+                .attributeClass(IdentityObjectAttribute.class)
+                .relationshipClass(RelationshipObject.class)
+                .relationshipIdentityClass(RelationshipIdentityObject.class)
+                .relationshipAttributeClass(RelationshipObjectAttribute.class)
+                .credentialClass(CredentialObject.class)
+                .credentialAttributeClass(CredentialObjectAttribute.class)
+                .partitionClass(PartitionObject.class)
+                .supportAllFeatures()
+                .supportRelationshipType(RealmAdminRelationship.class, ResourceRelationship.class, RequiredCredentialRelationship.class, ScopeRelationship.class)
+                .setIdentitySessionHandler(handler);
+
+        IdentityConfiguration build = builder.build();
+        return new DefaultIdentitySessionFactory(build);
+    }
+
 
     @After
     public void after() throws Exception {

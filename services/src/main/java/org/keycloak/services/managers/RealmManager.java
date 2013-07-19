@@ -88,17 +88,23 @@ public class RealmManager {
 
     public RealmModel importRealm(RealmRepresentation rep, User realmCreator) {
         verifyRealmRepresentation(rep);
-
         RealmModel realm = createRealm(rep.getRealm());
-        generateRealmKeys(realm);
+        importRealm(rep, realm);
         realm.addRealmAdmin(realmCreator);
-        realm.setName(rep.getRealm());
-        realm.setEnabled(rep.isEnabled());
-        realm.setTokenLifespan(rep.getTokenLifespan());
-        realm.setAccessCodeLifespan(rep.getAccessCodeLifespan());
-        realm.setSslNotRequired(rep.isSslNotRequired());
-        realm.setCookieLoginAllowed(rep.isCookieLoginAllowed());
         realm.updateRealm();
+        return realm;
+    }
+
+
+    public void importRealm(RealmRepresentation rep, RealmModel newRealm) {
+        generateRealmKeys(newRealm);
+        newRealm.setName(rep.getRealm());
+        newRealm.setEnabled(rep.isEnabled());
+        newRealm.setTokenLifespan(rep.getTokenLifespan());
+        newRealm.setAccessCodeLifespan(rep.getAccessCodeLifespan());
+        newRealm.setSslNotRequired(rep.isSslNotRequired());
+        newRealm.setCookieLoginAllowed(rep.isCookieLoginAllowed());
+        newRealm.updateRealm();
 
 
         Map<String, User> userMap = new HashMap<String, User>();
@@ -108,7 +114,7 @@ public class RealmManager {
             credential.setType(requiredCred.getType());
             credential.setInput(requiredCred.isInput());
             credential.setSecret(requiredCred.isSecret());
-            realm.addRequiredCredential(credential);
+            newRealm.addRequiredCredential(credential);
         }
 
         for (UserRepresentation userRep : rep.getUsers()) {
@@ -119,13 +125,13 @@ public class RealmManager {
                     user.setAttribute(new Attribute<String>(entry.getKey(), entry.getValue()));
                 }
             }
-            realm.getIdm().add(user);
+            newRealm.getIdm().add(user);
             if (userRep.getCredentials() != null) {
                 for (UserRepresentation.Credential cred : userRep.getCredentials()) {
                     UserCredentialModel credential = new UserCredentialModel();
                     credential.setType(cred.getType());
                     credential.setValue(cred.getValue());
-                    realm.updateCredential(user, credential);
+                    newRealm.updateCredential(user, credential);
                 }
             }
             userMap.put(user.getLoginName(), user);
@@ -136,7 +142,7 @@ public class RealmManager {
         if (rep.getRoles() != null) {
             for (String roleString : rep.getRoles()) {
                 SimpleRole role = new SimpleRole(roleString.trim());
-                realm.getIdm().add(role);
+                newRealm.getIdm().add(role);
                 roles.put(role.getName(), role);
             }
         }
@@ -148,10 +154,10 @@ public class RealmManager {
                     Role role = roles.get(roleString.trim());
                     if (role == null) {
                         role = new SimpleRole(roleString.trim());
-                        realm.getIdm().add(role);
+                        newRealm.getIdm().add(role);
                         roles.put(role.getName(), role);
                     }
-                    realm.getIdm().grantRole(user, role);
+                    newRealm.getIdm().grantRole(user, role);
                 }
             }
         }
@@ -162,11 +168,11 @@ public class RealmManager {
                     Role role = roles.get(roleString.trim());
                     if (role == null) {
                         role = new SimpleRole(roleString.trim());
-                        realm.getIdm().add(role);
+                        newRealm.getIdm().add(role);
                         roles.put(role.getName(), role);
                     }
                     User user = userMap.get(scope.getUsername());
-                    realm.addScope(user, role.getName());
+                    newRealm.addScope(user, role.getName());
                 }
 
             }
@@ -174,14 +180,13 @@ public class RealmManager {
 
         if (!roles.containsKey("*")) {
             SimpleRole wildcard = new SimpleRole("*");
-            realm.getIdm().add(wildcard);
+            newRealm.getIdm().add(wildcard);
             roles.put("*", wildcard);
         }
 
         if (rep.getResources() != null) {
-            createResources(rep, realm, userMap);
+            createResources(rep, newRealm, userMap);
         }
-        return realm;
     }
 
     protected void createResources(RealmRepresentation rep, RealmModel realm, Map<String, User> userMap) {
