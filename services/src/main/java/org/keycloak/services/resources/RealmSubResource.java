@@ -45,22 +45,10 @@ public class RealmSubResource {
     public String getRealmHtml(@PathParam("realm") String id) {
         StringBuffer html = new StringBuffer();
 
-        UriBuilder auth = uriInfo.getBaseUriBuilder();
-        auth.path(TokenService.class)
-                .path(TokenService.class, "requestAccessCode");
-        String authUri = auth.build(realm.getId()).toString();
-
-        UriBuilder code = uriInfo.getBaseUriBuilder();
-        code.path(TokenService.class).path(TokenService.class, "accessRequest");
-        String codeUri = code.build(realm.getId()).toString();
-
-        UriBuilder grant = uriInfo.getBaseUriBuilder();
-        grant.path(TokenService.class).path(TokenService.class, "accessTokenGrant");
-        String grantUrl = grant.build(realm.getId()).toString();
-
-        UriBuilder idGrant = uriInfo.getBaseUriBuilder();
-        grant.path(TokenService.class).path(TokenService.class, "identityTokenGrant");
-        String idGrantUrl = idGrant.build(realm.getId()).toString();
+        String authUri = TokenService.loginPage(uriInfo).build(realm.getId()).toString();
+        String codeUri = TokenService.accessCodeRequest(uriInfo).build(realm.getId()).toString();
+        String grantUrl = TokenService.grantRequest(uriInfo).build(realm.getId()).toString();
+        String idGrantUrl = TokenService.identityGrantRequest(uriInfo).build(realm.getId()).toString();
 
         html.append("<html><body><h1>Realm: ").append(realm.getName()).append("</h1>");
         html.append("<p>auth: ").append(authUri).append("</p>");

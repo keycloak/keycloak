@@ -71,6 +71,36 @@ public class TokenService {
         this.tokenManager = tokenManager;
     }
 
+    public static UriBuilder tokenServiceBase(UriInfo uriInfo) {
+        UriBuilder base = uriInfo.getBaseUriBuilder()
+                .path(RealmsResource.class).path(RealmsResource.class, "getTokenService");
+        return base;
+    }
+
+    public static UriBuilder accessCodeRequest(UriInfo uriInfo) {
+        return tokenServiceBase(uriInfo).path(TokenService.class, "accessRequest");
+
+    }
+
+    public static UriBuilder grantRequest(UriInfo uriInfo) {
+        return tokenServiceBase(uriInfo).path(TokenService.class, "accessTokenGrant");
+
+    }
+
+    public static UriBuilder identityGrantRequest(UriInfo uriInfo) {
+        return tokenServiceBase(uriInfo).path(TokenService.class, "accessTokenGrant");
+
+    }
+
+    public static UriBuilder loginPage(UriInfo uriInfo) {
+        return tokenServiceBase(uriInfo).path(TokenService.class, "requestAccessCode");
+    }
+
+    public static UriBuilder loginAction(UriInfo uriInfo) {
+        return tokenServiceBase(uriInfo).path(TokenService.class, "login");
+    }
+
+
     @Path("grants/identity-token")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
@@ -334,7 +364,7 @@ public class TokenService {
             }
             html.append("</table><p>To Authorize, please login below</p>");
         } else {
-            Set<String> scopeMapping = realm.getScope(client);
+            Set<String> scopeMapping = realm.getScopes(client);
             if (scopeMapping.contains("*")) {
                 html.append("<h1>Login For ").append(realm.getName()).append(" Realm</h1>");
                 if (validationError != null) {
@@ -388,7 +418,7 @@ public class TokenService {
             }
         }
 
-        UriBuilder formActionUri = uriInfo.getBaseUriBuilder().path(TokenService.class).path(TokenService.class, "login");
+        UriBuilder formActionUri = loginAction(uriInfo);
         String action = formActionUri.build(realm.getId()).toString();
         html.append("<form action=\"").append(action).append("\" method=\"POST\">");
         html.append("Username: <input type=\"text\" name=\"username\" size=\"20\"><br>");

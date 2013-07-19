@@ -1,6 +1,5 @@
 package org.keycloak.services.managers;
 
-import org.keycloak.services.models.RealmManager;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RequiredCredentialModel;
 import org.keycloak.services.resources.RegistrationService;

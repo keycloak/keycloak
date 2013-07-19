@@ -5,7 +5,6 @@ import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
 import org.keycloak.representations.SkeletonKeyToken;
 import org.keycloak.representations.idm.RequiredCredentialRepresentation;
-import org.keycloak.services.models.RealmManager;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RequiredCredentialModel;
 import org.picketlink.idm.credential.Credentials;
