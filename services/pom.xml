@@ -20,24 +20,34 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>org.picketlink</groupId>
             <artifactId>picketlink-idm-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.picketlink</groupId>
+            <artifactId>picketlink-common</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.picketlink</groupId>
             <artifactId>picketlink-idm-impl</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.picketlink</groupId>
             <artifactId>picketlink-idm-schema</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.picketlink</groupId>
             <artifactId>picketlink-config</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-core</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>

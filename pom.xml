@@ -55,6 +55,7 @@
         <module>core</module>
         <module>services</module>
         <module>integration</module>
+        <module>examples</module>
     </modules>
 
     <dependencyManagement>
@@ -68,16 +69,6 @@
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcmail-jdk16</artifactId>
                 <version>1.46</version>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-core</artifactId>
-                <version>5.1.6.FINAL</version>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-tree</artifactId>
-                <version>5.1.6.FINAL</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.resteasy</groupId>
@@ -147,6 +138,11 @@
             </dependency>
             <dependency>
                 <groupId>org.picketlink</groupId>
+                <artifactId>picketlink-common</artifactId>
+                <version>2.5.0-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>org.picketlink</groupId>
                 <artifactId>picketlink-idm-api</artifactId>
                 <version>2.5.0-SNAPSHOT</version>
             </dependency>
@@ -164,6 +160,11 @@
                 <groupId>org.picketlink</groupId>
                 <artifactId>picketlink-config</artifactId>
                 <version>2.5.0-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.logging</groupId>
+                <artifactId>jboss-logging</artifactId>
+                <version>3.1.1.GA</version>
             </dependency>
             <dependency>
                 <groupId>junit</groupId>

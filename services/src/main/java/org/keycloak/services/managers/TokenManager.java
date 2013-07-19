@@ -5,7 +5,6 @@ import org.jboss.resteasy.jose.jws.JWSBuilder;
 import org.jboss.resteasy.jwt.JsonSerialization;
 import org.keycloak.representations.SkeletonKeyScope;
 import org.keycloak.representations.SkeletonKeyToken;
-import org.keycloak.services.models.RealmManager;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.ResourceModel;
 import org.picketlink.idm.model.User;
@@ -94,7 +93,7 @@ public class TokenManager {
     }
 
     public SkeletonKeyToken createLoginToken(RealmModel realm, User client, User user) {
-        Set<String> mapping = realm.getScope(client);
+        Set<String> mapping = realm.getScopes(client);
         if (!mapping.contains("*")) {
             throw new ForbiddenException(Response.status(403).entity("<h1>Security Alert</h1><p>Known client not authorized to request a user login.</p>").type("text/html").build());
         }

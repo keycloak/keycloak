@@ -1,5 +1,5 @@
 {
-   "realm" : "test-realm",
+   "realm" : "demo",
    "enabled" : true,
    "tokenLifespan" : 6000,
    "accessCodeLifespan" : 30,

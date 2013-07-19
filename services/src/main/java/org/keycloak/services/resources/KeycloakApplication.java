@@ -54,7 +54,7 @@ public class KeycloakApplication extends Application {
         factory.close();
     }
 
-    public static IdentitySessionFactory createFactory() {
+    public IdentitySessionFactory createFactory() {
         ResourceLocalJpaIdentitySessionHandler handler = new ResourceLocalJpaIdentitySessionHandler("keycloak-identity-store");
         IdentityConfigurationBuilder builder = new IdentityConfigurationBuilder();
 
