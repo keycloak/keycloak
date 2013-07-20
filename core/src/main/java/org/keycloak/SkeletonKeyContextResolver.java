@@ -14,29 +14,24 @@ import javax.ws.rs.ext.Provider;
  * @version $Revision: 1 $
  */
 @Provider
-public class SkeletonKeyContextResolver implements ContextResolver<ObjectMapper>
-{
-   protected ObjectMapper mapper = new ObjectMapper();
+public class SkeletonKeyContextResolver implements ContextResolver<ObjectMapper> {
+    protected ObjectMapper mapper = new ObjectMapper();
 
-   public SkeletonKeyContextResolver()
-   {
-      mapper.setSerializationInclusion(JsonSerialize.Inclusion.NON_DEFAULT);
-   }
+    public SkeletonKeyContextResolver() {
+        mapper.setSerializationInclusion(JsonSerialize.Inclusion.NON_DEFAULT);
+    }
 
-   public SkeletonKeyContextResolver(boolean indent)
-   {
-      mapper.setSerializationInclusion(JsonSerialize.Inclusion.NON_DEFAULT);
-      if (indent)
-      {
-         mapper.enable(SerializationConfig.Feature.INDENT_OUTPUT);
-      }
-   }
+    public SkeletonKeyContextResolver(boolean indent) {
+        mapper.setSerializationInclusion(JsonSerialize.Inclusion.NON_DEFAULT);
+        if (indent) {
+            mapper.enable(SerializationConfig.Feature.INDENT_OUTPUT);
+        }
+    }
 
 
-   @Override
-   public ObjectMapper getContext(Class<?> type)
-   {
-      if (type.getPackage().getName().startsWith(getClass().getPackage().getName())) return mapper;
-      return null;
-   }
+    @Override
+    public ObjectMapper getContext(Class<?> type) {
+        if (type.getPackage().getName().startsWith(getClass().getPackage().getName())) return mapper;
+        return null;
+    }
 }
