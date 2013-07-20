@@ -10,10 +10,10 @@ import org.apache.catalina.connector.Response;
 import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.deploy.LoginConfig;
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.ResourceMetadata;
 import org.keycloak.adapters.as7.config.ManagedResourceConfig;
 import org.keycloak.adapters.as7.config.ManagedResourceConfigLoader;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 
 import javax.security.auth.login.LoginException;
 import javax.servlet.ServletException;
@@ -27,61 +27,49 @@ import java.io.IOException;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class BearerTokenAuthenticatorValve extends AuthenticatorBase implements LifecycleListener
-{
-   private static final Logger log = Logger.getLogger(BearerTokenAuthenticatorValve.class);
-   protected ManagedResourceConfig remoteSkeletonKeyConfig;
-   protected ResourceMetadata resourceMetadata;
+public class BearerTokenAuthenticatorValve extends AuthenticatorBase implements LifecycleListener {
+    private static final Logger log = Logger.getLogger(BearerTokenAuthenticatorValve.class);
+    protected ManagedResourceConfig remoteSkeletonKeyConfig;
+    protected ResourceMetadata resourceMetadata;
 
-   @Override
-   public void start() throws LifecycleException
-   {
-      super.start();
-      StandardContext standardContext = (StandardContext)context;
-      standardContext.addLifecycleListener(this);
-   }
+    @Override
+    public void start() throws LifecycleException {
+        super.start();
+        StandardContext standardContext = (StandardContext) context;
+        standardContext.addLifecycleListener(this);
+    }
 
-   @Override
-   public void lifecycleEvent(LifecycleEvent event)
-   {
-      if (event.getType() == Lifecycle.AFTER_START_EVENT) init();
-   }
+    @Override
+    public void lifecycleEvent(LifecycleEvent event) {
+        if (event.getType() == Lifecycle.AFTER_START_EVENT) init();
+    }
 
-   protected void init()
-   {
-      ManagedResourceConfigLoader managedResourceConfigLoader = new ManagedResourceConfigLoader(context);
-      resourceMetadata = managedResourceConfigLoader.getResourceMetadata();
-      remoteSkeletonKeyConfig = managedResourceConfigLoader.getRemoteSkeletonKeyConfig();
-   }
+    protected void init() {
+        ManagedResourceConfigLoader managedResourceConfigLoader = new ManagedResourceConfigLoader(context);
+        resourceMetadata = managedResourceConfigLoader.getResourceMetadata();
+        remoteSkeletonKeyConfig = managedResourceConfigLoader.getRemoteSkeletonKeyConfig();
+        managedResourceConfigLoader.init(false);
+    }
 
-   @Override
-   public void invoke(Request request, Response response) throws IOException, ServletException
-   {
-      try
-      {
-         super.invoke(request, response);
-      }
-      finally
-      {
-         ResteasyProviderFactory.clearContextData(); // to clear push of SkeletonKeySession
-      }
-   }
+    @Override
+    public void invoke(Request request, Response response) throws IOException, ServletException {
+        try {
+            super.invoke(request, response);
+        } finally {
+            ResteasyProviderFactory.clearContextData(); // to clear push of SkeletonKeySession
+        }
+    }
 
-   @Override
-   protected boolean authenticate(Request request, HttpServletResponse response, LoginConfig config) throws IOException
-   {
-      try
-      {
-         CatalinaBearerTokenAuthenticator bearer = new CatalinaBearerTokenAuthenticator(resourceMetadata, !remoteSkeletonKeyConfig.isCancelPropagation(), true);
-         if (bearer.login(request, response))
-         {
-            return true;
-       }
-         return false;
-      }
-      catch (LoginException e)
-      {
-      }
-      return false;
-   }
+    @Override
+    protected boolean authenticate(Request request, HttpServletResponse response, LoginConfig config) throws IOException {
+        try {
+            CatalinaBearerTokenAuthenticator bearer = new CatalinaBearerTokenAuthenticator(resourceMetadata, !remoteSkeletonKeyConfig.isCancelPropagation(), true);
+            if (bearer.login(request, response)) {
+                return true;
+            }
+            return false;
+        } catch (LoginException e) {
+        }
+        return false;
+    }
 }

@@ -19,6 +19,7 @@ import javax.ws.rs.core.UriInfo;
  */
 public class RealmSubResource {
     protected static final  Logger logger = Logger.getLogger(RealmSubResource.class);
+    public static final String ADMIN_ROLE = "$REALM-ADMIN$";
 
     @Context
     protected UriInfo uriInfo;
@@ -32,8 +33,13 @@ public class RealmSubResource {
         this.realm = realm;
     }
 
+    public static UriBuilder realmUrl(UriInfo uriInfo) {
+        UriBuilder base = uriInfo.getBaseUriBuilder()
+                .path(RealmsResource.class).path(RealmsResource.class, "getRealmResource");
+        return base;
+    }
+
     @GET
-    @Path("json")
     @Produces("application/json")
     public PublishedRealmRepresentation getRealm(@PathParam("realm") String id) {
         return realmRep(realm, uriInfo);
@@ -65,26 +71,14 @@ public class RealmSubResource {
     public static PublishedRealmRepresentation realmRep(RealmModel realm, UriInfo uriInfo) {
         PublishedRealmRepresentation rep = new PublishedRealmRepresentation();
         rep.setRealm(realm.getName());
-        rep.setSelf(uriInfo.getRequestUri().toString());
+        rep.setSelf(realmUrl(uriInfo).build(realm.getId()).toString());
         rep.setPublicKeyPem(realm.getPublicKeyPem());
+        rep.setAdminRole(ADMIN_ROLE);
 
-        UriBuilder auth = uriInfo.getBaseUriBuilder();
-        auth.path(RealmsResource.class).path(RealmsResource.class, "getTokenService")
-                .path(TokenService.class, "requestAccessCode");
-        rep.setAuthorizationUrl(auth.build(realm.getId()).toString());
-
-        UriBuilder code = uriInfo.getBaseUriBuilder();
-        code.path(RealmsResource.class).path(RealmsResource.class, "getTokenService").path(TokenService.class, "accessRequest");
-        rep.setCodeUrl(code.build(realm.getId()).toString());
-
-        UriBuilder grant = uriInfo.getBaseUriBuilder();
-        grant.path(RealmsResource.class).path(RealmsResource.class, "getTokenService").path(TokenService.class, "accessTokenGrant");
-        String grantUrl = grant.build(realm.getId()).toString();
-        rep.setGrantUrl(grantUrl);
-
-        UriBuilder idGrant = uriInfo.getBaseUriBuilder();
-        grant.path(RealmsResource.class).path(RealmsResource.class, "getTokenService").path(TokenService.class, "identityTokenGrant");
-        String idGrantUrl = idGrant.build(realm.getId()).toString();
+        rep.setAuthorizationUrl(TokenService.loginPage(uriInfo).build(realm.getId()).toString());
+        rep.setCodeUrl(TokenService.accessCodeRequest(uriInfo).build(realm.getId()).toString());
+        rep.setGrantUrl(TokenService.grantRequest(uriInfo).build(realm.getId()).toString());
+        String idGrantUrl = TokenService.identityGrantRequest(uriInfo).build(realm.getId()).toString();
         rep.setIdentityGrantUrl(idGrantUrl);
         return rep;
     }
