@@ -14,7 +14,29 @@
     <artifactId>examples-pom</artifactId>
     <packaging>pom</packaging>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.jboss.as.plugins</groupId>
+                <artifactId>jboss-as-maven-plugin</artifactId>
+                <version>7.1.1.Final</version>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
     <modules>
         <module>as7-eap-demo/server</module>
+        <module>as7-eap-demo/customer-app</module>
+        <module>as7-eap-demo/product-app</module>
+        <module>as7-eap-demo/database-service</module>
     </modules>
 </project>

@@ -82,6 +82,7 @@ public class OAuthManagedResourceValve extends FormAuthenticator implements Life
         }
         realmConfiguration.setMetadata(resourceMetadata);
         realmConfiguration.setClientId(client_id);
+        realmConfiguration.setSslRequired(!remoteSkeletonKeyConfig.isSslNotRequired());
 
         for (Map.Entry<String, String> entry : managedResourceConfigLoader.getRemoteSkeletonKeyConfig().getClientCredentials().entrySet()) {
             realmConfiguration.getCredentials().param(entry.getKey(), entry.getValue());

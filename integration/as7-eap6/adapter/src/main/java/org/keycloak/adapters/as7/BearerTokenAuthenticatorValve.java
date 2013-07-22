@@ -46,9 +46,9 @@ public class BearerTokenAuthenticatorValve extends AuthenticatorBase implements 
 
     protected void init() {
         ManagedResourceConfigLoader managedResourceConfigLoader = new ManagedResourceConfigLoader(context);
-        resourceMetadata = managedResourceConfigLoader.getResourceMetadata();
         remoteSkeletonKeyConfig = managedResourceConfigLoader.getRemoteSkeletonKeyConfig();
         managedResourceConfigLoader.init(false);
+        resourceMetadata = managedResourceConfigLoader.getResourceMetadata();
     }
 
     @Override
