@@ -97,13 +97,19 @@ public class RealmManager {
 
 
     public void importRealm(RealmRepresentation rep, RealmModel newRealm) {
-        generateRealmKeys(newRealm);
         newRealm.setName(rep.getRealm());
         newRealm.setEnabled(rep.isEnabled());
         newRealm.setTokenLifespan(rep.getTokenLifespan());
         newRealm.setAccessCodeLifespan(rep.getAccessCodeLifespan());
         newRealm.setSslNotRequired(rep.isSslNotRequired());
         newRealm.setCookieLoginAllowed(rep.isCookieLoginAllowed());
+        if (rep.getPrivateKey() == null || rep.getPublicKey() == null) {
+           generateRealmKeys(newRealm);
+        } else {
+            newRealm.setPrivateKeyPem(rep.getPrivateKey());
+            newRealm.setPublicKeyPem(rep.getPublicKey());
+        }
+
         newRealm.updateRealm();
 
 

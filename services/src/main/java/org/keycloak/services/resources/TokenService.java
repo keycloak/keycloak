@@ -201,6 +201,7 @@ public class TokenService {
     @POST
     @Produces("application/json")
     public Response accessRequest(MultivaluedMap<String, String> formData) {
+        logger.info("accessRequest <---");
         if (!realm.isEnabled()) {
             throw new NotAuthorizedException("Realm not enabled");
         }
@@ -286,6 +287,7 @@ public class TokenService {
             res.put("error_description", "Auth error");
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res).build();
         }
+        logger.info("accessRequest SUCCESS");
         AccessTokenResponse res = accessTokenResponse(realm.getPrivateKey(), accessCode.getToken());
         return Response.ok(res).build();
 
