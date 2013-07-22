@@ -21,6 +21,9 @@
  */
 package org.keycloak.social;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
