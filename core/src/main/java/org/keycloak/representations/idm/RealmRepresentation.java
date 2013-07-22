@@ -16,6 +16,8 @@ public class RealmRepresentation {
     protected boolean enabled;
     protected boolean sslNotRequired;
     protected boolean cookieLoginAllowed;
+    protected String privateKey;
+    protected String publicKey;
     protected Set<String> roles;
     protected List<RequiredCredentialRepresentation> requiredCredentials;
     protected List<UserRepresentation> users;
@@ -150,5 +152,21 @@ public class RealmRepresentation {
 
     public void setRoles(Set<String> roles) {
         this.roles = roles;
+    }
+
+    public String getPrivateKey() {
+        return privateKey;
+    }
+
+    public void setPrivateKey(String privateKey) {
+        this.privateKey = privateKey;
+    }
+
+    public String getPublicKey() {
+        return publicKey;
+    }
+
+    public void setPublicKey(String publicKey) {
+        this.publicKey = publicKey;
     }
 }

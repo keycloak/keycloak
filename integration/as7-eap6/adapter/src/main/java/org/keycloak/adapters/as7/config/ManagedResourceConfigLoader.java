@@ -98,6 +98,9 @@ public class ManagedResourceConfigLoader {
             remoteSkeletonKeyConfig.setRealmKey(rep.getPublicKeyPem());
             remoteSkeletonKeyConfig.setAdminRole(rep.getAdminRole());
         }
+        if (remoteSkeletonKeyConfig.getAdminRole() == null) {
+            remoteSkeletonKeyConfig.setAdminRole("$REALM-ADMIN$");
+        }
 
         String realm = remoteSkeletonKeyConfig.getRealm();
         String resource = remoteSkeletonKeyConfig.getResource();
