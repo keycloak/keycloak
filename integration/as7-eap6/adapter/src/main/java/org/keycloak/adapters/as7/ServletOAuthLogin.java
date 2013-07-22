@@ -7,6 +7,7 @@ import org.keycloak.RealmConfiguration;
 import org.keycloak.VerificationException;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.SkeletonKeyToken;
+import org.keycloak.representations.idm.RequiredCredentialRepresentation;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -77,6 +78,7 @@ public class ServletOAuthLogin {
 
     protected void sendRedirect(String url) {
         try {
+            log.info("Sending redirect to: " + url);
             response.sendRedirect(url);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -223,18 +225,26 @@ public class ServletOAuthLogin {
 
         String client_id = realmInfo.getClientId();
         String password = realmInfo.getCredentials().asMap().getFirst("password");
-        String authHeader = BasicAuthHelper.createHeader(client_id, password);
+        //String authHeader = BasicAuthHelper.createHeader(client_id, password);
         String redirectUri = stripOauthParametersFromRedirect();
         Form form = new Form();
         form.param("grant_type", "authorization_code")
                 .param("code", code)
+                .param("client_id", client_id)
+                .param(RequiredCredentialRepresentation.PASSWORD, password)
                 .param("redirect_uri", redirectUri);
 
-        Response res = realmInfo.getCodeUrl().request().header(HttpHeaders.AUTHORIZATION, authHeader).post(Entity.form(form));
+        Response res = realmInfo.getCodeUrl().request()
+                //.header(HttpHeaders.AUTHORIZATION, authHeader)
+                .post(Entity.form(form));
         AccessTokenResponse tokenResponse;
         try {
             if (res.getStatus() != 200) {
                 log.error("failed to turn code into token");
+                log.error("status from server: " + res.getStatus());
+                if (res.getStatus() == 400 && res.getMediaType() != null) {
+                    log.error("   " + res.readEntity(String.class));
+                }
                 sendError(Response.Status.FORBIDDEN.getStatusCode());
                 return false;
             }
@@ -248,7 +258,7 @@ public class ServletOAuthLogin {
         tokenString = tokenResponse.getToken();
         try {
             token = RSATokenVerifier.verifyToken(tokenString, realmInfo.getMetadata());
-            log.debug("Verification succeeded!");
+            log.info("Token Verification succeeded!");
         } catch (VerificationException e) {
             log.error("failed verification of token");
             sendError(Response.Status.FORBIDDEN.getStatusCode());

@@ -82,7 +82,6 @@ public class ManagedResourceConfigLoader {
 
         initClient();
 
-        String realm = remoteSkeletonKeyConfig.getRealm();
 
         if (remoteSkeletonKeyConfig.getRealmUrl() != null) {
             PublishedRealmRepresentation rep = null;
@@ -100,6 +99,7 @@ public class ManagedResourceConfigLoader {
             remoteSkeletonKeyConfig.setAdminRole(rep.getAdminRole());
         }
 
+        String realm = remoteSkeletonKeyConfig.getRealm();
         String resource = remoteSkeletonKeyConfig.getResource();
         if (realm == null) throw new RuntimeException("Must set 'realm' in config");
 

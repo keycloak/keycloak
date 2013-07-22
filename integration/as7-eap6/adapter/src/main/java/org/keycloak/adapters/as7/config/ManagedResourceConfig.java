@@ -27,6 +27,8 @@ public class ManagedResourceConfig {
     @JsonProperty("code-url")
     protected String codeUrl;
 
+    @JsonProperty("ssl-not-required")
+    protected boolean sslNotRequired;
     @JsonProperty("allow-any-hostname")
     protected boolean allowAnyHostname;
     @JsonProperty("disable-trust-manager")
@@ -49,6 +51,14 @@ public class ManagedResourceConfig {
     protected int connectionPoolSize;
     @JsonProperty("cancel-propagation")
     protected boolean cancelPropagation;
+
+    public boolean isSslNotRequired() {
+        return sslNotRequired;
+    }
+
+    public void setSslNotRequired(boolean sslNotRequired) {
+        this.sslNotRequired = sslNotRequired;
+    }
 
     public String getRealmUrl() {
         return realmUrl;

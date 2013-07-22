@@ -55,7 +55,6 @@ public class RealmsResource {
 
     @Path("{realm}/tokens")
     public TokenService getTokenService(@PathParam("realm") String id) {
-        logger.info("**** HERE token service****");
         RealmManager realmManager = new RealmManager(identitySession);
         RealmModel realm = realmManager.getRealm(id);
         if (realm == null) {
@@ -71,7 +70,6 @@ public class RealmsResource {
 
     @Path("{realm}")
     public RealmSubResource getRealmResource(@PathParam("realm") String id) {
-        logger.info("**** HERE @Path {realm} ****");
         RealmManager realmManager = new RealmManager(identitySession);
         RealmModel realm = realmManager.getRealm(id);
         if (realm == null) {

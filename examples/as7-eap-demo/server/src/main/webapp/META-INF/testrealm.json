@@ -12,90 +12,47 @@
    ],
    "users" : [
       {
-            "username" : "wburke",
+            "username" : "bburke@redhat.com",
             "enabled" : true,
             "attributes" : {
                 "email" : "bburke@redhat.com"
             },
             "credentials" : [
                 { "type" : "Password",
-                 "value" : "userpassword" }
+                 "value" : "password" }
             ]
       },
       {
-            "username" : "loginclient",
+            "username" : "customer-portal",
             "enabled" : true,
             "credentials" : [
                 { "type" : "Password",
-                 "value" : "clientpassword" }
+                 "value" : "password" }
             ]
       },
       {
-            "username" : "admin",
+            "username" : "product-portal",
             "enabled" : true,
             "credentials" : [
                 { "type" : "Password",
-                 "value" : "adminpassword" }
-            ]
-      },
-      {
-            "username" : "oauthclient",
-            "enabled" : true,
-            "credentials" : [
-                { "type" : "Password",
-                 "value" : "clientpassword" }
+                 "value" : "password" }
             ]
       }
    ],
    "roleMappings" : [
        {
-          "username" : "admin",
-          "roles" : ["admin"]
+          "username" : "bburke@redhat.com",
+          "roles" : ["user"]
        }
    ],
    "scopeMappings" : [
        {
-          "username" : "loginclient",
+          "username" : "customer-portal",
+          "roles" : ["*"]
+       },
+       {
+          "username" : "product-portal",
           "roles" : ["*"]
        }
-   ],
-   "resources" : [
-       {
-          "name" : "Application",
-          "roles" : ["admin", "user"],
-          "roleMappings" : [
-             {
-                "username" : "wburke",
-                "roles" : ["user"]
-             },
-             {
-                "username" : "admin",
-                "roles" : ["admin"]
-             }
-          ],
-          "scopeMappings" : [
-             {
-                "username" : "oauthclient",
-                "roles" : ["user"]
-             }
-          ]
-       },
-              {
-                 "name" : "OtherApp",
-                 "roles" : ["admin", "user"],
-                 "roleMappings" : [
-                    {
-                       "username" : "wburke",
-                       "roles" : ["user"]
-                    },
-                    {
-                       "username" : "admin",
-                       "roles" : ["admin"]
-                    }
-                 ]
-              }
-
    ]
-
-
 }

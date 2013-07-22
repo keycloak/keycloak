@@ -1,0 +1,8 @@
+{
+   "realm-url" : "http://localhost:8080/auth-server/rest/realms/demo",
+   "ssl-not-required" : true,
+   "client-id" : "customer-portal",
+   "client-credentials" : {
+      "password" : "password"
+   }
+}

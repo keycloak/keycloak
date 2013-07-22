@@ -28,12 +28,13 @@
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>jose-jwt</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss.spec.javax.servlet</groupId>
             <artifactId>jboss-servlet-api_3.0_spec</artifactId>
-            <scope>provided</scope>
             <version>1.0.0.Final</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
@@ -56,12 +57,13 @@
             <groupId>org.jboss.as</groupId>
             <artifactId>jboss-as-web</artifactId>
             <version>7.1.2.Final</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.picketbox</groupId>
             <artifactId>picketbox</artifactId>
-            <scope>provided</scope>
             <version>4.0.7.Final</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
