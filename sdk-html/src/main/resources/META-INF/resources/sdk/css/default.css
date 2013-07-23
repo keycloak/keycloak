@@ -1,0 +1,17 @@
+body {
+	margin: 50px;
+}
+
+div#keycloak-login-container,div#keycloak-register-container {
+	
+}
+
+div#keycloak-login-standard,div#keycloak-register-standard {
+	width: 50%;
+	float: left;
+}
+
+div#keycloak-login-social,div#keycloak-register-social {
+	width: 50%;
+	float: left;
+}
