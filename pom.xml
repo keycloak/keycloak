@@ -10,6 +10,7 @@
 
     <properties>
         <resteasy.version>3.0.2.Final</resteasy.version>
+        <picketlink.version>2.5.0.Keycloak-alpha-1</picketlink.version>
     </properties>
 
     <url>http://keycloak.org</url>
@@ -140,27 +141,27 @@
             <dependency>
                 <groupId>org.picketlink</groupId>
                 <artifactId>picketlink-common</artifactId>
-                <version>2.5.0-SNAPSHOT</version>
+                <version>${picketlink.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.picketlink</groupId>
                 <artifactId>picketlink-idm-api</artifactId>
-                <version>2.5.0-SNAPSHOT</version>
+                <version>${picketlink.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.picketlink</groupId>
                 <artifactId>picketlink-idm-impl</artifactId>
-                <version>2.5.0-SNAPSHOT</version>
+                <version>${picketlink.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.picketlink</groupId>
                 <artifactId>picketlink-idm-schema</artifactId>
-                <version>2.5.0-SNAPSHOT</version>
+                <version>${picketlink.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.picketlink</groupId>
                 <artifactId>picketlink-config</artifactId>
-                <version>2.5.0-SNAPSHOT</version>
+                <version>${picketlink.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.logging</groupId>
