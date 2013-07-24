@@ -37,7 +37,7 @@ public interface IdentityProvider {
     String getId();
 
     @XmlTransient
-    URI getAuthUrl(IdentityProviderCallback callback);
+    URI getAuthUrl(IdentityProviderCallback callback) throws IdentityProviderException;
 
     String getName();
 
@@ -45,6 +45,6 @@ public interface IdentityProvider {
     boolean isCallbackHandler(IdentityProviderCallback callback);
 
     @XmlTransient
-    User processCallback(IdentityProviderCallback callback);
+    User processCallback(IdentityProviderCallback callback) throws IdentityProviderException;
 
 }

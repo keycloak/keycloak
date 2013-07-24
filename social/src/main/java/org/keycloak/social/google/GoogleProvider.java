@@ -24,9 +24,9 @@ package org.keycloak.social.google;
 import java.net.URI;
 import java.util.UUID;
 
-import org.jboss.resteasy.logging.Logger;
 import org.keycloak.social.IdentityProvider;
 import org.keycloak.social.IdentityProviderCallback;
+import org.keycloak.social.IdentityProviderException;
 import org.picketlink.idm.model.SimpleUser;
 import org.picketlink.idm.model.User;
 
@@ -45,8 +45,6 @@ import com.google.api.services.oauth2.model.Userinfo;
 public class GoogleProvider implements IdentityProvider {
 
     private static final JacksonFactory JSON_FACTORY = new JacksonFactory();
-
-    private static final Logger log = Logger.getLogger(GoogleProvider.class);
 
     private static final NetHttpTransport TRANSPORT = new NetHttpTransport();
 
@@ -81,7 +79,7 @@ public class GoogleProvider implements IdentityProvider {
     }
 
     @Override
-    public User processCallback(IdentityProviderCallback callback) {
+    public User processCallback(IdentityProviderCallback callback) throws IdentityProviderException {
         String code = callback.getQueryParam("code");
 
         try {
@@ -109,8 +107,7 @@ public class GoogleProvider implements IdentityProvider {
 
             return user;
         } catch (Exception e) {
-            log.error("Failed to process callback", e);
-            return null;
+            throw new IdentityProviderException(e);
         }
     }
 

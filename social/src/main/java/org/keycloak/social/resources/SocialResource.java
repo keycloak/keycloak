@@ -41,8 +41,11 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
+import org.jboss.resteasy.logging.Logger;
 import org.keycloak.social.IdentityProvider;
 import org.keycloak.social.IdentityProviderCallback;
+import org.keycloak.social.IdentityProviderErrors;
+import org.keycloak.social.IdentityProviderException;
 import org.keycloak.social.IdentityProviderState;
 import org.keycloak.social.util.UriBuilder;
 import org.picketlink.idm.model.Attribute;
@@ -51,8 +54,10 @@ import org.picketlink.idm.model.User;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@Path("social")
+@Path("")
 public class SocialResource {
+
+    private static final Logger log = Logger.getLogger(SocialResource.class);
 
     // TODO This is just temporary - need to either save state variables somewhere they can be flushed after a timeout, or
     // alternatively they could be saved in http session, but that is probably not a good idea
@@ -89,9 +94,12 @@ public class SocialResource {
             callback.setProviderState(getProviderState(provider));
 
             if (provider.isCallbackHandler(callback)) {
-                User user = provider.processCallback(callback);
-                if (user == null) {
-                    break;
+                User user = null;
+                try {
+                    user = provider.processCallback(callback);
+                } catch (IdentityProviderException e) {
+                    log.warn("Failed to process callback", e);
+                    redirectToLogin(application, IdentityProviderErrors.PROVIDER_ERROR);
                 }
 
                 String providerUsername = user.getLoginName();
@@ -135,6 +143,7 @@ public class SocialResource {
 
     @GET
     @Path("providers")
+    @Produces(MediaType.APPLICATION_JSON)
     public List<IdentityProvider> getProviders() {
         List<IdentityProvider> providers = new LinkedList<IdentityProvider>();
         Iterator<IdentityProvider> itr = ServiceRegistry.lookupProviders(IdentityProvider.class);
@@ -170,13 +179,12 @@ public class SocialResource {
     }
 
     private Response redirectToLogin(String application, String error) {
-        URI uri = new UriBuilder(headers, uriInfo, "login?application=" + application + "&error=login_failed").build();
+        URI uri = new UriBuilder(headers, uriInfo, "sdk/api/" + application + "/login").setQueryParam("error", error).build();
         return Response.seeOther(uri).build();
     }
 
     @GET
     @Path("{application}/auth/{provider}")
-    @Produces(MediaType.TEXT_HTML)
     public Response redirectToProviderAuth(@PathParam("application") String application,
             @PathParam("provider") String providerId) {
         Iterator<IdentityProvider> itr = ServiceRegistry.lookupProviders(IdentityProvider.class);
@@ -186,7 +194,8 @@ public class SocialResource {
         }
 
         if (provider == null) {
-            return redirectToLogin(application, "invalid_provider");
+            log.warn("Failed to redirect to provider auth: " + providerId + " not found");
+            return redirectToLogin(application, IdentityProviderErrors.INVALID_PROVIDER);
         }
 
         IdentityProviderCallback callback = new IdentityProviderCallback();
@@ -195,12 +204,13 @@ public class SocialResource {
         callback.setUriInfo(uriInfo);
         callback.setProviderKey(null); // TODO Get provider key
         callback.setProviderSecret(null); // TODO Get provider secret
+        callback.setProviderState(getProviderState(provider));
 
-        URI authUrl = provider.getAuthUrl(callback);
-        if (authUrl != null) {
-            return Response.seeOther(authUrl).build();
-        } else {
-            return redirectToLogin(application, "invalid_provider");
+        try {
+            return Response.seeOther(provider.getAuthUrl(callback)).build();
+        } catch (Throwable t) {
+            log.warn("Failed to redirect to provider auth", t);
+            return redirectToLogin(application, IdentityProviderErrors.PROVIDER_ERROR);
         }
     }
 

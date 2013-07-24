@@ -23,9 +23,9 @@ package org.keycloak.social.twitter;
 
 import java.net.URI;
 
-import org.jboss.resteasy.logging.Logger;
 import org.keycloak.social.IdentityProvider;
 import org.keycloak.social.IdentityProviderCallback;
+import org.keycloak.social.IdentityProviderException;
 import org.picketlink.idm.model.SimpleUser;
 import org.picketlink.idm.model.User;
 
@@ -38,15 +38,13 @@ import twitter4j.auth.RequestToken;
  */
 public class TwitterProvider implements IdentityProvider {
 
-    private static final Logger log = Logger.getLogger(TwitterProvider.class);
-
     @Override
     public String getId() {
         return "twitter";
     }
 
     @Override
-    public URI getAuthUrl(IdentityProviderCallback callback) {
+    public URI getAuthUrl(IdentityProviderCallback callback) throws IdentityProviderException {
         try {
             Twitter twitter = new TwitterFactory().getInstance();
             twitter.setOAuthConsumer(callback.getProviderKey(), callback.getProviderSecret());
@@ -55,8 +53,7 @@ public class TwitterProvider implements IdentityProvider {
             callback.putState(requestToken.getToken(), requestToken);
             return callback.createUri(requestToken.getAuthenticationURL()).build();
         } catch (Exception e) {
-            log.error("Failed to retrieve login url", e);
-            return null;
+            throw new IdentityProviderException(e);
         }
     }
 
@@ -71,7 +68,7 @@ public class TwitterProvider implements IdentityProvider {
     }
 
     @Override
-    public User processCallback(IdentityProviderCallback callback) {
+    public User processCallback(IdentityProviderCallback callback) throws IdentityProviderException {
         try {
             Twitter twitter = new TwitterFactory().getInstance();
             twitter.setOAuthConsumer(callback.getProviderKey(), callback.getProviderSecret());
@@ -86,8 +83,7 @@ public class TwitterProvider implements IdentityProvider {
             user.setFirstName(twitterUser.getName());
             return user;
         } catch (Exception e) {
-            log.error("Failed to process callback", e);
-            return null;
+            throw new IdentityProviderException(e);
         }
     }
 
