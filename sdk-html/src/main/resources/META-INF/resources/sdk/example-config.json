@@ -1,5 +1,0 @@
-{
-	"id" : "acme-corp",
-	"name" : "Acme Corp",
-	"providers" : [ "google", "twitter" ]
-}

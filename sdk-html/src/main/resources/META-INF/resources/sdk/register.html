@@ -11,9 +11,12 @@
 </head>
 
 <body class=keycloak-login-page data-ng-app=keycloak>
-	<div id=keycloak-login-container data-ng-controller=LoginCtrl>
+	<div id=keycloak-login-container data-ng-controller=GlobalCtrl>
 		<div id=keycloak-login-standard>
 			<h1>Register with {{config.name}}</h1>
+			
+			<div class="alert alert-info" data-ng-show="info">{{info}}</div>
+			<div class="alert alert-error" data-ng-show="error">{{error}}</div>		
 
 			<form action="#">
 				<label for=firstname>Firstname</label>
@@ -34,7 +37,10 @@
 				<label for=password-confirm>Password confirmation</label>
 				<input id=password-confirm type=text data-ng-model=passwordConfirm required pattern="{{password}}" title="Passwords don't match" />
 								
-				<div><button class="btn btn-primary" id=keycloak-login-submit type=submit>Register</button></div>
+				<div>
+					<button class="btn btn-primary" id=keycloak-login-submit type=submit>Register</button>
+					<a class="btn" href="{{config.callbackUrl}}">Cancel</a>					
+				</div>
 			</form>
 		</div>
 

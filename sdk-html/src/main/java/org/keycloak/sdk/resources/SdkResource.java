@@ -25,24 +25,28 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.xml.bind.annotation.XmlRootElement;
+
+import org.keycloak.social.util.UriBuilder;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@Path("sdk")
+@Path("")
 public class SdkResource {
 
     @XmlRootElement
     public static class LoginConfig {
 
         private String callbackUrl;
+        
+        private String id;
 
         private String name;
 
@@ -50,6 +54,10 @@ public class SdkResource {
 
         public String getCallbackUrl() {
             return callbackUrl;
+        }
+
+        public String getId() {
+            return id;
         }
 
         public String getName() {
@@ -62,6 +70,10 @@ public class SdkResource {
 
         public void setCallbackUrl(String callbackUrl) {
             this.callbackUrl = callbackUrl;
+        }
+
+        public void setId(String id) {
+            this.id = id;
         }
 
         public void setName(String name) {
@@ -80,38 +92,40 @@ public class SdkResource {
     @Context
     private UriInfo uriInfo;
 
+    /**
+     * TODO Retrieve configuration for application from IDM
+     */
     @GET
-    @Path("config/{application}")
+    @Path("{application}/login/config")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getConfig(@PathParam("application") String application) {
-        String applicationCallbackUrl = null; // TODO Get application callback url
-        String applicationJavaScriptOrigin = null; // TODO Get application javascript origin
-        
+    public LoginConfig getLoginConfig(@PathParam("application") String application) {
         LoginConfig loginConfig = new LoginConfig();
+        loginConfig.setId(application);
         loginConfig.setName(application);
-        loginConfig.setCallbackUrl(applicationCallbackUrl);
-        loginConfig.setProviders(null); // TODO Get configured identity providers for application
+        loginConfig.setCallbackUrl("http://localhost:8080");
+        loginConfig.setProviders(new String[] { "google", "twitter" });
+        return loginConfig;
+    }
 
-        ResponseBuilder response = Response.ok(loginConfig);
-
-        if (applicationJavaScriptOrigin != null) {
-            response.header("Access-Control-Allow-Origin", applicationJavaScriptOrigin);
+    @GET
+    @Path("{application}/login")
+    public Response login(@PathParam("application") String application, @QueryParam("error") String error) {
+        UriBuilder ub = new UriBuilder(headers, uriInfo, "sdk/login.html").setQueryParam("application", application);
+        if (error != null) {
+            ub.setQueryParam("error", error);
         }
-
-        return response.build();
+        return Response.seeOther(ub.build()).build();
     }
 
     @GET
-    @Path("login/{application}")
-    @Produces(MediaType.TEXT_HTML)
-    public Response login(@PathParam("application") String application) {
-        return Response.ok(getClass().getResourceAsStream("login.html")).build();
+    @Path("{application}/register")
+    public Response register(@PathParam("application") String application, @QueryParam("error") String error) {
+        UriBuilder ub = new UriBuilder(headers, uriInfo, "sdk/register.html").setQueryParam("application", application);
+        if (error != null) {
+            ub.setQueryParam("error", error);
+        }
+        return Response.seeOther(ub.build()).build();
     }
 
-    @GET
-    @Path("register/{application}")
-    @Produces(MediaType.TEXT_HTML)
-    public Response register(@PathParam("application") String application) {
-        return Response.ok(getClass().getResourceAsStream("register.html")).build();
-    }
 }
+

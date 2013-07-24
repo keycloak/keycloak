@@ -11,10 +11,13 @@
 </head>
 
 <body class=keycloak-login-page data-ng-app=keycloak>
-	<div id=keycloak-login-container data-ng-controller=LoginCtrl>
+	<div id=keycloak-login-container data-ng-controller=GlobalCtrl>
 		<div id=keycloak-login-standard>
 			<h1>Login to {{config.name}}</h1>
-	
+			
+			<div class="alert alert-info" data-ng-show="info">{{info}}</div>
+			<div class="alert alert-error" data-ng-show="error">{{error}}</div>		
+
 			<form action="#">
 				<label for=username>Username</label>
 				<input id=username type=text data-ng-model=username required />
@@ -22,7 +25,11 @@
 				<label for=password>Password</label>
 				<input id=password type=text data-ng-model=password required />
 				
-				<div><button class="btn btn-primary" id=keycloak-login-submit type=submit>Login</button></div>
+				<div>
+					<button class="btn btn-primary" id=keycloak-login-submit type=submit>Login</button>
+					<a class="btn" href="register.html?application={{config.id}}">Register</a>
+					<a class="btn" href="{{config.callbackUrl}}">Cancel</a>
+				</div>
 			</form>
 		</div>
 
@@ -30,7 +37,7 @@
 			<h3>Login with</h3>
 
 			<div data-ng-repeat="p in config.providers">
-				<a href="/social/{{config.id}}/provider/{{p}}"><img data-ng-src="icons/{{p}}.png" /></a>
+				<a href="/keycloak-server/social/api/{{config.id}}/auth/{{p}}"><img data-ng-src="icons/{{p}}.png" /></a>
 			</div>
 		</div>
 	</div>
