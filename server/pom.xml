@@ -11,7 +11,7 @@
 	<artifactId>keycloak-server</artifactId>
 	<name>Keycloak Server</name>
 	<packaging>war</packaging>
-	
+
 	<description />
 
 	<dependencies>
@@ -30,24 +30,11 @@
 			<artifactId>keycloak-ui</artifactId>
 			<version>${project.version}</version>
 		</dependency>
-			
+
 		<dependency>
 			<groupId>org.jboss.resteasy</groupId>
 			<artifactId>jaxrs-api</artifactId>
 			<scope>provided</scope>
-		</dependency>		
+		</dependency>
 	</dependencies>
-
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<configuration>
-					<source>1.6</source>
-					<target>1.6</target>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
 </project>
