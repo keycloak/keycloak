@@ -57,7 +57,10 @@
         <module>services</module>
         <module>integration</module>
         <module>examples</module>
+        <module>sdk-html</module>
         <module>social</module>
+        <module>server</module>
+        <module>ui</module>
     </modules>
 
     <dependencyManagement>
@@ -271,6 +274,14 @@
                     <artifactId>maven-deploy-plugin</artifactId>
                     <version>2.5</version>
                 </plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-war-plugin</artifactId>
+					<version>2.3</version>
+					<configuration>
+						<failOnMissingWebXml>false</failOnMissingWebXml>
+					</configuration>
+				</plugin>
             </plugins>
         </pluginManagement>
 
