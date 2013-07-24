@@ -1,7 +1,8 @@
 'use strict';
 
-function GlobalCtrl($scope, Auth, $location, Notifications) {
-    
+var module = angular.module('keycloak.controllers', [ 'keycloak.services' ]); 
+
+module.controller('GlobalCtrl', function($scope, Auth, $location, Notifications) {
     $scope.addMessage = function() {
         Notifications.success("test");
     };
@@ -13,21 +14,14 @@ function GlobalCtrl($scope, Auth, $location, Notifications) {
     }, function() {
         $scope.path = $location.path().substring(1).split("/");
     });
-}
+});
 
-function ActivitiesEventsCtrl($scope, events) {
-    $scope.events = events;
-}
 
-function ActivitiesStatisticsCtrl($scope, statistics) {
-    $scope.statistics = statistics;
-}
-
-function ApplicationListCtrl($scope, applications) {
+module.controller('ApplicationListCtrl', function($scope, applications) {
     $scope.applications = applications;
-}
+});
 
-function ApplicationDetailCtrl($scope, applications, application, Application, realms, providers, $location, $window, $dialog, Notifications) {
+module.controller('ApplicationDetailCtrl', function($scope, applications, application, Application, realms, providers, $location, $window, $dialog, Notifications) {
     $scope.application = angular.copy(application);
     $scope.applications = applications;
     $scope.realms = realms;
@@ -159,19 +153,19 @@ function ApplicationDetailCtrl($scope, applications, application, Application, r
     };
 
     $scope.$watch("providers.length + application.providers.length", updateAvailableProviders);
-}
+});
 
-function RealmListCtrl($scope, realms) {
+module.controller('RealmListCtrl', function($scope, realms) {
     $scope.realms = realms;
-}
+});
 
-function UserListCtrl($scope, realms, realm, users) {
+module.controller('UserListCtrl', function($scope, realms, realm, users) {
     $scope.realms = realms;
     $scope.realm = realm;
     $scope.users = users;
-}
+});
 
-function UserDetailCtrl($scope, realms, realm, user, User, $location, $dialog, Notifications) {
+module.controller('UserDetailCtrl', function($scope, realms, realm, user, User, $location, $dialog, Notifications) {
     $scope.realms = realms;
     $scope.realm = realm;
     $scope.user = angular.copy(user);
@@ -239,9 +233,9 @@ function UserDetailCtrl($scope, realms, realm, user, User, $location, $dialog, N
             }
         });
     };
-}
+});
 
-function RealmDetailCtrl($scope, Realm, realms, realm, $location, $dialog, Notifications) {
+module.controller('RealmDetailCtrl', function($scope, Realm, realms, realm, $location, $dialog, Notifications) {
     $scope.realms = realms;
     $scope.realm = angular.copy(realm);
     $scope.create = !realm.name;
@@ -311,4 +305,4 @@ function RealmDetailCtrl($scope, Realm, realms, realm, $location, $dialog, Notif
             }
         });
     };
-}
+});

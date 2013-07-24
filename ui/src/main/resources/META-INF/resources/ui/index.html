@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en" ng-app="eventjugglerAdmin">
+<html lang="en" data-ng-app="keycloak">
 
 <head>
 <meta charset="utf-8">
-<title>EventJuggler Services Admin</title>
+<title>Keycloak</title>
 
 <link href="lib/bootstrap/css/bootstrap.css" rel="stylesheet">
 <link href="lib/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
@@ -14,28 +14,28 @@
 
 <script src="lib/angular/angular.js"></script>
 <script src="lib/angular/angular-resource.js"></script>
-<script src="lib/angular/ui-bootstrap-tpls-0.3.0.js"></script>
+<script src="lib/angular/ui-bootstrap-tpls-0.4.0.js"></script>
 
-<script src="lib/jquery/jquery-1.9.0.js"></script>
+<script src="lib/jquery/jquery-1.10.2.js"></script>
 
 <script src="js/app.js"></script>
 <script src="js/controllers.js"></script>
 <script src="js/services.js"></script>
 </head>
 
-<body ng-controller="GlobalCtrl">
+<body data-ng-controller="GlobalCtrl">
 
-    <div class="alert-container" ng-show="notification" ng-click="notification = null">
+    <div class="alert-container" data-ng-show="notification" data-ng-click="notification = null">
         <div class="alert alert-{{notification.type}}">{{notification.message}}</div>
     </div>
         
     <div id="wrap">
-        <div ng-include src="'partials/menu.html'"></div>
+        <div data-ng-include data-src="'partials/menu.html'"></div>
 
-        <div ng-view id="view" ng-hide="httpProviderError"></div>
+        <div data-ng-view id="view" data-ng-hide="httpProviderError"></div>
 
-        <div id="httpProviderError" ng-show="httpProviderError">
-            <button class="btn btn-danger" ng-click="httpProviderError=null">
+        <div id="httpProviderError" data-ng-show="httpProviderError">
+            <button class="btn btn-danger" data-ng-click="httpProviderError=null">
                 <strong>Error</strong> {{httpProviderError}}
             </button>
         </div>

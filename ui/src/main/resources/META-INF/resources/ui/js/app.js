@@ -1,34 +1,10 @@
 'use strict';
 
-var eventjugglerModule = angular.module('eventjugglerAdmin', [ 'eventjugglerAdminServices', 'ui.bootstrap' ]);
+var module = angular.module('keycloak', [ 'keycloak.services', 'keycloak.controllers', 'ui.bootstrap' ]);
 var resourceRequests = 0;
 
-eventjugglerModule.config([ '$routeProvider', function($routeProvider) {
-    $routeProvider.when('/activities/events', {
-        templateUrl : 'partials/activities-events.html',
-        resolve : {
-            events : function(ActivitiesEventsLoader) {
-                return ActivitiesEventsLoader();
-            }
-        },
-        controller : ActivitiesEventsCtrl
-    }).when('/activities/pages', {
-        templateUrl : 'partials/activities-pages.html',
-        resolve : {
-            statistics : function(ActivitiesStatisticsLoader) {
-                return ActivitiesStatisticsLoader();
-            }
-        },
-        controller : ActivitiesStatisticsCtrl
-    }).when('/activities', {
-        templateUrl : 'partials/activities-statistics.html',
-        resolve : {
-            statistics : function(ActivitiesStatisticsLoader) {
-                return ActivitiesStatisticsLoader();
-            }
-        },
-        controller : ActivitiesStatisticsCtrl
-    }).when('/applications/:key', {
+module.config([ '$routeProvider', function($routeProvider) {
+    $routeProvider.when('/applications/:key', {
         templateUrl : 'partials/application-detail.html',
         resolve : {
             applications : function(ApplicationListLoader) {
@@ -44,7 +20,7 @@ eventjugglerModule.config([ '$routeProvider', function($routeProvider) {
                 return ProviderListLoader();
             }
         },
-        controller : ApplicationDetailCtrl
+        controller : 'ApplicationDetailCtrl'
     }).when('/applications', {
         templateUrl : 'partials/application-list.html',
         resolve : {
@@ -52,7 +28,7 @@ eventjugglerModule.config([ '$routeProvider', function($routeProvider) {
                 return ApplicationListLoader();
             }
         },
-        controller : ApplicationListCtrl
+        controller : 'ApplicationListCtrl'
     }).when('/realms/:realmKey/users/:userId', {
         templateUrl : 'partials/user-detail.html',
         resolve : {
@@ -66,7 +42,7 @@ eventjugglerModule.config([ '$routeProvider', function($routeProvider) {
                 return UserLoader();
             }
         },
-        controller : UserDetailCtrl
+        controller : 'UserDetailCtrl'
     }).when('/realms/:realmKey/users', {
         templateUrl : 'partials/user-list.html',
         resolve : {
@@ -80,7 +56,7 @@ eventjugglerModule.config([ '$routeProvider', function($routeProvider) {
                 return UserListLoader();
             }
         },
-        controller : UserListCtrl
+        controller : 'UserListCtrl'
     }).when('/realms/:realmKey', {
         templateUrl : 'partials/realm-detail.html',
         resolve : {
@@ -91,7 +67,7 @@ eventjugglerModule.config([ '$routeProvider', function($routeProvider) {
                 return RealmLoader();
             }
         },
-        controller : RealmDetailCtrl
+        controller : 'RealmDetailCtrl'
     }).when('/realms', {
         templateUrl : 'partials/realm-list.html',
         resolve : {
@@ -99,13 +75,13 @@ eventjugglerModule.config([ '$routeProvider', function($routeProvider) {
                 return RealmListLoader();
             }
         },
-        controller : RealmListCtrl
+        controller : 'RealmListCtrl'
     }).otherwise({
         templateUrl : 'partials/home.html'
     });
 } ]);
 
-eventjugglerModule.config(function($httpProvider) {
+module.config(function($httpProvider) {
     $httpProvider.responseInterceptors.push('errorInterceptor');
 
     var spinnerFunction = function(data, headersGetter) {
@@ -121,7 +97,7 @@ eventjugglerModule.config(function($httpProvider) {
 
 });
 
-eventjugglerModule.factory('errorInterceptor', function($q, $window, $rootScope, $location) {
+module.factory('errorInterceptor', function($q, $window, $rootScope, $location) {
     return function(promise) {
         return promise.then(function(response) {
             $rootScope.httpProviderError = null;
@@ -133,7 +109,7 @@ eventjugglerModule.factory('errorInterceptor', function($q, $window, $rootScope,
     };
 });
 
-eventjugglerModule.factory('spinnerInterceptor', function($q, $window, $rootScope, $location) {
+module.factory('spinnerInterceptor', function($q, $window, $rootScope, $location) {
     return function(promise) {
         return promise.then(function(response) {
             resourceRequests--;
