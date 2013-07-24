@@ -1,0 +1,27 @@
+<header class="navbar navbar-fixed-top">
+    <div class="navbar-inner">
+        <div class="container">
+            <div class="nav-collapse">
+                <nav id="global-nav">
+                    <ul class="nav">
+                        <li class="divider-vertical-left" ng-class="path[0] == '' && 'active'"><a href="#">Home</a></li>
+                        <li class="divider-vertical-left" ng-class="path[0] == 'applications' && 'active'" ng-show="auth.loggedIn"><a href="#/applications">Applications</a></li>
+                        <li class="divider-vertical-left" ng-class="path[0] == 'realms' && 'active'" ng-show="auth.loggedIn"><a href="#/realms">Realms</a></li>
+                        <li class="divider-vertical-left" ng-class="path[0] == 'activities' && 'active'" ng-show="auth.root"><a href="#/activities">Activities</a></li>
+                    </ul>
+                    <ul class="nav pull-right" ng-hide="auth.loggedIn">
+                        <li><a href="/ejs-identity/api/login/system">Login</a></li>
+                        <li><a href="/ejs-identity/api/register/system">Register</a></li>
+                    </ul>
+                    <ul class="nav pull-right" ng-show="auth.loggedIn">
+                        <li class="dropdown"><a data-toggle="dropdown" class="dropdown-toggle" href="#"><i
+                                class="icon-user icon-gray"></i> {{auth.user.displayName}} <i class="caret"></i></a>
+                            <ul class="dropdown-menu">
+                                <li><a href="" ng-click="auth.logout()">Sign Out</a></li>
+                            </ul></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</header>

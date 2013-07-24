@@ -25,6 +25,11 @@
 			<artifactId>keycloak-social</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>org.keycloak</groupId>
+			<artifactId>keycloak-ui</artifactId>
+			<version>${project.version}</version>
+		</dependency>
 			
 		<dependency>
 			<groupId>org.jboss.resteasy</groupId>

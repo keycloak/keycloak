@@ -1,0 +1,88 @@
+<div id="wrapper" class="container">
+    <div class="row">
+        <aside class="span3" ng-include src="'partials/realm-menu.html'"></aside>
+        <div id="actions-bg"></div>
+
+        <div id="container-right" class="span9">
+            <h1>
+                <span class="gray" ng-show="create">New User</span>
+                <span class="gray" ng-hide="create">{{user.userId}}</span>
+            </h1>
+
+            <div ng-show="userForm.showErrors && userForm.$error.required" class="alert alert-error">Please fill in all required fields</div>
+            <p class="subtitle subtitle-right"><span class="required">*</span> Required fields</p>
+
+            <form class="form-horizontal" name="userForm" novalidate>
+                <fieldset>
+                    <legend>Details</legend>
+                    <div class="control-group">
+                        <label class="control-label" for="name">Username <span class="required">*</span></label>
+                        <div class="controls">
+                            <input type="text" class="input-xlarge" id="name" name="name" ng-model="user.userId" autofocus required ng-readonly="!create">
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label" for="email">Email </label>
+                        <div class="controls">
+                            <input type="email" class="input-xlarge" id="email" name="email" ng-model="user.email">
+                            <span class="help-inline error" ng-show="userForm.showErrors && userForm.email.$invalid">Invalid email</span>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label" for="firstName">Firstname </label>
+                        <div class="controls">
+                            <input type="text" class="input-xlarge" id="firstName" ng-model="user.firstName">
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label" for="lastName">Lastname </label>
+                        <div class="controls">
+                            <input type="text" class="input-xlarge" id="lastName" ng-model="user.lastName">
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label" for="password">Password <span class="required">*</span></label>
+                        <div class="controls">
+                            <input type="password" class="input-xlarge" id="password" name="password" ng-model="user.password" ng-required="create">
+                        </div>
+                    </div>
+                </fieldset>
+
+                <fieldset ng-show="user.attributes.length > 0">
+                    <legend>Attributes</legend>
+
+                    <table class="table table-striped table-bordered margin-top">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Value</th>
+                            </tr>
+                        </thead>
+                        <tr ng-repeat="attribute in user.attributes">
+                            <td><input type="text" placeholder="Name" value="{{attribute.name}}" readonly></td>
+                            <td><input type="text" placeholder="Value" value="{{attribute.value}}" readonly></td>
+                        </tr>
+                    </table>
+                </fieldset>
+
+                <div class="form-actions" ng-show="create">
+                    <button type="submit" ng-click="save()" class="btn btn-primary" ng-show="changed">Save</button>
+                    <button type="submit" ng-click="cancel()" class="btn" ng-click="cancel()" ng-show="changed">Cancel</button>
+                </div>
+
+                <div class="form-actions" ng-show="!create">
+                    <button type="submit" ng-click="save()" class="btn btn-primary" ng-show="changed">Save changes</button>
+                    <button type="submit" ng-click="reset()" class="btn" ng-show="changed">Clear changes</button>
+                    <a href="#/realms/{{realm.name}}/users" ng-hide="changed">View users &#187;</a>
+                    <button type="submit" ng-click="remove()" class="btn btn-danger" ng-hide="changed">Delete</button>
+                </div>
+                
+            </form>
+        </div>
+        <div id="container-right-bg"></div>
+    </div>
+</div>
