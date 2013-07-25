@@ -3,6 +3,12 @@
 .idea
 *.iml
 
+# Eclipse #
+###########
+.project
+.settings
+.classpath
+
 # Compiled source #
 ###################
 *.com
@@ -29,4 +35,7 @@
 ######################
 *.log
 
+# Maven #
+#########
+target
 

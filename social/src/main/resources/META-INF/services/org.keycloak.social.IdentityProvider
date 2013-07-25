@@ -1,0 +1,2 @@
+org.keycloak.social.google.GoogleProvider
+org.keycloak.social.twitter.TwitterProvider
