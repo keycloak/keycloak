@@ -39,9 +39,16 @@ module.controller('ApplicationDetailCtrl', function($scope, applications, applic
 		}
 	}, true);
 
-
 	$scope.addRole = function() {
 		if ($scope.newRole) {
+			for (var i = 0; i < $scope.application.roles.length; i++) {
+				if ($scope.application.roles[i] == $scope.newRole) {
+					Notifications.warn("Role already exists");
+					$scope.newRole = null;
+					return;
+				}
+			}
+			
 			if (!$scope.application.roles) {
 				$scope.application.roles = [];
 			}
@@ -51,8 +58,12 @@ module.controller('ApplicationDetailCtrl', function($scope, applications, applic
 		}
 	}
 
-	$scope.removeRole = function(i) {
-		$scope.application.roles.splice(i, 1);
+	$scope.removeRole = function(role) {
+		var i = $scope.application.roles.indexOf(role); 
+		if (i > -1) {
+			$scope.application.roles.splice(i, 1);
+		}
+		$scope.removeInitialRole(role);
 	};
 
 	$scope.addInitialRole = function() {
@@ -66,8 +77,11 @@ module.controller('ApplicationDetailCtrl', function($scope, applications, applic
 		}
 	}
 
-	$scope.removeInitialRole = function(i) {
-		$scope.application.initialRoles.splice(i, 1);
+	$scope.removeInitialRole = function(role) {
+		var i = $scope.application.initialRoles.indexOf(role);
+		if (i > -1) {
+			$scope.application.initialRoles.splice(i, 1);
+		}
 	};
 	
 	$scope.save = function() {
@@ -278,6 +292,14 @@ module.controller('RealmDetailCtrl', function($scope, Realm, realms, realm, $loc
 
 	$scope.addRole = function() {
 		if ($scope.newRole) {
+			for (var i = 0; i < $scope.realm.roles.length; i++) {
+				if ($scope.realm.roles[i] == $scope.newRole) {
+					Notifications.warn("Role already exists");
+					$scope.newRole = null;
+					return;
+				}
+			}
+			
 			if (!$scope.realm.roles) {
 				$scope.realm.roles = [];
 			}
@@ -287,8 +309,12 @@ module.controller('RealmDetailCtrl', function($scope, Realm, realms, realm, $loc
 		}
 	}
 
-	$scope.removeRole = function(i) {
-		$scope.realm.roles.splice(i, 1);
+	$scope.removeRole = function(role) {
+		var i = $scope.realm.roles.indexOf(role); 
+		if (i > -1) {
+			$scope.realm.roles.splice(i, 1);
+		}
+		$scope.removeInitialRole(role);
 	};
 
 	$scope.addInitialRole = function() {
@@ -302,8 +328,11 @@ module.controller('RealmDetailCtrl', function($scope, Realm, realms, realm, $loc
 		}
 	}
 
-	$scope.removeInitialRole = function(i) {
-		$scope.realm.initialRoles.splice(i, 1);
+	$scope.removeInitialRole = function(role) {
+		var i = $scope.realm.initialRoles.indexOf(role);
+		if (i > -1) {
+			$scope.realm.initialRoles.splice(i, 1);
+		}
 	};
 
 	$scope.save = function() {

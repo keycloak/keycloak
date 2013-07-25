@@ -42,7 +42,7 @@
 					<div class="control-group">
 						<label class="control-label">Roles</label>
 						<div class="controls">
-							<span style="margin-right: 1em;" data-ng-repeat="r in application.roles">{{r}} <button data-ng-click="removeRole($index)"><i class="icon-remove"></i></button></span>
+							<span class="label" style="margin-right: 1em;" data-ng-repeat="r in (application.roles|orderBy:'toString()')">{{r}} <button data-ng-click="removeRole(r)"><i class="icon-remove icon-white"></i></button></span>
 							
 							<div class="input-append">
 								<input class="input-small" type="text" data-ng-model="newRole" placeHolder="Role" data-kc-enter="addRole()" />
@@ -54,11 +54,11 @@
 					<div class="control-group">
 						<label class="control-label">Initial Roles</label>
 						<div class="controls">
-							<span style="margin-right: 1em;" data-ng-repeat="r in application.initialRoles">{{r}} <button data-ng-click="removeInitialRole($index)"><i class="icon-remove"></i></button></span>
+							<span class="label" style="margin-right: 1em;" data-ng-repeat="r in (application.initialRoles|orderBy:'toString()')">{{r}} <button data-ng-click="removeInitialRole(r)"><i class="icon-remove icon-white"></i></button></span>
 							
 							<div class="input-append">
 								<select style="width: auto;" data-ng-model="newInitialRole" data-ng-click="addInitialRole()">
-                                	<option data-ng-repeat="r in application.roles" value="{{r}}">{{r}}</option>
+                                	<option data-ng-repeat="r in (application.roles|remove:application.initialRoles|orderBy:'toString()')" value="{{r}}">{{r}}</option>
                             	</select>
 							</div>
 						</div>

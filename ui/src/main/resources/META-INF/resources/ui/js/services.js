@@ -20,14 +20,30 @@ module.factory('Notifications', function($rootScope, $timeout) {
 	if (!$rootScope.notifications) {
 		$rootScope.notifications = [];
 	}
+	
+	notifications.message = function(type, message) {
+		$rootScope.notification = {
+				type : type,
+				message : message
+			};
+
+			schedulePop();
+	}
+
+	notifications.info = function(message) {
+		notifications.message("info", message);
+	};
 
 	notifications.success = function(message) {
-		$rootScope.notification = {
-			type : "success",
-			message : message
-		};
+		notifications.message("success", message);
+	};
 
-		schedulePop();
+	notifications.error = function(message) {
+		notifications.message("error", message);
+	};
+
+	notifications.warn = function(message) {
+		notifications.message("warn", message);
 	};
 
 	return notifications;
