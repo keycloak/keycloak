@@ -4,7 +4,7 @@
         <div id="actions-bg"></div>
 
         <div id="container-right" class="span9">
-            <a class="btn btn-small pull-right" href="#/applications/new">Add Application</a>
+            <a class="btn btn-small pull-right" href="#/create/application">Add Application</a>
 
             <h1>
                 <span class="gray">Applications</span>
@@ -17,7 +17,7 @@
                     </tr>
                 </thead>
                 <tr data-ng-repeat="application in applications">
-                    <td><a href="#/applications/{{application.key}}">{{application.name}}</a></td>
+                    <td><a href="#/applications/{{application.id}}">{{application.name}}</a></td>
                 </tr>
             </table>
         </div>

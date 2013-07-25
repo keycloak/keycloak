@@ -14,25 +14,69 @@
 
             <form class="form-horizontal" name="realmForm" novalidate>
                 <fieldset>
-                    <legend>Details</legend>
+                    <legend>Settings</legend>
+                    
+					<div data-kc-input>
+                    	<label>Name</label>
+						<input class="input-xlarge" type="text" name="name" data-ng-model="realm.name" autofocus required>
+					</div>
+					
+					<div data-kc-input>
+                    	<label>Enabled</label>
+						<input class="input-xlarge" type="checkbox" name="enabled" data-ng-model="realm.enabled">
+					</div>
+					
+					<div data-kc-input>
+                    	<label>Social login</label>
+						<input class="input-xlarge" type="checkbox" name="social" data-ng-model="realm.social">
+					</div>
+					
+					<div data-kc-input>
+                    	<label>User registration</label>
+						<input class="input-xlarge" type="checkbox" name="social" data-ng-model="realm.userRegistration">
+					</div>
+                    
                     <div class="control-group">
-                        <label class="control-label" for="name">Name <span class="required">*</span></label>
+                    	<label for="realmForm-tokenExpiration" class="control-label">Token expiration</label>
                         <div class="controls">
-                            <input type="text" class="input-xlarge" id="name" name="name" data-ng-model="realm.name" autofocus required>
-                        </div>
-                    </div>
-                    <div class="control-group">
-                        <label class="control-label" for="key">Key </label>
-                        <div class="controls">
-                            <input class="input-xxlarge" type="text" id="key" name="key" data-ng-model="realm.key" data-ng-readonly="!(auth.root && create)">
-                        </div>
-                    </div>
-                    <div class="control-group" data-ng-show="auth.root">
-                        <label class="control-label" for="owner">Owner </label>
-                        <div class="controls">
-                            <input class="input-xxlarge" type="text" id="owner" data-ng-model="realm.owner">
-                        </div>
-                    </div>
+                        	<input class="input-small" type="text" name="tokenExpiration" data-ng-model="realm.tokenExpiration">
+                        	<select style="width: auto;" name="tokenExpirationUnit" data-ng-model="realm.tokenExpirationUnit">
+                       	 		<option value="SECONDS" data-ng-selected="!realm.tokenExpirationUnit">Seconds</option>
+                        		<option value="MINUTES">Minutes</option>
+                        		<option value="HOURS">Hours</option>
+                        		<option value="DAYS">Days</option>
+                        	</select>
+						</div>
+					</div>
+				</fieldset>
+					
+                <fieldset>
+                    <legend>Roles</legend>			
+                    		
+					<div class="control-group">
+						<label class="control-label">Roles</label>
+						<div class="controls">
+							<span style="margin-right: 1em;" data-ng-repeat="r in realm.roles">{{r}} <button data-ng-click="removeRole($index)"><i class="icon-remove"></i></button></span>
+							
+							<div class="input-append">
+								<input class="input-small" type="text" data-ng-model="newRole" placeHolder="Role" data-kc-enter="addRole()" />
+								<button class="btn" type="button" data-ng-click="addRole()">Add</button>
+							</div>
+						</div>
+					</div>
+
+					<div class="control-group">
+						<label class="control-label">Initial Roles</label>
+						<div class="controls">
+							<span style="margin-right: 1em;" data-ng-repeat="r in realm.initialRoles">{{r}} <button data-ng-click="removeInitialRole($index)"><i class="icon-remove"></i></button></span>
+							
+							<div class="input-append">
+								<select style="width: auto;" data-ng-model="newInitialRole" data-ng-click="addInitialRole()">
+                                	<option data-ng-repeat="r in realm.roles" value="{{r}}">{{r}}</option>
+                            	</select>
+							</div>
+						</div>
+					</div>
                 </fieldset>
 
                 <div class="form-actions" data-ng-show="create">

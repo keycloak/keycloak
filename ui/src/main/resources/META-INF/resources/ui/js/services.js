@@ -34,8 +34,8 @@ module.factory('Notifications', function($rootScope, $timeout) {
 });
 
 module.factory('Application', function($resource) {
-	return $resource('/keycloak-server/ui/api/applications/:key', {
-		key : '@key'
+	return $resource('/keycloak-server/ui/api/applications/:id', {
+		id : '@id'
 	}, {
 		update : {
 			method : 'PUT'
@@ -57,20 +57,16 @@ module.factory('ApplicationListLoader', function(Application, $q) {
 
 module.factory('ApplicationLoader', function(Application, $route, $q) {
 	return function() {
-		var key = $route.current.params.key;
-		if (key == 'new') {
-			return {};
-		} else {
-			var delay = $q.defer();
-			Application.get({
-				key : key
-			}, function(application) {
-				delay.resolve(application);
-			}, function() {
-				delay.reject('Unable to fetch application ' + key);
-			});
-			return delay.promise;
-		}
+		var id = $route.current.params.application;
+		var delay = $q.defer();
+		Application.get({
+			id : id
+		}, function(application) {
+			delay.resolve(application);
+		}, function() {
+			delay.reject('Unable to fetch application ' + id);
+		});
+		return delay.promise;
 	};
 });
 
@@ -91,8 +87,8 @@ module.factory('ProviderListLoader', function(Provider, $q) {
 });
 
 module.factory('Realm', function($resource) {
-	return $resource('/keycloak-server/ui/api/realms/:key', {
-		key : '@key'
+	return $resource('/keycloak-server/ui/api/realms/:id', {
+		id : '@id'
 	}, {
 		update : {
 			method : 'PUT'
@@ -114,27 +110,23 @@ module.factory('RealmListLoader', function(Realm, $q) {
 
 module.factory('RealmLoader', function(Realm, $route, $q) {
 	return function() {
-		var key = $route.current.params.realmKey;
-		if (key == 'new') {
-			return {};
-		} else {
-			var delay = $q.defer();
-			Realm.get({
-				key : key
-			}, function(realm) {
-				delay.resolve(realm);
-			}, function() {
-				delay.reject('Unable to fetch key ' + key);
-			});
-			return delay.promise;
-		}
+		var id = $route.current.params.realm;
+		var delay = $q.defer();
+		Realm.get({
+			id : id
+		}, function(realm) {
+			delay.resolve(realm);
+		}, function() {
+			delay.reject('Unable to fetch realm ' + name);
+		});
+		return delay.promise;
 	};
 });
 
 module.factory('User', function($resource) {
-	return $resource('/ejs-identity/api/im/:realmKey/users/:userId', {
-		realmKey : '@realmKey',
-		userId : '@userId'
+	return $resource('/ejs-identity/api/im/:realm/users/:id', {
+		realm : '@realm',
+		id : '@id'
 	}, {
 		save : {
 			method : 'PUT'
@@ -158,18 +150,18 @@ module.factory('UserListLoader', function(User, $route, $q) {
 
 module.factory('UserLoader', function(User, $route, $q) {
 	return function() {
-		var userId = $route.current.params.userId;
-		if (userId == 'new') {
+		var name = $route.current.params.user;
+		if (name == 'new') {
 			return {};
 		} else {
 			var delay = $q.defer();
 			User.get({
-				realmKey : $route.current.params.realmKey,
-				userId : userId
+				realm : $route.current.params.realm,
+				name : name
 			}, function(user) {
 				delay.resolve(user);
 			}, function() {
-				delay.reject('Unable to fetch user ' + $route.current.params.userId);
+				delay.reject('Unable to fetch user ' + name);
 			});
 			return delay.promise;
 		}
@@ -182,7 +174,7 @@ module.service('Auth', function($resource, $http, $location, $routeParams) {
 	};
 	auth.user = {
 		userId : 'test',
-		displayName: 'Test User'
+		displayName : 'Test User'
 	};
 	return auth;
 });

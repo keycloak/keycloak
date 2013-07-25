@@ -21,8 +21,6 @@
  */
 package org.keycloak.ui.example;
 
-import java.util.List;
-
 import javax.xml.bind.annotation.XmlRootElement;
 
 /**
@@ -31,84 +29,74 @@ import javax.xml.bind.annotation.XmlRootElement;
 @XmlRootElement
 public class Application {
 
-    private String callbackUrl;
+    private String[] callbackUrl;
 
-    private String key;
+    private boolean enabled;
+
+    private String id;
+
+    private String[] initialRoles;
 
     private String name;
 
-    private String owner;
-
-    private String javaScriptOrigin;
-
-    private List<IdentityProviderConfig> providers;
-
-    private String secret;
-
     private String realm;
 
-    public String getCallbackUrl() {
+    private String[] roles;
+
+    public String[] getCallbackUrl() {
         return callbackUrl;
     }
 
-    public String getJavaScriptOrigin() {
-        return javaScriptOrigin;
+    public String getId() {
+        return id;
     }
 
-    public String getKey() {
-        return key;
+    public String[] getInitialRoles() {
+        return initialRoles;
     }
 
     public String getName() {
         return name;
     }
 
-    public String getOwner() {
-        return owner;
-    }
-
-    public List<IdentityProviderConfig> getProviders() {
-        return providers;
-    }
-
-    public String getSecret() {
-        return secret;
-    }
-
     public String getRealm() {
         return realm;
     }
 
-    public void setCallbackUrl(String callbackUrl) {
+    public String[] getRoles() {
+        return roles;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setCallbackUrl(String[] callbackUrl) {
         this.callbackUrl = callbackUrl;
     }
 
-    public void setJavaScriptOrigin(String javaScriptOrigin) {
-        this.javaScriptOrigin = javaScriptOrigin;
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 
-    public void setKey(String key) {
-        this.key = key;
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public void setInitialRoles(String[] initialRoles) {
+        this.initialRoles = initialRoles;
     }
 
     public void setName(String name) {
         this.name = name;
     }
 
-    public void setOwner(String owner) {
-        this.owner = owner;
-    }
-
-    public void setProviders(List<IdentityProviderConfig> providers) {
-        this.providers = providers;
-    }
-
-    public void setSecret(String secret) {
-        this.secret = secret;
-    }
-
     public void setRealm(String realm) {
         this.realm = realm;
+    }
+
+    public void setRoles(String[] roles) {
+        this.roles = roles;
     }
 
 }

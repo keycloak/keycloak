@@ -24,27 +24,27 @@ import javax.ws.rs.core.Response;
 @Path("")
 public class Admin extends javax.ws.rs.core.Application {
 
-    private static Map<String, Realm> realms = new HashMap<String, Realm>();
-
     private static Map<String, Application> applications = new HashMap<String, Application>();
 
+    private static Map<String, Realm> realms = new HashMap<String, Realm>();
+
     @DELETE
-    @Path("/applications/{key}")
-    public void delete(@PathParam("key") String applicationKey) {
-        applications.remove(applicationKey);
+    @Path("/applications/{id}")
+    public void delete(@PathParam("id") String id) {
+        applications.remove(id);
     }
 
     @DELETE
-    @Path("/realms/{key}")
-    public void deleteRealm(@PathParam("key") String key) {
-        realms.remove(key);
+    @Path("/realms/{id}")
+    public void deleteRealm(@PathParam("id") String id) {
+        realms.remove(id);
     }
 
     @GET
-    @Path("/applications/{key}")
+    @Path("/applications/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Application getApplication(@PathParam("key") String applicationKey) {
-        return applications.get(applicationKey);
+    public Application getApplication(@PathParam("id") String id) {
+        return applications.get(id);
     }
 
     @GET
@@ -55,10 +55,10 @@ public class Admin extends javax.ws.rs.core.Application {
     }
 
     @GET
-    @Path("/realms/{key}")
+    @Path("/realms/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Realm getRealm(@PathParam("key") String key) {
-        return realms.get(key);
+    public Realm getRealm(@PathParam("id") String id) {
+        return realms.get(id);
     }
 
 
@@ -73,33 +73,33 @@ public class Admin extends javax.ws.rs.core.Application {
     @Path("/applications")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response save(Application application) {
-        String key = UUID.randomUUID().toString();
-        application.setKey(key);
-        applications.put(key, application);
-        return Response.created(URI.create("/applications/" + application.getKey())).build();
+        String id = UUID.randomUUID().toString();
+        application.setId(id);
+        applications.put(id, application);
+        return Response.created(URI.create("/applications/" + id)).build();
     }
 
     @POST
     @Path("/realms")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response save(Realm realm) {
-        String key = UUID.randomUUID().toString();
-        realm.setKey(key);
-        realms.put(key, realm);
-        return Response.created(URI.create("/realms/" + realm.getKey())).build();
+        String id = UUID.randomUUID().toString();
+        realm.setId(id);
+        realms.put(id, realm);
+        return Response.created(URI.create("/realms/" + id)).build();
     }
 
     @PUT
-    @Path("/applications/{key}")
+    @Path("/applications/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
-    public void save(@PathParam("key") String applicationKey, Application application) {
-        applications.put(applicationKey, application);
+    public void save(@PathParam("id") String id, Application application) {
+        applications.put(id, application);
     }
 
     @PUT
-    @Path("/realms/{key}")
+    @Path("/realms/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
-    public void save(@PathParam("key") String key, Realm realm) {
-        realms.put(key, realm);
+    public void save(@PathParam("id") String id, Realm realm) {
+        realms.put(id, realm);
     }
 }

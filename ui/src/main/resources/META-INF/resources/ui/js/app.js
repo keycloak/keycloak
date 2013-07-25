@@ -4,7 +4,24 @@ var module = angular.module('keycloak', [ 'keycloak.services', 'keycloak.control
 var resourceRequests = 0;
 
 module.config([ '$routeProvider', function($routeProvider) {
-    $routeProvider.when('/applications/:key', {
+    $routeProvider.when('/create/application', {
+        templateUrl : 'partials/application-detail.html',
+        resolve : {
+            applications : function(ApplicationListLoader) {
+                return ApplicationListLoader();
+            },
+            application : function(ApplicationLoader) {
+                return {};
+            },
+            realms : function(RealmListLoader) {
+                return RealmListLoader();
+            },
+            providers : function(ProviderListLoader) {
+                return ProviderListLoader();
+            }
+        },
+        controller : 'ApplicationDetailCtrl'
+    }).when('/applications/:application', {
         templateUrl : 'partials/application-detail.html',
         resolve : {
             applications : function(ApplicationListLoader) {
@@ -29,7 +46,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             }
         },
         controller : 'ApplicationListCtrl'
-    }).when('/realms/:realmKey/users/:userId', {
+    }).when('/realms/:realm/users/:user', {
         templateUrl : 'partials/user-detail.html',
         resolve : {
             realms : function(RealmListLoader) {
@@ -43,7 +60,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             }
         },
         controller : 'UserDetailCtrl'
-    }).when('/realms/:realmKey/users', {
+    }).when('/realms/:realm/users', {
         templateUrl : 'partials/user-list.html',
         resolve : {
             realms : function(RealmListLoader) {
@@ -57,7 +74,18 @@ module.config([ '$routeProvider', function($routeProvider) {
             }
         },
         controller : 'UserListCtrl'
-    }).when('/realms/:realmKey', {
+    }).when('/create/realm', {
+        templateUrl : 'partials/realm-detail.html',
+        resolve : {
+            realms : function(RealmListLoader) {
+                return RealmListLoader();
+            },
+            realm : function(RealmLoader) {
+                return {};
+            }
+        },
+        controller : 'RealmDetailCtrl'
+    }).when('/realms/:realm', {
         templateUrl : 'partials/realm-detail.html',
         resolve : {
             realms : function(RealmListLoader) {
@@ -124,6 +152,51 @@ module.factory('spinnerInterceptor', function($q, $window, $rootScope, $location
             }
 
             return $q.reject(response);
+        });
+    };
+});
+
+module.directive('kcInput', function() {
+	var d = {
+		scope : true,
+		replace: false,
+		link : function(scope, element, attrs) {
+			var form = element.closest('form');
+			var label = element.children('label');
+			var input = element.children('input'); 
+			
+			var id = form.attr('name') + '.' + input.attr('name');
+			
+			element.attr('class', 'control-group');
+			
+			label.attr('class', 'control-label');
+			label.attr('for', id);
+			
+			input.wrap('<div class="controls"/>');
+			input.attr('id', id);
+			
+			if (!input.attr('placeHolder')) {
+				input.attr('placeHolder', label.text());
+			}
+
+			if (input.attr('required')) {
+				label.append(' <span class="required">*</span>');
+			}
+		}
+	};
+	return d;
+});
+
+module.directive('kcEnter', function() {
+    return function(scope, element, attrs) {
+        element.bind("keydown keypress", function(event) {
+            if(event.which === 13) {
+                scope.$apply(function(){
+                    scope.$eval(attrs.kcEnter);
+                });
+
+                event.preventDefault();
+            }
         });
     };
 });

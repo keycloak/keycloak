@@ -21,40 +21,101 @@
  */
 package org.keycloak.ui.example;
 
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class Realm {
 
-    private String key;
+    private boolean enabled;
+
+    private String[] initialRoles;
+
+    private String id;
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
 
     private String name;
 
-    private String owner;
+    private String[] roles;
 
-    public String getKey() {
-        return key;
+    private boolean social;
+
+    private long tokenExpiration;
+
+    private TimeUnit tokenExpirationUnit;
+
+    private boolean userRegistration;
+
+    public String[] getInitialRoles() {
+        return initialRoles;
     }
 
     public String getName() {
         return name;
     }
 
-    public String getOwner() {
-        return owner;
+    public String[] getRoles() {
+        return roles;
     }
 
-    public void setKey(String key) {
-        this.key = key;
+    public long getTokenExpiration() {
+        return tokenExpiration;
+    }
+
+    public TimeUnit getTokenExpirationUnit() {
+        return tokenExpirationUnit;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public boolean isSocial() {
+        return social;
+    }
+
+    public boolean isUserRegistration() {
+        return userRegistration;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
+    public void setInitialRoles(String[] initialRoles) {
+        this.initialRoles = initialRoles;
     }
 
     public void setName(String name) {
         this.name = name;
     }
 
-    public void setOwner(String owner) {
-        this.owner = owner;
+    public void setRoles(String[] roles) {
+        this.roles = roles;
+    }
+
+    public void setSocial(boolean social) {
+        this.social = social;
+    }
+
+    public void setTokenExpiration(long tokenExpiration) {
+        this.tokenExpiration = tokenExpiration;
+    }
+
+    public void setTokenExpirationUnit(TimeUnit tokenExpirationUnit) {
+        this.tokenExpirationUnit = tokenExpirationUnit;
+    }
+
+    public void setUserRegistration(boolean userRegistration) {
+        this.userRegistration = userRegistration;
     }
 
 }

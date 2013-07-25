@@ -5,11 +5,11 @@
                 <span class="toggle">Realms</span>
             </div>
             <ul>
-                <li data-ng-repeat="r in realms" data-ng-class="realm.key == r.key && 'active'">
-                    <a href=#/realms/{{r.key}}>{{r.name}}</a>
-                    <ul class="sub-items" data-ng-show="realm.key == r.key">
-                        <li data-ng-class="!path[2] && 'active'"><a href="#/realms/{{r.key}}">Configuration</a></li>
-                        <li data-ng-class="path[2] == 'users' && 'active'"><a href="#/realms/{{r.key}}/users">Users</a></li>
+                <li data-ng-repeat="r in realms" data-ng-class="realm.id == r.id && 'active'">
+                    <a href=#/realms/{{r.id}}>{{r.name}}</a>
+                    <ul class="sub-items" data-ng-show="realm.id == r.id">
+                        <li data-ng-class="!path[2] && 'active'"><a href="#/realms/{{r.id}}">Configuration</a></li>
+                        <li data-ng-class="path[2] == 'users' && 'active'"><a href="#/realms/{{r.id}}/users">Users</a></li>
                     </ul>
                 </li>
             </ul>

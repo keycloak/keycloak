@@ -4,7 +4,7 @@
         <div id="actions-bg"></div>
 
         <div id="container-right" class="span9">
-            <a class="btn btn-small pull-right" href="#/realms/new">Add Realm</a>
+            <a class="btn btn-small pull-right" href="#/create/realm">Add Realm</a>
             
             <h1>
                 <span class="gray">Realms</span>
@@ -17,7 +17,7 @@
                     </tr>
                 </thead>
                 <tr data-ng-repeat="r in realms">
-                    <td><a href="#/realms/{{r.key}}">{{r.name}}</a></td>
+                    <td><a href="#/realms/{{r.id}}">{{r.name}}</a></td>
                 </tr>
             </table>
         </div>
