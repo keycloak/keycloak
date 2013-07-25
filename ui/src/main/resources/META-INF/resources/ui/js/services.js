@@ -20,14 +20,14 @@ module.factory('Notifications', function($rootScope, $timeout) {
 	if (!$rootScope.notifications) {
 		$rootScope.notifications = [];
 	}
-	
+
 	notifications.message = function(type, message) {
 		$rootScope.notification = {
-				type : type,
-				message : message
-			};
+			type : type,
+			message : message
+		};
 
-			schedulePop();
+		schedulePop();
 	}
 
 	notifications.info = function(message) {
@@ -140,7 +140,7 @@ module.factory('RealmLoader', function(Realm, $route, $q) {
 });
 
 module.factory('User', function($resource) {
-	return $resource('/ejs-identity/api/im/:realm/users/:id', {
+	return $resource('/keycloak-server/ui/api/realms/:realm/users/:id', {
 		realm : '@realm',
 		id : '@id'
 	}, {
@@ -154,7 +154,7 @@ module.factory('UserListLoader', function(User, $route, $q) {
 	return function() {
 		var delay = $q.defer();
 		User.query({
-			realmKey : $route.current.params.realmKey
+			realm : $route.current.params.realm
 		}, function(users) {
 			delay.resolve(users);
 		}, function() {
@@ -166,21 +166,17 @@ module.factory('UserListLoader', function(User, $route, $q) {
 
 module.factory('UserLoader', function(User, $route, $q) {
 	return function() {
-		var name = $route.current.params.user;
-		if (name == 'new') {
-			return {};
-		} else {
-			var delay = $q.defer();
-			User.get({
-				realm : $route.current.params.realm,
-				name : name
-			}, function(user) {
-				delay.resolve(user);
-			}, function() {
-				delay.reject('Unable to fetch user ' + name);
-			});
-			return delay.promise;
-		}
+		var id = $route.current.params.user;
+		var delay = $q.defer();
+		User.get({
+			realm : $route.current.params.realm,
+			id : id
+		}, function(user) {
+			delay.resolve(user);
+		}, function() {
+			delay.reject('Unable to fetch user ' + name);
+		});
+		return delay.promise;
 	};
 });
 

@@ -46,6 +46,20 @@ module.config([ '$routeProvider', function($routeProvider) {
 			}
 		},
 		controller : 'ApplicationListCtrl'
+	}).when('/create/user/:realm', {
+		templateUrl : 'partials/user-detail.html',
+		resolve : {
+			realms : function(RealmListLoader) {
+				return RealmListLoader();
+			},
+			realm : function(RealmLoader) {
+				return RealmLoader();
+			},
+			user : function(UserLoader) {
+				return {};
+			}
+		},
+		controller : 'UserDetailCtrl'
 	}).when('/realms/:realm/users/:user', {
 		templateUrl : 'partials/user-detail.html',
 		resolve : {

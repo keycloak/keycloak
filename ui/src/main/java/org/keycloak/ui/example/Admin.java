@@ -28,34 +28,37 @@ public class Admin extends javax.ws.rs.core.Application {
 
     private static Map<String, Realm> realms = new HashMap<String, Realm>();
 
+    private static Map<String, Map<String, User>> users = new HashMap<String, Map<String, User>>();
+
     @DELETE
-    @Path("/applications/{id}")
-    public void delete(@PathParam("id") String id) {
+    @Path("applications/{id}")
+    public void deleteApplication(@PathParam("id") String id) {
         applications.remove(id);
     }
 
     @DELETE
-    @Path("/realms/{id}")
+    @Path("realms/{id}")
     public void deleteRealm(@PathParam("id") String id) {
         realms.remove(id);
+        users.remove(id);
     }
 
     @GET
-    @Path("/applications/{id}")
+    @Path("applications/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     public Application getApplication(@PathParam("id") String id) {
         return applications.get(id);
     }
 
     @GET
-    @Path("/applications")
+    @Path("applications")
     @Produces(MediaType.APPLICATION_JSON)
     public List<Application> getApplications() {
         return new LinkedList<Application>(applications.values());
     }
 
     @GET
-    @Path("/realms/{id}")
+    @Path("realms/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     public Realm getRealm(@PathParam("id") String id) {
         return realms.get(id);
@@ -63,14 +66,14 @@ public class Admin extends javax.ws.rs.core.Application {
 
 
     @GET
-    @Path("/realms")
+    @Path("realms")
     @Produces(MediaType.APPLICATION_JSON)
     public List<Realm> getRealms() {
         return new LinkedList<Realm>(realms.values());
     }
 
     @POST
-    @Path("/applications")
+    @Path("applications")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response save(Application application) {
         String id = UUID.randomUUID().toString();
@@ -80,26 +83,56 @@ public class Admin extends javax.ws.rs.core.Application {
     }
 
     @POST
-    @Path("/realms")
+    @Path("realms")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response save(Realm realm) {
         String id = UUID.randomUUID().toString();
         realm.setId(id);
         realms.put(id, realm);
+        users.put(id, new HashMap<String, User>());
         return Response.created(URI.create("/realms/" + id)).build();
     }
 
     @PUT
-    @Path("/applications/{id}")
+    @Path("applications/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
     public void save(@PathParam("id") String id, Application application) {
         applications.put(id, application);
     }
 
     @PUT
-    @Path("/realms/{id}")
+    @Path("realms/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
     public void save(@PathParam("id") String id, Realm realm) {
         realms.put(id, realm);
+        users.put(id, new HashMap<String, User>());
     }
+
+    @GET
+    @Path("realms/{realm}/users/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public User getUser(@PathParam("realm") String realm, @PathParam("id") String id) {
+        return users.get(realm).get(id);
+    }
+
+    @GET
+    @Path("realms/{realm}/users")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<User> getUsers(@PathParam("realm") String realm) {
+        return new LinkedList<User>(users.get(realm).values());
+    }
+
+    @PUT
+    @Path("realms/{realm}/users/{id}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void save(@PathParam("realm") String realm, @PathParam("id") String id, User user) {
+        users.get(realm).put(id, user);
+    }
+
+    @DELETE
+    @Path("realms/{realm}/users/{id}")
+    public void deleteUser(@PathParam("realm") String realm, @PathParam("id") String id) {
+        users.get(realm).remove(id);
+    }
+
 }

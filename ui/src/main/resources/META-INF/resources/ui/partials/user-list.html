@@ -4,7 +4,7 @@
         <div id="actions-bg"></div>
 
         <div id="container-right" class="span9">
-            <a class="btn btn-small pull-right" href="#/realms/{{realm.key}}/users/new">Add User</a>
+            <a class="btn btn-small pull-right" href="#/create/user/{{realm.id}}">Add User</a>
 
                 <h1>
                     <span class="gray">{{realm.name}}</span> users
@@ -20,7 +20,7 @@
                         </tr>
                     </thead>
                     <tr data-ng-repeat="user in users">
-                        <td><a href="#/realms/{{realm.key}}/users/{{user.userId}}">{{user.userId}}</a></td>
+                        <td><a href="#/realms/{{realm.id}}/users/{{user.userId}}">{{user.userId}}</a></td>
                         <td>{{user.firstName}}</td>
                         <td>{{user.lastName}}</td>
                         <td>{{user.email}}</td>

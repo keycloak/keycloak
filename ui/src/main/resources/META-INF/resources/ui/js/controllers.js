@@ -215,13 +215,14 @@ module.controller('UserDetailCtrl', function($scope, realms, realm, user, User, 
 	$scope.save = function() {
 		if ($scope.userForm.$valid) {
 			User.save({
-				realmKey : realm.key
+				realm : realm.id,
+				id : $scope.user.userId
 			}, $scope.user, function() {
 				$scope.changed = false;
 				user = angular.copy($scope.user);
 
 				if ($scope.create) {
-					$location.url("/realms/" + realm.key + "/users/" + user.userId);
+					$location.url("/realms/" + realm.id + "/users/" + $scope.user.userId);
 					Notifications.success("Created user");
 				} else {
 					Notifications.success("Saved changes to user");
@@ -239,16 +240,16 @@ module.controller('UserDetailCtrl', function($scope, realms, realm, user, User, 
 	};
 
 	$scope.cancel = function() {
-		$location.url("/realms/" + realm.key + "/users");
+		$location.url("/realms/" + realm.id + "/users");
 	};
 
 	$scope.remove = function() {
 		Dialog.confirmDelete($scope.user.userId, 'user', function() {
 			$scope.user.$remove({
-				realmKey : realm.key,
-				userId : $scope.user.userId
+				realm : realm.id,
+				id : $scope.user.userId
 			}, function() {
-				$location.url("/realms/" + realm.key + "/users");
+				$location.url("/realms/" + realm.id + "/users");
 				Notifications.success("Deleted user");
 			});
 		});
