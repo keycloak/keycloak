@@ -51,6 +51,10 @@ public class RealmsResource {
         this.tokenManager = tokenManager;
     }
 
+    public static UriBuilder realmBaseUrl(UriInfo uriInfo) {
+        return uriInfo.getBaseUriBuilder().path(RealmsResource.class).path(RealmsResource.class, "getRealmResource");
+    }
+
     @Path("{realm}/tokens")
     public TokenService getTokenService(@PathParam("realm") String id) {
         RealmManager realmManager = new RealmManager(identitySession);

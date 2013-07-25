@@ -31,6 +31,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriBuilder;
@@ -208,10 +209,18 @@ public class TokenService {
             return null;
         }
 
+        return redirectAccessCode(scopeParam, state, redirect, client, user);
+    }
+
+    protected Response redirectAccessCode(String scopeParam, String state, String redirect, User client, User user) {
         String accessCode = tokenManager.createAccessCode(scopeParam, realm, client, user);
         UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam("code", accessCode);
         if (state != null) redirectUri.queryParam("state", state);
-        return Response.status(302).location(redirectUri.build()).build();
+        Response.ResponseBuilder location = Response.status(302).location(redirectUri.build());
+        if (realm.isCookieLoginAllowed()) {
+           location.cookie(tokenManager.createLoginCookie(realm, user, uriInfo));
+        }
+        return location.build();
     }
 
     @Path("access/codes")
@@ -379,6 +388,11 @@ public class TokenService {
             securityFailureForward("Login requester not enabled.");
             identitySession.close();
             return null;
+        }
+
+        User user = authManager.authenticateIdentityCookie(realm, headers);
+        if (user != null) {
+            return redirectAccessCode(scopeParam, state, redirect, client, user);
         }
         // todo make sure client is allowed to request a login
 

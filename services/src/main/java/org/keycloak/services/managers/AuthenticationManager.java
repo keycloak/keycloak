@@ -1,6 +1,8 @@
 package org.keycloak.services.managers;
 
 import org.jboss.resteasy.logging.Logger;
+import org.jboss.resteasy.spi.HttpResponse;
+import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
 import org.keycloak.representations.SkeletonKeyToken;
@@ -14,8 +16,10 @@ import org.picketlink.idm.credential.UsernamePasswordCredentials;
 import org.picketlink.idm.model.User;
 
 import javax.ws.rs.NotAuthorizedException;
+import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.NewCookie;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -39,6 +43,39 @@ public class AuthenticationManager {
     public boolean isRealmAdmin(RealmModel realm, HttpHeaders headers) {
         User user = authenticateBearerToken(realm, headers);
         return realm.isRealmAdmin(user);
+    }
+
+    protected void expireIdentityCookie(Cookie cookie) {
+        HttpResponse response = ResteasyProviderFactory.getContextData(HttpResponse.class);
+        if (response == null) return;
+        NewCookie expireIt = new NewCookie(cookie.getName(), "", cookie.getPath(), null, "Expiring cookie", 0, false);
+        response.addNewCookie(expireIt);
+    }
+
+    public User authenticateIdentityCookie(RealmModel realm, HttpHeaders headers) {
+        Cookie cookie = headers.getCookies().get(TokenManager.KEYCLOAK_IDENTITY_COOKIE);
+        if (cookie == null) return null;
+
+        String tokenString = cookie.getValue();
+        try {
+            SkeletonKeyToken token = RSATokenVerifier.verifyToken(tokenString, realm.getPublicKey(), realm.getId());
+            if (!token.isActive()) {
+                logger.info("identity cookie expired");
+                expireIdentityCookie(cookie);
+                return null;
+            }
+            User user = realm.getIdm().getUser(token.getPrincipal());
+            if (user == null || !user.isEnabled()) {
+                logger.info("Unknown user in identity cookie");
+                expireIdentityCookie(cookie);
+                return null;
+            }
+            return user;
+        } catch (VerificationException e) {
+            logger.info("Failed to verify identity cookie", e);
+            expireIdentityCookie(cookie);
+        }
+        return null;
     }
 
     public User authenticateBearerToken(RealmModel realm, HttpHeaders headers) {

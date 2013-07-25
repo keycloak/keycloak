@@ -11,8 +11,8 @@ import java.util.Set;
 public class RealmRepresentation {
     protected String self; // link
     protected String realm;
-    protected long tokenLifespan;
-    protected long accessCodeLifespan;
+    protected int tokenLifespan;
+    protected int accessCodeLifespan;
     protected boolean enabled;
     protected boolean sslNotRequired;
     protected boolean cookieLoginAllowed;
@@ -98,11 +98,11 @@ public class RealmRepresentation {
         this.cookieLoginAllowed = cookieLoginAllowed;
     }
 
-    public long getTokenLifespan() {
+    public int getTokenLifespan() {
         return tokenLifespan;
     }
 
-    public void setTokenLifespan(long tokenLifespan) {
+    public void setTokenLifespan(int tokenLifespan) {
         this.tokenLifespan = tokenLifespan;
     }
 
@@ -138,11 +138,11 @@ public class RealmRepresentation {
         this.requiredCredentials = requiredCredentials;
     }
 
-    public long getAccessCodeLifespan() {
+    public int getAccessCodeLifespan() {
         return accessCodeLifespan;
     }
 
-    public void setAccessCodeLifespan(long accessCodeLifespan) {
+    public void setAccessCodeLifespan(int accessCodeLifespan) {
         this.accessCodeLifespan = accessCodeLifespan;
     }
 

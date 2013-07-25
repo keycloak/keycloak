@@ -7,12 +7,17 @@ import org.keycloak.representations.SkeletonKeyScope;
 import org.keycloak.representations.SkeletonKeyToken;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.ResourceModel;
+import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.services.resources.TokenService;
 import org.picketlink.idm.model.User;
 
 import javax.ws.rs.ForbiddenException;
+import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -26,6 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class TokenManager {
 
+    public static final String KEYCLOAK_IDENTITY_COOKIE = "KEYCLOAK_IDENTITY";
     protected Map<String, AccessCodeEntry> accessCodeMap = new ConcurrentHashMap<String, AccessCodeEntry>();
 
     public void clearAccessCodes() {
@@ -34,6 +40,15 @@ public class TokenManager {
 
     public AccessCodeEntry pullAccessCode(String key) {
         return accessCodeMap.remove(key);
+    }
+
+    public NewCookie createLoginCookie(RealmModel realm, User user, UriInfo uriInfo) {
+        SkeletonKeyToken identityToken = createIdentityToken(realm, user.getLoginName());
+        String encoded = encodeToken(realm, identityToken);
+        URI uri = RealmsResource.realmBaseUrl(uriInfo).build(realm.getId());
+        boolean secureOnly = !realm.isSslNotRequired();
+        NewCookie cookie = new NewCookie(KEYCLOAK_IDENTITY_COOKIE, encoded, uri.getPath(), null, null, realm.getTokenLifespan(), secureOnly, true);
+        return cookie;
     }
 
     public String createAccessCode(String scopeParam, RealmModel realm, User client, User user)
