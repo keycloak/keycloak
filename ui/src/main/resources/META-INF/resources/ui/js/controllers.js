@@ -358,3 +358,38 @@ module.controller('RealmDetailCtrl', function($scope, Realm, realms, realm, $loc
 		});
 	};
 });
+
+module.controller('RoleMappingCtrl', function($scope, realms, realm, users, role, Notifications) {
+	$scope.realms = realms;
+	$scope.realm = realm;
+	$scope.allUsers = users;
+	$scope.users = [];
+	$scope.name = realm.name;
+	$scope.role = role;
+	
+	console.debug("role: " + role)
+	
+	$scope.addUser = function() {
+		for (var i = 0; i < $scope.allUsers.length; i++) {
+			if ($scope.allUsers[i].userId == $scope.newUser) {
+				console.debug("add user " + $scope.allUsers[i]);
+				$scope.users.push($scope.allUsers[i]);
+				$scope.newUser = null;
+				
+				// Send notification when rest call is success
+				Notifications.success("Saved role mapping for user");
+			}
+		}
+	}
+	
+	$scope.removeUser = function(id) {
+		for (var i = 0; i < $scope.users.length; i++) {
+			if ($scope.users[i].userId == id) {
+				$scope.users.splice(i, 1);
+				
+				// Send notification when rest call is success
+				Notifications.success("Removed role mapping for user");
+			}
+		}
+	}
+});

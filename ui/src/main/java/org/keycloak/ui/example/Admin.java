@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.UUID;
 
 import javax.ws.rs.ApplicationPath;
@@ -28,7 +29,7 @@ public class Admin extends javax.ws.rs.core.Application {
 
     private static Map<String, Realm> realms = new HashMap<String, Realm>();
 
-    private static Map<String, Map<String, User>> users = new HashMap<String, Map<String, User>>();
+    private static Map<UserId, User> users = new HashMap<UserId, User>();
 
     @DELETE
     @Path("applications/{id}")
@@ -89,7 +90,6 @@ public class Admin extends javax.ws.rs.core.Application {
         String id = UUID.randomUUID().toString();
         realm.setId(id);
         realms.put(id, realm);
-        users.put(id, new HashMap<String, User>());
         return Response.created(URI.create("/realms/" + id)).build();
     }
 
@@ -105,34 +105,39 @@ public class Admin extends javax.ws.rs.core.Application {
     @Consumes(MediaType.APPLICATION_JSON)
     public void save(@PathParam("id") String id, Realm realm) {
         realms.put(id, realm);
-        users.put(id, new HashMap<String, User>());
     }
 
     @GET
     @Path("realms/{realm}/users/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     public User getUser(@PathParam("realm") String realm, @PathParam("id") String id) {
-        return users.get(realm).get(id);
+        return users.get(new UserId(realm, id));
     }
 
     @GET
     @Path("realms/{realm}/users")
     @Produces(MediaType.APPLICATION_JSON)
     public List<User> getUsers(@PathParam("realm") String realm) {
-        return new LinkedList<User>(users.get(realm).values());
+        LinkedList<User> list = new LinkedList<User>();
+        for (Entry<UserId, User> e : users.entrySet()) {
+            if (e.getKey().getRealm().equals(realm)) {
+                list.add(e.getValue());
+            }
+        }
+        return list;
     }
 
     @PUT
     @Path("realms/{realm}/users/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
     public void save(@PathParam("realm") String realm, @PathParam("id") String id, User user) {
-        users.get(realm).put(id, user);
+        users.put(new UserId(realm, id), user);
     }
 
     @DELETE
     @Path("realms/{realm}/users/{id}")
     public void deleteUser(@PathParam("realm") String realm, @PathParam("id") String id) {
-        users.get(realm).remove(id);
+        users.remove(new UserId(realm, id));
     }
 
 }

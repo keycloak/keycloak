@@ -32,6 +32,15 @@ public class User implements Serializable {
     private String lastName;
     private String userId;
     private String password;
+    private String[] roles;
+
+    public String[] getRoles() {
+        return roles;
+    }
+
+    public void setRoles(String[] roles) {
+        this.roles = roles;
+    }
 
     public String getPassword() {
         return password;

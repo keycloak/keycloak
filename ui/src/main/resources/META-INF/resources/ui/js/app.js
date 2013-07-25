@@ -110,6 +110,40 @@ module.config([ '$routeProvider', function($routeProvider) {
 			}
 		},
 		controller : 'RealmDetailCtrl'
+	}).when('/realms/:realm/roles', {
+		templateUrl : 'partials/role-mapping.html',
+		resolve : {
+			realms : function(RealmListLoader) {
+				return RealmListLoader();
+			},
+			realm : function(RealmLoader) {
+				return RealmLoader();
+			},
+			users : function(UserListLoader) {
+				return UserListLoader();
+			},
+			role : function() {
+				return null;
+			}
+		},
+		controller : 'RoleMappingCtrl'
+	}).when('/realms/:realm/roles/:role', {
+		templateUrl : 'partials/role-mapping.html',
+		resolve : {
+			realms : function(RealmListLoader) {
+				return RealmListLoader();
+			},
+			realm : function(RealmLoader) {
+				return RealmLoader();
+			},
+			users : function(UserListLoader) {
+				return UserListLoader();
+			},
+			role : function($route) {
+				return $route.current.params.role;
+			}
+		},
+		controller : 'RoleMappingCtrl'
 	}).when('/realms', {
 		templateUrl : 'partials/realm-list.html',
 		resolve : {

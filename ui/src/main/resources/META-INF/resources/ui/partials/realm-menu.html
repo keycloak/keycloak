@@ -10,6 +10,7 @@
                     <ul class="sub-items" data-ng-show="realm.id == r.id">
                         <li data-ng-class="!path[2] && 'active'"><a href="#/realms/{{r.id}}">Configuration</a></li>
                         <li data-ng-class="path[2] == 'users' && 'active'"><a href="#/realms/{{r.id}}/users">Users</a></li>
+                        <li data-ng-class="path[2] == 'roles' && 'active'"><a href="#/realms/{{r.id}}/roles">Role mapping</a></li>
                     </ul>
                 </li>
             </ul>
