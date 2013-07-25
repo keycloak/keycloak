@@ -203,6 +203,10 @@ module.directive('kcEnter', function() {
 
 module.filter('remove', function() {
 	return function(input, remove) {
+		if (!input || !remove) {
+			return input;
+		}
+		
 		var out = [];
 		for (var i = 0; i < input.length; i++) {
 			if (remove.indexOf(input[i]) == -1) {

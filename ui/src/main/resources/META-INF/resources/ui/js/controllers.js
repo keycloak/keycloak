@@ -20,7 +20,7 @@ module.controller('ApplicationListCtrl', function($scope, applications) {
 	$scope.applications = applications;
 });
 
-module.controller('ApplicationDetailCtrl', function($scope, applications, application, Application, realms, providers, $location, $window, $dialog,
+module.controller('ApplicationDetailCtrl', function($scope, applications, application, Application, realms, providers, $location, $window, Dialog,
 		Notifications) {
 	$scope.application = angular.copy(application);
 	$scope.applications = applications;
@@ -41,14 +41,16 @@ module.controller('ApplicationDetailCtrl', function($scope, applications, applic
 
 	$scope.addRole = function() {
 		if ($scope.newRole) {
-			for (var i = 0; i < $scope.application.roles.length; i++) {
-				if ($scope.application.roles[i] == $scope.newRole) {
-					Notifications.warn("Role already exists");
-					$scope.newRole = null;
-					return;
+			if ($scope.application.roles) {
+				for ( var i = 0; i < $scope.application.roles.length; i++) {
+					if ($scope.application.roles[i] == $scope.newRole) {
+						Notifications.warn("Role already exists");
+						$scope.newRole = null;
+						return;
+					}
 				}
 			}
-			
+
 			if (!$scope.application.roles) {
 				$scope.application.roles = [];
 			}
@@ -59,11 +61,13 @@ module.controller('ApplicationDetailCtrl', function($scope, applications, applic
 	}
 
 	$scope.removeRole = function(role) {
-		var i = $scope.application.roles.indexOf(role); 
-		if (i > -1) {
-			$scope.application.roles.splice(i, 1);
-		}
-		$scope.removeInitialRole(role);
+		Dialog.confirmDelete(role, 'role', function() {
+			var i = $scope.application.roles.indexOf(role);
+			if (i > -1) {
+				$scope.application.roles.splice(i, 1);
+			}
+			$scope.removeInitialRole(role);
+		});
 	};
 
 	$scope.addInitialRole = function() {
@@ -83,7 +87,7 @@ module.controller('ApplicationDetailCtrl', function($scope, applications, applic
 			$scope.application.initialRoles.splice(i, 1);
 		}
 	};
-	
+
 	$scope.save = function() {
 		if ($scope.applicationForm.$valid) {
 			if ($scope.create) {
@@ -116,24 +120,11 @@ module.controller('ApplicationDetailCtrl', function($scope, applications, applic
 	};
 
 	$scope.remove = function() {
-		var title = 'Delete ' + $scope.application.name;
-		var msg = 'Are you sure you want to permanently delete this application?';
-		var btns = [ {
-			result : 'cancel',
-			label : 'Cancel'
-		}, {
-			result : 'ok',
-			label : 'Delete this application',
-			cssClass : 'btn-primary'
-		} ];
-
-		$dialog.messageBox(title, msg, btns).open().then(function(result) {
-			if (result == "ok") {
-				$scope.application.$remove(function() {
-					$location.url("/applications");
-					Notifications.success("Deleted application");
-				});
-			}
+		Dialog.confirmDelete($scope.application.name, 'application', function() {
+			$scope.application.$remove(function() {
+				$location.url("/applications");
+				Notifications.success("Deleted application");
+			});
 		});
 	};
 
@@ -207,7 +198,7 @@ module.controller('UserListCtrl', function($scope, realms, realm, users) {
 	$scope.users = users;
 });
 
-module.controller('UserDetailCtrl', function($scope, realms, realm, user, User, $location, $dialog, Notifications) {
+module.controller('UserDetailCtrl', function($scope, realms, realm, user, User, $location, Dialog, Notifications) {
 	$scope.realms = realms;
 	$scope.realm = realm;
 	$scope.user = angular.copy(user);
@@ -252,32 +243,19 @@ module.controller('UserDetailCtrl', function($scope, realms, realm, user, User, 
 	};
 
 	$scope.remove = function() {
-		var title = 'Delete ' + $scope.user.userId;
-		var msg = 'Are you sure you want to permanently delete this user?';
-		var btns = [ {
-			result : 'cancel',
-			label : 'Cancel'
-		}, {
-			result : 'ok',
-			label : 'Delete this user',
-			cssClass : 'btn-primary'
-		} ];
-
-		$dialog.messageBox(title, msg, btns).open().then(function(result) {
-			if (result == "ok") {
-				$scope.user.$remove({
-					realmKey : realm.key,
-					userId : $scope.user.userId
-				}, function() {
-					$location.url("/realms/" + realm.key + "/users");
-					Notifications.success("Deleted user");
-				});
-			}
+		Dialog.confirmDelete($scope.user.userId, 'user', function() {
+			$scope.user.$remove({
+				realmKey : realm.key,
+				userId : $scope.user.userId
+			}, function() {
+				$location.url("/realms/" + realm.key + "/users");
+				Notifications.success("Deleted user");
+			});
 		});
 	};
 });
 
-module.controller('RealmDetailCtrl', function($scope, Realm, realms, realm, $location, $dialog, Notifications) {
+module.controller('RealmDetailCtrl', function($scope, Realm, realms, realm, $location, Dialog, Notifications) {
 	$scope.realms = realms;
 	$scope.realm = angular.copy(realm);
 	$scope.create = !realm.name;
@@ -292,14 +270,16 @@ module.controller('RealmDetailCtrl', function($scope, Realm, realms, realm, $loc
 
 	$scope.addRole = function() {
 		if ($scope.newRole) {
-			for (var i = 0; i < $scope.realm.roles.length; i++) {
-				if ($scope.realm.roles[i] == $scope.newRole) {
-					Notifications.warn("Role already exists");
-					$scope.newRole = null;
-					return;
+			if ($scope.realm.roles) {
+				for ( var i = 0; i < $scope.realm.roles.length; i++) {
+					if ($scope.realm.roles[i] == $scope.newRole) {
+						Notifications.warn("Role already exists");
+						$scope.newRole = null;
+						return;
+					}
 				}
 			}
-			
+
 			if (!$scope.realm.roles) {
 				$scope.realm.roles = [];
 			}
@@ -310,11 +290,13 @@ module.controller('RealmDetailCtrl', function($scope, Realm, realms, realm, $loc
 	}
 
 	$scope.removeRole = function(role) {
-		var i = $scope.realm.roles.indexOf(role); 
-		if (i > -1) {
-			$scope.realm.roles.splice(i, 1);
-		}
-		$scope.removeInitialRole(role);
+		Dialog.confirmDelete(role, 'role', function() {
+			var i = $scope.realm.roles.indexOf(role);
+			if (i > -1) {
+				$scope.realm.roles.splice(i, 1);
+			}
+			$scope.removeInitialRole(role);
+		});
 	};
 
 	$scope.addInitialRole = function() {
@@ -367,24 +349,11 @@ module.controller('RealmDetailCtrl', function($scope, Realm, realms, realm, $loc
 	};
 
 	$scope.remove = function() {
-		var title = 'Delete ' + $scope.realm.name;
-		var msg = 'Are you sure you want to permanently delete this realm?';
-		var btns = [ {
-			result : 'cancel',
-			label : 'Cancel'
-		}, {
-			result : 'ok',
-			label : 'Delete this realm',
-			cssClass : 'btn-primary'
-		} ];
-
-		$dialog.messageBox(title, msg, btns).open().then(function(result) {
-			if (result == "ok") {
-				Realm.remove($scope.realm, function() {
-					$location.url("/realms");
-					Notifications.success("Deleted realm");
-				});
-			}
+		Dialog.confirmDelete($scope.realm.name, 'realm', function() {
+			Realm.remove($scope.realm, function() {
+				$location.url("/realms");
+				Notifications.success("Deleted realm");
+			});
 		});
 	};
 });

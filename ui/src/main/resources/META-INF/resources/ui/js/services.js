@@ -184,6 +184,29 @@ module.factory('UserLoader', function(User, $route, $q) {
 	};
 });
 
+module.service('Dialog', function($dialog) {
+	var dialog = {};
+	dialog.confirmDelete = function(name, type, success) {
+		var title = 'Delete ' + name;
+		var msg = 'Are you sure you want to permanently delete this ' + type + '?';
+		var btns = [ {
+			result : 'cancel',
+			label : 'Cancel'
+		}, {
+			result : 'ok',
+			label : 'Delete this ' + type,
+			cssClass : 'btn-primary'
+		} ];
+
+		$dialog.messageBox(title, msg, btns).open().then(function(result) {
+			if (result == "ok") {
+				success();
+			}
+		});
+	}
+	return dialog
+});
+
 module.service('Auth', function($resource, $http, $location, $routeParams) {
 	var auth = {
 		loggedIn : true
