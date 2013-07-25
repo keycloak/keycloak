@@ -1,15 +1,15 @@
 <div id="wrapper" class="container">
     <div class="row">
-        <aside class="span3" ng-include src="'partials/realm-menu.html'"></aside>
+        <aside class="span3" data-ng-include data-src="'partials/realm-menu.html'"></aside>
         <div id="actions-bg"></div>
 
         <div id="container-right" class="span9">
             <h1>
-                <span class="gray" ng-show="create">New Realm</span>
-                <span class="gray" ng-hide="create">{{realm.name}}</span> configuration
+                <span class="gray" data-ng-show="create">New Realm</span>
+                <span class="gray" data-ng-hide="create">{{realm.name}}</span> configuration
             </h1>
             
-            <div ng-show="realmForm.showErrors && realmForm.$error.required" class="alert alert-error">Please fill in all required fields</div>
+            <div data-ng-show="realmForm.showErrors && realmForm.$error.required" class="alert alert-error">Please fill in all required fields</div>
             <p class="subtitle subtitle-right"><span class="required">*</span> Required fields</p>
 
             <form class="form-horizontal" name="realmForm" novalidate>
@@ -18,33 +18,33 @@
                     <div class="control-group">
                         <label class="control-label" for="name">Name <span class="required">*</span></label>
                         <div class="controls">
-                            <input type="text" class="input-xlarge" id="name" name="name" ng-model="realm.name" autofocus required>
+                            <input type="text" class="input-xlarge" id="name" name="name" data-ng-model="realm.name" autofocus required>
                         </div>
                     </div>
                     <div class="control-group">
                         <label class="control-label" for="key">Key </label>
                         <div class="controls">
-                            <input class="input-xxlarge" type="text" id="key" name="key" ng-model="realm.key" ng-readonly="!(auth.root && create)">
+                            <input class="input-xxlarge" type="text" id="key" name="key" data-ng-model="realm.key" data-ng-readonly="!(auth.root && create)">
                         </div>
                     </div>
-                    <div class="control-group" ng-show="auth.root">
+                    <div class="control-group" data-ng-show="auth.root">
                         <label class="control-label" for="owner">Owner </label>
                         <div class="controls">
-                            <input class="input-xxlarge" type="text" id="owner" ng-model="realm.owner">
+                            <input class="input-xxlarge" type="text" id="owner" data-ng-model="realm.owner">
                         </div>
                     </div>
                 </fieldset>
 
-                <div class="form-actions" ng-show="create">
-                    <button type="submit" ng-click="save()" class="btn btn-primary" ng-show="changed">Save</button>
-                    <button type="submit" ng-click="cancel()" class="btn" ng-click="cancel()" ng-show="changed">Cancel</button>
+                <div class="form-actions" data-ng-show="create">
+                    <button type="submit" data-ng-click="save()" class="btn btn-primary" data-ng-show="changed">Save</button>
+                    <button type="submit" data-ng-click="cancel()" class="btn" data-ng-click="cancel()" data-ng-show="changed">Cancel</button>
                 </div>
 
-                <div class="form-actions" ng-show="!create">
-                    <button type="submit" ng-click="save()" class="btn btn-primary" ng-show="changed">Save changes</button>
-                    <button type="submit" ng-click="reset()" class="btn" ng-show="changed">Clear changes</button>
-                    <a href="#/realms" ng-hide="changed">View realms &#187;</a>
-                    <button type="submit" ng-click="remove()" class="btn btn-danger" ng-hide="changed">Delete</button>
+                <div class="form-actions" data-ng-show="!create">
+                    <button type="submit" data-ng-click="save()" class="btn btn-primary" data-ng-show="changed">Save changes</button>
+                    <button type="submit" data-ng-click="reset()" class="btn" data-ng-show="changed">Clear changes</button>
+                    <a href="#/realms" data-ng-hide="changed">View realms &#187;</a>
+                    <button type="submit" data-ng-click="remove()" class="btn btn-danger" data-ng-hide="changed">Delete</button>
                 </div>
                 
             </form>

@@ -1,6 +1,6 @@
 <div id="wrapper" class="container">
     <div class="row">
-        <aside class="span3" ng-include src="'partials/realm-menu.html'"></aside>
+        <aside class="span3" data-ng-include data-src="'partials/realm-menu.html'"></aside>
         <div id="actions-bg"></div>
 
         <div id="container-right" class="span9">
@@ -16,7 +16,7 @@
                         <th>Realm</th>
                     </tr>
                 </thead>
-                <tr ng-repeat="r in realms">
+                <tr data-ng-repeat="r in realms">
                     <td><a href="#/realms/{{r.key}}">{{r.name}}</a></td>
                 </tr>
             </table>

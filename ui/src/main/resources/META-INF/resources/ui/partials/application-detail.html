@@ -1,15 +1,15 @@
 <div id="wrapper" class="container">
     <div class="row">
-        <aside class="span3" ng-include src="'partials/application-menu.html'"></aside>
+        <aside class="span3" data-ng-include data-src="'partials/application-menu.html'"></aside>
         <div id="actions-bg"></div>
 
         <div id="container-right" class="span9">
             <h1>
-                <span class="gray" ng-show="create">New Application</span> <span class="gray" ng-hide="create">{{application.name}}</span>
+                <span class="gray" data-ng-show="create">New Application</span> <span class="gray" data-ng-hide="create">{{application.name}}</span>
                 configuration
             </h1>
 
-            <div ng-show="applicationForm.showErrors && applicationForm.$error.required" class="alert alert-error">Please fill in all required fields</div>
+            <div data-ng-show="applicationForm.showErrors && applicationForm.$error.required" class="alert alert-error">Please fill in all required fields</div>
             <p class="subtitle subtitle-right"><span class="required">*</span> Required fields</p>
 
             <form class="form-horizontal" name="applicationForm" novalidate>
@@ -19,46 +19,46 @@
                         <div class="control-group">
                             <label class="control-label" for="name">Name <span class="required">*</span></label>
                             <div class="controls">
-                                <input type="text" class="input-xlarge" id="name" name="name" ng-model="application.name" autofocus required>
+                                <input type="text" class="input-xlarge" id="name" name="name" data-ng-model="application.name" autofocus required>
                             </div>
                         </div>
                         <div class="control-group">
                             <label class="control-label" for="callbackUrl">Callback URL <span class="required">*</span></label>
                             <div class="controls">
-                                <input type="text" class="input-xxlarge" id="callbackUrl" name="callbackUrl" ng-model="application.callbackUrl"
+                                <input type="text" class="input-xxlarge" id="callbackUrl" name="callbackUrl" data-ng-model="application.callbackUrl"
                                     required>
                             </div>
                         </div>
                         <div class="control-group">
                             <label class="control-label" for="javaScriptOrigin">JavaScript Origin </label>
                             <div class="controls">
-                                <input type="text" class="input-xxlarge" id="javaScriptOrigin" ng-model="application.javaScriptOrigin">
+                                <input type="text" class="input-xxlarge" id="javaScriptOrigin" data-ng-model="application.javaScriptOrigin">
                             </div>
                         </div>
                         <div class="control-group">
                             <label class="control-label" for="key">Key </label>
                             <div class="controls">
-                                <input class="input-xxlarge" type="text" id="key" ng-model="application.key" ng-readonly="!(auth.root && create)">
+                                <input class="input-xxlarge" type="text" id="key" data-ng-model="application.key" data-ng-readonly="!(auth.root && create)">
                             </div>
                         </div>
                         <div class="control-group">
                             <label class="control-label" for="secret">Secret </label>
                             <div class="controls">
-                                <input class="input-xxlarge" type="text" id="secret" ng-model="application.secret" ng-readonly="!(auth.root && create)">
+                                <input class="input-xxlarge" type="text" id="secret" data-ng-model="application.secret" data-ng-readonly="!(auth.root && create)">
                             </div>
                         </div>
                         <div class="control-group">
                             <label class="control-label" for="realm">Realm <span class="required">*</span></label>
                             <div class="controls">
-                                <select ng-model="application.realm" id="realm" name="realm" required>
-                                    <option ng-repeat="r in realms" value="{{r.key}}" ng-selected="r.key == application.realm">{{r.name}}</option>
+                                <select data-ng-model="application.realm" id="realm" name="realm" data-ng-required>
+                                    <option data-ng-repeat="r in realms" value="{{r.key}}" data-ng-selected="r.key == application.realm">{{r.name}}</option>
                                 </select>
                             </div>
                         </div>
-                        <div class="control-group" ng-show="auth.root">
+                        <div class="control-group" data-ng-show="auth.root">
                             <label class="control-label" for="owner">Owner </label>
                             <div class="controls">
-                                <input class="input-xxlarge" type="text" id="owner" ng-model="application.owner">
+                                <input class="input-xxlarge" type="text" id="owner" data-ng-model="application.owner">
                             </div>
                         </div>
                     </div>
@@ -67,13 +67,13 @@
                     <legend>Identity Providers</legend>
                     <div>
                         <div class="input-append">
-                            <select ng-model="newProviderId">
-                                <option ng-repeat="p in availableProviders" value="{{p.id}}">{{p.name}}</option>
+                            <select data-ng-model="newProviderId">
+                                <option data-ng-repeat="p in availableProviders" value="{{p.id}}">{{p.name}}</option>
                             </select>
-                            <button class="btn" ng-click="addProvider()" ng-disabled="!newProviderId">Add Provider</button>
+                            <button class="btn" data-ng-click="addProvider()" data-ng-disabled="!newProviderId">Add Provider</button>
                         </div>
 
-                        <table class="table table-striped table-bordered margin-top" ng-show="application.providers.length > 0">
+                        <table class="table table-striped table-bordered margin-top" data-ng-show="application.providers.length > 0">
                             <thead>
                                 <tr>
                                     <th>Provider</th>
@@ -82,31 +82,31 @@
                                     <th>&nbsp;</th>
                                 </tr>
                             </thead>
-                            <tr ng-repeat="provider in application.providers">
+                            <tr data-ng-repeat="provider in application.providers">
                                     <td><input type="text" placeholder="Key" value="{{getProviderDescription(provider.providerId).name}}" readonly></td>
                                     <td>
-                                        <input type="text" placeholder="Key" ng-model="provider.key" required>
+                                        <input type="text" placeholder="Key" data-ng-model="provider.key" required>
                                     </td>
                                     <td>
-                                        <input type="text" placeholder="Secret" ng-model="provider.secret" required>
+                                        <input type="text" placeholder="Secret" data-ng-model="provider.secret" required>
                                     </td>
-                                    <td><i class="icon-question-sign" ng-click="openHelp($index)"></i></td>
-                                    <td><i class="icon-trash" ng-click="removeProvider($index)"></i></td>
+                                    <td><i class="icon-question-sign" data-ng-click="openHelp($index)"></i></td>
+                                    <td><i class="icon-trash" data-ng-click="removeProvider($index)"></i></td>
                             </tr>
                         </table>
                     </div>
                 </fieldset>
 
-                <div class="form-actions" ng-show="create">
-                    <button type="submit" ng-click="save()" class="btn btn-primary" ng-show="changed">Save</button>
-                    <button type="submit" ng-click="cancel()" class="btn" ng-click="cancel()" ng-show="changed">Cancel</button>
+                <div class="form-actions" data-ng-show="create">
+                    <button type="submit" data-ng-click="save()" class="btn btn-primary" data-ng-show="changed">Save</button>
+                    <button type="submit" data-ng-click="cancel()" class="btn" data-ng-click="cancel()" data-ng-show="changed">Cancel</button>
                 </div>
 
-                <div class="form-actions" ng-show="!create">
-                    <button type="submit" ng-click="save()" class="btn btn-primary" ng-show="changed">Save changes</button>
-                    <button type="submit" ng-click="reset()" class="btn" ng-show="changed">Clear changes</button>
-                    <a href="#/applications" ng-hide="changed">View applications &#187;</a>
-                    <button type="submit" ng-click="remove()" class="btn btn-danger" ng-hide="changed">Delete</button>
+                <div class="form-actions" data-ng-show="!create">
+                    <button type="submit" data-ng-click="save()" class="btn btn-primary" data-ng-show="changed">Save changes</button>
+                    <button type="submit" data-ng-click="reset()" class="btn" data-ng-show="changed">Clear changes</button>
+                    <a href="#/applications" data-ng-hide="changed">View applications &#187;</a>
+                    <button type="submit" data-ng-click="remove()" class="btn btn-danger" data-ng-hide="changed">Delete</button>
                 </div>
             </form>
         </div>
@@ -115,14 +115,14 @@
     </div>
 </div>
 
-<div modal="providerHelpModal" close="closeHelp()" options="opts">
+<div data-modal="providerHelpModal" data-close="closeHelp()" data-options="opts">
     <div class="modal-header">
         <h3>Configure {{providerHelp.description.name}}</h3>
     </div>
     <div class="modal-body">
-        <div ng-include src="providerHelp && 'partials/provider/' + providerHelp.description.id + '-help.html'"></div>
+        <div data-ng-include data-src="providerHelp && 'partials/provider/' + providerHelp.description.id + '-help.html'"></div>
     </div>
     <div class="modal-footer">
-        <button class="btn" ng-click="closeHelp()">Close</button>
+        <button class="btn" data-ng-click="closeHelp()">Close</button>
     </div>
 </div>

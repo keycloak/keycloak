@@ -5,8 +5,9 @@
                 <span class="toggle">Applications</span>
             </div>
             <ul>
-                <li ng-repeat="application in applications" ng-class="path[1] == application.key && 'active'"><a
-                    href="#/applications/{{application.key}}">{{application.name}}</a></li>
+                <li data-ng-repeat="application in applications" data-ng-class="path[1] == application.key && 'active'">
+                	<a href="#/applications/{{application.key}}">{{application.name}}</a>
+                </li>
             </ul>
         </li>
     </ul>

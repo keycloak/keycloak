@@ -1,6 +1,6 @@
 <div id="wrapper" class="container">
     <div class="row">
-        <aside class="span3" ng-include src="'partials/realm-menu.html'"></aside>
+        <aside class="span3" data-ng-include data-src="'partials/realm-menu.html'"></aside>
         <div id="actions-bg"></div>
 
         <div id="container-right" class="span9">
@@ -19,7 +19,7 @@
                             <th>Email</th>
                         </tr>
                     </thead>
-                    <tr ng-repeat="user in users">
+                    <tr data-ng-repeat="user in users">
                         <td><a href="#/realms/{{realm.key}}/users/{{user.userId}}">{{user.userId}}</a></td>
                         <td>{{user.firstName}}</td>
                         <td>{{user.lastName}}</td>

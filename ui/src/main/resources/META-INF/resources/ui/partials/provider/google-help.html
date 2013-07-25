@@ -6,7 +6,7 @@
 <p>Use any name that you'd like, click <i>Create Project</i>, select <i>API Access</i> and click on <i>Create an OAuth 2.0 client ID</i>.</p>
 
 <p>Use any product name you'd like and leave the other fields empty, then click <i>Next</i>. On the next page select <i>Web application</i>
-    as the application type. Click <i>more options next></i> to <i>Your site or hostname</i>. Fill in the form with the following values:</p>
+    as the application type. Click <i>more options</i> next to <i>Your site or hostname</i>. Fill in the form with the following values:</p>
 
 <ul>
     <li><b>Authorized Redirect URIs:</b> {{callbackUrl}}</li>
@@ -18,14 +18,13 @@
     <div class="control-group">
         <label class="control-label" for="providerHelp.key">Client ID </label>
         <div class="controls">
-            <input type="text" class="input-xlarge" id="providerHelp.key" ng-model="application.providers[providerHelp.index].key">
+            <input type="text" class="input-xlarge" id="providerHelp.key" data-ng-model="application.providers[providerHelp.index].key">
         </div>
     </div>
     <div class="control-group">
         <label class="control-label" for="providerHelp.secret">Client secret </label>
         <div class="controls">
-            <input type="text" class="input-xlarge" id="providerHelp.secret"
-                ng-model="application.providers[providerHelp.index].secret">
+            <input type="text" class="input-xlarge" id="providerHelp.secret" data-ng-model="application.providers[providerHelp.index].secret">
         </div>
     </div>
 </form>
