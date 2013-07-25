@@ -114,20 +114,20 @@ public class RealmModel {
         realmAgent.setAttribute(new Attribute<Boolean>(REALM_IS_REGISTRATION_ALLOWED, registrationAllowed));
     }
 
-    public long getTokenLifespan() {
-        return (Long) realmAgent.getAttribute(REALM_TOKEN_LIFESPAN).getValue();
+    public int getTokenLifespan() {
+        return (Integer) realmAgent.getAttribute(REALM_TOKEN_LIFESPAN).getValue();
     }
 
-    public void setTokenLifespan(long tokenLifespan) {
-        realmAgent.setAttribute(new Attribute<Long>(REALM_TOKEN_LIFESPAN, tokenLifespan));
+    public void setTokenLifespan(int tokenLifespan) {
+        realmAgent.setAttribute(new Attribute<Integer>(REALM_TOKEN_LIFESPAN, tokenLifespan));
     }
 
-    public long getAccessCodeLifespan() {
-        return (Long) realmAgent.getAttribute(REALM_ACCESS_CODE_LIFESPAN).getValue();
+    public int getAccessCodeLifespan() {
+        return (Integer) realmAgent.getAttribute(REALM_ACCESS_CODE_LIFESPAN).getValue();
     }
 
-    public void setAccessCodeLifespan(long accessCodeLifespan) {
-        realmAgent.setAttribute(new Attribute<Long>(REALM_ACCESS_CODE_LIFESPAN, accessCodeLifespan));
+    public void setAccessCodeLifespan(int accessCodeLifespan) {
+        realmAgent.setAttribute(new Attribute<Integer>(REALM_ACCESS_CODE_LIFESPAN, accessCodeLifespan));
     }
 
     public String getPublicKeyPem() {
