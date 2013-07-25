@@ -37,11 +37,11 @@ public class AuthenticationManager {
      * @return
      */
     public boolean isRealmAdmin(RealmModel realm, HttpHeaders headers) {
-        User user = authenticateToken(realm, headers);
+        User user = authenticateBearerToken(realm, headers);
         return realm.isRealmAdmin(user);
     }
 
-    public User authenticateToken(RealmModel realm, HttpHeaders headers) {
+    public User authenticateBearerToken(RealmModel realm, HttpHeaders headers) {
         String tokenString = null;
         String authHeader = headers.getHeaderString(HttpHeaders.AUTHORIZATION);
         if (authHeader == null) {

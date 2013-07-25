@@ -33,6 +33,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
+ * Per request object
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
@@ -45,8 +47,8 @@ public class RealmManager {
 
     protected IdentitySession identitySession;
 
-    public RealmManager(IdentitySession IdentitySession) {
-        this.identitySession = IdentitySession;
+    public RealmManager(IdentitySession identitySession) {
+        this.identitySession = identitySession;
     }
 
     public RealmModel defaultRealm() {

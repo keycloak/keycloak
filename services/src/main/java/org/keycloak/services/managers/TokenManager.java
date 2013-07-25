@@ -103,6 +103,17 @@ public class TokenManager {
 
     }
 
+
+    public String encodeScope(SkeletonKeyScope scope) {
+        String token = null;
+        try {
+            token = JsonSerialization.toString(scope, false);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return Base64Url.encode(token.getBytes());
+    }
+
     public SkeletonKeyScope decodeScope(String scopeParam) {
         SkeletonKeyScope scope = null;
         byte[] bytes = Base64Url.decode(scopeParam);

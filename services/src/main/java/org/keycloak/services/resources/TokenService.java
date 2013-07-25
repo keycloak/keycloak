@@ -6,9 +6,11 @@ import org.jboss.resteasy.jose.jws.JWSInput;
 import org.jboss.resteasy.jose.jws.crypto.RSAProvider;
 import org.jboss.resteasy.jwt.JsonSerialization;
 import org.jboss.resteasy.logging.Logger;
+import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.SkeletonKeyScope;
 import org.keycloak.representations.SkeletonKeyToken;
+import org.keycloak.services.JspRequestParameters;
 import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.TokenManager;
@@ -59,8 +61,13 @@ public class TokenService {
     @Context
     protected HttpHeaders headers;
     @Context
-    protected
-    IdentitySession IdentitySession;
+    protected IdentitySession identitySession;
+    @Context
+    HttpRequest request;
+
+
+    protected String securityFailurePath = "/securityFailure.jsp";
+    protected String loginFormPath = "/loginForm.jsp";
 
     protected RealmModel realm;
     protected TokenManager tokenManager;
@@ -92,11 +99,11 @@ public class TokenService {
 
     }
 
-    public static UriBuilder loginPage(UriInfo uriInfo) {
-        return tokenServiceBase(uriInfo).path(TokenService.class, "requestAccessCode");
+    public static UriBuilder loginPageUrl(UriInfo uriInfo) {
+        return tokenServiceBase(uriInfo).path(TokenService.class, "loginRequest");
     }
 
-    public static UriBuilder loginAction(UriInfo uriInfo) {
+    public static UriBuilder logainActionUrl(UriInfo uriInfo) {
         return tokenServiceBase(uriInfo).path(TokenService.class, "login");
     }
 
@@ -168,28 +175,38 @@ public class TokenService {
         String redirect = formData.getFirst("redirect_uri");
 
         if (!realm.isEnabled()) {
-            return Response.ok("Realm not enabled").type("text/html").build();
+            securityFailureForward("Realm not enabled.");
+            return null;
         }
         User client = realm.getIdm().getUser(clientId);
         if (client == null) {
-            throw new NotAuthorizedException("No client");
+            securityFailureForward("Unknown login requester.");
+            return null;
         }
         if (!client.isEnabled()) {
-            return Response.ok("Requester not enabled").type("text/html").build();
+            securityFailureForward("Login requester not enabled.");
+            return null;
         }
         String username = formData.getFirst("username");
         User user = realm.getIdm().getUser(username);
         if (user == null) {
-            logger.debug("user not found");
-            return loginForm("Not valid user", redirect, clientId, scopeParam, state, realm, client);
+            logger.error("Incorrect user name.");
+            request.setAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE", "Incorrect user name.");
+            forwardToLoginForm(redirect, clientId, scopeParam, state);
+            return null;
         }
         if (!user.isEnabled()) {
-            return Response.ok("Your account is not enabled").type("text/html").build();
-
+            securityFailureForward("Your account is not enabled.");
+            return null;
         }
         boolean authenticated = authManager.authenticateForm(realm, user, formData);
-        if (!authenticated)
-            return loginForm("Unable to authenticate, try again", redirect, clientId, scopeParam, state, realm, client);
+        if (!authenticated) {
+            logger.error("Authentication failed");
+            request.setAttribute("username", username);
+            request.setAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE", "Invalid credentials.");
+            forwardToLoginForm(redirect, clientId, scopeParam, state);
+            return null;
+        }
 
         String accessCode = tokenManager.createAccessCode(scopeParam, realm, client, user);
         UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam("code", accessCode);
@@ -318,21 +335,55 @@ public class TokenService {
         return res;
     }
 
-    @Path("auth/request")
+    protected void securityFailureForward(String message) {
+        logger.error(message);
+        request.setAttribute(JspRequestParameters.KEYCLOAK_SECURITY_FAILURE_MESSAGE, message);
+        request.forward(securityFailurePath);
+        identitySession.close();
+    }
+
+    protected void forwardToLoginForm(String redirect,
+                                      String clientId,
+                                      String scopeParam,
+                                      String state) {
+        request.setAttribute(RealmModel.class.getName(), realm);
+        request.setAttribute("KEYCLOAK_LOGIN_ACTION", logainActionUrl(uriInfo).build(realm.getId()));
+
+        // RESTEASY eats the form data, so we send via an attribute
+        request.setAttribute("redirect_uri", redirect);
+        request.setAttribute("client_id", clientId);
+        request.setAttribute("scope", scopeParam);
+        request.setAttribute("state", state);
+        request.forward(loginFormPath);
+        identitySession.close();
+    }
+
+    @Path("login")
     @GET
-    public Response requestAccessCode(@QueryParam("response_type") String responseType,
-                                      @QueryParam("redirect_uri") String redirect,
-                                      @QueryParam("client_id") String clientId,
-                                      @QueryParam("scope") String scopeParam,
-                                      @QueryParam("state") String state) {
+    public Response loginRequest(@QueryParam("response_type") String responseType,
+                                 @QueryParam("redirect_uri") String redirect,
+                                 @QueryParam("client_id") String clientId,
+                                 @QueryParam("scope") String scopeParam,
+                                 @QueryParam("state") String state) {
         if (!realm.isEnabled()) {
-            throw new NotAuthorizedException("Realm not enabled");
+            securityFailureForward("Realm not enabled");
+            return null;
         }
         User client = realm.getIdm().getUser(clientId);
-        if (client == null)
-            return Response.ok("<h1>Security Alert</h1><p>Unknown client trying to get access to your account.</p>").type("text/html").build();
+        if (client == null) {
+            securityFailureForward("Unknown login requester.");
+            return null;
+        }
 
-        return loginForm(null, redirect, clientId, scopeParam, state, realm, client);
+        if (!client.isEnabled()) {
+            securityFailureForward("Login requester not enabled.");
+            identitySession.close();
+            return null;
+        }
+        // todo make sure client is allowed to request a login
+
+        forwardToLoginForm(redirect, clientId, scopeParam, state);
+        return null;
     }
 
     private Response loginForm(String validationError, String redirect, String clientId, String scopeParam, String state, RealmModel realm, User client) {
@@ -420,7 +471,7 @@ public class TokenService {
             }
         }
 
-        UriBuilder formActionUri = loginAction(uriInfo);
+        UriBuilder formActionUri = logainActionUrl(uriInfo);
         String action = formActionUri.build(realm.getId()).toString();
         html.append("<form action=\"").append(action).append("\" method=\"POST\">");
         html.append("Username: <input type=\"text\" name=\"username\" size=\"20\"><br>");

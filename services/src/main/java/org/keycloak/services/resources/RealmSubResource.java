@@ -51,7 +51,7 @@ public class RealmSubResource {
     public String getRealmHtml(@PathParam("realm") String id) {
         StringBuffer html = new StringBuffer();
 
-        String authUri = TokenService.loginPage(uriInfo).build(realm.getId()).toString();
+        String authUri = TokenService.loginPageUrl(uriInfo).build(realm.getId()).toString();
         String codeUri = TokenService.accessCodeRequest(uriInfo).build(realm.getId()).toString();
         String grantUrl = TokenService.grantRequest(uriInfo).build(realm.getId()).toString();
         String idGrantUrl = TokenService.identityGrantRequest(uriInfo).build(realm.getId()).toString();
@@ -75,7 +75,7 @@ public class RealmSubResource {
         rep.setPublicKeyPem(realm.getPublicKeyPem());
         rep.setAdminRole(ADMIN_ROLE);
 
-        rep.setAuthorizationUrl(TokenService.loginPage(uriInfo).build(realm.getId()).toString());
+        rep.setAuthorizationUrl(TokenService.loginPageUrl(uriInfo).build(realm.getId()).toString());
         rep.setCodeUrl(TokenService.accessCodeRequest(uriInfo).build(realm.getId()).toString());
         rep.setGrantUrl(TokenService.grantRequest(uriInfo).build(realm.getId()).toString());
         String idGrantUrl = TokenService.identityGrantRequest(uriInfo).build(realm.getId()).toString();
