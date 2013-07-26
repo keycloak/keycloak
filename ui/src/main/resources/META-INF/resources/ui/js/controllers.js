@@ -16,21 +16,16 @@ module.controller('GlobalCtrl', function($scope, Auth, $location, Notifications)
 	});
 });
 
-module.controller('ApplicationListCtrl', function($scope, applications) {
-	$scope.applications = applications;
+module.controller('ApplicationListCtrl', function($scope, Application) {
+	$scope.applications = Application.query();
 });
 
-module.controller('ApplicationDetailCtrl', function($scope, applications, application, Application, realms, providers, $location, $window, Dialog,
+module.controller('ApplicationDetailCtrl', function($scope, application, Application, realms, $location, $window, Dialog,
 		Notifications) {
 	$scope.application = angular.copy(application);
-	$scope.applications = applications;
 	$scope.realms = realms;
-	$scope.providers = providers;
-
-	$scope.callbackUrl = $window.location.origin + "/ejs-identity/api/callback/" + application.id;
 
 	$scope.create = !application.id;
-
 	$scope.changed = $scope.create;
 
 	$scope.$watch('application', function() {
@@ -66,7 +61,10 @@ module.controller('ApplicationDetailCtrl', function($scope, applications, applic
 			if (i > -1) {
 				$scope.application.roles.splice(i, 1);
 			}
-			$scope.removeInitialRole(role);
+			
+			if ($scope.application.initialRoles) {
+				$scope.removeInitialRole(role);
+			}
 		});
 	};
 
@@ -127,137 +125,14 @@ module.controller('ApplicationDetailCtrl', function($scope, applications, applic
 			});
 		});
 	};
-
-	$scope.availableProviders = [];
-
-	$scope.addProvider = function() {
-		if (!$scope.application.providers) {
-			$scope.application.providers = [];
-		}
-
-		$scope.application.providers.push({
-			"providerId" : $scope.newProviderId
-		});
-
-		$scope.newProviderId = null;
-	};
-
-	$scope.getProviderDescription = function(providerId) {
-		for ( var i = 0; i < $scope.providers.length; i++) {
-			if ($scope.providers[i].id == providerId) {
-				return $scope.providers[i];
-			}
-		}
-	};
-
-	$scope.removeProvider = function(i) {
-		$scope.application.providers.splice(i, 1);
-	};
-
-	var updateAvailableProviders = function() {
-		$scope.availableProviders.splice(0, $scope.availableProviders.length);
-
-		for ( var i in $scope.providers) {
-			var add = true;
-
-			for ( var j in $scope.application.providers) {
-				if ($scope.application.providers[j].providerId == $scope.providers[i].id) {
-					add = false;
-					break;
-				}
-			}
-
-			if (add) {
-				$scope.availableProviders.push($scope.providers[i]);
-			}
-		}
-	};
-
-	$scope.openHelp = function(i) {
-		$scope.providerHelpModal = true;
-		$scope.providerHelp = {};
-		$scope.providerHelp.index = i;
-		$scope.providerHelp.description = $scope.getProviderDescription($scope.application.providers[i].providerId);
-	};
-
-	$scope.closeHelp = function() {
-		$scope.providerHelpModal = false;
-		$scope.providerHelp = null;
-	};
-
-	$scope.$watch("providers.length + application.providers.length", updateAvailableProviders);
 });
 
-module.controller('RealmListCtrl', function($scope, realms) {
-	$scope.realms = realms;
+
+module.controller('RealmListCtrl', function($scope, Realm) {
+	$scope.realms = Realm.query();
 });
 
-module.controller('UserListCtrl', function($scope, realms, realm, users) {
-	$scope.realms = realms;
-	$scope.realm = realm;
-	$scope.users = users;
-});
-
-module.controller('UserDetailCtrl', function($scope, realms, realm, user, User, $location, Dialog, Notifications) {
-	$scope.realms = realms;
-	$scope.realm = realm;
-	$scope.user = angular.copy(user);
-	$scope.create = !user.userId;
-
-	$scope.changed = $scope.create;
-
-	$scope.$watch('user', function() {
-		if (!angular.equals($scope.user, user)) {
-			$scope.changed = true;
-		}
-	}, true);
-
-	$scope.save = function() {
-		if ($scope.userForm.$valid) {
-			User.save({
-				realm : realm.id,
-				id : $scope.user.userId
-			}, $scope.user, function() {
-				$scope.changed = false;
-				user = angular.copy($scope.user);
-
-				if ($scope.create) {
-					$location.url("/realms/" + realm.id + "/users/" + $scope.user.userId);
-					Notifications.success("Created user");
-				} else {
-					Notifications.success("Saved changes to user");
-				}
-			});
-		} else {
-			$scope.userForm.showErrors = true;
-		}
-	};
-
-	$scope.reset = function() {
-		$scope.user = angular.copy(user);
-		$scope.changed = false;
-		$scope.userForm.showErrors = false;
-	};
-
-	$scope.cancel = function() {
-		$location.url("/realms/" + realm.id + "/users");
-	};
-
-	$scope.remove = function() {
-		Dialog.confirmDelete($scope.user.userId, 'user', function() {
-			$scope.user.$remove({
-				realm : realm.id,
-				id : $scope.user.userId
-			}, function() {
-				$location.url("/realms/" + realm.id + "/users");
-				Notifications.success("Deleted user");
-			});
-		});
-	};
-});
-
-module.controller('RealmDetailCtrl', function($scope, Realm, realms, realm, $location, Dialog, Notifications) {
-	$scope.realms = realms;
+module.controller('RealmDetailCtrl', function($scope, Realm, realm, $location, Dialog, Notifications) {
 	$scope.realm = angular.copy(realm);
 	$scope.create = !realm.name;
 
@@ -296,7 +171,10 @@ module.controller('RealmDetailCtrl', function($scope, Realm, realms, realm, $loc
 			if (i > -1) {
 				$scope.realm.roles.splice(i, 1);
 			}
-			$scope.removeInitialRole(role);
+			
+			if ($scope.realm.initialRoles) {
+				$scope.removeInitialRole(role);
+			}
 		});
 	};
 
@@ -359,36 +237,111 @@ module.controller('RealmDetailCtrl', function($scope, Realm, realms, realm, $loc
 	};
 });
 
-module.controller('RoleMappingCtrl', function($scope, realms, realm, users, role, Notifications) {
-	$scope.realms = realms;
+
+module.controller('UserListCtrl', function($scope, realm, users) {
 	$scope.realm = realm;
-	$scope.allUsers = users;
-	$scope.users = [];
-	$scope.name = realm.name;
+	$scope.users = users;
+});
+
+module.controller('UserDetailCtrl', function($scope, realm, user, User, $location, Dialog, Notifications) {
+	$scope.realm = realm;
+	$scope.user = angular.copy(user);
+	$scope.create = !user.userId;
+
+	$scope.changed = $scope.create;
+
+	$scope.$watch('user', function() {
+		if (!angular.equals($scope.user, user)) {
+			$scope.changed = true;
+		}
+	}, true);
+
+	$scope.save = function() {
+		if ($scope.userForm.$valid) {
+			User.save({
+				realm : realm.id,
+			}, $scope.user, function() {
+				$scope.changed = false;
+				user = angular.copy($scope.user);
+
+				if ($scope.create) {
+					$location.url("/realms/" + realm.id + "/users/" + $scope.user.userId);
+					Notifications.success("Created user");
+				} else {
+					Notifications.success("Saved changes to user");
+				}
+			});
+		} else {
+			$scope.userForm.showErrors = true;
+		}
+	};
+
+	$scope.reset = function() {
+		$scope.user = angular.copy(user);
+		$scope.changed = false;
+		$scope.userForm.showErrors = false;
+	};
+
+	$scope.cancel = function() {
+		$location.url("/realms/" + realm.id + "/users");
+	};
+
+	$scope.remove = function() {
+		Dialog.confirmDelete($scope.user.userId, 'user', function() {
+			$scope.user.$remove({
+				realm : realm.id,
+				userId : $scope.user.userId
+			}, function() {
+				$location.url("/realms/" + realm.id + "/users");
+				Notifications.success("Deleted user");
+			});
+		});
+	};
+});
+
+module.controller('RoleMappingCtrl', function($scope, realm, User, users, role, RoleMapping, Notifications) {
+	$scope.realm = realm;
+	$scope.realmId = realm.realm || realm.id;
+	$scope.allUsers = User.query({ realm : $scope.realmId });
+	$scope.users = users;
 	$scope.role = role;
-	
-	console.debug("role: " + role)
-	
+
 	$scope.addUser = function() {
-		for (var i = 0; i < $scope.allUsers.length; i++) {
-			if ($scope.allUsers[i].userId == $scope.newUser) {
-				console.debug("add user " + $scope.allUsers[i]);
-				$scope.users.push($scope.allUsers[i]);
-				$scope.newUser = null;
-				
-				// Send notification when rest call is success
-				Notifications.success("Saved role mapping for user");
+		var user = $scope.newUser;
+		$scope.newUser = null;
+		
+		for ( var i = 0; i < $scope.allUsers.length; i++) {
+			if ($scope.allUsers[i].userId == user) {
+				user = $scope.allUsers[i];
+				RoleMapping.save({
+					realm : $scope.realmId,
+					role : role
+				}, user, function() {
+					$scope.users = RoleMapping.query({
+						realm : $scope.realmId,
+						role : role
+					});
+					Notifications.success("Added role mapping for user");
+				});
 			}
 		}
 	}
-	
-	$scope.removeUser = function(id) {
+
+	$scope.removeUser = function(userId) {
 		for (var i = 0; i < $scope.users.length; i++) {
-			if ($scope.users[i].userId == id) {
-				$scope.users.splice(i, 1);
-				
-				// Send notification when rest call is success
-				Notifications.success("Removed role mapping for user");
+			var user = $scope.users[i];
+			if ($scope.users[i].userId == userId) {
+				RoleMapping.delete({
+					realm : $scope.realmId,
+					role : role
+				}, user, function() {
+					$scope.users = RoleMapping.query({
+						realm : $scope.realmId,
+						role : role
+					});
+
+					Notifications.success("Removed role mapping for user");
+				});
 			}
 		}
 	}

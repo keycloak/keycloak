@@ -1,12 +1,16 @@
-<nav id="local-nav">
+<nav id="local-nav" data-ng-controller="ApplicationListCtrl">
     <ul class="nav nav-list">
         <li>
             <div>
                 <span class="toggle">Applications</span>
             </div>
             <ul>
-                <li data-ng-repeat="application in applications" data-ng-class="path[1] == application.id && 'active'">
-                	<a href="#/applications/{{application.id}}">{{application.name}}</a>
+                <li data-ng-repeat="a in applications" data-ng-class="path[1] == a.id && 'active'">
+                	<a href="#/applications/{{a.id}}">{{a.name}}</a>
+                    <ul class="sub-items" data-ng-show="path[1] == a.id">
+                        <li data-ng-class="!path[2] && 'active'"><a href="#/applications/{{a.id}}">Configuration</a></li>
+                        <li data-ng-class="path[2] == 'roles' && 'active'"><a href="#/applications/{{a.id}}/roles">Role mapping</a></li>
+                    </ul>
                 </li>
             </ul>
         </li>

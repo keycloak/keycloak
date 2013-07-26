@@ -1,40 +1,29 @@
 'use strict';
 
-var module = angular.module('keycloak', [ 'keycloak.services', 'keycloak.controllers', 'ui.bootstrap' ]);
+var module = angular.module('keycloak', [ 'keycloak.services', 'keycloak.loaders', 'keycloak.controllers', 'ui.bootstrap' ]);
 var resourceRequests = 0;
 
 module.config([ '$routeProvider', function($routeProvider) {
+	
 	$routeProvider.when('/create/application', {
 		templateUrl : 'partials/application-detail.html',
 		resolve : {
-			applications : function(ApplicationListLoader) {
-				return ApplicationListLoader();
-			},
 			application : function(ApplicationLoader) {
 				return {};
 			},
 			realms : function(RealmListLoader) {
 				return RealmListLoader();
-			},
-			providers : function(ProviderListLoader) {
-				return ProviderListLoader();
 			}
 		},
 		controller : 'ApplicationDetailCtrl'
 	}).when('/applications/:application', {
 		templateUrl : 'partials/application-detail.html',
 		resolve : {
-			applications : function(ApplicationListLoader) {
-				return ApplicationListLoader();
-			},
 			application : function(ApplicationLoader) {
 				return ApplicationLoader();
 			},
 			realms : function(RealmListLoader) {
 				return RealmListLoader();
-			},
-			providers : function(ProviderListLoader) {
-				return ProviderListLoader();
 			}
 		},
 		controller : 'ApplicationDetailCtrl'
@@ -46,16 +35,36 @@ module.config([ '$routeProvider', function($routeProvider) {
 			}
 		},
 		controller : 'ApplicationListCtrl'
-	}).when('/create/user/:realm', {
+	})
+	
+	.when('/create/realm', {
+		templateUrl : 'partials/realm-detail.html',
+		resolve : {
+			realm : function(RealmLoader) {
+				return {};
+			}
+		},
+		controller : 'RealmDetailCtrl'
+	}).when('/realms/:realm', {
+		templateUrl : 'partials/realm-detail.html',
+		resolve : {
+			realm : function(RealmLoader) {
+				return RealmLoader();
+			}
+		},
+		controller : 'RealmDetailCtrl'
+	}).when('/realms', {
+		templateUrl : 'partials/realm-list.html',
+		controller : 'RealmListCtrl'
+	})
+	
+	.when('/create/user/:realm', {
 		templateUrl : 'partials/user-detail.html',
 		resolve : {
-			realms : function(RealmListLoader) {
-				return RealmListLoader();
-			},
 			realm : function(RealmLoader) {
 				return RealmLoader();
 			},
-			user : function(UserLoader) {
+			user : function() {
 				return {};
 			}
 		},
@@ -63,9 +72,6 @@ module.config([ '$routeProvider', function($routeProvider) {
 	}).when('/realms/:realm/users/:user', {
 		templateUrl : 'partials/user-detail.html',
 		resolve : {
-			realms : function(RealmListLoader) {
-				return RealmListLoader();
-			},
 			realm : function(RealmLoader) {
 				return RealmLoader();
 			},
@@ -77,9 +83,6 @@ module.config([ '$routeProvider', function($routeProvider) {
 	}).when('/realms/:realm/users', {
 		templateUrl : 'partials/user-list.html',
 		resolve : {
-			realms : function(RealmListLoader) {
-				return RealmListLoader();
-			},
 			realm : function(RealmLoader) {
 				return RealmLoader();
 			},
@@ -88,39 +91,19 @@ module.config([ '$routeProvider', function($routeProvider) {
 			}
 		},
 		controller : 'UserListCtrl'
-	}).when('/create/realm', {
-		templateUrl : 'partials/realm-detail.html',
-		resolve : {
-			realms : function(RealmListLoader) {
-				return RealmListLoader();
-			},
-			realm : function(RealmLoader) {
-				return {};
-			}
-		},
-		controller : 'RealmDetailCtrl'
-	}).when('/realms/:realm', {
-		templateUrl : 'partials/realm-detail.html',
-		resolve : {
-			realms : function(RealmListLoader) {
-				return RealmListLoader();
-			},
-			realm : function(RealmLoader) {
-				return RealmLoader();
-			}
-		},
-		controller : 'RealmDetailCtrl'
-	}).when('/realms/:realm/roles', {
+	})
+	
+	.when('/realms/:realm/roles', {
 		templateUrl : 'partials/role-mapping.html',
 		resolve : {
-			realms : function(RealmListLoader) {
-				return RealmListLoader();
-			},
 			realm : function(RealmLoader) {
 				return RealmLoader();
 			},
-			users : function(UserListLoader) {
-				return UserListLoader();
+			application : function() {
+				return null;
+			},
+			users : function() {
+				return null;
 			},
 			role : function() {
 				return null;
@@ -130,29 +113,53 @@ module.config([ '$routeProvider', function($routeProvider) {
 	}).when('/realms/:realm/roles/:role', {
 		templateUrl : 'partials/role-mapping.html',
 		resolve : {
-			realms : function(RealmListLoader) {
-				return RealmListLoader();
-			},
 			realm : function(RealmLoader) {
 				return RealmLoader();
 			},
-			users : function(UserListLoader) {
-				return UserListLoader();
+			application : function() {
+				return null;
 			},
 			role : function($route) {
 				return $route.current.params.role;
+			},
+			users : function(RoleMappingLoader) {
+				return RoleMappingLoader();
 			}
 		},
 		controller : 'RoleMappingCtrl'
-	}).when('/realms', {
-		templateUrl : 'partials/realm-list.html',
+	})
+	
+	.when('/applications/:application/roles', {
+		templateUrl : 'partials/role-mapping.html',
 		resolve : {
-			realms : function(RealmListLoader) {
-				return RealmListLoader();
+			realm : function(ApplicationLoader) {
+				return ApplicationLoader();
+			},
+			users : function() {
+				return null;
+			},
+			role : function() {
+				return null;
 			}
 		},
-		controller : 'RealmListCtrl'
-	}).otherwise({
+		controller : 'RoleMappingCtrl'
+	}).when('/applications/:application/roles/:role', {
+		templateUrl : 'partials/role-mapping.html',
+		resolve : {
+			realm : function(ApplicationLoader) {
+				return ApplicationLoader();
+			},
+			role : function($route) {
+				return $route.current.params.role;
+			},
+			users : function(RoleMappingLoader) {
+				return RoleMappingLoader();
+			}
+		},
+		controller : 'RoleMappingCtrl'
+	})
+	
+	.otherwise({
 		templateUrl : 'partials/home.html'
 	});
 } ]);
@@ -250,17 +257,34 @@ module.directive('kcEnter', function() {
 });
 
 module.filter('remove', function() {
-	return function(input, remove) {
+	return function(input, remove, attribute) {
 		if (!input || !remove) {
 			return input;
 		}
-		
+
 		var out = [];
-		for (var i = 0; i < input.length; i++) {
-			if (remove.indexOf(input[i]) == -1) {
-				out.push(input[i]);
+		for ( var i = 0; i < input.length; i++) {
+			var e = input[i];
+
+			for (var j = 0; j < remove.length; j++) {
+				if (attribute) {
+					if (remove[j][attribute] == e[attribute]) {
+						e = null;
+						break;
+					}
+				} else {
+					if (remove[j] == e) {
+						e = null;
+						break;
+					}
+				}
+			}
+
+			if (e != null) {
+				out.push(e);
 			}
 		}
+
 		return out;
 	};
 });

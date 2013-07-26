@@ -4,9 +4,9 @@
         <div id="actions-bg"></div>
 
         <div id="container-right" class="span9">
-            <h1>
-                <span class="gray" data-ng-show="create">New User</span>
-                <span class="gray" data-ng-hide="create">{{user.userId}}</span>
+            <h1 data-ng-show="create"><span class="gray">New User</span></h1>
+            <h1 data-ng-hide="create">
+                <span class="gray">{{user.userId}}</span> configuration
             </h1>
 
             <div data-ng-show="userForm.showErrors && userForm.$error.required" class="alert alert-error">Please fill in all required fields</div>

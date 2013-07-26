@@ -1,20 +1,21 @@
 <div id="wrapper" class="container">
 	<div class="row">
-		<aside class="span3" data-ng-include data-src="'partials/realm-menu.html'"></aside>
+		<aside class="span3" data-ng-include data-src="'partials/' + path[0].slice(0, -1) + '-menu.html'"></aside>
+		
 		<div id="actions-bg"></div>
 
 		<div id="container-right" class="span9">
 			<h1>
-				<span class="gray" data-ng-hide="create">{{name}}</span> role mapping
+				<span class="gray" data-ng-hide="create">{{realm.name}}</span> role mapping
 			</h1>
 
 			<ul class="nav nav-tabs">
-				<li data-ng-class="path[3] == r && 'active'" data-ng-repeat="r in (realm.roles|orderBy:'toString()')"><a href="#/realms/{{realm.id}}/roles/{{r}}">{{r}}</a></li>
+				<li data-ng-class="path[3] == r && 'active'" data-ng-repeat="r in (realm.roles|orderBy:'toString()')"><a href="#/{{path[0]}}/{{realm.id}}/roles/{{r}}">{{r}}</a></li>
 			</ul>
 
 			<div data-ng-show="role">
-				<select id="realm" name="realm" data-ng-model="newUser" data-ng-click="addUser(u)">
-					<option data-ng-repeat="u in (allUsers|remove:users)" value="{{u.userId}}">{{u.userId}}</option>
+				<select style="width: auto;" id="realm" name="realm" data-ng-model="newUser" data-ng-click="addUser(u)">
+					<option data-ng-repeat="u in (allUsers|remove:users:'userId')" value="{{u.userId}}">{{u.userId}}</option>
 				</select>
 
 				<table class="table table-striped table-bordered">
@@ -32,7 +33,7 @@
 						<td>{{user.firstName}}</td>
 						<td>{{user.lastName}}</td>
 						<td>{{user.email}}</td>
-						<td><button ng-click="removeUser(user.userId)">
+						<td><button data-ng-click="removeUser(user.userId)">
 								<i class="icon-remove"></i>
 							</button></td>
 					</tr>
