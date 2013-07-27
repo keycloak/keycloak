@@ -8,8 +8,8 @@ import java.security.PublicKey;
  * @version $Revision: 1 $
  */
 public class ResourceMetadata {
-    protected String resourceName;
     protected String realm;
+    protected String resourceName;
     protected KeyStore clientKeystore;
     protected String clientKeyPassword;
     protected KeyStore truststore;

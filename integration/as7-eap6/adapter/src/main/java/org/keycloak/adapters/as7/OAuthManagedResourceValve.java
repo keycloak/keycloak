@@ -14,8 +14,9 @@ import org.apache.catalina.deploy.LoginConfig;
 import org.apache.catalina.realm.GenericPrincipal;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
-import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
-import org.jboss.resteasy.plugins.providers.RegisterBuiltin;
+import org.jboss.resteasy.jose.jws.JWSInput;
+import org.jboss.resteasy.jose.jws.crypto.RSAProvider;
+import org.jboss.resteasy.jwt.JsonSerialization;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.RealmConfiguration;
 import org.keycloak.ResourceMetadata;
@@ -24,12 +25,14 @@ import org.keycloak.SkeletonKeySession;
 import org.keycloak.adapters.as7.config.ManagedResourceConfig;
 import org.keycloak.adapters.as7.config.ManagedResourceConfigLoader;
 import org.keycloak.representations.SkeletonKeyToken;
+import org.keycloak.representations.idm.admin.LogoutAction;
 
 import javax.security.auth.login.LoginException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -67,10 +70,6 @@ public class OAuthManagedResourceValve extends FormAuthenticator implements Life
         managedResourceConfigLoader.init(true);
         resourceMetadata = managedResourceConfigLoader.getResourceMetadata();
         remoteSkeletonKeyConfig = managedResourceConfigLoader.getRemoteSkeletonKeyConfig();
-        String client_id = remoteSkeletonKeyConfig.getClientId();
-        if (client_id == null) {
-            throw new IllegalArgumentException("Must set client-id to use with auth server");
-        }
         realmConfiguration = new RealmConfiguration();
         String authUrl = remoteSkeletonKeyConfig.getAuthUrl();
         if (authUrl == null) {
@@ -81,17 +80,16 @@ public class OAuthManagedResourceValve extends FormAuthenticator implements Life
             throw new RuntimeException("You mut specify code-url");
         }
         realmConfiguration.setMetadata(resourceMetadata);
-        realmConfiguration.setClientId(client_id);
         realmConfiguration.setSslRequired(!remoteSkeletonKeyConfig.isSslNotRequired());
 
-        for (Map.Entry<String, String> entry : managedResourceConfigLoader.getRemoteSkeletonKeyConfig().getClientCredentials().entrySet()) {
-            realmConfiguration.getCredentials().param(entry.getKey(), entry.getValue());
+        for (Map.Entry<String, String> entry : managedResourceConfigLoader.getRemoteSkeletonKeyConfig().getCredentials().entrySet()) {
+            realmConfiguration.getResourceCredentials().param(entry.getKey(), entry.getValue());
         }
 
         ResteasyClient client = managedResourceConfigLoader.getClient();
 
         realmConfiguration.setClient(client);
-        realmConfiguration.setAuthUrl(UriBuilder.fromUri(authUrl).queryParam("client_id", client_id));
+        realmConfiguration.setAuthUrl(UriBuilder.fromUri(authUrl).queryParam("client_id", resourceMetadata.getResourceName()));
         realmConfiguration.setCodeUrl(client.target(tokenUrl));
     }
 
@@ -99,8 +97,8 @@ public class OAuthManagedResourceValve extends FormAuthenticator implements Life
     public void invoke(Request request, Response response) throws IOException, ServletException {
         try {
             String requestURI = request.getDecodedRequestURI();
-            if (requestURI.endsWith("j_oauth_remote_logout")) {
-                remoteLogout(request, response);
+            if (requestURI.endsWith("j_admin_request")) {
+                adminRequest(request, response);
                 return;
             }
             super.invoke(request, response);
@@ -135,33 +133,71 @@ public class OAuthManagedResourceValve extends FormAuthenticator implements Life
         return false;
     }
 
-    protected void remoteLogout(Request request, HttpServletResponse response) throws IOException {
+    protected void adminRequest(Request request, HttpServletResponse response) throws IOException {
+        String token = request.getParameter("token");
+        if (token == null) {
+            log.warn("admin request failed, no token");
+            response.sendError(403, "no token");
+            return;
+        }
+
+        JWSInput input = new JWSInput(token);
+        boolean verified = false;
+        try {
+            verified = RSAProvider.verify(input, resourceMetadata.getRealmKey());
+        } catch (Exception ignore) {
+        }
+        if (!verified) {
+            log.warn("admin request failed, unable to verify token");
+            response.sendError(403, "verification failed");
+            return;
+        }
+        String action = request.getParameter("action");
+        if (LogoutAction.LOGOUT_ACTION.equals(action)) {
+            remoteLogout(input, response);
+        } else {
+            log.warn("admin request failed, unknown action");
+            response.sendError(403, "Unknown action");
+        }
+    }
+
+    protected void remoteLogout(JWSInput token, HttpServletResponse response) throws IOException {
         try {
             log.debug("->> remoteLogout: ");
-            if (!bearer(true, request, response)) {
-                log.debug("remoteLogout: bearer auth failed");
+            LogoutAction action = JsonSerialization.fromBytes(LogoutAction.class, token.getContent());
+            if (action.isExpired()) {
+                log.warn("admin request failed, expired token");
+                response.sendError(400, "Expired token");
                 return;
             }
-            GenericPrincipal gp = (GenericPrincipal) request.getPrincipal();
-            if (!gp.hasRole(remoteSkeletonKeyConfig.getAdminRole())) {
-                log.debug("remoteLogout: role failure");
-                response.sendError(403);
+            if (!LogoutAction.LOGOUT_ACTION.equals(action.getAction())) {
+                log.warn("Action doesn't match");
+                response.sendError(400, "Action does not match");
                 return;
             }
-            String user = request.getParameter("user");
+            if (!resourceMetadata.getResourceName().equals(action.getResource())) {
+                log.warn("Resource name does not match");
+                response.sendError(400, "Resource name does not match");
+                return;
+
+            }
+           String user = action.getUser();
             if (user != null) {
+                log.info("logout of session for: " + user);
                 userSessionManagement.logout(user);
             } else {
+                log.info("logout of all sessions");
                 userSessionManagement.logoutAll();
             }
         } catch (Exception e) {
-            log.error("failed to logout", e);
+            log.warn("failed to logout", e);
+            response.sendError(500, "Failed to logout");
         }
         response.setStatus(204);
     }
 
     protected boolean bearer(boolean challenge, Request request, HttpServletResponse response) throws LoginException, IOException {
-        CatalinaBearerTokenAuthenticator bearer = new CatalinaBearerTokenAuthenticator(realmConfiguration.getMetadata(), !remoteSkeletonKeyConfig.isCancelPropagation(), challenge);
+        CatalinaBearerTokenAuthenticator bearer = new CatalinaBearerTokenAuthenticator(realmConfiguration.getMetadata(), !remoteSkeletonKeyConfig.isCancelPropagation(), challenge, remoteSkeletonKeyConfig.isUseResourceRoleMappings());
         if (bearer.login(request, response)) {
             return true;
         }
@@ -207,13 +243,13 @@ public class OAuthManagedResourceValve extends FormAuthenticator implements Life
             if (!oauth.resolveCode(code)) return;
 
             SkeletonKeyToken token = oauth.getToken();
-            Set<String> roles = null;
-            if (resourceMetadata.getResourceName() != null) {
+            Set<String> roles = new HashSet<String>();
+            if (remoteSkeletonKeyConfig.isUseResourceRoleMappings()) {
                 SkeletonKeyToken.Access access = token.getResourceAccess(resourceMetadata.getResourceName());
-                if (access != null) roles = access.getRoles();
+                if (access != null) roles.addAll(access.getRoles());
             } else {
                 SkeletonKeyToken.Access access = token.getRealmAccess();
-                if (access != null) roles = access.getRoles();
+                if (access != null) roles.addAll(access.getRoles());
             }
             SkeletonKeyPrincipal skp = new SkeletonKeyPrincipal(token.getPrincipal(), null);
             GenericPrincipal principal = new CatalinaSecurityContextHelper().createPrincipal(context.getRealm(), skp, roles);

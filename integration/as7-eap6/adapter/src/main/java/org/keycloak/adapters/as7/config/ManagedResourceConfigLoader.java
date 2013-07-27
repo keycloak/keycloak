@@ -103,8 +103,9 @@ public class ManagedResourceConfigLoader {
         }
 
         String realm = remoteSkeletonKeyConfig.getRealm();
-        String resource = remoteSkeletonKeyConfig.getResource();
         if (realm == null) throw new RuntimeException("Must set 'realm' in config");
+        String resource = remoteSkeletonKeyConfig.getResource();
+        if (resource == null) throw new RuntimeException("Must set 'resource' in config");
 
         String realmKeyPem = remoteSkeletonKeyConfig.getRealmKey();
         if (realmKeyPem == null) {

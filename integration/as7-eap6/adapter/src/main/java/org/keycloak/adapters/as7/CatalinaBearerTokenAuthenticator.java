@@ -15,6 +15,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -29,11 +30,13 @@ public class CatalinaBearerTokenAuthenticator {
     protected SkeletonKeyToken token;
     private Principal principal;
     protected boolean propagateToken;
+    protected boolean useResourceRoleMappings;
 
-    public CatalinaBearerTokenAuthenticator(ResourceMetadata resourceMetadata, boolean propagateToken, boolean challenge) {
+    public CatalinaBearerTokenAuthenticator(ResourceMetadata resourceMetadata, boolean propagateToken, boolean challenge, boolean useResourceRoleMappings) {
         this.resourceMetadata = resourceMetadata;
         this.challenge = challenge;
         this.propagateToken = propagateToken;
+        this.useResourceRoleMappings = useResourceRoleMappings;
     }
 
     public ResourceMetadata getResourceMetadata() {
@@ -77,8 +80,8 @@ public class CatalinaBearerTokenAuthenticator {
             challengeResponse(response, "invalid_token", e.getMessage());
         }
         boolean verifyCaller = false;
-        Set<String> roles = null;
-        if (resourceMetadata.getResourceName() != null) {
+        Set<String> roles = new HashSet<String>();
+        if (useResourceRoleMappings) {
             SkeletonKeyToken.Access access = token.getResourceAccess(resourceMetadata.getResourceName());
             if (access != null) roles = access.getRoles();
             verifyCaller = token.isVerifyCaller(resourceMetadata.getResourceName());

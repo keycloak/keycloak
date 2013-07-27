@@ -15,8 +15,7 @@ public class RealmConfiguration {
     protected ResteasyClient client;
     protected UriBuilder authUrl;
     protected ResteasyWebTarget codeUrl;
-    protected String clientId;
-    protected Form credentials = new Form();
+    protected Form resourceCredentials = new Form();
     protected boolean sslRequired = true;
     protected String stateCookieName = "OAuth_Token_Request_State";
 
@@ -44,16 +43,8 @@ public class RealmConfiguration {
         this.authUrl = authUrl;
     }
 
-    public String getClientId() {
-        return clientId;
-    }
-
-    public void setClientId(String clientId) {
-        this.clientId = clientId;
-    }
-
-    public Form getCredentials() {
-        return credentials;
+    public Form getResourceCredentials() {
+        return resourceCredentials;
     }
 
     public ResteasyWebTarget getCodeUrl() {
