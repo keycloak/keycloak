@@ -527,8 +527,8 @@ public class OAuthAuthenticationServerValve extends FormAuthenticator implements
         html.append("<br>");
 
         writer = new StringWriter();
-        rep.getClientCredentials().put("password", "REQUIRED");
-        rep.setClientId("REQUIRED");
+        rep.getCredentials().put("password", "REQUIRED");
+        //rep.setClientId("REQUIRED");
         rep.setTruststore("REQUIRED");
         rep.setTruststorePassword("REQUIRED");
         mapper.writeValue(writer, rep);
@@ -561,7 +561,7 @@ public class OAuthAuthenticationServerValve extends FormAuthenticator implements
 
     public boolean bearer(Request request, HttpServletResponse response, boolean propagate) throws IOException {
         if (request.getHeader("Authorization") != null) {
-            CatalinaBearerTokenAuthenticator bearer = new CatalinaBearerTokenAuthenticator(resourceMetadata, true, false);
+            CatalinaBearerTokenAuthenticator bearer = new CatalinaBearerTokenAuthenticator(resourceMetadata, true, false, false);
             try {
                 if (bearer.login(request, response)) {
                     return true;

@@ -12,7 +12,10 @@ import java.util.Set;
 public class ResourceRepresentation {
     protected String self; // link
     protected String name;
+    protected String adminUrl;
     protected boolean surrogateAuthRequired;
+    protected boolean useRealmMappings;
+    protected List<CredentialRepresentation> credentials;
     protected Set<String> roles;
     protected List<RoleMappingRepresentation> roleMappings;
     protected List<ScopeMappingRepresentation> scopeMappings;
@@ -79,5 +82,37 @@ public class ResourceRepresentation {
         return mapping;
     }
 
+    public String getAdminUrl() {
+        return adminUrl;
+    }
 
+    public void setAdminUrl(String adminUrl) {
+        this.adminUrl = adminUrl;
+    }
+
+    public List<CredentialRepresentation> getCredentials() {
+        return credentials;
+    }
+
+    public void setCredentials(List<CredentialRepresentation> credentials) {
+        this.credentials = credentials;
+    }
+
+    public ResourceRepresentation credential(String type, String value, boolean hashed) {
+        if (this.credentials == null) credentials = new ArrayList<CredentialRepresentation>();
+        CredentialRepresentation cred = new CredentialRepresentation();
+        cred.setType(type);
+        cred.setValue(value);
+        cred.setHashed(hashed);
+        credentials.add(cred);
+        return this;
+    }
+
+    public boolean isUseRealmMappings() {
+        return useRealmMappings;
+    }
+
+    public void setUseRealmMappings(boolean useRealmMappings) {
+        this.useRealmMappings = useRealmMappings;
+    }
 }

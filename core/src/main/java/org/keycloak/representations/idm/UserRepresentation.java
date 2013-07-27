@@ -10,41 +10,12 @@ import java.util.Map;
  * @version $Revision: 1 $
  */
 public class UserRepresentation {
-    public static class Credential {
-        protected String type;
-        protected String value;
-        protected boolean hashed;
-
-        public String getType() {
-            return type;
-        }
-
-        public void setType(String type) {
-            this.type = type;
-        }
-
-        public String getValue() {
-            return value;
-        }
-
-        public void setValue(String value) {
-            this.value = value;
-        }
-
-        public boolean isHashed() {
-            return hashed;
-        }
-
-        public void setHashed(boolean hashed) {
-            this.hashed = hashed;
-        }
-    }
 
     protected String self; // link
     protected String username;
     protected boolean enabled;
     protected Map<String, String> attributes;
-    protected List<Credential> credentials;
+    protected List<CredentialRepresentation> credentials;
 
     public String getSelf() {
         return self;
@@ -70,23 +41,23 @@ public class UserRepresentation {
         this.attributes = attributes;
     }
 
-    public List<Credential> getCredentials() {
-        return credentials;
-    }
-
-    public void setCredentials(List<Credential> credentials) {
-        this.credentials = credentials;
-    }
-
     public UserRepresentation attribute(String name, String value) {
         if (this.attributes == null) attributes = new HashMap<String, String>();
         attributes.put(name, value);
         return this;
     }
 
+    public List<CredentialRepresentation> getCredentials() {
+        return credentials;
+    }
+
+    public void setCredentials(List<CredentialRepresentation> credentials) {
+        this.credentials = credentials;
+    }
+
     public UserRepresentation credential(String type, String value, boolean hashed) {
-        if (this.credentials == null) credentials = new ArrayList<Credential>();
-        Credential cred = new Credential();
+        if (this.credentials == null) credentials = new ArrayList<CredentialRepresentation>();
+        CredentialRepresentation cred = new CredentialRepresentation();
         cred.setType(type);
         cred.setValue(value);
         cred.setHashed(hashed);

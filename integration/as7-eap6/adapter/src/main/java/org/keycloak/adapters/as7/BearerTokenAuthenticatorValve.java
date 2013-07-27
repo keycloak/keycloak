@@ -63,7 +63,7 @@ public class BearerTokenAuthenticatorValve extends AuthenticatorBase implements 
     @Override
     protected boolean authenticate(Request request, HttpServletResponse response, LoginConfig config) throws IOException {
         try {
-            CatalinaBearerTokenAuthenticator bearer = new CatalinaBearerTokenAuthenticator(resourceMetadata, !remoteSkeletonKeyConfig.isCancelPropagation(), true);
+            CatalinaBearerTokenAuthenticator bearer = new CatalinaBearerTokenAuthenticator(resourceMetadata, !remoteSkeletonKeyConfig.isCancelPropagation(), true, remoteSkeletonKeyConfig.isUseResourceRoleMappings());
             if (bearer.login(request, response)) {
                 return true;
             }

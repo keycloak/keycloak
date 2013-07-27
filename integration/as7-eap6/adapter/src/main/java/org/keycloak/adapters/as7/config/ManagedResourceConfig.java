@@ -26,6 +26,8 @@ public class ManagedResourceConfig {
     protected String authUrl;
     @JsonProperty("code-url")
     protected String codeUrl;
+    @JsonProperty("use-resource-role-mappings")
+    protected boolean useResourceRoleMappings;
 
     @JsonProperty("ssl-not-required")
     protected boolean sslNotRequired;
@@ -37,20 +39,26 @@ public class ManagedResourceConfig {
     protected String truststore;
     @JsonProperty("truststore-password")
     protected String truststorePassword;
-    @JsonProperty("client-id")
-    protected String clientId;
     @JsonProperty("client-keystore")
     protected String clientKeystore;
     @JsonProperty("client-keystore-password")
     protected String clientKeystorePassword;
     @JsonProperty("client-key-password")
     protected String clientKeyPassword;
-    @JsonProperty("client-credentials")
-    protected Map<String, String> clientCredentials = new HashMap<String, String>();
+    @JsonProperty("credentials")
+    protected Map<String, String> credentials = new HashMap<String, String>();
     @JsonProperty("connection-pool-size")
     protected int connectionPoolSize;
     @JsonProperty("cancel-propagation")
     protected boolean cancelPropagation;
+
+    public boolean isUseResourceRoleMappings() {
+        return useResourceRoleMappings;
+    }
+
+    public void setUseResourceRoleMappings(boolean useResourceRoleMappings) {
+        this.useResourceRoleMappings = useResourceRoleMappings;
+    }
 
     public boolean isSslNotRequired() {
         return sslNotRequired;
@@ -140,16 +148,8 @@ public class ManagedResourceConfig {
         this.truststorePassword = truststorePassword;
     }
 
-    public String getClientId() {
-        return clientId;
-    }
-
-    public void setClientId(String clientId) {
-        this.clientId = clientId;
-    }
-
-    public Map<String, String> getClientCredentials() {
-        return clientCredentials;
+    public Map<String, String> getCredentials() {
+        return credentials;
     }
 
     public String getClientKeystore() {

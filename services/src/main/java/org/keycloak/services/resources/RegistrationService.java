@@ -1,6 +1,7 @@
 package org.keycloak.services.resources;
 
 import org.jboss.resteasy.logging.Logger;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.models.RealmModel;
@@ -12,10 +13,8 @@ import org.picketlink.idm.model.User;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.ForbiddenException;
-import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -57,7 +56,7 @@ public class RegistrationService {
 
             user = new SimpleUser(newUser.getUsername());
             defaultRealm.getIdm().add(user);
-            for (UserRepresentation.Credential cred : newUser.getCredentials()) {
+            for (CredentialRepresentation cred : newUser.getCredentials()) {
                 UserCredentialModel credModel = new UserCredentialModel();
                 credModel.setType(cred.getType());
                 credModel.setValue(cred.getValue());

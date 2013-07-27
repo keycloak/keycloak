@@ -13,6 +13,7 @@ import org.keycloak.representations.SkeletonKeyToken;
 import org.keycloak.services.JspRequestParameters;
 import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RequiredCredentialModel;
@@ -31,7 +32,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriBuilder;
@@ -51,7 +51,6 @@ public class TokenService {
 
 
     protected static final Logger logger = Logger.getLogger(TokenService.class);
-    //protected Map<String, AccessCodeEntry> accessCodeMap;
 
     @Context
     protected UriInfo uriInfo;
@@ -73,39 +72,40 @@ public class TokenService {
     protected RealmModel realm;
     protected TokenManager tokenManager;
     protected AuthenticationManager authManager = new AuthenticationManager();
+    private ResourceAdminManager resourceAdminManager = new ResourceAdminManager();
 
     public TokenService(RealmModel realm, TokenManager tokenManager) {
         this.realm = realm;
         this.tokenManager = tokenManager;
     }
 
-    public static UriBuilder tokenServiceBase(UriInfo uriInfo) {
+    public static UriBuilder tokenServiceBaseUrl(UriInfo uriInfo) {
         UriBuilder base = uriInfo.getBaseUriBuilder()
                 .path(RealmsResource.class).path(RealmsResource.class, "getTokenService");
         return base;
     }
 
-    public static UriBuilder accessCodeRequest(UriInfo uriInfo) {
-        return tokenServiceBase(uriInfo).path(TokenService.class, "accessRequest");
+    public static UriBuilder accessCodeToTokenUrl(UriInfo uriInfo) {
+        return tokenServiceBaseUrl(uriInfo).path(TokenService.class, "accessCodeToToken");
 
     }
 
-    public static UriBuilder grantRequest(UriInfo uriInfo) {
-        return tokenServiceBase(uriInfo).path(TokenService.class, "accessTokenGrant");
+    public static UriBuilder grantAccessTokenUrl(UriInfo uriInfo) {
+        return tokenServiceBaseUrl(uriInfo).path(TokenService.class, "grantAccessToken");
 
     }
 
-    public static UriBuilder identityGrantRequest(UriInfo uriInfo) {
-        return tokenServiceBase(uriInfo).path(TokenService.class, "accessTokenGrant");
+    public static UriBuilder grantIdentityTokenUrl(UriInfo uriInfo) {
+        return tokenServiceBaseUrl(uriInfo).path(TokenService.class, "grantIdentityToken");
 
     }
 
     public static UriBuilder loginPageUrl(UriInfo uriInfo) {
-        return tokenServiceBase(uriInfo).path(TokenService.class, "loginRequest");
+        return tokenServiceBaseUrl(uriInfo).path(TokenService.class, "loginPage");
     }
 
-    public static UriBuilder logainActionUrl(UriInfo uriInfo) {
-        return tokenServiceBase(uriInfo).path(TokenService.class, "login");
+    public static UriBuilder processLoginUrl(UriInfo uriInfo) {
+        return tokenServiceBaseUrl(uriInfo).path(TokenService.class, "processLogin");
     }
 
 
@@ -113,7 +113,7 @@ public class TokenService {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response identityTokenGrant(MultivaluedMap<String, String> form) {
+    public Response grantIdentityToken(MultivaluedMap<String, String> form) {
         String username = form.getFirst(AuthenticationManager.FORM_USERNAME);
         if (username == null) {
             throw new NotAuthorizedException("No user");
@@ -142,7 +142,7 @@ public class TokenService {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response accessTokenGrant(MultivaluedMap<String, String> form) {
+    public Response grantAccessToken(MultivaluedMap<String, String> form) {
         String username = form.getFirst(AuthenticationManager.FORM_USERNAME);
         if (username == null) {
             throw new NotAuthorizedException("No user");
@@ -169,7 +169,7 @@ public class TokenService {
     @Path("auth/request/login")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response login(MultivaluedMap<String, String> formData) {
+    public Response processLogin(MultivaluedMap<String, String> formData) {
         String clientId = formData.getFirst("client_id");
         String scopeParam = formData.getFirst("scope");
         String state = formData.getFirst("state");
@@ -226,7 +226,7 @@ public class TokenService {
     @Path("access/codes")
     @POST
     @Produces("application/json")
-    public Response accessRequest(MultivaluedMap<String, String> formData) {
+    public Response accessCodeToToken(MultivaluedMap<String, String> formData) {
         logger.info("accessRequest <---");
         if (!realm.isEnabled()) {
             throw new NotAuthorizedException("Realm not enabled");
@@ -356,7 +356,7 @@ public class TokenService {
                                       String scopeParam,
                                       String state) {
         request.setAttribute(RealmModel.class.getName(), realm);
-        request.setAttribute("KEYCLOAK_LOGIN_ACTION", logainActionUrl(uriInfo).build(realm.getId()));
+        request.setAttribute("KEYCLOAK_LOGIN_ACTION", processLoginUrl(uriInfo).build(realm.getId()));
 
         // RESTEASY eats the form data, so we send via an attribute
         request.setAttribute("redirect_uri", redirect);
@@ -369,11 +369,11 @@ public class TokenService {
 
     @Path("login")
     @GET
-    public Response loginRequest(@QueryParam("response_type") String responseType,
-                                 @QueryParam("redirect_uri") String redirect,
-                                 @QueryParam("client_id") String clientId,
-                                 @QueryParam("scope") String scopeParam,
-                                 @QueryParam("state") String state) {
+    public Response loginPage(@QueryParam("response_type") String responseType,
+                              @QueryParam("redirect_uri") String redirect,
+                              @QueryParam("client_id") String clientId,
+                              @QueryParam("scope") String scopeParam,
+                              @QueryParam("state") String state) {
         if (!realm.isEnabled()) {
             securityFailureForward("Realm not enabled");
             return null;
@@ -390,7 +390,7 @@ public class TokenService {
             return null;
         }
 
-        User user = authManager.authenticateIdentityCookie(realm, headers);
+        User user = authManager.authenticateIdentityCookie(realm, uriInfo, headers);
         if (user != null) {
             return redirectAccessCode(scopeParam, state, redirect, client, user);
         }
@@ -398,6 +398,21 @@ public class TokenService {
 
         forwardToLoginForm(redirect, clientId, scopeParam, state);
         return null;
+    }
+
+    @Path("logout")
+    @GET
+    public Response logout(@QueryParam("redirect_uri") String redirectUri) {
+        // todo do we care if anybody can trigger this?
+
+        User user = authManager.authenticateIdentityCookie(realm, uriInfo, headers);
+        if (user != null) {
+            logger.info("Logging out: " + user.getLoginName());
+            authManager.expireIdentityCookie(realm, uriInfo);
+            resourceAdminManager.singleLogOut(realm, user.getLoginName());
+        }
+        // todo manage legal redirects
+        return Response.status(302).location(UriBuilder.fromUri(redirectUri).build()).build();
     }
 
     private Response loginForm(String validationError, String redirect, String clientId, String scopeParam, String state, RealmModel realm, User client) {
@@ -431,7 +446,7 @@ public class TokenService {
             }
             html.append("</table><p>To Authorize, please login below</p>");
         } else {
-            Set<String> scopeMapping = realm.getScopes(client);
+            Set<String> scopeMapping = realm.getScope(client);
             if (scopeMapping.contains("*")) {
                 html.append("<h1>Login For ").append(realm.getName()).append(" Realm</h1>");
                 if (validationError != null) {
@@ -485,7 +500,7 @@ public class TokenService {
             }
         }
 
-        UriBuilder formActionUri = logainActionUrl(uriInfo);
+        UriBuilder formActionUri = processLoginUrl(uriInfo);
         String action = formActionUri.build(realm.getId()).toString();
         html.append("<form action=\"").append(action).append("\" method=\"POST\">");
         html.append("Username: <input type=\"text\" name=\"username\" size=\"20\"><br>");

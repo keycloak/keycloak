@@ -18,6 +18,8 @@ import org.picketlink.idm.model.Attribute;
 import org.picketlink.idm.model.Grant;
 import org.picketlink.idm.model.Realm;
 import org.picketlink.idm.model.Role;
+import org.picketlink.idm.model.SimpleRole;
+import org.picketlink.idm.model.SimpleUser;
 import org.picketlink.idm.model.Tier;
 import org.picketlink.idm.model.User;
 import org.picketlink.idm.query.IdentityQuery;
@@ -293,8 +295,15 @@ public class RealmModel {
         relationship.setResourceName(name);
         relationship.setRealmAgent(realmAgent);
         relationship.setResourceId(newTier.getId());
+        relationship.setManagementUrl(""); // Picketlink doesn't like null attribute values
+        User resourceUser = new SimpleUser(name);
+        idm.add(resourceUser);
+        relationship.setResourceUser(resourceUser);
         idm.add(relationship);
-        return new ResourceModel(newTier, relationship, this, identitySession);
+        ResourceModel resource = new ResourceModel(newTier, relationship, this, identitySession);
+        resource.getIdm().add(new SimpleRole("*"));
+        resource.addScope(resourceUser, "*");
+        return resource;
     }
 
     public Set<String> getRoleMappings(User user) {
@@ -320,7 +329,7 @@ public class RealmModel {
     }
 
 
-    public Set<String> getScopes(Agent agent) {
+    public Set<String> getScope(Agent agent) {
         RelationshipQuery<ScopeRelationship> query = getIdm().createRelationshipQuery(ScopeRelationship.class);
         query.setParameter(ScopeRelationship.CLIENT, agent);
         List<ScopeRelationship> scope = query.getResultList();

@@ -9,6 +9,7 @@ import org.keycloak.representations.SkeletonKeyToken;
 import org.keycloak.representations.idm.RequiredCredentialRepresentation;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RequiredCredentialModel;
+import org.keycloak.services.resources.RealmsResource;
 import org.picketlink.idm.credential.Credentials;
 import org.picketlink.idm.credential.Password;
 import org.picketlink.idm.credential.TOTPCredentials;
@@ -20,6 +21,8 @@ import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.NewCookie;
+import javax.ws.rs.core.UriInfo;
+import java.net.URI;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -45,14 +48,19 @@ public class AuthenticationManager {
         return realm.isRealmAdmin(user);
     }
 
-    protected void expireIdentityCookie(Cookie cookie) {
+    public void expireIdentityCookie(RealmModel realm, UriInfo uriInfo) {
+        URI uri = RealmsResource.realmBaseUrl(uriInfo).build(realm.getId());
         HttpResponse response = ResteasyProviderFactory.getContextData(HttpResponse.class);
-        if (response == null) return;
-        NewCookie expireIt = new NewCookie(cookie.getName(), "", cookie.getPath(), null, "Expiring cookie", 0, false);
+        if (response == null) {
+            logger.info("can't expire identity cookie, no HttpResponse");
+            return;
+        }
+        logger.info("Expiring identity cookie");
+        NewCookie expireIt = new NewCookie(TokenManager.KEYCLOAK_IDENTITY_COOKIE, "", uri.getPath(), null, "Expiring cookie", 0, false);
         response.addNewCookie(expireIt);
     }
 
-    public User authenticateIdentityCookie(RealmModel realm, HttpHeaders headers) {
+    public User authenticateIdentityCookie(RealmModel realm, UriInfo uriInfo, HttpHeaders headers) {
         Cookie cookie = headers.getCookies().get(TokenManager.KEYCLOAK_IDENTITY_COOKIE);
         if (cookie == null) return null;
 
@@ -61,19 +69,19 @@ public class AuthenticationManager {
             SkeletonKeyToken token = RSATokenVerifier.verifyToken(tokenString, realm.getPublicKey(), realm.getId());
             if (!token.isActive()) {
                 logger.info("identity cookie expired");
-                expireIdentityCookie(cookie);
+                expireIdentityCookie(realm, uriInfo);
                 return null;
             }
             User user = realm.getIdm().getUser(token.getPrincipal());
             if (user == null || !user.isEnabled()) {
                 logger.info("Unknown user in identity cookie");
-                expireIdentityCookie(cookie);
+                expireIdentityCookie(realm, uriInfo);
                 return null;
             }
             return user;
         } catch (VerificationException e) {
             logger.info("Failed to verify identity cookie", e);
-            expireIdentityCookie(cookie);
+            expireIdentityCookie(realm, uriInfo);
         }
         return null;
     }
