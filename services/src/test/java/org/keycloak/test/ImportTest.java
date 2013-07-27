@@ -104,7 +104,7 @@ public class ImportTest {
 
         User user = realm.getIdm().getUser("loginclient");
         Assert.assertNotNull(user);
-        Set<String> scopes = realm.getScopes(user);
+        Set<String> scopes = realm.getScope(user);
         System.out.println("Scopes size: " + scopes.size());
         Assert.assertTrue(scopes.contains("*"));
 

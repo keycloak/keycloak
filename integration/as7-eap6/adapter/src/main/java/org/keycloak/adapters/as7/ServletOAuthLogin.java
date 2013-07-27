@@ -1,7 +1,6 @@
 package org.keycloak.adapters.as7;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.util.BasicAuthHelper;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.RealmConfiguration;
 import org.keycloak.VerificationException;
@@ -14,7 +13,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Form;
-import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
@@ -144,7 +142,7 @@ public class ServletOAuthLogin {
             url = secureUrl.build().toString();
         }
         return realmInfo.getAuthUrl().clone()
-                .queryParam("client_id", realmInfo.getClientId())
+                .queryParam("client_id", realmInfo.getMetadata().getResourceName())
                 .queryParam("redirect_uri", url)
                 .queryParam("state", state)
                 .queryParam("login", "true")
@@ -223,8 +221,8 @@ public class ServletOAuthLogin {
 
         if (!checkStateCookie()) return false;
 
-        String client_id = realmInfo.getClientId();
-        String password = realmInfo.getCredentials().asMap().getFirst("password");
+        String client_id = realmInfo.getMetadata().getResourceName();
+        String password = realmInfo.getResourceCredentials().asMap().getFirst("password");
         //String authHeader = BasicAuthHelper.createHeader(client_id, password);
         String redirectUri = stripOauthParametersFromRedirect();
         Form form = new Form();

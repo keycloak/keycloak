@@ -3,6 +3,7 @@ package org.keycloak.services.models.relationships;
 import org.picketlink.idm.model.AbstractAttributedType;
 import org.picketlink.idm.model.Agent;
 import org.picketlink.idm.model.Relationship;
+import org.picketlink.idm.model.User;
 import org.picketlink.idm.model.annotation.AttributeProperty;
 import org.picketlink.idm.model.annotation.IdentityProperty;
 import org.picketlink.idm.query.RelationshipQueryParameter;
@@ -23,8 +24,10 @@ public class ResourceRelationship extends AbstractAttributedType implements Rela
     };
 
     protected Agent realmAgent;
+    protected User resourceUser;
     protected String resourceId;
     protected String resourceName;
+    protected String managementUrl = ""; // Picketlink doesn't like null attribute values
     protected boolean surrogateAuthRequired;
     protected boolean enabled;
 
@@ -35,6 +38,15 @@ public class ResourceRelationship extends AbstractAttributedType implements Rela
 
     public void setRealmAgent(Agent realmAgent) {
         this.realmAgent = realmAgent;
+    }
+
+    @IdentityProperty
+    public User getResourceUser() {
+        return resourceUser;
+    }
+
+    public void setResourceUser(User resourceUser) {
+        this.resourceUser = resourceUser;
     }
 
     @AttributeProperty
@@ -71,5 +83,16 @@ public class ResourceRelationship extends AbstractAttributedType implements Rela
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    @AttributeProperty
+    public String getManagementUrl()
+    {
+        return managementUrl;
+    }
+
+    public void setManagementUrl(String managementUrl) {
+        if (managementUrl == null) managementUrl = ""; // Picketlink doesn't like NULL attribute values.
+        this.managementUrl = managementUrl;
     }
 }

@@ -41,6 +41,10 @@ public class ResourceModel {
         getIdm().update(agent);
     }
 
+    public User getResourceUser() {
+        return agent.getResourceUser();
+    }
+
     public String getId() {
         return tier.getId();
     }
@@ -69,6 +73,14 @@ public class ResourceModel {
         agent.setSurrogateAuthRequired(surrogateAuthRequired);
     }
 
+    public String getManagementUrl() {
+        return agent.getManagementUrl();
+    }
+
+    public void setManagementUrl(String url) {
+        agent.setManagementUrl(url);
+    }
+
     public List<Role> getRoles() {
         IdentityQuery<Role> query = getIdm().createIdentityQuery(Role.class);
         query.setParameter(Role.PARTITION, tier);
@@ -90,10 +102,14 @@ public class ResourceModel {
         IdentityManager idm = getIdm();
         Role role = idm.getRole(roleName);
         if (role == null) throw new RuntimeException("role not found");
+        addScope(agent, role);
+
+    }
+
+    public void addScope(Agent agent, Role role) {
         ScopeRelationship scope = new ScopeRelationship();
         scope.setClient(agent);
         scope.setScope(role);
-
     }
 
     public Set<String> getScope(Agent agent) {
