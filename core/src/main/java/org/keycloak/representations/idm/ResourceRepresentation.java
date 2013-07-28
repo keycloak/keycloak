@@ -16,7 +16,7 @@ public class ResourceRepresentation {
     protected boolean surrogateAuthRequired;
     protected boolean useRealmMappings;
     protected List<CredentialRepresentation> credentials;
-    protected Set<String> roles;
+    protected List<RoleRepresentation> roles;
     protected List<RoleMappingRepresentation> roleMappings;
     protected List<ScopeMappingRepresentation> scopeMappings;
 
@@ -44,17 +44,17 @@ public class ResourceRepresentation {
         this.surrogateAuthRequired = surrogateAuthRequired;
     }
 
-    public Set<String> getRoles() {
+    public List<RoleRepresentation> getRoles() {
         return roles;
     }
 
-    public void setRoles(Set<String> roles) {
+    public void setRoles(List<RoleRepresentation> roles) {
         this.roles = roles;
     }
 
-    public ResourceRepresentation role(String role) {
-        if (this.roles == null) this.roles = new HashSet<String>();
-        this.roles.add(role);
+    public ResourceRepresentation role(String role, String description) {
+        if (this.roles == null) this.roles = new ArrayList<RoleRepresentation>();
+        this.roles.add(new RoleRepresentation(role, description));
         return this;
     }
 

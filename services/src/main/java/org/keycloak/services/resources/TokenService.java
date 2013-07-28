@@ -13,12 +13,14 @@ import org.keycloak.representations.SkeletonKeyToken;
 import org.keycloak.services.JspRequestParameters;
 import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RequiredCredentialModel;
 import org.keycloak.services.models.ResourceModel;
 import org.picketlink.idm.IdentitySession;
+import org.picketlink.idm.model.Role;
 import org.picketlink.idm.model.User;
 
 import javax.ws.rs.Consumes;
@@ -389,12 +391,19 @@ public class TokenService {
             identitySession.close();
             return null;
         }
+        Role resourceRole = realm.getIdm().getRole(RealmManager.RESOURCE_ROLE);
+        Role oauthClientRole = realm.getIdm().getRole(RealmManager.OAUTH_CLIENT_ROLE);
+        if (!realm.getIdm().hasRole(client, resourceRole) && !realm.getIdm().hasRole(client, oauthClientRole)) {
+            securityFailureForward("Login requester not allowed to request login.");
+            identitySession.close();
+            return null;
+
+        }
 
         User user = authManager.authenticateIdentityCookie(realm, uriInfo, headers);
         if (user != null) {
             return redirectAccessCode(scopeParam, state, redirect, client, user);
         }
-        // todo make sure client is allowed to request a login
 
         forwardToLoginForm(redirect, clientId, scopeParam, state);
         return null;
