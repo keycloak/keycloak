@@ -3,19 +3,16 @@ package org.keycloak.services.managers;
 import org.jboss.resteasy.jose.Base64Url;
 import org.jboss.resteasy.jose.jws.JWSBuilder;
 import org.jboss.resteasy.jwt.JsonSerialization;
-import org.jboss.resteasy.spi.HttpResponse;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.representations.SkeletonKeyScope;
 import org.keycloak.representations.SkeletonKeyToken;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.ResourceModel;
 import org.keycloak.services.resources.RealmsResource;
+import org.picketlink.idm.model.Role;
 import org.picketlink.idm.model.User;
 
-import javax.ws.rs.ForbiddenException;
-import javax.ws.rs.core.Cookie;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.NewCookie;
-import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -40,6 +37,9 @@ public class TokenManager {
         accessCodeMap.clear();
     }
 
+    public AccessCodeEntry getAccessCode(String key) {
+        return accessCodeMap.get(key);
+    }
 
     public AccessCodeEntry pullAccessCode(String key) {
         return accessCodeMap.remove(key);
@@ -54,16 +54,57 @@ public class TokenManager {
         return cookie;
     }
 
-    public String createAccessCode(String scopeParam, RealmModel realm, User client, User user)
-    {
-        SkeletonKeyToken token = null;
-        if (scopeParam != null) token = createScopedToken(scopeParam, realm, client, user);
-        else token = createUnscopedToken(realm, client, user);
-
+    public AccessCodeEntry createAccessCode(String scopeParam, RealmModel realm, User client, User user) {
         AccessCodeEntry code = new AccessCodeEntry();
+        SkeletonKeyScope scopeMap = null;
+        if (scopeParam != null) scopeMap = decodeScope(scopeParam);
+        List<Role> realmRolesRequested = code.getRealmRolesRequested();
+        MultivaluedMap<String, Role> resourceRolesRequested = code.getResourceRolesRequested();
+        Set<String> realmMapping = realm.getRoleMappings(user);
+
+        if (realmMapping != null && realmMapping.size() > 0 && (scopeMap == null || scopeMap.containsKey("realm"))) {
+            Set<String> scope = realm.getScope(client);
+            if (scope.size() > 0) {
+                Set<String> scopeRequest = null;
+                if (scopeMap != null) {
+                    scopeRequest.addAll(scopeMap.get("realm"));
+                    if (scopeRequest.contains(RealmManager.WILDCARD_ROLE)) scopeRequest = null;
+                }
+                for (String role : realmMapping) {
+                    if (
+                            (scopeRequest == null || scopeRequest.contains(role)) &&
+                                    (scope.contains("*") || scope.contains(role))
+                            )
+                        realmRolesRequested.add(realm.getIdm().getRole(role));
+                }
+            }
+        }
+        for (ResourceModel resource : realm.getResources()) {
+            Set<String> mapping = resource.getRoleMappings(user);
+            if (mapping != null && mapping.size() > 0 && (scopeMap == null || scopeMap.containsKey(resource.getName()))) {
+                Set<String> scope = resource.getScope(client);
+                if (scope.size() > 0) {
+                    Set<String> scopeRequest = null;
+                    if (scopeMap != null) {
+                        scopeRequest.addAll(scopeMap.get(resource.getName()));
+                        if (scopeRequest.contains(RealmManager.WILDCARD_ROLE)) scopeRequest = null;
+                    }
+                    for (String role : mapping) {
+                        if (
+                                (scopeRequest == null || scopeRequest.contains(role)) &&
+                                        (scope.contains("*") || scope.contains(role))
+                                )
+                            resourceRolesRequested.add(resource.getName(), resource.getIdm().getRole(role));
+                    }
+                }
+            }
+        }
+
+
+        createToken(code, realm, client, user);
         code.setExpiration((System.currentTimeMillis() / 1000) + realm.getAccessCodeLifespan());
-        code.setToken(token);
         code.setClient(client);
+        code.setUser(user);
         accessCodeMap.put(code.getId(), code);
         String accessCode = null;
         try {
@@ -71,30 +112,8 @@ public class TokenManager {
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
-        return accessCode;
-    }
-
-    public SkeletonKeyToken createScopedToken(SkeletonKeyScope scope, RealmModel realm, User client, User user) {
-        SkeletonKeyToken token = initToken(realm, client, user);
-        Map<String, ResourceModel> resourceMap = realm.getResourceMap();
-
-        for (String res : scope.keySet()) {
-            ResourceModel resource = resourceMap.get(res);
-            Set<String> scopeMapping = resource.getScope(client);
-            Set<String> roleMapping = resource.getRoleMappings(user);
-            SkeletonKeyToken.Access access = token.addAccess(resource.getName());
-            for (String role : scope.get(res)) {
-                if (!scopeMapping.contains("*") && !scopeMapping.contains(role)) {
-                    throw new ForbiddenException(Response.status(403).entity("<h1>Security Alert</h1><p>Known client not authorized for the requested scope.</p>").type("text/html").build());
-                }
-                if (!roleMapping.contains(role)) {
-                    throw new ForbiddenException(Response.status(403).entity("<h1>Security Alert</h1><p>Known client not authorized for the requested scope.</p>").type("text/html").build());
-
-                }
-                access.addRole(role);
-            }
-        }
-        return token;
+        code.setCode(accessCode);
+        return code;
     }
 
     protected SkeletonKeyToken initToken(RealmModel realm, User client, User user) {
@@ -110,38 +129,29 @@ public class TokenManager {
         return token;
     }
 
-    public SkeletonKeyToken createScopedToken(String scopeParam, RealmModel realm, User client, User user) {
-        SkeletonKeyScope scope = decodeScope(scopeParam);
-        return createScopedToken(scope, realm, client, user);
-    }
-
-    public SkeletonKeyToken createUnscopedToken(RealmModel realm, User client, User user) {
+    protected void createToken(AccessCodeEntry accessCodeEntry, RealmModel realm, User client, User user) {
 
         SkeletonKeyToken token = initToken(realm, client, user);
 
-        Set<String> realmMapping = realm.getRoleMappings(user);
-
-        if (realmMapping != null && realmMapping.size() > 0) {
-            Set<String> scope = realm.getScope(client);
+        if (accessCodeEntry.getRealmRolesRequested().size() > 0) {
             SkeletonKeyToken.Access access = new SkeletonKeyToken.Access();
-            for (String role : realmMapping) {
-                if (scope.contains("*") || scope.contains(role)) access.addRole(role);
+            for (Role role : accessCodeEntry.getRealmRolesRequested()) {
+                access.addRole(role.getName());
             }
             token.setRealmAccess(access);
         }
-        List<ResourceModel> resources = realm.getResources();
-        for (ResourceModel resource : resources) {
-            Set<String> scope = resource.getScope(client);
-            Set<String> mapping = resource.getRoleMappings(user);
-            if (mapping.size() == 0 || scope.size() == 0) continue;
-            SkeletonKeyToken.Access access = token.addAccess(resource.getName())
-                    .verifyCaller(resource.isSurrogateAuthRequired());
-            for (String role : mapping) {
-                if (scope.contains("*") || scope.contains(role)) access.addRole(role);
+
+        if (accessCodeEntry.getResourceRolesRequested().size() > 0) {
+            Map<String, ResourceModel> resourceMap = realm.getResourceMap();
+            for (String resourceName : accessCodeEntry.getResourceRolesRequested().keySet()) {
+                ResourceModel resource = resourceMap.get(resourceName);
+                SkeletonKeyToken.Access access = token.addAccess(resourceName).verifyCaller(resource.isSurrogateAuthRequired());
+                for (Role role : accessCodeEntry.getResourceRolesRequested().get(resourceName)) {
+                    access.addRole(role.getName());
+                }
             }
         }
-        return token;
-
+        accessCodeEntry.setToken(token);
     }
 
     public String encodeScope(SkeletonKeyScope scope) {

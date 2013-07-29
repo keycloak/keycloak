@@ -1,12 +1,13 @@
 package org.keycloak.services.resources;
 
-import org.jboss.resteasy.jose.Base64Url;
 import org.jboss.resteasy.jose.jws.JWSBuilder;
 import org.jboss.resteasy.jose.jws.JWSInput;
 import org.jboss.resteasy.jose.jws.crypto.RSAProvider;
 import org.jboss.resteasy.jwt.JsonSerialization;
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
+import org.jboss.resteasy.spi.HttpResponse;
+import org.keycloak.TokenIdGenerator;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.SkeletonKeyScope;
 import org.keycloak.representations.SkeletonKeyToken;
@@ -17,7 +18,6 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.models.RealmModel;
-import org.keycloak.services.models.RequiredCredentialModel;
 import org.keycloak.services.models.ResourceModel;
 import org.picketlink.idm.IdentitySession;
 import org.picketlink.idm.model.Role;
@@ -31,15 +31,20 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Providers;
+import java.net.URI;
 import java.security.PrivateKey;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -66,10 +71,13 @@ public class TokenService {
     protected IdentitySession identitySession;
     @Context
     HttpRequest request;
+    @Context
+    HttpResponse response;
 
 
     protected String securityFailurePath = "/securityFailure.jsp";
     protected String loginFormPath = "/loginForm.jsp";
+    protected String oauthFormPath = "/oauthForm.jsp";
 
     protected RealmModel realm;
     protected TokenManager tokenManager;
@@ -108,6 +116,10 @@ public class TokenService {
 
     public static UriBuilder processLoginUrl(UriInfo uriInfo) {
         return tokenServiceBaseUrl(uriInfo).path(TokenService.class, "processLogin");
+    }
+
+    public static UriBuilder processOAuthUrl(UriInfo uriInfo) {
+        return tokenServiceBaseUrl(uriInfo).path(TokenService.class, "processOAuth");
     }
 
 
@@ -211,16 +223,35 @@ public class TokenService {
             return null;
         }
 
-        return redirectAccessCode(scopeParam, state, redirect, client, user);
+        return processAccessCode(scopeParam, state, redirect, client, user);
     }
 
-    protected Response redirectAccessCode(String scopeParam, String state, String redirect, User client, User user) {
-        String accessCode = tokenManager.createAccessCode(scopeParam, realm, client, user);
-        UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam("code", accessCode);
+    protected Response processAccessCode(String scopeParam, String state, String redirect, User client, User user) {
+        Role resourceRole = realm.getIdm().getRole(RealmManager.RESOURCE_ROLE);
+        Role oauthClientRole = realm.getIdm().getRole(RealmManager.OAUTH_CLIENT_ROLE);
+        boolean isResource = realm.getIdm().hasRole(client, resourceRole);
+        if (!isResource && !realm.getIdm().hasRole(client, oauthClientRole)) {
+            securityFailureForward("Login requester not allowed to request login.");
+            identitySession.close();
+            return null;
+        }
+        AccessCodeEntry accessCode = tokenManager.createAccessCode(scopeParam, realm, client, user);
+
+        if (!isResource && accessCode.getRealmRolesRequested().size() > 0 && accessCode.getResourceRolesRequested().size() > 0) {
+            oauthGrantPage(accessCode, client, state, redirect);
+            identitySession.close();
+            return null;
+        }
+        return redirectAccessCode(accessCode, state, redirect);
+    }
+
+    protected Response redirectAccessCode(AccessCodeEntry accessCode, String state, String redirect) {
+        String code = accessCode.getCode();
+        UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam("code", code);
         if (state != null) redirectUri.queryParam("state", state);
         Response.ResponseBuilder location = Response.status(302).location(redirectUri.build());
         if (realm.isCookieLoginAllowed()) {
-           location.cookie(tokenManager.createLoginCookie(realm, user, uriInfo));
+            location.cookie(tokenManager.createLoginCookie(realm, accessCode.getUser(), uriInfo));
         }
         return location.build();
     }
@@ -393,16 +424,16 @@ public class TokenService {
         }
         Role resourceRole = realm.getIdm().getRole(RealmManager.RESOURCE_ROLE);
         Role oauthClientRole = realm.getIdm().getRole(RealmManager.OAUTH_CLIENT_ROLE);
-        if (!realm.getIdm().hasRole(client, resourceRole) && !realm.getIdm().hasRole(client, oauthClientRole)) {
+        boolean isResource = realm.getIdm().hasRole(client, resourceRole);
+        if (!isResource && !realm.getIdm().hasRole(client, oauthClientRole)) {
             securityFailureForward("Login requester not allowed to request login.");
             identitySession.close();
             return null;
-
         }
 
         User user = authManager.authenticateIdentityCookie(realm, uriInfo, headers);
         if (user != null) {
-            return redirectAccessCode(scopeParam, state, redirect, client, user);
+            return processAccessCode(scopeParam, state, redirect, client, user);
         }
 
         forwardToLoginForm(redirect, clientId, scopeParam, state);
@@ -424,117 +455,52 @@ public class TokenService {
         return Response.status(302).location(UriBuilder.fromUri(redirectUri).build()).build();
     }
 
-    private Response loginForm(String validationError, String redirect, String clientId, String scopeParam, String state, RealmModel realm, User client) {
-        StringBuffer html = new StringBuffer();
-        if (scopeParam != null) {
-            html.append("<h1>Grant Request For ").append(realm.getName()).append(" Realm</h1>");
-            if (validationError != null) {
-                try {
-                    Thread.sleep(1000); // put in a delay
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-                html.append("<p/><p><b>").append(validationError).append("</b></p>");
-            }
-            html.append("<p>A Third Party is requesting access to the following resources</p>");
-            html.append("<table>");
-            SkeletonKeyScope scope = tokenManager.decodeScope(scopeParam);
-            Map<String, ResourceModel> resourceMap = realm.getResourceMap();
-
-            for (String res : scope.keySet()) {
-                ResourceModel resource = resourceMap.get(res);
-                html.append("<tr><td><b>Resource: </b>").append(resource.getName()).append("</td><td><b>Roles:</b>");
-                Set<String> scopeMapping = resource.getScope(client);
-                for (String role : scope.get(res)) {
-                    html.append(" ").append(role);
-                    if (!scopeMapping.contains("*") && !scopeMapping.contains(role)) {
-                        return Response.ok("<h1>Security Alert</h1><p>Known client not authorized for the requested scope.</p>").type("text/html").build();
-                    }
-                }
-                html.append("</td></tr>");
-            }
-            html.append("</table><p>To Authorize, please login below</p>");
-        } else {
-            Set<String> scopeMapping = realm.getScope(client);
-            if (scopeMapping.contains("*")) {
-                html.append("<h1>Login For ").append(realm.getName()).append(" Realm</h1>");
-                if (validationError != null) {
-                    try {
-                        Thread.sleep(1000); // put in a delay
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-                    html.append("<p/><p><b>").append(validationError).append("</b></p>");
-                }
-            } else {
-                html.append("<h1>Grant Request For ").append(realm.getName()).append(" Realm</h1>");
-                if (validationError != null) {
-                    try {
-                        Thread.sleep(1000); // put in a delay
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-                    html.append("<p/><p><b>").append(validationError).append("</b></p>");
-                }
-                SkeletonKeyScope scope = new SkeletonKeyScope();
-                List<ResourceModel> resources = realm.getResources();
-                boolean found = false;
-                for (ResourceModel resource : resources) {
-                    Set<String> resourceScope = resource.getScope(client);
-                    if (resourceScope == null) continue;
-                    if (resourceScope.size() == 0) continue;
-                    if (!found) {
-                        found = true;
-                        html.append("<p>A Third Party is requesting access to the following resources</p>");
-                        html.append("<table>");
-                    }
-                    html.append("<tr><td><b>Resource: </b>").append(resource.getName()).append("</td><td><b>Roles:</b>");
-                    // todo add description of role
-                    for (String role : resourceScope) {
-                        html.append(" ").append(role);
-                        scope.add(resource.getName(), role);
-                    }
-                }
-                if (!found) {
-                    return Response.ok("<h1>Security Alert</h1><p>Known client not authorized to access this realm.</p>").type("text/html").build();
-                }
-                html.append("</table>");
-                try {
-                    String json = JsonSerialization.toString(scope, false);
-                    scopeParam = Base64Url.encode(json.getBytes("UTF-8"));
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-
-            }
+    @Path("oauth/grant")
+    @POST
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    public Response processOAuth(MultivaluedMap<String, String> formData) {
+        String redirect = formData.getFirst("redirect_uri");
+        String state = formData.getFirst("state");
+        if (formData.containsKey("cancel")) {
+            return redirectAccessDenied(redirect, state);
         }
+        String code = formData.getFirst("code");
 
-        UriBuilder formActionUri = processLoginUrl(uriInfo);
-        String action = formActionUri.build(realm.getId()).toString();
-        html.append("<form action=\"").append(action).append("\" method=\"POST\">");
-        html.append("Username: <input type=\"text\" name=\"username\" size=\"20\"><br>");
-
-        for (RequiredCredentialModel credential : realm.getRequiredCredentials()) {
-            if (!credential.isInput()) continue;
-            html.append(credential.getType()).append(": ");
-            if (credential.isSecret()) {
-                html.append("<input type=\"password\" name=\"").append(credential.getType()).append("\"  size=\"20\"><br>");
-
-            } else {
-                html.append("<input type=\"text\" name=\"").append(credential.getType()).append("\"  size=\"20\"><br>");
-            }
+        JWSInput input = new JWSInput(code, providers);
+        boolean verifiedCode = false;
+        try {
+            verifiedCode = RSAProvider.verify(input, realm.getPublicKey());
+        } catch (Exception ignored) {
+            logger.debug("Failed to verify signature", ignored);
         }
-        html.append("<input type=\"hidden\" name=\"client_id\" value=\"").append(clientId).append("\">");
-        if (scopeParam != null) {
-            html.append("<input type=\"hidden\" name=\"scope\" value=\"").append(scopeParam).append("\">");
+        if (!verifiedCode) {
+            return redirectAccessDenied(redirect, state);
         }
-        if (state != null) html.append("<input type=\"hidden\" name=\"state\" value=\"").append(state).append("\">");
-        html.append("<input type=\"hidden\" name=\"redirect_uri\" value=\"").append(redirect).append("\">");
-        html.append("<input type=\"submit\" value=\"");
-        if (scopeParam == null) html.append("Login");
-        else html.append("Grant Access");
-        html.append("\">");
-        html.append("</form>");
-        return Response.ok(html.toString()).type("text/html").build();
+        String key = input.readContent(String.class);
+        AccessCodeEntry accessCodeEntry = tokenManager.getAccessCode(key);
+        if (accessCodeEntry == null) {
+            return redirectAccessDenied(redirect, state);
+        }
+        return redirectAccessCode(accessCodeEntry, state, redirect);
     }
+
+    protected Response redirectAccessDenied(String redirect, String state) {
+        UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam("error", "access_denied");
+        if (state != null) redirectUri.queryParam("state", state);
+        Response.ResponseBuilder location = Response.status(302).location(redirectUri.build());
+        return location.build();
+    }
+
+    protected void oauthGrantPage(AccessCodeEntry accessCode, User client, String state, String redirect_uri) {
+        request.setAttribute("realmRolesRequested", accessCode.getRealmRolesRequested());
+        request.setAttribute("resourceRolesRequested", accessCode.getResourceRolesRequested());
+        request.setAttribute("state", state);
+        request.setAttribute("redirect_uri", redirect_uri);
+        request.setAttribute("client", client);
+        request.setAttribute("action", processOAuthUrl(uriInfo));
+        request.setAttribute("accessCode", accessCode.getCode());
+
+        request.forward(oauthFormPath);
+    }
+
 }
