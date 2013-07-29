@@ -7,9 +7,9 @@ The following examples requires JBoss AS7 or EAP 6.1, and Resteasy 3.0.2 and has
 * Bearer token authentication and authorization of JAX-RS services
 * Obtaining bearer tokens via the OAuth2 protocol
 
-There are 6 WAR projects.  These all will run on the same jboss instance, but pretend each one is running on a different
+There are 5 WAR projects.  These all will run on the same jboss instance, but pretend each one is running on a different
 machine on the network or Internet.
-* **auth-server**: A WAR that turns a security domain into a remote login server and oauth token service
+* **auth-server**: This is the keycloak SSO auth server
 * **customer-app** A WAR applications that does remote login using OAUTH2 browser redirects with the auth server
 * **product-app** A WAR applications that does remote login using OAUTH2 browser redirects with the auth server
 * **database-service** JAX-RS services authenticated by bearer tokens only.  The customer and product app invoke on it
