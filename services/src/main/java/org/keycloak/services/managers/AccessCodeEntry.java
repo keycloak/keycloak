@@ -17,6 +17,9 @@ import java.util.UUID;
 public class AccessCodeEntry {
     protected String id = UUID.randomUUID().toString() + System.currentTimeMillis();
     protected String code;
+    protected String state;
+    protected String redirectUri;
+
     protected long expiration;
     protected SkeletonKeyToken token;
     protected User user;
@@ -78,5 +81,21 @@ public class AccessCodeEntry {
 
     public MultivaluedMap<String, Role> getResourceRolesRequested() {
         return resourceRolesRequested;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
+    }
+
+    public String getRedirectUri() {
+        return redirectUri;
+    }
+
+    public void setRedirectUri(String redirectUri) {
+        this.redirectUri = redirectUri;
     }
 }

@@ -38,5 +38,6 @@
         <module>as7-eap-demo/customer-app</module>
         <module>as7-eap-demo/product-app</module>
         <module>as7-eap-demo/database-service</module>
+        <module>as7-eap-demo/third-party</module>
     </modules>
 </project>

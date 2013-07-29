@@ -25,15 +25,33 @@
                 { "type" : "Password",
                  "value" : "password" }
             ]
+      },
+      {
+            "username" : "third-party",
+            "enabled" : true,
+            "credentials" : [
+                { "type" : "Password",
+                 "value" : "password" }
+            ]
       }
    ],
    "roles" : [
-      { "name" : "user", "description" : "User privileges" },
-      { "name" : "admin", "description" : "Administrator privileges" }
+      { "name" : "user", "description" : "Have User privileges" },
+      { "name" : "admin", "description" : "Have Administrator privileges" }
    ],
    "roleMappings" : [
        {
           "username" : "bburke@redhat.com",
+          "roles" : ["user"]
+       },
+       {
+          "username" : "third-party",
+          "roles" : ["KEYCLOAK_IDENTITY_REQUESTER"]
+       }
+   ],
+   "scopeMappings" : [
+       {
+          "username" : "third-party",
           "roles" : ["user"]
        }
    ],

@@ -41,7 +41,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class RealmManager {
     private static AtomicLong counter = new AtomicLong(1);
     public static final String RESOURCE_ROLE = "KEYCLOAK_RESOURCE";
-    public static final String OAUTH_CLIENT_ROLE = "KEYCLOAK_OAUTH_CLIENT";
+    public static final String IDENTITY_REQUESTER_ROLE = "KEYCLOAK_IDENTITY_REQUESTER";
     public static final String WILDCARD_ROLE = "*";
 
     public static String generateId() {
@@ -78,6 +78,7 @@ public class RealmManager {
         RealmModel realm = new RealmModel(newRealm, identitySession);
         idm.add(new SimpleRole(WILDCARD_ROLE));
         idm.add(new SimpleRole(RESOURCE_ROLE));
+        idm.add(new SimpleRole(IDENTITY_REQUESTER_ROLE));
         return realm;
     }
 

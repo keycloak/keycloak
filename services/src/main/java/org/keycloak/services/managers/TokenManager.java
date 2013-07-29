@@ -54,7 +54,7 @@ public class TokenManager {
         return cookie;
     }
 
-    public AccessCodeEntry createAccessCode(String scopeParam, RealmModel realm, User client, User user) {
+    public AccessCodeEntry createAccessCode(String scopeParam, String state, String redirect, RealmModel realm, User client, User user) {
         AccessCodeEntry code = new AccessCodeEntry();
         SkeletonKeyScope scopeMap = null;
         if (scopeParam != null) scopeMap = decodeScope(scopeParam);
@@ -105,6 +105,8 @@ public class TokenManager {
         code.setExpiration((System.currentTimeMillis() / 1000) + realm.getAccessCodeLifespan());
         code.setClient(client);
         code.setUser(user);
+        code.setState(state);
+        code.setRedirectUri(redirect);
         accessCodeMap.put(code.getId(), code);
         String accessCode = null;
         try {
