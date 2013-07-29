@@ -38,6 +38,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * Meant to be a per-request object
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
@@ -57,6 +59,7 @@ public class RealmModel {
     protected IdentitySession identitySession;
     protected volatile transient PublicKey publicKey;
     protected volatile transient PrivateKey privateKey;
+    protected IdentityManager idm;
 
     public RealmModel(Realm realm, IdentitySession session) {
         this.realm = realm;
@@ -65,7 +68,8 @@ public class RealmModel {
     }
 
     public IdentityManager getIdm() {
-        return identitySession.createIdentityManager(realm);
+        if (idm == null) idm = identitySession.createIdentityManager(realm);
+        return idm;
     }
 
     public void updateRealm() {

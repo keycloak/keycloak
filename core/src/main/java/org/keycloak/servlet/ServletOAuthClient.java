@@ -55,7 +55,7 @@ public class ServletOAuthClient extends AbstractOAuthClient {
         if (cookiePath.equals("")) cookiePath = "/";
 
         Cookie cookie = new Cookie(stateCookieName, state);
-        cookie.setSecure(true);
+        cookie.setSecure(isSecure);
         cookie.setPath(cookiePath);
         response.addCookie(cookie);
         response.sendRedirect(url.toString());

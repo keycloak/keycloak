@@ -28,6 +28,7 @@ public class AbstractOAuthClient {
     protected String codeUrl;
     protected String stateCookieName = "OAuth_Token_Request_State";
     protected Client client;
+    protected boolean isSecure;
     protected final AtomicLong counter = new AtomicLong();
 
     protected String getStateCode() {
@@ -109,6 +110,8 @@ public class AbstractOAuthClient {
         Form codeForm = new Form()
                 .param("grant_type", "authorization_code")
                 .param("code", code)
+                .param("client_id", clientId)
+                .param("Password", password)
                 .param("redirect_uri", redirectUri);
         Response res = client.target(codeUrl).request().header(HttpHeaders.AUTHORIZATION, authHeader).post(Entity.form(codeForm));
         try {

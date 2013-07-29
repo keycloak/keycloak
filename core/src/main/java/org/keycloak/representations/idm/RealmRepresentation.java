@@ -18,7 +18,7 @@ public class RealmRepresentation {
     protected boolean cookieLoginAllowed;
     protected String privateKey;
     protected String publicKey;
-    protected Set<String> roles;
+    protected List<RoleRepresentation> roles;
     protected List<RequiredCredentialRepresentation> requiredCredentials;
     protected List<UserRepresentation> users;
     protected List<RoleMappingRepresentation> roleMappings;
@@ -146,11 +146,11 @@ public class RealmRepresentation {
         this.accessCodeLifespan = accessCodeLifespan;
     }
 
-    public Set<String> getRoles() {
+    public List<RoleRepresentation> getRoles() {
         return roles;
     }
 
-    public void setRoles(Set<String> roles) {
+    public void setRoles(List<RoleRepresentation> roles) {
         this.roles = roles;
     }
 
