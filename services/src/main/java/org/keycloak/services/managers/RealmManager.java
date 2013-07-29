@@ -5,6 +5,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredCredentialRepresentation;
 import org.keycloak.representations.idm.ResourceRepresentation;
 import org.keycloak.representations.idm.RoleMappingRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.ScopeMappingRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.models.RealmModel;
@@ -23,6 +24,7 @@ import org.picketlink.idm.model.User;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
+import java.io.Serializable;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -38,6 +40,9 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class RealmManager {
     private static AtomicLong counter = new AtomicLong(1);
+    public static final String RESOURCE_ROLE = "KEYCLOAK_RESOURCE";
+    public static final String IDENTITY_REQUESTER_ROLE = "KEYCLOAK_IDENTITY_REQUESTER";
+    public static final String WILDCARD_ROLE = "*";
 
     public static String generateId() {
         return counter.getAndIncrement() + "-" + System.currentTimeMillis();
@@ -71,7 +76,9 @@ public class RealmManager {
         SimpleAgent agent = new SimpleAgent(RealmModel.REALM_AGENT_ID);
         idm.add(agent);
         RealmModel realm = new RealmModel(newRealm, identitySession);
-        idm.add(new SimpleRole("*"));
+        idm.add(new SimpleRole(WILDCARD_ROLE));
+        idm.add(new SimpleRole(RESOURCE_ROLE));
+        idm.add(new SimpleRole(IDENTITY_REQUESTER_ROLE));
         return realm;
     }
 
@@ -145,8 +152,9 @@ public class RealmManager {
         }
 
         if (rep.getRoles() != null) {
-            for (String roleString : rep.getRoles()) {
-                SimpleRole role = new SimpleRole(roleString.trim());
+            for (RoleRepresentation roleRep : rep.getRoles()) {
+                SimpleRole role = new SimpleRole(roleRep.getName());
+                if (roleRep.getDescription() != null) role.setAttribute(new Attribute<String>("description", roleRep.getDescription()));
                 newRealm.getIdm().add(role);
             }
         }
@@ -186,6 +194,7 @@ public class RealmManager {
     }
 
     protected void createResources(RealmRepresentation rep, RealmModel realm, Map<String, User> userMap) {
+        Role loginRole = realm.getIdm().getRole(RealmManager.RESOURCE_ROLE);
         for (ResourceRepresentation resourceRep : rep.getResources()) {
             ResourceModel resource = realm.addResource(resourceRep.getName());
             resource.setManagementUrl(resourceRep.getAdminUrl());
@@ -202,11 +211,13 @@ public class RealmManager {
                 }
             }
             userMap.put(resourceUser.getLoginName(), resourceUser);
+            realm.getIdm().grantRole(resourceUser, loginRole);
 
 
             if (resourceRep.getRoles() != null) {
-                for (String roleString : resourceRep.getRoles()) {
-                    SimpleRole role = new SimpleRole(roleString.trim());
+                for (RoleRepresentation roleRep : resourceRep.getRoles()) {
+                    SimpleRole role = new SimpleRole(roleRep.getName());
+                    if (roleRep.getDescription() != null) role.setAttribute(new Attribute<String>("description", roleRep.getDescription()));
                     resource.getIdm().add(role);
                 }
             }

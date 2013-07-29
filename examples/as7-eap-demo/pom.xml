@@ -4,14 +4,14 @@
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
         <version>1.0-alpha-1</version>
-        <relativePath>../pom.xml</relativePath>
+        <relativePath>../../pom.xml</relativePath>
     </parent>
     <name>Examples</name>
     <description/>
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.keycloak</groupId>
-    <artifactId>examples-pom</artifactId>
+    <artifactId>as7-eap-demo-pom</artifactId>
     <packaging>pom</packaging>
 
     <build>
@@ -34,6 +34,10 @@
         </plugins>
     </build>
     <modules>
-        <module>as7-eap-demo</module>
+        <module>server</module>
+        <module>customer-app</module>
+        <module>product-app</module>
+        <module>database-service</module>
+        <module>third-party</module>
     </modules>
 </project>

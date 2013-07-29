@@ -9,7 +9,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title>Keycloak</title>
+    <title>Keycloak Realm Login Page</title>
 
     <link rel="shortcut icon" type="image/x-icon" href="<%=application.getContextPath()%>/img/favicon.ico">
 

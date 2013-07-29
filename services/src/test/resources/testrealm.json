@@ -62,7 +62,10 @@
    "resources" : [
        {
           "name" : "Application",
-          "roles" : ["admin", "user"],
+          "roles" : [
+              { "name" : "admin" },
+              { "name" : "user" }
+          ],
           "roleMappings" : [
              {
                 "username" : "wburke",
@@ -82,7 +85,10 @@
        },
               {
                  "name" : "OtherApp",
-                 "roles" : ["admin", "user"],
+          "roles" : [
+              { "name" : "admin" },
+              { "name" : "user" }
+          ],
                  "roleMappings" : [
                     {
                        "username" : "wburke",

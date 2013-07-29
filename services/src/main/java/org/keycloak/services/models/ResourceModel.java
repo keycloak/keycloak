@@ -25,6 +25,7 @@ public class ResourceModel {
     protected ResourceRelationship agent;
     protected RealmModel realm;
     protected IdentitySession identitySession;
+    protected IdentityManager idm;
 
     public ResourceModel(Tier tier, ResourceRelationship agent, RealmModel realm, IdentitySession session) {
         this.tier = tier;
@@ -34,7 +35,8 @@ public class ResourceModel {
     }
 
     public IdentityManager getIdm() {
-        return identitySession.createIdentityManager(tier);
+        if (idm == null) idm = identitySession.createIdentityManager(tier);
+        return idm;
     }
 
     public void updateResource() {

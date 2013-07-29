@@ -166,7 +166,7 @@ public class AdapterTest {
         idm.add(new SimpleRole("admin"));
         idm.add(new SimpleRole("user"));
         List<Role> roles = realmModel.getRoles();
-        Assert.assertEquals(3, roles.size());
+        Assert.assertEquals(5, roles.size());
         SimpleUser user = new SimpleUser("bburke");
         idm.add(user);
         Role role = idm.getRole("user");
