@@ -3,14 +3,12 @@ package org.keycloak.test;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMWriter;
 import org.jboss.resteasy.security.PemUtils;
-import org.keycloak.services.models.RealmModel;
 
 import java.io.IOException;
 import java.io.StringWriter;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
-import java.security.PublicKey;
 import java.security.Security;
 
 /**

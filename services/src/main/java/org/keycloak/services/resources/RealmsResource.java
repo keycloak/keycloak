@@ -3,13 +3,12 @@ package org.keycloak.services.resources;
 import org.jboss.resteasy.logging.Logger;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.managers.TokenManager;
+import org.keycloak.services.models.KeycloakSession;
 import org.keycloak.services.models.RealmModel;
-import org.picketlink.idm.IdentitySession;
-import org.picketlink.idm.model.Realm;
-import org.picketlink.idm.model.Role;
-import org.picketlink.idm.model.User;
+import org.keycloak.services.models.RoleModel;
+import org.keycloak.services.models.UserModel;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.NotAuthorizedException;
@@ -40,7 +39,7 @@ public class RealmsResource {
     protected HttpHeaders headers;
 
     @Context
-    protected IdentitySession identitySession;
+    protected KeycloakSession identitySession;
 
     @Context
     ResourceContext resourceContext;
@@ -92,9 +91,9 @@ public class RealmsResource {
         RealmModel realm;
         try {
             RealmManager realmManager = new RealmManager(identitySession);
-            RealmModel defaultRealm = realmManager.getRealm(Realm.DEFAULT_REALM);
-            User realmCreator = new AuthenticationManager().authenticateBearerToken(defaultRealm, headers);
-            Role creatorRole = defaultRealm.getRole(RegistrationService.REALM_CREATOR_ROLE);
+            RealmModel defaultRealm = realmManager.getRealm(RealmModel.DEFAULT_REALM);
+            UserModel realmCreator = new AuthenticationManager().authenticateBearerToken(defaultRealm, headers);
+            RoleModel creatorRole = defaultRealm.getRole(RegistrationService.REALM_CREATOR_ROLE);
             if (!defaultRealm.hasRole(realmCreator, creatorRole)) {
                 logger.warn("not a realm creator");
                 throw new NotAuthorizedException("Bearer");

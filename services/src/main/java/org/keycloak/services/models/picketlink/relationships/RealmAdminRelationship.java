@@ -1,8 +1,7 @@
-package org.keycloak.services.models.relationships;
+package org.keycloak.services.models.picketlink.relationships;
 
 import org.picketlink.idm.model.AbstractAttributedType;
 import org.picketlink.idm.model.Agent;
-import org.picketlink.idm.model.Realm;
 import org.picketlink.idm.model.Relationship;
 import org.picketlink.idm.model.annotation.AttributeProperty;
 import org.picketlink.idm.model.annotation.IdentityProperty;

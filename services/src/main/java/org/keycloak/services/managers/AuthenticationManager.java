@@ -9,12 +9,8 @@ import org.keycloak.representations.SkeletonKeyToken;
 import org.keycloak.representations.idm.RequiredCredentialRepresentation;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RequiredCredentialModel;
+import org.keycloak.services.models.UserModel;
 import org.keycloak.services.resources.RealmsResource;
-import org.picketlink.idm.credential.Credentials;
-import org.picketlink.idm.credential.Password;
-import org.picketlink.idm.credential.TOTPCredentials;
-import org.picketlink.idm.credential.UsernamePasswordCredentials;
-import org.picketlink.idm.model.User;
 
 import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.core.Cookie;
@@ -44,7 +40,7 @@ public class AuthenticationManager {
      * @return
      */
     public boolean isRealmAdmin(RealmModel realm, HttpHeaders headers) {
-        User user = authenticateBearerToken(realm, headers);
+        UserModel user = authenticateBearerToken(realm, headers);
         return realm.isRealmAdmin(user);
     }
 
@@ -60,7 +56,7 @@ public class AuthenticationManager {
         response.addNewCookie(expireIt);
     }
 
-    public User authenticateIdentityCookie(RealmModel realm, UriInfo uriInfo, HttpHeaders headers) {
+    public UserModel authenticateIdentityCookie(RealmModel realm, UriInfo uriInfo, HttpHeaders headers) {
         Cookie cookie = headers.getCookies().get(TokenManager.KEYCLOAK_IDENTITY_COOKIE);
         if (cookie == null) return null;
 
@@ -72,7 +68,7 @@ public class AuthenticationManager {
                 expireIdentityCookie(realm, uriInfo);
                 return null;
             }
-            User user = realm.getUser(token.getPrincipal());
+            UserModel user = realm.getUser(token.getPrincipal());
             if (user == null || !user.isEnabled()) {
                 logger.info("Unknown user in identity cookie");
                 expireIdentityCookie(realm, uriInfo);
@@ -86,7 +82,7 @@ public class AuthenticationManager {
         return null;
     }
 
-    public User authenticateBearerToken(RealmModel realm, HttpHeaders headers) {
+    public UserModel authenticateBearerToken(RealmModel realm, HttpHeaders headers) {
         String tokenString = null;
         String authHeader = headers.getHeaderString(HttpHeaders.AUTHORIZATION);
         if (authHeader == null) {
@@ -104,7 +100,7 @@ public class AuthenticationManager {
             if (!token.isActive()) {
                 throw new NotAuthorizedException("token_expired");
             }
-            User user = realm.getUser(token.getPrincipal());
+            UserModel user = realm.getUser(token.getPrincipal());
             if (user == null || !user.isEnabled()) {
                 throw new NotAuthorizedException("invalid_user");
             }
@@ -115,7 +111,7 @@ public class AuthenticationManager {
         }
     }
 
-    public boolean authenticateForm(RealmModel realm, User user, MultivaluedMap<String, String> formData) {
+    public boolean authenticateForm(RealmModel realm, UserModel user, MultivaluedMap<String, String> formData) {
         String username = user.getLoginName();
         Set<String> types = new HashSet<String>();
 

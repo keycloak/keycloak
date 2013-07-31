@@ -12,8 +12,8 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredCredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.InstallationManager;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.models.KeycloakSession;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.picketlink.idm.IdentitySession;
 import org.picketlink.idm.model.Realm;
@@ -43,7 +43,7 @@ public class RealmCreationTest {
         deployment.setApplicationClass(KeycloakApplication.class.getName());
         EmbeddedContainer.start(deployment);
         KeycloakApplication application = (KeycloakApplication) deployment.getApplication();
-        IdentitySession IdentitySession = application.getFactory().createIdentitySession();
+        KeycloakSession IdentitySession = application.getFactory().createSession();
         RealmManager manager = new RealmManager(IdentitySession);
         new InstallationManager().install(manager);
         client = new ResteasyClientBuilder().build();

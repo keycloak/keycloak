@@ -1,12 +1,14 @@
 package org.keycloak.services.resources;
 
 import org.keycloak.SkeletonKeyContextResolver;
-import org.keycloak.services.filters.IdentitySessionFilter;
+import org.keycloak.services.filters.KeycloakSessionFilter;
 import org.keycloak.services.managers.TokenManager;
-import org.keycloak.services.models.relationships.RealmAdminRelationship;
-import org.keycloak.services.models.relationships.ResourceRelationship;
-import org.keycloak.services.models.relationships.RequiredCredentialRelationship;
-import org.keycloak.services.models.relationships.ScopeRelationship;
+import org.keycloak.services.models.KeycloakSessionFactory;
+import org.keycloak.services.models.picketlink.PicketlinkKeycloakSessionFactory;
+import org.keycloak.services.models.picketlink.relationships.RealmAdminRelationship;
+import org.keycloak.services.models.picketlink.relationships.RequiredCredentialRelationship;
+import org.keycloak.services.models.picketlink.relationships.ResourceRelationship;
+import org.keycloak.services.models.picketlink.relationships.ScopeRelationship;
 import org.picketlink.idm.IdentitySessionFactory;
 import org.picketlink.idm.config.IdentityConfiguration;
 import org.picketlink.idm.config.IdentityConfigurationBuilder;
@@ -34,18 +36,18 @@ public class KeycloakApplication extends Application {
     protected Set<Object> singletons = new HashSet<Object>();
     protected Set<Class<?>> classes = new HashSet<Class<?>>();
 
-    protected IdentitySessionFactory factory;
+    protected KeycloakSessionFactory factory;
 
     public KeycloakApplication() {
-        this.factory = createFactory();
-        IdentitySessionFilter filter = new IdentitySessionFilter(factory);
+        this.factory = new PicketlinkKeycloakSessionFactory(createFactory());
+        KeycloakSessionFilter filter = new KeycloakSessionFilter(factory);
         singletons.add(new RealmsResource(new TokenManager()));
         singletons.add(filter);
         classes.add(SkeletonKeyContextResolver.class);
         classes.add(RegistrationService.class);
     }
 
-    public IdentitySessionFactory getFactory() {
+    public KeycloakSessionFactory getFactory() {
         return factory;
     }
 

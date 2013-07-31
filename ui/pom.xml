@@ -1,22 +1,22 @@
 <?xml version="1.0"?>
 <project>
-	<parent>
-		<artifactId>keycloak-parent</artifactId>
-		<groupId>org.keycloak</groupId>
-		<version>1.0-alpha-1</version>
-		<relativePath>../pom.xml</relativePath>
-	</parent>
-	<modelVersion>4.0.0</modelVersion>
+    <parent>
+        <artifactId>keycloak-parent</artifactId>
+        <groupId>org.keycloak</groupId>
+        <version>1.0-alpha-1</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
 
-	<artifactId>keycloak-ui</artifactId>
-	<name>Keycloak UI</name>
-	<description />
+    <artifactId>keycloak-ui</artifactId>
+    <name>Keycloak UI</name>
+    <description/>
 
-	<dependencies>
-		<dependency>
-			<groupId>org.jboss.resteasy</groupId>
-			<artifactId>jaxrs-api</artifactId>
-			<scope>provided</scope>
-		</dependency>
-	</dependencies>
+    <dependencies>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>jaxrs-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
 </project>
