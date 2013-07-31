@@ -7,6 +7,7 @@ import org.picketlink.idm.IdentityManager;
 import org.picketlink.idm.model.Agent;
 import org.picketlink.idm.model.Grant;
 import org.picketlink.idm.model.Role;
+import org.picketlink.idm.model.SimpleRole;
 import org.picketlink.idm.model.Tier;
 import org.picketlink.idm.model.User;
 import org.picketlink.idm.query.IdentityQuery;
@@ -34,7 +35,7 @@ public class ResourceModel {
         this.identitySession = session;
     }
 
-    public IdentityManager getIdm() {
+    protected IdentityManager getIdm() {
         if (idm == null) idm = identitySession.createIdentityManager(tier);
         return idm;
     }
@@ -81,6 +82,28 @@ public class ResourceModel {
 
     public void setManagementUrl(String url) {
         agent.setManagementUrl(url);
+    }
+
+    public User getUser(String name) {
+        return getIdm().getUser(name);
+    }
+
+    public void addUser(User user) {
+        getIdm().add(user);
+    }
+
+    public Role getRole(String name) {
+        return getIdm().getRole(name);
+    }
+
+    public Role addRole(String name) {
+        Role role = new SimpleRole(name);
+        getIdm().add(role);
+        return role;
+    }
+
+    public void addRole(Role role) {
+        getIdm().add(role);
     }
 
     public List<Role> getRoles() {

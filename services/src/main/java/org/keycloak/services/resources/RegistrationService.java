@@ -49,21 +49,21 @@ public class RegistrationService {
             if (!defaultRealm.isRegistrationAllowed()) {
                 throw new ForbiddenException();
             }
-            User user = defaultRealm.getIdm().getUser(newUser.getUsername());
+            User user = defaultRealm.getUser(newUser.getUsername());
             if (user != null) {
                 return Response.status(400).type("text/plain").entity("user exists").build();
             }
 
             user = new SimpleUser(newUser.getUsername());
-            defaultRealm.getIdm().add(user);
+            defaultRealm.addUser(user);
             for (CredentialRepresentation cred : newUser.getCredentials()) {
                 UserCredentialModel credModel = new UserCredentialModel();
                 credModel.setType(cred.getType());
                 credModel.setValue(cred.getValue());
                 defaultRealm.updateCredential(user, credModel);
             }
-            Role realmCreator = defaultRealm.getIdm().getRole(REALM_CREATOR_ROLE);
-            defaultRealm.getIdm().grantRole(user, realmCreator);
+            Role realmCreator = defaultRealm.getRole(REALM_CREATOR_ROLE);
+            defaultRealm.grantRole(user, realmCreator);
             identitySession.getTransaction().commit();
             URI uri = uriInfo.getBaseUriBuilder().path(RealmsResource.class).path(user.getLoginName()).build();
             return Response.created(uri).build();

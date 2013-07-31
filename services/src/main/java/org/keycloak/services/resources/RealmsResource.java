@@ -94,8 +94,8 @@ public class RealmsResource {
             RealmManager realmManager = new RealmManager(identitySession);
             RealmModel defaultRealm = realmManager.getRealm(Realm.DEFAULT_REALM);
             User realmCreator = new AuthenticationManager().authenticateBearerToken(defaultRealm, headers);
-            Role creatorRole = defaultRealm.getIdm().getRole(RegistrationService.REALM_CREATOR_ROLE);
-            if (!defaultRealm.getIdm().hasRole(realmCreator, creatorRole)) {
+            Role creatorRole = defaultRealm.getRole(RegistrationService.REALM_CREATOR_ROLE);
+            if (!defaultRealm.hasRole(realmCreator, creatorRole)) {
                 logger.warn("not a realm creator");
                 throw new NotAuthorizedException("Bearer");
             }
