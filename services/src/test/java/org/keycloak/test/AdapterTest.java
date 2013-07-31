@@ -7,18 +7,19 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.representations.idm.RequiredCredentialRepresentation;
-import org.keycloak.services.managers.InstallationManager;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.models.KeycloakSession;
+import org.keycloak.services.models.KeycloakSessionFactory;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RequiredCredentialModel;
 import org.keycloak.services.models.RoleModel;
-import org.keycloak.services.models.UserCredentialModel;
 import org.keycloak.services.models.UserModel;
-import org.keycloak.services.models.relationships.RealmAdminRelationship;
-import org.keycloak.services.models.relationships.RequiredCredentialRelationship;
-import org.keycloak.services.models.relationships.ResourceRelationship;
-import org.keycloak.services.models.relationships.ScopeRelationship;
-import org.picketlink.idm.IdentitySession;
+import org.keycloak.services.models.UserCredentialModel;
+import org.keycloak.services.models.picketlink.PicketlinkKeycloakSessionFactory;
+import org.keycloak.services.models.picketlink.relationships.RealmAdminRelationship;
+import org.keycloak.services.models.picketlink.relationships.RequiredCredentialRelationship;
+import org.keycloak.services.models.picketlink.relationships.ResourceRelationship;
+import org.keycloak.services.models.picketlink.relationships.ScopeRelationship;
 import org.picketlink.idm.IdentitySessionFactory;
 import org.picketlink.idm.config.IdentityConfiguration;
 import org.picketlink.idm.config.IdentityConfigurationBuilder;
@@ -41,16 +42,16 @@ import java.util.List;
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class AdapterTest {
-    private IdentitySessionFactory factory;
-    private IdentitySession IdentitySession;
+    private KeycloakSessionFactory factory;
+    private KeycloakSession identitySession;
     private RealmManager adapter;
     private RealmModel realmModel;
 
     @Before
     public void before() throws Exception {
-        factory = createFactory();
-        IdentitySession = factory.createIdentitySession();
-        adapter = new RealmManager(IdentitySession);
+        factory = new PicketlinkKeycloakSessionFactory(createFactory());
+        identitySession = factory.createSession();
+        adapter = new RealmManager(identitySession);
     }
 
     public static IdentitySessionFactory createFactory() {
@@ -79,7 +80,7 @@ public class AdapterTest {
 
     @After
     public void after() throws Exception {
-        IdentitySession.close();
+        identitySession.close();
         factory.close();
     }
 
@@ -99,7 +100,6 @@ public class AdapterTest {
         realmModel.setPrivateKeyPem("0234234");
         realmModel.setPublicKeyPem("0234234");
         realmModel.setTokenLifespan(1000);
-        realmModel.updateRealm();
 
         System.out.println(realmModel.getId());
         realmModel = adapter.getRealm(realmModel.getId());

@@ -8,17 +8,13 @@ import org.keycloak.representations.idm.RoleMappingRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.ScopeMappingRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.models.KeycloakSession;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RequiredCredentialModel;
 import org.keycloak.services.models.ResourceModel;
 import org.keycloak.services.models.RoleModel;
 import org.keycloak.services.models.UserCredentialModel;
 import org.keycloak.services.models.UserModel;
-import org.picketlink.idm.IdentityManager;
-import org.picketlink.idm.IdentitySession;
-import org.picketlink.idm.model.Realm;
-import org.picketlink.idm.model.SimpleAgent;
-import org.picketlink.idm.model.SimpleRole;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
@@ -45,22 +41,18 @@ public class RealmManager {
         return counter.getAndIncrement() + "-" + System.currentTimeMillis();
     }
 
-    protected IdentitySession identitySession;
+    protected KeycloakSession identitySession;
 
-    public RealmManager(IdentitySession identitySession) {
+    public RealmManager(KeycloakSession identitySession) {
         this.identitySession = identitySession;
     }
 
     public RealmModel defaultRealm() {
-        return getRealm(Realm.DEFAULT_REALM);
+        return getRealm(RealmModel.DEFAULT_REALM);
     }
 
     public RealmModel getRealm(String id) {
-        Realm existing = identitySession.findRealm(id);
-        if (existing == null) {
-            return null;
-        }
-        return new RealmModel(existing, identitySession);
+        return identitySession.getRealm(id);
     }
 
     public RealmModel createRealm(String name) {
@@ -68,14 +60,11 @@ public class RealmManager {
     }
 
     public RealmModel createRealm(String id, String name) {
-        Realm newRealm = identitySession.createRealm(id);
-        IdentityManager idm = identitySession.createIdentityManager(newRealm);
-        SimpleAgent agent = new SimpleAgent(RealmModel.REALM_AGENT_ID);
-        idm.add(agent);
-        RealmModel realm = new RealmModel(newRealm, identitySession);
-        idm.add(new SimpleRole(WILDCARD_ROLE));
-        idm.add(new SimpleRole(RESOURCE_ROLE));
-        idm.add(new SimpleRole(IDENTITY_REQUESTER_ROLE));
+        RealmModel realm =identitySession.createRealm(id, name);
+        realm.setName(name);
+        realm.addRole(WILDCARD_ROLE);
+        realm.addRole(RESOURCE_ROLE);
+        realm.addRole(IDENTITY_REQUESTER_ROLE);
         return realm;
     }
 
@@ -88,7 +77,6 @@ public class RealmManager {
         }
         realm.setPrivateKey(keyPair.getPrivate());
         realm.setPublicKey(keyPair.getPublic());
-        realm.updateRealm();
     }
 
     public RealmModel importRealm(RealmRepresentation rep, UserModel realmCreator) {
@@ -96,7 +84,6 @@ public class RealmManager {
         RealmModel realm = createRealm(rep.getRealm());
         importRealm(rep, realm);
         realm.addRealmAdmin(realmCreator);
-        realm.updateRealm();
         return realm;
     }
 
@@ -114,9 +101,6 @@ public class RealmManager {
             newRealm.setPrivateKeyPem(rep.getPrivateKey());
             newRealm.setPublicKeyPem(rep.getPublicKey());
         }
-
-        newRealm.updateRealm();
-
 
         Map<String, UserModel> userMap = new HashMap<String, UserModel>();
 
@@ -292,5 +276,4 @@ public class RealmManager {
             }
         }
     }
-
 }

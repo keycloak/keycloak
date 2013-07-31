@@ -5,4 +5,6 @@ package org.keycloak.services.models;
  * @version $Revision: 1 $
  */
 public interface KeycloakSessionFactory {
+    KeycloakSession createSession();
+    void close();
 }

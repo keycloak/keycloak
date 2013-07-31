@@ -4,11 +4,11 @@ import org.jboss.resteasy.logging.Logger;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.models.KeycloakSession;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RoleModel;
-import org.keycloak.services.models.UserCredentialModel;
 import org.keycloak.services.models.UserModel;
-import org.picketlink.idm.IdentitySession;
+import org.keycloak.services.models.UserCredentialModel;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.ForbiddenException;
@@ -33,7 +33,7 @@ public class RegistrationService {
     protected UriInfo uriInfo;
 
     @Context
-    protected IdentitySession identitySession;
+    protected KeycloakSession identitySession;
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)

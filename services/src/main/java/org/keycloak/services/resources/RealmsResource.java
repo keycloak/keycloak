@@ -5,10 +5,10 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.TokenManager;
+import org.keycloak.services.models.KeycloakSession;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RoleModel;
 import org.keycloak.services.models.UserModel;
-import org.picketlink.idm.IdentitySession;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.NotAuthorizedException;
@@ -39,7 +39,7 @@ public class RealmsResource {
     protected HttpHeaders headers;
 
     @Context
-    protected IdentitySession identitySession;
+    protected KeycloakSession identitySession;
 
     @Context
     ResourceContext resourceContext;

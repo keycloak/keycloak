@@ -1,5 +1,6 @@
-package org.keycloak.services.managers;
+package org.keycloak.test;
 
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RequiredCredentialModel;
 import org.keycloak.services.resources.RegistrationService;
@@ -20,7 +21,6 @@ public class InstallationManager {
         defaultRealm.setCookieLoginAllowed(true);
         defaultRealm.setRegistrationAllowed(true);
         manager.generateRealmKeys(defaultRealm);
-        defaultRealm.updateRealm();
         defaultRealm.addRequiredCredential(RequiredCredentialModel.PASSWORD);
         defaultRealm.addRole(RegistrationService.REALM_CREATOR_ROLE);
     }
