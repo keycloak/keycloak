@@ -11,20 +11,17 @@ import org.keycloak.services.managers.InstallationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RequiredCredentialModel;
+import org.keycloak.services.models.RoleModel;
 import org.keycloak.services.models.UserCredentialModel;
+import org.keycloak.services.models.UserModel;
 import org.keycloak.services.models.relationships.RealmAdminRelationship;
 import org.keycloak.services.models.relationships.RequiredCredentialRelationship;
 import org.keycloak.services.models.relationships.ResourceRelationship;
 import org.keycloak.services.models.relationships.ScopeRelationship;
-import org.keycloak.services.resources.KeycloakApplication;
 import org.picketlink.idm.IdentitySession;
 import org.picketlink.idm.IdentitySessionFactory;
-import org.picketlink.idm.IdentityManager;
 import org.picketlink.idm.config.IdentityConfiguration;
 import org.picketlink.idm.config.IdentityConfigurationBuilder;
-import org.picketlink.idm.credential.Credentials;
-import org.picketlink.idm.credential.Password;
-import org.picketlink.idm.credential.UsernamePasswordCredentials;
 import org.picketlink.idm.internal.DefaultIdentitySessionFactory;
 import org.picketlink.idm.jpa.internal.ResourceLocalJpaIdentitySessionHandler;
 import org.picketlink.idm.jpa.schema.CredentialObject;
@@ -35,10 +32,6 @@ import org.picketlink.idm.jpa.schema.PartitionObject;
 import org.picketlink.idm.jpa.schema.RelationshipIdentityObject;
 import org.picketlink.idm.jpa.schema.RelationshipObject;
 import org.picketlink.idm.jpa.schema.RelationshipObjectAttribute;
-import org.picketlink.idm.model.Role;
-import org.picketlink.idm.model.SimpleRole;
-import org.picketlink.idm.model.SimpleUser;
-import org.picketlink.idm.model.User;
 
 import java.util.List;
 
@@ -147,8 +140,7 @@ public class AdapterTest {
     @Test
     public void testCredentialValidation() throws Exception {
         test1CreateRealm();
-        User user = new SimpleUser("bburke");
-        realmModel.addUser(user);
+        UserModel user = realmModel.addUser("bburke");
         UserCredentialModel cred = new UserCredentialModel();
         cred.setType(RequiredCredentialRepresentation.PASSWORD);
         cred.setValue("geheim");
@@ -159,13 +151,12 @@ public class AdapterTest {
     @Test
     public void testRoles() throws Exception {
         test1CreateRealm();
-        realmModel.addRole(new SimpleRole("admin"));
-        realmModel.addRole(new SimpleRole("user"));
-        List<Role> roles = realmModel.getRoles();
+        realmModel.addRole("admin");
+        realmModel.addRole("user");
+        List<RoleModel> roles = realmModel.getRoles();
         Assert.assertEquals(5, roles.size());
-        SimpleUser user = new SimpleUser("bburke");
-        realmModel.addUser(user);
-        Role role = realmModel.getRole("user");
+        UserModel user = realmModel.addUser("bburke");
+        RoleModel role = realmModel.getRole("user");
         realmModel.grantRole(user, role);
         Assert.assertTrue(realmModel.hasRole(user, role));
     }

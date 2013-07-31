@@ -4,7 +4,6 @@ import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RequiredCredentialModel;
 import org.keycloak.services.resources.RegistrationService;
 import org.picketlink.idm.model.Realm;
-import org.picketlink.idm.model.SimpleRole;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

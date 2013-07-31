@@ -1,57 +1,58 @@
 <!doctype html>
 <html>
 <head>
-<meta charset="utf-8">
-<link href="css/bootstrap.css" rel="stylesheet">
-<link href="css/default.css" rel="stylesheet">
+    <meta charset="utf-8">
+    <link href="css/bootstrap.css" rel="stylesheet">
+    <link href="css/default.css" rel="stylesheet">
 
-<script src="js/angular.js"></script>
-<script src="js/angular-resource.js"></script>
-<script src="js/app.js"></script>
+    <script src="js/angular.js"></script>
+    <script src="js/angular-resource.js"></script>
+    <script src="js/app.js"></script>
 </head>
 
 <body class=keycloak-login-page data-ng-app=keycloak>
-	<div id=keycloak-login-container data-ng-controller=GlobalCtrl>
-		<div id=keycloak-login-standard>
-			<h1>Register with {{config.name}}</h1>
-			
-			<div class="alert alert-info" data-ng-show="info">{{info}}</div>
-			<div class="alert alert-error" data-ng-show="error">{{error}}</div>		
+<div id=keycloak-login-container data-ng-controller=GlobalCtrl>
+    <div id=keycloak-login-standard>
+        <h1>Register with {{config.name}}</h1>
 
-			<form action="#">
-				<label for=firstname>Firstname</label>
-				<input id=firstname type=text data-ng-model=firstname />
-				
-				<label for=lastname>Lastname</label>
-				<input id=lastname type=text data-ng-model=lastname />
-				
-				<label for=email>Email</label>
-				<input id=email type=email data-ng-model=email />
+        <div class="alert alert-info" data-ng-show="info">{{info}}</div>
+        <div class="alert alert-error" data-ng-show="error">{{error}}</div>
 
-				<label for=username>Username</label>
-				<input id=username type=text data-ng-model=username  />
-								
-				<label for=password>Password</label>
-				<input id=password type=text data-ng-model=password required />
-								
-				<label for=password-confirm>Password confirmation</label>
-				<input id=password-confirm type=text data-ng-model=passwordConfirm required pattern="{{password}}" title="Passwords don't match" />
-								
-				<div>
-					<button class="btn btn-primary" id=keycloak-login-submit type=submit>Register</button>
-					<a class="btn" href="{{config.callbackUrl}}">Cancel</a>					
-				</div>
-			</form>
-		</div>
+        <form action="#">
+            <label for=firstname>Firstname</label>
+            <input id=firstname type=text data-ng-model=firstname/>
 
-		<div id=keycloak-login-social>
-			<h3>Login with</h3>
+            <label for=lastname>Lastname</label>
+            <input id=lastname type=text data-ng-model=lastname/>
 
-			<div data-ng-repeat="p in config.providers">
-				<a href="/social/{{config.id}}/provider/{{p}}"><img data-ng-src="icons/{{p}}.png" /></a>
-			</div>
-		</div>
-	</div>
+            <label for=email>Email</label>
+            <input id=email type=email data-ng-model=email/>
+
+            <label for=username>Username</label>
+            <input id=username type=text data-ng-model=username/>
+
+            <label for=password>Password</label>
+            <input id=password type=text data-ng-model=password required/>
+
+            <label for=password-confirm>Password confirmation</label>
+            <input id=password-confirm type=text data-ng-model=passwordConfirm required pattern="{{password}}"
+                   title="Passwords don't match"/>
+
+            <div>
+                <button class="btn btn-primary" id=keycloak-login-submit type=submit>Register</button>
+                <a class="btn" href="{{config.callbackUrl}}">Cancel</a>
+            </div>
+        </form>
+    </div>
+
+    <div id=keycloak-login-social>
+        <h3>Login with</h3>
+
+        <div data-ng-repeat="p in config.providers">
+            <a href="/social/{{config.id}}/provider/{{p}}"><img data-ng-src="icons/{{p}}.png"/></a>
+        </div>
+    </div>
+</div>
 
 </body>
 </html>

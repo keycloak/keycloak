@@ -5,11 +5,11 @@ import org.jboss.resteasy.security.PemUtils;
 import org.keycloak.representations.idm.RequiredCredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.models.relationships.RealmAdminRelationship;
-import org.keycloak.services.models.relationships.ResourceRelationship;
 import org.keycloak.services.models.relationships.RequiredCredentialRelationship;
+import org.keycloak.services.models.relationships.ResourceRelationship;
 import org.keycloak.services.models.relationships.ScopeRelationship;
-import org.picketlink.idm.IdentitySession;
 import org.picketlink.idm.IdentityManager;
+import org.picketlink.idm.IdentitySession;
 import org.picketlink.idm.credential.Credentials;
 import org.picketlink.idm.credential.Password;
 import org.picketlink.idm.credential.TOTPCredential;
@@ -47,6 +47,7 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class RealmModel {
+    public static final String DEFAULT_REALM = "default";
     public static final String REALM_AGENT_ID = "_realm_";
     public static final String REALM_NAME = "name";
     public static final String REALM_ACCESS_CODE_LIFESPAN = "accessCodeLifespan";
@@ -239,13 +240,13 @@ public class RealmModel {
         idm.add(relationship);
     }
 
-    public boolean validatePassword(User user, String password) {
+    public boolean validatePassword(UserModel user, String password) {
         UsernamePasswordCredentials creds = new UsernamePasswordCredentials(user.getLoginName(), new Password(password));
         getIdm().validateCredentials(creds);
         return creds.getStatus() == Credentials.Status.VALID;
     }
 
-    public boolean validateTOTP(User user, String password, String token) {
+    public boolean validateTOTP(UserModel user, String password, String token) {
         TOTPCredentials creds = new TOTPCredentials();
         creds.setToken(token);
         creds.setUsername(user.getLoginName());
@@ -254,14 +255,14 @@ public class RealmModel {
         return creds.getStatus() == Credentials.Status.VALID;
     }
 
-    public void updateCredential(User user, UserCredentialModel cred) {
+    public void updateCredential(UserModel user, UserCredentialModel cred) {
         IdentityManager idm = getIdm();
         if (cred.getType().equals(RequiredCredentialRepresentation.PASSWORD)) {
             Password password = new Password(cred.getValue());
-            idm.updateCredential(user, password);
+            idm.updateCredential(user.getUser(), password);
         } else if (cred.getType().equals(RequiredCredentialRepresentation.TOTP)) {
             TOTPCredential totp = new TOTPCredential(cred.getValue());
-            idm.updateCredential(user, totp);
+            idm.updateCredential(user.getUser(), totp);
         } else if (cred.getType().equals(RequiredCredentialRepresentation.CLIENT_CERT)) {
             X509Certificate cert = null;
             try {
@@ -270,37 +271,46 @@ public class RealmModel {
                 throw new RuntimeException(e);
             }
             X509CertificateCredentials creds = new X509CertificateCredentials(cert);
-            idm.updateCredential(user, creds);
+            idm.updateCredential(user.getUser(), creds);
         }
     }
 
-    public User getUser(String name) {
-        return getIdm().getUser(name);
+    public UserModel getUser(String name) {
+        User user = getIdm().getUser(name);
+        if (user == null) return null;
+        return new UserModel(user, getIdm());
     }
 
-    public void addUser(User user) {
+    public UserModel addUser(String username) {
+        User user = getIdm().getUser(username);
+        if (user != null) throw new IllegalStateException("User already exists");
+        user = new SimpleUser(username);
         getIdm().add(user);
+        return new UserModel(user, getIdm());
     }
 
-    public Role getRole(String name) {
-        return getIdm().getRole(name);
+    public RoleModel getRole(String name) {
+        Role role = getIdm().getRole(name);
+        if (role == null) return null;
+        return new RoleModel(role, getIdm());
     }
 
-    public Role addRole(String name) {
+    public RoleModel addRole(String name) {
         Role role = new SimpleRole(name);
         getIdm().add(role);
-        return role;
+        return new RoleModel(role, getIdm());
     }
 
-    public void addRole(Role role) {
-        getIdm().add(role);
-    }
-
-    public List<Role> getRoles() {
+    public List<RoleModel> getRoles() {
         IdentityManager idm = getIdm();
         IdentityQuery<Role> query = idm.createIdentityQuery(Role.class);
         query.setParameter(Role.PARTITION, realm);
-        return query.getResultList();
+        List<Role> roles = query.getResultList();
+        List<RoleModel> roleModels = new ArrayList<RoleModel>();
+        for (Role role : roles) {
+            roleModels.add(new RoleModel(role, idm));
+        }
+        return roleModels;
     }
 
 
@@ -345,22 +355,22 @@ public class RealmModel {
         relationship.setResourceUser(resourceUser);
         idm.add(relationship);
         ResourceModel resource = new ResourceModel(newTier, relationship, this, identitySession);
-        resource.addRole(new SimpleRole("*"));
-        resource.addScope(resourceUser, "*");
+        resource.addRole("*");
+        resource.addScope(new UserModel(resourceUser, idm), "*");
         return resource;
     }
 
-    public boolean hasRole(User user, Role role) {
-        return getIdm().hasRole(user, role);
+    public boolean hasRole(UserModel user, RoleModel role) {
+        return getIdm().hasRole(user.getUser(), role.getRole());
     }
 
-    public void grantRole(User user, Role role) {
-        getIdm().grantRole(user, role);
+    public void grantRole(UserModel user, RoleModel role) {
+        getIdm().grantRole(user.getUser(), role.getRole());
     }
 
-    public Set<String> getRoleMappings(User user) {
+    public Set<String> getRoleMappings(UserModel user) {
         RelationshipQuery<Grant> query = getIdm().createRelationshipQuery(Grant.class);
-        query.setParameter(Grant.ASSIGNEE, user);
+        query.setParameter(Grant.ASSIGNEE, user.getUser());
         List<Grant> grants = query.getResultList();
         HashSet<String> set = new HashSet<String>();
         for (Grant grant : grants) {
@@ -369,21 +379,21 @@ public class RealmModel {
         return set;
     }
 
-    public void addScope(Agent agent, String roleName) {
+    public void addScope(UserModel agent, String roleName) {
         IdentityManager idm = getIdm();
         Role role = idm.getRole(roleName);
         if (role == null) throw new RuntimeException("role not found");
         ScopeRelationship scope = new ScopeRelationship();
-        scope.setClient(agent);
+        scope.setClient(agent.getUser());
         scope.setScope(role);
         idm.add(scope);
 
     }
 
 
-    public Set<String> getScope(Agent agent) {
+    public Set<String> getScope(UserModel agent) {
         RelationshipQuery<ScopeRelationship> query = getIdm().createRelationshipQuery(ScopeRelationship.class);
-        query.setParameter(ScopeRelationship.CLIENT, agent);
+        query.setParameter(ScopeRelationship.CLIENT, agent.getUser());
         List<ScopeRelationship> scope = query.getResultList();
         HashSet<String> set = new HashSet<String>();
         for (ScopeRelationship rel : scope) {
@@ -392,19 +402,19 @@ public class RealmModel {
         return set;
     }
 
-    public boolean isRealmAdmin(Agent agent) {
+    public boolean isRealmAdmin(UserModel agent) {
         IdentityManager idm = new RealmManager(identitySession).defaultRealm().getIdm();
         RelationshipQuery<RealmAdminRelationship> query = idm.createRelationshipQuery(RealmAdminRelationship.class);
         query.setParameter(RealmAdminRelationship.REALM, realm.getId());
-        query.setParameter(RealmAdminRelationship.ADMIN, agent);
+        query.setParameter(RealmAdminRelationship.ADMIN, agent.getUser());
         List<RealmAdminRelationship> results = query.getResultList();
         return results.size() > 0;
     }
 
-    public void addRealmAdmin(Agent agent) {
+    public void addRealmAdmin(UserModel agent) {
         IdentityManager idm = new RealmManager(identitySession).defaultRealm().getIdm();
         RealmAdminRelationship relationship = new RealmAdminRelationship();
-        relationship.setAdmin(agent);
+        relationship.setAdmin(agent.getUser());
         relationship.setRealm(realm.getId());
         idm.add(relationship);
     }

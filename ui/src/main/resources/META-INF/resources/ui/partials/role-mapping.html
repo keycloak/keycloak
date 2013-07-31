@@ -1,46 +1,50 @@
 <div id="wrapper" class="container">
-	<div class="row">
-		<aside class="span3" data-ng-include data-src="'partials/' + path[0].slice(0, -1) + '-menu.html'"></aside>
-		
-		<div id="actions-bg"></div>
+    <div class="row">
+        <aside class="span3" data-ng-include data-src="'partials/' + path[0].slice(0, -1) + '-menu.html'"></aside>
 
-		<div id="container-right" class="span9">
-			<h1>
-				<span class="gray" data-ng-hide="create">{{realm.name}}</span> role mapping
-			</h1>
+        <div id="actions-bg"></div>
 
-			<ul class="nav nav-tabs">
-				<li data-ng-class="path[3] == r && 'active'" data-ng-repeat="r in (realm.roles|orderBy:'toString()')"><a href="#/{{path[0]}}/{{realm.id}}/roles/{{r}}">{{r}}</a></li>
-			</ul>
+        <div id="container-right" class="span9">
+            <h1>
+                <span class="gray" data-ng-hide="create">{{realm.name}}</span> role mapping
+            </h1>
 
-			<div data-ng-show="role">
-				<select style="width: auto;" id="realm" name="realm" data-ng-model="newUser" data-ng-click="addUser(u)">
-					<option data-ng-repeat="u in (allUsers|remove:users:'userId')" value="{{u.userId}}">{{u.userId}}</option>
-				</select>
+            <ul class="nav nav-tabs">
+                <li data-ng-class="path[3] == r && 'active'" data-ng-repeat="r in (realm.roles|orderBy:'toString()')"><a
+                        href="#/{{path[0]}}/{{realm.id}}/roles/{{r}}">{{r}}</a></li>
+            </ul>
 
-				<table class="table table-striped table-bordered">
-					<thead>
-						<tr>
-							<th>Username</th>
-							<th>Firstname</th>
-							<th>Lastname</th>
-							<th>Email</th>
-							<th></th>
-						</tr>
-					</thead>
-					<tr data-ng-repeat="user in users">
-						<td>{{user.userId}}</td>
-						<td>{{user.firstName}}</td>
-						<td>{{user.lastName}}</td>
-						<td>{{user.email}}</td>
-						<td><button data-ng-click="removeUser(user.userId)">
-								<i class="icon-remove"></i>
-							</button></td>
-					</tr>
-				</table>
-			</div>
-		</div>
+            <div data-ng-show="role">
+                <select style="width: auto;" id="realm" name="realm" data-ng-model="newUser" data-ng-click="addUser(u)">
+                    <option data-ng-repeat="u in (allUsers|remove:users:'userId')" value="{{u.userId}}">{{u.userId}}
+                    </option>
+                </select>
 
-		<div id="container-right-bg"></div>
-	</div>
+                <table class="table table-striped table-bordered">
+                    <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Firstname</th>
+                        <th>Lastname</th>
+                        <th>Email</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tr data-ng-repeat="user in users">
+                        <td>{{user.userId}}</td>
+                        <td>{{user.firstName}}</td>
+                        <td>{{user.lastName}}</td>
+                        <td>{{user.email}}</td>
+                        <td>
+                            <button data-ng-click="removeUser(user.userId)">
+                                <i class="icon-remove"></i>
+                            </button>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div id="container-right-bg"></div>
+    </div>
 </div>

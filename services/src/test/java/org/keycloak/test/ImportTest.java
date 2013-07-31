@@ -10,6 +10,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RequiredCredentialModel;
+import org.keycloak.services.models.UserModel;
 import org.keycloak.services.models.relationships.RealmAdminRelationship;
 import org.keycloak.services.models.relationships.RequiredCredentialRelationship;
 import org.keycloak.services.models.relationships.ResourceRelationship;
@@ -30,8 +31,6 @@ import org.picketlink.idm.jpa.schema.RelationshipIdentityObject;
 import org.picketlink.idm.jpa.schema.RelationshipObject;
 import org.picketlink.idm.jpa.schema.RelationshipObjectAttribute;
 import org.picketlink.idm.model.Realm;
-import org.picketlink.idm.model.SimpleRole;
-import org.picketlink.idm.model.User;
 
 import java.util.Set;
 
@@ -96,13 +95,13 @@ public class ImportTest {
         manager.generateRealmKeys(defaultRealm);
         defaultRealm.updateRealm();
         defaultRealm.addRequiredCredential(RequiredCredentialModel.PASSWORD);
-        defaultRealm.addRole(new SimpleRole(RegistrationService.REALM_CREATOR_ROLE));
+        defaultRealm.addRole(RegistrationService.REALM_CREATOR_ROLE);
 
         RealmRepresentation rep = KeycloakTestBase.loadJson("testrealm.json");
         RealmModel realm = manager.createRealm("demo", rep.getRealm());
         manager.importRealm(rep, realm);
 
-        User user = realm.getUser("loginclient");
+        UserModel user = realm.getUser("loginclient");
         Assert.assertNotNull(user);
         Set<String> scopes = realm.getScope(user);
         System.out.println("Scopes size: " + scopes.size());

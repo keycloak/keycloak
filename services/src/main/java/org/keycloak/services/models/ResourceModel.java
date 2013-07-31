@@ -2,17 +2,16 @@ package org.keycloak.services.models;
 
 import org.keycloak.services.models.relationships.ResourceRelationship;
 import org.keycloak.services.models.relationships.ScopeRelationship;
-import org.picketlink.idm.IdentitySession;
 import org.picketlink.idm.IdentityManager;
-import org.picketlink.idm.model.Agent;
+import org.picketlink.idm.IdentitySession;
 import org.picketlink.idm.model.Grant;
 import org.picketlink.idm.model.Role;
 import org.picketlink.idm.model.SimpleRole;
 import org.picketlink.idm.model.Tier;
-import org.picketlink.idm.model.User;
 import org.picketlink.idm.query.IdentityQuery;
 import org.picketlink.idm.query.RelationshipQuery;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -44,8 +43,8 @@ public class ResourceModel {
         getIdm().update(agent);
     }
 
-    public User getResourceUser() {
-        return agent.getResourceUser();
+    public UserModel getResourceUser() {
+        return new UserModel(agent.getResourceUser(), realm.getIdm());
     }
 
     public String getId() {
@@ -84,37 +83,32 @@ public class ResourceModel {
         agent.setManagementUrl(url);
     }
 
-    public User getUser(String name) {
-        return getIdm().getUser(name);
+    public RoleModel getRole(String name) {
+        Role role = getIdm().getRole(name);
+        if (role == null) return null;
+        return new RoleModel(role, getIdm());
     }
 
-    public void addUser(User user) {
-        getIdm().add(user);
-    }
-
-    public Role getRole(String name) {
-        return getIdm().getRole(name);
-    }
-
-    public Role addRole(String name) {
+    public RoleModel addRole(String name) {
         Role role = new SimpleRole(name);
         getIdm().add(role);
-        return role;
+        return new RoleModel(role, getIdm());
     }
 
-    public void addRole(Role role) {
-        getIdm().add(role);
-    }
-
-    public List<Role> getRoles() {
+    public List<RoleModel> getRoles() {
         IdentityQuery<Role> query = getIdm().createIdentityQuery(Role.class);
         query.setParameter(Role.PARTITION, tier);
-        return query.getResultList();
+        List<Role> roles = query.getResultList();
+        List<RoleModel> roleModels = new ArrayList<RoleModel>();
+        for (Role role : roles) {
+            roleModels.add(new RoleModel(role, idm));
+        }
+        return roleModels;
     }
 
-    public Set<String> getRoleMappings(User user) {
+    public Set<String> getRoleMappings(UserModel user) {
         RelationshipQuery<Grant> query = getIdm().createRelationshipQuery(Grant.class);
-        query.setParameter(Grant.ASSIGNEE, user);
+        query.setParameter(Grant.ASSIGNEE, user.getUser());
         List<Grant> grants = query.getResultList();
         HashSet<String> set = new HashSet<String>();
         for (Grant grant : grants) {
@@ -123,7 +117,7 @@ public class ResourceModel {
         return set;
     }
 
-    public void addScope(Agent agent, String roleName) {
+    public void addScope(UserModel agent, String roleName) {
         IdentityManager idm = getIdm();
         Role role = idm.getRole(roleName);
         if (role == null) throw new RuntimeException("role not found");
@@ -131,15 +125,15 @@ public class ResourceModel {
 
     }
 
-    public void addScope(Agent agent, Role role) {
+    public void addScope(UserModel agent, Role role) {
         ScopeRelationship scope = new ScopeRelationship();
-        scope.setClient(agent);
+        scope.setClient(agent.getUser());
         scope.setScope(role);
     }
 
-    public Set<String> getScope(Agent agent) {
+    public Set<String> getScope(UserModel agent) {
         RelationshipQuery<ScopeRelationship> query = getIdm().createRelationshipQuery(ScopeRelationship.class);
-        query.setParameter(ScopeRelationship.CLIENT, agent);
+        query.setParameter(ScopeRelationship.CLIENT, agent.getUser());
         List<ScopeRelationship> scope = query.getResultList();
         HashSet<String> set = new HashSet<String>();
         for (ScopeRelationship rel : scope) {

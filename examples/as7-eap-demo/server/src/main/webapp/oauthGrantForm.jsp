@@ -1,4 +1,4 @@
-<%@ page import="org.picketlink.idm.model.*,org.keycloak.services.models.*,org.keycloak.services.resources.*,javax.ws.rs.core.*,java.util.*" language="java" contentType="text/html; charset=ISO-8859-1"
+<%@ page import="org.keycloak.services.models.*,org.keycloak.services.resources.*,javax.ws.rs.core.*,java.util.*" language="java" contentType="text/html; charset=ISO-8859-1"
  pageEncoding="ISO-8859-1"%>
 <%
         RealmModel realm = (RealmModel)request.getAttribute(RealmModel.class.getName());
@@ -22,9 +22,9 @@
 <body>
 
 <%
-    User client = (User)request.getAttribute("client");
-    List<Role> realmRolesRequested = (List<Role>)request.getAttribute("realmRolesRequested");
-    MultivaluedMap<String, Role> resourceRolesRequested = (MultivaluedMap<String, Role>)request.getAttribute("resourceRolesRequested");
+    UserModel client = (UserModel)request.getAttribute("client");
+    List<RoleModel> realmRolesRequested = (List<RoleModel>)request.getAttribute("realmRolesRequested");
+    MultivaluedMap<String, RoleModel> resourceRolesRequested = (MultivaluedMap<String, RoleModel>)request.getAttribute("resourceRolesRequested");
 %>
 
     <h1>Grant request for: <%=client.getLoginName()%></h1>
@@ -36,11 +36,11 @@
     <%
     if (realmRolesRequested.size() > 0) {
        %> <ul> <%
-       for (Role role : realmRolesRequested) {
+       for (RoleModel role : realmRolesRequested) {
           String desc = "Have " + role.getName() + " privileges.";
-          Attribute roleDesc = role.getAttribute("description");
+          String roleDesc = role.getDescription();
           if (roleDesc != null) {
-             desc = (String)roleDesc.getValue();
+             desc = roleDesc;
           }
           %>
           <li><%=desc%></li>
@@ -49,14 +49,14 @@
        %> </ul> <%
     }
     for (String resource : resourceRolesRequested.keySet()) {
-       List<Role> roles = resourceRolesRequested.get(resource);
+       List<RoleModel> roles = resourceRolesRequested.get(resource);
        out.println("<i>For application " + resource + ":</i> ");
        out.println("<ul>");
-       for (Role role : roles) {
+       for (RoleModel role : roles) {
           String desc = "Have " + role.getName() + " privileges.";
-          Attribute roleDesc = role.getAttribute("description");
+          String roleDesc = role.getDescription();
           if (roleDesc != null) {
-             desc = (String)roleDesc.getValue();
+             desc = roleDesc;
           }
           out.println("<li>" + desc + "</li>");
        }

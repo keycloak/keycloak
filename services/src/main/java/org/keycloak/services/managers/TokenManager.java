@@ -7,9 +7,9 @@ import org.keycloak.representations.SkeletonKeyScope;
 import org.keycloak.representations.SkeletonKeyToken;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.ResourceModel;
+import org.keycloak.services.models.RoleModel;
+import org.keycloak.services.models.UserModel;
 import org.keycloak.services.resources.RealmsResource;
-import org.picketlink.idm.model.Role;
-import org.picketlink.idm.model.User;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.NewCookie;
@@ -45,21 +45,21 @@ public class TokenManager {
         return accessCodeMap.remove(key);
     }
 
-    public NewCookie createLoginCookie(RealmModel realm, User user, UriInfo uriInfo) {
+    public NewCookie createLoginCookie(RealmModel realm, UserModel user, UriInfo uriInfo) {
         SkeletonKeyToken identityToken = createIdentityToken(realm, user.getLoginName());
         String encoded = encodeToken(realm, identityToken);
         URI uri = RealmsResource.realmBaseUrl(uriInfo).build(realm.getId());
         boolean secureOnly = !realm.isSslNotRequired();
-        NewCookie cookie = new NewCookie(KEYCLOAK_IDENTITY_COOKIE, encoded, uri.getPath(), null, null, realm.getTokenLifespan(), secureOnly, true);
+        NewCookie cookie = new NewCookie(KEYCLOAK_IDENTITY_COOKIE, encoded, uri.getPath(), null, null, NewCookie.DEFAULT_MAX_AGE, secureOnly, true);
         return cookie;
     }
 
-    public AccessCodeEntry createAccessCode(String scopeParam, String state, String redirect, RealmModel realm, User client, User user) {
+    public AccessCodeEntry createAccessCode(String scopeParam, String state, String redirect, RealmModel realm, UserModel client, UserModel user) {
         AccessCodeEntry code = new AccessCodeEntry();
         SkeletonKeyScope scopeMap = null;
         if (scopeParam != null) scopeMap = decodeScope(scopeParam);
-        List<Role> realmRolesRequested = code.getRealmRolesRequested();
-        MultivaluedMap<String, Role> resourceRolesRequested = code.getResourceRolesRequested();
+        List<RoleModel> realmRolesRequested = code.getRealmRolesRequested();
+        MultivaluedMap<String, RoleModel> resourceRolesRequested = code.getResourceRolesRequested();
         Set<String> realmMapping = realm.getRoleMappings(user);
 
         if (realmMapping != null && realmMapping.size() > 0 && (scopeMap == null || scopeMap.containsKey("realm"))) {
@@ -118,7 +118,7 @@ public class TokenManager {
         return code;
     }
 
-    protected SkeletonKeyToken initToken(RealmModel realm, User client, User user) {
+    protected SkeletonKeyToken initToken(RealmModel realm, UserModel client, UserModel user) {
         SkeletonKeyToken token = new SkeletonKeyToken();
         token.id(RealmManager.generateId());
         token.principal(user.getLoginName());
@@ -131,13 +131,13 @@ public class TokenManager {
         return token;
     }
 
-    protected void createToken(AccessCodeEntry accessCodeEntry, RealmModel realm, User client, User user) {
+    protected void createToken(AccessCodeEntry accessCodeEntry, RealmModel realm, UserModel client, UserModel user) {
 
         SkeletonKeyToken token = initToken(realm, client, user);
 
         if (accessCodeEntry.getRealmRolesRequested().size() > 0) {
             SkeletonKeyToken.Access access = new SkeletonKeyToken.Access();
-            for (Role role : accessCodeEntry.getRealmRolesRequested()) {
+            for (RoleModel role : accessCodeEntry.getRealmRolesRequested()) {
                 access.addRole(role.getName());
             }
             token.setRealmAccess(access);
@@ -148,7 +148,7 @@ public class TokenManager {
             for (String resourceName : accessCodeEntry.getResourceRolesRequested().keySet()) {
                 ResourceModel resource = resourceMap.get(resourceName);
                 SkeletonKeyToken.Access access = token.addAccess(resourceName).verifyCaller(resource.isSurrogateAuthRequired());
-                for (Role role : accessCodeEntry.getResourceRolesRequested().get(resourceName)) {
+                for (RoleModel role : accessCodeEntry.getResourceRolesRequested().get(resourceName)) {
                     access.addRole(role.getName());
                 }
             }
@@ -178,7 +178,7 @@ public class TokenManager {
     }
 
 
-    public SkeletonKeyToken createAccessToken(RealmModel realm, User user) {
+    public SkeletonKeyToken createAccessToken(RealmModel realm, UserModel user) {
         List<ResourceModel> resources = realm.getResources();
         SkeletonKeyToken token = new SkeletonKeyToken();
         token.id(RealmManager.generateId());

@@ -5,11 +5,10 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.models.RealmModel;
+import org.keycloak.services.models.RoleModel;
 import org.keycloak.services.models.UserCredentialModel;
+import org.keycloak.services.models.UserModel;
 import org.picketlink.idm.IdentitySession;
-import org.picketlink.idm.model.Role;
-import org.picketlink.idm.model.SimpleUser;
-import org.picketlink.idm.model.User;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.ForbiddenException;
@@ -49,20 +48,19 @@ public class RegistrationService {
             if (!defaultRealm.isRegistrationAllowed()) {
                 throw new ForbiddenException();
             }
-            User user = defaultRealm.getUser(newUser.getUsername());
+            UserModel user = defaultRealm.getUser(newUser.getUsername());
             if (user != null) {
                 return Response.status(400).type("text/plain").entity("user exists").build();
             }
 
-            user = new SimpleUser(newUser.getUsername());
-            defaultRealm.addUser(user);
+            user = defaultRealm.addUser(newUser.getUsername());
             for (CredentialRepresentation cred : newUser.getCredentials()) {
                 UserCredentialModel credModel = new UserCredentialModel();
                 credModel.setType(cred.getType());
                 credModel.setValue(cred.getValue());
                 defaultRealm.updateCredential(user, credModel);
             }
-            Role realmCreator = defaultRealm.getRole(REALM_CREATOR_ROLE);
+            RoleModel realmCreator = defaultRealm.getRole(REALM_CREATOR_ROLE);
             defaultRealm.grantRole(user, realmCreator);
             identitySession.getTransaction().commit();
             URI uri = uriInfo.getBaseUriBuilder().path(RealmsResource.class).path(user.getLoginName()).build();

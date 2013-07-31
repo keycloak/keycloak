@@ -27,14 +27,14 @@
             <groupId>org.picketlink</groupId>
             <artifactId>picketlink-idm-api</artifactId>
         </dependency>
-        
+
         <dependency>
             <groupId>org.jboss.spec.javax.ejb</groupId>
             <artifactId>jboss-ejb-api_3.2_spec</artifactId>
- 			<version>1.0.0.Alpha2</version>            
+            <version>1.0.0.Alpha2</version>
             <scope>provided</scope>
         </dependency>
-        
+
         <dependency>
             <groupId>com.google.api-client</groupId>
             <artifactId>google-api-client</artifactId>
@@ -47,11 +47,11 @@
             <groupId>com.google.apis</groupId>
             <artifactId>google-api-services-oauth2</artifactId>
         </dependency>
-        
+
         <dependency>
             <groupId>org.twitter4j</groupId>
             <artifactId>twitter4j-core</artifactId>
-        </dependency>  
+        </dependency>
     </dependencies>
 
     <build>
