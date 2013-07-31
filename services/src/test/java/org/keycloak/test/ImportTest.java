@@ -96,13 +96,13 @@ public class ImportTest {
         manager.generateRealmKeys(defaultRealm);
         defaultRealm.updateRealm();
         defaultRealm.addRequiredCredential(RequiredCredentialModel.PASSWORD);
-        defaultRealm.getIdm().add(new SimpleRole(RegistrationService.REALM_CREATOR_ROLE));
+        defaultRealm.addRole(new SimpleRole(RegistrationService.REALM_CREATOR_ROLE));
 
         RealmRepresentation rep = KeycloakTestBase.loadJson("testrealm.json");
         RealmModel realm = manager.createRealm("demo", rep.getRealm());
         manager.importRealm(rep, realm);
 
-        User user = realm.getIdm().getUser("loginclient");
+        User user = realm.getUser("loginclient");
         Assert.assertNotNull(user);
         Set<String> scopes = realm.getScope(user);
         System.out.println("Scopes size: " + scopes.size());

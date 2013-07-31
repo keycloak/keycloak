@@ -75,7 +75,7 @@ public class TokenManager {
                             (scopeRequest == null || scopeRequest.contains(role)) &&
                                     (scope.contains("*") || scope.contains(role))
                             )
-                        realmRolesRequested.add(realm.getIdm().getRole(role));
+                        realmRolesRequested.add(realm.getRole(role));
                 }
             }
         }
@@ -94,7 +94,7 @@ public class TokenManager {
                                 (scopeRequest == null || scopeRequest.contains(role)) &&
                                         (scope.contains("*") || scope.contains(role))
                                 )
-                            resourceRolesRequested.add(resource.getName(), resource.getIdm().getRole(role));
+                            resourceRolesRequested.add(resource.getName(), resource.getRole(role));
                     }
                 }
             }

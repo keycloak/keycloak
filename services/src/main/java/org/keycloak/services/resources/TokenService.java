@@ -125,7 +125,7 @@ public class TokenService {
         if (!realm.isEnabled()) {
             throw new NotAuthorizedException("Disabled realm");
         }
-        User user = realm.getIdm().getUser(username);
+        User user = realm.getUser(username);
         if (user == null) {
             throw new NotAuthorizedException("No user");
         }
@@ -154,7 +154,7 @@ public class TokenService {
         if (!realm.isEnabled()) {
             throw new NotAuthorizedException("Disabled realm");
         }
-        User user = realm.getIdm().getUser(username);
+        User user = realm.getUser(username);
         if (user == null) {
             throw new NotAuthorizedException("No user");
         }
@@ -183,7 +183,7 @@ public class TokenService {
             securityFailureForward("Realm not enabled.");
             return null;
         }
-        User client = realm.getIdm().getUser(clientId);
+        User client = realm.getUser(clientId);
         if (client == null) {
             securityFailureForward("Unknown login requester.");
             return null;
@@ -193,7 +193,7 @@ public class TokenService {
             return null;
         }
         String username = formData.getFirst("username");
-        User user = realm.getIdm().getUser(username);
+        User user = realm.getUser(username);
         if (user == null) {
             logger.error("Incorrect user name.");
             request.setAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE", "Incorrect user name.");
@@ -217,10 +217,10 @@ public class TokenService {
     }
 
     protected Response processAccessCode(String scopeParam, String state, String redirect, User client, User user) {
-        Role resourceRole = realm.getIdm().getRole(RealmManager.RESOURCE_ROLE);
-        Role identityRequestRole = realm.getIdm().getRole(RealmManager.IDENTITY_REQUESTER_ROLE);
-        boolean isResource = realm.getIdm().hasRole(client, resourceRole);
-        if (!isResource && !realm.getIdm().hasRole(client, identityRequestRole)) {
+        Role resourceRole = realm.getRole(RealmManager.RESOURCE_ROLE);
+        Role identityRequestRole = realm.getRole(RealmManager.IDENTITY_REQUESTER_ROLE);
+        boolean isResource = realm.hasRole(client, resourceRole);
+        if (!isResource && !realm.hasRole(client, identityRequestRole)) {
             securityFailureForward("Login requester not allowed to request login.");
             identitySession.close();
             return null;
@@ -274,7 +274,7 @@ public class TokenService {
             error.put("error_description", "client_id not specified");
             return Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build();
         }
-        User client = realm.getIdm().getUser(client_id);
+        User client = realm.getUser(client_id);
         if (client == null) {
             logger.debug("Could not find user");
             Map<String, String> error = new HashMap<String, String>();
@@ -403,7 +403,7 @@ public class TokenService {
             securityFailureForward("Realm not enabled");
             return null;
         }
-        User client = realm.getIdm().getUser(clientId);
+        User client = realm.getUser(clientId);
         if (client == null) {
             securityFailureForward("Unknown login requester.");
             return null;
@@ -415,10 +415,10 @@ public class TokenService {
             return null;
         }
 
-        Role resourceRole = realm.getIdm().getRole(RealmManager.RESOURCE_ROLE);
-        Role identityRequestRole = realm.getIdm().getRole(RealmManager.IDENTITY_REQUESTER_ROLE);
-        boolean isResource = realm.getIdm().hasRole(client, resourceRole);
-        if (!isResource && !realm.getIdm().hasRole(client, identityRequestRole)) {
+        Role resourceRole = realm.getRole(RealmManager.RESOURCE_ROLE);
+        Role identityRequestRole = realm.getRole(RealmManager.IDENTITY_REQUESTER_ROLE);
+        boolean isResource = realm.hasRole(client, resourceRole);
+        if (!isResource && !realm.hasRole(client, identityRequestRole)) {
             securityFailureForward("Login requester not allowed to request login.");
             identitySession.close();
             return null;

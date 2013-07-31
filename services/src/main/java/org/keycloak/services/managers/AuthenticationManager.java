@@ -72,7 +72,7 @@ public class AuthenticationManager {
                 expireIdentityCookie(realm, uriInfo);
                 return null;
             }
-            User user = realm.getIdm().getUser(token.getPrincipal());
+            User user = realm.getUser(token.getPrincipal());
             if (user == null || !user.isEnabled()) {
                 logger.info("Unknown user in identity cookie");
                 expireIdentityCookie(realm, uriInfo);
@@ -104,7 +104,7 @@ public class AuthenticationManager {
             if (!token.isActive()) {
                 throw new NotAuthorizedException("token_expired");
             }
-            User user = realm.getIdm().getUser(token.getPrincipal());
+            User user = realm.getUser(token.getPrincipal());
             if (user == null || !user.isEnabled()) {
                 throw new NotAuthorizedException("invalid_user");
             }
@@ -136,25 +136,13 @@ public class AuthenticationManager {
                     logger.warn("TOTP token not provided");
                     return false;
                 }
-                TOTPCredentials creds = new TOTPCredentials();
-                creds.setToken(token);
-                creds.setUsername(username);
-                creds.setPassword(new Password(password));
-                realm.getIdm().validateCredentials(creds);
-                if (creds.getStatus() != Credentials.Status.VALID) {
-                    return false;
-                }
+                return realm.validateTOTP(user, password, token);
             } else {
-                UsernamePasswordCredentials creds = new UsernamePasswordCredentials(username, new Password(password));
-                realm.getIdm().validateCredentials(creds);
-                if (creds.getStatus() != Credentials.Status.VALID) {
-                    return false;
-                }
+                return realm.validatePassword(user, password);
             }
         } else {
             logger.warn("Do not know how to authenticate user");
             return false;
         }
-        return true;
     }
 }

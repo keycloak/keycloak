@@ -23,7 +23,7 @@ public class InstallationManager {
         manager.generateRealmKeys(defaultRealm);
         defaultRealm.updateRealm();
         defaultRealm.addRequiredCredential(RequiredCredentialModel.PASSWORD);
-        defaultRealm.getIdm().add(new SimpleRole(RegistrationService.REALM_CREATOR_ROLE));
+        defaultRealm.addRole(RegistrationService.REALM_CREATOR_ROLE);
     }
 
     public boolean isInstalled(RealmManager manager) {
