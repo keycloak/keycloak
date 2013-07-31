@@ -10,8 +10,11 @@ import org.keycloak.services.models.relationships.RequiredCredentialRelationship
 import org.keycloak.services.models.relationships.ScopeRelationship;
 import org.picketlink.idm.IdentitySession;
 import org.picketlink.idm.IdentityManager;
+import org.picketlink.idm.credential.Credentials;
 import org.picketlink.idm.credential.Password;
 import org.picketlink.idm.credential.TOTPCredential;
+import org.picketlink.idm.credential.TOTPCredentials;
+import org.picketlink.idm.credential.UsernamePasswordCredentials;
 import org.picketlink.idm.credential.X509CertificateCredentials;
 import org.picketlink.idm.model.Agent;
 import org.picketlink.idm.model.Attribute;
@@ -67,7 +70,7 @@ public class RealmModel {
         realmAgent = getIdm().getAgent(REALM_AGENT_ID);
     }
 
-    public IdentityManager getIdm() {
+    protected IdentityManager getIdm() {
         if (idm == null) idm = identitySession.createIdentityManager(realm);
         return idm;
     }
@@ -236,6 +239,21 @@ public class RealmModel {
         idm.add(relationship);
     }
 
+    public boolean validatePassword(User user, String password) {
+        UsernamePasswordCredentials creds = new UsernamePasswordCredentials(user.getLoginName(), new Password(password));
+        getIdm().validateCredentials(creds);
+        return creds.getStatus() == Credentials.Status.VALID;
+    }
+
+    public boolean validateTOTP(User user, String password, String token) {
+        TOTPCredentials creds = new TOTPCredentials();
+        creds.setToken(token);
+        creds.setUsername(user.getLoginName());
+        creds.setPassword(new Password(password));
+        getIdm().validateCredentials(creds);
+        return creds.getStatus() == Credentials.Status.VALID;
+    }
+
     public void updateCredential(User user, UserCredentialModel cred) {
         IdentityManager idm = getIdm();
         if (cred.getType().equals(RequiredCredentialRepresentation.PASSWORD)) {
@@ -254,6 +272,28 @@ public class RealmModel {
             X509CertificateCredentials creds = new X509CertificateCredentials(cert);
             idm.updateCredential(user, creds);
         }
+    }
+
+    public User getUser(String name) {
+        return getIdm().getUser(name);
+    }
+
+    public void addUser(User user) {
+        getIdm().add(user);
+    }
+
+    public Role getRole(String name) {
+        return getIdm().getRole(name);
+    }
+
+    public Role addRole(String name) {
+        Role role = new SimpleRole(name);
+        getIdm().add(role);
+        return role;
+    }
+
+    public void addRole(Role role) {
+        getIdm().add(role);
     }
 
     public List<Role> getRoles() {
@@ -305,9 +345,17 @@ public class RealmModel {
         relationship.setResourceUser(resourceUser);
         idm.add(relationship);
         ResourceModel resource = new ResourceModel(newTier, relationship, this, identitySession);
-        resource.getIdm().add(new SimpleRole("*"));
+        resource.addRole(new SimpleRole("*"));
         resource.addScope(resourceUser, "*");
         return resource;
+    }
+
+    public boolean hasRole(User user, Role role) {
+        return getIdm().hasRole(user, role);
+    }
+
+    public void grantRole(User user, Role role) {
+        getIdm().grantRole(user, role);
     }
 
     public Set<String> getRoleMappings(User user) {

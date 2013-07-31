@@ -139,7 +139,7 @@ public class RealmManager {
                     user.setAttribute(new Attribute<String>(entry.getKey(), entry.getValue()));
                 }
             }
-            newRealm.getIdm().add(user);
+            newRealm.addUser(user);
             if (userRep.getCredentials() != null) {
                 for (CredentialRepresentation cred : userRep.getCredentials()) {
                     UserCredentialModel credential = new UserCredentialModel();
@@ -155,7 +155,7 @@ public class RealmManager {
             for (RoleRepresentation roleRep : rep.getRoles()) {
                 SimpleRole role = new SimpleRole(roleRep.getName());
                 if (roleRep.getDescription() != null) role.setAttribute(new Attribute<String>("description", roleRep.getDescription()));
-                newRealm.getIdm().add(role);
+                newRealm.addRole(role);
             }
         }
 
@@ -167,12 +167,12 @@ public class RealmManager {
             for (RoleMappingRepresentation mapping : rep.getRoleMappings()) {
                 User user = userMap.get(mapping.getUsername());
                 for (String roleString : mapping.getRoles()) {
-                    Role role = newRealm.getIdm().getRole(roleString.trim());
+                    Role role = newRealm.getRole(roleString.trim());
                     if (role == null) {
                         role = new SimpleRole(roleString.trim());
-                        newRealm.getIdm().add(role);
+                        newRealm.addRole(role);
                     }
-                    newRealm.getIdm().grantRole(user, role);
+                    newRealm.grantRole(user, role);
                 }
             }
         }
@@ -180,10 +180,10 @@ public class RealmManager {
         if (rep.getScopeMappings() != null) {
             for (ScopeMappingRepresentation scope : rep.getScopeMappings()) {
                 for (String roleString : scope.getRoles()) {
-                    Role role = newRealm.getIdm().getRole(roleString.trim());
+                    Role role = newRealm.getRole(roleString.trim());
                     if (role == null) {
                         role = new SimpleRole(roleString.trim());
-                        newRealm.getIdm().add(role);
+                        newRealm.addRole(role);
                     }
                     User user = userMap.get(scope.getUsername());
                     newRealm.addScope(user, role.getName());
@@ -194,7 +194,7 @@ public class RealmManager {
     }
 
     protected void createResources(RealmRepresentation rep, RealmModel realm, Map<String, User> userMap) {
-        Role loginRole = realm.getIdm().getRole(RealmManager.RESOURCE_ROLE);
+        Role loginRole = realm.getRole(RealmManager.RESOURCE_ROLE);
         for (ResourceRepresentation resourceRep : rep.getResources()) {
             ResourceModel resource = realm.addResource(resourceRep.getName());
             resource.setManagementUrl(resourceRep.getAdminUrl());
@@ -211,26 +211,26 @@ public class RealmManager {
                 }
             }
             userMap.put(resourceUser.getLoginName(), resourceUser);
-            realm.getIdm().grantRole(resourceUser, loginRole);
+            realm.grantRole(resourceUser, loginRole);
 
 
             if (resourceRep.getRoles() != null) {
                 for (RoleRepresentation roleRep : resourceRep.getRoles()) {
                     SimpleRole role = new SimpleRole(roleRep.getName());
                     if (roleRep.getDescription() != null) role.setAttribute(new Attribute<String>("description", roleRep.getDescription()));
-                    resource.getIdm().add(role);
+                    resource.addRole(role);
                 }
             }
             if (resourceRep.getRoleMappings() != null) {
                 for (RoleMappingRepresentation mapping : resourceRep.getRoleMappings()) {
                     User user = userMap.get(mapping.getUsername());
                     for (String roleString : mapping.getRoles()) {
-                        Role role = resource.getIdm().getRole(roleString.trim());
+                        Role role = resource.getRole(roleString.trim());
                         if (role == null) {
                             role = new SimpleRole(roleString.trim());
-                            resource.getIdm().add(role);
+                            resource.addRole(role);
                         }
-                        realm.getIdm().grantRole(user, role);
+                        realm.grantRole(user, role);
                     }
                 }
             }
@@ -238,10 +238,10 @@ public class RealmManager {
                 for (ScopeMappingRepresentation mapping : resourceRep.getScopeMappings()) {
                     User user = userMap.get(mapping.getUsername());
                     for (String roleString : mapping.getRoles()) {
-                        Role role = resource.getIdm().getRole(roleString.trim());
+                        Role role = resource.getRole(roleString.trim());
                         if (role == null) {
                             role = new SimpleRole(roleString.trim());
-                            resource.getIdm().add(role);
+                            resource.addRole(role);
                         }
                         resource.addScope(user, role.getName());
                     }

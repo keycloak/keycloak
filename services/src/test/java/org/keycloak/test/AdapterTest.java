@@ -148,30 +148,26 @@ public class AdapterTest {
     public void testCredentialValidation() throws Exception {
         test1CreateRealm();
         User user = new SimpleUser("bburke");
-        realmModel.getIdm().add(user);
+        realmModel.addUser(user);
         UserCredentialModel cred = new UserCredentialModel();
         cred.setType(RequiredCredentialRepresentation.PASSWORD);
         cred.setValue("geheim");
         realmModel.updateCredential(user, cred);
-        IdentityManager idm = realmModel.getIdm();
-        UsernamePasswordCredentials creds = new UsernamePasswordCredentials(user.getLoginName(), new Password("geheim"));
-        idm.validateCredentials(creds);
-        Assert.assertEquals(creds.getStatus(), Credentials.Status.VALID);
+        Assert.assertTrue(realmModel.validatePassword(user, "geheim"));
     }
 
     @Test
     public void testRoles() throws Exception {
         test1CreateRealm();
-        IdentityManager idm = realmModel.getIdm();
-        idm.add(new SimpleRole("admin"));
-        idm.add(new SimpleRole("user"));
+        realmModel.addRole(new SimpleRole("admin"));
+        realmModel.addRole(new SimpleRole("user"));
         List<Role> roles = realmModel.getRoles();
         Assert.assertEquals(5, roles.size());
         SimpleUser user = new SimpleUser("bburke");
-        idm.add(user);
-        Role role = idm.getRole("user");
-        idm.grantRole(user, role);
-        Assert.assertTrue(idm.hasRole(user, role));
+        realmModel.addUser(user);
+        Role role = realmModel.getRole("user");
+        realmModel.grantRole(user, role);
+        Assert.assertTrue(realmModel.hasRole(user, role));
     }
 
 
