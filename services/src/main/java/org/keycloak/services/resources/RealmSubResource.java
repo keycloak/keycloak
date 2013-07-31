@@ -2,8 +2,8 @@ package org.keycloak.services.resources;
 
 import org.jboss.resteasy.logging.Logger;
 import org.keycloak.representations.idm.PublishedRealmRepresentation;
+import org.keycloak.services.models.KeycloakSession;
 import org.keycloak.services.models.RealmModel;
-import org.picketlink.idm.IdentitySession;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -25,7 +25,7 @@ public class RealmSubResource {
     protected UriInfo uriInfo;
 
     @Context
-    protected IdentitySession identitySession;
+    protected KeycloakSession identitySession;
 
     protected RealmModel realm;
 

@@ -15,10 +15,10 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.managers.TokenManager;
+import org.keycloak.services.models.KeycloakSession;
 import org.keycloak.services.models.RealmModel;
-import org.picketlink.idm.IdentitySession;
-import org.picketlink.idm.model.Role;
-import org.picketlink.idm.model.User;
+import org.keycloak.services.models.RoleModel;
+import org.keycloak.services.models.UserModel;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -58,7 +58,7 @@ public class TokenService {
     @Context
     protected HttpHeaders headers;
     @Context
-    protected IdentitySession identitySession;
+    protected KeycloakSession identitySession;
     @Context
     HttpRequest request;
     @Context
@@ -125,7 +125,7 @@ public class TokenService {
         if (!realm.isEnabled()) {
             throw new NotAuthorizedException("Disabled realm");
         }
-        User user = realm.getUser(username);
+        UserModel user = realm.getUser(username);
         if (user == null) {
             throw new NotAuthorizedException("No user");
         }
@@ -154,7 +154,7 @@ public class TokenService {
         if (!realm.isEnabled()) {
             throw new NotAuthorizedException("Disabled realm");
         }
-        User user = realm.getUser(username);
+        UserModel user = realm.getUser(username);
         if (user == null) {
             throw new NotAuthorizedException("No user");
         }
@@ -183,7 +183,7 @@ public class TokenService {
             securityFailureForward("Realm not enabled.");
             return null;
         }
-        User client = realm.getUser(clientId);
+        UserModel client = realm.getUser(clientId);
         if (client == null) {
             securityFailureForward("Unknown login requester.");
             return null;
@@ -193,7 +193,7 @@ public class TokenService {
             return null;
         }
         String username = formData.getFirst("username");
-        User user = realm.getUser(username);
+        UserModel user = realm.getUser(username);
         if (user == null) {
             logger.error("Incorrect user name.");
             request.setAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE", "Incorrect user name.");
@@ -216,9 +216,9 @@ public class TokenService {
         return processAccessCode(scopeParam, state, redirect, client, user);
     }
 
-    protected Response processAccessCode(String scopeParam, String state, String redirect, User client, User user) {
-        Role resourceRole = realm.getRole(RealmManager.RESOURCE_ROLE);
-        Role identityRequestRole = realm.getRole(RealmManager.IDENTITY_REQUESTER_ROLE);
+    protected Response processAccessCode(String scopeParam, String state, String redirect, UserModel client, UserModel user) {
+        RoleModel resourceRole = realm.getRole(RealmManager.RESOURCE_ROLE);
+        RoleModel identityRequestRole = realm.getRole(RealmManager.IDENTITY_REQUESTER_ROLE);
         boolean isResource = realm.hasRole(client, resourceRole);
         if (!isResource && !realm.hasRole(client, identityRequestRole)) {
             securityFailureForward("Login requester not allowed to request login.");
@@ -274,7 +274,7 @@ public class TokenService {
             error.put("error_description", "client_id not specified");
             return Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build();
         }
-        User client = realm.getUser(client_id);
+        UserModel client = realm.getUser(client_id);
         if (client == null) {
             logger.debug("Could not find user");
             Map<String, String> error = new HashMap<String, String>();
@@ -332,7 +332,7 @@ public class TokenService {
             res.put("error_description", "Token expired");
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res).build();
         }
-        if (!client.getId().equals(accessCode.getClient().getId())) {
+        if (!client.getLoginName().equals(accessCode.getClient().getLoginName())) {
             Map<String, String> res = new HashMap<String, String>();
             res.put("error", "invalid_grant");
             res.put("error_description", "Auth error");
@@ -403,7 +403,7 @@ public class TokenService {
             securityFailureForward("Realm not enabled");
             return null;
         }
-        User client = realm.getUser(clientId);
+        UserModel client = realm.getUser(clientId);
         if (client == null) {
             securityFailureForward("Unknown login requester.");
             return null;
@@ -415,8 +415,8 @@ public class TokenService {
             return null;
         }
 
-        Role resourceRole = realm.getRole(RealmManager.RESOURCE_ROLE);
-        Role identityRequestRole = realm.getRole(RealmManager.IDENTITY_REQUESTER_ROLE);
+        RoleModel resourceRole = realm.getRole(RealmManager.RESOURCE_ROLE);
+        RoleModel identityRequestRole = realm.getRole(RealmManager.IDENTITY_REQUESTER_ROLE);
         boolean isResource = realm.hasRole(client, resourceRole);
         if (!isResource && !realm.hasRole(client, identityRequestRole)) {
             securityFailureForward("Login requester not allowed to request login.");
@@ -424,7 +424,7 @@ public class TokenService {
             return null;
         }
 
-        User user = authManager.authenticateIdentityCookie(realm, uriInfo, headers);
+        UserModel user = authManager.authenticateIdentityCookie(realm, uriInfo, headers);
         if (user != null) {
             logger.info(user.getLoginName() + " already logged in.");
             return processAccessCode(scopeParam, state, redirect, client, user);
@@ -439,7 +439,7 @@ public class TokenService {
     public Response logout(@QueryParam("redirect_uri") String redirectUri) {
         // todo do we care if anybody can trigger this?
 
-        User user = authManager.authenticateIdentityCookie(realm, uriInfo, headers);
+        UserModel user = authManager.authenticateIdentityCookie(realm, uriInfo, headers);
         if (user != null) {
             logger.info("Logging out: " + user.getLoginName());
             authManager.expireIdentityCookie(realm, uriInfo);
@@ -491,7 +491,7 @@ public class TokenService {
         return location.build();
     }
 
-    protected void oauthGrantPage(AccessCodeEntry accessCode, User client) {
+    protected void oauthGrantPage(AccessCodeEntry accessCode, UserModel client) {
         request.setAttribute("realmRolesRequested", accessCode.getRealmRolesRequested());
         request.setAttribute("resourceRolesRequested", accessCode.getResourceRolesRequested());
         request.setAttribute("client", client);

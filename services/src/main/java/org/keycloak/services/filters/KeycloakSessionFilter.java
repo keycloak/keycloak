@@ -2,8 +2,8 @@ package org.keycloak.services.filters;
 
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.picketlink.idm.IdentitySession;
-import org.picketlink.idm.IdentitySessionFactory;
+import org.keycloak.services.models.KeycloakSession;
+import org.keycloak.services.models.KeycloakSessionFactory;
 
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
@@ -17,24 +17,24 @@ import java.io.IOException;
  * @version $Revision: 1 $
  */
 @PreMatching
-public class IdentitySessionFilter implements ContainerRequestFilter, ContainerResponseFilter {
-    protected static final Logger logger = Logger.getLogger(IdentitySessionFilter.class);
-    protected IdentitySessionFactory factory;
+public class KeycloakSessionFilter implements ContainerRequestFilter, ContainerResponseFilter {
+    protected static final Logger logger = Logger.getLogger(KeycloakSessionFilter.class);
+    protected KeycloakSessionFactory factory;
 
-    public IdentitySessionFilter(IdentitySessionFactory factory) {
+    public KeycloakSessionFilter(KeycloakSessionFactory factory) {
         this.factory = factory;
     }
 
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
-        IdentitySession ctx = factory.createIdentitySession();
-        requestContext.setProperty(IdentitySession.class.getName(), ctx);
-        ResteasyProviderFactory.pushContext(IdentitySession.class, ctx);
+        KeycloakSession ctx = factory.createSession();
+        requestContext.setProperty(KeycloakSession.class.getName(), ctx);
+        ResteasyProviderFactory.pushContext(KeycloakSession.class, ctx);
     }
 
     @Override
     public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) throws IOException {
-        IdentitySession ctx = (IdentitySession)requestContext.getProperty(IdentitySession.class.getName());
+        KeycloakSession ctx = (KeycloakSession)requestContext.getProperty(KeycloakSession.class.getName());
         if (ctx != null) ctx.close();
     }
 }

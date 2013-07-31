@@ -6,10 +6,12 @@
             </div>
             <ul>
                 <li data-ng-repeat="a in applications" data-ng-class="path[1] == a.id && 'active'">
-                	<a href="#/applications/{{a.id}}">{{a.name}}</a>
+                    <a href="#/applications/{{a.id}}">{{a.name}}</a>
                     <ul class="sub-items" data-ng-show="path[1] == a.id">
-                        <li data-ng-class="!path[2] && 'active'"><a href="#/applications/{{a.id}}">Configuration</a></li>
-                        <li data-ng-class="path[2] == 'roles' && 'active'"><a href="#/applications/{{a.id}}/roles">Role mapping</a></li>
+                        <li data-ng-class="!path[2] && 'active'"><a href="#/applications/{{a.id}}">Configuration</a>
+                        </li>
+                        <li data-ng-class="path[2] == 'roles' && 'active'"><a href="#/applications/{{a.id}}/roles">Role
+                            mapping</a></li>
                     </ul>
                 </li>
             </ul>

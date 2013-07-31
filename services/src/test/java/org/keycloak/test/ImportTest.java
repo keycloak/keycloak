@@ -8,14 +8,17 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.models.KeycloakSession;
+import org.keycloak.services.models.KeycloakSessionFactory;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RequiredCredentialModel;
-import org.keycloak.services.models.relationships.RealmAdminRelationship;
-import org.keycloak.services.models.relationships.RequiredCredentialRelationship;
-import org.keycloak.services.models.relationships.ResourceRelationship;
-import org.keycloak.services.models.relationships.ScopeRelationship;
+import org.keycloak.services.models.UserModel;
+import org.keycloak.services.models.picketlink.PicketlinkKeycloakSessionFactory;
+import org.keycloak.services.models.picketlink.relationships.RealmAdminRelationship;
+import org.keycloak.services.models.picketlink.relationships.RequiredCredentialRelationship;
+import org.keycloak.services.models.picketlink.relationships.ResourceRelationship;
+import org.keycloak.services.models.picketlink.relationships.ScopeRelationship;
 import org.keycloak.services.resources.RegistrationService;
-import org.picketlink.idm.IdentitySession;
 import org.picketlink.idm.IdentitySessionFactory;
 import org.picketlink.idm.config.IdentityConfiguration;
 import org.picketlink.idm.config.IdentityConfigurationBuilder;
@@ -30,8 +33,6 @@ import org.picketlink.idm.jpa.schema.RelationshipIdentityObject;
 import org.picketlink.idm.jpa.schema.RelationshipObject;
 import org.picketlink.idm.jpa.schema.RelationshipObjectAttribute;
 import org.picketlink.idm.model.Realm;
-import org.picketlink.idm.model.SimpleRole;
-import org.picketlink.idm.model.User;
 
 import java.util.Set;
 
@@ -41,15 +42,15 @@ import java.util.Set;
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ImportTest {
-    private IdentitySessionFactory factory;
-    private IdentitySession identitySession;
+    private KeycloakSessionFactory factory;
+    private KeycloakSession identitySession;
     private RealmManager manager;
     private RealmModel realmModel;
 
     @Before
     public void before() throws Exception {
-        factory = createFactory();
-        identitySession = factory.createIdentitySession();
+        factory = new PicketlinkKeycloakSessionFactory(createFactory());
+        identitySession = factory.createSession();
         manager = new RealmManager(identitySession);
     }
 
@@ -94,15 +95,14 @@ public class ImportTest {
         defaultRealm.setCookieLoginAllowed(true);
         defaultRealm.setRegistrationAllowed(true);
         manager.generateRealmKeys(defaultRealm);
-        defaultRealm.updateRealm();
         defaultRealm.addRequiredCredential(RequiredCredentialModel.PASSWORD);
-        defaultRealm.addRole(new SimpleRole(RegistrationService.REALM_CREATOR_ROLE));
+        defaultRealm.addRole(RegistrationService.REALM_CREATOR_ROLE);
 
         RealmRepresentation rep = KeycloakTestBase.loadJson("testrealm.json");
         RealmModel realm = manager.createRealm("demo", rep.getRealm());
         manager.importRealm(rep, realm);
 
-        User user = realm.getUser("loginclient");
+        UserModel user = realm.getUser("loginclient");
         Assert.assertNotNull(user);
         Set<String> scopes = realm.getScope(user);
         System.out.println("Scopes size: " + scopes.size());

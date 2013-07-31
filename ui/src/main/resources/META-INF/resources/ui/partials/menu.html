@@ -4,9 +4,12 @@
             <div class="nav-collapse">
                 <nav id="global-nav">
                     <ul class="nav">
-                        <li class="divider-vertical-left" data-ng-class="path[0] == '' && 'active'"><a href="#">Home</a></li>
-                        <li class="divider-vertical-left" data-ng-class="path[0] == 'applications' && 'active'" data-ng-show="auth.loggedIn"><a href="#/applications">Applications</a></li>
-                        <li class="divider-vertical-left" data-ng-class="path[0] == 'realms' && 'active'" data-ng-show="auth.loggedIn"><a href="#/realms">Realms</a></li>
+                        <li class="divider-vertical-left" data-ng-class="path[0] == '' && 'active'"><a href="#">Home</a>
+                        </li>
+                        <li class="divider-vertical-left" data-ng-class="path[0] == 'applications' && 'active'"
+                            data-ng-show="auth.loggedIn"><a href="#/applications">Applications</a></li>
+                        <li class="divider-vertical-left" data-ng-class="path[0] == 'realms' && 'active'"
+                            data-ng-show="auth.loggedIn"><a href="#/realms">Realms</a></li>
                     </ul>
                     <ul class="nav pull-right" data-ng-hide="auth.loggedIn">
                         <li><a href="/ejs-identity/api/login/system">Login</a></li>
@@ -17,7 +20,8 @@
                                 class="icon-user icon-gray"></i> {{auth.user.displayName}} <i class="caret"></i></a>
                             <ul class="dropdown-menu">
                                 <li><a href="" data-ng-click="auth.logout()">Sign Out</a></li>
-                            </ul></li>
+                            </ul>
+                        </li>
                     </ul>
                 </nav>
             </div>

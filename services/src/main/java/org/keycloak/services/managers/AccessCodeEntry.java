@@ -1,8 +1,8 @@
 package org.keycloak.services.managers;
 
 import org.keycloak.representations.SkeletonKeyToken;
-import org.picketlink.idm.model.Role;
-import org.picketlink.idm.model.User;
+import org.keycloak.services.models.RoleModel;
+import org.keycloak.services.models.UserModel;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
@@ -22,10 +22,10 @@ public class AccessCodeEntry {
 
     protected long expiration;
     protected SkeletonKeyToken token;
-    protected User user;
-    protected User client;
-    protected List<Role> realmRolesRequested = new ArrayList<Role>();
-    MultivaluedMap<String, Role> resourceRolesRequested = new MultivaluedHashMap<String, Role>();
+    protected UserModel user;
+    protected UserModel client;
+    protected List<RoleModel> realmRolesRequested = new ArrayList<RoleModel>();
+    MultivaluedMap<String, RoleModel> resourceRolesRequested = new MultivaluedHashMap<String, RoleModel>();
 
     public boolean isExpired() {
         return expiration != 0 && (System.currentTimeMillis() / 1000) > expiration;
@@ -59,27 +59,27 @@ public class AccessCodeEntry {
         this.token = token;
     }
 
-    public User getClient() {
+    public UserModel getClient() {
         return client;
     }
 
-    public void setClient(User client) {
+    public void setClient(UserModel client) {
         this.client = client;
     }
 
-    public User getUser() {
+    public UserModel getUser() {
         return user;
     }
 
-    public void setUser(User user) {
+    public void setUser(UserModel user) {
         this.user = user;
     }
 
-    public List<Role> getRealmRolesRequested() {
+    public List<RoleModel> getRealmRolesRequested() {
         return realmRolesRequested;
     }
 
-    public MultivaluedMap<String, Role> getResourceRolesRequested() {
+    public MultivaluedMap<String, RoleModel> getResourceRolesRequested() {
         return resourceRolesRequested;
     }
 

@@ -5,16 +5,16 @@
 
         <div id="container-right" class="span9">
             <a class="btn btn-small pull-right" href="#/create/realm">Add Realm</a>
-            
+
             <h1>
                 <span class="gray">Realms</span>
             </h1>
 
             <table class="table table-striped table-bordered">
                 <thead>
-                    <tr>
-                        <th>Realm</th>
-                    </tr>
+                <tr>
+                    <th>Realm</th>
+                </tr>
                 </thead>
                 <tr data-ng-repeat="r in realms">
                     <td><a href="#/realms/{{r.id}}">{{r.name}}</a></td>
