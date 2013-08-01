@@ -3,7 +3,7 @@ package org.keycloak.services.models.picketlink;
 import org.keycloak.services.models.UserModel;
 import org.picketlink.idm.IdentityManager;
 import org.picketlink.idm.model.Attribute;
-import org.picketlink.idm.model.User;
+import org.picketlink.idm.model.sample.User;
 
 import java.util.HashMap;
 import java.util.Map;

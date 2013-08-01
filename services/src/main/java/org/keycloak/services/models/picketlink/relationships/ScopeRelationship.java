@@ -1,10 +1,9 @@
 package org.keycloak.services.models.picketlink.relationships;
 
 import org.picketlink.idm.model.AbstractAttributedType;
-import org.picketlink.idm.model.Agent;
 import org.picketlink.idm.model.Relationship;
-import org.picketlink.idm.model.Role;
-import org.picketlink.idm.model.annotation.IdentityProperty;
+import org.picketlink.idm.model.sample.Role;
+import org.picketlink.idm.model.sample.User;
 import org.picketlink.idm.query.RelationshipQueryParameter;
 
 /**
@@ -22,19 +21,17 @@ public class ScopeRelationship extends AbstractAttributedType implements Relatio
         }
     };
 
-    protected Agent client;
+    protected User client;
     protected Role scope;
 
-    @IdentityProperty
-    public Agent getClient() {
+    public User getClient() {
         return client;
     }
 
-    public void setClient(Agent client) {
+    public void setClient(User client) {
         this.client = client;
     }
 
-    @IdentityProperty
     public Role getScope() {
         return scope;
     }

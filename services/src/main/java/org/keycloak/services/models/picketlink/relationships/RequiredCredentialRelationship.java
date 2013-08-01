@@ -1,10 +1,11 @@
 package org.keycloak.services.models.picketlink.relationships;
 
+import org.keycloak.services.models.picketlink.mappings.RealmData;
 import org.picketlink.idm.model.AbstractAttributedType;
-import org.picketlink.idm.model.Agent;
+import org.picketlink.idm.model.Attribute;
 import org.picketlink.idm.model.Relationship;
 import org.picketlink.idm.model.annotation.AttributeProperty;
-import org.picketlink.idm.model.annotation.IdentityProperty;
+import org.picketlink.idm.query.AttributeParameter;
 import org.picketlink.idm.query.RelationshipQueryParameter;
 
 /**
@@ -14,56 +15,59 @@ import org.picketlink.idm.query.RelationshipQueryParameter;
 public class RequiredCredentialRelationship extends AbstractAttributedType implements Relationship {
     private static final long serialVersionUID = 1L;
 
-    public static final RelationshipQueryParameter REALM_AGENT = new RelationshipQueryParameter() {
-
-        @Override
-        public String getName() {
-            return "realmAgent";
-        }
-    };
+    public static final AttributeParameter REALM = new AttributeParameter("realm");
 
 
-    protected Agent realmAgent;
-    protected String credentialType;
-    protected boolean input;
-    protected boolean secret;
+    //protected String realm;
+    //protected String credentialType;
+    //protected boolean input;
+    //protected boolean secret;
 
     public RequiredCredentialRelationship() {
     }
 
-    @IdentityProperty
-    public Agent getRealmAgent() {
-        return realmAgent;
+    /*
+    @AttributeProperty
+    public String getRealm() {
+        return realm;
     }
 
-    public void setRealmAgent(Agent realmAgent) {
-        this.realmAgent = realmAgent;
+    public void setRealm(String realm) {
+        this.realm = realm;
+    }*/
+
+    public String getRealm() {
+        return (String)getAttribute("realm").getValue();
+    }
+
+    public void setRealm(String realm) {
+        setAttribute(new Attribute<String>("realm", realm));
     }
 
     @AttributeProperty
     public String getCredentialType() {
-        return credentialType;
+        return (String)getAttribute("credentialType").getValue();
     }
 
     public void setCredentialType(String credentialType) {
-        this.credentialType = credentialType;
+        setAttribute(new Attribute<String>("credentialType", credentialType));
     }
 
     @AttributeProperty
     public boolean isInput() {
-        return input;
+        return (Boolean)getAttribute("input").getValue();
     }
 
     public void setInput(boolean input) {
-        this.input = input;
+        setAttribute(new Attribute<Boolean>("input", input));
     }
 
     @AttributeProperty
     public boolean isSecret() {
-        return secret;
+        return (Boolean)getAttribute("secret").getValue();
     }
 
     public void setSecret(boolean secret) {
-        this.secret = secret;
+        setAttribute(new Attribute<Boolean>("secret", secret));
     }
 }
