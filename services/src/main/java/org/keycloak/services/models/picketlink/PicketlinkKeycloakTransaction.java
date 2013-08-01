@@ -1,16 +1,17 @@
 package org.keycloak.services.models.picketlink;
 
 import org.keycloak.services.models.KeycloakTransaction;
-import org.picketlink.idm.IdentityTransaction;
+
+import javax.persistence.EntityTransaction;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class PicketlinkKeycloakTransaction implements KeycloakTransaction{
-    protected IdentityTransaction transaction;
+public class PicketlinkKeycloakTransaction implements KeycloakTransaction {
+    protected EntityTransaction transaction;
 
-    public PicketlinkKeycloakTransaction(IdentityTransaction transaction) {
+    public PicketlinkKeycloakTransaction(EntityTransaction transaction) {
         this.transaction = transaction;
     }
 

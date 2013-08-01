@@ -4,11 +4,10 @@ import org.jboss.resteasy.spi.NotImplementedYetException;
 import org.keycloak.services.models.KeycloakSession;
 import org.keycloak.services.models.KeycloakTransaction;
 import org.keycloak.services.models.RealmModel;
-import org.picketlink.idm.IdentityManager;
-import org.picketlink.idm.IdentitySession;
-import org.picketlink.idm.model.Realm;
-import org.picketlink.idm.model.SimpleAgent;
+import org.keycloak.services.models.picketlink.mappings.RealmData;
+import org.picketlink.idm.PartitionManager;
 
+import javax.persistence.EntityManager;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -16,20 +15,31 @@ import java.util.concurrent.atomic.AtomicLong;
  * @version $Revision: 1 $
  */
 public class PicketlinkKeycloakSession implements KeycloakSession {
-    protected IdentitySession session;
+    public static ThreadLocal<EntityManager> currentEntityManager = new ThreadLocal<EntityManager>();
+    public static ThreadLocal<Exception> setWhere = new ThreadLocal<Exception>();
+    protected PartitionManager partitionManager;
+    protected EntityManager entityManager;
 
     private static AtomicLong counter = new AtomicLong(1);
     public static String generateId() {
         return counter.getAndIncrement() + "-" + System.currentTimeMillis();
     }
 
-    public PicketlinkKeycloakSession(IdentitySession session) {
-        this.session = session;
+    public PicketlinkKeycloakSession(PartitionManager partitionManager, EntityManager entityManager) {
+        this.partitionManager = partitionManager;
+        this.entityManager = entityManager;
+        if (currentEntityManager.get() != null)
+        {
+            setWhere.get().printStackTrace();
+            throw new IllegalStateException("Thread local was leaked!");
+        }
+        currentEntityManager.set(entityManager);
+        setWhere.set(new Exception());
     }
 
     @Override
     public KeycloakTransaction getTransaction() {
-        return new PicketlinkKeycloakTransaction(session.getTransaction());
+        return new PicketlinkKeycloakTransaction(entityManager.getTransaction());
     }
 
     @Override
@@ -39,21 +49,22 @@ public class PicketlinkKeycloakSession implements KeycloakSession {
 
     @Override
     public RealmAdapter createRealm(String id, String name) {
-        Realm newRealm = session.createRealm(id);
-        IdentityManager idm = session.createIdentityManager(newRealm);
-        SimpleAgent agent = new SimpleAgent(RealmAdapter.REALM_AGENT_ID);
-        idm.add(agent);
-        RealmAdapter realm = new RealmAdapter(newRealm, session);
+        // Picketlink beta 6 uses name attribute for getPartition()
+        RealmData newRealm = new RealmData(id);
+        newRealm.setId(id);
+        newRealm.setRealmName(name);
+        partitionManager.add(newRealm);
+        RealmAdapter realm = new RealmAdapter(this, newRealm, partitionManager);
         return realm;
     }
 
     @Override
     public RealmAdapter getRealm(String id) {
-        Realm existing = session.findRealm(id);
+        RealmData existing = partitionManager.getPartition(RealmData.class, id);
         if (existing == null) {
             return null;
         }
-        return new RealmAdapter(existing, session);
+        return new RealmAdapter(this, existing, partitionManager);
     }
 
     @Override
@@ -64,6 +75,9 @@ public class PicketlinkKeycloakSession implements KeycloakSession {
 
     @Override
     public void close() {
-        session.close();
+        if (entityManager.getTransaction().isActive()) entityManager.getTransaction().rollback();
+        setWhere.set(null);
+        currentEntityManager.set(null);
+        if (entityManager.isOpen()) entityManager.close();
     }
 }

@@ -24,9 +24,6 @@ public class RealmSubResource {
     @Context
     protected UriInfo uriInfo;
 
-    @Context
-    protected KeycloakSession identitySession;
-
     protected RealmModel realm;
 
     public RealmSubResource(RealmModel realm) {
@@ -42,29 +39,37 @@ public class RealmSubResource {
     @GET
     @Produces("application/json")
     public PublishedRealmRepresentation getRealm(@PathParam("realm") String id) {
-        return realmRep(realm, uriInfo);
+        return new Transaction() {
+            protected PublishedRealmRepresentation callImpl() {
+                return realmRep(realm, uriInfo);
+            }
+        }.call();
     }
 
     @GET
     @Path("html")
     @Produces("text/html")
     public String getRealmHtml(@PathParam("realm") String id) {
-        StringBuffer html = new StringBuffer();
+        return new Transaction() {
+            protected String callImpl() {
+                StringBuffer html = new StringBuffer();
 
-        String authUri = TokenService.loginPageUrl(uriInfo).build(realm.getId()).toString();
-        String codeUri = TokenService.accessCodeToTokenUrl(uriInfo).build(realm.getId()).toString();
-        String grantUrl = TokenService.grantAccessTokenUrl(uriInfo).build(realm.getId()).toString();
-        String idGrantUrl = TokenService.grantIdentityTokenUrl(uriInfo).build(realm.getId()).toString();
+                String authUri = TokenService.loginPageUrl(uriInfo).build(realm.getId()).toString();
+                String codeUri = TokenService.accessCodeToTokenUrl(uriInfo).build(realm.getId()).toString();
+                String grantUrl = TokenService.grantAccessTokenUrl(uriInfo).build(realm.getId()).toString();
+                String idGrantUrl = TokenService.grantIdentityTokenUrl(uriInfo).build(realm.getId()).toString();
 
-        html.append("<html><body><h1>Realm: ").append(realm.getName()).append("</h1>");
-        html.append("<p>auth: ").append(authUri).append("</p>");
-        html.append("<p>code: ").append(codeUri).append("</p>");
-        html.append("<p>grant: ").append(grantUrl).append("</p>");
-        html.append("<p>identity grant: ").append(idGrantUrl).append("</p>");
-        html.append("<p>public key: ").append(realm.getPublicKeyPem()).append("</p>");
-        html.append("</body></html>");
+                html.append("<html><body><h1>Realm: ").append(realm.getName()).append("</h1>");
+                html.append("<p>auth: ").append(authUri).append("</p>");
+                html.append("<p>code: ").append(codeUri).append("</p>");
+                html.append("<p>grant: ").append(grantUrl).append("</p>");
+                html.append("<p>identity grant: ").append(idGrantUrl).append("</p>");
+                html.append("<p>public key: ").append(realm.getPublicKeyPem()).append("</p>");
+                html.append("</body></html>");
 
-        return html.toString();
+                return html.toString();
+            }
+        }.call();
     }
 
 

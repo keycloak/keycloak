@@ -58,12 +58,9 @@ public class TokenService {
     @Context
     protected HttpHeaders headers;
     @Context
-    protected KeycloakSession identitySession;
-    @Context
     HttpRequest request;
     @Context
     HttpResponse response;
-
 
     protected String securityFailurePath = "/securityFailure.jsp";
     protected String loginFormPath = "/loginForm.jsp";
@@ -71,6 +68,7 @@ public class TokenService {
 
     protected RealmModel realm;
     protected TokenManager tokenManager;
+
     protected AuthenticationManager authManager = new AuthenticationManager();
     private ResourceAdminManager resourceAdminManager = new ResourceAdminManager();
 
@@ -117,103 +115,116 @@ public class TokenService {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response grantIdentityToken(MultivaluedMap<String, String> form) {
-        String username = form.getFirst(AuthenticationManager.FORM_USERNAME);
-        if (username == null) {
-            throw new NotAuthorizedException("No user");
-        }
-        if (!realm.isEnabled()) {
-            throw new NotAuthorizedException("Disabled realm");
-        }
-        UserModel user = realm.getUser(username);
-        if (user == null) {
-            throw new NotAuthorizedException("No user");
-        }
-        if (!user.isEnabled()) {
-            throw new NotAuthorizedException("Disabled user.");
-        }
-        if (!authManager.authenticateForm(realm, user, form)) {
-            throw new NotAuthorizedException("FORM");
-        }
-        tokenManager = new TokenManager();
-        SkeletonKeyToken token = tokenManager.createIdentityToken(realm, username);
-        String encoded = tokenManager.encodeToken(realm, token);
-        AccessTokenResponse res = accessTokenResponse(token, encoded);
-        return Response.ok(res, MediaType.APPLICATION_JSON_TYPE).build();
+    public Response grantIdentityToken(final MultivaluedMap<String, String> form) {
+        return new Transaction() {
+            protected Response callImpl() {
+                String username = form.getFirst(AuthenticationManager.FORM_USERNAME);
+                if (username == null) {
+                    throw new NotAuthorizedException("No user");
+                }
+                if (!realm.isEnabled()) {
+                    throw new NotAuthorizedException("Disabled realm");
+                }
+                UserModel user = realm.getUser(username);
+                if (user == null) {
+                    throw new NotAuthorizedException("No user");
+                }
+                if (!user.isEnabled()) {
+                    throw new NotAuthorizedException("Disabled user.");
+                }
+                if (!authManager.authenticateForm(realm, user, form)) {
+                    throw new NotAuthorizedException("FORM");
+                }
+                tokenManager = new TokenManager();
+                SkeletonKeyToken token = tokenManager.createIdentityToken(realm, username);
+                String encoded = tokenManager.encodeToken(realm, token);
+                AccessTokenResponse res = accessTokenResponse(token, encoded);
+                return Response.ok(res, MediaType.APPLICATION_JSON_TYPE).build();
+            }
+        }.call();
     }
 
     @Path("grants/access")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response grantAccessToken(MultivaluedMap<String, String> form) {
-        String username = form.getFirst(AuthenticationManager.FORM_USERNAME);
-        if (username == null) {
-            throw new NotAuthorizedException("No user");
-        }
-        if (!realm.isEnabled()) {
-            throw new NotAuthorizedException("Disabled realm");
-        }
-        UserModel user = realm.getUser(username);
-        if (user == null) {
-            throw new NotAuthorizedException("No user");
-        }
-        if (!user.isEnabled()) {
-            throw new NotAuthorizedException("Disabled user.");
-        }
-        if (authManager.authenticateForm(realm, user, form)) {
-            throw new NotAuthorizedException("Auth failed");
-        }
-        SkeletonKeyToken token = tokenManager.createAccessToken(realm, user);
-        String encoded = tokenManager.encodeToken(realm, token);
-        AccessTokenResponse res = accessTokenResponse(token, encoded);
-        return Response.ok(res, MediaType.APPLICATION_JSON_TYPE).build();
+    public Response grantAccessToken(final MultivaluedMap<String, String> form) {
+        return new Transaction() {
+            protected Response callImpl() {
+                String username = form.getFirst(AuthenticationManager.FORM_USERNAME);
+                if (username == null) {
+                    throw new NotAuthorizedException("No user");
+                }
+                if (!realm.isEnabled()) {
+                    throw new NotAuthorizedException("Disabled realm");
+                }
+                UserModel user = realm.getUser(username);
+                if (user == null) {
+                    throw new NotAuthorizedException("No user");
+                }
+                if (!user.isEnabled()) {
+                    throw new NotAuthorizedException("Disabled user.");
+                }
+                if (authManager.authenticateForm(realm, user, form)) {
+                    throw new NotAuthorizedException("Auth failed");
+                }
+                SkeletonKeyToken token = tokenManager.createAccessToken(realm, user);
+                String encoded = tokenManager.encodeToken(realm, token);
+                AccessTokenResponse res = accessTokenResponse(token, encoded);
+                return Response.ok(res, MediaType.APPLICATION_JSON_TYPE).build();
+            }
+        }.call();
+
     }
 
     @Path("auth/request/login")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response processLogin(MultivaluedMap<String, String> formData) {
-        String clientId = formData.getFirst("client_id");
-        String scopeParam = formData.getFirst("scope");
-        String state = formData.getFirst("state");
-        String redirect = formData.getFirst("redirect_uri");
+    public Response processLogin(final MultivaluedMap<String, String> formData) {
+        return new Transaction() {
+            protected Response callImpl() {
+                String clientId = formData.getFirst("client_id");
+                String scopeParam = formData.getFirst("scope");
+                String state = formData.getFirst("state");
+                String redirect = formData.getFirst("redirect_uri");
 
-        if (!realm.isEnabled()) {
-            securityFailureForward("Realm not enabled.");
-            return null;
-        }
-        UserModel client = realm.getUser(clientId);
-        if (client == null) {
-            securityFailureForward("Unknown login requester.");
-            return null;
-        }
-        if (!client.isEnabled()) {
-            securityFailureForward("Login requester not enabled.");
-            return null;
-        }
-        String username = formData.getFirst("username");
-        UserModel user = realm.getUser(username);
-        if (user == null) {
-            logger.error("Incorrect user name.");
-            request.setAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE", "Incorrect user name.");
-            forwardToLoginForm(redirect, clientId, scopeParam, state);
-            return null;
-        }
-        if (!user.isEnabled()) {
-            securityFailureForward("Your account is not enabled.");
-            return null;
-        }
-        boolean authenticated = authManager.authenticateForm(realm, user, formData);
-        if (!authenticated) {
-            logger.error("Authentication failed");
-            request.setAttribute("username", username);
-            request.setAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE", "Invalid credentials.");
-            forwardToLoginForm(redirect, clientId, scopeParam, state);
-            return null;
-        }
+                if (!realm.isEnabled()) {
+                    securityFailureForward("Realm not enabled.");
+                    return null;
+                }
+                UserModel client = realm.getUser(clientId);
+                if (client == null) {
+                    securityFailureForward("Unknown login requester.");
+                    return null;
+                }
+                if (!client.isEnabled()) {
+                    securityFailureForward("Login requester not enabled.");
+                    return null;
+                }
+                String username = formData.getFirst("username");
+                UserModel user = realm.getUser(username);
+                if (user == null) {
+                    logger.error("Incorrect user name.");
+                    request.setAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE", "Incorrect user name.");
+                    forwardToLoginForm(redirect, clientId, scopeParam, state);
+                    return null;
+                }
+                if (!user.isEnabled()) {
+                    securityFailureForward("Your account is not enabled.");
+                    return null;
+                }
+                boolean authenticated = authManager.authenticateForm(realm, user, formData);
+                if (!authenticated) {
+                    logger.error("Authentication failed");
+                    request.setAttribute("username", username);
+                    request.setAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE", "Invalid credentials.");
+                    forwardToLoginForm(redirect, clientId, scopeParam, state);
+                    return null;
+                }
 
-        return processAccessCode(scopeParam, state, redirect, client, user);
+                return processAccessCode(scopeParam, state, redirect, client, user);
+            }
+        }.call();
     }
 
     protected Response processAccessCode(String scopeParam, String state, String redirect, UserModel client, UserModel user) {
@@ -222,7 +233,6 @@ public class TokenService {
         boolean isResource = realm.hasRole(client, resourceRole);
         if (!isResource && !realm.hasRole(client, identityRequestRole)) {
             securityFailureForward("Login requester not allowed to request login.");
-            identitySession.close();
             return null;
         }
         AccessCodeEntry accessCode = tokenManager.createAccessCode(scopeParam, state, redirect, realm, client, user);
@@ -230,7 +240,6 @@ public class TokenService {
         logger.info("processAccessCode: go to oauth page?: " + (!isResource && (accessCode.getRealmRolesRequested().size() > 0 || accessCode.getResourceRolesRequested().size() > 0)));
         if (!isResource && (accessCode.getRealmRolesRequested().size() > 0 || accessCode.getResourceRolesRequested().size() > 0)) {
             oauthGrantPage(accessCode, client);
-            identitySession.close();
             return null;
         }
         return redirectAccessCode(accessCode, state, redirect);
@@ -251,96 +260,100 @@ public class TokenService {
     @Path("access/codes")
     @POST
     @Produces("application/json")
-    public Response accessCodeToToken(MultivaluedMap<String, String> formData) {
-        logger.info("accessRequest <---");
-        if (!realm.isEnabled()) {
-            throw new NotAuthorizedException("Realm not enabled");
-        }
+    public Response accessCodeToToken(final MultivaluedMap<String, String> formData) {
+        return new Transaction() {
+            protected Response callImpl() {
+                logger.info("accessRequest <---");
+                if (!realm.isEnabled()) {
+                    throw new NotAuthorizedException("Realm not enabled");
+                }
 
-        String code = formData.getFirst("code");
-        if (code == null) {
-            logger.debug("code not specified");
-            Map<String, String> error = new HashMap<String, String>();
-            error.put("error", "invalid_request");
-            error.put("error_description", "code not specified");
-            return Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build();
+                String code = formData.getFirst("code");
+                if (code == null) {
+                    logger.debug("code not specified");
+                    Map<String, String> error = new HashMap<String, String>();
+                    error.put("error", "invalid_request");
+                    error.put("error_description", "code not specified");
+                    return Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build();
 
-        }
-        String client_id = formData.getFirst("client_id");
-        if (client_id == null) {
-            logger.debug("client_id not specified");
-            Map<String, String> error = new HashMap<String, String>();
-            error.put("error", "invalid_request");
-            error.put("error_description", "client_id not specified");
-            return Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build();
-        }
-        UserModel client = realm.getUser(client_id);
-        if (client == null) {
-            logger.debug("Could not find user");
-            Map<String, String> error = new HashMap<String, String>();
-            error.put("error", "invalid_client");
-            error.put("error_description", "Could not find user");
-            return Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build();
-        }
+                }
+                String client_id = formData.getFirst("client_id");
+                if (client_id == null) {
+                    logger.debug("client_id not specified");
+                    Map<String, String> error = new HashMap<String, String>();
+                    error.put("error", "invalid_request");
+                    error.put("error_description", "client_id not specified");
+                    return Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build();
+                }
+                UserModel client = realm.getUser(client_id);
+                if (client == null) {
+                    logger.debug("Could not find user");
+                    Map<String, String> error = new HashMap<String, String>();
+                    error.put("error", "invalid_client");
+                    error.put("error_description", "Could not find user");
+                    return Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build();
+                }
 
-        if (!client.isEnabled()) {
-            logger.debug("user is not enabled");
-            Map<String, String> error = new HashMap<String, String>();
-            error.put("error", "invalid_client");
-            error.put("error_description", "User is not enabled");
-            return Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build();
-        }
+                if (!client.isEnabled()) {
+                    logger.debug("user is not enabled");
+                    Map<String, String> error = new HashMap<String, String>();
+                    error.put("error", "invalid_client");
+                    error.put("error_description", "User is not enabled");
+                    return Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build();
+                }
 
-        boolean authenticated = authManager.authenticateForm(realm, client, formData);
-        if (!authenticated) {
-            Map<String, String> error = new HashMap<String, String>();
-            error.put("error", "unauthorized_client");
-            return Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build();
-        }
+                boolean authenticated = authManager.authenticateForm(realm, client, formData);
+                if (!authenticated) {
+                    Map<String, String> error = new HashMap<String, String>();
+                    error.put("error", "unauthorized_client");
+                    return Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build();
+                }
 
 
-        JWSInput input = new JWSInput(code, providers);
-        boolean verifiedCode = false;
-        try {
-            verifiedCode = RSAProvider.verify(input, realm.getPublicKey());
-        } catch (Exception ignored) {
-            logger.debug("Failed to verify signature", ignored);
-        }
-        if (!verifiedCode) {
-            Map<String, String> res = new HashMap<String, String>();
-            res.put("error", "invalid_grant");
-            res.put("error_description", "Unable to verify code signature");
-            return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res).build();
-        }
-        String key = input.readContent(String.class);
-        AccessCodeEntry accessCode = tokenManager.pullAccessCode(key);
-        if (accessCode == null) {
-            Map<String, String> res = new HashMap<String, String>();
-            res.put("error", "invalid_grant");
-            res.put("error_description", "Code not found");
-            return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res).build();
-        }
-        if (accessCode.isExpired()) {
-            Map<String, String> res = new HashMap<String, String>();
-            res.put("error", "invalid_grant");
-            res.put("error_description", "Code is expired");
-            return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res).build();
-        }
-        if (!accessCode.getToken().isActive()) {
-            Map<String, String> res = new HashMap<String, String>();
-            res.put("error", "invalid_grant");
-            res.put("error_description", "Token expired");
-            return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res).build();
-        }
-        if (!client.getLoginName().equals(accessCode.getClient().getLoginName())) {
-            Map<String, String> res = new HashMap<String, String>();
-            res.put("error", "invalid_grant");
-            res.put("error_description", "Auth error");
-            return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res).build();
-        }
-        logger.info("accessRequest SUCCESS");
-        AccessTokenResponse res = accessTokenResponse(realm.getPrivateKey(), accessCode.getToken());
-        return Response.ok(res).build();
+                JWSInput input = new JWSInput(code, providers);
+                boolean verifiedCode = false;
+                try {
+                    verifiedCode = RSAProvider.verify(input, realm.getPublicKey());
+                } catch (Exception ignored) {
+                    logger.debug("Failed to verify signature", ignored);
+                }
+                if (!verifiedCode) {
+                    Map<String, String> res = new HashMap<String, String>();
+                    res.put("error", "invalid_grant");
+                    res.put("error_description", "Unable to verify code signature");
+                    return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res).build();
+                }
+                String key = input.readContent(String.class);
+                AccessCodeEntry accessCode = tokenManager.pullAccessCode(key);
+                if (accessCode == null) {
+                    Map<String, String> res = new HashMap<String, String>();
+                    res.put("error", "invalid_grant");
+                    res.put("error_description", "Code not found");
+                    return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res).build();
+                }
+                if (accessCode.isExpired()) {
+                    Map<String, String> res = new HashMap<String, String>();
+                    res.put("error", "invalid_grant");
+                    res.put("error_description", "Code is expired");
+                    return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res).build();
+                }
+                if (!accessCode.getToken().isActive()) {
+                    Map<String, String> res = new HashMap<String, String>();
+                    res.put("error", "invalid_grant");
+                    res.put("error_description", "Token expired");
+                    return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res).build();
+                }
+                if (!client.getLoginName().equals(accessCode.getClient().getLoginName())) {
+                    Map<String, String> res = new HashMap<String, String>();
+                    res.put("error", "invalid_grant");
+                    res.put("error_description", "Auth error");
+                    return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res).build();
+                }
+                logger.info("accessRequest SUCCESS");
+                AccessTokenResponse res = accessTokenResponse(realm.getPrivateKey(), accessCode.getToken());
+                return Response.ok(res).build();
+            }
+        }.call();
 
     }
 
@@ -373,7 +386,6 @@ public class TokenService {
         logger.error(message);
         request.setAttribute(JspRequestParameters.KEYCLOAK_SECURITY_FAILURE_MESSAGE, message);
         request.forward(securityFailurePath);
-        identitySession.close();
     }
 
     protected void forwardToLoginForm(String redirect,
@@ -389,99 +401,113 @@ public class TokenService {
         request.setAttribute("scope", scopeParam);
         request.setAttribute("state", state);
         request.forward(loginFormPath);
-        identitySession.close();
     }
 
     @Path("login")
     @GET
-    public Response loginPage(@QueryParam("response_type") String responseType,
-                              @QueryParam("redirect_uri") String redirect,
-                              @QueryParam("client_id") String clientId,
-                              @QueryParam("scope") String scopeParam,
-                              @QueryParam("state") String state) {
-        if (!realm.isEnabled()) {
-            securityFailureForward("Realm not enabled");
-            return null;
-        }
-        UserModel client = realm.getUser(clientId);
-        if (client == null) {
-            securityFailureForward("Unknown login requester.");
-            return null;
-        }
+    public Response loginPage(final @QueryParam("response_type") String responseType,
+                              final @QueryParam("redirect_uri") String redirect,
+                              final @QueryParam("client_id") String clientId,
+                              final @QueryParam("scope") String scopeParam,
+                              final @QueryParam("state") String state) {
+        return new Transaction() {
+            protected Response callImpl() {
+                if (!realm.isEnabled()) {
+                    securityFailureForward("Realm not enabled");
+                    return null;
+                }
+                UserModel client = realm.getUser(clientId);
+                if (client == null) {
+                    securityFailureForward("Unknown login requester.");
+                    transaction.rollback();
+                    return null;
+                }
 
-        if (!client.isEnabled()) {
-            securityFailureForward("Login requester not enabled.");
-            identitySession.close();
-            return null;
-        }
+                if (!client.isEnabled()) {
+                    securityFailureForward("Login requester not enabled.");
+                    transaction.rollback();
+                    session.close();
+                    return null;
+                }
 
-        RoleModel resourceRole = realm.getRole(RealmManager.RESOURCE_ROLE);
-        RoleModel identityRequestRole = realm.getRole(RealmManager.IDENTITY_REQUESTER_ROLE);
-        boolean isResource = realm.hasRole(client, resourceRole);
-        if (!isResource && !realm.hasRole(client, identityRequestRole)) {
-            securityFailureForward("Login requester not allowed to request login.");
-            identitySession.close();
-            return null;
-        }
+                RoleModel resourceRole = realm.getRole(RealmManager.RESOURCE_ROLE);
+                RoleModel identityRequestRole = realm.getRole(RealmManager.IDENTITY_REQUESTER_ROLE);
+                boolean isResource = realm.hasRole(client, resourceRole);
+                if (!isResource && !realm.hasRole(client, identityRequestRole)) {
+                    securityFailureForward("Login requester not allowed to request login.");
+                    transaction.rollback();
+                    session.close();
+                    return null;
+                }
 
-        UserModel user = authManager.authenticateIdentityCookie(realm, uriInfo, headers);
-        if (user != null) {
-            logger.info(user.getLoginName() + " already logged in.");
-            return processAccessCode(scopeParam, state, redirect, client, user);
-        }
+                UserModel user = authManager.authenticateIdentityCookie(realm, uriInfo, headers);
+                if (user != null) {
+                    logger.info(user.getLoginName() + " already logged in.");
+                    return processAccessCode(scopeParam, state, redirect, client, user);
+                }
 
-        forwardToLoginForm(redirect, clientId, scopeParam, state);
-        return null;
+                forwardToLoginForm(redirect, clientId, scopeParam, state);
+                return null;
+            }
+        }.call();
     }
 
     @Path("logout")
     @GET
-    public Response logout(@QueryParam("redirect_uri") String redirectUri) {
-        // todo do we care if anybody can trigger this?
+    public Response logout(final @QueryParam("redirect_uri") String redirectUri) {
+        return new Transaction() {
+            protected Response callImpl() {
+                // todo do we care if anybody can trigger this?
 
-        UserModel user = authManager.authenticateIdentityCookie(realm, uriInfo, headers);
-        if (user != null) {
-            logger.info("Logging out: " + user.getLoginName());
-            authManager.expireIdentityCookie(realm, uriInfo);
-            resourceAdminManager.singleLogOut(realm, user.getLoginName());
-        }
-        // todo manage legal redirects
-        return Response.status(302).location(UriBuilder.fromUri(redirectUri).build()).build();
+                UserModel user = authManager.authenticateIdentityCookie(realm, uriInfo, headers);
+                if (user != null) {
+                    logger.info("Logging out: " + user.getLoginName());
+                    authManager.expireIdentityCookie(realm, uriInfo);
+                    resourceAdminManager.singleLogOut(realm, user.getLoginName());
+                }
+                // todo manage legal redirects
+                return Response.status(302).location(UriBuilder.fromUri(redirectUri).build()).build();
+            }
+        }.call();
     }
 
     @Path("oauth/grant")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response processOAuth(MultivaluedMap<String, String> formData) {
-        String code = formData.getFirst("code");
-        JWSInput input = new JWSInput(code, providers);
-        boolean verifiedCode = false;
-        try {
-            verifiedCode = RSAProvider.verify(input, realm.getPublicKey());
-        } catch (Exception ignored) {
-            logger.debug("Failed to verify signature", ignored);
-        }
-        if (!verifiedCode) {
-            securityFailureForward("Illegal access code.");
-            identitySession.close();
-            return null;
-        }
-        String key = input.readContent(String.class);
-        AccessCodeEntry accessCodeEntry = tokenManager.getAccessCode(key);
-        if (accessCodeEntry == null) {
-            securityFailureForward("Unknown access code.");
-            identitySession.close();
-            return null;
-        }
+    public Response processOAuth(final MultivaluedMap<String, String> formData) {
+        return new Transaction() {
+            protected Response callImpl() {
+                String code = formData.getFirst("code");
+                JWSInput input = new JWSInput(code, providers);
+                boolean verifiedCode = false;
+                try {
+                    verifiedCode = RSAProvider.verify(input, realm.getPublicKey());
+                } catch (Exception ignored) {
+                    logger.debug("Failed to verify signature", ignored);
+                }
+                if (!verifiedCode) {
+                    securityFailureForward("Illegal access code.");
+                    session.close();
+                    return null;
+                }
+                String key = input.readContent(String.class);
+                AccessCodeEntry accessCodeEntry = tokenManager.getAccessCode(key);
+                if (accessCodeEntry == null) {
+                    securityFailureForward("Unknown access code.");
+                    session.close();
+                    return null;
+                }
 
-        String redirect = accessCodeEntry.getRedirectUri();
-        String state = accessCodeEntry.getState();
+                String redirect = accessCodeEntry.getRedirectUri();
+                String state = accessCodeEntry.getState();
 
-        if (formData.containsKey("cancel")) {
-            return redirectAccessDenied(redirect, state);
-        }
+                if (formData.containsKey("cancel")) {
+                    return redirectAccessDenied(redirect, state);
+                }
 
-        return redirectAccessCode(accessCodeEntry, state, redirect);
+                return redirectAccessCode(accessCodeEntry, state, redirect);
+            }
+        }.call();
     }
 
     protected Response redirectAccessDenied(String redirect, String state) {

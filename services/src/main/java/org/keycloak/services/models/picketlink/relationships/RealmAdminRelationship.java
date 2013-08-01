@@ -1,10 +1,12 @@
 package org.keycloak.services.models.picketlink.relationships;
 
+import org.keycloak.services.models.picketlink.mappings.RealmData;
 import org.picketlink.idm.model.AbstractAttributedType;
-import org.picketlink.idm.model.Agent;
+import org.picketlink.idm.model.Attribute;
 import org.picketlink.idm.model.Relationship;
 import org.picketlink.idm.model.annotation.AttributeProperty;
-import org.picketlink.idm.model.annotation.IdentityProperty;
+import org.picketlink.idm.model.sample.User;
+import org.picketlink.idm.query.AttributeParameter;
 import org.picketlink.idm.query.RelationshipQueryParameter;
 
 /**
@@ -14,13 +16,7 @@ import org.picketlink.idm.query.RelationshipQueryParameter;
 public class RealmAdminRelationship extends AbstractAttributedType implements Relationship {
     private static final long serialVersionUID = 1L;
 
-    public static final RelationshipQueryParameter REALM = new RelationshipQueryParameter() {
-
-        @Override
-        public String getName() {
-            return "realm";
-        }
-    };
+    public static final AttributeParameter REALM = new AttributeParameter("realm");
 
     public static final RelationshipQueryParameter ADMIN = new RelationshipQueryParameter() {
 
@@ -30,24 +26,22 @@ public class RealmAdminRelationship extends AbstractAttributedType implements Re
         }
     };
 
-    protected String realm;
-    protected Agent admin;
+    //protected String realm;
+    protected User admin;
 
-    @AttributeProperty
     public String getRealm() {
-        return realm;
+        return (String)getAttribute("realm").getValue();
     }
 
     public void setRealm(String realm) {
-        this.realm = realm;
+        setAttribute(new Attribute<String>("realm", realm));
     }
 
-    @IdentityProperty
-    public Agent getAdmin() {
+    public User getAdmin() {
         return admin;
     }
 
-    public void setAdmin(Agent admin) {
+    public void setAdmin(User admin) {
         this.admin = admin;
     }
 }

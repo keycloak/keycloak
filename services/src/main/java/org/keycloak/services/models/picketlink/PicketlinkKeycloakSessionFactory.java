@@ -2,22 +2,26 @@ package org.keycloak.services.models.picketlink;
 
 import org.keycloak.services.models.KeycloakSession;
 import org.keycloak.services.models.KeycloakSessionFactory;
-import org.picketlink.idm.IdentitySessionFactory;
+import org.picketlink.idm.PartitionManager;
+
+import javax.persistence.EntityManagerFactory;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class PicketlinkKeycloakSessionFactory implements KeycloakSessionFactory {
-    protected IdentitySessionFactory factory;
+    protected EntityManagerFactory factory;
+    protected PartitionManager partitionManager;
 
-    public PicketlinkKeycloakSessionFactory(IdentitySessionFactory factory) {
+    public PicketlinkKeycloakSessionFactory(EntityManagerFactory factory, PartitionManager partitionManager) {
         this.factory = factory;
+        this.partitionManager = partitionManager;
     }
 
     @Override
     public KeycloakSession createSession() {
-        return new PicketlinkKeycloakSession(factory.createIdentitySession());
+        return new PicketlinkKeycloakSession(partitionManager, factory.createEntityManager());
     }
 
     @Override

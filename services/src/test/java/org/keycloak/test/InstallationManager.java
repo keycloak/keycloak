@@ -4,7 +4,6 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RequiredCredentialModel;
 import org.keycloak.services.resources.RegistrationService;
-import org.picketlink.idm.model.Realm;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -12,8 +11,8 @@ import org.picketlink.idm.model.Realm;
  */
 public class InstallationManager {
     public void install(RealmManager manager) {
-        RealmModel defaultRealm = manager.createRealm(Realm.DEFAULT_REALM, Realm.DEFAULT_REALM);
-        defaultRealm.setName(Realm.DEFAULT_REALM);
+        RealmModel defaultRealm = manager.createRealm(RealmModel.DEFAULT_REALM, RealmModel.DEFAULT_REALM);
+        defaultRealm.setName(RealmModel.DEFAULT_REALM);
         defaultRealm.setEnabled(true);
         defaultRealm.setTokenLifespan(300);
         defaultRealm.setAccessCodeLifespan(60);

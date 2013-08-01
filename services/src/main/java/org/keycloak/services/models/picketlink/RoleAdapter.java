@@ -3,7 +3,7 @@ package org.keycloak.services.models.picketlink;
 import org.keycloak.services.models.RoleModel;
 import org.picketlink.idm.IdentityManager;
 import org.picketlink.idm.model.Attribute;
-import org.picketlink.idm.model.Role;
+import org.picketlink.idm.model.sample.Role;
 
 import java.io.Serializable;
 
