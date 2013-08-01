@@ -1,29 +1,36 @@
 package org.keycloak.services.resources;
 
 import org.keycloak.SkeletonKeyContextResolver;
-import org.keycloak.services.filters.KeycloakSessionFilter;
+import org.keycloak.services.filters.KeycloakSessionRequestFilter;
+import org.keycloak.services.filters.KeycloakSessionResponseFilter;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.models.KeycloakSessionFactory;
+import org.keycloak.services.models.picketlink.PicketlinkKeycloakSession;
 import org.keycloak.services.models.picketlink.PicketlinkKeycloakSessionFactory;
-import org.keycloak.services.models.picketlink.relationships.RealmAdminRelationship;
-import org.keycloak.services.models.picketlink.relationships.RequiredCredentialRelationship;
-import org.keycloak.services.models.picketlink.relationships.ResourceRelationship;
-import org.keycloak.services.models.picketlink.relationships.ScopeRelationship;
-import org.picketlink.idm.IdentitySessionFactory;
-import org.picketlink.idm.config.IdentityConfiguration;
+import org.keycloak.services.models.picketlink.mappings.RealmEntity;
+import org.keycloak.services.models.picketlink.mappings.ResourceEntity;
+import org.picketlink.idm.PartitionManager;
 import org.picketlink.idm.config.IdentityConfigurationBuilder;
-import org.picketlink.idm.internal.DefaultIdentitySessionFactory;
-import org.picketlink.idm.jpa.internal.ResourceLocalJpaIdentitySessionHandler;
-import org.picketlink.idm.jpa.schema.CredentialObject;
-import org.picketlink.idm.jpa.schema.CredentialObjectAttribute;
-import org.picketlink.idm.jpa.schema.IdentityObject;
-import org.picketlink.idm.jpa.schema.IdentityObjectAttribute;
-import org.picketlink.idm.jpa.schema.PartitionObject;
-import org.picketlink.idm.jpa.schema.RelationshipIdentityObject;
-import org.picketlink.idm.jpa.schema.RelationshipObject;
-import org.picketlink.idm.jpa.schema.RelationshipObjectAttribute;
+import org.picketlink.idm.internal.DefaultPartitionManager;
+import org.picketlink.idm.jpa.internal.JPAContextInitializer;
+import org.picketlink.idm.jpa.model.sample.simple.AccountTypeEntity;
+import org.picketlink.idm.jpa.model.sample.simple.AttributeTypeEntity;
+import org.picketlink.idm.jpa.model.sample.simple.AttributedTypeEntity;
+import org.picketlink.idm.jpa.model.sample.simple.DigestCredentialTypeEntity;
+import org.picketlink.idm.jpa.model.sample.simple.GroupTypeEntity;
+import org.picketlink.idm.jpa.model.sample.simple.IdentityTypeEntity;
+import org.picketlink.idm.jpa.model.sample.simple.OTPCredentialTypeEntity;
+import org.picketlink.idm.jpa.model.sample.simple.PartitionTypeEntity;
+import org.picketlink.idm.jpa.model.sample.simple.PasswordCredentialTypeEntity;
+import org.picketlink.idm.jpa.model.sample.simple.RelationshipIdentityTypeEntity;
+import org.picketlink.idm.jpa.model.sample.simple.RelationshipTypeEntity;
+import org.picketlink.idm.jpa.model.sample.simple.RoleTypeEntity;
+import org.picketlink.idm.jpa.model.sample.simple.X509CredentialTypeEntity;
 
 import javax.annotation.PreDestroy;
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.Persistence;
 import javax.ws.rs.core.Application;
 import java.util.HashSet;
 import java.util.Set;
@@ -39,12 +46,23 @@ public class KeycloakApplication extends Application {
     protected KeycloakSessionFactory factory;
 
     public KeycloakApplication() {
-        this.factory = new PicketlinkKeycloakSessionFactory(createFactory());
-        KeycloakSessionFilter filter = new KeycloakSessionFilter(factory);
+        KeycloakSessionFactory f = createSessionFactory();
+        this.factory = f;
+        KeycloakSessionRequestFilter filter = new KeycloakSessionRequestFilter(factory);
         singletons.add(new RealmsResource(new TokenManager()));
         singletons.add(filter);
+        classes.add(KeycloakSessionResponseFilter.class);
         classes.add(SkeletonKeyContextResolver.class);
         classes.add(RegistrationService.class);
+    }
+
+    protected KeycloakSessionFactory createSessionFactory() {
+        return buildSessionFactory();
+    }
+
+    public static KeycloakSessionFactory buildSessionFactory() {
+        EntityManagerFactory emf = Persistence.createEntityManagerFactory("keycloak-identity-store");
+        return new PicketlinkKeycloakSessionFactory(emf, buildPartitionManager());
     }
 
     public KeycloakSessionFactory getFactory() {
@@ -56,27 +74,45 @@ public class KeycloakApplication extends Application {
         factory.close();
     }
 
-    public IdentitySessionFactory createFactory() {
-        ResourceLocalJpaIdentitySessionHandler handler = new ResourceLocalJpaIdentitySessionHandler("keycloak-identity-store");
+    public PartitionManager createPartitionManager() {
+        return buildPartitionManager();
+    }
+
+    public static PartitionManager buildPartitionManager() {
         IdentityConfigurationBuilder builder = new IdentityConfigurationBuilder();
 
         builder
+                .named("KEYCLOAK_JPA_CONFIG")
                 .stores()
                 .jpa()
-                .identityClass(IdentityObject.class)
-                .attributeClass(IdentityObjectAttribute.class)
-                .relationshipClass(RelationshipObject.class)
-                .relationshipIdentityClass(RelationshipIdentityObject.class)
-                .relationshipAttributeClass(RelationshipObjectAttribute.class)
-                .credentialClass(CredentialObject.class)
-                .credentialAttributeClass(CredentialObjectAttribute.class)
-                .partitionClass(PartitionObject.class)
-                .supportAllFeatures()
-                .supportRelationshipType(RealmAdminRelationship.class, ResourceRelationship.class, RequiredCredentialRelationship.class, ScopeRelationship.class)
-                .setIdentitySessionHandler(handler);
+                .mappedEntity(
+                        AttributedTypeEntity.class,
+                        AccountTypeEntity.class,
+                        RoleTypeEntity.class,
+                        GroupTypeEntity.class,
+                        IdentityTypeEntity.class,
+                        RelationshipTypeEntity.class,
+                        RelationshipIdentityTypeEntity.class,
+                        PartitionTypeEntity.class,
+                        PasswordCredentialTypeEntity.class,
+                        DigestCredentialTypeEntity.class,
+                        X509CredentialTypeEntity.class,
+                        OTPCredentialTypeEntity.class,
+                        AttributeTypeEntity.class,
+                        RealmEntity.class,
+                        ResourceEntity.class
+                )
+                .supportGlobalRelationship(org.picketlink.idm.model.Relationship.class)
+                .addContextInitializer(new JPAContextInitializer(null) {
+                    @Override
+                    public EntityManager getEntityManager() {
+                        return PicketlinkKeycloakSession.currentEntityManager.get();
+                    }
+                })
+                .supportAllFeatures();
 
-        IdentityConfiguration build = builder.build();
-        return new DefaultIdentitySessionFactory(build);
+        DefaultPartitionManager partitionManager = new DefaultPartitionManager(builder.buildAll());
+        return partitionManager;
     }
 
 

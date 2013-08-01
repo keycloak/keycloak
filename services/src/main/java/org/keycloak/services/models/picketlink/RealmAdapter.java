@@ -4,33 +4,32 @@ import org.bouncycastle.openssl.PEMWriter;
 import org.jboss.resteasy.security.PemUtils;
 import org.keycloak.representations.idm.RequiredCredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.models.KeycloakSession;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RequiredCredentialModel;
 import org.keycloak.services.models.ResourceModel;
 import org.keycloak.services.models.RoleModel;
 import org.keycloak.services.models.UserCredentialModel;
 import org.keycloak.services.models.UserModel;
+import org.keycloak.services.models.picketlink.mappings.RealmData;
+import org.keycloak.services.models.picketlink.mappings.ResourceData;
 import org.keycloak.services.models.picketlink.relationships.RealmAdminRelationship;
 import org.keycloak.services.models.picketlink.relationships.RequiredCredentialRelationship;
 import org.keycloak.services.models.picketlink.relationships.ResourceRelationship;
 import org.keycloak.services.models.picketlink.relationships.ScopeRelationship;
 import org.picketlink.idm.IdentityManager;
-import org.picketlink.idm.IdentitySession;
+import org.picketlink.idm.PartitionManager;
+import org.picketlink.idm.RelationshipManager;
 import org.picketlink.idm.credential.Credentials;
 import org.picketlink.idm.credential.Password;
 import org.picketlink.idm.credential.TOTPCredential;
 import org.picketlink.idm.credential.TOTPCredentials;
 import org.picketlink.idm.credential.UsernamePasswordCredentials;
 import org.picketlink.idm.credential.X509CertificateCredentials;
-import org.picketlink.idm.model.Agent;
-import org.picketlink.idm.model.Attribute;
-import org.picketlink.idm.model.Grant;
-import org.picketlink.idm.model.Realm;
-import org.picketlink.idm.model.Role;
-import org.picketlink.idm.model.SimpleRole;
-import org.picketlink.idm.model.SimpleUser;
-import org.picketlink.idm.model.Tier;
-import org.picketlink.idm.model.User;
+import org.picketlink.idm.model.sample.Grant;
+import org.picketlink.idm.model.sample.Role;
+import org.picketlink.idm.model.sample.SampleModel;
+import org.picketlink.idm.model.sample.User;
 import org.picketlink.idm.query.IdentityQuery;
 import org.picketlink.idm.query.RelationshipQuery;
 
@@ -53,140 +52,138 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class RealmAdapter implements RealmModel {
-    public static final String REALM_AGENT_ID = "_realm_";
-    public static final String REALM_NAME = "name";
-    public static final String REALM_ACCESS_CODE_LIFESPAN = "accessCodeLifespan";
-    public static final String REALM_TOKEN_LIFESPAN = "tokenLifespan";
-    public static final String REALM_PRIVATE_KEY = "privateKey";
-    public static final String REALM_PUBLIC_KEY = "publicKey";
-    public static final String REALM_IS_SSL_NOT_REQUIRED = "isSSLNotRequired";
-    public static final String REALM_IS_COOKIE_LOGIN_ALLOWED = "isCookieLoginAllowed";
-    public static final String REALM_IS_REGISTRATION_ALLOWED = "isRegistrationAllowed";
 
-    protected Realm realm;
-    protected Agent realmAgent;
-    protected IdentitySession identitySession;
+    protected RealmData realm;
     protected volatile transient PublicKey publicKey;
     protected volatile transient PrivateKey privateKey;
     protected IdentityManager idm;
+    protected PartitionManager partitionManager;
+    protected RelationshipManager relationshipManager;
+    protected KeycloakSession session;
 
-    public RealmAdapter(Realm realm, IdentitySession session) {
+    public RealmAdapter(KeycloakSession session, RealmData realm, PartitionManager partitionManager) {
+        this.session = session;
         this.realm = realm;
-        this.identitySession = session;
-        realmAgent = getIdm().getAgent(REALM_AGENT_ID);
+        this.partitionManager = partitionManager;
     }
 
     protected IdentityManager getIdm() {
-        if (idm == null) idm = identitySession.createIdentityManager(realm);
+        if (idm == null) idm = partitionManager.createIdentityManager(realm);
         return idm;
     }
 
+    protected RelationshipManager getRelationshipManager() {
+        if (relationshipManager == null) relationshipManager = partitionManager.createRelationshipManager();
+        return relationshipManager;
+    }
+
     protected void updateRealm() {
-        getIdm().update(realmAgent);
+        partitionManager.update(realm);
     }
 
     @Override
     public String getId() {
-        return realm.getId();
+        // for some reason picketlink queries by name when finding partition, don't know what ID is used for now
+        return realm.getName();
     }
 
     @Override
     public String getName() {
-        return (String) realmAgent.getAttribute(REALM_NAME).getValue();
+        return realm.getRealmName();
     }
 
     @Override
     public void setName(String name) {
-        realmAgent.setAttribute(new Attribute<String>(REALM_NAME, name));
+        realm.setRealmName(name);
         updateRealm();
     }
 
     @Override
     public boolean isEnabled() {
-        return realmAgent.isEnabled();
+        return realm.isEnabled();
     }
 
     @Override
     public void setEnabled(boolean enabled) {
-        realmAgent.setEnabled(enabled);
+        realm.setEnabled(enabled);
         updateRealm();
     }
 
     @Override
     public boolean isSslNotRequired() {
-        return (Boolean) realmAgent.getAttribute(REALM_IS_SSL_NOT_REQUIRED).getValue();
+        return realm.isSslNotRequired();
     }
 
     @Override
     public void setSslNotRequired(boolean sslNotRequired) {
-        realmAgent.setAttribute(new Attribute<Boolean>(REALM_IS_SSL_NOT_REQUIRED, sslNotRequired));
+        realm.setSslNotRequired(sslNotRequired);
         updateRealm();
     }
 
     @Override
     public boolean isCookieLoginAllowed() {
-        return (Boolean) realmAgent.getAttribute(REALM_IS_COOKIE_LOGIN_ALLOWED).getValue();
+        return realm.isCookieLoginAllowed();
     }
 
     @Override
     public void setCookieLoginAllowed(boolean cookieLoginAllowed) {
-        realmAgent.setAttribute(new Attribute<Boolean>(REALM_IS_COOKIE_LOGIN_ALLOWED, cookieLoginAllowed));
+        realm.setCookieLoginAllowed(cookieLoginAllowed);
         updateRealm();
     }
 
     @Override
     public boolean isRegistrationAllowed() {
-        return (Boolean) realmAgent.getAttribute(REALM_IS_REGISTRATION_ALLOWED).getValue();
+        return realm.isRegistrationAllowed();
     }
 
     @Override
     public void setRegistrationAllowed(boolean registrationAllowed) {
-        realmAgent.setAttribute(new Attribute<Boolean>(REALM_IS_REGISTRATION_ALLOWED, registrationAllowed));
+        realm.setRegistrationAllowed(registrationAllowed);
         updateRealm();
     }
 
     @Override
     public int getTokenLifespan() {
-        return (Integer) realmAgent.getAttribute(REALM_TOKEN_LIFESPAN).getValue();
+        return realm.getTokenLifespan();
     }
 
     @Override
     public void setTokenLifespan(int tokenLifespan) {
-        realmAgent.setAttribute(new Attribute<Integer>(REALM_TOKEN_LIFESPAN, tokenLifespan));
+        realm.setTokenLifespan(tokenLifespan);
         updateRealm();
     }
 
     @Override
     public int getAccessCodeLifespan() {
-        return (Integer) realmAgent.getAttribute(REALM_ACCESS_CODE_LIFESPAN).getValue();
+        return realm.getAccessCodeLifespan();
     }
 
     @Override
     public void setAccessCodeLifespan(int accessCodeLifespan) {
-        realmAgent.setAttribute(new Attribute<Integer>(REALM_ACCESS_CODE_LIFESPAN, accessCodeLifespan));
+        realm.setAccessCodeLifespan(accessCodeLifespan);
         updateRealm();
     }
 
     @Override
     public String getPublicKeyPem() {
-        return (String) realmAgent.getAttribute(REALM_PUBLIC_KEY).getValue();
+        return realm.getPublicKeyPem();
     }
 
     @Override
     public void setPublicKeyPem(String publicKeyPem) {
-        realmAgent.setAttribute(new Attribute<String>(REALM_PUBLIC_KEY, publicKeyPem));
+        realm.setPublicKeyPem(publicKeyPem);
         this.publicKey = null;
         updateRealm();
     }
 
     @Override
     public String getPrivateKeyPem() {
-        return (String) realmAgent.getAttribute(REALM_PRIVATE_KEY).getValue();
+        return realm.getPrivateKeyPem();
     }
 
     @Override
     public void setPrivateKeyPem(String privateKeyPem) {
-        realmAgent.setAttribute(new Attribute<String>(REALM_PRIVATE_KEY, privateKeyPem));
+        realm.setPrivateKeyPem(privateKeyPem);
         this.privateKey = null;
         updateRealm();
     }
@@ -251,10 +248,8 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public List<RequiredCredentialModel> getRequiredCredentials() {
-        IdentityManager idm = getIdm();
-        Agent realmAgent = idm.getAgent(REALM_AGENT_ID);
-        RelationshipQuery<RequiredCredentialRelationship> query = idm.createRelationshipQuery(RequiredCredentialRelationship.class);
-        query.setParameter(RequiredCredentialRelationship.REALM_AGENT, realmAgent);
+        RelationshipQuery<RequiredCredentialRelationship> query = getRelationshipManager().createRelationshipQuery(RequiredCredentialRelationship.class);
+        query.setParameter(RequiredCredentialRelationship.REALM, realm.getName());
         List<RequiredCredentialRelationship> results = query.getResultList();
         List<RequiredCredentialModel> rtn = new ArrayList<RequiredCredentialModel>();
         for (RequiredCredentialRelationship relationship : results) {
@@ -269,15 +264,14 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public void addRequiredCredential(RequiredCredentialModel cred) {
-        IdentityManager idm = getIdm();
-        Agent realmAgent = idm.getAgent(REALM_AGENT_ID);
         RequiredCredentialRelationship relationship = new RequiredCredentialRelationship();
         relationship.setCredentialType(cred.getType());
         relationship.setInput(cred.isInput());
         relationship.setSecret(cred.isSecret());
-        relationship.setRealmAgent(realmAgent);
-        idm.add(relationship);
+        relationship.setRealm(realm.getName());
+        getRelationshipManager().add(relationship);
     }
+
 
     @Override
     public boolean validatePassword(UserModel user, String password) {
@@ -319,30 +313,34 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public UserAdapter getUser(String name) {
-        User user = getIdm().getUser(name);
+        User user = findPicketlinkUser(name);
         if (user == null) return null;
         return new UserAdapter(user, getIdm());
     }
 
+    protected User findPicketlinkUser(String name) {
+        return SampleModel.getUser(getIdm(), name);
+    }
+
     @Override
     public UserAdapter addUser(String username) {
-        User user = getIdm().getUser(username);
+        User user = findPicketlinkUser(username);
         if (user != null) throw new IllegalStateException("User already exists");
-        user = new SimpleUser(username);
+        user = new User(username);
         getIdm().add(user);
         return new UserAdapter(user, getIdm());
     }
 
     @Override
     public RoleAdapter getRole(String name) {
-        Role role = getIdm().getRole(name);
+        Role role = SampleModel.getRole(getIdm(), name);
         if (role == null) return null;
         return new RoleAdapter(role, getIdm());
     }
 
     @Override
     public RoleAdapter addRole(String name) {
-        Role role = new SimpleRole(name);
+        Role role = new Role(name);
         getIdm().add(role);
         return new RoleAdapter(role, getIdm());
     }
@@ -377,14 +375,13 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public List<ResourceModel> getResources() {
-        IdentityManager idm = getIdm();
-        RelationshipQuery<ResourceRelationship> query = idm.createRelationshipQuery(ResourceRelationship.class);
-        query.setParameter(ResourceRelationship.REALM_AGENT, realmAgent);
+        RelationshipQuery<ResourceRelationship> query = getRelationshipManager().createRelationshipQuery(ResourceRelationship.class);
+        query.setParameter(ResourceRelationship.REALM, realm.getName());
         List<ResourceRelationship> results = query.getResultList();
         List<ResourceModel> resources = new ArrayList<ResourceModel>();
         for (ResourceRelationship relationship : results) {
-            Tier resourceTier = identitySession.findTier(relationship.getResourceId());
-            ResourceModel model = new ResourceAdapter(resourceTier,relationship, this, identitySession);
+            ResourceData resource = partitionManager.getPartition(ResourceData.class, relationship.getResource());
+            ResourceModel model = new ResourceAdapter(resource, this, partitionManager);
             resources.add(model);
         }
 
@@ -393,18 +390,12 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public ResourceModel addResource(String name) {
-        Tier newTier = identitySession.createTier(RealmManager.generateId());
-        IdentityManager idm = getIdm();
-        ResourceRelationship relationship = new ResourceRelationship();
-        relationship.setResourceName(name);
-        relationship.setRealmAgent(realmAgent);
-        relationship.setResourceId(newTier.getId());
-        relationship.setManagementUrl(""); // Picketlink doesn't like null attribute values
-        User resourceUser = new SimpleUser(name);
+        ResourceData resourceData = new ResourceData(name);
+        User resourceUser = new User(name);
         idm.add(resourceUser);
-        relationship.setResourceUser(resourceUser);
-        idm.add(relationship);
-        ResourceModel resource = new ResourceAdapter(newTier, relationship, this, identitySession);
+        resourceData.setResourceUser(resourceUser);
+        partitionManager.add(resourceData);
+        ResourceModel resource = new ResourceAdapter(resourceData, this, partitionManager);
         resource.addRole("*");
         resource.addScope(new UserAdapter(resourceUser, idm), "*");
         return resource;
@@ -412,17 +403,17 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public boolean hasRole(UserModel user, RoleModel role) {
-        return getIdm().hasRole(((UserAdapter)user).getUser(), ((RoleAdapter)role).getRole());
+        return SampleModel.hasRole(getRelationshipManager(), ((UserAdapter) user).getUser(), ((RoleAdapter) role).getRole());
     }
 
     @Override
     public void grantRole(UserModel user, RoleModel role) {
-        getIdm().grantRole(((UserAdapter)user).getUser(), ((RoleAdapter)role).getRole());
+        SampleModel.grantRole(getRelationshipManager(), ((UserAdapter) user).getUser(), ((RoleAdapter) role).getRole());
     }
 
     @Override
     public Set<String> getRoleMappings(UserModel user) {
-        RelationshipQuery<Grant> query = getIdm().createRelationshipQuery(Grant.class);
+        RelationshipQuery<Grant> query = getRelationshipManager().createRelationshipQuery(Grant.class);
         query.setParameter(Grant.ASSIGNEE, ((UserAdapter)user).getUser());
         List<Grant> grants = query.getResultList();
         HashSet<String> set = new HashSet<String>();
@@ -435,19 +426,18 @@ public class RealmAdapter implements RealmModel {
     @Override
     public void addScope(UserModel agent, String roleName) {
         IdentityManager idm = getIdm();
-        Role role = idm.getRole(roleName);
+        Role role = SampleModel.getRole(idm, roleName);
         if (role == null) throw new RuntimeException("role not found");
         ScopeRelationship scope = new ScopeRelationship();
         scope.setClient(((UserAdapter)agent).getUser());
         scope.setScope(role);
-        idm.add(scope);
-
+        getRelationshipManager().add(scope);
     }
 
 
     @Override
     public Set<String> getScope(UserModel agent) {
-        RelationshipQuery<ScopeRelationship> query = getIdm().createRelationshipQuery(ScopeRelationship.class);
+        RelationshipQuery<ScopeRelationship> query = getRelationshipManager().createRelationshipQuery(ScopeRelationship.class);
         query.setParameter(ScopeRelationship.CLIENT, ((UserAdapter)agent).getUser());
         List<ScopeRelationship> scope = query.getResultList();
         HashSet<String> set = new HashSet<String>();
@@ -459,10 +449,9 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public boolean isRealmAdmin(UserModel agent) {
-        RealmAdapter realmModel = (RealmAdapter)new RealmManager(new PicketlinkKeycloakSession(identitySession)).defaultRealm();
-        IdentityManager idm = realmModel.getIdm();
-        RelationshipQuery<RealmAdminRelationship> query = idm.createRelationshipQuery(RealmAdminRelationship.class);
-        query.setParameter(RealmAdminRelationship.REALM, realm.getId());
+        RealmAdapter realmModel = (RealmAdapter)new RealmManager(session).defaultRealm();
+        RelationshipQuery<RealmAdminRelationship> query = getRelationshipManager().createRelationshipQuery(RealmAdminRelationship.class);
+        query.setParameter(RealmAdminRelationship.REALM, realm.getName());
         query.setParameter(RealmAdminRelationship.ADMIN, ((UserAdapter)agent).getUser());
         List<RealmAdminRelationship> results = query.getResultList();
         return results.size() > 0;
@@ -470,10 +459,9 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public void addRealmAdmin(UserModel agent) {
-        RealmAdapter realmModel = (RealmAdapter)new RealmManager(new PicketlinkKeycloakSession(identitySession)).defaultRealm();
         RealmAdminRelationship relationship = new RealmAdminRelationship();
         relationship.setAdmin(((UserAdapter)agent).getUser());
-        relationship.setRealm(realm.getId());
-        idm.add(relationship);
+        relationship.setRealm(realm.getName());
+        getRelationshipManager().add(relationship);
     }
 }

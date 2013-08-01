@@ -14,9 +14,8 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.models.KeycloakSession;
+import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.resources.KeycloakApplication;
-import org.picketlink.idm.IdentitySession;
-import org.picketlink.idm.model.Realm;
 
 import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.client.Client;
@@ -43,9 +42,12 @@ public class RealmCreationTest {
         deployment.setApplicationClass(KeycloakApplication.class.getName());
         EmbeddedContainer.start(deployment);
         KeycloakApplication application = (KeycloakApplication) deployment.getApplication();
-        KeycloakSession IdentitySession = application.getFactory().createSession();
-        RealmManager manager = new RealmManager(IdentitySession);
+        KeycloakSession session = application.getFactory().createSession();
+        session.getTransaction().begin();
+        RealmManager manager = new RealmManager(session);
         new InstallationManager().install(manager);
+        session.getTransaction().commit();
+        session.close();
         client = new ResteasyClientBuilder().build();
         client.register(SkeletonKeyContextResolver.class);
     }
@@ -72,14 +74,14 @@ public class RealmCreationTest {
             Form form = new Form();
             form.param(AuthenticationManager.FORM_USERNAME, "bburke");
             form.param(RequiredCredentialRepresentation.PASSWORD, "badpassword");
-            tokenResponse = target.path("realms").path(Realm.DEFAULT_REALM).path("tokens/grants/identity-token").request().post(Entity.form(form), AccessTokenResponse.class);
+            tokenResponse = target.path("realms").path(RealmModel.DEFAULT_REALM).path("tokens/grants/identity-token").request().post(Entity.form(form), AccessTokenResponse.class);
             Assert.fail();
         } catch (NotAuthorizedException e) {
         }
         Form form = new Form();
         form.param(AuthenticationManager.FORM_USERNAME, "bburke");
         form.param(RequiredCredentialRepresentation.PASSWORD, "geheim");
-        tokenResponse = target.path("realms").path(Realm.DEFAULT_REALM).path("tokens/grants/identity-token").request().post(Entity.form(form), AccessTokenResponse.class);
+        tokenResponse = target.path("realms").path(RealmModel.DEFAULT_REALM).path("tokens/grants/identity-token").request().post(Entity.form(form), AccessTokenResponse.class);
         Assert.assertNotNull(tokenResponse);
         System.out.println(tokenResponse.getToken());
         //

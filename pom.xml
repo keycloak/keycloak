@@ -10,7 +10,7 @@
 
     <properties>
         <resteasy.version>3.0.2.Final</resteasy.version>
-        <picketlink.version>2.5.0.Keycloak-alpha-1</picketlink.version>
+        <picketlink.version>2.5.0.Beta6</picketlink.version>
     </properties>
 
     <url>http://keycloak.org</url>
@@ -57,10 +57,11 @@
         <module>services</module>
         <module>integration</module>
         <module>examples</module>
+        <!--
         <module>sdk-html</module>
         <module>social</module>
         <module>server</module>
-        <module>ui</module>
+        <module>ui</module> -->
     </modules>
 
     <dependencyManagement>
@@ -158,7 +159,7 @@
             </dependency>
             <dependency>
                 <groupId>org.picketlink</groupId>
-                <artifactId>picketlink-idm-schema</artifactId>
+                <artifactId>picketlink-idm-simple-schema</artifactId>
                 <version>${picketlink.version}</version>
             </dependency>
             <dependency>
