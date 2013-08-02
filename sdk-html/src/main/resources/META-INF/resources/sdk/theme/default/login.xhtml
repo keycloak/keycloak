@@ -1,0 +1,36 @@
+<ui:composition xmlns:h="http://java.sun.com/jsf/html" xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets">
+	<div id="keycloak-login-container">
+		<div id="keycloak-login-standard">
+			<h1>Login to #{login.name}</h1>
+
+			<form action="#{login.loginAction}">
+				<label for="username">Username</label>
+				<h:inputText name="username" value="#{login.username}" />
+
+				<label for="password">Password</label>
+				<h:inputSecret name="password" />
+
+				<h:inputHidden name="client_id" value="#{login.clientId}" />
+				<h:inputHidden name="scope" value="#{login.scope}" disabled="#{empty login.scope}" />
+				<h:inputHidden name="state" value="#{login.state}" disabled="#{empty login.state}" />
+				<h:inputHidden name="redirect_uri" value="#{login.redirectUri}" disabled="#{empty login.redirectUri}" />
+
+				<div>
+					<button class="btn btn-primary" id="keycloak-login-submit" type="submit">Login</button>
+				</div>
+			</form>
+		</div>
+
+		<div id="keycloak-login-social">
+			<h3>Login with</h3>
+
+			<ui:repeat var="p" value="#{login.providers}">
+				<div>
+					<a href="#{p.loginUrl}"> <img src="#{p.iconUrl}" /> Login with #{p.name}</a>
+				</div>
+			</ui:repeat>
+		</div>
+
+	</div>
+</ui:composition>
