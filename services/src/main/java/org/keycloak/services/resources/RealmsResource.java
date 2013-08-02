@@ -10,6 +10,7 @@ import org.keycloak.services.models.KeycloakSessionFactory;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RoleModel;
 import org.keycloak.services.models.UserModel;
+import org.keycloak.social.SocialRequestManager;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.NotAuthorizedException;
@@ -44,8 +45,11 @@ public class RealmsResource {
 
     protected TokenManager tokenManager;
 
-    public RealmsResource(TokenManager tokenManager) {
+    protected SocialRequestManager socialRequestManager;
+
+    public RealmsResource(TokenManager tokenManager, SocialRequestManager socialRequestManager) {
         this.tokenManager = tokenManager;
+        this.socialRequestManager = socialRequestManager;
     }
 
     public static UriBuilder realmBaseUrl(UriInfo uriInfo) {
@@ -71,6 +75,23 @@ public class RealmsResource {
 
     }
 
+    @Path("{realm}/social")
+    public SocialService getSocialService(final @PathParam("realm") String id) {
+        return new Transaction(false) {
+            @Override
+            protected SocialService callImpl() {
+                RealmManager realmManager = new RealmManager(session);
+                RealmModel realm = realmManager.getRealm(id);
+                if (realm == null) {
+                    logger.debug("realm not found");
+                    throw new NotFoundException();
+                }
+                SocialService socialService = new SocialService(realm, tokenManager, socialRequestManager);
+                resourceContext.initResource(socialService);
+                return socialService;
+            }
+        }.call();
+    }
 
     @Path("{realm}")
     public RealmSubResource getRealmResource(final @PathParam("realm") String id) {

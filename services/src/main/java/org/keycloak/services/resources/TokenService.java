@@ -5,17 +5,13 @@ import org.jboss.resteasy.jose.jws.JWSInput;
 import org.jboss.resteasy.jose.jws.crypto.RSAProvider;
 import org.jboss.resteasy.jwt.JsonSerialization;
 import org.jboss.resteasy.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
-import org.jboss.resteasy.spi.HttpResponse;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.SkeletonKeyToken;
-import org.keycloak.services.JspRequestParameters;
 import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.managers.TokenManager;
-import org.keycloak.services.models.KeycloakSession;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RoleModel;
 import org.keycloak.services.models.UserModel;
@@ -28,7 +24,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -44,37 +39,21 @@ import java.util.Map;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class TokenService {
+public class TokenService extends AbstractLoginService {
 
 
     protected static final Logger logger = Logger.getLogger(TokenService.class);
 
     @Context
-    protected UriInfo uriInfo;
-    @Context
     protected Providers providers;
     @Context
     protected SecurityContext securityContext;
-    @Context
-    protected HttpHeaders headers;
-    @Context
-    HttpRequest request;
-    @Context
-    HttpResponse response;
-
-    protected String securityFailurePath = "/securityFailure.jsp";
-    protected String loginFormPath = "/loginForm.jsp";
-    protected String oauthFormPath = "/oauthGrantForm.jsp";
-
-    protected RealmModel realm;
-    protected TokenManager tokenManager;
 
     protected AuthenticationManager authManager = new AuthenticationManager();
     private ResourceAdminManager resourceAdminManager = new ResourceAdminManager();
 
     public TokenService(RealmModel realm, TokenManager tokenManager) {
-        this.realm = realm;
-        this.tokenManager = tokenManager;
+        super(realm, tokenManager);
     }
 
     public static UriBuilder tokenServiceBaseUrl(UriInfo uriInfo) {
@@ -227,36 +206,6 @@ public class TokenService {
         }.call();
     }
 
-    protected Response processAccessCode(String scopeParam, String state, String redirect, UserModel client, UserModel user) {
-        RoleModel resourceRole = realm.getRole(RealmManager.RESOURCE_ROLE);
-        RoleModel identityRequestRole = realm.getRole(RealmManager.IDENTITY_REQUESTER_ROLE);
-        boolean isResource = realm.hasRole(client, resourceRole);
-        if (!isResource && !realm.hasRole(client, identityRequestRole)) {
-            securityFailureForward("Login requester not allowed to request login.");
-            return null;
-        }
-        AccessCodeEntry accessCode = tokenManager.createAccessCode(scopeParam, state, redirect, realm, client, user);
-        logger.info("processAccessCode: isResource: " + isResource);
-        logger.info("processAccessCode: go to oauth page?: " + (!isResource && (accessCode.getRealmRolesRequested().size() > 0 || accessCode.getResourceRolesRequested().size() > 0)));
-        if (!isResource && (accessCode.getRealmRolesRequested().size() > 0 || accessCode.getResourceRolesRequested().size() > 0)) {
-            oauthGrantPage(accessCode, client);
-            return null;
-        }
-        return redirectAccessCode(accessCode, state, redirect);
-    }
-
-    protected Response redirectAccessCode(AccessCodeEntry accessCode, String state, String redirect) {
-        String code = accessCode.getCode();
-        UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam("code", code);
-        logger.info("redirectAccessCode: state: " + state);
-        if (state != null) redirectUri.queryParam("state", state);
-        Response.ResponseBuilder location = Response.status(302).location(redirectUri.build());
-        if (realm.isCookieLoginAllowed()) {
-            location.cookie(tokenManager.createLoginCookie(realm, accessCode.getUser(), uriInfo));
-        }
-        return location.build();
-    }
-
     @Path("access/codes")
     @POST
     @Produces("application/json")
@@ -382,27 +331,6 @@ public class TokenService {
         return res;
     }
 
-    protected void securityFailureForward(String message) {
-        logger.error(message);
-        request.setAttribute(JspRequestParameters.KEYCLOAK_SECURITY_FAILURE_MESSAGE, message);
-        request.forward(securityFailurePath);
-    }
-
-    protected void forwardToLoginForm(String redirect,
-                                      String clientId,
-                                      String scopeParam,
-                                      String state) {
-        request.setAttribute(RealmModel.class.getName(), realm);
-        request.setAttribute("KEYCLOAK_LOGIN_ACTION", processLoginUrl(uriInfo).build(realm.getId()));
-
-        // RESTEASY eats the form data, so we send via an attribute
-        request.setAttribute("redirect_uri", redirect);
-        request.setAttribute("client_id", clientId);
-        request.setAttribute("scope", scopeParam);
-        request.setAttribute("state", state);
-        request.forward(loginFormPath);
-    }
-
     @Path("login")
     @GET
     public Response loginPage(final @QueryParam("response_type") String responseType,
@@ -517,14 +445,9 @@ public class TokenService {
         return location.build();
     }
 
-    protected void oauthGrantPage(AccessCodeEntry accessCode, UserModel client) {
-        request.setAttribute("realmRolesRequested", accessCode.getRealmRolesRequested());
-        request.setAttribute("resourceRolesRequested", accessCode.getResourceRolesRequested());
-        request.setAttribute("client", client);
-        request.setAttribute("action", processOAuthUrl(uriInfo).build(realm.getId()).toString());
-        request.setAttribute("code", accessCode.getCode());
-
-        request.forward(oauthFormPath);
+    @Override
+    protected Logger getLogger() {
+        return logger;
     }
 
 }
