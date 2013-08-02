@@ -9,6 +9,7 @@ import org.keycloak.services.models.picketlink.PicketlinkKeycloakSession;
 import org.keycloak.services.models.picketlink.PicketlinkKeycloakSessionFactory;
 import org.keycloak.services.models.picketlink.mappings.RealmEntity;
 import org.keycloak.services.models.picketlink.mappings.ResourceEntity;
+import org.keycloak.social.SocialRequestManager;
 import org.picketlink.idm.PartitionManager;
 import org.picketlink.idm.config.IdentityConfigurationBuilder;
 import org.picketlink.idm.internal.DefaultPartitionManager;
@@ -49,7 +50,7 @@ public class KeycloakApplication extends Application {
         KeycloakSessionFactory f = createSessionFactory();
         this.factory = f;
         KeycloakSessionRequestFilter filter = new KeycloakSessionRequestFilter(factory);
-        singletons.add(new RealmsResource(new TokenManager()));
+        singletons.add(new RealmsResource(new TokenManager(), new SocialRequestManager()));
         singletons.add(filter);
         classes.add(KeycloakSessionResponseFilter.class);
         classes.add(SkeletonKeyContextResolver.class);

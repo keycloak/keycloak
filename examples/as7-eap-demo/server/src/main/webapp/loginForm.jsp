@@ -22,13 +22,41 @@
 <body>
 <div class="modal-body">
 
-    <div id="facebook-login-box" onclick="loginFacebook()">
-        <img id="facebook-sign" src="<%=application.getContextPath()%>/img/facebook.png" border="0"/>
-    </div>
+	<%
+	String googleLogin = request.getAttribute("KEYCLOAK_SOCIAL_LOGIN").toString();
+	googleLogin += "?provider_id=google";
+	googleLogin += "&client_id=" + request.getAttribute("client_id");
+    if (request.getAttribute("scope") != null) {
+    	googleLogin += "&scope=" + request.getAttribute("scope");
+    }
+    if (request.getAttribute("state") != null) {
+    	googleLogin += "&state=" + request.getAttribute("state");
+    }
+    googleLogin += "&redirect_uri=" + request.getAttribute("redirect_uri");
+    %>
+    
+	<a href="<%=googleLogin%>">
+	Login with Google
+	</a>
 
-    <div id="twitter-login-box" onclick="loginTwitter()">
-        <img id="twitter-sign" src="<%=application.getContextPath()%>/img/twitter.png" border="0"/>
-    </div>
+	<%
+	String twitterLogin = request.getAttribute("KEYCLOAK_SOCIAL_LOGIN").toString();
+	twitterLogin = twitterLogin.replace("://localhost", "://127.0.0.1");
+	
+	twitterLogin += "?provider_id=twitter";
+	twitterLogin += "&client_id=" + request.getAttribute("client_id");
+    if (request.getAttribute("scope") != null) {
+        twitterLogin += "&scope=" + request.getAttribute("scope");
+    }
+    if (request.getAttribute("state") != null) {
+        twitterLogin += "&state=" + request.getAttribute("state");
+    }
+    twitterLogin += "&redirect_uri=" + request.getAttribute("redirect_uri");
+    %>
+    
+	<a href="<%=twitterLogin%>">
+	Login with Twitter
+	</a>
 
     <hr/>
     <% String errorMessage = (String)request.getAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE");
