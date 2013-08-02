@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<project>
+    <parent>
+        <artifactId>keycloak-social-parent</artifactId>
+        <groupId>org.keycloak</groupId>
+        <version>1.0-alpha-1</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>keycloak-social-core</artifactId>
+    <name>Keycloak Social Core</name>
+    <description/>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>jaxrs-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
+</project>
