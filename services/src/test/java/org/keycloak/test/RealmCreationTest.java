@@ -87,7 +87,7 @@ public class RealmCreationTest {
         //
 
         RealmRepresentation realm = KeycloakTestBase.loadJson("testrealm.json");
-        response = target.path("realms").request().header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenResponse.getToken()).post(Entity.json(realm));
+        response = target.path("saas/admin/realms").request().header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenResponse.getToken()).post(Entity.json(realm));
         Assert.assertEquals(201, response.getStatus());
         response.close();
     }

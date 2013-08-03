@@ -13,6 +13,7 @@ import org.keycloak.services.models.KeycloakSessionFactory;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RequiredCredentialModel;
 import org.keycloak.services.models.ResourceModel;
+import org.keycloak.services.models.RoleModel;
 import org.keycloak.services.models.UserModel;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.services.resources.SaasService;
@@ -59,11 +60,14 @@ public class ImportTest {
         defaultRealm.setRegistrationAllowed(true);
         manager.generateRealmKeys(defaultRealm);
         defaultRealm.addRequiredCredential(RequiredCredentialModel.PASSWORD);
-        defaultRealm.addRole(SaasService.REALM_CREATOR_ROLE);
+        RoleModel role = defaultRealm.addRole(SaasService.REALM_CREATOR_ROLE);
+        UserModel admin = defaultRealm.addUser("admin");
+        defaultRealm.grantRole(admin, role);
 
         RealmRepresentation rep = KeycloakTestBase.loadJson("testrealm.json");
         RealmModel realm = manager.createRealm("demo", rep.getRealm());
         manager.importRealm(rep, realm);
+        realm.addRealmAdmin(admin);
         List<RequiredCredentialModel> creds = realm.getRequiredCredentials();
         Assert.assertEquals(1, creds.size());
 
@@ -74,6 +78,8 @@ public class ImportTest {
         Assert.assertTrue(scopes.contains("*"));
         List<ResourceModel> resources = realm.getResources();
         Assert.assertEquals(2, resources.size());
+        List<RealmModel> realms = identitySession.getRealms(admin);
+        Assert.assertEquals(1, realms.size());
 
     }
 

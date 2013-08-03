@@ -81,7 +81,7 @@ public class AuthenticationManager {
         String encoded = encodeToken(realm, identityToken);
         boolean secureOnly = !realm.isSslNotRequired();
         logger.info("creatingLoginCookie - name: " + cookieName + " path: " + cookiePath);
-        NewCookie cookie = new NewCookie(cookieName, encoded, cookiePath, null, null, NewCookie.DEFAULT_MAX_AGE, secureOnly, false);
+        NewCookie cookie = new NewCookie(cookieName, encoded, cookiePath, null, null, NewCookie.DEFAULT_MAX_AGE, secureOnly, true);
         return cookie;
     }
 
@@ -132,6 +132,13 @@ public class AuthenticationManager {
     public UserModel authenticateSaasIdentityCookie(RealmModel realm, UriInfo uriInfo, HttpHeaders headers) {
         String cookieName = SaasService.SAAS_IDENTITY_COOKIE;
         return authenticateIdentityCookie(realm, uriInfo, headers, cookieName);
+    }
+
+    public UserModel authenticateSaasIdentity(RealmModel realm, UriInfo uriInfo, HttpHeaders headers) {
+        UserModel user = authenticateSaasIdentityCookie(realm, uriInfo, headers);
+        if (user != null) return user;
+
+        return authenticateBearerToken(realm, headers);
     }
 
 

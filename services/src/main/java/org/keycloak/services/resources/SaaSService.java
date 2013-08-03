@@ -13,11 +13,13 @@ import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RoleModel;
 import org.keycloak.services.models.UserModel;
 import org.keycloak.services.models.UserCredentialModel;
+import org.keycloak.services.resources.admin.RealmsAdminResource;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -141,7 +143,27 @@ public class SaasService {
         return contextRoot(uriInfo).path("rest").path(SaasService.class);
     }
 
-
+    @Path("admin/realms")
+    public RealmsAdminResource getRealmsAdmin(@Context final HttpHeaders headers) {
+       return new Transaction(false) {
+           @Override
+           protected RealmsAdminResource callImpl() {
+               RealmManager realmManager = new RealmManager(session);
+               RealmModel saasRealm = realmManager.defaultRealm();
+               if (saasRealm == null) throw new NotFoundException();
+               UserModel admin = authManager.authenticateSaasIdentity(saasRealm, uriInfo, headers);
+               if (admin == null) {
+                   throw new NotAuthorizedException("Bearer");
+               }
+               RoleModel creatorRole = saasRealm.getRole(SaasService.REALM_CREATOR_ROLE);
+               if (!saasRealm.hasRole(admin, creatorRole)) {
+                   logger.warn("not a Realm creator");
+                   throw new NotAuthorizedException("Bearer");
+               }
+               return new RealmsAdminResource(admin);
+           }
+       }.call();
+    }
 
     @Path("logout")
     @GET
@@ -171,11 +193,11 @@ public class SaasService {
     @Path("login")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public void processLogin(final MultivaluedMap<String, String> formData) {
+    public Response processLogin(final MultivaluedMap<String, String> formData) {
         logger.info("processLogin start");
-        new Transaction() {
+        return new Transaction() {
             @Override
-            protected void runImpl() {
+            protected Response callImpl() {
                 RealmManager realmManager = new RealmManager(session);
                 RealmModel realm = realmManager.defaultRealm();
                 if (realm == null) throw new NotFoundException();
@@ -189,13 +211,13 @@ public class SaasService {
                     logger.info("Not Authenticated! Incorrect user name");
                     request.setAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE", "Incorrect user name.");
                     request.forward(saasLoginPath);
-                    return;
+                    return null;
                 }
                 if (!user.isEnabled()) {
                     logger.info("NAccount is disabled, contact admin.");
                     request.setAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE", "Account is disabled, contact admin.");
                     request.forward(saasLoginPath);
-                    return;
+                    return null;
                 }
 
                 boolean authenticated = authManager.authenticateForm(realm, user, formData);
@@ -203,14 +225,15 @@ public class SaasService {
                     logger.info("Not Authenticated! Invalid credentials");
                     request.setAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE", "Invalid credentials.");
                     request.forward(saasLoginPath);
-                    return;
+                    return null;
                 }
 
                 NewCookie cookie = authManager.createSaasIdentityCookie(realm, user, uriInfo);
-                response.addNewCookie(cookie);
-                request.forward(adminPath);
+                return Response.status(302)
+                               .cookie(cookie)
+                               .location(contextRoot(uriInfo).path(adminPath).build()).build();
             }
-        }.run();
+        }.call();
     }
 
     @Path("registrations")

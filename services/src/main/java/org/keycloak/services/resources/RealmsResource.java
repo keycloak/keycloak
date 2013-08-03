@@ -110,26 +110,4 @@ public class RealmsResource {
     }
 
 
-    @POST
-    @Consumes("application/json")
-    public Response importRealm(final RealmRepresentation rep) {
-        return new Transaction() {
-            @Override
-            protected Response callImpl() {
-                RealmManager realmManager = new RealmManager(session);
-                RealmModel defaultRealm = realmManager.getRealm(RealmModel.DEFAULT_REALM);
-                UserModel realmCreator = new AuthenticationManager().authenticateBearerToken(defaultRealm, headers);
-                RoleModel creatorRole = defaultRealm.getRole(SaasService.REALM_CREATOR_ROLE);
-                if (!defaultRealm.hasRole(realmCreator, creatorRole)) {
-                    logger.warn("not a realm creator");
-                    throw new NotAuthorizedException("Bearer");
-                }
-                RealmModel realm = realmManager.importRealm(rep, realmCreator);
-                UriBuilder builder = uriInfo.getRequestUriBuilder().path(realm.getId());
-                return Response.created(builder.build())
-                        .entity(PublicRealmResource.realmRep(realm, uriInfo))
-                        .type(MediaType.APPLICATION_JSON_TYPE).build();
-            }
-        }.call();
-    }
 }

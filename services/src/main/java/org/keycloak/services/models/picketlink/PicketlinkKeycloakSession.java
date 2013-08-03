@@ -6,10 +6,16 @@ import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.services.models.KeycloakSession;
 import org.keycloak.services.models.KeycloakTransaction;
 import org.keycloak.services.models.RealmModel;
+import org.keycloak.services.models.UserModel;
 import org.keycloak.services.models.picketlink.mappings.RealmData;
+import org.keycloak.services.models.picketlink.relationships.RealmAdminRelationship;
 import org.picketlink.idm.PartitionManager;
+import org.picketlink.idm.RelationshipManager;
+import org.picketlink.idm.query.RelationshipQuery;
 
 import javax.persistence.EntityManager;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -66,6 +72,25 @@ public class PicketlinkKeycloakSession implements KeycloakSession {
         partitionManager.add(newRealm);
         RealmAdapter realm = new RealmAdapter(this, newRealm, partitionManager);
         return realm;
+    }
+
+    @Override
+    public List<RealmModel> getRealms(UserModel admin) {
+        RelationshipManager relationshipManager = partitionManager.createRelationshipManager();
+        RelationshipQuery<RealmAdminRelationship> query = relationshipManager.createRelationshipQuery(RealmAdminRelationship.class);
+        query.setParameter(RealmAdminRelationship.ADMIN, ((UserAdapter)admin).getUser());
+        List<RealmAdminRelationship> results = query.getResultList();
+        List<RealmModel> realmModels = new ArrayList<RealmModel>();
+        for (RealmAdminRelationship relationship : results) {
+            String realmName = relationship.getRealm();
+            RealmModel model = getRealm(realmName);
+            if (model == null) {
+                relationshipManager.remove(relationship);
+            } else {
+                realmModels.add(model);
+            }
+        }
+        return realmModels;
     }
 
     @Override

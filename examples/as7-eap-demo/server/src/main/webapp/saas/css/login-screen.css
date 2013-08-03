@@ -1,0 +1,268 @@
+body {
+  min-height: 60em;
+}
+.rcue-login-register {
+  background-color: #1D2226;
+  background-image: url("img/login-screen-background.jpg");
+  background-position: top left;
+  background-size: auto;
+  background-repeat: no-repeat;
+  color: #fff;
+  /* Login area */
+
+  /* Social login area */
+
+  /* Info area */
+
+}
+.rcue-login-register h1 a {
+  position: absolute;
+  top: 5em;
+  right: 6.4em;
+}
+.rcue-login-register .content {
+  position: absolute;
+  bottom: 15%;
+  width: 100%;
+  min-width: 76em;
+}
+.rcue-login-register h2 {
+  padding-left: 4.34782608695652em;
+  /* 100px */
+
+  font-family: "Overpass", sans-serif;
+  font-size: 2.3em;
+  font-weight: 100;
+  text-transform: uppercase;
+  letter-spacing: 0.005em;
+}
+.rcue-login-register h2 strong {
+  font-weight: bold;
+}
+.rcue-login-register .background-area {
+  border-top: 0.1em rgba(255, 255, 255, 0.05) solid;
+  border-bottom: 0.1em rgba(255, 255, 255, 0.05) solid;
+  background-color: rgba(0, 0, 0, 0.3);
+  padding: 3em 0 3em 10em;
+  margin-top: 2.7em;
+  width: 100%;
+  min-width: 120em;
+}
+.rcue-login-register .background-area section {
+  float: left;
+  padding: 1.5em 4.5em 1.5em 4.6em;
+  width: auto;
+  position: relative;
+}
+.rcue-login-register .background-area section h3 {
+  display: none;
+}
+.rcue-login-register .background-area section:first-child {
+  padding-right: 4.5em;
+}
+.rcue-login-register .form-area {
+  background-image: url(img/login-register-separator.svg);
+  background-repeat: no-repeat;
+  background-position: 40.2em center;
+}
+.rcue-login-register .form-area.social {
+  background-image: url(img/login-register-social-separators.svg);
+  background-position: 39.6em center;
+}
+.rcue-login-register section.app-form {
+  padding-left: 0;
+}
+.rcue-login-register form > div {
+  margin-bottom: 1em;
+}
+.rcue-login-register label,
+.rcue-login-register .social-login > p {
+  display: inline-block;
+  font-size: 1.4em;
+  font-weight: 400;
+}
+.rcue-login-register label {
+  width: 6.07142857142857em;
+  /* 85px */
+
+}
+.rcue-login-register label.two-lines {
+  float: left;
+  margin-top: -0.28571428571429em;
+  /* -4px */
+
+  line-height: 1.1em;
+}
+.rcue-login-register input[type="text"],
+.rcue-login-register input[type="password"] {
+  width: 24.7272727272727em;
+  /* 272px */
+
+}
+.rcue-login-register form > div.aside-btn {
+  float: left;
+  font-size: 1.1em;
+  margin-left: 7.72727272727273em;
+  /* 85px */
+
+  margin-top: 0.90909090909091em;
+  /* 10px */
+
+  margin-bottom: 0;
+}
+.rcue-login-register form > div.aside-btn label {
+  font-size: 1em;
+  width: auto;
+}
+.rcue-login-register form > div.aside-btn input[type="checkbox"] {
+  margin-bottom: 0.54545454545455em;
+  /* 6px */
+
+}
+.rcue-login-register form > input[type="button"] {
+  float: right;
+  margin-top: 0.76923076923077em;
+  /* 10px */
+
+}
+.rcue-login-register p.subtitle {
+  font-size: 1.1em;
+  color: #999;
+  position: absolute;
+  right: 4.09090909090909em;
+  top: -0.636363636363636em;
+}
+.rcue-login-register section.social-login > span {
+  display: none;
+}
+.rcue-login-register section.social-login > p {
+  float: left;
+  margin-top: 0.28571428571429em;
+  /* 14px */
+
+  width: 6.78571428571429em;
+  /* 95px */
+
+}
+.rcue-login-register section.social-login > ul {
+  float: left;
+}
+.rcue-login-register section.social-login li {
+  margin-bottom: 2em;
+}
+.rcue-login-register section.social-login li:last-child {
+  margin-bottom: 0;
+}
+.rcue-login-register section.info-area {
+  padding-right: 0;
+}
+.rcue-login-register section.info-area p,
+.rcue-login-register section.info-area li {
+  font-size: 1.4em;
+  margin-bottom: 1.64285714285714em;
+  /* 23px */
+
+}
+.rcue-login-register section.info-area li {
+  color: #999;
+  margin-bottom: 1em;
+}
+.rcue-login-register section.info-area li:last-child {
+  margin-bottom: 0;
+}
+@media screen and (min-width: 1280px) {
+  .rcue-login-register {
+    background-size: 100% auto;
+  }
+}
+/* Social buttons */
+.zocial,
+a.zocial {
+  padding: 0;
+  line-height: 2.3em;
+  height: 2.3em;
+  width: 131px;
+  border-radius: 2px;
+  box-shadow: none;
+  background-image: none;
+  text-shadow: none;
+}
+.zocial .text,
+a.zocial .text {
+  font-size: 1.2em;
+  line-height: 1.25em;
+  text-align: center;
+  display: block;
+  font-family: "Open Sans", sans-serif;
+  font-weight: normal;
+  border-left: 1px solid rgba(0, 0, 0, 0.15);
+  margin-left: 3em;
+  /* 36 px */
+
+  margin-top: 0.25em;
+  /* 3px */
+
+}
+.zocial:hover,
+a.zocial:hover,
+.zocial:active,
+a.zocial:active,
+.zocial:focus,
+a.zocial:focus {
+  text-decoration: none;
+  background-image: none;
+}
+.zocial:hover,
+a.zocial:hover {
+  background-image: linear-gradient(rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.1) 100%);
+}
+.zocial:before,
+a.zocial:before {
+  margin: 0;
+  padding: 0;
+  box-shadow: none;
+  border: none;
+  width: 3em;
+  /* 36px */
+
+}
+.zocial.facebook:before {
+  width: 2.66666666666667em;
+  /* 32px */
+}
+/* Register page */
+.rcue-login-register.register label {
+  width: 7.5em;
+  /* 105px */
+
+}
+.rcue-login-register.register input[type="text"],
+.rcue-login-register.register input[type="email"],
+.rcue-login-register.register input[type="password"] {
+  width: 22.9090909090909em;
+  /* 252px */
+
+}
+.rcue-login-register.register form > div.aside-btn {
+  margin-left: 9.54545454545454em;
+  /* 105px */
+
+  width: 12.5454545454546em;
+  /* 138px */
+
+}
+.rcue-login-register.register form > div.aside-btn p {
+  line-height: 1.3em;
+}
+/* Customer login */
+.rcue-login-register.customer {
+  background-image: url("img/customer-login-screen-bg2.jpg");
+}
+.rcue-login-register.customer h2 {
+  display: inline-block;
+}
+.rcue-login-register.customer p.powered {
+  display: inline-block;
+  font-size: 1.3em;
+  margin-left: 1.2em;
+}
