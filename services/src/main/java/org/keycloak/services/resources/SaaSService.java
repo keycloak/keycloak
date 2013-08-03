@@ -9,7 +9,6 @@ import org.keycloak.representations.idm.RequiredCredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.models.KeycloakSession;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RoleModel;
 import org.keycloak.services.models.UserModel;

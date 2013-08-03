@@ -5,6 +5,8 @@ import org.keycloak.services.models.KeycloakSession;
 import org.keycloak.services.models.KeycloakSessionFactory;
 import org.keycloak.services.models.KeycloakTransaction;
 
+import javax.ws.rs.core.Application;
+
 /**
  * Meant to be used as an inner class wrapper (I forget the pattern name, its been awhile).
  *
@@ -15,6 +17,7 @@ public class Transaction {
     protected KeycloakSession session;
     protected KeycloakTransaction transaction;
     protected boolean closeSession;
+    protected boolean created;
 
     /**
      * Pull KeycloakSession from @Context
@@ -29,10 +32,16 @@ public class Transaction {
     /**
      *  Pull KeycloakSession from @Context
      *
-     * @param close whether to close the session or not after completion
+     * @param close whether to close the session or not after successful completion
      */
     public Transaction(boolean close) {
         this.session = ResteasyProviderFactory.getContextData(KeycloakSession.class);
+        if (session == null) {
+            KeycloakApplication app = (KeycloakApplication)ResteasyProviderFactory.getContextData(Application.class);
+            session = app.getFactory().createSession();
+            created = true;
+            ResteasyProviderFactory.pushContext(KeycloakSession.class, session);
+        }
         transaction = session.getTransaction();
         closeSession = close;
 
@@ -65,9 +74,12 @@ public class Transaction {
             if (!wasActive && transaction.isActive()) transaction.commit();
         } catch (RuntimeException e) {
             if (!wasActive && transaction.isActive()) transaction.rollback();
+            if (created) closeSession = true;
             throw e;
         } finally {
-            if (!wasActive && closeSession) session.close();
+            if (!wasActive && closeSession) {
+                session.close();
+            }
         }
     }
 
@@ -88,6 +100,7 @@ public class Transaction {
             return rtn;
         } catch (RuntimeException e) {
             if (!wasActive && transaction.isActive()) transaction.rollback();
+            if (created) closeSession = true; // close if there was a failure
             throw e;
         } finally {
             if (!wasActive && closeSession) session.close();

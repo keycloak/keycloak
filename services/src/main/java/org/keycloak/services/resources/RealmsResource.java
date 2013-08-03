@@ -92,17 +92,17 @@ public class RealmsResource {
     }
 
     @Path("{realm}")
-    public RealmSubResource getRealmResource(final @PathParam("realm") String id) {
+    public PublicRealmResource getRealmResource(final @PathParam("realm") String id) {
         return new Transaction(false) {
             @Override
-            protected RealmSubResource callImpl() {
+            protected PublicRealmResource callImpl() {
                 RealmManager realmManager = new RealmManager(session);
                 RealmModel realm = realmManager.getRealm(id);
                 if (realm == null) {
                     logger.debug("realm not found");
                     throw new NotFoundException();
                 }
-                RealmSubResource realmResource = new RealmSubResource(realm);
+                PublicRealmResource realmResource = new PublicRealmResource(realm);
                 resourceContext.initResource(realmResource);
                 return realmResource;
             }
@@ -127,7 +127,7 @@ public class RealmsResource {
                 RealmModel realm = realmManager.importRealm(rep, realmCreator);
                 UriBuilder builder = uriInfo.getRequestUriBuilder().path(realm.getId());
                 return Response.created(builder.build())
-                        .entity(RealmSubResource.realmRep(realm, uriInfo))
+                        .entity(PublicRealmResource.realmRep(realm, uriInfo))
                         .type(MediaType.APPLICATION_JSON_TYPE).build();
             }
         }.call();

@@ -49,10 +49,10 @@ public class KeycloakApplication extends Application {
     public KeycloakApplication() {
         KeycloakSessionFactory f = createSessionFactory();
         this.factory = f;
-        KeycloakSessionRequestFilter filter = new KeycloakSessionRequestFilter(factory);
+        //KeycloakSessionRequestFilter filter = new KeycloakSessionRequestFilter(factory);
+        //singletons.add(filter);
+        //classes.add(KeycloakSessionResponseFilter.class);
         singletons.add(new RealmsResource(new TokenManager(), new SocialRequestManager()));
-        singletons.add(filter);
-        classes.add(KeycloakSessionResponseFilter.class);
         classes.add(SkeletonKeyContextResolver.class);
         classes.add(SaasService.class);
     }
