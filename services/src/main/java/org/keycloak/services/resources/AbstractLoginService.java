@@ -30,7 +30,7 @@ public abstract class AbstractLoginService {
     HttpResponse response;
 
     protected String securityFailurePath = "/securityFailure.jsp";
-    protected String loginFormPath = "/loginForm.jsp";
+    protected String loginFormPath = "/sdk/login.xhtml";
     protected String oauthFormPath = "/oauthGrantForm.jsp";
 
     protected RealmModel realm;

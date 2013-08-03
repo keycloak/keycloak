@@ -1,0 +1,65 @@
+<ui:composition xmlns:h="http://java.sun.com/jsf/html" xmlns:f="http://java.sun.com/jsf/core" xmlns:ui="http://java.sun.com/jsf/facelets" xmlns:c="http://java.sun.com/jstl/core">
+	<h1><a href="#" title="Go to the home page"><img src="#{login.themeUrl}/img/red-hat-logo.png" alt="Red Hat logo"/></a></h1>
+	<div class="content">
+		<h2>
+			Log in to <strong>#{login.name}</strong>
+		</h2>
+		<div class="background-area">
+			<div class="form-area social clearfix">
+				<section class="app-form">
+					<h3>Application login area</h3>
+					<form action="#{login.loginAction}" method="post">
+						<div>
+							<label for="username">Username</label>
+							<input id="username" name="username" value="#{login.username}" type="text" />
+						</div>
+
+						<ui:repeat var="c" value="#{login.requiredCredentials}">
+							<div>
+								<label for="#{c.type}">#{c.type}</label>
+								<input id="#{c.type}" name="#{c.type}" type="#{c.secret ? 'password' : 'text'}" />
+							</div>
+						</ui:repeat>
+
+						<input name="client_id" value="#{login.clientId}" type="hidden" />
+						
+						<h:panelGroup rendered="#{not empty login.scope}">
+							<input name="scope" value="#{login.scope}" type="hidden" />
+						</h:panelGroup>
+						
+						<h:panelGroup rendered="#{not empty login.state}">
+							<input name="state" value="#{login.state}" type="hidden" />
+						</h:panelGroup>
+						
+						<h:panelGroup rendered="#{not empty login.redirectUri}">
+							<input name="redirect_uri" value="#{login.redirectUri}" type="hidden" />
+						</h:panelGroup>
+
+						<input type="submit" value="Log In" />
+					</form>
+				</section>
+				<section class="social-login">
+					<span>or</span>
+					<h3>Social login area</h3>
+					<p>Log In with</p>
+					<ul>
+						<ui:repeat var="p" value="#{login.providers}">
+							<li><a href="#{p.loginUrl}" class="zocial #{p.id}"> <span class="text">#{p.name}</span></a></li>
+						</ui:repeat>
+					</ul>
+				</section>
+				<section class="info-area">
+					<h3>Info area</h3>
+					<p>
+						Does not have an account? <a href="saas-register.html">Register</a>.
+					</p>
+					<ul>
+						<li><strong>Domain:</strong> 10.0.0.1</li>
+						<li><strong>Zone:</strong> Live</li>
+						<li><strong>Appliance:</strong> Yep</li>
+					</ul>
+				</section>
+			</div>
+		</div>
+	</div>
+</ui:composition>

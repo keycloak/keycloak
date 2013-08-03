@@ -58,11 +58,8 @@
         <module>integration</module>
         <module>examples</module>
         <module>social</module>
-        <!--
         <module>sdk-html</module>
-        <module>social</module>
-        <module>server</module>
-        <module>ui</module> -->
+        <!--<module>ui</module> -->
     </modules>
 
     <dependencyManagement>
