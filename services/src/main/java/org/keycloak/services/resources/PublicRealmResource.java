@@ -17,8 +17,8 @@ import javax.ws.rs.core.UriInfo;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class RealmSubResource {
-    protected static final  Logger logger = Logger.getLogger(RealmSubResource.class);
+public class PublicRealmResource {
+    protected static final  Logger logger = Logger.getLogger(PublicRealmResource.class);
     public static final String ADMIN_ROLE = "$REALM-ADMIN$";
 
     @Context
@@ -26,7 +26,7 @@ public class RealmSubResource {
 
     protected RealmModel realm;
 
-    public RealmSubResource(RealmModel realm) {
+    public PublicRealmResource(RealmModel realm) {
         this.realm = realm;
     }
 

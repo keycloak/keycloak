@@ -1,8 +1,7 @@
 package org.keycloak.services.resources;
 
 import org.keycloak.SkeletonKeyContextResolver;
-import org.keycloak.services.filters.KeycloakSessionRequestFilter;
-import org.keycloak.services.filters.KeycloakSessionResponseFilter;
+import org.keycloak.services.filters.KeycloakSessionCleanupFilter;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.models.KeycloakSessionFactory;
 import org.keycloak.services.models.picketlink.PicketlinkKeycloakSession;
@@ -49,12 +48,10 @@ public class KeycloakApplication extends Application {
     public KeycloakApplication() {
         KeycloakSessionFactory f = createSessionFactory();
         this.factory = f;
-        KeycloakSessionRequestFilter filter = new KeycloakSessionRequestFilter(factory);
+        classes.add(KeycloakSessionCleanupFilter.class);
         singletons.add(new RealmsResource(new TokenManager(), new SocialRequestManager()));
-        singletons.add(filter);
-        classes.add(KeycloakSessionResponseFilter.class);
         classes.add(SkeletonKeyContextResolver.class);
-        classes.add(RegistrationService.class);
+        classes.add(SaasService.class);
     }
 
     protected KeycloakSessionFactory createSessionFactory() {

@@ -7,7 +7,8 @@ import org.keycloak.services.models.KeycloakSession;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RequiredCredentialModel;
 import org.keycloak.services.resources.KeycloakApplication;
-import org.keycloak.services.resources.RegistrationService;
+import org.keycloak.services.resources.SaasService;
+import org.keycloak.services.resources.SaasService;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -35,12 +36,12 @@ public class DemoApplication extends KeycloakApplication {
         defaultRealm.setEnabled(true);
         defaultRealm.setTokenLifespan(300);
         defaultRealm.setAccessCodeLifespan(60);
-        defaultRealm.setSslNotRequired(false);
+        defaultRealm.setSslNotRequired(true);
         defaultRealm.setCookieLoginAllowed(true);
         defaultRealm.setRegistrationAllowed(true);
         manager.generateRealmKeys(defaultRealm);
         defaultRealm.addRequiredCredential(RequiredCredentialModel.PASSWORD);
-        defaultRealm.addRole(RegistrationService.REALM_CREATOR_ROLE);
+        defaultRealm.addRole(SaasService.REALM_CREATOR_ROLE);
 
         RealmRepresentation rep = loadJson("META-INF/testrealm.json");
         RealmModel realm = manager.createRealm("demo", rep.getRealm());

@@ -390,11 +390,17 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public ResourceModel addResource(String name) {
-        ResourceData resourceData = new ResourceData(name);
+        ResourceData resourceData = new ResourceData(RealmManager.generateId());
         User resourceUser = new User(name);
         idm.add(resourceUser);
         resourceData.setResourceUser(resourceUser);
+        resourceData.setResourceName(name);
+        resourceData.setResourceUser(resourceUser);
         partitionManager.add(resourceData);
+        ResourceRelationship resourceRelationship = new ResourceRelationship();
+        resourceRelationship.setRealm(realm.getName());
+        resourceRelationship.setResource(resourceData.getName());
+        getRelationshipManager().add(resourceRelationship);
         ResourceModel resource = new ResourceAdapter(resourceData, this, partitionManager);
         resource.addRole("*");
         resource.addScope(new UserAdapter(resourceUser, idm), "*");

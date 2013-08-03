@@ -23,6 +23,7 @@ public class ResourceData extends AbstractPartition {
         super(name);
     }
 
+    @AttributeProperty
     public String getResourceName() {
         return resourceName;
     }

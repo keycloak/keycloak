@@ -1,0 +1,17 @@
+.margin-top {
+    margin-top: 1em;
+}
+
+div#httpProviderError {
+    position: fixed;
+    left: 20px;
+    bottom: 20px;
+}
+
+div#loading {
+    color: #868686;
+    font-size: 14px;
+    position: fixed;
+    left: 0px;
+    bottom: 5px;
+}
