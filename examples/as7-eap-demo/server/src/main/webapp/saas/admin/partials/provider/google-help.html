@@ -1,0 +1,40 @@
+<p>
+    Open <a href="https://code.google.com/apis/console/" target="_blank">https://code.google.com/apis/console/</a>. From
+    the
+    drop-down menu select <i>Create</i>.
+</p>
+
+<p>Use any name that you'd like, click <i>Create Project</i>, select <i>API Access</i> and click on <i>Create an OAuth
+    2.0 client ID</i>.</p>
+
+<p>Use any product name you'd like and leave the other fields empty, then click <i>Next</i>. On the next page select <i>Web
+    application</i>
+    as the application type. Click <i>more options</i> next to <i>Your site or hostname</i>. Fill in the form with the
+    following values:</p>
+
+<ul>
+    <li><b>Authorized Redirect URIs:</b> {{callbackUrl}}</li>
+</ul>
+
+<p>Click on <i>Create client ID</i>. Insert <i>Client ID</i> and <i>Client secret</i> in the form below.</p>
+
+<form class="form-horizontal" name="googleHelpForm">
+    <div class="control-group">
+        <label class="control-label" for="providerHelp.key">Client ID </label>
+
+        <div class="controls">
+            <input type="text" class="input-xlarge" id="providerHelp.key"
+                   data-ng-model="application.providers[providerHelp.index].key">
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label" for="providerHelp.secret">Client secret </label>
+
+        <div class="controls">
+            <input type="text" class="input-xlarge" id="providerHelp.secret"
+                   data-ng-model="application.providers[providerHelp.index].secret">
+        </div>
+    </div>
+</form>
+
+<p>Close the help panel and click <i>save changes</i>.</p>

@@ -175,8 +175,9 @@ public class ServletOAuthLogin {
             return false;
         }
         // reset the cookie
-        Cookie reset = new Cookie(stateCookie.getName(), stateCookie.getValue());
-        reset.setPath(stateCookie.getPath());
+        log.info("** reseting application state cookie");
+        Cookie reset = new Cookie(realmInfo.getStateCookieName(), "");
+        reset.setPath(getDefaultCookiePath());
         reset.setMaxAge(0);
         response.addCookie(reset);
 

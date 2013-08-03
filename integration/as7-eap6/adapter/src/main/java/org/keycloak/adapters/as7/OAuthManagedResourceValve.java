@@ -163,7 +163,7 @@ public class OAuthManagedResourceValve extends FormAuthenticator implements Life
 
     protected void remoteLogout(JWSInput token, HttpServletResponse response) throws IOException {
         try {
-            log.debug("->> remoteLogout: ");
+            log.info("->> remoteLogout: ");
             LogoutAction action = JsonSerialization.fromBytes(LogoutAction.class, token.getContent());
             if (action.isExpired()) {
                 log.warn("admin request failed, expired token");

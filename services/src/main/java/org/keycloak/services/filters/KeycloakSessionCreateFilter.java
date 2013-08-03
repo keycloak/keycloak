@@ -16,12 +16,19 @@ import java.io.IOException;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class KeycloakSessionResponseFilter implements ContainerResponseFilter {
-    protected static final Logger logger = Logger.getLogger(KeycloakSessionResponseFilter.class);
+@PreMatching
+public class KeycloakSessionCreateFilter implements ContainerRequestFilter {
+    protected static final Logger logger = Logger.getLogger(KeycloakSessionCreateFilter.class);
+    protected KeycloakSessionFactory factory;
+
+    public KeycloakSessionCreateFilter(KeycloakSessionFactory factory) {
+        this.factory = factory;
+    }
 
     @Override
-    public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) throws IOException {
-        KeycloakSession ctx = (KeycloakSession)requestContext.getProperty(KeycloakSession.class.getName());
-        if (ctx != null) ctx.close();
+    public void filter(ContainerRequestContext requestContext) throws IOException {
+        KeycloakSession ctx = factory.createSession();
+        ResteasyProviderFactory.pushContext(KeycloakSession.class, ctx);
     }
+
 }

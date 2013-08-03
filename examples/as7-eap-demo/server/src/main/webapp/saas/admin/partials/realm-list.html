@@ -1,0 +1,27 @@
+<div id="wrapper" class="container">
+    <div class="row">
+        <aside class="span3" data-ng-include data-src="'partials/realm-menu.html'"></aside>
+        <div id="actions-bg"></div>
+
+        <div id="container-right" class="span9">
+            <a class="btn btn-small pull-right" href="#/create/realm">Add Realm</a>
+
+            <h1>
+                <span class="gray">Realms</span>
+            </h1>
+
+            <table class="table table-striped table-bordered">
+                <thead>
+                <tr>
+                    <th>Realm</th>
+                </tr>
+                </thead>
+                <tr data-ng-repeat="(id, name) in realms">
+                    <td><a href="#/realms/{{id}}">{{name}}</a></td>
+                </tr>
+            </table>
+        </div>
+
+        <div id="container-right-bg"></div>
+    </div>
+</div>

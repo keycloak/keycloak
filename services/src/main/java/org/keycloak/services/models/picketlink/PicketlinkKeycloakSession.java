@@ -1,13 +1,21 @@
 package org.keycloak.services.models.picketlink;
 
+import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.NotImplementedYetException;
+import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.services.models.KeycloakSession;
 import org.keycloak.services.models.KeycloakTransaction;
 import org.keycloak.services.models.RealmModel;
+import org.keycloak.services.models.UserModel;
 import org.keycloak.services.models.picketlink.mappings.RealmData;
+import org.keycloak.services.models.picketlink.relationships.RealmAdminRelationship;
 import org.picketlink.idm.PartitionManager;
+import org.picketlink.idm.RelationshipManager;
+import org.picketlink.idm.query.RelationshipQuery;
 
 import javax.persistence.EntityManager;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -17,6 +25,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class PicketlinkKeycloakSession implements KeycloakSession {
     public static ThreadLocal<EntityManager> currentEntityManager = new ThreadLocal<EntityManager>();
     public static ThreadLocal<Exception> setWhere = new ThreadLocal<Exception>();
+    public static ThreadLocal<String> setFromPath = new ThreadLocal<String>();
     protected PartitionManager partitionManager;
     protected EntityManager entityManager;
 
@@ -31,7 +40,14 @@ public class PicketlinkKeycloakSession implements KeycloakSession {
         if (currentEntityManager.get() != null)
         {
             setWhere.get().printStackTrace();
-            throw new IllegalStateException("Thread local was leaked!");
+            String path = setFromPath.get();
+            if (path == null) path = "???";
+
+            throw new IllegalStateException("Thread local was leaked! from path: " + path);
+        }
+        HttpRequest request = ResteasyProviderFactory.getContextData(HttpRequest.class);
+        if (request != null) {
+            setFromPath.set(request.getUri().getPath());
         }
         currentEntityManager.set(entityManager);
         setWhere.set(new Exception());
@@ -59,6 +75,25 @@ public class PicketlinkKeycloakSession implements KeycloakSession {
     }
 
     @Override
+    public List<RealmModel> getRealms(UserModel admin) {
+        RelationshipManager relationshipManager = partitionManager.createRelationshipManager();
+        RelationshipQuery<RealmAdminRelationship> query = relationshipManager.createRelationshipQuery(RealmAdminRelationship.class);
+        query.setParameter(RealmAdminRelationship.ADMIN, ((UserAdapter)admin).getUser());
+        List<RealmAdminRelationship> results = query.getResultList();
+        List<RealmModel> realmModels = new ArrayList<RealmModel>();
+        for (RealmAdminRelationship relationship : results) {
+            String realmName = relationship.getRealm();
+            RealmModel model = getRealm(realmName);
+            if (model == null) {
+                relationshipManager.remove(relationship);
+            } else {
+                realmModels.add(model);
+            }
+        }
+        return realmModels;
+    }
+
+    @Override
     public RealmAdapter getRealm(String id) {
         RealmData existing = partitionManager.getPartition(RealmData.class, id);
         if (existing == null) {
@@ -75,9 +110,10 @@ public class PicketlinkKeycloakSession implements KeycloakSession {
 
     @Override
     public void close() {
-        if (entityManager.getTransaction().isActive()) entityManager.getTransaction().rollback();
+        setFromPath.set(null);
         setWhere.set(null);
         currentEntityManager.set(null);
+        if (entityManager.getTransaction().isActive()) entityManager.getTransaction().rollback();
         if (entityManager.isOpen()) entityManager.close();
     }
 }

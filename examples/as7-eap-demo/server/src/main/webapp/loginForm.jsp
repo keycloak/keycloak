@@ -61,11 +61,11 @@
     <hr/>
     <% String errorMessage = (String)request.getAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE");
        if (errorMessage != null) { %>
-    <div id="error-message" class="alert alert-block alert-error" style="block"><%=errorMessage%></div>
+    <div id="error-message" class="alert alert-block alert-error" ><%=errorMessage%></div>
     <% } %>
     <form class="form-horizontal" name="loginForm" action="<%=request.getAttribute("KEYCLOAK_LOGIN_ACTION")%>" method="POST">
         <div class="control-group">
-            <label class="control-label" for="username">User Name</label>
+            <label class="control-label">User Name</label>
 
             <div class="controls">
             <% if (username != null) { %>
@@ -123,5 +123,6 @@
 </div>
 <footer>
   <p>Powered By Keycloak</p>
+</footer>
 </body>
 </html>
