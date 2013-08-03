@@ -1,6 +1,8 @@
 package org.keycloak.services.models.picketlink;
 
+import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.NotImplementedYetException;
+import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.services.models.KeycloakSession;
 import org.keycloak.services.models.KeycloakTransaction;
 import org.keycloak.services.models.RealmModel;
@@ -17,6 +19,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class PicketlinkKeycloakSession implements KeycloakSession {
     public static ThreadLocal<EntityManager> currentEntityManager = new ThreadLocal<EntityManager>();
     public static ThreadLocal<Exception> setWhere = new ThreadLocal<Exception>();
+    public static ThreadLocal<String> setFromPath = new ThreadLocal<String>();
     protected PartitionManager partitionManager;
     protected EntityManager entityManager;
 
@@ -31,7 +34,14 @@ public class PicketlinkKeycloakSession implements KeycloakSession {
         if (currentEntityManager.get() != null)
         {
             setWhere.get().printStackTrace();
-            throw new IllegalStateException("Thread local was leaked!");
+            String path = setFromPath.get();
+            if (path == null) path = "???";
+
+            throw new IllegalStateException("Thread local was leaked! from path: " + path);
+        }
+        HttpRequest request = ResteasyProviderFactory.getContextData(HttpRequest.class);
+        if (request != null) {
+            setFromPath.set(request.getUri().getPath());
         }
         currentEntityManager.set(entityManager);
         setWhere.set(new Exception());
@@ -75,9 +85,10 @@ public class PicketlinkKeycloakSession implements KeycloakSession {
 
     @Override
     public void close() {
-        if (entityManager.getTransaction().isActive()) entityManager.getTransaction().rollback();
+        setFromPath.set(null);
         setWhere.set(null);
         currentEntityManager.set(null);
+        if (entityManager.getTransaction().isActive()) entityManager.getTransaction().rollback();
         if (entityManager.isOpen()) entityManager.close();
     }
 }

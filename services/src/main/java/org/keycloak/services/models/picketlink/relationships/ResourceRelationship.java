@@ -1,15 +1,10 @@
 package org.keycloak.services.models.picketlink.relationships;
 
-import org.keycloak.services.models.picketlink.mappings.RealmData;
-import org.keycloak.services.models.picketlink.mappings.ResourceData;
 import org.picketlink.idm.model.AbstractAttributedType;
 import org.picketlink.idm.model.Attribute;
 import org.picketlink.idm.model.Relationship;
 import org.picketlink.idm.model.annotation.AttributeProperty;
-import org.picketlink.idm.model.sample.Agent;
-import org.picketlink.idm.model.sample.User;
 import org.picketlink.idm.query.AttributeParameter;
-import org.picketlink.idm.query.RelationshipQueryParameter;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -20,9 +15,10 @@ public class ResourceRelationship extends AbstractAttributedType implements Rela
 
     public static final AttributeParameter REALM = new AttributeParameter("realm");
 
-    protected String realm;
-    protected String resource;
+    public ResourceRelationship() {
+    }
 
+    @AttributeProperty
     public String getRealm() {
         return (String)getAttribute("realm").getValue();
     }
@@ -32,6 +28,7 @@ public class ResourceRelationship extends AbstractAttributedType implements Rela
     }
 
 
+    @AttributeProperty
     public String getResource() {
         return (String)getAttribute("resource").getValue();
     }

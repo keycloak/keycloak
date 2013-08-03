@@ -24,7 +24,7 @@ public class ResourceEntity implements Serializable {
     private PartitionTypeEntity partitionTypeEntity;
 
     @AttributeValue
-    private String realmName;
+    private String resourceName;
     @AttributeValue
     private boolean enabled;
     @AttributeValue
@@ -45,12 +45,12 @@ public class ResourceEntity implements Serializable {
         this.partitionTypeEntity = partitionTypeEntity;
     }
 
-    public String getRealmName() {
-        return realmName;
+    public String getResourceName() {
+        return resourceName;
     }
 
-    public void setRealmName(String realmName) {
-        this.realmName = realmName;
+    public void setResourceName(String realmName) {
+        this.resourceName = realmName;
     }
 
     public boolean isEnabled() {

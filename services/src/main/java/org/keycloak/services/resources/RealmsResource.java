@@ -5,8 +5,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.TokenManager;
-import org.keycloak.services.models.KeycloakSession;
-import org.keycloak.services.models.KeycloakSessionFactory;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RoleModel;
 import org.keycloak.services.models.UserModel;
@@ -121,7 +119,7 @@ public class RealmsResource {
                 RealmManager realmManager = new RealmManager(session);
                 RealmModel defaultRealm = realmManager.getRealm(RealmModel.DEFAULT_REALM);
                 UserModel realmCreator = new AuthenticationManager().authenticateBearerToken(defaultRealm, headers);
-                RoleModel creatorRole = defaultRealm.getRole(RegistrationService.REALM_CREATOR_ROLE);
+                RoleModel creatorRole = defaultRealm.getRole(SaasService.REALM_CREATOR_ROLE);
                 if (!defaultRealm.hasRole(realmCreator, creatorRole)) {
                     logger.warn("not a realm creator");
                     throw new NotAuthorizedException("Bearer");

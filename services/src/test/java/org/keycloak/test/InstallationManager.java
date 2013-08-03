@@ -3,7 +3,8 @@ package org.keycloak.test;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RequiredCredentialModel;
-import org.keycloak.services.resources.RegistrationService;
+import org.keycloak.services.resources.SaasService;
+import org.keycloak.services.resources.SaasService;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -21,7 +22,7 @@ public class InstallationManager {
         defaultRealm.setRegistrationAllowed(true);
         manager.generateRealmKeys(defaultRealm);
         defaultRealm.addRequiredCredential(RequiredCredentialModel.PASSWORD);
-        defaultRealm.addRole(RegistrationService.REALM_CREATOR_ROLE);
+        defaultRealm.addRole(SaasService.REALM_CREATOR_ROLE);
     }
 
     public boolean isInstalled(RealmManager manager) {

@@ -30,7 +30,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class TokenManager {
 
-    public static final String KEYCLOAK_IDENTITY_COOKIE = "KEYCLOAK_IDENTITY";
     protected Map<String, AccessCodeEntry> accessCodeMap = new ConcurrentHashMap<String, AccessCodeEntry>();
 
     public void clearAccessCodes() {
@@ -45,14 +44,6 @@ public class TokenManager {
         return accessCodeMap.remove(key);
     }
 
-    public NewCookie createLoginCookie(RealmModel realm, UserModel user, UriInfo uriInfo) {
-        SkeletonKeyToken identityToken = createIdentityToken(realm, user.getLoginName());
-        String encoded = encodeToken(realm, identityToken);
-        URI uri = RealmsResource.realmBaseUrl(uriInfo).build(realm.getId());
-        boolean secureOnly = !realm.isSslNotRequired();
-        NewCookie cookie = new NewCookie(KEYCLOAK_IDENTITY_COOKIE, encoded, uri.getPath(), null, null, NewCookie.DEFAULT_MAX_AGE, secureOnly, true);
-        return cookie;
-    }
 
     public AccessCodeEntry createAccessCode(String scopeParam, String state, String redirect, RealmModel realm, UserModel client, UserModel user) {
         AccessCodeEntry code = new AccessCodeEntry();
@@ -212,17 +203,6 @@ public class TokenManager {
         return token;
     }
 
-    public SkeletonKeyToken createIdentityToken(RealmModel realm, String username) {
-        SkeletonKeyToken token = new SkeletonKeyToken();
-        token.id(RealmManager.generateId());
-        token.issuedNow();
-        token.principal(username);
-        token.audience(realm.getId());
-        if (realm.getTokenLifespan() > 0) {
-            token.expiration((System.currentTimeMillis() / 1000) + realm.getTokenLifespan());
-        }
-        return token;
-    }
 
     public String encodeToken(RealmModel realm, Object token) {
         byte[] tokenBytes = null;

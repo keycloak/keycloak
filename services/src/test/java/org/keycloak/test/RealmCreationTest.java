@@ -64,7 +64,7 @@ public class RealmCreationTest {
         user.credential(RequiredCredentialRepresentation.PASSWORD, "geheim", false);
 
         WebTarget target = client.target(generateURL("/"));
-        Response response = target.path("registrations").request().post(Entity.json(user));
+        Response response = target.path("saas/registrations").request().post(Entity.json(user));
         Assert.assertEquals(201, response.getStatus());
         response.close();
 

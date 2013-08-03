@@ -11,6 +11,7 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.keycloak.services.JspRequestParameters;
 import org.keycloak.services.managers.AccessCodeEntry;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.models.RealmModel;
@@ -34,6 +35,7 @@ public abstract class AbstractLoginService {
 
     protected RealmModel realm;
     protected TokenManager tokenManager;
+    protected AuthenticationManager authManager = new AuthenticationManager();
 
     public AbstractLoginService(RealmModel realm, TokenManager tokenManager) {
         this.realm = realm;
@@ -69,7 +71,7 @@ public abstract class AbstractLoginService {
             redirectUri.queryParam("state", state);
         Response.ResponseBuilder location = Response.status(302).location(redirectUri.build());
         if (realm.isCookieLoginAllowed()) {
-            location.cookie(tokenManager.createLoginCookie(realm, accessCode.getUser(), uriInfo));
+            location.cookie(authManager.createLoginCookie(realm, accessCode.getUser(), uriInfo));
         }
         return location.build();
     }

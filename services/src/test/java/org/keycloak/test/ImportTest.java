@@ -12,10 +12,13 @@ import org.keycloak.services.models.KeycloakSession;
 import org.keycloak.services.models.KeycloakSessionFactory;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RequiredCredentialModel;
+import org.keycloak.services.models.ResourceModel;
 import org.keycloak.services.models.UserModel;
 import org.keycloak.services.resources.KeycloakApplication;
-import org.keycloak.services.resources.RegistrationService;
+import org.keycloak.services.resources.SaasService;
+import org.keycloak.services.resources.SaasService;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -56,17 +59,21 @@ public class ImportTest {
         defaultRealm.setRegistrationAllowed(true);
         manager.generateRealmKeys(defaultRealm);
         defaultRealm.addRequiredCredential(RequiredCredentialModel.PASSWORD);
-        defaultRealm.addRole(RegistrationService.REALM_CREATOR_ROLE);
+        defaultRealm.addRole(SaasService.REALM_CREATOR_ROLE);
 
         RealmRepresentation rep = KeycloakTestBase.loadJson("testrealm.json");
         RealmModel realm = manager.createRealm("demo", rep.getRealm());
         manager.importRealm(rep, realm);
+        List<RequiredCredentialModel> creds = realm.getRequiredCredentials();
+        Assert.assertEquals(1, creds.size());
 
         UserModel user = realm.getUser("loginclient");
         Assert.assertNotNull(user);
         Set<String> scopes = realm.getScope(user);
         System.out.println("Scopes size: " + scopes.size());
         Assert.assertTrue(scopes.contains("*"));
+        List<ResourceModel> resources = realm.getResources();
+        Assert.assertEquals(2, resources.size());
 
     }
 

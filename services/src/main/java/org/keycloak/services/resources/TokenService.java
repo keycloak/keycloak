@@ -49,7 +49,6 @@ public class TokenService extends AbstractLoginService {
     @Context
     protected SecurityContext securityContext;
 
-    protected AuthenticationManager authManager = new AuthenticationManager();
     private ResourceAdminManager resourceAdminManager = new ResourceAdminManager();
 
     public TokenService(RealmModel realm, TokenManager tokenManager) {
@@ -115,7 +114,7 @@ public class TokenService extends AbstractLoginService {
                     throw new NotAuthorizedException("FORM");
                 }
                 tokenManager = new TokenManager();
-                SkeletonKeyToken token = tokenManager.createIdentityToken(realm, username);
+                SkeletonKeyToken token = authManager.createIdentityToken(realm, username);
                 String encoded = tokenManager.encodeToken(realm, token);
                 AccessTokenResponse res = accessTokenResponse(token, encoded);
                 return Response.ok(res, MediaType.APPLICATION_JSON_TYPE).build();

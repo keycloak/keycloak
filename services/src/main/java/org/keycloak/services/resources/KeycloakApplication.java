@@ -54,7 +54,7 @@ public class KeycloakApplication extends Application {
         singletons.add(filter);
         classes.add(KeycloakSessionResponseFilter.class);
         classes.add(SkeletonKeyContextResolver.class);
-        classes.add(RegistrationService.class);
+        classes.add(SaasService.class);
     }
 
     protected KeycloakSessionFactory createSessionFactory() {

@@ -1,12 +1,10 @@
 package org.keycloak.services.models.picketlink.relationships;
 
-import org.keycloak.services.models.picketlink.mappings.RealmData;
 import org.picketlink.idm.model.AbstractAttributedType;
 import org.picketlink.idm.model.Attribute;
 import org.picketlink.idm.model.Relationship;
 import org.picketlink.idm.model.annotation.AttributeProperty;
 import org.picketlink.idm.query.AttributeParameter;
-import org.picketlink.idm.query.RelationshipQueryParameter;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

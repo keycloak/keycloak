@@ -2,6 +2,7 @@ package org.keycloak.services.managers;
 
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
+import org.jboss.resteasy.logging.Logger;
 import org.keycloak.TokenIdGenerator;
 import org.keycloak.representations.idm.admin.LogoutAction;
 import org.keycloak.services.models.RealmModel;
@@ -17,6 +18,7 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 public class ResourceAdminManager {
+    protected Logger logger = Logger.getLogger(ResourceAdminManager.class);
 
     public void logoutAll(RealmModel realm) {
         singleLogOut(realm, null);
@@ -28,6 +30,7 @@ public class ResourceAdminManager {
                 .build();
 
         List<ResourceModel> resources = realm.getResources();
+        logger.info("logging out " + resources.size() + " resoures.");
         for (ResourceModel resource : resources) {
             logoutResource(realm, resource, user, client);
         }
@@ -38,7 +41,9 @@ public class ResourceAdminManager {
         String token = new TokenManager().encodeToken(realm, adminAction);
         Form form = new Form();
         form.param("token", token);
-        Response response = client.target(resource.getManagementUrl()).queryParam("action", "logout").request().post(Entity.form(form));
+        String managementUrl = resource.getManagementUrl();
+        logger.info("logout user: " + user + " resource: " + resource.getName() + " url" + managementUrl);
+        Response response = client.target(managementUrl).queryParam("action", "logout").request().post(Entity.form(form));
         boolean success = response.getStatus() == 204;
         response.close();
         return success;
