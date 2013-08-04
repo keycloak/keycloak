@@ -9,14 +9,10 @@ import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.ResourceModel;
 import org.keycloak.services.models.RoleModel;
 import org.keycloak.services.models.UserModel;
-import org.keycloak.services.resources.RealmsResource;
 
 import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.NewCookie;
-import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -135,7 +131,7 @@ public class TokenManager {
         }
 
         if (accessCodeEntry.getResourceRolesRequested().size() > 0) {
-            Map<String, ResourceModel> resourceMap = realm.getResourceMap();
+            Map<String, ResourceModel> resourceMap = realm.getResourceNameMap();
             for (String resourceName : accessCodeEntry.getResourceRolesRequested().keySet()) {
                 ResourceModel resource = resourceMap.get(resourceName);
                 SkeletonKeyToken.Access access = token.addAccess(resourceName).verifyCaller(resource.isSurrogateAuthRequired());

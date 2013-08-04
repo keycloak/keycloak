@@ -3,31 +3,35 @@
         <div class="container">
             <div class="nav-collapse">
                 <nav id="global-nav">
-                    <div data-ng-controller="RealmDropdownCtrl">
+                    <div data-ng-controller="RealmDropdownCtrl" >   <!--
                         <ul class="nav pull-left" data-ng-show="auth.loggedIn">
                             <li class="dropdown"><a data-toggle="dropdown" class="dropdown-toggle" href="#"> Realms <i class="caret"></i></a>
                                 <ul class="dropdown-menu">
-                                    <li ng-repeat="(id, name) in realmslist()"><a href="#/realms/{{id}}">{{name}}</a>
+                                    <li ng-repeat="(id, name) in current.realms"><a href="#/realms/{{id}}">{{name}}</a>
                                     </li>
                                 </ul>
                             </li>
-                        </ul>
+                        </ul> -->
+                        <h3 data-ng-show="auth.loggedIn"><span class="gray pull-left">Realm: </span></h3>
+                        <select class="nav pull-left" data-ng-show="auth.loggedIn" ng-change="changeRealm()" ng-model="current.realm" ng-options="name for (id, name) in current.realms">
+                        </select>
+                        <!-- <select class="nav pull-left" ng-options="r.name for r in current.realms"></select> -->
                     </div>
-                    <ul class="nav">
-                        <li class="divider-vertical-left" data-ng-class="path[0] == 'realms' && 'active'"
-                            data-ng-show="auth.loggedIn"><a href="#/create/realm">New Realm</a></li>
-                    </ul>
                     <ul class="nav pull-right" data-ng-hide="auth.loggedIn">
                         <li><a href="/auth-server/saas/saas-login.jsp">Login</a></li>
                         <li><a href="/auth-server/saas/saas-register.jsp">Register</a></li>
                     </ul>
                     <ul class="nav pull-right" data-ng-show="auth.loggedIn">
-                        <li class="dropdown"><a data-toggle="dropdown" class="dropdown-toggle" href="#"><i
+                        <li class="divider-vertical-left dropdown"><a data-toggle="dropdown" class="dropdown-toggle" href="#"><i
                                 class="icon-user icon-gray"></i> Welcome: <b>{{auth.user.displayName}}</b> <i class="caret"></i></a>
                             <ul class="dropdown-menu">
                                 <li><a href="/auth-server/rest/saas/logout">Sign Out</a></li>
                             </ul>
                         </li>
+                    </ul>
+                    <ul class="nav pull-right" data-ng-show="auth.loggedIn">
+                        <li class="divider-vertical-left" data-ng-class="path[0] == 'realms' && 'active'"
+                            data-ng-show="auth.loggedIn"><a href="#/create/realm">New Realm</a></li>
                     </ul>
                 </nav>
             </div>

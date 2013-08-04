@@ -79,7 +79,7 @@ public interface RealmModel {
 
     List<RoleModel> getRoles();
 
-    Map<String, ResourceModel> getResourceMap();
+    Map<String, ResourceModel> getResourceNameMap();
 
     List<ResourceModel> getResources();
 
@@ -100,4 +100,16 @@ public interface RealmModel {
     void addRealmAdmin(UserModel agent);
 
     RoleModel getRoleById(String id);
+
+    void addResourceRequiredCredential(RequiredCredentialModel cred);
+
+    List<RequiredCredentialModel> getResourceRequiredCredentials();
+
+    void addOAuthClientRequiredCredential(RequiredCredentialModel cred);
+
+    List<RequiredCredentialModel> getOAuthClientRequiredCredentials();
+
+    boolean hasRole(UserModel user, String role);
+
+    ResourceModel getResourceById(String id);
 }

@@ -1,5 +1,6 @@
 package org.keycloak.services.resources;
 
+import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.logging.Logger;
 import org.keycloak.representations.idm.PublishedRealmRepresentation;
 import org.keycloak.services.models.KeycloakSession;
@@ -37,6 +38,7 @@ public class PublicRealmResource {
     }
 
     @GET
+    @NoCache
     @Produces("application/json")
     public PublishedRealmRepresentation getRealm(@PathParam("realm") String id) {
         return new Transaction() {
@@ -47,6 +49,7 @@ public class PublicRealmResource {
     }
 
     @GET
+    @NoCache
     @Path("html")
     @Produces("text/html")
     public String getRealmHtml(@PathParam("realm") String id) {

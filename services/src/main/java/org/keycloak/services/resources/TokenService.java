@@ -1,5 +1,6 @@
 package org.keycloak.services.resources;
 
+import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.jose.jws.JWSBuilder;
 import org.jboss.resteasy.jose.jws.JWSInput;
 import org.jboss.resteasy.jose.jws.crypto.RSAProvider;
@@ -381,6 +382,7 @@ public class TokenService extends AbstractLoginService {
 
     @Path("logout")
     @GET
+    @NoCache
     public Response logout(final @QueryParam("redirect_uri") String redirectUri) {
         return new Transaction() {
             protected Response callImpl() {

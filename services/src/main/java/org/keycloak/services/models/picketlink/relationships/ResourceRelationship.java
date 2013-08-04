@@ -14,6 +14,7 @@ public class ResourceRelationship extends AbstractAttributedType implements Rela
     private static final long serialVersionUID = 1L;
 
     public static final AttributeParameter REALM = new AttributeParameter("realm");
+    public static final AttributeParameter RESOURCE = new AttributeParameter("resource");
 
     public ResourceRelationship() {
     }

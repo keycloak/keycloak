@@ -23,6 +23,7 @@ import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -203,7 +204,15 @@ public class AuthenticationManager {
     public boolean authenticateForm(RealmModel realm, UserModel user, MultivaluedMap<String, String> formData) {
         Set<String> types = new HashSet<String>();
 
-        for (RequiredCredentialModel credential : realm.getRequiredCredentials()) {
+        List<RequiredCredentialModel> requiredCredentials = null;
+        if (realm.hasRole(user, RealmManager.RESOURCE_ROLE)) {
+            requiredCredentials = realm.getResourceRequiredCredentials();
+        } else if (realm.hasRole(user, RealmManager.IDENTITY_REQUESTER_ROLE)) {
+            requiredCredentials = realm.getOAuthClientRequiredCredentials();
+        } else {
+            requiredCredentials = realm.getRequiredCredentials();
+        }
+        for (RequiredCredentialModel credential : requiredCredentials) {
             types.add(credential.getType());
         }
 
