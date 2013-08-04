@@ -1,21 +1,21 @@
-<nav id="local-nav" data-ng-controller="RealmListCtrl">
-    <ul class="nav nav-list">
-        <li>
-            <div>
-                <span class="toggle">Realms</span>
-            </div>
-            <ul>
-                <li data-ng-repeat="r in realms" data-ng-class="path[1] == r.id && 'active'">
-                    <a href=#/realms/{{r.id}}>{{r.name}}</a>
-                    <ul class="sub-items" data-ng-show="path[1] == r.id">
-                        <li data-ng-class="!path[2] && 'active'"><a href="#/realms/{{r.id}}">Configuration</a></li>
-                        <li data-ng-class="path[2] == 'users' && 'active'"><a href="#/realms/{{r.id}}/users">Users</a>
-                        </li>
-                        <li data-ng-class="path[2] == 'roles' && 'active'"><a href="#/realms/{{r.id}}/roles">Role
-                            mapping</a></li>
-                    </ul>
-                </li>
-            </ul>
-        </li>
-    </ul>
-</nav>
+<div data-ng-hide="createRealm">
+    <nav id="local-nav">
+        <ul class="nav nav-list">
+            <li>
+                <div>
+                    <span class="toggle">Realm: </span> {{realm.realm}}
+                </div>
+                <ul>
+                    <li>
+                        <ul class="sub-items">
+                            <li data-ng-class="!path[2] && 'active'"><a href="#/realms/{{realm.id}}">Settings</a>
+                            </li>
+                            <li data-ng-class="path[2] == 'users' && 'active'"><a href="#/realms/{{realm.id}}/users">Users</a>
+                            </li>
+                            <li data-ng-class="path[2] == 'roles' && 'active'"><a href="#/realms/{{realm.id}}/roles">Roles</a></li>
+                        </ul>
+                    </li>
+                </ul>
+        </ul>
+    </nav>
+</div>

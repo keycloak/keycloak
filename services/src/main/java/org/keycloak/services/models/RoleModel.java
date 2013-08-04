@@ -10,4 +10,8 @@ public interface RoleModel {
     String getDescription();
 
     void setDescription(String description);
+
+    String getId();
+
+    void setName(String name);
 }

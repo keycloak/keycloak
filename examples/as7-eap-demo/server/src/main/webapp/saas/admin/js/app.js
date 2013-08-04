@@ -92,43 +92,42 @@ module.config([ '$routeProvider', function($routeProvider) {
 		},
 		controller : 'UserListCtrl'
 	})
-	
-	.when('/realms/:realm/roles', {
-		templateUrl : 'partials/role-mapping.html',
-		resolve : {
-			realm : function(RealmLoader) {
-				return RealmLoader();
-			},
-			application : function() {
-				return null;
-			},
-			users : function() {
-				return null;
-			},
-			role : function() {
-				return null;
-			}
-		},
-		controller : 'RoleMappingCtrl'
-	}).when('/realms/:realm/roles/:role', {
-		templateUrl : 'partials/role-mapping.html',
-		resolve : {
-			realm : function(RealmLoader) {
-				return RealmLoader();
-			},
-			application : function() {
-				return null;
-			},
-			role : function($route) {
-				return $route.current.params.role;
-			},
-			users : function(RoleMappingLoader) {
-				return RoleMappingLoader();
-			}
-		},
-		controller : 'RoleMappingCtrl'
-	})
-	
+
+        .when('/create/role/:realm', {
+            templateUrl : 'partials/role-detail.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                role : function() {
+                    return {};
+                }
+            },
+            controller : 'RoleDetailCtrl'
+        }).when('/realms/:realm/roles/:role', {
+            templateUrl : 'partials/role-detail.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                role : function(RoleLoader) {
+                    return RoleLoader();
+                }
+            },
+            controller : 'RoleDetailCtrl'
+        }).when('/realms/:realm/roles', {
+            templateUrl : 'partials/role-list.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                roles : function(RoleListLoader) {
+                    return RoleListLoader();
+                }
+            },
+            controller : 'RoleListCtrl'
+        })
+
 	.when('/applications/:application/roles', {
 		templateUrl : 'partials/role-mapping.html',
 		resolve : {

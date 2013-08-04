@@ -4,10 +4,10 @@
         <div id="actions-bg"></div>
 
         <div id="container-right" class="span9">
-            <h1 data-ng-show="create"><span class="gray">New Realm</span></h1>
+            <h1 data-ng-show="createRealm"><span class="gray">New Realm</span></h1>
 
-            <h1 data-ng-hide="create">
-                <span class="gray">{{realm.realm}}</span> configuration
+            <h1 data-ng-hide="createRealm">
+                <span class="gray">{{realm.realm}}</span>
             </h1>
 
             <div data-ng-show="realmForm.showErrors && realmForm.$error.required" class="alert alert-error">Please fill
@@ -82,47 +82,7 @@
                         </div>
                     </div>
                 </fieldset>
-
-                <fieldset>
-                    <legend>Roles</legend>
-
-                    <div class="control-group">
-                        <label class="control-label">Roles</label>
-
-                        <div class="controls">
-                            <span class="label" style="margin-right: 1em;"
-                                  data-ng-repeat="r in (realm.roles|orderBy:'toString()')">{{r}} <button
-                                    data-ng-click="removeRole(r)"><i class="icon-remove icon-white"></i></button></span>
-
-                            <div class="input-append">
-                                <input class="input-small" type="text" data-ng-model="newRole" placeHolder="Role"
-                                       data-kc-enter="addRole()"/>
-                                <button class="btn" type="button" data-ng-click="addRole()">Add</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="control-group">
-                        <label class="control-label">Initial Roles</label>
-
-                        <div class="controls">
-                            <span class="label" style="margin-right: 1em;"
-                                  data-ng-repeat="r in (realm.initialRoles|orderBy:'toString()')">{{r}} <button
-                                    data-ng-click="removeInitialRole(r)"><i class="icon-remove icon-white"></i></button></span>
-
-                            <div class="input-append">
-                                <select style="width: auto;" data-ng-model="newInitialRole"
-                                        data-ng-click="addInitialRole()">
-                                    <option data-ng-repeat="r in (realm.roles|remove:realm.initialRoles|orderBy:'toString()')"
-                                            value="{{r}}">{{r}}
-                                    </option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                </fieldset>
-
-                <div class="form-actions" data-ng-show="create">
+                <div class="form-actions" data-ng-show="createRealm">
                     <button type="submit" data-ng-click="save()" class="btn btn-primary" data-ng-show="changed">Save
                     </button>
                     <button type="submit" data-ng-click="cancel()" class="btn" data-ng-click="cancel()"
@@ -130,7 +90,7 @@
                     </button>
                 </div>
 
-                <div class="form-actions" data-ng-show="!create">
+                <div class="form-actions" data-ng-show="!createRealm">
                     <button type="submit" data-ng-click="save()" class="btn btn-primary" data-ng-show="changed">Save
                         changes
                     </button>

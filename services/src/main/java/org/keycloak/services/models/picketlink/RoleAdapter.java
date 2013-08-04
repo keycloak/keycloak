@@ -25,8 +25,19 @@ public class RoleAdapter implements RoleModel {
     }
 
     @Override
+    public String getId() {
+        return role.getId();
+    }
+
+    @Override
     public String getName() {
         return role.getName();
+    }
+
+    @Override
+    public void setName(String name) {
+        role.setName(name);
+        idm.update(role);
     }
 
     @Override
