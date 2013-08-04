@@ -147,3 +147,14 @@ module.factory('User', function($resource) {
 		}
 	});
 });
+
+module.factory('Role', function($resource) {
+    return $resource('/auth-server/rest/saas/admin/realms/:realm/roles/:roleId', {
+        realm : '@realm',
+        roleId : '@roleId'
+    },  {
+        update : {
+            method : 'PUT'
+        }
+    });
+});

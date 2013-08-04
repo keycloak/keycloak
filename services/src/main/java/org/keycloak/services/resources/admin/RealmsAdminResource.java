@@ -18,7 +18,9 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -41,18 +43,25 @@ public class RealmsAdminResource {
         this.admin = admin;
     }
 
+    public static final CacheControl noCache = new CacheControl();
+    static {
+        noCache.setNoCache(true);
+    }
+
     @GET
     @Produces("application/json")
-    public Map<String, String> getRealms() {
+    public Response getRealms() {
         return new Transaction() {
             @Override
-            protected  Map<String, String> callImpl() {
+            protected  Response callImpl() {
+                logger.info(("getRealms()"));
                 List<RealmModel> realms = session.getRealms(admin);
                 Map<String, String> map = new HashMap<String, String>();
                 for (RealmModel realm : realms) {
                     map.put(realm.getId(), realm.getName());
                 }
-                return map;
+                return Response.ok(new GenericEntity<Map<String, String>>(map){})
+                               .cacheControl(noCache).build();
             }
         }.call();
     }
