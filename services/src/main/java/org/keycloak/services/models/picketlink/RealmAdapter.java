@@ -416,13 +416,31 @@ public class RealmAdapter implements RealmModel {
      * @return
      */
     @Override
-    public Map<String, ResourceModel> getResourceMap() {
+    public Map<String, ResourceModel> getResourceNameMap() {
         Map<String, ResourceModel> resourceMap = new HashMap<String, ResourceModel>();
         for (ResourceModel resource : getResources()) {
             resourceMap.put(resource.getName(), resource);
         }
         return resourceMap;
     }
+
+    /**
+     * Makes sure that the resource returned is owned by the realm
+     *
+     * @return
+     */
+    @Override
+    public ResourceModel getResourceById(String id) {
+        RelationshipQuery<ResourceRelationship> query = getRelationshipManager().createRelationshipQuery(ResourceRelationship.class);
+        query.setParameter(ResourceRelationship.REALM, realm.getName());
+        query.setParameter(ResourceRelationship.RESOURCE, id);
+        List<ResourceRelationship> results = query.getResultList();
+        if (results.size() == 0) return null;
+        ResourceData resource = partitionManager.getPartition(ResourceData.class, id);
+        ResourceModel model = new ResourceAdapter(resource, this, partitionManager);
+        return model;
+    }
+
 
     @Override
     public List<ResourceModel> getResources() {

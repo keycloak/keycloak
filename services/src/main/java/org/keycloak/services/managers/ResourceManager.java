@@ -27,6 +27,7 @@ public class ResourceManager {
 
     public ResourceModel createResource(RealmModel realm, RoleModel loginRole, ResourceRepresentation resourceRep) {
         ResourceModel resource = realm.addResource(resourceRep.getName());
+        resource.setEnabled(resourceRep.isEnabled());
         resource.setManagementUrl(resourceRep.getAdminUrl());
         resource.setSurrogateAuthRequired(resourceRep.isSurrogateAuthRequired());
         resource.updateResource();
@@ -82,16 +83,22 @@ public class ResourceManager {
         return createResource(realm, loginRole, resourceRep);
     }
 
-    public ResourceRepresentation getResource(ResourceModel resourceModel, boolean bulk) {
+    public void updateResource(ResourceRepresentation rep, ResourceModel resource) {
+        resource.setName(rep.getName());
+        resource.setEnabled(rep.isEnabled());
+        resource.setManagementUrl(rep.getAdminUrl());
+        resource.setSurrogateAuthRequired(rep.isSurrogateAuthRequired());
+        resource.updateResource();
+
+    }
+
+    public ResourceRepresentation toRepresentation(ResourceModel resourceModel) {
         ResourceRepresentation rep = new ResourceRepresentation();
+        rep.setId(resourceModel.getId());
         rep.setName(resourceModel.getName());
         rep.setEnabled(resourceModel.isEnabled());
         rep.setAdminUrl(resourceModel.getManagementUrl());
         rep.setSurrogateAuthRequired(resourceModel.isSurrogateAuthRequired());
-        List<RoleModel> roles = resourceModel.getRoles();
-        for (RoleModel role : roles) {
-            rep.role(realmManager.toRepresentation(role));
-        }
         return rep;
 
     }

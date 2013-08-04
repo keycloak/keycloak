@@ -11,6 +11,7 @@ import java.util.Set;
  */
 public class ResourceRepresentation {
     protected String self; // link
+    protected String id;
     protected String name;
     protected String adminUrl;
     protected boolean surrogateAuthRequired;
@@ -27,6 +28,14 @@ public class ResourceRepresentation {
 
     public void setSelf(String self) {
         this.self = self;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getName() {

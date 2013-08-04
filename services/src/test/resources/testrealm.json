@@ -76,6 +76,7 @@
    "resources" : [
        {
           "name" : "Application",
+          "enabled" : true,
           "roles" : [
               { "name" : "admin" },
               { "name" : "user" }
@@ -97,8 +98,9 @@
              }
           ]
        },
-              {
+       {
                  "name" : "OtherApp",
+                  "enabled" : true,
           "roles" : [
               { "name" : "admin" },
               { "name" : "user" }
