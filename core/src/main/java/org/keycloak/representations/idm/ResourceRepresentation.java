@@ -15,6 +15,7 @@ public class ResourceRepresentation {
     protected String adminUrl;
     protected boolean surrogateAuthRequired;
     protected boolean useRealmMappings;
+    protected boolean enabled;
     protected List<CredentialRepresentation> credentials;
     protected List<RoleRepresentation> roles;
     protected List<RoleMappingRepresentation> roleMappings;
@@ -36,6 +37,14 @@ public class ResourceRepresentation {
         this.name = name;
     }
 
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
     public boolean isSurrogateAuthRequired() {
         return surrogateAuthRequired;
     }
@@ -51,6 +60,13 @@ public class ResourceRepresentation {
     public void setRoles(List<RoleRepresentation> roles) {
         this.roles = roles;
     }
+
+    public ResourceRepresentation role(RoleRepresentation role) {
+        if (this.roles == null) this.roles = new ArrayList<RoleRepresentation>();
+        this.roles.add(role);
+        return this;
+    }
+
 
     public ResourceRepresentation role(String role, String description) {
         if (this.roles == null) this.roles = new ArrayList<RoleRepresentation>();

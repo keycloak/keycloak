@@ -10,6 +10,20 @@
             "secret" : true
         }
    ],
+    "requiredResourceCredentials" : [
+        {
+            "type" : "Password",
+            "input" : true,
+            "secret" : true
+        }
+    ],
+    "requiredOAuthClientCredentials" : [
+        {
+            "type" : "Password",
+            "input" : true,
+            "secret" : true
+        }
+    ],
    "users" : [
       {
             "username" : "wburke",

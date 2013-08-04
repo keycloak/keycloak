@@ -13,9 +13,11 @@ import org.keycloak.services.models.UserCredentialModel;
 import org.keycloak.services.models.UserModel;
 import org.keycloak.services.models.picketlink.mappings.RealmData;
 import org.keycloak.services.models.picketlink.mappings.ResourceData;
+import org.keycloak.services.models.picketlink.relationships.OAuthClientRequiredCredentialRelationship;
 import org.keycloak.services.models.picketlink.relationships.RealmAdminRelationship;
 import org.keycloak.services.models.picketlink.relationships.RequiredCredentialRelationship;
 import org.keycloak.services.models.picketlink.relationships.ResourceRelationship;
+import org.keycloak.services.models.picketlink.relationships.ResourceRequiredCredentialRelationship;
 import org.keycloak.services.models.picketlink.relationships.ScopeRelationship;
 import org.picketlink.idm.IdentityManager;
 import org.picketlink.idm.PartitionManager;
@@ -252,6 +254,48 @@ public class RealmAdapter implements RealmModel {
         RelationshipQuery<RequiredCredentialRelationship> query = getRelationshipManager().createRelationshipQuery(RequiredCredentialRelationship.class);
         query.setParameter(RequiredCredentialRelationship.REALM, realm.getName());
         List<RequiredCredentialRelationship> results = query.getResultList();
+        return getRequiredCredentialModels(results);
+    }
+
+
+    @Override
+    public void addResourceRequiredCredential(RequiredCredentialModel cred) {
+        ResourceRequiredCredentialRelationship relationship = new ResourceRequiredCredentialRelationship();
+        addRequiredCredential(cred, relationship);
+    }
+
+    @Override
+    public List<RequiredCredentialModel> getResourceRequiredCredentials() {
+        RelationshipQuery<ResourceRequiredCredentialRelationship> query = getRelationshipManager().createRelationshipQuery(ResourceRequiredCredentialRelationship.class);
+        query.setParameter(ResourceRequiredCredentialRelationship.REALM, realm.getName());
+        List<ResourceRequiredCredentialRelationship> results = query.getResultList();
+        return getRequiredCredentialModels(results);
+    }
+
+    @Override
+    public void addOAuthClientRequiredCredential(RequiredCredentialModel cred) {
+        OAuthClientRequiredCredentialRelationship relationship = new OAuthClientRequiredCredentialRelationship();
+        addRequiredCredential(cred, relationship);
+    }
+
+    @Override
+    public List<RequiredCredentialModel> getOAuthClientRequiredCredentials() {
+        RelationshipQuery<OAuthClientRequiredCredentialRelationship> query = getRelationshipManager().createRelationshipQuery(OAuthClientRequiredCredentialRelationship.class);
+        query.setParameter(ResourceRequiredCredentialRelationship.REALM, realm.getName());
+        List<OAuthClientRequiredCredentialRelationship> results = query.getResultList();
+        return getRequiredCredentialModels(results);
+    }
+
+
+
+    @Override
+    public void addRequiredCredential(RequiredCredentialModel cred) {
+        RequiredCredentialRelationship relationship = new RequiredCredentialRelationship();
+        addRequiredCredential(cred, relationship);
+    }
+
+
+    protected List<RequiredCredentialModel> getRequiredCredentialModels(List<? extends RequiredCredentialRelationship> results) {
         List<RequiredCredentialModel> rtn = new ArrayList<RequiredCredentialModel>();
         for (RequiredCredentialRelationship relationship : results) {
             RequiredCredentialModel model = new RequiredCredentialModel();
@@ -262,10 +306,7 @@ public class RealmAdapter implements RealmModel {
         }
         return rtn;
     }
-
-    @Override
-    public void addRequiredCredential(RequiredCredentialModel cred) {
-        RequiredCredentialRelationship relationship = new RequiredCredentialRelationship();
+    protected void addRequiredCredential(RequiredCredentialModel cred, RequiredCredentialRelationship relationship) {
         relationship.setCredentialType(cred.getType());
         relationship.setInput(cred.isInput());
         relationship.setSecret(cred.isSecret());
@@ -421,6 +462,13 @@ public class RealmAdapter implements RealmModel {
     public boolean hasRole(UserModel user, RoleModel role) {
         return SampleModel.hasRole(getRelationshipManager(), ((UserAdapter) user).getUser(), ((RoleAdapter) role).getRole());
     }
+
+    @Override
+    public boolean hasRole(UserModel user, String role) {
+        RoleModel roleModel = getRole(role);
+        return hasRole(user, roleModel);
+    }
+
 
     @Override
     public void grantRole(UserModel user, RoleModel role) {

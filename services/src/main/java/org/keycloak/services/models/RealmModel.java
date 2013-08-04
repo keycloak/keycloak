@@ -100,4 +100,14 @@ public interface RealmModel {
     void addRealmAdmin(UserModel agent);
 
     RoleModel getRoleById(String id);
+
+    void addResourceRequiredCredential(RequiredCredentialModel cred);
+
+    List<RequiredCredentialModel> getResourceRequiredCredentials();
+
+    void addOAuthClientRequiredCredential(RequiredCredentialModel cred);
+
+    List<RequiredCredentialModel> getOAuthClientRequiredCredentials();
+
+    boolean hasRole(UserModel user, String role);
 }
