@@ -71,38 +71,18 @@ public class RealmResourcesResource {
     }
 
     @Path("{id}")
-    @PUT
-    @Consumes(MediaType.APPLICATION_JSON)
-    public void update(final @PathParam("id") String id, final ResourceRepresentation rep) {
-        new Transaction() {
-            @Override
-            protected void runImpl() {
-                ResourceModel resourceModel = realm.getResourceById(id);
-                if (resourceModel == null) {
-                    throw new NotFoundException();
-                }
-                ResourceManager resourceManager = new ResourceManager(new RealmManager(session));
-                resourceManager.updateResource(rep, resourceModel);
-            }
-        }.run();
-    }
-
-
-    @Path("{id}")
-    @GET
-    @NoCache
-    @Produces(MediaType.APPLICATION_JSON)
-    public ResourceRepresentation getResource(final @PathParam("id") String id) {
+    public RealmResourceResource getResource(final @PathParam("id") String id) {
         return new Transaction() {
             @Override
-            protected ResourceRepresentation callImpl() {
+            protected RealmResourceResource callImpl() {
                 ResourceModel resourceModel = realm.getResourceById(id);
                 if (resourceModel == null) {
                     throw new NotFoundException();
                 }
-                ResourceManager resourceManager = new ResourceManager(new RealmManager(session));
-                return resourceManager.toRepresentation(resourceModel);
+                return new RealmResourceResource(admin, realm, resourceModel);
             }
         }.call();
+
     }
+
 }

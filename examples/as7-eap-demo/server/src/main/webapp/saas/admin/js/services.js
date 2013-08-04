@@ -158,3 +158,10 @@ module.factory('Role', function($resource) {
         }
     });
 });
+
+module.factory('Current', function($resource) {
+    return {
+        realm : null,
+        realms : {}
+    };
+});
