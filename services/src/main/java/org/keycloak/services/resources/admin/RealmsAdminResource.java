@@ -1,5 +1,6 @@
 package org.keycloak.services.resources.admin;
 
+import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.logging.Logger;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
@@ -49,6 +50,7 @@ public class RealmsAdminResource {
     }
 
     @GET
+    @NoCache
     @Produces("application/json")
     public Response getRealms() {
         return new Transaction() {

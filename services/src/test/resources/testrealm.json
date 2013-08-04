@@ -10,6 +10,20 @@
             "secret" : true
         }
    ],
+    "requiredResourceCredentials" : [
+        {
+            "type" : "Password",
+            "input" : true,
+            "secret" : true
+        }
+    ],
+    "requiredOAuthClientCredentials" : [
+        {
+            "type" : "Password",
+            "input" : true,
+            "secret" : true
+        }
+    ],
    "users" : [
       {
             "username" : "wburke",
@@ -62,6 +76,7 @@
    "resources" : [
        {
           "name" : "Application",
+          "enabled" : true,
           "roles" : [
               { "name" : "admin" },
               { "name" : "user" }
@@ -83,8 +98,9 @@
              }
           ]
        },
-              {
+       {
                  "name" : "OtherApp",
+                  "enabled" : true,
           "roles" : [
               { "name" : "admin" },
               { "name" : "user" }

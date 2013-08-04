@@ -11,10 +11,12 @@ import java.util.Set;
  */
 public class ResourceRepresentation {
     protected String self; // link
+    protected String id;
     protected String name;
     protected String adminUrl;
     protected boolean surrogateAuthRequired;
     protected boolean useRealmMappings;
+    protected boolean enabled;
     protected List<CredentialRepresentation> credentials;
     protected List<RoleRepresentation> roles;
     protected List<RoleMappingRepresentation> roleMappings;
@@ -28,12 +30,28 @@ public class ResourceRepresentation {
         this.self = self;
     }
 
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
     public String getName() {
         return name;
     }
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 
     public boolean isSurrogateAuthRequired() {
@@ -51,6 +69,13 @@ public class ResourceRepresentation {
     public void setRoles(List<RoleRepresentation> roles) {
         this.roles = roles;
     }
+
+    public ResourceRepresentation role(RoleRepresentation role) {
+        if (this.roles == null) this.roles = new ArrayList<RoleRepresentation>();
+        this.roles.add(role);
+        return this;
+    }
+
 
     public ResourceRepresentation role(String role, String description) {
         if (this.roles == null) this.roles = new ArrayList<RoleRepresentation>();

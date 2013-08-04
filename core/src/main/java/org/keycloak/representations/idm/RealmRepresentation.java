@@ -21,6 +21,8 @@ public class RealmRepresentation {
     protected String publicKey;
     protected List<RoleRepresentation> roles;
     protected List<RequiredCredentialRepresentation> requiredCredentials;
+    protected List<RequiredCredentialRepresentation> requiredResourceCredentials;
+    protected List<RequiredCredentialRepresentation> requiredOAuthClientCredentials;
     protected List<UserRepresentation> users;
     protected List<RoleMappingRepresentation> roleMappings;
     protected List<ScopeMappingRepresentation> scopeMappings;
@@ -145,6 +147,22 @@ public class RealmRepresentation {
 
     public void setRequiredCredentials(List<RequiredCredentialRepresentation> requiredCredentials) {
         this.requiredCredentials = requiredCredentials;
+    }
+
+    public List<RequiredCredentialRepresentation> getRequiredResourceCredentials() {
+        return requiredResourceCredentials;
+    }
+
+    public void setRequiredResourceCredentials(List<RequiredCredentialRepresentation> requiredResourceCredentials) {
+        this.requiredResourceCredentials = requiredResourceCredentials;
+    }
+
+    public List<RequiredCredentialRepresentation> getRequiredOAuthClientCredentials() {
+        return requiredOAuthClientCredentials;
+    }
+
+    public void setRequiredOAuthClientCredentials(List<RequiredCredentialRepresentation> requiredOAuthClientCredentials) {
+        this.requiredOAuthClientCredentials = requiredOAuthClientCredentials;
     }
 
     public int getAccessCodeLifespan() {

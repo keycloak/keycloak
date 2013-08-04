@@ -4,6 +4,7 @@ var module = angular.module('keycloak.controllers', [ 'keycloak.services' ]);
 
 var realmslist = {};
 
+
 module.controller('GlobalCtrl', function($scope, $http, Auth, $location, Notifications) {
 	$scope.addMessage = function() {
 		Notifications.success("test");
@@ -152,20 +153,30 @@ module.controller('ApplicationDetailCtrl', function($scope, application, Applica
 });
 
 
-module.controller('RealmListCtrl', function($scope, Realm) {
+module.controller('RealmListCtrl', function($scope, Realm, Current) {
 	$scope.realms = Realm.get();
-    realmslist = $scope.realms;
+    Current.realms = $scope.realms;
 });
 
-module.controller('RealmDropdownCtrl', function($scope, Realm) {
+module.controller('RealmDropdownCtrl', function($scope, Realm, Current, $location) {
     console.log('test log writing');
-    realmslist = Realm.get();
-    $scope.realmslist = function() {
-        return realmslist;
+    Current.realms = Realm.get();
+    $scope.current = Current;
+    $scope.changeRealm = function() {
+        console.log('select box changed');
+        for (var id in Current.realms) {
+            var val = Current.realms[id];
+            console.log('checking: ' + val);
+            if (val == Current.realm) {
+                console.log("redirect to: /realms/" + id);
+               $location.url("/realms/" + id);
+               break;
+            }
+        }
     };
 });
 
-module.controller('RealmDetailCtrl', function($scope, Realm, realm, $location, Dialog, Notifications) {
+module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $location, Dialog, Notifications) {
 	$scope.realm = angular.copy(realm);
 	$scope.createRealm = !realm.id;
 
@@ -260,13 +271,21 @@ module.controller('RealmDetailCtrl', function($scope, Realm, realm, $location, D
 				Realm.save(realmCopy, function(data, headers) {
 					var l = headers().location;
 					var id = l.substring(l.lastIndexOf("/") + 1);
-                    realmslist = Realm.get();
-					$location.url("/realms/" + id);
+
+                    var data = Realm.get(function() {
+                        Current.realms = data;
+                        Current.realm = Current.realms[id];
+                        console.log('Current.realms[id]: ' + Current.realms[id]);
+                        console.log('data[id]: ' + data[id]);
+                        console.log('Current.realm.name: ' + Current.realm.name);
+
+                    });
+                    $location.url("/realms/" + id);
 					Notifications.success("Created realm");
 				});
 			} else {
 				Realm.update(realmCopy, function() {
-                    realmslist = Realm.get();
+                    Current.realms = Realm.get();
 					$scope.changed = false;
 					realm = angular.copy($scope.realm);
 					Notifications.success("Saved changes to realm");
@@ -290,7 +309,7 @@ module.controller('RealmDetailCtrl', function($scope, Realm, realm, $location, D
 	$scope.remove = function() {
 		Dialog.confirmDelete($scope.realm.name, 'realm', function() {
 			Realm.remove($scope.realm, function() {
-                realmslist = Realm.get();
+                Current.realms = Realm.get();
 				$location.url("/realms");
 				Notifications.success("Deleted realm");
 			});

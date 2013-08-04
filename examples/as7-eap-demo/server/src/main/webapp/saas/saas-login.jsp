@@ -67,7 +67,7 @@
                     </section>
                     <section class="info-area">
                         <h3>Info area</h3>
-                        <p>Does not have an account? <a href="saas-register.html">Register</a>.</p>
+                        <p>Does not have an account? <a href="<%=application.getContextPath()%>/saas/saas-register.jsp">Register</a>.</p>
                         <ul>
                             <li><strong>Domain:</strong> 10.0.0.1</li>
                             <li><strong>Zone:</strong> Live</li>

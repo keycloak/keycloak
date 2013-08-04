@@ -1,5 +1,6 @@
 package org.keycloak.services.resources.admin;
 
+import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.logging.Logger;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -47,7 +48,13 @@ public class RealmAdminResource {
         this.realm = realm;
     }
 
+    @Path("resources")
+    public RealmResourcesResource getResources() {
+        return new RealmResourcesResource(admin, realm);
+    }
+
     @GET
+    @NoCache
     @Produces("application/json")
     public RealmRepresentation getRealm() {
         return new Transaction() {
@@ -70,6 +77,7 @@ public class RealmAdminResource {
 
     @Path("roles")
     @GET
+    @NoCache
     @Produces("application/json")
     public List<RoleRepresentation> getRoles() {
         return new Transaction() {
@@ -88,6 +96,7 @@ public class RealmAdminResource {
 
     @Path("roles/{id}")
     @GET
+    @NoCache
     @Produces("application/json")
     public RoleRepresentation getRole(final @PathParam("id") String id) {
         return new Transaction() {
@@ -147,6 +156,7 @@ public class RealmAdminResource {
 
     @Path("users")
     @GET
+    @NoCache
     @Produces("application/json")
     public List<UserRepresentation> getUsers() {
         return null;

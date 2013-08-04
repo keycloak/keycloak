@@ -110,6 +110,20 @@ public class RealmManager {
             }
         }
 
+        if (rep.getRequiredResourceCredentials() != null) {
+            for (RequiredCredentialRepresentation requiredCred : rep.getRequiredCredentials()) {
+                addResourceRequiredCredential(newRealm, requiredCred);
+            }
+        }
+
+        if (rep.getRequiredOAuthClientCredentials() != null) {
+            for (RequiredCredentialRepresentation requiredCred : rep.getRequiredCredentials()) {
+                addOAuthClientRequiredCredential(newRealm, requiredCred);
+            }
+        }
+
+
+
         if (rep.getUsers() != null) {
             for (UserRepresentation userRep : rep.getUsers()) {
                 UserModel user = createUser(newRealm, userRep);
@@ -180,68 +194,42 @@ public class RealmManager {
     }
 
     public void addRequiredCredential(RealmModel newRealm, RequiredCredentialRepresentation requiredCred) {
+        RequiredCredentialModel credential = initializeCred(requiredCred);
+        newRealm.addRequiredCredential(credential);
+    }
+    public void addResourceRequiredCredential(RealmModel newRealm, RequiredCredentialRepresentation requiredCred) {
+        RequiredCredentialModel credential = initializeCred(requiredCred);
+        newRealm.addResourceRequiredCredential(credential);
+    }
+    public void addOAuthClientRequiredCredential(RealmModel newRealm, RequiredCredentialRepresentation requiredCred) {
+        RequiredCredentialModel credential = initializeCred(requiredCred);
+        newRealm.addOAuthClientRequiredCredential(credential);
+    }
+
+
+
+    private RequiredCredentialModel initializeCred(RequiredCredentialRepresentation requiredCred) {
         RequiredCredentialModel credential = new RequiredCredentialModel();
         credential.setType(requiredCred.getType());
         credential.setInput(requiredCred.isInput());
         credential.setSecret(requiredCred.isSecret());
-        newRealm.addRequiredCredential(credential);
+        return credential;
     }
 
     protected void createResources(RealmRepresentation rep, RealmModel realm) {
         RoleModel loginRole = realm.getRole(RealmManager.RESOURCE_ROLE);
+        ResourceManager manager = new ResourceManager(this);
         for (ResourceRepresentation resourceRep : rep.getResources()) {
-            createResource(realm, loginRole, resourceRep);
+            manager.createResource(realm, loginRole, resourceRep);
         }
     }
 
-    public void createResource(RealmModel realm, RoleModel loginRole, ResourceRepresentation resourceRep) {
-        ResourceModel resource = realm.addResource(resourceRep.getName());
-        resource.setManagementUrl(resourceRep.getAdminUrl());
-        resource.setSurrogateAuthRequired(resourceRep.isSurrogateAuthRequired());
-        resource.updateResource();
-
-        UserModel resourceUser = resource.getResourceUser();
-        if (resourceRep.getCredentials() != null) {
-            for (CredentialRepresentation cred : resourceRep.getCredentials()) {
-                UserCredentialModel credential = new UserCredentialModel();
-                credential.setType(cred.getType());
-                credential.setValue(cred.getValue());
-                realm.updateCredential(resourceUser, credential);
-            }
-        }
-        realm.grantRole(resourceUser, loginRole);
-
-
-        if (resourceRep.getRoles() != null) {
-            for (RoleRepresentation roleRep : resourceRep.getRoles()) {
-                RoleModel role = resource.addRole(roleRep.getName());
-                if (roleRep.getDescription() != null) role.setDescription(roleRep.getDescription());
-            }
-        }
-        if (resourceRep.getRoleMappings() != null) {
-            for (RoleMappingRepresentation mapping : resourceRep.getRoleMappings()) {
-                UserModel user = realm.getUser(mapping.getUsername());
-                for (String roleString : mapping.getRoles()) {
-                    RoleModel role = resource.getRole(roleString.trim());
-                    if (role == null) {
-                        role = resource.addRole(roleString.trim());
-                    }
-                    realm.grantRole(user, role);
-                }
-            }
-        }
-        if (resourceRep.getScopeMappings() != null) {
-            for (ScopeMappingRepresentation mapping : resourceRep.getScopeMappings()) {
-                UserModel user = realm.getUser(mapping.getUsername());
-                for (String roleString : mapping.getRoles()) {
-                    RoleModel role = resource.getRole(roleString.trim());
-                    if (role == null) {
-                        role = resource.addRole(roleString.trim());
-                    }
-                    resource.addScope(user, role.getName());
-                }
-            }
-        }
-        if (resourceRep.isUseRealmMappings()) realm.addScope(resource.getResourceUser(), "*");
+    public RoleRepresentation toRepresentation(RoleModel role) {
+        RoleRepresentation rep = new RoleRepresentation();
+        rep.setId(role.getId());
+        rep.setName(role.getName());
+        rep.setDescription(role.getDescription());
+        return rep;
     }
+
 }
