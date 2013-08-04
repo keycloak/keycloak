@@ -98,4 +98,6 @@ public interface RealmModel {
     boolean isRealmAdmin(UserModel agent);
 
     void addRealmAdmin(UserModel agent);
+
+    RoleModel getRoleById(String id);
 }

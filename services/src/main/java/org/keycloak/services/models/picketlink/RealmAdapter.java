@@ -26,6 +26,7 @@ import org.picketlink.idm.credential.TOTPCredential;
 import org.picketlink.idm.credential.TOTPCredentials;
 import org.picketlink.idm.credential.UsernamePasswordCredentials;
 import org.picketlink.idm.credential.X509CertificateCredentials;
+import org.picketlink.idm.model.IdentityType;
 import org.picketlink.idm.model.sample.Grant;
 import org.picketlink.idm.model.sample.Role;
 import org.picketlink.idm.model.sample.SampleModel;
@@ -336,6 +337,15 @@ public class RealmAdapter implements RealmModel {
         Role role = SampleModel.getRole(getIdm(), name);
         if (role == null) return null;
         return new RoleAdapter(role, getIdm());
+    }
+
+    @Override
+    public RoleModel getRoleById(String id) {
+        IdentityQuery<Role> query = getIdm().createIdentityQuery(Role.class);
+        query.setParameter(IdentityType.ID, id);
+        List<Role> roles = query.getResultList();
+        if (roles.size() == 0) return null;
+        return new RoleAdapter(roles.get(0), getIdm());
     }
 
     @Override

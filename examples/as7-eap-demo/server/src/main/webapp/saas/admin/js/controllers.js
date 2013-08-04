@@ -2,7 +2,9 @@
 
 var module = angular.module('keycloak.controllers', [ 'keycloak.services' ]);
 
-module.controller('GlobalCtrl', function($scope, Auth, $location, Notifications) {
+var realmslist = {};
+
+module.controller('GlobalCtrl', function($scope, $http, Auth, $location, Notifications) {
 	$scope.addMessage = function() {
 		Notifications.success("test");
 	};
@@ -14,6 +16,28 @@ module.controller('GlobalCtrl', function($scope, Auth, $location, Notifications)
 	}, function() {
 		$scope.path = $location.path().substring(1).split("/");
 	});
+
+    $http.get('/auth-server/rest/saas/admin/realms').success(function(data) {
+        var count = 0;
+        var showrealm = false;
+        var id = null;
+        for (var key in data) {
+            if (count > 0) {
+                showrealm = false;
+                break;
+            }
+            id = key;
+            showrealm = true;
+            count++;
+        }
+
+        if (showrealm) {
+            console.log('redirecting');
+            $location.url("/realms/" + id);
+        } else {
+            console.log('not redirecting');
+        }
+    });
 });
 
 module.controller('ApplicationListCtrl', function($scope, Application) {
@@ -130,13 +154,22 @@ module.controller('ApplicationDetailCtrl', function($scope, application, Applica
 
 module.controller('RealmListCtrl', function($scope, Realm) {
 	$scope.realms = Realm.get();
+    realmslist = $scope.realms;
+});
+
+module.controller('RealmDropdownCtrl', function($scope, Realm) {
+    console.log('test log writing');
+    realmslist = Realm.get();
+    $scope.realmslist = function() {
+        return realmslist;
+    };
 });
 
 module.controller('RealmDetailCtrl', function($scope, Realm, realm, $location, Dialog, Notifications) {
 	$scope.realm = angular.copy(realm);
-	$scope.create = !realm.id;
+	$scope.createRealm = !realm.id;
 
-    if ($scope.create) {
+    if ($scope.createRealm) {
         $scope.realm.enabled = true;
         $scope.realm.requireSsl = true;
         $scope.realm.cookieLoginAllowed = true;
@@ -223,15 +256,17 @@ module.controller('RealmDetailCtrl', function($scope, Realm, realm, $location, D
 
             };
 
-            if ($scope.create) {
+            if ($scope.createRealm) {
 				Realm.save(realmCopy, function(data, headers) {
 					var l = headers().location;
 					var id = l.substring(l.lastIndexOf("/") + 1);
+                    realmslist = Realm.get();
 					$location.url("/realms/" + id);
 					Notifications.success("Created realm");
 				});
 			} else {
 				Realm.update(realmCopy, function() {
+                    realmslist = Realm.get();
 					$scope.changed = false;
 					realm = angular.copy($scope.realm);
 					Notifications.success("Saved changes to realm");
@@ -255,6 +290,7 @@ module.controller('RealmDetailCtrl', function($scope, Realm, realm, $location, D
 	$scope.remove = function() {
 		Dialog.confirmDelete($scope.realm.name, 'realm', function() {
 			Realm.remove($scope.realm, function() {
+                realmslist = Realm.get();
 				$location.url("/realms");
 				Notifications.success("Deleted realm");
 			});
@@ -283,6 +319,9 @@ module.controller('UserDetailCtrl', function($scope, realm, user, User, $locatio
 
 	$scope.save = function() {
 		if ($scope.userForm.$valid) {
+
+
+
 			User.save({
 				realm : realm.id
 			}, $scope.user, function() {
@@ -322,6 +361,79 @@ module.controller('UserDetailCtrl', function($scope, realm, user, User, $locatio
 			});
 		});
 	};
+});
+
+module.controller('RoleListCtrl', function($scope, realm, roles) {
+    $scope.realm = realm;
+    $scope.roles = roles;
+});
+
+module.controller('RoleDetailCtrl', function($scope, realm, role, Role, $location, Dialog, Notifications) {
+    $scope.realm = realm;
+    $scope.role = angular.copy(role);
+    $scope.create = !role.name;
+
+    $scope.changed = $scope.create;
+
+    $scope.$watch('role', function() {
+        if (!angular.equals($scope.role, role)) {
+            $scope.changed = true;
+        }
+    }, true);
+
+    $scope.save = function() {
+        if ($scope.roleForm.$valid) {
+
+            if ($scope.create) {
+                Role.save({
+                    realm: realm.id
+                }, $scope.role, function (data, headers) {
+                    $scope.changed = false;
+                    role = angular.copy($scope.role);
+
+                    var l = headers().location;
+                    var id = l.substring(l.lastIndexOf("/") + 1);
+                    $location.url("/realms/" + realm.id + "/roles/" + id);
+                    Notifications.success("Created role");
+
+                });
+            } else {
+                Role.update({
+                    realm : realm.id,
+                    roleId : role.id
+                }, $scope.role, function() {
+                    $scope.changed = false;
+                    role = angular.copy($scope.role);
+                    Notifications.success("Saved changes to role");
+                });
+            }
+
+         } else {
+            $scope.roleForm.showErrors = true;
+        }
+    };
+
+    $scope.reset = function() {
+        $scope.role = angular.copy(user);
+        $scope.changed = false;
+        $scope.roleForm.showErrors = false;
+    };
+
+    $scope.cancel = function() {
+        $location.url("/realms/" + realm.id + "/roles");
+    };
+
+    $scope.remove = function() {
+        Dialog.confirmDelete($scope.role.name, 'role', function() {
+            $scope.role.$remove({
+                realm : realm.id,
+                role : $scope.role.name
+            }, function() {
+                $location.url("/realms/" + realm.id + "/roles");
+                Notifications.success("Deleted role");
+            });
+        });
+    };
 });
 
 module.controller('RoleMappingCtrl', function($scope, realm, User, users, role, RoleMapping, Notifications) {

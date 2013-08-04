@@ -72,6 +72,24 @@ module.factory('UserLoader', function(Loader, User, $route, $q) {
 	});
 });
 
+module.factory('RoleLoader', function(Loader, Role, $route, $q) {
+    return Loader.get(Role, function() {
+        return {
+            realm : $route.current.params.realm,
+            roleId : $route.current.params.role
+        }
+    });
+});
+
+module.factory('RoleListLoader', function(Loader, Role, $route, $q) {
+    return Loader.query(Role, function() {
+        return {
+            realm : $route.current.params.realm
+        }
+    });
+});
+
+
 module.factory('RoleMappingLoader', function(Loader, RoleMapping, $route, $q) {
 	var realm = $route.current.params.realm || $route.current.params.application;
 

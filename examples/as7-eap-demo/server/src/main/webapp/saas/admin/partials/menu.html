@@ -3,23 +3,29 @@
         <div class="container">
             <div class="nav-collapse">
                 <nav id="global-nav">
+                    <div data-ng-controller="RealmDropdownCtrl">
+                        <ul class="nav pull-left" data-ng-show="auth.loggedIn">
+                            <li class="dropdown"><a data-toggle="dropdown" class="dropdown-toggle" href="#"> Realms <i class="caret"></i></a>
+                                <ul class="dropdown-menu">
+                                    <li ng-repeat="(id, name) in realmslist()"><a href="#/realms/{{id}}">{{name}}</a>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
                     <ul class="nav">
-                        <li class="divider-vertical-left" data-ng-class="path[0] == '' && 'active'"><a href="#">Home</a>
-                        </li>
-                        <li class="divider-vertical-left" data-ng-class="path[0] == 'applications' && 'active'"
-                            data-ng-show="auth.loggedIn"><a href="#/applications">Applications</a></li>
                         <li class="divider-vertical-left" data-ng-class="path[0] == 'realms' && 'active'"
-                            data-ng-show="auth.loggedIn"><a href="#/realms">Realms</a></li>
+                            data-ng-show="auth.loggedIn"><a href="#/create/realm">New Realm</a></li>
                     </ul>
                     <ul class="nav pull-right" data-ng-hide="auth.loggedIn">
                         <li><a href="/auth-server/saas/saas-login.jsp">Login</a></li>
-                        <li><a href="/ejs-identity/api/register/system">Register</a></li>
+                        <li><a href="/auth-server/saas/saas-register.jsp">Register</a></li>
                     </ul>
                     <ul class="nav pull-right" data-ng-show="auth.loggedIn">
                         <li class="dropdown"><a data-toggle="dropdown" class="dropdown-toggle" href="#"><i
-                                class="icon-user icon-gray"></i> {{auth.user.displayName}} <i class="caret"></i></a>
+                                class="icon-user icon-gray"></i> Welcome: <b>{{auth.user.displayName}}</b> <i class="caret"></i></a>
                             <ul class="dropdown-menu">
-                                <li><a href="/auth-server/rest/saas/logout" >Sign Out</a></li>  <!--data-ng-click="auth.logout()" -->
+                                <li><a href="/auth-server/rest/saas/logout">Sign Out</a></li>
                             </ul>
                         </li>
                     </ul>

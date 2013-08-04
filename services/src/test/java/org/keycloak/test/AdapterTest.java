@@ -123,6 +123,10 @@ public class AdapterTest {
         RoleModel role = realmModel.getRole("user");
         realmModel.grantRole(user, role);
         Assert.assertTrue(realmModel.hasRole(user, role));
+        System.out.println("Role id: " + role.getId());
+        role = realmModel.getRoleById(role.getId());
+        Assert.assertNotNull(role);
+        Assert.assertEquals("user", role.getName());
     }
 
 
