@@ -1,11 +1,14 @@
 package org.keycloak.sdk;
 
 import java.net.URI;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import javax.annotation.PostConstruct;
+import javax.faces.application.FacesMessage;
 import javax.faces.bean.ManagedBean;
 import javax.faces.bean.RequestScoped;
 import javax.faces.context.FacesContext;
@@ -19,129 +22,174 @@ import org.keycloak.services.models.RequiredCredentialModel;
 @RequestScoped
 public class LoginBean {
 
-    private String style = "saas";
-
-    private String clientId;
-
-    private String scope;
-
-    private String state;
-
-    private String redirectUri;
+    private RealmModel realm;
 
     private String loginAction;
 
     private String socialLoginUrl;
 
-    private String themeUrl;
-
-    private List<SocialProvider> providers;
-    
-    private List<RequiredCredential> requiredCredentials; 
-
-    private RealmModel realm;
-
     private String username;
 
-    private String baseUrl;
+    private List<RequiredCredential> requiredCredentials;
+
+    private List<Property> hiddenProperties;
+
+    private List<SocialProvider> providers;
+
+    private String theme = "saas";
+
+    private String themeUrl;
+
+    private Map<String, Object> themeConfig;
 
     @PostConstruct
     public void init() {
-        HttpServletRequest request = (HttpServletRequest) FacesContext.getCurrentInstance().getExternalContext().getRequest();
+        FacesContext ctx = FacesContext.getCurrentInstance();
+
+        HttpServletRequest request = (HttpServletRequest) ctx.getExternalContext().getRequest();
 
         realm = (RealmModel) request.getAttribute(RealmModel.class.getName());
 
-        clientId = (String) request.getAttribute("client_id");
-        scope = (String) request.getAttribute("scope");
-        state = (String) request.getAttribute("state");
-        redirectUri = (String) request.getAttribute("redirect_uri");
-
         loginAction = ((URI) request.getAttribute("KEYCLOAK_LOGIN_ACTION")).toString();
-
         socialLoginUrl = ((URI) request.getAttribute("KEYCLOAK_SOCIAL_LOGIN")).toString();
 
         username = (String) request.getAttribute("username");
 
-        providers = new LinkedList<SocialProvider>();
-        for (Iterator<org.keycloak.social.SocialProvider> itr = ServiceRegistry
-                .lookupProviders(org.keycloak.social.SocialProvider.class); itr.hasNext();) {
-            org.keycloak.social.SocialProvider p = itr.next();
-            providers.add(new SocialProvider(p.getId(), p.getName()));
+        if (request.getAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE") != null) {
+            FacesMessage message = new FacesMessage(FacesMessage.SEVERITY_ERROR,
+                    (String) request.getAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE"), null);
+            ctx.addMessage(null, message);
         }
 
-        requiredCredentials = new LinkedList<RequiredCredential>();
-        for (RequiredCredentialModel m : realm.getRequiredCredentials()) {
-            if (m.isInput()) {
-                requiredCredentials.add(new RequiredCredential(m.getType(), m.isSecret()));
-            }
+        addRequiredCredentials();
+        addHiddenProperties(request, "client_id", "scope", "state", "redirect_uri");
+        addSocialProviders();
+
+        // TODO Get theme name from realm
+        theme = "saas";
+        themeUrl = FacesContext.getCurrentInstance().getExternalContext().getRequestContextPath() + "/sdk/theme/" + theme;
+
+        themeConfig = new HashMap<String, Object>();
+
+        themeConfig.put("styles", themeUrl + "/styles.css");
+
+        if (RealmModel.DEFAULT_REALM.equals(realm.getName())) {
+            themeConfig.put("logo", themeUrl + "/img/red-hat-logo.png");
+            themeConfig.put("background", themeUrl + "/img/login-screen-background.jpg");
+        } else {
+            themeConfig.put("background", themeUrl + "/img/customer-login-screen-bg2.jpg");
+            themeConfig.put("displayPoweredBy", true);
         }
-
-        baseUrl = FacesContext.getCurrentInstance().getExternalContext().getRequestContextPath() + "/sdk";
-        themeUrl = baseUrl + "/theme/" + style;
-
     }
 
-    public List<RequiredCredential> getRequiredCredentials() {
-        return requiredCredentials;
-    }
-
-    public String getStylesheet() {
-        return themeUrl + "/styles.css";
-    }
-
-    public String getLoginTemplate() {
-        return "theme/" + style + "/login.xhtml";
-    }
-
-    public String getLoginAction() {
-        return loginAction;
-    }
-
-    public String getStyle() {
-        return style;
+    public Map<String, Object> getThemeConfig() {
+        return themeConfig;
     }
 
     public String getName() {
         return realm.getName();
     }
 
-    public String getClientId() {
-        return clientId;
+    public String getLoginAction() {
+        return loginAction;
     }
 
-    public String getScope() {
-        return scope;
+    public List<Property> getHiddenProperties() {
+        return hiddenProperties;
     }
 
-    public String getState() {
-        return state;
+    public List<RequiredCredential> getRequiredCredentials() {
+        return requiredCredentials;
     }
 
-    public String getRedirectUri() {
-        return redirectUri;
-    }
-
-    public String getUsername() {
-        return username;
+    public String getTheme() {
+        return theme;
     }
 
     public String getThemeUrl() {
         return themeUrl;
     }
 
-    public String socialLoginUrl(String id) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(socialLoginUrl);
-        sb.append("?provider_id=" + id);
-        sb.append("&client_id=" + clientId);
-        if (scope != null) {
-            sb.append("&scope=" + scope);
+    public String getUsername() {
+        return username;
+    }
+
+    public boolean isSocial() {
+        // TODO Check if social is enabled in realm
+        return true && providers.size() > 0;
+    }
+
+    public boolean isRegistrationAllowed() {
+        return realm.isRegistrationAllowed();
+    }
+
+    private void addHiddenProperties(HttpServletRequest request, String... names) {
+        hiddenProperties = new LinkedList<Property>();
+        for (String name : names) {
+            Object v = request.getAttribute(name);
+            if (v != null) {
+                hiddenProperties.add(new Property(name, (String) v));
+            }
         }
-        if (state != null) {
-            sb.append("&state=" + state);
+    }
+
+    private void addRequiredCredentials() {
+        requiredCredentials = new LinkedList<RequiredCredential>();
+        for (RequiredCredentialModel m : realm.getRequiredCredentials()) {
+            if (m.isInput()) {
+                requiredCredentials.add(new RequiredCredential(m.getType(), m.isSecret()));
+            }
         }
-        sb.append("&redirect_uri=" + redirectUri);
-        return sb.toString();
+    }
+
+    private void addSocialProviders() {
+        // TODO Add providers configured for realm instead of all providers
+        providers = new LinkedList<SocialProvider>();
+        for (Iterator<org.keycloak.social.SocialProvider> itr = ServiceRegistry
+                .lookupProviders(org.keycloak.social.SocialProvider.class); itr.hasNext();) {
+            org.keycloak.social.SocialProvider p = itr.next();
+            providers.add(new SocialProvider(p.getId(), p.getName()));
+        }
+    }
+
+    public class Property {
+        private String name;
+        private String value;
+
+        public Property(String name, String value) {
+            this.name = name;
+            this.value = value;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getValue() {
+            return value;
+        }
+    }
+
+    public class RequiredCredential {
+        private String type;
+        private boolean secret;
+
+        public RequiredCredential(String type, boolean secure) {
+            this.type = type;
+            this.secret = secure;
+        }
+
+        public String getName() {
+            return type;
+        }
+
+        public String getLabel() {
+            return type;
+        }
+
+        public String getInputType() {
+            return secret ? "password" : "text";
+        }
     }
 
     public List<SocialProvider> getProviders() {
@@ -169,37 +217,10 @@ public class LoginBean {
             StringBuilder sb = new StringBuilder();
             sb.append(socialLoginUrl);
             sb.append("?provider_id=" + id);
-            sb.append("&client_id=" + clientId);
-            if (scope != null) {
-                sb.append("&scope=" + scope);
+            for (Property p : hiddenProperties) {
+                sb.append("&" + p.getName() + "=" + p.getValue());
             }
-            if (state != null) {
-                sb.append("&state=" + state);
-            }
-            sb.append("&redirect_uri=" + redirectUri);
             return sb.toString();
-        }
-
-        public String getIconUrl() {
-            return themeUrl + "/icons/" + id + ".png";
-        }
-    }
-    
-    public class RequiredCredential {
-        private String type;
-        private boolean secret;
-
-        public RequiredCredential(String type, boolean secure) {
-            this.type = type;
-            this.secret = secure;
-        }
-
-        public String getType() {
-            return type;
-        }
-
-        public boolean isSecret() {
-            return secret;
         }
     }
 

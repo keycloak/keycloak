@@ -3,7 +3,6 @@ body {
 }
 .rcue-login-register {
   background-color: #1D2226;
-  background-image: url("img/login-screen-background.jpg");
   background-position: top left;
   background-size: auto;
   background-repeat: no-repeat;
@@ -22,14 +21,12 @@ body {
 }
 .rcue-login-register .content {
   position: absolute;
-  bottom: 15%;
+  bottom: 10%;
   width: 100%;
   min-width: 76em;
 }
 .rcue-login-register h2 {
   padding-left: 4.34782608695652em;
-  /* 100px */
-
   font-family: "Overpass", sans-serif;
   font-size: 2.3em;
   font-weight: 100;
@@ -255,14 +252,16 @@ a.zocial:before {
   line-height: 1.3em;
 }
 /* Customer login */
-.rcue-login-register.customer {
-  background-image: url("img/customer-login-screen-bg2.jpg");
+
+.rcue-login-register p.powered {
+  font-size: 1.1em;
+  margin-top: 1.27272727272727em;
+  text-align: right;
+  margin-right: 5.81818181818182em;
 }
-.rcue-login-register.customer h2 {
-  display: inline-block;
+.rcue-login-register p.powered a {
+  color: #666;
 }
-.rcue-login-register.customer p.powered {
-  display: inline-block;
-  font-size: 1.3em;
-  margin-left: 1.2em;
+.rcue-login-register p.powered a:hover {
+  color: #0099D3;
 }
