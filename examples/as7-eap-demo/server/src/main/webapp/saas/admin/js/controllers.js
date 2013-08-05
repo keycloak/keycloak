@@ -5,7 +5,7 @@ var module = angular.module('keycloak.controllers', [ 'keycloak.services' ]);
 var realmslist = {};
 
 
-module.controller('GlobalCtrl', function($scope, $http, Auth, $location, Notifications) {
+module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location, Notifications) {
 	$scope.addMessage = function() {
 		Notifications.success("test");
 	};
@@ -19,6 +19,7 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, $location, Notific
 	});
 
     $http.get('/auth-server/rest/saas/admin/realms').success(function(data) {
+        Current.realms = data;
         var count = 0;
         var showrealm = false;
         var id = null;
@@ -34,6 +35,7 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, $location, Notific
 
         if (showrealm) {
             console.log('redirecting');
+            Current.realm = Current.realms[id];
             $location.url("/realms/" + id);
         } else {
             console.log('not redirecting');
@@ -158,22 +160,30 @@ module.controller('RealmListCtrl', function($scope, Realm, Current) {
     Current.realms = $scope.realms;
 });
 
-module.controller('RealmDropdownCtrl', function($scope, Realm, Current, $location) {
-    console.log('test log writing');
-    Current.realms = Realm.get();
+module.controller('RealmDropdownCtrl', function($scope, Realm, Current, Auth, $location) {
+//    Current.realms = Realm.get();
     $scope.current = Current;
     $scope.changeRealm = function() {
-        console.log('select box changed');
         for (var id in Current.realms) {
             var val = Current.realms[id];
-            console.log('checking: ' + val);
             if (val == Current.realm) {
-                console.log("redirect to: /realms/" + id);
                $location.url("/realms/" + id);
                break;
             }
         }
     };
+    $scope.showNav = function() {
+        var show = false;
+        for (var key in Current.realms) {
+            if (typeof Current.realms[key] != "function") {
+                if (Current.realms[key] == Current.realm) {
+                    $scope.currentRealmId = key;
+                }
+                show = true;
+            }
+        }
+        return Auth.loggedIn && show;
+    }
 });
 
 module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $location, Dialog, Notifications) {
@@ -275,10 +285,6 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $lo
                     var data = Realm.get(function() {
                         Current.realms = data;
                         Current.realm = Current.realms[id];
-                        console.log('Current.realms[id]: ' + Current.realms[id]);
-                        console.log('data[id]: ' + data[id]);
-                        console.log('Current.realm.name: ' + Current.realm.name);
-
                     });
                     $location.url("/realms/" + id);
 					Notifications.success("Created realm");
