@@ -36,7 +36,7 @@ public class LoginBean {
 
     private List<SocialProvider> providers;
 
-    private String theme = "saas";
+    private String theme;
 
     private String themeUrl;
 
@@ -66,7 +66,7 @@ public class LoginBean {
         addSocialProviders();
 
         // TODO Get theme name from realm
-        theme = "saas";
+        theme = "default";
         themeUrl = FacesContext.getCurrentInstance().getExternalContext().getRequestContextPath() + "/sdk/theme/" + theme;
 
         themeConfig = new HashMap<String, Object>();

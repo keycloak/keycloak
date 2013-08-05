@@ -1,36 +1,36 @@
-<ui:composition xmlns:h="http://java.sun.com/jsf/html" xmlns:f="http://java.sun.com/jsf/core"
-	xmlns:ui="http://java.sun.com/jsf/facelets">
-	<div id="keycloak-login-container">
-		<div id="keycloak-login-standard">
-			<h1>Login to #{login.name}</h1>
+<ui:composition xmlns:h="http://java.sun.com/jsf/html" xmlns:f="http://java.sun.com/jsf/core" xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:c="http://java.sun.com/jstl/core" template="template.xhtml">
 
-			<form action="#{login.loginAction}">
-				<label for="username">Username</label>
-				<h:inputText name="username" value="#{login.username}" />
+	<ui:define name="header">Log in to <strong>#{login.name}</strong></ui:define>
+	
+	<ui:define name="form">
+		<form action="#{login.loginAction}" method="post">
+			<div>
+				<label for="username">Username</label> <input id="username" name="username" value="#{login.username}" type="text" />
+			</div>
 
-				<label for="password">Password</label>
-				<h:inputSecret name="password" />
-
-				<h:inputHidden name="client_id" value="#{login.clientId}" />
-				<h:inputHidden name="scope" value="#{login.scope}" disabled="#{empty login.scope}" />
-				<h:inputHidden name="state" value="#{login.state}" disabled="#{empty login.state}" />
-				<h:inputHidden name="redirect_uri" value="#{login.redirectUri}" disabled="#{empty login.redirectUri}" />
-
+			<ui:repeat var="c" value="#{login.requiredCredentials}">
 				<div>
-					<button class="btn btn-primary" id="keycloak-login-submit" type="submit">Login</button>
-				</div>
-			</form>
-		</div>
-
-		<div id="keycloak-login-social">
-			<h3>Login with</h3>
-
-			<ui:repeat var="p" value="#{login.providers}">
-				<div>
-					<a href="#{p.loginUrl}"> <img src="#{p.iconUrl}" /> Login with #{p.name}</a>
+					<label for="#{c.name}">#{c.label}</label> <input id="#{c.name}" name="#{c.name}" type="#{c.inputType}" />
 				</div>
 			</ui:repeat>
-		</div>
 
-	</div>
+			<ui:repeat var="p" value="#{login.hiddenProperties}">
+				<input name="#{p.name}" value="#{p.value}" type="hidden" />
+			</ui:repeat>
+
+			<div class="aside-btn">
+				<input type="checkbox" id="remember" /><label for="remember">Remember Username</label>
+				<p>Forgot <a href="#">Username</a> or <a href="#">Password</a>?</p>
+			</div>
+
+			<input type="submit" value="Log In" />
+		</form>
+	</ui:define>
+	
+	<ui:define name="info">
+		<h:panelGroup rendered="#{login.registrationAllowed}">
+			<p>No account? <a href="saas-register.html">Register</a>.</p>
+		</h:panelGroup>	
+	</ui:define>
 </ui:composition>
