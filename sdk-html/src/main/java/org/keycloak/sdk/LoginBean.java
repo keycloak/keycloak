@@ -24,6 +24,8 @@ public class LoginBean {
 
     private RealmModel realm;
 
+    private String name;
+
     private String loginAction;
 
     private String socialLoginUrl;
@@ -49,6 +51,12 @@ public class LoginBean {
         HttpServletRequest request = (HttpServletRequest) ctx.getExternalContext().getRequest();
 
         realm = (RealmModel) request.getAttribute(RealmModel.class.getName());
+        
+        if (RealmModel.DEFAULT_REALM.equals(realm.getName())) {
+            name = "Keycloak";
+        } else {
+            name = realm.getName();
+        }
 
         loginAction = ((URI) request.getAttribute("KEYCLOAK_LOGIN_ACTION")).toString();
         socialLoginUrl = ((URI) request.getAttribute("KEYCLOAK_SOCIAL_LOGIN")).toString();
@@ -87,7 +95,7 @@ public class LoginBean {
     }
 
     public String getName() {
-        return realm.getName();
+        return name;
     }
 
     public String getLoginAction() {
