@@ -176,10 +176,12 @@ module.controller('RealmDropdownCtrl', function($scope, Realm, Current, Auth, $l
         var show = false;
         for (var key in Current.realms) {
             if (typeof Current.realms[key] != "function") {
+                if (Current.realms[key] == Current.realm) {
+                    $scope.currentRealmId = key;
+                }
                 show = true;
-                break;
             }
-         }
+        }
         return Auth.loggedIn && show;
     }
 });

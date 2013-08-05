@@ -12,7 +12,9 @@
                                 </ul>
                             </li>
                         </ul> -->
-                        <h3 data-ng-show="showNav()"><span class="gray pull-left">Realm: </span></h3>
+                        <ul class="nav pull-left" data-ng-show="showNav()">
+                            <li class="divider-vertical-right"><a href="#/realms/{{currentRealmId}}">Realm</a></li>
+                        </ul>
                         <select class="nav pull-left" data-ng-show="showNav()" ng-change="changeRealm()" ng-model="current.realm" ng-options="name for (id, name) in current.realms">
                         </select>
                         <!-- <select class="nav pull-left" ng-options="r.name for r in current.realms"></select> -->
@@ -30,7 +32,7 @@
                         </li>
                     </ul>
                     <ul class="nav pull-right" data-ng-show="auth.loggedIn">
-                        <li class="divider-vertical-left" data-ng-class="path[0] == 'realms' && 'active'"
+                        <li class="divider-vertical-left" data-ng-class="path[0] == 'create' && path[1] == 'realm' && 'active'"
                             data-ng-show="auth.loggedIn"><a href="#/create/realm">New Realm</a></li>
                     </ul>
                 </nav>
