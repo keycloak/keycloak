@@ -68,6 +68,7 @@ body {
 }
 .rcue-login-register section.app-form {
   padding-left: 0;
+  position: relative;
 }
 .rcue-login-register form > div {
   margin-bottom: 1em;
@@ -116,6 +117,7 @@ body {
   /* 6px */
 
 }
+.rcue-login-register form > input[type="button"],
 .rcue-login-register form > input[type="submit"] {
   float: right;
   margin-top: 0.76923076923077em;
@@ -128,6 +130,11 @@ body {
   position: absolute;
   right: 4.09090909090909em;
   top: -0.636363636363636em;
+}
+.rcue-login-register .feedback {
+  left: 32.7em;
+  top: -9.2em;
+  min-width: 35em;
 }
 .rcue-login-register section.social-login > span {
   display: none;
@@ -251,8 +258,6 @@ a.zocial:before {
 .rcue-login-register.register form > div.aside-btn p {
   line-height: 1.3em;
 }
-/* Customer login */
-
 .rcue-login-register p.powered {
   font-size: 1.1em;
   margin-top: 1.27272727272727em;

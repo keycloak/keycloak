@@ -24,6 +24,8 @@ public class LoginBean {
 
     private RealmModel realm;
 
+    private String name;
+
     private String loginAction;
 
     private String socialLoginUrl;
@@ -42,6 +44,8 @@ public class LoginBean {
 
     private Map<String, Object> themeConfig;
 
+    private String error;
+
     @PostConstruct
     public void init() {
         FacesContext ctx = FacesContext.getCurrentInstance();
@@ -49,21 +53,22 @@ public class LoginBean {
         HttpServletRequest request = (HttpServletRequest) ctx.getExternalContext().getRequest();
 
         realm = (RealmModel) request.getAttribute(RealmModel.class.getName());
+        
+        if (RealmModel.DEFAULT_REALM.equals(realm.getName())) {
+            name = "Keycloak";
+        } else {
+            name = realm.getName();
+        }
 
         loginAction = ((URI) request.getAttribute("KEYCLOAK_LOGIN_ACTION")).toString();
         socialLoginUrl = ((URI) request.getAttribute("KEYCLOAK_SOCIAL_LOGIN")).toString();
 
         username = (String) request.getAttribute("username");
 
-        if (request.getAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE") != null) {
-            FacesMessage message = new FacesMessage(FacesMessage.SEVERITY_ERROR,
-                    (String) request.getAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE"), null);
-            ctx.addMessage(null, message);
-        }
-
         addRequiredCredentials();
         addHiddenProperties(request, "client_id", "scope", "state", "redirect_uri");
         addSocialProviders();
+        addErrors(request);
 
         // TODO Get theme name from realm
         theme = "default";
@@ -87,11 +92,15 @@ public class LoginBean {
     }
 
     public String getName() {
-        return realm.getName();
+        return name;
     }
 
     public String getLoginAction() {
         return loginAction;
+    }
+
+    public String getError() {
+        return error;
     }
 
     public List<Property> getHiddenProperties() {
@@ -150,6 +159,10 @@ public class LoginBean {
             org.keycloak.social.SocialProvider p = itr.next();
             providers.add(new SocialProvider(p.getId(), p.getName()));
         }
+    }
+
+    private void addErrors(HttpServletRequest request) {
+        error = (String) request.getAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE");
     }
 
     public class Property {
