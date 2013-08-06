@@ -13,7 +13,7 @@
 	</style>
 </h:head>
 
-<h:body class="rcue-login-register">
+<h:body class="rcue-login-register #{bodyClass}">
 	<h:panelGroup rendered="#{not empty login.themeConfig['logo']}">
 		<h1><a href="#" title="Go to the home page"><img src="#{login.themeConfig['logo']}" alt="Logo" /></a></h1>
 	</h:panelGroup>
@@ -25,7 +25,11 @@
 			<div class="form-area #{login.social ? 'social' : ''} clearfix">
 				<section class="app-form">
 					<h3>Application login area</h3>
-					<h:messages />
+					
+					<h:panelGroup rendered="#{not empty login.error}">
+						<div class="feedback error bottom-left show"><p><strong>#{login.error}</strong></p></div>
+					</h:panelGroup>
+					
 					<ui:insert name="form" />
 				</section>
 				

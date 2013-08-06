@@ -29,9 +29,9 @@ public abstract class AbstractLoginService {
     @Context
     HttpResponse response;
 
-    protected String securityFailurePath = "/saas/securityFailure.jsp";
-    protected String loginFormPath = "/sdk/login.xhtml";
-    protected String oauthFormPath = "/saas/oauthGrantForm.jsp";
+    public final static String securityFailurePath = "/saas/securityFailure.jsp";
+    public final static String loginFormPath = "/sdk/login.xhtml";
+    public final static String oauthFormPath = "/saas/oauthGrantForm.jsp";
 
     protected RealmModel realm;
     protected TokenManager tokenManager;

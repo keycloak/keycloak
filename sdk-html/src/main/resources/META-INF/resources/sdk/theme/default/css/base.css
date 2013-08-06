@@ -7,29 +7,35 @@
   padding: 0;
   font-family: "Open Sans", sans-serif;
 }
-
 body {
   min-width: 120em;
   height: 100%;
   width: 100%;
   font-family: "Open Sans", sans-serif;
 }
-
 body {
-    font-size: 62.5%;
+  font-size: 62.5%;
 }
-
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   letter-spacing: -0.1em;
   font-weight: normal;
   font-family: "Overpass", sans-serif;
 }
-
 a {
   color: #0099d3;
   text-decoration: none;
 }
-
 a:hover {
   text-decoration: underline;
+}
+strong {
+  font-weight: bold;
+}
+.hidden {
+  display: none;
 }
