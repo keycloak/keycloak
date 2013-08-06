@@ -44,6 +44,8 @@ public class LoginBean {
 
     private Map<String, Object> themeConfig;
 
+    private String error;
+
     @PostConstruct
     public void init() {
         FacesContext ctx = FacesContext.getCurrentInstance();
@@ -63,15 +65,10 @@ public class LoginBean {
 
         username = (String) request.getAttribute("username");
 
-        if (request.getAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE") != null) {
-            FacesMessage message = new FacesMessage(FacesMessage.SEVERITY_ERROR,
-                    (String) request.getAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE"), null);
-            ctx.addMessage(null, message);
-        }
-
         addRequiredCredentials();
         addHiddenProperties(request, "client_id", "scope", "state", "redirect_uri");
         addSocialProviders();
+        addErrors(request);
 
         // TODO Get theme name from realm
         theme = "default";
@@ -100,6 +97,10 @@ public class LoginBean {
 
     public String getLoginAction() {
         return loginAction;
+    }
+
+    public String getError() {
+        return error;
     }
 
     public List<Property> getHiddenProperties() {
@@ -158,6 +159,10 @@ public class LoginBean {
             org.keycloak.social.SocialProvider p = itr.next();
             providers.add(new SocialProvider(p.getId(), p.getName()));
         }
+    }
+
+    private void addErrors(HttpServletRequest request) {
+        error = (String) request.getAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE");
     }
 
     public class Property {
