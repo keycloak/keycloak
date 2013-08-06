@@ -1,13 +1,2 @@
-<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:h="http://java.sun.com/jsf/html" xmlns:f="http://java.sun.com/jsf/core"
-	xmlns:ui="http://java.sun.com/jsf/facelets">
-<h:head>
-	<meta charset="utf-8"></meta>
-	<title>Register with #{register.name}</title>
-	<link href="#{register.themeUrl}/styles.css" rel="stylesheet" />
-</h:head>
-
-<h:body class="keycloak-register">
-	<ui:include src="theme/#{register.theme}/register.xhtml" />
-</h:body>
-
-</html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:include xmlns:ui="http://java.sun.com/jsf/facelets" src="theme/#{login.theme}/register.xhtml" />
