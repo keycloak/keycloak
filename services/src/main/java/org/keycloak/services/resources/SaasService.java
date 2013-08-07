@@ -93,8 +93,7 @@ public class SaasService {
     public Response whoAmI(final @Context HttpHeaders headers) {
         return new Transaction() {
             @Override
-            public Response callImpl()
-            {
+            public Response callImpl() {
                 logger.info("WHOAMI start.");
                 RealmManager realmManager = new RealmManager(session);
                 RealmModel realm = realmManager.defaultRealm();
@@ -115,8 +114,7 @@ public class SaasService {
     public String isLoggedIn(final @Context HttpHeaders headers) {
         return new Transaction() {
             @Override
-            public String callImpl()
-            {
+            public String callImpl() {
                 logger.info("WHOAMI Javascript start.");
                 RealmManager realmManager = new RealmManager(session);
                 RealmModel realm = realmManager.defaultRealm();
@@ -145,24 +143,38 @@ public class SaasService {
 
     @Path("admin/realms")
     public RealmsAdminResource getRealmsAdmin(@Context final HttpHeaders headers) {
-       return new Transaction(false) {
-           @Override
-           protected RealmsAdminResource callImpl() {
-               RealmManager realmManager = new RealmManager(session);
-               RealmModel saasRealm = realmManager.defaultRealm();
-               if (saasRealm == null) throw new NotFoundException();
-               UserModel admin = authManager.authenticateSaasIdentity(saasRealm, uriInfo, headers);
-               if (admin == null) {
-                   throw new NotAuthorizedException("Bearer");
-               }
-               RoleModel creatorRole = saasRealm.getRole(SaasService.REALM_CREATOR_ROLE);
-               if (!saasRealm.hasRole(admin, creatorRole)) {
-                   logger.warn("not a Realm creator");
-                   throw new NotAuthorizedException("Bearer");
-               }
-               return new RealmsAdminResource(admin);
-           }
-       }.call();
+        return new Transaction(false) {
+            @Override
+            protected RealmsAdminResource callImpl() {
+                RealmManager realmManager = new RealmManager(session);
+                RealmModel saasRealm = realmManager.defaultRealm();
+                if (saasRealm == null) throw new NotFoundException();
+                UserModel admin = authManager.authenticateSaasIdentity(saasRealm, uriInfo, headers);
+                if (admin == null) {
+                    throw new NotAuthorizedException("Bearer");
+                }
+                RoleModel creatorRole = saasRealm.getRole(SaasService.REALM_CREATOR_ROLE);
+                if (!saasRealm.hasRole(admin, creatorRole)) {
+                    logger.warn("not a Realm creator");
+                    throw new NotAuthorizedException("Bearer");
+                }
+                return new RealmsAdminResource(admin);
+            }
+        }.call();
+    }
+
+    @Path("loginPage.html")
+    @GET
+    public void loginPage() {
+        new Transaction() {
+            @Override
+            protected void runImpl() {
+                RealmManager realmManager = new RealmManager(session);
+                RealmModel realm = realmManager.defaultRealm();
+                authManager.expireSaasIdentityCookie(uriInfo);
+                forwardToLoginForm(realm);
+            }
+        }.run();
     }
 
     @Path("logout")
@@ -171,11 +183,14 @@ public class SaasService {
         new Transaction() {
             @Override
             protected void runImpl() {
+                RealmManager realmManager = new RealmManager(session);
+                RealmModel realm = realmManager.defaultRealm();
                 authManager.expireSaasIdentityCookie(uriInfo);
-                request.forward(saasLoginPath);
+                forwardToLoginForm(realm);
             }
         }.run();
     }
+
 
     @Path("logout-cookie")
     @GET
@@ -188,6 +203,18 @@ public class SaasService {
             }
         }.run();
     }
+
+    public final static String loginFormPath = "/sdk/login.xhtml";
+    protected void forwardToLoginForm(RealmModel realm) {
+        request.setAttribute(RealmModel.class.getName(), realm);
+        URI action = uriInfo.getBaseUriBuilder().path(SaasService.class).path(SaasService.class, "processLogin").build();
+        URI register = contextRoot(uriInfo).path(saasRegisterPath).build();
+        request.setAttribute("KEYCLOAK_LOGIN_ACTION", action);
+        request.setAttribute("KEYCLOAK_REGISTRATION_PAGE", register);
+        request.setAttribute("KEYCLOAK_SOCIAL_LOGIN", SocialService.redirectToProviderAuthUrl(uriInfo).build(realm.getId()));
+        request.forward(loginFormPath);
+    }
+
 
 
     @Path("login")
@@ -210,13 +237,13 @@ public class SaasService {
                 if (user == null) {
                     logger.info("Not Authenticated! Incorrect user name");
                     request.setAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE", "Incorrect user name.");
-                    request.forward(saasLoginPath);
+                    forwardToLoginForm(realm);
                     return null;
                 }
                 if (!user.isEnabled()) {
                     logger.info("NAccount is disabled, contact admin.");
                     request.setAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE", "Account is disabled, contact admin.");
-                    request.forward(saasLoginPath);
+                    forwardToLoginForm(realm);
                     return null;
                 }
 
@@ -224,14 +251,14 @@ public class SaasService {
                 if (!authenticated) {
                     logger.info("Not Authenticated! Invalid credentials");
                     request.setAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE", "Invalid credentials.");
-                    request.forward(saasLoginPath);
+                    forwardToLoginForm(realm);
                     return null;
                 }
 
                 NewCookie cookie = authManager.createSaasIdentityCookie(realm, user, uriInfo);
                 return Response.status(302)
-                               .cookie(cookie)
-                               .location(contextRoot(uriInfo).path(adminPath).build()).build();
+                        .cookie(cookie)
+                        .location(contextRoot(uriInfo).path(adminPath).build()).build();
             }
         }.call();
     }
