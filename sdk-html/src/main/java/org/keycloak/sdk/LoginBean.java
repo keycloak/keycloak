@@ -30,6 +30,8 @@ public class LoginBean {
 
     private String socialLoginUrl;
 
+    private String registrationUrl;
+
     private String username;
 
     private List<RequiredCredential> requiredCredentials;
@@ -61,6 +63,7 @@ public class LoginBean {
         }
 
         loginAction = ((URI) request.getAttribute("KEYCLOAK_LOGIN_ACTION")).toString();
+        registrationUrl = ((URI) request.getAttribute("KEYCLOAK_REGISTRATION_PAGE")).toString();
         socialLoginUrl = ((URI) request.getAttribute("KEYCLOAK_SOCIAL_LOGIN")).toString();
 
         username = (String) request.getAttribute("username");
@@ -117,6 +120,10 @@ public class LoginBean {
 
     public String getThemeUrl() {
         return themeUrl;
+    }
+
+    public String getRegistrationUrl() {
+        return registrationUrl;
     }
 
     public String getUsername() {

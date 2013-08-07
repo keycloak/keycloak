@@ -31,7 +31,7 @@
 	
 	<ui:define name="info">
 		<h:panelGroup rendered="#{login.registrationAllowed}">
-			<p>No account? <a href="saas-register.html">Register</a>.</p>
+			<p>No account? <a href="#{login.registrationUrl}">Register</a>.</p>
 		</h:panelGroup>	
 	</ui:define>
 </ui:composition>
