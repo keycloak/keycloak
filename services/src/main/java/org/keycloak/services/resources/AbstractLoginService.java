@@ -18,6 +18,8 @@ import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RoleModel;
 import org.keycloak.services.models.UserModel;
 
+import java.net.URI;
+
 public abstract class AbstractLoginService {
 
     @Context
@@ -86,6 +88,7 @@ public abstract class AbstractLoginService {
         request.setAttribute(RealmModel.class.getName(), realm);
         request.setAttribute("KEYCLOAK_LOGIN_ACTION", TokenService.processLoginUrl(uriInfo).build(realm.getId()));
         request.setAttribute("KEYCLOAK_SOCIAL_LOGIN", SocialService.redirectToProviderAuthUrl(uriInfo).build(realm.getId()));
+        request.setAttribute("KEYCLOAK_REGISTRATION_PAGE", URI.create("not-implemented-yet"));
 
         // RESTEASY eats the form data, so we send via an attribute
         request.setAttribute("redirect_uri", redirect);

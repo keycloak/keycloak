@@ -73,7 +73,7 @@
                     </section>
                     <section class="info-area">
                         <h3>Info area</h3>
-                        <p>Already have an account? <a href="<%=application.getContextPath()%>/saas/saas-login.jsp">Log in</a>.</p>
+                        <p>Already have an account? <a href="<%=application.getContextPath()%>/rest/saas/loginPage.html">Log in</a>.</p>
                         <ul>
                             <li><strong>Domain:</strong> 10.0.0.1</li>
                             <li><strong>Zone:</strong> Live</li>
