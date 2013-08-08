@@ -3,15 +3,7 @@
         <div class="container">
             <div class="nav-collapse">
                 <nav id="global-nav">
-                    <div data-ng-controller="RealmDropdownCtrl" >   <!--
-                        <ul class="nav pull-left" data-ng-show="auth.loggedIn">
-                            <li class="dropdown"><a data-toggle="dropdown" class="dropdown-toggle" href="#"> Realms <i class="caret"></i></a>
-                                <ul class="dropdown-menu">
-                                    <li ng-repeat="(id, name) in current.realms"><a href="#/realms/{{id}}">{{name}}</a>
-                                    </li>
-                                </ul>
-                            </li>
-                        </ul> -->
+                    <div data-ng-controller="RealmDropdownCtrl" >
                         <ul class="nav pull-left" data-ng-show="showNav()">
                             <li class="divider-vertical-right"><a href="#/realms/{{currentRealmId}}">Realm</a></li>
                         </ul>
@@ -20,7 +12,7 @@
                         <!-- <select class="nav pull-left" ng-options="r.name for r in current.realms"></select> -->
                     </div>
                     <ul class="nav pull-right" data-ng-hide="auth.loggedIn">
-                        <li><a href="/auth-server/rest/saas/login">Login</a></li>
+                        <li><a href="/auth-server/rest/saas/loginPage.html">Login</a></li>
                         <li><a href="/auth-server/saas/saas-register.jsp">Register</a></li>
                     </ul>
                     <ul class="nav pull-right" data-ng-show="auth.loggedIn">

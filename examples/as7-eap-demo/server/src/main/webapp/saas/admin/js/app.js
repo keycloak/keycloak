@@ -5,38 +5,8 @@ var resourceRequests = 0;
 
 module.config([ '$routeProvider', function($routeProvider) {
 	
-	$routeProvider.when('/create/application', {
-		templateUrl : 'partials/application-detail.html',
-		resolve : {
-			application : function(ApplicationLoader) {
-				return {};
-			},
-			realms : function(RealmListLoader) {
-				return RealmListLoader();
-			}
-		},
-		controller : 'ApplicationDetailCtrl'
-	}).when('/applications/:application', {
-		templateUrl : 'partials/application-detail.html',
-		resolve : {
-			application : function(ApplicationLoader) {
-				return ApplicationLoader();
-			},
-			realms : function(RealmListLoader) {
-				return RealmListLoader();
-			}
-		},
-		controller : 'ApplicationDetailCtrl'
-	}).when('/applications', {
-		templateUrl : 'partials/application-list.html',
-		resolve : {
-			applications : function(ApplicationListLoader) {
-				return ApplicationListLoader();
-			}
-		},
-		controller : 'ApplicationListCtrl'
-	})
-	
+	$routeProvider
+
 	.when('/create/realm', {
 		templateUrl : 'partials/realm-detail.html',
 		resolve : {
@@ -128,36 +98,47 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'RoleListCtrl'
         })
 
-	.when('/applications/:application/roles', {
-		templateUrl : 'partials/role-mapping.html',
-		resolve : {
-			realm : function(ApplicationLoader) {
-				return ApplicationLoader();
-			},
-			users : function() {
-				return null;
-			},
-			role : function() {
-				return null;
-			}
-		},
-		controller : 'RoleMappingCtrl'
-	}).when('/applications/:application/roles/:role', {
-		templateUrl : 'partials/role-mapping.html',
-		resolve : {
-			realm : function(ApplicationLoader) {
-				return ApplicationLoader();
-			},
-			role : function($route) {
-				return $route.current.params.role;
-			},
-			users : function(RoleMappingLoader) {
-				return RoleMappingLoader();
-			}
-		},
-		controller : 'RoleMappingCtrl'
-	})
-	
+
+        .when('/create/application/:realm', {
+            templateUrl : 'partials/application-detail.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                applications : function(ApplicationListLoader) {
+                    return ApplicationListLoader();
+                },
+                application : function() {
+                    return {};
+                }
+            },
+            controller : 'ApplicationDetailCtrl'
+        }).when('/realms/:realm/applications/:application', {
+            templateUrl : 'partials/application-detail.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                applications : function(ApplicationListLoader) {
+                    return ApplicationListLoader();
+                },
+                application : function(ApplicationLoader) {
+                    return ApplicationLoader();
+                }
+            },
+            controller : 'ApplicationDetailCtrl'
+        }).when('/realms/:realm/applications', {
+            templateUrl : 'partials/application-list.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                applications : function(ApplicationListLoader) {
+                    return ApplicationListLoader();
+                }
+            },
+            controller : 'ApplicationListCtrl'
+        })
 	.otherwise({
 		templateUrl : 'partials/home.html'
 	});

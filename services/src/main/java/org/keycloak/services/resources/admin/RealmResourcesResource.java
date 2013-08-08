@@ -72,7 +72,7 @@ public class RealmResourcesResource {
 
     @Path("{id}")
     public RealmResourceResource getResource(final @PathParam("id") String id) {
-        return new Transaction() {
+        return new Transaction(false) {
             @Override
             protected RealmResourceResource callImpl() {
                 ResourceModel resourceModel = realm.getResourceById(id);

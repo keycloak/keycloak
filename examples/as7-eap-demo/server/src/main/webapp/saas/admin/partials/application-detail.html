@@ -7,11 +7,11 @@
             <h1 data-ng-show="create"><span class="gray">New Application</span></h1>
 
             <h1 data-ng-hide="create">
-                <span class="gray">{{application.name}}</span> configuration
+                <span class="gray">Application Settings</span>
             </h1>
 
-            <div data-ng-show="applicationForm.showErrors && applicationForm.$error.required" class="alert alert-error">
-                Please fill in all required fields
+            <div data-ng-show="applicationForm.showErrors && applicationForm.$error.required" class="alert alert-error">Please fill
+                in all required fields
             </div>
             <p class="subtitle subtitle-right"><span class="required">*</span> Required fields</p>
 
@@ -30,58 +30,21 @@
                         <input class="input-xlarge" type="checkbox" name="enabled" data-ng-model="application.enabled">
                     </div>
 
+                   <div data-kc-input>
+                        <label>User registration</label>
+                        <input class="input-xlarge" type="checkbox" name="social"
+                               data-ng-model="application.userRegistration">
+                    </div>
+
                     <div class="control-group">
-                        <label class="control-label" for="realm">Realm <span class="required">*</span></label>
+                        <label for="applicationForm-adminUrl" class="control-label">Admin URL</label>
 
                         <div class="controls">
-                            <select data-ng-model="application.realm" id="realm" name="realm" data-ng-required>
-                                <option data-ng-repeat="r in realms" value="{{r.id}}"
-                                        data-ng-selected="r.id == application.realm">{{r.name}}
-                                </option>
-                            </select>
-                        </div>
+                            <input class="input-small" type="text" name="adminUrl"
+                                   data-ng-model="application.adminUrl">
+                         </div>
                     </div>
                 </fieldset>
-
-                <fieldset>
-                    <legend>Roles</legend>
-
-                    <div class="control-group">
-                        <label class="control-label">Roles</label>
-
-                        <div class="controls">
-                            <span class="label" style="margin-right: 1em;"
-                                  data-ng-repeat="r in (application.roles|orderBy:'toString()')">{{r}} <button
-                                    data-ng-click="removeRole(r)"><i class="icon-remove icon-white"></i></button></span>
-
-                            <div class="input-append">
-                                <input class="input-small" type="text" data-ng-model="newRole" placeHolder="Role"
-                                       data-kc-enter="addRole()"/>
-                                <button class="btn" type="button" data-ng-click="addRole()">Add</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="control-group">
-                        <label class="control-label">Initial Roles</label>
-
-                        <div class="controls">
-                            <span class="label" style="margin-right: 1em;"
-                                  data-ng-repeat="r in (application.initialRoles|orderBy:'toString()')">{{r}} <button
-                                    data-ng-click="removeInitialRole(r)"><i class="icon-remove icon-white"></i></button></span>
-
-                            <div class="input-append">
-                                <select style="width: auto;" data-ng-model="newInitialRole"
-                                        data-ng-click="addInitialRole()">
-                                    <option data-ng-repeat="r in (application.roles|remove:application.initialRoles|orderBy:'toString()')"
-                                            value="{{r}}">{{r}}
-                                    </option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                </fieldset>
-
                 <div class="form-actions" data-ng-show="create">
                     <button type="submit" data-ng-click="save()" class="btn btn-primary" data-ng-show="changed">Save
                     </button>
@@ -96,14 +59,13 @@
                     </button>
                     <button type="submit" data-ng-click="reset()" class="btn" data-ng-show="changed">Clear changes
                     </button>
-                    <a href="#/applications" data-ng-hide="changed">View applications &#187;</a>
                     <button type="submit" data-ng-click="remove()" class="btn btn-danger" data-ng-hide="changed">
                         Delete
                     </button>
                 </div>
+
             </form>
         </div>
-
         <div id="container-right-bg"></div>
     </div>
 </div>
