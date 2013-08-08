@@ -31,18 +31,6 @@ module.factory('Loader', function($q) {
 	return loader;
 });
 
-module.factory('ApplicationListLoader', function(Loader, Application, $q) {
-	return Loader.query(Application);
-});
-
-module.factory('ApplicationLoader', function(Loader, Application, $route, $q) {
-	return Loader.get(Application, function() {
-		return {
-			id : $route.current.params.application
-		}
-	});
-});
-
 module.factory('RealmListLoader', function(Loader, Realm, $q) {
 	return Loader.get(Realm);
 });
@@ -83,6 +71,24 @@ module.factory('RoleLoader', function(Loader, Role, $route, $q) {
 
 module.factory('RoleListLoader', function(Loader, Role, $route, $q) {
     return Loader.query(Role, function() {
+        return {
+            realm : $route.current.params.realm
+        }
+    });
+});
+
+
+module.factory('ApplicationLoader', function(Loader, Application, $route, $q) {
+    return Loader.get(Application, function() {
+        return {
+            realm : $route.current.params.realm,
+            id : $route.current.params.application
+        }
+    });
+});
+
+module.factory('ApplicationListLoader', function(Loader, Application, $route, $q) {
+    return Loader.query(Application, function() {
         return {
             realm : $route.current.params.realm
         }
