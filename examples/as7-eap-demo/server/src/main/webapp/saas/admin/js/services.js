@@ -2,32 +2,14 @@
 
 var module = angular.module('keycloak.services', [ 'ngResource' ]);
 
-module.service('Auth', function($resource, $http, $location, $routeParams) {
+module.service('Auth', function() {
 	var auth = {
-		loggedIn : keycloakCookieLoggedIn
+		loggedIn : false
 	};
 	auth.user = {
 		userId : null,
 		displayName : null
 	};
-    auth.logout = function() {
-        auth.user = {
-            userId : null,
-            displayName : null
-        };
-        auth.loggedIn = false;
-        $http.get('/auth-server/rest/saas/logout-cookie');
-    };
-    if (!auth.loggedIn) {
-        return auth;
-    }
-    $http.get('/auth-server/rest/saas/whoami').success(function(data, status) {
-        auth.user = data;
-        //alert(data.userId);
-    })
-        .error(function(data, status) {
-            alert("Failed!");
-        });
 	return auth;
 });
 
