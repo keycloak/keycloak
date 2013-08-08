@@ -82,9 +82,11 @@
         _startTimer: function(){
             var self = this;
 
-            this.timer = win.setTimeout(function(){
-                self._keepAlive();
-            }, this.options.pollingInterval * 1000);
+            if (this.options.pollingInterval > 0) {
+                this.timer = win.setTimeout(function () {
+                    self._keepAlive();
+                }, this.options.pollingInterval * 1000);
+            }
         },
 
         _stopTimer: function(){
@@ -103,6 +105,7 @@
 
             // if too many requests failed, abort
             if( !this.failedRequests ){
+                console.log('aborting...');
                 this._stopTimer();
                 options.onAbort.call( this.warning[0] );
                 return;
@@ -112,12 +115,14 @@
                 timeout: options.AJAXTimeout,
                 url: options.keepAliveURL,
                 error: function(){
+                    console.log('failure for keepalive');
                     self.failedRequests--;
                 },
                 success: function(response){
-                    if($.trim(response) !== options.serverResponseEquals){
+                    console.log('success for keepalive');
+/*                    if($.trim(response) !== options.serverResponseEquals){
                         self.failedRequests--;
-                    }
+                    }*/
                 },
                 complete: function(){
                     if( recurse ){

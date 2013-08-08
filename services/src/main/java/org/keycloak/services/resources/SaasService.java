@@ -1,5 +1,6 @@
 package org.keycloak.services.resources;
 
+import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
@@ -11,27 +12,12 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RoleModel;
-import org.keycloak.services.models.UserModel;
 import org.keycloak.services.models.UserCredentialModel;
+import org.keycloak.services.models.UserModel;
 import org.keycloak.services.resources.admin.RealmsAdminResource;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.ForbiddenException;
-import javax.ws.rs.FormParam;
-import javax.ws.rs.GET;
-import javax.ws.rs.NotAuthorizedException;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.NewCookie;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
+import javax.ws.rs.*;
+import javax.ws.rs.core.*;
 import java.net.URI;
 
 /**
@@ -87,22 +73,42 @@ public class SaasService {
         }
     }
 
-    @Path("whoami")
+    @Path("keepalive")
     @GET
-    @Produces("application/json")
-    public Response whoAmI(final @Context HttpHeaders headers) {
+    @NoCache
+    public Response keepalive(final @Context HttpHeaders headers) {
+        logger.info("keepalive");
         return new Transaction() {
             @Override
             public Response callImpl() {
-                logger.info("WHOAMI start.");
                 RealmManager realmManager = new RealmManager(session);
                 RealmModel realm = realmManager.defaultRealm();
                 if (realm == null) throw new NotFoundException();
                 UserModel user = authManager.authenticateSaasIdentityCookie(realm, uriInfo, headers);
                 if (user == null) {
-                    return Response.status(404).build();
+                    return Response.status(401).build();
                 }
-                logger.info("WHOAMI: " + user.getLoginName());
+                NewCookie refreshCookie = authManager.createSaasIdentityCookie(realm, user, uriInfo);
+                return Response.noContent().cookie(refreshCookie).build();
+            }
+        }.call();
+    }
+
+    @Path("whoami")
+    @GET
+    @Produces("application/json")
+    @NoCache
+    public Response whoAmI(final @Context HttpHeaders headers) {
+        return new Transaction() {
+            @Override
+            public Response callImpl() {
+                RealmManager realmManager = new RealmManager(session);
+                RealmModel realm = realmManager.defaultRealm();
+                if (realm == null) throw new NotFoundException();
+                UserModel user = authManager.authenticateSaasIdentityCookie(realm, uriInfo, headers);
+                if (user == null) {
+                    return Response.status(401).build();
+                }
                 return Response.ok(new WhoAmI(user.getLoginName(), user.getLoginName())).build();
             }
         }.call();
@@ -111,6 +117,7 @@ public class SaasService {
     @Path("isLoggedIn.js")
     @GET
     @Produces("application/javascript")
+    @NoCache
     public String isLoggedIn(final @Context HttpHeaders headers) {
         return new Transaction() {
             @Override
@@ -165,6 +172,7 @@ public class SaasService {
 
     @Path("loginPage.html")
     @GET
+    @NoCache
     public void loginPage() {
         new Transaction() {
             @Override
@@ -179,6 +187,7 @@ public class SaasService {
 
     @Path("logout")
     @GET
+    @NoCache
     public void logout() {
         new Transaction() {
             @Override
@@ -194,6 +203,7 @@ public class SaasService {
 
     @Path("logout-cookie")
     @GET
+    @NoCache
     public void logoutCookie() {
         logger.info("*** logoutCookie");
         new Transaction() {
@@ -205,6 +215,7 @@ public class SaasService {
     }
 
     public final static String loginFormPath = "/sdk/login.xhtml";
+
     protected void forwardToLoginForm(RealmModel realm) {
         request.setAttribute(RealmModel.class.getName(), realm);
         URI action = uriInfo.getBaseUriBuilder().path(SaasService.class).path(SaasService.class, "processLogin").build();
@@ -214,7 +225,6 @@ public class SaasService {
         request.setAttribute("KEYCLOAK_SOCIAL_LOGIN", SocialService.redirectToProviderAuthUrl(uriInfo).build(realm.getId()));
         request.forward(loginFormPath);
     }
-
 
 
     @Path("login")

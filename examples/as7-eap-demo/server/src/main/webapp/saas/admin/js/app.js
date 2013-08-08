@@ -160,13 +160,19 @@ module.config(function($httpProvider) {
 
 });
 
-module.factory('errorInterceptor', function($q, $window, $rootScope, $location) {
+module.factory('errorInterceptor', function($q, $window, $rootScope, $location, Auth) {
 	return function(promise) {
 		return promise.then(function(response) {
 			$rootScope.httpProviderError = null;
 			return response;
 		}, function(response) {
-			$rootScope.httpProviderError = response.status;
+            if (response.status == 401) {
+                console.log('session timeout?');
+                Auth.loggedIn = false;
+                $location.url('/');
+            } else {
+                $rootScope.httpProviderError = response.status;
+            }
 			return $q.reject(response);
 		});
 	};
@@ -191,6 +197,7 @@ module.factory('spinnerInterceptor', function($q, $window, $rootScope, $location
 	};
 });
 
+/*
 module.directive('kcInput', function() {
 	var d = {
 		scope : true,
@@ -235,6 +242,7 @@ module.directive('kcEnter', function() {
 		});
 	};
 });
+*/
 
 module.filter('remove', function() {
 	return function(input, remove, attribute) {

@@ -22,7 +22,6 @@
     <script src="lib/angular/angular-resource.js"></script>
     <script src="lib/angular/ui-bootstrap-tpls-0.4.0.js"></script>
 
-    <script src="/auth-server/rest/saas/isLoggedIn.js"></script>
     <script src="js/app.js"></script>
     <script src="js/controllers.js"></script>
     <script src="js/loaders.js"></script>
@@ -63,13 +62,14 @@
 <script src="lib/jquery/jquery.idletimeout.js" type="text/javascript"></script>
 <script type="text/javascript">
     $.idleTimeout('#idletimeout', '#idletimeout a', {
-        idleAfter: 5,
-        pollingInterval: 0,
-        keepAliveURL: '',
+        idleAfter: 300,
+        pollingInterval: 60,
+        keepAliveURL: '/auth-server/rest/saas/keepalive',
         serverResponseEquals: '',
+        failedRequests: 1,
         onTimeout: function(){
             $(this).slideUp();
-            window.location = "timeout.html";
+            window.location = "/auth-server/rest/saas/logout";
         },
         onIdle: function(){
             $(this).slideDown(); // show the warning bar
@@ -84,35 +84,4 @@
 </script>
 
 </body>
-
-<!--
-<body data-ng-controller="GlobalCtrl">
-<div id="idletimeout">
-    You will be logged off in <span></span>&nbsp;seconds due to inactivity.
-    <a id="idletimeout-resume" href="#">Click here to continue using this web page</a>.
-</div>
-
-
-<div class="alert-container" data-ng-show="notification" data-ng-click="notification = null">
-    <div class="alert alert-{{notification.type}}">{{notification.message}}</div>
-</div>
-
-<div id="wrap">
-    <div data-ng-include data-src="'partials/menu.html'"></div>
-
-    <div data-ng-view id="view" data-ng-hide="httpProviderError"></div>
-
-    <div id="httpProviderError" data-ng-show="httpProviderError">
-        <button class="btn btn-danger" data-ng-click="httpProviderError=null">
-            <strong>Error</strong> {{httpProviderError}}
-        </button>
-    </div>
-
-    <div id="loading">
-        <i class="icon-spinner icon-spin"></i> Loading...
-    </div>
-</div>
-
-</body>
--->
 </html>

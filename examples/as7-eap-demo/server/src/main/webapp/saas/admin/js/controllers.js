@@ -11,6 +11,13 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location
 	};
 
 	$scope.auth = Auth;
+    $http.get('/auth-server/rest/saas/whoami').success(function(data, status) {
+        Auth.user = data;
+        Auth.loggedIn = true;
+    })
+        .error(function(data, status) {
+            Auth.loggedIn = false;
+        });
 
 	$scope.$watch(function() {
 		return $location.path();
@@ -34,11 +41,11 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location
         }
 
         if (showrealm) {
-            console.log('redirecting');
+            console.log('default redirect to realm: ' + id);
             Current.realm = Current.realms[id];
             $location.url("/realms/" + id);
         } else {
-            console.log('not redirecting');
+            //console.log('not redirecting');
         }
     });
 });
