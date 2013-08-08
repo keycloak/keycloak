@@ -101,16 +101,6 @@ module.factory('Notifications', function($rootScope, $timeout) {
 	return notifications;
 });
 
-module.factory('Application', function($resource) {
-	return $resource('/keycloak-server/ui/api/applications/:id', {
-		id : '@id'
-	}, {
-		update : {
-			method : 'PUT'
-		}
-	});
-});
-
 module.factory('Provider', function($resource) {
 	return $resource('/ejs-identity/api/admin/providers');
 });
@@ -159,9 +149,23 @@ module.factory('Role', function($resource) {
     });
 });
 
+module.factory('Application', function($resource) {
+    return $resource('/auth-server/rest/saas/admin/realms/:realm/resources/:id', {
+        realm : '@realm',
+        id : '@id'
+    },  {
+        update : {
+            method : 'PUT'
+        }
+    });
+});
+
+
 module.factory('Current', function($resource) {
     return {
         realm : null,
-        realms : {}
+        realms : {},
+        application : null,
+        applications : {}
     };
 });
