@@ -14,6 +14,7 @@ public class RealmData extends AbstractPartition {
     private boolean sslNotRequired;
     private boolean cookieLoginAllowed;
     private boolean registrationAllowed;
+    private boolean social;
     private int tokenLifespan;
     private int accessCodeLifespan;
     private String publicKeyPem;
@@ -42,6 +43,15 @@ public class RealmData extends AbstractPartition {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    @AttributeProperty
+    public boolean isSocial() {
+        return social;
+    }
+
+    public void setSocial(boolean social) {
+        this.social = social;
     }
 
     @AttributeProperty

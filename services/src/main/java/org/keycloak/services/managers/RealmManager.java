@@ -69,6 +69,7 @@ public class RealmManager {
     public void updateRealm(RealmRepresentation rep, RealmModel realm) {
         if (rep.getRealm() != null) realm.setName(rep.getRealm());
         realm.setEnabled(rep.isEnabled());
+        realm.setSocial(rep.isSocial());
         realm.setCookieLoginAllowed(rep.isCookieLoginAllowed());
         realm.setRegistrationAllowed(rep.isRegistrationAllowed());
         realm.setSslNotRequired((rep.isSslNotRequired()));
@@ -78,7 +79,6 @@ public class RealmManager {
             realm.updateRequiredOAuthClientCredentials(rep.getRequiredOAuthClientCredentials());
         }
         if (rep.getRequiredCredentials() != null) {
-            logger.info("updating required credentials");
             realm.updateRequiredCredentials(rep.getRequiredCredentials());
         }
         if (rep.getRequiredApplicationCredentials() != null) {
@@ -98,6 +98,7 @@ public class RealmManager {
     public void importRealm(RealmRepresentation rep, RealmModel newRealm) {
         newRealm.setName(rep.getRealm());
         newRealm.setEnabled(rep.isEnabled());
+        newRealm.setSocial(rep.isSocial());
         newRealm.setTokenLifespan(rep.getTokenLifespan());
         newRealm.setAccessCodeLifespan(rep.getAccessCodeLifespan());
         newRealm.setSslNotRequired(rep.isSslNotRequired());
@@ -233,6 +234,7 @@ public class RealmManager {
         rep.setId(realm.getId());
         rep.setRealm(realm.getName());
         rep.setEnabled(realm.isEnabled());
+        rep.setSocial(realm.isSocial());
         rep.setSslNotRequired(realm.isSslNotRequired());
         rep.setCookieLoginAllowed(realm.isCookieLoginAllowed());
         rep.setPublicKey(realm.getPublicKeyPem());

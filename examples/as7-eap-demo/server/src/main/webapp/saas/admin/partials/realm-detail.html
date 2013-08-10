@@ -19,7 +19,7 @@
                 <fieldset>
 
                     <div class="control-group">
-                        <label for="realmForm-name" class="control-label">Name</label>
+                        <label for="realmForm-name" class="control-label">Name <span class="required">*</span></label>
 
                         <div class="controls">
                             <input class="input-xlarge" type="text" name="name" data-ng-model="realm.realm" autofocus
@@ -118,10 +118,24 @@
                         </div>
                     </div>
                     <div class="control-group">
-                        <label class="control-label">User Required Credentials</label>
+                        <label class="control-label">Required User Credentials</label>
 
                         <div class="controls">
                             <input style="width:250px" type="text" ui-select2="userCredentialOptions" ng-model="realm.requiredCredentials">
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">Required Application Credentials</label>
+
+                        <div class="controls">
+                            <input style="width:250px" type="text" ui-select2="userCredentialOptions" ng-model="realm.requiredApplicationCredentials">
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">Required OAuth Credentials</label>
+
+                        <div class="controls">
+                            <input style="width:250px" type="text" ui-select2="userCredentialOptions" ng-model="realm.requiredOAuthClientCredentials">
                         </div>
                     </div>
                 </fieldset>

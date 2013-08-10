@@ -26,6 +26,7 @@ import org.picketlink.idm.credential.TOTPCredentials;
 import org.picketlink.idm.credential.UsernamePasswordCredentials;
 import org.picketlink.idm.credential.X509CertificateCredentials;
 import org.picketlink.idm.model.IdentityType;
+import org.picketlink.idm.model.annotation.AttributeProperty;
 import org.picketlink.idm.model.sample.Grant;
 import org.picketlink.idm.model.sample.Role;
 import org.picketlink.idm.model.sample.SampleModel;
@@ -108,6 +109,16 @@ public class RealmAdapter implements RealmModel {
     public void setEnabled(boolean enabled) {
         realm.setEnabled(enabled);
         updateRealm();
+    }
+
+    @Override
+    public boolean isSocial() {
+        return realm.isSocial();
+    }
+
+    @Override
+    public void setSocial(boolean social) {
+        realm.setSocial(social);
     }
 
     @Override

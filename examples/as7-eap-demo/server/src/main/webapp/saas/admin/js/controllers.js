@@ -58,6 +58,8 @@ module.controller('RealmDropdownCtrl', function($scope, Realm, Current, Auth, $l
 module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $http, $location, Dialog, Notifications) {
 	$scope.createRealm = !realm.id;
 
+    console.log('RealmDetailCtrl');
+
     if ($scope.createRealm) {
         $scope.realm = {
             enabled: true,
@@ -67,7 +69,9 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $ht
             tokenLifespanUnit: 'SECONDS',
             accessCodeLifespan: 300,
             accessCodeLifespanUnit: 'SECONDS',
-            requiredCredentials: ['password']
+            requiredCredentials: ['password'],
+            requiredOAuthClientCredentials: ['password'],
+            requiredApplicationCredentials: ['password']
 
         };
     } else {
@@ -81,6 +85,7 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $ht
         }
         if (Current.realm == null || Current.realm.id != realm.id) {
             console.log('should be unreachable');
+            console.log('Why? ' + Current.realms.length + ' ' + Current.realm);
             return;
         }
         $scope.realm = angular.copy(realm);
@@ -95,7 +100,7 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $ht
 
 
     $scope.userCredentialOptions = {
-       'multiple' : true,
+        'multiple' : true,
         'simple_tags' : true,
         'tags' : ['password', 'totp', 'cert']
     };
@@ -133,6 +138,7 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $ht
 				});
 			} else {
                 console.log('updating realm...');
+                $scope.changed = false;
 				Realm.update(realmCopy, function() {
                     var id = realmCopy.id;
                     var data = Realm.query(function() {
@@ -140,6 +146,7 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $ht
                         for (var i = 0; i < Current.realms.length; i++) {
                             if (Current.realms[i].id == id) {
                                 Current.realm = Current.realms[i];
+                                oldCopy = angular.copy($scope.realm);
                             }
                         }
                     });

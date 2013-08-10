@@ -120,4 +120,8 @@ public interface RealmModel {
     void updateRequiredOAuthClientCredentials(Set<String> creds);
 
     void updateRequiredApplicationCredentials(Set<String> creds);
+
+    boolean isSocial();
+
+    void setSocial(boolean social);
 }

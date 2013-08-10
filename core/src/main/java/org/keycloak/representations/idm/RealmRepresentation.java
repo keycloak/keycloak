@@ -18,6 +18,7 @@ public class RealmRepresentation {
     protected boolean sslNotRequired;
     protected boolean cookieLoginAllowed;
     protected boolean registrationAllowed;
+    protected boolean social;
     protected String privateKey;
     protected String publicKey;
     protected List<RoleRepresentation> roles;
@@ -204,5 +205,13 @@ public class RealmRepresentation {
 
     public void setRegistrationAllowed(boolean registrationAllowed) {
         this.registrationAllowed = registrationAllowed;
+    }
+
+    public boolean isSocial() {
+        return social;
+    }
+
+    public void setSocial(boolean social) {
+        this.social = social;
     }
 }
