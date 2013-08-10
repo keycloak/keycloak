@@ -1,17 +1,12 @@
 package org.keycloak.services.managers;
 
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.representations.idm.ResourceRepresentation;
-import org.keycloak.representations.idm.RoleMappingRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.ScopeMappingRepresentation;
+import org.keycloak.representations.idm.*;
+import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.services.models.RealmModel;
-import org.keycloak.services.models.ResourceModel;
+import org.keycloak.services.models.ApplicationModel;
 import org.keycloak.services.models.RoleModel;
 import org.keycloak.services.models.UserCredentialModel;
 import org.keycloak.services.models.UserModel;
-
-import java.util.List;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -25,8 +20,8 @@ public class ResourceManager {
         this.realmManager = realmManager;
     }
 
-    public ResourceModel createResource(RealmModel realm, RoleModel loginRole, ResourceRepresentation resourceRep) {
-        ResourceModel resource = realm.addResource(resourceRep.getName());
+    public ApplicationModel createResource(RealmModel realm, RoleModel loginRole, ApplicationRepresentation resourceRep) {
+        ApplicationModel resource = realm.addApplication(resourceRep.getName());
         resource.setEnabled(resourceRep.isEnabled());
         resource.setManagementUrl(resourceRep.getAdminUrl());
         resource.setSurrogateAuthRequired(resourceRep.isSurrogateAuthRequired());
@@ -78,12 +73,12 @@ public class ResourceManager {
         return resource;
     }
 
-    public ResourceModel createResource(RealmModel realm, ResourceRepresentation resourceRep) {
+    public ApplicationModel createResource(RealmModel realm, ApplicationRepresentation resourceRep) {
         RoleModel loginRole = realm.getRole(RealmManager.RESOURCE_ROLE);
         return createResource(realm, loginRole, resourceRep);
     }
 
-    public void updateResource(ResourceRepresentation rep, ResourceModel resource) {
+    public void updateResource(ApplicationRepresentation rep, ApplicationModel resource) {
         resource.setName(rep.getName());
         resource.setEnabled(rep.isEnabled());
         resource.setManagementUrl(rep.getAdminUrl());
@@ -92,13 +87,13 @@ public class ResourceManager {
 
     }
 
-    public ResourceRepresentation toRepresentation(ResourceModel resourceModel) {
-        ResourceRepresentation rep = new ResourceRepresentation();
-        rep.setId(resourceModel.getId());
-        rep.setName(resourceModel.getName());
-        rep.setEnabled(resourceModel.isEnabled());
-        rep.setAdminUrl(resourceModel.getManagementUrl());
-        rep.setSurrogateAuthRequired(resourceModel.isSurrogateAuthRequired());
+    public ApplicationRepresentation toRepresentation(ApplicationModel applicationModel) {
+        ApplicationRepresentation rep = new ApplicationRepresentation();
+        rep.setId(applicationModel.getId());
+        rep.setName(applicationModel.getName());
+        rep.setEnabled(applicationModel.isEnabled());
+        rep.setAdminUrl(applicationModel.getManagementUrl());
+        rep.setSurrogateAuthRequired(applicationModel.isSurrogateAuthRequired());
         return rep;
 
     }

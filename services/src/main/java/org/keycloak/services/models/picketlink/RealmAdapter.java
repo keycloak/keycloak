@@ -1,24 +1,21 @@
 package org.keycloak.services.models.picketlink;
 
 import org.bouncycastle.openssl.PEMWriter;
+import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.security.PemUtils;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.models.KeycloakSession;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RequiredCredentialModel;
-import org.keycloak.services.models.ResourceModel;
+import org.keycloak.services.models.ApplicationModel;
 import org.keycloak.services.models.RoleModel;
 import org.keycloak.services.models.UserCredentialModel;
 import org.keycloak.services.models.UserModel;
 import org.keycloak.services.models.picketlink.mappings.RealmData;
-import org.keycloak.services.models.picketlink.mappings.ResourceData;
-import org.keycloak.services.models.picketlink.relationships.OAuthClientRequiredCredentialRelationship;
-import org.keycloak.services.models.picketlink.relationships.RealmAdminRelationship;
-import org.keycloak.services.models.picketlink.relationships.RequiredCredentialRelationship;
-import org.keycloak.services.models.picketlink.relationships.ResourceRelationship;
-import org.keycloak.services.models.picketlink.relationships.ResourceRequiredCredentialRelationship;
-import org.keycloak.services.models.picketlink.relationships.ScopeRelationship;
+import org.keycloak.services.models.picketlink.mappings.ApplicationData;
+import org.keycloak.services.models.picketlink.relationships.*;
+import org.keycloak.services.models.picketlink.relationships.RequiredApplicationCredentialRelationship;
 import org.picketlink.idm.IdentityManager;
 import org.picketlink.idm.PartitionManager;
 import org.picketlink.idm.RelationshipManager;
@@ -55,6 +52,7 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class RealmAdapter implements RealmModel {
+    protected static final Logger logger = Logger.getLogger(RealmManager.class);
 
     protected RealmData realm;
     protected volatile transient PublicKey publicKey;
@@ -251,28 +249,34 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public List<RequiredCredentialModel> getRequiredCredentials() {
-        RelationshipQuery<RequiredCredentialRelationship> query = getRelationshipManager().createRelationshipQuery(RequiredCredentialRelationship.class);
-        query.setParameter(RequiredCredentialRelationship.REALM, realm.getName());
-        List<RequiredCredentialRelationship> results = query.getResultList();
+        List<RequiredCredentialRelationship> results = getRequiredCredentialRelationships();
         return getRequiredCredentialModels(results);
     }
 
+    protected List<RequiredCredentialRelationship> getRequiredCredentialRelationships() {
+        RelationshipQuery<RequiredCredentialRelationship> query = getRelationshipManager().createRelationshipQuery(RequiredCredentialRelationship.class);
+        query.setParameter(RequiredCredentialRelationship.REALM, realm.getName());
+        return query.getResultList();
+    }
 
-    @Override
-    public void addRequiredResourceCredential(RequiredCredentialModel cred) {
-        ResourceRequiredCredentialRelationship relationship = new ResourceRequiredCredentialRelationship();
+
+    public void addRequiredApplicationCredential(RequiredCredentialModel cred) {
+        RequiredApplicationCredentialRelationship relationship = new RequiredApplicationCredentialRelationship();
         addRequiredCredential(cred, relationship);
     }
 
     @Override
-    public List<RequiredCredentialModel> getRequiredResourceCredentials() {
-        RelationshipQuery<ResourceRequiredCredentialRelationship> query = getRelationshipManager().createRelationshipQuery(ResourceRequiredCredentialRelationship.class);
-        query.setParameter(ResourceRequiredCredentialRelationship.REALM, realm.getName());
-        List<ResourceRequiredCredentialRelationship> results = query.getResultList();
+    public List<RequiredCredentialModel> getRequiredApplicationCredentials() {
+        List<RequiredApplicationCredentialRelationship> results = getResourceRequiredCredentialRelationships();
         return getRequiredCredentialModels(results);
     }
 
-    @Override
+    protected List<RequiredApplicationCredentialRelationship> getResourceRequiredCredentialRelationships() {
+        RelationshipQuery<RequiredApplicationCredentialRelationship> query = getRelationshipManager().createRelationshipQuery(RequiredApplicationCredentialRelationship.class);
+        query.setParameter(RequiredApplicationCredentialRelationship.REALM, realm.getName());
+        return query.getResultList();
+    }
+
     public void addRequiredOAuthClientCredential(RequiredCredentialModel cred) {
         OAuthClientRequiredCredentialRelationship relationship = new OAuthClientRequiredCredentialRelationship();
         addRequiredCredential(cred, relationship);
@@ -280,15 +284,16 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public List<RequiredCredentialModel> getRequiredOAuthClientCredentials() {
-        RelationshipQuery<OAuthClientRequiredCredentialRelationship> query = getRelationshipManager().createRelationshipQuery(OAuthClientRequiredCredentialRelationship.class);
-        query.setParameter(ResourceRequiredCredentialRelationship.REALM, realm.getName());
-        List<OAuthClientRequiredCredentialRelationship> results = query.getResultList();
+        List<OAuthClientRequiredCredentialRelationship> results = getOAuthClientRequiredCredentialRelationships();
         return getRequiredCredentialModels(results);
     }
 
+    protected List<OAuthClientRequiredCredentialRelationship> getOAuthClientRequiredCredentialRelationships() {
+        RelationshipQuery<OAuthClientRequiredCredentialRelationship> query = getRelationshipManager().createRelationshipQuery(OAuthClientRequiredCredentialRelationship.class);
+        query.setParameter(RequiredApplicationCredentialRelationship.REALM, realm.getName());
+        return query.getResultList();
+    }
 
-
-    @Override
     public void addRequiredCredential(RequiredCredentialModel cred) {
         RequiredCredentialRelationship relationship = new RequiredCredentialRelationship();
         addRequiredCredential(cred, relationship);
@@ -317,6 +322,65 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public void updateRequiredCredentials(Set<String> creds) {
+        List<RequiredCredentialRelationship> relationships = getRequiredCredentialRelationships();
+        RelationshipManager rm = getRelationshipManager();
+        Set<String> already = new HashSet<String>();
+        for (RequiredCredentialRelationship rel : relationships) {
+            if (!creds.contains(rel.getCredentialType())) {
+                rm.remove(rel);
+            } else {
+                already.add(rel.getCredentialType());
+            }
+        }
+        for (String cred : creds) {
+            logger.info("updating cred: " + cred);
+            if (!already.contains(cred)) {
+                addRequiredCredential(cred);
+            }
+        }
+    }
+
+    @Override
+    public void updateRequiredOAuthClientCredentials(Set<String> creds) {
+        List<OAuthClientRequiredCredentialRelationship> relationships = getOAuthClientRequiredCredentialRelationships();
+        RelationshipManager rm = getRelationshipManager();
+        Set<String> already = new HashSet<String>();
+        for (RequiredCredentialRelationship rel : relationships) {
+            if (!creds.contains(rel.getCredentialType())) {
+                rm.remove(rel);
+            } else {
+                already.add(rel.getCredentialType());
+            }
+        }
+        for (String cred : creds) {
+            if (!already.contains(cred)) {
+                addRequiredOAuthClientCredential(cred);
+            }
+        }
+    }
+
+    @Override
+    public void updateRequiredApplicationCredentials(Set<String> creds) {
+        List<RequiredApplicationCredentialRelationship> relationships = getResourceRequiredCredentialRelationships();
+        RelationshipManager rm = getRelationshipManager();
+        Set<String> already = new HashSet<String>();
+        for (RequiredCredentialRelationship rel : relationships) {
+            if (!creds.contains(rel.getCredentialType())) {
+                rm.remove(rel);
+            } else {
+                already.add(rel.getCredentialType());
+            }
+        }
+        for (String cred : creds) {
+            if (!already.contains(cred)) {
+                addRequiredResourceCredential(cred);
+            }
+        }
+    }
+
+
+    @Override
     public void addRequiredCredential(String type) {
         RequiredCredentialModel model = initRequiredCredentialModel(type);
         addRequiredCredential(model);
@@ -331,7 +395,7 @@ public class RealmAdapter implements RealmModel {
     @Override
     public void addRequiredResourceCredential(String type) {
         RequiredCredentialModel model = initRequiredCredentialModel(type);
-        addRequiredResourceCredential(model);
+        addRequiredApplicationCredential(model);
     }
 
     protected RequiredCredentialModel initRequiredCredentialModel(String type) {
@@ -444,9 +508,9 @@ public class RealmAdapter implements RealmModel {
      * @return
      */
     @Override
-    public Map<String, ResourceModel> getResourceNameMap() {
-        Map<String, ResourceModel> resourceMap = new HashMap<String, ResourceModel>();
-        for (ResourceModel resource : getResources()) {
+    public Map<String, ApplicationModel> getResourceNameMap() {
+        Map<String, ApplicationModel> resourceMap = new HashMap<String, ApplicationModel>();
+        for (ApplicationModel resource : getApplications()) {
             resourceMap.put(resource.getName(), resource);
         }
         return resourceMap;
@@ -458,27 +522,27 @@ public class RealmAdapter implements RealmModel {
      * @return
      */
     @Override
-    public ResourceModel getResourceById(String id) {
+    public ApplicationModel getApplicationById(String id) {
         RelationshipQuery<ResourceRelationship> query = getRelationshipManager().createRelationshipQuery(ResourceRelationship.class);
         query.setParameter(ResourceRelationship.REALM, realm.getName());
         query.setParameter(ResourceRelationship.RESOURCE, id);
         List<ResourceRelationship> results = query.getResultList();
         if (results.size() == 0) return null;
-        ResourceData resource = partitionManager.getPartition(ResourceData.class, id);
-        ResourceModel model = new ResourceAdapter(resource, this, partitionManager);
+        ApplicationData resource = partitionManager.getPartition(ApplicationData.class, id);
+        ApplicationModel model = new ApplicationAdapter(resource, this, partitionManager);
         return model;
     }
 
 
     @Override
-    public List<ResourceModel> getResources() {
+    public List<ApplicationModel> getApplications() {
         RelationshipQuery<ResourceRelationship> query = getRelationshipManager().createRelationshipQuery(ResourceRelationship.class);
         query.setParameter(ResourceRelationship.REALM, realm.getName());
         List<ResourceRelationship> results = query.getResultList();
-        List<ResourceModel> resources = new ArrayList<ResourceModel>();
+        List<ApplicationModel> resources = new ArrayList<ApplicationModel>();
         for (ResourceRelationship relationship : results) {
-            ResourceData resource = partitionManager.getPartition(ResourceData.class, relationship.getResource());
-            ResourceModel model = new ResourceAdapter(resource, this, partitionManager);
+            ApplicationData resource = partitionManager.getPartition(ApplicationData.class, relationship.getResource());
+            ApplicationModel model = new ApplicationAdapter(resource, this, partitionManager);
             resources.add(model);
         }
 
@@ -486,19 +550,19 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public ResourceModel addResource(String name) {
-        ResourceData resourceData = new ResourceData(RealmManager.generateId());
+    public ApplicationModel addApplication(String name) {
+        ApplicationData applicationData = new ApplicationData(RealmManager.generateId());
         User resourceUser = new User(name);
         idm.add(resourceUser);
-        resourceData.setResourceUser(resourceUser);
-        resourceData.setResourceName(name);
-        resourceData.setResourceUser(resourceUser);
-        partitionManager.add(resourceData);
+        applicationData.setResourceUser(resourceUser);
+        applicationData.setResourceName(name);
+        applicationData.setResourceUser(resourceUser);
+        partitionManager.add(applicationData);
         ResourceRelationship resourceRelationship = new ResourceRelationship();
         resourceRelationship.setRealm(realm.getName());
-        resourceRelationship.setResource(resourceData.getName());
+        resourceRelationship.setResource(applicationData.getName());
         getRelationshipManager().add(resourceRelationship);
-        ResourceModel resource = new ResourceAdapter(resourceData, this, partitionManager);
+        ApplicationModel resource = new ApplicationAdapter(applicationData, this, partitionManager);
         resource.addRole("*");
         resource.addScope(new UserAdapter(resourceUser, idm), "*");
         return resource;

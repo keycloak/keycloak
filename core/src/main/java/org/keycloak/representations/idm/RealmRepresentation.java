@@ -17,16 +17,17 @@ public class RealmRepresentation {
     protected boolean enabled;
     protected boolean sslNotRequired;
     protected boolean cookieLoginAllowed;
+    protected boolean registrationAllowed;
     protected String privateKey;
     protected String publicKey;
     protected List<RoleRepresentation> roles;
-    protected List<String> requiredCredentials;
-    protected List<String> requiredResourceCredentials;
-    protected List<String> requiredOAuthClientCredentials;
+    protected Set<String> requiredCredentials;
+    protected Set<String> requiredApplicationCredentials;
+    protected Set<String> requiredOAuthClientCredentials;
     protected List<UserRepresentation> users;
     protected List<RoleMappingRepresentation> roleMappings;
     protected List<ScopeMappingRepresentation> scopeMappings;
-    protected List<ResourceRepresentation> resources;
+    protected List<ApplicationRepresentation> applications;
 
 
     public String getSelf() {
@@ -57,14 +58,14 @@ public class RealmRepresentation {
         return users;
     }
 
-    public List<ResourceRepresentation> getResources() {
-        return resources;
+    public List<ApplicationRepresentation> getApplications() {
+        return applications;
     }
 
-    public ResourceRepresentation resource(String name) {
-        ResourceRepresentation resource = new ResourceRepresentation();
-        if (resources == null) resources = new ArrayList<ResourceRepresentation>();
-        resources.add(resource);
+    public ApplicationRepresentation resource(String name) {
+        ApplicationRepresentation resource = new ApplicationRepresentation();
+        if (applications == null) applications = new ArrayList<ApplicationRepresentation>();
+        applications.add(resource);
         resource.setName(name);
         return resource;
     }
@@ -81,8 +82,8 @@ public class RealmRepresentation {
         return user;
     }
 
-    public void setResources(List<ResourceRepresentation> resources) {
-        this.resources = resources;
+    public void setApplications(List<ApplicationRepresentation> applications) {
+        this.applications = applications;
     }
 
     public boolean isEnabled() {
@@ -141,27 +142,27 @@ public class RealmRepresentation {
         return mapping;
     }
 
-    public List<String> getRequiredCredentials() {
+    public Set<String> getRequiredCredentials() {
         return requiredCredentials;
     }
 
-    public void setRequiredCredentials(List<String> requiredCredentials) {
+    public void setRequiredCredentials(Set<String> requiredCredentials) {
         this.requiredCredentials = requiredCredentials;
     }
 
-    public List<String> getRequiredResourceCredentials() {
-        return requiredResourceCredentials;
+    public Set<String> getRequiredApplicationCredentials() {
+        return requiredApplicationCredentials;
     }
 
-    public void setRequiredResourceCredentials(List<String> requiredResourceCredentials) {
-        this.requiredResourceCredentials = requiredResourceCredentials;
+    public void setRequiredApplicationCredentials(Set<String> requiredApplicationCredentials) {
+        this.requiredApplicationCredentials = requiredApplicationCredentials;
     }
 
-    public List<String> getRequiredOAuthClientCredentials() {
+    public Set<String> getRequiredOAuthClientCredentials() {
         return requiredOAuthClientCredentials;
     }
 
-    public void setRequiredOAuthClientCredentials(List<String> requiredOAuthClientCredentials) {
+    public void setRequiredOAuthClientCredentials(Set<String> requiredOAuthClientCredentials) {
         this.requiredOAuthClientCredentials = requiredOAuthClientCredentials;
     }
 
@@ -195,5 +196,13 @@ public class RealmRepresentation {
 
     public void setPublicKey(String publicKey) {
         this.publicKey = publicKey;
+    }
+
+    public boolean isRegistrationAllowed() {
+        return registrationAllowed;
+    }
+
+    public void setRegistrationAllowed(boolean registrationAllowed) {
+        this.registrationAllowed = registrationAllowed;
     }
 }

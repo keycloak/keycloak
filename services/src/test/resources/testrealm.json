@@ -4,7 +4,7 @@
     "tokenLifespan": 6000,
     "accessCodeLifespan": 30,
     "requiredCredentials": [ "password" ],
-    "requiredResourceCredentials": [ "password" ],
+    "requiredApplicationCredentials": [ "password" ],
     "requiredOAuthClientCredentials": [ "password" ],
     "users": [
         {
@@ -63,7 +63,7 @@
             "roles": ["*"]
         }
     ],
-    "resources": [
+    "applications": [
         {
             "name": "Application",
             "enabled": true,

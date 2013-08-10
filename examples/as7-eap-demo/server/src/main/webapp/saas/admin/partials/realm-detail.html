@@ -22,7 +22,7 @@
                         <label for="realmForm-name" class="control-label">Name</label>
 
                         <div class="controls">
-                            <input class="input-xlarge" type="text" name="name" data-ng-model="realm.name" autofocus
+                            <input class="input-xlarge" type="text" name="name" data-ng-model="realm.realm" autofocus
                                    required>
                         </div>
                     </div>
@@ -139,7 +139,6 @@
                     </button>
                     <button type="submit" data-ng-click="reset()" class="btn" data-ng-show="changed">Clear changes
                     </button>
-                    <a href="#/realms" data-ng-hide="changed">View realms &#187;</a>
                     <button type="submit" data-ng-click="remove()" class="btn btn-danger" data-ng-hide="changed">
                         Delete
                     </button>

@@ -206,7 +206,7 @@ public class AuthenticationManager {
 
         List<RequiredCredentialModel> requiredCredentials = null;
         if (realm.hasRole(user, RealmManager.RESOURCE_ROLE)) {
-            requiredCredentials = realm.getRequiredResourceCredentials();
+            requiredCredentials = realm.getRequiredApplicationCredentials();
         } else if (realm.hasRole(user, RealmManager.IDENTITY_REQUESTER_ROLE)) {
             requiredCredentials = realm.getRequiredOAuthClientCredentials();
         } else {

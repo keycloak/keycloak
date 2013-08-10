@@ -6,17 +6,17 @@ import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.models.KeycloakSession;
 import org.keycloak.services.models.KeycloakSessionFactory;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RequiredCredentialModel;
-import org.keycloak.services.models.ResourceModel;
+import org.keycloak.services.models.ApplicationModel;
 import org.keycloak.services.models.RoleModel;
 import org.keycloak.services.models.UserModel;
 import org.keycloak.services.resources.KeycloakApplication;
-import org.keycloak.services.resources.SaasService;
 import org.keycloak.services.resources.SaasService;
 
 import java.util.List;
@@ -59,7 +59,7 @@ public class ImportTest {
         defaultRealm.setCookieLoginAllowed(true);
         defaultRealm.setRegistrationAllowed(true);
         manager.generateRealmKeys(defaultRealm);
-        defaultRealm.addRequiredCredential(RequiredCredentialModel.PASSWORD);
+        defaultRealm.addRequiredCredential(CredentialRepresentation.PASSWORD);
         RoleModel role = defaultRealm.addRole(SaasService.REALM_CREATOR_ROLE);
         UserModel admin = defaultRealm.addUser("admin");
         defaultRealm.grantRole(admin, role);
@@ -78,7 +78,7 @@ public class ImportTest {
         Set<String> scopes = realm.getScope(user);
         System.out.println("Scopes size: " + scopes.size());
         Assert.assertTrue(scopes.contains("*"));
-        List<ResourceModel> resources = realm.getResources();
+        List<ApplicationModel> resources = realm.getApplications();
         Assert.assertEquals(2, resources.size());
         List<RealmModel> realms = identitySession.getRealms(admin);
         Assert.assertEquals(1, realms.size());
@@ -96,7 +96,7 @@ public class ImportTest {
         defaultRealm.setCookieLoginAllowed(true);
         defaultRealm.setRegistrationAllowed(true);
         manager.generateRealmKeys(defaultRealm);
-        defaultRealm.addRequiredCredential(RequiredCredentialModel.PASSWORD);
+        defaultRealm.addRequiredCredential(CredentialRepresentation.PASSWORD);
         RoleModel role = defaultRealm.addRole(SaasService.REALM_CREATOR_ROLE);
         UserModel admin = defaultRealm.addUser("admin");
         defaultRealm.grantRole(admin, role);

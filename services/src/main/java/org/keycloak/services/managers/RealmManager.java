@@ -1,21 +1,14 @@
 package org.keycloak.services.managers;
 
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.ResourceRepresentation;
-import org.keycloak.representations.idm.RoleMappingRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.ScopeMappingRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
+import org.jboss.resteasy.logging.Logger;
+import org.keycloak.representations.idm.*;
+import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.services.models.*;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -25,6 +18,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @version $Revision: 1 $
  */
 public class RealmManager {
+    protected static final Logger logger = Logger.getLogger(RealmManager.class);
     private static AtomicLong counter = new AtomicLong(1);
     public static final String RESOURCE_ROLE = "KEYCLOAK_RESOURCE";
     public static final String IDENTITY_REQUESTER_ROLE = "KEYCLOAK_IDENTITY_REQUESTER";
@@ -72,6 +66,26 @@ public class RealmManager {
         realm.setPublicKey(keyPair.getPublic());
     }
 
+    public void updateRealm(RealmRepresentation rep, RealmModel realm) {
+        if (rep.getRealm() != null) realm.setName(rep.getRealm());
+        realm.setEnabled(rep.isEnabled());
+        realm.setCookieLoginAllowed(rep.isCookieLoginAllowed());
+        realm.setRegistrationAllowed(rep.isRegistrationAllowed());
+        realm.setSslNotRequired((rep.isSslNotRequired()));
+        realm.setAccessCodeLifespan(rep.getAccessCodeLifespan());
+        realm.setTokenLifespan(rep.getTokenLifespan());
+        if (rep.getRequiredOAuthClientCredentials() != null) {
+            realm.updateRequiredOAuthClientCredentials(rep.getRequiredOAuthClientCredentials());
+        }
+        if (rep.getRequiredCredentials() != null) {
+            logger.info("updating required credentials");
+            realm.updateRequiredCredentials(rep.getRequiredCredentials());
+        }
+        if (rep.getRequiredApplicationCredentials() != null) {
+            realm.updateRequiredApplicationCredentials(rep.getRequiredApplicationCredentials());
+        }
+    }
+
     public RealmModel importRealm(RealmRepresentation rep, UserModel realmCreator) {
         //verifyRealmRepresentation(rep);
         RealmModel realm = createRealm(rep.getRealm());
@@ -103,7 +117,7 @@ public class RealmManager {
             }
         }
 
-        if (rep.getRequiredResourceCredentials() != null) {
+        if (rep.getRequiredApplicationCredentials() != null) {
             for (String requiredCred : rep.getRequiredCredentials()) {
                 addResourceRequiredCredential(newRealm, requiredCred);
             }
@@ -130,7 +144,7 @@ public class RealmManager {
             }
         }
 
-        if (rep.getResources() != null) {
+        if (rep.getApplications() != null) {
             createResources(rep, newRealm);
         }
 
@@ -201,7 +215,7 @@ public class RealmManager {
      protected void createResources(RealmRepresentation rep, RealmModel realm) {
         RoleModel loginRole = realm.getRole(RealmManager.RESOURCE_ROLE);
         ResourceManager manager = new ResourceManager(this);
-        for (ResourceRepresentation resourceRep : rep.getResources()) {
+        for (ApplicationRepresentation resourceRep : rep.getApplications()) {
             manager.createResource(realm, loginRole, resourceRep);
         }
     }
@@ -226,21 +240,21 @@ public class RealmManager {
         rep.setAccessCodeLifespan(realm.getAccessCodeLifespan());
         List<RequiredCredentialModel> requiredCredentialModels = realm.getRequiredCredentials();
         if (requiredCredentialModels.size() > 0) {
-            rep.setRequiredCredentials(new ArrayList<String>());
+            rep.setRequiredCredentials(new HashSet<String>());
             for (RequiredCredentialModel cred : requiredCredentialModels) {
                 rep.getRequiredCredentials().add(cred.getType());
             }
         }
-        List<RequiredCredentialModel> requiredResourceCredentialModels = realm.getRequiredResourceCredentials();
+        List<RequiredCredentialModel> requiredResourceCredentialModels = realm.getRequiredApplicationCredentials();
         if (requiredResourceCredentialModels.size() > 0) {
-            rep.setRequiredResourceCredentials(new ArrayList<String>());
+            rep.setRequiredApplicationCredentials(new HashSet<String>());
             for (RequiredCredentialModel cred : requiredResourceCredentialModels) {
-                rep.getRequiredResourceCredentials().add(cred.getType());
+                rep.getRequiredApplicationCredentials().add(cred.getType());
             }
         }
         List<RequiredCredentialModel> requiredOAuthCredentialModels = realm.getRequiredOAuthClientCredentials();
         if (requiredOAuthCredentialModels.size() > 0) {
-            rep.setRequiredOAuthClientCredentials(new ArrayList<String>());
+            rep.setRequiredOAuthClientCredentials(new HashSet<String>());
             for (RequiredCredentialModel cred : requiredOAuthCredentialModels) {
                 rep.getRequiredOAuthClientCredentials().add(cred.getType());
             }

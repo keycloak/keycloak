@@ -1,15 +1,13 @@
 package org.keycloak.representations.idm;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ResourceRepresentation {
+public class ApplicationRepresentation {
     protected String self; // link
     protected String id;
     protected String name;
@@ -70,14 +68,14 @@ public class ResourceRepresentation {
         this.roles = roles;
     }
 
-    public ResourceRepresentation role(RoleRepresentation role) {
+    public ApplicationRepresentation role(RoleRepresentation role) {
         if (this.roles == null) this.roles = new ArrayList<RoleRepresentation>();
         this.roles.add(role);
         return this;
     }
 
 
-    public ResourceRepresentation role(String role, String description) {
+    public ApplicationRepresentation role(String role, String description) {
         if (this.roles == null) this.roles = new ArrayList<RoleRepresentation>();
         this.roles.add(new RoleRepresentation(role, description));
         return this;
@@ -123,7 +121,7 @@ public class ResourceRepresentation {
         this.credentials = credentials;
     }
 
-    public ResourceRepresentation credential(String type, String value) {
+    public ApplicationRepresentation credential(String type, String value) {
         if (this.credentials == null) credentials = new ArrayList<CredentialRepresentation>();
         CredentialRepresentation cred = new CredentialRepresentation();
         cred.setType(type);

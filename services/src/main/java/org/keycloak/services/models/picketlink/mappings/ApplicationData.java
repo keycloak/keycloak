@@ -9,17 +9,17 @@ import org.picketlink.idm.model.sample.User;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ResourceData extends AbstractPartition {
+public class ApplicationData extends AbstractPartition {
     private String resourceName;
     private boolean enabled;
     private boolean surrogateAuthRequired;
     private String managementUrl;
     private User resourceUser;
 
-    public ResourceData() {
+    public ApplicationData() {
         super(null);
     }
-    public ResourceData(String name) {
+    public ApplicationData(String name) {
         super(name);
     }
 

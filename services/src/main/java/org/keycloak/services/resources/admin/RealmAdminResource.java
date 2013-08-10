@@ -7,17 +7,13 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.models.RealmModel;
-import org.keycloak.services.models.RequiredCredentialModel;
 import org.keycloak.services.models.RoleModel;
 import org.keycloak.services.models.UserModel;
-import org.keycloak.services.resources.PublicRealmResource;
 import org.keycloak.services.resources.Transaction;
 
 import javax.ws.rs.Consumes;
-import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
-import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -25,15 +21,10 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -49,9 +40,9 @@ public class RealmAdminResource {
         this.realm = realm;
     }
 
-    @Path("resources")
-    public RealmResourcesResource getResources() {
-        return new RealmResourcesResource(admin, realm);
+    @Path("applications")
+    public ApplicationsResource getResources() {
+        return new ApplicationsResource(admin, realm);
     }
 
     @GET
@@ -84,6 +75,19 @@ public class RealmAdminResource {
                 return roles;
             }
         }.call();
+    }
+
+    @PUT
+    @Consumes("application/json")
+    public void updateRealm(final RealmRepresentation rep) {
+        new Transaction() {
+            @Override
+            protected void runImpl() {
+                logger.info("updating realm: " + rep.getRealm());
+                new RealmManager(session).updateRealm(rep, realm);
+            }
+        }.run();
+
     }
 
     @Path("roles/{id}")

@@ -13168,7 +13168,7 @@ var ngSubmitDirective = ngDirective(function(scope, element, attrs) {
  * @description
  * Fetches, compiles and includes an external HTML fragment.
  *
- * Keep in mind that Same Origin Policy applies to included resources
+ * Keep in mind that Same Origin Policy applies to included applications
  * (e.g. ngInclude won't work for cross-domain requests on all browsers and for
  *  file:// access on some browsers).
  *

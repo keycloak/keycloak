@@ -18,7 +18,9 @@ import org.keycloak.services.models.UserCredentialModel;
 import org.keycloak.services.resources.KeycloakApplication;
 
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.StringTokenizer;
 
 /**
@@ -89,8 +91,14 @@ public class AdapterTest {
     public void test2RequiredCredential() throws Exception {
         test1CreateRealm();
         realmModel.addRequiredCredential(CredentialRepresentation.PASSWORD);
-        realmModel.addRequiredCredential(CredentialRepresentation.TOTP);
         List<RequiredCredentialModel> storedCreds = realmModel.getRequiredCredentials();
+        Assert.assertEquals(1, storedCreds.size());
+
+        Set<String> creds = new HashSet<String>();
+        creds.add(CredentialRepresentation.PASSWORD);
+        creds.add(CredentialRepresentation.TOTP);
+        realmModel.updateRequiredCredentials(creds);
+        storedCreds = realmModel.getRequiredCredentials();
         Assert.assertEquals(2, storedCreds.size());
         boolean totp = false;
         boolean password = false;
