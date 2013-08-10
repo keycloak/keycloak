@@ -132,7 +132,7 @@ module.factory('Role', function($resource) {
 });
 
 module.factory('Application', function($resource) {
-    return $resource('/auth-server/rest/saas/admin/realms/:realm/resources/:id', {
+    return $resource('/auth-server/rest/saas/admin/realms/:realm/applications/:id', {
         realm : '@realm',
         id : '@id'
     },  {

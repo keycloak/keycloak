@@ -35,6 +35,8 @@ public class RealmEntity implements Serializable {
     @AttributeValue
     private boolean registrationAllowed;
     @AttributeValue
+    private boolean social;
+    @AttributeValue
     private int tokenLifespan;
     @AttributeValue
     private int accessCodeLifespan;
@@ -92,6 +94,14 @@ public class RealmEntity implements Serializable {
 
     public void setRegistrationAllowed(boolean registrationAllowed) {
         this.registrationAllowed = registrationAllowed;
+    }
+
+    public boolean isSocial() {
+        return social;
+    }
+
+    public void setSocial(boolean social) {
+        this.social = social;
     }
 
     public int getTokenLifespan() {

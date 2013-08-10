@@ -28,6 +28,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,18 +53,18 @@ public class RealmsAdminResource {
     @GET
     @NoCache
     @Produces("application/json")
-    public Response getRealms() {
+    public List<RealmRepresentation> getRealms() {
         return new Transaction() {
             @Override
-            protected  Response callImpl() {
+            protected  List<RealmRepresentation> callImpl() {
                 logger.info(("getRealms()"));
+                RealmManager realmManager = new RealmManager(session);
                 List<RealmModel> realms = session.getRealms(admin);
-                Map<String, String> map = new HashMap<String, String>();
+                List<RealmRepresentation> reps = new ArrayList<RealmRepresentation>();
                 for (RealmModel realm : realms) {
-                    map.put(realm.getId(), realm.getName());
+                    reps.add(realmManager.toRepresentation(realm));
                 }
-                return Response.ok(new GenericEntity<Map<String, String>>(map){})
-                               .cacheControl(noCache).build();
+                return reps;
             }
         }.call();
     }

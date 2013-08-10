@@ -6,7 +6,6 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.jboss.resteasy.spi.NotImplementedYetException;
 import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.representations.idm.RequiredCredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
@@ -19,6 +18,7 @@ import org.keycloak.services.resources.admin.RealmsAdminResource;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 import java.net.URI;
+import java.util.StringTokenizer;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -109,7 +109,7 @@ public class SaasService {
                 if (user == null) {
                     return Response.status(401).build();
                 }
-                return Response.ok(new WhoAmI(user.getLoginName(), user.getLoginName())).build();
+                return Response.ok(new WhoAmI(user.getLoginName(), user.getFirstName() + " " + user.getLastName())).build();
             }
         }.call();
     }
@@ -295,7 +295,7 @@ public class SaasService {
     @Path("registrations")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response processRegister(final @FormParam("name") String name,
+    public Response processRegister(final @FormParam("name") String fullname,
                                     final @FormParam("email") String email,
                                     final @FormParam("username") String username,
                                     final @FormParam("password") String password,
@@ -312,7 +312,29 @@ public class SaasService {
                 RealmModel defaultRealm = realmManager.defaultRealm();
                 UserRepresentation newUser = new UserRepresentation();
                 newUser.setUsername(username);
-                newUser.credential(RequiredCredentialRepresentation.PASSWORD, password, false);
+                newUser.setEmail(email);
+                if (fullname != null) {
+                    StringTokenizer tokenizer = new StringTokenizer(fullname, " ");
+                    StringBuffer first = null;
+                    String last = "";
+                    while (tokenizer.hasMoreTokens()) {
+                        String token = tokenizer.nextToken();
+                        if (tokenizer.hasMoreTokens()) {
+                            if (first == null) {
+                                first = new StringBuffer();
+                            } else {
+                                first.append(" ");
+                            }
+                            first.append(token);
+                        } else {
+                            last = token;
+                        }
+                    }
+                    if (first == null) first = new StringBuffer();
+                    newUser.setFirstName(first.toString());
+                    newUser.setLastName(last);
+                }
+                newUser.credential(CredentialRepresentation.PASSWORD, password);
                 UserModel user = registerMe(defaultRealm, newUser);
                 if (user == null) {
                     request.setAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE", "Username already exists.");
@@ -340,6 +362,9 @@ public class SaasService {
         }
 
         user = defaultRealm.addUser(newUser.getUsername());
+        user.setFirstName(newUser.getFirstName());
+        user.setLastName(newUser.getLastName());
+        user.setEmail(newUser.getEmail());
         for (CredentialRepresentation cred : newUser.getCredentials()) {
             UserCredentialModel credModel = new UserCredentialModel();
             credModel.setType(cred.getType());

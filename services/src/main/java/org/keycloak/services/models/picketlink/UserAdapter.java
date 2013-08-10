@@ -3,6 +3,7 @@ package org.keycloak.services.models.picketlink;
 import org.keycloak.services.models.UserModel;
 import org.picketlink.idm.IdentityManager;
 import org.picketlink.idm.model.Attribute;
+import org.picketlink.idm.model.annotation.AttributeProperty;
 import org.picketlink.idm.model.sample.User;
 
 import java.util.HashMap;
@@ -38,6 +39,39 @@ public class UserAdapter implements UserModel {
     @Override
     public void setEnabled(boolean enabled) {
         user.setEnabled(enabled);
+        idm.update(user);
+    }
+
+    @Override
+    public String getFirstName() {
+        return user.getFirstName();
+    }
+
+    @Override
+    public void setFirstName(String firstName) {
+        user.setFirstName(firstName);
+        idm.update(user);
+    }
+
+    @Override
+    public String getLastName() {
+        return user.getLastName();
+    }
+
+    @Override
+    public void setLastName(String lastName) {
+        user.setLastName(lastName);
+        idm.update(user);
+    }
+
+    @Override
+    public String getEmail() {
+        return user.getEmail();
+    }
+
+    @Override
+    public void setEmail(String email) {
+        user.setEmail(email);
         idm.update(user);
     }
 

@@ -6,8 +6,8 @@ import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.models.KeycloakSessionFactory;
 import org.keycloak.services.models.picketlink.PicketlinkKeycloakSession;
 import org.keycloak.services.models.picketlink.PicketlinkKeycloakSessionFactory;
+import org.keycloak.services.models.picketlink.mappings.ApplicationEntity;
 import org.keycloak.services.models.picketlink.mappings.RealmEntity;
-import org.keycloak.services.models.picketlink.mappings.ResourceEntity;
 import org.keycloak.social.SocialRequestManager;
 import org.picketlink.idm.PartitionManager;
 import org.picketlink.idm.config.IdentityConfigurationBuilder;
@@ -98,7 +98,7 @@ public class KeycloakApplication extends Application {
                         OTPCredentialTypeEntity.class,
                         AttributeTypeEntity.class,
                         RealmEntity.class,
-                        ResourceEntity.class
+                        ApplicationEntity.class
                 )
                 .supportGlobalRelationship(org.picketlink.idm.model.Relationship.class)
                 .addContextInitializer(new JPAContextInitializer(null) {

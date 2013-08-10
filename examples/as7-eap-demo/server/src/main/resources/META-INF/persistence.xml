@@ -19,7 +19,7 @@
         <class>org.picketlink.idm.jpa.model.sample.simple.OTPCredentialTypeEntity</class>
         <class>org.picketlink.idm.jpa.model.sample.simple.AttributeTypeEntity</class>
         <class>org.keycloak.services.models.picketlink.mappings.RealmEntity</class>
-        <class>org.keycloak.services.models.picketlink.mappings.ResourceEntity</class>
+        <class>org.keycloak.services.models.picketlink.mappings.ApplicationEntity</class>
 
         <exclude-unlisted-classes>true</exclude-unlisted-classes>
         

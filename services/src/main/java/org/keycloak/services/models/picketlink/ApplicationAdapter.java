@@ -1,10 +1,9 @@
 package org.keycloak.services.models.picketlink;
 
-import org.keycloak.services.models.ResourceModel;
+import org.keycloak.services.models.ApplicationModel;
 import org.keycloak.services.models.RoleModel;
 import org.keycloak.services.models.UserModel;
-import org.keycloak.services.models.picketlink.mappings.ResourceData;
-import org.keycloak.services.models.picketlink.relationships.ResourceRelationship;
+import org.keycloak.services.models.picketlink.mappings.ApplicationData;
 import org.keycloak.services.models.picketlink.relationships.ScopeRelationship;
 import org.picketlink.idm.IdentityManager;
 import org.picketlink.idm.PartitionManager;
@@ -24,14 +23,14 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ResourceAdapter implements ResourceModel {
-    protected ResourceData resource;
+public class ApplicationAdapter implements ApplicationModel {
+    protected ApplicationData resource;
     protected RealmAdapter realm;
     protected IdentityManager idm;
     protected PartitionManager partitionManager;
     protected RelationshipManager relationshipManager;
 
-    public ResourceAdapter(ResourceData resource, RealmAdapter realm, PartitionManager partitionManager) {
+    public ApplicationAdapter(ApplicationData resource, RealmAdapter realm, PartitionManager partitionManager) {
         this.resource = resource;
         this.realm = realm;
         this.partitionManager = partitionManager;

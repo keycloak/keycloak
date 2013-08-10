@@ -6,7 +6,7 @@ import org.jboss.resteasy.logging.Logger;
 import org.keycloak.TokenIdGenerator;
 import org.keycloak.representations.idm.admin.LogoutAction;
 import org.keycloak.services.models.RealmModel;
-import org.keycloak.services.models.ResourceModel;
+import org.keycloak.services.models.ApplicationModel;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Form;
@@ -29,14 +29,14 @@ public class ResourceAdminManager {
                 .disableTrustManager() // todo fix this, should have a trust manager or a good default
                 .build();
 
-        List<ResourceModel> resources = realm.getResources();
+        List<ApplicationModel> resources = realm.getApplications();
         logger.info("logging out " + resources.size() + " resoures.");
-        for (ResourceModel resource : resources) {
+        for (ApplicationModel resource : resources) {
             logoutResource(realm, resource, user, client);
         }
     }
 
-    protected boolean logoutResource(RealmModel realm, ResourceModel resource, String user, ResteasyClient client) {
+    protected boolean logoutResource(RealmModel realm, ApplicationModel resource, String user, ResteasyClient client) {
         LogoutAction adminAction = new LogoutAction(TokenIdGenerator.generateId(), System.currentTimeMillis() / 1000 + 30, resource.getName(), user);
         String token = new TokenManager().encodeToken(realm, adminAction);
         Form form = new Form();

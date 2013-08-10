@@ -27,25 +27,9 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location
 
     $http.get('/auth-server/rest/saas/admin/realms').success(function(data) {
         Current.realms = data;
-        var count = 0;
-        var showrealm = false;
-        var id = null;
-        for (var key in data) {
-            if (count > 0) {
-                showrealm = false;
-                break;
-            }
-            id = key;
-            showrealm = true;
-            count++;
-        }
-
-        if (showrealm) {
-            console.log('default redirect to realm: ' + id);
-            Current.realm = Current.realms[id];
-            $location.url("/realms/" + id);
-        } else {
-            //console.log('not redirecting');
+        if (data.length > 0) {
+            Current.realm = data[0];
+            $location.url("/realms/" + Current.realm.id);
         }
     });
 });
@@ -58,137 +42,115 @@ module.controller('RealmListCtrl', function($scope, Realm, Current) {
 module.controller('RealmDropdownCtrl', function($scope, Realm, Current, Auth, $location) {
 //    Current.realms = Realm.get();
     $scope.current = Current;
+    if (Current.realms.length > 0) {
+        console.log('[0]: ' + current.realms[0].realm);
+    }
     $scope.changeRealm = function() {
-        for (var id in Current.realms) {
-            var val = Current.realms[id];
-            if (val == Current.realm) {
-               $location.url("/realms/" + id);
-               break;
-            }
-        }
+        $location.url("/realms/" + $scope.current.realm.id);
     };
     $scope.showNav = function() {
-        var show = false;
-        for (var key in Current.realms) {
-            if (typeof Current.realms[key] != "function") {
-                if (Current.realms[key] == Current.realm) {
-                    $scope.currentRealmId = key;
-                }
-                show = true;
-            }
-        }
+        var show = Current.realms.length > 0;
+        console.log('Show dropdown? ' + show);
         return Auth.loggedIn && show;
     }
 });
 
-module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $location, Dialog, Notifications) {
-	$scope.realm = angular.copy(realm);
+module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $http, $location, Dialog, Notifications) {
 	$scope.createRealm = !realm.id;
 
+    console.log('RealmDetailCtrl');
+
     if ($scope.createRealm) {
-        $scope.realm.enabled = true;
-        $scope.realm.requireSsl = true;
-        $scope.realm.cookieLoginAllowed = true;
-        $scope.realm.tokenLifespan = 300;
-        $scope.realm.tokenLifespanUnit = 'SECONDS';
-        $scope.realm.accessCodeLifespan = 300;
-        $scope.realm.accessCodeLifespanUnit = 'SECONDS';
+        $scope.realm = {
+            enabled: true,
+            requireSsl: true,
+            cookieLoginAllowed: true,
+            tokenLifespan: 300,
+            tokenLifespanUnit: 'SECONDS',
+            accessCodeLifespan: 300,
+            accessCodeLifespanUnit: 'SECONDS',
+            requiredCredentials: ['password'],
+            requiredOAuthClientCredentials: ['password'],
+            requiredApplicationCredentials: ['password']
+
+        };
     } else {
-        $scope.realm.name = realm.realm;
-        $scope.realm.requireSsl = !$scope.realm.sslNotRequired;
+        if (Current.realm == null || Current.realm.id != realm.id) {
+            for (var i = 0; i < Current.realms.length; i++) {
+                if (realm.id == Current.realms[i].id) {
+                    Current.realm = Current.realms[i];
+                    break;
+                }
+            }
+        }
+        if (Current.realm == null || Current.realm.id != realm.id) {
+            console.log('should be unreachable');
+            console.log('Why? ' + Current.realms.length + ' ' + Current.realm);
+            return;
+        }
+        $scope.realm = angular.copy(realm);
+        $scope.realm.requireSsl = !realm.sslNotRequired;
         $scope.realm.tokenLifespanUnit = 'SECONDS';
-        $scope.realm.acessCodeLifespanUnit = 'SECONDS';
+        $scope.realm.accessCodeLifespanUnit = 'SECONDS';
+
     }
+
+    var oldCopy = angular.copy($scope.realm);
+
+
+
+    $scope.userCredentialOptions = {
+        'multiple' : true,
+        'simple_tags' : true,
+        'tags' : ['password', 'totp', 'cert']
+    };
 
 	$scope.changed = $scope.create;
 
 	$scope.$watch('realm', function() {
-		if (!angular.equals($scope.realm, realm)) {
+		if (!angular.equals($scope.realm, oldCopy)) {
 			$scope.changed = true;
 		}
 	}, true);
 
-	$scope.addRole = function() {
-		if ($scope.newRole) {
-			if ($scope.realm.roles) {
-				for ( var i = 0; i < $scope.realm.roles.length; i++) {
-					if ($scope.realm.roles[i] == $scope.newRole) {
-						Notifications.warn("Role already exists");
-						$scope.newRole = null;
-						return;
-					}
-				}
-			}
-
-			if (!$scope.realm.roles) {
-				$scope.realm.roles = [];
-			}
-
-			$scope.realm.roles.push($scope.newRole);
-			$scope.newRole = null;
-		}
-	}
-
-	$scope.removeRole = function(role) {
-		Dialog.confirmDelete(role, 'role', function() {
-			var i = $scope.realm.roles.indexOf(role);
-			if (i > -1) {
-				$scope.realm.roles.splice(i, 1);
-			}
-			
-			if ($scope.realm.initialRoles) {
-				$scope.removeInitialRole(role);
-			}
-		});
-	};
-
-	$scope.addInitialRole = function() {
-		if ($scope.newInitialRole) {
-			if (!$scope.realm.initialRoles) {
-				$scope.realm.initialRoles = [];
-			}
-
-			$scope.realm.initialRoles.push($scope.newInitialRole);
-			$scope.newInitialRole = null;
-		}
-	}
-
-	$scope.removeInitialRole = function(role) {
-		var i = $scope.realm.initialRoles.indexOf(role);
-		if (i > -1) {
-			$scope.realm.initialRoles.splice(i, 1);
-		}
-	};
-
 	$scope.save = function() {
 		if ($scope.realmForm.$valid) {
-            var realmCopy = {
-                realm: $scope.realm.name,
-                enabled: $scope.realm.enabled,
-                cookieLoginAllowed: $scope.realm.cookieLoginAllowed,
-                sslNotRequired: !$scope.realm.requireSsl,
-                tokenLifespan: $scope.realm.tokenLifespan,
-                accessCodeLifespan: $scope.realm.accessCodeLifespan
-
-            };
-
+            var realmCopy = angular.copy($scope.realm);
+            realmCopy.sslNotRequired = !realmCopy.requireSsl;
+            delete realmCopy["requireSsl"];
+            delete realmCopy["tokenLifespanUnit"];
+            delete realmCopy["accessCodeLifespanUnit"];
             if ($scope.createRealm) {
 				Realm.save(realmCopy, function(data, headers) {
+                    console.log('creating new realm');
 					var l = headers().location;
 					var id = l.substring(l.lastIndexOf("/") + 1);
-
-                    var data = Realm.get(function() {
+                    var data = Realm.query(function() {
                         Current.realms = data;
-                        Current.realm = Current.realms[id];
+                        for (var i = 0; i < Current.realms.length; i++) {
+                            if (Current.realms[i].id == id) {
+                                Current.realm = Current.realms[i];
+                            }
+                        }
                     });
                     $location.url("/realms/" + id);
 					Notifications.success("Created realm");
 				});
 			} else {
+                console.log('updating realm...');
+                $scope.changed = false;
 				Realm.update(realmCopy, function() {
-                    Current.realms = Realm.get();
-					$scope.changed = false;
-					realm = angular.copy($scope.realm);
+                    var id = realmCopy.id;
+                    var data = Realm.query(function() {
+                        Current.realms = data;
+                        for (var i = 0; i < Current.realms.length; i++) {
+                            if (Current.realms[i].id == id) {
+                                Current.realm = Current.realms[i];
+                                oldCopy = angular.copy($scope.realm);
+                            }
+                        }
+                    });
+                    $location.url("/realms/" + id);
 					Notifications.success("Saved changes to realm");
 				});
 			}
@@ -198,7 +160,7 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $lo
 	};
 
 	$scope.reset = function() {
-		$scope.realm = angular.copy(realm);
+		$scope.realm = angular.copy(oldCopy);
 		$scope.changed = false;
 		$scope.realmForm.showErrors = false;
 	};
@@ -385,7 +347,7 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, applications,
         application : null
     };
 
-    selection.applications = angular.copy(applications);
+    selection.applications = applications;
 
     for (var i=0;i < selection.applications.length; i++) {
         if (selection.applications[i].name == application.name) {
@@ -396,10 +358,11 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, applications,
     }
 
     $scope.selection = selection;
-
-    $scope.application = angular.copy(application);
-
-
+    if (!$scope.create) {
+        $scope.application= selection.application;
+    } else {
+        $scope.application = {};
+    }
 
     $scope.changeApplication = function() {
         console.log('ApplicationDetailCtrl.changeApplication() - ' + $scope.selection.application.name);
@@ -407,7 +370,7 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, applications,
     };
 
     $scope.$watch('application', function() {
-        if (!angular.equals($scope.application, application)) {
+        if (!angular.equals($scope.selection.application, application)) {
             $scope.changed = true;
         }
     }, true);

@@ -15,9 +15,9 @@ import java.io.Serializable;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-@IdentityManaged(ResourceData.class)
+@IdentityManaged(ApplicationData.class)
 @Entity
-public class ResourceEntity implements Serializable {
+public class ApplicationEntity implements Serializable {
     @OneToOne
     @Id
     @OwnerReference

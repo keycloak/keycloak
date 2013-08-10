@@ -6,7 +6,7 @@ import org.jboss.resteasy.jwt.JsonSerialization;
 import org.keycloak.representations.SkeletonKeyScope;
 import org.keycloak.representations.SkeletonKeyToken;
 import org.keycloak.services.models.RealmModel;
-import org.keycloak.services.models.ResourceModel;
+import org.keycloak.services.models.ApplicationModel;
 import org.keycloak.services.models.RoleModel;
 import org.keycloak.services.models.UserModel;
 
@@ -66,7 +66,7 @@ public class TokenManager {
                 }
             }
         }
-        for (ResourceModel resource : realm.getResources()) {
+        for (ApplicationModel resource : realm.getApplications()) {
             Set<String> mapping = resource.getRoleMappings(user);
             if (mapping != null && mapping.size() > 0 && (scopeMap == null || scopeMap.containsKey(resource.getName()))) {
                 Set<String> scope = resource.getScope(client);
@@ -131,9 +131,9 @@ public class TokenManager {
         }
 
         if (accessCodeEntry.getResourceRolesRequested().size() > 0) {
-            Map<String, ResourceModel> resourceMap = realm.getResourceNameMap();
+            Map<String, ApplicationModel> resourceMap = realm.getResourceNameMap();
             for (String resourceName : accessCodeEntry.getResourceRolesRequested().keySet()) {
-                ResourceModel resource = resourceMap.get(resourceName);
+                ApplicationModel resource = resourceMap.get(resourceName);
                 SkeletonKeyToken.Access access = token.addAccess(resourceName).verifyCaller(resource.isSurrogateAuthRequired());
                 for (RoleModel role : accessCodeEntry.getResourceRolesRequested().get(resourceName)) {
                     access.addRole(role.getName());
@@ -166,7 +166,7 @@ public class TokenManager {
 
 
     public SkeletonKeyToken createAccessToken(RealmModel realm, UserModel user) {
-        List<ResourceModel> resources = realm.getResources();
+        List<ApplicationModel> resources = realm.getApplications();
         SkeletonKeyToken token = new SkeletonKeyToken();
         token.id(RealmManager.generateId());
         token.issuedNow();
@@ -186,7 +186,7 @@ public class TokenManager {
             token.setRealmAccess(access);
         }
         if (resources != null) {
-            for (ResourceModel resource : resources) {
+            for (ApplicationModel resource : resources) {
                 Set<String> mapping = resource.getRoleMappings(user);
                 if (mapping == null) continue;
                 SkeletonKeyToken.Access access = token.addAccess(resource.getName())

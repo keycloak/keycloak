@@ -1,6 +1,6 @@
 'use strict';
 
-var module = angular.module('keycloak', [ 'keycloak.services', 'keycloak.loaders', 'keycloak.controllers', 'ui.bootstrap' ]);
+var module = angular.module('keycloak', [ 'keycloak.services', 'keycloak.loaders', 'keycloak.controllers', 'ui.bootstrap', 'ui.select2' ]);
 var resourceRequests = 0;
 
 module.config([ '$routeProvider', function($routeProvider) {
@@ -197,13 +197,12 @@ module.factory('spinnerInterceptor', function($q, $window, $rootScope, $location
 	};
 });
 
-/*
 module.directive('kcInput', function() {
 	var d = {
 		scope : true,
 		replace : false,
 		link : function(scope, element, attrs) {
-			var form = element.closest('form');
+			var form = element.children('form');
 			var label = element.children('label');
 			var input = element.children('input');
 
@@ -242,7 +241,7 @@ module.directive('kcEnter', function() {
 		});
 	};
 });
-*/
+
 
 module.filter('remove', function() {
 	return function(input, remove, attribute) {
