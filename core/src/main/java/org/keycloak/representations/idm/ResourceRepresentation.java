@@ -123,12 +123,11 @@ public class ResourceRepresentation {
         this.credentials = credentials;
     }
 
-    public ResourceRepresentation credential(String type, String value, boolean hashed) {
+    public ResourceRepresentation credential(String type, String value) {
         if (this.credentials == null) credentials = new ArrayList<CredentialRepresentation>();
         CredentialRepresentation cred = new CredentialRepresentation();
         cred.setType(type);
         cred.setValue(value);
-        cred.setHashed(hashed);
         credentials.add(cred);
         return this;
     }

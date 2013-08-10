@@ -1,23 +1,22 @@
 <div data-ng-hide="createRealm">
     <nav id="local-nav">
         <ul class="nav nav-list">
-            <li data-ng-class="!path[2] && 'active'"><a href="#/realms/{{realm.id}}">Realm Settings</a></li>
-            <li data-ng-class="path[2] == 'roles' && 'active'"><a href="#/realms/{{realm.id}}/roles">Realm Roles</a>
-                <ul class="sub-items">
-                    <li data-ng-class="path[0] == 'create' && path[1] == 'role' && 'active'"><a
-                            href="#/create/role/{{realm.id}}">Add Role</a></li>
-                </ul>
-            </li>
-            <li data-ng-class="path[2] == 'users' && 'active'"><a href="#/realms/{{realm.id}}/users">Realm Users</a>
+            <li data-ng-class="path[2] == 'users' && 'active'"><a href="#/realms/{{realm.id}}/users">Users</a>
                 <ul class="sub-items">
                     <li data-ng-class="path[0] == 'create' && path[1] == 'user' && 'active'"><a
-                            href="#/create/user/{{realm.id}}">Add User</a></li>
+                            href="#/create/user/{{realm.id}}">New User</a></li>
                     <li data-ng-class="path[0] == 'find' && path[1] == 'user' && 'active'"><a
                             href="#/find/user/{{realm.id}}">Find User</a></li>
                 </ul>
             </li>
+            <li data-ng-class="path[2] == 'roles' && 'active'"><a href="#/realms/{{realm.id}}/roles">Roles</a>
+                <ul class="sub-items">
+                    <li data-ng-class="path[0] == 'create' && path[1] == 'role' && 'active'"><a
+                            href="#/create/role/{{realm.id}}">New Role</a></li>
+                </ul>
+            </li>
             <li data-ng-class="path[2] == 'resources' && 'active'"><a href="#/realms/{{realm.id}}/applications">Manage Applications</a></li>
-
+            <li data-ng-class="!path[2] && 'active'"><a href="#/realms/{{realm.id}}">Realm Settings</a></li>
         </ul>
     </nav>
 </div>

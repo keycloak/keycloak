@@ -6,7 +6,7 @@ import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-import org.keycloak.representations.idm.RequiredCredentialRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.models.KeycloakSession;
 import org.keycloak.services.models.KeycloakSessionFactory;
@@ -19,6 +19,7 @@ import org.keycloak.services.resources.KeycloakApplication;
 
 
 import java.util.List;
+import java.util.StringTokenizer;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -53,6 +54,16 @@ public class AdapterTest {
     }
 
     @Test
+    public void testMe() {
+        String hello = "Bill     Burke";
+        StringTokenizer tokenizer = new StringTokenizer(hello, " ");
+        while (tokenizer.hasMoreTokens()) {
+            System.out.println("token: " + tokenizer.nextToken());
+        }
+    }
+
+
+    @Test
     public void test1CreateRealm() throws Exception {
         realmModel = adapter.createRealm("JUGGLER");
         realmModel.setAccessCodeLifespan(100);
@@ -77,25 +88,22 @@ public class AdapterTest {
     @Test
     public void test2RequiredCredential() throws Exception {
         test1CreateRealm();
-        RequiredCredentialModel creds = new RequiredCredentialModel();
-        creds.setSecret(true);
-        creds.setType(RequiredCredentialRepresentation.PASSWORD);
-        creds.setInput(true);
-        realmModel.addRequiredCredential(creds);
-        creds = new RequiredCredentialModel();
-        creds.setSecret(true);
-        creds.setType(RequiredCredentialRepresentation.TOTP);
-        creds.setInput(true);
-        realmModel.addRequiredCredential(creds);
+        realmModel.addRequiredCredential(CredentialRepresentation.PASSWORD);
+        realmModel.addRequiredCredential(CredentialRepresentation.TOTP);
         List<RequiredCredentialModel> storedCreds = realmModel.getRequiredCredentials();
         Assert.assertEquals(2, storedCreds.size());
         boolean totp = false;
         boolean password = false;
         for (RequiredCredentialModel cred : storedCreds) {
-            if (cred.getType().equals(RequiredCredentialRepresentation.PASSWORD)) password = true;
-            else if (cred.getType().equals(RequiredCredentialRepresentation.TOTP)) totp = true;
             Assert.assertTrue(cred.isInput());
-            Assert.assertTrue(cred.isSecret());
+            if (cred.getType().equals(CredentialRepresentation.PASSWORD)) {
+                password = true;
+                Assert.assertTrue(cred.isSecret());
+            }
+            else if (cred.getType().equals(CredentialRepresentation.TOTP)) {
+                totp = true;
+                Assert.assertFalse(cred.isSecret());
+            }
         }
         Assert.assertTrue(totp);
         Assert.assertTrue(password);
@@ -106,7 +114,7 @@ public class AdapterTest {
         test1CreateRealm();
         UserModel user = realmModel.addUser("bburke");
         UserCredentialModel cred = new UserCredentialModel();
-        cred.setType(RequiredCredentialRepresentation.PASSWORD);
+        cred.setType(CredentialRepresentation.PASSWORD);
         cred.setValue("geheim");
         realmModel.updateCredential(user, cred);
         Assert.assertTrue(realmModel.validatePassword(user, "geheim"));

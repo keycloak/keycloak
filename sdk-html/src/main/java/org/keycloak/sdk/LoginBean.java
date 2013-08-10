@@ -153,7 +153,7 @@ public class LoginBean {
         requiredCredentials = new LinkedList<RequiredCredential>();
         for (RequiredCredentialModel m : realm.getRequiredCredentials()) {
             if (m.isInput()) {
-                requiredCredentials.add(new RequiredCredential(m.getType(), m.isSecret()));
+                requiredCredentials.add(new RequiredCredential(m.getType(), m.isSecret(), m.getFormLabel()));
             }
         }
     }
@@ -193,10 +193,12 @@ public class LoginBean {
     public class RequiredCredential {
         private String type;
         private boolean secret;
+        private String formLabel;
 
-        public RequiredCredential(String type, boolean secure) {
+        public RequiredCredential(String type, boolean secure, String formLabel) {
             this.type = type;
             this.secret = secure;
+            this.formLabel = formLabel;
         }
 
         public String getName() {
@@ -204,7 +206,7 @@ public class LoginBean {
         }
 
         public String getLabel() {
-            return type;
+            return formLabel;
         }
 
         public String getInputType() {

@@ -1,123 +1,121 @@
 {
-   "realm" : "test-realm",
-   "enabled" : true,
-   "tokenLifespan" : 6000,
-   "accessCodeLifespan" : 30,
-   "requiredCredentials" : [
+    "realm": "test-realm",
+    "enabled": true,
+    "tokenLifespan": 6000,
+    "accessCodeLifespan": 30,
+    "requiredCredentials": [ "password" ],
+    "requiredResourceCredentials": [ "password" ],
+    "requiredOAuthClientCredentials": [ "password" ],
+    "users": [
         {
-            "type" : "Password",
-            "input" : true,
-            "secret" : true
-        }
-   ],
-    "requiredResourceCredentials" : [
-        {
-            "type" : "Password",
-            "input" : true,
-            "secret" : true
-        }
-    ],
-    "requiredOAuthClientCredentials" : [
-        {
-            "type" : "Password",
-            "input" : true,
-            "secret" : true
-        }
-    ],
-   "users" : [
-      {
-            "username" : "wburke",
-            "enabled" : true,
-            "attributes" : {
-                "email" : "bburke@redhat.com"
+            "username": "wburke",
+            "enabled": true,
+            "attributes": {
+                "email": "bburke@redhat.com"
             },
-            "credentials" : [
-                { "type" : "Password",
-                 "value" : "userpassword" }
+            "credentials": [
+                {
+                    "type": "password",
+                    "value": "userpassword"
+                }
             ]
-      },
-      {
-            "username" : "loginclient",
-            "enabled" : true,
-            "credentials" : [
-                { "type" : "Password",
-                 "value" : "clientpassword" }
+        },
+        {
+            "username": "loginclient",
+            "enabled": true,
+            "credentials": [
+                {
+                    "type": "password",
+                    "value": "clientpassword"
+                }
             ]
-      },
-      {
-            "username" : "admin",
-            "enabled" : true,
-            "credentials" : [
-                { "type" : "Password",
-                 "value" : "adminpassword" }
+        },
+        {
+            "username": "admin",
+            "enabled": true,
+            "credentials": [
+                {
+                    "type": "password",
+                    "value": "adminpassword"
+                }
             ]
-      },
-      {
-            "username" : "oauthclient",
-            "enabled" : true,
-            "credentials" : [
-                { "type" : "Password",
-                 "value" : "clientpassword" }
+        },
+        {
+            "username": "oauthclient",
+            "enabled": true,
+            "credentials": [
+                {
+                    "type": "password",
+                    "value": "clientpassword"
+                }
             ]
-      }
-   ],
-   "roleMappings" : [
-       {
-          "username" : "admin",
-          "roles" : ["admin"]
-       }
-   ],
-   "scopeMappings" : [
-       {
-          "username" : "loginclient",
-          "roles" : ["*"]
-       }
-   ],
-   "resources" : [
-       {
-          "name" : "Application",
-          "enabled" : true,
-          "roles" : [
-              { "name" : "admin" },
-              { "name" : "user" }
-          ],
-          "roleMappings" : [
-             {
-                "username" : "wburke",
-                "roles" : ["user"]
-             },
-             {
-                "username" : "admin",
-                "roles" : ["admin"]
-             }
-          ],
-          "scopeMappings" : [
-             {
-                "username" : "oauthclient",
-                "roles" : ["user"]
-             }
-          ]
-       },
-       {
-                 "name" : "OtherApp",
-                  "enabled" : true,
-          "roles" : [
-              { "name" : "admin" },
-              { "name" : "user" }
-          ],
-                 "roleMappings" : [
-                    {
-                       "username" : "wburke",
-                       "roles" : ["user"]
-                    },
-                    {
-                       "username" : "admin",
-                       "roles" : ["admin"]
-                    }
-                 ]
-              }
+        }
+    ],
+    "roleMappings": [
+        {
+            "username": "admin",
+            "roles": ["admin"]
+        }
+    ],
+    "scopeMappings": [
+        {
+            "username": "loginclient",
+            "roles": ["*"]
+        }
+    ],
+    "resources": [
+        {
+            "name": "Application",
+            "enabled": true,
+            "roles": [
+                {
+                    "name": "admin"
+                },
+                {
+                    "name": "user"
+                }
+            ],
+            "roleMappings": [
+                {
+                    "username": "wburke",
+                    "roles": ["user"]
+                },
+                {
+                    "username": "admin",
+                    "roles": ["admin"]
+                }
+            ],
+            "scopeMappings": [
+                {
+                    "username": "oauthclient",
+                    "roles": ["user"]
+                }
+            ]
+        },
+        {
+            "name": "OtherApp",
+            "enabled": true,
+            "roles": [
+                {
+                    "name": "admin"
+                },
+                {
+                    "name": "user"
+                }
+            ],
+            "roleMappings": [
+                {
+                    "username": "wburke",
+                    "roles": ["user"]
+                },
+                {
+                    "username": "admin",
+                    "roles": ["admin"]
+                }
+            ]
+        }
 
-   ]
+    ]
 
 
 }

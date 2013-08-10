@@ -2,7 +2,7 @@ package org.keycloak.services.models.picketlink;
 
 import org.bouncycastle.openssl.PEMWriter;
 import org.jboss.resteasy.security.PemUtils;
-import org.keycloak.representations.idm.RequiredCredentialRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.models.KeycloakSession;
 import org.keycloak.services.models.RealmModel;
@@ -259,13 +259,13 @@ public class RealmAdapter implements RealmModel {
 
 
     @Override
-    public void addResourceRequiredCredential(RequiredCredentialModel cred) {
+    public void addRequiredResourceCredential(RequiredCredentialModel cred) {
         ResourceRequiredCredentialRelationship relationship = new ResourceRequiredCredentialRelationship();
         addRequiredCredential(cred, relationship);
     }
 
     @Override
-    public List<RequiredCredentialModel> getResourceRequiredCredentials() {
+    public List<RequiredCredentialModel> getRequiredResourceCredentials() {
         RelationshipQuery<ResourceRequiredCredentialRelationship> query = getRelationshipManager().createRelationshipQuery(ResourceRequiredCredentialRelationship.class);
         query.setParameter(ResourceRequiredCredentialRelationship.REALM, realm.getName());
         List<ResourceRequiredCredentialRelationship> results = query.getResultList();
@@ -273,13 +273,13 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public void addOAuthClientRequiredCredential(RequiredCredentialModel cred) {
+    public void addRequiredOAuthClientCredential(RequiredCredentialModel cred) {
         OAuthClientRequiredCredentialRelationship relationship = new OAuthClientRequiredCredentialRelationship();
         addRequiredCredential(cred, relationship);
     }
 
     @Override
-    public List<RequiredCredentialModel> getOAuthClientRequiredCredentials() {
+    public List<RequiredCredentialModel> getRequiredOAuthClientCredentials() {
         RelationshipQuery<OAuthClientRequiredCredentialRelationship> query = getRelationshipManager().createRelationshipQuery(OAuthClientRequiredCredentialRelationship.class);
         query.setParameter(ResourceRequiredCredentialRelationship.REALM, realm.getName());
         List<OAuthClientRequiredCredentialRelationship> results = query.getResultList();
@@ -302,6 +302,7 @@ public class RealmAdapter implements RealmModel {
             model.setInput(relationship.isInput());
             model.setSecret(relationship.isSecret());
             model.setType(relationship.getCredentialType());
+            model.setFormLabel(relationship.getFormLabel());
             rtn.add(model);
         }
         return rtn;
@@ -311,9 +312,35 @@ public class RealmAdapter implements RealmModel {
         relationship.setInput(cred.isInput());
         relationship.setSecret(cred.isSecret());
         relationship.setRealm(realm.getName());
+        relationship.setFormLabel(cred.getFormLabel());
         getRelationshipManager().add(relationship);
     }
 
+    @Override
+    public void addRequiredCredential(String type) {
+        RequiredCredentialModel model = initRequiredCredentialModel(type);
+        addRequiredCredential(model);
+    }
+
+    @Override
+    public void addRequiredOAuthClientCredential(String type) {
+        RequiredCredentialModel model = initRequiredCredentialModel(type);
+        addRequiredOAuthClientCredential(model);
+    }
+
+    @Override
+    public void addRequiredResourceCredential(String type) {
+        RequiredCredentialModel model = initRequiredCredentialModel(type);
+        addRequiredResourceCredential(model);
+    }
+
+    protected RequiredCredentialModel initRequiredCredentialModel(String type) {
+        RequiredCredentialModel model = RequiredCredentialModel.BUILT_IN.get(type);
+        if (model == null) {
+            throw new RuntimeException("Unknown credential type " + type);
+        }
+        return model;
+    }
 
     @Override
     public boolean validatePassword(UserModel user, String password) {
@@ -335,13 +362,14 @@ public class RealmAdapter implements RealmModel {
     @Override
     public void updateCredential(UserModel user, UserCredentialModel cred) {
         IdentityManager idm = getIdm();
-        if (cred.getType().equals(RequiredCredentialRepresentation.PASSWORD)) {
+        if (cred.getType().equals(CredentialRepresentation.PASSWORD)) {
             Password password = new Password(cred.getValue());
             idm.updateCredential(((UserAdapter)user).getUser(), password);
-        } else if (cred.getType().equals(RequiredCredentialRepresentation.TOTP)) {
+        } else if (cred.getType().equals(CredentialRepresentation.TOTP)) {
             TOTPCredential totp = new TOTPCredential(cred.getValue());
+            totp.setDevice(cred.getDevice());
             idm.updateCredential(((UserAdapter)user).getUser(), totp);
-        } else if (cred.getType().equals(RequiredCredentialRepresentation.CLIENT_CERT)) {
+        } else if (cred.getType().equals(CredentialRepresentation.CLIENT_CERT)) {
             X509Certificate cert = null;
             try {
                 cert = org.keycloak.PemUtils.decodeCertificate(cred.getValue());

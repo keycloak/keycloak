@@ -93,12 +93,19 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $lo
         $scope.realm.tokenLifespanUnit = 'SECONDS';
         $scope.realm.accessCodeLifespan = 300;
         $scope.realm.accessCodeLifespanUnit = 'SECONDS';
+        $scope.realm.requiredCredentials = ['password'];
     } else {
         $scope.realm.name = realm.realm;
         $scope.realm.requireSsl = !$scope.realm.sslNotRequired;
         $scope.realm.tokenLifespanUnit = 'SECONDS';
         $scope.realm.acessCodeLifespanUnit = 'SECONDS';
     }
+
+    $scope.userCredentialOptions = {
+       'multiple' : true,
+        'simple_tags' : true,
+        'tags' : ['password', 'totp', 'cert']
+    };
 
 	$scope.changed = $scope.create;
 
@@ -168,7 +175,8 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $lo
                 cookieLoginAllowed: $scope.realm.cookieLoginAllowed,
                 sslNotRequired: !$scope.realm.requireSsl,
                 tokenLifespan: $scope.realm.tokenLifespan,
-                accessCodeLifespan: $scope.realm.accessCodeLifespan
+                accessCodeLifespan: $scope.realm.accessCodeLifespan,
+                requiredCredentials: $scope.realm.requiredCredentials
 
             };
 
@@ -385,7 +393,7 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, applications,
         application : null
     };
 
-    selection.applications = angular.copy(applications);
+    selection.applications = applications;
 
     for (var i=0;i < selection.applications.length; i++) {
         if (selection.applications[i].name == application.name) {
@@ -396,10 +404,11 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, applications,
     }
 
     $scope.selection = selection;
-
-    $scope.application = angular.copy(application);
-
-
+    if (!$scope.create) {
+        $scope.application= selection.application;
+    } else {
+        $scope.application = {};
+    }
 
     $scope.changeApplication = function() {
         console.log('ApplicationDetailCtrl.changeApplication() - ' + $scope.selection.application.name);
@@ -407,7 +416,7 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, applications,
     };
 
     $scope.$watch('application', function() {
-        if (!angular.equals($scope.application, application)) {
+        if (!angular.equals($scope.selection.application, application)) {
             $scope.changed = true;
         }
     }, true);

@@ -8,7 +8,7 @@ import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
 import org.keycloak.representations.SkeletonKeyToken;
-import org.keycloak.representations.idm.RequiredCredentialRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RequiredCredentialModel;
 import org.keycloak.services.models.UserModel;
@@ -206,9 +206,9 @@ public class AuthenticationManager {
 
         List<RequiredCredentialModel> requiredCredentials = null;
         if (realm.hasRole(user, RealmManager.RESOURCE_ROLE)) {
-            requiredCredentials = realm.getResourceRequiredCredentials();
+            requiredCredentials = realm.getRequiredResourceCredentials();
         } else if (realm.hasRole(user, RealmManager.IDENTITY_REQUESTER_ROLE)) {
-            requiredCredentials = realm.getOAuthClientRequiredCredentials();
+            requiredCredentials = realm.getRequiredOAuthClientCredentials();
         } else {
             requiredCredentials = realm.getRequiredCredentials();
         }
@@ -216,21 +216,23 @@ public class AuthenticationManager {
             types.add(credential.getType());
         }
 
-        if (types.contains(RequiredCredentialRepresentation.PASSWORD)) {
-            String password = formData.getFirst(RequiredCredentialRepresentation.PASSWORD);
+        if (types.contains(CredentialRepresentation.PASSWORD)) {
+            String password = formData.getFirst(CredentialRepresentation.PASSWORD);
             if (password == null) {
                 logger.warn("Password not provided");
                 return false;
             }
 
-            if (types.contains(RequiredCredentialRepresentation.TOTP)) {
-                String token = formData.getFirst(RequiredCredentialRepresentation.TOTP);
+            if (types.contains(CredentialRepresentation.TOTP)) {
+                String token = formData.getFirst(CredentialRepresentation.TOTP);
                 if (token == null) {
                     logger.warn("TOTP token not provided");
                     return false;
                 }
+                logger.info("validating TOTP");
                 return realm.validateTOTP(user, password, token);
             } else {
+                logger.info("validating password for user: " + user.getLoginName());
                 return realm.validatePassword(user, password);
             }
         } else {

@@ -17,39 +17,74 @@
 
             <form class="form-horizontal" name="realmForm" novalidate>
                 <fieldset>
-                    <legend>Settings</legend>
 
-                    <div data-kc-input>
-                        <label>Name</label>
-                        <input class="input-xlarge" type="text" name="name" data-ng-model="realm.name" autofocus
-                               required>
+                    <div class="control-group">
+                        <label for="realmForm-name" class="control-label">Name</label>
+
+                        <div class="controls">
+                            <input class="input-xlarge" type="text" name="name" data-ng-model="realm.name" autofocus
+                                   required>
+                        </div>
                     </div>
 
-                    <div data-kc-input>
-                        <label>Enabled</label>
-                        <input class="input-xlarge" type="checkbox" name="enabled" data-ng-model="realm.enabled">
-                    </div>
+                     <table>
+                        <tr>
+                            <td>
+                                <div class="control-group">
+                                    <label class="control-label">Enabled</label>
 
-                    <div data-kc-input>
-                        <label>Social login</label>
-                        <input class="input-xlarge" type="checkbox" name="social" data-ng-model="realm.social">
-                    </div>
+                                    <div class="controls">
+                                        <input class="input-xlarge" type="checkbox" name="enabled"
+                                               data-ng-model="realm.enabled">
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="control-group">
+                                    <label class="control-label">Social login</label>
 
-                    <div data-kc-input>
-                        <label>Require SSL</label>
-                        <input class="input-xlarge" type="checkbox" name="requireSsl" data-ng-model="realm.requireSsl">
-                    </div>
+                                    <div class="controls">
+                                        <input class="input-xlarge" type="checkbox" name="social"
+                                               data-ng-model="realm.social">
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="control-group">
+                                    <label class="control-label">Require SSL</label>
 
-                    <div data-kc-input>
-                        <label>Cookie login allowed</label>
-                        <input class="input-xlarge" type="checkbox" name="cookieLoginAllowed" data-ng-model="realm.cookieLoginAllowed">
-                    </div>
+                                    <div class="controls">
+                                        <input class="input-xlarge" type="checkbox" name="requireSsl"
+                                               data-ng-model="realm.requireSsl">
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="control-group">
+                                    <label class="control-label">Cookie login allowed</label>
 
-                    <div data-kc-input>
-                        <label>User registration</label>
-                        <input class="input-xlarge" type="checkbox" name="social"
-                               data-ng-model="realm.userRegistration">
-                    </div>
+                                    <div class="controls">
+                                        <input class="input-xlarge" type="checkbox" name="cookieLoginAllowed"
+                                               data-ng-model="realm.cookieLoginAllowed">
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                         <tr>
+                             <td>
+                                 <div class="control-group">
+                                     <label class="control-label">User registration</label>
+
+                                     <div class="controls">
+                                         <input class="input-xlarge" type="checkbox" name="userRegistration"
+                                                data-ng-model="realm.userRegistration">
+                                     </div>
+                                 </div>
+                             </td>
+                         </tr>
+                    </table>
 
                     <div class="control-group">
                         <label for="realmForm-tokenLifespan" class="control-label">Token lifespan</label>
@@ -74,11 +109,19 @@
                                    data-ng-model="realm.accessCodeLifespan">
                             <select style="width: auto;" name="accessCodeLifespanUnit"
                                     data-ng-model="realm.accessCodeLifespanUnit">
-                                <option value="SECONDS" data-ng-selected="!realm.accessCodeLifespanUnit">Seconds</option>
+                                <option value="SECONDS" data-ng-selected="!realm.accessCodeLifespanUnit">Seconds
+                                </option>
                                 <option value="MINUTES">Minutes</option>
                                 <option value="HOURS">Hours</option>
                                 <option value="DAYS">Days</option>
                             </select>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">User Required Credentials</label>
+
+                        <div class="controls">
+                            <input style="width:250px" type="text" ui-select2="userCredentialOptions" ng-model="realm.requiredCredentials">
                         </div>
                     </div>
                 </fieldset>

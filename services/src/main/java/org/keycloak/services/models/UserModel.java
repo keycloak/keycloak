@@ -20,4 +20,16 @@ public interface UserModel {
     String getAttribute(String name);
 
     Map<String, String> getAttributes();
+
+    String getFirstName();
+
+    void setFirstName(String firstName);
+
+    String getLastName();
+
+    void setLastName(String lastName);
+
+    String getEmail();
+
+    void setEmail(String email);
 }

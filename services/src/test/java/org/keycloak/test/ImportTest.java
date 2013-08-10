@@ -70,6 +70,8 @@ public class ImportTest {
         realm.addRealmAdmin(admin);
         List<RequiredCredentialModel> creds = realm.getRequiredCredentials();
         Assert.assertEquals(1, creds.size());
+        RequiredCredentialModel cred = creds.get(0);
+        Assert.assertEquals("Password", cred.getFormLabel());
 
         UserModel user = realm.getUser("loginclient");
         Assert.assertNotNull(user);
@@ -82,6 +84,29 @@ public class ImportTest {
         Assert.assertEquals(1, realms.size());
 
     }
+
+    @Test
+    public void install2() throws Exception {
+        RealmModel defaultRealm = manager.createRealm(RealmModel.DEFAULT_REALM, RealmModel.DEFAULT_REALM);
+        defaultRealm.setName(RealmModel.DEFAULT_REALM);
+        defaultRealm.setEnabled(true);
+        defaultRealm.setTokenLifespan(300);
+        defaultRealm.setAccessCodeLifespan(60);
+        defaultRealm.setSslNotRequired(false);
+        defaultRealm.setCookieLoginAllowed(true);
+        defaultRealm.setRegistrationAllowed(true);
+        manager.generateRealmKeys(defaultRealm);
+        defaultRealm.addRequiredCredential(RequiredCredentialModel.PASSWORD);
+        RoleModel role = defaultRealm.addRole(SaasService.REALM_CREATOR_ROLE);
+        UserModel admin = defaultRealm.addUser("admin");
+        defaultRealm.grantRole(admin, role);
+
+        RealmRepresentation rep = KeycloakTestBase.loadJson("testrealm-demo.json");
+        RealmModel realm = manager.createRealm("demo", rep.getRealm());
+        manager.importRealm(rep, realm);
+        realm.addRealmAdmin(admin);
+    }
+
 
 
 

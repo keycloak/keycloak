@@ -62,6 +62,7 @@ public interface RealmModel {
     List<RequiredCredentialModel> getRequiredCredentials();
 
     void addRequiredCredential(RequiredCredentialModel cred);
+    void addRequiredCredential(String cred);
 
     boolean validatePassword(UserModel user, String password);
 
@@ -101,15 +102,19 @@ public interface RealmModel {
 
     RoleModel getRoleById(String id);
 
-    void addResourceRequiredCredential(RequiredCredentialModel cred);
+    void addRequiredResourceCredential(RequiredCredentialModel cred);
 
-    List<RequiredCredentialModel> getResourceRequiredCredentials();
+    List<RequiredCredentialModel> getRequiredResourceCredentials();
 
-    void addOAuthClientRequiredCredential(RequiredCredentialModel cred);
+    void addRequiredOAuthClientCredential(RequiredCredentialModel cred);
 
-    List<RequiredCredentialModel> getOAuthClientRequiredCredentials();
+    List<RequiredCredentialModel> getRequiredOAuthClientCredentials();
 
     boolean hasRole(UserModel user, String role);
 
     ResourceModel getResourceById(String id);
+
+    void addRequiredOAuthClientCredential(String type);
+
+    void addRequiredResourceCredential(String type);
 }

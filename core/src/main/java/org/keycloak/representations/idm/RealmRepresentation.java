@@ -20,9 +20,9 @@ public class RealmRepresentation {
     protected String privateKey;
     protected String publicKey;
     protected List<RoleRepresentation> roles;
-    protected List<RequiredCredentialRepresentation> requiredCredentials;
-    protected List<RequiredCredentialRepresentation> requiredResourceCredentials;
-    protected List<RequiredCredentialRepresentation> requiredOAuthClientCredentials;
+    protected List<String> requiredCredentials;
+    protected List<String> requiredResourceCredentials;
+    protected List<String> requiredOAuthClientCredentials;
     protected List<UserRepresentation> users;
     protected List<RoleMappingRepresentation> roleMappings;
     protected List<ScopeMappingRepresentation> scopeMappings;
@@ -141,27 +141,27 @@ public class RealmRepresentation {
         return mapping;
     }
 
-    public List<RequiredCredentialRepresentation> getRequiredCredentials() {
+    public List<String> getRequiredCredentials() {
         return requiredCredentials;
     }
 
-    public void setRequiredCredentials(List<RequiredCredentialRepresentation> requiredCredentials) {
+    public void setRequiredCredentials(List<String> requiredCredentials) {
         this.requiredCredentials = requiredCredentials;
     }
 
-    public List<RequiredCredentialRepresentation> getRequiredResourceCredentials() {
+    public List<String> getRequiredResourceCredentials() {
         return requiredResourceCredentials;
     }
 
-    public void setRequiredResourceCredentials(List<RequiredCredentialRepresentation> requiredResourceCredentials) {
+    public void setRequiredResourceCredentials(List<String> requiredResourceCredentials) {
         this.requiredResourceCredentials = requiredResourceCredentials;
     }
 
-    public List<RequiredCredentialRepresentation> getRequiredOAuthClientCredentials() {
+    public List<String> getRequiredOAuthClientCredentials() {
         return requiredOAuthClientCredentials;
     }
 
-    public void setRequiredOAuthClientCredentials(List<RequiredCredentialRepresentation> requiredOAuthClientCredentials) {
+    public void setRequiredOAuthClientCredentials(List<String> requiredOAuthClientCredentials) {
         this.requiredOAuthClientCredentials = requiredOAuthClientCredentials;
     }
 

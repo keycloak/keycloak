@@ -7,6 +7,7 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.models.RealmModel;
+import org.keycloak.services.models.RequiredCredentialModel;
 import org.keycloak.services.models.RoleModel;
 import org.keycloak.services.models.UserModel;
 import org.keycloak.services.resources.PublicRealmResource;
@@ -60,20 +61,11 @@ public class RealmAdminResource {
         return new Transaction() {
             @Override
             protected RealmRepresentation callImpl() {
-                RealmRepresentation rep = new RealmRepresentation();
-                rep.setId(realm.getId());
-                rep.setRealm(realm.getName());
-                rep.setEnabled(realm.isEnabled());
-                rep.setSslNotRequired(realm.isSslNotRequired());
-                rep.setCookieLoginAllowed(realm.isCookieLoginAllowed());
-                rep.setPublicKey(realm.getPublicKeyPem());
-                rep.setTokenLifespan(realm.getTokenLifespan());
-                rep.setAccessCodeLifespan(realm.getAccessCodeLifespan());
-                return rep;
+                return new RealmManager(session).toRepresentation(realm);
             }
         }.call();
-
     }
+
 
     @Path("roles")
     @GET
