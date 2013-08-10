@@ -1,6 +1,10 @@
 package org.keycloak.services.models;
 
-import org.keycloak.representations.idm.RequiredCredentialRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -10,14 +14,9 @@ public class RequiredCredentialModel {
     protected String type;
     protected boolean input;
     protected boolean secret;
+    protected String formLabel;
 
     public RequiredCredentialModel() {
-    }
-
-    public RequiredCredentialModel(String type, boolean input, boolean secret) {
-        this.type = type;
-        this.input = input;
-        this.secret = secret;
     }
 
     public String getType() {
@@ -44,5 +43,39 @@ public class RequiredCredentialModel {
         this.secret = secret;
     }
 
-    public static final RequiredCredentialModel PASSWORD = new RequiredCredentialModel(RequiredCredentialRepresentation.PASSWORD, true, true);
+    public String getFormLabel() {
+        return formLabel;
+    }
+
+    public void setFormLabel(String formLabel) {
+        this.formLabel = formLabel;
+    }
+
+    public static final Map<String, RequiredCredentialModel> BUILT_IN;
+    public static final RequiredCredentialModel PASSWORD;
+    public static final RequiredCredentialModel TOTP;
+    public static final RequiredCredentialModel CLIENT_CERT;
+
+    static {
+        Map<String, RequiredCredentialModel> map = new HashMap<String, RequiredCredentialModel>();
+        PASSWORD = new RequiredCredentialModel();
+        PASSWORD.setType(CredentialRepresentation.PASSWORD);
+        PASSWORD.setInput(true);
+        PASSWORD.setSecret(true);
+        PASSWORD.setFormLabel("Password");
+        map.put(PASSWORD.getType(), PASSWORD);
+        TOTP = new RequiredCredentialModel();
+        TOTP.setType(CredentialRepresentation.TOTP);
+        TOTP.setInput(true);
+        TOTP.setSecret(false);
+        TOTP.setFormLabel("Authenticator Code");
+        map.put(TOTP.getType(), TOTP);
+        CLIENT_CERT = new RequiredCredentialModel();
+        CLIENT_CERT.setType(CredentialRepresentation.CLIENT_CERT);
+        CLIENT_CERT.setInput(false);
+        CLIENT_CERT.setSecret(false);
+        CLIENT_CERT.setFormLabel("Client Certificate");
+        map.put(CLIENT_CERT.getType(), CLIENT_CERT);
+        BUILT_IN = Collections.unmodifiableMap(map);
+    }
 }

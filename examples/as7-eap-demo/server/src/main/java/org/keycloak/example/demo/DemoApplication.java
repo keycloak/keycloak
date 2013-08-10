@@ -1,6 +1,7 @@
 package org.keycloak.example.demo;
 
 import org.jboss.resteasy.jwt.JsonSerialization;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.models.KeycloakSession;
@@ -40,7 +41,7 @@ public class DemoApplication extends KeycloakApplication {
         defaultRealm.setCookieLoginAllowed(true);
         defaultRealm.setRegistrationAllowed(true);
         manager.generateRealmKeys(defaultRealm);
-        defaultRealm.addRequiredCredential(RequiredCredentialModel.PASSWORD);
+        defaultRealm.addRequiredCredential(CredentialRepresentation.PASSWORD);
         defaultRealm.addRole(SaasService.REALM_CREATOR_ROLE);
 
         RealmRepresentation rep = loadJson("META-INF/testrealm.json");

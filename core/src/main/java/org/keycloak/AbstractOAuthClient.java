@@ -111,7 +111,7 @@ public class AbstractOAuthClient {
                 .param("grant_type", "authorization_code")
                 .param("code", code)
                 .param("client_id", clientId)
-                .param("Password", password)
+                .param("password", password)
                 .param("redirect_uri", redirectUri);
         Response res = client.target(codeUrl).request().header(HttpHeaders.AUTHORIZATION, authHeader).post(Entity.form(codeForm));
         try {

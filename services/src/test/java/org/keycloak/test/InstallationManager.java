@@ -1,5 +1,6 @@
 package org.keycloak.test;
 
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RequiredCredentialModel;
@@ -21,7 +22,7 @@ public class InstallationManager {
         defaultRealm.setCookieLoginAllowed(true);
         defaultRealm.setRegistrationAllowed(true);
         manager.generateRealmKeys(defaultRealm);
-        defaultRealm.addRequiredCredential(RequiredCredentialModel.PASSWORD);
+        defaultRealm.addRequiredCredential(CredentialRepresentation.PASSWORD);
         defaultRealm.addRole(SaasService.REALM_CREATOR_ROLE);
     }
 

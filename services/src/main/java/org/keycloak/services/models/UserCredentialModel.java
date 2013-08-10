@@ -8,6 +8,7 @@ public class UserCredentialModel {
 
     protected String type;
     protected String value;
+    protected String device;
 
     public String getType() {
         return type;
@@ -23,5 +24,13 @@ public class UserCredentialModel {
 
     public void setValue(String value) {
         this.value = value;
+    }
+
+    public String getDevice() {
+        return device;
+    }
+
+    public void setDevice(String device) {
+        this.device = device;
     }
 }

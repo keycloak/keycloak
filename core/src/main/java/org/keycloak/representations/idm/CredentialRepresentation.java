@@ -5,9 +5,13 @@ package org.keycloak.representations.idm;
 * @version $Revision: 1 $
 */
 public class CredentialRepresentation {
+    public static final String PASSWORD = "password";
+    public static final String TOTP = "totp";
+    public static final String CLIENT_CERT = "cert";
+
     protected String type;
     protected String value;
-    protected boolean hashed;
+    protected String device;
 
     public String getType() {
         return type;
@@ -25,11 +29,11 @@ public class CredentialRepresentation {
         this.value = value;
     }
 
-    public boolean isHashed() {
-        return hashed;
+    public String getDevice() {
+        return device;
     }
 
-    public void setHashed(boolean hashed) {
-        this.hashed = hashed;
+    public void setDevice(String device) {
+        this.device = device;
     }
 }

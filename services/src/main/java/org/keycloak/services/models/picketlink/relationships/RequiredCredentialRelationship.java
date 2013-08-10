@@ -68,4 +68,14 @@ public class RequiredCredentialRelationship extends AbstractAttributedType imple
     public void setSecret(boolean secret) {
         setAttribute(new Attribute<Boolean>("secret", secret));
     }
+
+    @AttributeProperty
+    public String getFormLabel() {
+        return (String)getAttribute("formLabel").getValue();
+    }
+
+    public void setFormLabel(String label) {
+        setAttribute(new Attribute<String>("formLabel", label));
+    }
+
 }

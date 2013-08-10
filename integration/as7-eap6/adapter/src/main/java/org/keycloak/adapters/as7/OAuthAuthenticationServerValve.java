@@ -447,7 +447,7 @@ public class OAuthAuthenticationServerValve extends FormAuthenticator implements
         userSessionManagement.logout(username);
         request.setUserPrincipal(null);
         request.setAuthType(null);
-        // logout user on all declared authenticated resources
+        // logout user on all declared authenticated applications
         logoutResources(username, admin);
         redirectToWelcomePage(request, response);
     }

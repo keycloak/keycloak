@@ -14,6 +14,9 @@ public class UserRepresentation {
     protected String self; // link
     protected String username;
     protected boolean enabled;
+    protected String firstName;
+    protected String lastName;
+    protected String email;
     protected Map<String, String> attributes;
     protected List<CredentialRepresentation> credentials;
 
@@ -23,6 +26,30 @@ public class UserRepresentation {
 
     public void setSelf(String self) {
         this.self = self;
+    }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public String getUsername() {
@@ -55,12 +82,11 @@ public class UserRepresentation {
         this.credentials = credentials;
     }
 
-    public UserRepresentation credential(String type, String value, boolean hashed) {
+    public UserRepresentation credential(String type, String value) {
         if (this.credentials == null) credentials = new ArrayList<CredentialRepresentation>();
         CredentialRepresentation cred = new CredentialRepresentation();
         cred.setType(type);
         cred.setValue(value);
-        cred.setHashed(hashed);
         credentials.add(cred);
         return this;
     }

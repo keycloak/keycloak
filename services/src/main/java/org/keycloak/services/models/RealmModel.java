@@ -61,7 +61,7 @@ public interface RealmModel {
 
     List<RequiredCredentialModel> getRequiredCredentials();
 
-    void addRequiredCredential(RequiredCredentialModel cred);
+    void addRequiredCredential(String cred);
 
     boolean validatePassword(UserModel user, String password);
 
@@ -79,11 +79,11 @@ public interface RealmModel {
 
     List<RoleModel> getRoles();
 
-    Map<String, ResourceModel> getResourceNameMap();
+    Map<String, ApplicationModel> getResourceNameMap();
 
-    List<ResourceModel> getResources();
+    List<ApplicationModel> getApplications();
 
-    ResourceModel addResource(String name);
+    ApplicationModel addApplication(String name);
 
     boolean hasRole(UserModel user, RoleModel role);
 
@@ -101,15 +101,27 @@ public interface RealmModel {
 
     RoleModel getRoleById(String id);
 
-    void addResourceRequiredCredential(RequiredCredentialModel cred);
 
-    List<RequiredCredentialModel> getResourceRequiredCredentials();
+    List<RequiredCredentialModel> getRequiredApplicationCredentials();
 
-    void addOAuthClientRequiredCredential(RequiredCredentialModel cred);
 
-    List<RequiredCredentialModel> getOAuthClientRequiredCredentials();
+    List<RequiredCredentialModel> getRequiredOAuthClientCredentials();
 
     boolean hasRole(UserModel user, String role);
 
-    ResourceModel getResourceById(String id);
+    ApplicationModel getApplicationById(String id);
+
+    void addRequiredOAuthClientCredential(String type);
+
+    void addRequiredResourceCredential(String type);
+
+    void updateRequiredCredentials(Set<String> creds);
+
+    void updateRequiredOAuthClientCredentials(Set<String> creds);
+
+    void updateRequiredApplicationCredentials(Set<String> creds);
+
+    boolean isSocial();
+
+    void setSocial(boolean social);
 }

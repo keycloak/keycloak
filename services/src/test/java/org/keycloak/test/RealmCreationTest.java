@@ -8,8 +8,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.SkeletonKeyContextResolver;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.RequiredCredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
@@ -61,7 +61,7 @@ public class RealmCreationTest {
     public void testRegisterLoginAndCreate() throws Exception {
         UserRepresentation user = new UserRepresentation();
         user.setUsername("bburke");
-        user.credential(RequiredCredentialRepresentation.PASSWORD, "geheim", false);
+        user.credential(CredentialRepresentation.PASSWORD, "geheim");
 
         WebTarget target = client.target(generateURL("/"));
         Response response = target.path("saas/registrations").request().post(Entity.json(user));
@@ -73,14 +73,14 @@ public class RealmCreationTest {
         try {
             Form form = new Form();
             form.param(AuthenticationManager.FORM_USERNAME, "bburke");
-            form.param(RequiredCredentialRepresentation.PASSWORD, "badpassword");
+            form.param(CredentialRepresentation.PASSWORD, "badpassword");
             tokenResponse = target.path("realms").path(RealmModel.DEFAULT_REALM).path("tokens/grants/identity-token").request().post(Entity.form(form), AccessTokenResponse.class);
             Assert.fail();
         } catch (NotAuthorizedException e) {
         }
         Form form = new Form();
         form.param(AuthenticationManager.FORM_USERNAME, "bburke");
-        form.param(RequiredCredentialRepresentation.PASSWORD, "geheim");
+        form.param(CredentialRepresentation.PASSWORD, "geheim");
         tokenResponse = target.path("realms").path(RealmModel.DEFAULT_REALM).path("tokens/grants/identity-token").request().post(Entity.form(form), AccessTokenResponse.class);
         Assert.assertNotNull(tokenResponse);
         System.out.println(tokenResponse.getToken());

@@ -6,7 +6,7 @@ import org.keycloak.RealmConfiguration;
 import org.keycloak.VerificationException;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.SkeletonKeyToken;
-import org.keycloak.representations.idm.RequiredCredentialRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -230,7 +230,7 @@ public class ServletOAuthLogin {
         form.param("grant_type", "authorization_code")
                 .param("code", code)
                 .param("client_id", client_id)
-                .param(RequiredCredentialRepresentation.PASSWORD, password)
+                .param(CredentialRepresentation.PASSWORD, password)
                 .param("redirect_uri", redirectUri);
 
         Response res = realmInfo.getCodeUrl().request()
