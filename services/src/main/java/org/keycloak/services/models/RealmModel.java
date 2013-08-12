@@ -124,4 +124,6 @@ public interface RealmModel {
     boolean isSocial();
 
     void setSocial(boolean social);
+
+    List<UserModel> queryUsers(Map<String, String> parameters);
 }

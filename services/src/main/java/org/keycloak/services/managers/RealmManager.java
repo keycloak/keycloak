@@ -131,10 +131,10 @@ public class RealmManager {
         }
 
 
-
+        UserManager userManager = new UserManager();
         if (rep.getUsers() != null) {
             for (UserRepresentation userRep : rep.getUsers()) {
-                UserModel user = createUser(newRealm, userRep);
+                UserModel user = userManager.createUser(newRealm, userRep);
                 userMap.put(user.getLoginName(), user);
             }
         }
@@ -182,24 +182,6 @@ public class RealmManager {
         if (roleRep.getDescription() != null) role.setDescription(roleRep.getDescription());
     }
 
-    public UserModel createUser(RealmModel newRealm, UserRepresentation userRep) {
-        UserModel user = newRealm.addUser(userRep.getUsername());
-        user.setEnabled(userRep.isEnabled());
-        if (userRep.getAttributes() != null) {
-            for (Map.Entry<String, String> entry : userRep.getAttributes().entrySet()) {
-                user.setAttribute(entry.getKey(), entry.getValue());
-            }
-        }
-        if (userRep.getCredentials() != null) {
-            for (CredentialRepresentation cred : userRep.getCredentials()) {
-                UserCredentialModel credential = new UserCredentialModel();
-                credential.setType(cred.getType());
-                credential.setValue(cred.getValue());
-                newRealm.updateCredential(user, credential);
-            }
-        }
-        return user;
-    }
 
     public void addRequiredCredential(RealmModel newRealm, String requiredCred) {
         newRealm.addRequiredCredential(requiredCred);

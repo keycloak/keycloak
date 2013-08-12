@@ -13,13 +13,13 @@
             <div data-ng-show="roleForm.showErrors && roleForm.$error.required" class="alert alert-error">Please fill in
                 all required fields
             </div>
-            <p class="subtitle subtitle-right"><span class="required">*</span> Required fields</p>
+            <p class="subtitle subtitle-right" data-ng-show="create"><span class="required">*</span> Required fields</p>
 
             <form class="form-horizontal" name="roleForm" novalidate>
                 <fieldset>
                     <legend>Details</legend>
                     <div class="control-group">
-                        <label class="control-label" for="name">Role name <span class="required">*</span></label>
+                        <label class="control-label" for="name">Role name <span class="required" data-ng-show="create">*</span></label>
 
                         <div class="controls">
                             <input type="text" class="input-xlarge" id="name" name="name" data-ng-model="role.name"

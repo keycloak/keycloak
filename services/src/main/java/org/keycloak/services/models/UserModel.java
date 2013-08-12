@@ -7,6 +7,10 @@ import java.util.Map;
  * @version $Revision: 1 $
  */
 public interface UserModel {
+    public static final String LAST_NAME = "lastName";
+    public static final String FIRST_NAME = "firstName";
+    public static final String EMAIL = "email";
+
     String getLoginName();
 
     boolean isEnabled();

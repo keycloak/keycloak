@@ -25,6 +25,7 @@ import org.picketlink.idm.credential.TOTPCredential;
 import org.picketlink.idm.credential.TOTPCredentials;
 import org.picketlink.idm.credential.UsernamePasswordCredentials;
 import org.picketlink.idm.credential.X509CertificateCredentials;
+import org.picketlink.idm.model.AttributedType;
 import org.picketlink.idm.model.IdentityType;
 import org.picketlink.idm.model.annotation.AttributeProperty;
 import org.picketlink.idm.model.sample.Grant;
@@ -474,6 +475,21 @@ public class RealmAdapter implements RealmModel {
         user = new User(username);
         getIdm().add(user);
         return new UserAdapter(user, getIdm());
+    }
+
+    @Override
+    public List<UserModel> queryUsers(Map<String, String> parameters) {
+        IdentityQuery<User> userQuery = getIdm().createIdentityQuery(User.class);
+        for (Map.Entry<String, String> entry : parameters.entrySet()) {
+            userQuery.setParameter(AttributedType.QUERY_ATTRIBUTE.byName(entry.getKey()), entry.getValue());
+        }
+        List<User> users = userQuery.getResultList();
+        List<UserModel> userModels = new ArrayList<UserModel>();
+        for (User user : users) {
+            userModels.add(new UserAdapter(user, getIdm()));
+        }
+        return userModels;
+
     }
 
     @Override
