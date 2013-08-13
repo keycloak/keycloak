@@ -4,3 +4,10 @@
 @IMPORT url("css/zocial/zocial.css");
 @IMPORT url("css/login-register.css");
 @IMPORT url("http://fonts.googleapis.com/css?family=Open+Sans:400,300,300italic,400italic,600,600italic,700,700italic,800,800italic");
+
+.zocial.google {
+  background-color: #dd4b39 !important;
+}
+.zocial.google:before {
+  content: "+" !important;
+}
