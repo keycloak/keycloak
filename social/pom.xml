@@ -17,6 +17,7 @@
         <module>core</module>
         <module>google</module>
         <module>twitter</module>
+        <module>facebook</module>
     </modules>
 
 </project>
