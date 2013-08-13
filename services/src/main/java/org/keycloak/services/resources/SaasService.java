@@ -222,7 +222,7 @@ public class SaasService {
         URI register = contextRoot(uriInfo).path(saasRegisterPath).build();
         request.setAttribute("KEYCLOAK_LOGIN_ACTION", action);
         request.setAttribute("KEYCLOAK_REGISTRATION_PAGE", register);
-        request.setAttribute("KEYCLOAK_SOCIAL_LOGIN", SocialService.redirectToProviderAuthUrl(uriInfo).build(realm.getId()));
+        request.setAttribute("KEYCLOAK_SOCIAL_LOGIN", SocialResource.redirectToProviderAuthUrl(uriInfo).build(realm.getId()));
         request.forward(loginFormPath);
     }
 

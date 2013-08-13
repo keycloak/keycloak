@@ -1,30 +1,8 @@
-/*
- * JBoss, Home of Professional Open Source.
- * Copyright 2012, Red Hat, Inc., and individual contributors
- * as indicated by the @author tags. See the copyright.txt file in the
- * distribution for a full listing of individual contributors.
- *
- * This is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
- *
- * This software is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
- */
 package org.keycloak.services.resources;
 
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -32,17 +10,19 @@ import java.util.Map.Entry;
 import javax.imageio.spi.ServiceRegistry;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 
 import org.jboss.resteasy.logging.Logger;
+import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.UserModel;
@@ -56,39 +36,42 @@ import org.keycloak.social.SocialProviderException;
 import org.keycloak.social.SocialRequestManager;
 import org.keycloak.social.SocialUser;
 
-/**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
- */
-public class SocialService extends AbstractLoginService {
+@Path("/social")
+public class SocialResource {
 
-    private static final Logger logger = Logger.getLogger(SocialService.class);
+    protected static Logger logger = Logger.getLogger(SocialResource.class);
 
     @Context
-    private HttpHeaders headers;
+    protected UriInfo uriInfo;
 
     @Context
-    private UriInfo uriInfo;
+    protected HttpHeaders headers;
+
+    @Context
+    private HttpRequest request;
+
+    private SocialRequestManager socialRequestManager;
+
+    private TokenManager tokenManager;
+
+    private AuthenticationManager authManager = new AuthenticationManager();
+
+    public SocialResource(TokenManager tokenManager, SocialRequestManager socialRequestManager) {
+        this.tokenManager = tokenManager;
+        this.socialRequestManager = socialRequestManager;
+    }
 
     public static UriBuilder socialServiceBaseUrl(UriInfo uriInfo) {
-        UriBuilder base = uriInfo.getBaseUriBuilder().path(RealmsResource.class).path(RealmsResource.class, "getSocialService");
+        UriBuilder base = uriInfo.getBaseUriBuilder().path(SocialResource.class);
         return base;
     }
 
     public static UriBuilder redirectToProviderAuthUrl(UriInfo uriInfo) {
-        return socialServiceBaseUrl(uriInfo).path(SocialService.class, "redirectToProviderAuth");
-
+        return socialServiceBaseUrl(uriInfo).path(SocialResource.class, "redirectToProviderAuth");
     }
 
     public static UriBuilder callbackUrl(UriInfo uriInfo) {
-        return socialServiceBaseUrl(uriInfo).path(SocialService.class, "callback");
-
-    }
-
-    private SocialRequestManager socialRequestManager;
-
-    public SocialService(RealmModel realm, TokenManager tokenManager, SocialRequestManager socialRequestManager) {
-        super(realm, tokenManager);
-        this.socialRequestManager = socialRequestManager;
+        return socialServiceBaseUrl(uriInfo).path(SocialResource.class, "callback");
     }
 
     @GET
@@ -101,9 +84,11 @@ public class SocialService extends AbstractLoginService {
                 RequestDetails requestData = getRequestDetails(queryParams);
                 SocialProvider provider = getProvider(requestData.getProviderId());
 
+                String realmId = requestData.getClientAttribute("realmId");
+
                 String key = System.getProperty("keycloak.social." + requestData.getProviderId() + ".key");
                 String secret = System.getProperty("keycloak.social." + requestData.getProviderId() + ".secret");
-                String callbackUri = callbackUrl(uriInfo).build(realm.getId()).toString();
+                String callbackUri = callbackUrl(uriInfo).build().toString();
 
                 SocialProviderConfig config = new SocialProviderConfig(key, secret, callbackUri);
 
@@ -114,12 +99,15 @@ public class SocialService extends AbstractLoginService {
                     socialUser = provider.processCallback(config, callback);
                 } catch (SocialProviderException e) {
                     logger.warn("Failed to process social callback", e);
-                    securityFailureForward("Failed to process social callback");
+                    OAuthUtil.securityFailureForward(request, "Failed to process social callback");
                     return null;
                 }
 
+                RealmManager realmManager = new RealmManager(session);
+                RealmModel realm = realmManager.getRealm(realmId);
+
                 if (!realm.isEnabled()) {
-                    securityFailureForward("Realm not enabled.");
+                    OAuthUtil.securityFailureForward(request, "Realm not enabled.");
                     return null;
                 }
 
@@ -127,11 +115,11 @@ public class SocialService extends AbstractLoginService {
 
                 UserModel client = realm.getUser(clientId);
                 if (client == null) {
-                    securityFailureForward("Unknown login requester.");
+                    OAuthUtil.securityFailureForward(request, "Unknown login requester.");
                     return null;
                 }
                 if (!client.isEnabled()) {
-                    securityFailureForward("Login requester not enabled.");
+                    OAuthUtil.securityFailureForward(request, "Login requester not enabled.");
                     return null;
                 }
 
@@ -149,7 +137,7 @@ public class SocialService extends AbstractLoginService {
                 }
 
                 if (!user.isEnabled()) {
-                    securityFailureForward("Your account is not enabled.");
+                    OAuthUtil.securityFailureForward(request, "Your account is not enabled.");
                     return null;
                 }
 
@@ -157,60 +145,46 @@ public class SocialService extends AbstractLoginService {
                 String state = requestData.getClientAttributes().get("state");
                 String redirectUri = requestData.getClientAttributes().get("redirectUri");
 
-                return processAccessCode(scope, state, redirectUri, client, user);
+                return OAuthUtil.processAccessCode(realm, tokenManager, authManager, request, uriInfo, scope, state,
+                        redirectUri, client, user);
             }
         }.call();
     }
 
     @GET
-    @Path("providers")
-    @Produces(MediaType.APPLICATION_JSON)
-    public List<SocialProvider> getProviders() {
-        List<SocialProvider> providers = new LinkedList<SocialProvider>();
-        Iterator<SocialProvider> itr = ServiceRegistry.lookupProviders(SocialProvider.class);
-        while (itr.hasNext()) {
-            providers.add(itr.next());
+    @Path("{realm}/login")
+    public Response redirectToProviderAuth(@PathParam("realm") final String realmId,
+            @QueryParam("provider_id") final String providerId, @QueryParam("client_id") final String clientId,
+            @QueryParam("scope") final String scope, @QueryParam("state") final String state,
+            @QueryParam("redirect_uri") final String redirectUri) {
+        SocialProvider provider = getProvider(providerId);
+        if (provider == null) {
+            OAuthUtil.securityFailureForward(request, "Social provider not found");
+            return null;
         }
-        return providers;
-    }
 
-    @GET
-    @Path("login")
-    public Response redirectToProviderAuth(@QueryParam("provider_id") final String providerId,
-            @QueryParam("client_id") final String clientId, @QueryParam("scope") final String scope,
-            @QueryParam("state") final String state, @QueryParam("redirect_uri") final String redirectUri) {
-        return new Transaction() {
-            protected Response callImpl() {
-                SocialProvider provider = getProvider(providerId);
-                if (provider == null) {
-                    securityFailureForward("Social provider not found");
-                    return null;
-                }
+        String key = System.getProperty("keycloak.social." + providerId + ".key");
+        String secret = System.getProperty("keycloak.social." + providerId + ".secret");
+        String callbackUri = callbackUrl(uriInfo).build().toString();
 
-                String key = System.getProperty("keycloak.social." + providerId + ".key");
-                String secret = System.getProperty("keycloak.social." + providerId + ".secret");
-                String callbackUri = callbackUrl(uriInfo).build(realm.getId()).toString();
+        SocialProviderConfig config = new SocialProviderConfig(key, secret, callbackUri);
 
-                SocialProviderConfig config = new SocialProviderConfig(key, secret, callbackUri);
+        try {
+            AuthRequest authRequest = provider.getAuthUrl(config);
 
-                try {
-                    AuthRequest authRequest = provider.getAuthUrl(config);
+            RequestDetails socialRequest = RequestDetailsBuilder.create(providerId)
+                    .putSocialAttributes(authRequest.getAttributes()).putClientAttribute("realmId", realmId)
+                    .putClientAttribute("clientId", clientId).putClientAttribute("scope", scope)
+                    .putClientAttribute("state", state).putClientAttribute("redirectUri", redirectUri).build();
 
-                    RequestDetails socialRequest = RequestDetailsBuilder.create(providerId)
-                            .putSocialAttributes(authRequest.getAttributes()).putClientAttribute("clientId", clientId)
-                            .putClientAttribute("scope", scope).putClientAttribute("state", state)
-                            .putClientAttribute("redirectUri", redirectUri).build();
+            socialRequestManager.addRequest(authRequest.getId(), socialRequest);
 
-                    socialRequestManager.addRequest(authRequest.getId(), socialRequest);
-
-                    return Response.status(Status.FOUND).location(authRequest.getAuthUri()).build();
-                } catch (Throwable t) {
-                    logger.error("Failed to redirect to social auth", t);
-                    securityFailureForward("Failed to redirect to social auth");
-                    return null;
-                }
-            }
-        }.call();
+            return Response.status(Status.FOUND).location(authRequest.getAuthUri()).build();
+        } catch (Throwable t) {
+            logger.error("Failed to redirect to social auth", t);
+            OAuthUtil.securityFailureForward(request, "Failed to redirect to social auth");
+            return null;
+        }
     }
 
     private RequestDetails getRequestDetails(Map<String, String[]> queryParams) {
@@ -249,11 +223,6 @@ public class SocialService extends AbstractLoginService {
             queryParams.put(e.getKey(), e.getValue().toArray(new String[e.getValue().size()]));
         }
         return queryParams;
-    }
-
-    @Override
-    protected Logger getLogger() {
-        return logger;
     }
 
 }

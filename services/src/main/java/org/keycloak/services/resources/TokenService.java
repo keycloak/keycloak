@@ -6,6 +6,8 @@ import org.jboss.resteasy.jose.jws.JWSInput;
 import org.jboss.resteasy.jose.jws.crypto.RSAProvider;
 import org.jboss.resteasy.jwt.JsonSerialization;
 import org.jboss.resteasy.logging.Logger;
+import org.jboss.resteasy.spi.HttpRequest;
+import org.jboss.resteasy.spi.HttpResponse;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.SkeletonKeyToken;
 import org.keycloak.services.managers.AccessCodeEntry;
@@ -25,6 +27,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -40,20 +43,32 @@ import java.util.Map;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class TokenService extends AbstractLoginService {
-
+public class TokenService {
 
     protected static final Logger logger = Logger.getLogger(TokenService.class);
+
+    protected RealmModel realm;
+    protected TokenManager tokenManager;
+    protected AuthenticationManager authManager = new AuthenticationManager();
 
     @Context
     protected Providers providers;
     @Context
     protected SecurityContext securityContext;
+    @Context
+    protected UriInfo uriInfo;
+    @Context
+    protected HttpHeaders headers;
+    @Context
+    HttpRequest request;
+    @Context
+    HttpResponse response;
 
     private ResourceAdminManager resourceAdminManager = new ResourceAdminManager();
 
     public TokenService(RealmModel realm, TokenManager tokenManager) {
-        super(realm, tokenManager);
+        this.realm = realm;
+        this.tokenManager = tokenManager;
     }
 
     public static UriBuilder tokenServiceBaseUrl(UriInfo uriInfo) {
@@ -168,16 +183,16 @@ public class TokenService extends AbstractLoginService {
                 String redirect = formData.getFirst("redirect_uri");
 
                 if (!realm.isEnabled()) {
-                    securityFailureForward("Realm not enabled.");
+                    OAuthUtil.securityFailureForward(request, "Realm not enabled.");
                     return null;
                 }
                 UserModel client = realm.getUser(clientId);
                 if (client == null) {
-                    securityFailureForward("Unknown login requester.");
+                    OAuthUtil.securityFailureForward(request, "Unknown login requester.");
                     return null;
                 }
                 if (!client.isEnabled()) {
-                    securityFailureForward("Login requester not enabled.");
+                    OAuthUtil.securityFailureForward(request, "Login requester not enabled.");
                     return null;
                 }
                 String username = formData.getFirst("username");
@@ -185,11 +200,11 @@ public class TokenService extends AbstractLoginService {
                 if (user == null) {
                     logger.error("Incorrect user name.");
                     request.setAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE", "Incorrect user name.");
-                    forwardToLoginForm(redirect, clientId, scopeParam, state);
+                    OAuthUtil.forwardToLoginForm(realm, request, uriInfo, redirect, clientId, scopeParam, state);
                     return null;
                 }
                 if (!user.isEnabled()) {
-                    securityFailureForward("Your account is not enabled.");
+                    OAuthUtil.securityFailureForward(request, "Your account is not enabled.");
                     return null;
                 }
                 boolean authenticated = authManager.authenticateForm(realm, user, formData);
@@ -197,11 +212,12 @@ public class TokenService extends AbstractLoginService {
                     logger.error("Authentication failed");
                     request.setAttribute("username", username);
                     request.setAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE", "Invalid credentials.");
-                    forwardToLoginForm(redirect, clientId, scopeParam, state);
+                    OAuthUtil.forwardToLoginForm(realm, request, uriInfo, redirect, clientId, scopeParam, state);
                     return null;
                 }
 
-                return processAccessCode(scopeParam, state, redirect, client, user);
+                return OAuthUtil.processAccessCode(realm, tokenManager, authManager, request, uriInfo, scopeParam, state,
+                        redirect, client, user);
             }
         }.call();
     }
@@ -341,18 +357,18 @@ public class TokenService extends AbstractLoginService {
         return new Transaction() {
             protected Response callImpl() {
                 if (!realm.isEnabled()) {
-                    securityFailureForward("Realm not enabled");
+                    OAuthUtil.securityFailureForward(request, "Realm not enabled");
                     return null;
                 }
                 UserModel client = realm.getUser(clientId);
                 if (client == null) {
-                    securityFailureForward("Unknown login requester.");
+                    OAuthUtil.securityFailureForward(request, "Unknown login requester.");
                     transaction.rollback();
                     return null;
                 }
 
                 if (!client.isEnabled()) {
-                    securityFailureForward("Login requester not enabled.");
+                    OAuthUtil.securityFailureForward(request, "Login requester not enabled.");
                     transaction.rollback();
                     session.close();
                     return null;
@@ -362,7 +378,7 @@ public class TokenService extends AbstractLoginService {
                 RoleModel identityRequestRole = realm.getRole(RealmManager.IDENTITY_REQUESTER_ROLE);
                 boolean isResource = realm.hasRole(client, resourceRole);
                 if (!isResource && !realm.hasRole(client, identityRequestRole)) {
-                    securityFailureForward("Login requester not allowed to request login.");
+                    OAuthUtil.securityFailureForward(request, "Login requester not allowed to request login.");
                     transaction.rollback();
                     session.close();
                     return null;
@@ -371,10 +387,11 @@ public class TokenService extends AbstractLoginService {
                 UserModel user = authManager.authenticateIdentityCookie(realm, uriInfo, headers);
                 if (user != null) {
                     logger.info(user.getLoginName() + " already logged in.");
-                    return processAccessCode(scopeParam, state, redirect, client, user);
+                    return OAuthUtil.processAccessCode(realm, tokenManager, authManager, request, uriInfo, scopeParam, state,
+                            redirect, client, user);
                 }
 
-                forwardToLoginForm(redirect, clientId, scopeParam, state);
+                OAuthUtil.forwardToLoginForm(realm, request, uriInfo, redirect, clientId, scopeParam, state);
                 return null;
             }
         }.call();
@@ -415,14 +432,14 @@ public class TokenService extends AbstractLoginService {
                     logger.debug("Failed to verify signature", ignored);
                 }
                 if (!verifiedCode) {
-                    securityFailureForward("Illegal access code.");
+                    OAuthUtil.securityFailureForward(request, "Illegal access code.");
                     session.close();
                     return null;
                 }
                 String key = input.readContent(String.class);
                 AccessCodeEntry accessCodeEntry = tokenManager.getAccessCode(key);
                 if (accessCodeEntry == null) {
-                    securityFailureForward("Unknown access code.");
+                    OAuthUtil.securityFailureForward(request, "Unknown access code.");
                     session.close();
                     return null;
                 }
@@ -434,7 +451,7 @@ public class TokenService extends AbstractLoginService {
                     return redirectAccessDenied(redirect, state);
                 }
 
-                return redirectAccessCode(accessCodeEntry, state, redirect);
+                return OAuthUtil.redirectAccessCode(realm, authManager, uriInfo, accessCodeEntry, state, redirect);
             }
         }.call();
     }
@@ -444,11 +461,6 @@ public class TokenService extends AbstractLoginService {
         if (state != null) redirectUri.queryParam("state", state);
         Response.ResponseBuilder location = Response.status(302).location(redirectUri.build());
         return location.build();
-    }
-
-    @Override
-    protected Logger getLogger() {
-        return logger;
     }
 
 }

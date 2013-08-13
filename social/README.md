@@ -18,7 +18,17 @@ Social provides implementations for Facebook, Google and Twitter.
 Configure Facebook
 ------------------
 
+Open https://developers.facebook.com/apps. Click on Create New App
 
+Use any app name that you'd like, click Continue
+
+Select Disabled for Sandbox Mode
+
+Under Select how your app integrates with Facebook select Website with Facebook login. Fill in the form with the following values:
+
+* Site URL: http://<HOSTNAME>[<PORT>]/auth-server/rest/social/callback
+
+Click on Save changes. Use the value of App ID as the value of the system property "keycloak.social.facebook.key", and the value of App Secret as the value of "keycloak.social.facebook.secret".
 
 
 Configure Google
@@ -30,7 +40,7 @@ Use any name that you'd like, click Create Project, select API Access and click 
 
 Use any product name you'd like and leave the other fields empty, then click Next. On the next page select Web application as the application type. Click more options next> to Your site or hostname. Fill in the form with the following values:
 
-* Authorized Redirect URIs: http://<HOSTNAME>[<PORT>]/auth-server/rest/realms/<REALM>/social/callback
+* Authorized Redirect URIs: http://<HOSTNAME>[<PORT>]/auth-server/rest/social/callback
 
 Click on Create client ID. Use the value of Client ID as the value of the system property "keycloak.social.google.key", and the value of Client secret as the value of "keycloak.social.google.secret".
 
@@ -40,10 +50,7 @@ Configure Twitter
 
 Open https://dev.twitter.com/apps. Click on Create a new application.
 
-Fill in name, description and website. For Callback URL use the following value:
-
-Callback URL: http://mbaas-stianst.rhcloud.com/ejs-identity/api/callback/516131bc-e3e4-4736-928b-cf1df8c0fe74
-Note: Twitter doesn't allow localhost as domain, use 127.0.0.1 instead!
+Fill in name, description and website. Leave Callback URL empty!
 
 Agree to the rules, fill in the captcha and click on Create your Twitter application.
 

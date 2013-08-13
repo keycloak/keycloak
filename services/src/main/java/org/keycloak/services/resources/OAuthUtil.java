@@ -1,14 +1,13 @@
 package org.keycloak.services.resources;
 
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
+import java.net.URI;
+
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
-import org.jboss.resteasy.spi.HttpResponse;
 import org.keycloak.services.JspRequestParameters;
 import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -18,57 +17,52 @@ import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RoleModel;
 import org.keycloak.services.models.UserModel;
 
-import java.net.URI;
+public class OAuthUtil {
 
-public abstract class AbstractLoginService {
-
-    @Context
-    protected UriInfo uriInfo;
-    @Context
-    protected HttpHeaders headers;
-    @Context
-    HttpRequest request;
-    @Context
-    HttpResponse response;
+    private static final Logger log = Logger.getLogger(OAuthUtil.class);
 
     public final static String securityFailurePath = "/saas/securityFailure.jsp";
     public final static String loginFormPath = "/sdk/login.xhtml";
     public final static String oauthFormPath = "/saas/oauthGrantForm.jsp";
 
-    protected RealmModel realm;
-    protected TokenManager tokenManager;
-    protected AuthenticationManager authManager = new AuthenticationManager();
-
-    public AbstractLoginService(RealmModel realm, TokenManager tokenManager) {
-        this.realm = realm;
-        this.tokenManager = tokenManager;
-    }
-
-    protected Response processAccessCode(String scopeParam, String state, String redirect, UserModel client, UserModel user) {
+    public static Response processAccessCode(RealmModel realm, TokenManager tokenManager, AuthenticationManager authManager,
+            HttpRequest request, UriInfo uriInfo,
+            String scopeParam, String state,
+            String redirect,
+            UserModel client, UserModel user) {
         RoleModel resourceRole = realm.getRole(RealmManager.RESOURCE_ROLE);
         RoleModel identityRequestRole = realm.getRole(RealmManager.IDENTITY_REQUESTER_ROLE);
         boolean isResource = realm.hasRole(client, resourceRole);
         if (!isResource && !realm.hasRole(client, identityRequestRole)) {
-            securityFailureForward("Login requester not allowed to request login.");
+            securityFailureForward(request, "Login requester not allowed to request login.");
             return null;
         }
         AccessCodeEntry accessCode = tokenManager.createAccessCode(scopeParam, state, redirect, realm, client, user);
-        getLogger().info("processAccessCode: isResource: " + isResource);
-        getLogger().info("processAccessCode: go to oauth page?: "
-                + (!isResource && (accessCode.getRealmRolesRequested().size() > 0 || accessCode.getResourceRolesRequested()
-                        .size() > 0)));
+        log.info("processAccessCode: isResource: " + isResource);
+        log.info(
+                "processAccessCode: go to oauth page?: "
+                        + (!isResource && (accessCode.getRealmRolesRequested().size() > 0 || accessCode
+                                .getResourceRolesRequested().size() > 0)));
         if (!isResource
                 && (accessCode.getRealmRolesRequested().size() > 0 || accessCode.getResourceRolesRequested().size() > 0)) {
-            oauthGrantPage(accessCode, client);
+            oauthGrantPage(realm, request, uriInfo, accessCode, client);
             return null;
         }
-        return redirectAccessCode(accessCode, state, redirect);
+        return redirectAccessCode(realm, authManager, uriInfo, accessCode, state, redirect);
     }
 
-    protected Response redirectAccessCode(AccessCodeEntry accessCode, String state, String redirect) {
+    public static void securityFailureForward(HttpRequest request, String message) {
+        log.error(message);
+        request.setAttribute(JspRequestParameters.KEYCLOAK_SECURITY_FAILURE_MESSAGE, message);
+        request.forward(securityFailurePath);
+    }
+
+    public static Response redirectAccessCode(RealmModel realm, AuthenticationManager authManager, UriInfo uriInfo,
+            AccessCodeEntry accessCode,
+            String state, String redirect) {
         String code = accessCode.getCode();
         UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam("code", code);
-        getLogger().info("redirectAccessCode: state: " + state);
+        log.info("redirectAccessCode: state: " + state);
         if (state != null)
             redirectUri.queryParam("state", state);
         Response.ResponseBuilder location = Response.status(302).location(redirectUri.build());
@@ -78,16 +72,11 @@ public abstract class AbstractLoginService {
         return location.build();
     }
 
-    protected void securityFailureForward(String message) {
-        getLogger().error(message);
-        request.setAttribute(JspRequestParameters.KEYCLOAK_SECURITY_FAILURE_MESSAGE, message);
-        request.forward(securityFailurePath);
-    }
-
-    protected void forwardToLoginForm(String redirect, String clientId, String scopeParam, String state) {
+    public static void forwardToLoginForm(RealmModel realm, HttpRequest request, UriInfo uriInfo, String redirect,
+            String clientId, String scopeParam, String state) {
         request.setAttribute(RealmModel.class.getName(), realm);
         request.setAttribute("KEYCLOAK_LOGIN_ACTION", TokenService.processLoginUrl(uriInfo).build(realm.getId()));
-        request.setAttribute("KEYCLOAK_SOCIAL_LOGIN", SocialService.redirectToProviderAuthUrl(uriInfo).build(realm.getId()));
+        request.setAttribute("KEYCLOAK_SOCIAL_LOGIN", SocialResource.redirectToProviderAuthUrl(uriInfo).build(realm.getId()));
         request.setAttribute("KEYCLOAK_REGISTRATION_PAGE", URI.create("not-implemented-yet"));
 
         // RESTEASY eats the form data, so we send via an attribute
@@ -98,7 +87,8 @@ public abstract class AbstractLoginService {
         request.forward(loginFormPath);
     }
 
-    protected void oauthGrantPage(AccessCodeEntry accessCode, UserModel client) {
+    public static void oauthGrantPage(RealmModel realm, HttpRequest request, UriInfo uriInfo, AccessCodeEntry accessCode,
+            UserModel client) {
         request.setAttribute("realmRolesRequested", accessCode.getRealmRolesRequested());
         request.setAttribute("resourceRolesRequested", accessCode.getResourceRolesRequested());
         request.setAttribute("client", client);
@@ -108,5 +98,4 @@ public abstract class AbstractLoginService {
         request.forward(oauthFormPath);
     }
 
-    protected abstract Logger getLogger();
 }
