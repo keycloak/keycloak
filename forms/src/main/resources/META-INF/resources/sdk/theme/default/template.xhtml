@@ -3,42 +3,47 @@
 
 <h:head>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-	<title>Log in to #{login.name}</title>
-	<link href="#{login.themeConfig['styles']}" rel="stylesheet" />
+	<title>Log in to #{forms.name}</title>
+	<link href="#{forms.themeConfig['styles']}" rel="stylesheet" />
 	<style>
 		body {
-			background-image: url("#{login.themeConfig['background']}");
+			background-image: url("#{forms.themeConfig['background']}");
 		}
 	</style>
 </h:head>
 
 <h:body class="rcue-login-register #{bodyClass}">
-	<h:panelGroup rendered="#{not empty login.themeConfig['logo']}">
-		<h1><a href="#" title="Go to the home page"><img src="#{login.themeConfig['logo']}" alt="Logo" /></a></h1>
+	<h:panelGroup rendered="#{not empty forms.themeConfig['logo']}">
+		<h1><a href="#" title="Go to the home page"><img src="#{forms.themeConfig['logo']}" alt="Logo" /></a></h1>
 	</h:panelGroup>
 
 	<div class="content">
 		<h2><ui:insert name="header" /></h2>
 
 		<div class="background-area">
-			<div class="form-area #{login.social ? 'social' : ''} clearfix">
+			<div class="form-area #{forms.social ? 'social' : ''} clearfix">
 				<section class="app-form">
 					<h3>Application login area</h3>
 					
-					<h:panelGroup rendered="#{not empty login.error}">
-						<div class="feedback error bottom-left show"><p><strong>#{login.error}</strong></p></div>
+					<h:panelGroup rendered="#{not empty forms.error}">
+						<div class="feedback error bottom-left show">
+							<p>
+								<strong>#{forms.error}</strong><br/>
+								#{forms.errorDetails}
+							</p>
+						</div>
 					</h:panelGroup>
 					
 					<ui:insert name="form" />
 				</section>
 				
-				<h:panelGroup rendered="#{login.social}">
+				<h:panelGroup rendered="#{forms.social}">
 					<section class="social-login">
 						<span>or</span>
 						<h3>Social login area</h3>
 						<p>Log In with</p>
 						<ul>
-							<ui:repeat var="p" value="#{login.providers}">
+							<ui:repeat var="p" value="#{forms.providers}">
 								<li><a href="#{p.loginUrl}" class="zocial #{p.id}"> <span class="text">#{p.name}</span></a></li>
 							</ui:repeat>
 						</ul>
@@ -48,16 +53,16 @@
 				<section class="info-area">
 					<h3>Info area</h3>
 					<ui:insert name="info" />
-					<ul>
-						<li><strong>Domain:</strong> 10.0.0.1</li>
-						<li><strong>Zone:</strong> Live</li>
-						<li><strong>Appliance:</strong> Yep</li>
-					</ul>
+<!-- 					<ul> -->
+<!-- 						<li><strong>Domain:</strong> 10.0.0.1</li> -->
+<!-- 						<li><strong>Zone:</strong> Live</li> -->
+<!-- 						<li><strong>Appliance:</strong> Yep</li> -->
+<!-- 					</ul> -->
 				</section>								
 			</div>
 		</div>
 			
-		<h:panelGroup rendered="#{login.themeConfig['displayPoweredBy']}">
+		<h:panelGroup rendered="#{forms.themeConfig['displayPoweredBy']}">
 			<p class="powered"><a href="#">Powered by Keycloak</a></p>
 		</h:panelGroup>			
 	</div>

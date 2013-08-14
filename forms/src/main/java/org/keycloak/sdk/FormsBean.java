@@ -8,23 +8,25 @@ import java.util.List;
 import java.util.Map;
 
 import javax.annotation.PostConstruct;
-import javax.faces.application.FacesMessage;
 import javax.faces.bean.ManagedBean;
 import javax.faces.bean.RequestScoped;
 import javax.faces.context.FacesContext;
 import javax.imageio.spi.ServiceRegistry;
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.MultivaluedMap;
 
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RequiredCredentialModel;
 
-@ManagedBean(name = "login")
+@ManagedBean(name = "forms")
 @RequestScoped
-public class LoginBean {
+public class FormsBean {
 
     private RealmModel realm;
 
     private String name;
+
+    private String loginUrl;
 
     private String loginAction;
 
@@ -32,7 +34,7 @@ public class LoginBean {
 
     private String registrationUrl;
 
-    private String username;
+    private String registrationAction;
 
     private List<RequiredCredential> requiredCredentials;
 
@@ -48,6 +50,12 @@ public class LoginBean {
 
     private String error;
 
+    private String errorDetails;
+
+    private String view;
+
+    private Map<String, String> formData;
+
     @PostConstruct
     public void init() {
         FacesContext ctx = FacesContext.getCurrentInstance();
@@ -55,20 +63,26 @@ public class LoginBean {
         HttpServletRequest request = (HttpServletRequest) ctx.getExternalContext().getRequest();
 
         realm = (RealmModel) request.getAttribute(RealmModel.class.getName());
-        
+
         if (RealmModel.DEFAULT_REALM.equals(realm.getName())) {
             name = "Keycloak";
         } else {
             name = realm.getName();
         }
 
+        view = ctx.getViewRoot().getViewId();
+        view = view.substring(view.lastIndexOf('/') + 1, view.lastIndexOf('.'));
+
+        loginUrl = ((URI) request.getAttribute("KEYCLOAK_LOGIN_PAGE")).toString();
         loginAction = ((URI) request.getAttribute("KEYCLOAK_LOGIN_ACTION")).toString();
+
         registrationUrl = ((URI) request.getAttribute("KEYCLOAK_REGISTRATION_PAGE")).toString();
+        registrationAction = ((URI) request.getAttribute("KEYCLOAK_REGISTRATION_ACTION")).toString();
+
         socialLoginUrl = ((URI) request.getAttribute("KEYCLOAK_SOCIAL_LOGIN")).toString();
 
-        username = (String) request.getAttribute("username");
-
         addRequiredCredentials();
+        addFormData(request);
         addHiddenProperties(request, "client_id", "scope", "state", "redirect_uri");
         addSocialProviders();
         addErrors(request);
@@ -98,6 +112,10 @@ public class LoginBean {
         return name;
     }
 
+    public String getLoginUrl() {
+        return loginUrl;
+    }
+
     public String getLoginAction() {
         return loginAction;
     }
@@ -106,12 +124,24 @@ public class LoginBean {
         return error;
     }
 
+    public String getErrorDetails() {
+        return errorDetails;
+    }
+
+    public Map<String, String> getFormData() {
+        return formData;
+    }
+
     public List<Property> getHiddenProperties() {
         return hiddenProperties;
     }
 
     public List<RequiredCredential> getRequiredCredentials() {
         return requiredCredentials;
+    }
+
+    public String getView() {
+        return view;
     }
 
     public String getTheme() {
@@ -126,8 +156,8 @@ public class LoginBean {
         return registrationUrl;
     }
 
-    public String getUsername() {
-        return username;
+    public String getRegistrationAction() {
+        return registrationAction;
     }
 
     public boolean isSocial() {
@@ -137,6 +167,18 @@ public class LoginBean {
 
     public boolean isRegistrationAllowed() {
         return realm.isRegistrationAllowed();
+    }
+
+    private void addFormData(HttpServletRequest request) {
+        formData = new HashMap<String, String>();
+
+        @SuppressWarnings("unchecked")
+        MultivaluedMap<String, String> t = (MultivaluedMap<String, String>) request.getAttribute("KEYCLOAK_FORM_DATA");
+        if (t != null) {
+            for (String k : t.keySet()) {
+                formData.put(k, t.getFirst(k));
+            }
+        }
     }
 
     private void addHiddenProperties(HttpServletRequest request, String... names) {
@@ -170,6 +212,16 @@ public class LoginBean {
 
     private void addErrors(HttpServletRequest request) {
         error = (String) request.getAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE");
+
+        if (error != null) {
+            if (view.equals("login")) {
+                errorDetails = error;
+                error = "Login failed";
+            } else if (view.equals("register")) {
+                errorDetails = error;
+                error = "Registration failed";
+            }
+        }
     }
 
     public class Property {

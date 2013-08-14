@@ -199,7 +199,8 @@ public class TokenService {
                 UserModel user = realm.getUser(username);
                 if (user == null) {
                     logger.error("Incorrect user name.");
-                    request.setAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE", "Incorrect user name.");
+                    request.setAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE", "Invalid username or password");
+                    request.setAttribute("KEYCLOAK_FORM_DATA", formData);
                     OAuthUtil.forwardToLoginForm(realm, request, uriInfo, redirect, clientId, scopeParam, state);
                     return null;
                 }
@@ -211,7 +212,8 @@ public class TokenService {
                 if (!authenticated) {
                     logger.error("Authentication failed");
                     request.setAttribute("username", username);
-                    request.setAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE", "Invalid credentials.");
+                    request.setAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE", "Invalid username or password");
+                    request.setAttribute("KEYCLOAK_FORM_DATA", formData);
                     OAuthUtil.forwardToLoginForm(realm, request, uriInfo, redirect, clientId, scopeParam, state);
                     return null;
                 }

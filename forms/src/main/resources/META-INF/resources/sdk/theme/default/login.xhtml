@@ -2,27 +2,28 @@
 <ui:composition xmlns:h="http://java.sun.com/jsf/html" xmlns:f="http://java.sun.com/jsf/core" xmlns:ui="http://java.sun.com/jsf/facelets"
 	xmlns:c="http://java.sun.com/jstl/core" template="template.xhtml">
 
-	<ui:define name="header">Log in to <strong>#{login.name}</strong></ui:define>
+	<ui:define name="header">Log in to <strong>#{forms.name}</strong></ui:define>
 	
 	<ui:define name="form">
-		<form action="#{login.loginAction}" method="post">
+		<form action="#{forms.loginAction}" method="post">
 			<div>
-				<label for="username">Username</label> <input id="username" name="username" value="#{login.username}" type="text" />
+				<label for="username">Username</label>
+				<input id="username" name="username" value="#{forms.formData['username']}" type="text" />
 			</div>
 
-			<ui:repeat var="c" value="#{login.requiredCredentials}">
+			<ui:repeat var="c" value="#{forms.requiredCredentials}">
 				<div>
 					<label for="#{c.name}">#{c.label}</label> <input id="#{c.name}" name="#{c.name}" type="#{c.inputType}" />
 				</div>
 			</ui:repeat>
 
-			<ui:repeat var="p" value="#{login.hiddenProperties}">
+			<ui:repeat var="p" value="#{forms.hiddenProperties}">
 				<input name="#{p.name}" value="#{p.value}" type="hidden" />
 			</ui:repeat>
 
 			<div class="aside-btn">
-				<input type="checkbox" id="remember" /><label for="remember">Remember Username</label>
-				<p>Forgot <a href="#">Username</a> or <a href="#">Password</a>?</p>
+				<!-- <input type="checkbox" id="remember" /><label for="remember">Remember Username</label> -->
+				<!-- <p>Forgot <a href="#">Username</a> or <a href="#">Password</a>?</p> -->
 			</div>
 
 			<input type="submit" value="Log In" />
@@ -30,8 +31,8 @@
 	</ui:define>
 	
 	<ui:define name="info">
-		<h:panelGroup rendered="#{login.registrationAllowed}">
-			<p>No account? <a href="#{login.registrationUrl}">Register</a>.</p>
+		<h:panelGroup rendered="#{forms.registrationAllowed}">
+			<p>No account? <a href="#{forms.registrationUrl}">Register</a>.</p>
 		</h:panelGroup>	
 	</ui:define>
 </ui:composition>

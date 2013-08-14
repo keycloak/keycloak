@@ -1,7 +1,5 @@
 package org.keycloak.services.resources;
 
-import java.net.URI;
-
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
@@ -22,7 +20,6 @@ public class OAuthUtil {
     private static final Logger log = Logger.getLogger(OAuthUtil.class);
 
     public final static String securityFailurePath = "/saas/securityFailure.jsp";
-    public final static String loginFormPath = "/sdk/login.xhtml";
     public final static String oauthFormPath = "/saas/oauthGrantForm.jsp";
 
     public static Response processAccessCode(RealmModel realm, TokenManager tokenManager, AuthenticationManager authManager,
@@ -75,16 +72,22 @@ public class OAuthUtil {
     public static void forwardToLoginForm(RealmModel realm, HttpRequest request, UriInfo uriInfo, String redirect,
             String clientId, String scopeParam, String state) {
         request.setAttribute(RealmModel.class.getName(), realm);
-        request.setAttribute("KEYCLOAK_LOGIN_ACTION", TokenService.processLoginUrl(uriInfo).build(realm.getId()));
-        request.setAttribute("KEYCLOAK_SOCIAL_LOGIN", SocialResource.redirectToProviderAuthUrl(uriInfo).build(realm.getId()));
-        request.setAttribute("KEYCLOAK_REGISTRATION_PAGE", URI.create("not-implemented-yet"));
+
+        request.setAttribute("KEYCLOAK_LOGIN_PAGE", Urls.realmLoginPage(uriInfo, realm.getId()));
+        request.setAttribute("KEYCLOAK_LOGIN_ACTION", Urls.realmLoginAction(uriInfo, realm.getId()));
+
+        request.setAttribute("KEYCLOAK_REGISTRATION_PAGE", Urls.realmRegisterPage(uriInfo, realm.getId()));
+        request.setAttribute("KEYCLOAK_REGISTRATION_ACTION", Urls.realmRegisterAction(uriInfo, realm.getId()));
+
+        request.setAttribute("KEYCLOAK_SOCIAL_LOGIN", Urls.socialRedirectToProviderAuth(uriInfo, realm.getId()));
 
         // RESTEASY eats the form data, so we send via an attribute
         request.setAttribute("redirect_uri", redirect);
         request.setAttribute("client_id", clientId);
         request.setAttribute("scope", scopeParam);
         request.setAttribute("state", state);
-        request.forward(loginFormPath);
+
+        request.forward(Pages.loginForm);
     }
 
     public static void oauthGrantPage(RealmModel realm, HttpRequest request, UriInfo uriInfo, AccessCodeEntry accessCode,

@@ -39,8 +39,6 @@ public class SaasService {
     @Context
     HttpResponse response;
 
-    protected String saasLoginPath = "/saas/saas-login.jsp";
-    protected String saasRegisterPath = "/saas/saas-register.jsp";
     protected String adminPath = "/saas/admin/index.html";
     protected AuthenticationManager authManager = new AuthenticationManager();
 
@@ -170,7 +168,7 @@ public class SaasService {
         }.call();
     }
 
-    @Path("loginPage.html")
+    @Path("login")
     @GET
     @NoCache
     public void loginPage() {
@@ -180,7 +178,22 @@ public class SaasService {
                 RealmManager realmManager = new RealmManager(session);
                 RealmModel realm = realmManager.defaultRealm();
                 authManager.expireSaasIdentityCookie(uriInfo);
-                forwardToLoginForm(realm);
+                forwardToLoginForm(realm, null, null);
+            }
+        }.run();
+    }
+
+    @Path("registrations")
+    @GET
+    @NoCache
+    public void registerPage() {
+        new Transaction() {
+            @Override
+            protected void runImpl() {
+                RealmManager realmManager = new RealmManager(session);
+                RealmModel realm = realmManager.defaultRealm();
+                authManager.expireSaasIdentityCookie(uriInfo);
+                forwardToRegisterForm(realm, null, null);
             }
         }.run();
     }
@@ -195,7 +208,7 @@ public class SaasService {
                 RealmManager realmManager = new RealmManager(session);
                 RealmModel realm = realmManager.defaultRealm();
                 authManager.expireSaasIdentityCookie(uriInfo);
-                forwardToLoginForm(realm);
+                forwardToLoginForm(realm, null, null);
             }
         }.run();
     }
@@ -214,16 +227,42 @@ public class SaasService {
         }.run();
     }
 
-    public final static String loginFormPath = "/sdk/login.xhtml";
+    protected void forwardToLoginForm(RealmModel realm, String error, MultivaluedMap<String, String> formData) {
+        if (error != null) {
+            request.setAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE", error);
+        }
 
-    protected void forwardToLoginForm(RealmModel realm) {
+        if (formData != null) {
+            request.setAttribute("KEYCLOAK_FORM_DATA", formData);
+        }
+
+        forwardToForm(realm, Pages.loginForm);
+    }
+
+    protected void forwardToRegisterForm(RealmModel realm, String error, MultivaluedMap<String, String> formData) {
+        if (error != null) {
+            request.setAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE", error);
+        }
+
+        if (formData != null) {
+            request.setAttribute("KEYCLOAK_FORM_DATA", formData);
+        }
+
+        forwardToForm(realm, Pages.registerForm);
+    }
+
+    protected void forwardToForm(RealmModel realm, String form) {
         request.setAttribute(RealmModel.class.getName(), realm);
-        URI action = uriInfo.getBaseUriBuilder().path(SaasService.class).path(SaasService.class, "processLogin").build();
-        URI register = contextRoot(uriInfo).path(saasRegisterPath).build();
-        request.setAttribute("KEYCLOAK_LOGIN_ACTION", action);
-        request.setAttribute("KEYCLOAK_REGISTRATION_PAGE", register);
-        request.setAttribute("KEYCLOAK_SOCIAL_LOGIN", SocialResource.redirectToProviderAuthUrl(uriInfo).build(realm.getId()));
-        request.forward(loginFormPath);
+
+        request.setAttribute("KEYCLOAK_LOGIN_PAGE", Urls.saasLoginPage(uriInfo));
+        request.setAttribute("KEYCLOAK_LOGIN_ACTION", Urls.saasLoginAction(uriInfo));
+
+        request.setAttribute("KEYCLOAK_REGISTRATION_PAGE", Urls.saasRegisterPage(uriInfo));
+        request.setAttribute("KEYCLOAK_REGISTRATION_ACTION", Urls.saasRegisterAction(uriInfo));
+
+        request.setAttribute("KEYCLOAK_SOCIAL_LOGIN", Urls.socialRedirectToProviderAuth(uriInfo, realm.getId()));
+
+        request.forward(form);
     }
 
 
@@ -246,22 +285,19 @@ public class SaasService {
                 UserModel user = realm.getUser(username);
                 if (user == null) {
                     logger.info("Not Authenticated! Incorrect user name");
-                    request.setAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE", "Incorrect user name.");
-                    forwardToLoginForm(realm);
+                    forwardToLoginForm(realm, "Invalid username or password", formData);
                     return null;
                 }
                 if (!user.isEnabled()) {
                     logger.info("NAccount is disabled, contact admin.");
-                    request.setAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE", "Account is disabled, contact admin.");
-                    forwardToLoginForm(realm);
+                    forwardToLoginForm(realm, "Account is disabled, contact admin.", formData);
                     return null;
                 }
 
                 boolean authenticated = authManager.authenticateForm(realm, user, formData);
                 if (!authenticated) {
                     logger.info("Not Authenticated! Invalid credentials");
-                    request.setAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE", "Invalid credentials.");
-                    forwardToLoginForm(realm);
+                    forwardToLoginForm(realm, "Invalid username or password", formData);
                     return null;
                 }
 
@@ -295,24 +331,24 @@ public class SaasService {
     @Path("registrations")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response processRegister(final @FormParam("name") String fullname,
-                                    final @FormParam("email") String email,
-                                    final @FormParam("username") String username,
-                                    final @FormParam("password") String password,
-                                    final @FormParam("password-confirm") String confirm) {
-        if (!password.equals(confirm)) {
-            request.setAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE", "Password confirmation doesn't match.");
-            request.forward(saasRegisterPath);
-            return null;
-        }
+    public Response processRegister(final MultivaluedMap<String, String> formData) {
         return new Transaction() {
             @Override
             protected Response callImpl() {
                 RealmManager realmManager = new RealmManager(session);
                 RealmModel defaultRealm = realmManager.defaultRealm();
+
+                String error = validateRegistrationForm(formData);
+                if (error != null) {
+                    forwardToRegisterForm(defaultRealm, error, formData);
+                    return null;
+                }
+
                 UserRepresentation newUser = new UserRepresentation();
-                newUser.setUsername(username);
-                newUser.setEmail(email);
+                newUser.setUsername(formData.getFirst("username"));
+                newUser.setEmail(formData.getFirst("email"));
+
+                String fullname = formData.getFirst("name");
                 if (fullname != null) {
                     StringTokenizer tokenizer = new StringTokenizer(fullname, " ");
                     StringBuffer first = null;
@@ -334,11 +370,11 @@ public class SaasService {
                     newUser.setFirstName(first.toString());
                     newUser.setLastName(last);
                 }
-                newUser.credential(CredentialRepresentation.PASSWORD, password);
+                newUser.credential(CredentialRepresentation.PASSWORD, formData.getFirst("password"));
                 UserModel user = registerMe(defaultRealm, newUser);
                 if (user == null) {
                     request.setAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE", "Username already exists.");
-                    request.forward(saasRegisterPath);
+                    forwardToRegisterForm(defaultRealm, "Username already exists.", formData);
                     return null;
 
                 }
@@ -376,5 +412,32 @@ public class SaasService {
         return user;
     }
 
+    private String validateRegistrationForm(MultivaluedMap<String, String> formData) {
+        if (isEmpty(formData.getFirst("name"))) {
+            return "Please specify full name";
+        }
+
+        if (isEmpty(formData.getFirst("email"))) {
+            return "Please specify email";
+        }
+
+        if (isEmpty(formData.getFirst("username"))) {
+            return "Please specify username";
+        }
+
+        if (isEmpty(formData.getFirst("password"))) {
+            return "Please specify password";
+        }
+
+        if (!formData.getFirst("password").equals(formData.getFirst("password-confirm"))) {
+            return "Password confirmation doesn't match.";
+        }
+
+        return null;
+    }
+
+    private boolean isEmpty(String s) {
+        return s == null || s.length() == 0;
+    }
 
 }

@@ -58,7 +58,7 @@
         <module>integration</module>
         <module>examples</module>
         <module>social</module>
-        <module>sdk-html</module>
+        <module>forms</module>
         <!--<module>ui</module> -->
     </modules>
 

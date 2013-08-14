@@ -4,31 +4,36 @@
 
 	<ui:param name="bodyClass" value="register" />
 
-	<ui:define name="header">Register with <strong>#{login.name}</strong></ui:define>
+	<ui:define name="header">Register with <strong>#{forms.name}</strong></ui:define>
 	
 	<ui:define name="form">
-		<form action="#{login.registerAction}" method="post">
+		<form action="#{forms.registrationAction}" method="post">
+			<p class="subtitle">All fields are required</p>
 			<div>
             	<label for="name">Full name</label>
-                <input type="text" id="name" />
+                <input type="text" id="name" name="name" value="#{forms.formData['name']}" />
 			</div>
             <div>
             	<label for="email">Email</label>
-				<input type="email" id="email" />
+				<input type="text" id="email" name="email" value="#{forms.formData['email']}" />
 			</div>
 			<div>
 				<label for="username">Username</label>
-				<input type="text" id="username" />
+				<input type="text" id="username" name="username" value="#{forms.formData['username']}" />
 			</div>
             <div>
             	<label for="password">Password</label>
-				<input type="password" id="password" />
+				<input type="password" id="password" name="password" />
+			</div>
+            <div>
+            	<label for="password-confirm">Password confirmation</label>
+				<input type="password" id="password-confirm" name="password-confirm" />
 			</div>
 
-			<ui:repeat var="p" value="#{login.hiddenProperties}">
+			<ui:repeat var="p" value="#{forms.hiddenProperties}">
 				<input name="#{p.name}" value="#{p.value}" type="hidden" />
 			</ui:repeat>
-						
+
 			<div class="aside-btn">
 				<p>By registering you agree to the <a href="#">Terms of Service</a> and the <a href="#">Privacy Policy</a>.</p>
 			</div>						
@@ -38,6 +43,6 @@
 	</ui:define>
 	
 	<ui:define name="info">
-		<p>Already have an account? <a href="realm-login.html">Log in</a>.</p>
+		<p>Already have an account? <a href="#{forms.loginUrl}">Log in</a>.</p>
 	</ui:define>
 </ui:composition>
