@@ -2,7 +2,6 @@ package org.keycloak.services.managers;
 
 import org.jboss.resteasy.logging.Logger;
 import org.keycloak.representations.idm.*;
-import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.services.models.*;
 
 import java.security.KeyPair;
@@ -84,6 +83,9 @@ public class RealmManager {
         if (rep.getRequiredApplicationCredentials() != null) {
             realm.updateRequiredApplicationCredentials(rep.getRequiredApplicationCredentials());
         }
+        if (rep.getDefaultRoles() != null) {
+            realm.updateDefaultRoles(rep.getDefaultRoles());
+        }
     }
 
     public RealmModel importRealm(RealmRepresentation rep, UserModel realmCreator) {
@@ -131,8 +133,6 @@ public class RealmManager {
             }
         }
 
-
-
         if (rep.getUsers() != null) {
             for (UserRepresentation userRep : rep.getUsers()) {
                 UserModel user = createUser(newRealm, userRep);
@@ -143,6 +143,12 @@ public class RealmManager {
         if (rep.getRoles() != null) {
             for (RoleRepresentation roleRep : rep.getRoles()) {
                 createRole(newRealm, roleRep);
+            }
+        }
+
+        if (rep.getDefaultRoles() != null) {
+            for (String roleString : rep.getDefaultRoles()) {
+                newRealm.addDefaultRole(roleString.trim());
             }
         }
 

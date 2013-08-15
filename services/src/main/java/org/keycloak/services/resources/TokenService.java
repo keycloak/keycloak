@@ -296,10 +296,9 @@ public class TokenService {
                 credentials.setValue(formData.getFirst("password"));
                 realm.updateCredential(user, credentials);
 
-                // TODO Grant default roles for realm when available
-                RoleModel defaultRole = realm.getRole("user");
-                
-                realm.grantRole(user, defaultRole);
+                for (RoleModel role : realm.getDefaultRoles()) {
+                    realm.grantRole(user, role);
+                }
 
                 return processLogin(clientId, scopeParam, state, redirect, formData);
             }

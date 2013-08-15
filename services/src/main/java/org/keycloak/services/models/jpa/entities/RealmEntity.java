@@ -29,6 +29,7 @@ public class RealmEntity {
     protected String publicKeyPem;
     @Column(length = 2048)
     protected String privateKeyPem;
+    protected String[] defaultRoles;
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true)
     Collection<RequiredCredentailEntity> requiredCredentials;

@@ -22,6 +22,7 @@ public class RealmRepresentation {
     protected String privateKey;
     protected String publicKey;
     protected List<RoleRepresentation> roles;
+    protected String[] defaultRoles;
     protected Set<String> requiredCredentials;
     protected Set<String> requiredApplicationCredentials;
     protected Set<String> requiredOAuthClientCredentials;
@@ -181,6 +182,14 @@ public class RealmRepresentation {
 
     public void setRoles(List<RoleRepresentation> roles) {
         this.roles = roles;
+    }
+
+    public String[] getDefaultRoles() {
+        return defaultRoles;
+    }
+
+    public void setDefaultRoles(String[] defaultRoles) {
+        this.defaultRoles = defaultRoles;
     }
 
     public String getPrivateKey() {

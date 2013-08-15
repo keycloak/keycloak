@@ -72,6 +72,10 @@ public class ImportTest {
         Assert.assertEquals(1, creds.size());
         RequiredCredentialModel cred = creds.get(0);
         Assert.assertEquals("password", cred.getFormLabel());
+        Assert.assertEquals(2, realm.getDefaultRoles().size());
+
+        Assert.assertNotNull(realm.getRole("foo"));
+        Assert.assertNotNull(realm.getRole("bar"));
 
         UserModel user = realm.getUser("loginclient");
         Assert.assertNotNull(user);

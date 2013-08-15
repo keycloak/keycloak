@@ -376,8 +376,11 @@ public class SaasService {
             credModel.setValue(cred.getValue());
             defaultRealm.updateCredential(user, credModel);
         }
-        RoleModel realmCreator = defaultRealm.getRole(REALM_CREATOR_ROLE);
-        defaultRealm.grantRole(user, realmCreator);
+
+        for (RoleModel role : defaultRealm.getDefaultRoles()) {
+            defaultRealm.grantRole(user, role);
+        }
+
         return user;
     }
 

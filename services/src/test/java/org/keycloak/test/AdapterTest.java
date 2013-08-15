@@ -75,6 +75,7 @@ public class AdapterTest {
         realmModel.setPrivateKeyPem("0234234");
         realmModel.setPublicKeyPem("0234234");
         realmModel.setTokenLifespan(1000);
+        realmModel.addDefaultRole("foo");
 
         System.out.println(realmModel.getId());
         realmModel = adapter.getRealm(realmModel.getId());
@@ -85,6 +86,8 @@ public class AdapterTest {
         Assert.assertEquals(realmModel.getName(), "JUGGLER");
         Assert.assertEquals(realmModel.getPrivateKeyPem(), "0234234");
         Assert.assertEquals(realmModel.getPublicKeyPem(), "0234234");
+        Assert.assertEquals(1, realmModel.getDefaultRoles().size());
+        Assert.assertEquals("foo", realmModel.getDefaultRoles().get(0).getName());
     }
 
     @Test
@@ -134,7 +137,7 @@ public class AdapterTest {
         realmModel.addRole("admin");
         realmModel.addRole("user");
         List<RoleModel> roles = realmModel.getRoles();
-        Assert.assertEquals(5, roles.size());
+        Assert.assertEquals(6, roles.size());
         UserModel user = realmModel.addUser("bburke");
         RoleModel role = realmModel.getRole("user");
         realmModel.grantRole(user, role);

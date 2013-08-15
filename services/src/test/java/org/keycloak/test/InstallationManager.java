@@ -24,6 +24,7 @@ public class InstallationManager {
         manager.generateRealmKeys(defaultRealm);
         defaultRealm.addRequiredCredential(CredentialRepresentation.PASSWORD);
         defaultRealm.addRole(SaasService.REALM_CREATOR_ROLE);
+        defaultRealm.addDefaultRole(SaasService.REALM_CREATOR_ROLE);
     }
 
     public boolean isInstalled(RealmManager manager) {

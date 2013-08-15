@@ -19,6 +19,7 @@ public class RealmData extends AbstractPartition {
     private int accessCodeLifespan;
     private String publicKeyPem;
     private String privateKeyPem;
+    private String[] defaultRoles;
 
     public RealmData() {
         super(null);
@@ -115,5 +116,14 @@ public class RealmData extends AbstractPartition {
 
     public void setPrivateKeyPem(String privateKeyPem) {
         this.privateKeyPem = privateKeyPem;
+    }
+
+    @AttributeProperty
+    public String[] getDefaultRoles() {
+        return defaultRoles;
+    }
+
+    public void setDefaultRoles(String[] defaultRoles) {
+        this.defaultRoles = defaultRoles;
     }
 }

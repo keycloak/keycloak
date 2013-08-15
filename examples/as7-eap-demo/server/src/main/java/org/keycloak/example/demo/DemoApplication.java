@@ -43,6 +43,7 @@ public class DemoApplication extends KeycloakApplication {
         manager.generateRealmKeys(defaultRealm);
         defaultRealm.addRequiredCredential(CredentialRepresentation.PASSWORD);
         defaultRealm.addRole(SaasService.REALM_CREATOR_ROLE);
+        defaultRealm.addDefaultRole(SaasService.REALM_CREATOR_ROLE);
 
         RealmRepresentation rep = loadJson("META-INF/testrealm.json");
         RealmModel realm = manager.createRealm("demo", rep.getRealm());
