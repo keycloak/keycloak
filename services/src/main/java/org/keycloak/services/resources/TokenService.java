@@ -118,7 +118,7 @@ public class TokenService {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.APPLICATION_JSON)
     public Response grantIdentityToken(final MultivaluedMap<String, String> form) {
-        return new Transaction() {
+        return new Transaction<Response>() {
             protected Response callImpl() {
                 String username = form.getFirst(AuthenticationManager.FORM_USERNAME);
                 if (username == null) {
@@ -151,7 +151,7 @@ public class TokenService {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.APPLICATION_JSON)
     public Response grantAccessToken(final MultivaluedMap<String, String> form) {
-        return new Transaction() {
+        return new Transaction<Response>() {
             protected Response callImpl() {
                 String username = form.getFirst(AuthenticationManager.FORM_USERNAME);
                 if (username == null) {
@@ -185,7 +185,7 @@ public class TokenService {
     public Response processLogin(@QueryParam("client_id") final String clientId, @QueryParam("scope") final String scopeParam,
             @QueryParam("state") final String state, @QueryParam("redirect_uri") final String redirect,
             final MultivaluedMap<String, String> formData) {
-        return new Transaction() {
+        return new Transaction<Response>() {
             protected Response callImpl() {
                 OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
 
@@ -229,7 +229,7 @@ public class TokenService {
     public Response processRegister(@QueryParam("client_id") final String clientId,
             @QueryParam("scope") final String scopeParam, @QueryParam("state") final String state,
             @QueryParam("redirect_uri") final String redirect, final MultivaluedMap<String, String> formData) {
-        return new Transaction() {
+        return new Transaction<Response>() {
             @Override
             protected Response callImpl() {
                 OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
@@ -310,7 +310,7 @@ public class TokenService {
     @POST
     @Produces("application/json")
     public Response accessCodeToToken(final MultivaluedMap<String, String> formData) {
-        return new Transaction() {
+        return new Transaction<Response>() {
             protected Response callImpl() {
                 logger.info("accessRequest <---");
                 if (!realm.isEnabled()) {
@@ -438,7 +438,7 @@ public class TokenService {
     public Response loginPage(final @QueryParam("response_type") String responseType,
             final @QueryParam("redirect_uri") String redirect, final @QueryParam("client_id") String clientId,
             final @QueryParam("scope") String scopeParam, final @QueryParam("state") String state) {
-        return new Transaction() {
+        return new Transaction<Response>() {
             protected Response callImpl() {
                 OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
 
@@ -486,7 +486,7 @@ public class TokenService {
     public Response registerPage(final @QueryParam("response_type") String responseType,
             final @QueryParam("redirect_uri") String redirect, final @QueryParam("client_id") String clientId,
             final @QueryParam("scope") String scopeParam, final @QueryParam("state") String state) {
-        return new Transaction() {
+        return new Transaction<Response>() {
             protected Response callImpl() {
                 OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
 
@@ -517,7 +517,7 @@ public class TokenService {
     @GET
     @NoCache
     public Response logout(final @QueryParam("redirect_uri") String redirectUri) {
-        return new Transaction() {
+        return new Transaction<Response>() {
             protected Response callImpl() {
                 // todo do we care if anybody can trigger this?
 
@@ -537,7 +537,7 @@ public class TokenService {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processOAuth(final MultivaluedMap<String, String> formData) {
-        return new Transaction() {
+        return new Transaction<Response>() {
             protected Response callImpl() {
                 OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
 

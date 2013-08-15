@@ -54,7 +54,7 @@ public class RealmsAdminResource {
     @NoCache
     @Produces("application/json")
     public List<RealmRepresentation> getRealms() {
-        return new Transaction() {
+        return new Transaction<List<RealmRepresentation>>() {
             @Override
             protected  List<RealmRepresentation> callImpl() {
                 logger.info(("getRealms()"));
@@ -81,7 +81,7 @@ public class RealmsAdminResource {
     @Consumes("application/json")
     public Response importRealm(@Context final UriInfo uriInfo, final RealmRepresentation rep) {
         logger.info("importRealm: " + rep.getRealm());
-        return new Transaction() {
+        return new Transaction<Response>() {
             @Override
             protected Response callImpl() {
                 RealmManager realmManager = new RealmManager(session);
@@ -96,7 +96,7 @@ public class RealmsAdminResource {
     @Path("{id}")
     public RealmAdminResource getRealmAdmin(@Context final HttpHeaders headers,
                                             @PathParam("id") final String id) {
-        return new Transaction(false) {
+        return new Transaction<RealmAdminResource>(false) {
             @Override
             protected RealmAdminResource callImpl() {
                 RealmManager realmManager = new RealmManager(session);

@@ -36,7 +36,7 @@ public class ApplicationResource {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     public void update(final ApplicationRepresentation rep) {
-        new Transaction() {
+        new Transaction<Void>() {
             @Override
             protected void runImpl() {
                 ResourceManager resourceManager = new ResourceManager(new RealmManager(session));
@@ -50,7 +50,7 @@ public class ApplicationResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public ApplicationRepresentation getResource(final @PathParam("id") String id) {
-        return new Transaction() {
+        return new Transaction<ApplicationRepresentation>() {
             @Override
             protected ApplicationRepresentation callImpl() {
                ResourceManager resourceManager = new ResourceManager(new RealmManager(session));

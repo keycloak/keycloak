@@ -41,7 +41,7 @@ public class PublicRealmResource {
     @NoCache
     @Produces("application/json")
     public PublishedRealmRepresentation getRealm(@PathParam("realm") String id) {
-        return new Transaction() {
+        return new Transaction<PublishedRealmRepresentation>() {
             protected PublishedRealmRepresentation callImpl() {
                 return realmRep(realm, uriInfo);
             }
@@ -53,7 +53,7 @@ public class PublicRealmResource {
     @Path("html")
     @Produces("text/html")
     public String getRealmHtml(@PathParam("realm") String id) {
-        return new Transaction() {
+        return new Transaction<String>() {
             protected String callImpl() {
                 StringBuffer html = new StringBuffer();
 
