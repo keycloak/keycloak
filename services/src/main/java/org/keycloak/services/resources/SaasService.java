@@ -9,14 +9,17 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RoleModel;
 import org.keycloak.services.models.UserCredentialModel;
 import org.keycloak.services.models.UserModel;
 import org.keycloak.services.resources.admin.RealmsAdminResource;
+import org.keycloak.services.resources.flows.Flows;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
+
 import java.net.URI;
 import java.util.StringTokenizer;
 
@@ -39,8 +42,6 @@ public class SaasService {
     @Context
     HttpResponse response;
 
-    protected String saasLoginPath = "/saas/saas-login.jsp";
-    protected String saasRegisterPath = "/saas/saas-register.jsp";
     protected String adminPath = "/saas/admin/index.html";
     protected AuthenticationManager authManager = new AuthenticationManager();
 
@@ -78,12 +79,13 @@ public class SaasService {
     @NoCache
     public Response keepalive(final @Context HttpHeaders headers) {
         logger.info("keepalive");
-        return new Transaction() {
+        return new Transaction<Response>() {
             @Override
             public Response callImpl() {
                 RealmManager realmManager = new RealmManager(session);
                 RealmModel realm = realmManager.defaultRealm();
-                if (realm == null) throw new NotFoundException();
+                if (realm == null)
+                    throw new NotFoundException();
                 UserModel user = authManager.authenticateSaasIdentityCookie(realm, uriInfo, headers);
                 if (user == null) {
                     return Response.status(401).build();
@@ -99,12 +101,13 @@ public class SaasService {
     @Produces("application/json")
     @NoCache
     public Response whoAmI(final @Context HttpHeaders headers) {
-        return new Transaction() {
+        return new Transaction<Response>() {
             @Override
             public Response callImpl() {
                 RealmManager realmManager = new RealmManager(session);
                 RealmModel realm = realmManager.defaultRealm();
-                if (realm == null) throw new NotFoundException();
+                if (realm == null)
+                    throw new NotFoundException();
                 UserModel user = authManager.authenticateSaasIdentityCookie(realm, uriInfo, headers);
                 if (user == null) {
                     return Response.status(401).build();
@@ -119,7 +122,7 @@ public class SaasService {
     @Produces("application/javascript")
     @NoCache
     public String isLoggedIn(final @Context HttpHeaders headers) {
-        return new Transaction() {
+        return new Transaction<String>() {
             @Override
             public String callImpl() {
                 logger.info("WHOAMI Javascript start.");
@@ -139,7 +142,6 @@ public class SaasService {
         }.call();
     }
 
-
     public static UriBuilder contextRoot(UriInfo uriInfo) {
         return UriBuilder.fromUri(uriInfo.getBaseUri()).replacePath("/auth-server");
     }
@@ -150,12 +152,13 @@ public class SaasService {
 
     @Path("admin/realms")
     public RealmsAdminResource getRealmsAdmin(@Context final HttpHeaders headers) {
-        return new Transaction(false) {
+        return new Transaction<RealmsAdminResource>(false) {
             @Override
             protected RealmsAdminResource callImpl() {
                 RealmManager realmManager = new RealmManager(session);
                 RealmModel saasRealm = realmManager.defaultRealm();
-                if (saasRealm == null) throw new NotFoundException();
+                if (saasRealm == null)
+                    throw new NotFoundException();
                 UserModel admin = authManager.authenticateSaasIdentity(saasRealm, uriInfo, headers);
                 if (admin == null) {
                     throw new NotAuthorizedException("Bearer");
@@ -170,7 +173,7 @@ public class SaasService {
         }.call();
     }
 
-    @Path("loginPage.html")
+    @Path("login")
     @GET
     @NoCache
     public void loginPage() {
@@ -180,7 +183,24 @@ public class SaasService {
                 RealmManager realmManager = new RealmManager(session);
                 RealmModel realm = realmManager.defaultRealm();
                 authManager.expireSaasIdentityCookie(uriInfo);
-                forwardToLoginForm(realm);
+
+                Flows.forms(realm, request).forwardToLogin();
+            }
+        }.run();
+    }
+
+    @Path("registrations")
+    @GET
+    @NoCache
+    public void registerPage() {
+        new Transaction() {
+            @Override
+            protected void runImpl() {
+                RealmManager realmManager = new RealmManager(session);
+                RealmModel realm = realmManager.defaultRealm();
+                authManager.expireSaasIdentityCookie(uriInfo);
+
+                Flows.forms(realm, request).forwardToRegistration();
             }
         }.run();
     }
@@ -195,11 +215,11 @@ public class SaasService {
                 RealmManager realmManager = new RealmManager(session);
                 RealmModel realm = realmManager.defaultRealm();
                 authManager.expireSaasIdentityCookie(uriInfo);
-                forwardToLoginForm(realm);
+
+                Flows.forms(realm, request).forwardToLogin();
             }
         }.run();
     }
-
 
     @Path("logout-cookie")
     @GET
@@ -214,30 +234,18 @@ public class SaasService {
         }.run();
     }
 
-    public final static String loginFormPath = "/sdk/login.xhtml";
-
-    protected void forwardToLoginForm(RealmModel realm) {
-        request.setAttribute(RealmModel.class.getName(), realm);
-        URI action = uriInfo.getBaseUriBuilder().path(SaasService.class).path(SaasService.class, "processLogin").build();
-        URI register = contextRoot(uriInfo).path(saasRegisterPath).build();
-        request.setAttribute("KEYCLOAK_LOGIN_ACTION", action);
-        request.setAttribute("KEYCLOAK_REGISTRATION_PAGE", register);
-        request.setAttribute("KEYCLOAK_SOCIAL_LOGIN", SocialService.redirectToProviderAuthUrl(uriInfo).build(realm.getId()));
-        request.forward(loginFormPath);
-    }
-
-
     @Path("login")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processLogin(final MultivaluedMap<String, String> formData) {
         logger.info("processLogin start");
-        return new Transaction() {
+        return new Transaction<Response>() {
             @Override
             protected Response callImpl() {
                 RealmManager realmManager = new RealmManager(session);
                 RealmModel realm = realmManager.defaultRealm();
-                if (realm == null) throw new NotFoundException();
+                if (realm == null)
+                    throw new NotFoundException();
 
                 if (!realm.isEnabled()) {
                     throw new NotImplementedYetException();
@@ -246,29 +254,27 @@ public class SaasService {
                 UserModel user = realm.getUser(username);
                 if (user == null) {
                     logger.info("Not Authenticated! Incorrect user name");
-                    request.setAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE", "Incorrect user name.");
-                    forwardToLoginForm(realm);
-                    return null;
+
+                    return Flows.forms(realm, request).setError(Messages.INVALID_USER).setFormData(formData)
+                            .forwardToLogin();
                 }
                 if (!user.isEnabled()) {
-                    logger.info("NAccount is disabled, contact admin.");
-                    request.setAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE", "Account is disabled, contact admin.");
-                    forwardToLoginForm(realm);
-                    return null;
+                    logger.info("Account is disabled, contact admin.");
+
+                    return Flows.forms(realm, request).setError(Messages.ACCOUNT_DISABLED)
+                            .setFormData(formData).forwardToLogin();
                 }
 
                 boolean authenticated = authManager.authenticateForm(realm, user, formData);
                 if (!authenticated) {
                     logger.info("Not Authenticated! Invalid credentials");
-                    request.setAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE", "Invalid credentials.");
-                    forwardToLoginForm(realm);
-                    return null;
+
+                    return Flows.forms(realm, request).setError(Messages.INVALID_PASSWORD).setFormData(formData)
+                            .forwardToLogin();
                 }
 
                 NewCookie cookie = authManager.createSaasIdentityCookie(realm, user, uriInfo);
-                return Response.status(302)
-                        .cookie(cookie)
-                        .location(contextRoot(uriInfo).path(adminPath).build()).build();
+                return Response.status(302).cookie(cookie).location(contextRoot(uriInfo).path(adminPath).build()).build();
             }
         }.call();
     }
@@ -277,7 +283,7 @@ public class SaasService {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response register(final UserRepresentation newUser) {
-        return new Transaction() {
+        return new Transaction<Response>() {
             @Override
             protected Response callImpl() {
                 RealmManager realmManager = new RealmManager(session);
@@ -295,24 +301,24 @@ public class SaasService {
     @Path("registrations")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response processRegister(final @FormParam("name") String fullname,
-                                    final @FormParam("email") String email,
-                                    final @FormParam("username") String username,
-                                    final @FormParam("password") String password,
-                                    final @FormParam("password-confirm") String confirm) {
-        if (!password.equals(confirm)) {
-            request.setAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE", "Password confirmation doesn't match.");
-            request.forward(saasRegisterPath);
-            return null;
-        }
-        return new Transaction() {
+    public Response processRegister(final MultivaluedMap<String, String> formData) {
+        return new Transaction<Response>() {
             @Override
             protected Response callImpl() {
                 RealmManager realmManager = new RealmManager(session);
                 RealmModel defaultRealm = realmManager.defaultRealm();
+
+                String error = validateRegistrationForm(formData);
+                if (error != null) {
+                    return Flows.forms(defaultRealm, request).setError(error).setFormData(formData)
+                            .forwardToRegistration();
+                }
+
                 UserRepresentation newUser = new UserRepresentation();
-                newUser.setUsername(username);
-                newUser.setEmail(email);
+                newUser.setUsername(formData.getFirst("username"));
+                newUser.setEmail(formData.getFirst("email"));
+
+                String fullname = formData.getFirst("name");
                 if (fullname != null) {
                     StringTokenizer tokenizer = new StringTokenizer(fullname, " ");
                     StringBuffer first = null;
@@ -330,16 +336,16 @@ public class SaasService {
                             last = token;
                         }
                     }
-                    if (first == null) first = new StringBuffer();
+                    if (first == null)
+                        first = new StringBuffer();
                     newUser.setFirstName(first.toString());
                     newUser.setLastName(last);
                 }
-                newUser.credential(CredentialRepresentation.PASSWORD, password);
+                newUser.credential(CredentialRepresentation.PASSWORD, formData.getFirst("password"));
                 UserModel user = registerMe(defaultRealm, newUser);
                 if (user == null) {
-                    request.setAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE", "Username already exists.");
-                    request.forward(saasRegisterPath);
-                    return null;
+                    return Flows.forms(defaultRealm, request).setError(Messages.USERNAME_EXISTS)
+                            .setFormData(formData).forwardToRegistration();
 
                 }
                 NewCookie cookie = authManager.createSaasIdentityCookie(defaultRealm, user, uriInfo);
@@ -347,7 +353,6 @@ public class SaasService {
             }
         }.call();
     }
-
 
     protected UserModel registerMe(RealmModel defaultRealm, UserRepresentation newUser) {
         if (!defaultRealm.isEnabled()) {
@@ -376,5 +381,32 @@ public class SaasService {
         return user;
     }
 
+    private String validateRegistrationForm(MultivaluedMap<String, String> formData) {
+        if (isEmpty(formData.getFirst("name"))) {
+            return Messages.MISSING_NAME;
+        }
+
+        if (isEmpty(formData.getFirst("email"))) {
+            return Messages.MISSING_EMAIL;
+        }
+
+        if (isEmpty(formData.getFirst("username"))) {
+            return Messages.MISSING_USERNAME;
+        }
+
+        if (isEmpty(formData.getFirst("password"))) {
+            return Messages.MISSING_PASSWORD;
+        }
+
+        if (!formData.getFirst("password").equals(formData.getFirst("password-confirm"))) {
+            return Messages.INVALID_PASSWORD_CONFIRM;
+        }
+
+        return null;
+    }
+
+    private boolean isEmpty(String s) {
+        return s == null || s.length() == 0;
+    }
 
 }

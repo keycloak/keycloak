@@ -43,11 +43,8 @@ public class RealmsResource {
 
     protected TokenManager tokenManager;
 
-    protected SocialRequestManager socialRequestManager;
-
-    public RealmsResource(TokenManager tokenManager, SocialRequestManager socialRequestManager) {
+    public RealmsResource(TokenManager tokenManager) {
         this.tokenManager = tokenManager;
-        this.socialRequestManager = socialRequestManager;
     }
 
     public static UriBuilder realmBaseUrl(UriInfo uriInfo) {
@@ -56,7 +53,7 @@ public class RealmsResource {
 
     @Path("{realm}/tokens")
     public TokenService getTokenService(final @PathParam("realm") String id) {
-        return new Transaction(false) {
+        return new Transaction<TokenService>(false) {
             @Override
             protected TokenService callImpl() {
                 RealmManager realmManager = new RealmManager(session);
@@ -73,27 +70,9 @@ public class RealmsResource {
 
     }
 
-    @Path("{realm}/social")
-    public SocialService getSocialService(final @PathParam("realm") String id) {
-        return new Transaction(false) {
-            @Override
-            protected SocialService callImpl() {
-                RealmManager realmManager = new RealmManager(session);
-                RealmModel realm = realmManager.getRealm(id);
-                if (realm == null) {
-                    logger.debug("realm not found");
-                    throw new NotFoundException();
-                }
-                SocialService socialService = new SocialService(realm, tokenManager, socialRequestManager);
-                resourceContext.initResource(socialService);
-                return socialService;
-            }
-        }.call();
-    }
-
     @Path("{realm}")
     public PublicRealmResource getRealmResource(final @PathParam("realm") String id) {
-        return new Transaction(false) {
+        return new Transaction<PublicRealmResource>(false) {
             @Override
             protected PublicRealmResource callImpl() {
                 RealmManager realmManager = new RealmManager(session);

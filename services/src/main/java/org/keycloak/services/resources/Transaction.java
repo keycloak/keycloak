@@ -13,7 +13,7 @@ import javax.ws.rs.core.Application;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class Transaction {
+public class Transaction<T> {
     protected KeycloakSession session;
     protected KeycloakTransaction transaction;
     protected boolean closeSession;
@@ -83,7 +83,7 @@ public class Transaction {
         }
     }
 
-    protected <T> T callImpl() {
+    protected T callImpl() {
         return null;
     }
 
@@ -91,7 +91,7 @@ public class Transaction {
      * Will not begin or end a transaction or close a session if the transaction was already active when called
      *
      */
-    public <T> T call() {
+    public T call() {
         boolean wasActive = transaction.isActive();
         if (!wasActive) transaction.begin();
         try {

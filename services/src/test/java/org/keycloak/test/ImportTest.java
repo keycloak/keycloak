@@ -71,7 +71,7 @@ public class ImportTest {
         List<RequiredCredentialModel> creds = realm.getRequiredCredentials();
         Assert.assertEquals(1, creds.size());
         RequiredCredentialModel cred = creds.get(0);
-        Assert.assertEquals("Password", cred.getFormLabel());
+        Assert.assertEquals("password", cred.getFormLabel());
 
         UserModel user = realm.getUser("loginclient");
         Assert.assertNotNull(user);

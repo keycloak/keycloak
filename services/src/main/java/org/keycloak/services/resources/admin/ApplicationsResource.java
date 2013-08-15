@@ -42,7 +42,7 @@ public class ApplicationsResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public List<ApplicationRepresentation> getResources() {
-        return new Transaction() {
+        return new Transaction<List<ApplicationRepresentation>>() {
             @Override
             protected List<ApplicationRepresentation> callImpl() {
                 List<ApplicationRepresentation> rep = new ArrayList<ApplicationRepresentation>();
@@ -59,7 +59,7 @@ public class ApplicationsResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createResource(final @Context UriInfo uriInfo, final ApplicationRepresentation rep) {
-        return new Transaction() {
+        return new Transaction<Response>() {
             @Override
             protected Response callImpl() {
                 ResourceManager resourceManager = new ResourceManager(new RealmManager(session));
@@ -71,7 +71,7 @@ public class ApplicationsResource {
 
     @Path("{id}")
     public ApplicationResource getResource(final @PathParam("id") String id) {
-        return new Transaction(false) {
+        return new Transaction<ApplicationResource>(false) {
             @Override
             protected ApplicationResource callImpl() {
                 ApplicationModel applicationModel = realm.getApplicationById(id);

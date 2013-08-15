@@ -1,0 +1,73 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:ui="http://java.sun.com/jsf/facelets" xmlns:h="http://java.sun.com/jsf/html">
+
+<h:head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<title>#{messages.logInTo} #{forms.name}</title>
+	<link href="#{forms.themeConfig['styles']}" rel="stylesheet" />
+	<style>
+		body {
+			background-image: url("#{forms.themeConfig['background']}");
+		}
+	</style>
+</h:head>
+
+<h:body class="rcue-login-register #{bodyClass}">
+	<h:panelGroup rendered="#{not empty forms.themeConfig['logo']}">
+		<h1><a href="#" title="Go to the home page"><img src="#{forms.themeConfig['logo']}" alt="Logo" /></a></h1>
+	</h:panelGroup>
+
+	<div class="content">
+		<h2><ui:insert name="header" /></h2>
+
+		<div class="background-area">
+			<div class="form-area #{forms.social ? 'social' : ''} clearfix">
+				<section class="app-form">
+					<h3>Application login area</h3>
+					
+					<h:panelGroup rendered="#{not empty forms.error}">
+						<div class="feedback error bottom-left show">
+							<p>
+								<strong>#{forms.error}</strong><br/>
+								#{forms.errorDetails}
+							</p>
+						</div>
+					</h:panelGroup>
+					
+					<ui:insert name="form" />
+				</section>
+				
+				<h:panelGroup rendered="#{forms.social}">
+					<section class="social-login">
+						<span>or</span>
+						<h3>Social login area</h3>
+						<p>#{messages.logInWith}</p>
+						<ul>
+							<ui:repeat var="p" value="#{forms.providers}">
+								<li><a href="#{p.loginUrl}" class="zocial #{p.id}"> <span class="text">#{p.name}</span></a></li>
+							</ui:repeat>
+						</ul>
+					</section>
+				</h:panelGroup>
+				
+				<section class="info-area">
+					<h3>Info area</h3>
+					<ui:insert name="info" />
+<!-- 					<ul> -->
+<!-- 						<li><strong>Domain:</strong> 10.0.0.1</li> -->
+<!-- 						<li><strong>Zone:</strong> Live</li> -->
+<!-- 						<li><strong>Appliance:</strong> Yep</li> -->
+<!-- 					</ul> -->
+				</section>								
+			</div>
+		</div>
+			
+		<h:panelGroup rendered="#{forms.themeConfig['displayPoweredBy']}">
+			<p class="powered"><a href="#">#{messages.poweredByKeycloak}</a></p>
+		</h:panelGroup>			
+	</div>
+
+	<ui:insert name="content" />
+
+</h:body>
+</html>

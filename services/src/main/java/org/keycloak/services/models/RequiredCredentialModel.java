@@ -62,19 +62,19 @@ public class RequiredCredentialModel {
         PASSWORD.setType(CredentialRepresentation.PASSWORD);
         PASSWORD.setInput(true);
         PASSWORD.setSecret(true);
-        PASSWORD.setFormLabel("Password");
+        PASSWORD.setFormLabel("password");
         map.put(PASSWORD.getType(), PASSWORD);
         TOTP = new RequiredCredentialModel();
         TOTP.setType(CredentialRepresentation.TOTP);
         TOTP.setInput(true);
         TOTP.setSecret(false);
-        TOTP.setFormLabel("Authenticator Code");
+        TOTP.setFormLabel("authenticatorCode");
         map.put(TOTP.getType(), TOTP);
         CLIENT_CERT = new RequiredCredentialModel();
         CLIENT_CERT.setType(CredentialRepresentation.CLIENT_CERT);
         CLIENT_CERT.setInput(false);
         CLIENT_CERT.setSecret(false);
-        CLIENT_CERT.setFormLabel("Client Certificate");
+        CLIENT_CERT.setFormLabel("clientCertificate");
         map.put(CLIENT_CERT.getType(), CLIENT_CERT);
         BUILT_IN = Collections.unmodifiableMap(map);
     }

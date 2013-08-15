@@ -47,7 +47,12 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-sdk-html</artifactId>
+            <artifactId>keycloak-social-facebook</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-forms</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

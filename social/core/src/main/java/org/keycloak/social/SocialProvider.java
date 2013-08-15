@@ -21,25 +21,20 @@
  */
 package org.keycloak.social;
 
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@XmlRootElement
 public interface SocialProvider {
 
     String getId();
 
-    @XmlTransient
     AuthRequest getAuthUrl(SocialProviderConfig config) throws SocialProviderException;
 
     String getRequestIdParamName();
 
     String getName();
 
-    @XmlTransient
     SocialUser processCallback(SocialProviderConfig config, AuthCallback callback) throws SocialProviderException;
 
 }

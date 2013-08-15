@@ -49,7 +49,7 @@ public class TwitterProvider implements SocialProvider {
             Twitter twitter = new TwitterFactory().getInstance();
             twitter.setOAuthConsumer(request.getKey(), request.getSecret());
 
-            RequestToken requestToken = twitter.getOAuthRequestToken();
+            RequestToken requestToken = twitter.getOAuthRequestToken(request.getCallbackUrl());
 
             return AuthRequestBuilder.create(requestToken.getToken(), requestToken.getAuthenticationURL())
                     .setAttribute("token", requestToken.getToken()).setAttribute("tokenSecret", requestToken.getTokenSecret())

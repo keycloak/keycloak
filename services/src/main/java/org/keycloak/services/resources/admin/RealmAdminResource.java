@@ -6,21 +6,25 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.managers.UserManager;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RoleModel;
 import org.keycloak.services.models.UserModel;
 import org.keycloak.services.resources.Transaction;
 
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.InternalServerErrorException;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -45,7 +49,7 @@ public class RealmAdminResource {
     @NoCache
     @Produces("application/json")
     public RealmRepresentation getRealm() {
-        return new Transaction() {
+        return new Transaction<RealmRepresentation>() {
             @Override
             protected RealmRepresentation callImpl() {
                 return new RealmManager(session).toRepresentation(realm);
@@ -58,15 +62,14 @@ public class RealmAdminResource {
     @GET
     @NoCache
     @Produces("application/json")
-    public List<RoleRepresentation> queryRoles() {
-        return new Transaction() {
+    public List<RoleRepresentation> getRoles() {
+        return new Transaction<List<RoleRepresentation>>() {
             @Override
             protected List<RoleRepresentation> callImpl() {
                 List<RoleModel> roleModels = realm.getRoles();
                 List<RoleRepresentation> roles = new ArrayList<RoleRepresentation>();
                 for (RoleModel roleModel : roleModels) {
                     RoleRepresentation role = new RoleRepresentation(roleModel.getName(), roleModel.getDescription());
-                    role.setId(roleModel.getId());
                     roles.add(role);
                 }
                 return roles;
@@ -92,7 +95,7 @@ public class RealmAdminResource {
     @NoCache
     @Produces("application/json")
     public RoleRepresentation getRole(final @PathParam("id") String id) {
-        return new Transaction() {
+        return new Transaction<RoleRepresentation>() {
             @Override
             protected RoleRepresentation callImpl() {
                 RoleModel roleModel = realm.getRoleById(id);
@@ -129,7 +132,7 @@ public class RealmAdminResource {
     @POST
     @Consumes("application/json")
     public Response createRole(final @Context UriInfo uriInfo, final RoleRepresentation rep) {
-        return new Transaction() {
+        return new Transaction<Response>() {
             @Override
             protected Response callImpl() {
                 if (realm.getRole(rep.getName()) != null) {
@@ -151,84 +154,9 @@ public class RealmAdminResource {
     @GET
     @NoCache
     @Produces("application/json")
-    public List<UserRepresentation> queryUsers(final @Context UriInfo uriInfo) {
-        return new Transaction() {
-            @Override
-            protected List<UserRepresentation> callImpl() {
-                logger.info("queryUsers");
-                Map<String, String> params = new HashMap<String, String>();
-                MultivaluedMap<String,String> queryParameters = uriInfo.getQueryParameters();
-                for (String key : queryParameters.keySet()) {
-                    logger.info("   " + key + "=" + queryParameters.getFirst(key));
-                    params.put(key, queryParameters.getFirst(key));
-                }
-                List<UserModel> userModels = realm.queryUsers(params);
-                List<UserRepresentation> users = new ArrayList<UserRepresentation>();
-                for (UserModel userModel : userModels) {
-                    users.add(UserManager.toRepresentation(userModel));
-                }
-                logger.info("   resultSet: " + users.size());
-                return users;
-            }
-        }.call();
+    public List<UserRepresentation> getUsers() {
+        return null;
     }
-
-    @Path("users/{loginName}")
-    @GET
-    @NoCache
-    @Produces("application/json")
-    public UserRepresentation getUser(final @PathParam("loginName") String loginName) {
-        return new Transaction() {
-            @Override
-            protected UserRepresentation callImpl() {
-                UserModel userModel = realm.getUser(loginName);
-                if (userModel == null) {
-                    throw new NotFoundException();
-                }
-                return UserManager.toRepresentation(userModel);
-            }
-        }.call();
-    }
-
-    @Path("users")
-    @POST
-    @NoCache
-    @Consumes("application/json")
-    public Response createUser(final @Context UriInfo uriInfo, final UserRepresentation rep) {
-        return new Transaction() {
-            @Override
-            protected Response callImpl() {
-                if (realm.getUser(rep.getUsername()) != null) {
-                    return Response.status(Response.Status.FOUND).build();
-                }
-                rep.setCredentials(null); // don't allow credential creation
-                UserManager userManager = new UserManager();
-                UserModel userModel = userManager.createUser(realm, rep);
-                return Response.created(uriInfo.getAbsolutePathBuilder().path(userModel.getLoginName()).build()).build();
-            }
-        }.call();
-    }
-
-    @Path("users/{loginName}")
-    @PUT
-    @NoCache
-    @Consumes("application/json")
-    public void updateUser(final @PathParam("loginName") String loginName, final UserRepresentation rep) {
-        new Transaction() {
-            @Override
-            protected void runImpl() {
-                UserModel userModel = realm.getUser(loginName);
-                if (userModel == null) {
-                    throw new NotFoundException();
-                }
-                UserManager userManager = new UserManager();
-                userManager.updateUserAsAdmin(userModel, rep);
-            }
-        }.run();
-    }
-
-
-
 
 
 

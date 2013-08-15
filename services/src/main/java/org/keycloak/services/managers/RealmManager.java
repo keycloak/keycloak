@@ -103,6 +103,7 @@ public class RealmManager {
         newRealm.setAccessCodeLifespan(rep.getAccessCodeLifespan());
         newRealm.setSslNotRequired(rep.isSslNotRequired());
         newRealm.setCookieLoginAllowed(rep.isCookieLoginAllowed());
+        newRealm.setRegistrationAllowed(rep.isRegistrationAllowed());
         if (rep.getPrivateKey() == null || rep.getPublicKey() == null) {
             generateRealmKeys(newRealm);
         } else {

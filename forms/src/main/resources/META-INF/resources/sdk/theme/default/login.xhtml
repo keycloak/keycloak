@@ -1,0 +1,34 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:h="http://java.sun.com/jsf/html" xmlns:f="http://java.sun.com/jsf/core" xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:c="http://java.sun.com/jstl/core" template="template.xhtml">
+
+	<ui:define name="header">Log in to <strong>#{forms.name}</strong></ui:define>
+	
+	<ui:define name="form">
+		<form action="#{forms.loginAction}" method="post">
+			<div>
+				<label for="username">#{messages.username}</label>
+				<input id="username" name="username" value="#{forms.formData['username']}" type="text" />
+			</div>
+
+			<ui:repeat var="c" value="#{forms.requiredCredentials}">
+				<div>
+					<label for="#{c.name}">#{messages[c.label]}</label> <input id="#{c.name}" name="#{c.name}" type="#{c.inputType}" />
+				</div>
+			</ui:repeat>
+
+			<div class="aside-btn">
+				<!-- <input type="checkbox" id="remember" /><label for="remember">Remember Username</label> -->
+				<!-- <p>Forgot <a href="#">Username</a> or <a href="#">Password</a>?</p> -->
+			</div>
+
+			<input type="submit" value="Log In" />
+		</form>
+	</ui:define>
+	
+	<ui:define name="info">
+		<h:panelGroup rendered="#{forms.registrationAllowed}">
+			<p>#{messages.noAccount} <a href="#{forms.registrationUrl}">#{messages.register}</a>.</p>
+		</h:panelGroup>	
+	</ui:define>
+</ui:composition>
