@@ -19,19 +19,29 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.keycloak.services.resources.flows;
+package org.keycloak.services.messages;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class Pages {
+public class Messages {
 
-    public final static String LOGIN = "/sdk/login.xhtml";
+    public static final String ACCOUNT_DISABLED = "accountDisabled";
 
-    public final static String OAUTH_GRANT = "/saas/oauthGrantForm.jsp";
+    public static final String INVALID_PASSWORD = "invalidPassword";
 
-    public final static String REGISTER = "/sdk/register.xhtml";
+    public static final String INVALID_PASSWORD_CONFIRM = "invalidPasswordConfirm";
 
-    public final static String SECURITY_FAILURE = "/saas/securityFailure.jsp";
+    public static final String INVALID_USER = "invalidUser";
+
+    public static final String MISSING_EMAIL = "missingEmail";
+
+    public static final String MISSING_NAME = "missingName";
+
+    public static final String MISSING_PASSWORD = "missingPassword";
+
+    public static final String MISSING_USERNAME = "missingUsername";
+
+    public static final String USERNAME_EXISTS = "usernameExists";
 
 }

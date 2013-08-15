@@ -17,6 +17,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.managers.TokenManager;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RoleModel;
 import org.keycloak.services.models.UserCredentialModel;
@@ -203,7 +204,7 @@ public class TokenService {
                 if (user == null) {
                     logger.error("Incorrect user name.");
 
-                    return Flows.forms(realm, request).setError("Invalid username or password").setFormData(formData)
+                    return Flows.forms(realm, request).setError(Messages.INVALID_USER).setFormData(formData)
                             .forwardToLogin();
                 }
                 if (!user.isEnabled()) {
@@ -213,7 +214,7 @@ public class TokenService {
                 if (!authenticated) {
                     logger.error("Authentication failed");
 
-                    return Flows.forms(realm, request).setError("Invalid username or password").setFormData(formData)
+                    return Flows.forms(realm, request).setError(Messages.INVALID_PASSWORD).setFormData(formData)
                             .forwardToLogin();
                 }
 
@@ -258,7 +259,7 @@ public class TokenService {
 
                 UserModel user = realm.getUser(username);
                 if (user != null) {
-                    return Flows.forms(realm, request).setError("Username already exists.").setFormData(formData)
+                    return Flows.forms(realm, request).setError(Messages.USERNAME_EXISTS).setFormData(formData)
                             .forwardToRegistration();
                 }
 
@@ -579,23 +580,23 @@ public class TokenService {
 
     private String validateRegistrationForm(MultivaluedMap<String, String> formData) {
         if (isEmpty(formData.getFirst("name"))) {
-            return "Please specify full name";
+            return Messages.MISSING_NAME;
         }
 
         if (isEmpty(formData.getFirst("email"))) {
-            return "Please specify email";
+            return Messages.MISSING_EMAIL;
         }
 
         if (isEmpty(formData.getFirst("username"))) {
-            return "Please specify username";
+            return Messages.MISSING_USERNAME;
         }
 
         if (isEmpty(formData.getFirst("password"))) {
-            return "Please specify password";
+            return Messages.MISSING_PASSWORD;
         }
 
         if (!formData.getFirst("password").equals(formData.getFirst("password-confirm"))) {
-            return "Password confirmation doesn't match.";
+            return Messages.INVALID_PASSWORD_CONFIRM;
         }
 
         return null;

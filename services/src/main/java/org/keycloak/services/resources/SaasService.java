@@ -9,6 +9,7 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RoleModel;
 import org.keycloak.services.models.UserCredentialModel;
@@ -254,13 +255,13 @@ public class SaasService {
                 if (user == null) {
                     logger.info("Not Authenticated! Incorrect user name");
 
-                    return Flows.forms(realm, request).setError("Invalid username or password").setFormData(formData)
+                    return Flows.forms(realm, request).setError(Messages.INVALID_USER).setFormData(formData)
                             .forwardToLogin();
                 }
                 if (!user.isEnabled()) {
-                    logger.info("NAccount is disabled, contact admin.");
+                    logger.info("Account is disabled, contact admin.");
 
-                    return Flows.forms(realm, request).setError("Invalid username or password")
+                    return Flows.forms(realm, request).setError(Messages.ACCOUNT_DISABLED)
                             .setFormData(formData).forwardToLogin();
                 }
 
@@ -268,7 +269,7 @@ public class SaasService {
                 if (!authenticated) {
                     logger.info("Not Authenticated! Invalid credentials");
 
-                    return Flows.forms(realm, request).setError("Invalid username or password").setFormData(formData)
+                    return Flows.forms(realm, request).setError(Messages.INVALID_PASSWORD).setFormData(formData)
                             .forwardToLogin();
                 }
 
@@ -343,7 +344,7 @@ public class SaasService {
                 newUser.credential(CredentialRepresentation.PASSWORD, formData.getFirst("password"));
                 UserModel user = registerMe(defaultRealm, newUser);
                 if (user == null) {
-                    return Flows.forms(defaultRealm, request).setError("Username already exists.")
+                    return Flows.forms(defaultRealm, request).setError(Messages.USERNAME_EXISTS)
                             .setFormData(formData).forwardToRegistration();
 
                 }
@@ -382,23 +383,23 @@ public class SaasService {
 
     private String validateRegistrationForm(MultivaluedMap<String, String> formData) {
         if (isEmpty(formData.getFirst("name"))) {
-            return "Please specify full name";
+            return Messages.MISSING_NAME;
         }
 
         if (isEmpty(formData.getFirst("email"))) {
-            return "Please specify email";
+            return Messages.MISSING_EMAIL;
         }
 
         if (isEmpty(formData.getFirst("username"))) {
-            return "Please specify username";
+            return Messages.MISSING_USERNAME;
         }
 
         if (isEmpty(formData.getFirst("password"))) {
-            return "Please specify password";
+            return Messages.MISSING_PASSWORD;
         }
 
         if (!formData.getFirst("password").equals(formData.getFirst("password-confirm"))) {
-            return "Password confirmation doesn't match.";
+            return Messages.INVALID_PASSWORD_CONFIRM;
         }
 
         return null;
