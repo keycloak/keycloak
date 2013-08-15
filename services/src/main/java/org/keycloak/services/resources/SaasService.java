@@ -79,7 +79,7 @@ public class SaasService {
     @NoCache
     public Response keepalive(final @Context HttpHeaders headers) {
         logger.info("keepalive");
-        return new Transaction() {
+        return new Transaction<Response>() {
             @Override
             public Response callImpl() {
                 RealmManager realmManager = new RealmManager(session);
@@ -101,7 +101,7 @@ public class SaasService {
     @Produces("application/json")
     @NoCache
     public Response whoAmI(final @Context HttpHeaders headers) {
-        return new Transaction() {
+        return new Transaction<Response>() {
             @Override
             public Response callImpl() {
                 RealmManager realmManager = new RealmManager(session);
@@ -122,7 +122,7 @@ public class SaasService {
     @Produces("application/javascript")
     @NoCache
     public String isLoggedIn(final @Context HttpHeaders headers) {
-        return new Transaction() {
+        return new Transaction<String>() {
             @Override
             public String callImpl() {
                 logger.info("WHOAMI Javascript start.");
@@ -152,7 +152,7 @@ public class SaasService {
 
     @Path("admin/realms")
     public RealmsAdminResource getRealmsAdmin(@Context final HttpHeaders headers) {
-        return new Transaction(false) {
+        return new Transaction<RealmsAdminResource>(false) {
             @Override
             protected RealmsAdminResource callImpl() {
                 RealmManager realmManager = new RealmManager(session);
@@ -239,7 +239,7 @@ public class SaasService {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processLogin(final MultivaluedMap<String, String> formData) {
         logger.info("processLogin start");
-        return new Transaction() {
+        return new Transaction<Response>() {
             @Override
             protected Response callImpl() {
                 RealmManager realmManager = new RealmManager(session);
@@ -283,7 +283,7 @@ public class SaasService {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response register(final UserRepresentation newUser) {
-        return new Transaction() {
+        return new Transaction<Response>() {
             @Override
             protected Response callImpl() {
                 RealmManager realmManager = new RealmManager(session);
@@ -302,7 +302,7 @@ public class SaasService {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processRegister(final MultivaluedMap<String, String> formData) {
-        return new Transaction() {
+        return new Transaction<Response>() {
             @Override
             protected Response callImpl() {
                 RealmManager realmManager = new RealmManager(session);

@@ -91,7 +91,7 @@ public class SocialResource {
     @GET
     @Path("callback")
     public Response callback() throws URISyntaxException {
-        return new Transaction() {
+        return new Transaction<Response>() {
             protected Response callImpl() {
                 Map<String, String[]> queryParams = getQueryParams();
 

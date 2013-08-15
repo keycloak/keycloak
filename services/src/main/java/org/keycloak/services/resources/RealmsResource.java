@@ -53,7 +53,7 @@ public class RealmsResource {
 
     @Path("{realm}/tokens")
     public TokenService getTokenService(final @PathParam("realm") String id) {
-        return new Transaction(false) {
+        return new Transaction<TokenService>(false) {
             @Override
             protected TokenService callImpl() {
                 RealmManager realmManager = new RealmManager(session);
@@ -72,7 +72,7 @@ public class RealmsResource {
 
     @Path("{realm}")
     public PublicRealmResource getRealmResource(final @PathParam("realm") String id) {
-        return new Transaction(false) {
+        return new Transaction<PublicRealmResource>(false) {
             @Override
             protected PublicRealmResource callImpl() {
                 RealmManager realmManager = new RealmManager(session);
