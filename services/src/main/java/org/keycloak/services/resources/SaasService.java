@@ -14,9 +14,11 @@ import org.keycloak.services.models.RoleModel;
 import org.keycloak.services.models.UserCredentialModel;
 import org.keycloak.services.models.UserModel;
 import org.keycloak.services.resources.admin.RealmsAdminResource;
+import org.keycloak.services.resources.flows.Flows;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
+
 import java.net.URI;
 import java.util.StringTokenizer;
 
@@ -81,7 +83,8 @@ public class SaasService {
             public Response callImpl() {
                 RealmManager realmManager = new RealmManager(session);
                 RealmModel realm = realmManager.defaultRealm();
-                if (realm == null) throw new NotFoundException();
+                if (realm == null)
+                    throw new NotFoundException();
                 UserModel user = authManager.authenticateSaasIdentityCookie(realm, uriInfo, headers);
                 if (user == null) {
                     return Response.status(401).build();
@@ -102,7 +105,8 @@ public class SaasService {
             public Response callImpl() {
                 RealmManager realmManager = new RealmManager(session);
                 RealmModel realm = realmManager.defaultRealm();
-                if (realm == null) throw new NotFoundException();
+                if (realm == null)
+                    throw new NotFoundException();
                 UserModel user = authManager.authenticateSaasIdentityCookie(realm, uriInfo, headers);
                 if (user == null) {
                     return Response.status(401).build();
@@ -137,7 +141,6 @@ public class SaasService {
         }.call();
     }
 
-
     public static UriBuilder contextRoot(UriInfo uriInfo) {
         return UriBuilder.fromUri(uriInfo.getBaseUri()).replacePath("/auth-server");
     }
@@ -153,7 +156,8 @@ public class SaasService {
             protected RealmsAdminResource callImpl() {
                 RealmManager realmManager = new RealmManager(session);
                 RealmModel saasRealm = realmManager.defaultRealm();
-                if (saasRealm == null) throw new NotFoundException();
+                if (saasRealm == null)
+                    throw new NotFoundException();
                 UserModel admin = authManager.authenticateSaasIdentity(saasRealm, uriInfo, headers);
                 if (admin == null) {
                     throw new NotAuthorizedException("Bearer");
@@ -178,7 +182,8 @@ public class SaasService {
                 RealmManager realmManager = new RealmManager(session);
                 RealmModel realm = realmManager.defaultRealm();
                 authManager.expireSaasIdentityCookie(uriInfo);
-                forwardToLoginForm(realm, null, null);
+
+                Flows.forms(realm, request).forwardToLogin();
             }
         }.run();
     }
@@ -193,7 +198,8 @@ public class SaasService {
                 RealmManager realmManager = new RealmManager(session);
                 RealmModel realm = realmManager.defaultRealm();
                 authManager.expireSaasIdentityCookie(uriInfo);
-                forwardToRegisterForm(realm, null, null);
+
+                Flows.forms(realm, request).forwardToRegistration();
             }
         }.run();
     }
@@ -208,11 +214,11 @@ public class SaasService {
                 RealmManager realmManager = new RealmManager(session);
                 RealmModel realm = realmManager.defaultRealm();
                 authManager.expireSaasIdentityCookie(uriInfo);
-                forwardToLoginForm(realm, null, null);
+
+                Flows.forms(realm, request).forwardToLogin();
             }
         }.run();
     }
-
 
     @Path("logout-cookie")
     @GET
@@ -227,45 +233,6 @@ public class SaasService {
         }.run();
     }
 
-    protected void forwardToLoginForm(RealmModel realm, String error, MultivaluedMap<String, String> formData) {
-        if (error != null) {
-            request.setAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE", error);
-        }
-
-        if (formData != null) {
-            request.setAttribute("KEYCLOAK_FORM_DATA", formData);
-        }
-
-        forwardToForm(realm, Pages.loginForm);
-    }
-
-    protected void forwardToRegisterForm(RealmModel realm, String error, MultivaluedMap<String, String> formData) {
-        if (error != null) {
-            request.setAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE", error);
-        }
-
-        if (formData != null) {
-            request.setAttribute("KEYCLOAK_FORM_DATA", formData);
-        }
-
-        forwardToForm(realm, Pages.registerForm);
-    }
-
-    protected void forwardToForm(RealmModel realm, String form) {
-        request.setAttribute(RealmModel.class.getName(), realm);
-
-        request.setAttribute("KEYCLOAK_LOGIN_PAGE", Urls.saasLoginPage(uriInfo));
-        request.setAttribute("KEYCLOAK_LOGIN_ACTION", Urls.saasLoginAction(uriInfo));
-
-        request.setAttribute("KEYCLOAK_REGISTRATION_PAGE", Urls.saasRegisterPage(uriInfo));
-        request.setAttribute("KEYCLOAK_REGISTRATION_ACTION", Urls.saasRegisterAction(uriInfo));
-
-        request.setAttribute("KEYCLOAK_SOCIAL_LOGIN", Urls.socialRedirectToProviderAuth(uriInfo, realm.getId()));
-
-        request.forward(form);
-    }
-
-
     @Path("login")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
@@ -276,7 +243,8 @@ public class SaasService {
             protected Response callImpl() {
                 RealmManager realmManager = new RealmManager(session);
                 RealmModel realm = realmManager.defaultRealm();
-                if (realm == null) throw new NotFoundException();
+                if (realm == null)
+                    throw new NotFoundException();
 
                 if (!realm.isEnabled()) {
                     throw new NotImplementedYetException();
@@ -285,26 +253,27 @@ public class SaasService {
                 UserModel user = realm.getUser(username);
                 if (user == null) {
                     logger.info("Not Authenticated! Incorrect user name");
-                    forwardToLoginForm(realm, "Invalid username or password", formData);
-                    return null;
+
+                    return Flows.forms(realm, request).setError("Invalid username or password").setFormData(formData)
+                            .forwardToLogin();
                 }
                 if (!user.isEnabled()) {
                     logger.info("NAccount is disabled, contact admin.");
-                    forwardToLoginForm(realm, "Account is disabled, contact admin.", formData);
-                    return null;
+
+                    return Flows.forms(realm, request).setError("Invalid username or password")
+                            .setFormData(formData).forwardToLogin();
                 }
 
                 boolean authenticated = authManager.authenticateForm(realm, user, formData);
                 if (!authenticated) {
                     logger.info("Not Authenticated! Invalid credentials");
-                    forwardToLoginForm(realm, "Invalid username or password", formData);
-                    return null;
+
+                    return Flows.forms(realm, request).setError("Invalid username or password").setFormData(formData)
+                            .forwardToLogin();
                 }
 
                 NewCookie cookie = authManager.createSaasIdentityCookie(realm, user, uriInfo);
-                return Response.status(302)
-                        .cookie(cookie)
-                        .location(contextRoot(uriInfo).path(adminPath).build()).build();
+                return Response.status(302).cookie(cookie).location(contextRoot(uriInfo).path(adminPath).build()).build();
             }
         }.call();
     }
@@ -340,8 +309,8 @@ public class SaasService {
 
                 String error = validateRegistrationForm(formData);
                 if (error != null) {
-                    forwardToRegisterForm(defaultRealm, error, formData);
-                    return null;
+                    return Flows.forms(defaultRealm, request).setError(error).setFormData(formData)
+                            .forwardToRegistration();
                 }
 
                 UserRepresentation newUser = new UserRepresentation();
@@ -366,16 +335,16 @@ public class SaasService {
                             last = token;
                         }
                     }
-                    if (first == null) first = new StringBuffer();
+                    if (first == null)
+                        first = new StringBuffer();
                     newUser.setFirstName(first.toString());
                     newUser.setLastName(last);
                 }
                 newUser.credential(CredentialRepresentation.PASSWORD, formData.getFirst("password"));
                 UserModel user = registerMe(defaultRealm, newUser);
                 if (user == null) {
-                    request.setAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE", "Username already exists.");
-                    forwardToRegisterForm(defaultRealm, "Username already exists.", formData);
-                    return null;
+                    return Flows.forms(defaultRealm, request).setError("Username already exists.")
+                            .setFormData(formData).forwardToRegistration();
 
                 }
                 NewCookie cookie = authManager.createSaasIdentityCookie(defaultRealm, user, uriInfo);
@@ -383,7 +352,6 @@ public class SaasService {
             }
         }.call();
     }
-
 
     protected UserModel registerMe(RealmModel defaultRealm, UserRepresentation newUser) {
         if (!defaultRealm.isEnabled()) {
