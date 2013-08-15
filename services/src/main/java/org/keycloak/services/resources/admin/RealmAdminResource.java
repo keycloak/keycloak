@@ -49,7 +49,7 @@ public class RealmAdminResource {
     @NoCache
     @Produces("application/json")
     public RealmRepresentation getRealm() {
-        return new Transaction() {
+        return new Transaction<RealmRepresentation>() {
             @Override
             protected RealmRepresentation callImpl() {
                 return new RealmManager(session).toRepresentation(realm);
@@ -63,7 +63,7 @@ public class RealmAdminResource {
     @NoCache
     @Produces("application/json")
     public List<RoleRepresentation> getRoles() {
-        return new Transaction() {
+        return new Transaction<List<RoleRepresentation>>() {
             @Override
             protected List<RoleRepresentation> callImpl() {
                 List<RoleModel> roleModels = realm.getRoles();
@@ -95,7 +95,7 @@ public class RealmAdminResource {
     @NoCache
     @Produces("application/json")
     public RoleRepresentation getRole(final @PathParam("id") String id) {
-        return new Transaction() {
+        return new Transaction<RoleRepresentation>() {
             @Override
             protected RoleRepresentation callImpl() {
                 RoleModel roleModel = realm.getRoleById(id);
@@ -132,7 +132,7 @@ public class RealmAdminResource {
     @POST
     @Consumes("application/json")
     public Response createRole(final @Context UriInfo uriInfo, final RoleRepresentation rep) {
-        return new Transaction() {
+        return new Transaction<Response>() {
             @Override
             protected Response callImpl() {
                 if (realm.getRole(rep.getName()) != null) {
