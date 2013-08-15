@@ -144,6 +144,10 @@ public class SocialResource {
                 UserModel user = realm.getUser(provider.getId() + "." + socialUser.getId());
 
                 if (user == null) {
+                    if (!realm.isRegistrationAllowed()) {
+                        return oauth.forwardToSecurityFailure("Registration not allowed");
+                    }
+
                     user = realm.addUser(provider.getId() + "." + socialUser.getId());
                     user.setAttribute(provider.getId() + ".id", socialUser.getId());
 
