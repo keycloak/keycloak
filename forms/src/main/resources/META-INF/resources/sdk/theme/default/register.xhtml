@@ -4,35 +4,31 @@
 
 	<ui:param name="bodyClass" value="register" />
 
-	<ui:define name="header">Register with <strong>#{forms.name}</strong></ui:define>
+	<ui:define name="header">#{messages.registerWith} <strong>#{forms.name}</strong></ui:define>
 	
 	<ui:define name="form">
 		<form action="#{forms.registrationAction}" method="post">
-			<p class="subtitle">All fields are required</p>
+			<p class="subtitle">#{messages.allRequired}</p>
 			<div>
-            	<label for="name">Full name</label>
+            	<label for="name">#{messages.fullName}</label>
                 <input type="text" id="name" name="name" value="#{forms.formData['name']}" />
 			</div>
             <div>
-            	<label for="email">Email</label>
+            	<label for="email">#{messages.email}</label>
 				<input type="text" id="email" name="email" value="#{forms.formData['email']}" />
 			</div>
 			<div>
-				<label for="username">Username</label>
+				<label for="username">#{messages.username}</label>
 				<input type="text" id="username" name="username" value="#{forms.formData['username']}" />
 			</div>
             <div>
-            	<label for="password">Password</label>
+            	<label for="password">#{messages.password}</label>
 				<input type="password" id="password" name="password" />
 			</div>
             <div>
-            	<label for="password-confirm">Password confirmation</label>
+            	<label for="password-confirm">#{messages.passwordConfirm}</label>
 				<input type="password" id="password-confirm" name="password-confirm" />
 			</div>
-
-			<ui:repeat var="p" value="#{forms.hiddenProperties}">
-				<input name="#{p.name}" value="#{p.value}" type="hidden" />
-			</ui:repeat>
 
 			<div class="aside-btn">
 				<p>By registering you agree to the <a href="#">Terms of Service</a> and the <a href="#">Privacy Policy</a>.</p>
@@ -43,6 +39,6 @@
 	</ui:define>
 	
 	<ui:define name="info">
-		<p>Already have an account? <a href="#{forms.loginUrl}">Log in</a>.</p>
+		<p>#{messages.alreadyHaveAccount} <a href="#{forms.loginUrl}">#{messages.logIn}</a>.</p>
 	</ui:define>
 </ui:composition>

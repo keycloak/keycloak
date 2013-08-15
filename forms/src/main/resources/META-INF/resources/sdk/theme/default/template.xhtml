@@ -3,7 +3,7 @@
 
 <h:head>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-	<title>Log in to #{forms.name}</title>
+	<title>#{messages.logInTo} #{forms.name}</title>
 	<link href="#{forms.themeConfig['styles']}" rel="stylesheet" />
 	<style>
 		body {
@@ -41,7 +41,7 @@
 					<section class="social-login">
 						<span>or</span>
 						<h3>Social login area</h3>
-						<p>Log In with</p>
+						<p>#{messages.logInWith}</p>
 						<ul>
 							<ui:repeat var="p" value="#{forms.providers}">
 								<li><a href="#{p.loginUrl}" class="zocial #{p.id}"> <span class="text">#{p.name}</span></a></li>
@@ -63,7 +63,7 @@
 		</div>
 			
 		<h:panelGroup rendered="#{forms.themeConfig['displayPoweredBy']}">
-			<p class="powered"><a href="#">Powered by Keycloak</a></p>
+			<p class="powered"><a href="#">#{messages.poweredByKeycloak}</a></p>
 		</h:panelGroup>			
 	</div>
 

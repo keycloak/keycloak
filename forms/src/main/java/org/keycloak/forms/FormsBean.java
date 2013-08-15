@@ -1,4 +1,4 @@
-package org.keycloak.sdk;
+package org.keycloak.forms;
 
 import java.net.URI;
 import java.util.HashMap;
@@ -14,9 +14,12 @@ import javax.faces.context.FacesContext;
 import javax.imageio.spi.ServiceRegistry;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.UriBuilder;
 
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RequiredCredentialModel;
+import org.keycloak.services.resources.flows.FormFlows;
+import org.keycloak.services.resources.flows.Urls;
 
 @ManagedBean(name = "forms")
 @RequestScoped
@@ -30,15 +33,13 @@ public class FormsBean {
 
     private String loginAction;
 
-    private String socialLoginUrl;
+    private UriBuilder socialLoginUrlBuilder;
 
     private String registrationUrl;
 
     private String registrationAction;
 
     private List<RequiredCredential> requiredCredentials;
-
-    private List<Property> hiddenProperties;
 
     private List<SocialProvider> providers;
 
@@ -62,9 +63,11 @@ public class FormsBean {
 
         HttpServletRequest request = (HttpServletRequest) ctx.getExternalContext().getRequest();
 
-        realm = (RealmModel) request.getAttribute(RealmModel.class.getName());
+        realm = (RealmModel) request.getAttribute(FormFlows.REALM);
 
-        if (RealmModel.DEFAULT_REALM.equals(realm.getName())) {
+        boolean saas = RealmModel.DEFAULT_REALM.equals(realm.getName());
+
+        if (saas) {
             name = "Keycloak";
         } else {
             name = realm.getName();
@@ -72,18 +75,29 @@ public class FormsBean {
 
         view = ctx.getViewRoot().getViewId();
         view = view.substring(view.lastIndexOf('/') + 1, view.lastIndexOf('.'));
+        
+        UriBuilder b = UriBuilder.fromUri(request.getRequestURI()).replaceQuery(request.getQueryString())
+                .replacePath(request.getContextPath()).path("rest");
+        URI baseURI = b.build();
 
-        loginUrl = ((URI) request.getAttribute("KEYCLOAK_LOGIN_PAGE")).toString();
-        loginAction = ((URI) request.getAttribute("KEYCLOAK_LOGIN_ACTION")).toString();
+        if (saas) {
+            loginUrl = Urls.saasLoginPage(baseURI).toString();
+            loginAction = Urls.saasLoginAction(baseURI).toString();
 
-        registrationUrl = ((URI) request.getAttribute("KEYCLOAK_REGISTRATION_PAGE")).toString();
-        registrationAction = ((URI) request.getAttribute("KEYCLOAK_REGISTRATION_ACTION")).toString();
+            registrationUrl = Urls.saasRegisterPage(baseURI).toString();
+            registrationAction = Urls.saasRegisterAction(baseURI).toString();
+        } else {
+            loginUrl = Urls.realmLoginPage(baseURI, realm.getId()).toString();
+            loginAction = Urls.realmLoginAction(baseURI, realm.getId()).toString();
 
-        socialLoginUrl = ((URI) request.getAttribute("KEYCLOAK_SOCIAL_LOGIN")).toString();
+            registrationUrl = Urls.realmRegisterPage(baseURI, realm.getId()).toString();
+            registrationAction = Urls.realmRegisterAction(baseURI, realm.getId()).toString();
+        }
+
+        socialLoginUrlBuilder = UriBuilder.fromUri(Urls.socialRedirectToProviderAuth(baseURI, realm.getId()));
 
         addRequiredCredentials();
         addFormData(request);
-        addHiddenProperties(request, "client_id", "scope", "state", "redirect_uri");
         addSocialProviders();
         addErrors(request);
 
@@ -132,10 +146,6 @@ public class FormsBean {
         return formData;
     }
 
-    public List<Property> getHiddenProperties() {
-        return hiddenProperties;
-    }
-
     public List<RequiredCredential> getRequiredCredentials() {
         return requiredCredentials;
     }
@@ -173,20 +183,10 @@ public class FormsBean {
         formData = new HashMap<String, String>();
 
         @SuppressWarnings("unchecked")
-        MultivaluedMap<String, String> t = (MultivaluedMap<String, String>) request.getAttribute("KEYCLOAK_FORM_DATA");
+        MultivaluedMap<String, String> t = (MultivaluedMap<String, String>) request.getAttribute(FormFlows.DATA);
         if (t != null) {
             for (String k : t.keySet()) {
                 formData.put(k, t.getFirst(k));
-            }
-        }
-    }
-
-    private void addHiddenProperties(HttpServletRequest request, String... names) {
-        hiddenProperties = new LinkedList<Property>();
-        for (String name : names) {
-            Object v = request.getAttribute(name);
-            if (v != null) {
-                hiddenProperties.add(new Property(name, (String) v));
             }
         }
     }
@@ -211,7 +211,7 @@ public class FormsBean {
     }
 
     private void addErrors(HttpServletRequest request) {
-        error = (String) request.getAttribute("KEYCLOAK_LOGIN_ERROR_MESSAGE");
+        error = (String) request.getAttribute(FormFlows.ERROR_MESSAGE);
 
         if (error != null) {
             if (view.equals("login")) {
@@ -288,13 +288,7 @@ public class FormsBean {
         }
 
         public String getLoginUrl() {
-            StringBuilder sb = new StringBuilder();
-            sb.append(socialLoginUrl);
-            sb.append("?provider_id=" + id);
-            for (Property p : hiddenProperties) {
-                sb.append("&" + p.getName() + "=" + p.getValue());
-            }
-            return sb.toString();
+            return socialLoginUrlBuilder.replaceQueryParam("provider_id", id).build().toString();
         }
     }
 

@@ -7,18 +7,14 @@
 	<ui:define name="form">
 		<form action="#{forms.loginAction}" method="post">
 			<div>
-				<label for="username">Username</label>
+				<label for="username">#{messages.username}</label>
 				<input id="username" name="username" value="#{forms.formData['username']}" type="text" />
 			</div>
 
 			<ui:repeat var="c" value="#{forms.requiredCredentials}">
 				<div>
-					<label for="#{c.name}">#{c.label}</label> <input id="#{c.name}" name="#{c.name}" type="#{c.inputType}" />
+					<label for="#{c.name}">#{messages[c.label]}</label> <input id="#{c.name}" name="#{c.name}" type="#{c.inputType}" />
 				</div>
-			</ui:repeat>
-
-			<ui:repeat var="p" value="#{forms.hiddenProperties}">
-				<input name="#{p.name}" value="#{p.value}" type="hidden" />
 			</ui:repeat>
 
 			<div class="aside-btn">
@@ -32,7 +28,7 @@
 	
 	<ui:define name="info">
 		<h:panelGroup rendered="#{forms.registrationAllowed}">
-			<p>No account? <a href="#{forms.registrationUrl}">Register</a>.</p>
+			<p>#{messages.noAccount} <a href="#{forms.registrationUrl}">#{messages.register}</a>.</p>
 		</h:panelGroup>	
 	</ui:define>
 </ui:composition>
