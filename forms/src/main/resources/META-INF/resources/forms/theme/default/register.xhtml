@@ -29,6 +29,14 @@
             	<label for="password-confirm">#{messages.passwordConfirm}</label>
 				<input type="password" id="password-confirm" name="password-confirm" />
 			</div>
+			
+			<h:panelGroup rendered="#{forms.totp}">
+	            <div>
+            		<label for="totp">#{messages.authenticatorCode}</label>
+					<input type="text" id="totp" name="totp" />
+					<input type="hidden" id="totpSecret" name="totpSecret" value="#{forms.totpSecret}" />
+				</div>
+			</h:panelGroup>
 
 			<div class="aside-btn">
 				<p>By registering you agree to the <a href="#">Terms of Service</a> and the <a href="#">Privacy Policy</a>.</p>
@@ -40,5 +48,11 @@
 	
 	<ui:define name="info">
 		<p>#{messages.alreadyHaveAccount} <a href="#{forms.loginUrl}">#{messages.logIn}</a>.</p>
+		
+		<h:panelGroup rendered="#{not empty forms.totpSecret}">
+			<p>Google Authenticator setup<br/>
+     		<img src="#{forms.totpSecretQrCodeUrl}" />
+     		</p>
+		</h:panelGroup>
 	</ui:define>
 </ui:composition>

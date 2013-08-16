@@ -21,12 +21,15 @@
  */
 package org.keycloak.forms;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.annotation.PostConstruct;
 import javax.faces.bean.ManagedBean;
@@ -37,10 +40,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.UriBuilder;
 
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RequiredCredentialModel;
 import org.keycloak.services.resources.flows.FormFlows;
 import org.keycloak.services.resources.flows.Urls;
+import org.picketlink.common.util.Base32;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -81,6 +86,10 @@ public class FormsBean {
 
     private Map<String, String> formData;
 
+    private String totpSecret;
+
+    private String formsUrl;
+
     @PostConstruct
     public void init() {
         FacesContext ctx = FacesContext.getCurrentInstance();
@@ -99,7 +108,7 @@ public class FormsBean {
 
         view = ctx.getViewRoot().getViewId();
         view = view.substring(view.lastIndexOf('/') + 1, view.lastIndexOf('.'));
-        
+
         UriBuilder b = UriBuilder.fromUri(request.getRequestURI()).replaceQuery(request.getQueryString())
                 .replacePath(request.getContextPath()).path("rest");
         URI baseURI = b.build();
@@ -125,9 +134,11 @@ public class FormsBean {
         addSocialProviders();
         addErrors(request);
 
+        formsUrl = FacesContext.getCurrentInstance().getExternalContext().getRequestContextPath() + "/forms";
+
         // TODO Get theme name from realm
         theme = "default";
-        themeUrl = FacesContext.getCurrentInstance().getExternalContext().getRequestContextPath() + "/sdk/theme/" + theme;
+        themeUrl = formsUrl + "/theme/" + theme;
 
         themeConfig = new HashMap<String, Object>();
 
@@ -220,8 +231,32 @@ public class FormsBean {
         for (RequiredCredentialModel m : realm.getRequiredCredentials()) {
             if (m.isInput()) {
                 requiredCredentials.add(new RequiredCredential(m.getType(), m.isSecret(), m.getFormLabel()));
+
+                if (m.getType().equals(CredentialRepresentation.TOTP)) {
+                    if (formData != null) {
+                        totpSecret = formData.get("totpSecret");
+                    }
+
+                    if (totpSecret == null) {
+                        totpSecret = UUID.randomUUID().toString();
+                    }
+                }
             }
         }
+    }
+
+    public boolean isTotp() {
+        return totpSecret != null;
+    }
+
+    public String getTotpSecret() {
+        return totpSecret;
+    }
+
+    public String getTotpSecretQrCodeUrl() throws UnsupportedEncodingException {
+        String totpSecretEncoded = Base32.encode(getTotpSecret().getBytes());
+        String contents = URLEncoder.encode("otpauth://totp/keycloak?secret=" + totpSecretEncoded, "utf-8");
+        return formsUrl + "/qrcode" + "?size=200x200&contents=" + contents;
     }
 
     private void addSocialProviders() {

@@ -15,6 +15,11 @@
 	<dependencies>
 		<dependency>
 			<groupId>org.keycloak</groupId>
+			<artifactId>keycloak-core</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.keycloak</groupId>
 			<artifactId>keycloak-services</artifactId>
 			<version>${project.version}</version>
 		</dependency>
@@ -23,11 +28,16 @@
 			<artifactId>keycloak-social-core</artifactId>
 			<version>${project.version}</version>
 		</dependency>
-		<dependency>
-			<groupId>org.jboss.resteasy</groupId>
-			<artifactId>jaxrs-api</artifactId>
-			<scope>provided</scope>
-		</dependency>
+        <dependency>
+            <groupId>org.picketlink</groupId>
+            <artifactId>picketlink-common</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-jaxrs</artifactId>
+            <scope>provided</scope>
+        </dependency>
 		<dependency>
 			<groupId>org.jboss.spec.javax.servlet</groupId>
 			<artifactId>jboss-servlet-api_3.0_spec</artifactId>
@@ -38,6 +48,14 @@
 			<artifactId>jsf-api</artifactId>
 			<version>2.1</version>
 		</dependency>
+		<dependency>
+      		<groupId>com.google.zxing</groupId>
+      		<artifactId>core</artifactId>
+		</dependency>
+            <dependency>
+      			<groupId>com.google.zxing</groupId>
+      			<artifactId>javase</artifactId>
+			</dependency>
 	</dependencies>
 
 	<build>
