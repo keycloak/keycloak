@@ -59,10 +59,11 @@ public class SocialRequestManager {
     }
     
     private void pruneExpired() {
+        long currentTime = System.currentTimeMillis();
         Iterator<Entry<String, Long>> itr = expires.entrySet().iterator();
         while (itr.hasNext()) {
             Entry<String, Long> e = itr.next();
-            if (e.getValue() < System.currentTimeMillis()) {
+            if (e.getValue() < currentTime) {
                 itr.remove();
                 map.remove(e.getKey());
             } else {
