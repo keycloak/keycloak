@@ -41,6 +41,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -664,5 +665,49 @@ public class RealmAdapter implements RealmModel {
         relationship.setAdmin(((UserAdapter)agent).getUser());
         relationship.setRealm(realm.getName());
         getRelationshipManager().add(relationship);
+    }
+
+    @Override
+    public List<RoleModel> getDefaultRoles() {
+        List<RoleModel> defaultRoleModels = new ArrayList<RoleModel>();
+        if (realm.getDefaultRoles() != null) {
+            for (String name : realm.getDefaultRoles()) {
+                RoleAdapter role = getRole(name);
+                if (role != null) {
+                    defaultRoleModels.add(role);
+                }
+            }
+        }
+        return defaultRoleModels;
+    }
+
+    @Override
+    public void addDefaultRole(String name) {
+        if (getRole(name) == null) {
+            addRole(name);
+        }
+
+        String[] defaultRoles = realm.getDefaultRoles();
+        if (defaultRoles == null) {
+            defaultRoles = new String[1];
+        } else {
+            defaultRoles = Arrays.copyOf(defaultRoles, defaultRoles.length + 1);
+        }
+        defaultRoles[defaultRoles.length - 1] = name;
+
+        realm.setDefaultRoles(defaultRoles);
+        updateRealm();
+    }
+
+    @Override
+    public void updateDefaultRoles(String[] defaultRoles) {
+        for (String name : defaultRoles) {
+            if (getRole(name) == null) {
+                addRole(name);
+            }
+        }
+
+        realm.setDefaultRoles(defaultRoles);
+        updateRealm();
     }
 }

@@ -78,6 +78,12 @@ public interface RealmModel {
     RoleModel addRole(String name);
 
     List<RoleModel> getRoles();
+    
+    List<RoleModel> getDefaultRoles();
+    
+    void addDefaultRole(String name);
+    
+    void updateDefaultRoles(String[] defaultRoles);
 
     Map<String, ApplicationModel> getResourceNameMap();
 

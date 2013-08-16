@@ -11,6 +11,7 @@
     "requiredCredentials": [ "password" ],
     "requiredApplicationCredentials": [ "password" ],
     "requiredOAuthClientCredentials": [ "password" ],
+    "defaultRoles": [ "user" ],
     "users" : [
         {
             "username" : "bburke@redhat.com",

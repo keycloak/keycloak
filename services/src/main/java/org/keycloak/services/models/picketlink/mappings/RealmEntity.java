@@ -46,6 +46,8 @@ public class RealmEntity implements Serializable {
     @AttributeValue
     @Column(length = 2048)
     private String privateKeyPem;
+    @AttributeValue
+    private String[] defaultRoles;
 
 
     public PartitionTypeEntity getPartitionTypeEntity() {

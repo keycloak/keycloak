@@ -2,7 +2,6 @@ package org.keycloak.services.managers;
 
 import org.jboss.resteasy.logging.Logger;
 import org.keycloak.representations.idm.*;
-import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.services.models.*;
 
 import java.security.KeyPair;
@@ -84,6 +83,9 @@ public class RealmManager {
         if (rep.getRequiredApplicationCredentials() != null) {
             realm.updateRequiredApplicationCredentials(rep.getRequiredApplicationCredentials());
         }
+        if (rep.getDefaultRoles() != null) {
+            realm.updateDefaultRoles(rep.getDefaultRoles());
+        }
     }
 
     public RealmModel importRealm(RealmRepresentation rep, UserModel realmCreator) {
@@ -131,11 +133,9 @@ public class RealmManager {
             }
         }
 
-
-        UserManager userManager = new UserManager();
         if (rep.getUsers() != null) {
             for (UserRepresentation userRep : rep.getUsers()) {
-                UserModel user = userManager.createUser(newRealm, userRep);
+                UserModel user = createUser(newRealm, userRep);
                 userMap.put(user.getLoginName(), user);
             }
         }
@@ -143,6 +143,12 @@ public class RealmManager {
         if (rep.getRoles() != null) {
             for (RoleRepresentation roleRep : rep.getRoles()) {
                 createRole(newRealm, roleRep);
+            }
+        }
+
+        if (rep.getDefaultRoles() != null) {
+            for (String roleString : rep.getDefaultRoles()) {
+                newRealm.addDefaultRole(roleString.trim());
             }
         }
 
@@ -183,6 +189,24 @@ public class RealmManager {
         if (roleRep.getDescription() != null) role.setDescription(roleRep.getDescription());
     }
 
+    public UserModel createUser(RealmModel newRealm, UserRepresentation userRep) {
+        UserModel user = newRealm.addUser(userRep.getUsername());
+        user.setEnabled(userRep.isEnabled());
+        if (userRep.getAttributes() != null) {
+            for (Map.Entry<String, String> entry : userRep.getAttributes().entrySet()) {
+                user.setAttribute(entry.getKey(), entry.getValue());
+            }
+        }
+        if (userRep.getCredentials() != null) {
+            for (CredentialRepresentation cred : userRep.getCredentials()) {
+                UserCredentialModel credential = new UserCredentialModel();
+                credential.setType(cred.getType());
+                credential.setValue(cred.getValue());
+                newRealm.updateCredential(user, credential);
+            }
+        }
+        return user;
+    }
 
     public void addRequiredCredential(RealmModel newRealm, String requiredCred) {
         newRealm.addRequiredCredential(requiredCred);

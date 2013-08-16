@@ -144,13 +144,16 @@ public class SocialResource {
                 UserModel user = realm.getUser(provider.getId() + "." + socialUser.getId());
 
                 if (user == null) {
+                    if (!realm.isRegistrationAllowed()) {
+                        return oauth.forwardToSecurityFailure("Registration not allowed");
+                    }
+
                     user = realm.addUser(provider.getId() + "." + socialUser.getId());
                     user.setAttribute(provider.getId() + ".id", socialUser.getId());
 
-                    // TODO Grant default roles for realm when available
-                    RoleModel defaultRole = realm.getRole("user");
-
-                    realm.grantRole(user, defaultRole);
+                    for (RoleModel role : realm.getDefaultRoles()) {
+                        realm.grantRole(user, role);
+                    }
                 }
 
                 if (!user.isEnabled()) {

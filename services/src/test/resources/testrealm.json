@@ -6,6 +6,7 @@
     "requiredCredentials": [ "password" ],
     "requiredApplicationCredentials": [ "password" ],
     "requiredOAuthClientCredentials": [ "password" ],
+    "defaultRoles": [ "foo", "bar" ],
     "users": [
         {
             "username": "wburke",
