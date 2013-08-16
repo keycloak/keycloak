@@ -87,6 +87,13 @@ public class ImportTest {
         List<RealmModel> realms = identitySession.getRealms(admin);
         Assert.assertEquals(1, realms.size());
 
+        // Test scope relationship
+        ApplicationModel application = realm.getResourceNameMap().get("Application");
+        UserModel oauthClient = realm.getUser("oauthclient");
+        Assert.assertNotNull(application);
+        Assert.assertNotNull(oauthClient);
+        Set<String> appScopes = application.getScope(oauthClient);
+        Assert.assertTrue(appScopes.contains("user"));
     }
 
     @Test
