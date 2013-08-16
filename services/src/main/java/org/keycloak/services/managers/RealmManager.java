@@ -122,13 +122,13 @@ public class RealmManager {
         }
 
         if (rep.getRequiredApplicationCredentials() != null) {
-            for (String requiredCred : rep.getRequiredCredentials()) {
+            for (String requiredCred : rep.getRequiredApplicationCredentials()) {
                 addResourceRequiredCredential(newRealm, requiredCred);
             }
         }
 
         if (rep.getRequiredOAuthClientCredentials() != null) {
-            for (String requiredCred : rep.getRequiredCredentials()) {
+            for (String requiredCred : rep.getRequiredOAuthClientCredentials()) {
                 addOAuthClientRequiredCredential(newRealm, requiredCred);
             }
         }

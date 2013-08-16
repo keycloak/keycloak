@@ -87,6 +87,13 @@ public class ImportTest {
         List<RealmModel> realms = identitySession.getRealms(admin);
         Assert.assertEquals(1, realms.size());
 
+        // Test scope relationship
+        ApplicationModel application = realm.getResourceNameMap().get("Application");
+        UserModel oauthClient = realm.getUser("oauthclient");
+        Assert.assertNotNull(application);
+        Assert.assertNotNull(oauthClient);
+        Set<String> appScopes = application.getScope(oauthClient);
+        Assert.assertTrue(appScopes.contains("user"));
     }
 
     @Test
@@ -109,10 +116,15 @@ public class ImportTest {
         RealmModel realm = manager.createRealm("demo", rep.getRealm());
         manager.importRealm(rep, realm);
         realm.addRealmAdmin(admin);
+
+        verifyRequiredCredentials(realm.getRequiredCredentials(), "password");
+        verifyRequiredCredentials(realm.getRequiredApplicationCredentials(), "totp");
+        verifyRequiredCredentials(realm.getRequiredOAuthClientCredentials(), "cert");
     }
 
-
-
-
+    private void verifyRequiredCredentials(List<RequiredCredentialModel> requiredCreds, String expectedType) {
+        Assert.assertEquals(1, requiredCreds.size());
+        Assert.assertEquals(expectedType, requiredCreds.get(0).getType());
+    }
 
 }
