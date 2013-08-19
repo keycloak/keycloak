@@ -123,6 +123,17 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public boolean isAutomaticRegistrationAfterSocialLogin() {
+        return realm.isAutomaticRegistrationAfterSocialLogin();
+    }
+
+    @Override
+    public void setAutomaticRegistrationAfterSocialLogin(boolean automaticRegistrationAfterSocialLogin) {
+        realm.setAutomaticRegistrationAfterSocialLogin(automaticRegistrationAfterSocialLogin);
+        updateRealm();
+    }
+
+    @Override
     public boolean isSslNotRequired() {
         return realm.isSslNotRequired();
     }

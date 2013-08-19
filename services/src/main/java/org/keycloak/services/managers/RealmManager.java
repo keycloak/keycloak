@@ -71,6 +71,7 @@ public class RealmManager {
         realm.setSocial(rep.isSocial());
         realm.setCookieLoginAllowed(rep.isCookieLoginAllowed());
         realm.setRegistrationAllowed(rep.isRegistrationAllowed());
+        realm.setAutomaticRegistrationAfterSocialLogin(rep.isAutomaticRegistrationAfterSocialLogin());
         realm.setSslNotRequired((rep.isSslNotRequired()));
         realm.setAccessCodeLifespan(rep.getAccessCodeLifespan());
         realm.setTokenLifespan(rep.getTokenLifespan());
@@ -106,6 +107,7 @@ public class RealmManager {
         newRealm.setSslNotRequired(rep.isSslNotRequired());
         newRealm.setCookieLoginAllowed(rep.isCookieLoginAllowed());
         newRealm.setRegistrationAllowed(rep.isRegistrationAllowed());
+        newRealm.setAutomaticRegistrationAfterSocialLogin(rep.isAutomaticRegistrationAfterSocialLogin());
         if (rep.getPrivateKey() == null || rep.getPublicKey() == null) {
             generateRealmKeys(newRealm);
         } else {
@@ -252,6 +254,7 @@ public class RealmManager {
         rep.setRealm(realm.getName());
         rep.setEnabled(realm.isEnabled());
         rep.setSocial(realm.isSocial());
+        rep.setAutomaticRegistrationAfterSocialLogin(realm.isAutomaticRegistrationAfterSocialLogin());
         rep.setSslNotRequired(realm.isSslNotRequired());
         rep.setCookieLoginAllowed(realm.isCookieLoginAllowed());
         rep.setPublicKey(realm.getPublicKeyPem());

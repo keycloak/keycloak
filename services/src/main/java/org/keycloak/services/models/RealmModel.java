@@ -138,4 +138,8 @@ public interface RealmModel {
     boolean isSocial();
 
     void setSocial(boolean social);
+
+    public boolean isAutomaticRegistrationAfterSocialLogin();
+
+    public void setAutomaticRegistrationAfterSocialLogin(boolean automaticRegistrationAfterSocialLogin);
 }

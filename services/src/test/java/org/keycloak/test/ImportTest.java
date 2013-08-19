@@ -59,6 +59,7 @@ public class ImportTest {
         defaultRealm.setSslNotRequired(false);
         defaultRealm.setCookieLoginAllowed(true);
         defaultRealm.setRegistrationAllowed(true);
+        defaultRealm.setAutomaticRegistrationAfterSocialLogin(false);
         manager.generateRealmKeys(defaultRealm);
         defaultRealm.addRequiredCredential(CredentialRepresentation.PASSWORD);
         RoleModel role = defaultRealm.addRole(SaasService.REALM_CREATOR_ROLE);
@@ -69,6 +70,8 @@ public class ImportTest {
         RealmModel realm = manager.createRealm("demo", rep.getRealm());
         manager.importRealm(rep, realm);
         realm.addRealmAdmin(admin);
+
+        Assert.assertFalse(realm.isAutomaticRegistrationAfterSocialLogin());
         List<RequiredCredentialModel> creds = realm.getRequiredCredentials();
         Assert.assertEquals(1, creds.size());
         RequiredCredentialModel cred = creds.get(0);
@@ -131,6 +134,7 @@ public class ImportTest {
         defaultRealm.setSslNotRequired(false);
         defaultRealm.setCookieLoginAllowed(true);
         defaultRealm.setRegistrationAllowed(true);
+        defaultRealm.setAutomaticRegistrationAfterSocialLogin(false);
         manager.generateRealmKeys(defaultRealm);
         defaultRealm.addRequiredCredential(CredentialRepresentation.PASSWORD);
         RoleModel role = defaultRealm.addRole(SaasService.REALM_CREATOR_ROLE);
@@ -142,6 +146,7 @@ public class ImportTest {
         manager.importRealm(rep, realm);
         realm.addRealmAdmin(admin);
 
+        Assert.assertTrue(realm.isAutomaticRegistrationAfterSocialLogin());
         verifyRequiredCredentials(realm.getRequiredCredentials(), "password");
         verifyRequiredCredentials(realm.getRequiredApplicationCredentials(), "totp");
         verifyRequiredCredentials(realm.getRequiredOAuthClientCredentials(), "cert");

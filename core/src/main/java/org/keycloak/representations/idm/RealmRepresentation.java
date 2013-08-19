@@ -19,6 +19,7 @@ public class RealmRepresentation {
     protected boolean cookieLoginAllowed;
     protected boolean registrationAllowed;
     protected boolean social;
+    protected boolean automaticRegistrationAfterSocialLogin;
     protected String privateKey;
     protected String publicKey;
     protected List<RoleRepresentation> roles;
@@ -235,5 +236,13 @@ public class RealmRepresentation {
 
     public void setSocial(boolean social) {
         this.social = social;
+    }
+
+    public boolean isAutomaticRegistrationAfterSocialLogin() {
+        return automaticRegistrationAfterSocialLogin;
+    }
+
+    public void setAutomaticRegistrationAfterSocialLogin(boolean automaticRegistrationAfterSocialLogin) {
+        this.automaticRegistrationAfterSocialLogin = automaticRegistrationAfterSocialLogin;
     }
 }
