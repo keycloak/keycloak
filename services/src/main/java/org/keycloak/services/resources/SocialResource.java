@@ -109,10 +109,6 @@ public class SocialResource {
                     return oauth.forwardToSecurityFailure("Realm not enabled.");
                 }
 
-                if (!realm.isEnabled()) {
-                    return oauth.forwardToSecurityFailure("Realm not enabled.");
-                }
-
                 String clientId = requestData.getClientAttributes().get("clientId");
 
                 UserModel client = realm.getUser(clientId);

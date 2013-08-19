@@ -50,6 +50,10 @@
                     "value": "clientpassword"
                 }
             ]
+        },
+        {
+            "username": "mySocialUser",
+            "enabled": true
         }
     ],
     "roleMappings": [
@@ -62,6 +66,25 @@
         {
             "username": "loginclient",
             "roles": ["*"]
+        }
+    ],
+    "socialMappings": [
+        {
+            "username": "mySocialUser",
+            "socialLinks": [
+                {
+                    "socialProvider": "facebook",
+                    "socialUsername": "fbuser1"
+                },
+                {
+                    "socialProvider": "facebook",
+                    "socialUsername": "fbuser2"
+                },
+                {
+                    "socialProvider": "google",
+                    "socialUsername": "mySocialUser@gmail.com"
+                }
+            ]
         }
     ],
     "applications": [

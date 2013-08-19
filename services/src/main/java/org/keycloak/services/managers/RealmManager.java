@@ -182,6 +182,16 @@ public class RealmManager {
 
             }
         }
+
+        if (rep.getSocialMappings() != null) {
+            for (SocialMappingRepresentation socialMapping : rep.getSocialMappings()) {
+                UserModel user = userMap.get(socialMapping.getUsername());
+                for (SocialLinkRepresentation link : socialMapping.getSocialLinks()) {
+                    SocialLinkModel mappingModel = new SocialLinkModel(link.getSocialProvider(), link.getSocialUsername());
+                    newRealm.addSocialLink(user, mappingModel);
+                }
+            }
+        }
     }
 
     public void createRole(RealmModel newRealm, RoleRepresentation roleRep) {
