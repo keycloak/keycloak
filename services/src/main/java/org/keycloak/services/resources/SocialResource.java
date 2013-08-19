@@ -46,6 +46,7 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RoleModel;
+import org.keycloak.services.models.SocialLinkModel;
 import org.keycloak.services.models.UserModel;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.OAuthFlows;
@@ -134,21 +135,35 @@ public class SocialResource {
                     return oauth.forwardToSecurityFailure("Failed to process social callback");
                 }
 
-                // TODO Lookup user based on attribute for provider id - this is so a user can have a friendly username + link a
-                // user to
-                // multiple social logins
-                UserModel user = realm.getUser(provider.getId() + "." + socialUser.getId());
+                SocialLinkModel socialLink = new SocialLinkModel(provider.getId(), socialUser.getUsername());
+                UserModel user = realm.getUserBySocialLink(socialLink);
 
                 if (user == null) {
                     if (!realm.isRegistrationAllowed()) {
                         return oauth.forwardToSecurityFailure("Registration not allowed");
                     }
 
-                    user = realm.addUser(provider.getId() + "." + socialUser.getId());
-                    user.setAttribute(provider.getId() + ".id", socialUser.getId());
+                    // Automatically register user into realm with his social username (don't redirect to registration screen)
+                    if (realm.isAutomaticRegistrationAfterSocialLogin()) {
 
-                    for (RoleModel role : realm.getDefaultRoles()) {
-                        realm.grantRole(user, role);
+                        if (realm.getUser(socialUser.getUsername()) != null) {
+                            // TODO: Username is already in realm. Show message and let user to bind accounts
+                            throw new IllegalStateException("Username " + socialUser.getUsername() +
+                                    " already registered in the realm. TODO: bind accounts...");
+
+                            // TODO: Maybe we should search also by email and bind accounts if user with this email is
+                            // already registered. But actually Keycloak allows duplicate emails
+                        } else {
+                            user = realm.addUser(socialUser.getUsername());
+                        }
+
+                        realm.addSocialLink(user, socialLink);
+
+                        for (RoleModel role : realm.getDefaultRoles()) {
+                            realm.grantRole(user, role);
+                        }
+                    }  else {
+                        // TODO: redirect to registration screen with pre-filled info
                     }
                 }
 

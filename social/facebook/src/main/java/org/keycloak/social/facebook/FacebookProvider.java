@@ -82,6 +82,13 @@ public class FacebookProvider implements SocialProvider {
             FacebookUser facebookUser = loadUser(accessToken, client);
 
             SocialUser socialUser = new SocialUser(facebookUser.getId());
+            socialUser.setUsername(facebookUser.getUsername());
+
+            // This could happen with Facebook testing users
+            if (facebookUser.getUsername() == null || facebookUser.getUsername().length() == 0) {
+                socialUser.setUsername(facebookUser.getId());
+            }
+
             socialUser.setEmail(facebookUser.getEmail());
             socialUser.setLastName(facebookUser.getLastName());
             socialUser.setFirstName(facebookUser.getFirstName());
