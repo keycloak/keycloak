@@ -27,34 +27,48 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.UUID;
 
 import javax.imageio.spi.ServiceRegistry;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
 import org.jboss.resteasy.logging.Logger;
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.jboss.resteasy.spi.HttpRequest;
+import org.jboss.resteasy.spi.HttpResponse;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.TokenManager;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RoleModel;
 import org.keycloak.services.models.SocialLinkModel;
 import org.keycloak.services.models.UserModel;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.OAuthFlows;
+import org.keycloak.services.resources.flows.PageFlows;
 import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.social.AuthCallback;
 import org.keycloak.social.AuthRequest;
 import org.keycloak.social.RequestDetails;
 import org.keycloak.social.RequestDetailsBuilder;
+import org.keycloak.social.SocialConstants;
 import org.keycloak.social.SocialProvider;
 import org.keycloak.social.SocialProviderConfig;
 import org.keycloak.social.SocialProviderException;
@@ -77,6 +91,12 @@ public class SocialResource {
 
     @Context
     private HttpRequest request;
+
+    @Context
+    private HttpResponse response;
+
+    @Context
+    ResourceContext resourceContext;
 
     private SocialRequestManager socialRequestManager;
 
@@ -147,7 +167,7 @@ public class SocialResource {
                     if (realm.isAutomaticRegistrationAfterSocialLogin()) {
 
                         if (realm.getUser(socialUser.getUsername()) != null) {
-                            // TODO: Username is already in realm. Show message and let user to bind accounts
+                            // TODO: Username is already in realm. Show message and let user to bind accounts after he re-authenticate
                             throw new IllegalStateException("Username " + socialUser.getUsername() +
                                     " already registered in the realm. TODO: bind accounts...");
 
@@ -155,6 +175,9 @@ public class SocialResource {
                             // already registered. But actually Keycloak allows duplicate emails
                         } else {
                             user = realm.addUser(socialUser.getUsername());
+                            user.setFirstName(socialUser.getFirstName());
+                            user.setLastName(socialUser.getLastName());
+                            user.setEmail(socialUser.getEmail());
                         }
 
                         realm.addSocialLink(user, socialLink);
@@ -163,7 +186,23 @@ public class SocialResource {
                             realm.grantRole(user, role);
                         }
                     }  else {
-                        // TODO: redirect to registration screen with pre-filled info
+                        // Redirect user to registration screen with prefilled data from social provider
+                        MultivaluedMap<String, String> formData = fillRegistrationFormWithSocialData(socialUser);
+
+                        RequestDetailsBuilder reqDetailsBuilder = RequestDetailsBuilder.createFromRequestDetails(requestData);
+                        reqDetailsBuilder.putSocialAttribute(SocialConstants.ATTR_SOCIAL_LINK, socialLink);
+
+                        String requestId = UUID.randomUUID().toString();
+                        socialRequestManager.addRequest(requestId, reqDetailsBuilder.build());
+                        boolean secureOnly = !realm.isSslNotRequired();
+                        String cookiePath = Urls.socialBase(uriInfo.getBaseUri()).build().getPath();
+                        logger.info("creating cookie for social registration - name: " + SocialConstants.SOCIAL_REGISTRATION_COOKIE
+                                + " path: " + cookiePath);
+                        NewCookie newCookie = new NewCookie(SocialConstants.SOCIAL_REGISTRATION_COOKIE, requestId,
+                                cookiePath, null, "Added social cookie", NewCookie.DEFAULT_MAX_AGE, secureOnly);
+                        response.addNewCookie(newCookie);
+
+                        return Flows.forms(realm, request).setFormData(formData).setSocialRegistration(true).forwardToRegistration();
                     }
                 }
 
@@ -213,6 +252,69 @@ public class SocialResource {
         }
     }
 
+    @POST
+    @Path("{realm}/socialRegistration")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    public Response socialRegistration(@PathParam("realm") final String realmId,
+                                       final MultivaluedMap<String, String> formData) {
+        return new Transaction<Response>() {
+            protected Response callImpl() {
+                PageFlows pageFlows = Flows.pages(request);
+                Cookie cookie = headers.getCookies().get(SocialConstants.SOCIAL_REGISTRATION_COOKIE);
+                if (cookie == null) {
+                    return pageFlows.forwardToSecurityFailure("Social registration cookie not found");
+                }
+
+                String requestId = cookie.getValue();
+                if (!socialRequestManager.isRequestId(requestId)) {
+                    logger.error("Unknown requestId found in cookie. Maybe it's expired. requestId=" + requestId);
+                    return pageFlows.forwardToSecurityFailure("Unknown requestId found in cookie. Maybe it's expired.");
+                }
+
+                RequestDetails requestData = socialRequestManager.getData(requestId);
+
+                RealmManager realmManager = new RealmManager(session);
+                RealmModel realm = realmManager.getRealm(realmId);
+                if (realm == null || !realm.isEnabled()) {
+                    return pageFlows.forwardToSecurityFailure("Realm doesn't exists or is not enabled.");
+                }
+                TokenService tokenService = new TokenService(realm, tokenManager);
+                resourceContext.initResource(tokenService);
+
+                String clientId = requestData.getClientAttribute("clientId");
+                String scope = requestData.getClientAttribute("scope");
+                String state = requestData.getClientAttribute("state");
+                String redirectUri = requestData.getClientAttribute("redirectUri");
+                SocialLinkModel socialLink = (SocialLinkModel)requestData.getSocialAttribute(SocialConstants.ATTR_SOCIAL_LINK);
+
+                Response response1 = tokenService.processRegisterImpl(clientId, scope, state, redirectUri, formData, true);
+
+                // Some error occured during registration
+                if (response1 == null) {
+                    return null;
+                }
+
+                String username = formData.getFirst("username");
+                UserModel user = realm.getUser(username);
+                if (user == null) {
+                    // Normally shouldn't happen
+                    throw new IllegalStateException("User " + username + " not found in the realm");
+                }
+                realm.addSocialLink(user, socialLink);
+
+                // Expire cookie and invalidate requestData
+                String cookiePath = Urls.socialBase(uriInfo.getBaseUri()).build().getPath();
+                NewCookie newCookie = new NewCookie(SocialConstants.SOCIAL_REGISTRATION_COOKIE, "", cookiePath, null,
+                        "Expire social cookie", 0, false);
+                logger.info("Expiring social registration cookie: " + SocialConstants.SOCIAL_REGISTRATION_COOKIE + ", path: " + cookiePath);
+                response.addNewCookie(newCookie);
+                socialRequestManager.retrieveData(requestId);
+
+                return response1;
+            }
+        }.call();
+    }
+
     private RequestDetails getRequestDetails(Map<String, String[]> queryParams) {
         Iterator<SocialProvider> itr = ServiceRegistry.lookupProviders(SocialProvider.class);
 
@@ -249,6 +351,27 @@ public class SocialResource {
             queryParams.put(e.getKey(), e.getValue().toArray(new String[e.getValue().size()]));
         }
         return queryParams;
+    }
+
+    protected MultivaluedMap<String, String> fillRegistrationFormWithSocialData(SocialUser socialUser) {
+        MultivaluedMap<String, String> formData = new MultivaluedMapImpl<String, String>();
+        formData.putSingle("username", socialUser.getUsername());
+
+        if (socialUser.getEmail() != null) {
+            formData.putSingle("email", socialUser.getEmail());
+        }
+
+        String fullName = null;
+        if (socialUser.getFirstName() == null) {
+            fullName = socialUser.getLastName();
+        } else if (socialUser.getLastName() == null) {
+            fullName = socialUser.getFirstName();
+        } else {
+            fullName = socialUser.getFirstName() + " " + socialUser.getLastName();
+        }
+
+        formData.putSingle("name", fullName);
+        return formData;
     }
 
 }

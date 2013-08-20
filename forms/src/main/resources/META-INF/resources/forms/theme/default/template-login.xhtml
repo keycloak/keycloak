@@ -39,12 +39,12 @@ body {
 						</div>
 				</h:panelGroup>
 
-				<h:panelGroup rendered="#{realm.social}">
+				<h:panelGroup rendered="#{social.displaySocialProviders}">
 					<section class="social-login"> <span>or</span>
 					<h3>Social login area</h3>
 					<p>#{messages.logInWith}</p>
 					<ul>
-						<ui:repeat var="p" value="#{forms.providers}">
+						<ui:repeat var="p" value="#{social.providers}">
 							<li><a href="#{p.loginUrl}" class="zocial #{p.id}"> <span class="text">#{p.name}</span></a></li>
 						</ui:repeat>
 					</ul>

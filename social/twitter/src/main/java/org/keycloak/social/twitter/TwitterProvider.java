@@ -71,7 +71,7 @@ public class TwitterProvider implements SocialProvider {
             twitter.setOAuthConsumer(config.getKey(), config.getSecret());
 
             String verifier = callback.getQueryParam("oauth_verifier");
-            RequestToken requestToken = new RequestToken(callback.getAttribute("token"), callback.getAttribute("tokenSecret"));
+            RequestToken requestToken = new RequestToken((String)callback.getAttribute("token"), (String)callback.getAttribute("tokenSecret"));
 
             twitter.getOAuthAccessToken(requestToken, verifier);
             twitter4j.User twitterUser = twitter.verifyCredentials();
