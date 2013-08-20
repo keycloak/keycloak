@@ -26,6 +26,7 @@ import javax.ws.rs.core.Response;
 
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.services.models.RealmModel;
+import org.keycloak.services.models.UserModel;
 import org.picketlink.idm.model.sample.Realm;
 
 /**
@@ -36,6 +37,7 @@ public class FormFlows {
     public static final String DATA = "KEYCLOAK_FORMS_DATA";
     public static final String ERROR_MESSAGE = "KEYCLOAK_FORMS_ERROR_MESSAGE";
     public static final String REALM = Realm.class.getName();
+    public static final String USER = UserModel.class.getName();
 
     private String error;
     private MultivaluedMap<String, String> formData;
@@ -43,6 +45,7 @@ public class FormFlows {
     private RealmModel realm;
 
     private HttpRequest request;
+    private UserModel userModel;
 
     FormFlows(RealmModel realm, HttpRequest request) {
         this.realm = realm;
@@ -68,12 +71,20 @@ public class FormFlows {
             request.setAttribute(DATA, formData);
         }
 
+        if (userModel != null) {
+            request.setAttribute(USER, userModel);
+        }
+
         request.forward(form);
         return null;
     }
 
     public Response forwardToLogin() {
         return forwardToForm(Pages.LOGIN);
+    }
+
+    public Response forwardToLoginTotp() {
+        return forwardToForm(Pages.LOGIN_TOTP);
     }
 
     public Response forwardToPassword() {
@@ -94,6 +105,11 @@ public class FormFlows {
 
     public FormFlows setError(String error) {
         this.error = error;
+        return this;
+    }
+
+    public FormFlows setUser(UserModel userModel) {
+        this.userModel = userModel;
         return this;
     }
 

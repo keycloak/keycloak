@@ -32,6 +32,8 @@ public class Pages {
 
     public final static String LOGIN = "/forms/login.xhtml";
 
+    public final static String LOGIN_TOTP = "/forms/login-totp.xhtml";
+
     public final static String OAUTH_GRANT = "/saas/oauthGrantForm.jsp";
 
     public final static String PASSWORD = "/forms/password.xhtml";

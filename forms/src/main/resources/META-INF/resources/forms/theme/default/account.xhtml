@@ -5,18 +5,22 @@
 	<ui:define name="header">Edit Account</ui:define>
 	
 	<ui:define name="content">
-		<form action="#" method="post">
+		<form action="#{url.accountUrl}" method="post">
 			<div>
-            	<label for="name">#{messages.fullName}</label>
-                <input type="text" id="name" name="name" value="#{forms.formData['name']}" />
+            	<label for="firstName">#{messages.firstName}</label>
+                <input type="text" id="firstName" name="firstName" value="#{user.firstName}" />
+			</div>
+			<div>
+            	<label for="lastName">#{messages.lastName}</label>
+                <input type="text" id="lastName" name="lastName" value="#{user.lastName}" />
 			</div>
             <div>
             	<label for="email">#{messages.email}</label>
-				<input type="text" id="email" name="email" value="#{forms.formData['email']}" />
+				<input type="text" id="email" name="email" value="#{user.email}" />
 			</div>
 			<div>
 				<label for="username">#{messages.username}</label>
-				<input type="text" id="username" name="username" value="#{forms.formData['username']}" />
+				<input type="text" id="username" name="username" value="#{user.username}" disabled="true" />
 			</div>
 
 			<input type="button" value="Cancel" />

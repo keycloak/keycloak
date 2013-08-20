@@ -30,6 +30,8 @@ public class Messages {
 
     public static final String INVALID_PASSWORD = "invalidPassword";
 
+    public static final String INVALID_PASSWORD_EXISTING = "invalidPasswordExisting";
+
     public static final String INVALID_PASSWORD_CONFIRM = "invalidPasswordConfirm";
 
     public static final String INVALID_USER = "invalidUser";

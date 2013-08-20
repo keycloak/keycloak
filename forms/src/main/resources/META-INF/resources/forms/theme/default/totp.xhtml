@@ -6,7 +6,11 @@
 
 	<ui:define name="content">
 	<h:messages globalOnly="true" />
-	
+		<h:panelGroup rendered="#{totp.enabled}">
+			Google Authenticator enabled	
+		</h:panelGroup>
+
+		<h:panelGroup rendered="#{not totp.enabled}">	
 		<h2>To setup Google Authenticator</h2>
 
 		<ol>
@@ -16,11 +20,11 @@
 			</li>
 			<li>Enter a one-time password provided by Google Authenticator and click Save to finish the setup
 
-				<form action="#" method="post">
+				<form action="#{url.totpUrl}" method="post">
 					<div>
 						<label for="totp">#{messages.authenticatorCode}</label>
 						<input type="text" id="totp" name="totp" />
-						<input type="hidden" id="totpSecret" name="totpSecret" value="{forms.totpSecret}" />
+						<input type="hidden" id="totpSecret" name="totpSecret" value="#{totp.totpSecret}" />
 					</div>
 
 					<input type="button" value="Cancel" />
@@ -28,5 +32,6 @@
 				</form>
 			</li>
 		</ol>
+		</h:panelGroup>
 	</ui:define>
 </ui:composition>

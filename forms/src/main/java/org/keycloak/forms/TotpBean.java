@@ -28,6 +28,7 @@ import java.util.Random;
 import javax.annotation.PostConstruct;
 import javax.faces.application.FacesMessage;
 import javax.faces.bean.ManagedBean;
+import javax.faces.bean.ManagedProperty;
 import javax.faces.bean.RequestScoped;
 import javax.faces.context.FacesContext;
 
@@ -40,12 +41,14 @@ import org.picketlink.common.util.Base32;
 @RequestScoped
 public class TotpBean {
 
+    @ManagedProperty(value = "#{user}")
+    private UserBean user;
+
     private String totpSecret;
     private String totpSecretEncoded;
 
     @PostConstruct
     public void init() {
-
         FacesContext facesContext = FacesContext.getCurrentInstance();
         FacesMessage facesMessage = new FacesMessage("This is a message");
         facesContext.addMessage(null, facesMessage);
@@ -63,6 +66,10 @@ public class TotpBean {
             sb.append(c);
         }
         return sb.toString();
+    }
+
+    public boolean isEnabled() {
+        return "ENABLED".equals(user.getUser().getAttribute("KEYCLOAK_TOTP"));
     }
 
     public String getTotpSecret() {
@@ -84,6 +91,14 @@ public class TotpBean {
         String contents = URLEncoder.encode("otpauth://totp/keycloak?secret=" + totpSecretEncoded, "utf-8");
         String contextPath = FacesContext.getCurrentInstance().getExternalContext().getRequestContextPath();
         return contextPath + "/forms/qrcode" + "?size=200x200&contents=" + contents;
+    }
+
+    public UserBean getUser() {
+        return user;
+    }
+
+    public void setUser(UserBean user) {
+        this.user = user;
     }
 
 }

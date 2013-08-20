@@ -21,13 +21,14 @@
  */
 package org.keycloak.forms;
 
-import java.util.Map;
-import java.util.Map.Entry;
-
 import javax.annotation.PostConstruct;
 import javax.faces.bean.ManagedBean;
 import javax.faces.bean.RequestScoped;
 import javax.faces.context.FacesContext;
+import javax.servlet.http.HttpServletRequest;
+
+import org.keycloak.services.models.UserModel;
+import org.keycloak.services.resources.flows.FormFlows;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -36,17 +37,34 @@ import javax.faces.context.FacesContext;
 @RequestScoped
 public class UserBean {
 
+    private UserModel user;
+
     @PostConstruct
     public void init() {
         FacesContext ctx = FacesContext.getCurrentInstance();
-        Map<String, Object> map = ctx.getExternalContext().getRequestCookieMap();
-        for (Entry<String, Object> c : map.entrySet()) {
-            System.out.println(c.getKey());
-        }
+        HttpServletRequest request = (HttpServletRequest) ctx.getExternalContext().getRequest();
+
+        user = (UserModel) request.getAttribute(FormFlows.USER);
     }
 
-    public boolean isLoggedIn() {
-        return false;
+    public String getFirstName() {
+        return user.getFirstName();
+    }
+
+    public String getLastName() {
+        return user.getLastName();
+    }
+
+    public String getUsername() {
+        return user.getLoginName();
+    }
+
+    public String getEmail() {
+        return user.getEmail();
+    }
+
+    UserModel getUser() {
+        return user;
     }
 
 }

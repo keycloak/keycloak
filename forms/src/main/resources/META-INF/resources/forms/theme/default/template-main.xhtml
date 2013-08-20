@@ -32,6 +32,10 @@ body {
 		<h1>
 			<ui:insert name="header" />
 		</h1>
+				
+		<h:panelGroup rendered="#{not empty error.summary}">
+			<div class="alert alert-danger">#{messages[error.summary]}</div>
+		</h:panelGroup>
 
 		<ui:insert name="content" />
 	</div>

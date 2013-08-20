@@ -212,9 +212,21 @@ public class TokenService {
                     return Flows.forms(realm, request).setError(Messages.INVALID_USER).setFormData(formData)
                             .forwardToLogin();
                 }
+
                 if (!user.isEnabled()) {
                     return oauth.forwardToSecurityFailure("Your account is not enabled.");
                 }
+
+                if ("ENABLED".equals(user.getAttribute("KEYCLOAK_TOTP")) && Validation.isEmpty(formData.getFirst("totp"))) {
+                    return Flows.forms(realm, request).setFormData(formData).forwardToLoginTotp();
+                } else {
+                    for (RequiredCredentialModel c : realm.getRequiredCredentials()) {
+                        if (c.getType().equals(CredentialRepresentation.TOTP)) {
+                            return Flows.forms(realm, request).forwardToTotp();
+                        }
+                    }
+                }
+
                 boolean authenticated = authManager.authenticateForm(realm, user, formData);
                 if (!authenticated) {
                     logger.error("Authentication failed");
@@ -305,13 +317,6 @@ public class TokenService {
                     UserCredentialModel credentials = new UserCredentialModel();
                     credentials.setType(CredentialRepresentation.PASSWORD);
                     credentials.setValue(formData.getFirst("password"));
-                    realm.updateCredential(user, credentials);
-                }
-
-                if (requiredCredentialTypes.contains(CredentialRepresentation.TOTP)) {
-                    UserCredentialModel credentials = new UserCredentialModel();
-                    credentials.setType(CredentialRepresentation.TOTP);
-                    credentials.setValue(formData.getFirst("totpSecret"));
                     realm.updateCredential(user, credentials);
                 }
 

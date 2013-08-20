@@ -6,7 +6,6 @@ import javax.ws.rs.core.MultivaluedMap;
 
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.messages.Messages;
-import org.picketlink.idm.credential.util.TimeBasedOTP;
 
 public class Validation {
 
@@ -30,18 +29,6 @@ public class Validation {
 
             if (!formData.getFirst("password").equals(formData.getFirst("password-confirm"))) {
                 return Messages.INVALID_PASSWORD_CONFIRM;
-            }
-        }
-
-        if (requiredCredentialTypes.contains(CredentialRepresentation.TOTP)) {
-            if (isEmpty(formData.getFirst("totp"))) {
-                return Messages.MISSING_TOTP;
-            }
-
-            boolean validTotp = new TimeBasedOTP().validate(formData.getFirst("totp"), formData.getFirst("totpSecret")
-                    .getBytes());
-            if (!validTotp) {
-                return Messages.INVALID_TOTP;
             }
         }
 

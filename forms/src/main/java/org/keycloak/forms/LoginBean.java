@@ -47,6 +47,8 @@ public class LoginBean {
 
     private String username;
 
+    private String password;
+
     private List<RequiredCredential> requiredCredentials;
 
     @PostConstruct
@@ -58,6 +60,7 @@ public class LoginBean {
         MultivaluedMap<String, String> formData = (MultivaluedMap<String, String>) request.getAttribute(FormFlows.DATA);
         if (formData != null) {
             username = formData.getFirst("username");
+            password = formData.getFirst("password");
         }
 
         requiredCredentials = new LinkedList<RequiredCredential>();
@@ -70,6 +73,10 @@ public class LoginBean {
 
     public String getUsername() {
         return username;
+    }
+
+    public String getPassword() {
+        return password;
     }
 
     public List<RequiredCredential> getRequiredCredentials() {
