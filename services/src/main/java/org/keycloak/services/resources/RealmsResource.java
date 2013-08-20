@@ -70,6 +70,24 @@ public class RealmsResource {
 
     }
 
+    @Path("{realm}/account")
+    public AccountService getAccountService(final @PathParam("realm") String id) {
+        return new Transaction<AccountService>(false) {
+            @Override
+            protected AccountService callImpl() {
+                RealmManager realmManager = new RealmManager(session);
+                RealmModel realm = realmManager.getRealm(id);
+                if (realm == null) {
+                    logger.debug("realm not found");
+                    throw new NotFoundException();
+                }
+                AccountService accountService = new AccountService(realm);
+                resourceContext.initResource(accountService);
+                return accountService;
+            }
+        }.call();
+    }
+
     @Path("{realm}")
     public PublicRealmResource getRealmResource(final @PathParam("realm") String id) {
         return new Transaction<PublicRealmResource>(false) {

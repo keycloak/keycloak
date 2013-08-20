@@ -19,29 +19,34 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.keycloak.services.resources.flows;
+package org.keycloak.forms;
+
+import java.util.Map;
+import java.util.Map.Entry;
+
+import javax.annotation.PostConstruct;
+import javax.faces.bean.ManagedBean;
+import javax.faces.bean.RequestScoped;
+import javax.faces.context.FacesContext;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class Pages {
+@ManagedBean(name = "user")
+@RequestScoped
+public class UserBean {
 
-    public final static String ACCESS = "/forms/access.xhtml";
+    @PostConstruct
+    public void init() {
+        FacesContext ctx = FacesContext.getCurrentInstance();
+        Map<String, Object> map = ctx.getExternalContext().getRequestCookieMap();
+        for (Entry<String, Object> c : map.entrySet()) {
+            System.out.println(c.getKey());
+        }
+    }
 
-    public final static String ACCOUNT = "/forms/account.xhtml";
-
-    public final static String LOGIN = "/forms/login.xhtml";
-
-    public final static String OAUTH_GRANT = "/saas/oauthGrantForm.jsp";
-
-    public final static String PASSWORD = "/forms/password.xhtml";
-
-    public final static String REGISTER = "/forms/register.xhtml";
-
-    public final static String SECURITY_FAILURE = "/saas/securityFailure.jsp";
-
-    public final static String SOCIAL = "/forms/social.xhtml";
-
-    public final static String TOTP = "/forms/totp.xhtml";
+    public boolean isLoggedIn() {
+        return false;
+    }
 
 }

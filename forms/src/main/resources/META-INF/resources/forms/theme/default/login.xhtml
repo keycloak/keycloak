@@ -1,17 +1,17 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <ui:composition xmlns:h="http://java.sun.com/jsf/html" xmlns:f="http://java.sun.com/jsf/core" xmlns:ui="http://java.sun.com/jsf/facelets"
-	xmlns:c="http://java.sun.com/jstl/core" template="template.xhtml">
+	xmlns:c="http://java.sun.com/jstl/core" template="template-login.xhtml">
 
-	<ui:define name="header">Log in to <strong>#{forms.name}</strong></ui:define>
+	<ui:define name="header">Log in to <strong>#{realm.name}</strong></ui:define>
 	
 	<ui:define name="form">
-		<form action="#{forms.loginAction}" method="post">
+		<form action="#{url.loginAction}" method="post">
 			<div>
 				<label for="username">#{messages.username}</label>
-				<input id="username" name="username" value="#{forms.formData['username']}" type="text" />
+				<input id="username" name="username" value="#{login.username}" type="text" />
 			</div>
 
-			<ui:repeat var="c" value="#{forms.requiredCredentials}">
+			<ui:repeat var="c" value="#{login.requiredCredentials}">
 				<div>
 					<label for="#{c.name}">#{messages[c.label]}</label> <input id="#{c.name}" name="#{c.name}" type="#{c.inputType}" />
 				</div>
@@ -27,8 +27,8 @@
 	</ui:define>
 	
 	<ui:define name="info">
-		<h:panelGroup rendered="#{forms.registrationAllowed}">
-			<p>#{messages.noAccount} <a href="#{forms.registrationUrl}">#{messages.register}</a>.</p>
+		<h:panelGroup rendered="#{realm.registrationAllowed}">
+			<p>#{messages.noAccount} <a href="#{url.registrationUrl}">#{messages.register}</a>.</p>
 		</h:panelGroup>	
 	</ui:define>
 </ui:composition>

@@ -33,12 +33,12 @@ import org.picketlink.idm.model.sample.Realm;
  */
 public class FormFlows {
 
-    public static final String REALM = Realm.class.getName();
-    public static final String ERROR_MESSAGE = "KEYCLOAK_FORMS_ERROR_MESSAGE";
     public static final String DATA = "KEYCLOAK_FORMS_DATA";
+    public static final String ERROR_MESSAGE = "KEYCLOAK_FORMS_ERROR_MESSAGE";
+    public static final String REALM = Realm.class.getName();
 
-    private MultivaluedMap<String, String> formData;
     private String error;
+    private MultivaluedMap<String, String> formData;
 
     private RealmModel realm;
 
@@ -49,22 +49,12 @@ public class FormFlows {
         this.request = request;
     }
 
-    public FormFlows setFormData(MultivaluedMap<String, String> formData) {
-        this.formData = formData;
-        return this;
+    public Response forwardToAccess() {
+        return forwardToForm(Pages.ACCESS);
     }
 
-    public FormFlows setError(String error) {
-        this.error = error;
-        return this;
-    }
-
-    public Response forwardToLogin() {
-        return forwardToForm(Pages.LOGIN);
-    }
-
-    public Response forwardToRegistration() {
-        return forwardToForm(Pages.REGISTER);
+    public Response forwardToAccount() {
+        return forwardToForm(Pages.ACCOUNT);
     }
 
     private Response forwardToForm(String form) {
@@ -80,6 +70,36 @@ public class FormFlows {
 
         request.forward(form);
         return null;
+    }
+
+    public Response forwardToLogin() {
+        return forwardToForm(Pages.LOGIN);
+    }
+
+    public Response forwardToPassword() {
+        return forwardToForm(Pages.PASSWORD);
+    }
+
+    public Response forwardToRegistration() {
+        return forwardToForm(Pages.REGISTER);
+    }
+
+    public Response forwardToSocial() {
+        return forwardToForm(Pages.SOCIAL);
+    }
+
+    public Response forwardToTotp() {
+        return forwardToForm(Pages.TOTP);
+    }
+
+    public FormFlows setError(String error) {
+        this.error = error;
+        return this;
+    }
+
+    public FormFlows setFormData(MultivaluedMap<String, String> formData) {
+        this.formData = formData;
+        return this;
     }
 
 }

@@ -1,25 +1,25 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <ui:composition xmlns:h="http://java.sun.com/jsf/html" xmlns:f="http://java.sun.com/jsf/core" xmlns:ui="http://java.sun.com/jsf/facelets"
-	xmlns:c="http://java.sun.com/jstl/core" template="template.xhtml">
+	xmlns:c="http://java.sun.com/jstl/core" template="template-login.xhtml">
 
 	<ui:param name="bodyClass" value="register" />
 
-	<ui:define name="header">#{messages.registerWith} <strong>#{forms.name}</strong></ui:define>
+	<ui:define name="header">#{messages.registerWith} <strong>#{realm.name}</strong></ui:define>
 	
 	<ui:define name="form">
-		<form action="#{forms.registrationAction}" method="post">
+		<form action="#{url.registrationAction}" method="post">
 			<p class="subtitle">#{messages.allRequired}</p>
 			<div>
             	<label for="name">#{messages.fullName}</label>
-                <input type="text" id="name" name="name" value="#{forms.formData['name']}" />
+                <input type="text" id="name" name="name" value="#{register.formData['name']}" />
 			</div>
             <div>
             	<label for="email">#{messages.email}</label>
-				<input type="text" id="email" name="email" value="#{forms.formData['email']}" />
+				<input type="text" id="email" name="email" value="#{register.formData['email']}" />
 			</div>
 			<div>
 				<label for="username">#{messages.username}</label>
-				<input type="text" id="username" name="username" value="#{forms.formData['username']}" />
+				<input type="text" id="username" name="username" value="#{register.formData['username']}" />
 			</div>
             <div>
             	<label for="password">#{messages.password}</label>
@@ -29,14 +29,6 @@
             	<label for="password-confirm">#{messages.passwordConfirm}</label>
 				<input type="password" id="password-confirm" name="password-confirm" />
 			</div>
-			
-			<h:panelGroup rendered="#{forms.totp}">
-	            <div>
-            		<label for="totp">#{messages.authenticatorCode}</label>
-					<input type="text" id="totp" name="totp" />
-					<input type="hidden" id="totpSecret" name="totpSecret" value="#{forms.totpSecret}" />
-				</div>
-			</h:panelGroup>
 
 			<div class="aside-btn">
 				<p>By registering you agree to the <a href="#">Terms of Service</a> and the <a href="#">Privacy Policy</a>.</p>
@@ -47,12 +39,6 @@
 	</ui:define>
 	
 	<ui:define name="info">
-		<p>#{messages.alreadyHaveAccount} <a href="#{forms.loginUrl}">#{messages.logIn}</a>.</p>
-		
-		<h:panelGroup rendered="#{not empty forms.totpSecret}">
-			<p>Google Authenticator setup<br/>
-     		<img src="#{forms.totpSecretQrCodeUrl}" />
-     		</p>
-		</h:panelGroup>
+		<p>#{messages.alreadyHaveAccount} <a href="#{url.loginUrl}">#{messages.logIn}</a>.</p>
 	</ui:define>
 </ui:composition>
