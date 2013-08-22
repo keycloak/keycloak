@@ -182,8 +182,6 @@ public class AccountService {
 
                     realm.updateCredential(user, credentials);
 
-                    authManager.expireIdentityCookie(realm, uriInfo);
-
                     return Flows.forms(realm, request).setUser(user).forwardToPassword();
                 } else {
                     return Response.status(Status.FORBIDDEN).build();
