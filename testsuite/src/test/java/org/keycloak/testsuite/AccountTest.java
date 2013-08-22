@@ -37,7 +37,7 @@ public class AccountTest extends AbstractDroneTest {
         registerUser("changePassword", "password");
 
         selenium.open(authServerUrl + "/rest/realms/demo/account/password");
-        selenium.waitForPageToLoad("10000");
+        selenium.waitForPageToLoad(DEFAULT_WAIT);
 
         Assert.assertTrue(selenium.isTextPresent("Change Password"));
 
@@ -45,12 +45,31 @@ public class AccountTest extends AbstractDroneTest {
         selenium.type("id=password-new", "newpassword");
         selenium.type("id=password-confirm", "newpassword");
         selenium.click("css=input[type=\"submit\"]");
-        selenium.waitForPageToLoad("30000");
+        selenium.waitForPageToLoad(DEFAULT_WAIT);
 
         logout();
 
         login("changePassword", "password", "Invalid username or password");
         login("changePassword", "newpassword");
+    }
+
+    @Test
+    public void changeProfile() {
+        registerUser("changeProfile", "password");
+
+        selenium.open(authServerUrl + "/rest/realms/demo/account");
+        selenium.waitForPageToLoad(DEFAULT_WAIT);
+
+        selenium.type("id=firstName", "Newfirst");
+        selenium.type("id=lastName", "Newlast");
+        selenium.type("id=email", "new@email.com");
+
+        selenium.click("css=input[type=\"submit\"]");
+        selenium.waitForPageToLoad(DEFAULT_WAIT);
+
+        Assert.assertEquals("Newfirst", selenium.getValue("id=firstName"));
+        Assert.assertEquals("Newlast", selenium.getValue("id=lastName"));
+        Assert.assertEquals("new@email.com", selenium.getValue("id=email"));
     }
 
 }
