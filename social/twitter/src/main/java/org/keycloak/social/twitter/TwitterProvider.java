@@ -71,13 +71,24 @@ public class TwitterProvider implements SocialProvider {
             twitter.setOAuthConsumer(config.getKey(), config.getSecret());
 
             String verifier = callback.getQueryParam("oauth_verifier");
-            RequestToken requestToken = new RequestToken(callback.getAttribute("token"), callback.getAttribute("tokenSecret"));
+            RequestToken requestToken = new RequestToken((String)callback.getAttribute("token"), (String)callback.getAttribute("tokenSecret"));
 
             twitter.getOAuthAccessToken(requestToken, verifier);
             twitter4j.User twitterUser = twitter.verifyCredentials();
 
             SocialUser user = new SocialUser(Long.toString(twitterUser.getId()));
-            user.setFirstName(twitterUser.getName());
+
+            // Use screenName as username for Twitter
+            user.setUsername(twitterUser.getScreenName());
+
+            String twitterName = twitterUser.getName();
+            int spaceIndex = twitterName.lastIndexOf(' ');
+            if (spaceIndex != -1) {
+                user.setFirstName(twitterName.substring(0, spaceIndex));
+                user.setLastName(twitterName.substring(spaceIndex + 1));
+            } else {
+                user.setFirstName(twitterName);
+            }
 
             return user;
         } catch (Exception e) {

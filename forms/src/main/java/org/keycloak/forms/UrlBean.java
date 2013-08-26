@@ -45,6 +45,9 @@ public class UrlBean {
     @ManagedProperty(value = "#{realm}")
     private RealmBean realm;
 
+    @ManagedProperty(value = "#{register}")
+    private RegisterBean registerBean;
+
     @PostConstruct
     public void init() {
         FacesContext ctx = FacesContext.getCurrentInstance();
@@ -62,6 +65,14 @@ public class UrlBean {
 
     public void setRealm(RealmBean realm) {
         this.realm = realm;
+    }
+
+    public RegisterBean getRegisterBean() {
+        return registerBean;
+    }
+
+    public void setRegisterBean(RegisterBean registerBean) {
+        this.registerBean = registerBean;
     }
 
     public String getAccessUrl() {
@@ -98,7 +109,10 @@ public class UrlBean {
 
     public String getRegistrationAction() {
         if (realm.isSaas()) {
+            // TODO: saas social registration
             return Urls.saasRegisterAction(baseURI).toString();
+        } else if (registerBean.isSocialRegistration()) {
+            return Urls.socialRegisterAction(baseURI, realm.getId()).toString();
         } else {
             return Urls.realmRegisterAction(baseURI, realm.getId()).toString();
         }

@@ -39,6 +39,8 @@
 	</ui:define>
 	
 	<ui:define name="info">
-		<p>#{messages.alreadyHaveAccount} <a href="#{url.loginUrl}">#{messages.logIn}</a>.</p>
+        <h:panelGroup rendered="#{not register.socialRegistration}">
+            <p>#{messages.alreadyHaveAccount} <a href="#{url.loginUrl}">#{messages.logIn}</a>.</p>
+        </h:panelGroup>
 	</ui:define>
 </ui:composition>

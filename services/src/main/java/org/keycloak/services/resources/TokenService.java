@@ -249,84 +249,98 @@ public class TokenService {
         return new Transaction<Response>() {
             @Override
             protected Response callImpl() {
-                OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
+                Response registrationResponse = processRegisterImpl(clientId, scopeParam, state, redirect, formData, false);
 
-                if (!realm.isEnabled()) {
-                    return oauth.forwardToSecurityFailure("Realm not enabled");
+                // If request has been already forwarded (either due to security or validation error) then we won't continue with login
+                if (registrationResponse != null || request.wasForwarded()) {
+                    logger.warn("Registration attempt wasn't successful. Request already forwarded or redirected.");
+                    return registrationResponse;
+                } else {
+                    return processLogin(clientId, scopeParam, state, redirect, formData);
                 }
-                UserModel client = realm.getUser(clientId);
-                if (client == null) {
-                    return oauth.forwardToSecurityFailure("Unknown login requester.");
-                }
-
-                if (!client.isEnabled()) {
-                    return oauth.forwardToSecurityFailure("Login requester not enabled.");
-                }
-
-                if (!realm.isRegistrationAllowed()) {
-                    return oauth.forwardToSecurityFailure("Registration not allowed");
-                }
-
-                List<String> requiredCredentialTypes = new LinkedList<String>();
-                for (RequiredCredentialModel m : realm.getRequiredCredentials()) {
-                    requiredCredentialTypes.add(m.getType());
-                }
-
-                String error = Validation.validateRegistrationForm(formData, requiredCredentialTypes);
-                if (error != null) {
-                    return Flows.forms(realm, request).setError(error).setFormData(formData).forwardToRegistration();
-                }
-
-                String username = formData.getFirst("username");
-
-                UserModel user = realm.getUser(username);
-                if (user != null) {
-                    return Flows.forms(realm, request).setError(Messages.USERNAME_EXISTS).setFormData(formData)
-                            .forwardToRegistration();
-                }
-
-                user = realm.addUser(username);
-
-                String fullname = formData.getFirst("name");
-                if (fullname != null) {
-                    StringTokenizer tokenizer = new StringTokenizer(fullname, " ");
-                    StringBuffer first = null;
-                    String last = "";
-                    while (tokenizer.hasMoreTokens()) {
-                        String token = tokenizer.nextToken();
-                        if (tokenizer.hasMoreTokens()) {
-                            if (first == null) {
-                                first = new StringBuffer();
-                            } else {
-                                first.append(" ");
-                            }
-                            first.append(token);
-                        } else {
-                            last = token;
-                        }
-                    }
-                    if (first == null)
-                        first = new StringBuffer();
-                    user.setFirstName(first.toString());
-                    user.setLastName(last);
-                }
-
-                user.setEmail(formData.getFirst("email"));
-
-                if (requiredCredentialTypes.contains(CredentialRepresentation.PASSWORD)) {
-                    UserCredentialModel credentials = new UserCredentialModel();
-                    credentials.setType(CredentialRepresentation.PASSWORD);
-                    credentials.setValue(formData.getFirst("password"));
-                    realm.updateCredential(user, credentials);
-                }
-
-                for (RoleModel role : realm.getDefaultRoles()) {
-                    realm.grantRole(user, role);
-                }
-
-                return processLogin(clientId, scopeParam, state, redirect, formData);
             }
         }.call();
+    }
+
+    public Response processRegisterImpl(String clientId, String scopeParam, String state, String redirect,
+                                        MultivaluedMap<String, String> formData, boolean isSocialRegistration) {
+        OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
+
+        if (!realm.isEnabled()) {
+            return oauth.forwardToSecurityFailure("Realm not enabled");
+        }
+        UserModel client = realm.getUser(clientId);
+        if (client == null) {
+            return oauth.forwardToSecurityFailure("Unknown login requester.");
+        }
+
+        if (!client.isEnabled()) {
+            return oauth.forwardToSecurityFailure("Login requester not enabled.");
+        }
+
+        if (!realm.isRegistrationAllowed()) {
+            return oauth.forwardToSecurityFailure("Registration not allowed");
+        }
+
+        List<String> requiredCredentialTypes = new LinkedList<String>();
+        for (RequiredCredentialModel m : realm.getRequiredCredentials()) {
+            requiredCredentialTypes.add(m.getType());
+        }
+
+        String error = Validation.validateRegistrationForm(formData, requiredCredentialTypes);
+        if (error != null) {
+            return Flows.forms(realm, request).setError(error).setFormData(formData)
+                    .setSocialRegistration(isSocialRegistration).forwardToRegistration();
+        }
+
+        String username = formData.getFirst("username");
+
+        UserModel user = realm.getUser(username);
+        if (user != null) {
+            return Flows.forms(realm, request).setError(Messages.USERNAME_EXISTS).setFormData(formData)
+                    .setSocialRegistration(isSocialRegistration).forwardToRegistration();
+        }
+
+        user = realm.addUser(username);
+
+        String fullname = formData.getFirst("name");
+        if (fullname != null) {
+            StringTokenizer tokenizer = new StringTokenizer(fullname, " ");
+            StringBuffer first = null;
+            String last = "";
+            while (tokenizer.hasMoreTokens()) {
+                String token = tokenizer.nextToken();
+                if (tokenizer.hasMoreTokens()) {
+                    if (first == null) {
+                        first = new StringBuffer();
+                    } else {
+                        first.append(" ");
+                    }
+                    first.append(token);
+                } else {
+                    last = token;
+                }
+            }
+            if (first == null)
+                first = new StringBuffer();
+            user.setFirstName(first.toString());
+            user.setLastName(last);
+        }
+
+        user.setEmail(formData.getFirst("email"));
+
+        if (requiredCredentialTypes.contains(CredentialRepresentation.PASSWORD)) {
+            UserCredentialModel credentials = new UserCredentialModel();
+            credentials.setType(CredentialRepresentation.PASSWORD);
+            credentials.setValue(formData.getFirst("password"));
+            realm.updateCredential(user, credentials);
+        }
+
+        for (RoleModel role : realm.getDefaultRoles()) {
+            realm.grantRole(user, role);
+        }
+
+        return null;
     }
 
     @Path("access/codes")

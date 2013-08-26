@@ -33,7 +33,7 @@ public class RequestDetailsBuilder {
 
     private Map<String, String> clientAttributes;
 
-    private Map<String, String> socialAttributes;
+    private Map<String, Object> socialAttributes;
 
     private RequestDetailsBuilder() {
     }
@@ -42,7 +42,17 @@ public class RequestDetailsBuilder {
         RequestDetailsBuilder req = new RequestDetailsBuilder();
         req.providerId = providerId;
         req.clientAttributes = new HashMap<String, String>();
-        req.socialAttributes = new HashMap<String, String>();
+        req.socialAttributes = new HashMap<String, Object>();
+        return req;
+    }
+
+    public static RequestDetailsBuilder createFromRequestDetails(RequestDetails from) {
+        RequestDetailsBuilder req = new RequestDetailsBuilder();
+        req.providerId = from.getProviderId();
+        req.clientAttributes = new HashMap<String, String>();
+        req.clientAttributes.putAll(from.getClientAttributes());
+        req.socialAttributes = new HashMap<String, Object>();
+        req.socialAttributes.putAll(from.getSocialAttributes());
         return req;
     }
 
@@ -56,12 +66,12 @@ public class RequestDetailsBuilder {
         return this;
     }
 
-    public RequestDetailsBuilder putSocialAttribute(String name, String value) {
+    public RequestDetailsBuilder putSocialAttribute(String name, Object value) {
         socialAttributes.put(name, value);
         return this;
     }
 
-    public RequestDetailsBuilder putSocialAttributes(Map<String, String> attributes) {
+    public RequestDetailsBuilder putSocialAttributes(Map<String, Object> attributes) {
         socialAttributes.putAll(attributes);
         return this;
     }
