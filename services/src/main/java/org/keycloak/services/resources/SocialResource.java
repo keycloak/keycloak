@@ -290,8 +290,9 @@ public class SocialResource {
                 Response response1 = tokenService.processRegisterImpl(clientId, scope, state, redirectUri, formData, true);
 
                 // Some error occured during registration
-                if (response1 == null) {
-                    return null;
+                if (response1 != null || request.wasForwarded()) {
+                    logger.warn("Registration attempt wasn't successful. Request already forwarded or redirected.");
+                    return response1;
                 }
 
                 String username = formData.getFirst("username");
@@ -310,7 +311,7 @@ public class SocialResource {
                 response.addNewCookie(newCookie);
                 socialRequestManager.retrieveData(requestId);
 
-                return response1;
+                return tokenService.processLogin(clientId, scope, state, redirectUri, formData);
             }
         }.call();
     }

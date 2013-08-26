@@ -249,7 +249,15 @@ public class TokenService {
         return new Transaction<Response>() {
             @Override
             protected Response callImpl() {
-                return processRegisterImpl(clientId, scopeParam, state, redirect, formData, false);
+                Response registrationResponse = processRegisterImpl(clientId, scopeParam, state, redirect, formData, false);
+
+                // If request has been already forwarded (either due to security or validation error) then we won't continue with login
+                if (registrationResponse != null || request.wasForwarded()) {
+                    logger.warn("Registration attempt wasn't successful. Request already forwarded or redirected.");
+                    return registrationResponse;
+                } else {
+                    return processLogin(clientId, scopeParam, state, redirect, formData);
+                }
             }
         }.call();
     }
@@ -332,7 +340,7 @@ public class TokenService {
             realm.grantRole(user, role);
         }
 
-        return processLogin(clientId, scopeParam, state, redirect, formData);
+        return null;
     }
 
     @Path("access/codes")
