@@ -15,12 +15,14 @@ public interface NoSQL {
 
     <T extends NoSQLObject> T loadObject(Class<T> type, String oid);
 
-    <T extends NoSQLObject> List<T> loadObjects(Class<T> type, Map<String, Object> queryAttributes);
+    <T extends NoSQLObject> T loadSingleObject(Class<T> type, NoSQLQuery query);
+
+    <T extends NoSQLObject> List<T> loadObjects(Class<T> type, NoSQLQuery query);
 
     // Object must have filled oid
     void removeObject(NoSQLObject object);
 
     void removeObject(Class<? extends NoSQLObject> type, String oid);
 
-    void removeObjects(Class<? extends NoSQLObject> type, Map<String, Object> queryAttributes);
+    void removeObjects(Class<? extends NoSQLObject> type, NoSQLQuery query);
 }

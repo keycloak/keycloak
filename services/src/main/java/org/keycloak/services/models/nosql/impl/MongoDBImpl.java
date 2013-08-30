@@ -13,6 +13,7 @@ import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import org.bson.types.ObjectId;
 import org.jboss.resteasy.logging.Logger;
+import org.jboss.resteasy.spi.NotImplementedYetException;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.models.nosql.api.AttributedNoSQLObject;
 import org.keycloak.services.models.nosql.api.NoSQL;
@@ -20,9 +21,14 @@ import org.keycloak.services.models.nosql.api.NoSQLCollection;
 import org.keycloak.services.models.nosql.api.NoSQLField;
 import org.keycloak.services.models.nosql.api.NoSQLId;
 import org.keycloak.services.models.nosql.api.NoSQLObject;
+import org.keycloak.services.models.nosql.api.NoSQLQuery;
+import org.keycloak.services.models.nosql.api.types.Converter;
+import org.keycloak.services.models.nosql.api.types.TypeConverter;
+import org.keycloak.services.models.nosql.impl.types.BasicDBListToStringArrayConverter;
 import org.picketlink.common.properties.Property;
 import org.picketlink.common.properties.query.AnnotatedPropertyCriteria;
 import org.picketlink.common.properties.query.PropertyQueries;
+import org.picketlink.common.reflection.Types;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -32,12 +38,18 @@ public class MongoDBImpl implements NoSQL {
     private final DB database;
     // private static final Logger logger = Logger.getLogger(MongoDBImpl.class);
 
+    private final TypeConverter typeConverter;
+
     public MongoDBImpl(DB database) {
         this.database = database;
+
+        typeConverter = new TypeConverter();
+        typeConverter.addConverter(new BasicDBListToStringArrayConverter());
     }
 
     private ConcurrentMap<Class<? extends NoSQLObject>, ObjectInfo<? extends NoSQLObject>> objectInfoCache =
             new ConcurrentHashMap<Class<? extends NoSQLObject>, ObjectInfo<? extends NoSQLObject>>();
+
 
 
     @Override
@@ -96,32 +108,62 @@ public class MongoDBImpl implements NoSQL {
     }
 
     @Override
-    public <T extends NoSQLObject> List<T> loadObjects(Class<T> type, Map<String, Object> queryAttributes) {
+    public <T extends NoSQLObject> T loadSingleObject(Class<T> type, NoSQLQuery query) {
+        List<T> result = loadObjects(type, query);
+        if (result.size() > 1) {
+            throw new IllegalStateException("There are " + result.size() + " results for type=" + type + ", query=" + query + ". We expect just one");
+        } else if (result.size() == 1) {
+            return result.get(0);
+        } else {
+            // 0 results
+            return null;
+        }
+    }
+
+    @Override
+    public <T extends NoSQLObject> List<T> loadObjects(Class<T> type, NoSQLQuery query) {
+        Map<String, Object> queryAttributes = query.getQueryAttributes();
+
         ObjectInfo<T> objectInfo = getObjectInfo(type);
         DBCollection dbCollection = database.getCollection(objectInfo.getDbCollectionName());
 
-        BasicDBObject query = new BasicDBObject();
+        BasicDBObject dbQuery = new BasicDBObject();
         for (Map.Entry<String, Object> queryAttr : queryAttributes.entrySet()) {
-            query.append(queryAttr.getKey(), queryAttr.getValue());
+            dbQuery.append(queryAttr.getKey(), queryAttr.getValue());
         }
-        DBCursor cursor = dbCollection.find(query);
+        DBCursor cursor = dbCollection.find(dbQuery);
 
         return convertCursor(type, cursor);
     }
 
     @Override
     public void removeObject(NoSQLObject object) {
-        //To change body of implemented methods use File | Settings | File Templates.
+        Class<? extends NoSQLObject> type = object.getClass();
+        ObjectInfo<?> objectInfo = getObjectInfo(type);
+
+        Property<String> idProperty = objectInfo.getOidProperty();
+        String oid = idProperty.getValue(object);
+
+        removeObject(type, oid);
     }
 
     @Override
     public void removeObject(Class<? extends NoSQLObject> type, String oid) {
-        //To change body of implemented methods use File | Settings | File Templates.
+        ObjectInfo<?> objectInfo = getObjectInfo(type);
+        DBCollection dbCollection = database.getCollection(objectInfo.getDbCollectionName());
+
+        BasicDBObject query = new BasicDBObject("_id", new ObjectId(oid));
+        dbCollection.remove(query);
     }
 
     @Override
-    public void removeObjects(Class<? extends NoSQLObject> type, Map<String, Object> queryAttributes) {
-        //To change body of implemented methods use File | Settings | File Templates.
+    public void removeObjects(Class<? extends NoSQLObject> type, NoSQLQuery query) {
+        throw new NotImplementedYetException();
+    }
+
+    // Possibility to add converters
+    public void addConverter(Converter<?, ?> converter) {
+        typeConverter.addConverter(converter);
     }
 
     private <T extends NoSQLObject> ObjectInfo<T> getObjectInfo(Class<?> objectClass) {
@@ -173,7 +215,20 @@ public class MongoDBImpl implements NoSQL {
 
             } else if ((property = objectInfo.getPropertyByName(key)) != null) {
                 // It's declared property with @DBField annotation
-                property.setValue(object, value);
+                Class<?> expectedType = property.getJavaClass();
+                Class actualType = value != null ? value.getClass() : expectedType;
+
+                // handle primitives
+                expectedType = Types.boxedClass(expectedType);
+                actualType = Types.boxedClass(actualType);
+
+                if (actualType.isAssignableFrom(expectedType)) {
+                    property.setValue(object, value);
+                } else {
+                    // we need to convert
+                    Object convertedValue = typeConverter.convertDBObjectToApplicationObject(value, expectedType, actualType);
+                    property.setValue(object, convertedValue);
+                }
 
             } else if (object instanceof AttributedNoSQLObject) {
                 // It's attributed object and property is not declared, so we will call setAttribute
