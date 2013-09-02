@@ -1,0 +1,74 @@
+package org.keycloak.services.models.nosql.keycloak.adapters;
+
+import java.net.UnknownHostException;
+
+import com.mongodb.DB;
+import com.mongodb.MongoClient;
+import org.keycloak.services.models.KeycloakSession;
+import org.keycloak.services.models.KeycloakSessionFactory;
+import org.keycloak.services.models.nosql.api.NoSQL;
+import org.keycloak.services.models.nosql.api.NoSQLObject;
+import org.keycloak.services.models.nosql.api.query.NoSQLQuery;
+import org.keycloak.services.models.nosql.api.query.NoSQLQueryBuilder;
+import org.keycloak.services.models.nosql.keycloak.data.ApplicationData;
+import org.keycloak.services.models.nosql.keycloak.data.RealmData;
+import org.keycloak.services.models.nosql.keycloak.data.RequiredCredentialData;
+import org.keycloak.services.models.nosql.keycloak.data.RoleData;
+import org.keycloak.services.models.nosql.keycloak.data.SocialLinkData;
+import org.keycloak.services.models.nosql.keycloak.data.UserData;
+import org.keycloak.services.models.nosql.impl.MongoDBImpl;
+import org.keycloak.services.models.nosql.impl.MongoDBQueryBuilder;
+import org.keycloak.services.models.nosql.keycloak.data.credentials.PasswordData;
+
+/**
+ * NoSQL implementation based on MongoDB
+ *
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
+ */
+public class MongoDBSessionFactory implements KeycloakSessionFactory {
+
+    private static final Class<?>[] MANAGED_DATA_TYPES = {
+            RealmData.class,
+            UserData.class,
+            RoleData.class,
+            RequiredCredentialData.class,
+            PasswordData.class,
+            SocialLinkData.class,
+            ApplicationData.class
+    };
+
+    private final MongoClient mongoClient;
+    private final NoSQL mongoDB;
+
+    public MongoDBSessionFactory(String host, int port, String dbName, boolean removeAllObjectsAtStartup) {
+        try {
+            // TODO: authentication support
+            mongoClient = new MongoClient(host, port);
+
+            DB db = mongoClient.getDB(dbName);
+            mongoDB = new MongoDBImpl(db);
+
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
+        }
+
+        if (removeAllObjectsAtStartup) {
+            NoSQLQuery emptyQuery = NoSQLQueryBuilder.create(MongoDBQueryBuilder.class).build();
+            for (Class<?> type : MANAGED_DATA_TYPES) {
+                mongoDB.removeObjects((Class<? extends NoSQLObject>)type, emptyQuery);
+            }
+            // TODO: logging
+            System.out.println("All objects successfully removed from DB");
+        }
+    }
+
+    @Override
+    public KeycloakSession createSession() {
+        return new NoSQLSession(mongoDB);
+    }
+
+    @Override
+    public void close() {
+        mongoClient.close();
+    }
+}

@@ -1,9 +1,8 @@
-package org.keycloak.services.models.nosql.adapters;
+package org.keycloak.services.models.nosql.keycloak.adapters;
 
 import org.keycloak.services.models.RoleModel;
 import org.keycloak.services.models.nosql.api.NoSQL;
-import org.keycloak.services.models.nosql.data.RoleData;
-import org.keycloak.services.models.nosql.data.UserData;
+import org.keycloak.services.models.nosql.keycloak.data.RoleData;
 
 /**
  * Wrapper around RoleData object, which will persist wrapped object after each set operation (compatibility with picketlink based impl)
@@ -45,5 +44,9 @@ public class RoleAdapter implements RoleModel {
     public void setName(String name) {
         role.setName(name);
         noSQL.saveObject(role);
+    }
+
+    public RoleData getRole() {
+        return role;
     }
 }

@@ -1,4 +1,4 @@
-package org.keycloak.services.models.nosql.data;
+package org.keycloak.services.models.nosql.keycloak.data;
 
 import org.keycloak.services.models.nosql.api.NoSQLCollection;
 import org.keycloak.services.models.nosql.api.NoSQLField;

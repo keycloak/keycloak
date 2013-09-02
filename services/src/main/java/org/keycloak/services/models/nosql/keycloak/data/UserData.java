@@ -1,4 +1,4 @@
-package org.keycloak.services.models.nosql.data;
+package org.keycloak.services.models.nosql.keycloak.data;
 
 import org.keycloak.services.models.nosql.api.AbstractAttributedNoSQLObject;
 import org.keycloak.services.models.nosql.api.NoSQLCollection;
@@ -19,6 +19,9 @@ public class UserData extends AbstractAttributedNoSQLObject {
     private boolean enabled;
 
     private String realmId;
+
+    private String[] roleIds;
+    private String[] scopeIds;
 
     @NoSQLId
     public String getId() {
@@ -81,5 +84,23 @@ public class UserData extends AbstractAttributedNoSQLObject {
 
     public void setRealmId(String realmId) {
         this.realmId = realmId;
+    }
+
+    @NoSQLField
+    public String[] getRoleIds() {
+        return roleIds;
+    }
+
+    public void setRoleIds(String[] roleIds) {
+        this.roleIds = roleIds;
+    }
+
+    @NoSQLField
+    public String[] getScopeIds() {
+        return scopeIds;
+    }
+
+    public void setScopeIds(String[] scopeIds) {
+        this.scopeIds = scopeIds;
     }
 }

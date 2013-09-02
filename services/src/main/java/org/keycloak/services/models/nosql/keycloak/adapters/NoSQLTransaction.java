@@ -1,4 +1,4 @@
-package org.keycloak.services.models.nosql.adapters;
+package org.keycloak.services.models.nosql.keycloak.adapters;
 
 import org.keycloak.services.models.KeycloakTransaction;
 

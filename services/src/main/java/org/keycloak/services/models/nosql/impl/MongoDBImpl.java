@@ -12,16 +12,13 @@ import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import org.bson.types.ObjectId;
-import org.jboss.resteasy.logging.Logger;
-import org.jboss.resteasy.spi.NotImplementedYetException;
-import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.models.nosql.api.AttributedNoSQLObject;
 import org.keycloak.services.models.nosql.api.NoSQL;
 import org.keycloak.services.models.nosql.api.NoSQLCollection;
 import org.keycloak.services.models.nosql.api.NoSQLField;
 import org.keycloak.services.models.nosql.api.NoSQLId;
 import org.keycloak.services.models.nosql.api.NoSQLObject;
-import org.keycloak.services.models.nosql.api.NoSQLQuery;
+import org.keycloak.services.models.nosql.api.query.NoSQLQuery;
 import org.keycloak.services.models.nosql.api.types.Converter;
 import org.keycloak.services.models.nosql.api.types.TypeConverter;
 import org.keycloak.services.models.nosql.impl.types.BasicDBListToStringArrayConverter;
@@ -68,14 +65,14 @@ public class MongoDBImpl implements NoSQL {
 
 
             dbObject.append(propName, propValue);
+        }
 
-            // Adding attributes
-            if (object instanceof AttributedNoSQLObject) {
-                AttributedNoSQLObject attributedObject = (AttributedNoSQLObject)object;
-                Map<String, String> attributes = attributedObject.getAttributes();
-                for (Map.Entry<String, String> attribute : attributes.entrySet()) {
-                    dbObject.append(attribute.getKey(), attribute.getValue());
-                }
+        // Adding attributes
+        if (object instanceof AttributedNoSQLObject) {
+            AttributedNoSQLObject attributedObject = (AttributedNoSQLObject)object;
+            Map<String, String> attributes = attributedObject.getAttributes();
+            for (Map.Entry<String, String> attribute : attributes.entrySet()) {
+                dbObject.append(attribute.getKey(), attribute.getValue());
             }
         }
 
@@ -98,8 +95,7 @@ public class MongoDBImpl implements NoSQL {
 
     @Override
     public <T extends NoSQLObject> T loadObject(Class<T> type, String oid) {
-        ObjectInfo<T> objectInfo = getObjectInfo(type);
-        DBCollection dbCollection = database.getCollection(objectInfo.getDbCollectionName());
+        DBCollection dbCollection = getDBCollectionForType(type);
 
         BasicDBObject idQuery = new BasicDBObject("_id", new ObjectId(oid));
         DBObject dbObject = dbCollection.findOne(idQuery);
@@ -122,15 +118,9 @@ public class MongoDBImpl implements NoSQL {
 
     @Override
     public <T extends NoSQLObject> List<T> loadObjects(Class<T> type, NoSQLQuery query) {
-        Map<String, Object> queryAttributes = query.getQueryAttributes();
+        DBCollection dbCollection = getDBCollectionForType(type);
+        BasicDBObject dbQuery = getDBQueryFromQuery(query);
 
-        ObjectInfo<T> objectInfo = getObjectInfo(type);
-        DBCollection dbCollection = database.getCollection(objectInfo.getDbCollectionName());
-
-        BasicDBObject dbQuery = new BasicDBObject();
-        for (Map.Entry<String, Object> queryAttr : queryAttributes.entrySet()) {
-            dbQuery.append(queryAttr.getKey(), queryAttr.getValue());
-        }
         DBCursor cursor = dbCollection.find(dbQuery);
 
         return convertCursor(type, cursor);
@@ -149,19 +139,21 @@ public class MongoDBImpl implements NoSQL {
 
     @Override
     public void removeObject(Class<? extends NoSQLObject> type, String oid) {
-        ObjectInfo<?> objectInfo = getObjectInfo(type);
-        DBCollection dbCollection = database.getCollection(objectInfo.getDbCollectionName());
+        DBCollection dbCollection = getDBCollectionForType(type);
 
-        BasicDBObject query = new BasicDBObject("_id", new ObjectId(oid));
-        dbCollection.remove(query);
+        BasicDBObject dbQuery = new BasicDBObject("_id", new ObjectId(oid));
+        dbCollection.remove(dbQuery);
     }
 
     @Override
     public void removeObjects(Class<? extends NoSQLObject> type, NoSQLQuery query) {
-        throw new NotImplementedYetException();
+        DBCollection dbCollection = getDBCollectionForType(type);
+        BasicDBObject dbQuery = getDBQueryFromQuery(query);
+
+        dbCollection.remove(dbQuery);
     }
 
-    // Possibility to add converters
+    // Possibility to add user-defined converters
     public void addConverter(Converter<?, ?> converter) {
         typeConverter.addConverter(converter);
     }
@@ -171,6 +163,7 @@ public class MongoDBImpl implements NoSQL {
         if (objectInfo == null) {
             Property<String> idProperty = PropertyQueries.<String>createQuery(objectClass).addCriteria(new AnnotatedPropertyCriteria(NoSQLId.class)).getFirstResult();
             if (idProperty == null) {
+                // TODO: should be allowed to have NoSQLObject classes without declared NoSQLId annotation?
                 throw new IllegalStateException("Class " + objectClass + " doesn't have property with declared annotation " + NoSQLId.class);
             }
 
@@ -195,6 +188,10 @@ public class MongoDBImpl implements NoSQL {
 
 
     private <T extends NoSQLObject> T convertObject(Class<T> type, DBObject dbObject) {
+        if (dbObject == null) {
+            return null;
+        }
+
         ObjectInfo<T> objectInfo = getObjectInfo(type);
 
         T object;
@@ -254,5 +251,19 @@ public class MongoDBImpl implements NoSQL {
         }
 
         return result;
+    }
+
+    private DBCollection getDBCollectionForType(Class<? extends NoSQLObject> type) {
+        ObjectInfo<?> objectInfo = getObjectInfo(type);
+        return database.getCollection(objectInfo.getDbCollectionName());
+    }
+
+    private BasicDBObject getDBQueryFromQuery(NoSQLQuery query) {
+        Map<String, Object> queryAttributes = query.getQueryAttributes();
+        BasicDBObject dbQuery = new BasicDBObject();
+        for (Map.Entry<String, Object> queryAttr : queryAttributes.entrySet()) {
+            dbQuery.append(queryAttr.getKey(), queryAttr.getValue());
+        }
+        return dbQuery;
     }
 }

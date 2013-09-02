@@ -1,7 +1,8 @@
 package org.keycloak.services.models.nosql.api;
 
 import java.util.List;
-import java.util.Map;
+
+import org.keycloak.services.models.nosql.api.query.NoSQLQuery;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

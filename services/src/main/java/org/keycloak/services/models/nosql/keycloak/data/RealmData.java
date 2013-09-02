@@ -1,4 +1,8 @@
-package org.keycloak.services.models.nosql.data;
+package org.keycloak.services.models.nosql.keycloak.data;
+
+import java.security.SecureRandom;
+import java.util.Random;
+import java.util.UUID;
 
 import org.keycloak.services.models.nosql.api.NoSQLCollection;
 import org.keycloak.services.models.nosql.api.NoSQLField;
@@ -10,6 +14,8 @@ import org.keycloak.services.models.nosql.api.NoSQLObject;
  */
 @NoSQLCollection(collectionName = "realms")
 public class RealmData implements NoSQLObject {
+
+    private String oid;
 
     private String id;
     private String name;
@@ -23,9 +29,21 @@ public class RealmData implements NoSQLObject {
     private int accessCodeLifespan;
     private String publicKeyPem;
     private String privateKeyPem;
+
     private String[] defaultRoles;
+    private String[] realmAdmins;
 
     @NoSQLId
+    public String getOid() {
+        return oid;
+    }
+
+    public void setOid(String oid) {
+        this.oid = oid;
+    }
+
+    // TODO: Is ID really needed? It seems that it exists just to workaround picketlink...
+    @NoSQLField
     public String getId() {
         return id;
     }
@@ -141,4 +159,14 @@ public class RealmData implements NoSQLObject {
     public void setDefaultRoles(String[] defaultRoles) {
         this.defaultRoles = defaultRoles;
     }
+
+    @NoSQLField
+    public String[] getRealmAdmins() {
+        return realmAdmins;
+    }
+
+    public void setRealmAdmins(String[] realmAdmins) {
+        this.realmAdmins = realmAdmins;
+    }
+
 }

@@ -8,8 +8,9 @@ import org.keycloak.models.picketlink.PicketlinkKeycloakSessionFactory;
 import org.keycloak.models.picketlink.mappings.ApplicationEntity;
 import org.keycloak.models.picketlink.mappings.RealmEntity;
 import org.keycloak.services.models.KeycloakSessionFactory;
-import org.keycloak.services.models.nosql.adapters.MongoDBSessionFactory;
+import org.keycloak.services.models.nosql.keycloak.adapters.MongoDBSessionFactory;
 import org.keycloak.services.models.picketlink.PicketlinkKeycloakSession;
+import org.keycloak.services.models.picketlink.PicketlinkKeycloakSessionFactory;
 import org.keycloak.services.models.picketlink.mappings.ApplicationEntity;
 import org.keycloak.services.models.picketlink.mappings.RealmEntity;
 import org.keycloak.social.SocialRequestManager;
@@ -24,6 +25,8 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.servlet.ServletContext;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.Persistence;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Context;
 import java.util.HashSet;
@@ -61,7 +64,7 @@ public class KeycloakApplication extends Application {
     public static KeycloakSessionFactory buildSessionFactory() {
         // EntityManagerFactory emf = Persistence.createEntityManagerFactory("keycloak-identity-store");
         // return new PicketlinkKeycloakSessionFactory(emf, buildPartitionManager());
-        return new MongoDBSessionFactory("localhost", 27017, "keycloak");
+        return new MongoDBSessionFactory("localhost", 27017, "keycloak", true);
     }
 
     public KeycloakSessionFactory getFactory() {

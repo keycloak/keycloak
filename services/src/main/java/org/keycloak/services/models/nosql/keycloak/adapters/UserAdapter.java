@@ -1,10 +1,10 @@
-package org.keycloak.services.models.nosql.adapters;
+package org.keycloak.services.models.nosql.keycloak.adapters;
 
 import java.util.Map;
 
 import org.keycloak.services.models.UserModel;
 import org.keycloak.services.models.nosql.api.NoSQL;
-import org.keycloak.services.models.nosql.data.UserData;
+import org.keycloak.services.models.nosql.keycloak.data.UserData;
 
 /**
  * Wrapper around UserData object, which will persist wrapped object after each set operation (compatibility with picketlink based impl)
@@ -89,5 +89,9 @@ public class UserAdapter implements UserModel {
     @Override
     public Map<String, String> getAttributes() {
         return user.getAttributes();
+    }
+
+    public UserData getUser() {
+        return user;
     }
 }
