@@ -1,5 +1,6 @@
 package org.keycloak.services.models.nosql.keycloak.data;
 
+import org.keycloak.services.models.nosql.api.AbstractNoSQLObject;
 import org.keycloak.services.models.nosql.api.NoSQLCollection;
 import org.keycloak.services.models.nosql.api.NoSQLField;
 import org.keycloak.services.models.nosql.api.NoSQLId;
@@ -9,7 +10,7 @@ import org.keycloak.services.models.nosql.api.NoSQLObject;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @NoSQLCollection(collectionName = "requiredCredentials")
-public class RequiredCredentialData implements NoSQLObject {
+public class RequiredCredentialData extends AbstractNoSQLObject {
 
     public static final int CLIENT_TYPE_USER = 1;
     public static final int CLIENT_TYPE_RESOURCE = 2;

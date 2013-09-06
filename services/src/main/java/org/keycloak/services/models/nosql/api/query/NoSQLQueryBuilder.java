@@ -12,14 +12,6 @@ public abstract class NoSQLQueryBuilder {
 
     protected NoSQLQueryBuilder() {};
 
-    public static NoSQLQueryBuilder create(Class<? extends NoSQLQueryBuilder> builderClass) {
-        try {
-            return builderClass.newInstance();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     public NoSQLQuery build() {
         return new NoSQLQuery(queryAttributes);
     }

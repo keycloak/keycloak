@@ -8,9 +8,9 @@ import org.picketlink.common.properties.Property;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-class ObjectInfo<T extends NoSQLObject> {
+public class ObjectInfo {
 
-    private final Class<T> objectClass;
+    private final Class<? extends NoSQLObject> objectClass;
 
     private final String dbCollectionName;
 
@@ -18,14 +18,14 @@ class ObjectInfo<T extends NoSQLObject> {
 
     private final List<Property<Object>> properties;
 
-    public ObjectInfo(Class<T> objectClass, String dbCollectionName, Property<String> oidProperty, List<Property<Object>> properties) {
+    public ObjectInfo(Class<? extends NoSQLObject> objectClass, String dbCollectionName, Property<String> oidProperty, List<Property<Object>> properties) {
         this.objectClass = objectClass;
         this.dbCollectionName = dbCollectionName;
         this.oidProperty = oidProperty;
         this.properties = properties;
     }
 
-    public Class<T> getObjectClass() {
+    public Class<? extends NoSQLObject> getObjectClass() {
         return objectClass;
     }
 

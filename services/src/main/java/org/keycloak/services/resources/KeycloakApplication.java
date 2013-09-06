@@ -62,9 +62,25 @@ public class KeycloakApplication extends Application {
     }
 
     public static KeycloakSessionFactory buildSessionFactory() {
-        // EntityManagerFactory emf = Persistence.createEntityManagerFactory("keycloak-identity-store");
-        // return new PicketlinkKeycloakSessionFactory(emf, buildPartitionManager());
-        return new MongoDBSessionFactory("localhost", 27017, "keycloak", true);
+        String sessionFactoryType = System.getProperty("keycloak.sessionFactory", "picketlink");
+        if ("mongo".equals(sessionFactoryType)) {
+            return buildMongoDBSessionFactory();
+        } else {
+            return buildPicketlinkSessionFactory();
+        }
+    }
+
+    private static KeycloakSessionFactory buildPicketlinkSessionFactory() {
+        EntityManagerFactory emf = Persistence.createEntityManagerFactory("keycloak-identity-store");
+        return new PicketlinkKeycloakSessionFactory(emf, buildPartitionManager());
+    }
+
+    private static KeycloakSessionFactory buildMongoDBSessionFactory() {
+        String host = System.getProperty("keycloak.mongodb.host", "localhost");
+        int port = Integer.parseInt(System.getProperty("keycloak.mongodb.port", "27017"));
+        String dbName = System.getProperty("keycloak.mongodb.databaseName", "keycloak");
+        boolean removeAllObjectsOnStartup = Boolean.parseBoolean(System.getProperty("keycloak.mongodb.removeAllObjectsOnStartup", "true"));
+        return new MongoDBSessionFactory(host, port, dbName, removeAllObjectsOnStartup);
     }
 
     public KeycloakSessionFactory getFactory() {

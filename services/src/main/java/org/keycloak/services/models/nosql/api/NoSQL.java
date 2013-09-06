@@ -3,6 +3,7 @@ package org.keycloak.services.models.nosql.api;
 import java.util.List;
 
 import org.keycloak.services.models.nosql.api.query.NoSQLQuery;
+import org.keycloak.services.models.nosql.api.query.NoSQLQueryBuilder;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -26,4 +27,6 @@ public interface NoSQL {
     void removeObject(Class<? extends NoSQLObject> type, String oid);
 
     void removeObjects(Class<? extends NoSQLObject> type, NoSQLQuery query);
+
+    NoSQLQueryBuilder createQueryBuilder();
 }

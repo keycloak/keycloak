@@ -16,7 +16,5 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Retention(RUNTIME)
 public @interface NoSQLField {
 
-    String fieldName() default "";
-
-    // TODO: add lazy loading?
+    // TODO: fieldName add lazy loading?
 }

@@ -4,6 +4,8 @@ import java.net.UnknownHostException;
 
 import com.mongodb.DB;
 import com.mongodb.MongoClient;
+import org.jboss.resteasy.logging.Logger;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.models.KeycloakSession;
 import org.keycloak.services.models.KeycloakSessionFactory;
 import org.keycloak.services.models.nosql.api.NoSQL;
@@ -26,8 +28,9 @@ import org.keycloak.services.models.nosql.keycloak.data.credentials.PasswordData
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class MongoDBSessionFactory implements KeycloakSessionFactory {
+    protected static final Logger logger = Logger.getLogger(MongoDBSessionFactory.class);
 
-    private static final Class<?>[] MANAGED_DATA_TYPES = {
+    private static final Class<? extends NoSQLObject>[] MANAGED_DATA_TYPES = (Class<? extends NoSQLObject>[])new Class<?>[] {
             RealmData.class,
             UserData.class,
             RoleData.class,
@@ -41,24 +44,16 @@ public class MongoDBSessionFactory implements KeycloakSessionFactory {
     private final NoSQL mongoDB;
 
     public MongoDBSessionFactory(String host, int port, String dbName, boolean removeAllObjectsAtStartup) {
+        logger.info(String.format("Going to use MongoDB database. host: %s, port: %d, databaseName: %s, removeAllObjectsAtStartup: %b", host, port, dbName, removeAllObjectsAtStartup));
         try {
             // TODO: authentication support
             mongoClient = new MongoClient(host, port);
 
             DB db = mongoClient.getDB(dbName);
-            mongoDB = new MongoDBImpl(db);
+            mongoDB = new MongoDBImpl(db, removeAllObjectsAtStartup, MANAGED_DATA_TYPES);
 
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);
-        }
-
-        if (removeAllObjectsAtStartup) {
-            NoSQLQuery emptyQuery = NoSQLQueryBuilder.create(MongoDBQueryBuilder.class).build();
-            for (Class<?> type : MANAGED_DATA_TYPES) {
-                mongoDB.removeObjects((Class<? extends NoSQLObject>)type, emptyQuery);
-            }
-            // TODO: logging
-            System.out.println("All objects successfully removed from DB");
         }
     }
 
@@ -69,6 +64,7 @@ public class MongoDBSessionFactory implements KeycloakSessionFactory {
 
     @Override
     public void close() {
+        logger.info("Closing MongoDB client");
         mongoClient.close();
     }
 }

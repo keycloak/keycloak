@@ -7,7 +7,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public abstract class AbstractAttributedNoSQLObject implements AttributedNoSQLObject {
+public abstract class AbstractAttributedNoSQLObject extends AbstractNoSQLObject implements AttributedNoSQLObject {
 
     // Simple hashMap for now (no thread-safe)
     private Map<String, String> attributes = new HashMap<String, String>();

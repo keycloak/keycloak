@@ -1,9 +1,11 @@
 package org.keycloak.services.models.nosql.keycloak.data;
 
+import org.keycloak.services.models.nosql.api.NoSQL;
 import org.keycloak.services.models.nosql.api.NoSQLCollection;
 import org.keycloak.services.models.nosql.api.NoSQLField;
 import org.keycloak.services.models.nosql.api.NoSQLId;
 import org.keycloak.services.models.nosql.api.NoSQLObject;
+import org.keycloak.services.models.nosql.api.query.NoSQLQuery;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -81,5 +83,17 @@ public class ApplicationData implements NoSQLObject {
 
     public void setRealmId(String realmId) {
         this.realmId = realmId;
+    }
+
+    @Override
+    public void afterRemove(NoSQL noSQL) {
+        // Remove resourceUser of this application
+        noSQL.removeObject(UserData.class, resourceUserId);
+
+        // Remove all roles, which belongs to this application
+        NoSQLQuery query = noSQL.createQueryBuilder()
+                .andCondition("applicationId", id)
+                .build();
+        noSQL.removeObjects(RoleData.class, query);
     }
 }

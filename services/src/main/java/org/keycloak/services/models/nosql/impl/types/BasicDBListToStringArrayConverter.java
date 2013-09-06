@@ -13,7 +13,7 @@ public class BasicDBListToStringArrayConverter implements Converter<Object, Basi
     private static final String[] PLACEHOLDER = new String[] {};
 
     @Override
-    public Object convertDBObjectToApplicationObject(BasicDBList dbObject) {
+    public String[] convertDBObjectToApplicationObject(BasicDBList dbObject) {
         return dbObject.toArray(PLACEHOLDER);
     }
 

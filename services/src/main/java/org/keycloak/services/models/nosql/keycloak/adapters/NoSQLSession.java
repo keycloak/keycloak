@@ -55,7 +55,7 @@ public class NoSQLSession implements KeycloakSession {
 
     @Override
     public RealmModel getRealm(String id) {
-        NoSQLQuery query = NoSQLQueryBuilder.create(MongoDBQueryBuilder.class)
+        NoSQLQuery query = noSQL.createQueryBuilder()
                 .andCondition("id", id)
                 .build();
         RealmData realmData = noSQL.loadSingleObject(RealmData.class, query);
@@ -65,7 +65,7 @@ public class NoSQLSession implements KeycloakSession {
     @Override
     public List<RealmModel> getRealms(UserModel admin) {
         String userId = ((UserAdapter)admin).getUser().getId();
-        NoSQLQuery query = NoSQLQueryBuilder.create(MongoDBQueryBuilder.class)
+        NoSQLQuery query = noSQL.createQueryBuilder()
                 .andCondition("realmAdmins", userId)
                 .build();
         List<RealmData> realms = noSQL.loadObjects(RealmData.class, query);

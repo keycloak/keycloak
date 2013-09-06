@@ -57,7 +57,7 @@ public class PasswordCredentialHandler {
         // If the user for the provided username cannot be found we fail validation
         if (user != null) {
             if (user.isEnabled()) {
-                NoSQLQuery query = NoSQLQueryBuilder.create(MongoDBQueryBuilder.class)
+                NoSQLQuery query = noSQL.createQueryBuilder()
                         .andCondition("userId", user.getId())
                         .build();
                 PasswordData passwordData = noSQL.loadSingleObject(PasswordData.class, query);
@@ -87,7 +87,7 @@ public class PasswordCredentialHandler {
                        Date effectiveDate, Date expiryDate) {
 
         // Try to look if user already has password
-        NoSQLQuery query = NoSQLQueryBuilder.create(MongoDBQueryBuilder.class)
+        NoSQLQuery query = noSQL.createQueryBuilder()
                 .andCondition("userId", user.getId())
                 .build();
 

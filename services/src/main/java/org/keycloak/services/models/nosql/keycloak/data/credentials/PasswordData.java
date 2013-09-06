@@ -2,6 +2,7 @@ package org.keycloak.services.models.nosql.keycloak.data.credentials;
 
 import java.util.Date;
 
+import org.keycloak.services.models.nosql.api.AbstractNoSQLObject;
 import org.keycloak.services.models.nosql.api.NoSQLCollection;
 import org.keycloak.services.models.nosql.api.NoSQLField;
 import org.keycloak.services.models.nosql.api.NoSQLId;
@@ -11,24 +12,14 @@ import org.keycloak.services.models.nosql.api.NoSQLObject;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @NoSQLCollection(collectionName = "passwordCredentials")
-public class PasswordData implements NoSQLObject {
+public class PasswordData extends AbstractNoSQLObject {
 
-    private String id;
     private Date effectiveDate = new Date();
     private Date expiryDate;
     private String encodedHash;
     private String salt;
 
     private String userId;
-
-    @NoSQLId
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
 
     @NoSQLField
     public Date getEffectiveDate() {

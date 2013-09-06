@@ -9,6 +9,8 @@ import org.keycloak.services.models.nosql.api.query.NoSQLQueryBuilder;
  */
 public class MongoDBQueryBuilder extends NoSQLQueryBuilder {
 
+    protected MongoDBQueryBuilder() {};
+
     @Override
     public NoSQLQueryBuilder inCondition(String name, Object[] values) {
         if (values == null) {

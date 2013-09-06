@@ -94,7 +94,7 @@ public class ApplicationAdapter implements ApplicationModel {
 
     @Override
     public RoleAdapter getRole(String name) {
-        NoSQLQuery query = NoSQLQueryBuilder.create(MongoDBQueryBuilder.class)
+        NoSQLQuery query = noSQL.createQueryBuilder()
                 .andCondition("name", name)
                 .andCondition("applicationId", getId())
                 .build();
@@ -122,7 +122,7 @@ public class ApplicationAdapter implements ApplicationModel {
 
     @Override
     public List<RoleModel> getRoles() {
-        NoSQLQuery query = NoSQLQueryBuilder.create(MongoDBQueryBuilder.class)
+        NoSQLQuery query = noSQL.createQueryBuilder()
                 .andCondition("applicationId", getId())
                 .build();
         List<RoleData> roles = noSQL.loadObjects(RoleData.class, query);
@@ -142,7 +142,7 @@ public class ApplicationAdapter implements ApplicationModel {
 
         Set<String> result = new HashSet<String>();
 
-        NoSQLQuery query = NoSQLQueryBuilder.create(MongoDBQueryBuilder.class)
+        NoSQLQuery query = noSQL.createQueryBuilder()
                 .inCondition("_id", roleIds)
                 .build();
         List<RoleData> roles = noSQL.loadObjects(RoleData.class, query);
@@ -184,7 +184,7 @@ public class ApplicationAdapter implements ApplicationModel {
 
         Set<String> result = new HashSet<String>();
 
-        NoSQLQuery query = NoSQLQueryBuilder.create(MongoDBQueryBuilder.class)
+        NoSQLQuery query = noSQL.createQueryBuilder()
                 .inCondition("_id", scopeIds)
                 .build();
         List<RoleData> roles = noSQL.loadObjects(RoleData.class, query);

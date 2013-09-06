@@ -1,9 +1,12 @@
 package org.keycloak.services.models.nosql.keycloak.data;
 
 import org.keycloak.services.models.nosql.api.AbstractAttributedNoSQLObject;
+import org.keycloak.services.models.nosql.api.NoSQL;
 import org.keycloak.services.models.nosql.api.NoSQLCollection;
 import org.keycloak.services.models.nosql.api.NoSQLField;
 import org.keycloak.services.models.nosql.api.NoSQLId;
+import org.keycloak.services.models.nosql.api.query.NoSQLQuery;
+import org.keycloak.services.models.nosql.keycloak.data.credentials.PasswordData;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -102,5 +105,16 @@ public class UserData extends AbstractAttributedNoSQLObject {
 
     public void setScopeIds(String[] scopeIds) {
         this.scopeIds = scopeIds;
+    }
+
+    @Override
+    public void afterRemove(NoSQL noSQL) {
+        NoSQLQuery query = noSQL.createQueryBuilder()
+                .andCondition("userId", id)
+                .build();
+
+        // Remove social links and passwords of this user
+        noSQL.removeObjects(SocialLinkData.class, query);
+        noSQL.removeObjects(PasswordData.class, query);
     }
 }

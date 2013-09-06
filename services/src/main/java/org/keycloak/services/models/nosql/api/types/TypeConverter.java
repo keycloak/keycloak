@@ -11,6 +11,7 @@ import java.util.Map;
  */
 public class TypeConverter {
 
+    // TODO: Thread-safety support (maybe...)
     private Map<ConverterKey, Converter<?, ?>> converterRegistry = new HashMap<ConverterKey, Converter<?, ?>>();
 
     public <T, S> void addConverter(Converter<T, S> converter) {
@@ -18,14 +19,19 @@ public class TypeConverter {
         converterRegistry.put(converterKey, converter);
     }
 
-    public <T, S> T convertDBObjectToApplicationObject(S dbObject, Class<T> expectedApplicationObjectType, Class<S> expectedDBObjectType) {
+    public <T, S> T convertDBObjectToApplicationObject(S dbObject, Class<T> expectedApplicationObjectType) {
+        // TODO: Not type safe as it expects that S type of converter must exactly match type of dbObject. Converter lookup should be more flexible
+        Class<S> expectedDBObjectType = (Class<S>)dbObject.getClass();
         Converter<T, S> converter = getConverter(expectedApplicationObjectType, expectedDBObjectType);
         return converter.convertDBObjectToApplicationObject(dbObject);
     }
 
-    public <T, S> S convertApplicationObjectToDBObject(T applicationobject, Class<T> expectedApplicationObjectType, Class<S> expectedDBObjectType) {
+    public <T, S> S convertApplicationObjectToDBObject(T applicationObject, Class<S> expectedDBObjectType) {
+        // TODO: Not type safe as it expects that T type of converter must exactly match type of applicationObject. Converter lookup should be more flexible
+        Class<T> expectedApplicationObjectType = (Class<T>)applicationObject.getClass();
         Converter<T, S> converter = getConverter(expectedApplicationObjectType, expectedDBObjectType);
-        return converter.convertApplicationObjectToDBObject(applicationobject);
+
+        return converter.convertApplicationObjectToDBObject(applicationObject);
     }
 
     private <T, S> Converter<T, S> getConverter( Class<T> expectedApplicationObjectType, Class<S> expectedDBObjectType) {

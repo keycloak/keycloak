@@ -1,15 +1,23 @@
 package org.keycloak.services.models.nosql.keycloak.data;
 
+import java.util.List;
+
+import org.jboss.resteasy.logging.Logger;
+import org.keycloak.services.models.nosql.api.NoSQL;
 import org.keycloak.services.models.nosql.api.NoSQLCollection;
 import org.keycloak.services.models.nosql.api.NoSQLField;
 import org.keycloak.services.models.nosql.api.NoSQLId;
 import org.keycloak.services.models.nosql.api.NoSQLObject;
+import org.keycloak.services.models.nosql.api.query.NoSQLQuery;
+import org.keycloak.services.models.nosql.impl.Utils;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @NoSQLCollection(collectionName = "roles")
 public class RoleData implements NoSQLObject {
+
+    private static final Logger logger = Logger.getLogger(RoleData.class);
 
     private String id;
     private String name;
@@ -61,5 +69,37 @@ public class RoleData implements NoSQLObject {
 
     public void setApplicationId(String applicationId) {
         this.applicationId = applicationId;
+    }
+
+    @Override
+    public void afterRemove(NoSQL noSQL) {
+        // Remove this role from all users, which has it
+        NoSQLQuery query = noSQL.createQueryBuilder()
+                .andCondition("roleIds", id)
+                .build();
+
+        List<UserData> users = noSQL.loadObjects(UserData.class, query);
+        for (UserData user : users) {
+            logger.info("Removing role " + getName() + " from user " + user.getLoginName());
+            String[] roleIds = user.getRoleIds();
+            String[] newRoleIds = Utils.removeItemFromArray(roleIds, getId());
+            user.setRoleIds(newRoleIds);
+            noSQL.saveObject(user);
+        }
+
+        // Remove this scope from all users, which has it
+        query = noSQL.createQueryBuilder()
+                .andCondition("scopeIds", id)
+                .build();
+
+        users = noSQL.loadObjects(UserData.class, query);
+        for (UserData user : users) {
+            logger.info("Removing scope " + getName() + " from user " + user.getLoginName());
+            String[] scopeIds = user.getScopeIds();
+            String[] newScopeIds = Utils.removeItemFromArray(scopeIds, getId());
+            user.setScopeIds(newScopeIds);
+            noSQL.saveObject(user);
+        }
+
     }
 }

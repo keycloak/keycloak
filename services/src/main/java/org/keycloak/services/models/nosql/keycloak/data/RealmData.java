@@ -4,10 +4,12 @@ import java.security.SecureRandom;
 import java.util.Random;
 import java.util.UUID;
 
+import org.keycloak.services.models.nosql.api.NoSQL;
 import org.keycloak.services.models.nosql.api.NoSQLCollection;
 import org.keycloak.services.models.nosql.api.NoSQLField;
 import org.keycloak.services.models.nosql.api.NoSQLId;
 import org.keycloak.services.models.nosql.api.NoSQLObject;
+import org.keycloak.services.models.nosql.api.query.NoSQLQuery;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -169,4 +171,22 @@ public class RealmData implements NoSQLObject {
         this.realmAdmins = realmAdmins;
     }
 
+    @Override
+    public void afterRemove(NoSQL noSQL) {
+        NoSQLQuery query = noSQL.createQueryBuilder()
+                .andCondition("realmId", oid)
+                .build();
+
+        // Remove all users of this realm
+        noSQL.removeObjects(UserData.class, query);
+
+        // Remove all requiredCredentials of this realm
+        noSQL.removeObjects(RequiredCredentialData.class, query);
+
+        // Remove all roles of this realm
+        noSQL.removeObjects(RoleData.class, query);
+
+        // Remove all applications of this realm
+        noSQL.removeObjects(ApplicationData.class, query);
+    }
 }

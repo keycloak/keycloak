@@ -27,4 +27,5 @@ class ConverterKey {
         ConverterKey tc = (ConverterKey)obj;
         return tc.applicationObjectType.equals(this.applicationObjectType) && tc.dbObjectType.equals(this.dbObjectType);
     }
+
 }

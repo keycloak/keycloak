@@ -53,4 +53,23 @@ public class Utils {
         return false;
     }
 
+    public static <T> T[] removeItemFromArray(T[] inputArray, T item) {
+        if (item == null) {
+            throw new IllegalArgumentException("item must be non-null");
+        }
+
+        if (inputArray == null) {
+            return inputArray;
+        } else {
+            T[] outputArray = (T[])Array.newInstance(item.getClass(), inputArray.length - 1);
+            int counter = 0;
+            for (T object : inputArray) {
+                if (!item.equals(object)) {
+                    outputArray[counter++] = object;
+                }
+            }
+            return outputArray;
+        }
+    }
+
 }

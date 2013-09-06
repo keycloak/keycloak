@@ -250,7 +250,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public UserAdapter getUser(String name) {
-        NoSQLQuery query = NoSQLQueryBuilder.create(MongoDBQueryBuilder.class)
+        NoSQLQuery query = noSQL.createQueryBuilder()
                 .andCondition("loginName", name)
                 .andCondition("realmId", getOid())
                 .build();
@@ -280,7 +280,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public RoleAdapter getRole(String name) {
-        NoSQLQuery query = NoSQLQueryBuilder.create(MongoDBQueryBuilder.class)
+        NoSQLQuery query = noSQL.createQueryBuilder()
                 .andCondition("name", name)
                 .andCondition("realmId", getOid())
                 .build();
@@ -308,7 +308,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public List<RoleModel> getRoles() {
-        NoSQLQuery query = NoSQLQueryBuilder.create(MongoDBQueryBuilder.class)
+        NoSQLQuery query = noSQL.createQueryBuilder()
                 .andCondition("realmId", getOid())
                 .build();
         List<RoleData> roles = noSQL.loadObjects(RoleData.class, query);
@@ -325,7 +325,7 @@ public class RealmAdapter implements RealmModel {
     public List<RoleModel> getDefaultRoles() {
         String[] defaultRoles = realm.getDefaultRoles();
 
-        NoSQLQuery query = NoSQLQueryBuilder.create(MongoDBQueryBuilder.class)
+        NoSQLQuery query = noSQL.createQueryBuilder()
                 .inCondition("_id", defaultRoles)
                 .build();
         List<RoleData> defaultRolesData = noSQL.loadObjects(RoleData.class, query);
@@ -393,7 +393,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public List<ApplicationModel> getApplications() {
-        NoSQLQuery query = NoSQLQueryBuilder.create(MongoDBQueryBuilder.class)
+        NoSQLQuery query = noSQL.createQueryBuilder()
                 .andCondition("realmId", getOid())
                 .build();
         List<ApplicationData> appDatas = noSQL.loadObjects(ApplicationData.class, query);
@@ -456,7 +456,7 @@ public class RealmAdapter implements RealmModel {
 
         Set<String> result = new HashSet<String>();
 
-        NoSQLQuery query = NoSQLQueryBuilder.create(MongoDBQueryBuilder.class)
+        NoSQLQuery query = noSQL.createQueryBuilder()
                 .inCondition("_id", roleIds)
                 .build();
         List<RoleData> roles = noSQL.loadObjects(RoleData.class, query);
@@ -492,7 +492,7 @@ public class RealmAdapter implements RealmModel {
 
         Set<String> result = new HashSet<String>();
 
-        NoSQLQuery query = NoSQLQueryBuilder.create(MongoDBQueryBuilder.class)
+        NoSQLQuery query = noSQL.createQueryBuilder()
                 .inCondition("_id", scopeIds)
                 .build();
         List<RoleData> roles = noSQL.loadObjects(RoleData.class, query);
@@ -639,7 +639,7 @@ public class RealmAdapter implements RealmModel {
     }
 
     protected List<RequiredCredentialData> getRequiredCredentialsData(int credentialType) {
-        NoSQLQuery query = NoSQLQueryBuilder.create(MongoDBQueryBuilder.class)
+        NoSQLQuery query = noSQL.createQueryBuilder()
                 .andCondition("realmId", getOid())
                 .andCondition("clientType", credentialType)
                 .build();
@@ -681,7 +681,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public UserModel getUserBySocialLink(SocialLinkModel socialLink) {
-        NoSQLQuery query = NoSQLQueryBuilder.create(MongoDBQueryBuilder.class)
+        NoSQLQuery query = noSQL.createQueryBuilder()
                 .andCondition("socialProvider", socialLink.getSocialProvider())
                 .andCondition("socialUsername", socialLink.getSocialUsername())
                 .build();
@@ -701,7 +701,7 @@ public class RealmAdapter implements RealmModel {
         UserData userData = ((UserAdapter)user).getUser();
         String userId = userData.getId();
 
-        NoSQLQuery query = NoSQLQueryBuilder.create(MongoDBQueryBuilder.class)
+        NoSQLQuery query = noSQL.createQueryBuilder()
                 .andCondition("userId", userId)
                 .build();
         List<SocialLinkData> dbSocialLinks = noSQL.loadObjects(SocialLinkData.class, query);
@@ -729,7 +729,7 @@ public class RealmAdapter implements RealmModel {
     public void removeSocialLink(UserModel user, SocialLinkModel socialLink) {
         UserData userData = ((UserAdapter)user).getUser();
         String userId = userData.getId();
-        NoSQLQuery query = NoSQLQueryBuilder.create(MongoDBQueryBuilder.class)
+        NoSQLQuery query = noSQL.createQueryBuilder()
                 .andCondition("socialProvider", socialLink.getSocialProvider())
                 .andCondition("socialUsername", socialLink.getSocialUsername())
                 .andCondition("userId", userId)
