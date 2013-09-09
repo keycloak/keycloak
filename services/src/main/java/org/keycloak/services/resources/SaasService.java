@@ -11,16 +11,20 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.models.RealmModel;
+import org.keycloak.services.models.RequiredCredentialModel;
 import org.keycloak.services.models.RoleModel;
 import org.keycloak.services.models.UserCredentialModel;
 import org.keycloak.services.models.UserModel;
 import org.keycloak.services.resources.admin.RealmsAdminResource;
 import org.keycloak.services.resources.flows.Flows;
+import org.keycloak.services.validation.Validation;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 
 import java.net.URI;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.StringTokenizer;
 
 /**
@@ -308,7 +312,12 @@ public class SaasService {
                 RealmManager realmManager = new RealmManager(session);
                 RealmModel defaultRealm = realmManager.defaultRealm();
 
-                String error = validateRegistrationForm(formData);
+                List<String> requiredCredentialTypes = new LinkedList<String>();
+                for (RequiredCredentialModel m : defaultRealm.getRequiredCredentials()) {
+                    requiredCredentialTypes.add(m.getType());
+                }
+
+                String error = Validation.validateRegistrationForm(formData, requiredCredentialTypes);
                 if (error != null) {
                     return Flows.forms(defaultRealm, request).setError(error).setFormData(formData)
                             .forwardToRegistration();
@@ -341,7 +350,15 @@ public class SaasService {
                     newUser.setFirstName(first.toString());
                     newUser.setLastName(last);
                 }
-                newUser.credential(CredentialRepresentation.PASSWORD, formData.getFirst("password"));
+
+                if (requiredCredentialTypes.contains(CredentialRepresentation.PASSWORD)) {
+                    newUser.credential(CredentialRepresentation.PASSWORD, formData.getFirst("password"));
+                }
+
+                if (requiredCredentialTypes.contains(CredentialRepresentation.TOTP)) {
+                    newUser.credential(CredentialRepresentation.TOTP, formData.getFirst("password"));
+                }
+
                 UserModel user = registerMe(defaultRealm, newUser);
                 if (user == null) {
                     return Flows.forms(defaultRealm, request).setError(Messages.USERNAME_EXISTS)
@@ -382,34 +399,6 @@ public class SaasService {
         }
 
         return user;
-    }
-
-    private String validateRegistrationForm(MultivaluedMap<String, String> formData) {
-        if (isEmpty(formData.getFirst("name"))) {
-            return Messages.MISSING_NAME;
-        }
-
-        if (isEmpty(formData.getFirst("email"))) {
-            return Messages.MISSING_EMAIL;
-        }
-
-        if (isEmpty(formData.getFirst("username"))) {
-            return Messages.MISSING_USERNAME;
-        }
-
-        if (isEmpty(formData.getFirst("password"))) {
-            return Messages.MISSING_PASSWORD;
-        }
-
-        if (!formData.getFirst("password").equals(formData.getFirst("password-confirm"))) {
-            return Messages.INVALID_PASSWORD_CONFIRM;
-        }
-
-        return null;
-    }
-
-    private boolean isEmpty(String s) {
-        return s == null || s.length() == 0;
     }
 
 }

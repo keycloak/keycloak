@@ -19,11 +19,14 @@ import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.models.RealmModel;
+import org.keycloak.services.models.RequiredCredentialModel;
 import org.keycloak.services.models.RoleModel;
 import org.keycloak.services.models.UserCredentialModel;
 import org.keycloak.services.models.UserModel;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.OAuthFlows;
+import org.keycloak.services.validation.Validation;
+import org.picketlink.idm.credential.util.TimeBasedOTP;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.ForbiddenException;
@@ -46,6 +49,8 @@ import javax.ws.rs.ext.Providers;
 
 import java.security.PrivateKey;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 
@@ -207,9 +212,21 @@ public class TokenService {
                     return Flows.forms(realm, request).setError(Messages.INVALID_USER).setFormData(formData)
                             .forwardToLogin();
                 }
+
                 if (!user.isEnabled()) {
                     return oauth.forwardToSecurityFailure("Your account is not enabled.");
                 }
+
+                if ("ENABLED".equals(user.getAttribute("KEYCLOAK_TOTP")) && Validation.isEmpty(formData.getFirst("totp"))) {
+                    return Flows.forms(realm, request).setFormData(formData).forwardToLoginTotp();
+                } else {
+                    for (RequiredCredentialModel c : realm.getRequiredCredentials()) {
+                        if (c.getType().equals(CredentialRepresentation.TOTP)) {
+                            return Flows.forms(realm, request).forwardToTotp();
+                        }
+                    }
+                }
+
                 boolean authenticated = authManager.authenticateForm(realm, user, formData);
                 if (!authenticated) {
                     logger.error("Authentication failed");
@@ -250,7 +267,12 @@ public class TokenService {
                     return oauth.forwardToSecurityFailure("Registration not allowed");
                 }
 
-                String error = validateRegistrationForm(formData);
+                List<String> requiredCredentialTypes = new LinkedList<String>();
+                for (RequiredCredentialModel m : realm.getRequiredCredentials()) {
+                    requiredCredentialTypes.add(m.getType());
+                }
+
+                String error = Validation.validateRegistrationForm(formData, requiredCredentialTypes);
                 if (error != null) {
                     return Flows.forms(realm, request).setError(error).setFormData(formData).forwardToRegistration();
                 }
@@ -291,10 +313,12 @@ public class TokenService {
 
                 user.setEmail(formData.getFirst("email"));
 
-                UserCredentialModel credentials = new UserCredentialModel();
-                credentials.setType(CredentialRepresentation.PASSWORD);
-                credentials.setValue(formData.getFirst("password"));
-                realm.updateCredential(user, credentials);
+                if (requiredCredentialTypes.contains(CredentialRepresentation.PASSWORD)) {
+                    UserCredentialModel credentials = new UserCredentialModel();
+                    credentials.setType(CredentialRepresentation.PASSWORD);
+                    credentials.setValue(formData.getFirst("password"));
+                    realm.updateCredential(user, credentials);
+                }
 
                 for (RoleModel role : realm.getDefaultRoles()) {
                     realm.grantRole(user, role);
@@ -575,34 +599,6 @@ public class TokenService {
             redirectUri.queryParam("state", state);
         Response.ResponseBuilder location = Response.status(302).location(redirectUri.build());
         return location.build();
-    }
-
-    private String validateRegistrationForm(MultivaluedMap<String, String> formData) {
-        if (isEmpty(formData.getFirst("name"))) {
-            return Messages.MISSING_NAME;
-        }
-
-        if (isEmpty(formData.getFirst("email"))) {
-            return Messages.MISSING_EMAIL;
-        }
-
-        if (isEmpty(formData.getFirst("username"))) {
-            return Messages.MISSING_USERNAME;
-        }
-
-        if (isEmpty(formData.getFirst("password"))) {
-            return Messages.MISSING_PASSWORD;
-        }
-
-        if (!formData.getFirst("password").equals(formData.getFirst("password-confirm"))) {
-            return Messages.INVALID_PASSWORD_CONFIRM;
-        }
-
-        return null;
-    }
-
-    private boolean isEmpty(String s) {
-        return s == null || s.length() == 0;
     }
 
 }

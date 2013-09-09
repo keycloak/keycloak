@@ -25,6 +25,7 @@ import java.net.URI;
 
 import javax.ws.rs.core.UriBuilder;
 
+import org.keycloak.services.resources.AccountService;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.SaasService;
 import org.keycloak.services.resources.SocialResource;
@@ -35,12 +36,32 @@ import org.keycloak.services.resources.TokenService;
  */
 public class Urls {
 
-    private static UriBuilder realmBase(URI baseUri) {
-        return UriBuilder.fromUri(baseUri).path(RealmsResource.class);
+    public static URI accountAccessPage(URI baseUri, String realmId) {
+        return accountBase(baseUri).path(AccountService.class, "accessPage").build(realmId);
     }
 
-    private static UriBuilder tokenBase(URI baseUri) {
-        return realmBase(baseUri).path(RealmsResource.class, "getTokenService");
+    private static UriBuilder accountBase(URI baseUri) {
+        return realmBase(baseUri).path(RealmsResource.class, "getAccountService");
+    }
+
+    public static URI accountPage(URI baseUri, String realmId) {
+        return accountBase(baseUri).path(AccountService.class, "accountPage").build(realmId);
+    }
+
+    public static URI accountPasswordPage(URI baseUri, String realmId) {
+        return accountBase(baseUri).path(AccountService.class, "passwordPage").build(realmId);
+    }
+
+    public static URI accountSocialPage(URI baseUri, String realmId) {
+        return accountBase(baseUri).path(AccountService.class, "socialPage").build(realmId);
+    }
+
+    public static URI accountTotpPage(URI baseUri, String realmId) {
+        return accountBase(baseUri).path(AccountService.class, "totpPage").build(realmId);
+    }
+
+    private static UriBuilder realmBase(URI baseUri) {
+        return UriBuilder.fromUri(baseUri).path(RealmsResource.class);
     }
 
     public static URI realmLoginAction(URI baseUri, String realmId) {
@@ -92,4 +113,7 @@ public class Urls {
                 .build(realmId);
     }
 
+    private static UriBuilder tokenBase(URI baseUri) {
+        return realmBase(baseUri).path(RealmsResource.class, "getTokenService");
+    }
 }

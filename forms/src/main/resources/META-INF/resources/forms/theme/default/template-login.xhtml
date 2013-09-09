@@ -1,0 +1,71 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:ui="http://java.sun.com/jsf/facelets" xmlns:h="http://java.sun.com/jsf/html">
+
+<h:head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<title>#{messages.logInTo} #{realm.name}</title>
+	<link href="#{template.themeConfig['styles']}" rel="stylesheet" />
+	<style>
+body {
+	background-image: url("#{template.themeConfig['background']}");
+}
+</style>
+</h:head>
+
+<h:body class="rcue-login-register #{bodyClass}">
+	<h:panelGroup rendered="#{not empty template.themeConfig['logo']}">
+		<h1>
+			<a href="#" title="Go to the home page"><img src="#{template.themeConfig['logo']}" alt="Logo" /></a>
+		</h1>
+	</h:panelGroup>
+
+	<div class="content">
+		<h2>
+			<ui:insert name="header" />
+		</h2>
+
+		<div class="background-area">
+			<div class="form-area #{realm.social ? 'social' : ''} clearfix">
+				<section class="app-form">
+				<h3>Application login area</h3>
+				<ui:insert name="form" />
+				</section>
+				
+				<h:panelGroup rendered="#{not empty error.summary}">
+						<div class="feedback error bottom-left show">
+							<p>
+								<strong>#{messages[error.summary]}</strong>
+							</p>
+						</div>
+				</h:panelGroup>
+
+				<h:panelGroup rendered="#{realm.social}">
+					<section class="social-login"> <span>or</span>
+					<h3>Social login area</h3>
+					<p>#{messages.logInWith}</p>
+					<ul>
+						<ui:repeat var="p" value="#{forms.providers}">
+							<li><a href="#{p.loginUrl}" class="zocial #{p.id}"> <span class="text">#{p.name}</span></a></li>
+						</ui:repeat>
+					</ul>
+					</section>
+				</h:panelGroup>
+
+				<section class="info-area">
+				<h3>Info area</h3>
+				<ui:insert name="info" />
+				</section>
+			</div>
+		</div>
+
+		<h:panelGroup rendered="#{template.themeConfig['displayPoweredBy']}">
+			<p class="powered">
+				<a href="#">#{messages.poweredByKeycloak}</a>
+			</p>
+		</h:panelGroup>
+	</div>
+
+	<ui:insert name="content" />
+
+</h:body>
+</html>

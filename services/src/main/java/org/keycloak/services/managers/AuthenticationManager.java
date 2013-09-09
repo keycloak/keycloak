@@ -211,6 +211,10 @@ public class AuthenticationManager {
             requiredCredentials = realm.getRequiredOAuthClientCredentials();
         } else {
             requiredCredentials = realm.getRequiredCredentials();
+
+            if (!types.contains(CredentialRepresentation.TOTP) && "ENABLED".equals(user.getAttribute("KEYCLOAK_TOTP"))) {
+                types.add(CredentialRepresentation.TOTP);
+            }
         }
         for (RequiredCredentialModel credential : requiredCredentials) {
             types.add(credential.getType());

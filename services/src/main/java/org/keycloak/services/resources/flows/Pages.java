@@ -26,12 +26,24 @@ package org.keycloak.services.resources.flows;
  */
 public class Pages {
 
-    public final static String LOGIN = "/sdk/login.xhtml";
+    public final static String ACCESS = "/forms/access.xhtml";
+
+    public final static String ACCOUNT = "/forms/account.xhtml";
+
+    public final static String LOGIN = "/forms/login.xhtml";
+
+    public final static String LOGIN_TOTP = "/forms/login-totp.xhtml";
 
     public final static String OAUTH_GRANT = "/saas/oauthGrantForm.jsp";
 
-    public final static String REGISTER = "/sdk/register.xhtml";
+    public final static String PASSWORD = "/forms/password.xhtml";
+
+    public final static String REGISTER = "/forms/register.xhtml";
 
     public final static String SECURITY_FAILURE = "/saas/securityFailure.jsp";
+
+    public final static String SOCIAL = "/forms/social.xhtml";
+
+    public final static String TOTP = "/forms/totp.xhtml";
 
 }

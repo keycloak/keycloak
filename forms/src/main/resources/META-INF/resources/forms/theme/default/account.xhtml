@@ -1,0 +1,30 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:h="http://java.sun.com/jsf/html" xmlns:f="http://java.sun.com/jsf/core" xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:c="http://java.sun.com/jstl/core" template="template-main.xhtml">
+
+	<ui:define name="header">Edit Account</ui:define>
+	
+	<ui:define name="content">
+		<form action="#{url.accountUrl}" method="post">
+			<div>
+            	<label for="firstName">#{messages.firstName}</label>
+                <input type="text" id="firstName" name="firstName" value="#{user.firstName}" />
+			</div>
+			<div>
+            	<label for="lastName">#{messages.lastName}</label>
+                <input type="text" id="lastName" name="lastName" value="#{user.lastName}" />
+			</div>
+            <div>
+            	<label for="email">#{messages.email}</label>
+				<input type="text" id="email" name="email" value="#{user.email}" />
+			</div>
+			<div>
+				<label for="username">#{messages.username}</label>
+				<input type="text" id="username" name="username" value="#{user.username}" disabled="true" />
+			</div>
+
+			<input type="button" value="Cancel" />
+			<input type="submit" value="Save" />
+		</form>
+	</ui:define>
+</ui:composition>

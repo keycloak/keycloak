@@ -154,6 +154,7 @@ public class ApplicationAdapter implements ApplicationModel {
         ScopeRelationship scope = new ScopeRelationship();
         scope.setClient(((UserAdapter)agent).getUser());
         scope.setScope(((RoleAdapter)role).getRole());
+        getRelationshipManager().add(scope);
     }
 
     @Override

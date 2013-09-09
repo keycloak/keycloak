@@ -1,0 +1,37 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:h="http://java.sun.com/jsf/html" xmlns:f="http://java.sun.com/jsf/core" xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:c="http://java.sun.com/jstl/core" template="template-main.xhtml">
+
+	<ui:define name="header">Google Authenticator Setup</ui:define>
+
+	<ui:define name="content">
+	<h:messages globalOnly="true" />
+		<h:panelGroup rendered="#{totp.enabled}">
+			Google Authenticator enabled	
+		</h:panelGroup>
+
+		<h:panelGroup rendered="#{not totp.enabled}">	
+		<h2>To setup Google Authenticator</h2>
+
+		<ol>
+			<li>Install Google Authenticator to your device</li>
+			<li>Set up an account in Google Authenticator and scan the QR code below or enter the key<br />
+				<img src="#{totp.totpSecretQrCodeUrl}" /> #{totp.totpSecretEncoded}
+			</li>
+			<li>Enter a one-time password provided by Google Authenticator and click Save to finish the setup
+
+				<form action="#{url.totpUrl}" method="post">
+					<div>
+						<label for="totp">#{messages.authenticatorCode}</label>
+						<input type="text" id="totp" name="totp" />
+						<input type="hidden" id="totpSecret" name="totpSecret" value="#{totp.totpSecret}" />
+					</div>
+
+					<input type="button" value="Cancel" />
+					<input type="submit" value="Save" />
+				</form>
+			</li>
+		</ol>
+		</h:panelGroup>
+	</ui:define>
+</ui:composition>
