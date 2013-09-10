@@ -33,7 +33,7 @@ public class AuthRequestBuilder {
 
     private UriBuilder b;
     
-    private Map<String, String> attributes;
+    private Map<String, Object> attributes;
 
     private String id;
 
@@ -44,7 +44,7 @@ public class AuthRequestBuilder {
         AuthRequestBuilder req = new AuthRequestBuilder();
         req.id = id;
         req.b = UriBuilder.fromUri(path);
-        req.attributes = new HashMap<String, String>();
+        req.attributes = new HashMap<String, Object>();
         return req;
     }
 
@@ -53,7 +53,7 @@ public class AuthRequestBuilder {
         return this;
     }
 
-    public AuthRequestBuilder setAttribute(String name, String value) {
+    public AuthRequestBuilder setAttribute(String name, Object value) {
         attributes.put(name, value);
         return this;
     }

@@ -106,6 +106,10 @@ public class GoogleProvider implements SocialProvider {
             Userinfo userInfo = oauth2.userinfo().get().execute();
 
             SocialUser user = new SocialUser(userInfo.getId());
+
+            // Use email as username for Google
+            user.setUsername(userInfo.getEmail());
+
             user.setFirstName(userInfo.getGivenName());
             user.setLastName(userInfo.getFamilyName());
             user.setEmail(userInfo.getEmail());

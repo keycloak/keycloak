@@ -37,6 +37,8 @@ public class RealmEntity implements Serializable {
     @AttributeValue
     private boolean social;
     @AttributeValue
+    private boolean automaticRegistrationAfterSocialLogin;
+    @AttributeValue
     private int tokenLifespan;
     @AttributeValue
     private int accessCodeLifespan;
@@ -104,6 +106,14 @@ public class RealmEntity implements Serializable {
 
     public void setSocial(boolean social) {
         this.social = social;
+    }
+
+    public boolean isAutomaticRegistrationAfterSocialLogin() {
+        return automaticRegistrationAfterSocialLogin;
+    }
+
+    public void setAutomaticRegistrationAfterSocialLogin(boolean automaticRegistrationAfterSocialLogin) {
+        this.automaticRegistrationAfterSocialLogin = automaticRegistrationAfterSocialLogin;
     }
 
     public int getTokenLifespan() {

@@ -15,6 +15,7 @@ import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RequiredCredentialModel;
 import org.keycloak.services.models.ApplicationModel;
 import org.keycloak.services.models.RoleModel;
+import org.keycloak.services.models.SocialLinkModel;
 import org.keycloak.services.models.UserModel;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.services.resources.SaasService;
@@ -58,6 +59,7 @@ public class ImportTest {
         defaultRealm.setSslNotRequired(false);
         defaultRealm.setCookieLoginAllowed(true);
         defaultRealm.setRegistrationAllowed(true);
+        defaultRealm.setAutomaticRegistrationAfterSocialLogin(false);
         manager.generateRealmKeys(defaultRealm);
         defaultRealm.addRequiredCredential(CredentialRepresentation.PASSWORD);
         RoleModel role = defaultRealm.addRole(SaasService.REALM_CREATOR_ROLE);
@@ -68,6 +70,8 @@ public class ImportTest {
         RealmModel realm = manager.createRealm("demo", rep.getRealm());
         manager.importRealm(rep, realm);
         realm.addRealmAdmin(admin);
+
+        Assert.assertFalse(realm.isAutomaticRegistrationAfterSocialLogin());
         List<RequiredCredentialModel> creds = realm.getRequiredCredentials();
         Assert.assertEquals(1, creds.size());
         RequiredCredentialModel cred = creds.get(0);
@@ -82,6 +86,8 @@ public class ImportTest {
         Set<String> scopes = realm.getScope(user);
         System.out.println("Scopes size: " + scopes.size());
         Assert.assertTrue(scopes.contains("*"));
+        Assert.assertEquals(0, realm.getSocialLinks(user).size());
+
         List<ApplicationModel> resources = realm.getApplications();
         Assert.assertEquals(2, resources.size());
         List<RealmModel> realms = identitySession.getRealms(admin);
@@ -94,6 +100,28 @@ public class ImportTest {
         Assert.assertNotNull(oauthClient);
         Set<String> appScopes = application.getScope(oauthClient);
         Assert.assertTrue(appScopes.contains("user"));
+
+        // Test social linking
+        UserModel socialUser = realm.getUser("mySocialUser");
+        Set<SocialLinkModel> socialLinks = realm.getSocialLinks(socialUser);
+        Assert.assertEquals(3, socialLinks.size());
+        int facebookCount = 0;
+        int googleCount = 0;
+        for (SocialLinkModel socialLinkModel : socialLinks) {
+            if ("facebook".equals(socialLinkModel.getSocialProvider())) {
+                facebookCount++;
+            } else if ("google".equals(socialLinkModel.getSocialProvider())) {
+                googleCount++;
+                Assert.assertEquals(socialLinkModel.getSocialUsername(), "mySocialUser@gmail.com");
+            }
+        }
+        Assert.assertEquals(2, facebookCount);
+        Assert.assertEquals(1, googleCount);
+
+        UserModel foundSocialUser = realm.getUserBySocialLink(new SocialLinkModel("facebook", "fbuser1"));
+        Assert.assertEquals(foundSocialUser.getLoginName(), socialUser.getLoginName());
+        Assert.assertNull(realm.getUserBySocialLink(new SocialLinkModel("facebook", "not-existing")));
+
     }
 
     @Test
@@ -106,6 +134,7 @@ public class ImportTest {
         defaultRealm.setSslNotRequired(false);
         defaultRealm.setCookieLoginAllowed(true);
         defaultRealm.setRegistrationAllowed(true);
+        defaultRealm.setAutomaticRegistrationAfterSocialLogin(false);
         manager.generateRealmKeys(defaultRealm);
         defaultRealm.addRequiredCredential(CredentialRepresentation.PASSWORD);
         RoleModel role = defaultRealm.addRole(SaasService.REALM_CREATOR_ROLE);
@@ -117,6 +146,7 @@ public class ImportTest {
         manager.importRealm(rep, realm);
         realm.addRealmAdmin(admin);
 
+        Assert.assertTrue(realm.isAutomaticRegistrationAfterSocialLogin());
         verifyRequiredCredentials(realm.getRequiredCredentials(), "password");
         verifyRequiredCredentials(realm.getRequiredApplicationCredentials(), "totp");
         verifyRequiredCredentials(realm.getRequiredOAuthClientCredentials(), "cert");

@@ -38,6 +38,7 @@ public class FormFlows {
     public static final String ERROR_MESSAGE = "KEYCLOAK_FORMS_ERROR_MESSAGE";
     public static final String REALM = Realm.class.getName();
     public static final String USER = UserModel.class.getName();
+    public static final String SOCIAL_REGISTRATION = "socialRegistration";
 
     private String error;
     private MultivaluedMap<String, String> formData;
@@ -46,6 +47,8 @@ public class FormFlows {
 
     private HttpRequest request;
     private UserModel userModel;
+
+    private boolean socialRegistration;
 
     FormFlows(RealmModel realm, HttpRequest request) {
         this.realm = realm;
@@ -74,6 +77,8 @@ public class FormFlows {
         if (userModel != null) {
             request.setAttribute(USER, userModel);
         }
+
+        request.setAttribute(SOCIAL_REGISTRATION, socialRegistration);
 
         request.forward(form);
         return null;
@@ -110,6 +115,12 @@ public class FormFlows {
 
     public FormFlows setUser(UserModel userModel) {
         this.userModel = userModel;
+        return this;
+    }
+
+    // Set flag whether user registration is triggered from social login
+    public FormFlows setSocialRegistration(boolean socialRegistration) {
+        this.socialRegistration = socialRegistration;
         return this;
     }
 

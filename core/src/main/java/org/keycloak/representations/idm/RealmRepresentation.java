@@ -19,6 +19,7 @@ public class RealmRepresentation {
     protected boolean cookieLoginAllowed;
     protected boolean registrationAllowed;
     protected boolean social;
+    protected boolean automaticRegistrationAfterSocialLogin;
     protected String privateKey;
     protected String publicKey;
     protected List<RoleRepresentation> roles;
@@ -29,6 +30,7 @@ public class RealmRepresentation {
     protected List<UserRepresentation> users;
     protected List<RoleMappingRepresentation> roleMappings;
     protected List<ScopeMappingRepresentation> scopeMappings;
+    protected List<SocialMappingRepresentation> socialMappings;
     protected List<ApplicationRepresentation> applications;
 
 
@@ -144,6 +146,18 @@ public class RealmRepresentation {
         return mapping;
     }
 
+    public List<SocialMappingRepresentation> getSocialMappings() {
+        return socialMappings;
+    }
+
+    public SocialMappingRepresentation socialMapping(String username) {
+        SocialMappingRepresentation mapping = new SocialMappingRepresentation();
+        mapping.setUsername(username);
+        if (socialMappings == null) socialMappings = new ArrayList<SocialMappingRepresentation>();
+        socialMappings.add(mapping);
+        return mapping;
+    }
+
     public Set<String> getRequiredCredentials() {
         return requiredCredentials;
     }
@@ -222,5 +236,13 @@ public class RealmRepresentation {
 
     public void setSocial(boolean social) {
         this.social = social;
+    }
+
+    public boolean isAutomaticRegistrationAfterSocialLogin() {
+        return automaticRegistrationAfterSocialLogin;
+    }
+
+    public void setAutomaticRegistrationAfterSocialLogin(boolean automaticRegistrationAfterSocialLogin) {
+        this.automaticRegistrationAfterSocialLogin = automaticRegistrationAfterSocialLogin;
     }
 }
