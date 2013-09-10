@@ -1,6 +1,7 @@
 package org.keycloak.services.models.nosql.api.query;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -21,7 +22,7 @@ public abstract class NoSQLQueryBuilder {
         return this;
     }
 
-    public abstract NoSQLQueryBuilder inCondition(String name, Object[] values);
+    public abstract NoSQLQueryBuilder inCondition(String name, List<?> values);
 
     protected void put(String name, Object value) {
         queryAttributes.put(name, value);

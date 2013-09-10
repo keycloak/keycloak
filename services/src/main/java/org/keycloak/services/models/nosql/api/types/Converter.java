@@ -8,11 +8,9 @@ package org.keycloak.services.models.nosql.api.types;
  */
 public interface Converter<T, S> {
 
-    T convertDBObjectToApplicationObject(S dbObject);
+    S convertObject(T objectToConvert);
 
-    S convertApplicationObjectToDBObject(T applicationObject);
+    Class<? extends T> getConverterObjectType();
 
-    Class<? extends T> getApplicationObjectType();
-
-    Class<S> getDBObjectType();
+    Class<S> getExpectedReturnType();
 }

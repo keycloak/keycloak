@@ -23,7 +23,6 @@ import org.keycloak.services.models.UserCredentialModel;
 import org.keycloak.services.models.UserModel;
 import org.keycloak.services.models.nosql.api.NoSQL;
 import org.keycloak.services.models.nosql.api.query.NoSQLQuery;
-import org.keycloak.services.models.nosql.api.query.NoSQLQueryBuilder;
 import org.keycloak.services.models.nosql.keycloak.credentials.PasswordCredentialHandler;
 import org.keycloak.services.models.nosql.keycloak.credentials.TOTPCredentialHandler;
 import org.keycloak.services.models.nosql.keycloak.data.ApplicationData;
@@ -32,11 +31,7 @@ import org.keycloak.services.models.nosql.keycloak.data.RequiredCredentialData;
 import org.keycloak.services.models.nosql.keycloak.data.RoleData;
 import org.keycloak.services.models.nosql.keycloak.data.SocialLinkData;
 import org.keycloak.services.models.nosql.keycloak.data.UserData;
-import org.keycloak.services.models.nosql.impl.MongoDBQueryBuilder;
-import org.keycloak.services.models.nosql.impl.Utils;
-import org.keycloak.services.models.picketlink.relationships.ResourceRelationship;
 import org.picketlink.idm.credential.Credentials;
-import org.picketlink.idm.query.RelationshipQuery;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -323,7 +318,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public List<RoleModel> getDefaultRoles() {
-        String[] defaultRoles = realm.getDefaultRoles();
+        List<String> defaultRoles = realm.getDefaultRoles();
 
         NoSQLQuery query = noSQL.createQueryBuilder()
                 .inCondition("_id", defaultRoles)
@@ -344,25 +339,20 @@ public class RealmAdapter implements RealmModel {
             role = addRole(name);
         }
 
-        String[] defaultRoles = realm.getDefaultRoles();
-        String[] roleIds = Utils.addItemToArray(defaultRoles, role.getId());
-
-        realm.setDefaultRoles(roleIds);
-        updateRealm();
+        noSQL.pushItemToList(realm, "defaultRoles", role.getId());
     }
 
     @Override
     public void updateDefaultRoles(String[] defaultRoles) {
         // defaultRoles is array with names of roles. So we need to convert to array of ids
-        String[] roleIds = new String[defaultRoles.length];
-        for (int i=0 ; i<defaultRoles.length ; i++) {
-            String roleName = defaultRoles[i];
+        List<String> roleIds = new ArrayList<String>();
+        for (String roleName : defaultRoles) {
             RoleModel role = getRole(roleName);
             if (role == null) {
                 role = addRole(roleName);
             }
 
-            roleIds[i] = role.getId();
+            roleIds.add(role.getId());
         }
 
         realm.setDefaultRoles(roleIds);
@@ -425,7 +415,7 @@ public class RealmAdapter implements RealmModel {
     public boolean hasRole(UserModel user, RoleModel role) {
         UserData userData = ((UserAdapter)user).getUser();
 
-        String[] roleIds = userData.getRoleIds();
+        List<String> roleIds = userData.getRoleIds();
         String roleId = role.getId();
         if (roleIds != null) {
             for (String currentId : roleIds) {
@@ -440,19 +430,13 @@ public class RealmAdapter implements RealmModel {
     @Override
     public void grantRole(UserModel user, RoleModel role) {
         UserData userData = ((UserAdapter)user).getUser();
-        RoleData roleData = ((RoleAdapter)role).getRole();
-
-        String[] roleIds = userData.getRoleIds();
-        roleIds = Utils.addItemToArray(roleIds, roleData.getId());
-        userData.setRoleIds(roleIds);
-
-        noSQL.saveObject(userData);
+        noSQL.pushItemToList(userData, "roleIds", role.getId());
     }
 
     @Override
     public Set<String> getRoleMappings(UserModel user) {
         UserData userData = ((UserAdapter)user).getUser();
-        String[] roleIds = userData.getRoleIds();
+        List<String> roleIds = userData.getRoleIds();
 
         Set<String> result = new HashSet<String>();
 
@@ -460,7 +444,7 @@ public class RealmAdapter implements RealmModel {
                 .inCondition("_id", roleIds)
                 .build();
         List<RoleData> roles = noSQL.loadObjects(RoleData.class, query);
-        // TODO: Maybe improve to have roles and scopes in separate table? As actually we need to obtain all roles and then filter programmatically...
+        // TODO: Maybe improve as currently we need to obtain all roles and then filter programmatically...
         for (RoleData role : roles) {
             if (getOid().equals(role.getRealmId())) {
                 result.add(role.getName());
@@ -476,19 +460,14 @@ public class RealmAdapter implements RealmModel {
         if (role == null) {
             throw new RuntimeException("Role not found");
         }
-        RoleData roleData = role.getRole();
 
-        String[] scopeIds = userData.getScopeIds();
-        scopeIds = Utils.addItemToArray(scopeIds, roleData.getId());
-        userData.setScopeIds(scopeIds);
-
-        noSQL.saveObject(userData);
+        noSQL.pushItemToList(userData, "scopeIds", role.getId());
     }
 
     @Override
     public Set<String> getScope(UserModel agent) {
         UserData userData = ((UserAdapter)agent).getUser();
-        String[] scopeIds = userData.getScopeIds();
+        List<String> scopeIds = userData.getScopeIds();
 
         Set<String> result = new HashSet<String>();
 
@@ -496,7 +475,7 @@ public class RealmAdapter implements RealmModel {
                 .inCondition("_id", scopeIds)
                 .build();
         List<RoleData> roles = noSQL.loadObjects(RoleData.class, query);
-        // TODO: Maybe improve to have roles and scopes in separate table? As actually we need to obtain all roles and then filter programmatically...
+        // TODO: Maybe improve as currently we need to obtain all roles and then filter programmatically...
         for (RoleData role : roles) {
             if (getOid().equals(role.getRealmId())) {
                 result.add(role.getName());
@@ -507,20 +486,16 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public boolean isRealmAdmin(UserModel agent) {
-        String[] realmAdmins = realm.getRealmAdmins();
+        List<String> realmAdmins = realm.getRealmAdmins();
         String userId = ((UserAdapter)agent).getUser().getId();
-        return Utils.contains(realmAdmins, userId);
+        return realmAdmins.contains(userId);
     }
 
     @Override
     public void addRealmAdmin(UserModel agent) {
         UserData userData = ((UserAdapter)agent).getUser();
 
-        String[] currentAdmins = realm.getRealmAdmins();
-        String[] newAdmins = Utils.addItemToArray(currentAdmins, userData.getId());
-
-        realm.setRealmAdmins(newAdmins);
-        updateRealm();
+        noSQL.pushItemToList(realm, "realmAdmins", userData.getId());
     }
 
     @Override

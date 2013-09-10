@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.keycloak.services.models.nosql.api.query.NoSQLQuery;
 import org.keycloak.services.models.nosql.api.query.NoSQLQueryBuilder;
+import org.picketlink.common.properties.Property;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -29,4 +30,8 @@ public interface NoSQL {
     void removeObjects(Class<? extends NoSQLObject> type, NoSQLQuery query);
 
     NoSQLQueryBuilder createQueryBuilder();
+
+    <S> void pushItemToList(NoSQLObject object, String listPropertyName, S itemToPush);
+
+    <S> void pullItemFromList(NoSQLObject object, String listPropertyName, S itemToPull);
 }

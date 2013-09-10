@@ -9,7 +9,6 @@ import org.keycloak.services.models.nosql.api.NoSQLField;
 import org.keycloak.services.models.nosql.api.NoSQLId;
 import org.keycloak.services.models.nosql.api.NoSQLObject;
 import org.keycloak.services.models.nosql.api.query.NoSQLQuery;
-import org.keycloak.services.models.nosql.impl.Utils;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -81,10 +80,7 @@ public class RoleData implements NoSQLObject {
         List<UserData> users = noSQL.loadObjects(UserData.class, query);
         for (UserData user : users) {
             logger.info("Removing role " + getName() + " from user " + user.getLoginName());
-            String[] roleIds = user.getRoleIds();
-            String[] newRoleIds = Utils.removeItemFromArray(roleIds, getId());
-            user.setRoleIds(newRoleIds);
-            noSQL.saveObject(user);
+            noSQL.pullItemFromList(user, "roleIds", getId());
         }
 
         // Remove this scope from all users, which has it
@@ -95,10 +91,7 @@ public class RoleData implements NoSQLObject {
         users = noSQL.loadObjects(UserData.class, query);
         for (UserData user : users) {
             logger.info("Removing scope " + getName() + " from user " + user.getLoginName());
-            String[] scopeIds = user.getScopeIds();
-            String[] newScopeIds = Utils.removeItemFromArray(scopeIds, getId());
-            user.setScopeIds(newScopeIds);
-            noSQL.saveObject(user);
+            noSQL.pullItemFromList(user, "scopeIds", getId());
         }
 
     }

@@ -1,11 +1,13 @@
 package org.keycloak.services.models.nosql.impl;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
@@ -22,8 +24,11 @@ import org.keycloak.services.models.nosql.api.query.NoSQLQuery;
 import org.keycloak.services.models.nosql.api.query.NoSQLQueryBuilder;
 import org.keycloak.services.models.nosql.api.types.Converter;
 import org.keycloak.services.models.nosql.api.types.TypeConverter;
-import org.keycloak.services.models.nosql.impl.types.BasicDBListToStringArrayConverter;
+import org.keycloak.services.models.nosql.impl.types.ListConverter;
+import org.keycloak.services.models.nosql.impl.types.BasicDBListConverter;
+import org.keycloak.services.models.nosql.impl.types.BasicDBObjectConverter;
 import org.keycloak.services.models.nosql.impl.types.NoSQLObjectConverter;
+import org.keycloak.services.models.nosql.impl.types.SimpleConverter;
 import org.picketlink.common.properties.Property;
 import org.picketlink.common.properties.query.AnnotatedPropertyCriteria;
 import org.picketlink.common.properties.query.PropertyQueries;
@@ -33,6 +38,8 @@ import org.picketlink.common.properties.query.PropertyQueries;
  */
 public class MongoDBImpl implements NoSQL {
 
+    private static final Class<?>[] SIMPLE_TYPES = { String.class, Integer.class, Boolean.class, Long.class, Double.class, Character.class, Date.class };
+
     private final DB database;
     private static final Logger logger = Logger.getLogger(MongoDBImpl.class);
 
@@ -40,14 +47,27 @@ public class MongoDBImpl implements NoSQL {
     private ConcurrentMap<Class<? extends NoSQLObject>, ObjectInfo> objectInfoCache =
             new ConcurrentHashMap<Class<? extends NoSQLObject>, ObjectInfo>();
 
+
     public MongoDBImpl(DB database, boolean removeAllObjectsAtStartup, Class<? extends NoSQLObject>[] managedDataTypes) {
         this.database = database;
 
         typeConverter = new TypeConverter();
-        typeConverter.addConverter(new BasicDBListToStringArrayConverter());
+
+        for (Class<?> simpleConverterClass : SIMPLE_TYPES) {
+            SimpleConverter converter = new SimpleConverter(simpleConverterClass);
+            typeConverter.addAppObjectConverter(converter);
+            typeConverter.addDBObjectConverter(converter);
+        }
+
+        // Specific converter for ArrayList is added just for performance purposes to avoid recursive converter lookup (most of list impl will be ArrayList)
+        typeConverter.addAppObjectConverter(new ListConverter(typeConverter, ArrayList.class));
+        typeConverter.addAppObjectConverter(new ListConverter(typeConverter, List.class));
+        typeConverter.addDBObjectConverter(new BasicDBListConverter(typeConverter));
+
         for (Class<? extends NoSQLObject> type : managedDataTypes) {
-            typeConverter.addConverter(new NoSQLObjectConverter(this, typeConverter, type));
             getObjectInfo(type);
+            typeConverter.addAppObjectConverter(new NoSQLObjectConverter(this, typeConverter, type));
+            typeConverter.addDBObjectConverter(new BasicDBObjectConverter(this, typeConverter, type));
         }
 
         if (removeAllObjectsAtStartup) {
@@ -55,10 +75,10 @@ public class MongoDBImpl implements NoSQL {
                 ObjectInfo objectInfo = getObjectInfo(type);
                 String collectionName = objectInfo.getDbCollectionName();
                 if (collectionName != null) {
-                    logger.debug("Removing all objects of type " + type);
+                    logger.debug("Dropping collection " + collectionName);
 
                     DBCollection dbCollection = this.database.getCollection(collectionName);
-                    dbCollection.remove(new BasicDBObject());
+                    dbCollection.drop();
                 }  else {
                     logger.debug("Skip removing objects of type " + type + " as it doesn't have it's own collection");
                 }
@@ -66,6 +86,7 @@ public class MongoDBImpl implements NoSQL {
             logger.info("All objects successfully removed from MongoDB");
         }
     }
+
 
     @Override
     public void saveObject(NoSQLObject object) {
@@ -90,11 +111,11 @@ public class MongoDBImpl implements NoSQL {
                 oidProperty.setValue(object, dbObject.getString("_id"));
             }
         } else {
-            BasicDBObject setCommand = new BasicDBObject("$set", dbObject);
             BasicDBObject query = new BasicDBObject("_id", new ObjectId(currentId));
-            dbCollection.update(query, setCommand);
+            dbCollection.update(query, dbObject);
         }
     }
+
 
     @Override
     public <T extends NoSQLObject> T loadObject(Class<T> type, String oid) {
@@ -105,6 +126,7 @@ public class MongoDBImpl implements NoSQL {
 
         return typeConverter.convertDBObjectToApplicationObject(dbObject, type);
     }
+
 
     @Override
     public <T extends NoSQLObject> T loadSingleObject(Class<T> type, NoSQLQuery query) {
@@ -119,6 +141,7 @@ public class MongoDBImpl implements NoSQL {
         }
     }
 
+
     @Override
     public <T extends NoSQLObject> List<T> loadObjects(Class<T> type, NoSQLQuery query) {
         DBCollection dbCollection = getDBCollectionForType(type);
@@ -128,6 +151,7 @@ public class MongoDBImpl implements NoSQL {
 
         return convertCursor(type, cursor);
     }
+
 
     @Override
     public void removeObject(NoSQLObject object) {
@@ -139,6 +163,7 @@ public class MongoDBImpl implements NoSQL {
 
         removeObject(type, oid);
     }
+
 
     @Override
     public void removeObject(Class<? extends NoSQLObject> type, String oid) {
@@ -154,6 +179,7 @@ public class MongoDBImpl implements NoSQL {
             found.afterRemove(this);
         }
     }
+
 
     @Override
     public void removeObjects(Class<? extends NoSQLObject> type, NoSQLQuery query) {
@@ -172,14 +198,81 @@ public class MongoDBImpl implements NoSQL {
         }
     }
 
+
     @Override
     public NoSQLQueryBuilder createQueryBuilder() {
         return new MongoDBQueryBuilder();
     }
 
+
+    @Override
+    public <S> void pushItemToList(NoSQLObject object, String listPropertyName, S itemToPush) {
+        Class<? extends NoSQLObject> type = object.getClass();
+        ObjectInfo objectInfo = getObjectInfo(type);
+
+        Property<String> oidProperty = getObjectInfo(type).getOidProperty();
+        if (oidProperty == null) {
+            throw new IllegalArgumentException("List pushes not supported for properties without oid");
+        }
+
+        // Add item to list directly in this object
+        Property<Object> listProperty = objectInfo.getPropertyByName(listPropertyName);
+        if (listProperty == null) {
+            throw new IllegalArgumentException("Property " + listPropertyName + " doesn't exist on object " + object);
+        }
+
+        List<S> list = (List<S>)listProperty.getValue(object);
+        if (list == null) {
+            list = new ArrayList<S>();
+            listProperty.setValue(object, list);
+        }
+        list.add(itemToPush);
+
+        // Push item to DB. We always convert whole list, so it's not so optimal...
+        BasicDBList dbList = typeConverter.convertApplicationObjectToDBObject(list, BasicDBList.class);
+
+        BasicDBObject query = new BasicDBObject("_id", new ObjectId(oidProperty.getValue(object)));
+        BasicDBObject listObject = new BasicDBObject(listPropertyName, dbList);
+        BasicDBObject setCommand = new BasicDBObject("$set", listObject);
+        getDBCollectionForType(type).update(query, setCommand);
+    }
+
+
+    @Override
+    public <S> void pullItemFromList(NoSQLObject object, String listPropertyName, S itemToPull) {
+        Class<? extends NoSQLObject> type = object.getClass();
+        ObjectInfo objectInfo = getObjectInfo(type);
+
+        Property<String> oidProperty = getObjectInfo(type).getOidProperty();
+        if (oidProperty == null) {
+            throw new IllegalArgumentException("List pulls not supported for properties without oid");
+        }
+
+        // Remove item from list directly in this object
+        Property<Object> listProperty = objectInfo.getPropertyByName(listPropertyName);
+        if (listProperty == null) {
+            throw new IllegalArgumentException("Property " + listPropertyName + " doesn't exist on object " + object);
+        }
+        List<S> list = (List<S>)listProperty.getValue(object);
+        if (list != null) {
+            list.remove(itemToPull);
+        }
+
+        // Pull item from DB
+        Object dbItemToPull = typeConverter.convertApplicationObjectToDBObject(itemToPull, Object.class);
+        BasicDBObject query = new BasicDBObject("_id", new ObjectId(oidProperty.getValue(object)));
+        BasicDBObject pullObject = new BasicDBObject(listPropertyName, dbItemToPull);
+        BasicDBObject pullCommand = new BasicDBObject("$pull", pullObject);
+        getDBCollectionForType(type).update(query, pullCommand);
+    }
+
     // Possibility to add user-defined converters
-    public void addConverter(Converter<?, ?> converter) {
-        typeConverter.addConverter(converter);
+    public void addAppObjectConverter(Converter<?, ?> converter) {
+        typeConverter.addAppObjectConverter(converter);
+    }
+
+    public void addDBObjectConverter(Converter<?, ?> converter) {
+        typeConverter.addDBObjectConverter(converter);
     }
 
     public ObjectInfo getObjectInfo(Class<? extends NoSQLObject> objectClass) {

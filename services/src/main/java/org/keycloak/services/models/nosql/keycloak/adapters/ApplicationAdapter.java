@@ -10,9 +10,6 @@ import org.keycloak.services.models.RoleModel;
 import org.keycloak.services.models.UserModel;
 import org.keycloak.services.models.nosql.api.NoSQL;
 import org.keycloak.services.models.nosql.api.query.NoSQLQuery;
-import org.keycloak.services.models.nosql.api.query.NoSQLQueryBuilder;
-import org.keycloak.services.models.nosql.impl.MongoDBQueryBuilder;
-import org.keycloak.services.models.nosql.impl.Utils;
 import org.keycloak.services.models.nosql.keycloak.data.ApplicationData;
 import org.keycloak.services.models.nosql.keycloak.data.RoleData;
 import org.keycloak.services.models.nosql.keycloak.data.UserData;
@@ -138,7 +135,7 @@ public class ApplicationAdapter implements ApplicationModel {
     @Override
     public Set<String> getRoleMappings(UserModel user) {
         UserData userData = ((UserAdapter)user).getUser();
-        String[] roleIds = userData.getRoleIds();
+        List<String> roleIds = userData.getRoleIds();
 
         Set<String> result = new HashSet<String>();
 
@@ -146,7 +143,7 @@ public class ApplicationAdapter implements ApplicationModel {
                 .inCondition("_id", roleIds)
                 .build();
         List<RoleData> roles = noSQL.loadObjects(RoleData.class, query);
-        // TODO: Maybe improve to have roles and scopes in separate table? As actually we need to obtain all roles and then filter programmatically...
+        // TODO: Maybe improve as currently we need to obtain all roles and then filter programmatically...
         for (RoleData role : roles) {
             if (getId().equals(role.getApplicationId())) {
                 result.add(role.getName());
@@ -168,19 +165,13 @@ public class ApplicationAdapter implements ApplicationModel {
     @Override
     public void addScope(UserModel agent, RoleModel role) {
         UserData userData = ((UserAdapter)agent).getUser();
-        RoleData roleData = ((RoleAdapter)role).getRole();
-
-        String[] scopeIds = userData.getScopeIds();
-        scopeIds = Utils.addItemToArray(scopeIds, roleData.getId());
-        userData.setScopeIds(scopeIds);
-
-        noSQL.saveObject(userData);
+        noSQL.pushItemToList(userData, "scopeIds", role.getId());
     }
 
     @Override
     public Set<String> getScope(UserModel agent) {
         UserData userData = ((UserAdapter)agent).getUser();
-        String[] scopeIds = userData.getScopeIds();
+        List<String> scopeIds = userData.getScopeIds();
 
         Set<String> result = new HashSet<String>();
 
@@ -188,7 +179,7 @@ public class ApplicationAdapter implements ApplicationModel {
                 .inCondition("_id", scopeIds)
                 .build();
         List<RoleData> roles = noSQL.loadObjects(RoleData.class, query);
-        // TODO: Maybe improve to have roles and scopes in separate table? As actually we need to obtain all roles and then filter programmatically...
+        // TODO: Maybe improve as currently we need to obtain all roles and then filter programmatically...
         for (RoleData role : roles) {
             if (getId().equals(role.getApplicationId())) {
                 result.add(role.getName());

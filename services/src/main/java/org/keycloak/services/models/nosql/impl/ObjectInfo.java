@@ -1,6 +1,10 @@
 package org.keycloak.services.models.nosql.impl;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.keycloak.services.models.nosql.api.NoSQLObject;
 import org.picketlink.common.properties.Property;
@@ -16,13 +20,18 @@ public class ObjectInfo {
 
     private final Property<String> oidProperty;
 
-    private final List<Property<Object>> properties;
+    private final Map<String, Property<Object>> properties;
 
     public ObjectInfo(Class<? extends NoSQLObject> objectClass, String dbCollectionName, Property<String> oidProperty, List<Property<Object>> properties) {
         this.objectClass = objectClass;
         this.dbCollectionName = dbCollectionName;
         this.oidProperty = oidProperty;
-        this.properties = properties;
+
+        Map<String, Property<Object>> props= new HashMap<String, Property<Object>>();
+        for (Property<Object> property : properties) {
+            props.put(property.getName(), property);
+        }
+        this.properties = Collections.unmodifiableMap(props);
     }
 
     public Class<? extends NoSQLObject> getObjectClass() {
@@ -37,17 +46,11 @@ public class ObjectInfo {
         return oidProperty;
     }
 
-    public List<Property<Object>> getProperties() {
-        return properties;
+    public Collection<Property<Object>> getProperties() {
+        return properties.values();
     }
 
     public Property<Object> getPropertyByName(String propertyName) {
-        for (Property<Object> property : properties) {
-            if (propertyName.equals(property.getName())) {
-                return property;
-            }
-        }
-
-        return null;
+        return properties.get(propertyName);
     }
 }
