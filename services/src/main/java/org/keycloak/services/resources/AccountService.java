@@ -21,18 +21,6 @@
  */
 package org.keycloak.services.resources;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
-import javax.ws.rs.core.Response.Status;
-
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -44,6 +32,13 @@ import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.FormFlows;
 import org.keycloak.services.validation.Validation;
 import org.picketlink.idm.credential.util.TimeBasedOTP;
+
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.core.*;
+import javax.ws.rs.core.Response.Status;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -70,184 +65,151 @@ public class AccountService {
     @Path("access")
     @GET
     public Response accessPage() {
-        return new Transaction<Response>() {
-            protected Response callImpl() {
-                UserModel user = authManager.authenticateIdentityCookie(realm, uriInfo, headers);
-                if (user != null) {
-                    return Flows.forms(realm, request).setUser(user).forwardToAccess();
-                } else {
-                    return Response.status(Status.FORBIDDEN).build();
-                }
-            }
-        }.call();
+        UserModel user = authManager.authenticateIdentityCookie(realm, uriInfo, headers);
+        if (user != null) {
+            return Flows.forms(realm, request).setUser(user).forwardToAccess();
+        } else {
+            return Response.status(Status.FORBIDDEN).build();
+        }
     }
 
     @Path("")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processAccountUpdate(final MultivaluedMap<String, String> formData) {
-        return new Transaction<Response>() {
-            protected Response callImpl() {
-                UserModel user = authManager.authenticateIdentityCookie(realm, uriInfo, headers);
-                if (user != null) {
-                    user.setFirstName(formData.getFirst("firstName"));
-                    user.setLastName(formData.getFirst("lastName"));
-                    user.setEmail(formData.getFirst("email"));
+        UserModel user = authManager.authenticateIdentityCookie(realm, uriInfo, headers);
+        if (user != null) {
+            user.setFirstName(formData.getFirst("firstName"));
+            user.setLastName(formData.getFirst("lastName"));
+            user.setEmail(formData.getFirst("email"));
 
-                    return Flows.forms(realm, request).setUser(user).forwardToAccount();
-                } else {
-                    return Response.status(Status.FORBIDDEN).build();
-                }
-            }
-        }.call();
+            return Flows.forms(realm, request).setUser(user).forwardToAccount();
+        } else {
+            return Response.status(Status.FORBIDDEN).build();
+        }
     }
 
     @Path("totp")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processTotpUpdate(final MultivaluedMap<String, String> formData) {
-        return new Transaction<Response>() {
-            protected Response callImpl() {
-                UserModel user = authManager.authenticateIdentityCookie(realm, uriInfo, headers);
-                if (user != null) {
-                    FormFlows forms = Flows.forms(realm, request);
+        UserModel user = authManager.authenticateIdentityCookie(realm, uriInfo, headers);
+        if (user != null) {
+            FormFlows forms = Flows.forms(realm, request);
 
-                    String totp = formData.getFirst("totp");
-                    String totpSecret = formData.getFirst("totpSecret");
+            String totp = formData.getFirst("totp");
+            String totpSecret = formData.getFirst("totpSecret");
 
-                    String error = null;
+            String error = null;
 
-                    if (Validation.isEmpty(totp)) {
-                        error = Messages.MISSING_TOTP;
-                    } else if (!new TimeBasedOTP().validate(totp, totpSecret.getBytes())) {
-                        error = Messages.INVALID_TOTP;
-                    }
-                    
-                    if (error != null) {
-                        return forms.setError(error).forwardToTotp();
-                    }
-
-                    UserCredentialModel credentials = new UserCredentialModel();
-                    credentials.setType(CredentialRepresentation.TOTP);
-                    credentials.setValue(formData.getFirst("totpSecret"));
-                    realm.updateCredential(user, credentials);
-
-                    if (!user.isEnabled() && "REQUIRED".equals(user.getAttribute("KEYCLOAK_TOTP"))) {
-                        user.setEnabled(true);
-                    }
-
-                    user.setAttribute("KEYCLOAK_TOTP", "ENABLED");
-
-                    return Flows.forms(realm, request).setUser(user).forwardToTotp();
-                } else {
-                    return Response.status(Status.FORBIDDEN).build();
-                }
+            if (Validation.isEmpty(totp)) {
+                error = Messages.MISSING_TOTP;
+            } else if (!new TimeBasedOTP().validate(totp, totpSecret.getBytes())) {
+                error = Messages.INVALID_TOTP;
             }
-        }.call();
+
+            if (error != null) {
+                return forms.setError(error).forwardToTotp();
+            }
+
+            UserCredentialModel credentials = new UserCredentialModel();
+            credentials.setType(CredentialRepresentation.TOTP);
+            credentials.setValue(formData.getFirst("totpSecret"));
+            realm.updateCredential(user, credentials);
+
+            if (!user.isEnabled() && "REQUIRED".equals(user.getAttribute("KEYCLOAK_TOTP"))) {
+                user.setEnabled(true);
+            }
+
+            user.setAttribute("KEYCLOAK_TOTP", "ENABLED");
+
+            return Flows.forms(realm, request).setUser(user).forwardToTotp();
+        } else {
+            return Response.status(Status.FORBIDDEN).build();
+        }
     }
 
     @Path("password")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processPasswordUpdate(final MultivaluedMap<String, String> formData) {
-        return new Transaction<Response>() {
-            protected Response callImpl() {
-                UserModel user = authManager.authenticateIdentityCookie(realm, uriInfo, headers);
-                if (user != null) {
-                    FormFlows forms = Flows.forms(realm, request).setUser(user);
+        UserModel user = authManager.authenticateIdentityCookie(realm, uriInfo, headers);
+        if (user != null) {
+            FormFlows forms = Flows.forms(realm, request).setUser(user);
 
-                    String password = formData.getFirst("password");
-                    String passwordNew = formData.getFirst("password-new");
-                    String passwordConfirm = formData.getFirst("password-confirm");
+            String password = formData.getFirst("password");
+            String passwordNew = formData.getFirst("password-new");
+            String passwordConfirm = formData.getFirst("password-confirm");
 
-                    String error = null;
+            String error = null;
 
-                    if (Validation.isEmpty(password)) {
-                        error = Messages.MISSING_PASSWORD;
-                    } else if (Validation.isEmpty(passwordNew)) {
-                        error = Messages.MISSING_PASSWORD;
-                    } else if (!passwordNew.equals(passwordConfirm)) {
-                        error = Messages.INVALID_PASSWORD_CONFIRM;
-                    } else if (!realm.validatePassword(user, password)) {
-                        error = Messages.INVALID_PASSWORD_EXISTING;
-                    }
-
-                    if (error != null) {
-                        return forms.setError(error).forwardToPassword();
-                    }
-
-                    UserCredentialModel credentials = new UserCredentialModel();
-                    credentials.setType(CredentialRepresentation.PASSWORD);
-                    credentials.setValue(passwordNew);
-
-                    realm.updateCredential(user, credentials);
-
-                    return Flows.forms(realm, request).setUser(user).forwardToPassword();
-                } else {
-                    return Response.status(Status.FORBIDDEN).build();
-                }
+            if (Validation.isEmpty(password)) {
+                error = Messages.MISSING_PASSWORD;
+            } else if (Validation.isEmpty(passwordNew)) {
+                error = Messages.MISSING_PASSWORD;
+            } else if (!passwordNew.equals(passwordConfirm)) {
+                error = Messages.INVALID_PASSWORD_CONFIRM;
+            } else if (!realm.validatePassword(user, password)) {
+                error = Messages.INVALID_PASSWORD_EXISTING;
             }
-        }.call();
+
+            if (error != null) {
+                return forms.setError(error).forwardToPassword();
+            }
+
+            UserCredentialModel credentials = new UserCredentialModel();
+            credentials.setType(CredentialRepresentation.PASSWORD);
+            credentials.setValue(passwordNew);
+
+            realm.updateCredential(user, credentials);
+
+            return Flows.forms(realm, request).setUser(user).forwardToPassword();
+        } else {
+            return Response.status(Status.FORBIDDEN).build();
+        }
     }
 
     @Path("")
     @GET
     public Response accountPage() {
-        return new Transaction<Response>() {
-            protected Response callImpl() {
-                UserModel user = authManager.authenticateIdentityCookie(realm, uriInfo, headers);
-                if (user != null) {
-                    return Flows.forms(realm, request).setUser(user).forwardToAccount();
-                } else {
-                    return Response.status(Status.FORBIDDEN).build();
-                }
-            }
-        }.call();
+        UserModel user = authManager.authenticateIdentityCookie(realm, uriInfo, headers);
+        if (user != null) {
+            return Flows.forms(realm, request).setUser(user).forwardToAccount();
+        } else {
+            return Response.status(Status.FORBIDDEN).build();
+        }
     }
 
     @Path("social")
     @GET
     public Response socialPage() {
-        return new Transaction<Response>() {
-            protected Response callImpl() {
-                UserModel user = authManager.authenticateIdentityCookie(realm, uriInfo, headers);
-                if (user != null) {
-                    return Flows.forms(realm, request).setUser(user).forwardToSocial();
-                } else {
-                    return Response.status(Status.FORBIDDEN).build();
-                }
-            }
-        }.call();
+        UserModel user = authManager.authenticateIdentityCookie(realm, uriInfo, headers);
+        if (user != null) {
+            return Flows.forms(realm, request).setUser(user).forwardToSocial();
+        } else {
+            return Response.status(Status.FORBIDDEN).build();
+        }
     }
 
     @Path("totp")
     @GET
     public Response totpPage() {
-        return new Transaction<Response>() {
-            protected Response callImpl() {
-                UserModel user = authManager.authenticateIdentityCookie(realm, uriInfo, headers);
-                if (user != null) {
-                    return Flows.forms(realm, request).setUser(user).forwardToTotp();
-                } else {
-                    return Response.status(Status.FORBIDDEN).build();
-                }
-            }
-        }.call();
+        UserModel user = authManager.authenticateIdentityCookie(realm, uriInfo, headers);
+        if (user != null) {
+            return Flows.forms(realm, request).setUser(user).forwardToTotp();
+        } else {
+            return Response.status(Status.FORBIDDEN).build();
+        }
     }
 
     @Path("password")
     @GET
     public Response passwordPage() {
-        return new Transaction<Response>() {
-            protected Response callImpl() {
-                UserModel user = authManager.authenticateIdentityCookie(realm, uriInfo, headers);
-                if (user != null) {
-                    return Flows.forms(realm, request).setUser(user).forwardToPassword();
-                } else {
-                    return Response.status(Status.FORBIDDEN).build();
-                }
-            }
-        }.call();
+        UserModel user = authManager.authenticateIdentityCookie(realm, uriInfo, headers);
+        if (user != null) {
+            return Flows.forms(realm, request).setUser(user).forwardToPassword();
+        } else {
+            return Response.status(Status.FORBIDDEN).build();
+        }
     }
-
 }

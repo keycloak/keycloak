@@ -55,11 +55,8 @@ module.config([ '$routeProvider', function($routeProvider) {
 		resolve : {
 			realm : function(RealmLoader) {
 				return RealmLoader();
-			},
-			users : function(UserListLoader) {
-				return UserListLoader();
 			}
-		},
+        },
 		controller : 'UserListCtrl'
 	})
 

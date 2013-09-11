@@ -21,6 +21,16 @@
         <async-supported>true</async-supported>
     </servlet>
 
+    <filter>
+        <filter-name>Keycloak Session Management</filter-name>
+        <filter-class>org.keycloak.services.filters.KeycloakSessionServletFilter</filter-class>
+    </filter>
+
+    <filter-mapping>
+        <filter-name>Keycloak Session Management</filter-name>
+        <url-pattern>/rest/*</url-pattern>
+    </filter-mapping>
+
     <servlet-mapping>
         <servlet-name>Resteasy</servlet-name>
         <url-pattern>/rest/*</url-pattern>
