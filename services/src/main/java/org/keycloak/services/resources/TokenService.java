@@ -11,18 +11,44 @@ import org.jboss.resteasy.spi.HttpResponse;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.SkeletonKeyToken;
 import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.services.managers.*;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.managers.AccessCodeEntry;
+import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.managers.ResourceAdminManager;
+import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.models.*;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.OAuthFlows;
 import org.keycloak.services.validation.Validation;
+import org.picketlink.idm.credential.util.TimeBasedOTP;
 
-import javax.ws.rs.*;
-import javax.ws.rs.core.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.ForbiddenException;
+import javax.ws.rs.GET;
+import javax.ws.rs.NotAuthorizedException;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.NewCookie;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.SecurityContext;
+import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Providers;
+
 import java.security.PrivateKey;
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.StringTokenizer;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -38,25 +64,18 @@ public class TokenService {
 
     @Context
     protected Providers providers;
-
     @Context
     protected SecurityContext securityContext;
-
     @Context
     protected UriInfo uriInfo;
-
     @Context
     protected HttpHeaders headers;
-
     @Context
     protected HttpRequest request;
-
     @Context
     protected HttpResponse response;
-
     @Context
     protected KeycloakSession session;
-
     @Context
     protected KeycloakTransaction transaction;
 
@@ -215,6 +234,19 @@ public class TokenService {
     public Response processRegister(@QueryParam("client_id") final String clientId,
             @QueryParam("scope") final String scopeParam, @QueryParam("state") final String state,
             @QueryParam("redirect_uri") final String redirect, final MultivaluedMap<String, String> formData) {
+        Response registrationResponse = processRegisterImpl(clientId, scopeParam, state, redirect, formData, false);
+
+        // If request has been already forwarded (either due to security or validation error) then we won't continue with login
+        if (registrationResponse != null || request.wasForwarded()) {
+            logger.warn("Registration attempt wasn't successful. Request already forwarded or redirected.");
+            return registrationResponse;
+        } else {
+            return processLogin(clientId, scopeParam, state, redirect, formData);
+        }
+    }
+
+    public Response processRegisterImpl(String clientId, String scopeParam, String state, String redirect,
+                                        MultivaluedMap<String, String> formData, boolean isSocialRegistration) {
         OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
 
         if (!realm.isEnabled()) {
@@ -240,7 +272,8 @@ public class TokenService {
 
         String error = Validation.validateRegistrationForm(formData, requiredCredentialTypes);
         if (error != null) {
-            return Flows.forms(realm, request).setError(error).setFormData(formData).forwardToRegistration();
+            return Flows.forms(realm, request).setError(error).setFormData(formData)
+                    .setSocialRegistration(isSocialRegistration).forwardToRegistration();
         }
 
         String username = formData.getFirst("username");
@@ -248,7 +281,7 @@ public class TokenService {
         UserModel user = realm.getUser(username);
         if (user != null) {
             return Flows.forms(realm, request).setError(Messages.USERNAME_EXISTS).setFormData(formData)
-                    .forwardToRegistration();
+                    .setSocialRegistration(isSocialRegistration).forwardToRegistration();
         }
 
         user = realm.addUser(username);
@@ -290,7 +323,7 @@ public class TokenService {
             realm.grantRole(user, role);
         }
 
-        return processLogin(clientId, scopeParam, state, redirect, formData);
+        return null;
     }
 
     @Path("access/codes")

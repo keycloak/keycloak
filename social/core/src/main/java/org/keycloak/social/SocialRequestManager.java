@@ -57,6 +57,11 @@ public class SocialRequestManager {
 
         return details;
     }
+
+    // Just obtain data without expiring it
+    public synchronized RequestDetails getData(String requestId) {
+        return map.get(requestId);
+    }
     
     private void pruneExpired() {
         long currentTime = System.currentTimeMillis();

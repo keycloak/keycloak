@@ -236,7 +236,7 @@
 			<dependency>
 				<groupId>org.jboss.arquillian.extension</groupId>
 				<artifactId>arquillian-drone-bom</artifactId>
-				<version>1.2.0.Alpha3</version>
+				<version>1.2.0.Beta1</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>

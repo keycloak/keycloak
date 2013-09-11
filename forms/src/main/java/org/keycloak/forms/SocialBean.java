@@ -46,6 +46,9 @@ public class SocialBean {
     @ManagedProperty(value = "#{realm}")
     private RealmBean realm;
 
+    @ManagedProperty(value = "#{register}")
+    private RegisterBean registerBean;
+
     @ManagedProperty(value = "#{url}")
     private UrlBean url;
 
@@ -73,4 +76,32 @@ public class SocialBean {
         return providers;
     }
 
+    // Display panel with social providers just in case that social is enabled for realm, but we are not in the middle of registration with social
+    public boolean isDisplaySocialProviders() {
+        return realm.isSocial() && !registerBean.isSocialRegistration();
+    }
+
+    public RealmBean getRealm() {
+        return realm;
+    }
+
+    public void setRealm(RealmBean realm) {
+        this.realm = realm;
+    }
+
+    public UrlBean getUrl() {
+        return url;
+    }
+
+    public void setUrl(UrlBean url) {
+        this.url = url;
+    }
+
+    public RegisterBean getRegisterBean() {
+        return registerBean;
+    }
+
+    public void setRegisterBean(RegisterBean registerBean) {
+        this.registerBean = registerBean;
+    }
 }

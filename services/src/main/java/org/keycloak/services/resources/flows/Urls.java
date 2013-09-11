@@ -95,7 +95,7 @@ public class Urls {
         return saasBase(baseUri).path(SaasService.class, "registerPage").build();
     }
 
-    private static UriBuilder socialBase(URI baseUri) {
+    public static UriBuilder socialBase(URI baseUri) {
         return UriBuilder.fromUri(baseUri).path(SocialResource.class);
     }
 
@@ -110,5 +110,9 @@ public class Urls {
 
     private static UriBuilder tokenBase(URI baseUri) {
         return realmBase(baseUri).path(RealmsResource.class, "getTokenService");
+    }
+
+    public static URI socialRegisterAction(URI baseUri, String realmId) {
+        return socialBase(baseUri).path(SocialResource.class, "socialRegistration").build(realmId);
     }
 }

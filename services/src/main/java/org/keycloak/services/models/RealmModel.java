@@ -127,9 +127,19 @@ public interface RealmModel {
 
     void updateRequiredApplicationCredentials(Set<String> creds);
 
+    UserModel getUserBySocialLink(SocialLinkModel socialLink);
+
+    Set<SocialLinkModel> getSocialLinks(UserModel user);
+
+    void addSocialLink(UserModel user, SocialLinkModel socialLink);
+
+    void removeSocialLink(UserModel user, SocialLinkModel socialLink);
+
     boolean isSocial();
 
     void setSocial(boolean social);
 
-    List<UserModel> queryUsers(Map<String, String> parameters);
+    public boolean isAutomaticRegistrationAfterSocialLogin();
+
+    public void setAutomaticRegistrationAfterSocialLogin(boolean automaticRegistrationAfterSocialLogin);
 }

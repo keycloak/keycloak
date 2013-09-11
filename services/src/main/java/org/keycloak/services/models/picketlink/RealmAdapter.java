@@ -5,15 +5,27 @@ import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.security.PemUtils;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.models.*;
-import org.keycloak.services.models.picketlink.mappings.ApplicationData;
+import org.keycloak.services.models.KeycloakSession;
+import org.keycloak.services.models.RealmModel;
+import org.keycloak.services.models.RequiredCredentialModel;
+import org.keycloak.services.models.ApplicationModel;
+import org.keycloak.services.models.RoleModel;
+import org.keycloak.services.models.SocialLinkModel;
+import org.keycloak.services.models.UserCredentialModel;
+import org.keycloak.services.models.UserModel;
 import org.keycloak.services.models.picketlink.mappings.RealmData;
+import org.keycloak.services.models.picketlink.mappings.ApplicationData;
 import org.keycloak.services.models.picketlink.relationships.*;
+import org.keycloak.services.models.picketlink.relationships.RequiredApplicationCredentialRelationship;
 import org.picketlink.idm.IdentityManager;
 import org.picketlink.idm.PartitionManager;
 import org.picketlink.idm.RelationshipManager;
-import org.picketlink.idm.credential.*;
-import org.picketlink.idm.model.AttributedType;
+import org.picketlink.idm.credential.Credentials;
+import org.picketlink.idm.credential.Password;
+import org.picketlink.idm.credential.TOTPCredential;
+import org.picketlink.idm.credential.TOTPCredentials;
+import org.picketlink.idm.credential.UsernamePasswordCredentials;
+import org.picketlink.idm.credential.X509CertificateCredentials;
 import org.picketlink.idm.model.IdentityType;
 import org.picketlink.idm.model.sample.Grant;
 import org.picketlink.idm.model.sample.Role;
@@ -27,7 +39,13 @@ import java.io.StringWriter;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Meant to be a per-request object
@@ -102,6 +120,17 @@ public class RealmAdapter implements RealmModel {
     @Override
     public void setSocial(boolean social) {
         realm.setSocial(social);
+    }
+
+    @Override
+    public boolean isAutomaticRegistrationAfterSocialLogin() {
+        return realm.isAutomaticRegistrationAfterSocialLogin();
+    }
+
+    @Override
+    public void setAutomaticRegistrationAfterSocialLogin(boolean automaticRegistrationAfterSocialLogin) {
+        realm.setAutomaticRegistrationAfterSocialLogin(automaticRegistrationAfterSocialLogin);
+        updateRealm();
     }
 
     @Override
@@ -460,21 +489,6 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public List<UserModel> queryUsers(Map<String, String> parameters) {
-        IdentityQuery<User> userQuery = getIdm().createIdentityQuery(User.class);
-        for (Map.Entry<String, String> entry : parameters.entrySet()) {
-            userQuery.setParameter(AttributedType.QUERY_ATTRIBUTE.byName(entry.getKey()), entry.getValue());
-        }
-        List<User> users = userQuery.getResultList();
-        List<UserModel> userModels = new ArrayList<UserModel>();
-        for (User user : users) {
-            userModels.add(new UserAdapter(user, getIdm()));
-        }
-        return userModels;
-
-    }
-
-    @Override
     public RoleAdapter getRole(String name) {
         Role role = SampleModel.getRole(getIdm(), name);
         if (role == null) return null;
@@ -690,5 +704,55 @@ public class RealmAdapter implements RealmModel {
 
         realm.setDefaultRoles(defaultRoles);
         updateRealm();
+    }
+
+    @Override
+    public UserModel getUserBySocialLink(SocialLinkModel socialLink) {
+        RelationshipQuery<SocialLinkRelationship> query = getRelationshipManager().createRelationshipQuery(SocialLinkRelationship.class);
+        query.setParameter(SocialLinkRelationship.SOCIAL_PROVIDER, socialLink.getSocialProvider());
+        query.setParameter(SocialLinkRelationship.SOCIAL_USERNAME, socialLink.getSocialUsername());
+        List<SocialLinkRelationship> results = query.getResultList();
+        if (results.isEmpty()) {
+            return null;
+        } else if (results.size() > 1) {
+            throw new IllegalStateException("More results found for socialProvider=" + socialLink.getSocialProvider() +
+                    ", socialUsername=" + socialLink.getSocialUsername() + ", results=" + results);
+        } else {
+            User user = results.get(0).getUser();
+            return new UserAdapter(user, getIdm());
+        }
+    }
+
+    @Override
+    public Set<SocialLinkModel> getSocialLinks(UserModel user) {
+        RelationshipQuery<SocialLinkRelationship> query = getRelationshipManager().createRelationshipQuery(SocialLinkRelationship.class);
+        query.setParameter(SocialLinkRelationship.USER, ((UserAdapter)user).getUser());
+        List<SocialLinkRelationship> plSocialLinks = query.getResultList();
+
+        Set<SocialLinkModel> results = new HashSet<SocialLinkModel>();
+        for (SocialLinkRelationship relationship : plSocialLinks) {
+            results.add(new SocialLinkModel(relationship.getSocialProvider(), relationship.getSocialUsername()));
+        }
+        return results;
+    }
+
+    @Override
+    public void addSocialLink(UserModel user, SocialLinkModel socialLink) {
+        SocialLinkRelationship relationship = new SocialLinkRelationship();
+        relationship.setUser(((UserAdapter)user).getUser());
+        relationship.setSocialProvider(socialLink.getSocialProvider());
+        relationship.setSocialUsername(socialLink.getSocialUsername());
+
+        getRelationshipManager().add(relationship);
+    }
+
+    @Override
+    public void removeSocialLink(UserModel user, SocialLinkModel socialLink) {
+        SocialLinkRelationship relationship = new SocialLinkRelationship();
+        relationship.setUser(((UserAdapter)user).getUser());
+        relationship.setSocialProvider(socialLink.getSocialProvider());
+        relationship.setSocialUsername(socialLink.getSocialUsername());
+
+        getRelationshipManager().remove(relationship);
     }
 }

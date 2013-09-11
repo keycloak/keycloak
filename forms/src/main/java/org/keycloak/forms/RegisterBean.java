@@ -26,6 +26,7 @@ import java.util.Map;
 
 import javax.annotation.PostConstruct;
 import javax.faces.bean.ManagedBean;
+import javax.faces.bean.ManagedProperty;
 import javax.faces.bean.RequestScoped;
 import javax.faces.context.FacesContext;
 import javax.servlet.http.HttpServletRequest;
@@ -42,12 +43,17 @@ public class RegisterBean {
 
     private HashMap<String, String> formData;
 
+    private boolean socialRegistration;
+
     @PostConstruct
     public void init() {
         FacesContext ctx = FacesContext.getCurrentInstance();
         HttpServletRequest request = (HttpServletRequest) ctx.getExternalContext().getRequest();
 
         this.formData = new HashMap<String, String>();
+
+        Boolean socialRegistrationAttr = (Boolean)request.getAttribute(FormFlows.SOCIAL_REGISTRATION);
+        this.socialRegistration = socialRegistrationAttr != null && socialRegistrationAttr;
 
         @SuppressWarnings("unchecked")
         MultivaluedMap<String, String> formData = (MultivaluedMap<String, String>) request.getAttribute(FormFlows.DATA);
@@ -60,6 +66,10 @@ public class RegisterBean {
 
     public Map<String, String> getFormData() {
         return formData;
+    }
+
+    public boolean isSocialRegistration() {
+        return socialRegistration;
     }
 
 }
