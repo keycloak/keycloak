@@ -5,18 +5,13 @@ import org.jboss.resteasy.logging.Logger;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceManager;
-import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.ApplicationModel;
+import org.keycloak.services.models.KeycloakSession;
+import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.UserModel;
-import org.keycloak.services.resources.Transaction;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
+import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -33,6 +28,12 @@ public class ApplicationsResource {
     protected UserModel admin;
     protected RealmModel realm;
 
+    @Context
+    protected ResourceContext resourceContext;
+
+    @Context
+    protected KeycloakSession session;
+
     public ApplicationsResource(UserModel admin, RealmModel realm) {
         this.admin = admin;
         this.realm = realm;
@@ -42,46 +43,32 @@ public class ApplicationsResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public List<ApplicationRepresentation> getResources() {
-        return new Transaction<List<ApplicationRepresentation>>() {
-            @Override
-            protected List<ApplicationRepresentation> callImpl() {
-                List<ApplicationRepresentation> rep = new ArrayList<ApplicationRepresentation>();
-                List<ApplicationModel> applicationModels = realm.getApplications();
-                ResourceManager resourceManager = new ResourceManager(new RealmManager(session));
-                for (ApplicationModel applicationModel : applicationModels) {
-                    rep.add(resourceManager.toRepresentation(applicationModel));
-                }
-                return rep;
-            }
-        }.call();
+        List<ApplicationRepresentation> rep = new ArrayList<ApplicationRepresentation>();
+        List<ApplicationModel> applicationModels = realm.getApplications();
+        ResourceManager resourceManager = new ResourceManager(new RealmManager(session));
+        for (ApplicationModel applicationModel : applicationModels) {
+            rep.add(resourceManager.toRepresentation(applicationModel));
+        }
+        return rep;
     }
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createResource(final @Context UriInfo uriInfo, final ApplicationRepresentation rep) {
-        return new Transaction<Response>() {
-            @Override
-            protected Response callImpl() {
-                ResourceManager resourceManager = new ResourceManager(new RealmManager(session));
-                ApplicationModel applicationModel = resourceManager.createResource(realm, rep);
-                return Response.created(uriInfo.getAbsolutePathBuilder().path(applicationModel.getId()).build()).build();
-            }
-        }.call();
+        ResourceManager resourceManager = new ResourceManager(new RealmManager(session));
+        ApplicationModel applicationModel = resourceManager.createResource(realm, rep);
+        return Response.created(uriInfo.getAbsolutePathBuilder().path(applicationModel.getId()).build()).build();
     }
 
     @Path("{id}")
     public ApplicationResource getResource(final @PathParam("id") String id) {
-        return new Transaction<ApplicationResource>(false) {
-            @Override
-            protected ApplicationResource callImpl() {
-                ApplicationModel applicationModel = realm.getApplicationById(id);
-                if (applicationModel == null) {
-                    throw new NotFoundException();
-                }
-                return new ApplicationResource(admin, realm, applicationModel);
-            }
-        }.call();
-
+        ApplicationModel applicationModel = realm.getApplicationById(id);
+        if (applicationModel == null) {
+            throw new NotFoundException();
+        }
+        ApplicationResource applicationResource = new ApplicationResource(admin, realm, applicationModel);
+        resourceContext.initResource(applicationResource);
+        return applicationResource;
     }
 
 }

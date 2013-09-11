@@ -11,6 +11,8 @@ import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.services.resources.SaasService;
 import org.keycloak.services.resources.SaasService;
 
+import javax.servlet.ServletContext;
+import javax.ws.rs.core.Context;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,8 +22,8 @@ import java.io.InputStream;
  */
 public class DemoApplication extends KeycloakApplication {
 
-    public DemoApplication() {
-        super();
+    public DemoApplication(@Context ServletContext servletContext) {
+        super(servletContext);
         KeycloakSession session = factory.createSession();
         session.getTransaction().begin();
         RealmManager realmManager = new RealmManager(session);

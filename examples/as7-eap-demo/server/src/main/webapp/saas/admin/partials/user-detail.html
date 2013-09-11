@@ -7,23 +7,32 @@
             <h1 data-ng-show="create"><span class="gray">New User</span></h1>
 
             <h1 data-ng-hide="create">
-                <span class="gray">{{user.userId}}</span> configuration
+                <span class="gray">User {{user.username}}</span>
             </h1>
 
             <div data-ng-show="userForm.showErrors && userForm.$error.required" class="alert alert-error">Please fill in
                 all required fields
             </div>
-            <p class="subtitle subtitle-right"><span class="required">*</span> Required fields</p>
+            <p class="subtitle subtitle-right" data-ng-show="create"><span class="required">*</span> Required fields</p>
 
             <form class="form-horizontal" name="userForm" novalidate>
                 <fieldset>
                     <legend>Details</legend>
                     <div class="control-group">
-                        <label class="control-label" for="name">Username <span class="required">*</span></label>
+                        <label class="control-label" for="name">Username <span class="required" data-ng-show="create">*</span></label>
 
                         <div class="controls">
-                            <input type="text" class="input-xlarge" id="name" name="name" data-ng-model="user.userId"
+                            <input type="text" class="input-xlarge" id="name" name="name" data-ng-model="user.username"
                                    autofocus required data-ng-readonly="!create">
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Enabled</label>
+
+                        <div class="controls">
+                            <input class="input-xlarge" type="checkbox" name="enabled"
+                                   data-ng-model="realm.enabled">
                         </div>
                     </div>
 
@@ -50,15 +59,6 @@
 
                         <div class="controls">
                             <input type="text" class="input-xlarge" id="lastName" data-ng-model="user.lastName">
-                        </div>
-                    </div>
-
-                    <div class="control-group">
-                        <label class="control-label" for="password">Password <span class="required">*</span></label>
-
-                        <div class="controls">
-                            <input type="password" class="input-xlarge" id="password" name="password"
-                                   data-ng-model="user.password" data-ng-required="create">
                         </div>
                     </div>
                 </fieldset>
@@ -94,7 +94,6 @@
                     </button>
                     <button type="submit" data-ng-click="reset()" class="btn" data-ng-show="changed">Clear changes
                     </button>
-                    <a href="#/realms/{{realm.id}}/users" data-ng-hide="changed">View users &#187;</a>
                     <button type="submit" data-ng-click="remove()" class="btn btn-danger" data-ng-hide="changed">
                         Delete
                     </button>

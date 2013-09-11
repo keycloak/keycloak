@@ -1,11 +1,10 @@
 package org.keycloak.services.validation;
 
-import java.util.List;
-
-import javax.ws.rs.core.MultivaluedMap;
-
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.messages.Messages;
+
+import javax.ws.rs.core.MultivaluedMap;
+import java.util.List;
 
 public class Validation {
 

@@ -1,12 +1,8 @@
 package org.keycloak.test;
 
-import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
-import org.jboss.resteasy.spi.ResteasyDeployment;
-import org.jboss.resteasy.test.EmbeddedContainer;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.keycloak.SkeletonKeyContextResolver;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -15,10 +11,8 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.models.KeycloakSession;
 import org.keycloak.services.models.RealmModel;
-import org.keycloak.services.resources.KeycloakApplication;
 
 import javax.ws.rs.NotAuthorizedException;
-import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Form;
@@ -31,30 +25,16 @@ import static org.jboss.resteasy.test.TestPortProvider.generateURL;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class RealmCreationTest {
-
-    private static ResteasyDeployment deployment;
-    private static Client client;
+public class RealmCreationTest extends AbstractKeycloakServerTest {
 
     @BeforeClass
     public static void before() throws Exception {
-        deployment = new ResteasyDeployment();
-        deployment.setApplicationClass(KeycloakApplication.class.getName());
-        EmbeddedContainer.start(deployment);
-        KeycloakApplication application = (KeycloakApplication) deployment.getApplication();
         KeycloakSession session = application.getFactory().createSession();
         session.getTransaction().begin();
         RealmManager manager = new RealmManager(session);
         new InstallationManager().install(manager);
         session.getTransaction().commit();
         session.close();
-        client = new ResteasyClientBuilder().build();
-        client.register(SkeletonKeyContextResolver.class);
-    }
-
-    public static void after() throws Exception {
-        client.close();
-        EmbeddedContainer.stop();
     }
 
     @Test
@@ -86,7 +66,7 @@ public class RealmCreationTest {
         System.out.println(tokenResponse.getToken());
         //
 
-        RealmRepresentation realm = KeycloakTestBase.loadJson("testrealm.json");
+        RealmRepresentation realm = loadJson("testrealm.json");
         response = target.path("saas/admin/realms").request().header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenResponse.getToken()).post(Entity.json(realm));
         Assert.assertEquals(201, response.getStatus());
         response.close();

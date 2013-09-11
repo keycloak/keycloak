@@ -3,13 +3,42 @@
         <aside class="span3" data-ng-include data-src="'partials/realm-menu.html'"></aside>
         <div id="actions-bg"></div>
 
+
         <div id="container-right" class="span9">
-            <a class="btn btn-small pull-right" href="#/create/user/{{realm.id}}">Add User</a>
+            <form class="form-horizontal" name="queryForm" novalidate>
+                <div class="control-group">
+                    <label class="control-label">Query </label>
 
-            <h1>
-                <span class="gray">{{realm.name}}</span> users
-            </h1>
+                    <div class="controls">
+                        <input type="text" class="input-xlarge" id="query" name="query" data-ng-model="query"
+                               autofocus required readonly>
+                        <button type="submit" data-ng-click="executeQuery()" class="btn btn-primary">Execute Query
+                        </button>
+                    </div>
+                </div>
+            </form>
 
+            <form class="form-horizontal" name="queryAttribute" novalidate>
+                <fieldset>
+                    <div class="control-group">
+                        <label class="control-label">Predefined Attribute</label>
+
+                        <div class="controls">
+                            <select style="width: auto;" name="name"
+                                    data-ng-model="attribute.name">
+                                <option value="loginName">Login name</option>
+                                <option value="lastName">Last name</option>
+                                <option value="firstName">First name</option>
+                                <option value="email">Email</option>
+                            </select>
+                            <input class="input-small" type="text" name="value"
+                                   data-ng-model="attribute.value">
+                            <button type="submit" data-ng-click="addAttribute()" class="btn btn-primary">Add Attribute
+                            </button>
+                        </div>
+                    </div>
+                </fieldset>
+            </form>
             <table class="table table-striped table-bordered">
                 <thead>
                 <tr>
@@ -20,7 +49,7 @@
                 </tr>
                 </thead>
                 <tr data-ng-repeat="user in users">
-                    <td><a href="#/realms/{{realm.id}}/users/{{user.userId}}">{{user.userId}}</a></td>
+                    <td><a href="#/realms/{{realm.id}}/users/{{user.username}}">{{user.username}}</a></td>
                     <td>{{user.firstName}}</td>
                     <td>{{user.lastName}}</td>
                     <td>{{user.email}}</td>

@@ -2,10 +2,7 @@ package org.keycloak.services.resources;
 
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.services.models.KeycloakSession;
-import org.keycloak.services.models.KeycloakSessionFactory;
 import org.keycloak.services.models.KeycloakTransaction;
-
-import javax.ws.rs.core.Application;
 
 /**
  * Meant to be used as an inner class wrapper (I forget the pattern name, its been awhile).
@@ -13,6 +10,7 @@ import javax.ws.rs.core.Application;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@Deprecated
 public class Transaction<T> {
     protected KeycloakSession session;
     protected KeycloakTransaction transaction;
@@ -36,6 +34,8 @@ public class Transaction<T> {
      */
     public Transaction(boolean close) {
         this.session = ResteasyProviderFactory.getContextData(KeycloakSession.class);
+        this.transaction = session.getTransaction();
+        /*
         if (session == null) {
             KeycloakApplication app = (KeycloakApplication)ResteasyProviderFactory.getContextData(Application.class);
             session = app.getFactory().createSession();
@@ -44,18 +44,8 @@ public class Transaction<T> {
         }
         transaction = session.getTransaction();
         closeSession = close;
+        */
 
-    }
-
-    /**
-     * Creates and manages its own session.
-     *
-     * @param factory
-     */
-    public Transaction(KeycloakSessionFactory factory) {
-        this.closeSession = true;
-        this.session = factory.createSession();
-        this.transaction = session.getTransaction();
     }
 
     protected void runImpl() {
@@ -67,20 +57,20 @@ public class Transaction<T> {
      *
      */
     public void run() {
-        boolean wasActive = transaction.isActive();
-        if (!wasActive) transaction.begin();
-        try {
+//        boolean wasActive = transaction.isActive();
+//        if (!wasActive) transaction.begin();
+//        try {
             runImpl();
-            if (!wasActive && transaction.isActive()) transaction.commit();
-        } catch (RuntimeException e) {
-            if (!wasActive && transaction.isActive()) transaction.rollback();
-            if (created) closeSession = true;
-            throw e;
-        } finally {
-            if (!wasActive && closeSession) {
-                session.close();
-            }
-        }
+//            if (!wasActive && transaction.isActive()) transaction.commit();
+//        } catch (RuntimeException e) {
+//            if (!wasActive && transaction.isActive()) transaction.rollback();
+//            if (created) closeSession = true;
+//            throw e;
+//        } finally {
+//            if (!wasActive && closeSession) {
+//                session.close();
+//            }
+//        }
     }
 
     protected T callImpl() {
@@ -92,18 +82,18 @@ public class Transaction<T> {
      *
      */
     public T call() {
-        boolean wasActive = transaction.isActive();
-        if (!wasActive) transaction.begin();
-        try {
+//        boolean wasActive = transaction.isActive();
+//        if (!wasActive) transaction.begin();
+//        try {
             T rtn = callImpl();
-            if (!wasActive && transaction.isActive()) transaction.commit();
+//            if (!wasActive && transaction.isActive()) transaction.commit();
             return rtn;
-        } catch (RuntimeException e) {
-            if (!wasActive && transaction.isActive()) transaction.rollback();
-            if (created) closeSession = true; // close if there was a failure
-            throw e;
-        } finally {
-            if (!wasActive && closeSession) session.close();
-        }
+//        } catch (RuntimeException e) {
+//            if (!wasActive && transaction.isActive()) transaction.rollback();
+//            if (created) closeSession = true; // close if there was a failure
+//            throw e;
+//        } finally {
+//            if (!wasActive && closeSession) session.close();
+//        }
     }
 }

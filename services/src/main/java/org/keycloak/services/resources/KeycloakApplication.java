@@ -1,7 +1,6 @@
 package org.keycloak.services.resources;
 
 import org.keycloak.SkeletonKeyContextResolver;
-import org.keycloak.services.filters.KeycloakSessionCleanupFilter;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.models.KeycloakSessionFactory;
 import org.keycloak.services.models.picketlink.PicketlinkKeycloakSession;
@@ -13,25 +12,15 @@ import org.picketlink.idm.PartitionManager;
 import org.picketlink.idm.config.IdentityConfigurationBuilder;
 import org.picketlink.idm.internal.DefaultPartitionManager;
 import org.picketlink.idm.jpa.internal.JPAContextInitializer;
-import org.picketlink.idm.jpa.model.sample.simple.AccountTypeEntity;
-import org.picketlink.idm.jpa.model.sample.simple.AttributeTypeEntity;
-import org.picketlink.idm.jpa.model.sample.simple.AttributedTypeEntity;
-import org.picketlink.idm.jpa.model.sample.simple.DigestCredentialTypeEntity;
-import org.picketlink.idm.jpa.model.sample.simple.GroupTypeEntity;
-import org.picketlink.idm.jpa.model.sample.simple.IdentityTypeEntity;
-import org.picketlink.idm.jpa.model.sample.simple.OTPCredentialTypeEntity;
-import org.picketlink.idm.jpa.model.sample.simple.PartitionTypeEntity;
-import org.picketlink.idm.jpa.model.sample.simple.PasswordCredentialTypeEntity;
-import org.picketlink.idm.jpa.model.sample.simple.RelationshipIdentityTypeEntity;
-import org.picketlink.idm.jpa.model.sample.simple.RelationshipTypeEntity;
-import org.picketlink.idm.jpa.model.sample.simple.RoleTypeEntity;
-import org.picketlink.idm.jpa.model.sample.simple.X509CredentialTypeEntity;
+import org.picketlink.idm.jpa.model.sample.simple.*;
 
 import javax.annotation.PreDestroy;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
+import javax.servlet.ServletContext;
 import javax.ws.rs.core.Application;
+import javax.ws.rs.core.Context;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -45,10 +34,11 @@ public class KeycloakApplication extends Application {
 
     protected KeycloakSessionFactory factory;
 
-    public KeycloakApplication() {
+    public KeycloakApplication(@Context ServletContext context) {
         KeycloakSessionFactory f = createSessionFactory();
         this.factory = f;
-        classes.add(KeycloakSessionCleanupFilter.class);
+        context.setAttribute(KeycloakSessionFactory.class.getName(), factory);
+        //classes.add(KeycloakSessionCleanupFilter.class);
 
         TokenManager tokenManager = new TokenManager();
 
@@ -56,6 +46,7 @@ public class KeycloakApplication extends Application {
         singletons.add(new SocialResource(tokenManager, new SocialRequestManager()));
         classes.add(SkeletonKeyContextResolver.class);
         classes.add(SaasService.class);
+
     }
 
     protected KeycloakSessionFactory createSessionFactory() {

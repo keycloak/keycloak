@@ -21,11 +21,11 @@
  */
 package org.keycloak.services.resources.flows;
 
-import javax.ws.rs.core.Response;
-
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.services.JspRequestParameters;
+
+import javax.ws.rs.core.Response;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

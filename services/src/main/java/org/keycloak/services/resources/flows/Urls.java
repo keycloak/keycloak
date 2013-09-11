@@ -21,15 +21,10 @@
  */
 package org.keycloak.services.resources.flows;
 
-import java.net.URI;
+import org.keycloak.services.resources.*;
 
 import javax.ws.rs.core.UriBuilder;
-
-import org.keycloak.services.resources.AccountService;
-import org.keycloak.services.resources.RealmsResource;
-import org.keycloak.services.resources.SaasService;
-import org.keycloak.services.resources.SocialResource;
-import org.keycloak.services.resources.TokenService;
+import java.net.URI;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

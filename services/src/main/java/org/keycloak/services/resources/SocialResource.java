@@ -56,10 +56,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.services.models.RealmModel;
-import org.keycloak.services.models.RoleModel;
-import org.keycloak.services.models.SocialLinkModel;
-import org.keycloak.services.models.UserModel;
+import org.keycloak.services.models.*;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.OAuthFlows;
 import org.keycloak.services.resources.flows.PageFlows;
@@ -98,6 +95,10 @@ public class SocialResource {
     @Context
     ResourceContext resourceContext;
 
+    @Context
+    protected KeycloakSession session;
+
+
     private SocialRequestManager socialRequestManager;
 
     private TokenManager tokenManager;
@@ -112,111 +113,107 @@ public class SocialResource {
     @GET
     @Path("callback")
     public Response callback() throws URISyntaxException {
-        return new Transaction<Response>() {
-            protected Response callImpl() {
-                Map<String, String[]> queryParams = getQueryParams();
+        Map<String, String[]> queryParams = getQueryParams();
 
-                RequestDetails requestData = getRequestDetails(queryParams);
-                SocialProvider provider = getProvider(requestData.getProviderId());
+        RequestDetails requestData = getRequestDetails(queryParams);
+        SocialProvider provider = getProvider(requestData.getProviderId());
 
-                String realmId = requestData.getClientAttribute("realmId");
+        String realmId = requestData.getClientAttribute("realmId");
 
-                RealmManager realmManager = new RealmManager(session);
-                RealmModel realm = realmManager.getRealm(realmId);
+        RealmManager realmManager = new RealmManager(session);
+        RealmModel realm = realmManager.getRealm(realmId);
 
-                OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
+        OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
 
-                if (!realm.isEnabled()) {
-                    return oauth.forwardToSecurityFailure("Realm not enabled.");
-                }
+        if (!realm.isEnabled()) {
+            return oauth.forwardToSecurityFailure("Realm not enabled.");
+        }
 
-                String clientId = requestData.getClientAttributes().get("clientId");
+        String clientId = requestData.getClientAttributes().get("clientId");
 
-                UserModel client = realm.getUser(clientId);
-                if (client == null) {
-                    return oauth.forwardToSecurityFailure("Unknown login requester.");
-                }
-                if (!client.isEnabled()) {
-                    return oauth.forwardToSecurityFailure("Login requester not enabled.");
-                }
+        UserModel client = realm.getUser(clientId);
+        if (client == null) {
+            return oauth.forwardToSecurityFailure("Unknown login requester.");
+        }
+        if (!client.isEnabled()) {
+            return oauth.forwardToSecurityFailure("Login requester not enabled.");
+        }
 
-                String key = System.getProperty("keycloak.social." + requestData.getProviderId() + ".key");
-                String secret = System.getProperty("keycloak.social." + requestData.getProviderId() + ".secret");
-                String callbackUri = Urls.socialCallback(uriInfo.getBaseUri()).toString();
-                SocialProviderConfig config = new SocialProviderConfig(key, secret, callbackUri);
+        String key = System.getProperty("keycloak.social." + requestData.getProviderId() + ".key");
+        String secret = System.getProperty("keycloak.social." + requestData.getProviderId() + ".secret");
+        String callbackUri = Urls.socialCallback(uriInfo.getBaseUri()).toString();
+        SocialProviderConfig config = new SocialProviderConfig(key, secret, callbackUri);
 
-                AuthCallback callback = new AuthCallback(requestData.getSocialAttributes(), queryParams);
+        AuthCallback callback = new AuthCallback(requestData.getSocialAttributes(), queryParams);
 
-                SocialUser socialUser = null;
-                try {
-                    socialUser = provider.processCallback(config, callback);
-                } catch (SocialProviderException e) {
-                    logger.warn("Failed to process social callback", e);
-                    return oauth.forwardToSecurityFailure("Failed to process social callback");
-                }
+        SocialUser socialUser = null;
+        try {
+            socialUser = provider.processCallback(config, callback);
+        } catch (SocialProviderException e) {
+            logger.warn("Failed to process social callback", e);
+            return oauth.forwardToSecurityFailure("Failed to process social callback");
+        }
 
-                SocialLinkModel socialLink = new SocialLinkModel(provider.getId(), socialUser.getUsername());
-                UserModel user = realm.getUserBySocialLink(socialLink);
+        SocialLinkModel socialLink = new SocialLinkModel(provider.getId(), socialUser.getUsername());
+        UserModel user = realm.getUserBySocialLink(socialLink);
 
-                if (user == null) {
-                    if (!realm.isRegistrationAllowed()) {
-                        return oauth.forwardToSecurityFailure("Registration not allowed");
-                    }
-
-                    // Automatically register user into realm with his social username (don't redirect to registration screen)
-                    if (realm.isAutomaticRegistrationAfterSocialLogin()) {
-
-                        if (realm.getUser(socialUser.getUsername()) != null) {
-                            // TODO: Username is already in realm. Show message and let user to bind accounts after he re-authenticate
-                            throw new IllegalStateException("Username " + socialUser.getUsername() +
-                                    " already registered in the realm. TODO: bind accounts...");
-
-                            // TODO: Maybe we should search also by email and bind accounts if user with this email is
-                            // already registered. But actually Keycloak allows duplicate emails
-                        } else {
-                            user = realm.addUser(socialUser.getUsername());
-                            user.setFirstName(socialUser.getFirstName());
-                            user.setLastName(socialUser.getLastName());
-                            user.setEmail(socialUser.getEmail());
-                        }
-
-                        realm.addSocialLink(user, socialLink);
-
-                        for (RoleModel role : realm.getDefaultRoles()) {
-                            realm.grantRole(user, role);
-                        }
-                    }  else {
-                        // Redirect user to registration screen with prefilled data from social provider
-                        MultivaluedMap<String, String> formData = fillRegistrationFormWithSocialData(socialUser);
-
-                        RequestDetailsBuilder reqDetailsBuilder = RequestDetailsBuilder.createFromRequestDetails(requestData);
-                        reqDetailsBuilder.putSocialAttribute(SocialConstants.ATTR_SOCIAL_LINK, socialLink);
-
-                        String requestId = UUID.randomUUID().toString();
-                        socialRequestManager.addRequest(requestId, reqDetailsBuilder.build());
-                        boolean secureOnly = !realm.isSslNotRequired();
-                        String cookiePath = Urls.socialBase(uriInfo.getBaseUri()).build().getPath();
-                        logger.info("creating cookie for social registration - name: " + SocialConstants.SOCIAL_REGISTRATION_COOKIE
-                                + " path: " + cookiePath);
-                        NewCookie newCookie = new NewCookie(SocialConstants.SOCIAL_REGISTRATION_COOKIE, requestId,
-                                cookiePath, null, "Added social cookie", NewCookie.DEFAULT_MAX_AGE, secureOnly);
-                        response.addNewCookie(newCookie);
-
-                        return Flows.forms(realm, request).setFormData(formData).setSocialRegistration(true).forwardToRegistration();
-                    }
-                }
-
-                if (!user.isEnabled()) {
-                    return oauth.forwardToSecurityFailure("Your account is not enabled.");
-                }
-
-                String scope = requestData.getClientAttributes().get("scope");
-                String state = requestData.getClientAttributes().get("state");
-                String redirectUri = requestData.getClientAttributes().get("redirectUri");
-
-                return oauth.processAccessCode(scope, state, redirectUri, client, user);
+        if (user == null) {
+            if (!realm.isRegistrationAllowed()) {
+                return oauth.forwardToSecurityFailure("Registration not allowed");
             }
-        }.call();
+
+            // Automatically register user into realm with his social username (don't redirect to registration screen)
+            if (realm.isAutomaticRegistrationAfterSocialLogin()) {
+
+                if (realm.getUser(socialUser.getUsername()) != null) {
+                    // TODO: Username is already in realm. Show message and let user to bind accounts after he re-authenticate
+                    throw new IllegalStateException("Username " + socialUser.getUsername() +
+                            " already registered in the realm. TODO: bind accounts...");
+
+                    // TODO: Maybe we should search also by email and bind accounts if user with this email is
+                    // already registered. But actually Keycloak allows duplicate emails
+                } else {
+                    user = realm.addUser(socialUser.getUsername());
+                    user.setFirstName(socialUser.getFirstName());
+                    user.setLastName(socialUser.getLastName());
+                    user.setEmail(socialUser.getEmail());
+                }
+
+                realm.addSocialLink(user, socialLink);
+
+                for (RoleModel role : realm.getDefaultRoles()) {
+                    realm.grantRole(user, role);
+                }
+            }  else {
+                // Redirect user to registration screen with prefilled data from social provider
+                MultivaluedMap<String, String> formData = fillRegistrationFormWithSocialData(socialUser);
+
+                RequestDetailsBuilder reqDetailsBuilder = RequestDetailsBuilder.createFromRequestDetails(requestData);
+                reqDetailsBuilder.putSocialAttribute(SocialConstants.ATTR_SOCIAL_LINK, socialLink);
+
+                String requestId = UUID.randomUUID().toString();
+                socialRequestManager.addRequest(requestId, reqDetailsBuilder.build());
+                boolean secureOnly = !realm.isSslNotRequired();
+                String cookiePath = Urls.socialBase(uriInfo.getBaseUri()).build().getPath();
+                logger.info("creating cookie for social registration - name: " + SocialConstants.SOCIAL_REGISTRATION_COOKIE
+                        + " path: " + cookiePath);
+                NewCookie newCookie = new NewCookie(SocialConstants.SOCIAL_REGISTRATION_COOKIE, requestId,
+                        cookiePath, null, "Added social cookie", NewCookie.DEFAULT_MAX_AGE, secureOnly);
+                response.addNewCookie(newCookie);
+
+                return Flows.forms(realm, request).setFormData(formData).setSocialRegistration(true).forwardToRegistration();
+            }
+        }
+
+        if (!user.isEnabled()) {
+            return oauth.forwardToSecurityFailure("Your account is not enabled.");
+        }
+
+        String scope = requestData.getClientAttributes().get("scope");
+        String state = requestData.getClientAttributes().get("state");
+        String redirectUri = requestData.getClientAttributes().get("redirectUri");
+
+        return oauth.processAccessCode(scope, state, redirectUri, client, user);
     }
 
     @GET
@@ -257,63 +254,59 @@ public class SocialResource {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response socialRegistration(@PathParam("realm") final String realmId,
                                        final MultivaluedMap<String, String> formData) {
-        return new Transaction<Response>() {
-            protected Response callImpl() {
-                PageFlows pageFlows = Flows.pages(request);
-                Cookie cookie = headers.getCookies().get(SocialConstants.SOCIAL_REGISTRATION_COOKIE);
-                if (cookie == null) {
-                    return pageFlows.forwardToSecurityFailure("Social registration cookie not found");
-                }
+        PageFlows pageFlows = Flows.pages(request);
+        Cookie cookie = headers.getCookies().get(SocialConstants.SOCIAL_REGISTRATION_COOKIE);
+        if (cookie == null) {
+            return pageFlows.forwardToSecurityFailure("Social registration cookie not found");
+        }
 
-                String requestId = cookie.getValue();
-                if (!socialRequestManager.isRequestId(requestId)) {
-                    logger.error("Unknown requestId found in cookie. Maybe it's expired. requestId=" + requestId);
-                    return pageFlows.forwardToSecurityFailure("Unknown requestId found in cookie. Maybe it's expired.");
-                }
+        String requestId = cookie.getValue();
+        if (!socialRequestManager.isRequestId(requestId)) {
+            logger.error("Unknown requestId found in cookie. Maybe it's expired. requestId=" + requestId);
+            return pageFlows.forwardToSecurityFailure("Unknown requestId found in cookie. Maybe it's expired.");
+        }
 
-                RequestDetails requestData = socialRequestManager.getData(requestId);
+        RequestDetails requestData = socialRequestManager.getData(requestId);
 
-                RealmManager realmManager = new RealmManager(session);
-                RealmModel realm = realmManager.getRealm(realmId);
-                if (realm == null || !realm.isEnabled()) {
-                    return pageFlows.forwardToSecurityFailure("Realm doesn't exists or is not enabled.");
-                }
-                TokenService tokenService = new TokenService(realm, tokenManager);
-                resourceContext.initResource(tokenService);
+        RealmManager realmManager = new RealmManager(session);
+        RealmModel realm = realmManager.getRealm(realmId);
+        if (realm == null || !realm.isEnabled()) {
+            return pageFlows.forwardToSecurityFailure("Realm doesn't exists or is not enabled.");
+        }
+        TokenService tokenService = new TokenService(realm, tokenManager);
+        resourceContext.initResource(tokenService);
 
-                String clientId = requestData.getClientAttribute("clientId");
-                String scope = requestData.getClientAttribute("scope");
-                String state = requestData.getClientAttribute("state");
-                String redirectUri = requestData.getClientAttribute("redirectUri");
-                SocialLinkModel socialLink = (SocialLinkModel)requestData.getSocialAttribute(SocialConstants.ATTR_SOCIAL_LINK);
+        String clientId = requestData.getClientAttribute("clientId");
+        String scope = requestData.getClientAttribute("scope");
+        String state = requestData.getClientAttribute("state");
+        String redirectUri = requestData.getClientAttribute("redirectUri");
+        SocialLinkModel socialLink = (SocialLinkModel)requestData.getSocialAttribute(SocialConstants.ATTR_SOCIAL_LINK);
 
-                Response response1 = tokenService.processRegisterImpl(clientId, scope, state, redirectUri, formData, true);
+        Response response1 = tokenService.processRegisterImpl(clientId, scope, state, redirectUri, formData, true);
 
-                // Some error occured during registration
-                if (response1 != null || request.wasForwarded()) {
-                    logger.warn("Registration attempt wasn't successful. Request already forwarded or redirected.");
-                    return response1;
-                }
+        // Some error occured during registration
+        if (response1 != null || request.wasForwarded()) {
+            logger.warn("Registration attempt wasn't successful. Request already forwarded or redirected.");
+            return response1;
+        }
 
-                String username = formData.getFirst("username");
-                UserModel user = realm.getUser(username);
-                if (user == null) {
-                    // Normally shouldn't happen
-                    throw new IllegalStateException("User " + username + " not found in the realm");
-                }
-                realm.addSocialLink(user, socialLink);
+        String username = formData.getFirst("username");
+        UserModel user = realm.getUser(username);
+        if (user == null) {
+            // Normally shouldn't happen
+            throw new IllegalStateException("User " + username + " not found in the realm");
+        }
+        realm.addSocialLink(user, socialLink);
 
-                // Expire cookie and invalidate requestData
-                String cookiePath = Urls.socialBase(uriInfo.getBaseUri()).build().getPath();
-                NewCookie newCookie = new NewCookie(SocialConstants.SOCIAL_REGISTRATION_COOKIE, "", cookiePath, null,
-                        "Expire social cookie", 0, false);
-                logger.info("Expiring social registration cookie: " + SocialConstants.SOCIAL_REGISTRATION_COOKIE + ", path: " + cookiePath);
-                response.addNewCookie(newCookie);
-                socialRequestManager.retrieveData(requestId);
+        // Expire cookie and invalidate requestData
+        String cookiePath = Urls.socialBase(uriInfo.getBaseUri()).build().getPath();
+        NewCookie newCookie = new NewCookie(SocialConstants.SOCIAL_REGISTRATION_COOKIE, "", cookiePath, null,
+                "Expire social cookie", 0, false);
+        logger.info("Expiring social registration cookie: " + SocialConstants.SOCIAL_REGISTRATION_COOKIE + ", path: " + cookiePath);
+        response.addNewCookie(newCookie);
+        socialRequestManager.retrieveData(requestId);
 
-                return tokenService.processLogin(clientId, scope, state, redirectUri, formData);
-            }
-        }.call();
+        return tokenService.processLogin(clientId, scope, state, redirectUri, formData);
     }
 
     private RequestDetails getRequestDetails(Map<String, String[]> queryParams) {

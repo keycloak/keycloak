@@ -3,7 +3,6 @@ package org.keycloak.services.resources;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.logging.Logger;
 import org.keycloak.representations.idm.PublishedRealmRepresentation;
-import org.keycloak.services.models.KeycloakSession;
 import org.keycloak.services.models.RealmModel;
 
 import javax.ws.rs.GET;
@@ -41,11 +40,7 @@ public class PublicRealmResource {
     @NoCache
     @Produces("application/json")
     public PublishedRealmRepresentation getRealm(@PathParam("realm") String id) {
-        return new Transaction<PublishedRealmRepresentation>() {
-            protected PublishedRealmRepresentation callImpl() {
-                return realmRep(realm, uriInfo);
-            }
-        }.call();
+        return realmRep(realm, uriInfo);
     }
 
     @GET
@@ -53,26 +48,22 @@ public class PublicRealmResource {
     @Path("html")
     @Produces("text/html")
     public String getRealmHtml(@PathParam("realm") String id) {
-        return new Transaction<String>() {
-            protected String callImpl() {
-                StringBuffer html = new StringBuffer();
+        StringBuffer html = new StringBuffer();
 
-                String authUri = TokenService.loginPageUrl(uriInfo).build(realm.getId()).toString();
-                String codeUri = TokenService.accessCodeToTokenUrl(uriInfo).build(realm.getId()).toString();
-                String grantUrl = TokenService.grantAccessTokenUrl(uriInfo).build(realm.getId()).toString();
-                String idGrantUrl = TokenService.grantIdentityTokenUrl(uriInfo).build(realm.getId()).toString();
+        String authUri = TokenService.loginPageUrl(uriInfo).build(realm.getId()).toString();
+        String codeUri = TokenService.accessCodeToTokenUrl(uriInfo).build(realm.getId()).toString();
+        String grantUrl = TokenService.grantAccessTokenUrl(uriInfo).build(realm.getId()).toString();
+        String idGrantUrl = TokenService.grantIdentityTokenUrl(uriInfo).build(realm.getId()).toString();
 
-                html.append("<html><body><h1>Realm: ").append(realm.getName()).append("</h1>");
-                html.append("<p>auth: ").append(authUri).append("</p>");
-                html.append("<p>code: ").append(codeUri).append("</p>");
-                html.append("<p>grant: ").append(grantUrl).append("</p>");
-                html.append("<p>identity grant: ").append(idGrantUrl).append("</p>");
-                html.append("<p>public key: ").append(realm.getPublicKeyPem()).append("</p>");
-                html.append("</body></html>");
+        html.append("<html><body><h1>Realm: ").append(realm.getName()).append("</h1>");
+        html.append("<p>auth: ").append(authUri).append("</p>");
+        html.append("<p>code: ").append(codeUri).append("</p>");
+        html.append("<p>grant: ").append(grantUrl).append("</p>");
+        html.append("<p>identity grant: ").append(idGrantUrl).append("</p>");
+        html.append("<p>public key: ").append(realm.getPublicKeyPem()).append("</p>");
+        html.append("</body></html>");
 
-                return html.toString();
-            }
-        }.call();
+        return html.toString();
     }
 
 

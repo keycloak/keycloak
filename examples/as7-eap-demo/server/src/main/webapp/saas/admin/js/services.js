@@ -110,11 +110,11 @@ module.factory('RoleMapping', function($resource) {
 });
 
 module.factory('User', function($resource) {
-	return $resource('/keycloak-server/ui/api/realms/:realm/users/:userId', {
+	return $resource('/auth-server/rest/saas/admin/realms/:realm/users/:userId', {
 		realm : '@realm',
 		userId : '@userId'
 	}, {
-		save : {
+		update : {
 			method : 'PUT'
 		}
 	});

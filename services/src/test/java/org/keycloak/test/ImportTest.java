@@ -66,7 +66,7 @@ public class ImportTest {
         UserModel admin = defaultRealm.addUser("admin");
         defaultRealm.grantRole(admin, role);
 
-        RealmRepresentation rep = KeycloakTestBase.loadJson("testrealm.json");
+        RealmRepresentation rep = AbstractKeycloakServerTest.loadJson("testrealm.json");
         RealmModel realm = manager.createRealm("demo", rep.getRealm());
         manager.importRealm(rep, realm);
         realm.addRealmAdmin(admin);
@@ -141,7 +141,7 @@ public class ImportTest {
         UserModel admin = defaultRealm.addUser("admin");
         defaultRealm.grantRole(admin, role);
 
-        RealmRepresentation rep = KeycloakTestBase.loadJson("testrealm-demo.json");
+        RealmRepresentation rep = AbstractKeycloakServerTest.loadJson("testrealm-demo.json");
         RealmModel realm = manager.createRealm("demo", rep.getRealm());
         manager.importRealm(rep, realm);
         realm.addRealmAdmin(admin);
