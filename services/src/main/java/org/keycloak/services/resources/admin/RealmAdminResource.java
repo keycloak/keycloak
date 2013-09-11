@@ -6,20 +6,13 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.models.KeycloakSession;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RoleModel;
 import org.keycloak.services.models.UserModel;
-import org.keycloak.services.resources.Transaction;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.InternalServerErrorException;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
+import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
@@ -35,6 +28,12 @@ public class RealmAdminResource {
     protected UserModel admin;
     protected RealmModel realm;
 
+    @Context
+    protected ResourceContext resourceContext;
+
+    @Context
+    protected KeycloakSession session;
+
     public RealmAdminResource(UserModel admin, RealmModel realm) {
         this.admin = admin;
         this.realm = realm;
@@ -42,19 +41,16 @@ public class RealmAdminResource {
 
     @Path("applications")
     public ApplicationsResource getResources() {
-        return new ApplicationsResource(admin, realm);
+        ApplicationsResource applicationsResource = new ApplicationsResource(admin, realm);
+        resourceContext.initResource(applicationsResource);
+        return applicationsResource;
     }
 
     @GET
     @NoCache
     @Produces("application/json")
     public RealmRepresentation getRealm() {
-        return new Transaction<RealmRepresentation>() {
-            @Override
-            protected RealmRepresentation callImpl() {
-                return new RealmManager(session).toRepresentation(realm);
-            }
-        }.call();
+        return new RealmManager(session).toRepresentation(realm);
     }
 
 
@@ -63,31 +59,20 @@ public class RealmAdminResource {
     @NoCache
     @Produces("application/json")
     public List<RoleRepresentation> getRoles() {
-        return new Transaction<List<RoleRepresentation>>() {
-            @Override
-            protected List<RoleRepresentation> callImpl() {
-                List<RoleModel> roleModels = realm.getRoles();
-                List<RoleRepresentation> roles = new ArrayList<RoleRepresentation>();
-                for (RoleModel roleModel : roleModels) {
-                    RoleRepresentation role = new RoleRepresentation(roleModel.getName(), roleModel.getDescription());
-                    roles.add(role);
-                }
-                return roles;
-            }
-        }.call();
+        List<RoleModel> roleModels = realm.getRoles();
+        List<RoleRepresentation> roles = new ArrayList<RoleRepresentation>();
+        for (RoleModel roleModel : roleModels) {
+            RoleRepresentation role = new RoleRepresentation(roleModel.getName(), roleModel.getDescription());
+            roles.add(role);
+        }
+        return roles;
     }
 
     @PUT
     @Consumes("application/json")
     public void updateRealm(final RealmRepresentation rep) {
-        new Transaction() {
-            @Override
-            protected void runImpl() {
-                logger.info("updating realm: " + rep.getRealm());
-                new RealmManager(session).updateRealm(rep, realm);
-            }
-        }.run();
-
+        logger.info("updating realm: " + rep.getRealm());
+        new RealmManager(session).updateRealm(rep, realm);
     }
 
     @Path("roles/{id}")
@@ -95,18 +80,13 @@ public class RealmAdminResource {
     @NoCache
     @Produces("application/json")
     public RoleRepresentation getRole(final @PathParam("id") String id) {
-        return new Transaction<RoleRepresentation>() {
-            @Override
-            protected RoleRepresentation callImpl() {
-                RoleModel roleModel = realm.getRoleById(id);
-                if (roleModel == null) {
-                    throw new NotFoundException();
-                }
-                RoleRepresentation rep = new RoleRepresentation(roleModel.getName(), roleModel.getDescription());
-                rep.setId(roleModel.getId());
-                return rep;
-            }
-        }.call();
+        RoleModel roleModel = realm.getRoleById(id);
+        if (roleModel == null) {
+            throw new NotFoundException();
+        }
+        RoleRepresentation rep = new RoleRepresentation(roleModel.getName(), roleModel.getDescription());
+        rep.setId(roleModel.getId());
+        return rep;
     }
 
 
@@ -114,39 +94,27 @@ public class RealmAdminResource {
     @PUT
     @Consumes("application/json")
     public void updateRole(final @PathParam("id") String id, final RoleRepresentation rep) {
-        new Transaction() {
-            @Override
-            protected void runImpl() {
-                RoleModel role = realm.getRoleById(id);
-                if (role == null) {
-                   throw new NotFoundException();
-                }
-                role.setName(rep.getName());
-                role.setDescription(rep.getDescription());
-            }
-        }.run();
-
+        RoleModel role = realm.getRoleById(id);
+        if (role == null) {
+            throw new NotFoundException();
+        }
+        role.setName(rep.getName());
+        role.setDescription(rep.getDescription());
     }
 
     @Path("roles")
     @POST
     @Consumes("application/json")
     public Response createRole(final @Context UriInfo uriInfo, final RoleRepresentation rep) {
-        return new Transaction<Response>() {
-            @Override
-            protected Response callImpl() {
-                if (realm.getRole(rep.getName()) != null) {
-                   throw new InternalServerErrorException(); // todo appropriate status here.
-                }
-                RoleModel role = realm.addRole(rep.getName());
-                if (role == null) {
-                    throw new NotFoundException();
-                }
-                role.setDescription(rep.getDescription());
-                return Response.created(uriInfo.getAbsolutePathBuilder().path(role.getId()).build()).build();
-            }
-        }.call();
-
+        if (realm.getRole(rep.getName()) != null) {
+            throw new InternalServerErrorException(); // todo appropriate status here.
+        }
+        RoleModel role = realm.addRole(rep.getName());
+        if (role == null) {
+            throw new NotFoundException();
+        }
+        role.setDescription(rep.getDescription());
+        return Response.created(uriInfo.getAbsolutePathBuilder().path(role.getId()).build()).build();
     }
 
 

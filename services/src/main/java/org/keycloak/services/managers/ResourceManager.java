@@ -1,12 +1,7 @@
 package org.keycloak.services.managers;
 
 import org.keycloak.representations.idm.*;
-import org.keycloak.representations.idm.ApplicationRepresentation;
-import org.keycloak.services.models.RealmModel;
-import org.keycloak.services.models.ApplicationModel;
-import org.keycloak.services.models.RoleModel;
-import org.keycloak.services.models.UserCredentialModel;
-import org.keycloak.services.models.UserModel;
+import org.keycloak.services.models.*;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

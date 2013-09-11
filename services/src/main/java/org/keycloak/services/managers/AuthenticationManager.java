@@ -16,11 +16,7 @@ import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.SaasService;
 
 import javax.ws.rs.NotAuthorizedException;
-import javax.ws.rs.core.Cookie;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.NewCookie;
-import javax.ws.rs.core.UriInfo;
+import javax.ws.rs.core.*;
 import java.net.URI;
 import java.util.HashSet;
 import java.util.List;

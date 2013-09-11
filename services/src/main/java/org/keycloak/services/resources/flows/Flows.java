@@ -21,12 +21,12 @@
  */
 package org.keycloak.services.resources.flows;
 
-import javax.ws.rs.core.UriInfo;
-
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.models.RealmModel;
+
+import javax.ws.rs.core.UriInfo;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

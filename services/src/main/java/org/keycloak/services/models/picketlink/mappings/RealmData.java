@@ -1,6 +1,5 @@
 package org.keycloak.services.models.picketlink.mappings;
 
-import org.picketlink.idm.jpa.annotations.AttributeValue;
 import org.picketlink.idm.model.AbstractPartition;
 import org.picketlink.idm.model.annotation.AttributeProperty;
 

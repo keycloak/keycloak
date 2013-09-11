@@ -5,16 +5,13 @@ import org.jboss.resteasy.logging.Logger;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceManager;
-import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.ApplicationModel;
+import org.keycloak.services.models.KeycloakSession;
+import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.UserModel;
-import org.keycloak.services.resources.Transaction;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.PUT;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
 /**
@@ -27,6 +24,9 @@ public class ApplicationResource {
     protected RealmModel realm;
     protected ApplicationModel applicationModel;
 
+    @Context
+    protected KeycloakSession session;
+
     public ApplicationResource(UserModel admin, RealmModel realm, ApplicationModel applicationModel) {
         this.admin = admin;
         this.realm = realm;
@@ -36,13 +36,8 @@ public class ApplicationResource {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     public void update(final ApplicationRepresentation rep) {
-        new Transaction<Void>() {
-            @Override
-            protected void runImpl() {
-                ResourceManager resourceManager = new ResourceManager(new RealmManager(session));
-                resourceManager.updateResource(rep, applicationModel);
-            }
-        }.run();
+        ResourceManager resourceManager = new ResourceManager(new RealmManager(session));
+        resourceManager.updateResource(rep, applicationModel);
     }
 
 
@@ -50,12 +45,7 @@ public class ApplicationResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public ApplicationRepresentation getResource(final @PathParam("id") String id) {
-        return new Transaction<ApplicationRepresentation>() {
-            @Override
-            protected ApplicationRepresentation callImpl() {
-               ResourceManager resourceManager = new ResourceManager(new RealmManager(session));
-                return resourceManager.toRepresentation(applicationModel);
-            }
-        }.call();
+        ResourceManager resourceManager = new ResourceManager(new RealmManager(session));
+        return resourceManager.toRepresentation(applicationModel);
     }
 }

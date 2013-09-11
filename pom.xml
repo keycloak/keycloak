@@ -9,7 +9,8 @@
     <packaging>pom</packaging>
 
     <properties>
-        <resteasy.version>3.0.2.Final</resteasy.version>
+        <resteasy.version>3.0.4.Final</resteasy.version>
+        <undertow.version>1.0.0.Beta12</undertow.version>
         <picketlink.version>2.5.0.Beta6</picketlink.version>
     </properties>
 
@@ -108,7 +109,21 @@
                 <groupId>org.jboss.resteasy</groupId>
                 <artifactId>tjws</artifactId>
                 <version>${resteasy.version}</version>
-                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.resteasy</groupId>
+                <artifactId>resteasy-undertow</artifactId>
+                <version>${resteasy.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.undertow</groupId>
+                <artifactId>undertow-servlet</artifactId>
+                <version>${undertow.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.undertow</groupId>
+                <artifactId>undertow-core</artifactId>
+                <version>${undertow.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.codehaus.jackson</groupId>
@@ -131,9 +146,9 @@
                 <version>1.9.12</version>
             </dependency>
             <dependency>
-                <groupId>javax.servlet</groupId>
-                <artifactId>servlet-api</artifactId>
-                <version>2.5</version>
+                <groupId>org.jboss.spec.javax.servlet</groupId>
+                <artifactId>jboss-servlet-api_3.0_spec</artifactId>
+                <version>1.0.1.Final</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.resteasy</groupId>
