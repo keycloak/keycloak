@@ -1,0 +1,258 @@
+/* Commom elements */
+body {
+  background-color: #f9f9f9;
+  font-size: 1em;
+  color: #4d5258;
+  font-family: "Open Sans", sans-serif;
+}
+.bs-sidebar {
+  background-color: #f9f9f9;
+  padding-top: 4.3em;
+  padding-right: 0;
+  padding-left: 0;
+  z-index: 20;
+}
+.bs-sidebar ul li {
+  margin-bottom: 0.5em;
+}
+.bs-sidebar ul li a {
+  font-size: 1.3em;
+  font-family: "Open Sans", sans-serif;
+  padding-left: 3em;
+  color: #4d5258;
+  line-height: 2.07692307692308em;
+  display: block;
+  border-width: 1px 0 1px 1px;
+  border-style: solid;
+  border-color: #f9f9f9;
+}
+.bs-sidebar ul li a:hover {
+  text-decoration: none;
+  color: #777777;
+}
+.bs-sidebar ul li.active a {
+  background-color: #c7e5f0;
+  border-color: #56bae0;
+  font-weight: bold;
+}
+#content-area {
+  padding: 0;
+  z-index: 10;
+  border-width: 0 1px;
+  border-color: #cecece;
+  border-style: solid;
+}
+#content-area .top-nav {
+  background-color: #f6f6f6;
+}
+#content-area .top-nav ul.rcue-tabs {
+  border-color: #cecece;
+  font-size: 1em;
+  margin-bottom: 0;
+}
+#content-area .top-nav ul.rcue-tabs li {
+  margin: 0 0.5em -1px 0;
+}
+#content-area .top-nav ul.rcue-tabs li a {
+  font-size: 1.3em;
+  line-height: 3.23076923076923em;
+  display: block;
+  padding: 0 0.76923076923077em;
+  color: #4d5258;
+}
+#content-area .top-nav ul.rcue-tabs li a:hover {
+  color: #777777;
+}
+#content-area .top-nav ul.rcue-tabs li.active a {
+  color: #0e9cd3;
+}
+#content-area .top-nav ul.rcue-tabs li:first-child {
+  margin-left: 1.5em;
+}
+#content-area #content {
+  padding: 1em 3em 3em 3em;
+  background: #fff;
+}
+#content-area #content h2 {
+  font-family: "Open Sans", sans-serif;
+  font-weight: 100;
+  font-size: 2.4em;
+  margin-bottom: 1.04166666666667em;
+}
+#content-area #content h2 span {
+  color: #a1a1a1;
+}
+#content-area #content p.subtitle {
+  color: #B7B7B7;
+  float: right;
+  font-size: 1.1em;
+  margin-top: 2.72727272727273em;
+}
+#content-area #content p.subtitle .required {
+  color: #CB2915;
+}
+#content-area #content p.subtitle + form {
+  clear: both;
+}
+#content-area #content fieldset {
+  margin-top: 1.5em;
+}
+#content-area #content .tooltip-box fieldset {
+  margin: 0;
+}
+#content-area #content .input-group {
+  display: inline-table;
+  width: 20em;
+}
+#content-area #content .input-group input[type="text"] {
+  border-radius: 2px 0 0 2px;
+}
+#content-area #content .input-group button {
+  border-radius: 0 2px 2px 0;
+  border-left: none;
+}
+#content-area #content .input-select {
+  height: 3.6em;
+}
+#content-area #content form a.bottom {
+  font-size: 1.1em;
+  display: inline-block;
+  margin-top: 1.36363636363636em;
+}
+.tooltip {
+  font-family: "Open Sans", sans-serif;
+  font-size: 1.1em;
+  text-align: left;
+  line-height: 1.63636363636364em;
+}
+.tooltip .tooltip.in {
+  opacity: 0.85;
+  filter: alpha(opacity=85);
+}
+.tooltip .tooltip-inner {
+  background-color: #434343;
+  border-radius: 1px;
+  padding: 5px 12px;
+  text-align: left;
+  max-width: 220px;
+}
+.tooltip.right {
+  padding: 0 8px;
+}
+.tooltip.right .tooltip-arrow {
+  border-right-color: #434343;
+  border-width: 8px 8px 8px 0;
+  margin-top: -8px;
+}
+#container-right-bg {
+  background-color: #fff;
+  border-width: 0 1px 0 1px;
+  border-style: solid;
+  border-color: #cecece;
+  bottom: 0;
+  margin-left: 292.5px;
+  position: fixed;
+  top: 70px;
+  width: 877.5px;
+}
+/* Page: Realm Users */
+.realm-users caption {
+  display: none;
+}
+table thead tr th {
+  font-size: 1.1em;
+}
+table thead tr th span {
+  font-size: 0.90909090909091em;
+}
+table thead tr th span button {
+  margin: 0;
+}
+table thead tr:first-child th {
+  padding: 5px 7px;
+}
+table a:hover {
+  color: #0099D3;
+}
+.advanced-search-comp {
+  position: relative;
+  display: inline-block;
+}
+.advanced-search-comp .advanced-search-link {
+  font-weight: normal;
+  margin-left: 1em;
+}
+.tooltip-box {
+  position: absolute;
+  font-size: 1em;
+  background-image: url("img/tooltip-box-arrow-right-up.svg");
+  background-position: right top;
+  background-repeat: no-repeat;
+  padding-top: 1em;
+  right: 0;
+  top: 1.5em;
+  font-size: 0.90909090909091em;
+}
+.tooltip-box fieldset {
+  width: 30.8em;
+  padding-left: 1.5em;
+  padding-right: 1.5em;
+  background-color: #fff;
+  border: 1px solid #b6b6b6;
+  border-top: none;
+  border-radius: 0 2px 2px 2px;
+  box-shadow: 0px 2px 2px rgba(0, 0, 0, 0.15);
+}
+.tooltip-box fieldset legend {
+  display: none;
+}
+.tooltip-box fieldset label {
+  width: 6em;
+}
+.tooltip-box fieldset .form-actions {
+  margin: 0;
+  padding: 1em 1.5em 1em 0;
+  background-color: #f8f8f8;
+  display: block;
+  float: none;
+  margin-right: -1.5em;
+  margin-left: -1.5em;
+}
+td.token-cell button {
+  margin-top: -1px;
+}
+/* Break Points */
+@media (max-width: 1200px) {
+  #container-right-bg {
+    margin-left: 242.5px;
+    width: 727.5px;
+  }
+}
+@media (max-width: 992px) {
+  .bs-sidebar {
+    padding-top: 2em;
+    width: 100%;
+  }
+  .bs-sidebar ul li a {
+    border-width: 1px;
+  }
+  #content-area .top-nav {
+    border-top: 1px solid #cecece;
+  }
+  #container-right-bg {
+    margin-left: 0;
+    width: 750px;
+  }
+}
+@media (max-width: 768px) {
+  .container {
+    min-width: 580px;
+  }
+  #content-area {
+    border: none;
+  }
+  #container-right-bg {
+    border: none;
+    width: 100%;
+  }
+}

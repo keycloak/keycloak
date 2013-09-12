@@ -57,9 +57,10 @@
         <module>core</module>
         <module>services</module>
         <module>integration</module>
-        <module>examples</module>
         <module>social</module>
         <module>forms</module>
+        <module>admin-ui-styles</module>
+        <module>examples</module>
         <!--<module>ui</module> -->
     </modules>
 

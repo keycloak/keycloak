@@ -1,0 +1,149 @@
+//
+// Responsive: Utility classes
+// --------------------------------------------------
+
+
+// IE10 Metro responsive
+// Required for Windows 8 Metro split-screen snapping with IE10
+//
+// Source: http://timkadlec.com/2012/10/ie10-snap-mode-and-responsive-design/
+@-ms-viewport{
+  width: device-width;
+}
+
+// IE10 on Windows Phone 8
+// IE10 on WP8 doesn't report CSS pixels, but actual device pixels. In
+// other words, say on a Lumia, you'll get 768px as the device width,
+// meaning users will see the tablet styles and not phone styles.
+//
+// Alternatively you can override this with JS (see source below), but
+// we won't be doing that here given our limited scope.
+//
+// Source: http://timkadlec.com/2013/01/windows-phone-8-and-device-width/
+@media screen and (max-width: 400px) {
+  @-ms-viewport{
+    width: 320px;
+  }
+}
+
+// Hide from screenreaders and browsers
+// Credit: HTML5 Boilerplate
+.hidden {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+// Visibility utilities
+
+.visible-xs {
+  .responsive-visibility();
+  @media (min-width: @screen-tablet) and (max-width: @screen-tablet-max) {
+    .responsive-invisibility();
+  }
+  @media (min-width: @screen-desktop) and (max-width: @screen-desktop-max) {
+    .responsive-invisibility();
+  }
+  @media (min-width: @screen-large-desktop) {
+    .responsive-invisibility();
+  }
+}
+.visible-sm {
+  .responsive-invisibility();
+  @media (min-width: @screen-tablet) and (max-width: @screen-tablet-max) {
+    .responsive-visibility();
+  }
+  @media (min-width: @screen-desktop) and (max-width: @screen-desktop-max) {
+    .responsive-invisibility();
+  }
+  @media (min-width: @screen-large-desktop) {
+    .responsive-invisibility();
+  }
+}
+.visible-md {
+  .responsive-invisibility();
+  @media (min-width: @screen-tablet) and (max-width: @screen-tablet-max) {
+    .responsive-invisibility();
+  }
+  @media (min-width: @screen-desktop) and (max-width: @screen-desktop-max) {
+    .responsive-visibility();
+  }
+  @media (min-width: @screen-large-desktop) {
+    .responsive-invisibility();
+  }
+}
+.visible-lg {
+  .responsive-invisibility();
+  @media (min-width: @screen-tablet) and (max-width: @screen-tablet-max) {
+    .responsive-invisibility();
+  }
+  @media (min-width: @screen-desktop) and (max-width: @screen-desktop-max) {
+    .responsive-invisibility();
+  }
+  @media (min-width: @screen-large-desktop) {
+    .responsive-visibility();
+  }
+}
+
+.hidden-xs {
+  .responsive-invisibility();
+  @media (min-width: @screen-tablet) and (max-width: @screen-tablet-max) {
+    .responsive-visibility();
+  }
+  @media (min-width: @screen-desktop) and (max-width: @screen-desktop-max) {
+    .responsive-visibility();
+  }
+  @media (min-width: @screen-large-desktop) {
+    .responsive-visibility();
+  }
+}
+.hidden-sm {
+  .responsive-visibility();
+  @media (min-width: @screen-tablet) and (max-width: @screen-tablet-max) {
+    .responsive-invisibility();
+  }
+  @media (min-width: @screen-desktop) and (max-width: @screen-desktop-max) {
+    .responsive-visibility();
+  }
+  @media (min-width: @screen-large-desktop) {
+    .responsive-visibility();
+  }
+}
+.hidden-md {
+  .responsive-visibility();
+  @media (min-width: @screen-tablet) and (max-width: @screen-tablet-max) {
+    .responsive-visibility();
+  }
+  @media (min-width: @screen-desktop) and (max-width: @screen-desktop-max) {
+    .responsive-invisibility();
+  }
+  @media (min-width: @screen-large-desktop) {
+    .responsive-visibility();
+  }
+}
+.hidden-lg {
+  .responsive-visibility();
+  @media (min-width: @screen-tablet) and (max-width: @screen-tablet-max) {
+    .responsive-visibility();
+  }
+  @media (min-width: @screen-desktop) and (max-width: @screen-desktop-max) {
+    .responsive-visibility();
+  }
+  @media (min-width: @screen-large-desktop) {
+    .responsive-invisibility();
+  }
+}
+
+// Print utilities
+.visible-print {
+  .responsive-invisibility();
+}
+.hidden-print  { }
+
+@media print {
+  .visible-print {
+    .responsive-visibility();
+  }
+  .hidden-print {
+    .responsive-invisibility();
+  }
+}
