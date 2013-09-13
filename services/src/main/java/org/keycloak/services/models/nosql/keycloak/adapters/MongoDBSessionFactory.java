@@ -43,14 +43,14 @@ public class MongoDBSessionFactory implements KeycloakSessionFactory {
     private final MongoClient mongoClient;
     private final NoSQL mongoDB;
 
-    public MongoDBSessionFactory(String host, int port, String dbName, boolean removeAllObjectsAtStartup) {
-        logger.info(String.format("Going to use MongoDB database. host: %s, port: %d, databaseName: %s, removeAllObjectsAtStartup: %b", host, port, dbName, removeAllObjectsAtStartup));
+    public MongoDBSessionFactory(String host, int port, String dbName, boolean dropDatabaseOnStartup) {
+        logger.info(String.format("Going to use MongoDB database. host: %s, port: %d, databaseName: %s, removeAllObjectsAtStartup: %b", host, port, dbName, dropDatabaseOnStartup));
         try {
             // TODO: authentication support
             mongoClient = new MongoClient(host, port);
 
             DB db = mongoClient.getDB(dbName);
-            mongoDB = new MongoDBImpl(db, removeAllObjectsAtStartup, MANAGED_DATA_TYPES);
+            mongoDB = new MongoDBImpl(db, dropDatabaseOnStartup, MANAGED_DATA_TYPES);
 
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);

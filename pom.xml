@@ -254,6 +254,11 @@
                 <artifactId>mongo-java-driver</artifactId>
                 <version>2.11.2</version>
             </dependency>
+            <dependency>
+                <groupId>de.flapdoodle.embed</groupId>
+                <artifactId>de.flapdoodle.embed.mongo</artifactId>
+                <version>1.27</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

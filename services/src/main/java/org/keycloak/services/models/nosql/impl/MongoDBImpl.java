@@ -48,7 +48,7 @@ public class MongoDBImpl implements NoSQL {
             new ConcurrentHashMap<Class<? extends NoSQLObject>, ObjectInfo>();
 
 
-    public MongoDBImpl(DB database, boolean removeAllObjectsAtStartup, Class<? extends NoSQLObject>[] managedDataTypes) {
+    public MongoDBImpl(DB database, boolean dropDatabaseOnStartup, Class<? extends NoSQLObject>[] managedDataTypes) {
         this.database = database;
 
         typeConverter = new TypeConverter();
@@ -70,20 +70,9 @@ public class MongoDBImpl implements NoSQL {
             typeConverter.addDBObjectConverter(new BasicDBObjectConverter(this, typeConverter, type));
         }
 
-        if (removeAllObjectsAtStartup) {
-            for (Class<? extends NoSQLObject> type : managedDataTypes) {
-                ObjectInfo objectInfo = getObjectInfo(type);
-                String collectionName = objectInfo.getDbCollectionName();
-                if (collectionName != null) {
-                    logger.debug("Dropping collection " + collectionName);
-
-                    DBCollection dbCollection = this.database.getCollection(collectionName);
-                    dbCollection.drop();
-                }  else {
-                    logger.debug("Skip removing objects of type " + type + " as it doesn't have it's own collection");
-                }
-            }
-            logger.info("All objects successfully removed from MongoDB");
+        if (dropDatabaseOnStartup) {
+            this.database.dropDatabase();
+            logger.info("Database " + this.database.getName() + " dropped in MongoDB");
         }
     }
 

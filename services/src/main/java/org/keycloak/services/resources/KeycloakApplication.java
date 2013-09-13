@@ -37,6 +37,16 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class KeycloakApplication extends Application {
+
+    public static final String SESSION_FACTORY = "keycloak.sessionFactory";
+    public static final String SESSION_FACTORY_PICKETLINK = "picketlink";
+    public static final String SESSION_FACTORY_MONGO = "mongo";
+    public static final String MONGO_HOST = "keycloak.mongodb.host";
+    public static final String MONGO_PORT = "keycloak.mongodb.port";
+    public static final String MONGO_DB_NAME = "keycloak.mongodb.databaseName";
+    public static final String MONGO_DROP_DB_ON_STARTUP = "keycloak.mongodb.dropDatabaseOnStartup";
+
+
     protected Set<Object> singletons = new HashSet<Object>();
     protected Set<Class<?>> classes = new HashSet<Class<?>>();
 
@@ -62,8 +72,8 @@ public class KeycloakApplication extends Application {
     }
 
     public static KeycloakSessionFactory buildSessionFactory() {
-        String sessionFactoryType = System.getProperty("keycloak.sessionFactory", "picketlink");
-        if ("mongo".equals(sessionFactoryType)) {
+        String sessionFactoryType = System.getProperty(SESSION_FACTORY, SESSION_FACTORY_PICKETLINK);
+        if (SESSION_FACTORY_MONGO.equals(sessionFactoryType)) {
             return buildMongoDBSessionFactory();
         } else {
             return buildPicketlinkSessionFactory();
@@ -76,11 +86,11 @@ public class KeycloakApplication extends Application {
     }
 
     private static KeycloakSessionFactory buildMongoDBSessionFactory() {
-        String host = System.getProperty("keycloak.mongodb.host", "localhost");
-        int port = Integer.parseInt(System.getProperty("keycloak.mongodb.port", "27017"));
-        String dbName = System.getProperty("keycloak.mongodb.databaseName", "keycloak");
-        boolean removeAllObjectsOnStartup = Boolean.parseBoolean(System.getProperty("keycloak.mongodb.removeAllObjectsOnStartup", "true"));
-        return new MongoDBSessionFactory(host, port, dbName, removeAllObjectsOnStartup);
+        String host = System.getProperty(MONGO_HOST, "localhost");
+        int port = Integer.parseInt(System.getProperty(MONGO_PORT, "27017"));
+        String dbName = System.getProperty(MONGO_DB_NAME, "keycloak");
+        boolean dropDatabaseOnStartup = Boolean.parseBoolean(System.getProperty(MONGO_DROP_DB_ON_STARTUP, "true"));
+        return new MongoDBSessionFactory(host, port, dbName, dropDatabaseOnStartup);
     }
 
     public KeycloakSessionFactory getFactory() {
