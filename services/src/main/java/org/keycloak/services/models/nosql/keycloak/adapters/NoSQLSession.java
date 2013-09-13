@@ -43,6 +43,10 @@ public class NoSQLSession implements KeycloakSession {
 
     @Override
     public RealmModel createRealm(String id, String name) {
+        if (getRealm(id) != null) {
+            throw new IllegalStateException("Realm with id '" + id + "' already exists");
+        }
+
         RealmData newRealm = new RealmData();
         newRealm.setId(id);
         newRealm.setName(name);

@@ -147,10 +147,12 @@
         <dependency>
             <groupId>org.picketlink</groupId>
             <artifactId>picketlink-common</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>mongo-java-driver</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>de.flapdoodle.embed</groupId>
@@ -170,13 +172,11 @@
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-            <version>1.3.161</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-entitymanager</artifactId>
-            <version>3.6.6.Final</version>
             <scope>test</scope>
         </dependency>
 		<dependency>

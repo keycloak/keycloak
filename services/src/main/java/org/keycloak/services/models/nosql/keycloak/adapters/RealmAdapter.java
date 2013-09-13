@@ -273,6 +273,15 @@ public class RealmAdapter implements RealmModel {
         return new UserAdapter(userData, noSQL);
     }
 
+    // This method doesn't exists on interface actually
+    public void removeUser(String name) {
+        NoSQLQuery query = noSQL.createQueryBuilder()
+                .andCondition("loginName", name)
+                .andCondition("realmId", getOid())
+                .build();
+        noSQL.removeObjects(UserData.class, query);
+    }
+
     @Override
     public RoleAdapter getRole(String name) {
         NoSQLQuery query = noSQL.createQueryBuilder()
@@ -659,6 +668,7 @@ public class RealmAdapter implements RealmModel {
         NoSQLQuery query = noSQL.createQueryBuilder()
                 .andCondition("socialProvider", socialLink.getSocialProvider())
                 .andCondition("socialUsername", socialLink.getSocialUsername())
+                .andCondition("realmId", getOid())
                 .build();
         SocialLinkData socialLinkData = noSQL.loadSingleObject(SocialLinkData.class, query);
 
@@ -696,6 +706,7 @@ public class RealmAdapter implements RealmModel {
         socialLinkData.setSocialProvider(socialLink.getSocialProvider());
         socialLinkData.setSocialUsername(socialLink.getSocialUsername());
         socialLinkData.setUserId(userData.getId());
+        socialLinkData.setRealmId(getOid());
 
         noSQL.saveObject(socialLinkData);
     }
