@@ -3,6 +3,7 @@ package org.keycloak.services.managers;
 import org.jboss.resteasy.logging.Logger;
 import org.keycloak.representations.idm.*;
 import org.keycloak.services.models.*;
+import org.keycloak.services.models.UserModel.RequiredAction;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -77,6 +78,7 @@ public class RealmManager {
         realm.setAutomaticRegistrationAfterSocialLogin(rep.isAutomaticRegistrationAfterSocialLogin());
         realm.setSslNotRequired((rep.isSslNotRequired()));
         realm.setAccessCodeLifespan(rep.getAccessCodeLifespan());
+        realm.setAccessCodeLifespanUserAction(rep.getAccessCodeLifespanUserAction());
         realm.setTokenLifespan(rep.getTokenLifespan());
         if (rep.getRequiredOAuthClientCredentials() != null) {
             realm.updateRequiredOAuthClientCredentials(rep.getRequiredOAuthClientCredentials());
@@ -107,6 +109,7 @@ public class RealmManager {
         newRealm.setSocial(rep.isSocial());
         newRealm.setTokenLifespan(rep.getTokenLifespan());
         newRealm.setAccessCodeLifespan(rep.getAccessCodeLifespan());
+        newRealm.setAccessCodeLifespanUserAction(rep.getAccessCodeLifespanUserAction());
         newRealm.setSslNotRequired(rep.isSslNotRequired());
         newRealm.setCookieLoginAllowed(rep.isCookieLoginAllowed());
         newRealm.setRegistrationAllowed(rep.isRegistrationAllowed());
@@ -206,10 +209,15 @@ public class RealmManager {
 
     public UserModel createUser(RealmModel newRealm, UserRepresentation userRep) {
         UserModel user = newRealm.addUser(userRep.getUsername());
-        user.setEnabled(userRep.isEnabled());
+        user.setStatus(UserModel.Status.valueOf(userRep.getStatus()));
         if (userRep.getAttributes() != null) {
             for (Map.Entry<String, String> entry : userRep.getAttributes().entrySet()) {
                 user.setAttribute(entry.getKey(), entry.getValue());
+            }
+        }
+        if (userRep.getRequiredActions() != null) {
+            for (String requiredAction : userRep.getRequiredActions()) {
+                user.addRequiredAction(RequiredAction.valueOf(requiredAction));
             }
         }
         if (userRep.getCredentials() != null) {
@@ -263,6 +271,7 @@ public class RealmManager {
         rep.setPublicKey(realm.getPublicKeyPem());
         rep.setTokenLifespan(realm.getTokenLifespan());
         rep.setAccessCodeLifespan(realm.getAccessCodeLifespan());
+        rep.setAccessCodeLifespanUserAction(realm.getAccessCodeLifespanUserAction());
         List<RequiredCredentialModel> requiredCredentialModels = realm.getRequiredCredentials();
         if (requiredCredentialModels.size() > 0) {
             rep.setRequiredCredentials(new HashSet<String>());

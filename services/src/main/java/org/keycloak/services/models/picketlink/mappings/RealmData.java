@@ -17,6 +17,7 @@ public class RealmData extends AbstractPartition {
     private boolean automaticRegistrationAfterSocialLogin;
     private int tokenLifespan;
     private int accessCodeLifespan;
+    private int accessCodeLifespanUserAction;
     private String publicKeyPem;
     private String privateKeyPem;
     private String[] defaultRoles;
@@ -107,6 +108,15 @@ public class RealmData extends AbstractPartition {
 
     public void setAccessCodeLifespan(int accessCodeLifespan) {
         this.accessCodeLifespan = accessCodeLifespan;
+    }
+
+    @AttributeProperty
+    public int getAccessCodeLifespanUserAction() {
+        return accessCodeLifespanUserAction;
+    }
+
+    public void setAccessCodeLifespanUserAction(int accessCodeLifespanUserAction) {
+        this.accessCodeLifespanUserAction = accessCodeLifespanUserAction;
     }
 
     @AttributeProperty

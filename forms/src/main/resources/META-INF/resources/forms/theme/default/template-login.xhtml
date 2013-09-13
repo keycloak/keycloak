@@ -3,7 +3,7 @@
 
 <h:head>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-	<title>#{messages.logInTo} #{realm.name}</title>
+	<title><ui:insert name="title" /></title>
 	<link href="#{template.themeConfig['styles']}" rel="stylesheet" />
 	<style>
 body {
@@ -34,7 +34,7 @@ body {
 				<h:panelGroup rendered="#{not empty error.summary}">
 						<div class="feedback error bottom-left show">
 							<p>
-								<strong>#{messages[error.summary]}</strong>
+								<strong id="loginError">#{messages[error.summary]}</strong>
 							</p>
 						</div>
 				</h:panelGroup>

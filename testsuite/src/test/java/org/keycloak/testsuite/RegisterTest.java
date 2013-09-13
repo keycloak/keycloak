@@ -22,6 +22,7 @@
 package org.keycloak.testsuite;
 
 import org.jboss.arquillian.junit.Arquillian;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -32,18 +33,66 @@ import org.junit.runner.RunWith;
 public class RegisterTest extends AbstractDroneTest {
 
     @Test
+    public void registerExistingUser() {
+        appPage.open();
+        loginPage.register();
+
+        Assert.assertTrue(registerPage.isCurrent());
+
+        registerPage.register("name", "email", "username", null, null);
+
+        Assert.assertTrue(registerPage.isCurrent());
+        Assert.assertEquals("Please specify password", registerPage.getError());
+    }
+
+    @Test
+    public void registerUserInvalidPasswordConfirm() {
+        appPage.open();
+        loginPage.register();
+
+        Assert.assertTrue(registerPage.isCurrent());
+
+        registerPage.register("name", "email", "bburke@redhat.com", "password", "invalid");
+
+        Assert.assertTrue(registerPage.isCurrent());
+        Assert.assertEquals("Password confirmation doesn't match", registerPage.getError());
+    }
+
+    @Test
     public void registerUserMissingPassword() {
-        registerUser("registerUserMissingPassword", null, "Please specify password");
+        appPage.open();
+        loginPage.register();
+
+        Assert.assertTrue(registerPage.isCurrent());
+
+        registerPage.register("name", "email", "username", null, null);
+
+        Assert.assertTrue(registerPage.isCurrent());
+        Assert.assertEquals("Please specify password", registerPage.getError());
     }
 
     @Test
     public void registerUserMissingUsername() {
-        registerUser(null, "password", "Please specify username");
+        appPage.open();
+        loginPage.register();
+
+        Assert.assertTrue(registerPage.isCurrent());
+
+        registerPage.register("name", "email", null, "password", "password");
+
+        Assert.assertTrue(registerPage.isCurrent());
+        Assert.assertEquals("Please specify username", registerPage.getError());
     }
 
     @Test
     public void registerUserSuccess() {
-        registerUser("registerUserSuccess", "password");
+        appPage.open();
+        loginPage.register();
+
+        Assert.assertTrue(registerPage.isCurrent());
+
+        registerPage.register("name", "email", "username", "password", "password");
+        Assert.assertTrue(appPage.isCurrent());
     }
 
 }

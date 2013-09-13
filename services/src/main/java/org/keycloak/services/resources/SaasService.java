@@ -8,6 +8,7 @@ import org.jboss.resteasy.spi.NotImplementedYetException;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.AuthenticationManager.AuthenticationStatus;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.models.*;
@@ -217,29 +218,20 @@ public class SaasService {
         }
         String username = formData.getFirst("username");
         UserModel user = realm.getUser(username);
-        if (user == null) {
-            logger.info("Not Authenticated! Incorrect user name");
 
-            return Flows.forms(realm, request).setError(Messages.INVALID_USER).setFormData(formData)
-                    .forwardToLogin();
+        AuthenticationStatus status = authManager.authenticateForm(realm, user, formData);
+
+        switch (status) {
+            case SUCCESS:
+                NewCookie cookie = authManager.createSaasIdentityCookie(realm, user, uriInfo);
+                return Response.status(302).cookie(cookie).location(contextRoot(uriInfo).path(adminPath).build()).build();
+            case ACCOUNT_DISABLED:
+                return Flows.forms(realm, request).setError(Messages.ACCOUNT_DISABLED).setFormData(formData).forwardToLogin();
+            case ACTIONS_REQUIRED:
+                return Flows.forms(realm, request).forwardToAction(user.getRequiredActions().get(0));
+            default:
+                return Flows.forms(realm, request).setError(Messages.INVALID_USER).setFormData(formData).forwardToLogin();
         }
-        if (!user.isEnabled()) {
-            logger.info("Account is disabled, contact admin.");
-
-            return Flows.forms(realm, request).setError(Messages.ACCOUNT_DISABLED)
-                    .setFormData(formData).forwardToLogin();
-        }
-
-        boolean authenticated = authManager.authenticateForm(realm, user, formData);
-        if (!authenticated) {
-            logger.info("Not Authenticated! Invalid credentials");
-
-            return Flows.forms(realm, request).setError(Messages.INVALID_PASSWORD).setFormData(formData)
-                    .forwardToLogin();
-        }
-
-        NewCookie cookie = authManager.createSaasIdentityCookie(realm, user, uriInfo);
-        return Response.status(302).cookie(cookie).location(contextRoot(uriInfo).path(adminPath).build()).build();
     }
 
     @Path("registrations")

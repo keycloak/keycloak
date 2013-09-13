@@ -1,18 +1,26 @@
 package org.keycloak.services.models.picketlink;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.services.models.UserModel;
+import org.keycloak.services.models.utils.ArrayUtils;
 import org.picketlink.idm.IdentityManager;
 import org.picketlink.idm.model.Attribute;
 import org.picketlink.idm.model.sample.User;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class UserAdapter implements UserModel {
+    private static final String KEYCLOAK_TOTP_ATTR = "totpEnabled";
+    private static final String REQUIRED_ACTIONS_ATTR = "requiredActions";
+    private static final String STATUS_ATTR = "status";
+
     protected User user;
     protected IdentityManager idm;
 
@@ -35,9 +43,23 @@ public class UserAdapter implements UserModel {
         return user.isEnabled();
     }
 
+    public UserModel.Status getStatus() {
+        Attribute<UserModel.Status> a = user.getAttribute(STATUS_ATTR);
+        if (a != null) {
+            return a.getValue();
+        } else {
+            return user.isEnabled() ? UserModel.Status.ENABLED : UserModel.Status.DISABLED;
+        }
+    }
+
     @Override
-    public void setEnabled(boolean enabled) {
-        user.setEnabled(enabled);
+    public void setStatus(UserModel.Status status) {
+        user.setAttribute(new Attribute<UserModel.Status>(STATUS_ATTR, status));
+        if (status == UserModel.Status.DISABLED) {
+            user.setEnabled(false);
+        } else {
+            user.setEnabled(true);
+        }
         idm.update(user);
     }
 
@@ -101,4 +123,75 @@ public class UserAdapter implements UserModel {
         }
         return attributes;
     }
+
+    private RequiredAction[] getRequiredActionsArray() {
+        Attribute<?> a = user.getAttribute(REQUIRED_ACTIONS_ATTR);
+        if (a == null) {
+            return null;
+        }
+
+        Object o = a.getValue();
+        if (o instanceof RequiredAction) {
+            return new RequiredAction[] { (RequiredAction) o };
+        } else {
+            return (RequiredAction[]) o;
+        }
+    }
+
+    @Override
+    public List<RequiredAction> getRequiredActions() {
+        RequiredAction[] actions = getRequiredActionsArray();
+        if (actions == null) {
+            return null;
+        } else {
+            return Collections.unmodifiableList(Arrays.asList(actions));
+        }
+    }
+
+    @Override
+    public void addRequiredAction(RequiredAction action) {
+        RequiredAction[] actions = getRequiredActionsArray();
+        if (actions == null) {
+            actions = new RequiredAction[] { action };
+        } else {
+            actions = ArrayUtils.add(actions, action);
+        }
+
+        Attribute<RequiredAction[]> a = new Attribute<RequiredAction[]>(REQUIRED_ACTIONS_ATTR, actions);
+
+        user.setAttribute(a);
+        idm.update(user);
+    }
+
+    @Override
+    public void removeRequiredAction(RequiredAction action) {
+        RequiredAction[] actions = getRequiredActionsArray();
+        if (actions != null) {
+            if (Arrays.binarySearch(actions, action) >= 0) {
+                actions = ArrayUtils.remove(actions, action);
+
+                if (actions.length == 0) {
+                    user.removeAttribute(REQUIRED_ACTIONS_ATTR);
+                } else {
+                    Attribute<RequiredAction[]> a = new Attribute<RequiredAction[]>(REQUIRED_ACTIONS_ATTR, actions);
+                    user.setAttribute(a);
+                }
+
+                idm.update(user);
+            }
+        }
+    }
+
+    @Override
+    public boolean isTotp() {
+        Attribute<Boolean> a = user.getAttribute(KEYCLOAK_TOTP_ATTR);
+        return a != null ? a.getValue() : false;
+    }
+
+    @Override
+    public void setTotp(boolean totp) {
+        user.setAttribute(new Attribute<Boolean>(KEYCLOAK_TOTP_ATTR, totp));
+        idm.update(user);
+    }
+
 }

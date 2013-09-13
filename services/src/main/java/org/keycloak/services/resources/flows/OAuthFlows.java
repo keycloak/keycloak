@@ -93,7 +93,16 @@ public class OAuthFlows {
             return oauthGrantPage(accessCode, client);
         }
 
-        return redirectAccessCode(accessCode, state, redirect);
+        if (user.getRequiredActions() != null) {
+            accessCode.setExpiration(System.currentTimeMillis() / 1000 + realm.getAccessCodeLifespanUserAction());
+            return Flows.forms(realm, request).setCode(accessCode.getCode()).setUser(user).forwardToAction(user.getRequiredActions().get(0));
+        }
+
+        if (redirect != null) {
+            return redirectAccessCode(accessCode, state, redirect);
+        } else {
+            return null;
+        }
     }
 
     public Response oauthGrantPage(AccessCodeEntry accessCode, UserModel client) {

@@ -14,6 +14,7 @@ public class RealmRepresentation {
     protected String realm;
     protected int tokenLifespan;
     protected int accessCodeLifespan;
+    protected int accessCodeLifespanUserAction;
     protected boolean enabled;
     protected boolean sslNotRequired;
     protected boolean cookieLoginAllowed;
@@ -188,6 +189,14 @@ public class RealmRepresentation {
 
     public void setAccessCodeLifespan(int accessCodeLifespan) {
         this.accessCodeLifespan = accessCodeLifespan;
+    }
+
+    public int getAccessCodeLifespanUserAction() {
+        return accessCodeLifespanUserAction;
+    }
+
+    public void setAccessCodeLifespanUserAction(int accessCodeLifespanUserAction) {
+        this.accessCodeLifespanUserAction = accessCodeLifespanUserAction;
     }
 
     public List<RoleRepresentation> getRoles() {

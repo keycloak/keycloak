@@ -69,7 +69,7 @@ public class TotpBean {
     }
 
     public boolean isEnabled() {
-        return "ENABLED".equals(user.getUser().getAttribute("KEYCLOAK_TOTP"));
+        return user.getUser().isTotp();
     }
 
     public String getTotpSecret() {

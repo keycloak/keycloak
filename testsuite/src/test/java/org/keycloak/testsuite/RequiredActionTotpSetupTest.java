@@ -21,20 +21,30 @@
  */
 package org.keycloak.testsuite;
 
+import java.net.MalformedURLException;
+
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
+import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.RegisterPage;
+import org.keycloak.testsuite.pages.TotpPage;
 import org.openqa.selenium.WebDriver;
+import org.picketlink.idm.credential.util.TimeBasedOTP;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public abstract class AbstractDroneTest {
+@RunWith(Arquillian.class)
+public class RequiredActionTotpSetupTest {
 
     @Deployment(name = "app", testable = false, order = 2)
     public static WebArchive appDeployment() {
@@ -43,7 +53,7 @@ public abstract class AbstractDroneTest {
 
     @Deployment(name = "auth-server", testable = false, order = 1)
     public static WebArchive deployment() {
-        return Deployments.deployment();
+        return Deployments.deployment().addAsResource("testrealm-totp.json", "META-INF/testrealm.json");
     }
 
     @Page
@@ -53,10 +63,20 @@ public abstract class AbstractDroneTest {
     protected WebDriver browser;
 
     @Page
+    protected TotpPage totpPage;
+
+    @Page
     protected LoginPage loginPage;
 
     @Page
     protected RegisterPage registerPage;
+
+    protected TimeBasedOTP totp;
+
+    @Before
+    public void before() throws MalformedURLException {
+        totp = new TimeBasedOTP();
+    }
 
     @After
     public void after() {
@@ -64,7 +84,21 @@ public abstract class AbstractDroneTest {
         if (appPage.isCurrent()) {
             appPage.logout();
         }
-        browser.manage().deleteAllCookies();
+    }
+
+    @Test
+    public void setupTotp() {
+        appPage.open();
+
+        loginPage.register();
+        registerPage.register("name", "email", "setupTotp", "password", "password");
+
+        Assert.assertTrue(totpPage.isCurrent());
+
+        totpPage.configure(totp.generate(totpPage.getTotpSecret()));
+
+        Assert.assertTrue(appPage.isCurrent());
+        Assert.assertEquals("setupTotp", appPage.getUser());
     }
 
 }

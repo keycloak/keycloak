@@ -12,6 +12,8 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RequiredCredentialModel;
 import org.keycloak.services.models.UserModel;
+import org.keycloak.services.models.UserModel.RequiredAction;
+import org.keycloak.services.models.UserModel.Status;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.SaasService;
 
@@ -197,7 +199,17 @@ public class AuthenticationManager {
         }
     }
 
-    public boolean authenticateForm(RealmModel realm, UserModel user, MultivaluedMap<String, String> formData) {
+    public AuthenticationStatus authenticateForm(RealmModel realm, UserModel user, MultivaluedMap<String, String> formData) {
+        if (user == null) {
+            logger.info("Not Authenticated! Incorrect user name");
+            return AuthenticationStatus.INVALID_USER;
+        }
+
+        if (!user.isEnabled() && user.getStatus() == Status.DISABLED) {
+            logger.info("Account is disabled, contact admin.");
+            return AuthenticationStatus.ACCOUNT_DISABLED;
+        }
+
         Set<String> types = new HashSet<String>();
 
         List<RequiredCredentialModel> requiredCredentials = null;
@@ -207,37 +219,54 @@ public class AuthenticationManager {
             requiredCredentials = realm.getRequiredOAuthClientCredentials();
         } else {
             requiredCredentials = realm.getRequiredCredentials();
-
-            if (!types.contains(CredentialRepresentation.TOTP) && "ENABLED".equals(user.getAttribute("KEYCLOAK_TOTP"))) {
-                types.add(CredentialRepresentation.TOTP);
-            }
         }
+
         for (RequiredCredentialModel credential : requiredCredentials) {
             types.add(credential.getType());
+        }
+
+        if (types.contains(CredentialRepresentation.TOTP) && !user.isTotp()) {
+            user.addRequiredAction(RequiredAction.CONFIGURE_TOTP);
+            user.setStatus(Status.ACTIONS_REQUIRED);
         }
 
         if (types.contains(CredentialRepresentation.PASSWORD)) {
             String password = formData.getFirst(CredentialRepresentation.PASSWORD);
             if (password == null) {
                 logger.warn("Password not provided");
-                return false;
+                return AuthenticationStatus.MISSING_PASSWORD;
             }
 
-            if (types.contains(CredentialRepresentation.TOTP)) {
+            if (user.isTotp()) {
                 String token = formData.getFirst(CredentialRepresentation.TOTP);
                 if (token == null) {
                     logger.warn("TOTP token not provided");
-                    return false;
+                    return AuthenticationStatus.MISSING_TOTP;
                 }
                 logger.info("validating TOTP");
-                return realm.validateTOTP(user, password, token);
+                if (!realm.validateTOTP(user, password, token)) {
+                    return AuthenticationStatus.INVALID_CREDENTIALS;
+                }
             } else {
                 logger.info("validating password for user: " + user.getLoginName());
-                return realm.validatePassword(user, password);
+                if (!realm.validatePassword(user, password)) {
+                    return AuthenticationStatus.INVALID_CREDENTIALS;
+                }
+            }
+
+            if (user.getStatus() == Status.ACTIONS_REQUIRED) {
+                return AuthenticationStatus.ACTIONS_REQUIRED;
+            } else {
+                return AuthenticationStatus.SUCCESS;
             }
         } else {
             logger.warn("Do not know how to authenticate user");
-            return false;
+            return AuthenticationStatus.FAILED;
         }
     }
+
+    public enum AuthenticationStatus {
+        SUCCESS, ACCOUNT_DISABLED, ACTIONS_REQUIRED, INVALID_USER, INVALID_CREDENTIALS, MISSING_PASSWORD, MISSING_TOTP, FAILED
+    }
+
 }

@@ -31,6 +31,7 @@ import javax.faces.context.FacesContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.UriBuilder;
 
+import org.keycloak.services.resources.flows.FormFlows;
 import org.keycloak.services.resources.flows.Urls;
 
 /**
@@ -56,6 +57,11 @@ public class UrlBean {
 
         UriBuilder b = UriBuilder.fromUri(request.getRequestURI()).replaceQuery(request.getQueryString())
                 .replacePath(request.getContextPath()).path("rest");
+
+        if (request.getAttribute(FormFlows.CODE) != null) {
+            b.queryParam("code", request.getAttribute(FormFlows.CODE));
+        }
+
         baseURI = b.build();
     }
 

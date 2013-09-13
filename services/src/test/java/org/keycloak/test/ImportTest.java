@@ -56,6 +56,7 @@ public class ImportTest {
         defaultRealm.setEnabled(true);
         defaultRealm.setTokenLifespan(300);
         defaultRealm.setAccessCodeLifespan(60);
+        defaultRealm.setAccessCodeLifespanUserAction(600);
         defaultRealm.setSslNotRequired(false);
         defaultRealm.setCookieLoginAllowed(true);
         defaultRealm.setRegistrationAllowed(true);
@@ -131,6 +132,7 @@ public class ImportTest {
         defaultRealm.setEnabled(true);
         defaultRealm.setTokenLifespan(300);
         defaultRealm.setAccessCodeLifespan(60);
+        defaultRealm.setAccessCodeLifespanUserAction(600);
         defaultRealm.setSslNotRequired(false);
         defaultRealm.setCookieLoginAllowed(true);
         defaultRealm.setRegistrationAllowed(true);
@@ -147,6 +149,7 @@ public class ImportTest {
         realm.addRealmAdmin(admin);
 
         Assert.assertTrue(realm.isAutomaticRegistrationAfterSocialLogin());
+        Assert.assertEquals(600, realm.getAccessCodeLifespanUserAction());
         verifyRequiredCredentials(realm.getRequiredCredentials(), "password");
         verifyRequiredCredentials(realm.getRequiredApplicationCredentials(), "totp");
         verifyRequiredCredentials(realm.getRequiredOAuthClientCredentials(), "cert");

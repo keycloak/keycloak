@@ -14,6 +14,7 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.AuthenticationManager.AuthenticationStatus;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.managers.TokenManager;
@@ -44,6 +45,7 @@ import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Providers;
 
 import java.security.PrivateKey;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -132,15 +134,12 @@ public class TokenService {
             throw new NotAuthorizedException("Disabled realm");
         }
         UserModel user = realm.getUser(username);
-        if (user == null) {
-            throw new NotAuthorizedException("No user");
+
+        AuthenticationStatus status = authManager.authenticateForm(realm, user, form);
+        if (status != AuthenticationStatus.SUCCESS) {
+            throw new NotAuthorizedException(status);
         }
-        if (!user.isEnabled()) {
-            throw new NotAuthorizedException("Disabled user.");
-        }
-        if (!authManager.authenticateForm(realm, user, form)) {
-            throw new NotAuthorizedException("FORM");
-        }
+
         tokenManager = new TokenManager();
         SkeletonKeyToken token = authManager.createIdentityToken(realm, username);
         String encoded = tokenManager.encodeToken(realm, token);
@@ -167,7 +166,7 @@ public class TokenService {
         if (!user.isEnabled()) {
             throw new NotAuthorizedException("Disabled user.");
         }
-        if (authManager.authenticateForm(realm, user, form)) {
+        if (authManager.authenticateForm(realm, user, form) != AuthenticationStatus.SUCCESS) {
             throw new NotAuthorizedException("Auth failed");
         }
         SkeletonKeyToken token = tokenManager.createAccessToken(realm, user);
@@ -194,38 +193,23 @@ public class TokenService {
         if (!client.isEnabled()) {
             return oauth.forwardToSecurityFailure("Login requester not enabled.");
         }
+
         String username = formData.getFirst("username");
         UserModel user = realm.getUser(username);
-        if (user == null) {
-            logger.error("Incorrect user name.");
 
-            return Flows.forms(realm, request).setError(Messages.INVALID_USER).setFormData(formData)
-                    .forwardToLogin();
+        AuthenticationStatus status = authManager.authenticateForm(realm, user, formData);
+
+        switch (status) {
+            case SUCCESS:
+            case ACTIONS_REQUIRED:
+                return oauth.processAccessCode(scopeParam, state, redirect, client, user);
+            case ACCOUNT_DISABLED:
+                return Flows.forms(realm, request).setError(Messages.ACCOUNT_DISABLED).setFormData(formData).forwardToLogin();
+            case MISSING_TOTP:
+                return Flows.forms(realm, request).setFormData(formData).forwardToLoginTotp();
+            default:
+                return Flows.forms(realm, request).setError(Messages.INVALID_USER).setFormData(formData).forwardToLogin();
         }
-
-        if (!user.isEnabled()) {
-            return oauth.forwardToSecurityFailure("Your account is not enabled.");
-        }
-
-        if ("ENABLED".equals(user.getAttribute("KEYCLOAK_TOTP")) && Validation.isEmpty(formData.getFirst("totp"))) {
-            return Flows.forms(realm, request).setFormData(formData).forwardToLoginTotp();
-        } else {
-            for (RequiredCredentialModel c : realm.getRequiredCredentials()) {
-                if (c.getType().equals(CredentialRepresentation.TOTP)) {
-                    return Flows.forms(realm, request).forwardToTotp();
-                }
-            }
-        }
-
-        boolean authenticated = authManager.authenticateForm(realm, user, formData);
-        if (!authenticated) {
-            logger.error("Authentication failed");
-
-            return Flows.forms(realm, request).setError(Messages.INVALID_PASSWORD).setFormData(formData)
-                    .forwardToLogin();
-        }
-
-        return oauth.processAccessCode(scopeParam, state, redirect, client, user);
     }
 
     @Path("registrations")
@@ -369,8 +353,8 @@ public class TokenService {
             return Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build();
         }
 
-        boolean authenticated = authManager.authenticateForm(realm, client, formData);
-        if (!authenticated) {
+        AuthenticationStatus status = authManager.authenticateForm(realm, client, formData);
+        if (status != AuthenticationStatus.SUCCESS) {
             Map<String, String> error = new HashMap<String, String>();
             error.put("error", "unauthorized_client");
             return Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build();

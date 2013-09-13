@@ -19,7 +19,7 @@ public class UserManager {
         rep.setEmail(user.getEmail());
         rep.setLastName(user.getLastName());
         rep.setFirstName(user.getFirstName());
-        rep.setEnabled(user.isEnabled());
+        rep.setStatus(user.getStatus().name());
         rep.setUsername(user.getLoginName());
         for (Map.Entry<String, String> entry : user.getAttributes().entrySet()) {
             rep.attribute(entry.getKey(), entry.getValue());
@@ -29,7 +29,7 @@ public class UserManager {
 
     public UserModel createUser(RealmModel newRealm, UserRepresentation userRep) {
         UserModel user = newRealm.addUser(userRep.getUsername());
-        user.setEnabled(userRep.isEnabled());
+        user.setStatus(UserModel.Status.valueOf(userRep.getStatus()));
         user.setEmail(userRep.getEmail());
         user.setFirstName(userRep.getFirstName());
         user.setLastName(userRep.getLastName());
@@ -56,10 +56,15 @@ public class UserManager {
      * @param userRep
      */
     public void updateUserAsAdmin(UserModel user, UserRepresentation userRep) {
-        user.setEnabled(userRep.isEnabled());
+        user.setStatus(UserModel.Status.valueOf(userRep.getStatus()));
         user.setEmail(userRep.getEmail());
         user.setFirstName(userRep.getFirstName());
         user.setLastName(userRep.getLastName());
+        if (userRep.getAttributes() != null) {
+            for (Map.Entry<String, String> entry : userRep.getAttributes().entrySet()) {
+                user.setAttribute(entry.getKey(), entry.getValue());
+            }
+        }
         if (userRep.getAttributes() != null) {
             for (Map.Entry<String, String> entry : userRep.getAttributes().entrySet()) {
                 user.setAttribute(entry.getKey(), entry.getValue());
@@ -78,6 +83,11 @@ public class UserManager {
         user.setEmail(userRep.getEmail());
         user.setFirstName(userRep.getFirstName());
         user.setLastName(userRep.getLastName());
+        if (userRep.getAttributes() != null) {
+            for (Map.Entry<String, String> entry : userRep.getAttributes().entrySet()) {
+                user.setAttribute(entry.getKey(), entry.getValue());
+            }
+        }
         if (userRep.getAttributes() != null) {
             for (Map.Entry<String, String> entry : userRep.getAttributes().entrySet()) {
                 user.setAttribute(entry.getKey(), entry.getValue());

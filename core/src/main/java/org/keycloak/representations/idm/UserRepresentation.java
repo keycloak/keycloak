@@ -13,12 +13,13 @@ public class UserRepresentation {
 
     protected String self; // link
     protected String username;
-    protected boolean enabled;
+    protected String status;
     protected String firstName;
     protected String lastName;
     protected String email;
     protected Map<String, String> attributes;
     protected List<CredentialRepresentation> credentials;
+    protected List<String> requiredActions;
 
     public String getSelf() {
         return self;
@@ -91,11 +92,19 @@ public class UserRepresentation {
         return this;
     }
 
-    public boolean isEnabled() {
-        return enabled;
+    public String getStatus() {
+        return status;
     }
 
-    public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public List<String> getRequiredActions() {
+        return requiredActions;
+    }
+
+    public void setRequiredActions(List<String> requiredActions) {
+        this.requiredActions = requiredActions;
     }
 }

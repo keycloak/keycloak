@@ -24,6 +24,7 @@ package org.keycloak.services.resources.flows;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.UserModel;
+import org.keycloak.services.models.UserModel.RequiredAction;
 import org.picketlink.idm.model.sample.Realm;
 
 import javax.ws.rs.core.MultivaluedMap;
@@ -39,6 +40,7 @@ public class FormFlows {
     public static final String REALM = Realm.class.getName();
     public static final String USER = UserModel.class.getName();
     public static final String SOCIAL_REGISTRATION = "socialRegistration";
+    public static final String CODE = "code";
 
     private String error;
     private MultivaluedMap<String, String> formData;
@@ -49,10 +51,24 @@ public class FormFlows {
     private UserModel userModel;
 
     private boolean socialRegistration;
+    private String code;
 
     FormFlows(RealmModel realm, HttpRequest request) {
         this.realm = realm;
         this.request = request;
+    }
+
+    public Response forwardToAction(RequiredAction action) {
+        switch (action) {
+            case CONFIGURE_TOTP:
+                return forwardToTotp();
+            case UPDATE_PROFILE:
+                return forwardToAccount();
+            case RESET_PASSWORD:
+                return forwardToPassword();
+            default:
+                return null; // TODO
+        }
     }
 
     public Response forwardToAccess() {
@@ -76,6 +92,10 @@ public class FormFlows {
 
         if (userModel != null) {
             request.setAttribute(USER, userModel);
+        }
+
+        if (code != null) {
+            request.setAttribute(CODE, code);
         }
 
         request.setAttribute(SOCIAL_REGISTRATION, socialRegistration);
@@ -106,6 +126,11 @@ public class FormFlows {
 
     public Response forwardToTotp() {
         return forwardToForm(Pages.TOTP);
+    }
+
+    public FormFlows setCode(String code) {
+        this.code = code;
+        return this;
     }
 
     public FormFlows setError(String error) {

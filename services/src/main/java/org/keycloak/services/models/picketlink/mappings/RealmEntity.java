@@ -43,6 +43,8 @@ public class RealmEntity implements Serializable {
     @AttributeValue
     private int accessCodeLifespan;
     @AttributeValue
+    private int accessCodeLifespanUserAction;
+    @AttributeValue
     @Column(length = 2048)
     private String publicKeyPem;
     @AttributeValue
@@ -130,6 +132,14 @@ public class RealmEntity implements Serializable {
 
     public void setAccessCodeLifespan(int accessCodeLifespan) {
         this.accessCodeLifespan = accessCodeLifespan;
+    }
+
+    public int getAccessCodeLifespanUserAction() {
+        return accessCodeLifespanUserAction;
+    }
+
+    public void setAccessCodeLifespanUserAction(int accessCodeLifespanUserAction) {
+        this.accessCodeLifespanUserAction = accessCodeLifespanUserAction;
     }
 
     public String getPublicKeyPem() {

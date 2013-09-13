@@ -23,11 +23,14 @@ package org.keycloak.testsuite;
 
 import java.net.MalformedURLException;
 
+import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.junit.Arquillian;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.keycloak.testsuite.pages.LoginTotpPage;
+import org.keycloak.testsuite.pages.TotpPage;
 import org.picketlink.idm.credential.util.TimeBasedOTP;
 
 /**
@@ -36,80 +39,77 @@ import org.picketlink.idm.credential.util.TimeBasedOTP;
 @RunWith(Arquillian.class)
 public class TotpTest extends AbstractDroneTest {
 
+    @Page
+    private LoginTotpPage loginTotpPage;
+
     private TimeBasedOTP totp;
-    private String totpSecret;
+
+    @Page
+    protected TotpPage totpPage;
 
     @Before
     public void before() throws MalformedURLException {
-        super.before();
-
         totp = new TimeBasedOTP();
-    }
-
-    public void configureTotp() {
-        selenium.open(authServerUrl + "/rest/realms/demo/account/totp");
-        selenium.waitForPageToLoad("10000");
-
-        Assert.assertTrue(selenium.isTextPresent("To setup Google Authenticator"));
-
-        totpSecret = selenium.getValue("totpSecret");
-        String code = totp.generate(totpSecret);
-
-        selenium.type("id=totp", code);
-        selenium.click("css=input[type=\"submit\"]");
-        selenium.waitForPageToLoad("30000");
-
-        Assert.assertTrue(selenium.isTextPresent("Google Authenticator enabled"));
     }
 
     @Test
     public void loginWithTotpFailure() {
-        registerUser("loginWithTotpFailure", "password");
-        configureTotp();
-        logout();
+        appPage.open();
+        loginPage.register();
+        registerPage.register("name", "email", "loginWithTotpFailure", "password", "password");
+        totpPage.open();
 
-        selenium.type("id=username", "loginWithTotpFailure");
-        selenium.type("id=password", "password");
+        String totpSecret = totpPage.getTotpSecret();
+        totpPage.configure(totp.generate(totpSecret));
 
-        selenium.click("css=input[type=\"submit\"]");
-        selenium.waitForPageToLoad(DEFAULT_WAIT);
+        appPage.open();
+        appPage.logout();
 
-        Assert.assertEquals("Log in to demo", selenium.getTitle());
+        loginPage.login("loginWithTotpSuccess", "password");
 
-        selenium.type("id=totp", "123456");
+        Assert.assertFalse(appPage.isCurrent());
 
-        selenium.click("css=input[type=\"submit\"]");
-        selenium.waitForPageToLoad(DEFAULT_WAIT);
+        loginTotpPage.login("123456");
 
-        Assert.assertTrue(selenium.isTextPresent("Invalid username or password"));
+        Assert.assertTrue(loginTotpPage.isCurrent());
+        Assert.assertEquals("Invalid username or password", loginTotpPage.getError());
     }
 
     @Test
     public void loginWithTotpSuccess() {
-        registerUser("loginWithTotpSuccess", "password");
-        configureTotp();
-        logout();
+        appPage.open();
+        loginPage.register();
+        registerPage.register("name", "email", "loginWithTotpSuccess", "password", "password");
+        totpPage.open();
 
-        selenium.type("id=username", "loginWithTotpSuccess");
-        selenium.type("id=password", "password");
+        String totpSecret = totpPage.getTotpSecret();
+        totpPage.configure(totp.generate(totpSecret));
 
-        selenium.click("css=input[type=\"submit\"]");
-        selenium.waitForPageToLoad(DEFAULT_WAIT);
+        appPage.open();
+        appPage.logout();
 
-        Assert.assertEquals("Log in to demo", selenium.getTitle());
+        loginPage.login("loginWithTotpSuccess", "password");
 
-        selenium.type("id=totp", totp.generate(totpSecret));
+        Assert.assertFalse(appPage.isCurrent());
 
-        selenium.click("css=input[type=\"submit\"]");
-        selenium.waitForPageToLoad(DEFAULT_WAIT);
+        loginTotpPage.login(totp.generate(totpSecret));
 
-        Assert.assertEquals("loginWithTotpSuccess", selenium.getText("id=user"));
+        Assert.assertTrue(appPage.isCurrent());
     }
 
     @Test
     public void setupTotp() {
-        registerUser("setupTotp", "password");
-        configureTotp();
+        appPage.open();
+        loginPage.register();
+        registerPage.register("name", "email", "setupTotp", "password", "password");
+
+        totpPage.open();
+
+        Assert.assertTrue(totpPage.isCurrent());
+
+        totpPage.configure(totp.generate(totpPage.getTotpSecret()));
+
+        Assert.assertTrue(browser.getPageSource().contains("Google Authenticator enabled"));
     }
 
 }

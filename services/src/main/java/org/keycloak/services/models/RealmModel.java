@@ -43,6 +43,10 @@ public interface RealmModel {
 
     void setAccessCodeLifespan(int accessCodeLifespan);
 
+    int getAccessCodeLifespanUserAction();
+
+    void setAccessCodeLifespanUserAction(int accessCodeLifespanUserAction);
+
     String getPublicKeyPem();
 
     void setPublicKeyPem(String publicKeyPem);
