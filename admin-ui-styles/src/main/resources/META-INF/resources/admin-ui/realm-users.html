@@ -1,0 +1,151 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>My realm - Users and Roles</title>
+        <link rel="icon" href="img/favicon.ico">
+        
+        <!-- Frameworks -->
+        <link rel="stylesheet" href="css/reset.css">
+        <link rel="stylesheet" href="bootstrap-3.0.0-wip/css/bootstrap.css">
+        <link rel="stylesheet" href="css/sprites.css">
+        <link rel="stylesheet" href='http://fonts.googleapis.com/css?family=Open+Sans:400,300,300italic,400italic,600,600italic,700,700italic,800,800italic'>
+        
+        <!-- RCUE styles -->
+        <link rel="stylesheet" href="css/base.css">
+        <link rel="stylesheet" href="css/forms.css">
+        <link rel="stylesheet" href="css/header.css">
+        <link rel="stylesheet" href="css/tabs.css">
+        <link rel="stylesheet" href="css/icons.css">
+        <link rel="stylesheet" href="css/tables.css">
+        
+        <!-- Page styles -->
+        <link rel="stylesheet" href="css/admin-console.css">
+        
+        <!-- JS -->
+        <script src="js/jquery-1.10.1.min.js"></script>
+        <script src="bootstrap-3.0.0-wip/js/dropdown.js"></script>
+        <script src="bootstrap-3.0.0-wip/js/tooltip.js"></script>
+        <script src="js/bootstrap-tokenfield.js"></script>
+        <script src="js/base.js"></script>
+    </head>
+    <body class="admin-console realm-users">
+    
+        <div class="header rcue">
+            <div class="navbar utility">
+                <div class="navbar-inner clearfix">
+                    <h1><a href="#"><strong>Keycloak</strong> Central Login</a></h1>
+                    <ul class="nav pull-right">
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown"><span class="icon-user">Icon: user</span>Brian Stevens<b class="caret"></b></a>
+                            <ul class="dropdown-menu">
+                                <li><a href="#">Account</a></li>
+                                <li class="separator"><a href="saas-login.html">Log Out</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="navbar primary">
+                <div class="navbar-inner">
+                    <ul class="nav">
+                        <li><a href="#">Overview</a></li>
+                        <li><a href="application-settings.html">Applications</a></li>
+                        <li class="active"><a href="realm-users.html">Realms</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div><!-- End .header -->
+        
+        <div class="container">
+            <div class="row">
+                <div class="bs-sidebar col-md-3 clearfix">
+                    <ul>
+                        <li class="active"><a href="realm-users.html">My realm</a></li>
+                        <li><a href="#">Another realm</a></li>
+                    </ul>    
+                </div>
+                
+                <div id="content-area" class="col-md-9" role="main">
+                    <div class="top-nav">
+                        <ul class="rcue-tabs">
+                            <li><a href="#">Settings</a></li>
+                            <li class="active"><a href="realm-users.html">Users and Roles</a></li>
+                        </ul>
+                    </div>
+                    <div id="content">
+                        <h2><span>My realm</span> Users and Roles</h2>
+                        
+                        <table>
+                            <caption>Table of realm users</caption>
+                            <thead>
+                                <tr>
+                                    <th class="rcue-table-actions" colspan="4">
+                                        <div class="search-comp clearfix">
+                                            <input type="text" placeholder="Search..." class="search">
+                                            <button class="icon-search tooltipRightTrigger" data-original-title="Search for User Name, Last Name, First Name or Email.">Icon: search</button>
+                                        </div>
+                                        <div class="advanced-search-comp">
+                                            <a href="#advanced-search-box" class="advanced-search-link">Advanced search</a>
+                                            <div class="tooltip-box hidden">
+                                                <form>
+                                                    <fieldset>
+                                                        <legend>Advanced Search</legend>
+                                                        <div class="form-group">
+                                                            <label for="username">Username</label>
+                                                            <input type="text" id="username">
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label for="last-name">Last Name</label>
+                                                            <input type="text" id="last-name">
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label for="first-name">First Name</label>
+                                                            <input type="text" id="first-name">
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label for="email">Email</label>
+                                                            <input type="text" id="email">
+                                                        </div>
+                                                        <div class="form-actions clearfix">
+                                                            <button type="submit" class="primary">Search</button>
+                                                        </div>
+                                                    </fieldset>
+                                                </form>
+                                            </div>
+                                        </div>
+                                        <div class="actions">
+                                            <a class="button" href="realm-user-edition.html">Add</a>
+                                            <button class="remove disabled">Remove</button>
+                                        </div>
+                                    </th>
+                                </tr>
+                                <tr>
+                                    <th>User Name</th>
+                                    <th>Last Name</th>
+                                    <th>First Name</th>
+                                    <th>Email</th>
+                                </tr>
+                            </thead>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="4">
+                                        <div class="table-nav">
+                                            <a href="#" class="first disabled">First page</a><a href="#" class="prev disabled">Previous page</a><span><strong>1-8</strong> of <strong>10</strong></span><a href="#" class="next">Next page</a><a href="#" class="last">Last page</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                            <tbody class="selectable-rows">
+                                <tr><td><a href="realm-user-edition.html">coverdale</a></td><td>Coverdale</td><td>David</td><td>coverdale@whitesnake.band</td></tr>
+                                <tr><td><a href="realm-user-edition.html">ozzy</a></td><td>Osbourne</td><td>Ozzy</td><td>ozzy@blacksabbath.band</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            <div id="container-right-bg"></div>
+            </div>    
+        </div>
+    </body>
+</html>
+

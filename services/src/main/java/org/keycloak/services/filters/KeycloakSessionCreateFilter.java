@@ -15,6 +15,7 @@ import java.io.IOException;
  * @version $Revision: 1 $
  */
 @PreMatching
+@Deprecated
 public class KeycloakSessionCreateFilter implements ContainerRequestFilter {
     protected static final Logger logger = Logger.getLogger(KeycloakSessionCreateFilter.class);
     protected KeycloakSessionFactory factory;

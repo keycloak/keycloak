@@ -13,6 +13,7 @@ import java.io.IOException;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@Deprecated
 public class KeycloakSessionCleanupFilter implements ContainerResponseFilter {
     protected static final Logger logger = Logger.getLogger(KeycloakSessionCleanupFilter.class);
 
