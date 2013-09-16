@@ -1,0 +1,200 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>My realm - Add User</title>
+        <link rel="icon" href="img/favicon.ico">
+        
+        <!-- Frameworks -->
+        <link rel="stylesheet" href="css/reset.css">
+        <link rel="stylesheet" href="bootstrap-3.0.0-wip/css/bootstrap.css">
+        <link rel="stylesheet" href="css/sprites.css">
+        <link rel="stylesheet" href="css/select2.css">
+        <link rel="stylesheet" href='http://fonts.googleapis.com/css?family=Open+Sans:400,300,300italic,400italic,600,600italic,700,700italic,800,800italic'>
+        
+        <!-- RCUE styles -->
+        <link rel="stylesheet" href="css/base.css">
+        <link rel="stylesheet" href="css/forms.css">
+        <link rel="stylesheet" href="css/header.css">
+        <link rel="stylesheet" href="css/tabs.css">
+        <link rel="stylesheet" href="css/icons.css">
+        <link rel="stylesheet" href="css/tables.css">
+        
+        <!-- Page styles -->
+        <link rel="stylesheet" href="css/admin-console.css">
+        
+        <!-- JS -->
+        <script src="js/jquery-1.10.1.min.js"></script>
+        <script src="bootstrap-3.0.0-wip/js/dropdown.js"></script>
+        <script src="bootstrap-3.0.0-wip/js/tooltip.js"></script>
+        <script src="js/bootstrap-tokenfield.js"></script>
+        <script src="js/base.js"></script>
+        <script src="js/select2.js"></script>
+  
+    </head>
+    <body class="admin-console realm-users">
+    
+        <div class="header rcue">
+            <div class="navbar utility">
+                <div class="navbar-inner clearfix">
+                    <h1><a href="#"><strong>Keycloak</strong> Central Login</a></h1>
+                    <ul class="nav pull-right">
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown"><span class="icon-user">Icon: user</span>Brian Stevens<b class="caret"></b></a>
+                            <ul class="dropdown-menu">
+                                <li><a href="#">Account</a></li>
+                                <li class="separator"><a href="saas-login.html">Log Out</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="navbar primary">
+                <div class="navbar-inner">
+                    <ul class="nav">
+                        <li><a href="#">Overview</a></li>
+                        <li><a href="application-settings.html">Applications</a></li>
+                        <li class="active"><a href="realm-users.html">Realms</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div><!-- End .header -->
+        
+        <div class="container">
+            <div class="row">
+                <div class="bs-sidebar col-md-3 clearfix">
+                    <ul>
+                        <li class="active"><a href="realm-users.html">My realm</a></li>
+                        <li><a href="#">Another realm</a></li>
+                    </ul>    
+                </div>
+                
+                <div id="content-area" class="col-md-9" role="main">
+                    <div class="top-nav">
+                        <ul class="rcue-tabs">
+                            <li><a href="#">Settings</a></li>
+                            <li class="active"><a href="realm-users.html">Users and Roles</a></li>
+                        </ul>
+                    </div>
+                    <div id="content">
+                        <h2 class="pull-left"><span>My realm</span> Add User</h2>
+                        <p class="subtitle"><span class="required">*</span> Required fields</p>
+                        <form>
+                            <fieldset>
+                                <legend><span class="icon-collapse toggle-icons">Icon: collapse</span><span class="text">User Info</span></legend>
+                                <div class="form-group">
+                                    <label for="app-name">Username</label><span class="required">*</span>
+                                    <input type="text" id="app-name" autofocus>
+                                </div>
+                                <div class="form-group">
+                                    <label for="email">Email</label>
+                                    <input type="email" id="email">
+                                </div>
+                                <div class="form-group">
+                                    <label for="last-name">Last name</label>
+                                    <input type="text" id="last-name">
+                                </div>
+                                <div class="form-group">
+                                    <label for="first-name">First name</label>
+                                    <input type="text" id="first-name">
+                                </div>
+                                <div class="form-group">
+                                    <label for="password">Password</label>
+                                    <input type="text" placeholder="At least 6 characters" id="password">
+                                </div>
+                                <div class="form-group clearfix">
+                                    <label for="enabled-user">Enabled User</label>
+                                    <div class="onoffswitch">
+                                        <input type="checkbox" checked="" class="onoffswitch-checkbox" name="onoffswitch" id="enabled-user">
+                                        <label for="enabled-user" class="onoffswitch-label">
+                                            <span class="onoffswitch-inner">
+                                                <span class="onoffswitch-active">ON</span>
+                                                <span class="onoffswitch-inactive">OFF</span>
+                                            </span>
+                                            <span class="onoffswitch-switch"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </fieldset>
+                            
+                            <fieldset>
+                                <legend><span class="icon-collapse toggle-icons">Icon: collapse</span><span class="text">Roles</span></legend>
+                                
+                                <table>
+                                    <caption>Table of user roles</caption>
+                                    <thead>
+                                        <tr>
+                                            <th>Domain</th>
+                                            <th>Roles</th>
+                                        </tr>
+                                    </thead>
+                                    <tfoot>
+                                        <tr>
+                                            <td colspan="2">
+                                                <div class="table-nav">
+                                                    <a href="#" class="first disabled">First page</a><a href="#" class="prev disabled">Previous page</a><span><strong>1-8</strong> of <strong>10</strong></span><a href="#" class="next">Next page</a><a href="#" class="last">Last page</a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tfoot>
+                                    <tbody>
+                                        <tr>
+                                            <td>My realm</td>
+                                            <td class="clear-font-size token-cell">
+                                                <div class="token">
+                                                    <span class="token-label">Admin</span>
+                                                    <a class="close" href="#">×</a>
+                                                </div>
+                                                <div class="token">
+                                                    <span class="token-label">User</span>
+                                                    <a class="close" href="#">×</a>
+                                                </div>
+                                                <div class="token">
+                                                    <span class="token-label">Manager</span>
+                                                    <a class="close" href="#">×</a>
+                                                </div>
+                                                <button class="icon-plus tooltipRightTrigger" data-original-title="Add role">Add role</button>
+                                                <select class="hidden chosen">
+                                                    <option>Admin</option>
+                                                    <option>Content_manager</option>
+                                                    <option>Editor</option>
+                                                    <option>Manager</option>
+                                                    <option>User</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>My application</td>
+                                            <td class="clear-font-size token-cell">
+                                                <div class="token">
+                                                    <span class="token-label">Editor</span>
+                                                    <a class="close" href="#">×</a>
+                                                </div>
+                                                
+                                                <select class="chosen">
+                                                    <option>Admin</option>
+                                                    <option>Content_manager</option>
+                                                    <option>Editor</option>
+                                                    <option>Manager</option>
+                                                    <option>User</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </fieldset>
+                            
+                            <div class="form-actions">
+                                <button type="submit" class="primary">Save</button>
+                                <button type="submit">Cancel</button>
+                            </div>
+                        </form>
+
+                    </div>
+                </div>
+            <div id="container-right-bg"></div>
+            </div>    
+        </div>
+    </body>
+</html>
+
