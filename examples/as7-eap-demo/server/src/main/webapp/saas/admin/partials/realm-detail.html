@@ -1,164 +1,178 @@
 <div id="wrapper" class="container">
     <div class="row">
-        <aside class="span3" data-ng-include data-src="'partials/realm-menu.html'"></aside>
-        <div id="actions-bg"></div>
-
-        <div id="container-right" class="span9">
-            <h1 data-ng-show="createRealm"><span class="gray">New Realm</span></h1>
-
-            <h1 data-ng-hide="createRealm">
-                <span class="gray">Realm Settings</span>
-            </h1>
-
-            <div data-ng-show="realmForm.showErrors && realmForm.$error.required" class="alert alert-error">Please fill
-                in all required fields
+        <div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="'partials/realm-menu.html'"></div>
+        <div id="content-area" class="col-md-9" role="main">
+            <div class="top-nav" data-ng-hide="createRealm">
+                <ul class="rcue-tabs">
+                    <li class="active"><a href="#">Settings</a></li>
+                    <li data-ng-show="realm.social"><a href="#">Social</a></li>
+                    <li><a href="#">Roles</a></li>
+                    <li><a href="#">Required Credentials</a></li>
+                    <li><a href="#">Token Settings</a></li>
+                </ul>
             </div>
-            <p class="subtitle subtitle-right"><span class="required">*</span> Required fields</p>
+            <div id="content">
+                <h2 class="pull-left" data-ng-show="createRealm">New Realm</h2>
+                <h2 class="pull-left" data-ng-hide="createRealm">Realm: <span>{{realm.realm}}</span></h2>
+                <p class="subtitle" data-ng-show="createRealm"><span class="required">*</span> Required fields</p>
+                <form name="realmForm" novalidate>
+                    <fieldset>
+                        <legend uncollapsed><span class="text">Required Settings</span> </legend>
+                        <div class="form-group">
+                            <label for="name">Name </label><span class="required" data-ng-show="createRealm">*</span>
 
-            <form class="form-horizontal" name="realmForm" novalidate>
-                <fieldset>
-
-                    <div class="control-group">
-                        <label for="realmForm-name" class="control-label">Name <span class="required">*</span></label>
-
-                        <div class="controls">
-                            <input class="input-xlarge" type="text" name="name" data-ng-model="realm.realm" autofocus
-                                   required>
+                            <div class="controls">
+                                <input type="text" id="name" name="name" data-ng-model="realm.realm" autofocus
+                                       required>
+                            </div>
                         </div>
-                    </div>
+                        <div class="form-group">
+                            <label class="control-label">Enabled</label>
 
-                     <table>
-                        <tr>
-                            <td>
-                                <div class="control-group">
-                                    <label class="control-label">Enabled</label>
-
-                                    <div class="controls">
-                                        <input class="input-xlarge" type="checkbox" name="enabled"
-                                               data-ng-model="realm.enabled">
-                                    </div>
+                            <div class="onoffswitch">
+                                <input type="checkbox" data-ng-model="realm.enabled" class="onoffswitch-checkbox"
+                                       name="enabled" id="enabled">
+                                <label for="enabled" class="onoffswitch-label">
+                                            <span class="onoffswitch-inner">
+                                                <span class="onoffswitch-active">ON</span>
+                                                <span class="onoffswitch-inactive">OFF</span>
+                                            </span>
+                                    <span class="onoffswitch-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </fieldset>
+                    <fieldset>
+                        <legend uncollapsed><span class="text">Login Options</span></legend>
+                        <div class="form-group clearfix block">
+                            <label class="control-label">Social login</label>
+                            <div class="onoffswitch">
+                                <input type="checkbox" data-ng-model="realm.social" class="onoffswitch-checkbox" name="social" id="social">
+                                <label for="social" class="onoffswitch-label">
+                                            <span class="onoffswitch-inner">
+                                                <span class="onoffswitch-active">ON</span>
+                                                <span class="onoffswitch-inactive">OFF</span>
+                                            </span>
+                                    <span class="onoffswitch-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group clearfix block">
+                            <label class="control-label">User registration</label>
+                            <div class="onoffswitch">
+                                <input type="checkbox" data-ng-model="realm.userRegistration" class="onoffswitch-checkbox" name="userRegistration" id="userRegistration">
+                                <label for="userRegistration" class="onoffswitch-label">
+                                            <span class="onoffswitch-inner">
+                                                <span class="onoffswitch-active">ON</span>
+                                                <span class="onoffswitch-inactive">OFF</span>
+                                            </span>
+                                    <span class="onoffswitch-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group clearfix block">
+                            <label class="control-label">Require SSL</label>
+                            <div class="onoffswitch">
+                                <input type="checkbox" data-ng-model="realm.requireSsl" class="onoffswitch-checkbox" name="requireSsl" id="requireSsl">
+                                <label for="requireSsl" class="onoffswitch-label">
+                                            <span class="onoffswitch-inner">
+                                                <span class="onoffswitch-active">ON</span>
+                                                <span class="onoffswitch-inactive">OFF</span>
+                                            </span>
+                                    <span class="onoffswitch-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label">Cookie login allowed</label>
+                            <div class="onoffswitch">
+                                <input type="checkbox" data-ng-model="realm.cookieLoginAllowed" class="onoffswitch-checkbox" name="cookieLoginAllowed" id="cookieLoginAllowed">
+                                <label for="cookieLoginAllowed" class="onoffswitch-label">
+                                            <span class="onoffswitch-inner">
+                                                <span class="onoffswitch-active">ON</span>
+                                                <span class="onoffswitch-inactive">OFF</span>
+                                            </span>
+                                    <span class="onoffswitch-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </fieldset>
+                    <fieldset>
+                        <legend collapsed><span class="text">Token Settings</span></legend>
+                        <div class="form-group input-select">
+                            <label for="tokenLifespan">Token lifespan</label>
+                            <div class="input-group">
+                                <input type="text" data-ng-model="realm.tokenLifespan" id="tokenLifespan" name="tokenLifespan" class="tiny">
+                                <div class="select-rcue">
+                                    <select name="tokenLifespanUnit" data-ng-model="realm.tokenLifespanUnit">
+                                        <option data-ng-selected="!realm.tokenLifespanUnit">Seconds</option>
+                                        <option>Minutes</option>
+                                        <option>Hours</option>
+                                        <option>Days</option>
+                                    </select>
                                 </div>
-                            </td>
-                            <td>
-                                <div class="control-group">
-                                    <label class="control-label">Social login</label>
-
-                                    <div class="controls">
-                                        <input class="input-xlarge" type="checkbox" name="social"
-                                               data-ng-model="realm.social">
-                                    </div>
+                            </div>
+                        </div>
+                        <div class="form-group input-select">
+                            <label for="accessCodeLifespan">Access code lifespan</label>
+                            <div class="input-group">
+                                <input type="text" data-ng-model="realm.accessCodeLifespan" id="accessCodeLifespan" name="accessCodeLifespan" class="tiny">
+                                <div class="select-rcue">
+                                    <select name="accessCodeLifespanUnit" data-ng-model="realm.accessCodeLifespanUnit">
+                                        <option data-ng-selected="!realm.accessCodeLifespanUnit">Seconds</option>
+                                        <option>Minutes</option>
+                                        <option>Hours</option>
+                                        <option>Days</option>
+                                    </select>
                                 </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <div class="control-group">
-                                    <label class="control-label">Require SSL</label>
-
-                                    <div class="controls">
-                                        <input class="input-xlarge" type="checkbox" name="requireSsl"
-                                               data-ng-model="realm.requireSsl">
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="control-group">
-                                    <label class="control-label">Cookie login allowed</label>
-
-                                    <div class="controls">
-                                        <input class="input-xlarge" type="checkbox" name="cookieLoginAllowed"
-                                               data-ng-model="realm.cookieLoginAllowed">
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                         <tr>
-                             <td>
-                                 <div class="control-group">
-                                     <label class="control-label">User registration</label>
-
-                                     <div class="controls">
-                                         <input class="input-xlarge" type="checkbox" name="userRegistration"
-                                                data-ng-model="realm.userRegistration">
-                                     </div>
-                                 </div>
-                             </td>
-                         </tr>
-                    </table>
-
-                    <div class="control-group">
-                        <label for="realmForm-tokenLifespan" class="control-label">Token lifespan</label>
-
-                        <div class="controls">
-                            <input class="input-small" type="text" name="tokenLifespan"
-                                   data-ng-model="realm.tokenLifespan">
-                            <select style="width: auto;" name="tokenLifespanUnit"
-                                    data-ng-model="realm.tokenLifespanUnit">
-                                <option value="SECONDS" data-ng-selected="!realm.tokenLifespanUnit">Seconds</option>
-                                <option value="MINUTES">Minutes</option>
-                                <option value="HOURS">Hours</option>
-                                <option value="DAYS">Days</option>
-                            </select>
+                            </div>
                         </div>
-                    </div>
-                    <div class="control-group">
-                        <label for="realmForm-accessCodeLifespan" class="control-label">Access code lifespan</label>
+                     </fieldset>
+                    <fieldset>
+                        <legend collapsed><span class="text">Default Credential Settings</span></legend>
+                        <div class="form-group">
+                            <label class="control-label">Required User Credentials</label>
 
-                        <div class="controls">
-                            <input class="input-small" type="text" name="accessCodeLifespan"
-                                   data-ng-model="realm.accessCodeLifespan">
-                            <select style="width: auto;" name="accessCodeLifespanUnit"
-                                    data-ng-model="realm.accessCodeLifespanUnit">
-                                <option value="SECONDS" data-ng-selected="!realm.accessCodeLifespanUnit">Seconds
-                                </option>
-                                <option value="MINUTES">Minutes</option>
-                                <option value="HOURS">Hours</option>
-                                <option value="DAYS">Days</option>
-                            </select>
+                            <div class="controls">
+                                <input style="width:250px" type="text" ui-select2="userCredentialOptions" ng-model="realm.requiredCredentials">
+                            </div>
                         </div>
-                    </div>
-                    <div class="control-group">
-                        <label class="control-label">Required User Credentials</label>
+                        <div class="form-group">
+                            <label class="control-label">Required Application Credentials</label>
 
-                        <div class="controls">
-                            <input style="width:250px" type="text" ui-select2="userCredentialOptions" ng-model="realm.requiredCredentials">
+                            <div class="controls">
+                                <input style="width:250;height:25" type="text" ui-select2="userCredentialOptions" ng-model="realm.requiredApplicationCredentials">
+                            </div>
                         </div>
-                    </div>
-                    <div class="control-group">
-                        <label class="control-label">Required Application Credentials</label>
+                        <div class="form-group">
+                            <label class="control-label">Required OAuth Credentials</label>
 
-                        <div class="controls">
-                            <input style="width:250px" type="text" ui-select2="userCredentialOptions" ng-model="realm.requiredApplicationCredentials">
+                            <div class="controls">
+                                <input style="width:250px" type="text" ui-select2="userCredentialOptions" ng-model="realm.requiredOAuthClientCredentials">
+                            </div>
                         </div>
+                    </fieldset>
+                    <div class="form-actions" data-ng-show="createRealm">
+                        <button type="submit" data-ng-click="save()" class="primary" data-ng-show="changed">Save
+                        </button>
+                        <button type="submit" data-ng-click="cancel()" data-ng-click="cancel()"
+                                data-ng-show="changed">Cancel
+                        </button>
                     </div>
-                    <div class="control-group">
-                        <label class="control-label">Required OAuth Credentials</label>
 
-                        <div class="controls">
-                            <input style="width:250px" type="text" ui-select2="userCredentialOptions" ng-model="realm.requiredOAuthClientCredentials">
-                        </div>
+                    <div class="form-actions" data-ng-show="!createRealm">
+                        <button type="submit" data-ng-click="save()" class="primary" data-ng-show="changed">Save
+                            changes
+                        </button>
+                        <button type="submit" data-ng-click="reset()" data-ng-show="changed">Clear changes
+                        </button>
+                        <button type="submit" data-ng-click="remove()" class="danger" data-ng-hide="changed">
+                            Delete
+                        </button>
                     </div>
-                </fieldset>
-                <div class="form-actions" data-ng-show="createRealm">
-                    <button type="submit" data-ng-click="save()" class="btn btn-primary" data-ng-show="changed">Save
-                    </button>
-                    <button type="submit" data-ng-click="cancel()" class="btn" data-ng-click="cancel()"
-                            data-ng-show="changed">Cancel
-                    </button>
-                </div>
 
-                <div class="form-actions" data-ng-show="!createRealm">
-                    <button type="submit" data-ng-click="save()" class="btn btn-primary" data-ng-show="changed">Save
-                        changes
-                    </button>
-                    <button type="submit" data-ng-click="reset()" class="btn" data-ng-show="changed">Clear changes
-                    </button>
-                    <button type="submit" data-ng-click="remove()" class="btn btn-danger" data-ng-hide="changed">
-                        Delete
-                    </button>
-                </div>
-
-            </form>
+                </form>
+            </div>
         </div>
         <div id="container-right-bg"></div>
     </div>
