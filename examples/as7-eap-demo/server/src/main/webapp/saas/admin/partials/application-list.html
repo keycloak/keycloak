@@ -1,10 +1,56 @@
 <div id="wrapper" class="container">
     <div class="row">
-        <aside class="span3" data-ng-include data-src="'partials/application-menu.html'"></aside>
-        <div id="actions-bg"></div>
-
-        <div id="container-right" class="span9">
-
+        <div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="'partials/realm-menu.html'"></div>
+        <div id="content-area" class="col-md-9" role="main">
+            <div class="top-nav" data-ng-hide="createRealm">
+                <ul class="rcue-tabs">
+                    <li class="active"><a href="#">Applications</a></li>
+                    <li><a href="#/create/application/{{realm.id}}">New Application</a></li>
+                </ul>
+            </div>
+            <div id="content">
+                <h2 class="pull-left">Applications</h2>
+                <table>
+                    <caption>Table of realm applications</caption>
+                    <thead>
+                    <tr>
+                        <th class="rcue-table-actions" colspan="4">
+                            <div class="search-comp clearfix">
+                                <input type="text" placeholder="Search..." class="search">
+                                <button class="icon-search tooltipRightTrigger"
+                                        data-original-title="Search by application name.">
+                                    Icon: search
+                                </button>
+                            </div>
+                        </th>
+                    </tr>
+                    <tr>
+                        <th>Application Name</th>
+                        <th>Enabled</th>
+                        <th>Base URL</th>
+                    </tr>
+                    </thead>
+                    <tfoot>
+                    <tr>
+                        <td colspan="3">
+                            <div class="table-nav">
+                                <a href="#" class="first disabled">First page</a><a href="#" class="prev disabled">Previous
+                                page</a><span><strong>1-8</strong> of <strong>10</strong></span><a href="#"
+                                                                                                   class="next">Next
+                                page</a><a href="#" class="last">Last page</a>
+                            </div>
+                        </td>
+                    </tr>
+                    </tfoot>
+                    <tbody class="selectable-rows">
+                    <tr ng-repeat="app in applications">
+                        <td><a href="#/realms/{{realm.id}}/applications/{{app.id}}">{{app.name}}</a></td>
+                        <td>{{app.enabled}}</td>
+                        <td></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
         <div id="container-right-bg"></div>
     </div>
