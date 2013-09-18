@@ -72,6 +72,8 @@ public class ImportTest {
         manager.importRealm(rep, realm);
         realm.addRealmAdmin(admin);
 
+        Assert.assertTrue(realm.isVerifyEmail());
+
         Assert.assertFalse(realm.isAutomaticRegistrationAfterSocialLogin());
         List<RequiredCredentialModel> creds = realm.getRequiredCredentials();
         Assert.assertEquals(1, creds.size());

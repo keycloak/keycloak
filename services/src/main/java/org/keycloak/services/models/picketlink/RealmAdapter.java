@@ -167,6 +167,17 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public boolean isVerifyEmail() {
+        return realm.isVerifyEmail();
+    }
+
+    @Override
+    public void setVerifyEmail(boolean verifyEmail) {
+        realm.setVerifyEmail(verifyEmail);
+        updateRealm();
+    }
+
+    @Override
     public int getTokenLifespan() {
         return realm.getTokenLifespan();
     }

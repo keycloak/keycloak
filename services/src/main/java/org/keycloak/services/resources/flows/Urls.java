@@ -35,7 +35,7 @@ public class Urls {
         return accountBase(baseUri).path(AccountService.class, "accessPage").build(realmId);
     }
 
-    private static UriBuilder accountBase(URI baseUri) {
+    public static UriBuilder accountBase(URI baseUri) {
         return realmBase(baseUri).path(RealmsResource.class, "getAccountService");
     }
 

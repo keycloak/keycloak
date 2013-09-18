@@ -44,6 +44,10 @@ public interface UserModel {
 
     void setEmail(String email);
 
+    boolean isEmailVerified();
+
+    void setEmailVerified(boolean verified);
+
     void setTotp(boolean totp);
 
     public static enum Status {

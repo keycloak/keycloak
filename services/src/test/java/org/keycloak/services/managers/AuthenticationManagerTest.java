@@ -16,6 +16,7 @@ import org.keycloak.services.models.KeycloakSessionFactory;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.UserCredentialModel;
 import org.keycloak.services.models.UserModel;
+import org.keycloak.services.models.UserModel.RequiredAction;
 import org.keycloak.services.models.UserModel.Status;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.picketlink.idm.credential.util.TimeBasedOTP;
@@ -62,8 +63,10 @@ public class AuthenticationManagerTest {
     }
 
     @Test
-    public void authFormMissingTotp() {
+    public void authFormRequiredAction() {
         realm.addRequiredCredential(CredentialRepresentation.TOTP);
+        user.addRequiredAction(RequiredAction.CONFIGURE_TOTP);
+        user.setStatus(Status.ACTIONS_REQUIRED);
         
         AuthenticationStatus status = am.authenticateForm(realm, user, formData);
         Assert.assertEquals(AuthenticationStatus.ACTIONS_REQUIRED, status);

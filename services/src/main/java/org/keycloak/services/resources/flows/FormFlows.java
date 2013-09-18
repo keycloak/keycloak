@@ -22,6 +22,7 @@
 package org.keycloak.services.resources.flows;
 
 import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.services.email.EmailSender;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.UserModel;
 import org.keycloak.services.models.UserModel.RequiredAction;
@@ -29,6 +30,7 @@ import org.picketlink.idm.model.sample.Realm;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -52,10 +54,12 @@ public class FormFlows {
 
     private boolean socialRegistration;
     private String code;
+    private UriInfo uriInfo;
 
-    FormFlows(RealmModel realm, HttpRequest request) {
+    FormFlows(RealmModel realm, HttpRequest request, UriInfo uriInfo) {
         this.realm = realm;
         this.request = request;
+        this.uriInfo = uriInfo;
     }
 
     public Response forwardToAction(RequiredAction action) {
@@ -66,6 +70,8 @@ public class FormFlows {
                 return forwardToAccount();
             case RESET_PASSWORD:
                 return forwardToPassword();
+            case VERIFY_EMAIL:
+                return forwardToVerifyEmail();
             default:
                 return null; // TODO
         }
@@ -126,6 +132,11 @@ public class FormFlows {
 
     public Response forwardToTotp() {
         return forwardToForm(Pages.TOTP);
+    }
+
+    public Response forwardToVerifyEmail() {
+        new EmailSender().sendEmailVerification(userModel, realm, code, uriInfo);
+        return forwardToForm(Pages.VERIFY_EMAIL);
     }
 
     public FormFlows setCode(String code) {

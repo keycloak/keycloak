@@ -225,11 +225,6 @@ public class AuthenticationManager {
             types.add(credential.getType());
         }
 
-        if (types.contains(CredentialRepresentation.TOTP) && !user.isTotp()) {
-            user.addRequiredAction(RequiredAction.CONFIGURE_TOTP);
-            user.setStatus(Status.ACTIONS_REQUIRED);
-        }
-
         if (types.contains(CredentialRepresentation.PASSWORD)) {
             String password = formData.getFirst(CredentialRepresentation.PASSWORD);
             if (password == null) {

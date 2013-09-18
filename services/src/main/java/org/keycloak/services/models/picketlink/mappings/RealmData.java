@@ -13,6 +13,7 @@ public class RealmData extends AbstractPartition {
     private boolean sslNotRequired;
     private boolean cookieLoginAllowed;
     private boolean registrationAllowed;
+    private boolean verifyEmail;
     private boolean social;
     private boolean automaticRegistrationAfterSocialLogin;
     private int tokenLifespan;
@@ -90,6 +91,14 @@ public class RealmData extends AbstractPartition {
 
     public void setRegistrationAllowed(boolean registrationAllowed) {
         this.registrationAllowed = registrationAllowed;
+    }
+
+    public boolean isVerifyEmail() {
+        return verifyEmail;
+    }
+
+    public void setVerifyEmail(boolean verifyEmail) {
+        this.verifyEmail = verifyEmail;
     }
 
     @AttributeProperty

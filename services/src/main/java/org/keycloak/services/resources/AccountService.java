@@ -21,6 +21,20 @@
  */
 package org.keycloak.services.resources;
 
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.UriInfo;
+import javax.ws.rs.ext.Providers;
+
 import org.jboss.resteasy.jose.jws.JWSInput;
 import org.jboss.resteasy.jose.jws.crypto.RSAProvider;
 import org.jboss.resteasy.spi.HttpRequest;
@@ -37,14 +51,6 @@ import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.FormFlows;
 import org.keycloak.services.validation.Validation;
 import org.picketlink.idm.credential.util.TimeBasedOTP;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.core.*;
-import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.ext.Providers;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -79,7 +85,7 @@ public class AccountService {
     public Response accessPage() {
         UserModel user = getUserFromAuthManager();
         if (user != null) {
-            return Flows.forms(realm, request).setUser(user).forwardToAccess();
+            return Flows.forms(realm, request, uriInfo).setUser(user).forwardToAccess();
         } else {
             return Response.status(Status.FORBIDDEN).build();
         }
@@ -99,7 +105,7 @@ public class AccountService {
             if (response != null) {
                 return response;
             } else {
-                return Flows.forms(realm, request).setUser(user).forwardToAccount();
+                return Flows.forms(realm, request, uriInfo).setUser(user).forwardToAccount();
             }
         } else {
             return Response.status(Status.FORBIDDEN).build();
@@ -108,15 +114,17 @@ public class AccountService {
 
     private UserModel getUser(RequiredAction action) {
         if (uriInfo.getQueryParameters().containsKey(FormFlows.CODE)) {
-            AccessCodeEntry accessCodeEntry = getAccessCodeEntry();
+            AccessCodeEntry accessCodeEntry = getAccessCodeEntry(uriInfo.getQueryParameters().getFirst(FormFlows.CODE));
             if (accessCodeEntry == null) {
                 return null;
             }
-            
 
             String loginName = accessCodeEntry.getUser().getLoginName();
             UserModel user = realm.getUser(loginName);
             if (!user.getRequiredActions().contains(action)) {
+                return null;
+            }
+            if (!accessCodeEntry.getUser().getRequiredActions().contains(action)) {
                 return null;
             }
             return user;
@@ -129,9 +137,7 @@ public class AccountService {
         return authManager.authenticateIdentityCookie(realm, uriInfo, headers);
     }
 
-    private AccessCodeEntry getAccessCodeEntry() {
-        String code = uriInfo.getQueryParameters().getFirst(FormFlows.CODE);
-
+    private AccessCodeEntry getAccessCodeEntry(String code) {
         JWSInput input = new JWSInput(code, providers);
         boolean verifiedCode = false;
         try {
@@ -163,7 +169,7 @@ public class AccountService {
     public Response processTotpUpdate(final MultivaluedMap<String, String> formData) {
         UserModel user = getUser(RequiredAction.CONFIGURE_TOTP);
         if (user != null) {
-            FormFlows forms = Flows.forms(realm, request);
+            FormFlows forms = Flows.forms(realm, request, uriInfo);
 
             String totp = formData.getFirst("totp");
             String totpSecret = formData.getFirst("totpSecret");
@@ -193,7 +199,28 @@ public class AccountService {
             if (response != null) {
                 return response;
             } else {
-                return Flows.forms(realm, request).setUser(user).forwardToTotp();
+                return Flows.forms(realm, request, uriInfo).setUser(user).forwardToTotp();
+            }
+        } else {
+            return Response.status(Status.FORBIDDEN).build();
+        }
+    }
+
+    @Path("email-verify")
+    @GET
+    public Response processEmailVerification(@QueryParam("code") String code) {
+        AccessCodeEntry accessCodeEntry = getAccessCodeEntry(code);
+        String loginName = accessCodeEntry.getUser().getLoginName();
+        UserModel user = realm.getUser(loginName);
+        if (user != null) {
+            user.setEmailVerified(true);
+            user.removeRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL);
+
+            Response response = redirectOauth();
+            if (response != null) {
+                return response;
+            } else {
+                return Flows.forms(realm, request, uriInfo).setUser(user).forwardToVerifyEmail();
             }
         } else {
             return Response.status(Status.FORBIDDEN).build();
@@ -203,7 +230,7 @@ public class AccountService {
     private Response redirectOauth() {
         String redirect = uriInfo.getQueryParameters().getFirst("redirect_uri");
         if (redirect != null) {
-            AccessCodeEntry accessCode = getAccessCodeEntry();
+            AccessCodeEntry accessCode = getAccessCodeEntry(uriInfo.getQueryParameters().getFirst(FormFlows.CODE));
             String state = uriInfo.getQueryParameters().getFirst("state");
             return Flows.oauth(realm, request, uriInfo, authManager, tokenManager).redirectAccessCode(accessCode, state,
                     redirect);
@@ -218,7 +245,7 @@ public class AccountService {
     public Response processPasswordUpdate(final MultivaluedMap<String, String> formData) {
         UserModel user = getUser(RequiredAction.RESET_PASSWORD);
         if (user != null) {
-            FormFlows forms = Flows.forms(realm, request).setUser(user);
+            FormFlows forms = Flows.forms(realm, request, uriInfo).setUser(user);
 
             String password = formData.getFirst("password");
             String passwordNew = formData.getFirst("password-new");
@@ -250,7 +277,7 @@ public class AccountService {
             if (response != null) {
                 return response;
             } else {
-                return Flows.forms(realm, request).setUser(user).forwardToPassword();
+                return Flows.forms(realm, request, uriInfo).setUser(user).forwardToPassword();
             }
         } else {
             return Response.status(Status.FORBIDDEN).build();
@@ -262,7 +289,7 @@ public class AccountService {
     public Response accountPage() {
         UserModel user = getUserFromAuthManager();
         if (user != null) {
-            return Flows.forms(realm, request).setUser(user).forwardToAccount();
+            return Flows.forms(realm, request, uriInfo).setUser(user).forwardToAccount();
         } else {
             return Response.status(Status.FORBIDDEN).build();
         }
@@ -273,7 +300,7 @@ public class AccountService {
     public Response socialPage() {
         UserModel user = getUserFromAuthManager();
         if (user != null) {
-            return Flows.forms(realm, request).setUser(user).forwardToSocial();
+            return Flows.forms(realm, request, uriInfo).setUser(user).forwardToSocial();
         } else {
             return Response.status(Status.FORBIDDEN).build();
         }
@@ -284,7 +311,7 @@ public class AccountService {
     public Response totpPage() {
         UserModel user = getUserFromAuthManager();
         if (user != null) {
-            return Flows.forms(realm, request).setUser(user).forwardToTotp();
+            return Flows.forms(realm, request, uriInfo).setUser(user).forwardToTotp();
         } else {
             return Response.status(Status.FORBIDDEN).build();
         }
@@ -295,9 +322,10 @@ public class AccountService {
     public Response passwordPage() {
         UserModel user = getUserFromAuthManager();
         if (user != null) {
-            return Flows.forms(realm, request).setUser(user).forwardToPassword();
+            return Flows.forms(realm, request, uriInfo).setUser(user).forwardToPassword();
         } else {
             return Response.status(Status.FORBIDDEN).build();
         }
     }
+
 }

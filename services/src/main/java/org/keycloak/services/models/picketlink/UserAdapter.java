@@ -17,6 +17,7 @@ import org.picketlink.idm.model.sample.User;
  * @version $Revision: 1 $
  */
 public class UserAdapter implements UserModel {
+    private static final String EMAIL_VERIFIED_ATTR = "emailVerified";
     private static final String KEYCLOAK_TOTP_ATTR = "totpEnabled";
     private static final String REQUIRED_ACTIONS_ATTR = "requiredActions";
     private static final String STATUS_ATTR = "status";
@@ -93,6 +94,18 @@ public class UserAdapter implements UserModel {
     @Override
     public void setEmail(String email) {
         user.setEmail(email);
+        idm.update(user);
+    }
+
+    @Override
+    public boolean isEmailVerified() {
+        Attribute<Boolean> a = user.getAttribute(EMAIL_VERIFIED_ATTR);
+        return a != null ? a.getValue() : false;
+    }
+
+    @Override
+    public void setEmailVerified(boolean verified) {
+        user.setAttribute(new Attribute<Boolean>(EMAIL_VERIFIED_ATTR, verified));
         idm.update(user);
     }
 

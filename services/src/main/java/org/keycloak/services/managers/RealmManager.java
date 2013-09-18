@@ -75,6 +75,7 @@ public class RealmManager {
         realm.setSocial(rep.isSocial());
         realm.setCookieLoginAllowed(rep.isCookieLoginAllowed());
         realm.setRegistrationAllowed(rep.isRegistrationAllowed());
+        realm.setVerifyEmail(rep.isVerifyEmail());
         realm.setAutomaticRegistrationAfterSocialLogin(rep.isAutomaticRegistrationAfterSocialLogin());
         realm.setSslNotRequired((rep.isSslNotRequired()));
         realm.setAccessCodeLifespan(rep.getAccessCodeLifespan());
@@ -113,6 +114,7 @@ public class RealmManager {
         newRealm.setSslNotRequired(rep.isSslNotRequired());
         newRealm.setCookieLoginAllowed(rep.isCookieLoginAllowed());
         newRealm.setRegistrationAllowed(rep.isRegistrationAllowed());
+        newRealm.setVerifyEmail(rep.isVerifyEmail());
         newRealm.setAutomaticRegistrationAfterSocialLogin(rep.isAutomaticRegistrationAfterSocialLogin());
         if (rep.getPrivateKey() == null || rep.getPublicKey() == null) {
             generateRealmKeys(newRealm);
@@ -269,6 +271,8 @@ public class RealmManager {
         rep.setSslNotRequired(realm.isSslNotRequired());
         rep.setCookieLoginAllowed(realm.isCookieLoginAllowed());
         rep.setPublicKey(realm.getPublicKeyPem());
+        rep.setRegistrationAllowed(realm.isRegistrationAllowed());
+        rep.setVerifyEmail(realm.isVerifyEmail());
         rep.setTokenLifespan(realm.getTokenLifespan());
         rep.setAccessCodeLifespan(realm.getAccessCodeLifespan());
         rep.setAccessCodeLifespanUserAction(realm.getAccessCodeLifespanUserAction());

@@ -40,8 +40,8 @@ public class Flows {
         return new PageFlows(request);
     }
 
-    public static FormFlows forms(RealmModel realm, HttpRequest request) {
-        return new FormFlows(realm, request);
+    public static FormFlows forms(RealmModel realm, HttpRequest request, UriInfo uriInfo) {
+        return new FormFlows(realm, request, uriInfo);
     }
 
     public static OAuthFlows oauth(RealmModel realm, HttpRequest request, UriInfo uriInfo, AuthenticationManager authManager,

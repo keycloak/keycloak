@@ -35,6 +35,10 @@ public interface RealmModel {
 
     void setRegistrationAllowed(boolean registrationAllowed);
 
+    boolean isVerifyEmail();
+
+    void setVerifyEmail(boolean verifyEmail);
+
     int getTokenLifespan();
 
     void setTokenLifespan(int tokenLifespan);

@@ -170,7 +170,7 @@ public class SaasService {
         RealmModel realm = realmManager.defaultRealm();
         authManager.expireSaasIdentityCookie(uriInfo);
 
-        Flows.forms(realm, request).forwardToLogin();
+        Flows.forms(realm, request, uriInfo).forwardToLogin();
     }
 
     @Path("registrations")
@@ -181,7 +181,7 @@ public class SaasService {
         RealmModel realm = realmManager.defaultRealm();
         authManager.expireSaasIdentityCookie(uriInfo);
 
-        Flows.forms(realm, request).forwardToRegistration();
+        Flows.forms(realm, request, uriInfo).forwardToRegistration();
     }
 
     @Path("logout")
@@ -192,7 +192,7 @@ public class SaasService {
         RealmModel realm = realmManager.defaultRealm();
         authManager.expireSaasIdentityCookie(uriInfo);
 
-        Flows.forms(realm, request).forwardToLogin();
+        Flows.forms(realm, request, uriInfo).forwardToLogin();
     }
 
     @Path("logout-cookie")
@@ -226,11 +226,13 @@ public class SaasService {
                 NewCookie cookie = authManager.createSaasIdentityCookie(realm, user, uriInfo);
                 return Response.status(302).cookie(cookie).location(contextRoot(uriInfo).path(adminPath).build()).build();
             case ACCOUNT_DISABLED:
-                return Flows.forms(realm, request).setError(Messages.ACCOUNT_DISABLED).setFormData(formData).forwardToLogin();
+                return Flows.forms(realm, request, uriInfo).setError(Messages.ACCOUNT_DISABLED).setFormData(formData)
+                        .forwardToLogin();
             case ACTIONS_REQUIRED:
-                return Flows.forms(realm, request).forwardToAction(user.getRequiredActions().get(0));
+                return Flows.forms(realm, request, uriInfo).forwardToAction(user.getRequiredActions().get(0));
             default:
-                return Flows.forms(realm, request).setError(Messages.INVALID_USER).setFormData(formData).forwardToLogin();
+                return Flows.forms(realm, request, uriInfo).setError(Messages.INVALID_USER).setFormData(formData)
+                        .forwardToLogin();
         }
     }
 
@@ -262,7 +264,7 @@ public class SaasService {
 
         String error = Validation.validateRegistrationForm(formData, requiredCredentialTypes);
         if (error != null) {
-            return Flows.forms(defaultRealm, request).setError(error).setFormData(formData)
+            return Flows.forms(defaultRealm, request, uriInfo).setError(error).setFormData(formData)
                     .forwardToRegistration();
         }
 
@@ -304,7 +306,7 @@ public class SaasService {
 
         UserModel user = registerMe(defaultRealm, newUser);
         if (user == null) {
-            return Flows.forms(defaultRealm, request).setError(Messages.USERNAME_EXISTS)
+            return Flows.forms(defaultRealm, request, uriInfo).setError(Messages.USERNAME_EXISTS)
                     .setFormData(formData).forwardToRegistration();
 
         }

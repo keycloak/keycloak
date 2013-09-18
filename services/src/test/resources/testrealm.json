@@ -8,6 +8,7 @@
     "requiredApplicationCredentials": [ "password" ],
     "requiredOAuthClientCredentials": [ "password" ],
     "defaultRoles": [ "foo", "bar" ],
+    "verifyEmail" : "true",
     "users": [
         {
             "username": "wburke",
