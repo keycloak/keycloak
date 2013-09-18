@@ -347,62 +347,42 @@ module.controller('RoleDetailCtrl', function($scope, realm, role, Role, $locatio
     };
 });
 
-module.controller('ApplicationListCtrl', function($scope, realm, applications, Application, $location, Dialog, Notifications) {
+module.controller('ApplicationListCtrl', function($scope, realm, applications, Application, $location) {
     console.log('ApplicationListCtrl');
     $scope.realm = realm;
-    $scope.selection = {
-        applications : angular.copy(applications),
-        application : null
-    };
-
-
-    $scope.create = false;
-
-    $scope.changeApplication = function() {
-        console.log('ApplicationListCtrl.changeApplication() - ' + $scope.selection.application.name);
-        $location.url("/realms/" + realm.id + "/applications/" + $scope.selection.application.id);
-    };
-
-
+    $scope.applications = applications;
+    $scope.$watch(function() {
+        return $location.path();
+    }, function() {
+        $scope.path = $location.path().substring(1).split("/");
+    });
 });
 
-module.controller('ApplicationDetailCtrl', function($scope, realm, applications, application, Application, $location, Dialog, Notifications) {
+module.controller('ApplicationDetailCtrl', function($scope, realm, application, Application, $location, Dialog, Notifications) {
     console.log('ApplicationDetailCtrl');
 
     $scope.realm = realm;
     $scope.create = !application.id;
-    var selection = {
-        applications : null,
-        application : null
-    };
-
-    selection.applications = applications;
-
-    for (var i=0;i < selection.applications.length; i++) {
-        if (selection.applications[i].name == application.name) {
-            console.log('app name: ' + application.name);
-            selection.application = selection.applications[i];
-            break;
-        }
-    }
-
-    $scope.selection = selection;
     if (!$scope.create) {
-        $scope.application= selection.application;
+        $scope.application= angular.copy(application);
     } else {
         $scope.application = {};
     }
 
-    $scope.changeApplication = function() {
-        console.log('ApplicationDetailCtrl.changeApplication() - ' + $scope.selection.application.name);
-        $location.url("/realms/" + realm.id + "/applications/" + $scope.selection.application.id);
-    };
+    $scope.$watch(function() {
+        return $location.path();
+    }, function() {
+        $scope.path = $location.path().substring(1).split("/");
+    });
 
     $scope.$watch('application', function() {
-        if (!angular.equals($scope.selection.application, application)) {
+        console.log('watch application');
+        if (!angular.equals($scope.application, application)) {
+            console.log('application changed');
             $scope.changed = true;
         }
     }, true);
+
 
     $scope.save = function() {
         if ($scope.applicationForm.$valid) {
@@ -447,7 +427,7 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, applications,
         Dialog.confirmDelete($scope.application.name, 'application', function() {
             $scope.application.$remove({
                 realm : realm.id,
-                id : $scope.applicatino.id
+                id : $scope.application.id
             }, function() {
                 $location.url("/realms/" + realm.id + "/applications");
                 Notifications.success("Deleted application");

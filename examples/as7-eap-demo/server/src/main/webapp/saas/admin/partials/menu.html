@@ -1,34 +1,48 @@
-<header class="navbar navbar-fixed-top">
-    <div class="navbar-inner">
-        <div class="container">
-            <div class="nav-collapse">
-                <nav id="global-nav">
-                    <div data-ng-controller="RealmDropdownCtrl" >
-                        <ul class="nav pull-left" data-ng-show="showNav()">
-                            <li class="divider-vertical-right"><a href="#/realms/{{current.realm.id}}">Realm</a></li>
-                        </ul>
-                        <select class="nav pull-left" data-ng-show="showNav()" ng-change="changeRealm()" ng-model="current.realm" ng-options="r.realm for r in current.realms">
-                        </select>
-                        <!-- <select class="nav pull-left" ng-options="r.name for r in current.realms"></select> -->
-                    </div>
-                    <ul class="nav pull-right" data-ng-hide="auth.loggedIn">
-                        <li><a href="/auth-server/rest/saas/login">Login</a></li>
-                        <li><a href="/auth-server/rest/saas/registrations">Register</a></li>
+<div class="header rcue">
+    <div class="navbar utility">
+        <div class="navbar-inner clearfix">
+            <h1><a href="#"><strong>Keycloak</strong> Central Login</a></h1>
+            <ul class="nav pull-right" data-ng-hide="auth.loggedIn">
+                <li><a href="/auth-server/rest/saas/login">Login</a></li>
+                <li><a href="/auth-server/rest/saas/registrations">Register</a></li>
+            </ul>
+            <ul class="nav pull-right" data-ng-show="auth.loggedIn">
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                        <span class="icon-user">Icon: user</span>{{auth.user.displayName}}<i class="caret"></i></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="#">Manage Account</a></li>
+                        <li class="separator"><a href="/auth-server/rest/saas/logout">Sign Out</a></li>
                     </ul>
-                    <ul class="nav pull-right" data-ng-show="auth.loggedIn">
-                        <li class="divider-vertical-left dropdown"><a data-toggle="dropdown" class="dropdown-toggle" href="#"><i
-                                class="icon-user icon-gray"></i> Welcome: <b>{{auth.user.displayName}}</b> <i class="caret"></i></a>
-                            <ul class="dropdown-menu">
-                                <li><a href="/auth-server/rest/saas/logout">Sign Out</a></li>
-                            </ul>
-                        </li>
-                    </ul>
-                    <ul class="nav pull-right" data-ng-show="auth.loggedIn">
-                        <li class="divider-vertical-left" data-ng-class="path[0] == 'create' && path[1] == 'realm' && 'active'"
-                            data-ng-show="auth.loggedIn"><a href="#/create/realm">New Realm</a></li>
-                    </ul>
-                </nav>
-            </div>
+                </li>
+            </ul>
         </div>
     </div>
-</header>
+    <div class="navbar primary">
+        <div class="navbar-inner" data-ng-controller="RealmDropdownCtrl">
+            <ul class="nav pull-right" data-ng-show="auth.loggedIn">
+                <li class="divider-vertical-left" data-ng-class="path[0] == 'create' && path[1] == 'realm' && 'active'"
+                    data-ng-show="auth.loggedIn"><a href="#/create/realm">New Realm</a></li>
+            </ul>
+            <ul class="nav" >
+                <li data-ng-show="showNav()"><a href="#/realms/{{current.realm.id}}">Realm</a></li>
+                <li class="select-rcue" data-ng-show="showNav()"><select ng-change="changeRealm()" ng-model="current.realm" ng-options="r.realm for r in current.realms">
+                </select></li>
+            </ul>
+        </div>
+    </div>
+    <!--
+    <div class="navbar primary">
+        <div class="navbar-inner" data-ng-controller="RealmDropdownCtrl">
+            <ul class="nav pull-right" data-ng-show="auth.loggedIn">
+                <li class="divider-vertical-left" data-ng-class="path[0] == 'create' && path[1] == 'realm' && 'active'"
+                    data-ng-show="auth.loggedIn"><a href="#/create/realm">New Realm</a></li>
+            </ul>
+            <ul class="nav" data-ng-show="showNav()">
+                <li class="divider-vertical-right"><a href="#/realms/{{current.realm.id}}">Realm</a></li>
+            </ul>
+            <select class="nav pull-left" data-ng-show="showNav()" ng-change="changeRealm()" ng-model="current.realm" ng-options="r.realm for r in current.realms">
+            </select>
+        </div>
+    </div> -->
+</div><!-- End .header -->

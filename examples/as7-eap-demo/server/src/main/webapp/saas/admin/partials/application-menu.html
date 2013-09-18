@@ -1,25 +1,23 @@
 <div data-ng-hide="create">
-    <nav id="local-nav">
-        <div data-ng-show="selection.applications.length > 0"><span class="divider-vertical-right">Application </span>
-            <select ng-change="changeApplication()" ng-model="selection.application" ng-options="a.name for a in selection.applications">
-                <option value="">-- chose an application --</option>
-            </select>
-        </div>
-        <ul class="nav nav-list" data-ng-show="selection.application">
-            <li data-ng-class="path[4] == 'roles' && 'active'"><a
-                    href="#/realms/{{realm.id}}/applications/{{selection.application.id}}/roles">Application Roles</a>
-                <ul class="sub-items">
-                    <li data-ng-class="path[0] == 'create' && path[1] == 'role' && 'active'"><a
-                            href="#/create/role/realms/{{realm.id}}/applications/{{selection.application.id}}">Add Role</a></li>
-                </ul>
-            </li>
-        </ul>
-        <hr/>
-        <div>
-            <a href="#/create/application/{{realm.id}}">New Application...</a>
-        </div>
-        <div>
-            <a href="#/realms/{{realm.id}}">Back to realm management...</a>
-        </div>
-    </nav>
+    <div data-ng-show="selection.applications.length > 0"><span class="divider-vertical-right">Application </span>
+        <select ng-change="changeApplication()" ng-model="selection.application" ng-options="a.name for a in selection.applications">
+            <option value="">-- chose an application --</option>
+        </select>
+    </div>
+    <ul data-ng-show="selection.application">
+        <li data-ng-class="path[4] == 'roles' && 'active'"><a
+                href="#/realms/{{realm.id}}/applications/{{selection.application.id}}/roles">Application Roles</a>
+            <ul class="sub-items">
+                <li data-ng-class="path[0] == 'create' && path[1] == 'role' && 'active'"><a
+                        href="#/create/role/realms/{{realm.id}}/applications/{{selection.application.id}}">Add Role</a></li>
+            </ul>
+        </li>
+    </ul>
+    <hr/>
+    <div>
+        <a href="#/create/application/{{realm.id}}">New Application...</a>
+    </div>
+    <div>
+        <a href="#/realms/{{realm.id}}">Back to realm management...</a>
+    </div>
 </div>
