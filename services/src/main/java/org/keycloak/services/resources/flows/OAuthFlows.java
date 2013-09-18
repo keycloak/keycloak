@@ -90,6 +90,7 @@ public class OAuthFlows {
                         .size() > 0)));
         if (!isResource
                 && (accessCode.getRealmRolesRequested().size() > 0 || accessCode.getResourceRolesRequested().size() > 0)) {
+            accessCode.setExpiration(System.currentTimeMillis() / 1000 + realm.getAccessCodeLifespanUserAction());
             return oauthGrantPage(accessCode, client);
         }
 
