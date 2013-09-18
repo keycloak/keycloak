@@ -24,11 +24,13 @@ import org.keycloak.services.models.nosql.api.query.NoSQLQuery;
 import org.keycloak.services.models.nosql.api.query.NoSQLQueryBuilder;
 import org.keycloak.services.models.nosql.api.types.Converter;
 import org.keycloak.services.models.nosql.api.types.TypeConverter;
+import org.keycloak.services.models.nosql.impl.types.EnumToStringConverter;
 import org.keycloak.services.models.nosql.impl.types.ListConverter;
 import org.keycloak.services.models.nosql.impl.types.BasicDBListConverter;
 import org.keycloak.services.models.nosql.impl.types.BasicDBObjectConverter;
 import org.keycloak.services.models.nosql.impl.types.NoSQLObjectConverter;
 import org.keycloak.services.models.nosql.impl.types.SimpleConverter;
+import org.keycloak.services.models.nosql.impl.types.StringToEnumConverter;
 import org.picketlink.common.properties.Property;
 import org.picketlink.common.properties.query.AnnotatedPropertyCriteria;
 import org.picketlink.common.properties.query.PropertyQueries;
@@ -63,6 +65,10 @@ public class MongoDBImpl implements NoSQL {
         typeConverter.addAppObjectConverter(new ListConverter(typeConverter, ArrayList.class));
         typeConverter.addAppObjectConverter(new ListConverter(typeConverter, List.class));
         typeConverter.addDBObjectConverter(new BasicDBListConverter(typeConverter));
+
+        // Enum converters
+        typeConverter.addAppObjectConverter(new EnumToStringConverter());
+        typeConverter.addDBObjectConverter(new StringToEnumConverter());
 
         for (Class<? extends NoSQLObject> type : managedDataTypes) {
             getObjectInfo(type);

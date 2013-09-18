@@ -18,6 +18,10 @@ public class Person extends AbstractNoSQLObject {
     private int age;
     private List<String> kids;
     private List<Address> addresses;
+    private Address mainAddress;
+    private Gender gender;
+    private List<Gender> genders;
+
 
     @NoSQLId
     public String getId() {
@@ -47,6 +51,24 @@ public class Person extends AbstractNoSQLObject {
     }
 
     @NoSQLField
+    public Gender getGender() {
+        return gender;
+    }
+
+    public void setGender(Gender gender) {
+        this.gender = gender;
+    }
+
+    @NoSQLField
+    public List<Gender> getGenders() {
+        return genders;
+    }
+
+    public void setGenders(List<Gender> genders) {
+        this.genders = genders;
+    }
+
+    @NoSQLField
     public List<String> getKids() {
         return kids;
     }
@@ -62,5 +84,18 @@ public class Person extends AbstractNoSQLObject {
 
     public void setAddresses(List<Address> addresses) {
         this.addresses = addresses;
+    }
+
+    @NoSQLField
+    public Address getMainAddress() {
+        return mainAddress;
+    }
+
+    public void setMainAddress(Address mainAddress) {
+        this.mainAddress = mainAddress;
+    }
+
+    public static enum Gender {
+        MALE, FEMALE
     }
 }

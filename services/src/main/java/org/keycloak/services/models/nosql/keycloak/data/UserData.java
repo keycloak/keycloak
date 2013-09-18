@@ -3,6 +3,7 @@ package org.keycloak.services.models.nosql.keycloak.data;
 import java.util.List;
 
 import org.jboss.resteasy.logging.Logger;
+import org.keycloak.services.models.UserModel;
 import org.keycloak.services.models.nosql.api.AbstractAttributedNoSQLObject;
 import org.keycloak.services.models.nosql.api.NoSQL;
 import org.keycloak.services.models.nosql.api.NoSQLCollection;
@@ -24,12 +25,15 @@ public class UserData extends AbstractAttributedNoSQLObject {
     private String firstName;
     private String lastName;
     private String email;
-    private boolean enabled;
+    private boolean emailVerified;
+    private boolean totp;
+    private UserModel.Status status;
 
     private String realmId;
 
     private List<String> roleIds;
     private List<String> scopeIds;
+    private List<UserModel.RequiredAction> requiredActions;
 
     @NoSQLId
     public String getId() {
@@ -77,12 +81,34 @@ public class UserData extends AbstractAttributedNoSQLObject {
     }
 
     @NoSQLField
-    public boolean isEnabled() {
-        return enabled;
+    public boolean isEmailVerified() {
+        return emailVerified;
     }
 
-    public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
+    public void setEmailVerified(boolean emailVerified) {
+        this.emailVerified = emailVerified;
+    }
+
+    public boolean isEnabled() {
+        return !UserModel.Status.DISABLED.equals(getStatus());
+    }
+
+    @NoSQLField
+    public boolean isTotp() {
+        return totp;
+    }
+
+    public void setTotp(boolean totp) {
+        this.totp = totp;
+    }
+
+    @NoSQLField
+    public UserModel.Status getStatus() {
+        return status;
+    }
+
+    public void setStatus(UserModel.Status status) {
+        this.status = status;
     }
 
     @NoSQLField
@@ -110,6 +136,15 @@ public class UserData extends AbstractAttributedNoSQLObject {
 
     public void setScopeIds(List<String> scopeIds) {
         this.scopeIds = scopeIds;
+    }
+
+    @NoSQLField
+    public List<UserModel.RequiredAction> getRequiredActions() {
+        return requiredActions;
+    }
+
+    public void setRequiredActions(List<UserModel.RequiredAction> requiredActions) {
+        this.requiredActions = requiredActions;
     }
 
     @Override

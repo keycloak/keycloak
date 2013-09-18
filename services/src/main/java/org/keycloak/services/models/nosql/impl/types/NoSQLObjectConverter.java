@@ -40,7 +40,7 @@ public class NoSQLObjectConverter<T extends NoSQLObject> implements Converter<T,
             String propName = property.getName();
             Object propValue = property.getValue(applicationObject);
 
-            Object dbValue = propValue == null ? null : typeConverter.convertApplicationObjectToDBObject(propValue, Types.boxedClass(property.getJavaClass()));
+            Object dbValue = propValue == null ? null : typeConverter.convertApplicationObjectToDBObject(propValue, Object.class);
             dbObject.put(propName, dbValue);
         }
 

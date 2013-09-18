@@ -54,6 +54,7 @@ public class MongoDBModelTest {
         Person john = new Person();
         john.setFirstName("john");
         john.setAge(25);
+        john.setGender(Person.Gender.MALE);
 
         mongoDB.saveObject(john);
 
@@ -72,6 +73,9 @@ public class MongoDBModelTest {
         addresses.add(addr2);
 
         mary.setAddresses(addresses);
+        mary.setMainAddress(addr1);
+        mary.setGender(Person.Gender.FEMALE);
+        mary.setGenders(Arrays.asList(new Person.Gender[] {Person.Gender.FEMALE}));
         mongoDB.saveObject(mary);
 
         Assert.assertEquals(2, mongoDB.loadObjects(Person.class, mongoDB.createQueryBuilder().build()).size());
@@ -99,5 +103,10 @@ public class MongoDBModelTest {
         Assert.assertTrue(mary.getKids().contains("Pauline"));
         Assert.assertFalse(mary.getKids().contains("Paul"));
         Assert.assertEquals(3, mary.getAddresses().size());
+        Address mainAddress = mary.getMainAddress();
+        Assert.assertEquals("Elm", mainAddress.getStreet());
+        Assert.assertEquals(5, mainAddress.getNumber());
+        Assert.assertEquals(Person.Gender.FEMALE, mary.getGender());
+        Assert.assertTrue(mary.getGenders().contains(Person.Gender.FEMALE));
     }
 }

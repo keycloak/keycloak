@@ -26,10 +26,12 @@ public class RealmData implements NoSQLObject {
     private boolean sslNotRequired;
     private boolean cookieLoginAllowed;
     private boolean registrationAllowed;
+    private boolean verifyEmail;
     private boolean social;
     private boolean automaticRegistrationAfterSocialLogin;
     private int tokenLifespan;
     private int accessCodeLifespan;
+    private int accessCodeLifespanUserAction;
     private String publicKeyPem;
     private String privateKeyPem;
 
@@ -100,6 +102,15 @@ public class RealmData implements NoSQLObject {
     }
 
     @NoSQLField
+    public boolean isVerifyEmail() {
+        return verifyEmail;
+    }
+
+    public void setVerifyEmail(boolean verifyEmail) {
+        this.verifyEmail = verifyEmail;
+    }
+
+    @NoSQLField
     public boolean isSocial() {
         return social;
     }
@@ -133,6 +144,15 @@ public class RealmData implements NoSQLObject {
 
     public void setAccessCodeLifespan(int accessCodeLifespan) {
         this.accessCodeLifespan = accessCodeLifespan;
+    }
+
+    @NoSQLField
+    public int getAccessCodeLifespanUserAction() {
+        return accessCodeLifespanUserAction;
+    }
+
+    public void setAccessCodeLifespanUserAction(int accessCodeLifespanUserAction) {
+        this.accessCodeLifespanUserAction = accessCodeLifespanUserAction;
     }
 
     @NoSQLField

@@ -1,5 +1,6 @@
 package org.keycloak.services.models.nosql.keycloak.adapters;
 
+import java.util.List;
 import java.util.Map;
 
 import org.keycloak.services.models.UserModel;
@@ -32,9 +33,15 @@ public class UserAdapter implements UserModel {
     }
 
     @Override
-    public void setEnabled(boolean enabled) {
-       user.setEnabled(enabled);
-       noSQL.saveObject(user);
+    public void setStatus(Status status) {
+        user.setStatus(status);
+        noSQL.saveObject(user);
+    }
+
+    @Override
+    public Status getStatus() {
+        Status status = user.getStatus();
+        return status != null ? status : Status.ENABLED;
     }
 
     @Override
@@ -71,6 +78,17 @@ public class UserAdapter implements UserModel {
     }
 
     @Override
+    public boolean isEmailVerified() {
+        return user.isEmailVerified();
+    }
+
+    @Override
+    public void setEmailVerified(boolean verified) {
+        user.setEmailVerified(verified);
+        noSQL.saveObject(user);
+    }
+
+    @Override
     public void setAttribute(String name, String value) {
         user.setAttribute(name, value);
     }
@@ -93,5 +111,38 @@ public class UserAdapter implements UserModel {
 
     public UserData getUser() {
         return user;
+    }
+
+    @Override
+    public List<RequiredAction> getRequiredActions() {
+        List<RequiredAction> requiredActions = user.getRequiredActions();
+
+        // Compatibility with picketlink impl
+        if (requiredActions == null || requiredActions.size() == 0) {
+            return null;
+        }
+
+        return requiredActions;
+    }
+
+    @Override
+    public void addRequiredAction(RequiredAction action) {
+        noSQL.pushItemToList(user, "requiredActions", action);
+    }
+
+    @Override
+    public void removeRequiredAction(RequiredAction action) {
+        noSQL.pullItemFromList(user, "requiredActions", action);
+    }
+
+    @Override
+    public boolean isTotp() {
+        return user.isTotp();
+    }
+
+    @Override
+    public void setTotp(boolean totp) {
+        user.setTotp(totp);
+        noSQL.saveObject(user);
     }
 }

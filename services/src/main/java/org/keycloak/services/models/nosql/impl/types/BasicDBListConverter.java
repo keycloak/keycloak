@@ -58,7 +58,16 @@ public class BasicDBListConverter implements Converter<BasicDBList, ArrayList> {
                 throw new RuntimeException(cnfe);
             }
         } else {
-            return Object.class;
+            // Special case (if we have String like "org.keycloak.Gender###MALE" we expect that substring before ### is className
+            if (String.class.equals(dbObject.getClass())) {
+                String dbObjString = (String)dbObject;
+                if (dbObjString.contains(ClassCache.SPLIT)) {
+                    String className = dbObjString.substring(0, dbObjString.indexOf(ClassCache.SPLIT));
+                    return ClassCache.getInstance().getOrLoadClass(className);
+                }
+            }
+
+            return dbObject.getClass();
         }
     }
 }

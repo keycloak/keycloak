@@ -60,17 +60,17 @@ public class TypeConverter {
                 converter = (Converter<Object, S>)appObjects.values().iterator().next();
             } else {
                 // Try to find converter for requested application type
-                converter = (Converter<Object, S>)appObjects.get(expectedApplicationObjectType);
+                converter = (Converter<Object, S>)getAppConverterForType(expectedApplicationObjectType, appObjects);
             }
         }
 
         if (converter == null) {
             throw new IllegalArgumentException("Can't found converter for type " + dbObjectType + " and expectedApplicationType " + expectedApplicationObjectType);
         }
-        if (!expectedApplicationObjectType.isAssignableFrom(converter.getExpectedReturnType())) {
+        /*if (!expectedApplicationObjectType.isAssignableFrom(converter.getExpectedReturnType())) {
             throw new IllegalArgumentException("Converter " + converter + " has return type " + converter.getExpectedReturnType() +
                     " but we need type " + expectedApplicationObjectType);
-        }
+        } */
 
         return converter.convertObject(dbObject);
     }
@@ -78,7 +78,7 @@ public class TypeConverter {
 
     public <S> S convertApplicationObjectToDBObject(Object applicationObject, Class<S> expectedDBObjectType) {
         Class<?> appObjectType = applicationObject.getClass();
-        Converter<Object, S> converter = (Converter<Object, S>)getAppConverterForType(appObjectType);
+        Converter<Object, S> converter = (Converter<Object, S>)getAppConverterForType(appObjectType, appObjectConverters);
         if (converter == null) {
             throw new IllegalArgumentException("Can't found converter for type " + appObjectType + " in registered appObjectConverters");
         }
@@ -90,14 +90,14 @@ public class TypeConverter {
     }
 
     // Try to find converter for given type or all it's supertypes
-    private Converter<Object, ?> getAppConverterForType(Class<?> appObjectType) {
+    private static Converter<Object, ?> getAppConverterForType(Class<?> appObjectType, Map<Class<?>, Converter<?, ?>> appObjectConverters) {
         Converter<Object, ?> converter = (Converter<Object, ?>)appObjectConverters.get(appObjectType);
         if (converter != null) {
             return converter;
         } else {
             Class<?>[] interfaces = appObjectType.getInterfaces();
             for (Class<?> interface1 : interfaces) {
-                converter = getAppConverterForType(interface1);
+                converter = getAppConverterForType(interface1, appObjectConverters);
                 if (converter != null) {
                     return converter;
                 }
@@ -105,7 +105,7 @@ public class TypeConverter {
 
             Class<?> superType = appObjectType.getSuperclass();
             if (superType != null) {
-                return getAppConverterForType(superType);
+                return getAppConverterForType(superType, appObjectConverters);
             } else {
                 return null;
             }
