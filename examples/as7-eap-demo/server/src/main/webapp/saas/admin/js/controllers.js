@@ -184,29 +184,13 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $ht
 module.controller('UserListCtrl', function($scope, realm, User) {
 	$scope.realm = realm;
     $scope.users = [];
-    $scope.query = "*";
-    $scope.attribute = {};
-    var params = {};
+    //$scope.search = "Search...";
 
-    $scope.addAttribute = function() {
-        console.log('queryAttribute');
-        params[$scope.attribute.name] = $scope.attribute.value;
-        for (var key in params) {
-            $scope.query = " " + key + "=" +params[key];
-        }
-    };
-
-    $scope.executeQuery = function() {
-        console.log('executeQuery');
-        var parameters = angular.copy(params);
+    $scope.searchQuery = function() {
+        console.log('search: ' + $scope.search);
+        var parameters = { search : $scope.search };
         parameters["realm"] = realm.id;
         $scope.users = User.query(parameters);
-    };
-
-    $scope.clearQuery = function() {
-        params = {};
-        $scopre.query = "*";
-        $scope.users = [];
     };
 });
 
@@ -224,37 +208,32 @@ module.controller('UserDetailCtrl', function($scope, realm, user, User, $locatio
 	}, true);
 
 	$scope.save = function() {
-		if ($scope.userForm.$valid) {
-            if ($scope.create) {
-                User.save({
-                    realm: realm.id
-                }, $scope.user, function () {
-                    $scope.changed = false;
-                    user = angular.copy($scope.user);
+        if ($scope.create) {
+            User.save({
+                realm: realm.id
+            }, $scope.user, function () {
+                $scope.changed = false;
+                user = angular.copy($scope.user);
 
-                    $location.url("/realms/" + realm.id + "/users/" + $scope.user.username);
-                    Notifications.success("Created user");
-                });
-            } else {
-                User.update({
-                    realm: realm.id,
-                    userId: $scope.user.username
-                }, $scope.user, function () {
-                    $scope.changed = false;
-                    user = angular.copy($scope.user);
-                    Notifications.success("Saved changes to user");
-                });
-
-            }
+                $location.url("/realms/" + realm.id + "/users/" + $scope.user.username);
+                Notifications.success("Created user");
+            });
         } else {
-			$scope.userForm.showErrors = true;
-		}
+            User.update({
+                realm: realm.id,
+                userId: $scope.user.username
+            }, $scope.user, function () {
+                $scope.changed = false;
+                user = angular.copy($scope.user);
+                Notifications.success("Saved changes to user");
+            });
+
+        }
 	};
 
 	$scope.reset = function() {
 		$scope.user = angular.copy(user);
 		$scope.changed = false;
-		$scope.userForm.showErrors = false;
 	};
 
 	$scope.cancel = function() {

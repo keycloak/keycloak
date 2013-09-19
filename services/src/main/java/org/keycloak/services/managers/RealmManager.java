@@ -8,10 +8,7 @@ import org.keycloak.services.models.UserModel.RequiredAction;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -234,6 +231,66 @@ public class RealmManager {
         return user;
     }
 
+    /**
+     * Query users based on a search string:
+     *
+     * "Bill Burke" first and last name
+     * "bburke@redhat.com" email
+     * "Burke" lastname or username
+     *
+     * @param searchString
+     * @param realmModel
+     * @return
+     */
+    public List<UserModel> searchUsers(String searchString, RealmModel realmModel) {
+        if (searchString == null) {
+            return Collections.emptyList();
+        }
+
+        String search = searchString.trim();
+        if (search.contains(" ")) { //first and last name
+            String[] split = search.split(" ");
+            if (split.length != 2) {
+                return Collections.emptyList();
+            }
+            Map<String, String> attributes = new HashMap<String, String>();
+            attributes.put(UserModel.FIRST_NAME, split[0]);
+            attributes.put(UserModel.LAST_NAME, split[1]);
+            return realmModel.searchForUserByAttributes(attributes);
+        } else if (search.contains("@")) { // email
+            Map<String, String> attributes = new HashMap<String, String>();
+            attributes.put(UserModel.EMAIL, search);
+            return realmModel.searchForUserByAttributes(attributes);
+        } else { // username and lastname
+            Map<String, String> attributes = new HashMap<String, String>();
+            attributes.put(UserModel.LOGIN_NAME, search);
+            List<UserModel> usernameQuery = realmModel.searchForUserByAttributes(attributes);
+            attributes.clear();
+            attributes.put(UserModel.LAST_NAME, search);
+            List<UserModel> lastnameQuery = realmModel.searchForUserByAttributes(attributes);
+            if (usernameQuery.size() == 0) {
+                return lastnameQuery;
+            } else if (lastnameQuery.size() == 0) {
+                return usernameQuery;
+            }
+            List<UserModel> results = new ArrayList<UserModel>();
+            results.addAll(usernameQuery);
+            for (UserModel lastnameUser : lastnameQuery) {
+               boolean found = false;
+                for (UserModel usernameUser : usernameQuery) {
+                    if (usernameUser.getLoginName().equals(lastnameUser.getLoginName())) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    results.add(lastnameUser);
+                }
+            }
+            return results;
+        }
+    }
+
     public void addRequiredCredential(RealmModel newRealm, String requiredCred) {
         newRealm.addRequiredCredential(requiredCred);
     }
@@ -252,6 +309,18 @@ public class RealmManager {
         for (ApplicationRepresentation resourceRep : rep.getApplications()) {
             manager.createResource(realm, loginRole, resourceRep);
         }
+    }
+
+    public UserRepresentation toRepresentation(UserModel user) {
+        UserRepresentation rep = new UserRepresentation();
+        rep.setUsername(user.getLoginName());
+        rep.setLastName(user.getLastName());
+        rep.setFirstName(user.getFirstName());
+        rep.setEmail(user.getEmail());
+        Map<String, String> attrs = new HashMap<String, String>();
+        attrs.putAll(user.getAttributes());
+        rep.setAttributes(attrs);
+        return rep;
     }
 
     public RoleRepresentation toRepresentation(RoleModel role) {
