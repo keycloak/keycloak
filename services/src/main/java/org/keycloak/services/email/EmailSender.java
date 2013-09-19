@@ -24,7 +24,6 @@ package org.keycloak.services.email;
 import java.net.URI;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
-import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 
@@ -39,7 +38,6 @@ import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 
 import org.jboss.resteasy.logging.Logger;
-import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.UserModel;
 import org.keycloak.services.resources.AccountService;
@@ -98,6 +96,27 @@ public class EmailSender {
             send(user.getEmail(), "Verify email", sb.toString());
         } catch (Exception e1) {
             log.warn("Failed to send email verification");
+        }
+    }
+
+    public void sendPasswordReset(UserModel user, RealmModel realm, String code, UriInfo uriInfo) {
+        UriBuilder builder = Urls.accountBase(uriInfo.getBaseUri()).path(AccountService.class, "passwordPage");
+        for (Entry<String, List<String>> e : uriInfo.getQueryParameters().entrySet()) {
+            builder.queryParam(e.getKey(), e.getValue().toArray());
+        }
+        builder.queryParam("code", code);
+
+        URI uri = builder.build(realm.getId());
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(uri.toString());
+        sb.append("\n");
+        sb.append("Expires in " + TimeUnit.SECONDS.toMinutes(realm.getAccessCodeLifespanUserAction()));
+
+        try {
+            send(user.getEmail(), "Reset password link", sb.toString());
+        } catch (Exception e) {
+            log.warn("Failed to send reset password link", e);
         }
     }
 

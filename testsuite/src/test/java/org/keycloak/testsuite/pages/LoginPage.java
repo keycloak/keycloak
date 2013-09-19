@@ -26,7 +26,10 @@ public class LoginPage {
     private WebElement loginErrorMessage;
 
     public void login(String username, String password) {
+        usernameInput.clear();
         usernameInput.sendKeys(username);
+
+        passwordInput.clear();
         passwordInput.sendKeys(password);
 
         submitButton.click();

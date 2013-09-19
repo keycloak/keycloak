@@ -39,8 +39,10 @@ import org.jboss.resteasy.jose.jws.JWSInput;
 import org.jboss.resteasy.jose.jws.crypto.RSAProvider;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.services.email.EmailSender;
 import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.models.RealmModel;
@@ -49,6 +51,7 @@ import org.keycloak.services.models.UserModel;
 import org.keycloak.services.models.UserModel.RequiredAction;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.FormFlows;
+import org.keycloak.services.resources.flows.OAuthFlows;
 import org.keycloak.services.validation.Validation;
 import org.picketlink.idm.credential.util.TimeBasedOTP;
 
@@ -253,14 +256,18 @@ public class AccountService {
 
             String error = null;
 
-            if (Validation.isEmpty(password)) {
-                error = Messages.MISSING_PASSWORD;
-            } else if (Validation.isEmpty(passwordNew)) {
+            if (Validation.isEmpty(passwordNew)) {
                 error = Messages.MISSING_PASSWORD;
             } else if (!passwordNew.equals(passwordConfirm)) {
                 error = Messages.INVALID_PASSWORD_CONFIRM;
-            } else if (!realm.validatePassword(user, password)) {
-                error = Messages.INVALID_PASSWORD_EXISTING;
+            }
+
+            if (user.getRequiredActions() == null || !user.getRequiredActions().contains(RequiredAction.RESET_PASSWORD)) {
+                if (Validation.isEmpty(password)) {
+                    error = Messages.MISSING_PASSWORD;
+                } else if (!realm.validatePassword(user, password)) {
+                    error = Messages.INVALID_PASSWORD_EXISTING;
+                }
             }
 
             if (error != null) {
@@ -273,12 +280,13 @@ public class AccountService {
 
             realm.updateCredential(user, credentials);
 
-            Response response = redirectOauth();
-            if (response != null) {
-                return response;
-            } else {
-                return Flows.forms(realm, request, uriInfo).setUser(user).forwardToPassword();
-            }
+            user.removeRequiredAction(RequiredAction.RESET_PASSWORD);
+            user.setStatus(UserModel.Status.ENABLED);
+
+            authManager.expireIdentityCookie(realm, uriInfo);
+            new ResourceAdminManager().singleLogOut(realm, user.getLoginName());
+            
+            return Flows.forms(realm, request, uriInfo).forwardToLogin();
         } else {
             return Response.status(Status.FORBIDDEN).build();
         }
@@ -320,12 +328,48 @@ public class AccountService {
     @Path("password")
     @GET
     public Response passwordPage() {
-        UserModel user = getUserFromAuthManager();
+        UserModel user = getUser(RequiredAction.RESET_PASSWORD);
         if (user != null) {
             return Flows.forms(realm, request, uriInfo).setUser(user).forwardToPassword();
         } else {
             return Response.status(Status.FORBIDDEN).build();
         }
+    }
+
+    @Path("password-reset")
+    @GET
+    public Response resetPassword(@QueryParam("username") final String username,
+            @QueryParam("client_id") final String clientId, @QueryParam("scope") final String scopeParam,
+            @QueryParam("state") final String state, @QueryParam("redirect_uri") final String redirect) {
+
+        OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
+
+        if (!realm.isEnabled()) {
+            return oauth.forwardToSecurityFailure("Realm not enabled.");
+        }
+        UserModel client = realm.getUser(clientId);
+        if (client == null) {
+            return oauth.forwardToSecurityFailure("Unknown login requester.");
+        }
+        if (!client.isEnabled()) {
+            return oauth.forwardToSecurityFailure("Login requester not enabled.");
+        }
+
+        // String username = formData.getFirst("username");
+        UserModel user = realm.getUser(username);
+        user.addRequiredAction(RequiredAction.RESET_PASSWORD);
+        user.setStatus(UserModel.Status.ACTIONS_REQUIRED);
+
+        AccessCodeEntry accessCode = tokenManager.createAccessCode(scopeParam, state, redirect, realm, client, user);
+        accessCode.setExpiration(System.currentTimeMillis() / 1000 + realm.getAccessCodeLifespanUserAction());
+
+        if (user.getEmail() == null) {
+            return oauth.forwardToSecurityFailure("Email address not set, contact admin");
+        }
+
+        new EmailSender().sendPasswordReset(user, realm, accessCode.getCode(), uriInfo);
+        // TODO Add info message
+        return Flows.forms(realm, request, uriInfo).forwardToLogin();
     }
 
 }

@@ -21,10 +21,13 @@
  */
 package org.keycloak.testsuite;
 
+import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.junit.Arquillian;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.keycloak.testsuite.pages.ChangePasswordPage;
+import org.keycloak.testsuite.pages.UpdateProfilePage;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -32,44 +35,52 @@ import org.junit.runner.RunWith;
 @RunWith(Arquillian.class)
 public class AccountTest extends AbstractDroneTest {
 
+    @Page
+    protected ChangePasswordPage changePasswordPage;
+
+    @Page
+    protected UpdateProfilePage profilePage;
+
     @Test
     public void changePassword() {
-        // registerUser("changePassword", "password");
-        //
-        // browser.open(authServerUrl + "/rest/realms/demo/account/password");
-        // browser.waitForPageToLoad(DEFAULT_WAIT);
-        //
-        // Assert.assertTrue(browser.isTextPresent("Change Password"));
-        //
-        // browser.type("id=password", "password");
-        // browser.type("id=password-new", "newpassword");
-        // browser.type("id=password-confirm", "newpassword");
-        // browser.click("css=input[type=\"submit\"]");
-        // browser.waitForPageToLoad(DEFAULT_WAIT);
-        //
-        // logout();
-        //
-        // login("changePassword", "password", "Invalid username or password");
-        // login("changePassword", "newpassword");
+        appPage.open();
+        loginPage.register();
+        registerPage.register("name", "email", "changePassword", "password", "password");
+
+        changePasswordPage.open();
+        changePasswordPage.changePassword("password", "new-password", "new-password");
+
+        appPage.open();
+
+        Assert.assertTrue(loginPage.isCurrent());
+
+        loginPage.login("changePassword", "password");
+
+        Assert.assertEquals("Invalid username or password", loginPage.getError());
+
+        loginPage.login("changePassword", "new-password");
+
+        Assert.assertTrue(appPage.isCurrent());
+        Assert.assertEquals("changePassword", appPage.getUser());
     }
 
     @Test
     public void changeProfile() {
-        // registerUser("changeProfile", "password");
-        //
-        // browser.open(authServerUrl + "/rest/realms/demo/account");
-        // browser.waitForPageToLoad(DEFAULT_WAIT);
-        //
-        // browser.type("id=firstName", "Newfirst");
-        // browser.type("id=lastName", "Newlast");
-        // browser.type("id=email", "new@email.com");
-        //
-        // browser.click("css=input[type=\"submit\"]");
-        // browser.waitForPageToLoad(DEFAULT_WAIT);
-        //
-        // Assert.assertEquals("Newfirst", browser.getValue("id=firstName"));
-        // Assert.assertEquals("Newlast", browser.getValue("id=lastName"));
-        // Assert.assertEquals("new@email.com", browser.getValue("id=email"));
+        appPage.open();
+        loginPage.register();
+        registerPage.register("first last", "old@email.com", "changeProfile", "password", "password");
+
+        profilePage.open();
+
+        Assert.assertEquals("first", profilePage.getFirstName());
+        Assert.assertEquals("last", profilePage.getLastName());
+        Assert.assertEquals("old@email.com", profilePage.getEmail());
+
+        profilePage.updateProfile("New first", "New last", "new@email.com");
+
+        Assert.assertEquals("New first", profilePage.getFirstName());
+        Assert.assertEquals("New last", profilePage.getLastName());
+        Assert.assertEquals("new@email.com", profilePage.getEmail());
     }
 
 }
