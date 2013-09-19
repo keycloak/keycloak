@@ -20,6 +20,7 @@ import org.keycloak.services.models.nosql.keycloak.data.SocialLinkData;
 import org.keycloak.services.models.nosql.keycloak.data.UserData;
 import org.keycloak.services.models.nosql.impl.MongoDBImpl;
 import org.keycloak.services.models.nosql.impl.MongoDBQueryBuilder;
+import org.keycloak.services.models.nosql.keycloak.data.credentials.OTPData;
 import org.keycloak.services.models.nosql.keycloak.data.credentials.PasswordData;
 
 /**
@@ -36,6 +37,7 @@ public class MongoDBSessionFactory implements KeycloakSessionFactory {
             RoleData.class,
             RequiredCredentialData.class,
             PasswordData.class,
+            OTPData.class,
             SocialLinkData.class,
             ApplicationData.class
     };

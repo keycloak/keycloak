@@ -1,15 +1,11 @@
 package org.keycloak.services.models.nosql.keycloak.credentials;
 
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
 
 import org.keycloak.services.models.nosql.api.NoSQL;
 import org.keycloak.services.models.nosql.api.query.NoSQLQuery;
-import org.keycloak.services.models.nosql.api.query.NoSQLQueryBuilder;
-import org.keycloak.services.models.nosql.impl.MongoDBQueryBuilder;
 import org.keycloak.services.models.nosql.keycloak.data.UserData;
 import org.keycloak.services.models.nosql.keycloak.data.credentials.PasswordData;
 import org.picketlink.idm.credential.Credentials;
@@ -34,7 +30,11 @@ public class PasswordCredentialHandler {
 
     private PasswordEncoder passwordEncoder = new SHAPasswordEncoder(512);;
 
-    public void setup(Map<String, Object> options) {
+    public PasswordCredentialHandler(Map<String, Object> options) {
+        setup(options);
+    }
+
+    private void setup(Map<String, Object> options) {
         if (options != null) {
             Object providedEncoder = options.get(PASSWORD_ENCODER);
 
@@ -64,6 +64,7 @@ public class PasswordCredentialHandler {
 
                 // If the stored hash is null we automatically fail validation
                 if (passwordData != null) {
+                    // TODO: Status.INVALID should have bigger priority than Status.EXPIRED?
                     if (!isCredentialExpired(passwordData.getExpiryDate())) {
 
                         boolean matches = this.passwordEncoder.verify(saltPassword(passwordToValidate, passwordData.getSalt()), passwordData.getEncodedHash());

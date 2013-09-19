@@ -18,24 +18,20 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.services.resources.KeycloakApplication;
+import org.keycloak.test.common.AbstractKeycloakTest;
+import org.keycloak.test.common.SessionFactoryTestContext;
 import org.picketlink.idm.credential.util.TimeBasedOTP;
 
-public class AuthenticationManagerTest {
+public class AuthenticationManagerTest extends AbstractKeycloakTest {
 
-    private RealmManager adapter;
     private AuthenticationManager am;
-    private KeycloakSessionFactory factory;
     private MultivaluedMap<String, String> formData;
-    private KeycloakSession identitySession;
     private TimeBasedOTP otp;
     private RealmModel realm;
     private UserModel user;
 
-    @After
-    public void after() throws Exception {
-        identitySession.getTransaction().commit();
-        identitySession.close();
-        factory.close();
+    public AuthenticationManagerTest(SessionFactoryTestContext testContext) {
+        super(testContext);
     }
 
     @Test
@@ -134,12 +130,8 @@ public class AuthenticationManagerTest {
 
     @Before
     public void before() throws Exception {
-        factory = KeycloakApplication.buildSessionFactory();
-        identitySession = factory.createSession();
-        identitySession.getTransaction().begin();
-        adapter = new RealmManager(identitySession);
-
-        realm = adapter.createRealm("Test");
+        super.before();
+        realm = getRealmManager().createRealm("Test");
         realm.setAccessCodeLifespan(100);
         realm.setCookieLoginAllowed(true);
         realm.setEnabled(true);

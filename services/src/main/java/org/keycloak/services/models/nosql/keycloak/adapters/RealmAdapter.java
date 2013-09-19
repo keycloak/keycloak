@@ -32,6 +32,8 @@ import org.keycloak.services.models.nosql.keycloak.data.RoleData;
 import org.keycloak.services.models.nosql.keycloak.data.SocialLinkData;
 import org.keycloak.services.models.nosql.keycloak.data.UserData;
 import org.picketlink.idm.credential.Credentials;
+import org.picketlink.idm.credential.Password;
+import org.picketlink.idm.credential.TOTPCredentials;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -44,9 +46,9 @@ public class RealmAdapter implements RealmModel {
     protected volatile transient PublicKey publicKey;
     protected volatile transient PrivateKey privateKey;
 
-    // TODO: likely shouldn't be static. And setup is not called ATM, which means that it's not possible to configure stuff like PasswordEncoder etc.
-    private static PasswordCredentialHandler passwordCredentialHandler = new PasswordCredentialHandler();
-    private static TOTPCredentialHandler totpCredentialHandler = new TOTPCredentialHandler();
+    // TODO: likely shouldn't be static. And ATM, just empty map is passed -> It's not possible to configure stuff like PasswordEncoder etc.
+    private static PasswordCredentialHandler passwordCredentialHandler = new PasswordCredentialHandler(new HashMap<String, Object>());
+    private static TOTPCredentialHandler totpCredentialHandler = new TOTPCredentialHandler(new HashMap<String, Object>());
 
     public RealmAdapter(RealmData realmData, NoSQL noSQL) {
         this.realm = realmData;
@@ -659,7 +661,8 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public boolean validateTOTP(UserModel user, String password, String token) {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        Credentials.Status status = totpCredentialHandler.validate(noSQL, ((UserAdapter)user).getUser(), password, token, null);
+        return status == Credentials.Status.VALID;
     }
 
     @Override
@@ -667,10 +670,7 @@ public class RealmAdapter implements RealmModel {
         if (cred.getType().equals(CredentialRepresentation.PASSWORD)) {
             passwordCredentialHandler.update(noSQL, ((UserAdapter)user).getUser(), cred.getValue(), null, null);
         } else if (cred.getType().equals(CredentialRepresentation.TOTP)) {
-            // TODO
-//            TOTPCredential totp = new TOTPCredential(cred.getValue());
-//            totp.setDevice(cred.getDevice());
-//            idm.updateCredential(((UserAdapter)user).getUser(), totp);
+            totpCredentialHandler.update(noSQL, ((UserAdapter)user).getUser(), cred.getValue(), cred.getDevice(), null, null);
         } else if (cred.getType().equals(CredentialRepresentation.CLIENT_CERT)) {
             // TODO
 //            X509Certificate cert = null;
