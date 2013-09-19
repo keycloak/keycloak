@@ -3,14 +3,16 @@
     "enabled": true,
     "tokenLifespan": 6000,
     "accessCodeLifespan": 30,
+    "accessCodeLifespanUserAction": 600,
     "requiredCredentials": [ "password" ],
     "requiredApplicationCredentials": [ "password" ],
     "requiredOAuthClientCredentials": [ "password" ],
     "defaultRoles": [ "foo", "bar" ],
+    "verifyEmail" : "true",
     "users": [
         {
             "username": "wburke",
-            "enabled": true,
+            "status": "ENABLED",
             "attributes": {
                 "email": "bburke@redhat.com"
             },
@@ -23,7 +25,7 @@
         },
         {
             "username": "loginclient",
-            "enabled": true,
+            "status": "ENABLED",
             "credentials": [
                 {
                     "type": "password",
@@ -33,7 +35,7 @@
         },
         {
             "username": "admin",
-            "enabled": true,
+            "status": "ENABLED",
             "credentials": [
                 {
                     "type": "password",
@@ -43,7 +45,7 @@
         },
         {
             "username": "oauthclient",
-            "enabled": true,
+            "status": "ENABLED",
             "credentials": [
                 {
                     "type": "password",
@@ -53,7 +55,7 @@
         },
         {
             "username": "mySocialUser",
-            "enabled": true
+            "status": "ENABLED"
         }
     ],
     "roleMappings": [

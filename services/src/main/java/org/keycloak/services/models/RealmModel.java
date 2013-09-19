@@ -35,6 +35,10 @@ public interface RealmModel {
 
     void setRegistrationAllowed(boolean registrationAllowed);
 
+    boolean isVerifyEmail();
+
+    void setVerifyEmail(boolean verifyEmail);
+
     int getTokenLifespan();
 
     void setTokenLifespan(int tokenLifespan);
@@ -42,6 +46,10 @@ public interface RealmModel {
     int getAccessCodeLifespan();
 
     void setAccessCodeLifespan(int accessCodeLifespan);
+
+    int getAccessCodeLifespanUserAction();
+
+    void setAccessCodeLifespanUserAction(int accessCodeLifespanUserAction);
 
     String getPublicKeyPem();
 

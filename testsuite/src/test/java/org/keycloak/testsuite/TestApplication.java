@@ -25,6 +25,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import javax.servlet.ServletContext;
+import javax.ws.rs.core.Context;
+
 import org.jboss.resteasy.jwt.JsonSerialization;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -40,27 +43,8 @@ import org.keycloak.services.resources.SaasService;
  */
 public class TestApplication extends KeycloakApplication {
 
-    public static RealmRepresentation loadJson(String path)
-    {
-        InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(path);
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
-        int c;
-        try {
-            while ( (c = is.read()) != -1)
-            {
-                os.write(c);
-            }
-            byte[] bytes = os.toByteArray();
-            //System.out.println(new String(bytes));
-
-            return JsonSerialization.fromBytes(RealmRepresentation.class, bytes);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public TestApplication() {
-        super();
+    public TestApplication(@Context ServletContext servletContext) {
+        super(servletContext);
         KeycloakSession session = factory.createSession();
         session.getTransaction().begin();
         RealmManager realmManager = new RealmManager(session);
@@ -90,5 +74,21 @@ public class TestApplication extends KeycloakApplication {
 
     }
 
+    public static RealmRepresentation loadJson(String path) {
+        InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(path);
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        int c;
+        try {
+            while ((c = is.read()) != -1) {
+                os.write(c);
+            }
+            byte[] bytes = os.toByteArray();
+            // System.out.println(new String(bytes));
+
+            return JsonSerialization.fromBytes(RealmRepresentation.class, bytes);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
 }

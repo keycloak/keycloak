@@ -14,10 +14,12 @@ public class RealmRepresentation {
     protected String realm;
     protected int tokenLifespan;
     protected int accessCodeLifespan;
+    protected int accessCodeLifespanUserAction;
     protected boolean enabled;
     protected boolean sslNotRequired;
     protected boolean cookieLoginAllowed;
     protected boolean registrationAllowed;
+    protected boolean verifyEmail;
     protected boolean social;
     protected boolean automaticRegistrationAfterSocialLogin;
     protected String privateKey;
@@ -190,6 +192,14 @@ public class RealmRepresentation {
         this.accessCodeLifespan = accessCodeLifespan;
     }
 
+    public int getAccessCodeLifespanUserAction() {
+        return accessCodeLifespanUserAction;
+    }
+
+    public void setAccessCodeLifespanUserAction(int accessCodeLifespanUserAction) {
+        this.accessCodeLifespanUserAction = accessCodeLifespanUserAction;
+    }
+
     public List<RoleRepresentation> getRoles() {
         return roles;
     }
@@ -228,6 +238,14 @@ public class RealmRepresentation {
 
     public void setRegistrationAllowed(boolean registrationAllowed) {
         this.registrationAllowed = registrationAllowed;
+    }
+
+    public boolean isVerifyEmail() {
+        return verifyEmail;
+    }
+
+    public void setVerifyEmail(boolean verifyEmail) {
+        this.verifyEmail = verifyEmail;
     }
 
     public boolean isSocial() {

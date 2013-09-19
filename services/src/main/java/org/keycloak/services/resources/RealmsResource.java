@@ -66,7 +66,7 @@ public class RealmsResource {
             logger.debug("realm not found");
             throw new NotFoundException();
         }
-        AccountService accountService = new AccountService(realm);
+        AccountService accountService = new AccountService(realm, tokenManager);
         resourceContext.initResource(accountService);
         return accountService;
     }

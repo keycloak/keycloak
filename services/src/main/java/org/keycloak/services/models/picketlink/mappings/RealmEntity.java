@@ -35,6 +35,8 @@ public class RealmEntity implements Serializable {
     @AttributeValue
     private boolean registrationAllowed;
     @AttributeValue
+    private boolean verifyEmail;
+    @AttributeValue
     private boolean social;
     @AttributeValue
     private boolean automaticRegistrationAfterSocialLogin;
@@ -42,6 +44,8 @@ public class RealmEntity implements Serializable {
     private int tokenLifespan;
     @AttributeValue
     private int accessCodeLifespan;
+    @AttributeValue
+    private int accessCodeLifespanUserAction;
     @AttributeValue
     @Column(length = 2048)
     private String publicKeyPem;
@@ -100,6 +104,14 @@ public class RealmEntity implements Serializable {
         this.registrationAllowed = registrationAllowed;
     }
 
+    public boolean isVerifyEmail() {
+        return verifyEmail;
+    }
+
+    public void setVerifyEmail(boolean verifyEmail) {
+        this.verifyEmail = verifyEmail;
+    }
+
     public boolean isSocial() {
         return social;
     }
@@ -130,6 +142,14 @@ public class RealmEntity implements Serializable {
 
     public void setAccessCodeLifespan(int accessCodeLifespan) {
         this.accessCodeLifespan = accessCodeLifespan;
+    }
+
+    public int getAccessCodeLifespanUserAction() {
+        return accessCodeLifespanUserAction;
+    }
+
+    public void setAccessCodeLifespanUserAction(int accessCodeLifespanUserAction) {
+        this.accessCodeLifespanUserAction = accessCodeLifespanUserAction;
     }
 
     public String getPublicKeyPem() {

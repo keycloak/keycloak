@@ -21,10 +21,13 @@
  */
 package org.keycloak.testsuite;
 
+import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.junit.Arquillian;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.keycloak.testsuite.pages.ChangePasswordPage;
+import org.keycloak.testsuite.pages.UpdateProfilePage;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -32,44 +35,52 @@ import org.junit.runner.RunWith;
 @RunWith(Arquillian.class)
 public class AccountTest extends AbstractDroneTest {
 
+    @Page
+    protected ChangePasswordPage changePasswordPage;
+
+    @Page
+    protected UpdateProfilePage profilePage;
+
     @Test
     public void changePassword() {
-        registerUser("changePassword", "password");
+        appPage.open();
+        loginPage.register();
+        registerPage.register("name", "email", "changePassword", "password", "password");
 
-        selenium.open(authServerUrl + "/rest/realms/demo/account/password");
-        selenium.waitForPageToLoad(DEFAULT_WAIT);
+        changePasswordPage.open();
+        changePasswordPage.changePassword("password", "new-password", "new-password");
 
-        Assert.assertTrue(selenium.isTextPresent("Change Password"));
+        appPage.open();
 
-        selenium.type("id=password", "password");
-        selenium.type("id=password-new", "newpassword");
-        selenium.type("id=password-confirm", "newpassword");
-        selenium.click("css=input[type=\"submit\"]");
-        selenium.waitForPageToLoad(DEFAULT_WAIT);
+        Assert.assertTrue(loginPage.isCurrent());
 
-        logout();
+        loginPage.login("changePassword", "password");
 
-        login("changePassword", "password", "Invalid username or password");
-        login("changePassword", "newpassword");
+        Assert.assertEquals("Invalid username or password", loginPage.getError());
+
+        loginPage.login("changePassword", "new-password");
+
+        Assert.assertTrue(appPage.isCurrent());
+        Assert.assertEquals("changePassword", appPage.getUser());
     }
 
     @Test
     public void changeProfile() {
-        registerUser("changeProfile", "password");
+        appPage.open();
+        loginPage.register();
+        registerPage.register("first last", "old@email.com", "changeProfile", "password", "password");
 
-        selenium.open(authServerUrl + "/rest/realms/demo/account");
-        selenium.waitForPageToLoad(DEFAULT_WAIT);
+        profilePage.open();
 
-        selenium.type("id=firstName", "Newfirst");
-        selenium.type("id=lastName", "Newlast");
-        selenium.type("id=email", "new@email.com");
+        Assert.assertEquals("first", profilePage.getFirstName());
+        Assert.assertEquals("last", profilePage.getLastName());
+        Assert.assertEquals("old@email.com", profilePage.getEmail());
 
-        selenium.click("css=input[type=\"submit\"]");
-        selenium.waitForPageToLoad(DEFAULT_WAIT);
+        profilePage.updateProfile("New first", "New last", "new@email.com");
 
-        Assert.assertEquals("Newfirst", selenium.getValue("id=firstName"));
-        Assert.assertEquals("Newlast", selenium.getValue("id=lastName"));
-        Assert.assertEquals("new@email.com", selenium.getValue("id=email"));
+        Assert.assertEquals("New first", profilePage.getFirstName());
+        Assert.assertEquals("New last", profilePage.getLastName());
+        Assert.assertEquals("new@email.com", profilePage.getEmail());
     }
 
 }

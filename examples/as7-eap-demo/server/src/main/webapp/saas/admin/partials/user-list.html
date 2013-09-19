@@ -9,7 +9,7 @@
                 </ul>
             </div>
             <div id="content">
-                <h2 class="pull-left">Users</h2>
+                <h2 class="pull-left">Query Users</h2>
                 <table>
                     <caption>Table of realm users</caption>
                     <thead>
@@ -27,7 +27,6 @@
                     </tr>
                     <tr>
                     <tr>
-                        <th>Enabled</th>
                         <th>Username</th>
                         <th>Last Name</th>
                         <th>First Name</th>
@@ -37,7 +36,7 @@
                     </thead>
                     <tfoot>
                     <tr>
-                        <td colspan="3">
+                        <td colspan="4">
                             <div class="table-nav">
                                 <a href="#" class="first disabled">First page</a><a href="#" class="prev disabled">Previous
                                 page</a><span><strong>1-8</strong> of <strong>10</strong></span><a href="#"
@@ -49,7 +48,6 @@
                     </tfoot>
                     <tbody class="selectable-rows">
                     <tr ng-repeat="user in users">
-                        <td>{{user.enabled}}</td>
                         <td><a href="#/realms/{{realm.id}}/users/{{user.username}}">{{user.username}}</a></td>
                         <td>{{user.lastName</td>
                         <td>{{user.firstName</td>

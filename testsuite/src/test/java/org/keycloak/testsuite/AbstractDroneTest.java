@@ -21,20 +21,15 @@
  */
 package org.keycloak.testsuite;
 
-import java.io.File;
-import java.net.MalformedURLException;
-import java.net.URL;
-
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-
-import com.thoughtworks.selenium.DefaultSelenium;
+import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.RegisterPage;
+import org.openqa.selenium.WebDriver;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -43,112 +38,33 @@ public abstract class AbstractDroneTest {
 
     @Deployment(name = "app", testable = false, order = 2)
     public static WebArchive appDeployment() {
-        File[] libs = Maven.resolver().loadPomFromFile("pom.xml")
-                .resolve("org.keycloak:keycloak-core", "org.keycloak:keycloak-as7-adapter").withoutTransitivity().asFile();
-
-        WebArchive archive = ShrinkWrap.create(WebArchive.class, "app.war").addClasses(TestApplication.class)
-                .addAsLibraries(libs).addAsWebInfResource("jboss-deployment-structure.xml")
-                .addAsWebInfResource("app-web.xml", "web.xml").addAsWebInfResource("app-jboss-web.xml", "jboss-web.xml")
-                .addAsWebInfResource("app-resteasy-oauth.json", "resteasy-oauth.json").addAsWebResource("user.jsp");
-        return archive;
+        return Deployments.appDeployment();
     }
 
     @Deployment(name = "auth-server", testable = false, order = 1)
     public static WebArchive deployment() {
-        File[] libs = Maven.resolver().loadPomFromFile("pom.xml").importRuntimeDependencies().resolve().withTransitivity()
-                .asFile();
-
-        WebArchive archive = ShrinkWrap.create(WebArchive.class, "auth-server.war").addClasses(TestApplication.class)
-                .addAsLibraries(libs).addAsWebInfResource("jboss-deployment-structure.xml").addAsWebInfResource("web.xml")
-                .addAsResource("persistence.xml", "META-INF/persistence.xml")
-                .addAsResource("testrealm.json", "META-INF/testrealm.json");
-
-        return archive;
+        return Deployments.deployment();
     }
 
-    URL appUrl;
-
-    URL authServerUrl;
-
-    String DEFAULT_WAIT = "10000";
+    @Page
+    protected AppPage appPage;
 
     @Drone
-    DefaultSelenium selenium;
+    protected WebDriver browser;
+
+    @Page
+    protected LoginPage loginPage;
+
+    @Page
+    protected RegisterPage registerPage;
 
     @After
     public void after() {
-        logout();
-    }
-
-    @Before
-    public void before() throws MalformedURLException {
-        authServerUrl = new URL("http://localhost:8080/auth-server");
-        appUrl = new URL("http://localhost:8080/app/user.jsp");
-    }
-
-    public void login(String username, String password) {
-        login(username, password, null);
-    }
-
-    public void login(String username, String password, String expectErrorMessage) {
-        selenium.open(appUrl.toString());
-        selenium.waitForPageToLoad(DEFAULT_WAIT);
-
-        Assert.assertEquals("Log in to demo", selenium.getTitle());
-
-        if (username != null) {
-            selenium.type("id=username", username);
+        appPage.open();
+        if (appPage.isCurrent()) {
+            appPage.logout();
         }
-
-        if (password != null) {
-            selenium.type("id=password", password);
-        }
-
-        selenium.click("css=input[type=\"submit\"]");
-
-        selenium.waitForPageToLoad(DEFAULT_WAIT);
-
-        if (expectErrorMessage == null) {
-            Assert.assertEquals(username, selenium.getText("id=user"));
-        } else {
-            Assert.assertTrue(selenium.isTextPresent(expectErrorMessage));
-        }
-    }
-
-    public void logout() {
-        selenium.open(authServerUrl + "/rest/realms/demo/tokens/logout?redirect_uri=" + appUrl);
-        selenium.waitForPageToLoad(DEFAULT_WAIT);
-
-        Assert.assertEquals("Log in to demo", selenium.getTitle());
-    }
-
-    public void registerUser(String username, String password) {
-        registerUser(username, password, null);
-    }
-
-    public void registerUser(String username, String password, String expectErrorMessage) {
-        selenium.open(appUrl.toString());
-        selenium.waitForPageToLoad(DEFAULT_WAIT);
-
-        selenium.click("link=Register");
-        selenium.waitForPageToLoad(DEFAULT_WAIT);
-        selenium.type("id=name", "Test User");
-        selenium.type("id=email", "test@user.com");
-        if (username != null) {
-            selenium.type("id=username", username);
-        }
-        if (password != null) {
-            selenium.type("id=password", password);
-            selenium.type("id=password-confirm", password);
-        }
-        selenium.click("css=input[type=\"submit\"]");
-        selenium.waitForPageToLoad(DEFAULT_WAIT);
-
-        if (expectErrorMessage == null) {
-            Assert.assertEquals(username, selenium.getText("id=user"));
-        } else {
-            Assert.assertTrue(selenium.isTextPresent(expectErrorMessage));
-        }
+        browser.manage().deleteAllCookies();
     }
 
 }

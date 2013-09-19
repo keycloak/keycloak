@@ -128,7 +128,6 @@ public class RealmAdminResource {
             throw new NotFoundException();
         }
         user.setEmail(rep.getEmail());
-        user.setEnabled(rep.isEnabled());
         user.setFirstName(rep.getFirstName());
         user.setLastName(rep.getLastName());
         for (Map.Entry<String, String> attr : rep.getAttributes().entrySet()) {
@@ -148,7 +147,6 @@ public class RealmAdminResource {
             throw new NotFoundException();
         }
         user.setEmail(rep.getEmail());
-        user.setEnabled(rep.isEnabled());
         user.setFirstName(rep.getFirstName());
         user.setLastName(rep.getLastName());
         if (rep.getAttributes() != null) {

@@ -46,4 +46,6 @@ public class Pages {
 
     public final static String TOTP = "/forms/totp.xhtml";
 
+    public final static String VERIFY_EMAIL = "/forms/verify-email.xhtml";
+
 }

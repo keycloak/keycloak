@@ -201,7 +201,8 @@ public class SocialResource {
                         cookiePath, null, "Added social cookie", NewCookie.DEFAULT_MAX_AGE, secureOnly);
                 response.addNewCookie(newCookie);
 
-                return Flows.forms(realm, request).setFormData(formData).setSocialRegistration(true).forwardToRegistration();
+                return Flows.forms(realm, request, uriInfo).setFormData(formData).setSocialRegistration(true)
+                        .forwardToRegistration();
             }
         }
 

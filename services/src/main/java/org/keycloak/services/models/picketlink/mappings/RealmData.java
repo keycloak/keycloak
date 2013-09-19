@@ -13,10 +13,12 @@ public class RealmData extends AbstractPartition {
     private boolean sslNotRequired;
     private boolean cookieLoginAllowed;
     private boolean registrationAllowed;
+    private boolean verifyEmail;
     private boolean social;
     private boolean automaticRegistrationAfterSocialLogin;
     private int tokenLifespan;
     private int accessCodeLifespan;
+    private int accessCodeLifespanUserAction;
     private String publicKeyPem;
     private String privateKeyPem;
     private String[] defaultRoles;
@@ -91,6 +93,14 @@ public class RealmData extends AbstractPartition {
         this.registrationAllowed = registrationAllowed;
     }
 
+    public boolean isVerifyEmail() {
+        return verifyEmail;
+    }
+
+    public void setVerifyEmail(boolean verifyEmail) {
+        this.verifyEmail = verifyEmail;
+    }
+
     @AttributeProperty
     public int getTokenLifespan() {
         return tokenLifespan;
@@ -107,6 +117,15 @@ public class RealmData extends AbstractPartition {
 
     public void setAccessCodeLifespan(int accessCodeLifespan) {
         this.accessCodeLifespan = accessCodeLifespan;
+    }
+
+    @AttributeProperty
+    public int getAccessCodeLifespanUserAction() {
+        return accessCodeLifespanUserAction;
+    }
+
+    public void setAccessCodeLifespanUserAction(int accessCodeLifespanUserAction) {
+        this.accessCodeLifespanUserAction = accessCodeLifespanUserAction;
     }
 
     @AttributeProperty

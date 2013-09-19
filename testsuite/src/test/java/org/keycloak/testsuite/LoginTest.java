@@ -22,6 +22,7 @@
 package org.keycloak.testsuite;
 
 import org.jboss.arquillian.junit.Arquillian;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -33,17 +34,42 @@ public class LoginTest extends AbstractDroneTest {
 
     @Test
     public void loginInvalidPassword() {
-        login("invalid", "password", "Invalid username or password");
+        appPage.open();
+
+        Assert.assertTrue(loginPage.isCurrent());
+        loginPage.login("bburke@redhat.com", "invalid");
+
+        Assert.assertEquals("Invalid username or password", loginPage.getError());
     }
 
     @Test
     public void loginInvalidUsername() {
-        login("invalid", "password", "Invalid username or password");
+        appPage.open();
+
+        Assert.assertTrue(loginPage.isCurrent());
+        loginPage.login("invalid", "password");
+
+        Assert.assertEquals("Invalid username or password", loginPage.getError());
     }
 
     @Test
     public void loginSuccess() {
-        login("bburke@redhat.com", "password");
+        appPage.open();
+
+        Assert.assertTrue(loginPage.isCurrent());
+        loginPage.login("bburke@redhat.com", "password");
+        
+        Assert.assertTrue(appPage.isCurrent());
+        Assert.assertEquals("bburke@redhat.com", appPage.getUser());
+    }
+
+    @Test
+    public void logout() {
+        loginSuccess();
+        appPage.logout();
+
+        appPage.open();
+        Assert.assertTrue(loginPage.isCurrent());
     }
 
 }

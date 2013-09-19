@@ -156,6 +156,11 @@
             <version>3.6.6.Final</version>
             <scope>test</scope>
         </dependency>
+		<dependency>
+    		<groupId>com.icegreen</groupId>
+    		<artifactId>greenmail</artifactId>
+            <scope>test</scope>
+		</dependency>        
     </dependencies>
     <build>
         <plugins>

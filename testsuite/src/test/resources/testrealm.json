@@ -3,6 +3,7 @@
     "enabled": true,
     "tokenLifespan": 300,
     "accessCodeLifespan": 10,
+    "accessCodeLifespanUserAction": 600,
     "sslNotRequired": true,
     "cookieLoginAllowed": true,
     "registrationAllowed": true,
@@ -15,10 +16,8 @@
     "users" : [
         {
             "username" : "bburke@redhat.com",
-            "enabled" : true,
-            "attributes" : {
-                "email" : "bburke@redhat.com"
-            },
+            "status": "ENABLED",
+            "email" : "bburke@redhat.com",
             "credentials" : [
                 { "type" : "password",
                     "value" : "password" }
@@ -26,7 +25,7 @@
         },
         {
             "username" : "third-party",
-            "enabled" : true,
+            "status": "ENABLED",
             "credentials" : [
                 { "type" : "password",
                     "value" : "password" }

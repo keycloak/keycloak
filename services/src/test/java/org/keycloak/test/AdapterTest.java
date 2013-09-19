@@ -18,6 +18,7 @@ import org.keycloak.services.models.UserCredentialModel;
 import org.keycloak.services.resources.KeycloakApplication;
 
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -69,6 +70,7 @@ public class AdapterTest {
     public void test1CreateRealm() throws Exception {
         realmModel = adapter.createRealm("JUGGLER");
         realmModel.setAccessCodeLifespan(100);
+        realmModel.setAccessCodeLifespanUserAction(600);
         realmModel.setCookieLoginAllowed(true);
         realmModel.setEnabled(true);
         realmModel.setName("JUGGLER");
@@ -82,6 +84,7 @@ public class AdapterTest {
         realmModel = adapter.getRealm(realmModel.getId());
         Assert.assertNotNull(realmModel);
         Assert.assertEquals(realmModel.getAccessCodeLifespan(), 100);
+        Assert.assertEquals(600, realmModel.getAccessCodeLifespanUserAction());
         Assert.assertEquals(realmModel.getTokenLifespan(), 1000);
         Assert.assertEquals(realmModel.isEnabled(), true);
         Assert.assertEquals(realmModel.getName(), "JUGGLER");
@@ -261,5 +264,54 @@ public class AdapterTest {
         Assert.assertEquals("user", role.getName());
     }
 
+    @Test
+    public void testUserStatus() throws Exception {
+        test1CreateRealm();
 
+        UserModel user = realmModel.addUser("bburke");
+        Assert.assertTrue(user.isEnabled());
+        Assert.assertEquals(UserModel.Status.ENABLED, user.getStatus());
+
+        user.setStatus(UserModel.Status.DISABLED);
+        user = realmModel.getUser("bburke");
+
+        Assert.assertFalse(user.isEnabled());
+        Assert.assertEquals(UserModel.Status.DISABLED, user.getStatus());
+
+        user.setStatus(UserModel.Status.ACTIONS_REQUIRED);
+        user = realmModel.getUser("bburke");
+
+        Assert.assertTrue(user.isEnabled());
+        Assert.assertEquals(UserModel.Status.ACTIONS_REQUIRED, user.getStatus());
+    }
+
+    @Test
+    public void testUserRequiredActions() throws Exception {
+        test1CreateRealm();
+
+        UserModel user = realmModel.addUser("bburke");
+
+        Assert.assertNull(user.getRequiredActions());
+
+        user.addRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP);
+        user = realmModel.getUser("bburke");
+
+        Assert.assertEquals(Arrays.asList(UserModel.RequiredAction.CONFIGURE_TOTP), user.getRequiredActions());
+
+        user.addRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL);
+        user = realmModel.getUser("bburke");
+
+        Assert.assertEquals(Arrays.asList(UserModel.RequiredAction.CONFIGURE_TOTP, UserModel.RequiredAction.VERIFY_EMAIL),
+                user.getRequiredActions());
+
+        user.removeRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP);
+        user = realmModel.getUser("bburke");
+
+        Assert.assertEquals(Arrays.asList(UserModel.RequiredAction.VERIFY_EMAIL), user.getRequiredActions());
+
+        user.removeRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL);
+        user = realmModel.getUser("bburke");
+
+        Assert.assertNull(user.getRequiredActions());
+    }
 }

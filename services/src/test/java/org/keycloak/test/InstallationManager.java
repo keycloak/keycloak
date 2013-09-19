@@ -18,6 +18,7 @@ public class InstallationManager {
         defaultRealm.setEnabled(true);
         defaultRealm.setTokenLifespan(300);
         defaultRealm.setAccessCodeLifespan(60);
+        defaultRealm.setAccessCodeLifespanUserAction(600);
         defaultRealm.setSslNotRequired(false);
         defaultRealm.setCookieLoginAllowed(true);
         defaultRealm.setRegistrationAllowed(true);
