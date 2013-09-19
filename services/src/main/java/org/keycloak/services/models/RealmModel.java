@@ -142,4 +142,6 @@ public interface RealmModel {
     public boolean isAutomaticRegistrationAfterSocialLogin();
 
     public void setAutomaticRegistrationAfterSocialLogin(boolean automaticRegistrationAfterSocialLogin);
+
+    List<UserModel> searchForUserByAttributes(Map<String, String> attributes);
 }

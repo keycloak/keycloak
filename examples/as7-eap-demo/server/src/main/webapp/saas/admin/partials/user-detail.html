@@ -1,106 +1,97 @@
 <div id="wrapper" class="container">
     <div class="row">
-        <aside class="span3" data-ng-include data-src="'partials/realm-menu.html'"></aside>
-        <div id="actions-bg"></div>
-
-        <div id="container-right" class="span9">
-            <h1 data-ng-show="create"><span class="gray">New User</span></h1>
-
-            <h1 data-ng-hide="create">
-                <span class="gray">User {{user.username}}</span>
-            </h1>
-
-            <div data-ng-show="userForm.showErrors && userForm.$error.required" class="alert alert-error">Please fill in
-                all required fields
+        <div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="'partials/realm-menu.html'"></div>
+        <div id="content-area" class="col-md-9" role="main">
+            <div class="top-nav" data-ng-show="create">
+                <ul class="rcue-tabs" >
+                    <li class="active"><a href="#">New User</a></li>
+                    <li><a href="#">Users</a></li>
+                </ul>
             </div>
-            <p class="subtitle subtitle-right" data-ng-show="create"><span class="required">*</span> Required fields</p>
-
-            <form class="form-horizontal" name="userForm" novalidate>
-                <fieldset>
-                    <legend>Details</legend>
-                    <div class="control-group">
-                        <label class="control-label" for="name">Username <span class="required" data-ng-show="create">*</span></label>
-
-                        <div class="controls">
-                            <input type="text" class="input-xlarge" id="name" name="name" data-ng-model="user.username"
-                                   autofocus required data-ng-readonly="!create">
+            <div class="top-nav" data-ng-show="!create">
+                <ul class="rcue-tabs" >
+                    <li class="active"><a href="#">Attributes</a></li>
+                    <li><a href="#">Credentials</a></li>
+                    <li><a href="#">Role Mappings</a></li>
+                </ul>
+            </div>
+            <div id="content">
+                <h2 class="pull-left" data-ng-show="create">New User</h2>
+                <h2 class="pull-left" data-ng-hide="create">User <span>{{user.username}}</span></h2>
+                <p class="subtitle"><span class="required">*</span> Required fields</p>
+                <form name="applicationForm" novalidate>
+                    <fieldset>
+                        <legend uncollapsed><span class="text">Attributes</span></legend>
+                        <div class="form-group">
+                            <label for="username">Username </label><span class="required" data-ng-show="create">*</span>
+                            <div class="controls">
+                                <input type="text" id="username" name="username" data-ng-model="user.username" autofocus
+                                       required data-ng-readonly="!create">
+                            </div>
                         </div>
+
+                        <div class="form-group clearfix block">
+                            <label class="control-label">Enabled</label>
+                            <div class="onoffswitch">
+                                <input type="checkbox" data-ng-model="user.enabled" class="onoffswitch-checkbox"
+                                       name="enabled" id="enabled">
+                                <label for="enabled" class="onoffswitch-label">
+                                            <span class="onoffswitch-inner">
+                                                <span class="onoffswitch-active">ON</span>
+                                                <span class="onoffswitch-inactive">OFF</span>
+                                            </span>
+                                    <span class="onoffswitch-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="email" class="control-label">Email</label>
+
+                            <div class="controls">
+                                <input class="input-small" type="text" name="email" id="email"
+                                       data-ng-model="user.email">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="firstName" class="control-label">First Name</label>
+
+                            <div class="controls">
+                                <input class="input-small" type="text" name="firstName" id="firstName"
+                                       data-ng-model="user.firstName">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="lastName" class="control-label">Last Name</label>
+
+                            <div class="controls">
+                                <input class="input-small" type="text" name="lastName" id="lastName"
+                                       data-ng-model="user.lastName">
+                            </div>
+                        </div>
+                    </fieldset>
+                    <div class="form-actions" data-ng-show="create">
+                        <button type="submit" data-ng-click="save()" class="primary">Save
+                        </button>
+                        <button type="submit" data-ng-click="cancel()" data-ng-click="cancel()"
+                                data-ng-show="changed">Cancel
+                        </button>
                     </div>
 
-                    <div class="control-group">
-                        <label class="control-label">Enabled</label>
-
-                        <div class="controls">
-                            <input class="input-xlarge" type="checkbox" name="enabled"
-                                   data-ng-model="realm.enabled">
-                        </div>
+                    <div class="form-actions" data-ng-show="!create">
+                        <button type="submit" data-ng-click="save()" class="primary" data-ng-show="changed">Save
+                            changes
+                        </button>
+                        <button type="submit" data-ng-click="reset()" data-ng-show="changed">Clear changes
+                        </button>
+                        <button type="submit" data-ng-click="remove()" class="danger">
+                            Delete
+                        </button>
                     </div>
 
-                    <div class="control-group">
-                        <label class="control-label" for="email">Email </label>
-
-                        <div class="controls">
-                            <input type="email" class="input-xlarge" id="email" name="email" data-ng-model="user.email">
-                            <span class="help-inline error"
-                                  data-ng-show="userForm.showErrors && userForm.email.$invalid">Invalid email</span>
-                        </div>
-                    </div>
-
-                    <div class="control-group">
-                        <label class="control-label" for="firstName">Firstname </label>
-
-                        <div class="controls">
-                            <input type="text" class="input-xlarge" id="firstName" data-ng-model="user.firstName">
-                        </div>
-                    </div>
-
-                    <div class="control-group">
-                        <label class="control-label" for="lastName">Lastname </label>
-
-                        <div class="controls">
-                            <input type="text" class="input-xlarge" id="lastName" data-ng-model="user.lastName">
-                        </div>
-                    </div>
-                </fieldset>
-
-                <fieldset data-ng-show="user.attributes.length > 0">
-                    <legend>Attributes</legend>
-
-                    <table class="table table-striped table-bordered margin-top">
-                        <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Value</th>
-                        </tr>
-                        </thead>
-                        <tr data-ng-repeat="attribute in user.attributes">
-                            <td><input type="text" placeholder="Name" value="{{attribute.name}}" readonly></td>
-                            <td><input type="text" placeholder="Value" value="{{attribute.value}}" readonly></td>
-                        </tr>
-                    </table>
-                </fieldset>
-
-                <div class="form-actions" data-ng-show="create">
-                    <button type="submit" data-ng-click="save()" class="btn btn-primary" data-ng-show="changed">Save
-                    </button>
-                    <button type="submit" data-ng-click="cancel()" class="btn" data-ng-click="cancel()"
-                            data-ng-show="changed">Cancel
-                    </button>
-                </div>
-
-                <div class="form-actions" data-ng-show="!create">
-                    <button type="submit" data-ng-click="save()" class="btn btn-primary" data-ng-show="changed">Save
-                        changes
-                    </button>
-                    <button type="submit" data-ng-click="reset()" class="btn" data-ng-show="changed">Clear changes
-                    </button>
-                    <button type="submit" data-ng-click="remove()" class="btn btn-danger" data-ng-hide="changed">
-                        Delete
-                    </button>
-                </div>
-
-            </form>
+                </form>
+            </div>
         </div>
         <div id="container-right-bg"></div>
     </div>
+</div>
 </div>

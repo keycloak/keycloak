@@ -755,4 +755,28 @@ public class RealmAdapter implements RealmModel {
 
         getRelationshipManager().remove(relationship);
     }
+
+    @Override
+    public List<UserModel> searchForUserByAttributes(Map<String, String> attributes) {
+        IdentityQuery<User> query = getIdm().createIdentityQuery(User.class);
+        for (Map.Entry<String, String> entry : attributes.entrySet()) {
+            if (entry.getKey().equals(UserModel.LOGIN_NAME)) {
+                query.setParameter(User.LOGIN_NAME, entry.getValue());
+            } else if (entry.getKey().equalsIgnoreCase(UserModel.FIRST_NAME)) {
+                query.setParameter(User.FIRST_NAME, entry.getValue());
+
+            } else if (entry.getKey().equalsIgnoreCase(UserModel.LAST_NAME)) {
+                query.setParameter(User.LAST_NAME, entry.getValue());
+
+            } else if (entry.getKey().equalsIgnoreCase(UserModel.EMAIL)) {
+                query.setParameter(User.EMAIL, entry.getValue());
+            }
+        }
+        List<User> users = query.getResultList();
+        List<UserModel> userModels = new ArrayList<UserModel>();
+        for (User user : users) {
+            userModels.add(new UserAdapter(user, idm));
+        }
+        return userModels;
+    }
 }

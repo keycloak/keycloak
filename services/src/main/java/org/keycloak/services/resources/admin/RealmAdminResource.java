@@ -17,7 +17,9 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -117,16 +119,96 @@ public class RealmAdminResource {
         return Response.created(uriInfo.getAbsolutePathBuilder().path(role.getId()).build()).build();
     }
 
+    @Path("users/{username}")
+    @PUT
+    @Consumes("application/json")
+    public void updateUser(final @PathParam("username") String username, final UserRepresentation rep) {
+        UserModel user = realm.getUser(username);
+        if (user == null) {
+            throw new NotFoundException();
+        }
+        user.setEmail(rep.getEmail());
+        user.setEnabled(rep.isEnabled());
+        user.setFirstName(rep.getFirstName());
+        user.setLastName(rep.getLastName());
+        for (Map.Entry<String, String> attr : rep.getAttributes().entrySet()) {
+            user.setAttribute(attr.getKey(), attr.getValue());
+        }
+    }
+
+    @Path("users")
+    @POST
+    @Consumes("application/json")
+    public Response createUser(final @Context UriInfo uriInfo, final UserRepresentation rep) {
+        if (realm.getUser(rep.getUsername()) != null) {
+            throw new InternalServerErrorException(); // todo appropriate status here.
+        }
+        UserModel user = realm.addUser(rep.getUsername());
+        if (user == null) {
+            throw new NotFoundException();
+        }
+        user.setEmail(rep.getEmail());
+        user.setEnabled(rep.isEnabled());
+        user.setFirstName(rep.getFirstName());
+        user.setLastName(rep.getLastName());
+        if (rep.getAttributes() != null) {
+            for (Map.Entry<String, String> attr : rep.getAttributes().entrySet()) {
+                user.setAttribute(attr.getKey(), attr.getValue());
+            }
+        }
+        return Response.created(uriInfo.getAbsolutePathBuilder().path(user.getLoginName()).build()).build();
+    }
+
+    @Path("users/{username}")
+    @GET
+    @NoCache
+    @Produces("application/json")
+    public UserRepresentation getUser(final @PathParam("username") String username) {
+        UserModel user = realm.getUser(username);
+        if (user == null) {
+            throw new NotFoundException();
+        }
+        return new RealmManager(session).toRepresentation(user);
+    }
 
     @Path("users")
     @GET
     @NoCache
     @Produces("application/json")
-    public List<UserRepresentation> getUsers() {
-        return null;
+    public List<UserRepresentation> getUsers(@QueryParam("search") String search,
+                                             @QueryParam("lastName") String last,
+                                             @QueryParam("firstName") String first,
+                                             @QueryParam("email") String email,
+                                             @QueryParam("username") String username) {
+        RealmManager manager = new RealmManager(session);
+        List<UserRepresentation> results = new ArrayList<UserRepresentation>();
+        if (search != null) {
+            List<UserModel> userModels = manager.searchUsers(search, realm);
+            for (UserModel user : userModels) {
+                results.add(manager.toRepresentation(user));
+            }
+        } else {
+            Map<String, String> attributes = new HashMap<String, String>();
+            if (last != null) {
+                attributes.put(UserModel.LAST_NAME, last);
+            }
+            if (first != null) {
+                attributes.put(UserModel.FIRST_NAME, first);
+            }
+            if (email != null) {
+                attributes.put(UserModel.EMAIL, email);
+            }
+            if (username != null) {
+                attributes.put(UserModel.LOGIN_NAME, username);
+            }
+            List<UserModel> userModels = realm.searchForUserByAttributes(attributes);
+            for (UserModel user : userModels) {
+                results.add(manager.toRepresentation(user));
+            }
+
+        }
+        return results;
     }
-
-
 
 
 }

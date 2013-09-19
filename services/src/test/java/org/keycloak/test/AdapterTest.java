@@ -112,8 +112,7 @@ public class AdapterTest {
             if (cred.getType().equals(CredentialRepresentation.PASSWORD)) {
                 password = true;
                 Assert.assertTrue(cred.isSecret());
-            }
-            else if (cred.getType().equals(CredentialRepresentation.TOTP)) {
+            } else if (cred.getType().equals(CredentialRepresentation.TOTP)) {
                 totp = true;
                 Assert.assertFalse(cred.isSecret());
             }
@@ -132,6 +131,118 @@ public class AdapterTest {
         realmModel.updateCredential(user, cred);
         Assert.assertTrue(realmModel.validatePassword(user, "geheim"));
     }
+
+    @Test
+    public void testUserSearch() throws Exception {
+        test1CreateRealm();
+        {
+            UserModel user = realmModel.addUser("bburke");
+            user.setLastName("Burke");
+            user.setFirstName("Bill");
+            user.setEmail("bburke@redhat.com");
+        }
+
+        {
+            List<UserModel> userModels = adapter.searchUsers("total junk query", realmModel);
+            Assert.assertEquals(userModels.size(), 0);
+        }
+
+        {
+            List<UserModel> userModels = adapter.searchUsers("Bill Burke", realmModel);
+            Assert.assertEquals(userModels.size(), 1);
+            UserModel bburke = userModels.get(0);
+            Assert.assertEquals(bburke.getFirstName(), "Bill");
+            Assert.assertEquals(bburke.getLastName(), "Burke");
+            Assert.assertEquals(bburke.getEmail(), "bburke@redhat.com");
+        }
+
+
+        {
+            List<UserModel> userModels = adapter.searchUsers("bburke@redhat.com", realmModel);
+            Assert.assertEquals(userModels.size(), 1);
+            UserModel bburke = userModels.get(0);
+            Assert.assertEquals(bburke.getFirstName(), "Bill");
+            Assert.assertEquals(bburke.getLastName(), "Burke");
+            Assert.assertEquals(bburke.getEmail(), "bburke@redhat.com");
+        }
+
+        {
+            List<UserModel> userModels = adapter.searchUsers("bburke", realmModel);
+            Assert.assertEquals(userModels.size(), 1);
+            UserModel bburke = userModels.get(0);
+            Assert.assertEquals(bburke.getFirstName(), "Bill");
+            Assert.assertEquals(bburke.getLastName(), "Burke");
+            Assert.assertEquals(bburke.getEmail(), "bburke@redhat.com");
+        }
+
+        {
+            List<UserModel> userModels = adapter.searchUsers("Burke", realmModel);
+            Assert.assertEquals(userModels.size(), 1);
+            UserModel bburke = userModels.get(0);
+            Assert.assertEquals(bburke.getFirstName(), "Bill");
+            Assert.assertEquals(bburke.getLastName(), "Burke");
+            Assert.assertEquals(bburke.getEmail(), "bburke@redhat.com");
+        }
+
+        {
+            UserModel user = realmModel.addUser("mburke");
+            user.setLastName("Burke");
+            user.setFirstName("Monica");
+            user.setEmail("mburke@redhat.com");
+        }
+
+        {
+            UserModel user = realmModel.addUser("thor");
+            user.setLastName("Thorgersen");
+            user.setFirstName("Stian");
+            user.setEmail("thor@redhat.com");
+        }
+
+        {
+            List<UserModel> userModels = adapter.searchUsers("Monica Burke", realmModel);
+            Assert.assertEquals(userModels.size(), 1);
+            UserModel bburke = userModels.get(0);
+            Assert.assertEquals(bburke.getFirstName(), "Monica");
+            Assert.assertEquals(bburke.getLastName(), "Burke");
+            Assert.assertEquals(bburke.getEmail(), "mburke@redhat.com");
+        }
+
+
+        {
+            List<UserModel> userModels = adapter.searchUsers("mburke@redhat.com", realmModel);
+            Assert.assertEquals(userModels.size(), 1);
+            UserModel bburke = userModels.get(0);
+            Assert.assertEquals(bburke.getFirstName(), "Monica");
+            Assert.assertEquals(bburke.getLastName(), "Burke");
+            Assert.assertEquals(bburke.getEmail(), "mburke@redhat.com");
+        }
+
+        {
+            List<UserModel> userModels = adapter.searchUsers("mburke", realmModel);
+            Assert.assertEquals(userModels.size(), 1);
+            UserModel bburke = userModels.get(0);
+            Assert.assertEquals(bburke.getFirstName(), "Monica");
+            Assert.assertEquals(bburke.getLastName(), "Burke");
+            Assert.assertEquals(bburke.getEmail(), "mburke@redhat.com");
+        }
+
+        {
+            List<UserModel> userModels = adapter.searchUsers("Burke", realmModel);
+            Assert.assertEquals(userModels.size(), 2);
+            UserModel first = userModels.get(0);
+            UserModel second = userModels.get(1);
+            if (!first.getEmail().equals("bburke@redhat.com") && !second.getEmail().equals("bburke@redhat.com")) {
+                Assert.fail();
+            }
+            if (!first.getEmail().equals("mburke@redhat.com") && !second.getEmail().equals("mburke@redhat.com")) {
+                Assert.fail();
+            }
+        }
+
+
+
+    }
+
 
     @Test
     public void testRoles() throws Exception {
