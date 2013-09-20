@@ -25,39 +25,28 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Random;
 
-import javax.annotation.PostConstruct;
-import javax.faces.application.FacesMessage;
-import javax.faces.bean.ManagedBean;
-import javax.faces.bean.ManagedProperty;
-import javax.faces.bean.RequestScoped;
-import javax.faces.context.FacesContext;
-
 import org.picketlink.common.util.Base32;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@ManagedBean(name = "totp")
-@RequestScoped
 public class TotpBean {
 
-    @ManagedProperty(value = "#{user}")
     private UserBean user;
 
     private String totpSecret;
     private String totpSecretEncoded;
+    private String contextUrl;
 
-    @PostConstruct
-    public void init() {
-        FacesContext facesContext = FacesContext.getCurrentInstance();
-        FacesMessage facesMessage = new FacesMessage("This is a message");
-        facesContext.addMessage(null, facesMessage);
+    public TotpBean(UserBean user, String contextUrl) {
+        this.user = user;
+        this.contextUrl = contextUrl;
 
         totpSecret = randomString(20);
         totpSecretEncoded = Base32.encode(totpSecret.getBytes());
     }
 
-    private static final String randomString(int length) {
+    private static String randomString(int length) {
         String chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVW1234567890";
         Random r = new Random();
         StringBuilder sb = new StringBuilder();
@@ -89,8 +78,7 @@ public class TotpBean {
 
     public String getTotpSecretQrCodeUrl() throws UnsupportedEncodingException {
         String contents = URLEncoder.encode("otpauth://totp/keycloak?secret=" + totpSecretEncoded, "utf-8");
-        String contextPath = FacesContext.getCurrentInstance().getExternalContext().getRequestContextPath();
-        return contextPath + "/forms/qrcode" + "?size=200x200&contents=" + contents;
+        return contextUrl + "/forms/qrcode" + "?size=200x200&contents=" + contents;
     }
 
     public UserBean getUser() {
