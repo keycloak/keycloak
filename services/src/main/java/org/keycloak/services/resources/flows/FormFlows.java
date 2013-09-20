@@ -21,15 +21,22 @@
  */
 package org.keycloak.services.resources.flows;
 
+import java.net.URI;
+import java.util.Iterator;
+
 import org.jboss.resteasy.spi.HttpRequest;
+import org.jboss.resteasy.spi.ResteasyUriInfo;
+import org.keycloak.services.FormService;
 import org.keycloak.services.email.EmailSender;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.UserModel;
 import org.keycloak.services.models.UserModel.RequiredAction;
 import org.picketlink.idm.model.sample.Realm;
 
+import javax.imageio.spi.ServiceRegistry;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 
 /**
@@ -85,29 +92,43 @@ public class FormFlows {
         return forwardToForm(Pages.ACCOUNT);
     }
 
-    private Response forwardToForm(String form) {
-        request.setAttribute(REALM, realm);
+    private Response forwardToForm(String template) {
 
-        if (error != null) {
-            request.setAttribute(ERROR_MESSAGE, error);
+        FormService.FormServiceDataBean formDataBean = new FormService.FormServiceDataBean(realm, userModel, formData, error);
+
+        // Getting URI needed by form processing service
+        ResteasyUriInfo uriInfo = request.getUri();
+        MultivaluedMap<String, String> queryParameterMap = uriInfo.getQueryParameters();
+
+        String requestURI = uriInfo.getBaseUri().getPath();
+        UriBuilder uriBuilder = UriBuilder.fromUri(requestURI);
+
+        for(String k : queryParameterMap.keySet()){
+            uriBuilder.replaceQueryParam(k, queryParameterMap.get(k).toArray());
         }
 
-        if (formData != null) {
-            request.setAttribute(DATA, formData);
+        if (code != null){
+            uriBuilder.queryParam(CODE, code);
         }
 
-        if (userModel != null) {
-            request.setAttribute(USER, userModel);
+        URI baseURI = uriBuilder.build();
+        formDataBean.setBaseURI(baseURI);
+
+        // TODO find a better way to obtain contextPath
+        // Getting context path by removing "rest/" substring from the BaseUri path
+        formDataBean.setContextPath(requestURI.substring(0,requestURI.length()-5));
+        formDataBean.setSocialRegistration(socialRegistration);
+
+        // Find the service and process relevant template
+        Iterator<FormService> itr = ServiceRegistry.lookupProviders(FormService.class);
+
+        while (itr.hasNext()) {
+            FormService provider = itr.next();
+            if (provider.getId().equals("FormServiceId"))
+                return Response.status(200).entity(provider.process(template, formDataBean)).build();
         }
 
-        if (code != null) {
-            request.setAttribute(CODE, code);
-        }
-
-        request.setAttribute(SOCIAL_REGISTRATION, socialRegistration);
-
-        request.forward(form);
-        return null;
+        return Response.status(200).entity("form provider not found").build();
     }
 
     public Response forwardToLogin() {

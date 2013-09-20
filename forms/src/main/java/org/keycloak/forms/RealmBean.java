@@ -21,34 +21,21 @@
  */
 package org.keycloak.forms;
 
-import javax.annotation.PostConstruct;
-import javax.faces.bean.ManagedBean;
-import javax.faces.bean.RequestScoped;
-import javax.faces.context.FacesContext;
-import javax.servlet.http.HttpServletRequest;
-
 import org.keycloak.services.models.RealmModel;
-import org.keycloak.services.resources.flows.FormFlows;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@ManagedBean(name = "realm")
-@RequestScoped
 public class RealmBean {
 
     private RealmModel realm;
 
     private boolean saas;
 
-    @PostConstruct
-    public void init() {
-        FacesContext ctx = FacesContext.getCurrentInstance();
-        HttpServletRequest request = (HttpServletRequest) ctx.getExternalContext().getRequest();
 
-        realm = (RealmModel) request.getAttribute(FormFlows.REALM);
-
-        saas = RealmModel.DEFAULT_REALM.equals(realm.getName());
+    public RealmBean(RealmModel realmModel) {
+        realm = realmModel;
+        saas = RealmModel.DEFAULT_REALM.equals(realmModel.getName());
     }
 
     public String getId() {
@@ -59,7 +46,7 @@ public class RealmBean {
         return saas ? "Keycloak" : realm.getName();
     }
 
-    RealmModel getRealm() {
+    public RealmModel getRealm() {
         return realm;
     }
 

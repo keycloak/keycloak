@@ -24,39 +24,23 @@ package org.keycloak.forms;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.annotation.PostConstruct;
-import javax.faces.bean.ManagedBean;
-import javax.faces.bean.ManagedProperty;
-import javax.faces.bean.RequestScoped;
-import javax.faces.context.FacesContext;
-import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.MultivaluedMap;
-
-import org.keycloak.services.resources.flows.FormFlows;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@ManagedBean(name = "register")
-@RequestScoped
 public class RegisterBean {
 
-    private HashMap<String, String> formData;
+    private Map<String, String> formData = new HashMap<String, String>();
 
     private boolean socialRegistration;
 
-    @PostConstruct
-    public void init() {
-        FacesContext ctx = FacesContext.getCurrentInstance();
-        HttpServletRequest request = (HttpServletRequest) ctx.getExternalContext().getRequest();
+    public RegisterBean(MultivaluedMap<String, String> formData, boolean socialRegistration) {
 
         this.formData = new HashMap<String, String>();
 
-        Boolean socialRegistrationAttr = (Boolean)request.getAttribute(FormFlows.SOCIAL_REGISTRATION);
-        this.socialRegistration = socialRegistrationAttr != null && socialRegistrationAttr;
+        this.socialRegistration = socialRegistration;
 
-        @SuppressWarnings("unchecked")
-        MultivaluedMap<String, String> formData = (MultivaluedMap<String, String>) request.getAttribute(FormFlows.DATA);
         if (formData != null) {
             for (String k : formData.keySet()) {
                 this.formData.put(k, formData.getFirst(k));

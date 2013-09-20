@@ -21,29 +21,15 @@
  */
 package org.keycloak.forms;
 
-import javax.annotation.PostConstruct;
-import javax.faces.bean.ManagedBean;
-import javax.faces.bean.RequestScoped;
-import javax.faces.context.FacesContext;
-import javax.servlet.http.HttpServletRequest;
-
-import org.keycloak.services.resources.flows.FormFlows;
-
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@ManagedBean(name = "error")
-@RequestScoped
 public class ErrorBean {
 
     private String summary;
 
-    @PostConstruct
-    public void init() {
-        FacesContext ctx = FacesContext.getCurrentInstance();
-        HttpServletRequest request = (HttpServletRequest) ctx.getExternalContext().getRequest();
-
-        summary = (String) request.getAttribute(FormFlows.ERROR_MESSAGE);
+    public ErrorBean(String summary) {
+        this.summary = summary;
     }
 
     public String getSummary() {

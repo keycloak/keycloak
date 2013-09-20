@@ -24,23 +24,14 @@ package org.keycloak.forms;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.annotation.PostConstruct;
-import javax.faces.bean.ManagedBean;
-import javax.faces.bean.ManagedProperty;
-import javax.faces.bean.RequestScoped;
-import javax.faces.context.FacesContext;
-
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@ManagedBean(name = "template")
-@RequestScoped
 public class TemplateBean {
 
-    @ManagedProperty(value = "#{realm}")
     private RealmBean realm;
 
-    private String theme;
+    private String theme = "default";
 
     private String themeUrl;
 
@@ -48,9 +39,9 @@ public class TemplateBean {
 
     private String formsPath;
 
-    @PostConstruct
-    public void init() {
-        formsPath = FacesContext.getCurrentInstance().getExternalContext().getRequestContextPath() + "/forms";
+
+    public TemplateBean(RealmBean realm, String contextPath) {
+        formsPath = contextPath + "/forms";
 
         // TODO Get theme name from realm
         theme = "default";
@@ -60,6 +51,7 @@ public class TemplateBean {
 
         themeConfig.put("styles", themeUrl + "/styles.css");
 
+        // TODO move this into CSS
         if (realm.isSaas()) {
             themeConfig.put("logo", themeUrl + "/img/red-hat-logo.png");
             themeConfig.put("background", themeUrl + "/img/login-screen-background.jpg");

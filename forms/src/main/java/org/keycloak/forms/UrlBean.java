@@ -23,46 +23,20 @@ package org.keycloak.forms;
 
 import java.net.URI;
 
-import javax.annotation.PostConstruct;
-import javax.faces.bean.ManagedBean;
-import javax.faces.bean.ManagedProperty;
-import javax.faces.bean.RequestScoped;
-import javax.faces.context.FacesContext;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.core.UriBuilder;
-
-import org.keycloak.services.resources.flows.FormFlows;
 import org.keycloak.services.resources.flows.Urls;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@ManagedBean(name = "url")
-@RequestScoped
 public class UrlBean {
 
     private URI baseURI;
 
-    @ManagedProperty(value = "#{realm}")
     private RealmBean realm;
 
-    @ManagedProperty(value = "#{register}")
-    private RegisterBean registerBean;
-
-    @PostConstruct
-    public void init() {
-        FacesContext ctx = FacesContext.getCurrentInstance();
-
-        HttpServletRequest request = (HttpServletRequest) ctx.getExternalContext().getRequest();
-
-        UriBuilder b = UriBuilder.fromUri(request.getRequestURI()).replaceQuery(request.getQueryString())
-                .replacePath(request.getContextPath()).path("rest");
-
-        if (request.getAttribute(FormFlows.CODE) != null) {
-            b.queryParam("code", request.getAttribute(FormFlows.CODE));
-        }
-
-        baseURI = b.build();
+    public UrlBean(RealmBean realm, URI baseURI){
+        this.realm = realm;
+        this.baseURI = baseURI;
     }
 
     public RealmBean getRealm() {
@@ -71,14 +45,6 @@ public class UrlBean {
 
     public void setRealm(RealmBean realm) {
         this.realm = realm;
-    }
-
-    public RegisterBean getRegisterBean() {
-        return registerBean;
-    }
-
-    public void setRegisterBean(RegisterBean registerBean) {
-        this.registerBean = registerBean;
     }
 
     public String getAccessUrl() {
@@ -115,10 +81,7 @@ public class UrlBean {
 
     public String getRegistrationAction() {
         if (realm.isSaas()) {
-            // TODO: saas social registration
             return Urls.saasRegisterAction(baseURI).toString();
-        } else if (registerBean.isSocialRegistration()) {
-            return Urls.socialRegisterAction(baseURI, realm.getId()).toString();
         } else {
             return Urls.realmRegisterAction(baseURI, realm.getId()).toString();
         }
@@ -126,6 +89,7 @@ public class UrlBean {
 
     public String getRegistrationUrl() {
         if (realm.isSaas()) {
+            // TODO: saas social registration
             return Urls.saasRegisterPage(baseURI).toString();
         } else {
             return Urls.realmRegisterPage(baseURI, realm.getId()).toString();

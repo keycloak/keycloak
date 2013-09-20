@@ -56,6 +56,10 @@
       			<groupId>com.google.zxing</groupId>
       			<artifactId>javase</artifactId>
 			</dependency>
+		<dependency>
+			<groupId>org.freemarker</groupId>
+			<artifactId>freemarker</artifactId>
+		</dependency>
 	</dependencies>
 
 	<build>

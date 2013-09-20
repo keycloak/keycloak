@@ -21,30 +21,17 @@
  */
 package org.keycloak.forms;
 
-import javax.annotation.PostConstruct;
-import javax.faces.bean.ManagedBean;
-import javax.faces.bean.RequestScoped;
-import javax.faces.context.FacesContext;
-import javax.servlet.http.HttpServletRequest;
-
 import org.keycloak.services.models.UserModel;
-import org.keycloak.services.resources.flows.FormFlows;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@ManagedBean(name = "user")
-@RequestScoped
 public class UserBean {
 
     private UserModel user;
 
-    @PostConstruct
-    public void init() {
-        FacesContext ctx = FacesContext.getCurrentInstance();
-        HttpServletRequest request = (HttpServletRequest) ctx.getExternalContext().getRequest();
-
-        user = (UserModel) request.getAttribute(FormFlows.USER);
+    public UserBean(UserModel user){
+        this.user = user;
     }
 
     public String getFirstName() {

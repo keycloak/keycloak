@@ -26,10 +26,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-import javax.annotation.PostConstruct;
-import javax.faces.bean.ManagedBean;
-import javax.faces.bean.ManagedProperty;
-import javax.faces.bean.RequestScoped;
 import javax.imageio.spi.ServiceRegistry;
 import javax.ws.rs.core.UriBuilder;
 
@@ -39,28 +35,24 @@ import org.keycloak.services.resources.flows.Urls;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@ManagedBean(name = "social")
-@RequestScoped
 public class SocialBean {
 
-    @ManagedProperty(value = "#{realm}")
     private RealmBean realm;
 
-    @ManagedProperty(value = "#{register}")
     private RegisterBean registerBean;
 
-    @ManagedProperty(value = "#{url}")
     private UrlBean url;
 
     private List<SocialProvider> providers;
 
-    private UriBuilder socialLoginUrlBuilder;
+    public SocialBean(RealmBean realm, RegisterBean registerBean, UrlBean url) {
+        this.realm = realm;
+        this.registerBean = registerBean;
+        this.url = url;
 
-    @PostConstruct
-    public void init() {
         URI baseURI = url.getBaseURI();
 
-        socialLoginUrlBuilder = UriBuilder.fromUri(Urls.socialRedirectToProviderAuth(baseURI, realm.getId()));
+        UriBuilder socialLoginUrlBuilder = UriBuilder.fromUri(Urls.socialRedirectToProviderAuth(baseURI, realm.getId()));
 
         providers = new LinkedList<SocialProvider>();
         for (Iterator<org.keycloak.social.SocialProvider> itr = ServiceRegistry
