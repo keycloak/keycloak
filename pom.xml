@@ -103,11 +103,6 @@
             </dependency>
             <dependency>
                 <groupId>org.jboss.resteasy</groupId>
-                <artifactId>jose-jwt</artifactId>
-                <version>${resteasy.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.resteasy</groupId>
                 <artifactId>tjws</artifactId>
                 <version>${resteasy.version}</version>
             </dependency>
@@ -150,11 +145,6 @@
                 <groupId>org.jboss.spec.javax.servlet</groupId>
                 <artifactId>jboss-servlet-api_3.0_spec</artifactId>
                 <version>1.0.1.Final</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.resteasy</groupId>
-                <artifactId>tjws</artifactId>
-                <version>${resteasy.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.picketlink</groupId>
@@ -201,6 +191,8 @@
                 <artifactId>google-api-client</artifactId>
                 <version>1.14.1-beta</version>
             </dependency>
+            
+            <!-- Google+ -->
             <dependency>
                 <groupId>com.google.http-client</groupId>
                 <artifactId>google-http-client-jackson</artifactId>
@@ -211,11 +203,15 @@
                 <artifactId>google-api-services-oauth2</artifactId>
                 <version>v2-rev35-1.14.1-beta</version>
             </dependency>
+            
+            <!-- Twitter -->
             <dependency>
                 <groupId>org.twitter4j</groupId>
                 <artifactId>twitter4j-core</artifactId>
                 <version>3.0.3</version>
             </dependency>
+			
+			<!-- QR Code Generator -->
             <dependency>
       			<groupId>com.google.zxing</groupId>
       			<artifactId>core</artifactId>
@@ -226,12 +222,15 @@
       			<artifactId>javase</artifactId>
       			<version>2.2</version>
 			</dependency>
+						
+			<!-- Email Test Servers -->
 			<dependency>
     			<groupId>com.icegreen</groupId>
     			<artifactId>greenmail</artifactId>
 	    		<version>1.3.1b</version>
 			</dependency>  			
 			
+			<!-- Arquillian -->
 			<dependency>
   				<groupId>org.jboss.arquillian</groupId>
   				<artifactId>arquillian-bom</artifactId>
@@ -245,6 +244,12 @@
 				<version>1.2.0.Beta1</version>
 				<type>pom</type>
 				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.jboss.arquillian.graphene</groupId>
+				<artifactId>graphene-webdriver</artifactId>
+				<type>pom</type>
+				<version>2.0.0.Beta2</version>
 			</dependency>
         </dependencies>
     </dependencyManagement>
@@ -334,7 +339,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>2.3.1</version>
                 <configuration>
                     <source>1.6</source>
                     <target>1.6</target>
@@ -344,7 +348,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.8</version>
                 <configuration>
                     <minmemory>128m</minmemory>
                     <maxmemory>1024m</maxmemory>
@@ -358,7 +361,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-install-plugin</artifactId>
-                <version>2.3.1</version>
                 <configuration>
                     <createChecksum>true</createChecksum>
                 </configuration>
@@ -366,7 +368,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>2.1.2</version>
                 <executions>
                     <execution>
                         <phase>verify</phase>
@@ -379,7 +380,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-deploy-plugin</artifactId>
-                <version>2.5</version>
             </plugin>
             <plugin>
                 <groupId>com.atlassian.maven.plugins</groupId>

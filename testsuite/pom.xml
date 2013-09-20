@@ -129,14 +129,12 @@
 			<artifactId>graphene-webdriver</artifactId>
 			<type>pom</type>
 			<scope>test</scope>
-			<version>2.0.0.Beta1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.jboss.shrinkwrap.resolver</groupId>
 			<artifactId>shrinkwrap-resolver-impl-maven</artifactId>
 			<scope>test</scope>
 		</dependency>
-
 		<dependency>
     		<groupId>com.icegreen</groupId>
     		<artifactId>greenmail</artifactId>
