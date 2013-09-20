@@ -20,6 +20,7 @@ public class RealmRepresentation {
     protected boolean cookieLoginAllowed;
     protected boolean registrationAllowed;
     protected boolean verifyEmail;
+    protected boolean resetPasswordAllowed;
     protected boolean social;
     protected boolean automaticRegistrationAfterSocialLogin;
     protected String privateKey;
@@ -246,6 +247,14 @@ public class RealmRepresentation {
 
     public void setVerifyEmail(boolean verifyEmail) {
         this.verifyEmail = verifyEmail;
+    }
+
+    public boolean isResetPasswordAllowed() {
+        return resetPasswordAllowed;
+    }
+
+    public void setResetPasswordAllowed(boolean resetPassword) {
+        this.resetPasswordAllowed = resetPassword;
     }
 
     public boolean isSocial() {

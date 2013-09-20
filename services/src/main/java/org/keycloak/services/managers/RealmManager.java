@@ -73,6 +73,7 @@ public class RealmManager {
         realm.setCookieLoginAllowed(rep.isCookieLoginAllowed());
         realm.setRegistrationAllowed(rep.isRegistrationAllowed());
         realm.setVerifyEmail(rep.isVerifyEmail());
+        realm.setResetPasswordAllowed(rep.isResetPasswordAllowed());
         realm.setAutomaticRegistrationAfterSocialLogin(rep.isAutomaticRegistrationAfterSocialLogin());
         realm.setSslNotRequired((rep.isSslNotRequired()));
         realm.setAccessCodeLifespan(rep.getAccessCodeLifespan());
@@ -112,6 +113,7 @@ public class RealmManager {
         newRealm.setCookieLoginAllowed(rep.isCookieLoginAllowed());
         newRealm.setRegistrationAllowed(rep.isRegistrationAllowed());
         newRealm.setVerifyEmail(rep.isVerifyEmail());
+        newRealm.setResetPasswordAllowed(rep.isResetPasswordAllowed());
         newRealm.setAutomaticRegistrationAfterSocialLogin(rep.isAutomaticRegistrationAfterSocialLogin());
         if (rep.getPrivateKey() == null || rep.getPublicKey() == null) {
             generateRealmKeys(newRealm);
@@ -341,11 +343,23 @@ public class RealmManager {
         rep.setSslNotRequired(realm.isSslNotRequired());
         rep.setCookieLoginAllowed(realm.isCookieLoginAllowed());
         rep.setPublicKey(realm.getPublicKeyPem());
+        rep.setPrivateKey(realm.getPrivateKeyPem());
         rep.setRegistrationAllowed(realm.isRegistrationAllowed());
         rep.setVerifyEmail(realm.isVerifyEmail());
+        rep.setResetPasswordAllowed(realm.isResetPasswordAllowed());
         rep.setTokenLifespan(realm.getTokenLifespan());
         rep.setAccessCodeLifespan(realm.getAccessCodeLifespan());
         rep.setAccessCodeLifespanUserAction(realm.getAccessCodeLifespanUserAction());
+
+        List<RoleModel> defaultRoles = realm.getDefaultRoles();
+        if (defaultRoles.size() > 0) {
+            String[] d = new String[defaultRoles.size()];
+            for (int i = 0; i < d.length; i++) {
+                d[i] = defaultRoles.get(i).getName();
+            }
+            rep.setDefaultRoles(d);
+        }
+
         List<RequiredCredentialModel> requiredCredentialModels = realm.getRequiredCredentials();
         if (requiredCredentialModels.size() > 0) {
             rep.setRequiredCredentials(new HashSet<String>());

@@ -37,6 +37,8 @@ public class RealmEntity implements Serializable {
     @AttributeValue
     private boolean verifyEmail;
     @AttributeValue
+    private boolean resetPasswordAllowed;
+    @AttributeValue
     private boolean social;
     @AttributeValue
     private boolean automaticRegistrationAfterSocialLogin;
@@ -110,6 +112,14 @@ public class RealmEntity implements Serializable {
 
     public void setVerifyEmail(boolean verifyEmail) {
         this.verifyEmail = verifyEmail;
+    }
+
+    public boolean isResetPasswordAllowed() {
+        return resetPasswordAllowed;
+    }
+
+    public void setResetPasswordAllowed(boolean resetPassword) {
+        this.resetPasswordAllowed = resetPassword;
     }
 
     public boolean isSocial() {

@@ -61,11 +61,14 @@ public class ResetPasswordTest extends AbstractDroneTest {
 
         Assert.assertTrue(loginPage.isCurrent());
         
+        // TODO Replace with clicking reset password link when added
         String url = browser.getCurrentUrl();
         url = url.replace("tokens/login", "account/password-reset");
         url = url + "&username=bburke@redhat.com";
 
         browser.navigate().to(url);
+
+        Assert.assertEquals(1, greenMail.getReceivedMessages().length);
 
         MimeMessage message = greenMail.getReceivedMessages()[0];
 

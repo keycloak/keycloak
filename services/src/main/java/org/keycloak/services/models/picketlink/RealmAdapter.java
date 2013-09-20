@@ -178,6 +178,17 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public boolean isResetPasswordAllowed() {
+        return realm.isResetPasswordAllowed();
+    }
+
+    @Override
+    public void setResetPasswordAllowed(boolean resetPassword) {
+        realm.setResetPasswordAllowed(resetPassword);
+        updateRealm();
+    }
+
+    @Override
     public int getTokenLifespan() {
         return realm.getTokenLifespan();
     }

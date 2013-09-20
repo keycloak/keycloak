@@ -347,6 +347,10 @@ public class AccountService {
         if (!realm.isEnabled()) {
             return oauth.forwardToSecurityFailure("Realm not enabled.");
         }
+        if (!realm.isResetPasswordAllowed()) {
+            return oauth.forwardToSecurityFailure("Password reset not permitted, contact admin.");
+        }
+
         UserModel client = realm.getUser(clientId);
         if (client == null) {
             return oauth.forwardToSecurityFailure("Unknown login requester.");

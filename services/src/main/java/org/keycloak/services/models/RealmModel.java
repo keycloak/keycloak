@@ -39,6 +39,10 @@ public interface RealmModel {
 
     void setVerifyEmail(boolean verifyEmail);
 
+    boolean isResetPasswordAllowed();
+
+    void setResetPasswordAllowed(boolean resetPasswordAllowed);
+
     int getTokenLifespan();
 
     void setTokenLifespan(int tokenLifespan);
