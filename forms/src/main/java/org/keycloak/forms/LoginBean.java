@@ -24,25 +24,15 @@ package org.keycloak.forms;
 import java.util.LinkedList;
 import java.util.List;
 
-import javax.annotation.PostConstruct;
-import javax.faces.bean.ManagedBean;
-import javax.faces.bean.ManagedProperty;
-import javax.faces.bean.RequestScoped;
-import javax.faces.context.FacesContext;
-import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.keycloak.forms.model.RequiredCredential;
-import org.keycloak.services.resources.flows.FormFlows;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@ManagedBean(name = "login")
-@RequestScoped
 public class LoginBean {
 
-    @ManagedProperty(value = "#{realm}")
     private RealmBean realm;
 
     private String username;
@@ -51,13 +41,10 @@ public class LoginBean {
 
     private List<RequiredCredential> requiredCredentials;
 
-    @PostConstruct
-    public void init() {
-        FacesContext ctx = FacesContext.getCurrentInstance();
-        HttpServletRequest request = (HttpServletRequest) ctx.getExternalContext().getRequest();
+    public LoginBean(RealmBean realm, MultivaluedMap<String, String> formData){
 
-        @SuppressWarnings("unchecked")
-        MultivaluedMap<String, String> formData = (MultivaluedMap<String, String>) request.getAttribute(FormFlows.DATA);
+        this.realm = realm;
+
         if (formData != null) {
             username = formData.getFirst("username");
             password = formData.getFirst("password");
@@ -69,6 +56,7 @@ public class LoginBean {
                 requiredCredentials.add(new RequiredCredential(c.getType(), c.isSecret(), c.getFormLabel()));
             }
         }
+
     }
 
     public String getUsername() {

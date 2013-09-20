@@ -191,6 +191,11 @@
                 <artifactId>google-api-client</artifactId>
                 <version>1.14.1-beta</version>
             </dependency>
+            <dependency>
+                <groupId>org.freemarker</groupId>
+                <artifactId>freemarker</artifactId>
+                <version>2.3.19</version>
+            </dependency>
             
             <!-- Google+ -->
             <dependency>
