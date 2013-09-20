@@ -34,16 +34,13 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.openqa.selenium.WebDriver;
-
-import com.icegreen.greenmail.util.GreenMail;
-import com.icegreen.greenmail.util.ServerSetup;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -79,24 +76,14 @@ public class RequiredActionEmailVerificationTest {
     @Page
     protected RegisterPage registerPage;
 
-    private GreenMail greenMail;
-
-    @Before
-    public void before() {
-        ServerSetup setup = new ServerSetup(3025, "localhost", "smtp");
-
-        greenMail = new GreenMail(setup);
-        greenMail.start();
-    }
+    @Rule
+    public GreenMailRule greenMail = new GreenMailRule();
 
     @After
     public void after() {
         appPage.open();
         if (appPage.isCurrent()) {
             appPage.logout();
-        }
-        if (greenMail != null) {
-            greenMail.stop();
         }
     }
 

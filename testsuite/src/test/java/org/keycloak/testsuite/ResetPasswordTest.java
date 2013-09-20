@@ -31,15 +31,11 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.keycloak.testsuite.pages.ChangePasswordPage;
-
-import com.icegreen.greenmail.util.GreenMail;
-import com.icegreen.greenmail.util.ServerSetup;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -53,25 +49,11 @@ public class ResetPasswordTest extends AbstractDroneTest {
                 .addAsWebInfResource("web-properties-email-verfication.xml", "web.xml");
     }
 
-    private GreenMail greenMail;
+    @Rule
+    public GreenMailRule greenMail = new GreenMailRule();
 
     @Page
     protected ChangePasswordPage changePasswordPage;
-
-    @Before
-    public void before() {
-        ServerSetup setup = new ServerSetup(3025, "localhost", "smtp");
-
-        greenMail = new GreenMail(setup);
-        greenMail.start();
-    }
-
-    @After
-    public void after() {
-        if (greenMail != null) {
-            greenMail.stop();
-        }
-    }
 
     @Test
     public void resetPassword() throws IOException, MessagingException {

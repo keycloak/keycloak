@@ -1,6 +1,8 @@
 package org.keycloak.services.email;
 
 import java.io.IOException;
+import java.lang.Thread.UncaughtExceptionHandler;
+import java.net.SocketException;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.AddressException;
@@ -33,6 +35,18 @@ public class EmailSenderTest {
     @After
     public void after() throws InterruptedException {
         if (greenMail != null) {
+            // Suppress error from GreenMail on shutdown
+            Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandler() {
+                @Override
+                public void uncaughtException(Thread t, Throwable e) {
+                    if (!(e.getCause() instanceof SocketException && t.getClass().getName()
+                            .equals("com.icegreen.greenmail.smtp.SmtpHandler"))) {
+                        System.err.print("Exception in thread \"" + t.getName() + "\" ");
+                        e.printStackTrace(System.err);
+                    }
+                }
+            });
+
             greenMail.stop();
         }
     }
