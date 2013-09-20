@@ -3,6 +3,7 @@ package org.keycloak.test;
 import java.util.Iterator;
 import java.util.List;
 
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -25,6 +26,13 @@ public class ModelTest extends AbstractKeycloakServerTest {
         identitySession = factory.createSession();
         identitySession.getTransaction().begin();
         manager = new RealmManager(identitySession);
+    }
+
+    @After
+    public void after() throws Exception {
+        identitySession.getTransaction().commit();
+        identitySession.close();
+        factory.close();
     }
 
     @Test
