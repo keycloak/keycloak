@@ -34,6 +34,22 @@
                 { "type" : "password",
                     "value" : "password" }
             ]
+        },
+        {
+           "username" : "admin",
+           "enabled" : true,
+            "credentials" : [
+                { "type" : "password",
+                  "value" : "admin" }
+            ]
+        },
+        { 
+           "username" : "manager",
+           "enabled" : true,
+            "credentials" : [
+                { "type" : "password",
+                  "value" : "manager" }
+            ]
         }
     ],
     "roles": [
@@ -54,6 +70,14 @@
         {
             "username": "third-party",
             "roles": ["KEYCLOAK_IDENTITY_REQUESTER"]
+        },
+        {
+            "username" : "admin",
+            "roles": ["admin"]
+        },
+        {
+            "username" : "manager",
+            "roles": ["admin", "user"]
         }
     ],
     "scopeMappings": [

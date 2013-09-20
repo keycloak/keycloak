@@ -40,9 +40,16 @@ Step 4: Login and Observe Apps
 ---------------------------------------
 Try going to the customer app and viewing customer data:
 
-[http://localhost:8080/customer-portal/customers/view.jsp](http://localhost:8080/customer-portal/customers/view.jsp)
+[http://localhost:8080/customer-portal](http://localhost:8080/customer-portal)
 
-This should take you to the auth-server login screen.  Enter username: bburke@redhat.com and password: password.
+This should take you to the main customer portal page with the option to select either the [Customer Listings](http://localhost:8080/customer-portal/customers/view.jsp ) or the [Customer Admin Interface](http://localhost:8080/customer-portal/admin/admin.jsp). Either of which will automatically open the auth-server login screen if the user is not currently authenticated. Login using one of the default user accounts:
+
+Default users accounts:
+username:bburke@redhat.com password:password roles:user
+username:admin password:admin roles:admin
+username:manager password:manager roles:user,admin
+
+Note: the admin user is not automatically give the user role, as such the admin will not be allowed to access the customer listings. The 'manager' user has both the admin and user roles and will be able to access both.
 
 If you click on the products link, you'll be take to the products app and show a product listing.  The redirects
 are still happening, but the auth-server knows you are already logged in so the login is bypassed.
