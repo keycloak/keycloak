@@ -1,5 +1,5 @@
 <ul data-ng-hide="createRealm">
-    <li data-ng-class="!path[2] && 'active'"><a href="#/realms/{{realm.id}}">Realm Settings</a></li>
+    <li data-ng-class="(!path[2] || path[1] == 'role' || path[2] == 'roles') && 'active'"><a href="#/realms/{{realm.id}}">Realm Settings</a></li>
     <li data-ng-class="(path[2] == 'users' || path[1] == 'user') && 'active'"><a href="#/realms/{{realm.id}}/users">Users</a>
     </li>
     <li data-ng-class="(path[2] == 'applications' || path[1] == 'application') && 'active'"><a href="#/realms/{{realm.id}}/applications">Applications</a></li>

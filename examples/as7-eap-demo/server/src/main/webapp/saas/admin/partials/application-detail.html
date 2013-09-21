@@ -2,14 +2,22 @@
     <div class="row">
         <div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="'partials/realm-menu.html'"></div>
         <div id="content-area" class="col-md-9" role="main">
-            <div class="top-nav">
+            <div class="top-nav" data-ng-show="!create">
                 <ul class="rcue-tabs">
-                    <li class="active"><a href="#">Settings</a></li>
+                    <li><a href="#/create/application/{{realm.id}}">New Application</a></li>
+                    <li><a href="#/realms/{{realm.id}}/applications">Applications</a></li>
+                    <li class="active"><a href="#/realms/{{realm.id}}/applications/{{application.id}}">Settings</a></li>
                     <li><a href="#">Credentials</a></li>
                     <li><a href="#">Installation</a></li>
                     <li><a href="#">Roles</a></li>
-                    <li><a href="#">Scopes</a></li>
+                    <li><a href="#">Scope</a></li>
                     <li><a href="#">Sessions</a></li>
+                </ul>
+            </div>
+            <div class="top-nav" data-ng-show="create">
+                <ul class="rcue-tabs">
+                    <li class="active"><a href="#/create/application/{{realm.id}}">New Application</a></li>
+                    <li><a href="#/realms/{{realm.id}}/applications">Applications</a></li>
                 </ul>
             </div>
             <div id="content">

@@ -4,14 +4,14 @@
         <div id="content-area" class="col-md-9" role="main">
             <div class="top-nav" data-ng-hide="createRealm">
                 <ul class="rcue-tabs">
-                    <li class="active"><a href="#">Users</a></li>
                     <li><a href="#/create/user/{{realm.id}}">New User</a></li>
+                    <li class="active"><a href="#/realms/{{realm.id}}/users">Query Users</a></li>
                 </ul>
             </div>
             <div id="content">
                 <h2 class="pull-left">Query Users</h2>
                 <table>
-                    <caption>Table of realm users</caption>
+                    <caption data-ng-show="users && search">Table of realm users</caption>
                     <thead>
                     <tr>
                         <th class="rcue-table-actions" colspan="4">
@@ -26,7 +26,7 @@
                         </th>
                     </tr>
                     <tr>
-                    <tr>
+                    <tr data-ng-show="users && search">
                         <th>Username</th>
                         <th>Last Name</th>
                         <th>First Name</th>
@@ -34,7 +34,7 @@
                     </tr>
                     </tr>
                     </thead>
-                    <tfoot>
+                    <tfoot data-ng-show="users && users.length > 10"> <!-- todo -->
                     <tr>
                         <td colspan="4">
                             <div class="table-nav">
@@ -49,9 +49,9 @@
                     <tbody class="selectable-rows">
                     <tr ng-repeat="user in users">
                         <td><a href="#/realms/{{realm.id}}/users/{{user.username}}">{{user.username}}</a></td>
-                        <td>{{user.lastName</td>
-                        <td>{{user.firstName</td>
-                        <td>{{user.email</td>
+                        <td>{{user.lastName}}</td>
+                        <td>{{user.firstName}}</td>
+                        <td>{{user.email}}</td>
                     </tr>
                     </tbody>
                 </table>
