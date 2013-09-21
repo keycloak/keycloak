@@ -183,8 +183,6 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $ht
 
 module.controller('UserListCtrl', function($scope, realm, User) {
 	$scope.realm = realm;
-    $scope.users = [];
-    //$scope.search = "Search...";
 
     $scope.searchQuery = function() {
         console.log('search: ' + $scope.search);
@@ -253,9 +251,15 @@ module.controller('UserDetailCtrl', function($scope, realm, user, User, $locatio
 	};
 });
 
-module.controller('RoleListCtrl', function($scope, realm, roles) {
+module.controller('RoleListCtrl', function($scope, $location, realm, roles) {
     $scope.realm = realm;
     $scope.roles = roles;
+
+    $scope.$watch(function() {
+        return $location.path();
+    }, function() {
+        $scope.path = $location.path().substring(1).split("/");
+    });
 });
 
 module.controller('RoleDetailCtrl', function($scope, realm, role, Role, $location, Dialog, Notifications) {
@@ -265,6 +269,12 @@ module.controller('RoleDetailCtrl', function($scope, realm, role, Role, $locatio
 
     $scope.changed = $scope.create;
 
+    $scope.$watch(function() {
+        return $location.path();
+    }, function() {
+        $scope.path = $location.path().substring(1).split("/");
+    });
+
     $scope.$watch('role', function() {
         if (!angular.equals($scope.role, role)) {
             $scope.changed = true;
@@ -272,34 +282,28 @@ module.controller('RoleDetailCtrl', function($scope, realm, role, Role, $locatio
     }, true);
 
     $scope.save = function() {
-        if ($scope.roleForm.$valid) {
+        if ($scope.create) {
+            Role.save({
+                realm: realm.id
+            }, $scope.role, function (data, headers) {
+                $scope.changed = false;
+                role = angular.copy($scope.role);
 
-            if ($scope.create) {
-                Role.save({
-                    realm: realm.id
-                }, $scope.role, function (data, headers) {
-                    $scope.changed = false;
-                    role = angular.copy($scope.role);
+                var l = headers().location;
+                var id = l.substring(l.lastIndexOf("/") + 1);
+                $location.url("/realms/" + realm.id + "/roles/" + id);
+                Notifications.success("Created role");
 
-                    var l = headers().location;
-                    var id = l.substring(l.lastIndexOf("/") + 1);
-                    $location.url("/realms/" + realm.id + "/roles/" + id);
-                    Notifications.success("Created role");
-
-                });
-            } else {
-                Role.update({
-                    realm : realm.id,
-                    roleId : role.id
-                }, $scope.role, function() {
-                    $scope.changed = false;
-                    role = angular.copy($scope.role);
-                    Notifications.success("Saved changes to role");
-                });
-            }
-
-         } else {
-            $scope.roleForm.showErrors = true;
+            });
+        } else {
+            Role.update({
+                realm : realm.id,
+                roleId : role.id
+            }, $scope.role, function() {
+                $scope.changed = false;
+                role = angular.copy($scope.role);
+                Notifications.success("Saved changes to role");
+            });
         }
     };
 

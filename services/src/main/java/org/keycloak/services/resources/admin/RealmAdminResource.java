@@ -65,6 +65,7 @@ public class RealmAdminResource {
         List<RoleRepresentation> roles = new ArrayList<RoleRepresentation>();
         for (RoleModel roleModel : roleModels) {
             RoleRepresentation role = new RoleRepresentation(roleModel.getName(), roleModel.getDescription());
+            role.setId(roleModel.getId());
             roles.add(role);
         }
         return roles;

@@ -2,18 +2,19 @@
     <div class="row">
         <div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="'partials/realm-menu.html'"></div>
         <div id="content-area" class="col-md-9" role="main">
-            <div class="top-nav" data-ng-hide="createRealm">
+            <div class="top-nav">
                 <ul class="rcue-tabs">
-                    <li class="active"><a href="#">Applications</a></li>
                     <li><a href="#/create/application/{{realm.id}}">New Application</a></li>
+                    <li class="active"><a href="#">Applications</a></li>
                 </ul>
             </div>
             <div id="content">
                 <h2 class="pull-left">Applications</h2>
                 <table>
-                    <caption>Table of realm applications</caption>
+                    <caption data-ng-show="applications && applications.length > 0">Table of realm applications</caption>
+                    <caption data-ng-show="!applications || applications.length == 0">No configured applications...</caption>
                     <thead>
-                    <tr>
+                    <tr data-ng-show="applications && applications.length > 5">
                         <th class="rcue-table-actions" colspan="3">
                             <div class="search-comp clearfix">
                                 <input type="text" placeholder="Search..." class="search">
@@ -30,7 +31,7 @@
                         <th>Base URL</th>
                     </tr>
                     </thead>
-                    <tfoot>
+                    <tfoot data-ng-show="applications && applications.length > 5"> <!-- todo -->
                     <tr>
                         <td colspan="3">
                             <div class="table-nav">
