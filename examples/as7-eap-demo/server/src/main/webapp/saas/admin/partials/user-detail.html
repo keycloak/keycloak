@@ -4,12 +4,16 @@
         <div id="content-area" class="col-md-9" role="main">
             <div class="top-nav" data-ng-show="create">
                 <ul class="rcue-tabs" >
-                    <li class="active"><a href="#">New User</a></li>
-                    <li><a href="#">Users</a></li>
+                    <ul class="rcue-tabs">
+                        <li class="active"><a href="#/create/user/{{realm.id}}">New User</a></li>
+                        <li><a href="#/realms/{{realm.id}}/users">Query Users</a></li>
+                    </ul>
                 </ul>
             </div>
             <div class="top-nav" data-ng-show="!create">
                 <ul class="rcue-tabs" >
+                    <li><a href="#/create/user/{{realm.id}}">New User</a></li>
+                    <li><a href="#/realms/{{realm.id}}/users">Query Users</a></li>
                     <li class="active"><a href="#">Attributes</a></li>
                     <li><a href="#">Credentials</a></li>
                     <li><a href="#">Role Mappings</a></li>
