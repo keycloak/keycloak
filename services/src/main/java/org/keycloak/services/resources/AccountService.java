@@ -116,7 +116,7 @@ public class AccountService {
             accessCodeEntry.getRequiredActions().remove(UserModel.RequiredAction.UPDATE_PROFILE);
         }
 
-        Response response = redirectOauth(accessCodeEntry);
+        Response response = redirectOauth(user, accessCodeEntry);
         if (response != null) {
             return response;
         } else {
@@ -161,8 +161,7 @@ public class AccountService {
             return null;
         }
 
-        if (accessCodeEntry.getRequiredActions() == null
-                || !accessCodeEntry.getRequiredActions().contains(requiredAction)) {
+        if (accessCodeEntry.getRequiredActions() == null || !accessCodeEntry.getRequiredActions().contains(requiredAction)) {
             return null;
         }
 
@@ -208,7 +207,7 @@ public class AccountService {
 
         user.setTotp(true);
 
-        Response response = redirectOauth(accessCodeEntry);
+        Response response = redirectOauth(user, accessCodeEntry);
         if (response != null) {
             return response;
         } else {
@@ -231,7 +230,7 @@ public class AccountService {
             accessCodeEntry.getRequiredActions().remove(UserModel.RequiredAction.VERIFY_EMAIL);
         }
 
-        Response response = redirectOauth(accessCodeEntry);
+        Response response = redirectOauth(user, accessCodeEntry);
         if (response != null) {
             return response;
         } else {
@@ -239,17 +238,24 @@ public class AccountService {
         }
     }
 
-    private Response redirectOauth(AccessCodeEntry accessCodeEntry) {
-        if (accessCodeEntry == null) {
+    private Response redirectOauth(UserModel user, AccessCodeEntry accessCode) {
+        if (accessCode == null) {
             return null;
         }
-        String redirect = uriInfo.getQueryParameters().getFirst("redirect_uri");
-        if (redirect != null) {
-            String state = uriInfo.getQueryParameters().getFirst("state");
-            return Flows.oauth(realm, request, uriInfo, authManager, tokenManager).redirectAccessCode(accessCodeEntry, state,
-                    redirect);
+
+        Set<RequiredAction> requiredActions = user.getRequiredActions();
+        if (!requiredActions.isEmpty()) {
+            return Flows.forms(realm, request, uriInfo).setCode(accessCode.getCode()).setUser(user)
+                    .forwardToAction(requiredActions.iterator().next());
         } else {
-            return null;
+            String redirect = uriInfo.getQueryParameters().getFirst("redirect_uri");
+            if (redirect != null) {
+                String state = uriInfo.getQueryParameters().getFirst("state");
+                return Flows.oauth(realm, request, uriInfo, authManager, tokenManager).redirectAccessCode(accessCode, state,
+                        redirect);
+            } else {
+                return null;
+            }
         }
     }
 
