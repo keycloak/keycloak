@@ -39,7 +39,7 @@ public class RegisterTest extends AbstractDroneTest {
 
         Assert.assertTrue(registerPage.isCurrent());
 
-        registerPage.register("name", "email", "username", null, null);
+        registerPage.register("name", "email", "registerExistingUser", null, null);
 
         Assert.assertTrue(registerPage.isCurrent());
         Assert.assertEquals("Please specify password", registerPage.getError());
@@ -52,7 +52,7 @@ public class RegisterTest extends AbstractDroneTest {
 
         Assert.assertTrue(registerPage.isCurrent());
 
-        registerPage.register("name", "email", "bburke@redhat.com", "password", "invalid");
+        registerPage.register("name", "email", "registerUserInvalidPasswordConfirm", "password", "invalid");
 
         Assert.assertTrue(registerPage.isCurrent());
         Assert.assertEquals("Password confirmation doesn't match", registerPage.getError());
@@ -65,7 +65,7 @@ public class RegisterTest extends AbstractDroneTest {
 
         Assert.assertTrue(registerPage.isCurrent());
 
-        registerPage.register("name", "email", "username", null, null);
+        registerPage.register("name", "email", "registerUserMissingPassword", null, null);
 
         Assert.assertTrue(registerPage.isCurrent());
         Assert.assertEquals("Please specify password", registerPage.getError());
@@ -91,7 +91,7 @@ public class RegisterTest extends AbstractDroneTest {
 
         Assert.assertTrue(registerPage.isCurrent());
 
-        registerPage.register("name", "email", "username", "password", "password");
+        registerPage.register("name", "email", "registerUserSuccess", "password", "password");
         Assert.assertTrue(appPage.isCurrent());
     }
 

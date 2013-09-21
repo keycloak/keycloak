@@ -12,8 +12,6 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RequiredCredentialModel;
 import org.keycloak.services.models.UserModel;
-import org.keycloak.services.models.UserModel.RequiredAction;
-import org.keycloak.services.models.UserModel.Status;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.SaasService;
 
@@ -205,7 +203,7 @@ public class AuthenticationManager {
             return AuthenticationStatus.INVALID_USER;
         }
 
-        if (!user.isEnabled() && user.getStatus() == Status.DISABLED) {
+        if (!user.isEnabled()) {
             logger.info("Account is disabled, contact admin.");
             return AuthenticationStatus.ACCOUNT_DISABLED;
         }
@@ -249,7 +247,7 @@ public class AuthenticationManager {
                 }
             }
 
-            if (user.getStatus() == Status.ACTIONS_REQUIRED) {
+            if (!user.getRequiredActions().isEmpty()) {
                 return AuthenticationStatus.ACTIONS_REQUIRED;
             } else {
                 return AuthenticationStatus.SUCCESS;

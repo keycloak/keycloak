@@ -21,6 +21,10 @@
  */
 package org.keycloak.services.resources.flows;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.services.managers.AccessCodeEntry;
@@ -30,6 +34,7 @@ import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.RoleModel;
 import org.keycloak.services.models.UserModel;
+import org.keycloak.services.models.UserModel.RequiredAction;
 import org.keycloak.services.resources.TokenService;
 
 import javax.ws.rs.core.Response;
@@ -88,16 +93,19 @@ public class OAuthFlows {
         log.info("processAccessCode: go to oauth page?: "
                 + (!isResource && (accessCode.getRealmRolesRequested().size() > 0 || accessCode.getResourceRolesRequested()
                         .size() > 0)));
+
+        Set<RequiredAction> requiredActions = user.getRequiredActions();
+        if (!requiredActions.isEmpty()) {
+            accessCode.setRequiredActions(new HashSet<UserModel.RequiredAction>(requiredActions));
+            accessCode.setExpiration(System.currentTimeMillis() / 1000 + realm.getAccessCodeLifespanUserAction());
+            return Flows.forms(realm, request, uriInfo).setCode(accessCode.getCode()).setUser(user)
+                    .forwardToAction(user.getRequiredActions().iterator().next());
+        }
+
         if (!isResource
                 && (accessCode.getRealmRolesRequested().size() > 0 || accessCode.getResourceRolesRequested().size() > 0)) {
             accessCode.setExpiration(System.currentTimeMillis() / 1000 + realm.getAccessCodeLifespanUserAction());
             return oauthGrantPage(accessCode, client);
-        }
-
-        if (user.getRequiredActions() != null) {
-            accessCode.setExpiration(System.currentTimeMillis() / 1000 + realm.getAccessCodeLifespanUserAction());
-            return Flows.forms(realm, request, uriInfo).setCode(accessCode.getCode()).setUser(user)
-                    .forwardToAction(user.getRequiredActions().get(0));
         }
 
         if (redirect != null) {

@@ -12,7 +12,7 @@
     "users": [
         {
             "username": "wburke",
-            "status": "ENABLED",
+            "enabled": true,
             "attributes": {
                 "email": "bburke@redhat.com"
             },
@@ -25,7 +25,7 @@
         },
         {
             "username": "loginclient",
-            "status": "ENABLED",
+            "enabled": true,
             "credentials": [
                 {
                     "type": "password",
@@ -35,7 +35,7 @@
         },
         {
             "username": "admin",
-            "status": "ENABLED",
+            "enabled": true,
             "credentials": [
                 {
                     "type": "password",
@@ -45,7 +45,7 @@
         },
         {
             "username": "oauthclient",
-            "status": "ENABLED",
+            "enabled": true,
             "credentials": [
                 {
                     "type": "password",
@@ -55,7 +55,7 @@
         },
         {
             "username": "mySocialUser",
-            "status": "ENABLED"
+            "enabled": true
         }
     ],
     "roleMappings": [

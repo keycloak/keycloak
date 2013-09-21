@@ -3,8 +3,9 @@ package org.keycloak.services.models.picketlink;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.keycloak.services.models.UserModel;
 import org.keycloak.services.models.utils.ArrayUtils;
@@ -20,7 +21,6 @@ public class UserAdapter implements UserModel {
     private static final String EMAIL_VERIFIED_ATTR = "emailVerified";
     private static final String KEYCLOAK_TOTP_ATTR = "totpEnabled";
     private static final String REQUIRED_ACTIONS_ATTR = "requiredActions";
-    private static final String STATUS_ATTR = "status";
 
     protected User user;
     protected IdentityManager idm;
@@ -44,23 +44,9 @@ public class UserAdapter implements UserModel {
         return user.isEnabled();
     }
 
-    public UserModel.Status getStatus() {
-        Attribute<UserModel.Status> a = user.getAttribute(STATUS_ATTR);
-        if (a != null) {
-            return a.getValue();
-        } else {
-            return user.isEnabled() ? UserModel.Status.ENABLED : UserModel.Status.DISABLED;
-        }
-    }
-
     @Override
-    public void setStatus(UserModel.Status status) {
-        user.setAttribute(new Attribute<UserModel.Status>(STATUS_ATTR, status));
-        if (status == UserModel.Status.DISABLED) {
-            user.setEnabled(false);
-        } else {
-            user.setEnabled(true);
-        }
+    public void setEnabled(boolean enabled) {
+        user.setEnabled(enabled);
         idm.update(user);
     }
 
@@ -131,7 +117,7 @@ public class UserAdapter implements UserModel {
     @Override
     public Map<String, String> getAttributes() {
         Map<String, String> attributes = new HashMap<String, String>();
-        for (Attribute attribute : user.getAttributes()) {
+        for (Attribute<?> attribute : user.getAttributes()) {
            if (attribute.getValue() != null) attributes.put(attribute.getName(), attribute.getValue().toString());
         }
         return attributes;
@@ -152,12 +138,16 @@ public class UserAdapter implements UserModel {
     }
 
     @Override
-    public List<RequiredAction> getRequiredActions() {
+    public Set<RequiredAction> getRequiredActions() {
         RequiredAction[] actions = getRequiredActionsArray();
         if (actions == null) {
-            return null;
+            return Collections.emptySet();
         } else {
-            return Collections.unmodifiableList(Arrays.asList(actions));
+            Set<RequiredAction> s = new HashSet<RequiredAction>();
+            for (RequiredAction a : actions) {
+                s.add(a);
+            }
+            return Collections.unmodifiableSet(s);
         }
     }
 
@@ -167,7 +157,9 @@ public class UserAdapter implements UserModel {
         if (actions == null) {
             actions = new RequiredAction[] { action };
         } else {
-            actions = ArrayUtils.add(actions, action);
+            if (Arrays.binarySearch(actions, action) < 0) {
+                actions = ArrayUtils.add(actions, action);
+            }
         }
 
         Attribute<RequiredAction[]> a = new Attribute<RequiredAction[]>(REQUIRED_ACTIONS_ATTR, actions);

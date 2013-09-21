@@ -15,11 +15,13 @@ import org.keycloak.services.models.RequiredCredentialModel;
 import org.keycloak.services.models.RoleModel;
 import org.keycloak.services.models.UserModel;
 import org.keycloak.services.models.UserCredentialModel;
+import org.keycloak.services.models.UserModel.RequiredAction;
 import org.keycloak.services.resources.KeycloakApplication;
 
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -265,53 +267,41 @@ public class AdapterTest {
     }
 
     @Test
-    public void testUserStatus() throws Exception {
-        test1CreateRealm();
-
-        UserModel user = realmModel.addUser("bburke");
-        Assert.assertTrue(user.isEnabled());
-        Assert.assertEquals(UserModel.Status.ENABLED, user.getStatus());
-
-        user.setStatus(UserModel.Status.DISABLED);
-        user = realmModel.getUser("bburke");
-
-        Assert.assertFalse(user.isEnabled());
-        Assert.assertEquals(UserModel.Status.DISABLED, user.getStatus());
-
-        user.setStatus(UserModel.Status.ACTIONS_REQUIRED);
-        user = realmModel.getUser("bburke");
-
-        Assert.assertTrue(user.isEnabled());
-        Assert.assertEquals(UserModel.Status.ACTIONS_REQUIRED, user.getStatus());
-    }
-
-    @Test
     public void testUserRequiredActions() throws Exception {
         test1CreateRealm();
 
         UserModel user = realmModel.addUser("bburke");
 
-        Assert.assertNull(user.getRequiredActions());
+        Assert.assertTrue(user.getRequiredActions().isEmpty());
 
         user.addRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP);
         user = realmModel.getUser("bburke");
 
-        Assert.assertEquals(Arrays.asList(UserModel.RequiredAction.CONFIGURE_TOTP), user.getRequiredActions());
+        Assert.assertEquals(1, user.getRequiredActions().size());
+        Assert.assertTrue(user.getRequiredActions().contains(RequiredAction.CONFIGURE_TOTP));
+
+        user.addRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP);
+        user = realmModel.getUser("bburke");
+
+        Assert.assertEquals(1, user.getRequiredActions().size());
+        Assert.assertTrue(user.getRequiredActions().contains(RequiredAction.CONFIGURE_TOTP));
 
         user.addRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL);
         user = realmModel.getUser("bburke");
 
-        Assert.assertEquals(Arrays.asList(UserModel.RequiredAction.CONFIGURE_TOTP, UserModel.RequiredAction.VERIFY_EMAIL),
-                user.getRequiredActions());
+        Assert.assertEquals(2, user.getRequiredActions().size());
+        Assert.assertTrue(user.getRequiredActions().contains(RequiredAction.CONFIGURE_TOTP));
+        Assert.assertTrue(user.getRequiredActions().contains(RequiredAction.VERIFY_EMAIL));
 
         user.removeRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP);
         user = realmModel.getUser("bburke");
 
-        Assert.assertEquals(Arrays.asList(UserModel.RequiredAction.VERIFY_EMAIL), user.getRequiredActions());
+        Assert.assertEquals(1, user.getRequiredActions().size());
+        Assert.assertTrue(user.getRequiredActions().contains(RequiredAction.VERIFY_EMAIL));
 
         user.removeRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL);
         user = realmModel.getUser("bburke");
 
-        Assert.assertNull(user.getRequiredActions());
+        Assert.assertTrue(user.getRequiredActions().isEmpty());
     }
 }

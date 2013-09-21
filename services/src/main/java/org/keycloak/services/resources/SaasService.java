@@ -229,7 +229,7 @@ public class SaasService {
                 return Flows.forms(realm, request, uriInfo).setError(Messages.ACCOUNT_DISABLED).setFormData(formData)
                         .forwardToLogin();
             case ACTIONS_REQUIRED:
-                return Flows.forms(realm, request, uriInfo).forwardToAction(user.getRequiredActions().get(0));
+                return Flows.forms(realm, request, uriInfo).forwardToAction(user.getRequiredActions().iterator().next());
             default:
                 return Flows.forms(realm, request, uriInfo).setError(Messages.INVALID_USER).setFormData(formData)
                         .forwardToLogin();

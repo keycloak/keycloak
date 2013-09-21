@@ -20,7 +20,6 @@ import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.models.*;
 import org.keycloak.services.models.UserModel.RequiredAction;
-import org.keycloak.services.models.UserModel.Status;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.OAuthFlows;
 import org.keycloak.services.validation.Validation;
@@ -218,7 +217,6 @@ public class TokenService {
         for (RequiredCredentialModel c : realm.getRequiredCredentials()) {
             if (c.getType().equals(CredentialRepresentation.TOTP) && !user.isTotp()) {
                 user.addRequiredAction(RequiredAction.CONFIGURE_TOTP);
-                user.setStatus(Status.ACTIONS_REQUIRED);
                 logger.info("User is required to configure totp");
             }
         }
@@ -227,7 +225,6 @@ public class TokenService {
     private void isEmailVerificationRequired(UserModel user) {
         if (realm.isVerifyEmail() && !user.isEmailVerified()) {
             user.addRequiredAction(RequiredAction.VERIFY_EMAIL);
-            user.setStatus(Status.ACTIONS_REQUIRED);
             logger.info("User is required to verify email");
         }
     }
@@ -416,6 +413,12 @@ public class TokenService {
             res.put("error_description", "Token expired");
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res)
                     .build();
+        }
+        if (accessCode.getRequiredActions() != null && !accessCode.getRequiredActions().isEmpty()) {
+            Map<String, String> res = new HashMap<String, String>();
+            res.put("error", "invalid_grant");
+            res.put("error_description", "Actions required");
+            return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res).build();
         }
         if (!client.getLoginName().equals(accessCode.getClient().getLoginName())) {
             Map<String, String> res = new HashMap<String, String>();

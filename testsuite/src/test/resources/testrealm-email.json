@@ -17,7 +17,7 @@
     "users" : [
         {
             "username" : "bburke@redhat.com",
-            "status": "ENABLED",
+            "enabled": true,
             "email" : "bburke@redhat.com",
             "credentials" : [
                 { "type" : "password",
@@ -26,7 +26,7 @@
         },
         {
             "username" : "third-party",
-            "status": "ENABLED",
+            "enabled": true,
             "credentials" : [
                 { "type" : "password",
                     "value" : "password" }

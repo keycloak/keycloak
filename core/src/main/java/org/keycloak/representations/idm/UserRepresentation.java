@@ -13,7 +13,7 @@ public class UserRepresentation {
 
     protected String self; // link
     protected String username;
-    protected String status;
+    protected boolean enabled;
     protected String firstName;
     protected String lastName;
     protected String email;
@@ -61,6 +61,14 @@ public class UserRepresentation {
         this.username = username;
     }
 
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
     public Map<String, String> getAttributes() {
         return attributes;
     }
@@ -90,14 +98,6 @@ public class UserRepresentation {
         cred.setValue(value);
         credentials.add(cred);
         return this;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
     }
 
     public List<String> getRequiredActions() {

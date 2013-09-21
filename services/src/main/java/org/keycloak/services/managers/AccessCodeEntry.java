@@ -3,11 +3,13 @@ package org.keycloak.services.managers;
 import org.keycloak.representations.SkeletonKeyToken;
 import org.keycloak.services.models.RoleModel;
 import org.keycloak.services.models.UserModel;
+import org.keycloak.services.models.UserModel.RequiredAction;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -23,6 +25,7 @@ public class AccessCodeEntry {
     protected long expiration;
     protected SkeletonKeyToken token;
     protected UserModel user;
+    protected Set<RequiredAction> requiredActions;
     protected UserModel client;
     protected List<RoleModel> realmRolesRequested = new ArrayList<RoleModel>();
     MultivaluedMap<String, RoleModel> resourceRolesRequested = new MultivaluedHashMap<String, RoleModel>();
@@ -73,6 +76,14 @@ public class AccessCodeEntry {
 
     public void setUser(UserModel user) {
         this.user = user;
+    }
+
+    public Set<RequiredAction> getRequiredActions() {
+        return requiredActions;
+    }
+
+    public void setRequiredActions(Set<RequiredAction> requiredActions) {
+        this.requiredActions = requiredActions;
     }
 
     public List<RoleModel> getRealmRolesRequested() {

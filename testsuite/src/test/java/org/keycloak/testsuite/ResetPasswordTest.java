@@ -91,4 +91,24 @@ public class ResetPasswordTest extends AbstractDroneTest {
         Assert.assertEquals("bburke@redhat.com", appPage.getUser());
     }
 
+    @Test
+    public void tempPassword() {
+        appPage.open();
+
+        Assert.assertTrue(loginPage.isCurrent());
+
+        loginPage.login("reset@pass.com", "temp-password");
+
+        Assert.assertTrue(changePasswordPage.isCurrent());
+
+        changePasswordPage.changePassword("new-password", "new-password");
+
+        Assert.assertTrue(loginPage.isCurrent());
+
+        loginPage.login("reset@pass.com", "new-password");
+
+        Assert.assertTrue(appPage.isCurrent());
+        Assert.assertEquals("reset@pass.com", appPage.getUser());
+    }
+
 }

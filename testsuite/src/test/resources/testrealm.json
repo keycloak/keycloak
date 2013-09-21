@@ -17,7 +17,7 @@
     "users" : [
         {
             "username" : "bburke@redhat.com",
-            "status": "ENABLED",
+            "enabled": true,
             "email" : "bburke@redhat.com",
             "credentials" : [
                 { "type" : "password",
@@ -25,8 +25,18 @@
             ]
         },
         {
+            "username" : "reset@pass.com",
+            "enabled": true,
+            "requiredActions" : [ "RESET_PASSWORD" ],
+            "email" : "reset@pass.com",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "temp-password" }
+            ]
+        },
+        {
             "username" : "third-party",
-            "status": "ENABLED",
+            "enabled": true,
             "credentials" : [
                 { "type" : "password",
                     "value" : "password" }
@@ -46,6 +56,10 @@
     "roleMappings": [
         {
             "username": "bburke@redhat.com",
+            "roles": ["user"]
+        },
+        {
+            "username": "reset@pass.com",
             "roles": ["user"]
         },
         {

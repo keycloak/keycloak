@@ -210,7 +210,7 @@ public class RealmManager {
 
     public UserModel createUser(RealmModel newRealm, UserRepresentation userRep) {
         UserModel user = newRealm.addUser(userRep.getUsername());
-        user.setStatus(UserModel.Status.valueOf(userRep.getStatus()));
+        user.setEnabled(userRep.isEnabled());
         user.setEmail(userRep.getEmail());
         if (userRep.getAttributes() != null) {
             for (Map.Entry<String, String> entry : userRep.getAttributes().entrySet()) {

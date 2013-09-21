@@ -19,7 +19,7 @@ public class UserManager {
         rep.setEmail(user.getEmail());
         rep.setLastName(user.getLastName());
         rep.setFirstName(user.getFirstName());
-        rep.setStatus(user.getStatus().name());
+        rep.setEnabled(user.isEnabled());
         rep.setUsername(user.getLoginName());
         for (Map.Entry<String, String> entry : user.getAttributes().entrySet()) {
             rep.attribute(entry.getKey(), entry.getValue());
@@ -29,7 +29,7 @@ public class UserManager {
 
     public UserModel createUser(RealmModel newRealm, UserRepresentation userRep) {
         UserModel user = newRealm.addUser(userRep.getUsername());
-        user.setStatus(UserModel.Status.valueOf(userRep.getStatus()));
+        user.setEnabled(userRep.isEnabled());
         user.setEmail(userRep.getEmail());
         user.setFirstName(userRep.getFirstName());
         user.setLastName(userRep.getLastName());
@@ -56,7 +56,7 @@ public class UserManager {
      * @param userRep
      */
     public void updateUserAsAdmin(UserModel user, UserRepresentation userRep) {
-        user.setStatus(UserModel.Status.valueOf(userRep.getStatus()));
+        user.setEnabled(userRep.isEnabled());
         user.setEmail(userRep.getEmail());
         user.setFirstName(userRep.getFirstName());
         user.setLastName(userRep.getLastName());
