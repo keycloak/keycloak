@@ -414,12 +414,6 @@ public class TokenService {
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res)
                     .build();
         }
-        if (accessCode.getRequiredActions() != null && !accessCode.getRequiredActions().isEmpty()) {
-            Map<String, String> res = new HashMap<String, String>();
-            res.put("error", "invalid_grant");
-            res.put("error_description", "Actions required");
-            return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res).build();
-        }
         if (!client.getLoginName().equals(accessCode.getClient().getLoginName())) {
             Map<String, String> res = new HashMap<String, String>();
             res.put("error", "invalid_grant");
