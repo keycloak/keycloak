@@ -45,6 +45,16 @@
             ]
         },
         {
+            "username" : "multiple@actions.com",
+            "enabled": true,
+            "requiredActions" : [ "UPDATE_PROFILE", "UPDATE_PASSWORD" ],
+            "email" : "multiple@actions.com",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "temp-password" }
+            ]
+        },
+        {
             "username" : "third-party",
             "enabled": true,
             "credentials" : [
@@ -74,6 +84,10 @@
         },
         {
             "username": "updateprof@pass.com",
+            "roles": ["user"]
+        },
+        {
+            "username": "multiple@actions.com",
             "roles": ["user"]
         },
         {

@@ -21,62 +21,39 @@
  */
 package org.keycloak.testsuite;
 
-import java.net.MalformedURLException;
-
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.pages.RegisterPage;
-import org.keycloak.testsuite.pages.TotpPage;
-import org.openqa.selenium.WebDriver;
-import org.picketlink.idm.credential.util.TimeBasedOTP;
+import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
+import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 @RunWith(Arquillian.class)
-public class RequiredActionMultipleActionsTest {
+public class RequiredActionMultipleActionsTest extends AbstractDroneTest {
 
-    @Deployment(name = "app", testable = false, order = 2)
-    public static WebArchive appDeployment() {
-        return Deployments.appDeployment();
+    @Deployment(name = "properties", testable = false, order = 1)
+    public static WebArchive propertiesDeployment() {
+        return ShrinkWrap.create(WebArchive.class, "properties.war").addClass(SystemPropertiesSetter.class)
+                .addAsWebInfResource("web-properties-email-verfication.xml", "web.xml");
     }
 
-    @Deployment(name = "auth-server", testable = false, order = 1)
-    public static WebArchive deployment() {
-        return Deployments.deployment().addAsResource("testrealm-totp.json", "META-INF/testrealm.json");
-    }
+    @Rule
+    public GreenMailRule greenMail = new GreenMailRule();
 
     @Page
-    protected AppPage appPage;
-
-    @Drone
-    protected WebDriver browser;
+    protected LoginPasswordUpdatePage changePasswordPage;
 
     @Page
-    protected TotpPage totpPage;
-
-    @Page
-    protected LoginPage loginPage;
-
-    @Page
-    protected RegisterPage registerPage;
-
-    protected TimeBasedOTP totp;
-
-    @Before
-    public void before() throws MalformedURLException {
-        totp = new TimeBasedOTP();
-    }
+    protected LoginUpdateProfilePage updateProfilePage;
 
     @After
     public void after() {
@@ -87,8 +64,38 @@ public class RequiredActionMultipleActionsTest {
     }
 
     @Test
-    public void setupTotp() {
-        Assert.fail("Not implemented");
+    public void updateProfileAndPassword() {
+        appPage.open();
+
+        Assert.assertTrue(loginPage.isCurrent());
+
+        loginPage.login("multiple@actions.com", "temp-password");
+
+        if (changePasswordPage.isCurrent()) {
+            updatePassword();
+
+            Assert.assertTrue(updateProfilePage.isCurrent());
+            updateProfile();
+        } else if (updateProfilePage.isCurrent()) {
+            updateProfile();
+
+            Assert.assertTrue(changePasswordPage.isCurrent());
+            updatePassword();
+        } else {
+            Assert.fail("Expected to update password and profile before login");
+        }
+
+        Assert.assertTrue(appPage.isCurrent());
+        Assert.assertEquals("multiple@actions.com", appPage.getUser());
+
+    }
+
+    public void updatePassword() {
+        changePasswordPage.changePassword("new-password", "new-password");
+    }
+
+    public void updateProfile() {
+        updateProfilePage.update("New first", "New last", "new@email.com");
     }
 
 }
