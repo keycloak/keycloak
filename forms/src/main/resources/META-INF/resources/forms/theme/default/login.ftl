@@ -36,6 +36,8 @@
         <#if realm.registrationAllowed>
             <p>${rb.getString('noAccount')} <a href="${url.registrationUrl?default('')}">${rb.getString('register')}</a>.</p>
         </#if>
+        
+        <a href="${url.passwordResetUrl}">Reset password</a>
     </div>
 
     </#if>

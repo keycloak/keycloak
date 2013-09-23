@@ -55,6 +55,14 @@ public class Urls {
         return accountBase(baseUri).path(AccountService.class, "totpPage").build(realmId);
     }
 
+    public static URI accountEmailVerification(URI baseUri, String realmId) {
+        return accountBase(baseUri).path(AccountService.class, "emailVerification").build(realmId);
+    }
+
+    public static URI accountPasswordReset(URI baseUri, String realmId) {
+        return accountBase(baseUri).path(AccountService.class, "passwordReset").build(realmId);
+    }
+
     private static UriBuilder realmBase(URI baseUri) {
         return UriBuilder.fromUri(baseUri).path(RealmsResource.class);
     }

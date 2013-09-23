@@ -35,7 +35,8 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.keycloak.testsuite.pages.ChangePasswordPage;
+import org.keycloak.testsuite.pages.LoginPasswordResetPage;
+import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -53,7 +54,10 @@ public class ResetPasswordTest extends AbstractDroneTest {
     public GreenMailRule greenMail = new GreenMailRule();
 
     @Page
-    protected ChangePasswordPage changePasswordPage;
+    protected LoginPasswordResetPage resetPasswordPage;
+
+    @Page
+    protected LoginPasswordUpdatePage updatePasswordPage;
 
     @Test
     public void resetPassword() throws IOException, MessagingException {
@@ -61,12 +65,13 @@ public class ResetPasswordTest extends AbstractDroneTest {
 
         Assert.assertTrue(loginPage.isCurrent());
         
-        // TODO Replace with clicking reset password link when added
-        String url = browser.getCurrentUrl();
-        url = url.replace("tokens/login", "account/password-reset");
-        url = url + "&username=bburke@redhat.com";
+        loginPage.resetPassword();
 
-        browser.navigate().to(url);
+        Assert.assertTrue(resetPasswordPage.isCurrent());
+
+        resetPasswordPage.changePassword("bburke@redhat.com", "bburke@redhat.com");
+
+        Assert.assertTrue(resetPasswordPage.isCurrent());
 
         Assert.assertEquals(1, greenMail.getReceivedMessages().length);
 
@@ -77,38 +82,22 @@ public class ResetPasswordTest extends AbstractDroneTest {
 
         browser.navigate().to(changePasswordUrl.trim());
 
-        changePasswordPage.changePassword("new-password", "new-password");
+        Assert.assertTrue(updatePasswordPage.isCurrent());
+
+        updatePasswordPage.changePassword("new-password", "new-password");
+
+        Assert.assertTrue(appPage.isCurrent());
+        Assert.assertEquals("bburke@redhat.com", appPage.getUser());
+
+        appPage.logout();
+        appPage.open();
 
         Assert.assertTrue(loginPage.isCurrent());
-
-        loginPage.login("bburke@redhat.com", "password");
-        Assert.assertTrue(loginPage.isCurrent());
-        Assert.assertEquals("Invalid username or password", loginPage.getError());
 
         loginPage.login("bburke@redhat.com", "new-password");
 
         Assert.assertTrue(appPage.isCurrent());
         Assert.assertEquals("bburke@redhat.com", appPage.getUser());
-    }
-
-    @Test
-    public void tempPassword() {
-        appPage.open();
-
-        Assert.assertTrue(loginPage.isCurrent());
-
-        loginPage.login("reset@pass.com", "temp-password");
-
-        Assert.assertTrue(changePasswordPage.isCurrent());
-
-        changePasswordPage.changePassword("new-password", "new-password");
-
-        Assert.assertTrue(loginPage.isCurrent());
-
-        loginPage.login("reset@pass.com", "new-password");
-
-        Assert.assertTrue(appPage.isCurrent());
-        Assert.assertEquals("reset@pass.com", appPage.getUser());
     }
 
 }

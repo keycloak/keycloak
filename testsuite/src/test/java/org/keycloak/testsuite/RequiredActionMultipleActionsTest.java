@@ -34,9 +34,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.RegisterPage;
+import org.keycloak.testsuite.pages.TotpPage;
 import org.openqa.selenium.WebDriver;
 import org.picketlink.idm.credential.util.TimeBasedOTP;
 
@@ -44,7 +44,7 @@ import org.picketlink.idm.credential.util.TimeBasedOTP;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 @RunWith(Arquillian.class)
-public class RequiredActionTotpSetupTest {
+public class RequiredActionMultipleActionsTest {
 
     @Deployment(name = "app", testable = false, order = 2)
     public static WebArchive appDeployment() {
@@ -63,7 +63,7 @@ public class RequiredActionTotpSetupTest {
     protected WebDriver browser;
 
     @Page
-    protected LoginConfigTotpPage totpPage;
+    protected TotpPage totpPage;
 
     @Page
     protected LoginPage loginPage;
@@ -88,17 +88,7 @@ public class RequiredActionTotpSetupTest {
 
     @Test
     public void setupTotp() {
-        appPage.open();
-
-        loginPage.register();
-        registerPage.register("name", "email", "setupTotp", "password", "password");
-
-        Assert.assertTrue(totpPage.isCurrent());
-
-        totpPage.configure(totp.generate(totpPage.getTotpSecret()));
-
-        Assert.assertTrue(appPage.isCurrent());
-        Assert.assertEquals("setupTotp", appPage.getUser());
+        Assert.fail("Not implemented");
     }
 
 }

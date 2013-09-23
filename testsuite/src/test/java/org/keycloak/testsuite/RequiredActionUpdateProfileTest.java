@@ -21,44 +21,22 @@
  */
 package org.keycloak.testsuite;
 
-import java.io.IOException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.mail.MessagingException;
-import javax.mail.internet.MimeMessage;
-
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.pages.RegisterPage;
-import org.openqa.selenium.WebDriver;
+import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 @RunWith(Arquillian.class)
-public class RequiredActionEmailVerificationTest {
-
-    @Deployment(name = "app", testable = false, order = 3)
-    public static WebArchive appDeployment() {
-        return Deployments.appDeployment();
-    }
-
-    @Deployment(name = "auth-server", testable = false, order = 2)
-    public static WebArchive deployment() {
-        return Deployments.deployment().addAsResource("testrealm-email.json", "META-INF/testrealm.json");
-    }
+public class RequiredActionUpdateProfileTest extends AbstractDroneTest {
 
     @Deployment(name = "properties", testable = false, order = 1)
     public static WebArchive propertiesDeployment() {
@@ -66,52 +44,26 @@ public class RequiredActionEmailVerificationTest {
                 .addAsWebInfResource("web-properties-email-verfication.xml", "web.xml");
     }
 
-    @Page
-    protected AppPage appPage;
-
-    @Drone
-    protected WebDriver browser;
-
-    @Page
-    protected LoginPage loginPage;
-
-    @Page
-    protected RegisterPage registerPage;
-
     @Rule
     public GreenMailRule greenMail = new GreenMailRule();
 
-    @After
-    public void after() {
-        appPage.open();
-        if (appPage.isCurrent()) {
-            appPage.logout();
-        }
-    }
+    @Page
+    protected LoginUpdateProfilePage updateProfilePage;
 
     @Test
-    public void verifyEmail() throws IOException, MessagingException {
+    public void updateProfile() {
         appPage.open();
 
-        loginPage.register();
-        registerPage.register("name", "email", "verifyEmail", "password", "password");
+        Assert.assertTrue(loginPage.isCurrent());
 
-        Assert.assertTrue(browser.getPageSource().contains("Verify email"));
+        loginPage.login("updateprof@pass.com", "password");
 
-        MimeMessage message = greenMail.getReceivedMessages()[0];
+        Assert.assertTrue(updateProfilePage.isCurrent());
 
-        String body = (String) message.getContent();
-
-        Pattern p = Pattern.compile("(?s).*(http://[^\\s]*).*");
-        Matcher m = p.matcher(body);
-        m.matches();
-
-        String verificationUrl = m.group(1);
-
-        browser.navigate().to(verificationUrl.trim());
+        updateProfilePage.update("New first", "New last", "new@email.com");
 
         Assert.assertTrue(appPage.isCurrent());
-        Assert.assertEquals("verifyEmail", appPage.getUser());
+        Assert.assertEquals("updateprof@pass.com", appPage.getUser());
     }
 
 }

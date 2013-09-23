@@ -54,6 +54,6 @@ public interface UserModel {
     void setTotp(boolean totp);
 
     public static enum RequiredAction {
-        VERIFY_EMAIL, UPDATE_PROFILE, CONFIGURE_TOTP, RESET_PASSWORD
+        VERIFY_EMAIL, UPDATE_PROFILE, CONFIGURE_TOTP, UPDATE_PASSWORD
     }
 }

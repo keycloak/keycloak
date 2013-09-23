@@ -28,6 +28,7 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyUriInfo;
 import org.keycloak.services.FormService;
 import org.keycloak.services.email.EmailSender;
+import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.UserModel;
 import org.keycloak.services.models.UserModel.RequiredAction;
@@ -60,7 +61,7 @@ public class FormFlows {
     private UserModel userModel;
 
     private boolean socialRegistration;
-    private String code;
+    private AccessCodeEntry accessCode;
     private UriInfo uriInfo;
 
     FormFlows(RealmModel realm, HttpRequest request, UriInfo uriInfo) {
@@ -72,15 +73,16 @@ public class FormFlows {
     public Response forwardToAction(RequiredAction action) {
         switch (action) {
             case CONFIGURE_TOTP:
-                return forwardToTotp();
+                return forwardToForm(Pages.LOGIN_CONFIG_TOTP);
             case UPDATE_PROFILE:
-                return forwardToAccount();
-            case RESET_PASSWORD:
-                return forwardToPassword();
+                return forwardToForm(Pages.LOGIN_UPDATE_PROFILE);
+            case UPDATE_PASSWORD:
+                return forwardToForm(Pages.LOGIN_UPDATE_PASSWORD);
             case VERIFY_EMAIL:
-                return forwardToVerifyEmail();
+                new EmailSender().sendEmailVerification(userModel, realm, accessCode, uriInfo);
+                return forwardToForm(Pages.LOGIN_VERIFY_EMAIL);
             default:
-                return null; // TODO
+                return Response.serverError().build();
         }
     }
 
@@ -107,8 +109,8 @@ public class FormFlows {
             uriBuilder.replaceQueryParam(k, queryParameterMap.get(k).toArray());
         }
 
-        if (code != null){
-            uriBuilder.queryParam(CODE, code);
+        if (accessCode != null) {
+            uriBuilder.queryParam(CODE, accessCode.getCode());
         }
 
         URI baseURI = uriBuilder.build();
@@ -135,6 +137,10 @@ public class FormFlows {
         return forwardToForm(Pages.LOGIN);
     }
 
+    public Response forwardToPasswordReset() {
+        return forwardToForm(Pages.LOGIN_RESET_PASSWORD);
+    }
+
     public Response forwardToLoginTotp() {
         return forwardToForm(Pages.LOGIN_TOTP);
     }
@@ -155,13 +161,8 @@ public class FormFlows {
         return forwardToForm(Pages.TOTP);
     }
 
-    public Response forwardToVerifyEmail() {
-        new EmailSender().sendEmailVerification(userModel, realm, code, uriInfo);
-        return forwardToForm(Pages.VERIFY_EMAIL);
-    }
-
-    public FormFlows setCode(String code) {
-        this.code = code;
+    public FormFlows setAccessCode(AccessCodeEntry accessCode) {
+        this.accessCode = accessCode;
         return this;
     }
 

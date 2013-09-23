@@ -96,12 +96,20 @@ public class UrlBean {
         }
     }
 
+    public String getPasswordResetUrl() {
+        return Urls.accountPasswordReset(baseURI, realm.getId()).toString();
+    }
+
     public String getSocialUrl() {
         return Urls.accountSocialPage(baseURI, realm.getId()).toString();
     }
 
     public String getTotpUrl() {
         return Urls.accountTotpPage(baseURI, realm.getId()).toString();
+    }
+
+    public String getEmailVerificationUrl() {
+        return Urls.accountEmailVerification(baseURI, realm.getId()).toString();
     }
 
 }

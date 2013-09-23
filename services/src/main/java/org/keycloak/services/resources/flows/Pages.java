@@ -34,9 +34,17 @@ public class Pages {
 
     public final static String LOGIN_TOTP = "/forms/login-totp.ftl";
 
+    public final static String LOGIN_CONFIG_TOTP = "/forms/login-config-totp.ftl";
+
+    public final static String LOGIN_VERIFY_EMAIL = "/forms/login-verify-email.ftl";
+
     public final static String OAUTH_GRANT = "/saas/oauthGrantForm.jsp";
 
     public final static String PASSWORD = "/forms/password.ftl";
+
+    public final static String LOGIN_RESET_PASSWORD = "/forms/login-reset-password.ftl";
+
+    public final static String LOGIN_UPDATE_PASSWORD = "/forms/login-update-password.ftl";
 
     public final static String REGISTER = "/forms/register.ftl";
 
@@ -46,6 +54,6 @@ public class Pages {
 
     public final static String TOTP = "/forms/totp.ftl";
 
-    public final static String VERIFY_EMAIL = "/forms/verify-email.ftl";
+    public final static String LOGIN_UPDATE_PROFILE = "/forms/login-update-profile.ftl";
 
 }

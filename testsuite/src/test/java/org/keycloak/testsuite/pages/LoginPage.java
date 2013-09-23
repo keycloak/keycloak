@@ -22,6 +22,9 @@ public class LoginPage {
     @FindBy(linkText = "Register")
     private WebElement registerLink;
 
+    @FindBy(linkText = "Reset password")
+    private WebElement resetPasswordLink;
+
     @FindBy(id = "loginError")
     private WebElement loginErrorMessage;
 
@@ -45,6 +48,10 @@ public class LoginPage {
 
     public void register() {
         registerLink.click();
+    }
+
+    public void resetPassword() {
+        resetPasswordLink.click();
     }
 
 }

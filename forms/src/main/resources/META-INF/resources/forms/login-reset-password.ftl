@@ -1,0 +1,1 @@
+<#include "./theme/" + template.theme + "/login-reset-password.ftl">

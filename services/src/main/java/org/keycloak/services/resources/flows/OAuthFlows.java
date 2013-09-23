@@ -97,7 +97,7 @@ public class OAuthFlows {
         if (!requiredActions.isEmpty()) {
             accessCode.setRequiredActions(new HashSet<UserModel.RequiredAction>(requiredActions));
             accessCode.setExpiration(System.currentTimeMillis() / 1000 + realm.getAccessCodeLifespanUserAction());
-            return Flows.forms(realm, request, uriInfo).setCode(accessCode.getCode()).setUser(user)
+            return Flows.forms(realm, request, uriInfo).setAccessCode(accessCode).setUser(user)
                     .forwardToAction(user.getRequiredActions().iterator().next());
         }
 

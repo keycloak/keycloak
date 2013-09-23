@@ -23,9 +23,8 @@ package org.keycloak.services.email;
 
 import java.net.URI;
 import java.util.Map.Entry;
-import java.util.concurrent.TimeUnit;
-import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 import javax.mail.Message;
 import javax.mail.MessagingException;
@@ -38,6 +37,7 @@ import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 
 import org.jboss.resteasy.logging.Logger;
+import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.UserModel;
 import org.keycloak.services.resources.AccountService;
@@ -78,12 +78,9 @@ public class EmailSender {
         transport.sendMessage(msg, new InternetAddress[] { new InternetAddress(address) });
     }
 
-    public void sendEmailVerification(UserModel user, RealmModel realm, String code, UriInfo uriInfo) {
-        UriBuilder builder = Urls.accountBase(uriInfo.getBaseUri()).path(AccountService.class, "processEmailVerification");
-        for (Entry<String, List<String>> e : uriInfo.getQueryParameters().entrySet()) {
-            builder.queryParam(e.getKey(), e.getValue().toArray());
-        }
-        builder.queryParam("code", code);
+    public void sendEmailVerification(UserModel user, RealmModel realm, AccessCodeEntry accessCode, UriInfo uriInfo) {
+        UriBuilder builder = Urls.accountBase(uriInfo.getBaseUri()).path(AccountService.class, "emailVerification");
+        builder.queryParam("key", accessCode.getId());
 
         URI uri = builder.build(realm.getId());
 
@@ -99,12 +96,9 @@ public class EmailSender {
         }
     }
 
-    public void sendPasswordReset(UserModel user, RealmModel realm, String code, UriInfo uriInfo) {
+    public void sendPasswordReset(UserModel user, RealmModel realm, AccessCodeEntry accessCode, UriInfo uriInfo) {
         UriBuilder builder = Urls.accountBase(uriInfo.getBaseUri()).path(AccountService.class, "passwordPage");
-        for (Entry<String, List<String>> e : uriInfo.getQueryParameters().entrySet()) {
-            builder.queryParam(e.getKey(), e.getValue().toArray());
-        }
-        builder.queryParam("code", code);
+        builder.queryParam("key", accessCode.getId());
 
         URI uri = builder.build(realm.getId());
 

@@ -27,11 +27,21 @@
         {
             "username" : "reset@pass.com",
             "enabled": true,
-            "requiredActions" : [ "RESET_PASSWORD" ],
+            "requiredActions" : [ "UPDATE_PASSWORD" ],
             "email" : "reset@pass.com",
             "credentials" : [
                 { "type" : "password",
                     "value" : "temp-password" }
+            ]
+        },
+        {
+            "username" : "updateprof@pass.com",
+            "enabled": true,
+            "requiredActions" : [ "UPDATE_PROFILE" ],
+            "email" : "reset@pass.com",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
             ]
         },
         {
@@ -60,6 +70,10 @@
         },
         {
             "username": "reset@pass.com",
+            "roles": ["user"]
+        },
+        {
+            "username": "updateprof@pass.com",
             "roles": ["user"]
         },
         {

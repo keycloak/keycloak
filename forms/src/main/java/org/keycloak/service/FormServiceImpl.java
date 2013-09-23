@@ -59,13 +59,17 @@ public class FormServiceImpl implements FormService {
         commandMap.put(Pages.LOGIN, new CommandLogin());
         commandMap.put(Pages.REGISTER, new CommandRegister());
         commandMap.put(Pages.ACCOUNT, new CommandAccount());
+        commandMap.put(Pages.LOGIN_UPDATE_PROFILE, new CommandPassword());
         commandMap.put(Pages.PASSWORD, new CommandPassword());
+        commandMap.put(Pages.LOGIN_RESET_PASSWORD, new CommandPassword());
+        commandMap.put(Pages.LOGIN_UPDATE_PASSWORD, new CommandPassword());
         commandMap.put(Pages.ACCESS, new CommandAccess());
-        commandMap.put(Pages.LOGIN_TOTP, new CommandLoginTotp());
         commandMap.put(Pages.SECURITY_FAILURE, new CommandSecurityFailure());
         commandMap.put(Pages.SOCIAL, new CommandSocial());
         commandMap.put(Pages.TOTP, new CommandTotp());
-        commandMap.put(Pages.VERIFY_EMAIL, new CommandEmail());
+        commandMap.put(Pages.LOGIN_CONFIG_TOTP, new CommandTotp());
+        commandMap.put(Pages.LOGIN_TOTP, new CommandLoginTotp());
+        commandMap.put(Pages.LOGIN_VERIFY_EMAIL, new CommandLoginTotp());
     }
 
     public String getId(){

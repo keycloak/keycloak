@@ -51,6 +51,8 @@ public class AccountTest extends AbstractDroneTest {
         changePasswordPage.changePassword("password", "new-password", "new-password");
 
         appPage.open();
+        Assert.assertTrue(appPage.isCurrent());
+        appPage.logout();
 
         Assert.assertTrue(loginPage.isCurrent());
 

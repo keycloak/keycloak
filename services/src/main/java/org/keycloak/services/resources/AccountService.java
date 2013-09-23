@@ -28,7 +28,6 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
@@ -45,7 +44,6 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.email.EmailSender;
 import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.models.RealmModel;
@@ -54,7 +52,6 @@ import org.keycloak.services.models.UserModel;
 import org.keycloak.services.models.UserModel.RequiredAction;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.FormFlows;
-import org.keycloak.services.resources.flows.OAuthFlows;
 import org.keycloak.services.validation.Validation;
 import org.picketlink.idm.credential.util.TimeBasedOTP;
 
@@ -116,9 +113,8 @@ public class AccountService {
             accessCodeEntry.getRequiredActions().remove(UserModel.RequiredAction.UPDATE_PROFILE);
         }
 
-        Response response = redirectOauth(user, accessCodeEntry);
-        if (response != null) {
-            return response;
+        if (accessCodeEntry != null) {
+            return redirectOauth(user, accessCodeEntry);
         } else {
             return Flows.forms(realm, request, uriInfo).setUser(user).forwardToAccount();
         }
@@ -207,34 +203,88 @@ public class AccountService {
 
         user.setTotp(true);
 
-        Response response = redirectOauth(user, accessCodeEntry);
-        if (response != null) {
-            return response;
+        if (accessCodeEntry != null) {
+            return redirectOauth(user, accessCodeEntry);
         } else {
             return Flows.forms(realm, request, uriInfo).setUser(user).forwardToTotp();
         }
     }
 
-    @Path("email-verify")
+    @Path("password-reset")
     @GET
-    public Response processEmailVerification() {
-        AccessCodeEntry accessCodeEntry = getAccessCodeEntry(RequiredAction.VERIFY_EMAIL);
-        UserModel user = accessCodeEntry != null ? getUserFromAccessCode(accessCodeEntry) : null;
-        if (user == null) {
-            return Response.status(Status.FORBIDDEN).build();
+    public Response passwordReset() {
+        return Flows.forms(realm, request, uriInfo).forwardToPasswordReset();
+    }
+
+    @Path("password-reset")
+    @POST
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    public Response sendPasswordReset(final MultivaluedMap<String, String> formData) {
+        String username = formData.getFirst("username");
+        String email = formData.getFirst("email");
+
+        String scopeParam = uriInfo.getQueryParameters().getFirst("scope");
+        String state = uriInfo.getQueryParameters().getFirst("state");
+        String redirect = uriInfo.getQueryParameters().getFirst("redirect_uri");
+        String clientId = uriInfo.getQueryParameters().getFirst("client_id");
+
+        UserModel client = realm.getUser(clientId);
+        if (client == null) {
+            return Flows.oauth(realm, request, uriInfo, authManager, tokenManager).forwardToSecurityFailure(
+                    "Unknown login requester.");
+        }
+        if (!client.isEnabled()) {
+            return Flows.oauth(realm, request, uriInfo, authManager, tokenManager).forwardToSecurityFailure(
+                    "Login requester not enabled.");
         }
 
-        user.setEmailVerified(true);
-        user.removeRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL);
-        if (accessCodeEntry != null) {
-            accessCodeEntry.getRequiredActions().remove(UserModel.RequiredAction.VERIFY_EMAIL);
+        UserModel user = realm.getUser(username);
+        if (user == null || !email.equals(user.getEmail())) {
+            Flows.forms(realm, request, uriInfo).setError("Invalid username or email")
+                    .forwardToAction(RequiredAction.UPDATE_PASSWORD);
         }
 
-        Response response = redirectOauth(user, accessCodeEntry);
-        if (response != null) {
-            return response;
+        Set<RequiredAction> requiredActions = new HashSet<RequiredAction>(user.getRequiredActions());
+        requiredActions.add(RequiredAction.UPDATE_PASSWORD);
+
+        AccessCodeEntry accessCode = tokenManager.createAccessCode(scopeParam, state, redirect, realm, client, user);
+        accessCode.setRequiredActions(requiredActions);
+        accessCode.setExpiration(System.currentTimeMillis() / 1000 + realm.getAccessCodeLifespanUserAction());
+
+        new EmailSender().sendPasswordReset(user, realm, accessCode, uriInfo);
+
+        return Flows.forms(realm, request, uriInfo).forwardToPasswordReset();
+    }
+
+    @Path("email-verification")
+    @GET
+    public Response emailVerification() {
+        if (uriInfo.getQueryParameters().containsKey("key")) {
+            AccessCodeEntry accessCode = tokenManager.getAccessCode(uriInfo.getQueryParameters().getFirst("key"));
+            if (accessCode == null || accessCode.isExpired()
+                    || !accessCode.getRequiredActions().contains(RequiredAction.VERIFY_EMAIL)) {
+                return Response.status(Status.FORBIDDEN).build();
+            }
+
+            String loginName = accessCode.getUser().getLoginName();
+            UserModel user = realm.getUser(loginName);
+            user.setEmailVerified(true);
+            user.removeRequiredAction(RequiredAction.VERIFY_EMAIL);
+
+            accessCode.getRequiredActions().remove(RequiredAction.VERIFY_EMAIL);
+
+            return redirectOauth(user, accessCode);
         } else {
-            return Flows.forms(realm, request, uriInfo).setUser(user).forwardToVerifyEmail();
+            AccessCodeEntry accessCode = getAccessCodeEntry(RequiredAction.VERIFY_EMAIL);
+            UserModel user = accessCode != null ? getUserFromAccessCode(accessCode) : null;
+            if (user == null) {
+                return Response.status(Status.FORBIDDEN).build();
+            }
+
+            new EmailSender().sendEmailVerification(user, realm, accessCode, uriInfo);
+
+            return Flows.forms(realm, request, uriInfo).setAccessCode(accessCode).setUser(user)
+                    .forwardToAction(RequiredAction.VERIFY_EMAIL);
         }
     }
 
@@ -245,17 +295,11 @@ public class AccountService {
 
         Set<RequiredAction> requiredActions = user.getRequiredActions();
         if (!requiredActions.isEmpty()) {
-            return Flows.forms(realm, request, uriInfo).setCode(accessCode.getCode()).setUser(user)
+            return Flows.forms(realm, request, uriInfo).setAccessCode(accessCode).setUser(user)
                     .forwardToAction(requiredActions.iterator().next());
         } else {
-            String redirect = uriInfo.getQueryParameters().getFirst("redirect_uri");
-            if (redirect != null) {
-                String state = uriInfo.getQueryParameters().getFirst("state");
-                return Flows.oauth(realm, request, uriInfo, authManager, tokenManager).redirectAccessCode(accessCode, state,
-                        redirect);
-            } else {
-                return null;
-            }
+            return Flows.oauth(realm, request, uriInfo, authManager, tokenManager).redirectAccessCode(accessCode,
+                    accessCode.getState(), accessCode.getRedirectUri());
         }
     }
 
@@ -263,11 +307,13 @@ public class AccountService {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processPasswordUpdate(final MultivaluedMap<String, String> formData) {
-        AccessCodeEntry accessCodeEntry = getAccessCodeEntry(RequiredAction.RESET_PASSWORD);
-        UserModel user = accessCodeEntry != null ? getUserFromAccessCode(accessCodeEntry) : getUserFromAuthManager();
+        AccessCodeEntry accessCode = getAccessCodeEntry(RequiredAction.UPDATE_PASSWORD);
+        UserModel user = accessCode != null ? getUserFromAccessCode(accessCode) : getUserFromAuthManager();
         if (user == null) {
             return Response.status(Status.FORBIDDEN).build();
         }
+
+        boolean loginAction = accessCode != null;
 
         FormFlows forms = Flows.forms(realm, request, uriInfo).setUser(user);
 
@@ -283,7 +329,7 @@ public class AccountService {
             error = Messages.INVALID_PASSWORD_CONFIRM;
         }
 
-        if (accessCodeEntry == null) {
+        if (!loginAction) {
             if (Validation.isEmpty(password)) {
                 error = Messages.MISSING_PASSWORD;
             } else if (!realm.validatePassword(user, password)) {
@@ -301,15 +347,16 @@ public class AccountService {
 
         realm.updateCredential(user, credentials);
 
-        user.removeRequiredAction(RequiredAction.RESET_PASSWORD);
-        if (accessCodeEntry != null) {
-            accessCodeEntry.getRequiredActions().remove(UserModel.RequiredAction.RESET_PASSWORD);
+        user.removeRequiredAction(RequiredAction.UPDATE_PASSWORD);
+        if (accessCode != null) {
+            accessCode.getRequiredActions().remove(UserModel.RequiredAction.UPDATE_PASSWORD);
         }
 
-        authManager.expireIdentityCookie(realm, uriInfo);
-        new ResourceAdminManager().singleLogOut(realm, user.getLoginName());
-
-        return Flows.forms(realm, request, uriInfo).forwardToLogin();
+        if (accessCode != null) {
+            return redirectOauth(user, accessCode);
+        } else {
+            return Flows.forms(realm, request, uriInfo).setUser(user).forwardToPassword();
+        }
     }
 
     @Path("")
@@ -348,61 +395,21 @@ public class AccountService {
     @Path("password")
     @GET
     public Response passwordPage() {
-        UserModel user = getUserFromAuthManager();
+        if (uriInfo.getQueryParameters().containsKey("key")) {
+            AccessCodeEntry accessCode = tokenManager.getAccessCode(uriInfo.getQueryParameters().getFirst("key"));
+            if (accessCode == null || accessCode.isExpired()
+                    || !accessCode.getRequiredActions().contains(RequiredAction.UPDATE_PASSWORD)) {
+                return Response.status(Status.FORBIDDEN).build();
+            }
 
-        // TODO Remove when we have a separate login-reset-password page
-        if (user == null) {
-            AccessCodeEntry accessCodeEntry = getAccessCodeEntry(RequiredAction.RESET_PASSWORD);
-            user = accessCodeEntry != null ? getUserFromAccessCode(accessCodeEntry) : null;
-        }
-
-        if (user != null) {
-            return Flows.forms(realm, request, uriInfo).setUser(user).forwardToPassword();
+            return Flows.forms(realm, request, uriInfo).setAccessCode(accessCode)
+                    .forwardToAction(RequiredAction.UPDATE_PASSWORD);
         } else {
-            return Response.status(Status.FORBIDDEN).build();
+            UserModel user = getUserFromAuthManager();
+            if (user == null) {
+                return Response.status(Status.FORBIDDEN).build();
+            }
+            return Flows.forms(realm, request, uriInfo).setUser(user).forwardToPassword();
         }
     }
-
-    @Path("password-reset")
-    @GET
-    public Response resetPassword(@QueryParam("username") final String username,
-            @QueryParam("client_id") final String clientId, @QueryParam("scope") final String scopeParam,
-            @QueryParam("state") final String state, @QueryParam("redirect_uri") final String redirect) {
-
-        OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
-
-        if (!realm.isEnabled()) {
-            return oauth.forwardToSecurityFailure("Realm not enabled.");
-        }
-        if (!realm.isResetPasswordAllowed()) {
-            return oauth.forwardToSecurityFailure("Password reset not permitted, contact admin.");
-        }
-
-        UserModel client = realm.getUser(clientId);
-        if (client == null) {
-            return oauth.forwardToSecurityFailure("Unknown login requester.");
-        }
-        if (!client.isEnabled()) {
-            return oauth.forwardToSecurityFailure("Login requester not enabled.");
-        }
-
-        // String username = formData.getFirst("username");
-        UserModel user = realm.getUser(username);
-
-        Set<RequiredAction> requiredActions = new HashSet<RequiredAction>(user.getRequiredActions());
-        requiredActions.add(RequiredAction.RESET_PASSWORD);
-
-        AccessCodeEntry accessCode = tokenManager.createAccessCode(scopeParam, state, redirect, realm, client, user);
-        accessCode.setRequiredActions(requiredActions);
-        accessCode.setExpiration(System.currentTimeMillis() / 1000 + realm.getAccessCodeLifespanUserAction());
-
-        if (user.getEmail() == null) {
-            return oauth.forwardToSecurityFailure("Email address not set, contact admin");
-        }
-
-        new EmailSender().sendPasswordReset(user, realm, accessCode.getCode(), uriInfo);
-        // TODO Add info message
-        return Flows.forms(realm, request, uriInfo).forwardToLogin();
-    }
-
 }
