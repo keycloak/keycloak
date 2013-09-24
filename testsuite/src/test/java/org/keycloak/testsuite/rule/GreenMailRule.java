@@ -1,4 +1,4 @@
-package org.keycloak.testsuite;
+package org.keycloak.testsuite.rule;
 
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.SocketException;

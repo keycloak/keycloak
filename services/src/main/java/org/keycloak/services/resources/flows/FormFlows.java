@@ -35,6 +35,7 @@ import org.keycloak.services.models.UserModel.RequiredAction;
 import org.picketlink.idm.model.sample.Realm;
 
 import javax.imageio.spi.ServiceRegistry;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
@@ -127,7 +128,7 @@ public class FormFlows {
         while (itr.hasNext()) {
             FormService provider = itr.next();
             if (provider.getId().equals("FormServiceId"))
-                return Response.status(200).entity(provider.process(template, formDataBean)).build();
+                return Response.status(200).type(MediaType.TEXT_HTML).entity(provider.process(template, formDataBean)).build();
         }
 
         return Response.status(200).entity("form provider not found").build();

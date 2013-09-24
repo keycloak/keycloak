@@ -119,17 +119,10 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.jboss.arquillian.extension</groupId>
-			<artifactId>arquillian-drone-webdriver-depchain</artifactId>
-			<type>pom</type>
+			<groupId>org.seleniumhq.selenium</groupId>
+			<artifactId>selenium-java</artifactId>
 			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.jboss.arquillian.graphene</groupId>
-			<artifactId>graphene-webdriver</artifactId>
-			<type>pom</type>
-			<scope>test</scope>
-		</dependency>
+  		</dependency>
 		<dependency>
 			<groupId>org.jboss.shrinkwrap.resolver</groupId>
 			<artifactId>shrinkwrap-resolver-impl-maven</artifactId>

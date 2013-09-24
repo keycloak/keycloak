@@ -23,7 +23,6 @@ package org.keycloak.testsuite;
 
 import java.net.MalformedURLException;
 
-import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.junit.Arquillian;
 import org.junit.Assert;
 import org.junit.Before;
@@ -31,6 +30,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.pages.TotpPage;
+import org.keycloak.testsuite.rule.Page;
 import org.picketlink.idm.credential.util.TimeBasedOTP;
 
 /**
@@ -109,7 +109,7 @@ public class TotpTest extends AbstractDroneTest {
 
         totpPage.configure(totp.generate(totpPage.getTotpSecret()));
 
-        Assert.assertTrue(browser.getPageSource().contains("Google Authenticator enabled"));
+        Assert.assertTrue(driver.getPageSource().contains("Google Authenticator enabled"));
     }
 
 }

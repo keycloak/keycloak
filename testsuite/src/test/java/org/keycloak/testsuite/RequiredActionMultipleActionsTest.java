@@ -22,7 +22,6 @@
 package org.keycloak.testsuite;
 
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
@@ -33,6 +32,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
+import org.keycloak.testsuite.rule.GreenMailRule;
+import org.keycloak.testsuite.rule.Page;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

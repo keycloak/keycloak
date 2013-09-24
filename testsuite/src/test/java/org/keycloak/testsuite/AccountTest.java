@@ -21,13 +21,13 @@
  */
 package org.keycloak.testsuite;
 
-import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.junit.Arquillian;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.keycloak.testsuite.pages.ChangePasswordPage;
 import org.keycloak.testsuite.pages.UpdateProfilePage;
+import org.keycloak.testsuite.rule.Page;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

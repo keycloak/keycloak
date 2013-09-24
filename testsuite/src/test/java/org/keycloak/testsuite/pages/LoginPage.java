@@ -1,13 +1,13 @@
 package org.keycloak.testsuite.pages;
 
-import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.keycloak.testsuite.rule.Driver;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 public class LoginPage {
 
-    @Drone
+    @Driver
     private WebDriver browser;
 
     @FindBy(id = "username")

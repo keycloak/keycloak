@@ -29,8 +29,6 @@ import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
@@ -42,6 +40,10 @@ import org.junit.runner.RunWith;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.RegisterPage;
+import org.keycloak.testsuite.rule.Driver;
+import org.keycloak.testsuite.rule.GreenMailRule;
+import org.keycloak.testsuite.rule.Page;
+import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
 
 /**
@@ -66,11 +68,14 @@ public class RequiredActionEmailVerificationTest {
                 .addAsWebInfResource("web-properties-email-verfication.xml", "web.xml");
     }
 
+    @Rule
+    public WebRule webRule = new WebRule(this);
+
     @Page
     protected AppPage appPage;
 
-    @Drone
-    protected WebDriver browser;
+    @Driver
+    protected WebDriver driver;
 
     @Page
     protected LoginPage loginPage;
@@ -96,7 +101,7 @@ public class RequiredActionEmailVerificationTest {
         loginPage.register();
         registerPage.register("name", "email", "verifyEmail", "password", "password");
 
-        Assert.assertTrue(browser.getPageSource().contains("Verify email"));
+        Assert.assertTrue(driver.getPageSource().contains("Verify email"));
 
         MimeMessage message = greenMail.getReceivedMessages()[0];
 
@@ -108,7 +113,7 @@ public class RequiredActionEmailVerificationTest {
 
         String verificationUrl = m.group(1);
 
-        browser.navigate().to(verificationUrl.trim());
+        driver.navigate().to(verificationUrl.trim());
 
         Assert.assertTrue(appPage.isCurrent());
         Assert.assertEquals("verifyEmail", appPage.getUser());

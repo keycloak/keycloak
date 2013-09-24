@@ -56,7 +56,6 @@ public class LoginTest extends AbstractDroneTest {
     public void loginSuccess() {
         appPage.open();
 
-        Assert.assertTrue(loginPage.isCurrent());
         loginPage.login("bburke@redhat.com", "password");
         
         Assert.assertTrue(appPage.isCurrent());

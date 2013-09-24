@@ -22,13 +22,15 @@
 package org.keycloak.testsuite;
 
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.After;
+import org.junit.Rule;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.RegisterPage;
+import org.keycloak.testsuite.rule.Driver;
+import org.keycloak.testsuite.rule.Page;
+import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
 
 /**
@@ -46,11 +48,14 @@ public abstract class AbstractDroneTest {
         return Deployments.deployment();
     }
 
+    @Rule
+    public WebRule webRule = new WebRule(this);
+
     @Page
     protected AppPage appPage;
 
-    @Drone
-    protected WebDriver browser;
+    @Driver
+    protected WebDriver driver;
 
     @Page
     protected LoginPage loginPage;
@@ -64,7 +69,7 @@ public abstract class AbstractDroneTest {
         if (appPage.isCurrent()) {
             appPage.logout();
         }
-        browser.manage().deleteAllCookies();
+        driver.manage().deleteAllCookies();
     }
 
 }

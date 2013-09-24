@@ -24,19 +24,21 @@ package org.keycloak.testsuite;
 import java.net.MalformedURLException;
 
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.RegisterPage;
+import org.keycloak.testsuite.rule.Driver;
+import org.keycloak.testsuite.rule.Page;
+import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
 import org.picketlink.idm.credential.util.TimeBasedOTP;
 
@@ -56,11 +58,14 @@ public class RequiredActionTotpSetupTest {
         return Deployments.deployment().addAsResource("testrealm-totp.json", "META-INF/testrealm.json");
     }
 
+    @Rule
+    public WebRule webRule = new WebRule(this);
+
     @Page
     protected AppPage appPage;
 
-    @Drone
-    protected WebDriver browser;
+    @Driver
+    protected WebDriver driver;
 
     @Page
     protected LoginConfigTotpPage totpPage;
