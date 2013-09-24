@@ -55,6 +55,7 @@ public class TemplateBean {
         if (realm.isSaas()) {
             themeConfig.put("logo", themeUrl + "/img/red-hat-logo.png");
             themeConfig.put("background", themeUrl + "/img/login-screen-background.jpg");
+            themeConfig.put("displayPoweredBy", false);
         } else {
             themeConfig.put("background", themeUrl + "/img/customer-login-screen-bg2.jpg");
             themeConfig.put("displayPoweredBy", true);

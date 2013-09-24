@@ -19,6 +19,7 @@ import org.keycloak.services.validation.Validation;
 import javax.ws.rs.*;
 import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.*;
+
 import java.net.URI;
 import java.util.LinkedList;
 import java.util.List;
@@ -165,34 +166,34 @@ public class SaasService {
     @Path("login")
     @GET
     @NoCache
-    public void loginPage() {
+    public Response loginPage() {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = realmManager.defaultRealm();
         authManager.expireSaasIdentityCookie(uriInfo);
 
-        Flows.forms(realm, request, uriInfo).forwardToLogin();
+        return Flows.forms(realm, request, uriInfo).forwardToLogin();
     }
 
     @Path("registrations")
     @GET
     @NoCache
-    public void registerPage() {
+    public Response registerPage() {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = realmManager.defaultRealm();
         authManager.expireSaasIdentityCookie(uriInfo);
 
-        Flows.forms(realm, request, uriInfo).forwardToRegistration();
+        return Flows.forms(realm, request, uriInfo).forwardToRegistration();
     }
 
     @Path("logout")
     @GET
     @NoCache
-    public void logout() {
+    public Response logout() {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = realmManager.defaultRealm();
         authManager.expireSaasIdentityCookie(uriInfo);
 
-        Flows.forms(realm, request, uriInfo).forwardToLogin();
+        return Flows.forms(realm, request, uriInfo).forwardToLogin();
     }
 
     @Path("logout-cookie")

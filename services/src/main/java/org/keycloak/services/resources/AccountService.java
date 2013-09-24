@@ -240,7 +240,7 @@ public class AccountService {
 
         UserModel user = realm.getUser(username);
         if (user == null || !email.equals(user.getEmail())) {
-            Flows.forms(realm, request, uriInfo).setError("Invalid username or email")
+            return Flows.forms(realm, request, uriInfo).setError("Invalid username or email")
                     .forwardToAction(RequiredAction.UPDATE_PASSWORD);
         }
 
