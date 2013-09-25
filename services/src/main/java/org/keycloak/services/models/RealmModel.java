@@ -107,7 +107,7 @@ public interface RealmModel {
 
     void grantRole(UserModel user, RoleModel role);
 
-    Set<String> getRoleMappings(UserModel user);
+    Set<String> getRoleMappingValues(UserModel user);
 
     void addScope(UserModel agent, String roleName);
 
@@ -156,4 +156,8 @@ public interface RealmModel {
     public void setAutomaticRegistrationAfterSocialLogin(boolean automaticRegistrationAfterSocialLogin);
 
     List<UserModel> searchForUserByAttributes(Map<String, String> attributes);
+
+    List<RoleModel> getRoleMappings(UserModel user);
+
+    void deleteRoleMapping(UserModel user, RoleModel role);
 }
