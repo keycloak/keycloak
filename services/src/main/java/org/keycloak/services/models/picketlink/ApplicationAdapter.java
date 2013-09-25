@@ -8,6 +8,7 @@ import org.keycloak.services.models.picketlink.relationships.ScopeRelationship;
 import org.picketlink.idm.IdentityManager;
 import org.picketlink.idm.PartitionManager;
 import org.picketlink.idm.RelationshipManager;
+import org.picketlink.idm.model.IdentityType;
 import org.picketlink.idm.model.sample.Grant;
 import org.picketlink.idm.model.sample.Role;
 import org.picketlink.idm.model.sample.SampleModel;
@@ -110,6 +111,22 @@ public class ApplicationAdapter implements ApplicationModel {
     }
 
     @Override
+    public RoleModel getRoleById(String id) {
+        IdentityQuery<Role> query = getIdm().createIdentityQuery(Role.class);
+        query.setParameter(IdentityType.ID, id);
+        List<Role> roles = query.getResultList();
+        if (roles.size() == 0) return null;
+        return new RoleAdapter(roles.get(0), getIdm());
+    }
+
+    @Override
+    public void grantRole(UserModel user, RoleModel role) {
+        SampleModel.grantRole(getRelationshipManager(), ((UserAdapter) user).getUser(), ((RoleAdapter) role).getRole());
+    }
+
+
+
+    @Override
     public RoleAdapter addRole(String name) {
         Role role = new Role(name);
         getIdm().add(role);
@@ -129,7 +146,7 @@ public class ApplicationAdapter implements ApplicationModel {
     }
 
     @Override
-    public Set<String> getRoleMappings(UserModel user) {
+    public Set<String> getRoleMappingValues(UserModel user) {
         RelationshipQuery<Grant> query = getRelationshipManager().createRelationshipQuery(Grant.class);
         query.setParameter(Grant.ASSIGNEE, ((UserAdapter)user).getUser());
         List<Grant> grants = query.getResultList();
@@ -139,6 +156,32 @@ public class ApplicationAdapter implements ApplicationModel {
         }
         return set;
     }
+
+    @Override
+    public List<RoleModel> getRoleMappings(UserModel user) {
+        RelationshipQuery<Grant> query = getRelationshipManager().createRelationshipQuery(Grant.class);
+        query.setParameter(Grant.ASSIGNEE, ((UserAdapter)user).getUser());
+        List<Grant> grants = query.getResultList();
+        List<RoleModel> set = new ArrayList<RoleModel>();
+        for (Grant grant : grants) {
+            if (grant.getRole().getPartition().getId().equals(resource.getId())) set.add(new RoleAdapter(grant.getRole(), getIdm()));
+        }
+        return set;
+    }
+
+    @Override
+    public void deleteRoleMapping(UserModel user, RoleModel role) {
+        RelationshipQuery<Grant> query = getRelationshipManager().createRelationshipQuery(Grant.class);
+        query.setParameter(Grant.ASSIGNEE, ((UserAdapter)user).getUser());
+        query.setParameter(Grant.ROLE, ((RoleAdapter)role).getRole());
+        List<Grant> grants = query.getResultList();
+        for (Grant grant : grants) {
+            getRelationshipManager().remove(grant);
+        }
+    }
+
+
+
 
     @Override
     public void addScope(UserModel agent, String roleName) {

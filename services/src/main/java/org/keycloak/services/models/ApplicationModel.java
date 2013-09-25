@@ -36,11 +36,19 @@ public interface ApplicationModel {
 
     List<RoleModel> getRoles();
 
-    Set<String> getRoleMappings(UserModel user);
+    Set<String> getRoleMappingValues(UserModel user);
 
     void addScope(UserModel agent, String roleName);
 
     void addScope(UserModel agent, RoleModel role);
 
     Set<String> getScope(UserModel agent);
+
+    List<RoleModel> getRoleMappings(UserModel user);
+
+    void deleteRoleMapping(UserModel user, RoleModel role);
+
+    RoleModel getRoleById(String id);
+
+    void grantRole(UserModel user, RoleModel role);
 }
