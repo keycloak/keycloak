@@ -40,17 +40,28 @@ module.config([ '$routeProvider', function($routeProvider) {
 		},
 		controller : 'UserDetailCtrl'
 	}).when('/realms/:realm/users/:user', {
-		templateUrl : 'partials/user-detail.html',
-		resolve : {
-			realm : function(RealmLoader) {
-				return RealmLoader();
-			},
-			user : function(UserLoader) {
-				return UserLoader();
-			}
-		},
-		controller : 'UserDetailCtrl'
-	}).when('/realms/:realm/users', {
+            templateUrl : 'partials/user-detail.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                user : function(UserLoader) {
+                    return UserLoader();
+                }
+            },
+            controller : 'UserDetailCtrl'
+        }).when('/realms/:realm/users/:user/role-mappings', {
+            templateUrl : 'partials/role-mappings.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                user : function(UserLoader) {
+                    return UserLoader();
+                }
+            },
+            controller : 'UserDetailCtrl'
+        }).when('/realms/:realm/users', {
 		templateUrl : 'partials/user-list.html',
 		resolve : {
 			realm : function(RealmLoader) {

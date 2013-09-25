@@ -642,7 +642,18 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public Set<String> getRoleMappings(UserModel user) {
+    public void deleteRoleMapping(UserModel user, RoleModel role) {
+        RelationshipQuery<Grant> query = getRelationshipManager().createRelationshipQuery(Grant.class);
+        query.setParameter(Grant.ASSIGNEE, ((UserAdapter)user).getUser());
+        query.setParameter(Grant.ROLE, ((RoleAdapter)role).getRole());
+        List<Grant> grants = query.getResultList();
+        for (Grant grant : grants) {
+            getRelationshipManager().remove(grant);
+        }
+    }
+
+    @Override
+    public Set<String> getRoleMappingValues(UserModel user) {
         RelationshipQuery<Grant> query = getRelationshipManager().createRelationshipQuery(Grant.class);
         query.setParameter(Grant.ASSIGNEE, ((UserAdapter)user).getUser());
         List<Grant> grants = query.getResultList();
@@ -652,6 +663,19 @@ public class RealmAdapter implements RealmModel {
         }
         return set;
     }
+
+    @Override
+    public List<RoleModel> getRoleMappings(UserModel user) {
+        RelationshipQuery<Grant> query = getRelationshipManager().createRelationshipQuery(Grant.class);
+        query.setParameter(Grant.ASSIGNEE, ((UserAdapter)user).getUser());
+        List<Grant> grants = query.getResultList();
+        List<RoleModel> set = new ArrayList<RoleModel>();
+        for (Grant grant : grants) {
+            if (grant.getRole().getPartition().getId().equals(realm.getId())) set.add(new RoleAdapter(grant.getRole(), getIdm()));
+        }
+        return set;
+    }
+
 
     @Override
     public void addScope(UserModel agent, String roleName) {
