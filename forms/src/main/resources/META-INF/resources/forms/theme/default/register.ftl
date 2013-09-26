@@ -38,7 +38,7 @@
             <p>By registering you agree to the <a href="#">Terms of Service</a> and the <a href="#">Privacy Policy</a>.</p>
         </div>
 
-        <input type="submit" value="Register" />
+        <input class="btn-primary" type="submit" value="Register"/>
     </form>
 
     <#elseif section = "info">
@@ -46,4 +46,5 @@
     <p>${rb.getString('alreadyHaveAccount')} <a href="${url.loginUrl}">${rb.getString('logIn')}</a>.</p>
 
     </#if>
+
 </@layout.registrationLayout>

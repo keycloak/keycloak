@@ -1,8 +1,11 @@
 body {
+  font-size: 62.5%;
   min-height: 60em;
+  min-width: 120em;
 }
 .rcue-login-register {
   background-color: #1D2226;
+  background-image: url("img/login-screen-background.jpg");
   background-position: top left;
   background-size: auto;
   background-repeat: no-repeat;
@@ -66,6 +69,11 @@ body {
   background-image: url(img/login-register-social-separators.svg);
   background-position: 39.6em center;
 }
+.rcue-login-register section > p {
+  font-size: 1.3em;
+  margin-bottom: 1.53846153846154em;
+  line-height: 1.3em;
+}
 .rcue-login-register section.app-form {
   padding-left: 0;
   position: relative;
@@ -86,9 +94,7 @@ body {
 }
 .rcue-login-register label.two-lines {
   float: left;
-  margin-top: -0.28571428571429em;
-  /* -4px */
-
+  margin-top: -0.14285714285714em;
   line-height: 1.1em;
 }
 .rcue-login-register input[type="text"],
@@ -118,7 +124,7 @@ body {
 
 }
 .rcue-login-register form > input[type="button"],
-.rcue-login-register form > input[type="submit"] {
+.rcue-login-register form > input[type="submit"]{
   float: right;
   margin-top: 0.76923076923077em;
   /* 10px */
@@ -131,10 +137,15 @@ body {
   right: 4.09090909090909em;
   top: -0.636363636363636em;
 }
-.rcue-login-register .feedback {
+.rcue-login-register .feedback.bottom-left {
   left: 32.7em;
   top: -9.2em;
   min-width: 35em;
+}
+.rcue-login-register input.error[type="text"],
+.rcue-login-register input.error[type="password"],
+.rcue-login-register input.error[type="email"] {
+  background-color: #F8E7E7;
 }
 .rcue-login-register section.social-login > span {
   display: none;
@@ -164,8 +175,6 @@ body {
 .rcue-login-register section.info-area li {
   font-size: 1.4em;
   margin-bottom: 1.64285714285714em;
-  /* 23px */
-
 }
 .rcue-login-register section.info-area li {
   color: #999;
@@ -258,6 +267,10 @@ a.zocial:before {
 .rcue-login-register.register form > div.aside-btn p {
   line-height: 1.3em;
 }
+/* Customer login */
+.rcue-login-register.customer {
+  background-image: url("img/customer-login-screen-bg2.jpg");
+}
 .rcue-login-register p.powered {
   font-size: 1.1em;
   margin-top: 1.27272727272727em;
@@ -269,4 +282,80 @@ a.zocial:before {
 }
 .rcue-login-register p.powered a:hover {
   color: #0099D3;
+}
+/* Forgot Password page */
+.rcue-login-register.reset .background-area section {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.rcue-login-register.reset .background-area section.app-form {
+  width: 43.2em;
+}
+.rcue-login-register.reset .feedback {
+  left: 35.7em;
+}
+.rcue-login-register.reset .form-area {
+  background-image: none;
+}
+.rcue-login-register.reset .form-area p.instruction {
+  font-size: 1.3em;
+  line-height: 1.3em;
+  margin-bottom: 1.81818181818182em;
+}
+.rcue-login-register.reset label {
+  width: 8.21428571428571em;
+}
+.rcue-login-register.totp {
+  min-height: 0;
+}
+.rcue-login-register.totp ol li {
+  margin-bottom: 3em;
+  width: 100%;
+}
+.rcue-login-register.totp ol li p {
+  font-size: 1.3em;
+  margin-bottom: 1.92307692307692em;
+}
+.rcue-login-register.totp ol li p strong {
+  text-indent: -1em;
+  float: left;
+  font-size: 1.84615384615385em;
+  font-weight: normal;
+  margin-top: -0.20833333333333em;
+  color: #999;
+}
+.rcue-login-register.totp ol li img {
+  border: 7px solid #fff;
+  width: 150px;
+}
+.rcue-login-register.totp ol li .code {
+  font-size: 1.3em;
+  margin-left: 1.53846153846154em;
+}
+.rcue-login-register.totp ol li form {
+  width: 357px;
+}
+.rcue-login-register.totp ol li:last-child {
+  margin-bottom: 0;
+}
+.rcue-login-register.totp .content {
+  position: inherit;
+  margin-top: 16em;
+}
+.rcue-login-register.email .background-area section {
+  width: 41.2em;
+}
+.rcue-login-register.email .background-area section.email {
+  width: 45.8em;
+}
+.rcue-login-register.email label {
+  width: 6.78571428571429em;
+}
+.rcue-login-register.email .form-area.email {
+  background-position: 40.6em center;
+  background-image: url(img/login-register-email-separator.svg);
+  background-repeat: no-repeat;
+}
+.rcue-login-register.email .feedback.bottom-left {
+  left: 38.3em;
 }
