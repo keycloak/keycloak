@@ -83,27 +83,11 @@ module.factory('Notifications', function($rootScope, $timeout) {
 	return notifications;
 });
 
-module.factory('Provider', function($resource) {
-	return $resource('/ejs-identity/api/admin/providers');
-});
-
 module.factory('Realm', function($resource) {
 	return $resource('/auth-server/rest/saas/admin/realms/:id', {
 		id : '@id'
 	}, {
 		update : {
-			method : 'PUT'
-		}
-	});
-});
-
-module.factory('RoleMapping', function($resource) {
-	return $resource('/keycloak-server/ui/api/roles/:realm/:role/:userId', {
-		realm : '@realm',
-		role : '@role',
-		userId : '@userId'
-	}, {
-		save : {
 			method : 'PUT'
 		}
 	});
@@ -119,6 +103,21 @@ module.factory('User', function($resource) {
 		}
 	});
 });
+
+module.factory('RealmRoleMapping', function($resource) {
+    return $resource('/auth-server/rest/saas/admin/realms/:realm/users/:userId/role-mappings/realm', {
+        realm : '@realm',
+        userId : '@userId'
+    });
+});
+
+module.factory('RealmRoles', function($resource) {
+    return $resource('/auth-server/rest/saas/admin/realms/:realm/roles', {
+        realm : '@realm'
+    });
+});
+
+
 
 module.factory('Role', function($resource) {
     return $resource('/auth-server/rest/saas/admin/realms/:realm/roles/:roleId', {
