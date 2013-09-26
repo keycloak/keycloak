@@ -14,7 +14,7 @@
         <form action="${url.loginAction?default('')}" method="post">
             <div>
                 <label for="username">${rb.getString('username')}</label>
-                <input id="username" name="username" value="${login.username?default('')}" type="text" />
+                <input id="username" name="username" value="${login.username!''}" type="text" />
             </div>
 
             <#list login.requiredCredentials as c>
@@ -26,7 +26,7 @@
             <div class="aside-btn">
             </div>
 
-            <input type="submit" value="Log In" />
+            <input class="btn-primary" type="submit" value="Log In"/>
         </form>
     </div>
 
@@ -34,7 +34,7 @@
 
     <div name="info">
         <#if realm.registrationAllowed>
-            <p>${rb.getString('noAccount')} <a href="${url.registrationUrl?default('')}">${rb.getString('register')}</a>.</p>
+            <p>${rb.getString('noAccount')} <a href="${url.registrationUrl!''}">${rb.getString('register')}</a>.</p>
         </#if>
         
         <a href="${url.passwordResetUrl}">Reset password</a>

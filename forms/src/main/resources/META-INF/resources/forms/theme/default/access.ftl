@@ -1,5 +1,5 @@
 <#import "template-main.ftl" as layout>
-<@layout.mainLayout ; section>
+<@layout.mainLayout active='access' bodyClass='access'; section>
 
     <#if section = "header">
 

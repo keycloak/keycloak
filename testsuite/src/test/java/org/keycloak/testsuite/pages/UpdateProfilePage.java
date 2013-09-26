@@ -22,7 +22,7 @@ public class UpdateProfilePage {
     @FindBy(id = "email")
     private WebElement emailInput;
 
-    @FindBy(css = "input[type=\"submit\"]")
+    @FindBy(css = "button[type=\"submit\"]")
     private WebElement submitButton;
 
     public void updateProfile(String firstName, String lastName, String email) {
