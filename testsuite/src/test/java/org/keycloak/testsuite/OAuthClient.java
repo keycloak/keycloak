@@ -23,14 +23,26 @@ package org.keycloak.testsuite;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.Charset;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.core.UriBuilder;
 
+import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+import org.json.JSONObject;
+import org.junit.Assert;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
 /**
@@ -46,6 +58,8 @@ public class OAuthClient {
 
     private String responseType = "code";
 
+    private String grantType = "authorization_code";
+
     private String clientId = "test-app";
 
     private String redirectUri = "http://localhost:8081/app/auth";
@@ -58,17 +72,42 @@ public class OAuthClient {
         this.driver = driver;
     }
 
-    // public void login(String username, String password) throws UnsupportedEncodingException {
-    // HttpClient client = new DefaultHttpClient();
-    // HttpPost post = new HttpPost(getLoginFormUrl());
-    //
-    // List<NameValuePair> parameters = new LinkedList<NameValuePair>();
-    // parameters.add(new BasicNameValuePair("username", username));
-    // parameters.add(new BasicNameValuePair("password", password));
-    //
-    // UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, Charset.forName("UTF-8"));
-    // post.setEntity(formEntity);
-    // }
+    public AuthorizationCodeResponse doLogin(String username, String password) {
+        openLoginForm();
+
+        driver.findElement(By.id("username")).sendKeys(username);
+        driver.findElement(By.id("password")).sendKeys(password);
+        driver.findElement(By.cssSelector("input[type=\"submit\"]")).click();
+
+        return new AuthorizationCodeResponse(this);
+    }
+
+    public AccessTokenResponse doAccessTokenRequest(String code, String password) throws Exception {
+        HttpClient client = new DefaultHttpClient();
+        HttpPost post = new HttpPost(getAccessTokenUrl());
+
+        List<NameValuePair> parameters = new LinkedList<NameValuePair>();
+        if (grantType != null) {
+            parameters.add(new BasicNameValuePair("grant_type", grantType));
+        }
+        if (code != null) {
+            parameters.add(new BasicNameValuePair("code", code));
+        }
+        if (redirectUri != null) {
+            parameters.add(new BasicNameValuePair("redirect_uri", redirectUri));
+        }
+        if (clientId != null) {
+            parameters.add(new BasicNameValuePair("client_id", clientId));
+        }
+        if (password != null) {
+            parameters.add(new BasicNameValuePair("password", password));
+        }
+
+        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, Charset.forName("UTF-8"));
+        post.setEntity(formEntity);
+
+        return new AccessTokenResponse(client.execute(post));
+    }
 
     public boolean isAuthorizationResponse() {
         return getCurrentRequest().equals(redirectUri) && getCurrentQuery().containsKey("code");
@@ -129,8 +168,12 @@ public class OAuthClient {
 
     public String getLoginFormUrl() {
         UriBuilder b = UriBuilder.fromUri(baseUrl + "/realms/" + realm + "/tokens/login");
-        b.queryParam("response_type", responseType);
-        b.queryParam("client_id", clientId);
+        if (responseType != null) {
+            b.queryParam("response_type", responseType);
+        }
+        if (clientId != null) {
+            b.queryParam("client_id", clientId);
+        }
         if (redirectUri != null) {
             b.queryParam("redirect_uri", redirectUri);
         }
@@ -140,6 +183,11 @@ public class OAuthClient {
         if (state != null) {
             b.queryParam("state", state);
         }
+        return b.build().toString();
+    }
+
+    public String getAccessTokenUrl() {
+        UriBuilder b = UriBuilder.fromUri(baseUrl + "/realms/" + realm + "/tokens/access/codes");
         return b.build().toString();
     }
 
@@ -171,6 +219,98 @@ public class OAuthClient {
     public OAuthClient state(String state) {
         this.state = state;
         return this;
+    }
+
+    public String getRealm() {
+        return realm;
+    }
+
+    public static class AuthorizationCodeResponse {
+
+        private boolean isRedirected;
+        private String code;
+        private String state;
+        private String error;
+
+        public AuthorizationCodeResponse(OAuthClient client) {
+            isRedirected = client.getCurrentRequest().equals(client.getRedirectUri());
+            code = client.getCurrentQuery().get("code");
+            state = client.getCurrentQuery().get("state");
+            error = client.getCurrentQuery().get("error");
+        }
+
+        public boolean isRedirected() {
+            return isRedirected;
+        }
+
+        public String getCode() {
+            return code;
+        }
+
+        public String getState() {
+            return state;
+        }
+
+        public String getError() {
+            return error;
+        }
+
+    }
+
+    public static class AccessTokenResponse {
+        private int statusCode;
+
+        private String accessToken;
+        private String tokenType;
+        private int expiresIn;
+        private String refreshToken;
+
+        private String error;
+
+        public AccessTokenResponse(HttpResponse response) throws Exception {
+            statusCode = response.getStatusLine().getStatusCode();
+            if (!"application/json".equals(response.getHeaders("Content-Type")[0].getValue())) {
+                Assert.fail("Invalid content type");
+            }
+
+            JSONObject responseJson = new JSONObject(IOUtils.toString(response.getEntity().getContent()));
+
+            if (statusCode == 200) {
+                accessToken = responseJson.getString("access_token");
+                tokenType = responseJson.getString("token_type");
+                expiresIn = responseJson.getInt("expires_in");
+
+                if (responseJson.has("refresh_token")) {
+                    refreshToken = responseJson.getString("refresh_token");
+                }
+            } else {
+                error = responseJson.getString("error");
+            }
+        }
+
+        public String getAccessToken() {
+            return accessToken;
+        }
+
+        public String getError() {
+            return error;
+        }
+
+        public int getExpiresIn() {
+            return expiresIn;
+        }
+
+        public int getStatusCode() {
+            return statusCode;
+        }
+
+        public String getRefreshToken() {
+            return refreshToken;
+        }
+
+        public String getTokenType() {
+            return tokenType;
+        }
     }
 
 }
