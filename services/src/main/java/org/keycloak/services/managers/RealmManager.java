@@ -313,7 +313,7 @@ public class RealmManager {
         }
     }
 
-    public UserRepresentation toRepresentation(UserModel user) {
+    public static UserRepresentation toRepresentation(UserModel user) {
         UserRepresentation rep = new UserRepresentation();
         rep.setUsername(user.getLoginName());
         rep.setLastName(user.getLastName());
@@ -325,7 +325,7 @@ public class RealmManager {
         return rep;
     }
 
-    public RoleRepresentation toRepresentation(RoleModel role) {
+    public static RoleRepresentation toRepresentation(RoleModel role) {
         RoleRepresentation rep = new RoleRepresentation();
         rep.setId(role.getId());
         rep.setName(role.getName());
@@ -333,7 +333,7 @@ public class RealmManager {
         return rep;
     }
 
-    public RealmRepresentation toRepresentation(RealmModel realm) {
+    public static RealmRepresentation toRepresentation(RealmModel realm) {
         RealmRepresentation rep = new RealmRepresentation();
         rep.setId(realm.getId());
         rep.setRealm(realm.getName());

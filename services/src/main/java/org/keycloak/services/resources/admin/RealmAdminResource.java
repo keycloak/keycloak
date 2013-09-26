@@ -56,6 +56,13 @@ public class RealmAdminResource {
     }
 
 
+    @PUT
+    @Consumes("application/json")
+    public void updateRealm(final RealmRepresentation rep) {
+        logger.info("updating realm: " + rep.getRealm());
+        new RealmManager(session).updateRealm(rep, realm);
+    }
+
     @Path("roles")
     @GET
     @NoCache
@@ -69,13 +76,6 @@ public class RealmAdminResource {
             roles.add(role);
         }
         return roles;
-    }
-
-    @PUT
-    @Consumes("application/json")
-    public void updateRealm(final RealmRepresentation rep) {
-        logger.info("updating realm: " + rep.getRealm());
-        new RealmManager(session).updateRealm(rep, realm);
     }
 
     @Path("roles/{id}")

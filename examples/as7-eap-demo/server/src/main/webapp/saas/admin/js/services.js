@@ -130,6 +130,19 @@ module.factory('Role', function($resource) {
     });
 });
 
+module.factory('ApplicationRole', function($resource) {
+    return $resource('/auth-server/rest/saas/admin/realms/:realm/applications/:application/roles/:roleId', {
+        realm : '@realm',
+        application : "@application",
+        roleId : '@roleId'
+    },  {
+        update : {
+            method : 'PUT'
+        }
+    });
+});
+
+
 module.factory('Application', function($resource) {
     return $resource('/auth-server/rest/saas/admin/realms/:realm/applications/:id', {
         realm : '@realm',

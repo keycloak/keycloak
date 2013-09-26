@@ -327,8 +327,23 @@ module.controller('RoleListCtrl', function($scope, $location, realm, roles) {
     });
 });
 
-module.controller('RoleDetailCtrl', function($scope, realm, role, Role, $location, Dialog, Notifications) {
+module.controller('ApplicationRoleListCtrl', function($scope, $location, realm, application, roles) {
     $scope.realm = realm;
+    $scope.roles = roles;
+    $scope.application = application;
+
+    $scope.$watch(function() {
+        return $location.path();
+    }, function() {
+        $scope.path = $location.path().substring(1).split("/");
+    });
+});
+
+
+
+module.controller('ApplicationRoleDetailCtrl', function($scope, realm, application, role, ApplicationRole, $location, Dialog, Notifications) {
+    $scope.realm = realm;
+    $scope.application = application;
     $scope.role = angular.copy(role);
     $scope.create = !role.name;
 
@@ -348,8 +363,9 @@ module.controller('RoleDetailCtrl', function($scope, realm, role, Role, $locatio
 
     $scope.save = function() {
         if ($scope.create) {
-            Role.save({
-                realm: realm.id
+            ApplicationRole.save({
+                realm: realm.id,
+                application : application.id
             }, $scope.role, function (data, headers) {
                 $scope.changed = false;
                 role = angular.copy($scope.role);
@@ -361,8 +377,9 @@ module.controller('RoleDetailCtrl', function($scope, realm, role, Role, $locatio
 
             });
         } else {
-            Role.update({
+            ApplicationRole.update({
                 realm : realm.id,
+                application : application.id,
                 roleId : role.id
             }, $scope.role, function() {
                 $scope.changed = false;
@@ -379,16 +396,17 @@ module.controller('RoleDetailCtrl', function($scope, realm, role, Role, $locatio
     };
 
     $scope.cancel = function() {
-        $location.url("/realms/" + realm.id + "/roles");
+        $location.url("/realms/" + realm.id + "/applications/" + application.id + "/roles");
     };
 
     $scope.remove = function() {
         Dialog.confirmDelete($scope.role.name, 'role', function() {
             $scope.role.$remove({
                 realm : realm.id,
+                application : application.id,
                 role : $scope.role.name
             }, function() {
-                $location.url("/realms/" + realm.id + "/roles");
+                $location.url("/realms/" + realm.id + "/applications/" + application.id + "/roles");
                 Notifications.success("Deleted role");
             });
         });
