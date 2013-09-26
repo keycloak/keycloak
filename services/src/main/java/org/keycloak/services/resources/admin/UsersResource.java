@@ -1,6 +1,7 @@
 package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.logging.Logger;
 import org.keycloak.representations.idm.*;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.models.*;
@@ -8,6 +9,7 @@ import org.keycloak.services.models.*;
 import javax.ws.rs.*;
 import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.util.ArrayList;
@@ -20,6 +22,7 @@ import java.util.Map;
  * @version $Revision: 1 $
  */
 public class UsersResource {
+    protected static final Logger logger = Logger.getLogger(UsersResource.class);
 
     protected RealmModel realm;
 
@@ -123,6 +126,8 @@ public class UsersResource {
 
     @Path("{username}/role-mappings")
     @GET
+    @Produces("application/json")
+    @NoCache
     public AllRoleMappingsRepresentation getRoleMappings(@PathParam("username") String username) {
         UserModel user = realm.getUser(username);
         if (user == null) {
@@ -168,7 +173,9 @@ public class UsersResource {
 
     @Path("{username}/role-mappings/realm")
     @GET
-    public RealmRoleMappingsRepresentation getRealmRoleMappings(@PathParam("username") String username) {
+    @Produces("application/json")
+    @NoCache
+    public List<RoleRepresentation> getRealmRoleMappings(@PathParam("username") String username) {
         UserModel user = realm.getUser(username);
         if (user == null) {
             throw new NotFoundException();
@@ -176,20 +183,19 @@ public class UsersResource {
 
         RealmRoleMappingsRepresentation rep = new RealmRoleMappingsRepresentation();
         List<RoleModel> realmMappings = realm.getRoleMappings(user);
-        if (realmMappings.size() > 0) {
-            RealmManager manager = new RealmManager(session);
-            List<RoleRepresentation> realmRep = new ArrayList<RoleRepresentation>();
-            for (RoleModel roleModel : realmMappings) {
-                realmRep.add(manager.toRepresentation(roleModel));
-            }
-            rep.setMappings(realmRep);
+        List<RoleRepresentation> realmMappingsRep = new ArrayList<RoleRepresentation>();
+        RealmManager manager = new RealmManager(session);
+        for (RoleModel roleModel : realmMappings) {
+            realmMappingsRep.add(manager.toRepresentation(roleModel));
         }
-        return rep;
+        return realmMappingsRep;
     }
 
     @Path("{username}/role-mappings/realm")
     @POST
+    @Consumes("application/json")
     public void addRealmRoleMappings(@PathParam("username") String username, List<RoleRepresentation> roles) {
+        logger.info("** addRealmRoleMappings: " + roles);
         UserModel user = realm.getUser(username);
         if (user == null) {
             throw new NotFoundException();
@@ -208,7 +214,9 @@ public class UsersResource {
 
     @Path("{username}/role-mappings/realm")
     @DELETE
-    public void deleteRoleMapping(@PathParam("username") String username, List<RoleRepresentation> roles) {
+    @Consumes("application/json")
+    public void deleteRealmRoleMappings(@PathParam("username") String username, List<RoleRepresentation> roles) {
+        logger.info("deleteRealmRoleMappings");
         UserModel user = realm.getUser(username);
         if (user == null) {
             throw new NotFoundException();
@@ -229,12 +237,13 @@ public class UsersResource {
                 realm.deleteRoleMapping(user, roleModel);
             }
         }
-
     }
 
     @Path("{username}/role-mappings/applications/{appId}")
     @GET
-    public ApplicationRoleMappings getApplicationRoleMappings(@PathParam("username") String username, @PathParam("appId") String appId) {
+    @Produces("application/json")
+    @NoCache
+    public List<RoleRepresentation> getApplicationRoleMappings(@PathParam("username") String username, @PathParam("appId") String appId) {
         UserModel user = realm.getUser(username);
         if (user == null) {
             throw new NotFoundException();
@@ -248,19 +257,17 @@ public class UsersResource {
 
         ApplicationRoleMappings rep = new ApplicationRoleMappings();
         List<RoleModel> mappings = application.getRoleMappings(user);
-        if (mappings.size() > 0) {
-            RealmManager manager = new RealmManager(session);
-            List<RoleRepresentation> mapRep = new ArrayList<RoleRepresentation>();
-            for (RoleModel roleModel : mappings) {
-                mapRep.add(manager.toRepresentation(roleModel));
-            }
-            rep.setMappings(mapRep);
+        List<RoleRepresentation> mapRep = new ArrayList<RoleRepresentation>();
+        RealmManager manager = new RealmManager(session);
+        for (RoleModel roleModel : mappings) {
+            mapRep.add(manager.toRepresentation(roleModel));
         }
-        return rep;
+        return mapRep;
     }
 
     @Path("{username}/role-mappings/applications/{appId}")
     @POST
+    @Consumes("application/json")
     public void addApplicationRoleMapping(@PathParam("username") String username, @PathParam("appId") String appId, List<RoleRepresentation> roles) {
         UserModel user = realm.getUser(username);
         if (user == null) {
@@ -278,6 +285,7 @@ public class UsersResource {
 
     @Path("{username}/role-mappings/applications/{appId}")
     @DELETE
+    @Consumes("application/json")
     public void deleteApplicationRoleMapping(@PathParam("username") String username, @PathParam("appId") String appId, List<RoleRepresentation> roles) {
         UserModel user = realm.getUser(username);
         if (user == null) {
