@@ -1,0 +1,57 @@
+<div id="wrapper" class="container">
+    <div class="row">
+        <div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="'partials/realm-menu.html'"></div>
+        <div id="content-area" class="col-md-9" role="main">
+            <div class="top-nav">
+                <ul class="rcue-tabs">
+                    <li><a href="#/create/role/{{realm.id}}/applications/{{application.id}}">New {{application.name}} Role</a></li>
+                    <li class="active"><a href="#/realms/{{realm.id}}/applications/{{application.id}}/roles">{{application.name}} Roles</a></li>
+                    <li><a href="#/realms/{{realm.id}}/applications/{{application.id}}">{{application.name}} Settings</a></li>
+                </ul>
+            </div>
+            <div id="content">
+                <h2 class="pull-left">Application <span>{{application.name}}</span> Roles</h2>
+                <table>
+                    <caption data-ng-show="roles && roles.length > 0">Table of realm roles</caption>
+                    <caption data-ng-show="!roles || roles.length == 0">No configured realm roles...</caption>
+                    <thead>
+                    <tr data-ng-show="roles && roles.length > 5">
+                        <th class="rcue-table-actions" colspan="2">
+                            <div class="search-comp clearfix">
+                                <input type="text" placeholder="Search..." class="search">
+                                <button class="icon-search tooltipRightTrigger"
+                                        data-original-title="Search by role name.">
+                                    Icon: search
+                                </button>
+                            </div>
+                        </th>
+                    </tr>
+                    <tr>
+                        <th>Role Name</th>
+                        <th>Description</th>
+                    </tr>
+                    </thead>
+                    <tfoot data-ng-show="roles && roles.length > 5"> <!-- todo -->
+                    <tr>
+                        <td colspan="2">
+                            <div class="table-nav">
+                                <a href="#" class="first disabled">First page</a><a href="#" class="prev disabled">Previous
+                                page</a><span><strong>1-8</strong> of <strong>10</strong></span><a href="#"
+                                                                                                   class="next">Next
+                                page</a><a href="#" class="last">Last page</a>
+                            </div>
+                        </td>
+                    </tr>
+                    </tfoot>
+                    <tbody class="selectable-rows">
+                    <tr ng-repeat="role in roles">
+                        <td><a href="#/realms/{{realm.id}}/applications/{{application.id}}/roles/{{role.id}}">{{role.name}}</a></td>
+                        <td>{{role.description}}</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div id="container-right-bg"></div>
+    </div>
+</div>

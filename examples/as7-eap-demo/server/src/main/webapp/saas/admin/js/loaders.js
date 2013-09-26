@@ -77,6 +77,26 @@ module.factory('RoleListLoader', function(Loader, Role, $route, $q) {
     });
 });
 
+module.factory('ApplicationRoleLoader', function(Loader, ApplicationRole, $route, $q) {
+    return Loader.get(ApplicationRole, function() {
+        return {
+            realm : $route.current.params.realm,
+            application : $route.current.params.application,
+            roleId : $route.current.params.role
+        }
+    });
+});
+
+module.factory('ApplicationRoleListLoader', function(Loader, ApplicationRole, $route, $q) {
+    return Loader.query(ApplicationRole, function() {
+        return {
+            realm : $route.current.params.realm,
+            application : $route.current.params.application
+        }
+    });
+});
+
+
 
 module.factory('ApplicationLoader', function(Loader, Application, $route, $q) {
     return Loader.get(Application, function() {
