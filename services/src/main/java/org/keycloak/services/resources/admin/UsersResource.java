@@ -244,6 +244,8 @@ public class UsersResource {
     @Produces("application/json")
     @NoCache
     public List<RoleRepresentation> getApplicationRoleMappings(@PathParam("username") String username, @PathParam("appId") String appId) {
+        logger.info("getApplicationRoleMappings");
+
         UserModel user = realm.getUser(username);
         if (user == null) {
             throw new NotFoundException();
@@ -258,10 +260,10 @@ public class UsersResource {
         ApplicationRoleMappings rep = new ApplicationRoleMappings();
         List<RoleModel> mappings = application.getRoleMappings(user);
         List<RoleRepresentation> mapRep = new ArrayList<RoleRepresentation>();
-        RealmManager manager = new RealmManager(session);
         for (RoleModel roleModel : mappings) {
-            mapRep.add(manager.toRepresentation(roleModel));
+            mapRep.add(RealmManager.toRepresentation(roleModel));
         }
+        logger.info("getApplicationRoleMappings.size() = " + mapRep.size());
         return mapRep;
     }
 
@@ -269,6 +271,7 @@ public class UsersResource {
     @POST
     @Consumes("application/json")
     public void addApplicationRoleMapping(@PathParam("username") String username, @PathParam("appId") String appId, List<RoleRepresentation> roles) {
+        logger.info("addApplicationRoleMapping");
         UserModel user = realm.getUser(username);
         if (user == null) {
             throw new NotFoundException();
@@ -280,6 +283,13 @@ public class UsersResource {
             throw new NotFoundException();
         }
 
+        for (RoleRepresentation role : roles) {
+            RoleModel roleModel = application.getRoleById(role.getId());
+            if (roleModel == null) {
+                throw new NotFoundException();
+            }
+            application.grantRole(user, roleModel);
+        }
 
     }
 

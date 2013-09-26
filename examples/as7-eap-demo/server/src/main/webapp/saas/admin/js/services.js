@@ -111,6 +111,16 @@ module.factory('RealmRoleMapping', function($resource) {
     });
 });
 
+module.factory('ApplicationRoleMapping', function($resource) {
+    return $resource('/auth-server/rest/saas/admin/realms/:realm/users/:userId/role-mappings/applications/:application', {
+        realm : '@realm',
+        userId : '@userId',
+        application : "@application"
+    });
+});
+
+
+
 module.factory('RealmRoles', function($resource) {
     return $resource('/auth-server/rest/saas/admin/realms/:realm/roles', {
         realm : '@realm'

@@ -6,13 +6,13 @@
                 <ul class="rcue-tabs" >
                     <li><a href="#/create/user/{{realm.id}}">New User</a></li>
                     <li><a href="#/realms/{{realm.id}}/users">Query Users</a></li>
-                    <li><a href="#/realms/{{realm.id}}/users/{{user.username}}">Attributes</a></li>
-                    <li><a href="#">Credentials</a></li>
-                    <li class="active"><a href="#">Role Mappings</a></li>
+                    <li><a href="#/realms/{{realm.id}}/users/{{user.username}}">{{user.username}} Attributes</a></li>
+                    <li><a href="#">{{user.username}} Credentials</a></li>
+                    <li class="active"><a href="#">{{user.username}} Role Mappings</a></li>
                 </ul>
             </div>
             <div id="content">
-                <h2 class="pull-left">Role Mappings: <span>{{realm.realm}}</span></h2>
+                <h2 class="pull-left">User Role Mappings for <span>{{user.username}}</span></h2>
                 <p class="subtitle"></p>
                 <form name="realmForm" novalidate>
                     <fieldset>
@@ -34,23 +34,30 @@
                             </div>
                         </div>
                     </fieldset>
-                    <fieldset>
+                    <fieldset ng-show="applications.length > 0">
                         <legend collapsed><span class="text">Application Roles</span> </legend>
-                        <div class="form-group">
+                        <div class="form-group input-select">
+                            <label for="applications">Application: </label>
+                            <div class="input-group">
+                                <div class="select-rcue">
+                                    <select id="applications" name="applications" ng-change="changeApplication()" ng-model="application" ng-options="a.name for a in applications">
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group" ng-show="application">
                             <div class="controls">
-                                <select multiple size=5>
-                                    <option value="role1">role1</option>
-                                    <option value="role2">role2</option>
-                                    <option value="role3">role3</option>
-                                    <option value="role4">role4</option>
+                                <select multiple size="5"
+                                        ng-multiple="true"
+                                        ng-model="selectedApplicationRoles"
+                                        ng-options="r.name for r in applicationRoles">
                                 </select>
-                                <button type="submit">---&gt;</button>
-                                <button type="submit">&lt;---</button>
-                                <select multiple size=5>
-                                    <option value="role1">role1</option>
-                                    <option disabled="disabled" value="role2">role2</option>
-                                    <option value="role3">role3</option>
-                                    <option value="role4">role4</option>
+                                <button type="submit" ng-click="addApplicationRole()">---&gt;</button>
+                                <button type="submit" ng-click="deleteApplicationRole()">&lt;---</button>
+                                <select multiple size=5
+                                        ng-multiple="true"
+                                        ng-model="selectedApplicationMappings"
+                                        ng-options="r.name for r in applicationMappings">
                                 </select>
                             </div>
                         </div>
