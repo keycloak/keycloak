@@ -59,6 +59,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 user : function(UserLoader) {
                     return UserLoader();
                 },
+                applications : function(ApplicationListLoader) {
+                    return ApplicationListLoader();
+                },
                 roles : function(RoleListLoader) {
                     return RoleListLoader();
                 }
