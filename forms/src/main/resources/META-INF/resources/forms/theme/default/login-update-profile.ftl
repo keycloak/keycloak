@@ -28,7 +28,7 @@
             <div class="aside-btn">
             </div>
 
-            <input type="submit" value="Submit" />
+            <input class="btn-primary" type="submit" value="Submit" />
         </form>
     </div>
 

@@ -19,7 +19,7 @@ public class TotpPage {
     @FindBy(id = "totp")
     private WebElement totpInput;
 
-    @FindBy(css = "input[type=\"submit\"]")
+    @FindBy(css = "button[type=\"submit\"]")
     private WebElement submitButton;
 
     public void configure(String totp) {

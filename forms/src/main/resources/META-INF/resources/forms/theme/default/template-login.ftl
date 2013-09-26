@@ -9,7 +9,7 @@
     </title>
     <link href="${template.themeConfig.styles}" rel="stylesheet" />
     <style>
-        body {
+        body.rcue-login-register {
             background-image: url("${template.themeConfig.background}");
         }
     </style>

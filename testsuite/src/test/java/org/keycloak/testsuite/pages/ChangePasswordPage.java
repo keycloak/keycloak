@@ -22,7 +22,7 @@ public class ChangePasswordPage {
     @FindBy(id = "password-confirm")
     private WebElement passwordConfirmInput;
 
-    @FindBy(css = "input[type=\"submit\"]")
+    @FindBy(css = "button[type=\"submit\"].primary")
     private WebElement submitButton;
 
     public void changePassword(String password, String newPassword, String passwordConfirm) {

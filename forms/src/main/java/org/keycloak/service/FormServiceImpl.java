@@ -132,7 +132,7 @@ public class FormServiceImpl implements FormService {
     private class CommandSocial implements Command {
         public void exec(Map<String, Object> attributes, FormServiceDataBean dataBean) {
             RealmBean realm = new RealmBean(dataBean.getRealm());
-
+            attributes.put("user", new UserBean(dataBean.getUserModel()));
             attributes.put("url", new UrlBean(realm, dataBean.getBaseURI()));
         }
     }
@@ -186,6 +186,7 @@ public class FormServiceImpl implements FormService {
             RealmBean realm = new RealmBean(dataBean.getRealm());
 
             attributes.put("realm", realm);
+            attributes.put("user", new UserBean(dataBean.getUserModel()));
             attributes.put("url", new UrlBean(realm, dataBean.getBaseURI()));
         }
     }

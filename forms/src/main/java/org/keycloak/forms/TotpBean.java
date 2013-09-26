@@ -78,7 +78,7 @@ public class TotpBean {
 
     public String getTotpSecretQrCodeUrl() throws UnsupportedEncodingException {
         String contents = URLEncoder.encode("otpauth://totp/keycloak?secret=" + totpSecretEncoded, "utf-8");
-        return contextUrl + "/forms/qrcode" + "?size=200x200&contents=" + contents;
+        return contextUrl + "/forms/qrcode" + "?size=246x246&contents=" + contents;
     }
 
     public UserBean getUser() {
