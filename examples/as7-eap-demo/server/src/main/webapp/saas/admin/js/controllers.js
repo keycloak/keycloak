@@ -192,6 +192,71 @@ module.controller('UserListCtrl', function($scope, realm, User) {
     };
 });
 
+Array.prototype.remove = function(from, to) {
+    var rest = this.slice((to || from) + 1 || this.length);
+    this.length = from < 0 ? this.length + from : from;
+    return this.push.apply(this, rest);
+};
+
+module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, roles, RealmRoleMapping) {
+    $scope.realm = realm;
+    $scope.user = user;
+    $scope.realmRoles = angular.copy(roles);
+    $scope.selectedRealmRoles = [];
+    $scope.selectedRealmMappings = [];
+    $scope.realmMappings = [];
+
+    $scope.realmMappings = RealmRoleMapping.query({realm : realm.id, userId : user.username}, function(){
+       for (var i = 0; i < $scope.realmMappings.length; i++) {
+           var role = $scope.realmMappings[i];
+           for (var j = 0; j < $scope.realmRoles.length; j++) {
+               var realmRole = $scope.realmRoles[j];
+               if (realmRole.id == role.id) {
+                   var idx = $scope.realmRoles.indexOf(realmRole);
+                   if (idx != -1) {
+                       $scope.realmRoles.splice(idx, 1);
+                       break;
+                   }
+               }
+           }
+       }
+    });
+
+    $scope.addRealmRole = function() {
+        $http.post('/auth-server/rest/saas/admin/realms/' + realm.id + '/users/' + user.username + '/role-mappings/realm',
+                   $scope.selectedRealmRoles).success(function() {
+                for (var i = 0; i < $scope.selectedRealmRoles.length; i++) {
+                    var role = $scope.selectedRealmRoles[i];
+                    var idx = $scope.realmRoles.indexOf($scope.selectedRealmRoles[i]);
+                    if (idx != -1) {
+                        $scope.realmRoles.splice(idx, 1);
+                        $scope.realmMappings.push(role);
+                    }
+                }
+                $scope.selectRealmRoles = [];
+            });
+    };
+
+    $scope.deleteRealmRole = function() {
+        console.log('deleteRealmRole');
+        $http.delete('/auth-server/rest/saas/admin/realms/' + realm.id + '/users/' + user.username + '/role-mappings/realm',
+                {data : $scope.selectedRealmMappings, headers : {"content-type" : "application/json"}}).success(function() {
+                for (var i = 0; i < $scope.selectedRealmMappings.length; i++) {
+                    var role = $scope.selectedRealmMappings[i];
+                    var idx = $scope.realmMappings.indexOf($scope.selectedRealmMappings[i]);
+                    if (idx != -1) {
+                        $scope.realmMappings.splice(idx, 1);
+                        $scope.realmRoles.push(role);
+                    }
+                }
+                $scope.selectedRealmMappings = [];
+            });
+    };
+
+
+
+});
+
 module.controller('UserDetailCtrl', function($scope, realm, user, User, $location, Dialog, Notifications) {
 	$scope.realm = realm;
 	$scope.user = angular.copy(user);

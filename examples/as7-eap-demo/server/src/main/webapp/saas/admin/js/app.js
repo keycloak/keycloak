@@ -58,9 +58,12 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 user : function(UserLoader) {
                     return UserLoader();
+                },
+                roles : function(RoleListLoader) {
+                    return RoleListLoader();
                 }
             },
-            controller : 'UserDetailCtrl'
+            controller : 'UserRoleMappingCtrl'
         }).when('/realms/:realm/users', {
 		templateUrl : 'partials/user-list.html',
 		resolve : {

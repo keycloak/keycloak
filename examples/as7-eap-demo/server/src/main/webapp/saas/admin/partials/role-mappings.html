@@ -6,7 +6,7 @@
                 <ul class="rcue-tabs" >
                     <li><a href="#/create/user/{{realm.id}}">New User</a></li>
                     <li><a href="#/realms/{{realm.id}}/users">Query Users</a></li>
-                    <li><a href="#">Attributes</a></li>
+                    <li><a href="#/realms/{{realm.id}}/users/{{user.username}}">Attributes</a></li>
                     <li><a href="#">Credentials</a></li>
                     <li class="active"><a href="#">Role Mappings</a></li>
                 </ul>
@@ -19,19 +19,17 @@
                         <legend uncollapsed><span class="text">Realm Roles</span> </legend>
                         <div class="form-group">
                             <div class="controls">
-                                <select multiple size=5>
-                                    <option value="role1">role1</option>
-                                    <option value="role2">role2</option>
-                                    <option value="role3">role3</option>
-                                    <option value="role4">role4</option>
+                                <select multiple size="5"
+                                        ng-multiple="true"
+                                        ng-model="selectedRealmRoles"
+                                        ng-options="r.name for r in realmRoles">
                                 </select>
-                                <button type="submit">---&gt;</button>
-                                <button type="submit">&lt;---</button>
-                                <select multiple size=5>
-                                    <option value="role1">role1</option>
-                                    <option disabled="disabled" value="role2">role2</option>
-                                    <option value="role3">role3</option>
-                                    <option value="role4">role4</option>
+                                <button type="submit" ng-click="addRealmRole()">---&gt;</button>
+                                <button type="submit" ng-click="deleteRealmRole()">&lt;---</button>
+                                <select multiple size=5
+                                        ng-multiple="true"
+                                        ng-model="selectedRealmMappings"
+                                        ng-options="r.name for r in realmMappings">
                                 </select>
                             </div>
                         </div>
@@ -57,26 +55,6 @@
                             </div>
                         </div>
                     </fieldset>
-
-                    <div class="form-actions" data-ng-show="createRealm">
-                        <button type="submit" data-ng-click="save()" class="primary" data-ng-show="changed">Save
-                        </button>
-                        <button type="submit" data-ng-click="cancel()" data-ng-click="cancel()"
-                                data-ng-show="changed">Cancel
-                        </button>
-                    </div>
-
-                    <div class="form-actions" data-ng-show="!createRealm">
-                        <button type="submit" data-ng-click="save()" class="primary" data-ng-show="changed">Save
-                            changes
-                        </button>
-                        <button type="submit" data-ng-click="reset()" data-ng-show="changed">Clear changes
-                        </button>
-                        <button type="submit" data-ng-click="remove()" class="danger" data-ng-hide="changed">
-                            Delete
-                        </button>
-                    </div>
-
                 </form>
             </div>
         </div>
