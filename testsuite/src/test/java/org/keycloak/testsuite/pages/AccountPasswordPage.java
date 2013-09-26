@@ -1,16 +1,16 @@
 package org.keycloak.testsuite.pages;
 
 import org.keycloak.testsuite.Constants;
-import org.keycloak.testsuite.rule.Driver;
+import org.keycloak.testsuite.rule.WebResource;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
-public class ChangePasswordPage {
+public class AccountPasswordPage extends Page {
 
-    private static String PATH = Constants.AUTH_SERVER_ROOT + "/rest/realms/demo/account/password";
+    private static String PATH = Constants.AUTH_SERVER_ROOT + "/rest/realms/test/account/password";
 
-    @Driver
+    @WebResource
     private WebDriver browser;
 
     @FindBy(id = "password")

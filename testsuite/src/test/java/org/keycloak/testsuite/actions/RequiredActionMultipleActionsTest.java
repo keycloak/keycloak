@@ -19,76 +19,81 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.keycloak.testsuite;
+package org.keycloak.testsuite.actions;
 
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.After;
 import org.junit.Assert;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.models.RealmModel;
+import org.keycloak.services.models.UserModel;
+import org.keycloak.services.models.UserModel.RequiredAction;
+import org.keycloak.testsuite.OAuthClient;
+import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
-import org.keycloak.testsuite.rule.GreenMailRule;
-import org.keycloak.testsuite.rule.Page;
+import org.keycloak.testsuite.rule.KeycloakRule;
+import org.keycloak.testsuite.rule.KeycloakRule.KeycloakSetup;
+import org.keycloak.testsuite.rule.WebResource;
+import org.keycloak.testsuite.rule.WebRule;
+import org.openqa.selenium.WebDriver;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@RunWith(Arquillian.class)
-public class RequiredActionMultipleActionsTest extends AbstractDroneTest {
+public class RequiredActionMultipleActionsTest {
 
-    @Deployment(name = "properties", testable = false, order = 1)
-    public static WebArchive propertiesDeployment() {
-        return ShrinkWrap.create(WebArchive.class, "properties.war").addClass(SystemPropertiesSetter.class)
-                .addAsWebInfResource("web-properties-email-verfication.xml", "web.xml");
-    }
+    @ClassRule
+    public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakSetup() {
+
+        @Override
+        public void config(RealmManager manager, RealmModel defaultRealm, RealmModel appRealm) {
+            UserModel user = appRealm.getUser("test-user@localhost");
+            user.addRequiredAction(RequiredAction.UPDATE_PROFILE);
+            user.addRequiredAction(RequiredAction.UPDATE_PASSWORD);
+        }
+
+    });
 
     @Rule
-    public GreenMailRule greenMail = new GreenMailRule();
+    public WebRule webRule = new WebRule(this);
 
-    @Page
+    @WebResource
+    protected WebDriver driver;
+
+    @WebResource
+    protected OAuthClient oauth;
+
+    @WebResource
+    protected LoginPage loginPage;
+
+    @WebResource
     protected LoginPasswordUpdatePage changePasswordPage;
 
-    @Page
+    @WebResource
     protected LoginUpdateProfilePage updateProfilePage;
-
-    @After
-    public void after() {
-        appPage.open();
-        if (appPage.isCurrent()) {
-            appPage.logout();
-        }
-    }
 
     @Test
     public void updateProfileAndPassword() {
-        appPage.open();
-
-        Assert.assertTrue(loginPage.isCurrent());
-
-        loginPage.login("multiple@actions.com", "temp-password");
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
 
         if (changePasswordPage.isCurrent()) {
             updatePassword();
 
-            Assert.assertTrue(updateProfilePage.isCurrent());
+            updateProfilePage.assertCurrent();
             updateProfile();
         } else if (updateProfilePage.isCurrent()) {
             updateProfile();
 
-            Assert.assertTrue(changePasswordPage.isCurrent());
+            changePasswordPage.assertCurrent();
             updatePassword();
         } else {
             Assert.fail("Expected to update password and profile before login");
         }
 
-        Assert.assertTrue(appPage.isCurrent());
-        Assert.assertEquals("multiple@actions.com", appPage.getUser());
-
+        Assert.assertTrue("Expected authorization response", oauth.isAuthorizationResponse());
     }
 
     public void updatePassword() {

@@ -1,13 +1,13 @@
 package org.keycloak.testsuite.pages;
 
-import org.keycloak.testsuite.rule.Driver;
+import org.keycloak.testsuite.rule.WebResource;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
-public class RegisterPage {
+public class RegisterPage extends Page {
 
-    @Driver
+    @WebResource
     private WebDriver browser;
 
     @FindBy(id = "name")
@@ -60,7 +60,12 @@ public class RegisterPage {
     }
 
     public boolean isCurrent() {
-        return browser.getTitle().equals("Register with demo");
+        return browser.getTitle().equals("Register with test");
+    }
+
+    @Override
+    public void open() {
+        throw new UnsupportedOperationException();
     }
 
 }

@@ -3,6 +3,8 @@ package org.keycloak.testsuite.rule;
 import java.lang.reflect.Field;
 
 import org.junit.rules.ExternalResource;
+import org.keycloak.testsuite.OAuthClient;
+import org.keycloak.testsuite.pages.Page;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
@@ -13,6 +15,7 @@ import com.gargoylesoftware.htmlunit.WebClient;
 public class WebRule extends ExternalResource {
 
     private WebDriver driver;
+    private OAuthClient oauth;
     private Object test;
 
     public WebRule(Object test) {
@@ -28,7 +31,7 @@ public class WebRule extends ExternalResource {
 
         if (browser.equals("htmlunit")) {
             HtmlUnitDriver d = new HtmlUnitDriver();
-            d.getWebClient().setCssEnabled(false);
+            d.getWebClient().getOptions().setCssEnabled(false);
             driver = d;
         } else if (browser.equals("chrome")) {
             driver = new ChromeDriver();
@@ -38,29 +41,26 @@ public class WebRule extends ExternalResource {
             throw new RuntimeException("Unsupported browser " + browser);
         }
 
-        initDriver(test);
-        initPages(test);
+        oauth = new OAuthClient(driver);
+
+        initWebResources(test);
     }
 
-    protected void initDriver(Object o) {
+    protected void initWebResources(Object o) {
         Class<?> c = o.getClass();
         while (c != null) {
             for (Field f : c.getDeclaredFields()) {
-                if (f.getAnnotation(Driver.class) != null) {
-                    set(f, o, driver);
-                }
-            }
-
-            c = c.getSuperclass();
-        }
-    }
-
-    protected void initPages(Object o) {
-        Class<?> c = o.getClass();
-        while (c != null) {
-            for (Field f : c.getDeclaredFields()) {
-                if (f.getAnnotation(Page.class) != null) {
-                    set(f, o, getPage(f.getType()));
+                if (f.getAnnotation(WebResource.class) != null) {
+                    Class<?> type = f.getType();
+                    if (type.equals(WebDriver.class)) {
+                        set(f, o, driver);
+                    } else if (Page.class.isAssignableFrom(type)) {
+                        set(f, o, getPage(f.getType()));
+                    } else if (type.equals(OAuthClient.class)) {
+                        set(f, o, oauth);
+                    } else {
+                        throw new RuntimeException("Unsupported type " + f);
+                    }
                 }
             }
 
@@ -84,7 +84,7 @@ public class WebRule extends ExternalResource {
     public <T> T getPage(Class<T> pageClass) {
         try {
             T instance = pageClass.newInstance();
-            initDriver(instance);
+            initWebResources(instance);
             PageFactory.initElements(driver, instance);
             return instance;
         } catch (Exception e) {
@@ -94,6 +94,7 @@ public class WebRule extends ExternalResource {
 
     @Override
     protected void after() {
+        driver.manage().deleteAllCookies();
         driver.close();
     }
 

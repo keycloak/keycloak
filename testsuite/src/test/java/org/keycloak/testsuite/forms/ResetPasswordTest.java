@@ -19,60 +19,66 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.keycloak.testsuite;
+package org.keycloak.testsuite.forms;
 
 import java.io.IOException;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.keycloak.testsuite.OAuthClient;
+import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordResetPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.rule.GreenMailRule;
-import org.keycloak.testsuite.rule.Page;
+import org.keycloak.testsuite.rule.KeycloakRule;
+import org.keycloak.testsuite.rule.WebResource;
+import org.keycloak.testsuite.rule.WebRule;
+import org.openqa.selenium.WebDriver;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@RunWith(Arquillian.class)
-public class ResetPasswordTest extends AbstractDroneTest {
+public class ResetPasswordTest {
 
-    @Deployment(name = "properties", testable = false, order = 1)
-    public static WebArchive propertiesDeployment() {
-        return ShrinkWrap.create(WebArchive.class, "properties.war").addClass(SystemPropertiesSetter.class)
-                .addAsWebInfResource("web-properties-email-verfication.xml", "web.xml");
-    }
+    @ClassRule
+    public static KeycloakRule keycloakRule = new KeycloakRule();
+
+    @Rule
+    public WebRule webRule = new WebRule(this);
 
     @Rule
     public GreenMailRule greenMail = new GreenMailRule();
 
-    @Page
+    @WebResource
+    protected WebDriver driver;
+
+    @WebResource
+    protected OAuthClient oauth;
+
+    @WebResource
+    protected LoginPage loginPage;
+
+    @WebResource
     protected LoginPasswordResetPage resetPasswordPage;
 
-    @Page
+    @WebResource
     protected LoginPasswordUpdatePage updatePasswordPage;
 
     @Test
     public void resetPassword() throws IOException, MessagingException {
-        appPage.open();
-
-        Assert.assertTrue(loginPage.isCurrent());
-        
+        loginPage.open();
         loginPage.resetPassword();
 
-        Assert.assertTrue(resetPasswordPage.isCurrent());
+        resetPasswordPage.assertCurrent();
 
-        resetPasswordPage.changePassword("bburke@redhat.com", "bburke@redhat.com");
+        resetPasswordPage.changePassword("test-user@localhost", "test-user@localhost");
 
-        Assert.assertTrue(resetPasswordPage.isCurrent());
+        resetPasswordPage.assertCurrent();
 
         Assert.assertEquals(1, greenMail.getReceivedMessages().length);
 
@@ -83,22 +89,19 @@ public class ResetPasswordTest extends AbstractDroneTest {
 
         driver.navigate().to(changePasswordUrl.trim());
 
-        Assert.assertTrue(updatePasswordPage.isCurrent());
+        updatePasswordPage.assertCurrent();
 
         updatePasswordPage.changePassword("new-password", "new-password");
 
-        Assert.assertTrue(appPage.isCurrent());
-        Assert.assertEquals("bburke@redhat.com", appPage.getUser());
+        Assert.assertTrue("Expected authorization response", oauth.isAuthorizationResponse());
 
-        appPage.logout();
-        appPage.open();
+        oauth.openLogout();
 
-        Assert.assertTrue(loginPage.isCurrent());
+        loginPage.open();
 
-        loginPage.login("bburke@redhat.com", "new-password");
+        loginPage.login("test-user@localhost", "new-password");
 
-        Assert.assertTrue(appPage.isCurrent());
-        Assert.assertEquals("bburke@redhat.com", appPage.getUser());
+        Assert.assertTrue("Expected authorization response", oauth.isAuthorizationResponse());
     }
 
 }

@@ -19,80 +19,100 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.keycloak.testsuite;
+package org.keycloak.testsuite.forms;
 
-import org.jboss.arquillian.junit.Arquillian;
 import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.keycloak.testsuite.OAuthClient;
+import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.RegisterPage;
+import org.keycloak.testsuite.rule.KeycloakRule;
+import org.keycloak.testsuite.rule.WebResource;
+import org.keycloak.testsuite.rule.WebRule;
+import org.openqa.selenium.WebDriver;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@RunWith(Arquillian.class)
-public class RegisterTest extends AbstractDroneTest {
+public class RegisterTest {
+
+    @ClassRule
+    public static KeycloakRule keycloakRule = new KeycloakRule();
+
+    @Rule
+    public WebRule webRule = new WebRule(this);
+
+    @WebResource
+    protected WebDriver driver;
+
+    @WebResource
+    protected OAuthClient oauth;
+
+    @WebResource
+    protected LoginPage loginPage;
+
+    @WebResource
+    protected RegisterPage registerPage;
 
     @Test
     public void registerExistingUser() {
-        appPage.open();
-        loginPage.register();
+        loginPage.open();
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
 
-        Assert.assertTrue(registerPage.isCurrent());
+        registerPage.register("name", "email", "test-user@localhost", "password", "password");
 
-        registerPage.register("name", "email", "registerExistingUser", null, null);
-
-        Assert.assertTrue(registerPage.isCurrent());
-        Assert.assertEquals("Please specify password", registerPage.getError());
+        registerPage.assertCurrent();
+        Assert.assertEquals("Username already exists", registerPage.getError());
     }
 
     @Test
     public void registerUserInvalidPasswordConfirm() {
-        appPage.open();
-        loginPage.register();
-
-        Assert.assertTrue(registerPage.isCurrent());
+        loginPage.open();
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
 
         registerPage.register("name", "email", "registerUserInvalidPasswordConfirm", "password", "invalid");
 
-        Assert.assertTrue(registerPage.isCurrent());
+        registerPage.assertCurrent();
         Assert.assertEquals("Password confirmation doesn't match", registerPage.getError());
     }
 
     @Test
     public void registerUserMissingPassword() {
-        appPage.open();
-        loginPage.register();
-
-        Assert.assertTrue(registerPage.isCurrent());
+        loginPage.open();
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
 
         registerPage.register("name", "email", "registerUserMissingPassword", null, null);
 
-        Assert.assertTrue(registerPage.isCurrent());
+        registerPage.assertCurrent();
         Assert.assertEquals("Please specify password", registerPage.getError());
     }
 
     @Test
     public void registerUserMissingUsername() {
-        appPage.open();
-        loginPage.register();
-
-        Assert.assertTrue(registerPage.isCurrent());
+        loginPage.open();
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
 
         registerPage.register("name", "email", null, "password", "password");
 
-        Assert.assertTrue(registerPage.isCurrent());
+        registerPage.assertCurrent();
         Assert.assertEquals("Please specify username", registerPage.getError());
     }
 
     @Test
     public void registerUserSuccess() {
-        appPage.open();
-        loginPage.register();
-
-        Assert.assertTrue(registerPage.isCurrent());
+        loginPage.open();
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
 
         registerPage.register("name", "email", "registerUserSuccess", "password", "password");
-        Assert.assertTrue(appPage.isCurrent());
+
+        Assert.assertTrue("Expected authorization response", oauth.isAuthorizationResponse());
     }
 
 }

@@ -19,7 +19,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.keycloak.testsuite;
+package org.keycloak.testsuite.actions;
 
 import java.io.IOException;
 import java.util.regex.Matcher;
@@ -28,77 +28,86 @@ import java.util.regex.Pattern;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.After;
 import org.junit.Assert;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.models.RealmModel;
+import org.keycloak.services.models.UserModel;
+import org.keycloak.services.models.UserModel.RequiredAction;
+import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.RegisterPage;
-import org.keycloak.testsuite.rule.Driver;
 import org.keycloak.testsuite.rule.GreenMailRule;
-import org.keycloak.testsuite.rule.Page;
+import org.keycloak.testsuite.rule.KeycloakRule;
+import org.keycloak.testsuite.rule.KeycloakRule.KeycloakSetup;
+import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@RunWith(Arquillian.class)
 public class RequiredActionEmailVerificationTest {
 
-    @Deployment(name = "app", testable = false, order = 3)
-    public static WebArchive appDeployment() {
-        return Deployments.appDeployment();
-    }
+    @ClassRule
+    public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakSetup() {
 
-    @Deployment(name = "auth-server", testable = false, order = 2)
-    public static WebArchive deployment() {
-        return Deployments.deployment().addAsResource("testrealm-email.json", "META-INF/testrealm.json");
-    }
+        @Override
+        public void config(RealmManager manager, RealmModel defaultRealm, RealmModel appRealm) {
+            appRealm.setVerifyEmail(true);
 
-    @Deployment(name = "properties", testable = false, order = 1)
-    public static WebArchive propertiesDeployment() {
-        return ShrinkWrap.create(WebArchive.class, "properties.war").addClass(SystemPropertiesSetter.class)
-                .addAsWebInfResource("web-properties-email-verfication.xml", "web.xml");
-    }
+            UserModel user = appRealm.getUser("test-user@localhost");
+            user.addRequiredAction(RequiredAction.VERIFY_EMAIL);
+        }
+
+    });
 
     @Rule
     public WebRule webRule = new WebRule(this);
 
-    @Page
-    protected AppPage appPage;
-
-    @Driver
-    protected WebDriver driver;
-
-    @Page
-    protected LoginPage loginPage;
-
-    @Page
-    protected RegisterPage registerPage;
-
     @Rule
     public GreenMailRule greenMail = new GreenMailRule();
 
-    @After
-    public void after() {
-        appPage.open();
-        if (appPage.isCurrent()) {
-            appPage.logout();
-        }
+    @WebResource
+    protected WebDriver driver;
+
+    @WebResource
+    protected OAuthClient oauth;
+
+    @WebResource
+    protected LoginPage loginPage;
+
+    @WebResource
+    protected RegisterPage registerPage;
+
+    @Test
+    public void verifyEmailExisting() throws IOException, MessagingException {
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+
+        Assert.assertTrue(driver.getPageSource().contains("Verify email"));
+
+        MimeMessage message = greenMail.getReceivedMessages()[0];
+
+        String body = (String) message.getContent();
+
+        Pattern p = Pattern.compile("(?s).*(http://[^\\s]*).*");
+        Matcher m = p.matcher(body);
+        m.matches();
+
+        String verificationUrl = m.group(1);
+
+        driver.navigate().to(verificationUrl.trim());
+
+        Assert.assertTrue("Expected authorization response", oauth.isAuthorizationResponse());
     }
 
     @Test
-    public void verifyEmail() throws IOException, MessagingException {
-        appPage.open();
-
-        loginPage.register();
+    public void verifyEmailRegister() throws IOException, MessagingException {
+        loginPage.open();
+        loginPage.clickRegister();
         registerPage.register("name", "email", "verifyEmail", "password", "password");
 
         Assert.assertTrue(driver.getPageSource().contains("Verify email"));
@@ -115,8 +124,7 @@ public class RequiredActionEmailVerificationTest {
 
         driver.navigate().to(verificationUrl.trim());
 
-        Assert.assertTrue(appPage.isCurrent());
-        Assert.assertEquals("verifyEmail", appPage.getUser());
+        Assert.assertTrue("Expected authorization response", oauth.isAuthorizationResponse());
     }
 
 }

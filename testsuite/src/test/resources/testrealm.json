@@ -1,5 +1,5 @@
 {
-    "realm": "demo",
+    "realm": "test",
     "enabled": true,
     "tokenLifespan": 300,
     "accessCodeLifespan": 10,
@@ -16,47 +16,9 @@
     "defaultRoles": [ "user" ],
     "users" : [
         {
-            "username" : "bburke@redhat.com",
+            "username" : "test-user@localhost",
             "enabled": true,
-            "email" : "bburke@redhat.com",
-            "credentials" : [
-                { "type" : "password",
-                    "value" : "password" }
-            ]
-        },
-        {
-            "username" : "reset@pass.com",
-            "enabled": true,
-            "requiredActions" : [ "UPDATE_PASSWORD" ],
-            "email" : "reset@pass.com",
-            "credentials" : [
-                { "type" : "password",
-                    "value" : "temp-password" }
-            ]
-        },
-        {
-            "username" : "updateprof@pass.com",
-            "enabled": true,
-            "requiredActions" : [ "UPDATE_PROFILE" ],
-            "email" : "reset@pass.com",
-            "credentials" : [
-                { "type" : "password",
-                    "value" : "password" }
-            ]
-        },
-        {
-            "username" : "multiple@actions.com",
-            "enabled": true,
-            "requiredActions" : [ "UPDATE_PROFILE", "UPDATE_PASSWORD" ],
-            "email" : "multiple@actions.com",
-            "credentials" : [
-                { "type" : "password",
-                    "value" : "temp-password" }
-            ]
-        },
-        {
-            "username" : "third-party",
-            "enabled": true,
+            "email" : "test-user@localhost",
             "credentials" : [
                 { "type" : "password",
                     "value" : "password" }
@@ -75,37 +37,15 @@
     ],
     "roleMappings": [
         {
-            "username": "bburke@redhat.com",
-            "roles": ["user"]
-        },
-        {
-            "username": "reset@pass.com",
-            "roles": ["user"]
-        },
-        {
-            "username": "updateprof@pass.com",
-            "roles": ["user"]
-        },
-        {
-            "username": "multiple@actions.com",
-            "roles": ["user"]
-        },
-        {
-            "username": "third-party",
-            "roles": ["KEYCLOAK_IDENTITY_REQUESTER"]
-        }
-    ],
-    "scopeMappings": [
-        {
-            "username": "third-party",
+            "username": "test-user@localhost",
             "roles": ["user"]
         }
     ],
     "applications": [
         {
-            "name": "customer-portal",
+            "name": "test-app",
             "enabled": true,
-            "adminUrl": "http://localhost:8080/app/j_admin_request",
+            "adminUrl": "http://localhost:8081/app/logout",
             "useRealmMappings": true,
             "credentials": [
                 {

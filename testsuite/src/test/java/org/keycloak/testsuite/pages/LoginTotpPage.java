@@ -1,13 +1,14 @@
 package org.keycloak.testsuite.pages;
 
-import org.keycloak.testsuite.rule.Driver;
+import org.keycloak.testsuite.rule.WebResource;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
-public class LoginTotpPage {
+public class LoginTotpPage extends Page {
 
-    @Driver
+    @WebResource
     private WebDriver browser;
 
     @FindBy(id = "totp")
@@ -15,9 +16,6 @@ public class LoginTotpPage {
 
     @FindBy(css = "input[type=\"submit\"]")
     private WebElement submitButton;
-
-    @FindBy(linkText = "Register")
-    private WebElement registerLink;
 
     @FindBy(id = "loginError")
     private WebElement loginErrorMessage;
@@ -33,7 +31,19 @@ public class LoginTotpPage {
     }
 
     public boolean isCurrent() {
-        return browser.getTitle().equals("Log in to demo");
+        if (browser.getTitle().equals("Log in to test")) {
+            try {
+                browser.findElement(By.id("totp"));
+                return true;
+            } catch (Throwable t) {
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public void open() {
+        throw new UnsupportedOperationException();
     }
 
 }

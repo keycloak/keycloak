@@ -1,14 +1,9 @@
 package org.keycloak.testsuite.pages;
 
-import org.keycloak.testsuite.rule.Driver;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
-public class LoginPage {
-
-    @Driver
-    private WebDriver browser;
+public class LoginPage extends Page {
 
     @FindBy(id = "username")
     private WebElement usernameInput;
@@ -43,15 +38,21 @@ public class LoginPage {
     }
 
     public boolean isCurrent() {
-        return browser.getTitle().equals("Log in to demo");
+        return driver.getTitle().equals("Log in to test");
     }
 
-    public void register() {
+    public void clickRegister() {
         registerLink.click();
     }
 
     public void resetPassword() {
         resetPasswordLink.click();
+    }
+
+    @Override
+    public void open() {
+        oauth.openLoginForm();
+        assertCurrent();
     }
 
 }

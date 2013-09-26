@@ -2,6 +2,9 @@ package org.keycloak.testsuite.rule;
 
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.SocketException;
+import java.util.Iterator;
+import java.util.Map.Entry;
+import java.util.Properties;
 
 import javax.mail.internet.MimeMessage;
 
@@ -14,8 +17,23 @@ public class GreenMailRule extends ExternalResource {
 
     private GreenMail greenMail;
 
+    private Properties originalProperties = new Properties();
+
     @Override
     protected void before() throws Throwable {
+        Iterator<Entry<Object, Object>> itr = System.getProperties().entrySet().iterator();
+        while (itr.hasNext()) {
+            Entry<Object, Object> e = itr.next();
+            if (((String) e.getKey()).startsWith("keycloak.mail")) {
+                originalProperties.put(e.getKey(), e.getValue());
+                itr.remove();
+            }
+        }
+        
+        System.setProperty("keycloak.mail.smtp.from", "auto@keycloak.org");
+        System.setProperty("keycloak.mail.smtp.host", "localhost");
+        System.setProperty("keycloak.mail.smtp.port", "3025");
+        
         ServerSetup setup = new ServerSetup(3025, "localhost", "smtp");
 
         greenMail = new GreenMail(setup);
@@ -39,6 +57,11 @@ public class GreenMailRule extends ExternalResource {
 
             greenMail.stop();
         }
+
+        System.getProperties().remove("keycloak.mail.smtp.from");
+        System.getProperties().remove("keycloak.mail.smtp.host");
+        System.getProperties().remove("keycloak.mail.smtp.port");
+        System.getProperties().putAll(originalProperties);
     }
 
     public MimeMessage[] getReceivedMessages() {
