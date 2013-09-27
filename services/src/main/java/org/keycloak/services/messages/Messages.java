@@ -38,7 +38,9 @@ public class Messages {
 
     public static final String MISSING_EMAIL = "missingEmail";
 
-    public static final String MISSING_NAME = "missingName";
+    public static final String MISSING_FIRST_NAME = "missingFirstName";
+
+    public static final String MISSING_LAST_NAME = "missingLastName";
 
     public static final String MISSING_PASSWORD = "missingPassword";
 

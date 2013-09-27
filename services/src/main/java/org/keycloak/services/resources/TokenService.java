@@ -286,30 +286,8 @@ public class TokenService {
         }
 
         user = realm.addUser(username);
-
-        String fullname = formData.getFirst("name");
-        if (fullname != null) {
-            StringTokenizer tokenizer = new StringTokenizer(fullname, " ");
-            StringBuffer first = null;
-            String last = "";
-            while (tokenizer.hasMoreTokens()) {
-                String token = tokenizer.nextToken();
-                if (tokenizer.hasMoreTokens()) {
-                    if (first == null) {
-                        first = new StringBuffer();
-                    } else {
-                        first.append(" ");
-                    }
-                    first.append(token);
-                } else {
-                    last = token;
-                }
-            }
-            if (first == null)
-                first = new StringBuffer();
-            user.setFirstName(first.toString());
-            user.setLastName(last);
-        }
+        user.setFirstName(formData.getFirst("firstName"));
+        user.setLastName(formData.getFirst("lastName"));
 
         user.setEmail(formData.getFirst("email"));
 

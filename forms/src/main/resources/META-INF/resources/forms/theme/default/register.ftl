@@ -14,8 +14,12 @@
     <form action="${url.registrationAction}" method="post">
         <p class="subtitle">${rb.getString('allRequired')}</p>
         <div>
-            <label for="name">${rb.getString('fullName')}</label>
-            <input type="text" id="name" name="name" value="${register.formData.name!''}" />
+            <label for="firstName">${rb.getString('firstName')}</label>
+            <input type="text" id="firstName" name="firstName" value="${register.formData.firstName!''}" />
+        </div>
+        <div>
+            <label for="lastName">${rb.getString('lastName')}</label>
+            <input type="text" id="lastName" name="lastName" value="${register.formData.lastName!''}" />
         </div>
         <div>
             <label for="email">${rb.getString('email')}</label>

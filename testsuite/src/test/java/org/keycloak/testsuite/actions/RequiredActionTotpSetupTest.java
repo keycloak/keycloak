@@ -85,7 +85,7 @@ public class RequiredActionTotpSetupTest {
     public void setupTotpRegister() {
         loginPage.open();
         loginPage.clickRegister();
-        registerPage.register("name", "email", "setupTotp", "password", "password");
+        registerPage.register("firstName", "lastName", "email", "setupTotp", "password", "password");
 
         totpPage.assertCurrent();
 

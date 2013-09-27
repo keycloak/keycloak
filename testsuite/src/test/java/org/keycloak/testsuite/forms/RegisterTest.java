@@ -63,7 +63,7 @@ public class RegisterTest {
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
-        registerPage.register("name", "email", "test-user@localhost", "password", "password");
+        registerPage.register("firstName", "lastName", "email", "test-user@localhost", "password", "password");
 
         registerPage.assertCurrent();
         Assert.assertEquals("Username already exists", registerPage.getError());
@@ -75,7 +75,7 @@ public class RegisterTest {
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
-        registerPage.register("name", "email", "registerUserInvalidPasswordConfirm", "password", "invalid");
+        registerPage.register("firstName", "lastName", "email", "registerUserInvalidPasswordConfirm", "password", "invalid");
 
         registerPage.assertCurrent();
         Assert.assertEquals("Password confirmation doesn't match", registerPage.getError());
@@ -87,7 +87,7 @@ public class RegisterTest {
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
-        registerPage.register("name", "email", "registerUserMissingPassword", null, null);
+        registerPage.register("firstName", "lastName", "email", "registerUserMissingPassword", null, null);
 
         registerPage.assertCurrent();
         Assert.assertEquals("Please specify password", registerPage.getError());
@@ -99,7 +99,7 @@ public class RegisterTest {
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
-        registerPage.register("name", "email", null, "password", "password");
+        registerPage.register("firstName", "lastName", "email", null, "password", "password");
 
         registerPage.assertCurrent();
         Assert.assertEquals("Please specify username", registerPage.getError());
@@ -111,7 +111,7 @@ public class RegisterTest {
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
-        registerPage.register("name", "email", "registerUserSuccess", "password", "password");
+        registerPage.register("firstName", "lastName", "email", "registerUserSuccess", "password", "password");
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
     }
