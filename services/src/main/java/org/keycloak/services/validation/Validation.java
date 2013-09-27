@@ -9,8 +9,12 @@ import java.util.List;
 public class Validation {
 
     public static String validateRegistrationForm(MultivaluedMap<String, String> formData, List<String> requiredCredentialTypes) {
-        if (isEmpty(formData.getFirst("name"))) {
-            return Messages.MISSING_NAME;
+        if (isEmpty(formData.getFirst("firstName"))) {
+            return Messages.MISSING_FIRST_NAME;
+        }
+
+        if (isEmpty(formData.getFirst("lastName"))) {
+            return Messages.MISSING_LAST_NAME;
         }
 
         if (isEmpty(formData.getFirst("email"))) {

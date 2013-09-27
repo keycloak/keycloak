@@ -273,29 +273,8 @@ public class SaasService {
         newUser.setUsername(formData.getFirst("username"));
         newUser.setEmail(formData.getFirst("email"));
 
-        String fullname = formData.getFirst("name");
-        if (fullname != null) {
-            StringTokenizer tokenizer = new StringTokenizer(fullname, " ");
-            StringBuffer first = null;
-            String last = "";
-            while (tokenizer.hasMoreTokens()) {
-                String token = tokenizer.nextToken();
-                if (tokenizer.hasMoreTokens()) {
-                    if (first == null) {
-                        first = new StringBuffer();
-                    } else {
-                        first.append(" ");
-                    }
-                    first.append(token);
-                } else {
-                    last = token;
-                }
-            }
-            if (first == null)
-                first = new StringBuffer();
-            newUser.setFirstName(first.toString());
-            newUser.setLastName(last);
-        }
+        newUser.setFirstName(formData.getFirst("firstName"));
+        newUser.setLastName(formData.getFirst("lastName"));
 
         if (requiredCredentialTypes.contains(CredentialRepresentation.PASSWORD)) {
             newUser.credential(CredentialRepresentation.PASSWORD, formData.getFirst("password"));
