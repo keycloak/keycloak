@@ -9,7 +9,6 @@ import org.keycloak.services.models.*;
 import javax.ws.rs.*;
 import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.util.ArrayList;
@@ -150,11 +149,11 @@ public class UsersResource {
 
         List<ApplicationModel> applications = realm.getApplications();
         if (applications.size() > 0) {
-            Map<String, ApplicationRoleMappings> appMappings = new HashMap<String, ApplicationRoleMappings>();
+            Map<String, ApplicationRoleMappingsRepresentation> appMappings = new HashMap<String, ApplicationRoleMappingsRepresentation>();
             for (ApplicationModel application : applications) {
                 List<RoleModel> roleMappings = application.getRoleMappings(user);
                 if (roleMappings.size() > 0) {
-                    ApplicationRoleMappings mappings = new ApplicationRoleMappings();
+                    ApplicationRoleMappingsRepresentation mappings = new ApplicationRoleMappingsRepresentation();
                     mappings.setUsername(user.getLoginName());
                     mappings.setApplicationId(application.getId());
                     mappings.setApplication(application.getName());
@@ -257,7 +256,6 @@ public class UsersResource {
             throw new NotFoundException();
         }
 
-        ApplicationRoleMappings rep = new ApplicationRoleMappings();
         List<RoleModel> mappings = application.getRoleMappings(user);
         List<RoleRepresentation> mapRep = new ArrayList<RoleRepresentation>();
         for (RoleModel roleModel : mappings) {
