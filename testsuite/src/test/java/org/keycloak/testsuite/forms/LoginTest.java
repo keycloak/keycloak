@@ -25,7 +25,8 @@ import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.testsuite.OAuthClient;
+import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
@@ -47,7 +48,7 @@ public class LoginTest {
     protected WebDriver driver;
 
     @WebResource
-    protected OAuthClient oauth;
+    protected AppPage appPage;
 
     @WebResource
     protected LoginPage loginPage;
@@ -77,7 +78,7 @@ public class LoginTest {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
         
-        Assert.assertTrue("Expected authorization response", oauth.isAuthorizationResponse());
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
     }
 
 }

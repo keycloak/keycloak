@@ -22,8 +22,6 @@
 package org.keycloak.testsuite.pages;
 
 import org.keycloak.testsuite.Constants;
-import org.keycloak.testsuite.rule.WebResource;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -33,9 +31,6 @@ import org.openqa.selenium.support.FindBy;
 public class AccountPasswordPage extends Page {
 
     private static String PATH = Constants.AUTH_SERVER_ROOT + "/rest/realms/test/account/password";
-
-    @WebResource
-    private WebDriver browser;
 
     @FindBy(id = "password")
     private WebElement passwordInput;
@@ -58,11 +53,11 @@ public class AccountPasswordPage extends Page {
     }
 
     public boolean isCurrent() {
-        return browser.getPageSource().contains("Change Password");
+        return driver.getPageSource().contains("Change Password");
     }
 
     public void open() {
-        browser.navigate().to(PATH);
+        driver.navigate().to(PATH);
     }
 
 }

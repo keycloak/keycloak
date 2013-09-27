@@ -21,6 +21,8 @@
  */
 package org.keycloak.testsuite.pages;
 
+import org.keycloak.testsuite.OAuthClient;
+import org.keycloak.testsuite.rule.WebResource;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -29,6 +31,9 @@ import org.openqa.selenium.support.FindBy;
  */
 public class LoginPage extends Page {
 
+    @WebResource
+    protected OAuthClient oauth;
+    
     @FindBy(id = "username")
     private WebElement usernameInput;
 

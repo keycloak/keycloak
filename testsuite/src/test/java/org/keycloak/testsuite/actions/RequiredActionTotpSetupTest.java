@@ -30,7 +30,8 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.UserModel;
 import org.keycloak.services.models.UserModel.RequiredAction;
-import org.keycloak.testsuite.OAuthClient;
+import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.RegisterPage;
@@ -67,7 +68,7 @@ public class RequiredActionTotpSetupTest {
     protected WebDriver driver;
 
     @WebResource
-    protected OAuthClient oauth;
+    protected AppPage appPage;
 
     @WebResource
     protected LoginPage loginPage;
@@ -90,7 +91,7 @@ public class RequiredActionTotpSetupTest {
 
         totpPage.configure(totp.generate(totpPage.getTotpSecret()));
 
-        Assert.assertTrue("Expected authorization response", oauth.isAuthorizationResponse());
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
     }
 
     @Test
@@ -102,7 +103,7 @@ public class RequiredActionTotpSetupTest {
 
         totpPage.configure(totp.generate(totpPage.getTotpSecret()));
 
-        Assert.assertTrue("Expected authorization response", oauth.isAuthorizationResponse());
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
     }
 
 }

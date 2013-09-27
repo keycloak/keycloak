@@ -31,6 +31,8 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.testsuite.OAuthClient;
+import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordResetPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
@@ -59,6 +61,9 @@ public class ResetPasswordTest {
 
     @WebResource
     protected OAuthClient oauth;
+
+    @WebResource
+    protected AppPage appPage;
 
     @WebResource
     protected LoginPage loginPage;
@@ -93,7 +98,7 @@ public class ResetPasswordTest {
 
         updatePasswordPage.changePassword("new-password", "new-password");
 
-        Assert.assertTrue("Expected authorization response", oauth.isAuthorizationResponse());
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         oauth.openLogout();
 
@@ -101,7 +106,7 @@ public class ResetPasswordTest {
 
         loginPage.login("test-user@localhost", "new-password");
 
-        Assert.assertTrue("Expected authorization response", oauth.isAuthorizationResponse());
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
     }
 
 }

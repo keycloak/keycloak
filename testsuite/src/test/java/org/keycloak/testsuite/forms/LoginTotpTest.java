@@ -33,7 +33,8 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.UserCredentialModel;
 import org.keycloak.services.models.UserModel;
-import org.keycloak.testsuite.OAuthClient;
+import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.rule.GreenMailRule;
@@ -76,7 +77,7 @@ public class LoginTotpTest {
     protected WebDriver driver;
 
     @WebResource
-    protected OAuthClient oauth;
+    protected AppPage appPage;
 
     @WebResource
     protected LoginPage loginPage;
@@ -113,7 +114,7 @@ public class LoginTotpTest {
 
         loginTotpPage.login(totp.generate("totpSecret"));
 
-        Assert.assertTrue("Expected authorization response", oauth.isAuthorizationResponse());
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
     }
 
 }

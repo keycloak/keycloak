@@ -21,8 +21,6 @@
  */
 package org.keycloak.testsuite.pages;
 
-import org.keycloak.testsuite.rule.WebResource;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -30,9 +28,6 @@ import org.openqa.selenium.support.FindBy;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class LoginPasswordResetPage extends Page {
-
-    @WebResource
-    private WebDriver browser;
 
     @FindBy(id = "username")
     private WebElement usernameInput;
@@ -51,7 +46,7 @@ public class LoginPasswordResetPage extends Page {
     }
 
     public boolean isCurrent() {
-        return browser.getTitle().equals("Reset password");
+        return driver.getTitle().equals("Reset password");
     }
 
     public void open() {

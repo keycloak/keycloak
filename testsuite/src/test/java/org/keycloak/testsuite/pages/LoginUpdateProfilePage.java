@@ -21,8 +21,6 @@
  */
 package org.keycloak.testsuite.pages;
 
-import org.keycloak.testsuite.rule.WebResource;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -30,9 +28,6 @@ import org.openqa.selenium.support.FindBy;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class LoginUpdateProfilePage extends Page {
-
-    @WebResource
-    private WebDriver browser;
 
     @FindBy(id = "firstName")
     private WebElement firstNameInput;
@@ -65,7 +60,7 @@ public class LoginUpdateProfilePage extends Page {
     }
 
     public boolean isCurrent() {
-        return browser.getTitle().equals("Update profile");
+        return driver.getTitle().equals("Update profile");
     }
 
     @Override

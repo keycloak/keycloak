@@ -21,36 +21,30 @@
  */
 package org.keycloak.testsuite.pages;
 
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.FindBy;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class LoginPasswordUpdatePage extends Page {
+public class AppPage extends Page {
 
-    @FindBy(id = "password-new")
-    private WebElement newPasswordInput;
+    private String baseUrl = "http://localhost:8081/app";
 
-    @FindBy(id = "password-confirm")
-    private WebElement passwordConfirmInput;
-
-    @FindBy(css = "input[type=\"submit\"]")
-    private WebElement submitButton;
-
-    public void changePassword(String newPassword, String passwordConfirm) {
-        newPasswordInput.sendKeys(newPassword);
-        passwordConfirmInput.sendKeys(passwordConfirm);
-
-        submitButton.click();
-    }
-
-    public boolean isCurrent() {
-        return driver.getTitle().equals("Update password");
-    }
-
+    @Override
     public void open() {
-        throw new UnsupportedOperationException();
+        driver.navigate().to(baseUrl);
+    }
+
+    @Override
+    public boolean isCurrent() {
+        return driver.getCurrentUrl().startsWith(baseUrl);
+    }
+
+    public RequestType getRequestType() {
+        return RequestType.valueOf(driver.getTitle());
+    }
+
+    public enum RequestType {
+        AUTH_RESPONSE, LOGOUT_REQUEST, APP_REQUEST
     }
 
 }

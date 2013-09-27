@@ -22,11 +22,18 @@
 package org.keycloak.testsuite;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.List;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -35,7 +42,32 @@ public class ApplicationServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        resp.getWriter().print("Hello world!");
+        String title = "";
+        String body = "";
+
+        StringBuffer sb = req.getRequestURL();
+        sb.append("?");
+        sb.append(req.getQueryString());
+
+        List<NameValuePair> query = null;
+
+        try {
+            query = URLEncodedUtils.parse(new URI(sb.toString()), "UTF-8");
+        } catch (URISyntaxException e) {
+            throw new ServletException(e);
+        }
+
+        if (req.getRequestURI().endsWith("auth")) {
+            title = "AUTH_RESPONSE";
+        } else if (req.getRequestURI().endsWith("logout")) {
+            title = "LOGOUT_REQUEST";
+        } else {
+            title = "APP_REQUEST";
+        }
+
+        PrintWriter pw = resp.getWriter();
+        pw.printf("<html><head><title>%s</title></head><body>%s</body>", title, body);
+        pw.flush();
     }
 
 }

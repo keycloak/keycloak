@@ -21,8 +21,6 @@
  */
 package org.keycloak.testsuite.pages;
 
-import org.keycloak.testsuite.rule.WebResource;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -30,9 +28,6 @@ import org.openqa.selenium.support.FindBy;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class LoginConfigTotpPage extends Page {
-
-    @WebResource
-    private WebDriver browser;
 
     @FindBy(id = "totpSecret")
     private WebElement totpSecret;
@@ -53,7 +48,7 @@ public class LoginConfigTotpPage extends Page {
     }
 
     public boolean isCurrent() {
-        return browser.getTitle().equals("Config TOTP");
+        return driver.getTitle().equals("Config TOTP");
     }
 
     public void open() {

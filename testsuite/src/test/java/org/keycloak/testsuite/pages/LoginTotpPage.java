@@ -21,9 +21,7 @@
  */
 package org.keycloak.testsuite.pages;
 
-import org.keycloak.testsuite.rule.WebResource;
 import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -31,9 +29,6 @@ import org.openqa.selenium.support.FindBy;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class LoginTotpPage extends Page {
-
-    @WebResource
-    private WebDriver browser;
 
     @FindBy(id = "totp")
     private WebElement totpInput;
@@ -55,9 +50,9 @@ public class LoginTotpPage extends Page {
     }
 
     public boolean isCurrent() {
-        if (browser.getTitle().equals("Log in to test")) {
+        if (driver.getTitle().equals("Log in to test")) {
             try {
-                browser.findElement(By.id("totp"));
+                driver.findElement(By.id("totp"));
                 return true;
             } catch (Throwable t) {
             }

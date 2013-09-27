@@ -30,6 +30,8 @@ import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.UserModel;
 import org.keycloak.services.models.UserModel.RequiredAction;
 import org.keycloak.testsuite.OAuthClient;
+import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.rule.GreenMailRule;
@@ -70,6 +72,9 @@ public class RequiredActionResetPasswordTest {
     protected OAuthClient oauth;
 
     @WebResource
+    protected AppPage appPage;
+
+    @WebResource
     protected LoginPage loginPage;
 
     @WebResource
@@ -83,7 +88,7 @@ public class RequiredActionResetPasswordTest {
         changePasswordPage.assertCurrent();
         changePasswordPage.changePassword("new-password", "new-password");
 
-        Assert.assertTrue("Expected authorization response", oauth.isAuthorizationResponse());
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         oauth.openLogout();
 

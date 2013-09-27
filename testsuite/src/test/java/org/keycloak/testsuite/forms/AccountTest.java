@@ -35,6 +35,8 @@ import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
 import org.keycloak.testsuite.pages.AccountTotpPage;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
+import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.KeycloakRule.KeycloakSetup;
@@ -59,6 +61,9 @@ public class AccountTest {
 
     @WebResource
     protected OAuthClient oauth;
+
+    @WebResource
+    protected AppPage appPage;
 
     @WebResource
     protected LoginPage loginPage;
@@ -108,7 +113,7 @@ public class AccountTest {
         loginPage.open();
         loginPage.login("test-user@localhost", "new-password");
 
-        Assert.assertTrue("Expected authorization response", oauth.isAuthorizationResponse());
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
     }
 
     @Test
