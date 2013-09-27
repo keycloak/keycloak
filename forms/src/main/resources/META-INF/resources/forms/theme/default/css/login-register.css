@@ -295,6 +295,35 @@ a.zocial:before {
   left: 35.7em;
 }
 
+.rcue-login-register.oauth .form-actions {
+    margin-bottom: 0;
+    margin-top: 2em;
+}
+
+.rcue-login-register .background-area .content-area {
+    width: 50em;
+}
+.rcue-login-register .background-area .content-area ul {
+    border-bottom: 1px solid #34393C;
+    margin-bottom: 2em;
+}
+.rcue-login-register .background-area .content-area ul li {
+    border-top: 1px solid #34393C;
+    padding: 2em;
+}
+.rcue-login-register .background-area .content-area ul li span:first-child {
+    font-size: 1.3em;
+}
+.rcue-login-register .background-area .content-area ul li span.icon-info {
+    float: right;
+    margin-top: 0.5em;
+}
+.rcue-login-register .background-area .content-area p.terms {
+    color: #999999;
+    font-size: 1.1em;
+    line-height: 1.3em;
+}
+
 .rcue-login-register .background-area p.instruction.instruction.second {
     color: #999999;
 }
