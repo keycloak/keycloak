@@ -15,15 +15,15 @@
         <p class="subtitle">${rb.getString('allRequired')}</p>
         <div>
             <label for="name">${rb.getString('fullName')}</label>
-            <input type="text" id="name" name="name" value="${register.formData.name?default('')}" />
+            <input type="text" id="name" name="name" value="${register.formData.name!''}" />
         </div>
         <div>
             <label for="email">${rb.getString('email')}</label>
-            <input type="text" id="email" name="email" value="${register.formData.email?default('')}" />
+            <input type="text" id="email" name="email" value="${register.formData.email!''}" />
         </div>
         <div>
             <label for="username">${rb.getString('username')}</label>
-            <input type="text" id="username" name="username" value="${register.formData.username?default('')}" />
+            <input type="text" id="username" name="username" value="${register.formData.username!''}" />
         </div>
         <div>
             <label for="password">${rb.getString('password')}</label>

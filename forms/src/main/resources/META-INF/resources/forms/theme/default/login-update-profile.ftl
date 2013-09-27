@@ -10,19 +10,19 @@
 
     <#elseif section = "form">
 
-    <div name="form">
+    <div id="form">
         <form action="${url.accountUrl}" method="post">
         	<div>
             	<label for="firstName">${rb.getString('firstName')}</label>
-	            <input type="text" id="firstName" name="firstName" value="${user.firstName?default('')}" />
+	            <input type="text" id="firstName" name="firstName" value="${user.firstName!''}" />
     	    </div>
 	        <div>
     	        <label for="lastName">${rb.getString('lastName')}</label>
-            	<input type="text" id="lastName" name="lastName" value="${user.lastName?default('')}" />
+            	<input type="text" id="lastName" name="lastName" value="${user.lastName!''}" />
         	</div>
 	        <div>
     	        <label for="email">${rb.getString('email')}</label>
-            	<input type="text" id="email" name="email" value="${user.email?default('')}" />
+            	<input type="text" id="email" name="email" value="${user.email!''}" />
 	        </div>
 
             <div class="aside-btn">
@@ -34,7 +34,7 @@
 
     <#elseif section = "info" >
 
-    <div name="info">
+    <div id="info">
     </div>
 
     </#if>

@@ -6,12 +6,12 @@
 
     <#elseif section = "header">
 
-    Log in to <strong>${(realm.name)?default('')}</strong>
+    Log in to <strong>${(realm.name)!''}</strong>
 
     <#elseif section = "form">
 
-    <div name="form">
-        <form action="${url.loginAction?default('')}" method="post">
+    <div id="form">
+        <form action="${url.loginAction}" method="post">
             <div>
                 <label for="username">${rb.getString('username')}</label>
                 <input id="username" name="username" value="${login.username!''}" type="text" />
@@ -32,9 +32,9 @@
 
     <#elseif section = "info" >
 
-    <div name="info">
+    <div id="info">
         <#if realm.registrationAllowed>
-            <p>${rb.getString('noAccount')} <a href="${url.registrationUrl!''}">${rb.getString('register')}</a>.</p>
+            <p>${rb.getString('noAccount')} <a href="${url.registrationUrl}">${rb.getString('register')}</a>.</p>
         </#if>
         
         <a href="${url.passwordResetUrl}">Reset password</a>

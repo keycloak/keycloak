@@ -10,7 +10,7 @@
 
     <#elseif section = "form">
 
-    <div name="form">
+    <div id="form">
         <h2>To setup Google Authenticator</h2>
 
         <ol>
@@ -35,7 +35,7 @@
 
     <#elseif section = "info" >
 
-    <div name="info">
+    <div id="info">
     </div>
 
     </#if>

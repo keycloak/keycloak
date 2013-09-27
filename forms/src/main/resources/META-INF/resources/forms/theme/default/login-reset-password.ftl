@@ -10,7 +10,7 @@
 
     <#elseif section = "form">
 
-    <div name="form">
+    <div id="form">
         <form action="${url.passwordResetUrl}" method="post">
             <div>
                 <label for="username">${rb.getString('username')}</label>
@@ -27,7 +27,7 @@
 
     <#elseif section = "info" >
 
-    <div name="info">
+    <div id="info">
     </div>
 
     </#if>
