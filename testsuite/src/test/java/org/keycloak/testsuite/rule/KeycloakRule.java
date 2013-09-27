@@ -131,8 +131,6 @@ public class KeycloakRule extends ExternalResource {
             os.write(c);
         }
         byte[] bytes = os.toByteArray();
-        System.out.println(new String(bytes));
-
         return JsonSerialization.fromBytes(RealmRepresentation.class, bytes);
     }
 
