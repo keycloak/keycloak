@@ -14,11 +14,11 @@
                 <input type="password" id="password" name="password" autofocus>
             </div>
             <div class="form-group">
-                <label for="new-password">${rb.getString('passwordNew')}</label>
+                <label for="password-new">${rb.getString('passwordNew')}</label>
                 <input type="password" id="password-new" name="password-new" placeholder="At least 6 characters" class="error">
             </div>
             <div class="form-group">
-                <label for="new-password-confirm" class="two-lines">${rb.getString('passwordConfirm')}</label>
+                <label for="password-confirm" class="two-lines">${rb.getString('passwordConfirm')}</label>
                 <input type="password" id="password-confirm" name="password-confirm" class="error">
             </div>
         </fieldset>

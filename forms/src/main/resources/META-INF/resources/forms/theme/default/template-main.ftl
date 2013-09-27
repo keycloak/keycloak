@@ -13,6 +13,7 @@
 
     <link rel="stylesheet" href="${template.formsPath}/theme/${template.theme}/css/sprites.css">
     <link rel="stylesheet" href="${template.formsPath}/theme/${template.theme}/css/select2.css">
+    <!-- TODO remove external links -->
     <link rel="stylesheet" href='http://fonts.googleapis.com/css?family=Open+Sans:400,300,300italic,400italic,600,600italic,700,700italic,800,800italic'>
 
     <!-- RCUE styles -->

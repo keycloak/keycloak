@@ -26,7 +26,7 @@
                 <p><strong>3</strong>Enter the one-time-password provided by Google Authenticator below and click Submit to finish the setup.</p>
                 <form action="${url.totpUrl}" method="post">
                     <div class="form-group">
-                        <label for="otp">${rb.getString('authenticatorCode')}</label>
+                        <label for="totp">${rb.getString('authenticatorCode')}</label>
                         <input type="text" id="totp" name="totp" />
                         <input type="hidden" id="totpSecret" name="totpSecret" value="${totp.totpSecret}" />
                     </div>

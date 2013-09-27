@@ -12,8 +12,8 @@
     <#elseif section = "form">
 
     <form action="${url.loginAction}" method="post">
-        <input id="username" name="username" value="${login.username?default('')}" type="hidden" />
-        <input id="password" name="password" value="${login.password?default('')}" type="hidden" />
+        <input id="username" name="username" value="${login.username!''}" type="hidden" />
+        <input id="password" name="password" value="${login.password!''}" type="hidden" />
 
         <div>
             <label for="totp">${rb.getString('authenticatorCode')}</label>

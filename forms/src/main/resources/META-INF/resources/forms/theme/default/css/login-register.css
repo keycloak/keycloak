@@ -48,16 +48,16 @@ body {
   width: 100%;
   min-width: 120em;
 }
-.rcue-login-register .background-area section {
+.rcue-login-register .background-area .section {
   float: left;
   padding: 1.5em 4.5em 1.5em 4.6em;
   width: auto;
   position: relative;
 }
-.rcue-login-register .background-area section h3 {
+.rcue-login-register .background-area .section h3 {
   display: none;
 }
-.rcue-login-register .background-area section:first-child {
+.rcue-login-register .background-area .section:first-child {
   padding-right: 4.5em;
 }
 .rcue-login-register .form-area {
@@ -69,12 +69,12 @@ body {
   background-image: url(img/login-register-social-separators.svg);
   background-position: 39.6em center;
 }
-.rcue-login-register section > p {
+.rcue-login-register .section > p {
   font-size: 1.3em;
   margin-bottom: 1.53846153846154em;
   line-height: 1.3em;
 }
-.rcue-login-register section.app-form {
+.rcue-login-register .section.app-form {
   padding-left: 0;
   position: relative;
 }
@@ -147,10 +147,10 @@ body {
 .rcue-login-register input.error[type="email"] {
   background-color: #F8E7E7;
 }
-.rcue-login-register section.social-login > span {
+.rcue-login-register .section.social-login > span {
   display: none;
 }
-.rcue-login-register section.social-login > p {
+.rcue-login-register .section.social-login > p {
   float: left;
   margin-top: 0.28571428571429em;
   /* 14px */
@@ -159,28 +159,28 @@ body {
   /* 95px */
 
 }
-.rcue-login-register section.social-login > ul {
+.rcue-login-register .section.social-login > ul {
   float: left;
 }
-.rcue-login-register section.social-login li {
+.rcue-login-register .section.social-login li {
   margin-bottom: 2em;
 }
-.rcue-login-register section.social-login li:last-child {
+.rcue-login-register .section.social-login li:last-child {
   margin-bottom: 0;
 }
-.rcue-login-register section.info-area {
+.rcue-login-register .section.info-area {
   padding-right: 0;
 }
-.rcue-login-register section.info-area p,
-.rcue-login-register section.info-area li {
+.rcue-login-register .section.info-area p,
+.rcue-login-register .section.info-area li {
   font-size: 1.4em;
   margin-bottom: 1.64285714285714em;
 }
-.rcue-login-register section.info-area li {
+.rcue-login-register .section.info-area li {
   color: #999;
   margin-bottom: 1em;
 }
-.rcue-login-register section.info-area li:last-child {
+.rcue-login-register .section.info-area li:last-child {
   margin-bottom: 0;
 }
 @media screen and (min-width: 1280px) {
@@ -284,11 +284,11 @@ a.zocial:before {
   color: #0099D3;
 }
 /* Forgot Password page */
-.rcue-login-register.reset .background-area section {
+.rcue-login-register.reset .background-area .section {
   padding-top: 0;
   padding-bottom: 0;
 }
-.rcue-login-register.reset .background-area section.app-form {
+.rcue-login-register.reset .background-area .section.app-form {
   width: 43.2em;
 }
 .rcue-login-register.reset .feedback {
@@ -342,10 +342,10 @@ a.zocial:before {
   position: inherit;
   margin-top: 16em;
 }
-.rcue-login-register.email .background-area section {
+.rcue-login-register.email .background-area .section {
   width: 41.2em;
 }
-.rcue-login-register.email .background-area section.email {
+.rcue-login-register.email .background-area .section.email {
   width: 45.8em;
 }
 .rcue-login-register.email label {
