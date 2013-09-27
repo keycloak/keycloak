@@ -13,7 +13,7 @@ public class AllRoleMappingsRepresentation {
     protected String username;
 
     protected List<RoleRepresentation> realmMappings;
-    protected Map<String, ApplicationRoleMappings> applicationMappings;
+    protected Map<String, ApplicationRoleMappingsRepresentation> applicationMappings;
 
     public String getRealmId() {
         return realmId;
@@ -47,11 +47,11 @@ public class AllRoleMappingsRepresentation {
         this.realmMappings = realmMappings;
     }
 
-    public Map<String,ApplicationRoleMappings> getApplicationMappings() {
+    public Map<String,ApplicationRoleMappingsRepresentation> getApplicationMappings() {
         return applicationMappings;
     }
 
-    public void setApplicationMappings(Map<String, ApplicationRoleMappings> applicationMappings) {
+    public void setApplicationMappings(Map<String, ApplicationRoleMappingsRepresentation> applicationMappings) {
         this.applicationMappings = applicationMappings;
     }
 }
