@@ -1,1 +1,1 @@
-template not found
+<#include "./theme/" + template.theme + "/error.ftl">

@@ -47,7 +47,7 @@ public class LoginPage extends Page {
     @FindBy(linkText = "Register")
     private WebElement registerLink;
 
-    @FindBy(linkText = "Reset password")
+    @FindBy(linkText = "Password")
     private WebElement resetPasswordLink;
 
     @FindBy(id = "loginError")

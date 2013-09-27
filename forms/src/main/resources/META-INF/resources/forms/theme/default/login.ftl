@@ -24,6 +24,7 @@
             </#list>
 
             <div class="aside-btn">
+                <p>Forgot <a href="${url.passwordResetUrl}">Password</a>?</p>
             </div>
 
             <input class="btn-primary" type="submit" value="Log In"/>
@@ -36,8 +37,6 @@
         <#if realm.registrationAllowed>
             <p>${rb.getString('noAccount')} <a href="${url.registrationUrl}">${rb.getString('register')}</a>.</p>
         </#if>
-        
-        <a href="${url.passwordResetUrl}">Reset password</a>
     </div>
 
     </#if>
