@@ -120,6 +120,7 @@ public class RealmAdapter implements RealmModel {
     @Override
     public void setSocial(boolean social) {
         realm.setSocial(social);
+        updateRealm();
     }
 
     @Override
