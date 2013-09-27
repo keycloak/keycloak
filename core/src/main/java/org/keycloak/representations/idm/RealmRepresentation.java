@@ -12,17 +12,17 @@ public class RealmRepresentation {
     protected String self; // link
     protected String id;
     protected String realm;
-    protected int tokenLifespan;
-    protected int accessCodeLifespan;
-    protected int accessCodeLifespanUserAction;
-    protected boolean enabled;
-    protected boolean sslNotRequired;
-    protected boolean cookieLoginAllowed;
-    protected boolean registrationAllowed;
-    protected boolean verifyEmail;
-    protected boolean resetPasswordAllowed;
-    protected boolean social;
-    protected boolean automaticRegistrationAfterSocialLogin;
+    protected Integer tokenLifespan;
+    protected Integer accessCodeLifespan;
+    protected Integer accessCodeLifespanUserAction;
+    protected Boolean enabled;
+    protected Boolean sslNotRequired;
+    protected Boolean cookieLoginAllowed;
+    protected Boolean registrationAllowed;
+    protected Boolean verifyEmail;
+    protected Boolean resetPasswordAllowed;
+    protected Boolean social;
+    protected Boolean automaticRegistrationAfterSocialLogin;
     protected String privateKey;
     protected String publicKey;
     protected List<RoleRepresentation> roles;
@@ -93,35 +93,35 @@ public class RealmRepresentation {
         this.applications = applications;
     }
 
-    public boolean isEnabled() {
+    public Boolean isEnabled() {
         return enabled;
     }
 
-    public void setEnabled(boolean enabled) {
+    public void setEnabled(Boolean enabled) {
         this.enabled = enabled;
     }
 
-    public boolean isSslNotRequired() {
+    public Boolean isSslNotRequired() {
         return sslNotRequired;
     }
 
-    public void setSslNotRequired(boolean sslNotRequired) {
+    public void setSslNotRequired(Boolean sslNotRequired) {
         this.sslNotRequired = sslNotRequired;
     }
 
-    public boolean isCookieLoginAllowed() {
+    public Boolean isCookieLoginAllowed() {
         return cookieLoginAllowed;
     }
 
-    public void setCookieLoginAllowed(boolean cookieLoginAllowed) {
+    public void setCookieLoginAllowed(Boolean cookieLoginAllowed) {
         this.cookieLoginAllowed = cookieLoginAllowed;
     }
 
-    public int getTokenLifespan() {
+    public Integer getTokenLifespan() {
         return tokenLifespan;
     }
 
-    public void setTokenLifespan(int tokenLifespan) {
+    public void setTokenLifespan(Integer tokenLifespan) {
         this.tokenLifespan = tokenLifespan;
     }
 
@@ -185,19 +185,19 @@ public class RealmRepresentation {
         this.requiredOAuthClientCredentials = requiredOAuthClientCredentials;
     }
 
-    public int getAccessCodeLifespan() {
+    public Integer getAccessCodeLifespan() {
         return accessCodeLifespan;
     }
 
-    public void setAccessCodeLifespan(int accessCodeLifespan) {
+    public void setAccessCodeLifespan(Integer accessCodeLifespan) {
         this.accessCodeLifespan = accessCodeLifespan;
     }
 
-    public int getAccessCodeLifespanUserAction() {
+    public Integer getAccessCodeLifespanUserAction() {
         return accessCodeLifespanUserAction;
     }
 
-    public void setAccessCodeLifespanUserAction(int accessCodeLifespanUserAction) {
+    public void setAccessCodeLifespanUserAction(Integer accessCodeLifespanUserAction) {
         this.accessCodeLifespanUserAction = accessCodeLifespanUserAction;
     }
 
@@ -233,43 +233,43 @@ public class RealmRepresentation {
         this.publicKey = publicKey;
     }
 
-    public boolean isRegistrationAllowed() {
+    public Boolean isRegistrationAllowed() {
         return registrationAllowed;
     }
 
-    public void setRegistrationAllowed(boolean registrationAllowed) {
+    public void setRegistrationAllowed(Boolean registrationAllowed) {
         this.registrationAllowed = registrationAllowed;
     }
 
-    public boolean isVerifyEmail() {
+    public Boolean isVerifyEmail() {
         return verifyEmail;
     }
 
-    public void setVerifyEmail(boolean verifyEmail) {
+    public void setVerifyEmail(Boolean verifyEmail) {
         this.verifyEmail = verifyEmail;
     }
 
-    public boolean isResetPasswordAllowed() {
+    public Boolean isResetPasswordAllowed() {
         return resetPasswordAllowed;
     }
 
-    public void setResetPasswordAllowed(boolean resetPassword) {
+    public void setResetPasswordAllowed(Boolean resetPassword) {
         this.resetPasswordAllowed = resetPassword;
     }
 
-    public boolean isSocial() {
+    public Boolean isSocial() {
         return social;
     }
 
-    public void setSocial(boolean social) {
+    public void setSocial(Boolean social) {
         this.social = social;
     }
 
-    public boolean isAutomaticRegistrationAfterSocialLogin() {
+    public Boolean isAutomaticRegistrationAfterSocialLogin() {
         return automaticRegistrationAfterSocialLogin;
     }
 
-    public void setAutomaticRegistrationAfterSocialLogin(boolean automaticRegistrationAfterSocialLogin) {
+    public void setAutomaticRegistrationAfterSocialLogin(Boolean automaticRegistrationAfterSocialLogin) {
         this.automaticRegistrationAfterSocialLogin = automaticRegistrationAfterSocialLogin;
     }
 }

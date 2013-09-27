@@ -59,7 +59,7 @@ public class RealmAdminResource {
     @PUT
     @Consumes("application/json")
     public void updateRealm(final RealmRepresentation rep) {
-        logger.info("updating realm: " + rep.getRealm());
+        logger.info("updating realm: " + realm.getName());
         new RealmManager(session).updateRealm(rep, realm);
     }
 

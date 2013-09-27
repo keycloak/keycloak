@@ -64,15 +64,7 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $ht
         $scope.realm = {
             enabled: true,
             requireSsl: true,
-            cookieLoginAllowed: true,
-            tokenLifespan: 300,
-            tokenLifespanUnit: 'SECONDS',
-            accessCodeLifespan: 300,
-            accessCodeLifespanUnit: 'SECONDS',
-            requiredCredentials: ['password'],
-            requiredOAuthClientCredentials: ['password'],
-            requiredApplicationCredentials: ['password']
-
+            cookieLoginAllowed: true
         };
     } else {
         if (Current.realm == null || Current.realm.id != realm.id) {
@@ -90,20 +82,11 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $ht
         }
         $scope.realm = angular.copy(realm);
         $scope.realm.requireSsl = !realm.sslNotRequired;
-        $scope.realm.tokenLifespanUnit = 'SECONDS';
-        $scope.realm.accessCodeLifespanUnit = 'SECONDS';
-
     }
 
     var oldCopy = angular.copy($scope.realm);
 
 
-
-    $scope.userCredentialOptions = {
-        'multiple' : true,
-        'simple_tags' : true,
-        'tags' : ['password', 'totp', 'cert']
-    };
 
 	$scope.changed = $scope.create;
 
@@ -118,8 +101,6 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $ht
             var realmCopy = angular.copy($scope.realm);
             realmCopy.sslNotRequired = !realmCopy.requireSsl;
             delete realmCopy["requireSsl"];
-            delete realmCopy["tokenLifespanUnit"];
-            delete realmCopy["accessCodeLifespanUnit"];
             if ($scope.createRealm) {
 				Realm.save(realmCopy, function(data, headers) {
                     console.log('creating new realm');
@@ -179,6 +160,105 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $ht
 		});
 	};
 });
+
+module.controller('RealmRequiredCredentialsCtrl', function($scope, Realm, realm, $http, $location, Dialog, Notifications) {
+    console.log('RealmRequiredCredentialsCtrl');
+
+    $scope.realm = {
+        id : realm.id, realm : realm.realm,
+        requiredCredentials : realm.requiredCredentials,
+        requiredApplicationCredentials : realm.requiredApplicationCredentials,
+        requiredOAuthClientCredentials : realm.requiredOAuthClientCredentials
+    };
+
+    $scope.userCredentialOptions = {
+        'multiple' : true,
+        'simple_tags' : true,
+        'tags' : ['password', 'totp', 'cert']
+    };
+
+    var oldCopy = angular.copy($scope.realm);
+    $scope.changed = false;
+
+    $scope.$watch('realm', function() {
+        if (!angular.equals($scope.realm, oldCopy)) {
+            $scope.changed = true;
+        }
+    }, true);
+
+    $scope.save = function() {
+        if ($scope.realmForm.$valid) {
+            var realmCopy = angular.copy($scope.realm);
+            $scope.changed = false;
+            Realm.update(realmCopy, function () {
+                $location.url("/realms/" + realm.id + "/required-credentials");
+                Notifications.success("Saved changes to realm");
+            });
+        } else {
+            $scope.realmForm.showErrors = true;
+        }
+    };
+
+    $scope.reset = function() {
+        $scope.realm = angular.copy(oldCopy);
+        $scope.changed = false;
+        $scope.realmForm.showErrors = false;
+    };
+});
+
+
+module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, $location, Dialog, Notifications) {
+    console.log('RealmTokenDetailCtrl');
+
+    $scope.realm = { id : realm.id, realm : realm.realm, tokenLifespan : realm.tokenLifespan,  accessCodeLifespan : realm.accessCodeLifespan };
+    $scope.realm.tokenLifespanUnit = 'Seconds';
+    $scope.realm.accessCodeLifespanUnit = 'Seconds';
+
+    var oldCopy = angular.copy($scope.realm);
+    $scope.changed = false;
+
+    $scope.$watch('realm', function() {
+        if (!angular.equals($scope.realm, oldCopy)) {
+            $scope.changed = true;
+        }
+    }, true);
+
+    $scope.save = function() {
+        if ($scope.realmForm.$valid) {
+            var realmCopy = angular.copy($scope.realm);
+            delete realmCopy["tokenLifespanUnit"];
+            delete realmCopy["accessCodeLifespanUnit"];
+            if ($scope.realm.tokenLifespanUnit == 'Minutes') {
+                realmCopy.tokenLifespan = $scope.realm.tokenLifespan * 60;
+            } else if ($scope.realm.tokenLifespanUnit == 'Hours') {
+                realmCopy.tokenLifespan = $scope.realm.tokenLifespan * 60 * 60;
+            } else if ($scope.realm.tokenLifespanUnit == 'Days') {
+                realmCopy.tokenLifespan = $scope.realm.tokenLifespan * 60 * 60 * 24;
+            }
+            if ($scope.realm.accessCodeLifespanUnit == 'Minutes') {
+                realmCopy.accessCodeLifespan = $scope.realm.accessCodeLifespan * 60;
+            } else if ($scope.realm.accessCodeLifespanUnit == 'Hours') {
+                realmCopy.accessCodeLifespan = $scope.realm.accessCodeLifespan * 60 * 60;
+            } else if ($scope.realm.accessCodeLifespanUnit == 'Days') {
+                realmCopy.accessCodeLifespan = $scope.realm.accessCodeLifespan * 60 * 60 * 24;
+            }
+            $scope.changed = false;
+            Realm.update(realmCopy, function () {
+                $location.url("/realms/" + realm.id + "/token-settings");
+                Notifications.success("Saved changes to realm");
+            });
+        } else {
+            $scope.realmForm.showErrors = true;
+        }
+    };
+
+    $scope.reset = function() {
+        $scope.realm = angular.copy(oldCopy);
+        $scope.changed = false;
+        $scope.realmForm.showErrors = false;
+    };
+});
+
 
 
 module.controller('UserListCtrl', function($scope, realm, User) {

@@ -26,8 +26,24 @@ module.config([ '$routeProvider', function($routeProvider) {
 	}).when('/realms', {
 		templateUrl : 'partials/realm-list.html',
 		controller : 'RealmListCtrl'
-	})
-	
+	}).when('/realms/:realm/token-settings', {
+            templateUrl : 'partials/realm-tokens.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                }
+            },
+            controller : 'RealmTokenDetailCtrl'
+        })
+        .when('/realms/:realm/required-credentials', {
+            templateUrl : 'partials/realm-credentials.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                }
+            },
+            controller : 'RealmRequiredCredentialsCtrl'
+        })
 	.when('/create/user/:realm', {
 		templateUrl : 'partials/user-detail.html',
 		resolve : {

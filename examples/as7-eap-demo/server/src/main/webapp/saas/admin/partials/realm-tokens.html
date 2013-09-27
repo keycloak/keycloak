@@ -4,18 +4,19 @@
         <div id="content-area" class="col-md-9" role="main">
             <div class="top-nav" data-ng-hide="createRealm">
                 <ul class="rcue-tabs">
-                    <li><a href="#">Settings</a></li>
+                    <li><a href="#/realms/{{realm.id}}">Settings</a></li>
                     <li data-ng-show="realm.social"><a href="#">Social</a></li>
-                    <li><a href="#">Roles</a></li>
-                    <li><a href="#">Required Credentials</a></li>
-                    <li class="active"><a href="#">Token Settings</a></li>
+                    <li><a href="#/realms/{{realm.id}}/roles">Roles</a></li>
+                    <li><a href="#/realms/{{realm.id}}/required-credentials">Required Credentials</a></li>
+                    <li class="active"><a href="#/realms/{{realm.id}}/token-settings">Token Settings</a></li>
                 </ul>
             </div>
             <div id="content">
                 <h2 class="pull-left">Realm: <span>{{realm.realm}}</span></h2>
+                <p class="subtitle"></p>
                 <form name="realmForm" novalidate>
                     <fieldset>
-                        <legend collapsed><span class="text">Token Settings</span></legend>
+                        <legend uncollapsed><span class="text">Token Settings</span></legend>
                         <div class="form-group input-select">
                             <label for="tokenLifespan">Token lifespan</label>
                             <div class="input-group">
