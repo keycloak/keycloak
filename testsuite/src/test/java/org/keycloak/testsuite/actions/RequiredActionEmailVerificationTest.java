@@ -109,7 +109,7 @@ public class RequiredActionEmailVerificationTest {
     public void verifyEmailRegister() throws IOException, MessagingException {
         loginPage.open();
         loginPage.clickRegister();
-        registerPage.register("name", "email", "verifyEmail", "password", "password");
+        registerPage.register("firstName", "lastName", "email", "verifyEmail", "password", "password");
 
         Assert.assertTrue(driver.getPageSource().contains("Verify email"));
 

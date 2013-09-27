@@ -29,8 +29,11 @@ import org.openqa.selenium.support.FindBy;
  */
 public class RegisterPage extends Page {
 
-    @FindBy(id = "name")
-    private WebElement nameInput;
+    @FindBy(id = "firstName")
+    private WebElement firstNameInput;
+
+    @FindBy(id = "lastName")
+    private WebElement lastNameInput;
 
     @FindBy(id = "email")
     private WebElement emailInput;
@@ -50,9 +53,13 @@ public class RegisterPage extends Page {
     @FindBy(id = "loginError")
     private WebElement loginErrorMessage;
 
-    public void register(String name, String email, String username, String password, String passwordConfirm) {
-        if (name != null) {
-            nameInput.sendKeys(name);
+    public void register(String firstName, String lastName, String email, String username, String password, String passwordConfirm) {
+        if (firstName != null) {
+            firstNameInput.sendKeys(firstName);
+        }
+
+        if (lastName != null) {
+            lastNameInput.sendKeys(lastName);
         }
 
         if (email != null) {
