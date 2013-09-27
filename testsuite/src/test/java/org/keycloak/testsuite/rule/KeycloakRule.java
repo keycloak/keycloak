@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import javax.servlet.DispatcherType;
+import javax.servlet.Servlet;
 
 import org.jboss.resteasy.jwt.JsonSerialization;
 import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
@@ -100,12 +101,16 @@ public class KeycloakRule extends ExternalResource {
             configure(setup);
         }
 
+        deployServlet("app", "/app", ApplicationServlet.class);
+    }
+
+    public void deployServlet(String name, String contextPath, Class<? extends Servlet> servletClass) {
         DeploymentInfo deploymentInfo = new DeploymentInfo();
         deploymentInfo.setClassLoader(getClass().getClassLoader());
-        deploymentInfo.setDeploymentName("app");
-        deploymentInfo.setContextPath("/app");
+        deploymentInfo.setDeploymentName(name);
+        deploymentInfo.setContextPath(contextPath);
 
-        ServletInfo servlet = new ServletInfo(ApplicationServlet.class.getSimpleName(), ApplicationServlet.class);
+        ServletInfo servlet = new ServletInfo(servletClass.getSimpleName(), servletClass);
         servlet.addMapping("/*");
 
         deploymentInfo.addServlet(servlet);
