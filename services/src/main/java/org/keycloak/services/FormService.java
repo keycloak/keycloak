@@ -27,6 +27,7 @@ import javax.ws.rs.core.MultivaluedMap;
 
 import org.keycloak.services.models.RealmModel;
 import org.keycloak.services.models.UserModel;
+import org.keycloak.services.resources.flows.FormFlows;
 
 /**
  * @author <a href="mailto:vrockai@redhat.com">Viliam Rockai</a>
@@ -42,6 +43,9 @@ public interface FormService {
         private RealmModel realm;
         private UserModel userModel;
         private String error;
+
+        private FormFlows.ErrorType errorType;
+
         private MultivaluedMap<String, String> formData;
         private URI baseURI;
 
@@ -120,6 +124,14 @@ public interface FormService {
 
         public void setUserModel(UserModel userModel) {
             this.userModel = userModel;
+        }
+
+        public FormFlows.ErrorType getErrorType() {
+            return errorType;
+        }
+
+        public void setErrorType(FormFlows.ErrorType errorType) {
+            this.errorType = errorType;
         }
     }
 }

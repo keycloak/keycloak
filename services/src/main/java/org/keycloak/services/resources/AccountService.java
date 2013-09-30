@@ -240,8 +240,7 @@ public class AccountService {
 
         UserModel user = realm.getUser(username);
         if (user == null || !email.equals(user.getEmail())) {
-            return Flows.forms(realm, request, uriInfo).setError("Invalid username or email")
-                    .forwardToAction(RequiredAction.UPDATE_PASSWORD);
+            return Flows.forms(realm, request, uriInfo).setError("emailError").forwardToPasswordReset();
         }
 
         Set<RequiredAction> requiredActions = new HashSet<RequiredAction>(user.getRequiredActions());
@@ -253,7 +252,8 @@ public class AccountService {
 
         new EmailSender().sendPasswordReset(user, realm, accessCode, uriInfo);
 
-        return Flows.forms(realm, request, uriInfo).forwardToPasswordReset();
+        return Flows.forms(realm, request, uriInfo).setError("emailSent").setErrorType(FormFlows.ErrorType.SUCCESS)
+                .forwardToPasswordReset();
     }
 
     @Path("email-verification")

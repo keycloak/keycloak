@@ -250,19 +250,19 @@ button.primary:enabled:active {
   background-position: 1.27272727272727em 1.63636363636364em;
 }
 .feedback.error {
-  background-image: url(img/feedback-error-arrow-down.svg);
+  background-image: url(img/feedback-error-arrow-down.png);
 }
 .feedback.error p {
   border-color: #b91415;
-  background-image: url(img/feedback-error-sign.svg);
+  background-image: url(img/feedback-error-sign.png);
   background-color: #f8e7e7;
 }
 .feedback.success {
-  background-image: url(img/feedback-success-arrow-down.svg);
+  background-image: url(img/feedback-success-arrow-down.png);
 }
 .feedback.success p {
   border-color: #4b9e39;
-  background-image: url(img/feedback-success-sign.svg);
+  background-image: url(img/feedback-success-sign.png);
   background-color: #e4f1e1;
 }
 .feedback.warning p {

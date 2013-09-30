@@ -85,12 +85,14 @@ public class ResetPasswordTest {
 
         resetPasswordPage.assertCurrent();
 
+        Assert.assertEquals("Success!", resetPasswordPage.getMessage());
+
         Assert.assertEquals(1, greenMail.getReceivedMessages().length);
 
         MimeMessage message = greenMail.getReceivedMessages()[0];
 
         String body = (String) message.getContent();
-        String changePasswordUrl = body.split("\n")[0];
+        String changePasswordUrl = body.split("\n")[3];
 
         driver.navigate().to(changePasswordUrl.trim());
 
@@ -107,6 +109,36 @@ public class ResetPasswordTest {
         loginPage.login("test-user@localhost", "new-password");
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+    }
+
+    @Test
+    public void resetPasswordWrongUsername() throws IOException, MessagingException {
+        loginPage.open();
+        loginPage.resetPassword();
+
+        resetPasswordPage.assertCurrent();
+
+        resetPasswordPage.changePassword("invalid", "test-user@localhost");
+
+        resetPasswordPage.assertCurrent();
+
+        Assert.assertNotEquals("Success!", resetPasswordPage.getMessage());
+        Assert.assertEquals("Error!", resetPasswordPage.getMessage());
+    }
+
+    @Test
+    public void resetPasswordWrongEmail() throws IOException, MessagingException {
+        loginPage.open();
+        loginPage.resetPassword();
+
+        resetPasswordPage.assertCurrent();
+
+        resetPasswordPage.changePassword("test-user@localhost", "invalid");
+
+        resetPasswordPage.assertCurrent();
+
+        Assert.assertNotEquals("Success!", resetPasswordPage.getMessage());
+        Assert.assertEquals("Error!", resetPasswordPage.getMessage());
     }
 
 }
