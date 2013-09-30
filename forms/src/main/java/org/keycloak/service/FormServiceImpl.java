@@ -42,6 +42,7 @@ import org.keycloak.forms.TotpBean;
 import org.keycloak.forms.UrlBean;
 import org.keycloak.forms.UserBean;
 import org.keycloak.services.FormService;
+import org.keycloak.services.resources.flows.FormFlows;
 import org.keycloak.services.resources.flows.Pages;
 
 /**
@@ -149,6 +150,10 @@ public class FormServiceImpl implements FormService {
 
     private class CommandPassword implements Command {
         public void exec(Map<String, Object> attributes, FormServiceDataBean dataBean) {
+            if (dataBean.getError() != null){
+                attributes.put("message", new ErrorBean(dataBean.getError(), dataBean.getErrorType()));
+            }
+
             RealmBean realm = new RealmBean(dataBean.getRealm());
 
             attributes.put("realm", realm);

@@ -53,7 +53,12 @@ public class FormFlows {
     public static final String SOCIAL_REGISTRATION = "socialRegistration";
     public static final String CODE = "code";
 
+    // TODO refactor/rename "error" to "message" everywhere where it makes sense
     private String error;
+
+    public static enum ErrorType {SUCCESS, WARNING, ERROR};
+    private ErrorType errorType;
+
     private MultivaluedMap<String, String> formData;
 
     private RealmModel realm;
@@ -98,6 +103,7 @@ public class FormFlows {
     private Response forwardToForm(String template) {
 
         FormService.FormServiceDataBean formDataBean = new FormService.FormServiceDataBean(realm, userModel, formData, error);
+        formDataBean.setErrorType(errorType == null ? ErrorType.ERROR : errorType);
 
         // Getting URI needed by form processing service
         ResteasyUriInfo uriInfo = request.getUri();
@@ -169,6 +175,11 @@ public class FormFlows {
 
     public FormFlows setError(String error) {
         this.error = error;
+        return this;
+    }
+
+    public FormFlows setErrorType(ErrorType errorType) {
+        this.errorType = errorType;
         return this;
     }
 

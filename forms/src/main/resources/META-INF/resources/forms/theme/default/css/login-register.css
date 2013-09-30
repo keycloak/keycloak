@@ -324,6 +324,12 @@ a.zocial:before {
     line-height: 1.3em;
 }
 
+.rcue-login-register.reset p.subtitle {
+    margin-bottom: 10px;
+    position: inherit;
+    text-align: right;
+}
+
 .rcue-login-register .background-area p.instruction.instruction.second {
     color: #999999;
 }

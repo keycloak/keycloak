@@ -103,9 +103,16 @@ public class EmailSender {
         URI uri = builder.build(realm.getId());
 
         StringBuilder sb = new StringBuilder();
+
+        sb.append("Hi ").append(user.getFirstName()).append(",\n\n");
+        sb.append("Someone just requested to change your Keycloak account's password. ");
+        sb.append("If this was you, click on the link below to set a new password:\n");
         sb.append(uri.toString());
-        sb.append("\n");
-        sb.append("Expires in " + TimeUnit.SECONDS.toMinutes(realm.getAccessCodeLifespanUserAction()));
+        sb.append("\n\nThis link will expire within ").append(TimeUnit.SECONDS.toMinutes(realm.getAccessCodeLifespanUserAction()));
+        sb.append(" minutes.\n\n");
+        sb.append("If you don't want to reset your password, just ignore this message and nothing will be changed.\n\n");
+        sb.append("Thanks,\n");
+        sb.append("The Keycloak Team");
 
         try {
             send(user.getEmail(), "Reset password link", sb.toString());

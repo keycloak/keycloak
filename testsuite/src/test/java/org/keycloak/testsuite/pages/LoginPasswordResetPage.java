@@ -38,6 +38,9 @@ public class LoginPasswordResetPage extends Page {
     @FindBy(css = "input[type=\"submit\"]")
     private WebElement submitButton;
 
+    @FindBy(css = ".feedback > p > strong")
+    private WebElement emailErrorMessage;
+
     public void changePassword(String username, String email) {
         usernameInput.sendKeys(username);
         emailInput.sendKeys(email);
@@ -46,11 +49,15 @@ public class LoginPasswordResetPage extends Page {
     }
 
     public boolean isCurrent() {
-        return driver.getTitle().equals("Reset password");
+        return driver.getTitle().equals("Forgot Your Password?");
     }
 
     public void open() {
         throw new UnsupportedOperationException();
+    }
+
+    public String getMessage() {
+        return emailErrorMessage != null ? emailErrorMessage.getText() : null;
     }
 
 }
