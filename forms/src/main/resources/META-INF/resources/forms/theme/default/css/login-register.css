@@ -330,6 +330,12 @@ a.zocial:before {
     text-align: right;
 }
 
+.rcue-login-register .background-area p.instruction {
+    font-size: 1.3em;
+    line-height: 1.3em;
+    margin-bottom: 1.53846em;
+}
+
 .rcue-login-register .background-area p.instruction.instruction.second {
     color: #999999;
 }
