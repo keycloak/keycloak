@@ -40,6 +40,7 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.RegisterPage;
+import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.rule.GreenMailRule;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.KeycloakRule.KeycloakSetup;
@@ -81,6 +82,9 @@ public class RequiredActionEmailVerificationTest {
     protected LoginPage loginPage;
 
     @WebResource
+    protected VerifyEmailPage verifyEmailPage;
+
+    @WebResource
     protected RegisterPage registerPage;
 
     @Test
@@ -88,7 +92,9 @@ public class RequiredActionEmailVerificationTest {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
 
-        Assert.assertTrue(driver.getPageSource().contains("Verify email"));
+        Assert.assertTrue(verifyEmailPage.isCurrent());
+
+        Assert.assertEquals(1, greenMail.getReceivedMessages().length);
 
         MimeMessage message = greenMail.getReceivedMessages()[0];
 
@@ -111,9 +117,40 @@ public class RequiredActionEmailVerificationTest {
         loginPage.clickRegister();
         registerPage.register("firstName", "lastName", "email", "verifyEmail", "password", "password");
 
-        Assert.assertTrue(driver.getPageSource().contains("Verify email"));
+        Assert.assertTrue(verifyEmailPage.isCurrent());
+
+        Assert.assertEquals(1, greenMail.getReceivedMessages().length);
 
         MimeMessage message = greenMail.getReceivedMessages()[0];
+
+        String body = (String) message.getContent();
+
+        Pattern p = Pattern.compile("(?s).*(http://[^\\s]*).*");
+        Matcher m = p.matcher(body);
+        m.matches();
+
+        String verificationUrl = m.group(1);
+
+        driver.navigate().to(verificationUrl.trim());
+
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+    }
+
+    @Test
+    public void verifyEmailResend() throws IOException, MessagingException {
+        loginPage.open();
+        loginPage.clickRegister();
+        registerPage.register("firstName2", "lastName2", "email2", "verifyEmail2", "password2", "password2");
+
+        Assert.assertTrue(verifyEmailPage.isCurrent());
+
+        Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+
+        verifyEmailPage.clickResendEmail();
+
+        Assert.assertEquals(2, greenMail.getReceivedMessages().length);
+
+        MimeMessage message = greenMail.getReceivedMessages()[1];
 
         String body = (String) message.getContent();
 

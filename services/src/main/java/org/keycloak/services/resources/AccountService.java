@@ -281,8 +281,6 @@ public class AccountService {
                 return Response.status(Status.FORBIDDEN).build();
             }
 
-            new EmailSender().sendEmailVerification(user, realm, accessCode, uriInfo);
-
             return Flows.forms(realm, request, uriInfo).setAccessCode(accessCode).setUser(user)
                     .forwardToAction(RequiredAction.VERIFY_EMAIL);
         }

@@ -1,24 +1,25 @@
 <#import "template-login-action.ftl" as layout>
-<@layout.registrationLayout bodyClass=""; section>
+<@layout.registrationLayout bodyClass="reset"; section>
     <#if section = "title">
 
-    Verify email
+    Email verification
 
     <#elseif section = "header">
 
-    Verify email
+    Email verification
 
     <#elseif section = "form">
 
-    <div id="form">
-    	An email with instructions to verify your email address has been sent to you. If you don't receive this email, 
-    	<a href="${url.emailVerificationUrl}">click here</a> to re-send the email.
+    <div class="app-form">
+        <p class="instruction">
+            Your account is not enabled. An email with instructions to verify your email address has been sent to you.
+        </p>
+        <p class="instruction">Haven't received a verification code in your email?
+            <a href="${url.emailVerificationUrl}">Click here</a> to re-send the email.
+        </p>
     </div>
 
     <#elseif section = "info" >
-
-    <div id="info">
-    </div>
 
     </#if>
 </@layout.registrationLayout>
