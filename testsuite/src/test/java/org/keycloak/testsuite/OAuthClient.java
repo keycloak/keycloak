@@ -56,7 +56,7 @@ public class OAuthClient {
 
     private WebDriver driver;
 
-    private String baseUrl = "http://localhost:8081/auth-server/rest";
+    private String baseUrl = Constants.AUTH_SERVER_ROOT + "/rest";
 
     private String realm = "test";
 
