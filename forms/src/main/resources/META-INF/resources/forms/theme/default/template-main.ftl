@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="${template.formsPath}/theme/${template.theme}/css/reset.css">
     <!--link rel="stylesheet" href="bootstrap-3.0.0-wip/css/bootstrap.css"-->
     <link href="${template.formsPath}/lib/bootstrap/css/bootstrap.css" rel="stylesheet" />
+    <link href="${template.formsPath}/theme/${template.theme}/css/zocial/zocial.css" rel="stylesheet">
 
     <link rel="stylesheet" href="${template.formsPath}/theme/${template.theme}/css/sprites.css">
     <link rel="stylesheet" href="${template.formsPath}/theme/${template.theme}/css/select2.css">
