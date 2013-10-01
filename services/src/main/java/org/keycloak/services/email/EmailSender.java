@@ -85,9 +85,15 @@ public class EmailSender {
         URI uri = builder.build(realm.getId());
 
         StringBuilder sb = new StringBuilder();
+        sb.append("Hi ").append(user.getFirstName()).append(",\n\n");
+        sb.append("Someone has created a Keycloak account with this email address. ");
+        sb.append("If this was you, click the link below to verify your email address:\n");
         sb.append(uri.toString());
-        sb.append("\n");
-        sb.append("Expires in " + TimeUnit.SECONDS.toMinutes(realm.getAccessCodeLifespanUserAction()));
+        sb.append("\n\nThis link will expire within ").append(TimeUnit.SECONDS.toMinutes(realm.getAccessCodeLifespanUserAction()));
+        sb.append(" minutes.\n\n");
+        sb.append("If you didn't create this account, just ignore this message.\n\n");
+        sb.append("Thanks,\n");
+        sb.append("The Keycloak Team");
 
         try {
             send(user.getEmail(), "Verify email", sb.toString());
