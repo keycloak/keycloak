@@ -21,7 +21,7 @@ The UI of each of these applications is very crude and exists just to show our O
 
 Step 1: Make sure you've upgraded Resteasy
 --------------------------------------
-The first thing you is upgrade Resteasy to 3.0.2 within JBoss as described [here](http://docs.jboss.org/resteasy/docs/3.0.2.Final/userguide/html/Installation_Configuration.html#upgrading-as7)
+The first thing you is upgrade Resteasy to 3.0.4 within JBoss as described [here](http://docs.jboss.org/resteasy/docs/3.0.4.Final/userguide/html/Installation_Configuration.html#upgrading-as7)
 
 
 Step 2: Boot JBoss
@@ -58,4 +58,22 @@ to get permission to access a user's data.  To run this example
 
 If you area already logged in, you will not be asked for a username and password, but you will be redirected to
 an oauth grant page.  This page asks you if you want to grant certain permissions to the third-part app.
+
+Admin Console
+==========================
+
+1. Register or login
+
+You'll have to first register and create an account
+
+Login:
+[http://localhost:8080/auth-server/rest/saas/login](http://localhost:8080/auth-server/rest/saas/login)
+
+Register:
+[http://localhost:8080/auth-server/rest/saas/registrations](http://localhost:8080/auth-server/rest/saas/registrations)
+
+2. Next you'll be brought to the admin console.  Click "New Realm" button and start doing stuff.
+
+
+
 
