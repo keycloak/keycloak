@@ -1,24 +1,22 @@
 <#import "template-login-action.ftl" as layout>
-<@layout.registrationLayout bodyClass=""; section>
+<@layout.registrationLayout bodyClass="reset"; section>
     <#if section = "title">
 
-    Update password
+    ${rb.getString('emailUpdateHeader')}
 
     <#elseif section = "header">
 
-    Update password
+    ${rb.getString('emailUpdateHeader')}
 
     <#elseif section = "form">
 
     <div id="form">
         <form action="${url.passwordUrl}" method="post">
         	<div>
-            	<label for="password-new">${rb.getString('passwordNew')}</label>
-            	<input type="password" id="password-new" name="password-new" />
+            	<label for="password-new">${rb.getString('passwordNew')}</label><input type="password" id="password-new" name="password-new" />
         	</div>
         	<div>
-        	    <label for="password-confirm">${rb.getString('passwordConfirm')}</label>
-    	        <input type="password" id="password-confirm" name="password-confirm" />
+        	    <label for="password-confirm">${rb.getString('passwordConfirm')}</label><input type="password" id="password-confirm" name="password-confirm" />
 	        </div>
 
             <input class="btn-primary" type="submit" value="Submit" />

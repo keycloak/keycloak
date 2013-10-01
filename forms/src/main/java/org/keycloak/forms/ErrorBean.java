@@ -21,6 +21,8 @@
  */
 package org.keycloak.forms;
 
+import org.keycloak.services.resources.flows.FormFlows;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -28,12 +30,32 @@ public class ErrorBean {
 
     private String summary;
 
+    private FormFlows.ErrorType type;
+
+    // Message is considered ERROR by default
     public ErrorBean(String summary) {
+        this(summary, FormFlows.ErrorType.ERROR);
+    }
+
+    public ErrorBean(String summary, FormFlows.ErrorType type) {
         this.summary = summary;
+        this.type = type;
     }
 
     public String getSummary() {
         return summary;
+    }
+
+    public boolean isSuccess(){
+        return FormFlows.ErrorType.SUCCESS.equals(this.type);
+    }
+
+    public boolean isWarning(){
+        return FormFlows.ErrorType.WARNING.equals(this.type);
+    }
+
+    public boolean isError(){
+        return FormFlows.ErrorType.ERROR.equals(this.type);
     }
 
 }
