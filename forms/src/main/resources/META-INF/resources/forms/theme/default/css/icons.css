@@ -1,0 +1,34 @@
+.icon-collapse, .icon-expand {
+    background-image: url("img/icon-collapse-expand.png");
+    background-position: left top;
+    background-repeat: no-repeat;
+    height: 14px;
+    margin-right: 1em;
+    width: 14px;
+}
+.icon-expand {
+    background-position: left -14px;
+    margin-top: -1px;
+}
+.social:before {
+    display: inline-block;
+    font: 120%/1.65 zocial;
+    padding-right: 10px;
+    width: 28px;
+}
+.social.googleplus:before {
+    color: #D54431;
+    content: "+";
+}
+.social.google:before {
+    color: #3078F0;
+    content: "G";
+}
+.social.twitter:before {
+    color: #46C0FB;
+    content: "T";
+}
+.social.facebook:before {
+    color: #4863AE;
+    content: "f";
+}

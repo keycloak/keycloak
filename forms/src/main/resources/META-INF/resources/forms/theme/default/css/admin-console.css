@@ -240,33 +240,65 @@ td.token-cell button {
   margin-top: 0.45454545454545em;
 }
 table.list {
-  border-left: none;
-  border-right: none;
+  border-color: #EDEDED;
+  border-left: medium none #EDEDED;
+  border-right: medium none #EDEDED;
   margin-top: 1.5em;
 }
 table.list caption {
   display: none;
 }
 table.list tbody tr:first-child td {
-  border-top: 1px solid #dcdcdc;
+  border-top: 1px solid #EDEDED;
 }
 table.list tbody tr:nth-child(2n) {
-  background-color: #fff;
+  background-color: #FFFFFF;
 }
 table.list tbody tr td {
-  border-right: none;
-  border-left: none;
+  border-left: medium none;
+  border-right: medium none;
 }
 table.list tbody tr td.provider {
-  font-weight: bold;
   font-size: 1.2em;
+  font-weight: bold;
+}
+table.list tbody tr td.provider a {
+  display: inline-block;
+  padding-bottom: 0.333333em;
+  padding-top: 0.416667em;
 }
 table.list tbody tr td.soft {
-  color: #a1a1a1;
+  color: #A1A1A1;
 }
 table.list tbody tr td.action {
-  text-align: right;
   font-size: 1em;
+  text-align: right;
+}
+table.list tbody tr.expanded {
+  background-color: #F6F6F6;
+}
+table.list tbody tr.expanded .provider {
+  display: block;
+  font-size: 1.3913em;
+  padding-top: 0.5em;
+}
+table.list tbody tr.expanded p {
+  margin-bottom: 1.73913em;
+  margin-top: 1.30435em;
+}
+table.list tbody tr.expanded ul li {
+  margin-left: 1.30435em;
+}
+table.list tbody tr.expanded ul li .item, table.list tbody tr.expanded ul li .status {
+  margin-right: 2.6087em;
+}
+table.list tbody tr.expanded ul li .red {
+  color: #BA1212;
+}
+table.list tbody tr.expanded .form-actions {
+  font-size: 0.869565em;
+  margin-bottom: 1.5em;
+  margin-top: 0.5em;
 }
 /* Page: TOTP setup */
 .totp ol li {
