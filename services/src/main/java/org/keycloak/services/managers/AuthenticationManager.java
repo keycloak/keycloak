@@ -9,9 +9,9 @@ import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
 import org.keycloak.representations.SkeletonKeyToken;
 import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.services.models.RealmModel;
-import org.keycloak.services.models.RequiredCredentialModel;
-import org.keycloak.services.models.UserModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredCredentialModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.SaasService;
 

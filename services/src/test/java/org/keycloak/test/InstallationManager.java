@@ -2,9 +2,7 @@ package org.keycloak.test;
 
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.models.RealmModel;
-import org.keycloak.services.models.RequiredCredentialModel;
-import org.keycloak.services.resources.SaasService;
+import org.keycloak.models.RealmModel;
 import org.keycloak.services.resources.SaasService;
 
 /**

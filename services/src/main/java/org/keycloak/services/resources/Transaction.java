@@ -1,8 +1,8 @@
 package org.keycloak.services.resources;
 
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.keycloak.services.models.KeycloakSession;
-import org.keycloak.services.models.KeycloakTransaction;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakTransaction;
 
 /**
  * Meant to be used as an inner class wrapper (I forget the pattern name, its been awhile).

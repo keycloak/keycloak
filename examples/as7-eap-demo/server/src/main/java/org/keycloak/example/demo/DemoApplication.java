@@ -4,11 +4,9 @@ import org.jboss.resteasy.jwt.JsonSerialization;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.models.KeycloakSession;
-import org.keycloak.services.models.RealmModel;
-import org.keycloak.services.models.RequiredCredentialModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.services.resources.KeycloakApplication;
-import org.keycloak.services.resources.SaasService;
 import org.keycloak.services.resources.SaasService;
 
 import javax.servlet.ServletContext;

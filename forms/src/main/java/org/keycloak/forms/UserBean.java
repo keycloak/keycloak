@@ -21,7 +21,7 @@
  */
 package org.keycloak.forms;
 
-import org.keycloak.services.models.UserModel;
+import org.keycloak.models.UserModel;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

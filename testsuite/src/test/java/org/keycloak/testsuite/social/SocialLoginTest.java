@@ -27,7 +27,7 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.models.RealmModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.testsuite.DummySocialServlet;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;

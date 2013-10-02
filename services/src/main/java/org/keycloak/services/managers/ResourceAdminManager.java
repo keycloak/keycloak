@@ -5,8 +5,8 @@ import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.logging.Logger;
 import org.keycloak.TokenIdGenerator;
 import org.keycloak.representations.idm.admin.LogoutAction;
-import org.keycloak.services.models.ApplicationModel;
-import org.keycloak.services.models.RealmModel;
+import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.RealmModel;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Form;

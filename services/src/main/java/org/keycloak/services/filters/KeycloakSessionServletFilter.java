@@ -1,9 +1,9 @@
 package org.keycloak.services.filters;
 
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.keycloak.services.models.KeycloakSession;
-import org.keycloak.services.models.KeycloakSessionFactory;
-import org.keycloak.services.models.KeycloakTransaction;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.KeycloakTransaction;
 
 import javax.servlet.*;
 import java.io.IOException;

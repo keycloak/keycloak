@@ -21,7 +21,7 @@
  */
 package org.keycloak.forms;
 
-import org.keycloak.services.models.RealmModel;
+import org.keycloak.models.RealmModel;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
