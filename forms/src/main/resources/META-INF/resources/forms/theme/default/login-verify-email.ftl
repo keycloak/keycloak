@@ -1,5 +1,5 @@
 <#import "template-login-action.ftl" as layout>
-<@layout.registrationLayout bodyClass="reset"; section>
+<@layout.registrationLayout bodyClass="email"; section>
     <#if section = "title">
 
     Email verification
@@ -7,6 +7,11 @@
     <#elseif section = "header">
 
     Email verification
+
+    <#elseif section = "feedback">
+    <div class="feedback warning show">
+        <p><strong>Your account is not enabled because you need to verify your email.</strong><br>Please follow the steps below.</p>
+    </div>
 
     <#elseif section = "form">
 
