@@ -60,7 +60,7 @@ public class LoginUpdateProfilePage extends Page {
     }
 
     public boolean isCurrent() {
-        return driver.getTitle().equals("Update profile");
+        return driver.getTitle().equals("Update Account Information");
     }
 
     @Override

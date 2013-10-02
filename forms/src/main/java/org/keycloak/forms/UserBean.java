@@ -30,24 +30,35 @@ public class UserBean {
 
     private UserModel user;
 
+    private String firstName;
+    private String lastName;
+    private String email;
+    private String username;
+
     public UserBean(UserModel user){
         this.user = user;
+        if (user != null){
+            this.firstName = user.getFirstName();
+            this.lastName = user.getLastName();
+            this.username = user.getLoginName();
+            this.email = user.getEmail();
+        }
     }
 
     public String getFirstName() {
-        return user.getFirstName();
+        return firstName;
     }
 
     public String getLastName() {
-        return user.getLastName();
+        return lastName;
     }
 
     public String getUsername() {
-        return user.getLoginName();
+        return username;
     }
 
     public String getEmail() {
-        return user.getEmail();
+        return email;
     }
 
     UserModel getUser() {
