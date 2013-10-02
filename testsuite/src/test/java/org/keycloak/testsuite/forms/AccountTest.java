@@ -143,9 +143,11 @@ public class AccountTest {
 
         Assert.assertTrue(totpPage.isCurrent());
 
+        Assert.assertFalse(driver.getPageSource().contains("Remove Google"));
+
         totpPage.configure(totp.generate(totpPage.getTotpSecret()));
 
-        Assert.assertTrue(driver.getPageSource().contains("Google Authenticator enabled"));
+        Assert.assertTrue(driver.getPageSource().contains("Remove Google"));
     }
 
 }

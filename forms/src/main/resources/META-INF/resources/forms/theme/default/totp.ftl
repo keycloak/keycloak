@@ -3,16 +3,33 @@
 
     <#if section = "header">
 
-    Google Authenticator Setup
+        <#if totp.enabled>
+            <h2>Authenticators</h2>
+        <#else>
+            <h2>Google Authenticator Setup</h2>
+        </#if>
 
     <#elseif section = "content">
 
-    <!--h:messages globalOnly="true" /-->
         <#if totp.enabled>
-        Google Authenticator enabled
-        <#else>
-        <h2>Google Authenticator Setup</h2>
+        <#-- TODO this is only mock page -->
+        <form>
+            <fieldset>
+                <p class="info">You have the following authenticators set up:</p>
+                <table class="list">
+                    <caption>Table of social authenticators</caption>
+                    <tbody>
+                    <tr>
+                        <td class="provider"><span class="social googleplus">Google</span></td>
+                        <td class="soft">Connected as john@google.com</td>
+                        <td class="action"><a href="user-totp-setup.html" class="button">Remove Google</a></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </fieldset>
+        </form>
 
+        <#else>
         <ol>
             <li>
                 <p><strong>1</strong>Download the <a href="http://code.google.com/p/google-authenticator/" target="_blank">Google Authenticator app</a> in your device.</p>

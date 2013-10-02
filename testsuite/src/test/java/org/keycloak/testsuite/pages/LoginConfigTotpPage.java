@@ -48,7 +48,7 @@ public class LoginConfigTotpPage extends Page {
     }
 
     public boolean isCurrent() {
-        return driver.getTitle().equals("Config TOTP");
+        return driver.getTitle().equals("Google Authenticator Setup");
     }
 
     public void open() {
