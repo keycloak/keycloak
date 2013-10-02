@@ -348,7 +348,7 @@ a.zocial:before {
     font-size: 1.3em;
 }
 
-.rcue-login-register.reset .form-area {
+.rcue-login-register.reset .form-area, .rcue-login-register.totp .form-area {
   background-image: none;
 }
 .rcue-login-register.reset .form-area p.instruction {
