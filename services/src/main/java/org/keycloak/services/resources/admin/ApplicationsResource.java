@@ -5,10 +5,10 @@ import org.jboss.resteasy.logging.Logger;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceManager;
-import org.keycloak.services.models.ApplicationModel;
-import org.keycloak.services.models.KeycloakSession;
-import org.keycloak.services.models.RealmModel;
-import org.keycloak.services.models.UserModel;
+import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 
 import javax.ws.rs.*;
 import javax.ws.rs.container.ResourceContext;

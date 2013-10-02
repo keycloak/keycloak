@@ -11,12 +11,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.AuthenticationManager.AuthenticationStatus;
-import org.keycloak.services.models.KeycloakSession;
-import org.keycloak.services.models.KeycloakSessionFactory;
-import org.keycloak.services.models.RealmModel;
-import org.keycloak.services.models.UserCredentialModel;
-import org.keycloak.services.models.UserModel;
-import org.keycloak.services.models.UserModel.RequiredAction;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.picketlink.idm.credential.util.TimeBasedOTP;
 

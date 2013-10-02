@@ -5,10 +5,10 @@ import org.jboss.resteasy.jose.jws.JWSBuilder;
 import org.jboss.resteasy.jwt.JsonSerialization;
 import org.keycloak.representations.SkeletonKeyScope;
 import org.keycloak.representations.SkeletonKeyToken;
-import org.keycloak.services.models.ApplicationModel;
-import org.keycloak.services.models.RealmModel;
-import org.keycloak.services.models.RoleModel;
-import org.keycloak.services.models.UserModel;
+import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserModel;
 
 import javax.ws.rs.core.MultivaluedMap;
 import java.io.IOException;

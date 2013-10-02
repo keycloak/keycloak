@@ -9,10 +9,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.models.KeycloakSession;
-import org.keycloak.services.models.KeycloakSessionFactory;
-import org.keycloak.services.models.RealmModel;
-import org.keycloak.services.models.RoleModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.services.resources.KeycloakApplication;
 
 public class ModelTest extends AbstractKeycloakServerTest {

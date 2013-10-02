@@ -2,7 +2,7 @@ package org.keycloak.services.filters;
 
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.keycloak.services.models.KeycloakSession;
+import org.keycloak.models.KeycloakSession;
 
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerResponseContext;

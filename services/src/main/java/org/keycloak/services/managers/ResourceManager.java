@@ -1,7 +1,7 @@
 package org.keycloak.services.managers;
 
+import org.keycloak.models.*;
 import org.keycloak.representations.idm.*;
-import org.keycloak.services.models.*;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

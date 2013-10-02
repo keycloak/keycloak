@@ -5,13 +5,13 @@ import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.jboss.resteasy.spi.NotImplementedYetException;
+import org.keycloak.models.*;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthenticationStatus;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.services.models.*;
 import org.keycloak.services.resources.admin.RealmsAdminResource;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.validation.Validation;
@@ -23,7 +23,6 @@ import javax.ws.rs.core.*;
 import java.net.URI;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.StringTokenizer;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
