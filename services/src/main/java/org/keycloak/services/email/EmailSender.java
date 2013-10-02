@@ -38,8 +38,8 @@ import javax.ws.rs.core.UriInfo;
 
 import org.jboss.resteasy.logging.Logger;
 import org.keycloak.services.managers.AccessCodeEntry;
-import org.keycloak.services.models.RealmModel;
-import org.keycloak.services.models.UserModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.services.resources.AccountService;
 import org.keycloak.services.resources.flows.Urls;
 

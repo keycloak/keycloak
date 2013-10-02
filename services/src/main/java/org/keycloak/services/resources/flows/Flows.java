@@ -24,7 +24,7 @@ package org.keycloak.services.resources.flows;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.TokenManager;
-import org.keycloak.services.models.RealmModel;
+import org.keycloak.models.RealmModel;
 
 import javax.ws.rs.core.UriInfo;
 

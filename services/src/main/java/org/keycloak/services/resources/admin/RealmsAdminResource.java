@@ -4,9 +4,9 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.logging.Logger;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.models.KeycloakSession;
-import org.keycloak.services.models.RealmModel;
-import org.keycloak.services.models.UserModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.services.resources.SaasService;
 
 import javax.ws.rs.*;

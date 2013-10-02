@@ -25,8 +25,8 @@ import java.net.URI;
 
 import javax.ws.rs.core.MultivaluedMap;
 
-import org.keycloak.services.models.RealmModel;
-import org.keycloak.services.models.UserModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.services.resources.flows.FormFlows;
 
 /**

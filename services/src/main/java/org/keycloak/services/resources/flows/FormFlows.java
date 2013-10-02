@@ -29,9 +29,9 @@ import org.jboss.resteasy.spi.ResteasyUriInfo;
 import org.keycloak.services.FormService;
 import org.keycloak.services.email.EmailSender;
 import org.keycloak.services.managers.AccessCodeEntry;
-import org.keycloak.services.models.RealmModel;
-import org.keycloak.services.models.UserModel;
-import org.keycloak.services.models.UserModel.RequiredAction;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserModel.RequiredAction;
 import org.picketlink.idm.model.sample.Realm;
 
 import javax.imageio.spi.ServiceRegistry;

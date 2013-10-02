@@ -2,11 +2,11 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.logging.Logger;
+import org.keycloak.models.*;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceManager;
-import org.keycloak.services.models.*;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;

@@ -1,9 +1,9 @@
 package org.keycloak.services.managers;
 
 import org.jboss.resteasy.logging.Logger;
+import org.keycloak.models.*;
 import org.keycloak.representations.idm.*;
-import org.keycloak.services.models.*;
-import org.keycloak.services.models.UserModel.RequiredAction;
+import org.keycloak.models.UserModel.RequiredAction;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;

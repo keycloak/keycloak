@@ -3,8 +3,8 @@ package org.keycloak.services.resources;
 import org.jboss.resteasy.logging.Logger;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.TokenManager;
-import org.keycloak.services.models.KeycloakSession;
-import org.keycloak.services.models.RealmModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;

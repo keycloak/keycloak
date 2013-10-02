@@ -55,6 +55,7 @@
 
     <modules>
         <module>core</module>
+        <module>model</module>
         <module>services</module>
         <module>integration</module>
         <module>social</module>

@@ -51,7 +51,7 @@ public class LoginBean {
         }
 
         requiredCredentials = new LinkedList<RequiredCredential>();
-        for (org.keycloak.services.models.RequiredCredentialModel c : realm.getRealm().getRequiredCredentials()) {
+        for (org.keycloak.models.RequiredCredentialModel c : realm.getRealm().getRequiredCredentials()) {
             if (c.isInput()) {
                 requiredCredentials.add(new RequiredCredential(c.getType(), c.isSecret(), c.getFormLabel()));
             }
