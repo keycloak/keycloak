@@ -267,7 +267,7 @@ button.primary:enabled:active {
 }
 .feedback.warning p {
   border-color: #f17528;
-  background-image: url(img/feedback-warning-sign.svg);
+  background-image: url(img/feedback-warning-sign.png);
   background-color: #fef1e9;
 }
 button,

@@ -16,6 +16,9 @@
 </head>
 
 <body class="rcue-login-register ${bodyClass}">
+    <div class="feedback-aligner">
+        <#nested "feedback">
+    </div>
     <#if (template.themeConfig.logo)?has_content>
         <h1>
             <a href="#" title="Go to the home page"><img src="${template.themeConfig.logo}" alt="Logo" /></a>
