@@ -168,6 +168,10 @@ public class FormFlows {
         return forwardToForm(Pages.TOTP);
     }
 
+    public Response forwardToErrorPage() {
+        return forwardToForm(Pages.ERROR);
+    }
+
     public FormFlows setAccessCode(AccessCodeEntry accessCode) {
         this.accessCode = accessCode;
         return this;
