@@ -1,4 +1,4 @@
-<%@ page import="org.keycloak.services.models.*,org.keycloak.services.resources.*,javax.ws.rs.core.*,java.util.*" language="java" contentType="text/html; charset=ISO-8859-1"
+<%@ page import="org.keycloak.models.*,org.keycloak.services.resources.*,javax.ws.rs.core.*,java.util.*" language="java" contentType="text/html; charset=ISO-8859-1"
  pageEncoding="ISO-8859-1"%>
 <%
         RealmModel realm = (RealmModel)request.getAttribute(RealmModel.class.getName());
