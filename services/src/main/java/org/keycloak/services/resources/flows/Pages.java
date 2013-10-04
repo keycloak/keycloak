@@ -48,7 +48,7 @@ public class Pages {
 
     public final static String REGISTER = "/forms/register.ftl";
 
-    public final static String SECURITY_FAILURE = "/saas/securityFailure.jsp";
+    public final static String ERROR = "/forms/error.ftl";
 
     public final static String SOCIAL = "/forms/social.ftl";
 
