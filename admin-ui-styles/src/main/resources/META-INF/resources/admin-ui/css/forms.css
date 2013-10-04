@@ -453,7 +453,6 @@ input[type="email"].tiny {
   background-image: url(img/chosen-arrow-down.png), -moz-linear-gradient(center top, #eeeeee 0%, #ffffff 50%);
   border-bottom: none;
   border-radius: 2px 2px 0 0;
-  background-image: ;
   background-repeat: no-repeat;
   background-position: right top;
 }
@@ -524,7 +523,7 @@ input[type="email"].tiny {
   line-height: 1.45454545454545em;
 }
 .tokenfield.form-control .token .close {
-  text-indent: -9999999em;
+  text-indent: -99999em;
   width: 1.6em;
   height: 1.6em;
   line-height: 1.6em;
@@ -569,7 +568,7 @@ input[type="email"].tiny {
   line-height: 1.45454545454545em;
 }
 .token .close {
-  text-indent: -9999999em;
+  text-indent: -99999em;
   width: 1.6em;
   height: 1.6em;
   line-height: 1.6em;
