@@ -57,7 +57,6 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.OAuthFlows;
-import org.keycloak.services.resources.flows.PageFlows;
 import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.social.AuthCallback;
 import org.keycloak.social.AuthRequest;
@@ -221,9 +220,12 @@ public class SocialResource {
             @QueryParam("provider_id") final String providerId, @QueryParam("client_id") final String clientId,
             @QueryParam("scope") final String scope, @QueryParam("state") final String state,
             @QueryParam("redirect_uri") final String redirectUri) {
+        RealmManager realmManager = new RealmManager(session);
+        RealmModel realm = realmManager.getRealm(realmId);
+
         SocialProvider provider = getProvider(providerId);
         if (provider == null) {
-            return Flows.pages(request).forwardToSecurityFailure("Social provider not found");
+            return Flows.forms(realm, request, uriInfo).setError("Social provider not found").forwardToErrorPage();
         }
 
         String key = System.getProperty("keycloak.social." + providerId + ".key");
@@ -244,7 +246,7 @@ public class SocialResource {
 
             return Response.status(Status.FOUND).location(authRequest.getAuthUri()).build();
         } catch (Throwable t) {
-            return Flows.pages(request).forwardToSecurityFailure("Failed to redirect to social auth");
+            return Flows.forms(realm, request, uriInfo).setError("Failed to redirect to social auth").forwardToErrorPage();
         }
     }
 
@@ -253,24 +255,24 @@ public class SocialResource {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response socialRegistration(@PathParam("realm") final String realmId,
                                        final MultivaluedMap<String, String> formData) {
-        PageFlows pageFlows = Flows.pages(request);
+        RealmManager realmManager = new RealmManager(session);
+        RealmModel realm = realmManager.getRealm(realmId);
+
         Cookie cookie = headers.getCookies().get(SocialConstants.SOCIAL_REGISTRATION_COOKIE);
         if (cookie == null) {
-            return pageFlows.forwardToSecurityFailure("Social registration cookie not found");
+            return Flows.forms(realm, request, uriInfo).setError("Social registration cookie not found").forwardToErrorPage();
         }
 
         String requestId = cookie.getValue();
         if (!socialRequestManager.isRequestId(requestId)) {
             logger.error("Unknown requestId found in cookie. Maybe it's expired. requestId=" + requestId);
-            return pageFlows.forwardToSecurityFailure("Unknown requestId found in cookie. Maybe it's expired.");
+            return Flows.forms(realm, request, uriInfo).setError("Unknown requestId found in cookie. Maybe it's expired.").forwardToErrorPage();
         }
 
         RequestDetails requestData = socialRequestManager.getData(requestId);
 
-        RealmManager realmManager = new RealmManager(session);
-        RealmModel realm = realmManager.getRealm(realmId);
         if (realm == null || !realm.isEnabled()) {
-            return pageFlows.forwardToSecurityFailure("Realm doesn't exists or is not enabled.");
+            return Flows.forms(realm, request, uriInfo).setError("Realm doesn't exists or is not enabled.").forwardToErrorPage();
         }
         TokenService tokenService = new TokenService(realm, tokenManager);
         resourceContext.initResource(tokenService);
