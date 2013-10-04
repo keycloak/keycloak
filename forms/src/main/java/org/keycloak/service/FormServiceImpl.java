@@ -169,6 +169,7 @@ public class FormServiceImpl implements FormService {
             attributes.put("realm", realm);
 
             UrlBean url = new UrlBean(realm, dataBean.getBaseURI());
+            url.setSocialRegistration(dataBean.getSocialRegistration());
 
             attributes.put("url", url);
             attributes.put("user", new UserBean(dataBean.getUserModel()));
@@ -213,6 +214,7 @@ public class FormServiceImpl implements FormService {
             attributes.put("realm", realm);
 
             UrlBean url = new UrlBean(realm, dataBean.getBaseURI());
+            url.setSocialRegistration(dataBean.getSocialRegistration());
 
             attributes.put("url", url);
             attributes.put("user", new UserBean(dataBean.getUserModel()));
@@ -236,6 +238,7 @@ public class FormServiceImpl implements FormService {
             attributes.put("realm", realm);
 
             UrlBean url = new UrlBean(realm, dataBean.getBaseURI());
+            url.setSocialRegistration(dataBean.getSocialRegistration());
 
             attributes.put("url", url);
             attributes.put("user", new UserBean(dataBean.getUserModel()));
