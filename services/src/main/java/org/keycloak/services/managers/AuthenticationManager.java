@@ -211,7 +211,7 @@ public class AuthenticationManager {
         Set<String> types = new HashSet<String>();
 
         List<RequiredCredentialModel> requiredCredentials = null;
-        if (realm.hasRole(user, RealmManager.RESOURCE_ROLE)) {
+        if (realm.hasRole(user, RealmManager.APPLICATION_ROLE)) {
             requiredCredentials = realm.getRequiredApplicationCredentials();
         } else if (realm.hasRole(user, RealmManager.IDENTITY_REQUESTER_ROLE)) {
             requiredCredentials = realm.getRequiredOAuthClientCredentials();

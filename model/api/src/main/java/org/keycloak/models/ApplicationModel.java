@@ -8,9 +8,9 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public interface ApplicationModel {
-    void updateResource();
+    void updateApplication();
 
-    UserModel getResourceUser();
+    UserModel getApplicationUser();
 
     String getId();
 
@@ -30,6 +30,10 @@ public interface ApplicationModel {
 
     void setManagementUrl(String url);
 
+    String getBaseUrl();
+
+    void setBaseUrl(String url);
+
     RoleModel getRole(String name);
 
     RoleModel addRole(String name);
@@ -38,11 +42,11 @@ public interface ApplicationModel {
 
     Set<String> getRoleMappingValues(UserModel user);
 
-    void addScope(UserModel agent, String roleName);
+    void addScopeMapping(UserModel agent, String roleName);
 
-    void addScope(UserModel agent, RoleModel role);
+    void addScopeMapping(UserModel agent, RoleModel role);
 
-    Set<String> getScope(UserModel agent);
+    Set<String> getScopeMapping(UserModel agent);
 
     List<RoleModel> getRoleMappings(UserModel user);
 

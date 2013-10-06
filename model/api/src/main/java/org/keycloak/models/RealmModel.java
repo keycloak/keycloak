@@ -97,7 +97,7 @@ public interface RealmModel {
     
     void updateDefaultRoles(String[] defaultRoles);
 
-    Map<String, ApplicationModel> getResourceNameMap();
+    Map<String, ApplicationModel> getApplicationNameMap();
 
     List<ApplicationModel> getApplications();
 
@@ -109,9 +109,9 @@ public interface RealmModel {
 
     Set<String> getRoleMappingValues(UserModel user);
 
-    void addScope(UserModel agent, String roleName);
+    void addScopeMapping(UserModel agent, String roleName);
 
-    Set<String> getScope(UserModel agent);
+    Set<String> getScopeMapping(UserModel agent);
 
     boolean isRealmAdmin(UserModel agent);
 
@@ -160,4 +160,8 @@ public interface RealmModel {
     List<RoleModel> getRoleMappings(UserModel user);
 
     void deleteRoleMapping(UserModel user, RoleModel role);
+
+    OAuthClientModel addOAuthClient(String name);
+
+    OAuthClientModel getOAuthClient(String name);
 }

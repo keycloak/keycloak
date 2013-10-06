@@ -553,7 +553,7 @@ public class RealmAdapter implements RealmModel {
      * @return
      */
     @Override
-    public Map<String, ApplicationModel> getResourceNameMap() {
+    public Map<String, ApplicationModel> getApplicationNameMap() {
         Map<String, ApplicationModel> resourceMap = new HashMap<String, ApplicationModel>();
         for (ApplicationModel resource : getApplications()) {
             resourceMap.put(resource.getName(), resource);
@@ -568,10 +568,10 @@ public class RealmAdapter implements RealmModel {
      */
     @Override
     public ApplicationModel getApplicationById(String id) {
-        RelationshipQuery<ResourceRelationship> query = getRelationshipManager().createRelationshipQuery(ResourceRelationship.class);
-        query.setParameter(ResourceRelationship.REALM, realm.getName());
-        query.setParameter(ResourceRelationship.RESOURCE, id);
-        List<ResourceRelationship> results = query.getResultList();
+        RelationshipQuery<ApplicationRelationship> query = getRelationshipManager().createRelationshipQuery(ApplicationRelationship.class);
+        query.setParameter(ApplicationRelationship.REALM, realm.getName());
+        query.setParameter(ApplicationRelationship.APPLICATION, id);
+        List<ApplicationRelationship> results = query.getResultList();
         if (results.size() == 0) return null;
         ApplicationData resource = partitionManager.getPartition(ApplicationData.class, id);
         ApplicationModel model = new ApplicationAdapter(resource, this, partitionManager);
@@ -581,12 +581,12 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public List<ApplicationModel> getApplications() {
-        RelationshipQuery<ResourceRelationship> query = getRelationshipManager().createRelationshipQuery(ResourceRelationship.class);
-        query.setParameter(ResourceRelationship.REALM, realm.getName());
-        List<ResourceRelationship> results = query.getResultList();
+        RelationshipQuery<ApplicationRelationship> query = getRelationshipManager().createRelationshipQuery(ApplicationRelationship.class);
+        query.setParameter(ApplicationRelationship.REALM, realm.getName());
+        List<ApplicationRelationship> results = query.getResultList();
         List<ApplicationModel> resources = new ArrayList<ApplicationModel>();
-        for (ResourceRelationship relationship : results) {
-            ApplicationData resource = partitionManager.getPartition(ApplicationData.class, relationship.getResource());
+        for (ApplicationRelationship relationship : results) {
+            ApplicationData resource = partitionManager.getPartition(ApplicationData.class, relationship.getApplication());
             ApplicationModel model = new ApplicationAdapter(resource, this, partitionManager);
             resources.add(model);
         }
@@ -603,13 +603,13 @@ public class RealmAdapter implements RealmModel {
         applicationData.setResourceName(name);
         applicationData.setResourceUser(resourceUser);
         partitionManager.add(applicationData);
-        ResourceRelationship resourceRelationship = new ResourceRelationship();
+        ApplicationRelationship resourceRelationship = new ApplicationRelationship();
         resourceRelationship.setRealm(realm.getName());
-        resourceRelationship.setResource(applicationData.getName());
+        resourceRelationship.setApplication(applicationData.getName());
         getRelationshipManager().add(resourceRelationship);
         ApplicationModel resource = new ApplicationAdapter(applicationData, this, partitionManager);
         resource.addRole("*");
-        resource.addScope(new UserAdapter(resourceUser, idm), "*");
+        resource.addScopeMapping(new UserAdapter(resourceUser, idm), "*");
         return resource;
     }
 
@@ -667,7 +667,7 @@ public class RealmAdapter implements RealmModel {
 
 
     @Override
-    public void addScope(UserModel agent, String roleName) {
+    public void addScopeMapping(UserModel agent, String roleName) {
         IdentityManager idm = getIdm();
         Role role = SampleModel.getRole(idm, roleName);
         if (role == null) throw new RuntimeException("role not found");
@@ -677,9 +677,31 @@ public class RealmAdapter implements RealmModel {
         getRelationshipManager().add(scope);
     }
 
+    @Override
+    public OAuthClientModel addOAuthClient(String name) {
+        User client = new User(name);
+        getIdm().add(client);
+        OAuthClientRelationship rel = new OAuthClientRelationship();
+        rel.setOauthAgent(client);
+        rel.setRealm(realm.getName());
+        getRelationshipManager().add(rel);
+        return new OAuthClientAdapter(rel, getIdm(), getRelationshipManager());
+    }
 
     @Override
-    public Set<String> getScope(UserModel agent) {
+    public OAuthClientModel getOAuthClient(String name) {
+        User user = findPicketlinkUser(name);
+        if (user == null) return null;
+        RelationshipQuery<OAuthClientRelationship> query = getRelationshipManager().createRelationshipQuery(OAuthClientRelationship.class);
+        query.setParameter(OAuthClientRelationship.OAUTH_AGENT, user);
+        List<OAuthClientRelationship> results = query.getResultList();
+        if (results.size() == 0) return null;
+        return new OAuthClientAdapter(results.get(0), getIdm(), getRelationshipManager());
+    }
+
+
+    @Override
+    public Set<String> getScopeMapping(UserModel agent) {
         RelationshipQuery<ScopeRelationship> query = getRelationshipManager().createRelationshipQuery(ScopeRelationship.class);
         query.setParameter(ScopeRelationship.CLIENT, ((UserAdapter)agent).getUser());
         List<ScopeRelationship> scope = query.getResultList();
