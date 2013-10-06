@@ -156,6 +156,17 @@ module.config([ '$routeProvider', function($routeProvider) {
                 }
             },
             controller : 'ApplicationRoleDetailCtrl'
+        }).when('/realms/:realm/applications/:application/credentials', {
+            templateUrl : 'partials/application-credentials.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                application : function(ApplicationLoader) {
+                    return ApplicationLoader();
+                }
+            },
+            controller : 'ApplicationCredentialsCtrl'
         }).when('/realms/:realm/applications/:application/roles', {
             templateUrl : 'partials/application-role-list.html',
             resolve : {

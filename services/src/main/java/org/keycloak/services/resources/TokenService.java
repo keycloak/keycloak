@@ -451,7 +451,7 @@ public class TokenService {
             return null;
         }
 
-        RoleModel resourceRole = realm.getRole(RealmManager.RESOURCE_ROLE);
+        RoleModel resourceRole = realm.getRole(RealmManager.APPLICATION_ROLE);
         RoleModel identityRequestRole = realm.getRole(RealmManager.IDENTITY_REQUESTER_ROLE);
         boolean isResource = realm.hasRole(client, resourceRole);
         if (!isResource && !realm.hasRole(client, identityRequestRole)) {

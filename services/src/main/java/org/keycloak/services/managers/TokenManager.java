@@ -50,7 +50,7 @@ public class TokenManager {
         Set<String> realmMapping = realm.getRoleMappingValues(user);
 
         if (realmMapping != null && realmMapping.size() > 0 && (scopeMap == null || scopeMap.containsKey("realm"))) {
-            Set<String> scope = realm.getScope(client);
+            Set<String> scope = realm.getScopeMapping(client);
             if (scope.size() > 0) {
                 Set<String> scopeRequest = null;
                 if (scopeMap != null) {
@@ -69,7 +69,7 @@ public class TokenManager {
         for (ApplicationModel resource : realm.getApplications()) {
             Set<String> mapping = resource.getRoleMappingValues(user);
             if (mapping != null && mapping.size() > 0 && (scopeMap == null || scopeMap.containsKey(resource.getName()))) {
-                Set<String> scope = resource.getScope(client);
+                Set<String> scope = resource.getScopeMapping(client);
                 if (scope.size() > 0) {
                     Set<String> scopeRequest = null;
                     if (scopeMap != null) {
@@ -131,7 +131,7 @@ public class TokenManager {
         }
 
         if (accessCodeEntry.getResourceRolesRequested().size() > 0) {
-            Map<String, ApplicationModel> resourceMap = realm.getResourceNameMap();
+            Map<String, ApplicationModel> resourceMap = realm.getApplicationNameMap();
             for (String resourceName : accessCodeEntry.getResourceRolesRequested().keySet()) {
                 ApplicationModel resource = resourceMap.get(resourceName);
                 SkeletonKeyToken.Access access = token.addAccess(resourceName).verifyCaller(resource.isSurrogateAuthRequired());

@@ -322,4 +322,22 @@ public class UsersResource {
             }
         }
     }
+
+    @Path("{username}/credentials")
+    @PUT
+    @Consumes("application/json")
+    public void updateCredentials(@PathParam("username") String username, List<CredentialRepresentation> credentials) {
+        UserModel user = realm.getUser(username);
+        if (user == null) {
+            throw new NotFoundException();
+        }
+        if (credentials == null) return;
+
+        for (CredentialRepresentation rep : credentials) {
+            UserCredentialModel cred = RealmManager.fromRepresentation(rep);
+            realm.updateCredential(user, cred);
+        }
+
+    }
+
 }

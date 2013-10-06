@@ -3,8 +3,8 @@ package org.keycloak.services.resources.admin;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.logging.Logger;
 import org.keycloak.representations.idm.ApplicationRepresentation;
+import org.keycloak.services.managers.ApplicationManager;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.managers.ResourceManager;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -45,7 +45,7 @@ public class ApplicationsResource {
     public List<ApplicationRepresentation> getResources() {
         List<ApplicationRepresentation> rep = new ArrayList<ApplicationRepresentation>();
         List<ApplicationModel> applicationModels = realm.getApplications();
-        ResourceManager resourceManager = new ResourceManager(new RealmManager(session));
+        ApplicationManager resourceManager = new ApplicationManager(new RealmManager(session));
         for (ApplicationModel applicationModel : applicationModels) {
             rep.add(resourceManager.toRepresentation(applicationModel));
         }
@@ -55,8 +55,8 @@ public class ApplicationsResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createResource(final @Context UriInfo uriInfo, final ApplicationRepresentation rep) {
-        ResourceManager resourceManager = new ResourceManager(new RealmManager(session));
-        ApplicationModel applicationModel = resourceManager.createResource(realm, rep);
+        ApplicationManager resourceManager = new ApplicationManager(new RealmManager(session));
+        ApplicationModel applicationModel = resourceManager.createApplication(realm, rep);
         return Response.created(uriInfo.getAbsolutePathBuilder().path(applicationModel.getId()).build()).build();
     }
 

@@ -10,13 +10,13 @@ import org.picketlink.idm.query.AttributeParameter;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ResourceRelationship extends AbstractAttributedType implements Relationship {
+public class ApplicationRelationship extends AbstractAttributedType implements Relationship {
     private static final long serialVersionUID = 1L;
 
     public static final AttributeParameter REALM = new AttributeParameter("realm");
-    public static final AttributeParameter RESOURCE = new AttributeParameter("resource");
+    public static final AttributeParameter APPLICATION = new AttributeParameter("application");
 
-    public ResourceRelationship() {
+    public ApplicationRelationship() {
     }
 
     @AttributeProperty
@@ -30,12 +30,12 @@ public class ResourceRelationship extends AbstractAttributedType implements Rela
 
 
     @AttributeProperty
-    public String getResource() {
-        return (String)getAttribute("resource").getValue();
+    public String getApplication() {
+        return (String)getAttribute("application").getValue();
     }
 
-    public void setResource(String realm) {
-        setAttribute(new Attribute<String>("resource", realm));
+    public void setApplication(String app) {
+        setAttribute(new Attribute<String>("application", app));
     }
 
 }
