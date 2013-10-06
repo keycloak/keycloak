@@ -4,9 +4,10 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.logging.Logger;
 import org.keycloak.models.*;
 import org.keycloak.representations.idm.ApplicationRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.services.managers.ApplicationManager;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.managers.ResourceManager;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
@@ -38,17 +39,17 @@ public class ApplicationResource {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     public void update(final ApplicationRepresentation rep) {
-        ResourceManager resourceManager = new ResourceManager(new RealmManager(session));
-        resourceManager.updateResource(rep, application);
+        ApplicationManager applicationManager = new ApplicationManager(new RealmManager(session));
+        applicationManager.updateApplication(rep, application);
     }
 
 
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public ApplicationRepresentation getResource(final @PathParam("id") String id) {
-        ResourceManager resourceManager = new ResourceManager(new RealmManager(session));
-        return resourceManager.toRepresentation(application);
+    public ApplicationRepresentation getApplication() {
+        ApplicationManager applicationManager = new ApplicationManager(new RealmManager(session));
+        return applicationManager.toRepresentation(application);
     }
 
     @Path("roles")
@@ -102,6 +103,20 @@ public class ApplicationResource {
         }
         role.setDescription(rep.getDescription());
         return Response.created(uriInfo.getAbsolutePathBuilder().path(role.getId()).build()).build();
+    }
+
+    @Path("credentials")
+    @PUT
+    @Consumes("application/json")
+    public void updateCredentials(List<CredentialRepresentation> credentials) {
+        logger.info("updateCredentials");
+        if (credentials == null) return;
+
+        for (CredentialRepresentation rep : credentials) {
+            UserCredentialModel cred = RealmManager.fromRepresentation(rep);
+            realm.updateCredential(application.getApplicationUser(), cred);
+        }
+
     }
 
 }

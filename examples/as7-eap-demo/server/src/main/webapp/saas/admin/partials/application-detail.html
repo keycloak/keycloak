@@ -7,7 +7,7 @@
                     <li><a href="#/create/application/{{realm.id}}">New Application</a></li>
                     <li><a href="#/realms/{{realm.id}}/applications">Applications</a></li>
                     <li class="active"><a href="#/realms/{{realm.id}}/applications/{{application.id}}">Settings</a></li>
-                    <li><a href="#">Credentials</a></li>
+                    <li><a href="#/realms/{{realm.id}}/applications/{{application.id}}/credentials">Credentials</a></li>
                     <li><a href="#">Installation</a></li>
                     <li><a href="#/realms/{{realm.id}}/applications/{{application.id}}/roles">Roles</a></li>
                     <li><a href="#">Scope</a></li>
@@ -47,6 +47,14 @@
                                             </span>
                                     <span class="onoffswitch-switch"></span>
                                 </label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="adminUrl" class="control-label">Base URL</label>
+
+                            <div class="controls">
+                                <input class="input-small" type="text" name="baseUrl" id="baseUrl"
+                                       data-ng-model="application.baseUrl">
                             </div>
                         </div>
                         <div class="form-group">

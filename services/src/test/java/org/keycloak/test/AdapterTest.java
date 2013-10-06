@@ -6,15 +6,10 @@ import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+import org.keycloak.models.*;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.services.managers.OAuthClientManager;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RequiredCredentialModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.services.resources.KeycloakApplication;
 
@@ -133,6 +128,19 @@ public class AdapterTest {
         cred.setValue("geheim");
         realmModel.updateCredential(user, cred);
         Assert.assertTrue(realmModel.validatePassword(user, "geheim"));
+    }
+
+    @Test
+    public void testOAuthClient() throws Exception {
+        test1CreateRealm();
+
+        OAuthClientModel oauth = new OAuthClientManager(realmModel).createOAuthClient("oauth-client");
+        oauth.setBaseUrl("/foo/bar");
+        oauth = realmModel.getOAuthClient("oauth-client");
+        Assert.assertEquals("/foo/bar", oauth.getBaseUrl());
+        Assert.assertTrue(realmModel.hasRole(oauth.getOAuthAgent(), RealmManager.IDENTITY_REQUESTER_ROLE));
+
+
     }
 
     @Test

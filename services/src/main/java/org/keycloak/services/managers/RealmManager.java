@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class RealmManager {
     protected static final Logger logger = Logger.getLogger(RealmManager.class);
     private static AtomicLong counter = new AtomicLong(1);
-    public static final String RESOURCE_ROLE = "KEYCLOAK_RESOURCE";
+    public static final String APPLICATION_ROLE = "KEYCLOAK_APPLICATION";
     public static final String IDENTITY_REQUESTER_ROLE = "KEYCLOAK_IDENTITY_REQUESTER";
     public static final String WILDCARD_ROLE = "*";
 
@@ -50,7 +50,7 @@ public class RealmManager {
         RealmModel realm = identitySession.createRealm(id, name);
         realm.setName(name);
         realm.addRole(WILDCARD_ROLE);
-        realm.addRole(RESOURCE_ROLE);
+        realm.addRole(APPLICATION_ROLE);
         realm.addRole(IDENTITY_REQUESTER_ROLE);
         return realm;
     }
@@ -74,10 +74,12 @@ public class RealmManager {
         if (rep.isRegistrationAllowed() != null) realm.setRegistrationAllowed(rep.isRegistrationAllowed());
         if (rep.isVerifyEmail() != null) realm.setVerifyEmail(rep.isVerifyEmail());
         if (rep.isResetPasswordAllowed() != null) realm.setResetPasswordAllowed(rep.isResetPasswordAllowed());
-        if (rep.isAutomaticRegistrationAfterSocialLogin() != null) realm.setAutomaticRegistrationAfterSocialLogin(rep.isAutomaticRegistrationAfterSocialLogin());
+        if (rep.isAutomaticRegistrationAfterSocialLogin() != null)
+            realm.setAutomaticRegistrationAfterSocialLogin(rep.isAutomaticRegistrationAfterSocialLogin());
         if (rep.isSslNotRequired() != null) realm.setSslNotRequired((rep.isSslNotRequired()));
         if (rep.getAccessCodeLifespan() != null) realm.setAccessCodeLifespan(rep.getAccessCodeLifespan());
-        if (rep.getAccessCodeLifespanUserAction() != null) realm.setAccessCodeLifespanUserAction(rep.getAccessCodeLifespanUserAction());
+        if (rep.getAccessCodeLifespanUserAction() != null)
+            realm.setAccessCodeLifespanUserAction(rep.getAccessCodeLifespanUserAction());
         if (rep.getTokenLifespan() != null) realm.setTokenLifespan(rep.getTokenLifespan());
         if (rep.getRequiredOAuthClientCredentials() != null) {
             realm.updateRequiredOAuthClientCredentials(rep.getRequiredOAuthClientCredentials());
@@ -113,7 +115,8 @@ public class RealmManager {
         if (rep.getAccessCodeLifespan() != null) newRealm.setAccessCodeLifespan(rep.getAccessCodeLifespan());
         else newRealm.setAccessCodeLifespan(60);
 
-        if (rep.getAccessCodeLifespanUserAction() != null) newRealm.setAccessCodeLifespanUserAction(rep.getAccessCodeLifespanUserAction());
+        if (rep.getAccessCodeLifespanUserAction() != null)
+            newRealm.setAccessCodeLifespanUserAction(rep.getAccessCodeLifespanUserAction());
         else newRealm.setAccessCodeLifespanUserAction(300);
 
         if (rep.isSslNotRequired() != null) newRealm.setSslNotRequired(rep.isSslNotRequired());
@@ -121,7 +124,8 @@ public class RealmManager {
         if (rep.isRegistrationAllowed() != null) newRealm.setRegistrationAllowed(rep.isRegistrationAllowed());
         if (rep.isVerifyEmail() != null) newRealm.setVerifyEmail(rep.isVerifyEmail());
         if (rep.isResetPasswordAllowed() != null) newRealm.setResetPasswordAllowed(rep.isResetPasswordAllowed());
-        if (rep.isAutomaticRegistrationAfterSocialLogin() != null) newRealm.setAutomaticRegistrationAfterSocialLogin(rep.isAutomaticRegistrationAfterSocialLogin());
+        if (rep.isAutomaticRegistrationAfterSocialLogin() != null)
+            newRealm.setAutomaticRegistrationAfterSocialLogin(rep.isAutomaticRegistrationAfterSocialLogin());
         if (rep.getPrivateKey() == null || rep.getPublicKey() == null) {
             generateRealmKeys(newRealm);
         } else {
@@ -175,7 +179,7 @@ public class RealmManager {
         }
 
         if (rep.getApplications() != null) {
-            createResources(rep, newRealm);
+            createApplications(rep, newRealm);
         }
 
         if (rep.getRoleMappings() != null) {
@@ -199,7 +203,7 @@ public class RealmManager {
                         role = newRealm.addRole(roleString.trim());
                     }
                     UserModel user = userMap.get(scope.getUsername());
-                    newRealm.addScope(user, role.getName());
+                    newRealm.addScopeMapping(user, role.getName());
                 }
 
             }
@@ -237,18 +241,23 @@ public class RealmManager {
         }
         if (userRep.getCredentials() != null) {
             for (CredentialRepresentation cred : userRep.getCredentials()) {
-                UserCredentialModel credential = new UserCredentialModel();
-                credential.setType(cred.getType());
-                credential.setValue(cred.getValue());
+                UserCredentialModel credential = fromRepresentation(cred);
                 newRealm.updateCredential(user, credential);
             }
         }
         return user;
     }
 
+    public static UserCredentialModel fromRepresentation(CredentialRepresentation cred) {
+        UserCredentialModel credential = new UserCredentialModel();
+        credential.setType(cred.getType());
+        credential.setValue(cred.getValue());
+        return credential;
+    }
+
     /**
      * Query users based on a search string:
-     *
+     * <p/>
      * "Bill Burke" first and last name
      * "bburke@redhat.com" email
      * "Burke" lastname or username
@@ -291,7 +300,7 @@ public class RealmManager {
             List<UserModel> results = new ArrayList<UserModel>();
             results.addAll(usernameQuery);
             for (UserModel lastnameUser : lastnameQuery) {
-               boolean found = false;
+                boolean found = false;
                 for (UserModel usernameUser : usernameQuery) {
                     if (usernameUser.getLoginName().equals(lastnameUser.getLoginName())) {
                         found = true;
@@ -309,20 +318,21 @@ public class RealmManager {
     public void addRequiredCredential(RealmModel newRealm, String requiredCred) {
         newRealm.addRequiredCredential(requiredCred);
     }
+
     public void addResourceRequiredCredential(RealmModel newRealm, String requiredCred) {
         newRealm.addRequiredResourceCredential(requiredCred);
     }
+
     public void addOAuthClientRequiredCredential(RealmModel newRealm, String requiredCred) {
         newRealm.addRequiredOAuthClientCredential(requiredCred);
     }
 
 
-
-     protected void createResources(RealmRepresentation rep, RealmModel realm) {
-        RoleModel loginRole = realm.getRole(RealmManager.RESOURCE_ROLE);
-        ResourceManager manager = new ResourceManager(this);
+    protected void createApplications(RealmRepresentation rep, RealmModel realm) {
+        RoleModel loginRole = realm.getRole(RealmManager.APPLICATION_ROLE);
+        ApplicationManager manager = new ApplicationManager(this);
         for (ApplicationRepresentation resourceRep : rep.getApplications()) {
-            manager.createResource(realm, loginRole, resourceRep);
+            manager.createApplication(realm, loginRole, resourceRep);
         }
     }
 

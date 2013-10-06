@@ -111,6 +111,8 @@ module.factory('RealmRoleMapping', function($resource) {
     });
 });
 
+
+
 module.factory('ApplicationRoleMapping', function($resource) {
     return $resource('/auth-server/rest/saas/admin/realms/:realm/users/:userId/role-mappings/applications/:application', {
         realm : '@realm',
@@ -163,6 +165,19 @@ module.factory('Application', function($resource) {
         }
     });
 });
+
+module.factory('ApplicationCredentials', function($resource) {
+    return $resource('/auth-server/rest/saas/admin/realms/:realm/applications/:application/credentials', {
+        realm : '@realm',
+        application : '@application'
+    },  {
+        update : {
+            method : 'PUT',
+            isArray : true
+        }
+    });
+});
+
 
 
 module.factory('Current', function($resource) {

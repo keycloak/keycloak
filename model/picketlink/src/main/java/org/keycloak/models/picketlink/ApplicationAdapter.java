@@ -25,20 +25,20 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class ApplicationAdapter implements ApplicationModel {
-    protected ApplicationData resource;
+    protected ApplicationData applicationData;
     protected RealmAdapter realm;
     protected IdentityManager idm;
     protected PartitionManager partitionManager;
     protected RelationshipManager relationshipManager;
 
-    public ApplicationAdapter(ApplicationData resource, RealmAdapter realm, PartitionManager partitionManager) {
-        this.resource = resource;
+    public ApplicationAdapter(ApplicationData applicationData, RealmAdapter realm, PartitionManager partitionManager) {
+        this.applicationData = applicationData;
         this.realm = realm;
         this.partitionManager = partitionManager;
     }
 
     protected IdentityManager getIdm() {
-        if (idm == null) idm = partitionManager.createIdentityManager(resource);
+        if (idm == null) idm = partitionManager.createIdentityManager(applicationData);
         return idm;
     }
 
@@ -48,59 +48,69 @@ public class ApplicationAdapter implements ApplicationModel {
     }
 
     @Override
-    public void updateResource() {
-        partitionManager.update(resource);
+    public void updateApplication() {
+        partitionManager.update(applicationData);
     }
 
     @Override
-    public UserAdapter getResourceUser() {
-        return new UserAdapter(resource.getResourceUser(), realm.getIdm());
+    public UserAdapter getApplicationUser() {
+        return new UserAdapter(applicationData.getResourceUser(), realm.getIdm());
     }
 
     @Override
     public String getId() {
         // for some reason picketlink queries by name when finding partition, don't know what ID is used for now
-        return resource.getName();
+        return applicationData.getName();
     }
 
     @Override
     public String getName() {
-        return resource.getResourceName();
+        return applicationData.getResourceName();
     }
 
     @Override
     public void setName(String name) {
-        resource.setResourceName(name);
+        applicationData.setResourceName(name);
     }
 
     @Override
     public boolean isEnabled() {
-        return resource.isEnabled();
+        return applicationData.isEnabled();
     }
 
     @Override
     public void setEnabled(boolean enabled) {
-        resource.setEnabled(enabled);
+        applicationData.setEnabled(enabled);
     }
 
     @Override
     public boolean isSurrogateAuthRequired() {
-        return resource.isSurrogateAuthRequired();
+        return applicationData.isSurrogateAuthRequired();
     }
 
     @Override
     public void setSurrogateAuthRequired(boolean surrogateAuthRequired) {
-        resource.setSurrogateAuthRequired(surrogateAuthRequired);
+        applicationData.setSurrogateAuthRequired(surrogateAuthRequired);
     }
 
     @Override
     public String getManagementUrl() {
-        return resource.getManagementUrl();
+        return applicationData.getManagementUrl();
     }
 
     @Override
     public void setManagementUrl(String url) {
-        resource.setManagementUrl(url);
+        applicationData.setManagementUrl(url);
+    }
+
+    @Override
+    public String getBaseUrl() {
+        return applicationData.getBaseUrl();
+    }
+
+    @Override
+    public void setBaseUrl(String url) {
+        applicationData.setBaseUrl(url);
     }
 
     @Override
@@ -136,7 +146,7 @@ public class ApplicationAdapter implements ApplicationModel {
     @Override
     public List<RoleModel> getRoles() {
         IdentityQuery<Role> query = getIdm().createIdentityQuery(Role.class);
-        query.setParameter(Role.PARTITION, resource);
+        query.setParameter(Role.PARTITION, applicationData);
         List<Role> roles = query.getResultList();
         List<RoleModel> roleModels = new ArrayList<RoleModel>();
         for (Role role : roles) {
@@ -152,7 +162,7 @@ public class ApplicationAdapter implements ApplicationModel {
         List<Grant> grants = query.getResultList();
         HashSet<String> set = new HashSet<String>();
         for (Grant grant : grants) {
-            if (grant.getRole().getPartition().getId().equals(resource.getId())) set.add(grant.getRole().getName());
+            if (grant.getRole().getPartition().getId().equals(applicationData.getId())) set.add(grant.getRole().getName());
         }
         return set;
     }
@@ -164,7 +174,7 @@ public class ApplicationAdapter implements ApplicationModel {
         List<Grant> grants = query.getResultList();
         List<RoleModel> set = new ArrayList<RoleModel>();
         for (Grant grant : grants) {
-            if (grant.getRole().getPartition().getId().equals(resource.getId())) set.add(new RoleAdapter(grant.getRole(), getIdm()));
+            if (grant.getRole().getPartition().getId().equals(applicationData.getId())) set.add(new RoleAdapter(grant.getRole(), getIdm()));
         }
         return set;
     }
@@ -184,16 +194,16 @@ public class ApplicationAdapter implements ApplicationModel {
 
 
     @Override
-    public void addScope(UserModel agent, String roleName) {
+    public void addScopeMapping(UserModel agent, String roleName) {
         IdentityManager idm = getIdm();
         Role role = SampleModel.getRole(idm,roleName);
         if (role == null) throw new RuntimeException("role not found");
-        addScope(agent, new RoleAdapter(role, idm));
+        addScopeMapping(agent, new RoleAdapter(role, idm));
 
     }
 
     @Override
-    public void addScope(UserModel agent, RoleModel role) {
+    public void addScopeMapping(UserModel agent, RoleModel role) {
         ScopeRelationship scope = new ScopeRelationship();
         scope.setClient(((UserAdapter)agent).getUser());
         scope.setScope(((RoleAdapter)role).getRole());
@@ -201,13 +211,13 @@ public class ApplicationAdapter implements ApplicationModel {
     }
 
     @Override
-    public Set<String> getScope(UserModel agent) {
+    public Set<String> getScopeMapping(UserModel agent) {
         RelationshipQuery<ScopeRelationship> query = getRelationshipManager().createRelationshipQuery(ScopeRelationship.class);
         query.setParameter(ScopeRelationship.CLIENT, ((UserAdapter)agent).getUser());
         List<ScopeRelationship> scope = query.getResultList();
         HashSet<String> set = new HashSet<String>();
         for (ScopeRelationship rel : scope) {
-            if (rel.getScope().getPartition().getId().equals(resource.getId())) set.add(rel.getScope().getName());
+            if (rel.getScope().getPartition().getId().equals(applicationData.getId())) set.add(rel.getScope().getName());
         }
         return set;
     }

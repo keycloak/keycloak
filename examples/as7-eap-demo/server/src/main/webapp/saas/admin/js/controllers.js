@@ -42,9 +42,6 @@ module.controller('RealmListCtrl', function($scope, Realm, Current) {
 module.controller('RealmDropdownCtrl', function($scope, Realm, Current, Auth, $location) {
 //    Current.realms = Realm.get();
     $scope.current = Current;
-    if (Current.realms.length > 0) {
-        console.log('[0]: ' + current.realms[0].realm);
-    }
     $scope.changeRealm = function() {
         $location.url("/realms/" + $scope.current.realm.id);
     };
@@ -477,6 +474,92 @@ module.controller('ApplicationRoleListCtrl', function($scope, $location, realm, 
         $scope.path = $location.path().substring(1).split("/");
     });
 });
+
+function randomString(len) {
+    var charSet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    var randomString = '';
+    for (var i = 0; i < len; i++) {
+        var randomPoz = Math.floor(Math.random() * charSet.length);
+        randomString += charSet.substring(randomPoz,randomPoz+1);
+    }
+    return randomString;
+}
+
+module.controller('ApplicationCredentialsCtrl', function($scope, $location, realm, application, ApplicationCredentials, Notifications) {
+    $scope.realm = realm;
+    $scope.application = application;
+
+    var required = realm.requiredApplicationCredentials;
+
+    for (var i = 0; i < required.length; i++) {
+        if (required[i] == 'password') {
+            $scope.passwordRequired = true;
+        } else if (required[i] == 'totp') {
+            $scope.totpRequired = true;
+        } else if (required[i] == 'cert') {
+            $scope.certRequired = true;
+        }
+    }
+
+    $scope.generateTotp = function() {
+        $scope.totp = randomString(5) + '-' + randomString(5) + '-' + randomString(5);
+    }
+
+    $scope.changePassword = function() {
+        if ($scope.password != $scope.confirmPassword) {
+           Notifications.error("Password not confirmed");
+           $scope.password = "";
+           $scope.confirmPassword = "";
+           return;
+        }
+        var creds = [
+           {
+              type : "password",
+              value : $scope.password
+           }
+        ];
+
+        ApplicationCredentials.update({ realm : realm.id, application : application.id }, creds,
+            function() {
+                Notifications.success('Change password successful');
+                $scope.password = null;
+                $scope.confirmPassword = null;
+            },
+            function() {
+                Notifications.error("Change password failed");
+                $scope.password = null;
+                $scope.confirmPassword = null;
+            }
+        );
+    };
+
+    $scope.changeTotp = function() {
+        var creds = [
+            {
+                type : "totp",
+                value : $scope.totp
+            }
+        ];
+
+        ApplicationCredentials.update({ realm : realm.id, application : application.id }, creds,
+            function() {
+                Notifications.success('Change totp successful');
+                $scope.totp = null;
+            },
+            function() {
+                Notifications.error("Change totp failed");
+                $scope.totp = null;
+            }
+        );
+    };
+    $scope.$watch(function() {
+        return $location.path();
+    }, function() {
+        $scope.path = $location.path().substring(1).split("/");
+    });
+});
+
+
 
 
 

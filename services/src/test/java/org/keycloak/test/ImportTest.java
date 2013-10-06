@@ -86,7 +86,7 @@ public class ImportTest {
 
         UserModel user = realm.getUser("loginclient");
         Assert.assertNotNull(user);
-        Set<String> scopes = realm.getScope(user);
+        Set<String> scopes = realm.getScopeMapping(user);
         System.out.println("Scopes size: " + scopes.size());
         Assert.assertTrue(scopes.contains("*"));
         Assert.assertEquals(0, realm.getSocialLinks(user).size());
@@ -97,11 +97,11 @@ public class ImportTest {
         Assert.assertEquals(1, realms.size());
 
         // Test scope relationship
-        ApplicationModel application = realm.getResourceNameMap().get("Application");
+        ApplicationModel application = realm.getApplicationNameMap().get("Application");
         UserModel oauthClient = realm.getUser("oauthclient");
         Assert.assertNotNull(application);
         Assert.assertNotNull(oauthClient);
-        Set<String> appScopes = application.getScope(oauthClient);
+        Set<String> appScopes = application.getScopeMapping(oauthClient);
         Assert.assertTrue(appScopes.contains("user"));
 
         // Test social linking

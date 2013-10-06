@@ -31,6 +31,8 @@ public class ApplicationEntity implements Serializable {
     private boolean surrogateAuthRequired;
     @AttributeValue
     private String managementUrl;
+    @AttributeValue
+    private String baseUrl;
 
     @OneToOne
     @AttributeValue
@@ -75,6 +77,14 @@ public class ApplicationEntity implements Serializable {
 
     public void setManagementUrl(String managementUrl) {
         this.managementUrl = managementUrl;
+    }
+
+    public String getBaseUrl() {
+        return baseUrl;
+    }
+
+    public void setBaseUrl(String baseUrl) {
+        this.baseUrl = baseUrl;
     }
 
     public AccountTypeEntity getResourceUser() {
