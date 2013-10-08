@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="keycloak.js"></script>
+</head>
+<body>
+
+	<script>
+		keycloak.init({
+			clientId : 'test-app',
+			clientSecret : 'password',
+			baseUrl : 'http://localhost:8081/auth',
+			realm : 'test'
+		});
+
+		if (keycloak.authenticated) {
+			document.write('User: ' + keycloak.user);
+		} else {
+			document.write('<a href="#" id="login" onclick="keycloak.login()">Login</a>');
+		}
+	</script>
+
+</body>
+</html>
