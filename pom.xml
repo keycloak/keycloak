@@ -61,6 +61,7 @@
         <module>social</module>
         <module>forms</module>
         <module>admin-ui-styles</module>
+        <module>admin-ui</module>
         <module>examples</module>
         <module>testsuite</module>
         <!--<module>ui</module> -->
