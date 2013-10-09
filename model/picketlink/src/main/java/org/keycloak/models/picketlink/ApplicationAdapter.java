@@ -134,7 +134,16 @@ public class ApplicationAdapter implements ApplicationModel {
         SampleModel.grantRole(getRelationshipManager(), ((UserAdapter) user).getUser(), ((RoleAdapter) role).getRole());
     }
 
+    @Override
+    public boolean hasRole(UserModel user, RoleModel role) {
+        return SampleModel.hasRole(getRelationshipManager(), ((UserAdapter) user).getUser(), ((RoleAdapter) role).getRole());
+    }
 
+    @Override
+    public boolean hasRole(UserModel user, String role) {
+        RoleModel roleModel = getRole(role);
+        return hasRole(user, roleModel);
+    }
 
     @Override
     public RoleAdapter addRole(String name) {
@@ -190,9 +199,6 @@ public class ApplicationAdapter implements ApplicationModel {
         }
     }
 
-
-
-
     @Override
     public void addScopeMapping(UserModel agent, String roleName) {
         IdentityManager idm = getIdm();
@@ -211,7 +217,19 @@ public class ApplicationAdapter implements ApplicationModel {
     }
 
     @Override
-    public Set<String> getScopeMapping(UserModel agent) {
+    public void deleteScopeMapping(UserModel user, RoleModel role) {
+        RelationshipQuery<ScopeRelationship> query = getRelationshipManager().createRelationshipQuery(ScopeRelationship.class);
+        query.setParameter(ScopeRelationship.CLIENT, ((UserAdapter)user).getUser());
+        query.setParameter(ScopeRelationship.SCOPE, ((RoleAdapter)role).getRole());
+        List<ScopeRelationship> grants = query.getResultList();
+        for (ScopeRelationship grant : grants) {
+            getRelationshipManager().remove(grant);
+        }
+    }
+
+
+    @Override
+    public Set<String> getScopeMappingValues(UserModel agent) {
         RelationshipQuery<ScopeRelationship> query = getRelationshipManager().createRelationshipQuery(ScopeRelationship.class);
         query.setParameter(ScopeRelationship.CLIENT, ((UserAdapter)agent).getUser());
         List<ScopeRelationship> scope = query.getResultList();
@@ -221,4 +239,17 @@ public class ApplicationAdapter implements ApplicationModel {
         }
         return set;
     }
+
+    @Override
+    public List<RoleModel> getScopeMappings(UserModel agent) {
+        RelationshipQuery<ScopeRelationship> query = getRelationshipManager().createRelationshipQuery(ScopeRelationship.class);
+        query.setParameter(ScopeRelationship.CLIENT, ((UserAdapter)agent).getUser());
+        List<ScopeRelationship> scope = query.getResultList();
+        List<RoleModel> roles = new ArrayList<RoleModel>();
+        for (ScopeRelationship rel : scope) {
+            if (rel.getScope().getPartition().getId().equals(applicationData.getId())) roles.add(new RoleAdapter(rel.getScope(), getIdm()));
+        }
+        return roles;
+    }
+
 }

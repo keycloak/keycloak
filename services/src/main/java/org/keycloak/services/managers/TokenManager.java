@@ -50,7 +50,7 @@ public class TokenManager {
         Set<String> realmMapping = realm.getRoleMappingValues(user);
 
         if (realmMapping != null && realmMapping.size() > 0 && (scopeMap == null || scopeMap.containsKey("realm"))) {
-            Set<String> scope = realm.getScopeMapping(client);
+            Set<String> scope = realm.getScopeMappingValues(client);
             if (scope.size() > 0) {
                 Set<String> scopeRequest = null;
                 if (scopeMap != null) {
@@ -69,7 +69,7 @@ public class TokenManager {
         for (ApplicationModel resource : realm.getApplications()) {
             Set<String> mapping = resource.getRoleMappingValues(user);
             if (mapping != null && mapping.size() > 0 && (scopeMap == null || scopeMap.containsKey(resource.getName()))) {
-                Set<String> scope = resource.getScopeMapping(client);
+                Set<String> scope = resource.getScopeMappingValues(client);
                 if (scope.size() > 0) {
                     Set<String> scopeRequest = null;
                     if (scopeMap != null) {

@@ -37,11 +37,13 @@
 			<artifactId>keycloak-services</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+        <!--
 		<dependency>
 			<groupId>org.keycloak</groupId>
 			<artifactId>keycloak-server</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+		-->
 		<dependency>
 			<groupId>org.keycloak</groupId>
 			<artifactId>keycloak-social-core</artifactId>

@@ -7,7 +7,7 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class RoleMappingRepresentation {
+public class UserRoleMappingRepresentation {
     protected String self; // link
     protected String username;
     protected Set<String> roles;
@@ -36,7 +36,7 @@ public class RoleMappingRepresentation {
         this.roles = roles;
     }
 
-    public RoleMappingRepresentation role(String role) {
+    public UserRoleMappingRepresentation role(String role) {
         if (this.roles == null) this.roles = new HashSet<String>();
         this.roles.add(role);
         return this;

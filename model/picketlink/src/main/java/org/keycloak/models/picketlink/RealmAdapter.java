@@ -665,7 +665,6 @@ public class RealmAdapter implements RealmModel {
         return set;
     }
 
-
     @Override
     public void addScopeMapping(UserModel agent, String roleName) {
         IdentityManager idm = getIdm();
@@ -675,6 +674,25 @@ public class RealmAdapter implements RealmModel {
         scope.setClient(((UserAdapter)agent).getUser());
         scope.setScope(role);
         getRelationshipManager().add(scope);
+    }
+
+    @Override
+    public void addScopeMapping(UserModel agent, RoleModel role) {
+        ScopeRelationship scope = new ScopeRelationship();
+        scope.setClient(((UserAdapter)agent).getUser());
+        scope.setScope(((RoleAdapter)role).getRole());
+        getRelationshipManager().add(scope);
+    }
+
+    @Override
+    public void deleteScopeMapping(UserModel user, RoleModel role) {
+        RelationshipQuery<ScopeRelationship> query = getRelationshipManager().createRelationshipQuery(ScopeRelationship.class);
+        query.setParameter(ScopeRelationship.CLIENT, ((UserAdapter)user).getUser());
+        query.setParameter(ScopeRelationship.SCOPE, ((RoleAdapter)role).getRole());
+        List<ScopeRelationship> grants = query.getResultList();
+        for (ScopeRelationship grant : grants) {
+            getRelationshipManager().remove(grant);
+        }
     }
 
     @Override
@@ -699,9 +717,32 @@ public class RealmAdapter implements RealmModel {
         return new OAuthClientAdapter(results.get(0), getIdm(), getRelationshipManager());
     }
 
+    @Override
+    public List<OAuthClientModel> getOAuthClients() {
+        RelationshipQuery<OAuthClientRelationship> query = getRelationshipManager().createRelationshipQuery(OAuthClientRelationship.class);
+        query.setParameter(OAuthClientRelationship.REALM, realm.getName());
+        List<OAuthClientRelationship> results = query.getResultList();
+        List<OAuthClientModel> list = new ArrayList<OAuthClientModel>();
+        for (OAuthClientRelationship rel : results) {
+            list.add(new OAuthClientAdapter(rel, getIdm(), getRelationshipManager()));
+        }
+        return list;
+    }
 
     @Override
-    public Set<String> getScopeMapping(UserModel agent) {
+    public List<RoleModel> getScopeMappings(UserModel agent) {
+        RelationshipQuery<ScopeRelationship> query = getRelationshipManager().createRelationshipQuery(ScopeRelationship.class);
+        query.setParameter(ScopeRelationship.CLIENT, ((UserAdapter)agent).getUser());
+        List<ScopeRelationship> scope = query.getResultList();
+        List<RoleModel> roles = new ArrayList<RoleModel>();
+        for (ScopeRelationship rel : scope) {
+            if (rel.getScope().getPartition().getId().equals(realm.getId())) roles.add(new RoleAdapter(rel.getScope(), getIdm()));
+        }
+        return roles;
+    }
+
+    @Override
+    public Set<String> getScopeMappingValues(UserModel agent) {
         RelationshipQuery<ScopeRelationship> query = getRelationshipManager().createRelationshipQuery(ScopeRelationship.class);
         query.setParameter(ScopeRelationship.CLIENT, ((UserAdapter)agent).getUser());
         List<ScopeRelationship> scope = query.getResultList();

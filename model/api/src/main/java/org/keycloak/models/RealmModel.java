@@ -10,7 +10,7 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface RealmModel {
+public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMapperModel {
     String DEFAULT_REALM = "default";
 
     String getId();
@@ -85,12 +85,6 @@ public interface RealmModel {
 
     UserModel addUser(String username);
 
-    RoleModel getRole(String name);
-
-    RoleModel addRole(String name);
-
-    List<RoleModel> getRoles();
-    
     List<RoleModel> getDefaultRoles();
     
     void addDefaultRole(String name);
@@ -103,29 +97,15 @@ public interface RealmModel {
 
     ApplicationModel addApplication(String name);
 
-    boolean hasRole(UserModel user, RoleModel role);
-
-    void grantRole(UserModel user, RoleModel role);
-
-    Set<String> getRoleMappingValues(UserModel user);
-
-    void addScopeMapping(UserModel agent, String roleName);
-
-    Set<String> getScopeMapping(UserModel agent);
-
     boolean isRealmAdmin(UserModel agent);
 
     void addRealmAdmin(UserModel agent);
-
-    RoleModel getRoleById(String id);
 
 
     List<RequiredCredentialModel> getRequiredApplicationCredentials();
 
 
     List<RequiredCredentialModel> getRequiredOAuthClientCredentials();
-
-    boolean hasRole(UserModel user, String role);
 
     ApplicationModel getApplicationById(String id);
 
@@ -157,11 +137,9 @@ public interface RealmModel {
 
     List<UserModel> searchForUserByAttributes(Map<String, String> attributes);
 
-    List<RoleModel> getRoleMappings(UserModel user);
-
-    void deleteRoleMapping(UserModel user, RoleModel role);
-
     OAuthClientModel addOAuthClient(String name);
 
     OAuthClientModel getOAuthClient(String name);
+
+    List<OAuthClientModel> getOAuthClients();
 }

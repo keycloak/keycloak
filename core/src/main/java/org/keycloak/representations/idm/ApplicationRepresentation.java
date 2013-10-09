@@ -18,7 +18,7 @@ public class ApplicationRepresentation {
     protected boolean enabled;
     protected List<CredentialRepresentation> credentials;
     protected List<RoleRepresentation> roles;
-    protected List<RoleMappingRepresentation> roleMappings;
+    protected List<UserRoleMappingRepresentation> roleMappings;
     protected List<ScopeMappingRepresentation> scopeMappings;
 
     public String getSelf() {
@@ -82,14 +82,14 @@ public class ApplicationRepresentation {
         return this;
     }
 
-    public List<RoleMappingRepresentation> getRoleMappings() {
+    public List<UserRoleMappingRepresentation> getRoleMappings() {
         return roleMappings;
     }
 
-    public RoleMappingRepresentation roleMapping(String username) {
-        RoleMappingRepresentation mapping = new RoleMappingRepresentation();
+    public UserRoleMappingRepresentation roleMapping(String username) {
+        UserRoleMappingRepresentation mapping = new UserRoleMappingRepresentation();
         mapping.setUsername(username);
-        if (roleMappings == null) roleMappings = new ArrayList<RoleMappingRepresentation>();
+        if (roleMappings == null) roleMappings = new ArrayList<UserRoleMappingRepresentation>();
         roleMappings.add(mapping);
         return mapping;
     }
