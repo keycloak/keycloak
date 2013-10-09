@@ -49,7 +49,7 @@ public class SaasService {
     @Context
     protected ResourceContext resourceContext;
 
-    protected String adminPath = "/saas/admin/index.html";
+    protected String adminPath = "/admin/index.html";
     protected AuthenticationManager authManager = new AuthenticationManager();
 
     public static class WhoAmI {
