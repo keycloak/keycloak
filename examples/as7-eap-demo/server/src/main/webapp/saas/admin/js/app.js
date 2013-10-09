@@ -181,6 +181,23 @@ module.config([ '$routeProvider', function($routeProvider) {
                 }
             },
             controller : 'ApplicationRoleListCtrl'
+        }).when('/realms/:realm/applications/:application/scope-mappings', {
+            templateUrl : 'partials/application-scope-mappings.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                application : function(ApplicationLoader) {
+                    return ApplicationLoader();
+                },
+                applications : function(ApplicationListLoader) {
+                    return ApplicationListLoader();
+                },
+                roles : function(RoleListLoader) {
+                    return RoleListLoader();
+                }
+            },
+            controller : 'ApplicationScopeMappingCtrl'
         })
 
 

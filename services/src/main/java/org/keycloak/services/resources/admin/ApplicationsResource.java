@@ -25,7 +25,6 @@ import java.util.List;
  */
 public class ApplicationsResource {
     protected static final Logger logger = Logger.getLogger(RealmAdminResource.class);
-    protected UserModel admin;
     protected RealmModel realm;
 
     @Context
@@ -34,15 +33,14 @@ public class ApplicationsResource {
     @Context
     protected KeycloakSession session;
 
-    public ApplicationsResource(UserModel admin, RealmModel realm) {
-        this.admin = admin;
+    public ApplicationsResource(RealmModel realm) {
         this.realm = realm;
     }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public List<ApplicationRepresentation> getResources() {
+    public List<ApplicationRepresentation> getApplications() {
         List<ApplicationRepresentation> rep = new ArrayList<ApplicationRepresentation>();
         List<ApplicationModel> applicationModels = realm.getApplications();
         ApplicationManager resourceManager = new ApplicationManager(new RealmManager(session));
@@ -54,19 +52,19 @@ public class ApplicationsResource {
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response createResource(final @Context UriInfo uriInfo, final ApplicationRepresentation rep) {
+    public Response createApplication(final @Context UriInfo uriInfo, final ApplicationRepresentation rep) {
         ApplicationManager resourceManager = new ApplicationManager(new RealmManager(session));
         ApplicationModel applicationModel = resourceManager.createApplication(realm, rep);
         return Response.created(uriInfo.getAbsolutePathBuilder().path(applicationModel.getId()).build()).build();
     }
 
     @Path("{id}")
-    public ApplicationResource getResource(final @PathParam("id") String id) {
+    public ApplicationResource getApplication(final @PathParam("id") String id) {
         ApplicationModel applicationModel = realm.getApplicationById(id);
         if (applicationModel == null) {
             throw new NotFoundException();
         }
-        ApplicationResource applicationResource = new ApplicationResource(admin, realm, applicationModel);
+        ApplicationResource applicationResource = new ApplicationResource(realm, applicationModel, session);
         resourceContext.initResource(applicationResource);
         return applicationResource;
     }

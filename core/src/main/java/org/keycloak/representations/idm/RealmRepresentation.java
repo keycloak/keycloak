@@ -31,7 +31,7 @@ public class RealmRepresentation {
     protected Set<String> requiredApplicationCredentials;
     protected Set<String> requiredOAuthClientCredentials;
     protected List<UserRepresentation> users;
-    protected List<RoleMappingRepresentation> roleMappings;
+    protected List<UserRoleMappingRepresentation> roleMappings;
     protected List<ScopeMappingRepresentation> scopeMappings;
     protected List<SocialMappingRepresentation> socialMappings;
     protected List<ApplicationRepresentation> applications;
@@ -125,14 +125,14 @@ public class RealmRepresentation {
         this.tokenLifespan = tokenLifespan;
     }
 
-    public List<RoleMappingRepresentation> getRoleMappings() {
+    public List<UserRoleMappingRepresentation> getRoleMappings() {
         return roleMappings;
     }
 
-    public RoleMappingRepresentation roleMapping(String username) {
-        RoleMappingRepresentation mapping = new RoleMappingRepresentation();
+    public UserRoleMappingRepresentation roleMapping(String username) {
+        UserRoleMappingRepresentation mapping = new UserRoleMappingRepresentation();
         mapping.setUsername(username);
-        if (roleMappings == null) roleMappings = new ArrayList<RoleMappingRepresentation>();
+        if (roleMappings == null) roleMappings = new ArrayList<UserRoleMappingRepresentation>();
         roleMappings.add(mapping);
         return mapping;
     }

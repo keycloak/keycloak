@@ -111,13 +111,26 @@ module.factory('RealmRoleMapping', function($resource) {
     });
 });
 
-
-
 module.factory('ApplicationRoleMapping', function($resource) {
     return $resource('/auth-server/rest/saas/admin/realms/:realm/users/:userId/role-mappings/applications/:application', {
         realm : '@realm',
         userId : '@userId',
         application : "@application"
+    });
+});
+
+module.factory('ApplicationRealmScopeMapping', function($resource) {
+    return $resource('/auth-server/rest/saas/admin/realms/:realm/applications/:application/scope-mappings/realm', {
+        realm : '@realm',
+        application : '@application'
+    });
+});
+
+module.factory('ApplicationApplicationScopeMapping', function($resource) {
+    return $resource('/auth-server/rest/saas/admin/realms/:realm/applications/:application/scope-mappings/applications/:targetApp', {
+        realm : '@realm',
+        application : '@application',
+        targetApp : '@targetApp'
     });
 });
 

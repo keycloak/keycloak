@@ -2,9 +2,6 @@
 
 var module = angular.module('keycloak.controllers', [ 'keycloak.services' ]);
 
-var realmslist = {};
-
-
 module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location, Notifications) {
 	$scope.addMessage = function() {
 		Notifications.success("test");
@@ -463,6 +460,74 @@ module.controller('RoleListCtrl', function($scope, $location, realm, roles) {
     });
 });
 
+module.controller('RoleDetailCtrl', function($scope, realm, role, Role, $location, Dialog, Notifications) {
+    $scope.realm = realm;
+    $scope.role = angular.copy(role);
+    $scope.create = !role.name;
+
+    $scope.changed = $scope.create;
+
+    $scope.$watch(function() {
+        return $location.path();
+    }, function() {
+        $scope.path = $location.path().substring(1).split("/");
+    });
+
+    $scope.$watch('role', function() {
+        if (!angular.equals($scope.role, role)) {
+            $scope.changed = true;
+        }
+    }, true);
+
+    $scope.save = function() {
+        if ($scope.create) {
+            Role.save({
+                realm: realm.id
+            }, $scope.role, function (data, headers) {
+                $scope.changed = false;
+                role = angular.copy($scope.role);
+
+                var l = headers().location;
+                var id = l.substring(l.lastIndexOf("/") + 1);
+                $location.url("/realms/" + realm.id + "/roles/" + id);
+                Notifications.success("Created role");
+
+            });
+        } else {
+            Role.update({
+                realm : realm.id,
+                roleId : role.id
+            }, $scope.role, function() {
+                $scope.changed = false;
+                role = angular.copy($scope.role);
+                Notifications.success("Saved changes to role");
+            });
+        }
+    };
+
+    $scope.reset = function() {
+        $scope.role = angular.copy(role);
+        $scope.changed = false;
+        $scope.roleForm.showErrors = false;
+    };
+
+    $scope.cancel = function() {
+        $location.url("/realms/" + realm.id + "/roles");
+    };
+
+    $scope.remove = function() {
+        Dialog.confirmDelete($scope.role.name, 'role', function() {
+            $scope.role.$remove({
+                realm : realm.id,
+                role : $scope.role.name
+            }, function() {
+                $location.url("/realms/" + realm.id + "/roles");
+                Notifications.success("Deleted role");
+            });
+        });
+    };
+});
+
 module.controller('ApplicationRoleListCtrl', function($scope, $location, realm, application, roles) {
     $scope.realm = realm;
     $scope.roles = roles;
@@ -774,4 +839,122 @@ module.controller('RoleMappingCtrl', function($scope, realm, User, users, role, 
 			}
 		}
 	}
+});
+
+module.controller('ApplicationScopeMappingCtrl', function($scope, $http, realm, application, roles, applications, ApplicationRealmScopeMapping, ApplicationApplicationScopeMapping, ApplicationRole) {
+    $scope.realm = realm;
+    $scope.application = application;
+    $scope.realmRoles = angular.copy(roles);
+    $scope.selectedRealmRoles = [];
+    $scope.selectedRealmMappings = [];
+    $scope.realmMappings = [];
+    $scope.applications = applications;
+    $scope.applicationRoles = [];
+    $scope.selectedApplicationRoles = [];
+    $scope.selectedApplicationMappings = [];
+    $scope.applicationMappings = [];
+
+
+
+    $scope.realmMappings = ApplicationRealmScopeMapping.query({realm : realm.id, application : application.id}, function(){
+        for (var i = 0; i < $scope.realmMappings.length; i++) {
+            var role = $scope.realmMappings[i];
+            for (var j = 0; j < $scope.realmRoles.length; j++) {
+                var realmRole = $scope.realmRoles[j];
+                if (realmRole.id == role.id) {
+                    var idx = $scope.realmRoles.indexOf(realmRole);
+                    if (idx != -1) {
+                        $scope.realmRoles.splice(idx, 1);
+                        break;
+                    }
+                }
+            }
+        }
+    });
+
+    $scope.addRealmRole = function() {
+        $http.post('/auth-server/rest/saas/admin/realms/' + realm.id + '/applications/' + application.id + '/scope-mappings/realm',
+                $scope.selectedRealmRoles).success(function() {
+                for (var i = 0; i < $scope.selectedRealmRoles.length; i++) {
+                    var role = $scope.selectedRealmRoles[i];
+                    var idx = $scope.realmRoles.indexOf($scope.selectedRealmRoles[i]);
+                    if (idx != -1) {
+                        $scope.realmRoles.splice(idx, 1);
+                        $scope.realmMappings.push(role);
+                    }
+                }
+                $scope.selectRealmRoles = [];
+            });
+    };
+
+    $scope.deleteRealmRole = function() {
+        $http.delete('/auth-server/rest/saas/admin/realms/' + realm.id + '/applications/' + application.id +  '/scope-mappings/realm',
+            {data : $scope.selectedRealmMappings, headers : {"content-type" : "application/json"}}).success(function() {
+                for (var i = 0; i < $scope.selectedRealmMappings.length; i++) {
+                    var role = $scope.selectedRealmMappings[i];
+                    var idx = $scope.realmMappings.indexOf($scope.selectedRealmMappings[i]);
+                    if (idx != -1) {
+                        $scope.realmMappings.splice(idx, 1);
+                        $scope.realmRoles.push(role);
+                    }
+                }
+                $scope.selectedRealmMappings = [];
+            });
+    };
+
+    $scope.addApplicationRole = function() {
+        $http.post('/auth-server/rest/saas/admin/realms/' + realm.id + '/applications/' + application.id +  '/scope-mappings/applications/' + $scope.targetApp.id,
+                $scope.selectedApplicationRoles).success(function() {
+                for (var i = 0; i < $scope.selectedApplicationRoles.length; i++) {
+                    var role = $scope.selectedApplicationRoles[i];
+                    var idx = $scope.applicationRoles.indexOf($scope.selectedApplicationRoles[i]);
+                    if (idx != -1) {
+                        $scope.applicationRoles.splice(idx, 1);
+                        $scope.applicationMappings.push(role);
+                    }
+                }
+                $scope.selectedApplicationRoles = [];
+            });
+    };
+
+    $scope.deleteApplicationRole = function() {
+        $http.delete('/auth-server/rest/saas/admin/realms/' + realm.id + '/applications/' + application.id +  '/scope-mappings/applications/' + $scope.targetApp.id,
+            {data : $scope.selectedApplicationMappings, headers : {"content-type" : "application/json"}}).success(function() {
+                for (var i = 0; i < $scope.selectedApplicationMappings.length; i++) {
+                    var role = $scope.selectedApplicationMappings[i];
+                    var idx = $scope.applicationMappings.indexOf($scope.selectedApplicationMappings[i]);
+                    if (idx != -1) {
+                        $scope.applicationMappings.splice(idx, 1);
+                        $scope.applicationRoles.push(role);
+                    }
+                }
+                $scope.selectedApplicationMappings = [];
+            });
+    };
+
+
+    $scope.changeApplication = function() {
+        $scope.applicationRoles = ApplicationRole.query({realm : realm.id, application : $scope.targetApp.id}, function() {
+                $scope.applicationMappings = ApplicationApplicationScopeMapping.query({realm : realm.id, application : application.id, targetApp : $scope.targetApp.id}, function(){
+                    for (var i = 0; i < $scope.applicationMappings.length; i++) {
+                        var role = $scope.applicationMappings[i];
+                        for (var j = 0; j < $scope.applicationRoles.length; j++) {
+                            var realmRole = $scope.applicationRoles[j];
+                            if (realmRole.id == role.id) {
+                                var idx = $scope.applicationRoles.indexOf(realmRole);
+                                if (idx != -1) {
+                                    $scope.applicationRoles.splice(idx, 1);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                });
+
+            }
+        );
+    };
+
+
+
 });

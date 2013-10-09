@@ -183,7 +183,7 @@ public class RealmManager {
         }
 
         if (rep.getRoleMappings() != null) {
-            for (RoleMappingRepresentation mapping : rep.getRoleMappings()) {
+            for (UserRoleMappingRepresentation mapping : rep.getRoleMappings()) {
                 UserModel user = userMap.get(mapping.getUsername());
                 for (String roleString : mapping.getRoles()) {
                     RoleModel role = newRealm.getRole(roleString.trim());
