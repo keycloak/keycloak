@@ -102,6 +102,16 @@ a.button.disabled {
   font-weight: normal;
   letter-spacing: 0.06363636363636em;
 }
+
+input[type="button"].btn-secondary,
+button.btn-secondary,
+input[type="submit"].btn-secondary,
+a.button.btn-secondary {
+    background-color: #EEEEEE;
+    border-color: #BBBBBB;
+    color: #4D5258;
+}
+
 input[type="button"].disabled:hover,
 input[type="submit"].disabled:hover,
 button.disabled:hover,
