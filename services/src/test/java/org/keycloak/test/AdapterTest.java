@@ -134,7 +134,7 @@ public class AdapterTest {
     public void testOAuthClient() throws Exception {
         test1CreateRealm();
 
-        OAuthClientModel oauth = new OAuthClientManager(realmModel).createOAuthClient("oauth-client");
+        OAuthClientModel oauth = new OAuthClientManager(realmModel).create("oauth-client");
         oauth.setBaseUrl("/foo/bar");
         oauth = realmModel.getOAuthClient("oauth-client");
         Assert.assertEquals("/foo/bar", oauth.getBaseUrl());

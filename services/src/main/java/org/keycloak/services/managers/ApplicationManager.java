@@ -42,7 +42,7 @@ public class ApplicationManager {
             }
         }
         if (resourceRep.getRoleMappings() != null) {
-            for (RoleMappingRepresentation mapping : resourceRep.getRoleMappings()) {
+            for (UserRoleMappingRepresentation mapping : resourceRep.getRoleMappings()) {
                 UserModel user = realm.getUser(mapping.getUsername());
                 for (String roleString : mapping.getRoles()) {
                     RoleModel role = applicationModel.getRole(roleString.trim());

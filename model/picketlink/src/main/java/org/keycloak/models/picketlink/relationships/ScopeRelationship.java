@@ -21,6 +21,15 @@ public class ScopeRelationship extends AbstractAttributedType implements Relatio
         }
     };
 
+    public static final RelationshipQueryParameter SCOPE = new RelationshipQueryParameter() {
+
+        @Override
+        public String getName() {
+            return "scope";
+        }
+    };
+
+
     protected User client;
     protected Role scope;
 

@@ -127,16 +127,13 @@ public class UsersResource {
     @GET
     @Produces("application/json")
     @NoCache
-    public AllRoleMappingsRepresentation getRoleMappings(@PathParam("username") String username) {
+    public MappingsRepresentation getRoleMappings(@PathParam("username") String username) {
         UserModel user = realm.getUser(username);
         if (user == null) {
             throw new NotFoundException();
         }
 
-        AllRoleMappingsRepresentation all = new AllRoleMappingsRepresentation();
-        all.setRealmId(realm.getId());
-        all.setRealmName(realm.getName());
-        all.setUsername(username);
+        MappingsRepresentation all = new MappingsRepresentation();
         List<RoleModel> realmMappings = realm.getRoleMappings(user);
         RealmManager manager = new RealmManager(session);
         if (realmMappings.size() > 0) {
@@ -149,12 +146,11 @@ public class UsersResource {
 
         List<ApplicationModel> applications = realm.getApplications();
         if (applications.size() > 0) {
-            Map<String, ApplicationRoleMappingsRepresentation> appMappings = new HashMap<String, ApplicationRoleMappingsRepresentation>();
+            Map<String, ApplicationMappingsRepresentation> appMappings = new HashMap<String, ApplicationMappingsRepresentation>();
             for (ApplicationModel application : applications) {
                 List<RoleModel> roleMappings = application.getRoleMappings(user);
                 if (roleMappings.size() > 0) {
-                    ApplicationRoleMappingsRepresentation mappings = new ApplicationRoleMappingsRepresentation();
-                    mappings.setUsername(user.getLoginName());
+                    ApplicationMappingsRepresentation mappings = new ApplicationMappingsRepresentation();
                     mappings.setApplicationId(application.getId());
                     mappings.setApplication(application.getName());
                     List<RoleRepresentation> roles = new ArrayList<RoleRepresentation>();
@@ -180,7 +176,6 @@ public class UsersResource {
             throw new NotFoundException();
         }
 
-        RealmRoleMappingsRepresentation rep = new RealmRoleMappingsRepresentation();
         List<RoleModel> realmMappings = realm.getRoleMappings(user);
         List<RoleRepresentation> realmMappingsRep = new ArrayList<RoleRepresentation>();
         RealmManager manager = new RealmManager(session);
