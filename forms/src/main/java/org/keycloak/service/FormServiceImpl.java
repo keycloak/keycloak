@@ -65,12 +65,12 @@ public class FormServiceImpl implements FormService {
         commandMap.put(Pages.LOGIN_RESET_PASSWORD, new CommandPassword());
         commandMap.put(Pages.LOGIN_UPDATE_PASSWORD, new CommandPassword());
         commandMap.put(Pages.ACCESS, new CommandAccess());
-        commandMap.put(Pages.SECURITY_FAILURE, new CommandSecurityFailure());
         commandMap.put(Pages.SOCIAL, new CommandSocial());
         commandMap.put(Pages.TOTP, new CommandTotp());
         commandMap.put(Pages.LOGIN_CONFIG_TOTP, new CommandTotp());
         commandMap.put(Pages.LOGIN_TOTP, new CommandLoginTotp());
         commandMap.put(Pages.LOGIN_VERIFY_EMAIL, new CommandLoginTotp());
+        commandMap.put(Pages.ERROR, new CommandError());
     }
 
     public String getId(){
@@ -143,11 +143,6 @@ public class FormServiceImpl implements FormService {
         }
     }
 
-    private class CommandSecurityFailure implements Command {
-        public void exec(Map<String, Object> attributes, FormServiceDataBean dataBean) {
-        }
-    }
-
     private class CommandPassword implements Command {
         public void exec(Map<String, Object> attributes, FormServiceDataBean dataBean) {
             if (dataBean.getError() != null){
@@ -174,6 +169,7 @@ public class FormServiceImpl implements FormService {
             attributes.put("realm", realm);
 
             UrlBean url = new UrlBean(realm, dataBean.getBaseURI());
+            url.setSocialRegistration(dataBean.getSocialRegistration());
 
             attributes.put("url", url);
             attributes.put("user", new UserBean(dataBean.getUserModel()));
@@ -218,6 +214,7 @@ public class FormServiceImpl implements FormService {
             attributes.put("realm", realm);
 
             UrlBean url = new UrlBean(realm, dataBean.getBaseURI());
+            url.setSocialRegistration(dataBean.getSocialRegistration());
 
             attributes.put("url", url);
             attributes.put("user", new UserBean(dataBean.getUserModel()));
@@ -241,6 +238,7 @@ public class FormServiceImpl implements FormService {
             attributes.put("realm", realm);
 
             UrlBean url = new UrlBean(realm, dataBean.getBaseURI());
+            url.setSocialRegistration(dataBean.getSocialRegistration());
 
             attributes.put("url", url);
             attributes.put("user", new UserBean(dataBean.getUserModel()));
@@ -250,6 +248,14 @@ public class FormServiceImpl implements FormService {
 
             SocialBean social = new SocialBean(realm, register, url);
             attributes.put("social", social);
+        }
+    }
+
+    private class CommandError implements Command {
+        public void exec(Map<String, Object> attributes, FormServiceDataBean dataBean) {
+            if (dataBean.getError() != null){
+                attributes.put("error", new ErrorBean(dataBean.getError()));
+            }
         }
     }
 

@@ -544,6 +544,7 @@ public class TokenService {
             return redirectAccessDenied(redirect, state);
         }
 
+        accessCodeEntry.setExpiration((System.currentTimeMillis() / 1000) + realm.getAccessCodeLifespan());
         return oauth.redirectAccessCode(accessCodeEntry, state, redirect);
     }
 

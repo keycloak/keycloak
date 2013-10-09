@@ -5,7 +5,7 @@
 	height: 16px;
 	background-image: url(img/sprites.png); /* Modified by Gabriel */
 	background-repeat: no-repeat;
-	text-indent: -9999999em;
+	text-indent: -99999em;
 	margin-right: 0.5em;
 	vertical-align: text-top;
 }

@@ -34,6 +34,16 @@ public class UrlBean {
 
     private RealmBean realm;
 
+    private boolean socialRegistration;
+
+    public boolean isSocialRegistration() {
+        return socialRegistration;
+    }
+
+    public void setSocialRegistration(boolean socialRegistration) {
+        this.socialRegistration = socialRegistration;
+    }
+
     public UrlBean(RealmBean realm, URI baseURI){
         this.realm = realm;
         this.baseURI = baseURI;
@@ -82,6 +92,8 @@ public class UrlBean {
     public String getRegistrationAction() {
         if (realm.isSaas()) {
             return Urls.saasRegisterAction(baseURI).toString();
+        } else if (socialRegistration){
+            return Urls.socialRegisterAction(baseURI, realm.getId()).toString();
         } else {
             return Urls.realmRegisterAction(baseURI, realm.getId()).toString();
         }

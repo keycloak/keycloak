@@ -21,81 +21,45 @@
  */
 package org.keycloak.testsuite.rule;
 
-import io.undertow.server.handlers.resource.ClassPathResourceManager;
-import io.undertow.servlet.Servlets;
 import io.undertow.servlet.api.DeploymentInfo;
-import io.undertow.servlet.api.FilterInfo;
 import io.undertow.servlet.api.ServletInfo;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import javax.servlet.DispatcherType;
 import javax.servlet.Servlet;
 
 import org.jboss.resteasy.jwt.JsonSerialization;
-import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
-import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.junit.rules.ExternalResource;
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.services.filters.KeycloakSessionServletFilter;
-import org.keycloak.services.managers.RealmManager;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.services.resources.KeycloakApplication;
-import org.keycloak.services.resources.SaasService;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.ApplicationServlet;
+import org.keycloak.testutils.KeycloakServer;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class KeycloakRule extends ExternalResource {
 
-    private String testRealm = "testrealm.json";
-
-    private UndertowJaxrsServer server;
-    private KeycloakSessionFactory factory;
+    private KeycloakServer server;
 
     private KeycloakSetup setup;
 
     public KeycloakRule() {
     }
 
-    public KeycloakRule(String testRealm) {
-        this.testRealm = testRealm;
-    }
-    
     public KeycloakRule(KeycloakSetup setup) {
         this.setup = setup;
     }
 
     protected void before() throws Throwable {
-        ResteasyDeployment deployment = new ResteasyDeployment();
-        deployment.setApplicationClass(KeycloakApplication.class.getName());
-        server = new UndertowJaxrsServer().start();
+        server = new KeycloakServer();
+        server.start();
 
-        DeploymentInfo di = server.undertowDeployment(deployment, "rest");
-        di.setClassLoader(getClass().getClassLoader());
-        di.setContextPath("/auth-server");
-        di.setDeploymentName("Keycloak");
-        di.setResourceManager(new ClassPathResourceManager(getClass().getClassLoader(), "META-INF/resources"));
-
-        FilterInfo filter = Servlets.filter("SessionFilter", KeycloakSessionServletFilter.class);
-        di.addFilter(filter);
-        di.addFilterUrlMapping("SessionFilter", "/rest/*", DispatcherType.REQUEST);
-
-        server.deploy(di);
-
-        factory = KeycloakApplication.buildSessionFactory();
-
-        setupDefaultRealm();
-
-        importRealm(testRealm);
+        server.importRealm(getClass().getResourceAsStream("/testrealm.json"));
 
         if (setup != null) {
             configure(setup);
@@ -114,12 +78,11 @@ public class KeycloakRule extends ExternalResource {
         servlet.addMapping("/*");
 
         deploymentInfo.addServlet(servlet);
-        server.deploy(deploymentInfo);
+        server.getServer().deploy(deploymentInfo);
     }
 
     @Override
     protected void after() {
-        factory.close();
         server.stop();
     }
 
@@ -131,78 +94,31 @@ public class KeycloakRule extends ExternalResource {
             os.write(c);
         }
         byte[] bytes = os.toByteArray();
-        System.out.println(new String(bytes));
-
         return JsonSerialization.fromBytes(RealmRepresentation.class, bytes);
     }
 
-    public void setupDefaultRealm() {
-        KeycloakSession session = createSession();
-        session.getTransaction().begin();
-
-        RealmManager manager = new RealmManager(session);
-
-        RealmModel defaultRealm = manager.createRealm(RealmModel.DEFAULT_REALM, RealmModel.DEFAULT_REALM);
-        defaultRealm.setName(RealmModel.DEFAULT_REALM);
-        defaultRealm.setEnabled(true);
-        defaultRealm.setTokenLifespan(300);
-        defaultRealm.setAccessCodeLifespan(60);
-        defaultRealm.setAccessCodeLifespanUserAction(600);
-        defaultRealm.setSslNotRequired(false);
-        defaultRealm.setCookieLoginAllowed(true);
-        defaultRealm.setRegistrationAllowed(true);
-        defaultRealm.setAutomaticRegistrationAfterSocialLogin(false);
-        manager.generateRealmKeys(defaultRealm);
-        defaultRealm.addRequiredCredential(CredentialRepresentation.PASSWORD);
-        RoleModel role = defaultRealm.addRole(SaasService.REALM_CREATOR_ROLE);
-        UserModel admin = defaultRealm.addUser("admin");
-        defaultRealm.grantRole(admin, role);
-
-        session.getTransaction().commit();
-        session.close();
-    }
-
-    public void importRealm(String name) throws IOException {
-        KeycloakSession session = createSession();
-        session.getTransaction().begin();
-
-        RealmManager manager = new RealmManager(session);
-
-        RealmModel defaultRealm = manager.getRealm(RealmModel.DEFAULT_REALM);
-        UserModel admin = defaultRealm.getUser("admin");
-
-        RealmRepresentation rep = loadJson(name);
-        RealmModel realm = manager.createRealm("test", rep.getRealm());
-        manager.importRealm(rep, realm);
-        realm.addRealmAdmin(admin);
-
-        session.getTransaction().commit();
-        session.close();
-    }
-
     public void configure(KeycloakSetup configurer) {
-        KeycloakSession session = createSession();
+        KeycloakSession session = server.getKeycloakSessionFactory().createSession();
         session.getTransaction().begin();
 
-        RealmManager manager = new RealmManager(session);
+        try {
+            RealmManager manager = new RealmManager(session);
 
-        RealmModel defaultRealm = manager.getRealm(RealmModel.DEFAULT_REALM);
-        RealmModel appRealm = manager.getRealm("test");
+            RealmModel defaultRealm = manager.getRealm(RealmModel.DEFAULT_REALM);
+            RealmModel appRealm = manager.getRealm("test");
 
-        configurer.config(manager, defaultRealm, appRealm);
+            configurer.config(manager, defaultRealm, appRealm);
 
-        session.getTransaction().commit();
-        session.close();
+            session.getTransaction().commit();
+        } finally {
+            session.close();
+        }
     }
 
-    public KeycloakSession createSession() {
-        return factory.createSession();
-    }
-    
     public interface KeycloakSetup {
-        
+
         void config(RealmManager manager, RealmModel defaultRealm, RealmModel appRealm);
-        
+
     }
 
 }

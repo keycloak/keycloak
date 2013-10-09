@@ -24,6 +24,7 @@ package org.keycloak.testsuite;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
+import java.security.PublicKey;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -40,8 +41,11 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
+import org.jboss.resteasy.security.PemUtils;
 import org.json.JSONObject;
 import org.junit.Assert;
+import org.keycloak.RSATokenVerifier;
+import org.keycloak.representations.SkeletonKeyToken;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
@@ -52,7 +56,7 @@ public class OAuthClient {
 
     private WebDriver driver;
 
-    private String baseUrl = "http://localhost:8081/auth-server/rest";
+    private String baseUrl = Constants.AUTH_SERVER_ROOT + "/rest";
 
     private String realm = "test";
 
@@ -68,8 +72,13 @@ public class OAuthClient {
 
     private String state;
 
-    public OAuthClient(WebDriver driver) {
+    private PublicKey realmPublicKey;
+
+    public OAuthClient(WebDriver driver) throws Exception {
         this.driver = driver;
+
+        JSONObject realmJson = new JSONObject(IOUtils.toString(getClass().getResourceAsStream("/testrealm.json")));
+        realmPublicKey = PemUtils.decodePublicKey(realmJson.getString("publicKey"));
     }
 
     public AuthorizationCodeResponse doLogin(String username, String password) {
@@ -107,6 +116,10 @@ public class OAuthClient {
         post.setEntity(formEntity);
 
         return new AccessTokenResponse(client.execute(post));
+    }
+
+    public SkeletonKeyToken verifyToken(String token) throws Exception {
+        return RSATokenVerifier.verifyToken(token, realmPublicKey, realm);
     }
 
     public boolean isAuthorizationResponse() {

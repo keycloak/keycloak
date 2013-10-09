@@ -21,17 +21,10 @@
  */
 package org.keycloak.testsuite.oauth;
 
-import java.security.PublicKey;
-
-import org.apache.commons.io.IOUtils;
-import org.jboss.resteasy.security.PemUtils;
-import org.json.JSONObject;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.RSATokenVerifier;
 import org.keycloak.representations.SkeletonKeyToken;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.OAuthClient.AccessTokenResponse;
@@ -61,14 +54,6 @@ public class AccessTokenTest {
     @WebResource
     protected LoginPage loginPage;
 
-    private PublicKey realmPublicKey;
-
-    @Before
-    public void before() throws Exception {
-        JSONObject realmJson = new JSONObject(IOUtils.toString(getClass().getResourceAsStream("/testrealm.json")));
-        realmPublicKey = PemUtils.decodePublicKey(realmJson.getString("publicKey"));
-    }
-
     @Test
     public void accessTokenRequest() throws Exception {
         oauth.doLogin("test-user@localhost", "password");
@@ -82,7 +67,8 @@ public class AccessTokenTest {
 
         Assert.assertEquals("bearer", response.getTokenType());
 
-        SkeletonKeyToken token = RSATokenVerifier.verifyToken(response.getAccessToken(), realmPublicKey, oauth.getRealm());
+        SkeletonKeyToken token = oauth.verifyToken(response.getAccessToken());
+
         Assert.assertEquals("test-user@localhost", token.getPrincipal());
 
         Assert.assertEquals(1, token.getRealmAccess().getRoles().size());

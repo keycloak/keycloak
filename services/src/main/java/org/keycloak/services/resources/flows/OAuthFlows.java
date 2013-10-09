@@ -126,7 +126,7 @@ public class OAuthFlows {
     }
 
     public Response forwardToSecurityFailure(String message) {
-        return Flows.pages(request).forwardToSecurityFailure(message);
+        return Flows.forms(realm, request, uriInfo).setError(message).forwardToErrorPage();
     }
 
 }

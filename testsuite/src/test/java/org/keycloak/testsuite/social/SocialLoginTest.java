@@ -26,12 +26,15 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.representations.SkeletonKeyToken;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.models.RealmModel;
 import org.keycloak.testsuite.DummySocialServlet;
+import org.keycloak.testsuite.OAuthClient;
+import org.keycloak.testsuite.OAuthClient.AccessTokenResponse;
 import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
+import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.KeycloakRule.KeycloakSetup;
 import org.keycloak.testsuite.rule.WebResource;
@@ -65,13 +68,16 @@ public class SocialLoginTest {
     @WebResource
     protected LoginPage loginPage;
 
+    @WebResource
+    protected OAuthClient oauth;
+
     @BeforeClass
     public static void before() {
         keycloakRule.deployServlet("dummy-social", "/dummy-social", DummySocialServlet.class);
     }
 
     @Test
-    public void loginSuccess() {
+    public void loginSuccess() throws Exception {
         loginPage.open();
 
         loginPage.clickSocial("dummy");
@@ -80,6 +86,15 @@ public class SocialLoginTest {
         driver.findElement(By.id("submit")).click();
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        AccessTokenResponse response = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get("code"), "password");
+
+        SkeletonKeyToken token = oauth.verifyToken(response.getAccessToken());
+
+        Assert.assertEquals("dummy-user", token.getPrincipal());
+
+        Assert.assertEquals(1, token.getRealmAccess().getRoles().size());
+        Assert.assertTrue(token.getRealmAccess().isUserInRole("user"));
     }
 
 }

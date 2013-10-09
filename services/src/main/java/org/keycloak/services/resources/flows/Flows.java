@@ -36,10 +36,6 @@ public class Flows {
     private Flows() {
     }
 
-    public static PageFlows pages(HttpRequest request) {
-        return new PageFlows(request);
-    }
-
     public static FormFlows forms(RealmModel realm, HttpRequest request, UriInfo uriInfo) {
         return new FormFlows(realm, request, uriInfo);
     }

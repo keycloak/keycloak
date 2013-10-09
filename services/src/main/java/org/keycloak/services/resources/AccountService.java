@@ -296,6 +296,7 @@ public class AccountService {
             return Flows.forms(realm, request, uriInfo).setAccessCode(accessCode).setUser(user)
                     .forwardToAction(requiredActions.iterator().next());
         } else {
+            accessCode.setExpiration((System.currentTimeMillis() / 1000) + realm.getAccessCodeLifespan());
             return Flows.oauth(realm, request, uriInfo, authManager, tokenManager).redirectAccessCode(accessCode,
                     accessCode.getState(), accessCode.getRedirectUri());
         }
