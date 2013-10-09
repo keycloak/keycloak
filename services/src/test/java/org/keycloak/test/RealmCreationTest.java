@@ -11,11 +11,6 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.services.models.KeycloakSession;
-import org.keycloak.services.models.RealmModel;
-import org.keycloak.services.resources.KeycloakApplication;
-import org.keycloak.test.common.AbstractKeycloakTest;
-import org.keycloak.test.common.SessionFactoryTestContext;
 
 import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.client.Entity;

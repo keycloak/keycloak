@@ -6,6 +6,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.picketlink.mappings.RealmData;
 import org.keycloak.models.picketlink.relationships.RealmAdminRelationship;
+import org.keycloak.models.utils.KeycloakSessionUtils;
 import org.picketlink.idm.PartitionManager;
 import org.picketlink.idm.RelationshipManager;
 import org.picketlink.idm.query.RelationshipQuery;
@@ -24,11 +25,6 @@ public class PicketlinkKeycloakSession implements KeycloakSession {
     public static ThreadLocal<Exception> setWhere = new ThreadLocal<Exception>();
     protected PartitionManager partitionManager;
     protected EntityManager entityManager;
-
-    private static AtomicLong counter = new AtomicLong(1);
-    public static String generateId() {
-        return counter.getAndIncrement() + "-" + System.currentTimeMillis();
-    }
 
     public PicketlinkKeycloakSession(PartitionManager partitionManager, EntityManager entityManager) {
         this.partitionManager = partitionManager;
@@ -50,7 +46,7 @@ public class PicketlinkKeycloakSession implements KeycloakSession {
 
     @Override
     public RealmAdapter createRealm(String name) {
-        return createRealm(generateId(), name);
+        return createRealm(KeycloakSessionUtils.generateId(), name);
     }
 
     @Override

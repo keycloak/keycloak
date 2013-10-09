@@ -1,7 +1,5 @@
 package org.keycloak.test.common;
 
-import com.mongodb.DB;
-import com.mongodb.MongoClient;
 import de.flapdoodle.embed.mongo.MongodExecutable;
 import de.flapdoodle.embed.mongo.MongodProcess;
 import de.flapdoodle.embed.mongo.MongodStarter;
@@ -9,7 +7,6 @@ import de.flapdoodle.embed.mongo.config.MongodConfig;
 import de.flapdoodle.embed.mongo.distribution.Version;
 import de.flapdoodle.embed.process.runtime.Network;
 import org.jboss.resteasy.logging.Logger;
-import org.keycloak.services.models.KeycloakSessionFactory;
 import org.keycloak.services.resources.KeycloakApplication;
 
 /**

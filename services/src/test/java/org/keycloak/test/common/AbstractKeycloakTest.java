@@ -10,9 +10,9 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.models.KeycloakSession;
-import org.keycloak.services.models.KeycloakSessionFactory;
 import org.keycloak.services.resources.KeycloakApplication;
 
 /**

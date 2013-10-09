@@ -34,6 +34,12 @@
             <artifactId>keycloak-model-picketlink</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <!-- TODO: Remove -->
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-model-mongo</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-social-core</artifactId>

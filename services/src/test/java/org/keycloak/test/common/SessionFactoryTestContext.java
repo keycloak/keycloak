@@ -1,7 +1,5 @@
 package org.keycloak.test.common;
 
-import org.keycloak.services.models.KeycloakSessionFactory;
-
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */

@@ -1,6 +1,5 @@
 package org.keycloak.test.common;
 
-import org.keycloak.services.models.KeycloakSessionFactory;
 import org.keycloak.services.resources.KeycloakApplication;
 
 /**

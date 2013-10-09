@@ -1,18 +1,13 @@
 package org.keycloak.services.resources;
 
 import org.keycloak.SkeletonKeyContextResolver;
+import org.keycloak.models.mongo.keycloak.adapters.MongoDBSessionFactory;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.picketlink.PicketlinkKeycloakSession;
 import org.keycloak.models.picketlink.PicketlinkKeycloakSessionFactory;
 import org.keycloak.models.picketlink.mappings.ApplicationEntity;
 import org.keycloak.models.picketlink.mappings.RealmEntity;
-import org.keycloak.services.models.KeycloakSessionFactory;
-import org.keycloak.services.models.nosql.keycloak.adapters.MongoDBSessionFactory;
-import org.keycloak.services.models.picketlink.PicketlinkKeycloakSession;
-import org.keycloak.services.models.picketlink.PicketlinkKeycloakSessionFactory;
-import org.keycloak.services.models.picketlink.mappings.ApplicationEntity;
-import org.keycloak.services.models.picketlink.mappings.RealmEntity;
 import org.keycloak.social.SocialRequestManager;
 import org.picketlink.idm.PartitionManager;
 import org.picketlink.idm.config.IdentityConfigurationBuilder;
@@ -25,8 +20,6 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.servlet.ServletContext;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Context;
 import java.util.HashSet;

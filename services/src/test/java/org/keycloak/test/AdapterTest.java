@@ -141,6 +141,8 @@ public class AdapterTest extends AbstractKeycloakTest {
             user.setEmail("bburke@redhat.com");
         }
 
+        RealmManager adapter = getRealmManager();
+
         {
             List<UserModel> userModels = adapter.searchUsers("total junk query", realmModel);
             Assert.assertEquals(userModels.size(), 0);
