@@ -299,20 +299,6 @@
                 <version>${mysql.version}</version>
             </dependency>
 
-			<dependency>
-  				<groupId>org.jboss.arquillian</groupId>
-  				<artifactId>arquillian-bom</artifactId>
-  				<version>1.1.1.Final</version>
-  				<type>pom</type>
-  				<scope>import</scope>
-			</dependency>			
-			<dependency>
-				<groupId>org.jboss.arquillian.extension</groupId>
-				<artifactId>arquillian-drone-bom</artifactId>
-				<version>1.2.0.Beta1</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
         </dependencies>
     </dependencyManagement>
 

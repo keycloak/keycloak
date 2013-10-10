@@ -32,10 +32,10 @@ public abstract class AbstractKeycloakTest {
 
     static
     {
-        // TODO: Disable MongoDB by default and enable it just for some specific maven profile (system property)?
+        // TODO: MongoDB disabled by default
         TEST_CONTEXTS = new SessionFactoryTestContext[] {
                 new PicketlinkSessionFactoryTestContext(),
-                new MongoDBSessionFactoryTestContext()
+                // new MongoDBSessionFactoryTestContext()
         };
     }
 
