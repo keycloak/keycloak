@@ -35,6 +35,14 @@ public interface UserModel {
 
     void removeRequiredAction(RequiredAction action);
 
+    Set<String> getWebOrigins();
+
+    void setWebOrigins(Set<String> webOrigins);
+
+    void addWebOrigin(String webOrigin);
+
+    void removeWebOrigin(String webOrigin);
+
     Set<String> getRedirectUris();
 
     void setRedirectUris(Set<String> redirectUris);

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="keycloak.js"></script>
+</head>
+<body>
+	<script>
+		keycloak.init({
+			clientId : '57572475438.apps.googleusercontent.com',
+			clientSecret : 'xyfsPS9maRTz5fj0pOxf0zjD'
+		});
+
+		if (keycloak.authenticated) {
+            document.write('<h2>Token</h2><pre>' + keycloak.token + '</pre>');
+            document.write('<h2>Token info</h2><pre>' + JSON.stringify(keycloak.tokenInfo, undefined, 4) + '</pre>');
+            document.write('<h2>Profile</h2><pre>' + JSON.stringify(keycloak.profile(true), undefined, 4) + '</pre>');		
+            document.write('<h2>Contacts</h2><pre>' + keycloak.contacts(true) + '</pre>');		
+        } else {
+			document.write('<a href="#" id="login" onclick="keycloak.login()">Login</a>');
+		}
+	</script>
+
+</body>
+</html>

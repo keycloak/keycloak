@@ -42,6 +42,11 @@ public class ApplicationManager {
                 resourceUser.addRedirectUri(redirectUri);
             }
         }
+        if (resourceRep.getWebOrigins() != null) {
+            for (String webOrigin : resourceRep.getWebOrigins()) {
+                resourceUser.addWebOrigin(webOrigin);
+            }
+        }
 
         realm.grantRole(resourceUser, loginRole);
 
@@ -97,6 +102,11 @@ public class ApplicationManager {
         if (redirectUris != null) {
             resource.getApplicationUser().setRedirectUris(new HashSet<String>(redirectUris));
         }
+
+        List<String> webOrigins = rep.getWebOrigins();
+        if (webOrigins != null) {
+            resource.getApplicationUser().setWebOrigins(new HashSet<String>(webOrigins));
+        }
     }
 
     public ApplicationRepresentation toRepresentation(ApplicationModel applicationModel) {
@@ -111,6 +121,11 @@ public class ApplicationManager {
         Set<String> redirectUris = applicationModel.getApplicationUser().getRedirectUris();
         if (redirectUris != null) {
             rep.setRedirectUris(new LinkedList<String>(redirectUris));
+        }
+
+        Set<String> webOrigins = applicationModel.getApplicationUser().getWebOrigins();
+        if (webOrigins != null) {
+            rep.setWebOrigins(new LinkedList<String>(webOrigins));
         }
 
         return rep;
