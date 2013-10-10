@@ -21,6 +21,10 @@
         <async-supported>true</async-supported>
     </servlet>
 
+    <listener>
+        <listener-class>org.keycloak.services.listeners.MongoRunnerListener</listener-class>
+    </listener>
+
     <filter>
         <filter-name>Keycloak Session Management</filter-name>
         <filter-class>org.keycloak.services.filters.KeycloakSessionServletFilter</filter-class>
