@@ -130,6 +130,28 @@ public class ApplicationAdapter implements ApplicationModel {
     }
 
     @Override
+    public boolean hasRole(UserModel user, String role) {
+        RoleModel roleModel = getRole(role);
+        return hasRole(user, roleModel);
+    }
+
+    @Override
+    public boolean hasRole(UserModel user, RoleModel role) {
+        UserData userData = ((UserAdapter)user).getUser();
+
+        List<String> roleIds = userData.getRoleIds();
+        String roleId = role.getId();
+        if (roleIds != null) {
+            for (String currentId : roleIds) {
+                if (roleId.equals(currentId)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
     public RoleAdapter addRole(String name) {
         if (getRole(name) != null) {
             throw new IllegalArgumentException("Role " + name + " already exists");
@@ -218,20 +240,43 @@ public class ApplicationAdapter implements ApplicationModel {
     }
 
     @Override
-    public Set<String> getScopeMapping(UserModel agent) {
-        UserData userData = ((UserAdapter)agent).getUser();
-        List<String> scopeIds = userData.getScopeIds();
+    public void deleteScopeMapping(UserModel user, RoleModel role) {
+        UserData userData = ((UserAdapter)user).getUser();
+        noSQL.pullItemFromList(userData, "scopeIds", role.getId());
+    }
 
-        Set<String> result = new HashSet<String>();
+    // Static so that it can be used from RealmAdapter as well
+    static List<RoleData> getAllScopesOfUser(UserModel user, NoSQL noSQL) {
+        UserData userData = ((UserAdapter)user).getUser();
+        List<String> roleIds = userData.getScopeIds();
 
         NoSQLQuery query = noSQL.createQueryBuilder()
-                .inCondition("_id", scopeIds)
+                .inCondition("_id", roleIds)
                 .build();
-        List<RoleData> roles = noSQL.loadObjects(RoleData.class, query);
+        return noSQL.loadObjects(RoleData.class, query);
+    }
+
+    @Override
+    public Set<String> getScopeMappingValues(UserModel agent) {
+        Set<String> result = new HashSet<String>();
+        List<RoleData> roles = getAllScopesOfUser(agent,  noSQL);
         // TODO: Maybe improve as currently we need to obtain all roles and then filter programmatically...
         for (RoleData role : roles) {
             if (getId().equals(role.getApplicationId())) {
                 result.add(role.getName());
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public List<RoleModel> getScopeMappings(UserModel agent) {
+        List<RoleModel> result = new ArrayList<RoleModel>();
+        List<RoleData> roles = getAllScopesOfUser(agent,  noSQL);
+        // TODO: Maybe improve as currently we need to obtain all roles and then filter programmatically...
+        for (RoleData role : roles) {
+            if (getId().equals(role.getApplicationId())) {
+                result.add(new RoleAdapter(role, noSQL));
             }
         }
         return result;

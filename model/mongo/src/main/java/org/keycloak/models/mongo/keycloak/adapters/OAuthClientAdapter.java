@@ -4,6 +4,7 @@ import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.mongo.api.NoSQL;
 import org.keycloak.models.mongo.keycloak.data.OAuthClientData;
+import org.keycloak.models.mongo.keycloak.data.UserData;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -11,12 +12,17 @@ import org.keycloak.models.mongo.keycloak.data.OAuthClientData;
 public class OAuthClientAdapter implements OAuthClientModel {
 
     private final OAuthClientData delegate;
-    private final UserAdapter oauthAgent;
+    private UserAdapter oauthAgent;
     private final NoSQL noSQL;
 
     public OAuthClientAdapter(OAuthClientData oauthClientData, UserAdapter oauthAgent, NoSQL noSQL) {
         this.delegate = oauthClientData;
         this.oauthAgent = oauthAgent;
+        this.noSQL = noSQL;
+    }
+
+    public OAuthClientAdapter(OAuthClientData oauthClientData, NoSQL noSQL) {
+        this.delegate = oauthClientData;
         this.noSQL = noSQL;
     }
 
@@ -27,6 +33,11 @@ public class OAuthClientAdapter implements OAuthClientModel {
 
     @Override
     public UserModel getOAuthAgent() {
+        // This is not thread-safe. Assumption is that OAuthClientAdapter instance is per-client object
+        if (oauthAgent == null) {
+            UserData user = noSQL.loadObject(UserData.class, delegate.getOauthAgentId());
+            oauthAgent = user!=null ? new UserAdapter(user, noSQL) : null;
+        }
         return oauthAgent;
     }
 

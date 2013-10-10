@@ -95,7 +95,7 @@ public class ReadUsersWorker implements Worker {
 
             // Read scopes of user in realm
             if (readScopes) {
-                realm.getScopeMapping(user);
+                realm.getScopeMappings(user);
             }
 
             // Validate password (shoould be same as username)

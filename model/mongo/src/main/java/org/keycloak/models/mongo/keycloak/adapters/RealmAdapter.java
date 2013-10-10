@@ -513,13 +513,24 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public void addScopeMapping(UserModel agent, String roleName) {
-        UserData userData = ((UserAdapter)agent).getUser();
         RoleAdapter role = getRole(roleName);
         if (role == null) {
             throw new RuntimeException("Role not found");
         }
 
+        addScopeMapping(agent, role);
+    }
+
+    @Override
+    public void addScopeMapping(UserModel agent, RoleModel role) {
+        UserData userData = ((UserAdapter)agent).getUser();
         noSQL.pushItemToList(userData, "scopeIds", role.getId());
+    }
+
+    @Override
+    public void deleteScopeMapping(UserModel user, RoleModel role) {
+        UserData userData = ((UserAdapter)user).getUser();
+        noSQL.pullItemFromList(userData, "scopeIds", role.getId());
     }
 
     @Override
@@ -547,16 +558,35 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public Set<String> getScopeMapping(UserModel agent) {
-        UserData userData = ((UserAdapter)agent).getUser();
-        List<String> scopeIds = userData.getScopeIds();
-
-        Set<String> result = new HashSet<String>();
-
+    public List<OAuthClientModel> getOAuthClients() {
         NoSQLQuery query = noSQL.createQueryBuilder()
-                .inCondition("_id", scopeIds)
+                .andCondition("realmId", getOid())
                 .build();
-        List<RoleData> roles = noSQL.loadObjects(RoleData.class, query);
+        List<OAuthClientData> results = noSQL.loadObjects(OAuthClientData.class, query);
+        List<OAuthClientModel> list = new ArrayList<OAuthClientModel>();
+        for (OAuthClientData data : results) {
+            list.add(new OAuthClientAdapter(data, noSQL));
+        }
+        return list;
+    }
+
+    @Override
+    public List<RoleModel> getScopeMappings(UserModel agent) {
+        List<RoleModel> result = new ArrayList<RoleModel>();
+        List<RoleData> roles = ApplicationAdapter.getAllScopesOfUser(agent, noSQL);
+        // TODO: Maybe improve as currently we need to obtain all roles and then filter programmatically...
+        for (RoleData role : roles) {
+            if (getOid().equals(role.getRealmId())) {
+                result.add(new RoleAdapter(role, noSQL));
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public Set<String> getScopeMappingValues(UserModel agent) {
+        Set<String> result = new HashSet<String>();
+        List<RoleData> roles = ApplicationAdapter.getAllScopesOfUser(agent, noSQL);
         // TODO: Maybe improve as currently we need to obtain all roles and then filter programmatically...
         for (RoleData role : roles) {
             if (getOid().equals(role.getRealmId())) {
