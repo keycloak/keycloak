@@ -23,7 +23,9 @@ package org.keycloak.testutils;
 
 import io.undertow.Undertow;
 import io.undertow.Undertow.Builder;
-import io.undertow.server.handlers.resource.ClassPathResourceManager;
+import io.undertow.server.handlers.resource.Resource;
+import io.undertow.server.handlers.resource.ResourceManager;
+import io.undertow.server.handlers.resource.URLResource;
 import io.undertow.servlet.Servlets;
 import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.FilterInfo;
@@ -32,6 +34,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 
 import javax.servlet.DispatcherType;
 
@@ -46,7 +49,6 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.services.FormService;
 import org.keycloak.services.filters.KeycloakSessionServletFilter;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
@@ -230,7 +232,7 @@ public class KeycloakServer {
         di.setClassLoader(getClass().getClassLoader());
         di.setContextPath("/auth-server");
         di.setDeploymentName("Keycloak");
-        di.setResourceManager(new ClassPathResourceManager(FormService.class.getClassLoader(), "META-INF/resources"));
+        di.setResourceManager(new KeycloakResourceManager());
 
         FilterInfo filter = Servlets.filter("SessionFilter", KeycloakSessionServletFilter.class);
         di.addFilter(filter);
@@ -259,6 +261,20 @@ public class KeycloakServer {
         server.stop();
 
         info("Stopped Keycloak");
+    }
+
+    public static class KeycloakResourceManager implements ResourceManager {
+        @Override
+        public Resource getResource(String path) throws IOException {
+            String realPath = "META-INF/resources" + path;
+
+            if (realPath.endsWith("/admin/")) {
+                realPath += "index.html";
+            }
+
+            URL url = getClass().getClassLoader().getResource(realPath);
+            return new URLResource(url, url.openConnection(), path);
+        }
     }
 
 }

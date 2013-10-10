@@ -29,6 +29,16 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-admin-ui</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-admin-ui-styles</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-core</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -37,13 +47,6 @@
             <artifactId>keycloak-services</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <!--
-<dependency>
-<groupId>org.keycloak</groupId>
-<artifactId>keycloak-server</artifactId>
-<version>${project.version}</version>
-</dependency>
--->
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-social-core</artifactId>
