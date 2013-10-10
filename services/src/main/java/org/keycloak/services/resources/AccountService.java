@@ -164,6 +164,14 @@ public class AccountService {
         return accessCodeEntry;
     }
 
+    @Path("totp-remove")
+    @GET
+    public Response processTotpRemove() {
+        UserModel user = getUserFromAuthManager();
+        user.setTotp(false);
+        return Flows.forms(realm, request, uriInfo).setUser(user).forwardToTotp();
+    }
+
     @Path("totp")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
