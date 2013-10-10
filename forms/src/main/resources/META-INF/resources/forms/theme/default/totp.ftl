@@ -22,7 +22,9 @@
                     <tr>
                         <td class="provider"><span class="social googleplus">Google</span></td>
                         <td class="soft">Connected as john@google.com</td>
-                        <td class="action"><a href="user-totp-setup.html" class="button">Remove Google</a></td>
+                        <td class="action">
+                            <a href="${url.totpRemoveUrl}" class="button">Remove Google</a>
+                        </td>
                     </tr>
                     </tbody>
                 </table>
