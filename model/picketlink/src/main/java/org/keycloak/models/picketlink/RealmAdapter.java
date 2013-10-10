@@ -819,6 +819,7 @@ public class RealmAdapter implements RealmModel {
         RelationshipQuery<SocialLinkRelationship> query = getRelationshipManager().createRelationshipQuery(SocialLinkRelationship.class);
         query.setParameter(SocialLinkRelationship.SOCIAL_PROVIDER, socialLink.getSocialProvider());
         query.setParameter(SocialLinkRelationship.SOCIAL_USERNAME, socialLink.getSocialUsername());
+        query.setParameter(SocialLinkRelationship.REALM, realm.getName());
         List<SocialLinkRelationship> results = query.getResultList();
         if (results.isEmpty()) {
             return null;
@@ -850,6 +851,7 @@ public class RealmAdapter implements RealmModel {
         relationship.setUser(((UserAdapter)user).getUser());
         relationship.setSocialProvider(socialLink.getSocialProvider());
         relationship.setSocialUsername(socialLink.getSocialUsername());
+        relationship.setRealm(realm.getName());
 
         getRelationshipManager().add(relationship);
     }
@@ -860,6 +862,7 @@ public class RealmAdapter implements RealmModel {
         relationship.setUser(((UserAdapter)user).getUser());
         relationship.setSocialProvider(socialLink.getSocialProvider());
         relationship.setSocialUsername(socialLink.getSocialUsername());
+        relationship.setRealm(realm.getName());
 
         getRelationshipManager().remove(relationship);
     }
