@@ -9,6 +9,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.mongo.keycloak.adapters.RealmAdapter;
 import org.keycloak.services.resources.KeycloakApplication;
+import org.keycloak.services.utils.PropertiesManager;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -51,7 +52,7 @@ public class RemoveUsersWorker implements Worker {
 
         // TODO: Not supported in model actually. We support operation just in MongoDB
         // UserModel user = realm.removeUser(username);
-        if (KeycloakApplication.SESSION_FACTORY_MONGO.equals(System.getProperty(KeycloakApplication.SESSION_FACTORY))) {
+        if (PropertiesManager.isMongoSessionFactory()) {
             RealmAdapter mongoRealm = (RealmAdapter)realm;
             mongoRealm.removeUser(username);
         } else {

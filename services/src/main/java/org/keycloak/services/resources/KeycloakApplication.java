@@ -8,6 +8,7 @@ import org.keycloak.models.picketlink.PicketlinkKeycloakSession;
 import org.keycloak.models.picketlink.PicketlinkKeycloakSessionFactory;
 import org.keycloak.models.picketlink.mappings.ApplicationEntity;
 import org.keycloak.models.picketlink.mappings.RealmEntity;
+import org.keycloak.services.utils.PropertiesManager;
 import org.keycloak.social.SocialRequestManager;
 import org.picketlink.idm.PartitionManager;
 import org.picketlink.idm.config.IdentityConfigurationBuilder;
@@ -30,15 +31,6 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class KeycloakApplication extends Application {
-
-    public static final String SESSION_FACTORY = "keycloak.sessionFactory";
-    public static final String SESSION_FACTORY_PICKETLINK = "picketlink";
-    public static final String SESSION_FACTORY_MONGO = "mongo";
-    public static final String MONGO_HOST = "keycloak.mongodb.host";
-    public static final String MONGO_PORT = "keycloak.mongodb.port";
-    public static final String MONGO_DB_NAME = "keycloak.mongodb.databaseName";
-    public static final String MONGO_DROP_DB_ON_STARTUP = "keycloak.mongodb.dropDatabaseOnStartup";
-
 
     protected Set<Object> singletons = new HashSet<Object>();
     protected Set<Class<?>> classes = new HashSet<Class<?>>();
@@ -65,11 +57,12 @@ public class KeycloakApplication extends Application {
     }
 
     public static KeycloakSessionFactory buildSessionFactory() {
-        String sessionFactoryType = System.getProperty(SESSION_FACTORY, SESSION_FACTORY_PICKETLINK);
-        if (SESSION_FACTORY_MONGO.equals(sessionFactoryType)) {
+        if (PropertiesManager.isMongoSessionFactory()) {
             return buildMongoDBSessionFactory();
-        } else {
+        } else if (PropertiesManager.isPicketlinkSessionFactory()) {
             return buildPicketlinkSessionFactory();
+        } else {
+            throw new IllegalStateException("Unknown session factory type: " + PropertiesManager.getSessionFactoryType());
         }
     }
 
@@ -79,10 +72,10 @@ public class KeycloakApplication extends Application {
     }
 
     private static KeycloakSessionFactory buildMongoDBSessionFactory() {
-        String host = System.getProperty(MONGO_HOST, "localhost");
-        int port = Integer.parseInt(System.getProperty(MONGO_PORT, "27017"));
-        String dbName = System.getProperty(MONGO_DB_NAME, "keycloak");
-        boolean dropDatabaseOnStartup = Boolean.parseBoolean(System.getProperty(MONGO_DROP_DB_ON_STARTUP, "true"));
+        String host = PropertiesManager.getMongoHost();
+        int port = PropertiesManager.getMongoPort();
+        String dbName = PropertiesManager.getMongoDbName();
+        boolean dropDatabaseOnStartup = PropertiesManager.dropDatabaseOnStartup();
         return new MongoDBSessionFactory(host, port, dbName, dropDatabaseOnStartup);
     }
 

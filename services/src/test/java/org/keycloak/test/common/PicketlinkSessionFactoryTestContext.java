@@ -1,6 +1,7 @@
 package org.keycloak.test.common;
 
 import org.keycloak.services.resources.KeycloakApplication;
+import org.keycloak.services.utils.PropertiesManager;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -19,6 +20,6 @@ public class PicketlinkSessionFactoryTestContext implements SessionFactoryTestCo
 
     @Override
     public void initEnvironment() {
-        System.setProperty(KeycloakApplication.SESSION_FACTORY, KeycloakApplication.SESSION_FACTORY_PICKETLINK);
+        PropertiesManager.setSessionFactoryType(PropertiesManager.SESSION_FACTORY_PICKETLINK);
     }
 }

@@ -8,6 +8,7 @@ import de.flapdoodle.embed.mongo.distribution.Version;
 import de.flapdoodle.embed.process.runtime.Network;
 import org.jboss.resteasy.logging.Logger;
 import org.keycloak.services.resources.KeycloakApplication;
+import org.keycloak.services.utils.PropertiesManager;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -15,7 +16,7 @@ import org.keycloak.services.resources.KeycloakApplication;
 public class MongoDBSessionFactoryTestContext implements SessionFactoryTestContext {
 
     protected static final Logger logger = Logger.getLogger(MongoDBSessionFactoryTestContext.class);
-    private static final int PORT = 27777;
+    private static final int PORT = PropertiesManager.MONGO_DEFAULT_PORT_UNIT_TESTS;
 
     private MongodExecutable mongodExe;
     private MongodProcess mongod;
@@ -42,16 +43,16 @@ public class MongoDBSessionFactoryTestContext implements SessionFactoryTestConte
         }
         logger.info("MongoDB stopped successfully");
 
-        // Null this, so other tests are not affected
-        System.setProperty(KeycloakApplication.SESSION_FACTORY, "");
+        // Reset this, so other tests are not affected
+        PropertiesManager.setDefaultSessionFactoryType();
     }
 
     @Override
     public void initEnvironment() {
-        System.setProperty(KeycloakApplication.SESSION_FACTORY, KeycloakApplication.SESSION_FACTORY_MONGO);
-        System.setProperty(KeycloakApplication.MONGO_HOST, "localhost");
-        System.setProperty(KeycloakApplication.MONGO_PORT, String.valueOf(PORT));
-        System.setProperty(KeycloakApplication.MONGO_DB_NAME, "keycloakTest");
-        System.setProperty(KeycloakApplication.MONGO_DROP_DB_ON_STARTUP, "true");
+        PropertiesManager.setSessionFactoryType(PropertiesManager.SESSION_FACTORY_MONGO);
+        PropertiesManager.setMongoHost("localhost");
+        PropertiesManager.setMongoPort(PORT);
+        PropertiesManager.setMongoDbName("keycloakTest");
+        PropertiesManager.setDropDatabaseOnStartup(true);
     }
 }
