@@ -7,8 +7,6 @@ import org.apache.jorphan.logging.LoggingManager;
 import org.apache.log.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.mongo.keycloak.adapters.RealmAdapter;
-import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.services.utils.PropertiesManager;
 
 /**
@@ -45,6 +43,8 @@ public class RemoveUsersWorker implements Worker {
 
     @Override
     public void run(SampleResult result, KeycloakSession identitySession) {
+        throw new IllegalStateException("Not yet supported");
+        /*
         int userNumber = ++userCounterInRealm;
         int totalUserNumber = totalUserCounter.incrementAndGet();
 
@@ -63,6 +63,7 @@ public class RemoveUsersWorker implements Worker {
 
         int labelC = ((totalUserNumber - 1) / NUMBER_OF_USERS_IN_EACH_REPORT) * NUMBER_OF_USERS_IN_EACH_REPORT;
         result.setSampleLabel("ReadUsers " + (labelC + 1) + "-" + (labelC + NUMBER_OF_USERS_IN_EACH_REPORT));
+        */
     }
 
     @Override

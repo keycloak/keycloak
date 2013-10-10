@@ -1,7 +1,6 @@
 package org.keycloak.services.resources;
 
 import org.keycloak.SkeletonKeyContextResolver;
-import org.keycloak.models.mongo.keycloak.adapters.MongoDBSessionFactory;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.picketlink.PicketlinkKeycloakSession;
@@ -23,6 +22,8 @@ import javax.persistence.Persistence;
 import javax.servlet.ServletContext;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Context;
+
+import java.lang.reflect.Constructor;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -76,7 +77,15 @@ public class KeycloakApplication extends Application {
         int port = PropertiesManager.getMongoPort();
         String dbName = PropertiesManager.getMongoDbName();
         boolean dropDatabaseOnStartup = PropertiesManager.dropDatabaseOnStartup();
-        return new MongoDBSessionFactory(host, port, dbName, dropDatabaseOnStartup);
+
+        // Create MongoDBSessionFactory via reflection now
+        try {
+            Class<? extends KeycloakSessionFactory> mongoDBSessionFactoryClass = (Class<? extends KeycloakSessionFactory>)Class.forName("org.keycloak.models.mongo.keycloak.adapters.MongoDBSessionFactory");
+            Constructor<? extends KeycloakSessionFactory> constr = mongoDBSessionFactoryClass.getConstructor(String.class, int.class, String.class, boolean.class);
+            return constr.newInstance(host, port, dbName, dropDatabaseOnStartup);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public KeycloakSessionFactory getFactory() {
