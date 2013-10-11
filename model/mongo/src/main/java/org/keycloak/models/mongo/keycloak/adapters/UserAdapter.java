@@ -128,7 +128,10 @@ public class UserAdapter implements UserModel {
 
     @Override
     public void addRequiredAction(RequiredAction action) {
-        noSQL.pushItemToList(user, "requiredActions", action);
+        // Push action only if it's not already here
+        if (user.getRequiredActions() == null || !user.getRequiredActions().contains(action)) {
+            noSQL.pushItemToList(user, "requiredActions", action);
+        }
     }
 
     @Override
