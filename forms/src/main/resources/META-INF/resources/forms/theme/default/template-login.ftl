@@ -35,7 +35,8 @@
                 </div>
 
                 <#if error?has_content>
-                    <div class="feedback error bottom-left show">
+                    <div class="
+                     error bottom-left show">
                         <p>
                             <strong id="loginError">${rb.getString(error.summary)}</strong>
                         </p>
