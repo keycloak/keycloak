@@ -1,4 +1,5 @@
 #!/bin/bash
+# dev setup
 
 if [ -z "$JBOSS_HOME"]; then
     echo "Need toset JBOSS_HOME"
