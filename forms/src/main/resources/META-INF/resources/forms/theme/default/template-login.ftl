@@ -31,16 +31,16 @@
             <div class="form-area ${(realm.social)?string('social','')} clearfix">
                 <div class="section app-form">
                     <h3>Application login area</h3>
+                    <#if error?has_content>
+                        <div class="feedback error bottom-left show">
+                            <p>
+                                <strong id="loginError">${rb.getString(error.summary)}</strong>
+                                <br>&nbsp; <!-- TODO: Just so it aligns. Change when there's support for error.detail/message -->
+                            </p>
+                        </div>
+                    </#if>
                     <#nested "form">
                 </div>
-
-                <#if error?has_content>
-                    <div class="feedback error bottom-left show">
-                        <p>
-                            <strong id="loginError">${rb.getString(error.summary)}</strong>
-                        </p>
-                    </div>
-                </#if>
 
                 <#if social.displaySocialProviders>
                     <div class="section social-login"> <span>or</span>
