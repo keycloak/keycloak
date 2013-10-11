@@ -87,15 +87,13 @@ public class PasswordCredentialHandler {
     public void update(NoSQL noSQL, UserData user, String password,
                        Date effectiveDate, Date expiryDate) {
 
-        // Try to look if user already has password
+        // Delete existing password of user
         NoSQLQuery query = noSQL.createQueryBuilder()
                 .andCondition("userId", user.getId())
                 .build();
+        noSQL.removeObjects(PasswordData.class, query);
 
-        PasswordData passwordData = noSQL.loadSingleObject(PasswordData.class, query);
-        if (passwordData == null) {
-            passwordData = new PasswordData();
-        }
+        PasswordData passwordData = new PasswordData();
 
         String passwordSalt = generateSalt();
 
