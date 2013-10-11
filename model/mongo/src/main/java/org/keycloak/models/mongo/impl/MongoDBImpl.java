@@ -249,16 +249,18 @@ public class MongoDBImpl implements NoSQL {
             throw new IllegalArgumentException("Property " + listPropertyName + " doesn't exist on object " + object);
         }
         List<S> list = (List<S>)listProperty.getValue(object);
+
+        // If list is null, we skip both object and DB update
         if (list != null) {
             list.remove(itemToPull);
-        }
 
-        // Pull item from DB
-        Object dbItemToPull = typeConverter.convertApplicationObjectToDBObject(itemToPull, Object.class);
-        BasicDBObject query = new BasicDBObject("_id", new ObjectId(oidProperty.getValue(object)));
-        BasicDBObject pullObject = new BasicDBObject(listPropertyName, dbItemToPull);
-        BasicDBObject pullCommand = new BasicDBObject("$pull", pullObject);
-        getDBCollectionForType(type).update(query, pullCommand);
+            // Pull item from DB
+            Object dbItemToPull = typeConverter.convertApplicationObjectToDBObject(itemToPull, Object.class);
+            BasicDBObject query = new BasicDBObject("_id", new ObjectId(oidProperty.getValue(object)));
+            BasicDBObject pullObject = new BasicDBObject(listPropertyName, dbItemToPull);
+            BasicDBObject pullCommand = new BasicDBObject("$pull", pullObject);
+            getDBCollectionForType(type).update(query, pullCommand);
+        }
     }
 
     // Possibility to add user-defined converters
