@@ -195,22 +195,18 @@ public class KeycloakServer {
             }
 
             RealmModel defaultRealm = manager.createRealm(RealmModel.DEFAULT_REALM, RealmModel.DEFAULT_REALM);
-            manager.generateRealmKeys(defaultRealm);
-
+            defaultRealm.setName(RealmModel.DEFAULT_REALM);
             defaultRealm.setEnabled(true);
             defaultRealm.setTokenLifespan(300);
             defaultRealm.setAccessCodeLifespan(60);
             defaultRealm.setAccessCodeLifespanUserAction(600);
-            defaultRealm.setSslNotRequired(false);
+            defaultRealm.setSslNotRequired(true);
             defaultRealm.setCookieLoginAllowed(true);
             defaultRealm.setRegistrationAllowed(true);
-            defaultRealm.setAutomaticRegistrationAfterSocialLogin(false);
-            defaultRealm.setVerifyEmail(false);
-
+            manager.generateRealmKeys(defaultRealm);
             defaultRealm.addRequiredCredential(CredentialRepresentation.PASSWORD);
-            RoleModel role = defaultRealm.addRole(SaasService.REALM_CREATOR_ROLE);
-            UserModel admin = defaultRealm.addUser("admin");
-            defaultRealm.grantRole(admin, role);
+            defaultRealm.addRole(SaasService.REALM_CREATOR_ROLE);
+            defaultRealm.addDefaultRole(SaasService.REALM_CREATOR_ROLE);
 
             session.getTransaction().commit();
         } finally {
