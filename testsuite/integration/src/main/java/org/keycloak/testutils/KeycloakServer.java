@@ -121,6 +121,10 @@ public class KeycloakServer {
             }
         }
 
+        if (System.getProperties().containsKey("import")) {
+            keycloak.importRealm(new FileInputStream(System.getProperty("import")));
+        }
+
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {

@@ -13,6 +13,9 @@ public class MailServer {
 
         GreenMail greenMail = new GreenMail(setup);
         greenMail.start();
+
+        System.out.println("Started mail server (localhost:3025)");
+        System.out.println();
         
         while (true) {
             int c = greenMail.getReceivedMessages().length;
