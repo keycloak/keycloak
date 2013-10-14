@@ -19,6 +19,8 @@ import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.services.resources.SaasService;
+import org.keycloak.test.common.AbstractKeycloakTest;
+import org.keycloak.test.common.SessionFactoryTestContext;
 
 import java.util.List;
 import java.util.Set;
@@ -28,29 +30,15 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class ImportTest {
-    private KeycloakSessionFactory factory;
-    private KeycloakSession identitySession;
-    private RealmManager manager;
-    private RealmModel realmModel;
+public class ImportTest extends AbstractKeycloakTest {
 
-    @Before
-    public void before() throws Exception {
-        factory = KeycloakApplication.buildSessionFactory();
-        identitySession = factory.createSession();
-        identitySession.getTransaction().begin();
-        manager = new RealmManager(identitySession);
-    }
-
-    @After
-    public void after() throws Exception {
-        identitySession.getTransaction().commit();
-        identitySession.close();
-        factory.close();
+    public ImportTest(SessionFactoryTestContext testContext) {
+        super(testContext);
     }
 
     @Test
     public void install() throws Exception {
+        RealmManager manager = getRealmManager();
         RealmModel defaultRealm = manager.createRealm(RealmModel.DEFAULT_REALM, RealmModel.DEFAULT_REALM);
         defaultRealm.setName(RealmModel.DEFAULT_REALM);
         defaultRealm.setEnabled(true);
@@ -93,7 +81,7 @@ public class ImportTest {
 
         List<ApplicationModel> resources = realm.getApplications();
         Assert.assertEquals(2, resources.size());
-        List<RealmModel> realms = identitySession.getRealms(admin);
+        List<RealmModel> realms = getIdentitySession().getRealms(admin);
         Assert.assertEquals(1, realms.size());
 
         // Test scope relationship
@@ -129,6 +117,7 @@ public class ImportTest {
 
     @Test
     public void install2() throws Exception {
+        RealmManager manager = getRealmManager();
         RealmModel defaultRealm = manager.createRealm(RealmModel.DEFAULT_REALM, RealmModel.DEFAULT_REALM);
         defaultRealm.setName(RealmModel.DEFAULT_REALM);
         defaultRealm.setEnabled(true);

@@ -7,6 +7,7 @@ import org.keycloak.models.picketlink.PicketlinkKeycloakSession;
 import org.keycloak.models.picketlink.PicketlinkKeycloakSessionFactory;
 import org.keycloak.models.picketlink.mappings.ApplicationEntity;
 import org.keycloak.models.picketlink.mappings.RealmEntity;
+import org.keycloak.services.utils.PropertiesManager;
 import org.keycloak.social.SocialRequestManager;
 import org.picketlink.idm.PartitionManager;
 import org.picketlink.idm.config.IdentityConfigurationBuilder;
@@ -21,6 +22,8 @@ import javax.persistence.Persistence;
 import javax.servlet.ServletContext;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Context;
+
+import java.lang.reflect.Constructor;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -29,6 +32,7 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class KeycloakApplication extends Application {
+
     protected Set<Object> singletons = new HashSet<Object>();
     protected Set<Class<?>> classes = new HashSet<Class<?>>();
 
@@ -54,8 +58,34 @@ public class KeycloakApplication extends Application {
     }
 
     public static KeycloakSessionFactory buildSessionFactory() {
+        if (PropertiesManager.isMongoSessionFactory()) {
+            return buildMongoDBSessionFactory();
+        } else if (PropertiesManager.isPicketlinkSessionFactory()) {
+            return buildPicketlinkSessionFactory();
+        } else {
+            throw new IllegalStateException("Unknown session factory type: " + PropertiesManager.getSessionFactoryType());
+        }
+    }
+
+    private static KeycloakSessionFactory buildPicketlinkSessionFactory() {
         EntityManagerFactory emf = Persistence.createEntityManagerFactory("keycloak-identity-store");
         return new PicketlinkKeycloakSessionFactory(emf, buildPartitionManager());
+    }
+
+    private static KeycloakSessionFactory buildMongoDBSessionFactory() {
+        String host = PropertiesManager.getMongoHost();
+        int port = PropertiesManager.getMongoPort();
+        String dbName = PropertiesManager.getMongoDbName();
+        boolean dropDatabaseOnStartup = PropertiesManager.dropDatabaseOnStartup();
+
+        // Create MongoDBSessionFactory via reflection now
+        try {
+            Class<? extends KeycloakSessionFactory> mongoDBSessionFactoryClass = (Class<? extends KeycloakSessionFactory>)Class.forName("org.keycloak.models.mongo.keycloak.adapters.MongoDBSessionFactory");
+            Constructor<? extends KeycloakSessionFactory> constr = mongoDBSessionFactoryClass.getConstructor(String.class, int.class, String.class, boolean.class);
+            return constr.newInstance(host, port, dbName, dropDatabaseOnStartup);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public KeycloakSessionFactory getFactory() {

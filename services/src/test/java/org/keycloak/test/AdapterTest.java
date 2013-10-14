@@ -12,6 +12,8 @@ import org.keycloak.services.managers.OAuthClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.services.resources.KeycloakApplication;
+import org.keycloak.test.common.AbstractKeycloakTest;
+import org.keycloak.test.common.SessionFactoryTestContext;
 
 
 import java.util.HashSet;
@@ -24,30 +26,16 @@ import java.util.StringTokenizer;
  * @version $Revision: 1 $
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class AdapterTest {
-    private KeycloakSessionFactory factory;
-    private KeycloakSession identitySession;
-    private RealmManager adapter;
+public class AdapterTest extends AbstractKeycloakTest {
     private RealmModel realmModel;
 
-    @Before
-    public void before() throws Exception {
-        factory = KeycloakApplication.buildSessionFactory();
-        identitySession = factory.createSession();
-        identitySession.getTransaction().begin();
-        adapter = new RealmManager(identitySession);
-    }
-
-    @After
-    public void after() throws Exception {
-        identitySession.getTransaction().commit();
-        identitySession.close();
-        factory.close();
+    public AdapterTest(SessionFactoryTestContext testContext) {
+        super(testContext);
     }
 
     @Test
     public void installTest() throws Exception {
-        new InstallationManager().install(adapter);
+        new InstallationManager().install(getRealmManager());
 
     }
 
@@ -63,7 +51,7 @@ public class AdapterTest {
 
     @Test
     public void test1CreateRealm() throws Exception {
-        realmModel = adapter.createRealm("JUGGLER");
+        realmModel = getRealmManager().createRealm("JUGGLER");
         realmModel.setAccessCodeLifespan(100);
         realmModel.setAccessCodeLifespanUserAction(600);
         realmModel.setCookieLoginAllowed(true);
@@ -76,7 +64,7 @@ public class AdapterTest {
         realmModel.addDefaultRole("foo");
 
         System.out.println(realmModel.getId());
-        realmModel = adapter.getRealm(realmModel.getId());
+        realmModel = getRealmManager().getRealm(realmModel.getId());
         Assert.assertNotNull(realmModel);
         Assert.assertEquals(realmModel.getAccessCodeLifespan(), 100);
         Assert.assertEquals(600, realmModel.getAccessCodeLifespanUserAction());
@@ -152,6 +140,8 @@ public class AdapterTest {
             user.setFirstName("Bill");
             user.setEmail("bburke@redhat.com");
         }
+
+        RealmManager adapter = getRealmManager();
 
         {
             List<UserModel> userModels = adapter.searchUsers("total junk query", realmModel);
