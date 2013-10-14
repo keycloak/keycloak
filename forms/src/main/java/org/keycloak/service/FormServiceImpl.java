@@ -81,6 +81,10 @@ public class FormServiceImpl implements FormService {
 
         Map<String, Object> attributes = new HashMap<String, Object>();
 
+        if (dataBean.getError() != null){
+            attributes.put("message", new ErrorBean(dataBean.getError(), dataBean.getErrorType()));
+        }
+
         RealmBean realm = new RealmBean(dataBean.getRealm());
         attributes.put("template", new TemplateBean(realm, dataBean.getContextPath()));
 
@@ -145,10 +149,6 @@ public class FormServiceImpl implements FormService {
 
     private class CommandPassword implements Command {
         public void exec(Map<String, Object> attributes, FormServiceDataBean dataBean) {
-            if (dataBean.getError() != null){
-                attributes.put("message", new ErrorBean(dataBean.getError(), dataBean.getErrorType()));
-            }
-
             RealmBean realm = new RealmBean(dataBean.getRealm());
 
             attributes.put("realm", realm);

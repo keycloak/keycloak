@@ -41,6 +41,9 @@ public class AccountTotpPage extends Page {
     @FindBy(css = "button[type=\"submit\"]")
     private WebElement submitButton;
 
+    @FindBy(linkText = "Remove Google")
+    private WebElement removeLink;
+
     public void configure(String totp) {
         totpInput.sendKeys(totp);
         submitButton.click();
@@ -51,11 +54,15 @@ public class AccountTotpPage extends Page {
     }
 
     public boolean isCurrent() {
-        return driver.getPageSource().contains("Google Authenticator Setup");
+        return driver.getTitle().contains("Edit Account - Google Authenticator");
     }
 
     public void open() {
         driver.navigate().to(PATH);
+    }
+
+    public void removeTotp() {
+        removeLink.click();
     }
 
 }

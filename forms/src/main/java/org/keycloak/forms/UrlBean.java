@@ -120,6 +120,10 @@ public class UrlBean {
         return Urls.accountTotpPage(baseURI, realm.getId()).toString();
     }
 
+    public String getTotpRemoveUrl() {
+        return Urls.accountTotpRemove(baseURI, realm.getId()).toString();
+    }
+
     public String getEmailVerificationUrl() {
         return Urls.accountEmailVerification(baseURI, realm.getId()).toString();
     }

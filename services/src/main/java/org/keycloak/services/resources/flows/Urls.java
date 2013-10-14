@@ -55,6 +55,10 @@ public class Urls {
         return accountBase(baseUri).path(AccountService.class, "totpPage").build(realmId);
     }
 
+    public static URI accountTotpRemove(URI baseUri, String realmId) {
+        return accountBase(baseUri).path(AccountService.class, "processTotpRemove").build(realmId);
+    }
+
     public static URI accountEmailVerification(URI baseUri, String realmId) {
         return accountBase(baseUri).path(AccountService.class, "emailVerification").build(realmId);
     }

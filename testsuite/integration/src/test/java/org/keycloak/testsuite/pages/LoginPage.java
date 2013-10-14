@@ -41,6 +41,9 @@ public class LoginPage extends Page {
     @FindBy(id = "password")
     private WebElement passwordInput;
 
+    @FindBy(id = "totp")
+    private WebElement totp;
+
     @FindBy(css = "input[type=\"submit\"]")
     private WebElement submitButton;
 
@@ -59,6 +62,19 @@ public class LoginPage extends Page {
 
         passwordInput.clear();
         passwordInput.sendKeys(password);
+
+        submitButton.click();
+    }
+
+    public void loginTotp(String username, String password, String code) {
+        usernameInput.clear();
+        usernameInput.sendKeys(username);
+
+        passwordInput.clear();
+        passwordInput.sendKeys(password);
+
+        totp.clear();
+        totp.sendKeys(code);
 
         submitButton.click();
     }
