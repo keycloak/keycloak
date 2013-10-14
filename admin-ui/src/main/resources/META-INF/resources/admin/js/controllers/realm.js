@@ -155,7 +155,7 @@ module.controller('RealmRequiredCredentialsCtrl', function($scope, Realm, realm,
     console.log('RealmRequiredCredentialsCtrl');
 
     $scope.realm = {
-        id : realm.id, realm : realm.realm,
+        id : realm.id, realm : realm.realm, social : realm.social,
         requiredCredentials : realm.requiredCredentials,
         requiredApplicationCredentials : realm.requiredApplicationCredentials,
         requiredOAuthClientCredentials : realm.requiredOAuthClientCredentials
@@ -200,7 +200,7 @@ module.controller('RealmRequiredCredentialsCtrl', function($scope, Realm, realm,
 module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, $location, Dialog, Notifications) {
     console.log('RealmTokenDetailCtrl');
 
-    $scope.realm = { id : realm.id, realm : realm.realm, tokenLifespan : realm.tokenLifespan,  accessCodeLifespan : realm.accessCodeLifespan };
+    $scope.realm = { id : realm.id, realm : realm.realm, social : realm.social, tokenLifespan : realm.tokenLifespan,  accessCodeLifespan : realm.accessCodeLifespan };
     $scope.realm.tokenLifespanUnit = 'Seconds';
     $scope.realm.accessCodeLifespanUnit = 'Seconds';
 
