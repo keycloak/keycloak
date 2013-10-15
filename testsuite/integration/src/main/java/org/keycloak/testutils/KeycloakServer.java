@@ -117,16 +117,26 @@ public class KeycloakServer {
 
         if (System.getProperties().containsKey("resources")) {
             String resources = System.getProperty("resources");
-            if (resources == null || resources.equals("")) {
-                for (String c : System.getProperty("java.class.path").split(File.pathSeparator)) {
-                    if (c.contains(File.separator + "testsuite" + File.separator + "integration")) {
-                        config.setResourcesHome(c.replaceFirst("testsuite.integration.*", ""));
+            if (resources == null || resources.equals("") || resources.equals("true")) {
+                if (System.getProperties().containsKey("maven.home")) {
+                    resources = System.getProperty("user.dir").replaceFirst("testsuite.integration.*", "");
+                } else {
+                    for (String c : System.getProperty("java.class.path").split(File.pathSeparator)) {
+                        if (c.contains(File.separator + "testsuite" + File.separator + "integration")) {
+                            resources = c.replaceFirst("testsuite.integration.*", "");
+                        }
                     }
                 }
-            } else {
-                config.setResourcesHome(resources);
             }
+
+            File dir = new File(resources).getAbsoluteFile();
+            if (!dir.isDirectory() || !new File(dir, "admin-ui").isDirectory()) {
+                throw new RuntimeException("Invalid resources directory");
+            }
+
+            config.setResourcesHome(dir.getAbsolutePath());
         }
+
 
         final KeycloakServer keycloak = new KeycloakServer(config);
         keycloak.sysout = true;
@@ -309,9 +319,9 @@ public class KeycloakServer {
                 if (path.startsWith("/forms")) {
                     file = file(resourcesHome, "forms", "src", "main", "resources", "META-INF", "resources", path.replace('/', File.separatorChar));
                 } else if (path.startsWith("/admin")) {
-                    file =  file(resourcesHome, "admin-ui", "src", "main", "resources", "META-INF", "resources", path.replace('/', File.separatorChar));
+                    file = file(resourcesHome, "admin-ui", "src", "main", "resources", "META-INF", "resources", path.replace('/', File.separatorChar));
                     if (!file.isFile()) {
-                        file =  file(resourcesHome, "admin-ui-styles", "src", "main", "resources", "META-INF", "resources", path.replace('/', File.separatorChar));
+                        file = file(resourcesHome, "admin-ui-styles", "src", "main", "resources", "META-INF", "resources", path.replace('/', File.separatorChar));
                     }
                 } else {
                     throw new IOException("Unknown resource " + path);
@@ -323,10 +333,9 @@ public class KeycloakServer {
 
     private static File file(String... path) {
         StringBuilder s = new StringBuilder();
-        s.append(path[0]);
-        for (int i = 1; i < path.length; i++) {
+        for (String p : path) {
             s.append(File.separator);
-            s.append(path[i]);
+            s.append(p);
         }
         return new File(s.toString());
     }
