@@ -103,9 +103,9 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $ht
                                 Current.realm = Current.realms[i];
                             }
                         }
+                        $location.url("/realms/" + id);
+                        Notifications.success("Created realm");
                     });
-                    $location.url("/realms/" + id);
-                    Notifications.success("Created realm");
                 });
             } else {
                 console.log('updating realm...');
