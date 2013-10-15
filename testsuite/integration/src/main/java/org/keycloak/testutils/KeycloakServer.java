@@ -119,7 +119,7 @@ public class KeycloakServer {
             String resources = System.getProperty("resources");
             if (resources == null || resources.equals("")) {
                 for (String c : System.getProperty("java.class.path").split(File.pathSeparator)) {
-                    if (c.contains("keycloak" + File.separator + "testsuite" + File.separator + "integration")) {
+                    if (c.contains(File.separator + "testsuite" + File.separator + "integration")) {
                         config.setResourcesHome(c.replaceFirst("testsuite.integration.*", ""));
                     }
                 }
