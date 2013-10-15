@@ -712,3 +712,66 @@ input[type="email"].tiny {
   font-size: 1.1em;
   margin-right: 0.90909090909091em;
 }
+.changing-selectors .select-title {
+  display: inline-block;
+}
+.changing-selectors .select-title label {
+  font-size: 1.1em;
+  margin-left: 0.2em;
+  margin-bottom: 0.3em;
+  margin-top: 0.5em;
+  display: block;
+  font-weight: normal;
+}
+.changing-selectors select {
+  min-height: 150px;
+  font-size: 1.1em;
+  padding: 0.545454545454545em;
+  min-width: 18.1818181818182em;
+  border: 1px #b6b6b6 solid;
+  border-radius: 2px;
+  box-shadow: inset 0px 2px 2px rgba(0, 0, 0, 0.1);
+  color: #333;
+  max-width: 200px;
+  width: auto;
+  min-width: 150px;
+  display: inline-block;
+}
+.changing-selectors select:hover {
+  border-color: #62afdb;
+}
+.changing-selectors select option {
+  padding: 0.36363636363636em 0.45454545454545em;
+  display: block;
+}
+.changing-selectors select option[disabled="disabled"] {
+  color: #aaa;
+}
+.changing-selectors .middle-buttons {
+  display: inline-block;
+  width: 4.5em;
+  margin-left: 0.8em;
+  margin-right: 0.8em;
+  vertical-align: middle;
+}
+.changing-selectors .middle-buttons button:first-child {
+  margin-bottom: 0.5em;
+}
+.changing-selectors .middle-buttons button.disabled span {
+  opacity: 0.4;
+  filter: alpha(opacity=40);
+}
+.changing-selectors .middle-buttons button span {
+  margin-right: 0;
+}
+.breadcrumb {
+  background: none;
+  margin: 5px 0 5px 0;
+  padding: 0;
+}
+.breadcrumb li a {
+  font-size: 1.1em;
+}
+.breadcrumb > li + li:before {
+  content: "» ";
+}
