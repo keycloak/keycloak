@@ -25,7 +25,7 @@
             <!-- <p>Forgot <a href="#">Username</a> or <a href="#">Password</a>?</p> -->
         </div>
 
-        <input type="submit" value="Log In" />
+        <input class="btn-primary" type="submit" value="Log In" />
     </form>
 
     <#elseif section = "info">

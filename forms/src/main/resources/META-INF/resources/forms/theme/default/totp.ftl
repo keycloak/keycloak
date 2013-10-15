@@ -1,7 +1,9 @@
 <#import "template-main.ftl" as layout>
 <@layout.mainLayout active='totp' bodyClass='totp'; section>
 
-    <#if section = "header">
+    <#if section = "title">
+        Google Authenticator
+    <#elseif section = "header">
 
         <#if totp.enabled>
             <h2>Authenticators</h2>
@@ -12,7 +14,6 @@
     <#elseif section = "content">
 
         <#if totp.enabled>
-        <#-- TODO this is only mock page -->
         <form>
             <fieldset>
                 <p class="info">You have the following authenticators set up:</p>
@@ -21,11 +22,16 @@
                     <tbody>
                     <tr>
                         <td class="provider"><span class="social googleplus">Google</span></td>
-                        <td class="soft">Connected as john@google.com</td>
-                        <td class="action"><a href="user-totp-setup.html" class="button">Remove Google</a></td>
+                        <td class="action">
+                            <a href="${url.totpRemoveUrl}" class="button">Remove Google</a>
+                        </td>
                     </tr>
                     </tbody>
                 </table>
+                <p class="info">
+                    If the totp authentication is required by the realm and you remove your configured authenticator,
+                    you will have to reconfigure it immediately or on the next login.
+                </p>
             </fieldset>
         </form>
 

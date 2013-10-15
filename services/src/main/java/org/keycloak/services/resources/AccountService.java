@@ -164,6 +164,15 @@ public class AccountService {
         return accessCodeEntry;
     }
 
+    @Path("totp-remove")
+    @GET
+    public Response processTotpRemove() {
+        UserModel user = getUserFromAuthManager();
+        user.setTotp(false);
+        return Flows.forms(realm, request, uriInfo).setError("successTotpRemoved").setErrorType(FormFlows.ErrorType.SUCCESS)
+                .setUser(user).forwardToTotp();
+    }
+
     @Path("totp")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
@@ -206,7 +215,8 @@ public class AccountService {
         if (accessCodeEntry != null) {
             return redirectOauth(user, accessCodeEntry);
         } else {
-            return Flows.forms(realm, request, uriInfo).setUser(user).forwardToTotp();
+            return Flows.forms(realm, request, uriInfo).setError("successTotp").setErrorType(FormFlows.ErrorType.SUCCESS)
+                    .setUser(user).forwardToTotp();
         }
     }
 

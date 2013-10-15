@@ -30,6 +30,8 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
+import org.keycloak.testsuite.OAuthClient;
+import org.keycloak.testsuite.pages.AccountTotpPage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
@@ -54,9 +56,6 @@ public class RequiredActionTotpSetupTest {
         public void config(RealmManager manager, RealmModel defaultRealm, RealmModel appRealm) {
             appRealm.addRequiredCredential(CredentialRepresentation.TOTP);
             appRealm.setResetPasswordAllowed(true);
-
-            UserModel user = appRealm.getUser("test-user@localhost");
-            user.addRequiredAction(RequiredAction.CONFIGURE_TOTP);
         }
 
     });
@@ -75,6 +74,12 @@ public class RequiredActionTotpSetupTest {
 
     @WebResource
     protected LoginConfigTotpPage totpPage;
+
+    @WebResource
+    protected AccountTotpPage accountTotpPage;
+
+    @WebResource
+    protected OAuthClient oauth;
 
     @WebResource
     protected RegisterPage registerPage;
@@ -101,9 +106,69 @@ public class RequiredActionTotpSetupTest {
 
         totpPage.assertCurrent();
 
-        totpPage.configure(totp.generate(totpPage.getTotpSecret()));
+        String totpSecret = totpPage.getTotpSecret();
+
+        totpPage.configure(totp.generate(totpSecret));
+
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        oauth.openLogout();
+
+        loginPage.open();
+        loginPage.loginTotp("test-user@localhost", "password", totp.generate(totpSecret));
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
     }
 
+    @Test
+    public void setupTotpRegisteredAfterTotpRemoval() {
+        // Register new user
+        loginPage.open();
+        loginPage.clickRegister();
+        registerPage.register("firstName2", "lastName2", "email2", "setupTotp2", "password2", "password2");
+
+        // Configure totp
+        totpPage.assertCurrent();
+
+        String totpCode = totpPage.getTotpSecret();
+        totpPage.configure(totp.generate(totpCode));
+
+        // After totp config, user should be on the app page
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        // Logout
+        oauth.openLogout();
+
+        // Try to login after logout
+        loginPage.open();
+        loginPage.login("setupTotp2", "password2");
+
+        // Totp is already configured, thus one-time password is needed, login page should be loaded
+        Assert.assertTrue(loginPage.isCurrent());
+        Assert.assertFalse(totpPage.isCurrent());
+
+        // Login with one-time password
+        loginPage.loginTotp("setupTotp2", "password2", totp.generate(totpCode));
+
+        // Open account page
+        accountTotpPage.open();
+        accountTotpPage.assertCurrent();
+
+        // Remove google authentificator
+        accountTotpPage.removeTotp();
+
+        // Logout
+        oauth.openLogout();
+
+        // Try to login
+        loginPage.open();
+        loginPage.login("setupTotp2", "password2");
+
+        // Since the authentificator was removed, it has to be set up again
+        totpPage.assertCurrent();
+        totpPage.configure(totp.generate(totpPage.getTotpSecret()));
+
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+    }
 }

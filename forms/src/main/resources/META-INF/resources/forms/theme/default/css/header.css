@@ -60,6 +60,7 @@ body {
 }
 .header.rcue .navbar {
   margin-bottom: 0;
+  z-index:auto;
 }
 .header.rcue .navbar.primary {
   font-size: 13px;
