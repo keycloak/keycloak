@@ -35,7 +35,6 @@ input[type="email"],
     
     &.error {
         border-color: #ba1212;
-        background-color: #f8e7e7;
         transition: all .33s ease-in-out;
         -moz-transition: all .33s ease-in-out;
         -webkit-transition: all .33s ease-in-out;
@@ -150,7 +149,8 @@ a.button {
       line-height: 2.18181818181818em;
 }
 
-button.primary {
+button.primary,
+.button.primary {
   border-color: #21799e;
   background-image: linear-gradient(top, #00A9EC 0%, #009BD3 100%);
   background-image: -o-linear-gradient(top, #00A9EC 0%, #009BD3 100%);
@@ -168,17 +168,44 @@ button.primary {
 }
 
 button.primary:hover,
-button.primary:focus {
+button.primary:focus,
+.button.primary:hover,
+.button.primary:focus {
   background-color: #009BD3;
 }
 
-button.primary:enabled:active {
+button.primary:enabled:active,
+.button.primary:enabled:active {
   background-color: #0099d4;
   box-shadow: inset 0 0 5px 3px #0074ae;
 }
 
 
 /* Code from Gabriel */
+
+button.primary,
+.button.primary {
+    background-color: #00a2df;
+    
+    &:hover,
+    &:active,
+    &:focus {
+        background-image: none;
+        color: #fff;
+    }
+}
+
+.rcue-login-register.register .two-fields {
+    
+    input[type="text"] {
+        width: 121px;
+        min-width: 0;
+    }
+    
+    input + input {
+        margin-left: 10px;
+    }  
+} 
 
 .search-comp {
     position: relative;
@@ -210,40 +237,88 @@ button.primary:enabled:active {
     }
 }
 
+.feedback-aligner {
+    position: absolute;
+    top: 1.5em;
+    text-align: center;
+    width: 100%;
+    height: 0;
+    z-index: 100;
+    
+    .feedback {
+        position: relative;
+        display: inline-block;
+        text-align: left;
+        border-width: 1px;
+        
+        p {
+            border-width: 1px;
+        }
+    }
+}
+
 .feedback {
     position: absolute;
     opacity: 0;
     transition: opacity .33s ease-in-out;
     -moz-transition: opacity .33s ease-in-out;
     -webkit-transition: opacity .33s ease-in-out;
+    
+    p {
+        padding: 0.90909090909091em 3.63636363636364em;
+        border-style: solid;
+        border-width: 1px 1px 0px 1px;
+        background-repeat: no-repeat;
+        background-position: 1.27272727272727em center;
+        font-size: 1.1em;
+        line-height: 1.4em;
+        border-radius: 2px;
+        color: #4d5258;
+        margin-bottom: 0;
+    }
    
     &.show {
         opacity: 1;
     }
-
-    &.error {
-        background-image: url(img/feedback-error-arrow-down.svg);
+    
+    &.bottom-left {
         background-position: left bottom;
         background-repeat: no-repeat;
         padding-bottom: 1em;
         
         p {
+            background-position: 1.27272727272727em 1.63636363636364em;
+        }
+    }
+
+    &.error {
+        background-image: url(img/feedback-error-arrow-down.svg);
+        
+        p {
             border-color: #b91415;
             background-image: url(img/feedback-error-sign.svg);
             background-color: #f8e7e7;
-            color: #4d5258;
         }
     }
     
-    p {
-        padding: 1em 3.63636363636364em;
-        border-style: solid;
-        border-width: 1px 1px 0px 1px;
-        background-repeat: no-repeat;
-        background-position: 1.27272727272727em 1.63636363636364em;
-        font-size: 1.1em;
-        line-height: 1.27272727272727em;
-        border-radius: 2px;
+    &.success {
+        background-image: url(img/feedback-success-arrow-down.svg);
+                
+        p {
+            border-color: #4b9e39;
+            background-image: url(img/feedback-success-sign.svg);
+            background-color: #e4f1e1;
+        }
+    }
+    
+    &.warning {
+        
+        p {
+            border-color: #f17528;
+            background-image: url(img/feedback-warning-sign.svg);
+            background-color: #fef1e9;
+        }
+        
     }
 }
 
@@ -270,6 +345,22 @@ button[class^="icon-"] {
     
     &:hover {
         background-image: url(img/sprites.png);
+    }
+}
+
+button.link {
+    border: none;
+    background-color: transparent;
+    background: none;
+    box-shadow: none;
+    font-weight: normal;
+    font-size: 1em;
+    color: 	#0099D3;
+    letter-spacing: 0;
+    padding: 0;
+    
+    &:hover {
+        text-decoration: underline;
     }
 }
 
@@ -302,6 +393,13 @@ legend {
             background-image: url(img/sprites.png);
         }
     }
+}
+
+fieldset.border-top {
+    border-width: 1px 0 0 0;
+    border-style: solid;
+    border-color: #e9e8e8;
+    padding-top: 2em;
 }
 
 .form-group {
@@ -338,8 +436,6 @@ legend {
     }
     
     .required {
-        position: absolute;
-        left: 10em;
         font-size: 1.1em;
         color: #CB2915;
     }
@@ -347,6 +443,10 @@ legend {
 
 legend + .form-group {
     padding-top: 1em;
+}
+
+legend + table {
+    margin-top: 1em;
 }
 
 .code {
@@ -521,32 +621,42 @@ input[type="email"] {
     }
 }
 
-.select2-container .select2-choice {
+.select2-container {
+    float: left;
+    margin-top: 0.3em;
+    margin-bottom: 0.3em;
     
-    &> .select2-chosen {
-        line-height: 2.1em;
-        padding-left: 0.90909090909091em;
-        margin-right: 0;
-        font-size: 1.1em;
-        padding-right: 2.36363636363636em;
-        padding-right: 26px;
-    }
+    .select2-choice {
     
-    .select2-arrow {
-        display: none;
+        &> .select2-chosen {
+            line-height: 2.1em;
+            padding-left: 0.90909090909091em;
+            margin-right: 0;
+            font-size: 1.1em;
+            padding-right: 2.36363636363636em;
+            padding-right: 26px;
+        }
+        
+        .select2-arrow {
+            display: none;
+        }
     }
 }
 
 .select2-dropdown-open {
-    
+
     .select2-choice,
     .select2-choices {
-        background-image: url(img/chosen-arrow-down.png), -moz-linear-gradient(center top , #eee 0%, #fff 50%);
         border-bottom: none;
         border-radius: 2px 2px 0 0;
+        background-image: url(img/chosen-arrow-down.png);
+        background-color: transparent;
         background-repeat: no-repeat;
         background-position: right top;
+        box-shadow: none;
     }
+    
+    background-color: #fff;
 }
 
 .select2-dropdown-open,
@@ -564,26 +674,60 @@ input[type="email"] {
 
 .select2-drop-active {
     border-radius: 0 0 2px 2px;
-    margin-top: -3px;
-    padding-top: 3px;
+    margin-top: -1px;
+    padding-top: 4px;
 }
 
 .select2-container.select2-drop-above .select2-choice {
     border-radius: 0 0 2px 2px;
-    background-image: url(img/chosen-arrow-up.png), -moz-linear-gradient(center top , #eee 0%, #fff 50%);
+    background-image: url(img/chosen-arrow-up.png);
     background-repeat: no-repeat;
-    background-position: right -1px;
+    background-position: right 0;
+    box-shadow: none;
 }
 
 .select2-drop.select2-drop-above {
     border-radius: 2px 2px 0 0;
     padding-top: 0;
-    margin-top: 0;
+    margin-top: 2px;
 }
 
 .select2-drop.select2-drop-above.select2-drop-active,
 .select2-drop-active {
     border-color: #62AFDB;
+}
+
+.select2-results {
+    padding-left: 0;
+    margin-right: 0;
+    
+    li {
+        border-top: 1px solid transparent;
+        border-bottom: 1px solid transparent;
+    }
+    
+    .select2-result-label,
+    .select2-no-results, 
+    .select2-searching, 
+    .select2-selection-limit {
+        font-size: 1.1em;
+        padding-left: 1.09090909090909em;
+    }
+    
+    .select2-no-results, 
+    .select2-searching, 
+    .select2-selection-limit {
+        color: #838383;
+        padding-top: 3px;
+        padding-bottom: 4px;
+    }
+    
+    .select2-highlighted {
+        background-color: #d5ecf9;
+        border-top: 1px solid #a7d7f1;
+        border-bottom: 1px solid #a7d7f1;
+        color: #4d5258;
+    }
 }
 
 .input-group input + .select-rcue {
@@ -649,6 +793,7 @@ input[type="email"] {
         margin: 0.272727272727273em 0;
         box-shadow: none;
         outline: 0 none;
+        float: left;
     }   
     
     &:hover {
@@ -662,7 +807,7 @@ input[type="email"] {
 }
 
 .token {
-    display: inline-block;
+    float: left;
     background-color: #d4ecf8;
     border: 1px solid #a3d7f0;
     border-radius: 1px;
@@ -673,13 +818,13 @@ input[type="email"] {
     outline: 0 none;
         
     span {
-        display: inline-block;
+        float: left;
         font-size: 1.1em;
         line-height: 1.45454545454545em;
     }
     
     .close {
-        text-indent: -99999em;
+        text-indent: -9999999em;
         width: 1.6em;
         height: 1.6em;
         line-height: 1.6em;
@@ -699,6 +844,12 @@ input[type="email"] {
     
     .primary {
         float: right;
-        margin-left: 8px;
+        margin-left: 0.90909090909091em;
     }
+    
+    a {
+        font-size: 1.1em;
+        margin-right: 0.90909090909091em;
+    }
+    
 }
