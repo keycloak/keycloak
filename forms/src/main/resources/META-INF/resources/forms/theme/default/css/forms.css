@@ -75,19 +75,23 @@ a.button.btn-primary {
   border-style: solid;
 }
 input[type="button"].btn-primary:hover,
+input[type="submit"].btn-primary:hover,
 button.btn-primary:hover,
 a.button.btn-primary:hover,
 input[type="button"].btn-primary:focus,
+input[type="submit"].btn-primary:focus,
 button.btn-primary:focus,
 a.button.btn-primary:focus {
   background-color: #009BD3;
 }
 input[type="button"].btn-primary:active,
+input[type="submit"].btn-primary:active,
 button.btn-primary:active,
 a.button.btn-primary:active {
   background-color: #0099d4;
 }
 input[type="button"].disabled,
+input[type="submit"].disabled,
 button.disabled,
 a.button.disabled {
   border-color: #cfcdcd;
@@ -99,25 +103,30 @@ a.button.disabled {
   letter-spacing: 0.06363636363636em;
 }
 input[type="button"].disabled:hover,
+input[type="submit"].disabled:hover,
 button.disabled:hover,
 a.button.disabled:hover {
   cursor: default;
 }
 input[type="button"].disabled:active,
+input[type="submit"].disabled:active,
 button.disabled:active,
 a.button.disabled:active {
   box-shadow: none;
 }
 input[type="button"]:hover,
+input[type="submit"]:hover,
 button:hover,
 a.button:hover,
 input[type="button"]:focus,
+input[type="submit"]:focus,
 button:focus,
 a.button:focus {
   background-image: none;
   cursor: pointer;
 }
 input[type="button"]:active,
+input[type="submit"]:active,
 button:active,
 a.button:active {
   background-image: none;
