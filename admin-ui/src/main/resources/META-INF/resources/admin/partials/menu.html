@@ -19,16 +19,25 @@
         </div>
     </div>
     <div class="navbar primary">
-        <div class="navbar-inner" data-ng-controller="RealmDropdownCtrl">
-            <ul class="nav pull-right" data-ng-show="auth.loggedIn">
-                <li class="divider-vertical-left" data-ng-class="path[0] == 'create' && path[1] == 'realm' && 'active'"
-                    data-ng-show="auth.loggedIn"><a href="#/create/realm">New Realm</a></li>
+        <div class="navbar-inner clearfix" data-ng-controller="RealmDropdownCtrl">
+            <ul class="nav pull-left">
+                <li>
+                    <span class="dropdown-label" data-ng-show="showNav()">Realm:</span>
+                    <div class="dropdown" data-ng-show="showNav()">
+                        <a data-toggle="dropdown" class="dropdown-toggle" href="#">My First Realm</a>
+                        <ul class="dropdown-menu">
+                            <li class="selected"><a href="#">My First Realm</a></li>
+                            <li><a href="#">Another Realm</a></li>
+                            <li><a href="#">Some realm with a freaking gigantic name</a></li>
+                        </ul>
+                    </div>
+                    <!-- This component should be replaced by the dropdown-menu above --> <li class="select-rcue" data-ng-show="showNav()"><select ng-change="changeRealm()" ng-model="current.realm" ng-options="r.realm for r in current.realms"></select></li>
+                </li>
             </ul>
-            <ul class="nav" >
-                <li data-ng-show="showNav()"><a href="#/realms/{{current.realm.id}}">Realm</a></li>
-                <li class="select-rcue" data-ng-show="showNav()"><select ng-change="changeRealm()" ng-model="current.realm" ng-options="r.realm for r in current.realms">
-                </select></li>
-            </ul>
+            <div class="pull-right" data-ng-show="auth.loggedIn">
+                <a class="button primary" href="#/create/realm" data-ng-class="path[0] == 'create' && path[1] == 'realm' && 'active'"
+                    data-ng-show="auth.loggedIn">Add Realm</a>
+            </div>
         </div>
     </div>
 </div>
