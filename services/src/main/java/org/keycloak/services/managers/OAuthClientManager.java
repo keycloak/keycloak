@@ -1,5 +1,6 @@
 package org.keycloak.services.managers;
 
+import org.keycloak.models.Constants;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -18,7 +19,7 @@ public class OAuthClientManager {
 
     public OAuthClientModel create(String name) {
         OAuthClientModel model = realm.addOAuthClient(name);
-        RoleModel role = realm.getRole(RealmManager.IDENTITY_REQUESTER_ROLE);
+        RoleModel role = realm.getRole(Constants.IDENTITY_REQUESTER_ROLE);
         realm.grantRole(model.getOAuthAgent(), role);
         return model;
     }

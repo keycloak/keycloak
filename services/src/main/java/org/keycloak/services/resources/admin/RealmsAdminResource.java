@@ -78,9 +78,6 @@ public class RealmsAdminResource {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = realmManager.getRealm(id);
         if (realm == null) throw new NotFoundException();
-        if (!realm.isRealmAdmin(admin)) {
-            throw new ForbiddenException();
-        }
 
         RealmAdminResource adminResource = new RealmAdminResource(admin, realm);
         resourceContext.initResource(adminResource);

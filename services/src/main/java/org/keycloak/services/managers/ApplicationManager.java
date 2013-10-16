@@ -70,7 +70,7 @@ public class ApplicationManager {
     }
 
     public ApplicationModel createApplication(RealmModel realm, ApplicationRepresentation resourceRep) {
-        RoleModel loginRole = realm.getRole(RealmManager.APPLICATION_ROLE);
+        RoleModel loginRole = realm.getRole(Constants.APPLICATION_ROLE);
         return createApplication(realm, loginRole, resourceRep);
     }
 

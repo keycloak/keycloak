@@ -24,14 +24,8 @@
                 <li>
                     <span class="dropdown-label" data-ng-show="showNav()">Realm:</span>
                     <div class="dropdown" data-ng-show="showNav()">
-                        <a data-toggle="dropdown" class="dropdown-toggle" href="#">My First Realm</a>
-                        <ul class="dropdown-menu">
-                            <li class="selected"><a href="#">My First Realm</a></li>
-                            <li><a href="#">Another Realm</a></li>
-                            <li><a href="#">Some realm with a freaking gigantic name</a></li>
-                        </ul>
+                        <select ng-change="changeRealm()" ng-model="current.realm" ng-options="r.realm for r in current.realms"></select>
                     </div>
-                    <!-- This component should be replaced by the dropdown-menu above --> <li class="select-rcue" data-ng-show="showNav()"><select ng-change="changeRealm()" ng-model="current.realm" ng-options="r.realm for r in current.realms"></select></li>
                 </li>
             </ul>
             <div class="pull-right" data-ng-show="auth.loggedIn">

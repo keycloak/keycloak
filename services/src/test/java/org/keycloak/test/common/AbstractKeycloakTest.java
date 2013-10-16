@@ -24,9 +24,9 @@ public abstract class AbstractKeycloakTest {
     protected static final SessionFactoryTestContext[] TEST_CONTEXTS;
 
     private final SessionFactoryTestContext testContext;
-    private KeycloakSessionFactory factory;
-    private KeycloakSession identitySession;
-    private RealmManager realmManager;
+    protected KeycloakSessionFactory factory;
+    protected KeycloakSession identitySession;
+    protected RealmManager realmManager;
 
     // STATIC METHODS
 

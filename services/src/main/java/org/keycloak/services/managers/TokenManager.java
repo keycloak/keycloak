@@ -3,12 +3,9 @@ package org.keycloak.services.managers;
 import org.jboss.resteasy.jose.Base64Url;
 import org.jboss.resteasy.jose.jws.JWSBuilder;
 import org.jboss.resteasy.jwt.JsonSerialization;
+import org.keycloak.models.*;
 import org.keycloak.representations.SkeletonKeyScope;
 import org.keycloak.representations.SkeletonKeyToken;
-import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserModel;
 
 import javax.ws.rs.core.MultivaluedMap;
 import java.io.IOException;
@@ -55,7 +52,7 @@ public class TokenManager {
                 Set<String> scopeRequest = null;
                 if (scopeMap != null) {
                     scopeRequest.addAll(scopeMap.get("realm"));
-                    if (scopeRequest.contains(RealmManager.WILDCARD_ROLE)) scopeRequest = null;
+                    if (scopeRequest.contains(Constants.WILDCARD_ROLE)) scopeRequest = null;
                 }
                 for (String role : realmMapping) {
                     if (
@@ -74,7 +71,7 @@ public class TokenManager {
                     Set<String> scopeRequest = null;
                     if (scopeMap != null) {
                         scopeRequest.addAll(scopeMap.get(resource.getName()));
-                        if (scopeRequest.contains(RealmManager.WILDCARD_ROLE)) scopeRequest = null;
+                        if (scopeRequest.contains(Constants.WILDCARD_ROLE)) scopeRequest = null;
                     }
                     for (String role : mapping) {
                         if (
