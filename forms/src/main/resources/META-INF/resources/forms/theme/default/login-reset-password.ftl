@@ -21,7 +21,7 @@
         </#if>
 
         <p class="instruction">${rb.getString('emailInstruction')}</p>
-        <form action="${url.passwordResetUrl}" method="post">
+        <form action="${url.loginPasswordResetUrl}" method="post">
             <div>
                 <label for="username">${rb.getString('username')}</label><input id="username" name="username" type="text" />
             </div>

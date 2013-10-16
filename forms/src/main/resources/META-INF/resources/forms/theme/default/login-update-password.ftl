@@ -11,7 +11,7 @@
     <#elseif section = "form">
 
     <div id="form">
-        <form action="${url.passwordUrl}" method="post">
+        <form action="${url.loginUpdatePasswordUrl}" method="post">
         	<div>
             	<label for="password-new">${rb.getString('passwordNew')}</label><input type="password" id="password-new" name="password-new" />
         	</div>

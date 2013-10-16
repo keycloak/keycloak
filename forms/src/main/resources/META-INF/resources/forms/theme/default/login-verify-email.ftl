@@ -20,7 +20,7 @@
             Your account is not enabled. An email with instructions to verify your email address has been sent to you.
         </p>
         <p class="instruction">Haven't received a verification code in your email?
-            <a href="${url.emailVerificationUrl}">Click here</a> to re-send the email.
+            <a href="${url.loginEmailVerificationUrl}">Click here</a> to re-send the email.
         </p>
     </div>
 

@@ -15,7 +15,7 @@
     <#elseif section = "form">
 
     <div id="form">
-        <form action="${url.accountUrl}" method="post">
+        <form action="${url.loginUpdateProfileUrl}" method="post">
             <div class="feedback error bottom-left">
                 <p><strong>Some required fields are empty or incorrect.</strong><br>Please correct the fields in red.</p>
             </div>

@@ -79,7 +79,7 @@ public class EmailSender {
     }
 
     public void sendEmailVerification(UserModel user, RealmModel realm, AccessCodeEntry accessCode, UriInfo uriInfo) {
-        UriBuilder builder = Urls.accountBase(uriInfo.getBaseUri()).path(AccountService.class, "emailVerification");
+        UriBuilder builder = Urls.loginActionEmailVerificationBuilder(uriInfo.getBaseUri());
         builder.queryParam("key", accessCode.getId());
 
         URI uri = builder.build(realm.getId());
@@ -103,7 +103,7 @@ public class EmailSender {
     }
 
     public void sendPasswordReset(UserModel user, RealmModel realm, AccessCodeEntry accessCode, UriInfo uriInfo) {
-        UriBuilder builder = Urls.accountBase(uriInfo.getBaseUri()).path(AccountService.class, "passwordPage");
+        UriBuilder builder = Urls.loginPasswordResetBuilder(uriInfo.getBaseUri());
         builder.queryParam("key", accessCode.getId());
 
         URI uri = builder.build(realm.getId());

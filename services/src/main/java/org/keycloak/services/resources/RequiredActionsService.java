@@ -29,6 +29,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.services.email.EmailSender;
 import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.TokenManager;
@@ -43,8 +44,8 @@ import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.*;
-import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.ext.Providers;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -75,7 +76,7 @@ public class RequiredActionsService {
         this.tokenManager = tokenManager;
     }
 
-    @Path("")
+    @Path("profile")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response updateProfile(final MultivaluedMap<String, String> formData) {
@@ -98,7 +99,7 @@ public class RequiredActionsService {
     @Path("totp")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response configureTotp(final MultivaluedMap<String, String> formData) {
+    public Response updateTotp(final MultivaluedMap<String, String> formData) {
         AccessCodeEntry accessCode = getAccessCodeEntry(RequiredAction.CONFIGURE_TOTP);
         if (accessCode == null) {
             return forwardToErrorPage();
@@ -129,39 +130,10 @@ public class RequiredActionsService {
         return redirectOauth(user, accessCode);
     }
 
-
-    @Path("email-verification")
-    @GET
-    public Response emailVerification() {
-        if (uriInfo.getQueryParameters().containsKey("key")) {
-            AccessCodeEntry accessCode = tokenManager.getAccessCode(uriInfo.getQueryParameters().getFirst("key"));
-            if (accessCode == null || accessCode.isExpired()
-                    || !accessCode.getRequiredActions().contains(RequiredAction.VERIFY_EMAIL)) {
-                return forwardToErrorPage();
-            }
-
-            UserModel user = getUser(accessCode);
-            user.setEmailVerified(true);
-
-            user.removeRequiredAction(RequiredAction.VERIFY_EMAIL);
-            accessCode.getRequiredActions().remove(RequiredAction.VERIFY_EMAIL);
-
-            return redirectOauth(user, accessCode);
-        } else {
-            AccessCodeEntry accessCode = getAccessCodeEntry(RequiredAction.VERIFY_EMAIL);
-            if (accessCode == null) {
-                return forwardToErrorPage();
-            }
-
-            return Flows.forms(realm, request, uriInfo).setAccessCode(accessCode).setUser(accessCode.getUser())
-                    .forwardToAction(RequiredAction.VERIFY_EMAIL);
-        }
-    }
-
     @Path("password")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response resetPassword(final MultivaluedMap<String, String> formData) {
+    public Response updatePassword(final MultivaluedMap<String, String> formData) {
         AccessCodeEntry accessCode = getAccessCodeEntry(RequiredAction.UPDATE_PASSWORD);
         if (accessCode == null) {
             return forwardToErrorPage();
@@ -196,6 +168,90 @@ public class RequiredActionsService {
         } else {
             return Flows.forms(realm, request, uriInfo).setUser(user).forwardToPassword();
         }
+    }
+
+
+    @Path("email-verification")
+    @GET
+    public Response emailVerification() {
+        if (uriInfo.getQueryParameters().containsKey("key")) {
+            AccessCodeEntry accessCode = tokenManager.getAccessCode(uriInfo.getQueryParameters().getFirst("key"));
+            if (accessCode == null || accessCode.isExpired()
+                    || !accessCode.getRequiredActions().contains(RequiredAction.VERIFY_EMAIL)) {
+                return forwardToErrorPage();
+            }
+
+            UserModel user = getUser(accessCode);
+            user.setEmailVerified(true);
+
+            user.removeRequiredAction(RequiredAction.VERIFY_EMAIL);
+            accessCode.getRequiredActions().remove(RequiredAction.VERIFY_EMAIL);
+
+            return redirectOauth(user, accessCode);
+        } else {
+            AccessCodeEntry accessCode = getAccessCodeEntry(RequiredAction.VERIFY_EMAIL);
+            if (accessCode == null) {
+                return forwardToErrorPage();
+            }
+
+            return Flows.forms(realm, request, uriInfo).setAccessCode(accessCode).setUser(accessCode.getUser())
+                    .forwardToAction(RequiredAction.VERIFY_EMAIL);
+        }
+    }
+
+    @Path("password-reset")
+    @GET
+    public Response passwordReset() {
+        if (uriInfo.getQueryParameters().containsKey("key")) {
+            AccessCodeEntry accessCode = tokenManager.getAccessCode(uriInfo.getQueryParameters().getFirst("key"));
+            if (accessCode == null || accessCode.isExpired()
+                    || !accessCode.getRequiredActions().contains(RequiredAction.UPDATE_PASSWORD)) {
+                return forwardToErrorPage();
+            }
+            return Flows.forms(realm, request, uriInfo).setAccessCode(accessCode).forwardToAction(RequiredAction.UPDATE_PASSWORD);
+        } else {
+            return Flows.forms(realm, request, uriInfo).forwardToPasswordReset();
+        }
+    }
+
+    @Path("password-reset")
+    @POST
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    public Response sendPasswordReset(final MultivaluedMap<String, String> formData) {
+        String username = formData.getFirst("username");
+        String email = formData.getFirst("email");
+
+        String scopeParam = uriInfo.getQueryParameters().getFirst("scope");
+        String state = uriInfo.getQueryParameters().getFirst("state");
+        String redirect = uriInfo.getQueryParameters().getFirst("redirect_uri");
+        String clientId = uriInfo.getQueryParameters().getFirst("client_id");
+
+        UserModel client = realm.getUser(clientId);
+        if (client == null) {
+            return Flows.oauth(realm, request, uriInfo, authManager, tokenManager).forwardToSecurityFailure(
+                    "Unknown login requester.");
+        }
+        if (!client.isEnabled()) {
+            return Flows.oauth(realm, request, uriInfo, authManager, tokenManager).forwardToSecurityFailure(
+                    "Login requester not enabled.");
+        }
+
+        UserModel user = realm.getUser(username);
+        if (user == null || !email.equals(user.getEmail())) {
+            return Flows.forms(realm, request, uriInfo).setError("emailError").forwardToPasswordReset();
+        }
+
+        Set<RequiredAction> requiredActions = new HashSet<RequiredAction>(user.getRequiredActions());
+        requiredActions.add(RequiredAction.UPDATE_PASSWORD);
+
+        AccessCodeEntry accessCode = tokenManager.createAccessCode(scopeParam, state, redirect, realm, client, user);
+        accessCode.setRequiredActions(requiredActions);
+        accessCode.setExpiration(System.currentTimeMillis() / 1000 + realm.getAccessCodeLifespanUserAction());
+
+        new EmailSender().sendPasswordReset(user, realm, accessCode, uriInfo);
+
+        return Flows.forms(realm, request, uriInfo).setError("emailSent").setErrorType(FormFlows.ErrorType.SUCCESS)
+                .forwardToPasswordReset();
     }
 
     private AccessCodeEntry getAccessCodeEntry(RequiredAction requiredAction) {
