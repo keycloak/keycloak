@@ -5,6 +5,92 @@ body {
   color: #4d5258;
   font-family: "Open Sans", sans-serif;
 }
+.feedback-aligner {
+  top: 0.9em;
+}
+/* Header */
+.header.rcue .navbar.primary .navbar-inner {
+  min-height: 42px;
+}
+.header.rcue .navbar.primary .nav > li .dropdown-label {
+  font-size: 0.84615384615385em;
+  color: #dbdada;
+  margin-left: 1.36363636363636em;
+  display: inline-block;
+}
+.header.rcue .navbar.primary .nav > li .dropdown {
+  display: inline-block;
+  margin-left: 0.53846153846154em;
+  margin-top: 0.46153846153846em;
+  min-width: 15.3846153846154em;
+  width: auto;
+}
+.header.rcue .navbar.primary .nav > li .dropdown .dropdown-toggle {
+  font-size: 0.84615384615385em;
+  color: #fff;
+  display: inline-block;
+  line-height: 2.36363636363636em;
+  border: 1px solid #676c6e;
+  border-radius: 2px;
+  padding: 0 0.54545454545455em;
+  background: #555a5e url(img/sprite-arrow-down.svg) no-repeat right -26px;
+  display: block;
+}
+.header.rcue .navbar.primary .nav > li .dropdown .dropdown-toggle:hover,
+.header.rcue .navbar.primary .nav > li .dropdown .dropdown-toggle:focus {
+  text-decoration: none;
+}
+.header.rcue .navbar.primary .nav > li .dropdown .dropdown-toggle:hover {
+  border-color: #7e8385;
+}
+.header.rcue .navbar.primary .nav > li .dropdown .dropdown-menu {
+  left: 0;
+  min-width: 0;
+  width: 100%;
+  overflow: hidden;
+}
+.header.rcue .navbar.primary .nav > li .dropdown .dropdown-menu li,
+.header.rcue .navbar.primary .nav > li .dropdown .dropdown-menu li.selected {
+  width: auto;
+}
+.header.rcue .navbar.primary .nav > li .dropdown .dropdown-menu li a,
+.header.rcue .navbar.primary .nav > li .dropdown .dropdown-menu li.selected a {
+  width: auto;
+  border-top: 1px solid transparent;
+  border-bottom: 1px solid transparent;
+}
+.header.rcue .navbar.primary .nav > li .dropdown .dropdown-menu li a:hover,
+.header.rcue .navbar.primary .nav > li .dropdown .dropdown-menu li.selected a:hover {
+  background-color: #D5ECF9;
+  background-image: none;
+  border-bottom: 1px solid #A7D7F1;
+  border-top: 1px solid #A7D7F1;
+  color: #4D5258;
+}
+.header.rcue .navbar.primary .nav > li .dropdown .dropdown-menu li.selected a {
+  background-color: #2B99C0;
+  background-image: linear-gradient(top, #2ea1ca 0%, #2792b6 100%);
+  background-image: -o-linear-gradient(top, #2ea1ca 0%, #2792b6 100%);
+  background-image: -moz-linear-gradient(top, #2ea1ca 0%, #2792b6 100%);
+  background-image: -webkit-linear-gradient(top, #2ea1ca 0%, #2792b6 100%);
+  background-image: -ms-linear-gradient(top, #2ea1ca 0%, #2792b6 100%);
+  background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0, #2ea1ca), color-stop(1, 0, #2792b6));
+  background-repeat: repeat-x;
+  color: #FFFFFF;
+}
+.header.rcue .navbar.primary .nav > li .dropdown.open .dropdown-toggle {
+  text-decoration: none;
+  box-shadow: inset 0px 2px 5px rgba(0, 0, 0, 0.2);
+  border-color: #7e8385;
+}
+.header.rcue .navbar.primary .button {
+  font-size: 0.84615384615385em;
+  margin-right: 1.36363636363636em;
+  margin-top: 0.63636363636364em;
+}
+.header.rcue .navbar.primary .button:focus {
+  text-decoration: none;
+}
 .bs-sidebar {
   background-color: #f9f9f9;
   padding-top: 4.3em;
@@ -197,6 +283,7 @@ table a:hover {
   width: 30.8em;
   padding-left: 1.5em;
   padding-right: 1.5em;
+  padding-top: .5em;
   background-color: #fff;
   border: 1px solid #b6b6b6;
   border-top: none;
@@ -221,6 +308,118 @@ table a:hover {
 td.token-cell button {
   margin-top: -1px;
 }
+/* Page: User Account */
+.user form fieldset div:first-child {
+  margin-top: 1em;
+}
+.user form fieldset p + div {
+  margin-top: 2.5em;
+}
+.user .bs-sidebar {
+  padding-top: 3.3em;
+}
+.user p.info {
+  font-size: 1.1em;
+}
+table.list {
+  border-left: none;
+  border-right: none;
+  margin-top: 1.5em;
+  border-color: #ededed;
+}
+table.list caption {
+  display: none;
+}
+table.list tbody tr:first-child td {
+  border-top: 1px solid #ededed;
+}
+table.list tbody tr:nth-child(2n) {
+  background-color: #fff;
+}
+table.list tbody tr td {
+  border-right: none;
+  border-left: none;
+}
+table.list tbody tr td.provider {
+  font-weight: bold;
+  font-size: 1.2em;
+}
+table.list tbody tr td.provider a {
+  padding-top: 0.41666666666667em;
+  padding-bottom: 0.33333333333333em;
+  display: inline-block;
+}
+table.list tbody tr td.soft {
+  color: #a1a1a1;
+}
+table.list tbody tr td.action {
+  text-align: right;
+  font-size: 1em;
+}
+table.list tbody tr.expanded {
+  background-color: #f6f6f6;
+}
+table.list tbody tr.expanded .provider {
+  font-size: 1.39130434782609em;
+  padding-top: 0.5em;
+  display: block;
+}
+table.list tbody tr.expanded p {
+  margin-top: 1.30434782608696em;
+  margin-bottom: 1.73913043478261em;
+}
+table.list tbody tr.expanded ul li {
+  margin-left: 1.30434782608696em;
+}
+table.list tbody tr.expanded ul li .item,
+table.list tbody tr.expanded ul li .status {
+  margin-right: 2.60869565217391em;
+}
+table.list tbody tr.expanded ul li .red {
+  color: #BA1212;
+}
+table.list tbody tr.expanded .form-actions {
+  font-size: 0.8695652173913em;
+  margin-top: 0.5em;
+  margin-bottom: 1.5em;
+}
+/* Page: TOTP setup */
+.totp ol li {
+  margin-bottom: 2.5em;
+  margin-left: 2.4em;
+  width: 100%;
+}
+.totp ol li p {
+  font-size: 1.3em;
+  margin-bottom: 1.53846153846154em;
+}
+.totp ol li p strong {
+  text-indent: -1em;
+  float: left;
+  font-size: 1.84615384615385em;
+  font-weight: normal;
+  margin-top: -0.375em;
+  color: #999;
+}
+.totp ol li img {
+  width: 136px;
+}
+.totp ol li .code {
+  font-size: 1.3em;
+  margin-left: 1.53846153846154em;
+  vertical-align: bottom;
+}
+.totp ol li:last-child {
+  margin-bottom: 0;
+}
+.totp ol li .form-actions {
+  margin-right: 2.4em;
+}
+.totp ol li .form-actions input[type="button"],
+.totp ol li .form-actions button,
+.totp ol li .form-actions a.button {
+  font-size: 1.1em;
+}
 /* Break Points */
 @media (max-width: 1200px) {
   #container-right-bg {
@@ -229,11 +428,13 @@ td.token-cell button {
   }
 }
 @media (max-width: 992px) {
-  .bs-sidebar {
+  .bs-sidebar,
+  .user .bs-sidebar {
     padding-top: 2em;
     width: 100%;
   }
-  .bs-sidebar ul li a {
+  .bs-sidebar ul li a,
+  .user .bs-sidebar ul li a {
     border-width: 1px;
   }
   #content-area .top-nav {
@@ -242,6 +443,9 @@ td.token-cell button {
   #container-right-bg {
     margin-left: 0;
     width: 750px;
+  }
+  .user #content-area #content {
+    border-top: 1px solid #cecece;
   }
 }
 @media (max-width: 768px) {

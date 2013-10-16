@@ -3,7 +3,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Edit Account</title>
+    <title>Edit Account - <#nested "title"></title>
     <link rel="icon" href="img/favicon.ico">
 
     <!-- Frameworks -->
@@ -34,10 +34,14 @@
 </head>
 <body class="admin-console user ${bodyClass}">
 
-    <#if error?has_content>
-    <!--div class="feedback success show"><p><strong>Success!</strong> Your changes have been saved.</p></div-->
+    <#if message?has_content>
     <div class="feedback-aligner">
-        <div class="alert alert-danger">${rb.getString(error.summary)}</div>
+        <#if message.success>
+        <div class="feedback success show"><p><strong>${rb.getString('successHeader')}</strong> ${rb.getString(message.summary)}</p></div>
+        </#if>
+        <#if message.error>
+        <div class="feedback error show"><p><strong>${rb.getString('errorHeader')}</strong> ${rb.getString(message.summary)}</p></div>
+        </#if>
     </div>
     </#if>
 

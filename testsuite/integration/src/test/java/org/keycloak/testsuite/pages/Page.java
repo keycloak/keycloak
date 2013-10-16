@@ -35,7 +35,7 @@ public abstract class Page {
 
     public void assertCurrent() {
         String name = getClass().getSimpleName();
-        Assert.assertTrue("Exptected " + name + " but was " + driver.getTitle() + " (" + driver.getCurrentUrl() + ")",
+        Assert.assertTrue("Expected " + name + " but was " + driver.getTitle() + " (" + driver.getCurrentUrl() + ")",
                 isCurrent());
     }
 
