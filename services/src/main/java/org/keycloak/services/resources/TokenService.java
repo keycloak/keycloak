@@ -192,6 +192,11 @@ public class TokenService {
         String username = formData.getFirst("username");
         UserModel user = realm.getUser(username);
 
+        if (user == null){
+            return Flows.forms(realm, request, uriInfo).setError(Messages.INVALID_USER).setFormData(formData)
+                    .forwardToLogin();
+        }
+
         isTotpConfigurationRequired(user);
         isEmailVerificationRequired(user);
 
