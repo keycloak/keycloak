@@ -15,7 +15,6 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthenticationStatus;
-import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.messages.Messages;
@@ -176,6 +175,7 @@ public class TokenService {
     public Response processLogin(@QueryParam("client_id") final String clientId, @QueryParam("scope") final String scopeParam,
             @QueryParam("state") final String state, @QueryParam("redirect_uri") final String redirect,
             final MultivaluedMap<String, String> formData) {
+        logger.info("TokenService.processLogin");
         OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
 
         if (!realm.isEnabled()) {
@@ -451,8 +451,8 @@ public class TokenService {
             return null;
         }
 
-        RoleModel resourceRole = realm.getRole(RealmManager.APPLICATION_ROLE);
-        RoleModel identityRequestRole = realm.getRole(RealmManager.IDENTITY_REQUESTER_ROLE);
+        RoleModel resourceRole = realm.getRole(Constants.APPLICATION_ROLE);
+        RoleModel identityRequestRole = realm.getRole(Constants.IDENTITY_REQUESTER_ROLE);
         boolean isResource = realm.hasRole(client, resourceRole);
         if (!isResource && !realm.hasRole(client, identityRequestRole)) {
             oauth.forwardToSecurityFailure("Login requester not allowed to request login.");

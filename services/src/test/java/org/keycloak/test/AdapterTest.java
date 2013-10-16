@@ -1,17 +1,15 @@
 package org.keycloak.test;
 
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.models.*;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.OAuthClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.models.UserModel.RequiredAction;
-import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.test.common.AbstractKeycloakTest;
 import org.keycloak.test.common.SessionFactoryTestContext;
 
@@ -35,7 +33,7 @@ public class AdapterTest extends AbstractKeycloakTest {
 
     @Test
     public void installTest() throws Exception {
-        new InstallationManager().install(getRealmManager());
+        new ApplianceBootstrap().bootstrap(identitySession);
 
     }
 
@@ -77,6 +75,48 @@ public class AdapterTest extends AbstractKeycloakTest {
         Assert.assertEquals(1, realmModel.getDefaultRoles().size());
         Assert.assertEquals("foo", realmModel.getDefaultRoles().get(0).getName());
     }
+
+    @Test
+    public void testRealmListing() throws Exception {
+        realmModel = getRealmManager().createRealm("JUGGLER");
+        realmModel.setAccessCodeLifespan(100);
+        realmModel.setAccessCodeLifespanUserAction(600);
+        realmModel.setCookieLoginAllowed(true);
+        realmModel.setEnabled(true);
+        realmModel.setName("JUGGLER");
+        realmModel.setPrivateKeyPem("0234234");
+        realmModel.setPublicKeyPem("0234234");
+        realmModel.setTokenLifespan(1000);
+        realmModel.setAutomaticRegistrationAfterSocialLogin(true);
+        realmModel.addDefaultRole("foo");
+
+        System.out.println(realmModel.getId());
+        realmModel = getRealmManager().getRealm(realmModel.getId());
+        Assert.assertNotNull(realmModel);
+        Assert.assertEquals(realmModel.getAccessCodeLifespan(), 100);
+        Assert.assertEquals(600, realmModel.getAccessCodeLifespanUserAction());
+        Assert.assertEquals(realmModel.getTokenLifespan(), 1000);
+        Assert.assertEquals(realmModel.isEnabled(), true);
+        Assert.assertEquals(realmModel.getName(), "JUGGLER");
+        Assert.assertEquals(realmModel.getPrivateKeyPem(), "0234234");
+        Assert.assertEquals(realmModel.getPublicKeyPem(), "0234234");
+        Assert.assertEquals(realmModel.isAutomaticRegistrationAfterSocialLogin(), true);
+        Assert.assertEquals(1, realmModel.getDefaultRoles().size());
+        Assert.assertEquals("foo", realmModel.getDefaultRoles().get(0).getName());
+
+        String id = realmModel.getId();
+        System.out.println("id: " + id);
+
+        identitySession.getTransaction().commit();
+        identitySession.close();
+        identitySession = factory.createSession();
+        identitySession.getTransaction().begin();
+        realmManager = new RealmManager(identitySession);
+        List<RealmModel> realms = identitySession.getRealms(null);
+        System.out.println("num realms: " + realms.size());
+        Assert.assertEquals(realms.size(), 1);
+    }
+
 
     @Test
     public void test2RequiredCredential() throws Exception {
@@ -126,7 +166,7 @@ public class AdapterTest extends AbstractKeycloakTest {
         oauth.setBaseUrl("/foo/bar");
         oauth = realmModel.getOAuthClient("oauth-client");
         Assert.assertEquals("/foo/bar", oauth.getBaseUrl());
-        Assert.assertTrue(realmModel.hasRole(oauth.getOAuthAgent(), RealmManager.IDENTITY_REQUESTER_ROLE));
+        Assert.assertTrue(realmModel.hasRole(oauth.getOAuthAgent(), Constants.IDENTITY_REQUESTER_ROLE));
 
 
     }

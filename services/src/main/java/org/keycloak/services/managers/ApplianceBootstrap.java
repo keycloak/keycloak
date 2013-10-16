@@ -2,7 +2,6 @@ package org.keycloak.services.managers;
 
 import org.keycloak.models.*;
 import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.services.resources.SaasService;
 
 import java.util.UUID;
 
@@ -13,17 +12,14 @@ import java.util.UUID;
 public class ApplianceBootstrap {
 
 
-    public static final String ADMIN_REALM = "Keycloak Adminstration";
-    public static final String ADMIN_CONSOLE = "Admin Console";
-
     public void initKeycloakAdminRealm(RealmModel realm) {
 
     }
 
     public void bootstrap(KeycloakSession session) {
         RealmManager manager = new RealmManager(session);
-        RealmModel realm = manager.createRealm(ADMIN_REALM, "Keycloak Adminstration");
-        realm.setName("Keycloak Adminstration");
+        RealmModel realm = manager.createRealm(Constants.ADMIN_REALM, Constants.ADMIN_REALM);
+        realm.setName(Constants.ADMIN_REALM);
         realm.setEnabled(true);
         realm.addRequiredCredential(CredentialRepresentation.PASSWORD);
         realm.addRequiredOAuthClientCredential(CredentialRepresentation.PASSWORD);
@@ -36,16 +32,16 @@ public class ApplianceBootstrap {
         manager.generateRealmKeys(realm);
         initKeycloakAdminRealm(realm);
 
-        ApplicationModel adminConsole = realm.addApplication(ADMIN_CONSOLE);
+        ApplicationModel adminConsole = realm.addApplication(Constants.ADMIN_CONSOLE_APPLICATION);
         adminConsole.setEnabled(true);
         UserCredentialModel adminConsolePassword = new UserCredentialModel();
         adminConsolePassword.setType(UserCredentialModel.PASSWORD);
         adminConsolePassword.setValue(UUID.randomUUID().toString()); // just a random password as we'll never access it
         realm.updateCredential(adminConsole.getApplicationUser(), adminConsolePassword);
 
-        RoleModel applicationRole = realm.getRole(RealmManager.APPLICATION_ROLE);
+        RoleModel applicationRole = realm.getRole(Constants.APPLICATION_ROLE);
         realm.grantRole(adminConsole.getApplicationUser(), applicationRole);
-        RoleModel adminRole = adminConsole.addRole("admin");
+        RoleModel adminRole = adminConsole.addRole(Constants.ADMIN_CONSOLE_ADMIN_ROLE);
 
         UserModel adminUser = realm.addUser("admin");
         adminUser.setEnabled(true);
@@ -53,7 +49,7 @@ public class ApplianceBootstrap {
         password.setType(UserCredentialModel.PASSWORD);
         password.setValue("admin");
         realm.updateCredential(adminUser, password);
-        adminUser.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+        //adminUser.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
 
         adminConsole.grantRole(adminUser, adminRole);
 

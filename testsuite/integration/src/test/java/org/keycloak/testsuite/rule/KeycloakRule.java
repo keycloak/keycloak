@@ -32,6 +32,7 @@ import javax.servlet.Servlet;
 
 import org.jboss.resteasy.jwt.JsonSerialization;
 import org.junit.rules.ExternalResource;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -104,10 +105,10 @@ public class KeycloakRule extends ExternalResource {
         try {
             RealmManager manager = new RealmManager(session);
 
-            RealmModel defaultRealm = manager.getRealm(RealmModel.DEFAULT_REALM);
+            RealmModel adminstrationRealm = manager.getRealm(Constants.ADMIN_REALM);
             RealmModel appRealm = manager.getRealm("test");
 
-            configurer.config(manager, defaultRealm, appRealm);
+            configurer.config(manager, null, appRealm);
 
             session.getTransaction().commit();
         } finally {
@@ -117,7 +118,7 @@ public class KeycloakRule extends ExternalResource {
 
     public interface KeycloakSetup {
 
-        void config(RealmManager manager, RealmModel defaultRealm, RealmModel appRealm);
+        void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm);
 
     }
 

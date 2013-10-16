@@ -6,6 +6,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.picketlink.mappings.RealmData;
 import org.keycloak.models.picketlink.relationships.RealmAdminRelationship;
+import org.keycloak.models.picketlink.relationships.RealmListingRelationship;
 import org.keycloak.models.utils.KeycloakSessionUtils;
 import org.picketlink.idm.PartitionManager;
 import org.picketlink.idm.RelationshipManager;
@@ -56,18 +57,24 @@ public class PicketlinkKeycloakSession implements KeycloakSession {
         newRealm.setId(id);
         newRealm.setRealmName(name);
         partitionManager.add(newRealm);
+        RealmListingRelationship rel = new RealmListingRelationship();
+        // picketlink beta 6 uses Realm name for lookup! Don't forget!
+        rel.setRealm(newRealm.getName());
+        partitionManager.createRelationshipManager().add(rel);
+
         RealmAdapter realm = new RealmAdapter(this, newRealm, partitionManager);
         return realm;
     }
 
     @Override
     public List<RealmModel> getRealms(UserModel admin) {
+        // todo ability to assign realm management to a specific admin
+        // currently each admin is allowed to access all realms so just do a big query
         RelationshipManager relationshipManager = partitionManager.createRelationshipManager();
-        RelationshipQuery<RealmAdminRelationship> query = relationshipManager.createRelationshipQuery(RealmAdminRelationship.class);
-        query.setParameter(RealmAdminRelationship.ADMIN, ((UserAdapter)admin).getUser());
-        List<RealmAdminRelationship> results = query.getResultList();
+        RelationshipQuery<RealmListingRelationship> query = relationshipManager.createRelationshipQuery(RealmListingRelationship.class);
+        List<RealmListingRelationship> results = query.getResultList();
         List<RealmModel> realmModels = new ArrayList<RealmModel>();
-        for (RealmAdminRelationship relationship : results) {
+        for (RealmListingRelationship relationship : results) {
             String realmName = relationship.getRealm();
             RealmModel model = getRealm(realmName);
             if (model == null) {
@@ -81,6 +88,7 @@ public class PicketlinkKeycloakSession implements KeycloakSession {
 
     @Override
     public RealmAdapter getRealm(String id) {
+        // picketlink beta 6 uses Realm name for lookup! Don't forget!
         RealmData existing = partitionManager.getPartition(RealmData.class, id);
         if (existing == null) {
             return null;

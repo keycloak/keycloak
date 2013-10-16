@@ -20,9 +20,6 @@ import java.util.concurrent.atomic.AtomicLong;
 public class RealmManager {
     protected static final Logger logger = Logger.getLogger(RealmManager.class);
     private static AtomicLong counter = new AtomicLong(1);
-    public static final String APPLICATION_ROLE = "KEYCLOAK_APPLICATION";
-    public static final String IDENTITY_REQUESTER_ROLE = "KEYCLOAK_IDENTITY_REQUESTER";
-    public static final String WILDCARD_ROLE = "*";
 
     public static String generateId() {
         return counter.getAndIncrement() + "-" + System.currentTimeMillis();
@@ -34,8 +31,8 @@ public class RealmManager {
         this.identitySession = identitySession;
     }
 
-    public RealmModel defaultRealm() {
-        return getRealm(RealmModel.DEFAULT_REALM);
+    public RealmModel getKeycloakAdminstrationRealm() {
+        return getRealm(Constants.ADMIN_REALM);
     }
 
     public RealmModel getRealm(String id) {
@@ -49,9 +46,9 @@ public class RealmManager {
     public RealmModel createRealm(String id, String name) {
         RealmModel realm = identitySession.createRealm(id, name);
         realm.setName(name);
-        realm.addRole(WILDCARD_ROLE);
-        realm.addRole(APPLICATION_ROLE);
-        realm.addRole(IDENTITY_REQUESTER_ROLE);
+        realm.addRole(Constants.WILDCARD_ROLE);
+        realm.addRole(Constants.APPLICATION_ROLE);
+        realm.addRole(Constants.IDENTITY_REQUESTER_ROLE);
         return realm;
     }
 
@@ -99,7 +96,6 @@ public class RealmManager {
         //verifyRealmRepresentation(rep);
         RealmModel realm = createRealm(rep.getRealm());
         importRealm(rep, realm);
-        realm.addRealmAdmin(realmCreator);
         return realm;
     }
 
@@ -329,7 +325,7 @@ public class RealmManager {
 
 
     protected void createApplications(RealmRepresentation rep, RealmModel realm) {
-        RoleModel loginRole = realm.getRole(RealmManager.APPLICATION_ROLE);
+        RoleModel loginRole = realm.getRole(Constants.APPLICATION_ROLE);
         ApplicationManager manager = new ApplicationManager(this);
         for (ApplicationRepresentation resourceRep : rep.getApplications()) {
             manager.createApplication(realm, loginRole, resourceRep);

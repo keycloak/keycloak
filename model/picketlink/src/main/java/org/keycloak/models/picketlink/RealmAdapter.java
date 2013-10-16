@@ -754,23 +754,6 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public boolean isRealmAdmin(UserModel agent) {
-        RelationshipQuery<RealmAdminRelationship> query = getRelationshipManager().createRelationshipQuery(RealmAdminRelationship.class);
-        query.setParameter(RealmAdminRelationship.REALM, realm.getName());
-        query.setParameter(RealmAdminRelationship.ADMIN, ((UserAdapter)agent).getUser());
-        List<RealmAdminRelationship> results = query.getResultList();
-        return results.size() > 0;
-    }
-
-    @Override
-    public void addRealmAdmin(UserModel agent) {
-        RealmAdminRelationship relationship = new RealmAdminRelationship();
-        relationship.setAdmin(((UserAdapter)agent).getUser());
-        relationship.setRealm(realm.getName());
-        getRelationshipManager().add(relationship);
-    }
-
-    @Override
     public List<RoleModel> getDefaultRoles() {
         List<RoleModel> defaultRoleModels = new ArrayList<RoleModel>();
         if (realm.getDefaultRoles() != null) {

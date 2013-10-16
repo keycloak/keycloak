@@ -21,6 +21,7 @@
  */
 package org.keycloak.forms;
 
+import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 
 /**
@@ -35,7 +36,7 @@ public class RealmBean {
 
     public RealmBean(RealmModel realmModel) {
         realm = realmModel;
-        saas = RealmModel.DEFAULT_REALM.equals(realmModel.getName());
+        saas = Constants.ADMIN_REALM.equals(realmModel.getId());
     }
 
     public String getId() {

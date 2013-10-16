@@ -37,17 +37,12 @@ import org.jboss.resteasy.jwt.JsonSerialization;
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
 import org.jboss.resteasy.spi.ResteasyDeployment;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.models.*;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.filters.KeycloakSessionServletFilter;
+import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
-import org.keycloak.services.resources.SaasService;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -211,24 +206,11 @@ public class KeycloakServer {
         try {
             RealmManager manager = new RealmManager(session);
 
-            if (manager.getRealm(RealmModel.DEFAULT_REALM) != null) {
+            if (manager.getRealm(Constants.ADMIN_REALM) != null) {
                 return;
             }
 
-            RealmModel defaultRealm = manager.createRealm(RealmModel.DEFAULT_REALM, RealmModel.DEFAULT_REALM);
-            defaultRealm.setName(RealmModel.DEFAULT_REALM);
-            defaultRealm.setEnabled(true);
-            defaultRealm.setTokenLifespan(300);
-            defaultRealm.setAccessCodeLifespan(60);
-            defaultRealm.setAccessCodeLifespanUserAction(600);
-            defaultRealm.setSslNotRequired(true);
-            defaultRealm.setCookieLoginAllowed(true);
-            defaultRealm.setRegistrationAllowed(true);
-            manager.generateRealmKeys(defaultRealm);
-            defaultRealm.addRequiredCredential(CredentialRepresentation.PASSWORD);
-            defaultRealm.addRole(SaasService.REALM_CREATOR_ROLE);
-            defaultRealm.addDefaultRole(SaasService.REALM_CREATOR_ROLE);
-
+            new ApplianceBootstrap().bootstrap(session);
             session.getTransaction().commit();
         } finally {
             session.close();

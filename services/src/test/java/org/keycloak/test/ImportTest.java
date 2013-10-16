@@ -39,26 +39,9 @@ public class ImportTest extends AbstractKeycloakTest {
     @Test
     public void install() throws Exception {
         RealmManager manager = getRealmManager();
-        RealmModel defaultRealm = manager.createRealm(RealmModel.DEFAULT_REALM, RealmModel.DEFAULT_REALM);
-        defaultRealm.setName(RealmModel.DEFAULT_REALM);
-        defaultRealm.setEnabled(true);
-        defaultRealm.setTokenLifespan(300);
-        defaultRealm.setAccessCodeLifespan(60);
-        defaultRealm.setAccessCodeLifespanUserAction(600);
-        defaultRealm.setSslNotRequired(false);
-        defaultRealm.setCookieLoginAllowed(true);
-        defaultRealm.setRegistrationAllowed(true);
-        defaultRealm.setAutomaticRegistrationAfterSocialLogin(false);
-        manager.generateRealmKeys(defaultRealm);
-        defaultRealm.addRequiredCredential(CredentialRepresentation.PASSWORD);
-        RoleModel role = defaultRealm.addRole(SaasService.REALM_CREATOR_ROLE);
-        UserModel admin = defaultRealm.addUser("admin");
-        defaultRealm.grantRole(admin, role);
-
         RealmRepresentation rep = AbstractKeycloakServerTest.loadJson("testrealm.json");
         RealmModel realm = manager.createRealm("demo", rep.getRealm());
         manager.importRealm(rep, realm);
-        realm.addRealmAdmin(admin);
 
         Assert.assertTrue(realm.isVerifyEmail());
 
@@ -81,8 +64,6 @@ public class ImportTest extends AbstractKeycloakTest {
 
         List<ApplicationModel> resources = realm.getApplications();
         Assert.assertEquals(2, resources.size());
-        List<RealmModel> realms = getIdentitySession().getRealms(admin);
-        Assert.assertEquals(1, realms.size());
 
         // Test scope relationship
         ApplicationModel application = realm.getApplicationNameMap().get("Application");
@@ -118,26 +99,9 @@ public class ImportTest extends AbstractKeycloakTest {
     @Test
     public void install2() throws Exception {
         RealmManager manager = getRealmManager();
-        RealmModel defaultRealm = manager.createRealm(RealmModel.DEFAULT_REALM, RealmModel.DEFAULT_REALM);
-        defaultRealm.setName(RealmModel.DEFAULT_REALM);
-        defaultRealm.setEnabled(true);
-        defaultRealm.setTokenLifespan(300);
-        defaultRealm.setAccessCodeLifespan(60);
-        defaultRealm.setAccessCodeLifespanUserAction(600);
-        defaultRealm.setSslNotRequired(false);
-        defaultRealm.setCookieLoginAllowed(true);
-        defaultRealm.setRegistrationAllowed(true);
-        defaultRealm.setAutomaticRegistrationAfterSocialLogin(false);
-        manager.generateRealmKeys(defaultRealm);
-        defaultRealm.addRequiredCredential(CredentialRepresentation.PASSWORD);
-        RoleModel role = defaultRealm.addRole(SaasService.REALM_CREATOR_ROLE);
-        UserModel admin = defaultRealm.addUser("admin");
-        defaultRealm.grantRole(admin, role);
-
         RealmRepresentation rep = AbstractKeycloakServerTest.loadJson("testrealm-demo.json");
         RealmModel realm = manager.createRealm("demo", rep.getRealm());
         manager.importRealm(rep, realm);
-        realm.addRealmAdmin(admin);
 
         Assert.assertTrue(realm.isAutomaticRegistrationAfterSocialLogin());
         Assert.assertEquals(600, realm.getAccessCodeLifespanUserAction());
