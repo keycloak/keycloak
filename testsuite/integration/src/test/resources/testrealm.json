@@ -24,6 +24,14 @@
                 { "type" : "password",
                     "value" : "password" }
             ]
+        },
+        {
+            "username" : "third-party",
+            "enabled": true,
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ]
         }
     ],
     "roles": [
@@ -40,6 +48,16 @@
         {
             "username": "test-user@localhost",
             "roles": ["user"]
+        },
+        {
+            "username": "third-party",
+            "roles": ["KEYCLOAK_IDENTITY_REQUESTER"]
+        }
+    ],
+    "scopeMappings": [
+        {
+            "username": "third-party",
+            "roles": ["user"]
         }
     ],
     "applications": [
@@ -52,6 +70,24 @@
                 {
                     "type": "password",
                     "value": "password"
+                }
+            ],
+            "roles": [
+                {
+                    "name": "customer-user",
+                    "description": "Have Customer User privileges"
+                }
+            ],
+            "roleMappings": [
+                {
+                    "username": "test-user@localhost",
+                    "roles": ["customer-user"]
+                }
+            ],
+            "scopeMappings": [
+                {
+                    "username": "third-party",
+                    "roles": ["customer-user"]
                 }
             ]
         }

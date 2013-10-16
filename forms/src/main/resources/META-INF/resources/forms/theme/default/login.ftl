@@ -24,7 +24,7 @@
             </#list>
 
             <div class="aside-btn">
-                <p>Forgot <a href="${url.passwordResetUrl}">Password</a>?</p>
+                <p>Forgot <a href="${url.loginPasswordResetUrl}">Password</a>?</p>
             </div>
 
             <input class="btn-primary" type="submit" value="Log In"/>

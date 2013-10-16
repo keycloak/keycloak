@@ -34,6 +34,7 @@ import freemarker.template.TemplateException;
 import org.jboss.resteasy.logging.Logger;
 import org.keycloak.forms.ErrorBean;
 import org.keycloak.forms.LoginBean;
+import org.keycloak.forms.OAuthGrantBean;
 import org.keycloak.forms.RealmBean;
 import org.keycloak.forms.RegisterBean;
 import org.keycloak.forms.SocialBean;
@@ -42,7 +43,6 @@ import org.keycloak.forms.TotpBean;
 import org.keycloak.forms.UrlBean;
 import org.keycloak.forms.UserBean;
 import org.keycloak.services.FormService;
-import org.keycloak.services.resources.flows.FormFlows;
 import org.keycloak.services.resources.flows.Pages;
 
 /**
@@ -71,6 +71,7 @@ public class FormServiceImpl implements FormService {
         commandMap.put(Pages.LOGIN_TOTP, new CommandLoginTotp());
         commandMap.put(Pages.LOGIN_VERIFY_EMAIL, new CommandLoginTotp());
         commandMap.put(Pages.ERROR, new CommandError());
+        commandMap.put(Pages.OAUTH_GRANT, new CommandOAuthGrant());
     }
 
     public String getId(){
@@ -256,6 +257,20 @@ public class FormServiceImpl implements FormService {
             if (dataBean.getError() != null){
                 attributes.put("error", new ErrorBean(dataBean.getError()));
             }
+        }
+    }
+
+    private class CommandOAuthGrant implements Command {
+        public void exec(Map<String, Object> attributes, FormServiceDataBean dataBean) {
+
+            OAuthGrantBean oauth = new OAuthGrantBean();
+            oauth.setAction(dataBean.getOAuthAction());
+            oauth.setResourceRolesRequested(dataBean.getOAuthResourceRolesRequested());
+            oauth.setClient(dataBean.getOAuthClient());
+            oauth.setoAuthCode(dataBean.getOAuthCode());
+            oauth.setRealmRolesRequested(dataBean.getOAuthRealmRolesRequested());
+
+            attributes.put("oauth", oauth);
         }
     }
 
