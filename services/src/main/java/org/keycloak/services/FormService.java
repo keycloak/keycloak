@@ -22,10 +22,12 @@
 package org.keycloak.services;
 
 import java.net.URI;
+import java.util.List;
 
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.resources.flows.FormFlows;
 
@@ -133,5 +135,53 @@ public interface FormService {
         public void setErrorType(FormFlows.ErrorType errorType) {
             this.errorType = errorType;
         }
+
+        /* OAuth Part */
+        private MultivaluedMap<String, RoleModel> oAuthResourceRolesRequested;
+        private List<RoleModel> oAuthRealmRolesRequested;
+        private UserModel oAuthClient;
+        private String oAuthCode;
+        private String oAuthAction;
+
+        public String getOAuthAction() {
+            return oAuthAction;
+        }
+
+        public void setOAuthAction(String action) {
+            this.oAuthAction = action;
+        }
+
+        public MultivaluedMap<String, RoleModel> getOAuthResourceRolesRequested() {
+            return oAuthResourceRolesRequested;
+        }
+
+        public void setOAuthResourceRolesRequested(MultivaluedMap<String, RoleModel> resourceRolesRequested) {
+            this.oAuthResourceRolesRequested = resourceRolesRequested;
+        }
+
+        public List<RoleModel> getOAuthRealmRolesRequested() {
+            return oAuthRealmRolesRequested;
+        }
+
+        public void setOAuthRealmRolesRequested(List<RoleModel> realmRolesRequested) {
+            this.oAuthRealmRolesRequested = realmRolesRequested;
+        }
+
+        public UserModel getOAuthClient() {
+            return oAuthClient;
+        }
+
+        public void setOAuthClient(UserModel client) {
+            this.oAuthClient = client;
+        }
+
+        public String getOAuthCode() {
+            return oAuthCode;
+        }
+
+        public void setOAuthCode(String oAuthCode) {
+            this.oAuthCode = oAuthCode;
+        }
+
     }
 }
