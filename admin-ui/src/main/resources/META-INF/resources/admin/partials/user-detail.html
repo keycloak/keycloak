@@ -3,31 +3,38 @@
         <div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="'partials/realm-menu.html'"></div>
         <div id="content-area" class="col-md-9" role="main">
             <div class="top-nav" data-ng-show="create">
-                <ul class="rcue-tabs" >
-                    <ul class="rcue-tabs">
-                        <li class="active"><a href="#/create/user/{{realm.id}}">New User</a></li>
-                        <li><a href="#/realms/{{realm.id}}/users">Query Users</a></li>
-                    </ul>
+                <ul class="rcue-tabs">
+                    <li></li>
                 </ul>
             </div>
             <div class="top-nav" data-ng-show="!create">
                 <ul class="rcue-tabs" >
-                    <li><a href="#/create/user/{{realm.id}}">New User</a></li>
-                    <li><a href="#/realms/{{realm.id}}/users">Query Users</a></li>
                     <li class="active"><a href="#">Attributes</a></li>
                     <li><a href="#">Credentials</a></li>
                     <li><a href="#/realms/{{realm.id}}/users/{{user.username}}/role-mappings">Role Mappings</a></li>
                 </ul>
             </div>
             <div id="content">
-                <h2 class="pull-left" data-ng-show="create">New User</h2>
-                <h2 class="pull-left" data-ng-hide="create">User <span>{{user.username}}</span></h2>
-                <p class="subtitle"><span class="required">*</span> Required fields</p>
+                <ol class="breadcrumb" data-ng-show="create">
+                    <li><a href="#/realms/{{realm.id}}">{{realm.realm}}</a></li>
+                    <li><a href="#/realms/{{realm.id}}/users">Users</a></li>
+                    <li class="active">Add</li>
+                </ol>
+                <h2 class="pull-left" data-ng-show="create">Add User</h2>
+                <p class="subtitle" data-ng-show="create"><span class="required">*</span> Required fields</p>
+
+                <ol class="breadcrumb" data-ng-hide="create">
+                    <li><a href="#/realms/{{realm.id}}">{{realm.realm}}</a></li>
+                    <li><a href="#/realms/{{realm.id}}/users">Users</a></li>
+                    <li><a href="#/realms/{{realm.id}}/users/{{user.username}}">{{user.username}}</a></li>
+                    <li class="active">Attributes</li>
+                </ol>
+                <h2 class="pull-left" data-ng-hide="create"><span>{{user.username}}'s</span> Attributes</h2>
+                
                 <form name="applicationForm" novalidate>
-                    <fieldset>
-                        <legend uncollapsed><span class="text">Attributes</span></legend>
+                    <fieldset class="border-top">
                         <div class="form-group">
-                            <label for="username">Username </label><span class="required" data-ng-show="create">*</span>
+                            <label for="username">Username <span class="required" data-ng-show="create">*</span></label>
                             <div class="controls">
                                 <input type="text" id="username" name="username" data-ng-model="user.username" autofocus
                                        required data-ng-readonly="!create">
@@ -69,7 +76,6 @@
 
                     <div class="form-actions" data-ng-show="!create">
                         <button type="submit" data-ng-click="save()" class="primary" data-ng-show="changed">Save
-                            changes
                         </button>
                         <button type="submit" data-ng-click="reset()" data-ng-show="changed">Clear changes
                         </button>

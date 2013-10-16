@@ -344,6 +344,7 @@ fieldset.border-top {
   border-style: solid;
   border-color: #e9e8e8;
   padding-top: 2em;
+  clear: both;
 }
 .form-group {
   display: block;

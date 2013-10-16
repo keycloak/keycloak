@@ -4,19 +4,22 @@
         <div id="content-area" class="col-md-9" role="main">
             <div class="top-nav" data-ng-hide="createRealm">
                 <ul class="rcue-tabs">
-                    <li><a href="#/realms/{{realm.id}}">Settings</a></li>
+                    <li><a href="#/realms/{{realm.id}}">General</a></li>
                     <li data-ng-show="realm.social"><a href="#">Social</a></li>
                     <li><a href="#/realms/{{realm.id}}/roles">Roles</a></li>
-                    <li><a href="#/realms/{{realm.id}}/required-credentials">Required Credentials</a></li>
-                    <li class="active"><a href="#/realms/{{realm.id}}/token-settings">Token Settings</a></li>
+                    <li><a href="#/realms/{{realm.id}}/required-credentials">Credentials</a></li>
+                    <li class="active"><a href="#/realms/{{realm.id}}/token-settings">Token</a></li>
                 </ul>
             </div>
             <div id="content">
-                <h2 class="pull-left">Realm: <span>{{realm.realm}}</span></h2>
-                <p class="subtitle"></p>
+                <ol class="breadcrumb">
+                    <li><a href="#/realms/{{realm.id}}">{{realm.realm}}</a></li>
+                    <li><a href="#/realms/{{realm.id}}">Settings</a></li>
+                    <li class="active">Token</li>
+                </ol>
+                <h2><span>{{realm.realm}}</span> Token Settings</h2>
                 <form name="realmForm" novalidate>
-                    <fieldset>
-                        <legend uncollapsed><span class="text">Token Settings</span></legend>
+                    <fieldset class="border-top">
                         <div class="form-group input-select">
                             <label for="tokenLifespan">Token lifespan</label>
                             <div class="input-group">
@@ -48,7 +51,6 @@
                      </fieldset>
                     <div class="form-actions">
                         <button type="submit" data-ng-click="save()" class="primary" data-ng-show="changed">Save
-                            changes
                         </button>
                         <button type="submit" data-ng-click="reset()" data-ng-show="changed">Clear changes
                         </button>
