@@ -35,7 +35,7 @@ public class Urls {
         return accountBase(baseUri).path(AccountService.class, "accessPage").build(realmId);
     }
 
-    public static UriBuilder accountBase(URI baseUri) {
+    private static UriBuilder accountBase(URI baseUri) {
         return realmBase(baseUri).path(RealmsResource.class, "getAccountService");
     }
 
@@ -59,12 +59,32 @@ public class Urls {
         return accountBase(baseUri).path(AccountService.class, "processTotpRemove").build(realmId);
     }
 
-    public static URI accountEmailVerification(URI baseUri, String realmId) {
-        return accountBase(baseUri).path(AccountService.class, "emailVerification").build(realmId);
+    public static URI loginActionUpdatePassword(URI baseUri, String realmId) {
+        return requiredActionsBase(baseUri).path(RequiredActionsService.class, "updatePassword").build(realmId);
     }
 
-    public static URI accountPasswordReset(URI baseUri, String realmId) {
-        return accountBase(baseUri).path(AccountService.class, "passwordReset").build(realmId);
+    public static URI loginActionUpdateTotp(URI baseUri, String realmId) {
+        return requiredActionsBase(baseUri).path(RequiredActionsService.class, "updateTotp").build(realmId);
+    }
+
+    public static URI loginActionUpdateProfile(URI baseUri, String realmId) {
+        return requiredActionsBase(baseUri).path(RequiredActionsService.class, "updateProfile").build(realmId);
+    }
+
+    public static URI loginActionEmailVerification(URI baseUri, String realmId) {
+        return loginActionEmailVerificationBuilder(baseUri).build(realmId);
+    }
+
+    public static UriBuilder loginActionEmailVerificationBuilder(URI baseUri) {
+        return requiredActionsBase(baseUri).path(RequiredActionsService.class, "emailVerification");
+    }
+
+    public static URI loginPasswordReset(URI baseUri, String realmId) {
+        return loginPasswordResetBuilder(baseUri).build(realmId);
+    }
+
+    public static UriBuilder loginPasswordResetBuilder(URI baseUri) {
+        return requiredActionsBase(baseUri).path(RequiredActionsService.class, "passwordReset");
     }
 
     private static UriBuilder realmBase(URI baseUri) {
@@ -120,11 +140,15 @@ public class Urls {
                 .build(realmId);
     }
 
-    private static UriBuilder tokenBase(URI baseUri) {
-        return realmBase(baseUri).path(RealmsResource.class, "getTokenService");
-    }
-
     public static URI socialRegisterAction(URI baseUri, String realmId) {
         return socialBase(baseUri).path(SocialResource.class, "socialRegistration").build(realmId);
+    }
+
+    private static UriBuilder requiredActionsBase(URI baseUri) {
+        return tokenBase(baseUri).path(TokenService.class, "getRequiredActionsService");
+    }
+
+    private static UriBuilder tokenBase(URI baseUri) {
+        return realmBase(baseUri).path(RealmsResource.class, "getTokenService");
     }
 }

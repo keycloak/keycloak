@@ -108,8 +108,16 @@ public class UrlBean {
         }
     }
 
-    public String getPasswordResetUrl() {
-        return Urls.accountPasswordReset(baseURI, realm.getId()).toString();
+    public String getLoginUpdatePasswordUrl() {
+        return Urls.loginActionUpdatePassword(baseURI, realm.getId()).toString();
+    }
+
+    public String getLoginUpdateTotpUrl() {
+        return Urls.loginActionUpdateTotp(baseURI, realm.getId()).toString();
+    }
+
+    public String getLoginUpdateProfileUrl() {
+        return Urls.loginActionUpdateProfile(baseURI, realm.getId()).toString();
     }
 
     public String getSocialUrl() {
@@ -124,8 +132,12 @@ public class UrlBean {
         return Urls.accountTotpRemove(baseURI, realm.getId()).toString();
     }
 
-    public String getEmailVerificationUrl() {
-        return Urls.accountEmailVerification(baseURI, realm.getId()).toString();
+    public String getLoginPasswordResetUrl() {
+        return Urls.loginPasswordReset(baseURI, realm.getId()).toString();
+    }
+
+    public String getLoginEmailVerificationUrl() {
+        return Urls.loginActionEmailVerification(baseURI, realm.getId()).toString();
     }
 
 }

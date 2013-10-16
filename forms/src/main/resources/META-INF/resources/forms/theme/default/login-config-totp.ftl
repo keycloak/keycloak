@@ -27,7 +27,7 @@
             </li>
             <li class="clearfix">
                 <p><strong>3</strong>Enter the one-time-password provided by Google Authenticator below and click Submit to finish the setup.</p>
-                <form action="${url.totpUrl}" method="post">
+                <form action="${url.loginUpdateTotpUrl}" method="post">
                     <div>
                         <label for="otp" class="two-lines">One-time-password</label><input type="text" id="totp" name="totp" />
                         <input type="hidden" id="totpSecret" name="totpSecret" value="${totp.totpSecret}" />

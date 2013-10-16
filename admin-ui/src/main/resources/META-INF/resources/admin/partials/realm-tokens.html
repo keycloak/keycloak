@@ -12,8 +12,12 @@
                 </ul>
             </div>
             <div id="content">
-                <h2 class="pull-left">Realm: <span>{{realm.realm}}</span></h2>
-                <p class="subtitle"></p>
+                <ol class="breadcrumb">
+                    <li><a href="#/realms/{{realm.id}}">{{realm.realm}}</a></li>
+                    <li><a href="#/realms/{{realm.id}}">Settings</a></li>
+                    <li class="active">Token</li>
+                </ol>
+                <h2><span>{{realm.realm}}</span> Token Settings</h2>
                 <form name="realmForm" novalidate>
                     <fieldset>
                         <legend uncollapsed><span class="text">Token Settings</span></legend>
@@ -48,7 +52,6 @@
                      </fieldset>
                     <div class="form-actions">
                         <button type="submit" data-ng-click="save()" class="primary" data-ng-show="changed">Save
-                            changes
                         </button>
                         <button type="submit" data-ng-click="reset()" data-ng-show="changed">Clear changes
                         </button>

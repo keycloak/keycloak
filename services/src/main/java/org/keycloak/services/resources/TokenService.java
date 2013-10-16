@@ -30,6 +30,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
@@ -75,6 +76,8 @@ public class TokenService {
     @Context
     protected KeycloakTransaction transaction;
 
+    @Context
+    protected ResourceContext resourceContext;
 
     private ResourceAdminManager resourceAdminManager = new ResourceAdminManager();
 
@@ -215,6 +218,13 @@ public class TokenService {
                 return Flows.forms(realm, request, uriInfo).setError(Messages.INVALID_USER).setFormData(formData)
                         .forwardToLogin();
         }
+    }
+
+    @Path("auth/request/login-actions")
+    public RequiredActionsService getRequiredActionsService() {
+        RequiredActionsService service = new RequiredActionsService(realm, tokenManager);
+        resourceContext.initResource(service);
+        return service;
     }
 
     private void isTotpConfigurationRequired(UserModel user) {

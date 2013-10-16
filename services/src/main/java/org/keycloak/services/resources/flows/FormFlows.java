@@ -23,9 +23,11 @@ package org.keycloak.services.resources.flows;
 
 import java.net.URI;
 import java.util.Iterator;
+import java.util.List;
 
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyUriInfo;
+import org.keycloak.models.RoleModel;
 import org.keycloak.services.FormService;
 import org.keycloak.services.email.EmailSender;
 import org.keycloak.services.managers.AccessCodeEntry;
@@ -100,9 +102,7 @@ public class FormFlows {
         return forwardToForm(Pages.ACCOUNT);
     }
 
-    private Response forwardToForm(String template) {
-
-        FormService.FormServiceDataBean formDataBean = new FormService.FormServiceDataBean(realm, userModel, formData, error);
+    private Response forwardToForm(String template, FormService.FormServiceDataBean formDataBean) {
         formDataBean.setErrorType(errorType == null ? ErrorType.ERROR : errorType);
 
         // Getting URI needed by form processing service
@@ -140,6 +140,13 @@ public class FormFlows {
         return Response.status(200).entity("form provider not found").build();
     }
 
+    private Response forwardToForm(String template) {
+
+        FormService.FormServiceDataBean formDataBean = new FormService.FormServiceDataBean(realm, userModel, formData, error);
+        return forwardToForm(template, formDataBean);
+
+    }
+
     public Response forwardToLogin() {
         return forwardToForm(Pages.LOGIN);
     }
@@ -170,6 +177,19 @@ public class FormFlows {
 
     public Response forwardToErrorPage() {
         return forwardToForm(Pages.ERROR);
+    }
+
+    public Response forwardToOAuthGrant(){
+
+        FormService.FormServiceDataBean formDataBean = new FormService.FormServiceDataBean(realm, userModel, formData, error);
+
+        formDataBean.setOAuthRealmRolesRequested((List<RoleModel>) request.getAttribute("realmRolesRequested"));
+        formDataBean.setOAuthResourceRolesRequested((MultivaluedMap<String, RoleModel>) request.getAttribute("resourceRolesRequested"));
+        formDataBean.setOAuthClient((UserModel)request.getAttribute("client"));
+        formDataBean.setOAuthCode((String)request.getAttribute("code"));
+        formDataBean.setOAuthAction((String)request.getAttribute("action"));
+
+        return forwardToForm(Pages.OAUTH_GRANT, formDataBean);
     }
 
     public FormFlows setAccessCode(AccessCodeEntry accessCode) {

@@ -18,14 +18,16 @@
                     <li class="active">Roles</li>
                 </ol>
                 <h2 class="pull-left"><span>{{realm.realm}}</span> Roles</h2>
+                <div class="feedback info" data-ng-show="!roles || roles.length == 0">
+                    <p><strong>You have not configured realm roles.</strong><br><a class="button" href="#/create/role/{{realm.id}}">Add Role</a></p>
+                </div>
                 <table>
                     <caption class="hidden" data-ng-show="roles && roles.length > 0">Table of realm roles</caption>
-                    <caption data-ng-show="!roles || roles.length == 0">No configured realm roles...</caption>
                     <thead>
                         <tr>
                             <th class="rcue-table-actions" colspan="2">
                                 <div class="actions">
-                                    <a class="button" href="#/create/role/{{realm.id}}">Add</a>
+                                    <a class="button" href="#/create/role/{{realm.id}}">Add Role</a>
                                     <!-- <button class="remove disabled">Remove</button> -->
                                 </div>
                             </th>
@@ -58,7 +60,7 @@
                         </td>
                     </tr>
                     </tfoot>
-                    <tbody class="selectable-rows">
+                    <tbody>
                     <tr ng-repeat="role in roles">
                         <td><a href="#/realms/{{realm.id}}/roles/{{role.id}}">{{role.name}}</a></td>
                         <td>{{role.description}}</td>

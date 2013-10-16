@@ -121,8 +121,7 @@ public class OAuthFlows {
         request.setAttribute("action", TokenService.processOAuthUrl(uriInfo).build(realm.getId()).toString());
         request.setAttribute("code", accessCode.getCode());
 
-        request.forward(Pages.OAUTH_GRANT);
-        return null;
+        return Flows.forms(realm, request, uriInfo).setAccessCode(accessCode).forwardToOAuthGrant();
     }
 
     public Response forwardToSecurityFailure(String message) {

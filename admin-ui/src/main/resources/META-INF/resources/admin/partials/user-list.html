@@ -2,37 +2,44 @@
     <div class="row">
         <div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="'partials/realm-menu.html'"></div>
         <div id="content-area" class="col-md-9" role="main">
-            <div class="top-nav" data-ng-hide="createRealm">
+            <div class="top-nav">
                 <ul class="rcue-tabs">
-                    <li><a href="#/create/user/{{realm.id}}">New User</a></li>
-                    <li class="active"><a href="#/realms/{{realm.id}}/users">Query Users</a></li>
+                    <li></li>
                 </ul>
             </div>
             <div id="content">
-                <h2 class="pull-left">Query Users</h2>
+                <ol class="breadcrumb">
+                    <li><a href="#/realms/{{realm.id}}">{{realm.realm}}</a></li>
+                    <li class="active">Users</li>
+                </ol>
+                <h2><span>{{realm.realm}}</span> Users</h2>
                 <table>
-                    <caption data-ng-show="users && search">Table of realm users</caption>
+                    <caption data-ng-show="users && search" class="hidden">Table of realm users</caption>
                     <thead>
-                    <tr>
-                        <th class="rcue-table-actions" colspan="4">
-                            <div class="search-comp clearfix">
-                                <input type="text" placeholder="Search..." data-ng-model="search" class="search">
-                                <button data-ng-click="searchQuery()"
-                                        class="icon-search tooltipRightTrigger"
-                                        data-original-title="Search by full name, last name, email, or username.">
-                                    Icon: search
-                                </button>
-                            </div>
-                        </th>
-                    </tr>
-                    <tr>
-                    <tr data-ng-show="users && search">
-                        <th>Username</th>
-                        <th>Last Name</th>
-                        <th>First Name</th>
-                        <th>Email</th>
-                    </tr>
-                    </tr>
+                        <tr>
+                            <th class="rcue-table-actions" colspan="4">
+                                <div class="search-comp clearfix">
+                                    <input type="text" placeholder="Search..." data-ng-model="search" class="search">
+                                    <button data-ng-click="searchQuery()"
+                                            class="icon-search tooltipRightTrigger"
+                                            data-original-title="Search by full name, last name, email, or username.">
+                                        Icon: search
+                                    </button>
+                                </div>
+                                <div class="actions">
+                                    <a class="button" href="#/create/user/{{realm.id}}">Add User</a>
+                                    <button class="remove disabled">Remove</button>
+                                </div>
+                            </th>
+                        </tr>
+                        <tr>
+                            <tr data-ng-show="users && search">
+                                <th>Username</th>
+                                <th>Last Name</th>
+                                <th>First Name</th>
+                                <th>Email</th>
+                            </tr>
+                        </tr>
                     </thead>
                     <tfoot data-ng-show="users && users.length > 10"> <!-- todo -->
                     <tr>
