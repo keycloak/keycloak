@@ -34,6 +34,14 @@ module.config([ '$routeProvider', function($routeProvider) {
                 }
             },
             controller : 'RealmTokenDetailCtrl'
+        }).when('/realms/:realm/social-settings', {
+            templateUrl : 'partials/realm-social.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                }
+            },
+            controller : 'RealmTokenDetailCtrl'
         })
         .when('/realms/:realm/required-credentials', {
             templateUrl : 'partials/realm-credentials.html',

@@ -4,11 +4,11 @@
         <div id="content-area" class="col-md-9" role="main">
             <div class="top-nav" data-ng-hide="createRealm">
                 <ul class="rcue-tabs">
-                    <li><a href="#/realms/{{realm.id}}">Settings</a></li>
-                    <li data-ng-show="realm.social"><a href="#">Social</a></li>
+                    <li><a href="#/realms/{{realm.id}}">General</a></li>
+                    <li data-ng-show="realm.social"><a href="#/realms/{{realm.id}}/social-settings">Social</a></li>
                     <li><a href="#/realms/{{realm.id}}/roles">Roles</a></li>
-                    <li><a href="#/realms/{{realm.id}}/required-credentials">Required Credentials</a></li>
-                    <li class="active"><a href="#/realms/{{realm.id}}/token-settings">Token Settings</a></li>
+                    <li><a href="#/realms/{{realm.id}}/required-credentials">Credentials</a></li>
+                    <li class="active"><a href="#/realms/{{realm.id}}/token-settings">Token</a></li>
                 </ul>
             </div>
             <div id="content">

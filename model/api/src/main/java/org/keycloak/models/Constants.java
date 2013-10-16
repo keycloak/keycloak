@@ -5,7 +5,7 @@ package org.keycloak.models;
  * @version $Revision: 1 $
  */
 public interface Constants {
-    String ADMIN_REALM = "Keycloak Adminstration";
+    String ADMIN_REALM = "Keycloak Administration";
     String ADMIN_CONSOLE_APPLICATION = "Admin Console";
     String ADMIN_CONSOLE_ADMIN_ROLE = "admin";
     String APPLICATION_ROLE = "KEYCLOAK_APPLICATION";
