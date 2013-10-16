@@ -38,7 +38,7 @@ public class Pages {
 
     public final static String LOGIN_VERIFY_EMAIL = "/forms/login-verify-email.ftl";
 
-    public final static String OAUTH_GRANT = "/saas/oauthGrantForm.jsp";
+    public final static String OAUTH_GRANT = "/forms/login-oauth-grant.ftl";
 
     public final static String PASSWORD = "/forms/password.ftl";
 

@@ -11,20 +11,32 @@
 
     <#elseif section = "form">
     <div class="content-area">
-        <p class="instruction">This application requests access to:</p>
+        <p class="instruction"><strong>${oauth.client.loginName}</strong> requests access to:</p>
         <ul>
-            <li>
-                <span>View basic information about your account</span>
-            </li>
-            <li>
-                <span>View your email address</span>
-            </li>
+            <#list oauth.realmRolesRequested as role>
+                <li>
+                    <span>${role.description}</span>
+                </li>
+            </#list>
         </ul>
+
+        <#list oauth.resourceRolesRequested?keys as resourceRole>
+            <p class="instruction"><strong>${resourceRole}</strong> requests access to:</p>
+            <ul>
+                <#list oauth.resourceRolesRequested[resourceRole] as role>
+                    <li>
+                        <span>${role.description}</span>
+                    </li>
+                </#list>
+            </ul>
+        </#list>
+
         <p class="terms">Keycloak Central Login and Google will use this information in accordance with their respective terms of service and privacy policies.</p>
-        <div class="form-actions">
-            <button class="primary" type="submit">Accept</button>
-            <button type="submit">Cancel</button>
-        </div>
+        <form class="form-actions" action="${oauth.action}" method="POST">
+            <input type="hidden" name="code" value="${oauth.oAuthCode}">
+            <input type="submit" class="btn-primary primary" name="accept" value="Accept">
+            <input type="submit" class="btn-secondary" name="cancel" value="Cancel">
+        </form>
     </div>
 
     <#elseif section = "info" >

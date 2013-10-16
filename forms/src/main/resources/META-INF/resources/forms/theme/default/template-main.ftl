@@ -66,7 +66,7 @@
                 <li class="<#if active=='account'>active</#if>"><a href="${url.accountUrl}">Account</a></li>
                 <li class="<#if active=='password'>active</#if>"><a href="${url.passwordUrl}">Password</a></li>
                 <li class="<#if active=='totp'>active</#if>"><a href="${url.totpUrl}">Authenticator</a></li>
-                <li class="<#if active=='social'>active</#if>"><a href="${url.socialUrl}">Social Accounts</a></li>
+                <#--<li class="<#if active=='social'>active</#if>"><a href="${url.socialUrl}">Social Accounts</a></li>-->
                 <li class="<#if active=='access'>active</#if>"><a href="${url.accessUrl}">Authorized Access</a></li>
             </ul>
         </div>
