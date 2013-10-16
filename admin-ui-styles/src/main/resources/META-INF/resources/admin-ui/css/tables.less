@@ -120,28 +120,29 @@ table {
         
             border-top: 1px solid #ededed;
                     
-            &.selected {
-                background-color: #eaf5fb;
-                
-                td:first-child {
-                    background-image: url(img/icon-row-selected.svg);
-                    background-position: 0.2em center;
-                    background-repeat: no-repeat;
-                }
-            }
-            
             &:hover {
                 cursor: default;
             }
             
+            td {
+                vertical-align: middle;
+            }
+            
             td.token-cell {
                 padding: 0 0.7em;
+                line-height: 0;
                 
                 .token {
                     padding-top: 0.18181818181818em;
                     padding-bottom: 0.18181818181818em;
-                    margin-top: 7px;
+                    margin-top: 6px;
+                    margin-bottom: 5px;
+                }
+                
+                button {
+                    float: left;
                     margin-bottom: 7px;
+                    margin-top: 8px;
                 }
             }
         }
@@ -155,6 +156,17 @@ table {
             
             tr:first-child td {
                 padding-top: 9px;
+            }
+            
+            tr.selected,
+            tr.selected:hover {
+                background-color: #eaf5fb;
+                
+                td:first-child {
+                    background-image: url(img/icon-row-selected.svg);
+                    background-position: 0.2em center;
+                    background-repeat: no-repeat;
+                }
             }
         }
     }    

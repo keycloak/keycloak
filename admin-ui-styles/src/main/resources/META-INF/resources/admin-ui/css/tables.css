@@ -88,25 +88,26 @@ table tbody tr:hover {
 table tbody tr {
   border-top: 1px solid #ededed;
 }
-table tbody tr.selected {
-  background-color: #eaf5fb;
-}
-table tbody tr.selected td:first-child {
-  background-image: url(img/icon-row-selected.svg);
-  background-position: 0.2em center;
-  background-repeat: no-repeat;
-}
 table tbody tr:hover {
   cursor: default;
 }
+table tbody tr td {
+  vertical-align: middle;
+}
 table tbody tr td.token-cell {
   padding: 0 0.7em;
+  line-height: 0;
 }
 table tbody tr td.token-cell .token {
   padding-top: 0.18181818181818em;
   padding-bottom: 0.18181818181818em;
-  margin-top: 7px;
+  margin-top: 6px;
+  margin-bottom: 5px;
+}
+table tbody tr td.token-cell button {
+  float: left;
   margin-bottom: 7px;
+  margin-top: 8px;
 }
 table tbody.selectable-rows tr:hover {
   cursor: pointer;
@@ -114,6 +115,16 @@ table tbody.selectable-rows tr:hover {
 }
 table tbody.selectable-rows tr:first-child td {
   padding-top: 9px;
+}
+table tbody.selectable-rows tr.selected,
+table tbody.selectable-rows tr.selected:hover {
+  background-color: #eaf5fb;
+}
+table tbody.selectable-rows tr.selected td:first-child,
+table tbody.selectable-rows tr.selected:hover td:first-child {
+  background-image: url(img/icon-row-selected.svg);
+  background-position: 0.2em center;
+  background-repeat: no-repeat;
 }
 table tfoot tr {
   border-top: 1px solid #cecece;

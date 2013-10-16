@@ -625,7 +625,7 @@ input[type="email"].tiny {
   line-height: 1.45454545454545em;
 }
 .tokenfield.form-control .token .close {
-  text-indent: -9999999em;
+  text-indent: -99999em;
   width: 1.6em;
   height: 1.6em;
   line-height: 1.6em;

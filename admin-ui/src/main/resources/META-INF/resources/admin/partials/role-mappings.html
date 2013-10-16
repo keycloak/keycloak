@@ -4,36 +4,48 @@
         <div id="content-area" class="col-md-9" role="main">
             <div class="top-nav">
                 <ul class="rcue-tabs" >
-                    <li><a href="#/create/user/{{realm.id}}">New User</a></li>
-                    <li><a href="#/realms/{{realm.id}}/users">Query Users</a></li>
-                    <li><a href="#/realms/{{realm.id}}/users/{{user.username}}">{{user.username}} Attributes</a></li>
-                    <li><a href="#">{{user.username}} Credentials</a></li>
-                    <li class="active"><a href="#">{{user.username}} Role Mappings</a></li>
+                    <li><a href="#/realms/{{realm.id}}/users/{{user.username}}">Attributes</a></li>
+                    <li><a href="#">Credentials</a></li>
+                    <li class="active"><a href="#">Role Mappings</a></li>
                 </ul>
             </div>
             <div id="content">
-                <h2 class="pull-left">User Role Mappings for <span>{{user.username}}</span></h2>
-                <p class="subtitle"></p>
+                <ol class="breadcrumb">
+                    <li><a href="#/realms/{{realm.id}}">{{realm.realm}}</a></li>
+                    <li><a href="#/realms/{{realm.id}}/users">Users</a></li>
+                    <li><a href="#/realms/{{realm.id}}/users/{{user.username}}">{{user.username}}</a></li>
+                    <li class="active">Role Mappings</li>
+                </ol>
+                <h2 class="pull-left"><span>{{user.username}}'s</span> Role Mappings</h2>
+                <p class="subtitle">All fields required</p>
                 <form name="realmForm" novalidate>
-                    <fieldset>
-                        <legend uncollapsed><span class="text">Realm Roles</span> </legend>
+                    <fieldset class="border-top">
                         <div class="form-group">
-                            <div class="controls">
-                                <select multiple size="5"
-                                        ng-multiple="true"
-                                        ng-model="selectedRealmRoles"
-                                        ng-options="r.name for r in realmRoles">
-                                </select>
-                                <button type="submit" ng-click="addRealmRole()">---&gt;</button>
-                                <button type="submit" ng-click="deleteRealmRole()">&lt;---</button>
-                                <select multiple size=5
+                            <div class="controls changing-selectors">
+                                <div class="select-title">
+                                    <label for="available">Available Roles</label>
+                                    <select id="available" class="form-control" multiple size="5"
+                                            ng-multiple="true"
+                                            ng-model="selectedRealmRoles"
+                                            ng-options="r.name for r in realmRoles">
+                                    </select>
+                                </div>
+                                <div class="middle-buttons">
+                                    <button type="submit" ng-click="addRealmRole()" data-original-title="Move right" class="tooltipRightTrigger"><span class="icon-arrow-right">Move right</span></button>
+                                    <button type="submit" ng-click="deleteRealmRole()" data-original-title="Move left" class="tooltipRightTrigger"><span class="icon-arrow-left">Move left</span></button>
+                                </div>
+                                <div class="select-title">
+                                    <label for="assigned">Assigned Roles</label>
+                                    <select id="assigned" class="form-control" multiple size=5
                                         ng-multiple="true"
                                         ng-model="selectedRealmMappings"
                                         ng-options="r.name for r in realmMappings">
-                                </select>
+                                    </select>
+                                </div>
                             </div>
                         </div>
                     </fieldset>
+                    
                     <fieldset ng-show="applications.length > 0">
                         <legend collapsed><span class="text">Application Roles</span> </legend>
                         <div class="form-group input-select">
