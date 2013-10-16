@@ -217,6 +217,11 @@ public class TokenService {
         }
     }
 
+    @Path("auth/request/login-actions")
+    public RequiredActionsService getRequiredActionsService() {
+        return new RequiredActionsService(realm, tokenManager);
+    }
+
     private void isTotpConfigurationRequired(UserModel user) {
         for (RequiredCredentialModel c : realm.getRequiredCredentials()) {
             if (c.getType().equals(CredentialRepresentation.TOTP) && !user.isTotp()) {
