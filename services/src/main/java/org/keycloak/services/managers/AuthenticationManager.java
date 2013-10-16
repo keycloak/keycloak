@@ -7,6 +7,7 @@ import org.jboss.resteasy.spi.HttpResponse;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
+import org.keycloak.models.Constants;
 import org.keycloak.representations.SkeletonKeyToken;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.models.RealmModel;
@@ -32,18 +33,6 @@ public class AuthenticationManager {
     protected Logger logger = Logger.getLogger(AuthenticationManager.class);
     public static final String FORM_USERNAME = "username";
     public static final String KEYCLOAK_IDENTITY_COOKIE = "KEYCLOAK_IDENTITY";
-
-    /**
-     * Grabs token from headers, authenticates, authorizes
-     *
-     * @param realm
-     * @param headers
-     * @return
-     */
-    public boolean isRealmAdmin(RealmModel realm, HttpHeaders headers) {
-        UserModel user = authenticateBearerToken(realm, headers);
-        return realm.isRealmAdmin(user);
-    }
 
     public SkeletonKeyToken createIdentityToken(RealmModel realm, String username) {
         SkeletonKeyToken token = new SkeletonKeyToken();
@@ -211,9 +200,9 @@ public class AuthenticationManager {
         Set<String> types = new HashSet<String>();
 
         List<RequiredCredentialModel> requiredCredentials = null;
-        if (realm.hasRole(user, RealmManager.APPLICATION_ROLE)) {
+        if (realm.hasRole(user, Constants.APPLICATION_ROLE)) {
             requiredCredentials = realm.getRequiredApplicationCredentials();
-        } else if (realm.hasRole(user, RealmManager.IDENTITY_REQUESTER_ROLE)) {
+        } else if (realm.hasRole(user, Constants.IDENTITY_REQUESTER_ROLE)) {
             requiredCredentials = realm.getRequiredOAuthClientCredentials();
         } else {
             requiredCredentials = realm.getRequiredCredentials();

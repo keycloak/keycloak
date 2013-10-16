@@ -71,6 +71,7 @@ public class ApplicationAdapter implements ApplicationModel {
     @Override
     public void setName(String name) {
         applicationData.setResourceName(name);
+        updateApplication();
     }
 
     @Override
@@ -81,6 +82,7 @@ public class ApplicationAdapter implements ApplicationModel {
     @Override
     public void setEnabled(boolean enabled) {
         applicationData.setEnabled(enabled);
+        updateApplication();
     }
 
     @Override
@@ -91,6 +93,7 @@ public class ApplicationAdapter implements ApplicationModel {
     @Override
     public void setSurrogateAuthRequired(boolean surrogateAuthRequired) {
         applicationData.setSurrogateAuthRequired(surrogateAuthRequired);
+        updateApplication();
     }
 
     @Override
@@ -101,6 +104,7 @@ public class ApplicationAdapter implements ApplicationModel {
     @Override
     public void setManagementUrl(String url) {
         applicationData.setManagementUrl(url);
+        updateApplication();
     }
 
     @Override
@@ -111,6 +115,7 @@ public class ApplicationAdapter implements ApplicationModel {
     @Override
     public void setBaseUrl(String url) {
         applicationData.setBaseUrl(url);
+        updateApplication();
     }
 
     @Override

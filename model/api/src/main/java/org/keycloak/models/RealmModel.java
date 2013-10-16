@@ -11,7 +11,6 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMapperModel {
-    String DEFAULT_REALM = "default";
 
     String getId();
 
@@ -96,11 +95,6 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
     List<ApplicationModel> getApplications();
 
     ApplicationModel addApplication(String name);
-
-    boolean isRealmAdmin(UserModel agent);
-
-    void addRealmAdmin(UserModel agent);
-
 
     List<RequiredCredentialModel> getRequiredApplicationCredentials();
 

@@ -26,9 +26,9 @@ import java.util.Set;
 
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.models.Constants;
 import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -81,8 +81,8 @@ public class OAuthFlows {
     }
 
     public Response processAccessCode(String scopeParam, String state, String redirect, UserModel client, UserModel user) {
-        RoleModel resourceRole = realm.getRole(RealmManager.APPLICATION_ROLE);
-        RoleModel identityRequestRole = realm.getRole(RealmManager.IDENTITY_REQUESTER_ROLE);
+        RoleModel resourceRole = realm.getRole(Constants.APPLICATION_ROLE);
+        RoleModel identityRequestRole = realm.getRole(Constants.IDENTITY_REQUESTER_ROLE);
         boolean isResource = realm.hasRole(client, resourceRole);
         if (!isResource && !realm.hasRole(client, identityRequestRole)) {
             return forwardToSecurityFailure("Login requester not allowed to request login.");
