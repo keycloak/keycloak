@@ -70,19 +70,11 @@ public class UrlBean {
     }
 
     public String getLoginAction() {
-        if (realm.isSaas()) {
-            return Urls.saasLoginAction(baseURI).toString();
-        } else {
-            return Urls.realmLoginAction(baseURI, realm.getId()).toString();
-        }
+        return Urls.realmLoginAction(baseURI, realm.getId()).toString();
     }
 
     public String getLoginUrl() {
-        if (realm.isSaas()) {
-            return Urls.saasLoginPage(baseURI).toString();
-        } else {
-            return Urls.realmLoginPage(baseURI, realm.getId()).toString();
-        }
+        return Urls.realmLoginPage(baseURI, realm.getId()).toString();
     }
 
     public String getPasswordUrl() {

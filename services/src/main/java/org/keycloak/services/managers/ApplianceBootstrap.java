@@ -26,6 +26,7 @@ public class ApplianceBootstrap {
         realm.addRequiredResourceCredential(CredentialRepresentation.PASSWORD);
         realm.setTokenLifespan(300);
         realm.setAccessCodeLifespan(60);
+        realm.setAccessCodeLifespanUserAction(300);
         realm.setSslNotRequired(true);
         realm.setCookieLoginAllowed(true);
         realm.setRegistrationAllowed(false);
@@ -49,7 +50,7 @@ public class ApplianceBootstrap {
         password.setType(UserCredentialModel.PASSWORD);
         password.setValue("admin");
         realm.updateCredential(adminUser, password);
-        //adminUser.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+        adminUser.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
 
         adminConsole.grantRole(adminUser, adminRole);
 

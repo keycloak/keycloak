@@ -51,12 +51,13 @@ public class ServletOAuthClient extends AbstractOAuthClient {
                 .queryParam("redirect_uri", redirectUri)
                 .queryParam("state", state)
                 .build();
-        String cookiePath = request.getContextPath();
-        if (cookiePath.equals("")) cookiePath = "/";
+        String stateCookiePath = this.stateCookiePath;
+        if (stateCookiePath == null) stateCookiePath = request.getContextPath();
+        if (stateCookiePath.equals("")) stateCookiePath = "/";
 
         Cookie cookie = new Cookie(stateCookieName, state);
         cookie.setSecure(isSecure);
-        cookie.setPath(cookiePath);
+        cookie.setPath(stateCookiePath);
         response.addCookie(cookie);
         response.sendRedirect(url.toString());
     }

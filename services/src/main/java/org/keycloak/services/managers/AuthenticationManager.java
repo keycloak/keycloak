@@ -99,7 +99,7 @@ public class AuthenticationManager {
         expireCookie(SaasService.SAAS_IDENTITY_COOKIE, cookiePath);
     }
 
-    protected void expireCookie(String cookieName, String path) {
+    public void expireCookie(String cookieName, String path) {
         HttpResponse response = ResteasyProviderFactory.getContextData(HttpResponse.class);
         if (response == null) {
             logger.info("can't expire identity cookie, no HttpResponse");
