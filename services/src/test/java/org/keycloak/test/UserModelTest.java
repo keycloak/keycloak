@@ -53,9 +53,32 @@ public class UserModelTest extends AbstractKeycloakServerTest {
         user.addRequiredAction(RequiredAction.CONFIGURE_TOTP);
         user.addRequiredAction(RequiredAction.UPDATE_PASSWORD);
 
+        user.addWebOrigin("origin-1");
+        user.addWebOrigin("origin-2");
+
         UserModel persisted = manager.getRealm(realm.getId()).getUser("user");
 
         assertEquals(user, persisted);
+    }
+    
+    @Test
+    public void webOriginSetTest() {
+        RealmModel realm = manager.createRealm("original");
+        UserModel user = realm.addUser("user");
+
+        Assert.assertTrue(user.getWebOrigins().isEmpty());
+
+        user.addWebOrigin("origin-1");
+        Assert.assertEquals(1, user.getWebOrigins().size());
+
+        user.addWebOrigin("origin-2");
+        Assert.assertEquals(2, user.getWebOrigins().size());
+
+        user.removeWebOrigin("origin-2");
+        Assert.assertEquals(1, user.getWebOrigins().size());
+
+        user.removeWebOrigin("origin-1");
+        Assert.assertTrue(user.getWebOrigins().isEmpty());
     }
 
     @Test
@@ -102,7 +125,7 @@ public class UserModelTest extends AbstractKeycloakServerTest {
         Assert.assertEquals(expected.getLastName(), actual.getLastName());
         Assert.assertArrayEquals(expected.getRedirectUris().toArray(), actual.getRedirectUris().toArray());
         Assert.assertArrayEquals(expected.getRequiredActions().toArray(), actual.getRequiredActions().toArray());
-
+        Assert.assertArrayEquals(expected.getWebOrigins().toArray(), actual.getWebOrigins().toArray());
     }
 
     public static void assertEquals(List<RoleModel> expected, List<RoleModel> actual) {

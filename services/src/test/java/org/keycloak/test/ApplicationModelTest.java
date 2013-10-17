@@ -49,6 +49,9 @@ public class ApplicationModelTest extends AbstractKeycloakServerTest {
         application.getApplicationUser().addRedirectUri("redirect-1");
         application.getApplicationUser().addRedirectUri("redirect-2");
 
+        application.getApplicationUser().addWebOrigin("origin-1");
+        application.getApplicationUser().addWebOrigin("origin-2");
+
         application.updateApplication();
     }
 
@@ -85,6 +88,7 @@ public class ApplicationModelTest extends AbstractKeycloakServerTest {
         UserModel euser = expected.getApplicationUser();
 
         Assert.assertTrue(euser.getRedirectUris().containsAll(auser.getRedirectUris()));
+        Assert.assertTrue(euser.getWebOrigins().containsAll(auser.getWebOrigins()));
     }
 
     public static void assertEquals(List<RoleModel> expected, List<RoleModel> actual) {
