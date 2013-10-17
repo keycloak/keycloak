@@ -1,5 +1,6 @@
 package org.keycloak.services.managers;
 
+import org.keycloak.models.RealmModel;
 import org.keycloak.representations.SkeletonKeyToken;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
@@ -23,6 +24,7 @@ public class AccessCodeEntry {
     protected String redirectUri;
 
     protected long expiration;
+    protected RealmModel realm;
     protected SkeletonKeyToken token;
     protected UserModel user;
     protected Set<RequiredAction> requiredActions;
@@ -36,6 +38,14 @@ public class AccessCodeEntry {
 
     public String getId() {
         return id;
+    }
+
+    public RealmModel getRealm() {
+        return realm;
+    }
+
+    public void setRealm(RealmModel realm) {
+        this.realm = realm;
     }
 
     public String getCode() {

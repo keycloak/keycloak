@@ -47,10 +47,9 @@ public class KeycloakApplication extends Application {
         TokenManager tokenManager = new TokenManager();
 
         singletons.add(new RealmsResource(tokenManager));
+        singletons.add(new SaasService(tokenManager));
         singletons.add(new SocialResource(tokenManager, new SocialRequestManager()));
         classes.add(SkeletonKeyContextResolver.class);
-        classes.add(SaasService.class);
-
     }
 
     protected KeycloakSessionFactory createSessionFactory() {

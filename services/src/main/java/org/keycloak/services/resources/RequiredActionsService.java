@@ -23,6 +23,7 @@ package org.keycloak.services.resources;
 
 import org.jboss.resteasy.jose.jws.JWSInput;
 import org.jboss.resteasy.jose.jws.crypto.RSAProvider;
+import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
@@ -52,6 +53,7 @@ import java.util.Set;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class RequiredActionsService {
+    protected static final Logger logger = Logger.getLogger(RequiredActionsService.class);
 
     private RealmModel realm;
 
@@ -134,10 +136,13 @@ public class RequiredActionsService {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response updatePassword(final MultivaluedMap<String, String> formData) {
+        logger.info("updatePassword");
         AccessCodeEntry accessCode = getAccessCodeEntry(RequiredAction.UPDATE_PASSWORD);
         if (accessCode == null) {
+            logger.info("updatePassword access code is null");
             return forwardToErrorPage();
         }
+        logger.info("updatePassword has access code");
 
         UserModel user = getUser(accessCode);
 
@@ -157,6 +162,8 @@ public class RequiredActionsService {
         credentials.setValue(passwordNew);
 
         realm.updateCredential(user, credentials);
+
+        logger.info("updatePassword updated credential");
 
         user.removeRequiredAction(RequiredAction.UPDATE_PASSWORD);
         if (accessCode != null) {
@@ -257,6 +264,7 @@ public class RequiredActionsService {
     private AccessCodeEntry getAccessCodeEntry(RequiredAction requiredAction) {
         String code = uriInfo.getQueryParameters().getFirst(FormFlows.CODE);
         if (code == null) {
+            logger.info("getAccessCodeEntry code as not in query param");
             return null;
         }
 
@@ -265,24 +273,31 @@ public class RequiredActionsService {
         try {
             verifiedCode = RSAProvider.verify(input, realm.getPublicKey());
         } catch (Exception ignored) {
+            logger.info("getAccessCodeEntry code failed verification");
             return null;
         }
 
         if (!verifiedCode) {
+            logger.info("getAccessCodeEntry code failed verification2");
             return null;
         }
 
         String key = input.readContent(String.class);
         AccessCodeEntry accessCodeEntry = tokenManager.getAccessCode(key);
         if (accessCodeEntry == null) {
+            logger.info("getAccessCodeEntry access code entry null");
             return null;
         }
 
         if (accessCodeEntry.isExpired()) {
+            logger.info("getAccessCodeEntry: access code id: " + accessCodeEntry.getId());
+            logger.info("getAccessCodeEntry access code entry expired: " + accessCodeEntry.getExpiration());
+            logger.info("getAccessCodeEntry current time: " + (System.currentTimeMillis() / 1000));
             return null;
         }
 
         if (accessCodeEntry.getRequiredActions() == null || !accessCodeEntry.getRequiredActions().contains(requiredAction)) {
+            logger.info("getAccessCodeEntry required actions null || entry does not contain required action: " + (accessCodeEntry.getRequiredActions() == null) + "|" + !accessCodeEntry.getRequiredActions().contains(requiredAction) );
             return null;
         }
 
@@ -303,6 +318,7 @@ public class RequiredActionsService {
             return Flows.forms(realm, request, uriInfo).setAccessCode(accessCode).setUser(user)
                     .forwardToAction(requiredActions.iterator().next());
         } else {
+            logger.info("redirectOauth: redirecting to: " + accessCode.getRedirectUri());
             accessCode.setExpiration((System.currentTimeMillis() / 1000) + realm.getAccessCodeLifespan());
             return Flows.oauth(realm, request, uriInfo, authManager, tokenManager).redirectAccessCode(accessCode,
                     accessCode.getState(), accessCode.getRedirectUri());

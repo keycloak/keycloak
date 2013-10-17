@@ -1,21 +1,33 @@
 package org.keycloak.services.resources;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.jose.jws.JWSInput;
+import org.jboss.resteasy.jose.jws.crypto.RSAProvider;
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.jboss.resteasy.spi.NotImplementedYetException;
+import org.keycloak.AbstractOAuthClient;
+import org.keycloak.jaxrs.JaxrsOAuthClient;
 import org.keycloak.models.*;
+import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthenticationStatus;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.admin.RealmsAdminResource;
 import org.keycloak.services.resources.flows.Flows;
+import org.keycloak.services.resources.flows.OAuthFlows;
 
 import javax.ws.rs.*;
 import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.*;
+import javax.ws.rs.ext.Providers;
+import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -42,8 +54,17 @@ public class SaasService {
     @Context
     protected ResourceContext resourceContext;
 
+    @Context
+    protected Providers providers;
+
+
     protected String adminPath = "/admin/index.html";
     protected AuthenticationManager authManager = new AuthenticationManager();
+    protected TokenManager tokenManager;
+
+    public SaasService(TokenManager tokenManager) {
+        this.tokenManager = tokenManager;
+    }
 
     public static class WhoAmI {
         protected String userId;
@@ -168,7 +189,99 @@ public class SaasService {
         RealmModel realm = getAdminstrationRealm(realmManager);
         authManager.expireSaasIdentityCookie(uriInfo);
 
-        return Flows.forms(realm, request, uriInfo).forwardToLogin();
+        JaxrsOAuthClient oauth = new JaxrsOAuthClient();
+        String authUrl = TokenService.loginPageUrl(uriInfo).build(Constants.ADMIN_REALM).toString();
+        logger.info("authUrl: " + authUrl);
+        oauth.setAuthUrl(authUrl);
+        oauth.setClientId(Constants.ADMIN_CONSOLE_APPLICATION);
+        URI redirectUri = uriInfo.getBaseUriBuilder().path(SaasService.class).path(SaasService.class, "loginRedirect").build();
+        logger.info("redirectUri: " + redirectUri.toString());
+        oauth.setStateCookiePath(redirectUri.getPath());
+        return oauth.redirect(uriInfo, redirectUri.toString());
+    }
+
+    @Path("login-redirect")
+    @GET
+    @NoCache
+    public Response loginRedirect(@QueryParam("code") String code,
+                                  @QueryParam("state") String state,
+                                  @QueryParam("error") String error,
+                                  @Context HttpHeaders headers
+
+                                  ) {
+        try {
+            logger.info("loginRedirect ********************** <---");
+            if (error != null) {
+                logger.debug("error from oauth");
+                throw new ForbiddenException("error");
+            }
+            RealmManager realmManager = new RealmManager(session);
+            RealmModel realm = getAdminstrationRealm(realmManager);
+            if (!realm.isEnabled()) {
+                logger.debug("realm not enabled");
+                throw new ForbiddenException();
+            }
+            ApplicationModel adminConsole = realm.getApplicationNameMap().get(Constants.ADMIN_CONSOLE_APPLICATION);
+            UserModel adminConsoleUser = adminConsole.getApplicationUser();
+            if (!adminConsole.isEnabled() || !adminConsoleUser.isEnabled()) {
+                logger.debug("admin app not enabled");
+                throw new ForbiddenException();
+            }
+
+            if (code == null) {
+                logger.debug("code not specified");
+                throw new BadRequestException();
+            }
+            if (state == null) {
+                logger.debug("state not specified");
+                throw new BadRequestException();
+            }
+            new JaxrsOAuthClient().checkStateCookie(uriInfo, headers);
+
+            JWSInput input = new JWSInput(code, providers);
+            boolean verifiedCode = false;
+            try {
+                verifiedCode = RSAProvider.verify(input, realm.getPublicKey());
+            } catch (Exception ignored) {
+                logger.debug("Failed to verify signature", ignored);
+            }
+            if (!verifiedCode) {
+                logger.debug("unverified access code");
+                throw new BadRequestException();
+            }
+            String key = input.readContent(String.class);
+            AccessCodeEntry accessCode = tokenManager.pullAccessCode(key);
+            if (accessCode == null) {
+                logger.debug("bad access code");
+                throw new BadRequestException();
+            }
+            if (accessCode.isExpired()) {
+                logger.debug("access code expired");
+                throw new BadRequestException();
+            }
+            if (!accessCode.getToken().isActive()) {
+                logger.debug("access token expired");
+                throw new BadRequestException();
+            }
+            if (!accessCode.getRealm().getId().equals(realm.getId())) {
+                logger.debug("bad realm");
+                throw new BadRequestException();
+
+            }
+            if (!adminConsoleUser.getLoginName().equals(accessCode.getClient().getLoginName())) {
+                logger.debug("bad client");
+                throw new BadRequestException();
+            }
+            if (!adminConsole.hasRole(accessCode.getUser(), Constants.ADMIN_CONSOLE_ADMIN_ROLE)) {
+                logger.debug("not allowed");
+                throw new ForbiddenException();
+            }
+            logger.info("loginRedirect SUCCESS");
+            NewCookie cookie = authManager.createSaasIdentityCookie(realm, accessCode.getUser(), uriInfo);
+            return Response.status(302).cookie(cookie).location(contextRoot(uriInfo).path(adminPath).build()).build();
+        } finally {
+            authManager.expireCookie(AbstractOAuthClient.OAUTH_TOKEN_REQUEST_STATE, uriInfo.getAbsolutePath().getPath());
+        }
     }
 
     @Path("logout")
@@ -178,8 +291,9 @@ public class SaasService {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = getAdminstrationRealm(realmManager);
         authManager.expireSaasIdentityCookie(uriInfo);
+        authManager.expireIdentityCookie(realm, uriInfo);
 
-        return Flows.forms(realm, request, uriInfo).forwardToLogin();
+        return Response.status(302).location(uriInfo.getBaseUriBuilder().path(SaasService.class).path(SaasService.class, "loginPage").build()).build();
     }
 
     @Path("logout-cookie")
@@ -199,6 +313,8 @@ public class SaasService {
         RealmModel realm = getAdminstrationRealm(realmManager);
         if (realm == null)
             throw new NotFoundException();
+        ApplicationModel adminConsole = realm.getApplicationNameMap().get(Constants.ADMIN_CONSOLE_APPLICATION);
+        UserModel adminConsoleUser = adminConsole.getApplicationUser();
 
         if (!realm.isEnabled()) {
             throw new NotImplementedYetException();
@@ -208,6 +324,8 @@ public class SaasService {
 
         AuthenticationStatus status = authManager.authenticateForm(realm, user, formData);
 
+        OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
+
         switch (status) {
             case SUCCESS:
                 NewCookie cookie = authManager.createSaasIdentityCookie(realm, user, uriInfo);
@@ -216,7 +334,7 @@ public class SaasService {
                 return Flows.forms(realm, request, uriInfo).setError(Messages.ACCOUNT_DISABLED).setFormData(formData)
                         .forwardToLogin();
             case ACTIONS_REQUIRED:
-                return Flows.forms(realm, request, uriInfo).forwardToAction(user.getRequiredActions().iterator().next());
+                return oauth.processAccessCode(null, "n", contextRoot(uriInfo).path(adminPath).build().toString(), adminConsoleUser, user);
             default:
                 return Flows.forms(realm, request, uriInfo).setError(Messages.INVALID_USER).setFormData(formData)
                         .forwardToLogin();
