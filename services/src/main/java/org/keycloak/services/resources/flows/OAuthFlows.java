@@ -68,6 +68,11 @@ public class OAuthFlows {
     }
 
     public Response redirectAccessCode(AccessCodeEntry accessCode, String state, String redirect) {
+        Set<String> redirectUris = accessCode.getClient().getRedirectUris();
+        if (!redirectUris.isEmpty() && !redirectUris.contains(redirect)) {
+            return forwardToSecurityFailure("Invalid redirect_uri " + redirect);
+        }
+
         String code = accessCode.getCode();
         UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam("code", code);
         log.info("redirectAccessCode: state: " + state);

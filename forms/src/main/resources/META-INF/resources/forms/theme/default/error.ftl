@@ -12,8 +12,7 @@
     <#elseif section = "form">
 
         <p class="instruction">Something happened and we could not process your request.</p>
-        <p class="instruction second">${error.summary}</p>
-        <a href="saas-login.html" class="link-right">Go to the homepage »</a>
+        <p id="error-summary" class="instruction second">${error.summary}</p>
 
     <#elseif section = "info" >
 

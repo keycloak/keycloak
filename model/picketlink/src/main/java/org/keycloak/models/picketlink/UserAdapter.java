@@ -1,6 +1,6 @@
 package org.keycloak.models.picketlink;
 
-import java.util.Arrays;
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.ArrayUtils;
 import org.picketlink.idm.IdentityManager;
 import org.picketlink.idm.model.Attribute;
 import org.picketlink.idm.model.sample.User;
@@ -21,6 +20,8 @@ public class UserAdapter implements UserModel {
     private static final String EMAIL_VERIFIED_ATTR = "emailVerified";
     private static final String KEYCLOAK_TOTP_ATTR = "totpEnabled";
     private static final String REQUIRED_ACTIONS_ATTR = "requiredActions";
+
+    private static final String REDIRECT_URIS = "redirectUris";
 
     protected User user;
     protected IdentityManager idm;
@@ -110,7 +111,8 @@ public class UserAdapter implements UserModel {
     @Override
     public String getAttribute(String name) {
         Attribute<String> attribute = user.getAttribute(name);
-        if (attribute == null || attribute.getValue() == null) return null;
+        if (attribute == null || attribute.getValue() == null)
+            return null;
         return attribute.getValue().toString();
     }
 
@@ -118,73 +120,45 @@ public class UserAdapter implements UserModel {
     public Map<String, String> getAttributes() {
         Map<String, String> attributes = new HashMap<String, String>();
         for (Attribute<?> attribute : user.getAttributes()) {
-           if (attribute.getValue() != null) attributes.put(attribute.getName(), attribute.getValue().toString());
+            if (attribute.getValue() != null)
+                attributes.put(attribute.getName(), attribute.getValue().toString());
         }
         return attributes;
     }
 
-    private RequiredAction[] getRequiredActionsArray() {
-        Attribute<?> a = user.getAttribute(REQUIRED_ACTIONS_ATTR);
-        if (a == null) {
-            return null;
-        }
-
-        Object o = a.getValue();
-        if (o instanceof RequiredAction) {
-            return new RequiredAction[] { (RequiredAction) o };
-        } else {
-            return (RequiredAction[]) o;
-        }
-    }
-
     @Override
     public Set<RequiredAction> getRequiredActions() {
-        RequiredAction[] actions = getRequiredActionsArray();
-        if (actions == null) {
-            return Collections.emptySet();
-        } else {
-            Set<RequiredAction> s = new HashSet<RequiredAction>();
-            for (RequiredAction a : actions) {
-                s.add(a);
-            }
-            return Collections.unmodifiableSet(s);
-        }
+        return getAttributeSet(REQUIRED_ACTIONS_ATTR);
     }
 
     @Override
     public void addRequiredAction(RequiredAction action) {
-        RequiredAction[] actions = getRequiredActionsArray();
-        if (actions == null) {
-            actions = new RequiredAction[] { action };
-        } else {
-            if (Arrays.binarySearch(actions, action) < 0) {
-                actions = ArrayUtils.add(actions, action);
-            }
-        }
-
-        Attribute<RequiredAction[]> a = new Attribute<RequiredAction[]>(REQUIRED_ACTIONS_ATTR, actions);
-
-        user.setAttribute(a);
-        idm.update(user);
+        addToAttributeSet(REQUIRED_ACTIONS_ATTR, action);
     }
 
     @Override
     public void removeRequiredAction(RequiredAction action) {
-        RequiredAction[] actions = getRequiredActionsArray();
-        if (actions != null) {
-            if (Arrays.binarySearch(actions, action) >= 0) {
-                actions = ArrayUtils.remove(actions, action);
+        removeFromAttributeSet(REQUIRED_ACTIONS_ATTR, action);
+    }
 
-                if (actions.length == 0) {
-                    user.removeAttribute(REQUIRED_ACTIONS_ATTR);
-                } else {
-                    Attribute<RequiredAction[]> a = new Attribute<RequiredAction[]>(REQUIRED_ACTIONS_ATTR, actions);
-                    user.setAttribute(a);
-                }
+    @Override
+    public Set<String> getRedirectUris() {
+        return getAttributeSet(REDIRECT_URIS);
+    }
 
-                idm.update(user);
-            }
-        }
+    @Override
+    public void setRedirectUris(Set<String> redirectUris) {
+        setAttributeSet(REDIRECT_URIS, redirectUris);
+    }
+
+    @Override
+    public void addRedirectUri(String redirectUri) {
+        addToAttributeSet(REDIRECT_URIS, redirectUri);
+    }
+
+    @Override
+    public void removeRedirectUri(String redirectUri) {
+        removeFromAttributeSet(REDIRECT_URIS, redirectUri);
     }
 
     @Override
@@ -197,6 +171,59 @@ public class UserAdapter implements UserModel {
     public void setTotp(boolean totp) {
         user.setAttribute(new Attribute<Boolean>(KEYCLOAK_TOTP_ATTR, totp));
         idm.update(user);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T extends Serializable> Set<T> getAttributeSet(String name) {
+        Attribute<Serializable> a = user.getAttribute(name);
+
+        Set<Serializable> s = new HashSet<Serializable>();
+
+        if (a != null) {
+            Serializable o = a.getValue();
+            if (o instanceof Serializable[]) {
+                for (Serializable t : (Serializable[]) o) {
+                    s.add(t);
+                }
+            } else {
+                s.add(o);
+            }
+        }
+
+        return (Set<T>) s;
+    }
+
+    private <T extends Serializable> void setAttributeSet(String name, Set<T> set) {
+        if (set.isEmpty()) {
+            user.removeAttribute(name);
+        } else {
+            user.setAttribute(new Attribute<Serializable[]>(name, set.toArray(new Serializable[set.size()])));
+        }
+        idm.update(user);
+    }
+
+    private <T extends Serializable> void addToAttributeSet(String name, T t) {
+        Set<Serializable> set = getAttributeSet(name);
+        if (set == null) {
+            set = new HashSet<Serializable>();
+        }
+
+        if (set.add(t)) {
+            setAttributeSet(name, set);
+            idm.update(user);
+        }
+    }
+
+    private <T extends Serializable> void removeFromAttributeSet(String name, T t) {
+        Set<Serializable> set = getAttributeSet(name);
+        if (set == null) {
+            return;
+        }
+
+        if (set.remove(t)) {
+            setAttributeSet(name, set);
+            idm.update(user);
+        }
     }
 
 }

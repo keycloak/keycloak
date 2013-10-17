@@ -28,8 +28,13 @@ import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.OAuthClient.AuthorizationCodeResponse;
+import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
@@ -56,8 +61,11 @@ public class AuthorizationCodeTest {
     @WebResource
     protected LoginPage loginPage;
 
+    @WebResource
+    protected ErrorPage errorPage;
+
     @Test
-    public void authorizationRequest() throws ClientProtocolException, IOException {
+    public void authorizationRequest() throws IOException {
         oauth.state("mystate");
 
         AuthorizationCodeResponse response = oauth.doLogin("test-user@localhost", "password");
@@ -69,7 +77,54 @@ public class AuthorizationCodeTest {
     }
 
     @Test
-    public void authorizationRequestNoState() throws ClientProtocolException, IOException {
+    public void authorizationValidRedirectUri() throws IOException {
+        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                for (ApplicationModel app : appRealm.getApplications()) {
+                    if (app.getName().equals("test-app")) {
+                        UserModel client = app.getApplicationUser();
+                        client.addRedirectUri(oauth.getRedirectUri());
+                    }
+                }
+            }
+        });
+
+        oauth.state("mystate");
+
+        AuthorizationCodeResponse response = oauth.doLogin("test-user@localhost", "password");
+
+        Assert.assertTrue(response.isRedirected());
+        Assert.assertNotNull(response.getCode());
+    }
+
+    @Test
+    public void authorizationRequestInvalidRedirectUri() throws IOException {
+        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                for (ApplicationModel app : appRealm.getApplications()) {
+                    if (app.getName().equals("test-app")) {
+                        UserModel client = app.getApplicationUser();
+                        client.addRedirectUri(oauth.getRedirectUri());
+                    }
+                }
+            }
+        });
+
+        oauth.redirectUri("http://invalid");
+        oauth.state("mystate");
+
+        AuthorizationCodeResponse response = oauth.doLogin("test-user@localhost", "password");
+
+        Assert.assertFalse(response.isRedirected());
+
+        Assert.assertTrue(errorPage.isCurrent());
+        Assert.assertEquals("Invalid redirect_uri http://invalid", errorPage.getError());
+    }
+
+    @Test
+    public void authorizationRequestNoState() throws IOException {
         AuthorizationCodeResponse response = oauth.doLogin("test-user@localhost", "password");
 
         Assert.assertTrue(response.isRedirected());
