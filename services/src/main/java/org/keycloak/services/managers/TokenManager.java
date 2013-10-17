@@ -3,6 +3,7 @@ package org.keycloak.services.managers;
 import org.jboss.resteasy.jose.Base64Url;
 import org.jboss.resteasy.jose.jws.JWSBuilder;
 import org.jboss.resteasy.jwt.JsonSerialization;
+import org.jboss.resteasy.logging.Logger;
 import org.keycloak.models.*;
 import org.keycloak.representations.SkeletonKeyScope;
 import org.keycloak.representations.SkeletonKeyToken;
@@ -22,6 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @version $Revision: 1 $
  */
 public class TokenManager {
+    protected static final Logger logger = Logger.getLogger(TokenManager.class);
 
     protected Map<String, AccessCodeEntry> accessCodeMap = new ConcurrentHashMap<String, AccessCodeEntry>();
 
@@ -86,6 +88,9 @@ public class TokenManager {
 
 
         createToken(code, realm, client, user);
+        logger.info("tokenmanager: access code id: " + code.getId());
+        logger.info("accesscode setExpiration: " + (System.currentTimeMillis() / 1000) + realm.getAccessCodeLifespan());
+        code.setRealm(realm);
         code.setExpiration((System.currentTimeMillis() / 1000) + realm.getAccessCodeLifespan());
         code.setClient(client);
         code.setUser(user);
