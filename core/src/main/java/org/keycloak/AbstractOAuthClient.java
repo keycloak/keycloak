@@ -21,12 +21,14 @@ import java.util.concurrent.atomic.AtomicLong;
  * @version $Revision: 1 $
  */
 public class AbstractOAuthClient {
+    public static final String OAUTH_TOKEN_REQUEST_STATE = "OAuth_Token_Request_State";
     protected String clientId;
     protected String password;
     protected KeyStore truststore;
     protected String authUrl;
     protected String codeUrl;
-    protected String stateCookieName = "OAuth_Token_Request_State";
+    protected String stateCookieName = OAUTH_TOKEN_REQUEST_STATE;
+    protected String stateCookiePath;
     protected Client client;
     protected boolean isSecure;
     protected final AtomicLong counter = new AtomicLong();
@@ -35,6 +37,9 @@ public class AbstractOAuthClient {
         return counter.getAndIncrement() + "/" + UUID.randomUUID().toString();
     }
 
+    /**
+     * Creates a Client for obtaining access token from code
+     */
     public void start() {
         if (client == null) {
             client = new ResteasyClientBuilder().trustStore(truststore)
@@ -44,6 +49,9 @@ public class AbstractOAuthClient {
         }
     }
 
+    /**
+     * closes cllient
+     */
     public void stop() {
         client.close();
     }
@@ -76,6 +84,8 @@ public class AbstractOAuthClient {
         return authUrl;
     }
 
+
+
     public void setAuthUrl(String authUrl) {
         this.authUrl = authUrl;
     }
@@ -94,6 +104,14 @@ public class AbstractOAuthClient {
 
     public void setStateCookieName(String stateCookieName) {
         this.stateCookieName = stateCookieName;
+    }
+
+    public String getStateCookiePath() {
+        return stateCookiePath;
+    }
+
+    public void setStateCookiePath(String stateCookiePath) {
+        this.stateCookiePath = stateCookiePath;
     }
 
     public Client getClient() {
@@ -128,7 +146,6 @@ public class AbstractOAuthClient {
     }
 
     protected String stripOauthParametersFromRedirect(String uri) {
-        System.out.println("******************** redirect_uri: " + uri);
         UriBuilder builder = UriBuilder.fromUri(uri)
                 .replaceQueryParam("code", null)
                 .replaceQueryParam("state", null);
