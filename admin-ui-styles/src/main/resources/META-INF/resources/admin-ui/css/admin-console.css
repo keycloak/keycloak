@@ -135,6 +135,7 @@ body {
   border-color: #cecece;
   font-size: 1em;
   margin-bottom: 0;
+  min-height: 4.4em;
 }
 #content-area .top-nav ul.rcue-tabs li {
   margin: 0 0.5em -1px 0;
