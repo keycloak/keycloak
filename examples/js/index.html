@@ -10,7 +10,8 @@
 			clientId : 'test-app',
 			clientSecret : 'password',
 			baseUrl : 'http://localhost:8081/auth-server',
-			realm : 'test'
+			realm : 'test',
+            redirectUri : 'http://localhost/js'
 		});
 
 		if (keycloak.authenticated) {

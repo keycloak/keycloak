@@ -4,7 +4,8 @@ window.keycloak = (function () {
         baseUrl: null,
         clientId: null,
         clientSecret: null,
-        realm: null
+        realm: null,
+        redirectUri: null
     };
 
     kc.init = function (c) {
@@ -30,12 +31,9 @@ window.keycloak = (function () {
     }
 
     kc.login = function () {
-        var clientId = encodeURIComponent(config.clientId);
-        var redirectUri = encodeURIComponent(window.location.href);
-        var state = encodeURIComponent(createUUID());
-        var realm = encodeURIComponent(config.realm);
-        var url = config.baseUrl + '/rest/realms/' + realm + '/tokens/login?response_type=code&client_id=' + clientId + '&redirect_uri=' + redirectUri
-            + '&state=' + state;
+        var state = createUUID();
+        var url = config.baseUrl + '/rest/realms/' + encodeURIComponent(config.realm) + '/tokens/login?response_type=code&client_id='
+            + encodeURIComponent(config.clientId) + '&redirect_uri=' + encodeURIComponent(config.redirectUri) + '&state=' + encodeURIComponent(state);
 
         sessionStorage.state = state;
 
