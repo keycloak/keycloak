@@ -35,6 +35,14 @@ public interface UserModel {
 
     void removeRequiredAction(RequiredAction action);
 
+    Set<String> getRedirectUris();
+
+    void setRedirectUris(Set<String> redirectUris);
+
+    void addRedirectUri(String redirectUri);
+
+    void removeRedirectUri(String redirectUri);
+
     String getFirstName();
 
     void setFirstName(String firstName);

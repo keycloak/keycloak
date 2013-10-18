@@ -302,42 +302,4 @@ public class AdapterTest extends AbstractKeycloakTest {
         Assert.assertEquals("user", role.getName());
     }
 
-    @Test
-    public void testUserRequiredActions() throws Exception {
-        test1CreateRealm();
-
-        UserModel user = realmModel.addUser("bburke");
-
-        Assert.assertTrue(user.getRequiredActions().isEmpty());
-
-        user.addRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP);
-        user = realmModel.getUser("bburke");
-
-        Assert.assertEquals(1, user.getRequiredActions().size());
-        Assert.assertTrue(user.getRequiredActions().contains(RequiredAction.CONFIGURE_TOTP));
-
-        user.addRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP);
-        user = realmModel.getUser("bburke");
-
-        Assert.assertEquals(1, user.getRequiredActions().size());
-        Assert.assertTrue(user.getRequiredActions().contains(RequiredAction.CONFIGURE_TOTP));
-
-        user.addRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL);
-        user = realmModel.getUser("bburke");
-
-        Assert.assertEquals(2, user.getRequiredActions().size());
-        Assert.assertTrue(user.getRequiredActions().contains(RequiredAction.CONFIGURE_TOTP));
-        Assert.assertTrue(user.getRequiredActions().contains(RequiredAction.VERIFY_EMAIL));
-
-        user.removeRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP);
-        user = realmModel.getUser("bburke");
-
-        Assert.assertEquals(1, user.getRequiredActions().size());
-        Assert.assertTrue(user.getRequiredActions().contains(RequiredAction.VERIFY_EMAIL));
-
-        user.removeRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL);
-        user = realmModel.getUser("bburke");
-
-        Assert.assertTrue(user.getRequiredActions().isEmpty());
-    }
 }

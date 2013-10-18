@@ -20,6 +20,7 @@ public class ApplicationRepresentation {
     protected List<RoleRepresentation> roles;
     protected List<UserRoleMappingRepresentation> roleMappings;
     protected List<ScopeMappingRepresentation> scopeMappings;
+    protected List<String> redirectUris;
 
     public String getSelf() {
         return self;
@@ -145,5 +146,13 @@ public class ApplicationRepresentation {
 
     public void setUseRealmMappings(boolean useRealmMappings) {
         this.useRealmMappings = useRealmMappings;
+    }
+
+    public List<String> getRedirectUris() {
+        return redirectUris;
+    }
+
+    public void setRedirectUris(List<String> redirectUris) {
+        this.redirectUris = redirectUris;
     }
 }
