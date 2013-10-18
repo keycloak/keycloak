@@ -26,18 +26,18 @@ import org.keycloak.services.resources.flows.FormFlows;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class ErrorBean {
+public class MessageBean {
 
     private String summary;
 
-    private FormFlows.ErrorType type;
+    private FormFlows.MessageType type;
 
     // Message is considered ERROR by default
-    public ErrorBean(String summary) {
-        this(summary, FormFlows.ErrorType.ERROR);
+    public MessageBean(String summary) {
+        this(summary, FormFlows.MessageType.ERROR);
     }
 
-    public ErrorBean(String summary, FormFlows.ErrorType type) {
+    public MessageBean(String summary, FormFlows.MessageType type) {
         this.summary = summary;
         this.type = type;
     }
@@ -47,15 +47,15 @@ public class ErrorBean {
     }
 
     public boolean isSuccess(){
-        return FormFlows.ErrorType.SUCCESS.equals(this.type);
+        return FormFlows.MessageType.SUCCESS.equals(this.type);
     }
 
     public boolean isWarning(){
-        return FormFlows.ErrorType.WARNING.equals(this.type);
+        return FormFlows.MessageType.WARNING.equals(this.type);
     }
 
     public boolean isError(){
-        return FormFlows.ErrorType.ERROR.equals(this.type);
+        return FormFlows.MessageType.ERROR.equals(this.type);
     }
 
 }

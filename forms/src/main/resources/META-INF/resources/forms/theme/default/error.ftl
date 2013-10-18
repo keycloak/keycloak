@@ -12,7 +12,7 @@
     <#elseif section = "form">
 
         <p class="instruction">Something happened and we could not process your request.</p>
-        <p id="error-summary" class="instruction second">${error.summary}</p>
+        <p id="error-summary" class="instruction second">${message.summary}</p>
 
     <#elseif section = "info" >
 

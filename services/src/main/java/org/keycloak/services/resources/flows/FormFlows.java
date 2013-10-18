@@ -34,6 +34,7 @@ import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
+import org.keycloak.services.messages.Messages;
 import org.picketlink.idm.model.sample.Realm;
 
 import javax.imageio.spi.ServiceRegistry;
@@ -58,8 +59,8 @@ public class FormFlows {
     // TODO refactor/rename "error" to "message" everywhere where it makes sense
     private String error;
 
-    public static enum ErrorType {SUCCESS, WARNING, ERROR};
-    private ErrorType errorType;
+    public static enum MessageType {SUCCESS, WARNING, ERROR};
+    private MessageType messageType = MessageType.ERROR;
 
     private MultivaluedMap<String, String> formData;
 
@@ -79,16 +80,17 @@ public class FormFlows {
     }
 
     public Response forwardToAction(RequiredAction action) {
+
         switch (action) {
             case CONFIGURE_TOTP:
-                return forwardToForm(Pages.LOGIN_CONFIG_TOTP);
+                return forwardToActionForm(Pages.LOGIN_CONFIG_TOTP, Messages.ACTION_WARN_TOTP);
             case UPDATE_PROFILE:
-                return forwardToForm(Pages.LOGIN_UPDATE_PROFILE);
+                return forwardToActionForm(Pages.LOGIN_UPDATE_PROFILE, Messages.ACTION_WARN_PROFILE);
             case UPDATE_PASSWORD:
-                return forwardToForm(Pages.LOGIN_UPDATE_PASSWORD);
+                return forwardToActionForm(Pages.LOGIN_UPDATE_PASSWORD, Messages.ACTION_WARN_PASSWD);
             case VERIFY_EMAIL:
                 new EmailSender().sendEmailVerification(userModel, realm, accessCode, uriInfo);
-                return forwardToForm(Pages.LOGIN_VERIFY_EMAIL);
+                return forwardToActionForm(Pages.LOGIN_VERIFY_EMAIL, Messages.ACTION_WARN_EMAIL);
             default:
                 return Response.serverError().build();
         }
@@ -103,7 +105,6 @@ public class FormFlows {
     }
 
     private Response forwardToForm(String template, FormService.FormServiceDataBean formDataBean) {
-        formDataBean.setErrorType(errorType == null ? ErrorType.ERROR : errorType);
 
         // Getting URI needed by form processing service
         ResteasyUriInfo uriInfo = request.getUri();
@@ -143,8 +144,21 @@ public class FormFlows {
     private Response forwardToForm(String template) {
 
         FormService.FormServiceDataBean formDataBean = new FormService.FormServiceDataBean(realm, userModel, formData, error);
-        return forwardToForm(template, formDataBean);
+        formDataBean.setMessageType(messageType);
 
+        return forwardToForm(template, formDataBean);
+    }
+
+    private Response forwardToActionForm(String template, String warningSummary) {
+
+        // If no other message is set, notify user about required action in the warning window
+        // so it's clear that this is a req. action form not a login form
+        if (error == null){
+            messageType = MessageType.WARNING;
+            error = warningSummary;
+        }
+
+        return forwardToForm(template);
     }
 
     public Response forwardToLogin() {
@@ -202,8 +216,8 @@ public class FormFlows {
         return this;
     }
 
-    public FormFlows setErrorType(ErrorType errorType) {
-        this.errorType = errorType;
+    public FormFlows setErrorType(MessageType errorType) {
+        this.messageType = errorType;
         return this;
     }
 

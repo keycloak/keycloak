@@ -17,7 +17,11 @@
 
 <body class="rcue-login-register ${bodyClass}">
     <div class="feedback-aligner">
-        <#nested "feedback">
+        <#if message?has_content && message.warning>
+        <div class="feedback warning show">
+            <p><strong>${rb.getString('actionWarningHeader')} ${rb.getString(message.summary)}</strong><br/>${rb.getString('actionFollow')}</p>
+        </div>
+        </#if>
     </div>
     <#if (template.themeConfig.logo)?has_content>
         <h1>
@@ -33,17 +37,25 @@
         <div class="background-area">
             <div class="form-area clearfix">
                 <div class="section app-form">
+                    <#if !isErrorPage && message?has_content>
+                        <#if message.error>
+                            <div class="feedback error bottom-left show">
+                                <p>
+                                    <strong id="loginError">${rb.getString(message.summary)}</strong><br/>${rb.getString('emailErrorInfo')}
+                                </p>
+                            </div>
+                        <#elseif message.success>
+                            <div class="feedback success bottom-left show">
+                                <p>
+                                    <strong>${rb.getString('successHeader')}</strong> ${rb.getString(message.summary)}
+                                </p>
+                            </div>
+                        </#if>
+                    </#if>
+
                     <h3>Application login area</h3>
                     <#nested "form">
                 </div>
-
-                <#if !isErrorPage && error?has_content>
-                    <div class="feedback error bottom-left show">
-                        <p>
-                            <strong id="loginError">${rb.getString(error.summary)}</strong>
-                        </p>
-                    </div>
-                </#if>
 
                 <div class="section info-area">
                     <h3>Info area</h3>

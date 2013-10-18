@@ -88,6 +88,12 @@ public class RequiredActionsService {
         }
 
         UserModel user = getUser(accessCode);
+
+        String error = Validation.validateUpdateProfileForm(formData);
+        if (error != null) {
+            return Flows.forms(realm, request, uriInfo).setError(error).forwardToAction(RequiredAction.UPDATE_PROFILE);
+        }
+
         user.setFirstName(formData.getFirst("firstName"));
         user.setLastName(formData.getFirst("lastName"));
         user.setEmail(formData.getFirst("email"));
@@ -146,15 +152,14 @@ public class RequiredActionsService {
 
         UserModel user = getUser(accessCode);
 
-        String password = formData.getFirst("password");
         String passwordNew = formData.getFirst("password-new");
         String passwordConfirm = formData.getFirst("password-confirm");
 
         FormFlows forms = Flows.forms(realm, request, uriInfo).setUser(user);
         if (Validation.isEmpty(passwordNew)) {
-            forms.setError(Messages.MISSING_PASSWORD).forwardToAction(RequiredAction.UPDATE_PASSWORD);
+            return forms.setError(Messages.MISSING_PASSWORD).forwardToAction(RequiredAction.UPDATE_PASSWORD);
         } else if (!passwordNew.equals(passwordConfirm)) {
-            forms.setError(Messages.MISSING_PASSWORD).forwardToAction(RequiredAction.UPDATE_PASSWORD);
+            return forms.setError(Messages.NOTMATCH_PASSWORD).forwardToAction(RequiredAction.UPDATE_PASSWORD);
         }
 
         UserCredentialModel credentials = new UserCredentialModel();
@@ -257,7 +262,7 @@ public class RequiredActionsService {
 
         new EmailSender().sendPasswordReset(user, realm, accessCode, uriInfo);
 
-        return Flows.forms(realm, request, uriInfo).setError("emailSent").setErrorType(FormFlows.ErrorType.SUCCESS)
+        return Flows.forms(realm, request, uriInfo).setError("emailSent").setErrorType(FormFlows.MessageType.SUCCESS)
                 .forwardToPasswordReset();
     }
 
