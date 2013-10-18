@@ -95,6 +95,33 @@ public class SaasService {
         }
     }
 
+    @Path("ping")
+    @GET
+    @NoCache
+    @Produces("text/plain")
+    public String ping(@Context HttpHeaders headers) {
+        logger.info("************** GET PING");
+        for (String header : headers.getRequestHeaders().keySet()) {
+            logger.info("   " + header + ": " + headers.getHeaderString(header));
+        }
+        return "ping";
+    }
+
+    @Path("ping")
+    @OPTIONS
+    @NoCache
+    @Produces("text/plain")
+    public Response optionsPing(@Context HttpHeaders headers) {
+        logger.info("************** OPTIONS PING");
+        for (String header : headers.getRequestHeaders().keySet()) {
+            logger.info("   " + header + ": " + headers.getHeaderString(header));
+        }
+        return Response.ok()
+               .header("Access-Control-Allow-Origin", "*")
+               .header("Access-Control-Allow-Headers", HttpHeaders.AUTHORIZATION).build();
+    }
+
+
     @Path("keepalive")
     @GET
     @NoCache
