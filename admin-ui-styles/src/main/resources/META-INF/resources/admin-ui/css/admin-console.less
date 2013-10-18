@@ -34,9 +34,71 @@ body {
             font-size: 0.84615384615385em;
             color: #dbdada;
             margin-left: 1.36363636363636em;
+            float: left;
+            margin-top: 0.63636363636364em;
+            line-height: 2.36363636363636em
+        }
+
+        .select-rcue {
+            font-size: 0.76923076923077em;
+            margin-left: 1em;
+            margin-top: 0.7em;
             display: inline-block;
+            vertical-align: middle;
+            background-color: #555a5e;
+            background-image: none;
+            background-image: url(img/sprite-arrow-down.svg);
+            background-repeat: no-repeat;
+            background-position: right -26px;
+            border: 1px solid #676c6e;
+            border-radius: 2px;
+            padding-left: 0;
+            
+            &:hover {
+                border-color: #7e8385;
+            }
+            
+            select {
+                color: #fff;
+                
+                &:-moz-focusring {
+                    color: transparent;
+                    text-shadow: 0 0 0 #fff;
+                }
+                
+                option {
+                    background-color: #fff;
+                    color: black;
+                    padding: 4px 10px;
+                }
+            }
         }
         
+        a#refresh {
+            border: none;
+            margin: 0;
+            padding: 0;
+            float: right;
+            font-size: 0.76923076923077em;
+            margin-left: 1em;
+            margin-top: 1.4em;
+            
+            &:hover {
+                background: none;
+            }
+            
+            .icon-spinner6 {
+                margin-right: 0;
+                background-image: url('img/sprites-gray.png');
+                
+                &:hover {
+                    background-image: url('img/sprites-white.png');
+                    background-color: transparent;
+                }
+            }
+        }
+        
+/*
         .dropdown {
             display: inline-block;
             margin-left: 0.53846153846154em;
@@ -116,6 +178,7 @@ body {
                 border-color: #7e8385;
             }
         }
+*/
     }
     
     .button {

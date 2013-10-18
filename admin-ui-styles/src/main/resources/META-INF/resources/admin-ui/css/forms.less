@@ -11,10 +11,16 @@ fieldset {
     font-style: italic;
 }
 
+select:-moz-focusring {
+    color: transparent;
+    text-shadow: 0 0 0 #333;
+}
+
+
 input[type="text"],
 input[type="password"],
 input[type="email"],
- {
+textarea {
     font-size: 1.1em;
     padding: 0 0.545454545454545em;
     min-width: 18.1818181818182em;
@@ -43,6 +49,11 @@ input[type="email"],
             box-shadow: 0 0 5px #ba1212;
         }
     }
+}
+
+textarea {
+    padding: 0.45em 0.545454545454545em;
+    height: auto;
 }
 
 input[type="button"],
@@ -178,6 +189,32 @@ button.primary:enabled:active,
 .button.primary:enabled:active {
   background-color: #0099d4;
   box-shadow: inset 0 0 5px 3px #0074ae;
+}
+
+.destructive {
+    background-image: linear-gradient(top, #D90000 0%, #AD0101 100%);
+    background-image: -o-linear-gradient(top, #D90000 0%, #AD0101 100%);
+    background-image: -moz-linear-gradient(top, #D90000 0%, #AD0101 100%);
+    background-image: -webkit-linear-gradient(top, #D90000 0%, #AD0101 100%);
+    background-image: -ms-linear-gradient(top, #D90000 0%, #AD0101 100%);
+    background-image: -webkit-gradient(
+        linear,
+        left top,
+        left bottom,
+        color-stop(0.0, #D90000),
+        color-stop(1,0, #AD0101)
+        );
+    border-color: #350000;
+    color: #FFFFFF;
+    
+    &:hover {
+        background-color: #AD0101;
+    }
+    
+    &:enabled:active {
+        background-color: #AD0101;
+        box-shadow: 0 0 5px 3px #750101 inset;
+    }
 }
 
 
@@ -319,6 +356,32 @@ button.primary,
             background-color: #fef1e9;
         }
         
+    }
+    
+    &.info {
+        
+        p {
+            border-color: #5994b2;
+            background-image: url(img/feedback-info-sign.svg);
+            background-color: #e4f3fa;
+        }
+        
+    }
+    
+    &.inline {
+        opacity: 1;
+        position: relative;
+        margin-bottom: 20px;
+        
+        p {
+            border-width: 1px;
+        }
+    }
+    
+    .button {
+        display: inline-block;
+        font-size: 0.90909090909091em;
+        margin-left: 0.90909090909091em;
     }
 }
 
