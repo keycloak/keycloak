@@ -30,7 +30,7 @@ import org.openqa.selenium.support.FindBy;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class LoginPage extends Page {
+public class LoginPage extends AbstractPage {
 
     @WebResource
     protected OAuthClient oauth;

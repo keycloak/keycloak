@@ -1,6 +1,8 @@
 package org.keycloak.services.resources;
 
 import org.jboss.resteasy.logging.Logger;
+import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.Constants;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.models.KeycloakSession;
@@ -66,7 +68,14 @@ public class RealmsResource {
             logger.debug("realm not found");
             throw new NotFoundException();
         }
-        AccountService accountService = new AccountService(realm, tokenManager);
+
+        ApplicationModel application = realm.getApplicationNameMap().get(Constants.ACCOUNT_MANAGEMENT_APPLICATION);
+        if (application == null || !application.isEnabled()) {
+            logger.debug("account management not enabled");
+            throw new NotFoundException();
+        }
+
+        AccountService accountService = new AccountService(realm, application, tokenManager);
         resourceContext.initResource(accountService);
         return accountService;
     }

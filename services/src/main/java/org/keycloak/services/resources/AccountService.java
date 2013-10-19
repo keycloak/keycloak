@@ -21,37 +21,35 @@
  */
 package org.keycloak.services.resources;
 
+import java.net.URI;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.*;
+import javax.ws.rs.core.*;
 import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Providers;
 
+import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.jose.jws.JWSInput;
 import org.jboss.resteasy.jose.jws.crypto.RSAProvider;
+import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.AbstractOAuthClient;
+import org.keycloak.jaxrs.JaxrsOAuthClient;
+import org.keycloak.models.*;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.email.EmailSender;
 import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.FormFlows;
+import org.keycloak.services.resources.flows.Pages;
+import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.services.validation.Validation;
 import org.picketlink.idm.credential.util.TimeBasedOTP;
 
@@ -59,6 +57,10 @@ import org.picketlink.idm.credential.util.TimeBasedOTP;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class AccountService {
+
+    private static final Logger logger = Logger.getLogger(AccountService.class);
+
+    public static final String ACCOUNT_IDENTITY_COOKIE = "KEYCLOAK_ACCOUNT_IDENTITY";
 
     private RealmModel realm;
 
@@ -72,37 +74,64 @@ public class AccountService {
     private UriInfo uriInfo;
 
     @Context
-    protected Providers providers;
+    private Providers providers;
 
-    protected AuthenticationManager authManager = new AuthenticationManager();
+    private AuthenticationManager authManager = new AuthenticationManager();
+
+    private ApplicationModel application;
 
     private TokenManager tokenManager;
 
-    public AccountService(RealmModel realm, TokenManager tokenManager) {
+    public AccountService(RealmModel realm, ApplicationModel application, TokenManager tokenManager) {
         this.realm = realm;
+        this.application = application;
         this.tokenManager = tokenManager;
+    }
+
+    private Response forwardToPage(String path, String template) {
+        UserModel user = getUser(false);
+        if (user != null) {
+            return Flows.forms(realm, request, uriInfo).setUser(user).forwardToForm(template);
+        } else {
+            return login(path);
+        }
+    }
+
+    @Path("")
+    @GET
+    public Response accountPage() {
+        return forwardToPage(null, Pages.ACCOUNT);
+    }
+
+    @Path("social")
+    @GET
+    public Response socialPage() {
+        return forwardToPage("social", Pages.SOCIAL);
+    }
+
+    @Path("totp")
+    @GET
+    public Response totpPage() {
+        return forwardToPage("totp", Pages.TOTP);
+    }
+
+    @Path("password")
+    @GET
+    public Response passwordPage() {
+        return forwardToPage("password", Pages.PASSWORD);
     }
 
     @Path("access")
     @GET
     public Response accessPage() {
-        UserModel user = getUserFromAuthManager();
-        if (user != null) {
-            return Flows.forms(realm, request, uriInfo).setUser(user).forwardToAccess();
-        } else {
-            return Response.status(Status.FORBIDDEN).build();
-        }
+        return forwardToPage("access", Pages.ACCESS);
     }
 
     @Path("")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processAccountUpdate(final MultivaluedMap<String, String> formData) {
-        UserModel user = getUserFromAuthManager();
-        if (user == null) {
-            return Response.status(Status.FORBIDDEN).build();
-        }
-
+        UserModel user = getUser(true);
         user.setFirstName(formData.getFirst("firstName"));
         user.setLastName(formData.getFirst("lastName"));
         user.setEmail(formData.getFirst("email"));
@@ -113,7 +142,7 @@ public class AccountService {
     @Path("totp-remove")
     @GET
     public Response processTotpRemove() {
-        UserModel user = getUserFromAuthManager();
+        UserModel user = getUser(true);
         user.setTotp(false);
         return Flows.forms(realm, request, uriInfo).setError("successTotpRemoved").setErrorType(FormFlows.MessageType.SUCCESS)
                 .setUser(user).forwardToTotp();
@@ -123,31 +152,21 @@ public class AccountService {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processTotpUpdate(final MultivaluedMap<String, String> formData) {
-        UserModel user = getUserFromAuthManager();
-        if (user == null) {
-            return Response.status(Status.FORBIDDEN).build();
-        }
-
-        FormFlows forms = Flows.forms(realm, request, uriInfo);
+        UserModel user = getUser(true);
 
         String totp = formData.getFirst("totp");
         String totpSecret = formData.getFirst("totpSecret");
 
-        String error = null;
-
+        FormFlows forms = Flows.forms(realm, request, uriInfo).setUser(user);
         if (Validation.isEmpty(totp)) {
-            error = Messages.MISSING_TOTP;
+            return forms.setError(Messages.MISSING_TOTP).forwardToTotp();
         } else if (!new TimeBasedOTP().validate(totp, totpSecret.getBytes())) {
-            error = Messages.INVALID_TOTP;
-        }
-
-        if (error != null) {
-            return forms.setError(error).setUser(user).forwardToTotp();
+            return forms.setError(Messages.INVALID_TOTP).forwardToTotp();
         }
 
         UserCredentialModel credentials = new UserCredentialModel();
         credentials.setType(CredentialRepresentation.TOTP);
-        credentials.setValue(formData.getFirst("totpSecret"));
+        credentials.setValue(totpSecret);
         realm.updateCredential(user, credentials);
 
         user.setTotp(true);
@@ -160,10 +179,7 @@ public class AccountService {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processPasswordUpdate(final MultivaluedMap<String, String> formData) {
-        UserModel user = getUserFromAuthManager();
-        if (user == null) {
-            return Response.status(Status.FORBIDDEN).build();
-        }
+        UserModel user = getUser(true);
 
         FormFlows forms = Flows.forms(realm, request, uriInfo).setUser(user);
 
@@ -172,17 +188,16 @@ public class AccountService {
         String passwordConfirm = formData.getFirst("password-confirm");
 
         if (Validation.isEmpty(passwordNew)) {
-            forms.setError(Messages.MISSING_PASSWORD).forwardToPassword();
+            return forms.setError(Messages.MISSING_PASSWORD).forwardToPassword();
         } else if (!passwordNew.equals(passwordConfirm)) {
-            forms.setError(Messages.INVALID_PASSWORD_CONFIRM).forwardToPassword();
+            return forms.setError(Messages.INVALID_PASSWORD_CONFIRM).forwardToPassword();
         }
 
         if (Validation.isEmpty(password)) {
-            forms.setError(Messages.MISSING_PASSWORD).forwardToPassword();
+            return forms.setError(Messages.MISSING_PASSWORD).forwardToPassword();
         } else if (!realm.validatePassword(user, password)) {
-            forms.setError(Messages.INVALID_PASSWORD_EXISTING).forwardToPassword();
+            return forms.setError(Messages.INVALID_PASSWORD_EXISTING).forwardToPassword();
         }
-
 
         UserCredentialModel credentials = new UserCredentialModel();
         credentials.setType(CredentialRepresentation.PASSWORD);
@@ -193,50 +208,112 @@ public class AccountService {
         return Flows.forms(realm, request, uriInfo).setUser(user).forwardToPassword();
     }
 
-    @Path("")
+    @Path("login-redirect")
     @GET
-    public Response accountPage() {
-        UserModel user = getUserFromAuthManager();
-        if (user != null) {
-            return Flows.forms(realm, request, uriInfo).setUser(user).forwardToAccount();
-        } else {
-            return Response.status(Status.FORBIDDEN).build();
+    public Response loginRedirect(@QueryParam("code") String code,
+                                  @QueryParam("state") String state,
+                                  @QueryParam("error") String error,
+                                  @Context HttpHeaders headers) {
+        try {
+            if (error != null) {
+                logger.debug("error from oauth");
+                throw new ForbiddenException("error");
+            }
+            if (!realm.isEnabled()) {
+                logger.debug("realm not enabled");
+                throw new ForbiddenException();
+            }
+            UserModel client = application.getApplicationUser();
+            if (!client.isEnabled() || !application.isEnabled()) {
+                logger.debug("account management app not enabled");
+                throw new ForbiddenException();
+            }
+            if (code == null) {
+                logger.debug("code not specified");
+                throw new BadRequestException();
+            }
+            if (state == null) {
+                logger.debug("state not specified");
+                throw new BadRequestException();
+            }
+            String path = new JaxrsOAuthClient().checkStateCookie(uriInfo, headers);
+
+            JWSInput input = new JWSInput(code, providers);
+            boolean verifiedCode = false;
+            try {
+                verifiedCode = RSAProvider.verify(input, realm.getPublicKey());
+            } catch (Exception ignored) {
+                logger.debug("Failed to verify signature", ignored);
+            }
+            if (!verifiedCode) {
+                logger.debug("unverified access code");
+                throw new BadRequestException();
+            }
+            String key = input.readContent(String.class);
+            AccessCodeEntry accessCode = tokenManager.pullAccessCode(key);
+            if (accessCode == null) {
+                logger.debug("bad access code");
+                throw new BadRequestException();
+            }
+            if (accessCode.isExpired()) {
+                logger.debug("access code expired");
+                throw new BadRequestException();
+            }
+            if (!accessCode.getToken().isActive()) {
+                logger.debug("access token expired");
+                throw new BadRequestException();
+            }
+            if (!accessCode.getRealm().getId().equals(realm.getId())) {
+                logger.debug("bad realm");
+                throw new BadRequestException();
+
+            }
+            if (!client.getLoginName().equals(accessCode.getClient().getLoginName())) {
+                logger.debug("bad client");
+                throw new BadRequestException();
+            }
+
+            UriBuilder redirectBuilder = Urls.accountBase(uriInfo.getBaseUri());
+            if (path != null) {
+                redirectBuilder.path(path);
+            }
+            URI redirectUri = redirectBuilder.build(realm.getId());
+
+            NewCookie cookie = authManager.createAccountIdentityCookie(realm, accessCode.getUser(), Urls.accountBase(uriInfo.getBaseUri()).build(realm.getId()));
+            return Response.status(302).cookie(cookie).location(redirectUri).build();
+        } finally {
+            authManager.expireCookie(AbstractOAuthClient.OAUTH_TOKEN_REQUEST_STATE, uriInfo.getAbsolutePath().getPath());
         }
     }
 
-    @Path("social")
+    @Path("logout")
     @GET
-    public Response socialPage() {
-        UserModel user = getUserFromAuthManager();
-        if (user != null) {
-            return Flows.forms(realm, request, uriInfo).setUser(user).forwardToSocial();
-        } else {
-            return Response.status(Status.FORBIDDEN).build();
-        }
+    public Response logout() {
+        // TODO Should use single-sign out via TokenService
+        URI baseUri = Urls.accountBase(uriInfo.getBaseUri()).build(realm.getId());
+        authManager.expireIdentityCookie(realm, uriInfo);
+        authManager.expireAccountIdentityCookie(baseUri);
+        return Response.status(302).location(baseUri).build();
     }
 
-    @Path("totp")
-    @GET
-    public Response totpPage() {
-        UserModel user = getUserFromAuthManager();
-        if (user != null) {
-            return Flows.forms(realm, request, uriInfo).setUser(user).forwardToTotp();
-        } else {
-            return Response.status(Status.FORBIDDEN).build();
-        }
+    private Response login(String path) {
+        JaxrsOAuthClient oauth = new JaxrsOAuthClient();
+        String authUrl = Urls.realmLoginPage(uriInfo.getBaseUri(), realm.getId()).toString();
+        oauth.setAuthUrl(authUrl);
+
+        oauth.setClientId(Constants.ACCOUNT_MANAGEMENT_APPLICATION);
+
+        URI accountUri = Urls.accountPageBuilder(uriInfo.getBaseUri()).path(AccountService.class, "loginRedirect").build(realm.getId());
+
+        oauth.setStateCookiePath(accountUri.getPath());
+        return oauth.redirect(uriInfo, accountUri.toString(), path);
     }
 
-    @Path("password")
-    @GET
-    public Response passwordPage() {
-        UserModel user = getUserFromAuthManager();
-        if (user == null) {
-            return Response.status(Status.FORBIDDEN).build();
+    private UserModel getUser(boolean required) {
+        UserModel user = authManager.authenticateAccountIdentityCookie(realm, uriInfo, headers);
+        if (user == null && required) {
+            throw new ForbiddenException();
         }
-        return Flows.forms(realm, request, uriInfo).setUser(user).forwardToPassword();
-    }
-
-    private UserModel getUserFromAuthManager() {
-        return authManager.authenticateIdentityCookie(realm, uriInfo, headers);
+        return user;
     }
 }

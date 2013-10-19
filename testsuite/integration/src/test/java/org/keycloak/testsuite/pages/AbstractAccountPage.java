@@ -21,43 +21,22 @@
  */
 package org.keycloak.testsuite.pages;
 
-import org.keycloak.testsuite.Constants;
+import org.junit.Assert;
+import org.keycloak.testsuite.rule.WebResource;
+import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class AccountPasswordPage extends AbstractAccountPage {
+public abstract class AbstractAccountPage extends  AbstractPage {
 
-    private static String PATH = Constants.AUTH_SERVER_ROOT + "/rest/realms/test/account/password";
+    @FindBy(linkText = "Logout")
+    private WebElement logoutLink;
 
-    @FindBy(id = "password")
-    private WebElement passwordInput;
-
-    @FindBy(id = "password-new")
-    private WebElement newPasswordInput;
-
-    @FindBy(id = "password-confirm")
-    private WebElement passwordConfirmInput;
-
-    @FindBy(css = "button[type=\"submit\"].primary")
-    private WebElement submitButton;
-
-    public void changePassword(String password, String newPassword, String passwordConfirm) {
-        passwordInput.sendKeys(password);
-        newPasswordInput.sendKeys(newPassword);
-        passwordConfirmInput.sendKeys(passwordConfirm);
-
-        submitButton.click();
-    }
-
-    public boolean isCurrent() {
-        return driver.getPageSource().contains("Change Password");
-    }
-
-    public void open() {
-        driver.navigate().to(PATH);
+    public void logout() {
+        logoutLink.click();
     }
 
 }

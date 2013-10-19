@@ -27,7 +27,7 @@ import org.openqa.selenium.support.FindBy;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class OAuthGrantPage extends Page {
+public class OAuthGrantPage extends AbstractPage {
 
     @FindBy(css = "input[name=\"accept\"]")
     private WebElement acceptButton;

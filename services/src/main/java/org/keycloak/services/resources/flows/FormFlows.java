@@ -141,7 +141,7 @@ public class FormFlows {
         return Response.status(200).entity("form provider not found").build();
     }
 
-    private Response forwardToForm(String template) {
+    public Response forwardToForm(String template) {
 
         FormService.FormServiceDataBean formDataBean = new FormService.FormServiceDataBean(realm, userModel, formData, error);
         formDataBean.setMessageType(messageType);

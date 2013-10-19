@@ -127,7 +127,7 @@ public class RequiredActionsService {
 
         UserCredentialModel credentials = new UserCredentialModel();
         credentials.setType(CredentialRepresentation.TOTP);
-        credentials.setValue(formData.getFirst("totpSecret"));
+        credentials.setValue(totpSecret);
         realm.updateCredential(user, credentials);
 
         user.setTotp(true);

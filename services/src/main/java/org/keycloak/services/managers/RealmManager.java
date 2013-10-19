@@ -90,6 +90,36 @@ public class RealmManager {
         if (rep.getDefaultRoles() != null) {
             realm.updateDefaultRoles(rep.getDefaultRoles());
         }
+
+        if (rep.isAccountManagement()) {
+            enableAccountManagement(realm);
+        } else {
+            disableAccountManagement(realm);
+        }
+    }
+
+    private void enableAccountManagement(RealmModel realm) {
+        ApplicationModel application = realm.getApplicationById(Constants.ACCOUNT_MANAGEMENT_APPLICATION);
+        if (application == null) {
+            application = realm.addApplication(Constants.ACCOUNT_MANAGEMENT_APPLICATION);
+
+            UserCredentialModel password = new UserCredentialModel();
+            password.setType(UserCredentialModel.PASSWORD);
+            password.setValue(UUID.randomUUID().toString()); // just a random password as we'll never access it
+
+            realm.updateCredential(application.getApplicationUser(), password);
+
+            RoleModel applicationRole = realm.getRole(Constants.APPLICATION_ROLE);
+            realm.grantRole(application.getApplicationUser(), applicationRole);
+        }
+        application.setEnabled(true);
+    }
+
+    private void disableAccountManagement(RealmModel realm) {
+        ApplicationModel application = realm.getApplicationNameMap().get(Constants.ACCOUNT_MANAGEMENT_APPLICATION);
+        if (application != null) {
+            application.setEnabled(false); // TODO Should we delete the application instead?
+        }
     }
 
     public RealmModel importRealm(RealmRepresentation rep, UserModel realmCreator) {
@@ -213,6 +243,10 @@ public class RealmManager {
                     newRealm.addSocialLink(user, mappingModel);
                 }
             }
+        }
+
+        if (rep.isAccountManagement() != null && rep.isAccountManagement()) {
+            enableAccountManagement(newRealm);
         }
     }
 
@@ -369,6 +403,9 @@ public class RealmManager {
         rep.setTokenLifespan(realm.getTokenLifespan());
         rep.setAccessCodeLifespan(realm.getAccessCodeLifespan());
         rep.setAccessCodeLifespanUserAction(realm.getAccessCodeLifespanUserAction());
+
+        ApplicationModel accountManagementApplication = realm.getApplicationNameMap().get(Constants.ACCOUNT_MANAGEMENT_APPLICATION);
+        rep.setAccountManagement(accountManagementApplication != null && accountManagementApplication.isEnabled());
 
         List<RoleModel> defaultRoles = realm.getDefaultRoles();
         if (defaultRoles.size() > 0) {

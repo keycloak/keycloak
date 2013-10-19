@@ -23,14 +23,13 @@ package org.keycloak.testsuite.pages;
 
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.rule.WebResource;
-import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class ErrorPage extends Page {
+public class ErrorPage extends AbstractPage {
 
     @WebResource
     protected OAuthClient oauth;

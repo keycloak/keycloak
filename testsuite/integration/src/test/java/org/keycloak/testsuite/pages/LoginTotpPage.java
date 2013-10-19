@@ -28,7 +28,7 @@ import org.openqa.selenium.support.FindBy;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class LoginTotpPage extends Page {
+public class LoginTotpPage extends AbstractPage {
 
     @FindBy(id = "totp")
     private WebElement totpInput;

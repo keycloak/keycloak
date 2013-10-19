@@ -29,7 +29,7 @@ import org.openqa.selenium.support.FindBy;
 /**
  * @author <a href="mailto:vrockai@redhat.com">Viliam Rockai</a>
  */
-public class VerifyEmailPage extends Page {
+public class VerifyEmailPage extends AbstractPage {
 
     @WebResource
     protected OAuthClient oauth;

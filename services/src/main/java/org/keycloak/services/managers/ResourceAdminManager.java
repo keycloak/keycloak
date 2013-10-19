@@ -37,16 +37,20 @@ public class ResourceAdminManager {
     }
 
     protected boolean logoutResource(RealmModel realm, ApplicationModel resource, String user, ResteasyClient client) {
-        LogoutAction adminAction = new LogoutAction(TokenIdGenerator.generateId(), System.currentTimeMillis() / 1000 + 30, resource.getName(), user);
-        String token = new TokenManager().encodeToken(realm, adminAction);
-        Form form = new Form();
-        form.param("token", token);
         String managementUrl = resource.getManagementUrl();
-        logger.info("logout user: " + user + " resource: " + resource.getName() + " url" + managementUrl);
-        Response response = client.target(managementUrl).queryParam("action", "logout").request().post(Entity.form(form));
-        boolean success = response.getStatus() == 204;
-        response.close();
-        return success;
+        if (managementUrl != null) {
+            LogoutAction adminAction = new LogoutAction(TokenIdGenerator.generateId(), System.currentTimeMillis() / 1000 + 30, resource.getName(), user);
+            String token = new TokenManager().encodeToken(realm, adminAction);
+            Form form = new Form();
+            form.param("token", token);
+            logger.info("logout user: " + user + " resource: " + resource.getName() + " url" + managementUrl);
+            Response response = client.target(managementUrl).queryParam("action", "logout").request().post(Entity.form(form));
+            boolean success = response.getStatus() == 204;
+            response.close();
+            return success;
+        } else {
+            return false;
+        }
     }
 
 }
