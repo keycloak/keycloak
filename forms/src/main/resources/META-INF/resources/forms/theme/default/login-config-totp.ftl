@@ -8,11 +8,6 @@
 
     Google Authenticator Setup
 
-    <#elseif section = "feedback">
-    <div class="feedback warning show">
-        <p><strong>Your account is not enabled because you need to set up the Google Authenticator.</strong><br>Please follow the steps below.</p>
-    </div>
-
     <#elseif section = "form">
 
     <div id="form">

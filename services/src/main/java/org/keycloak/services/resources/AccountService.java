@@ -115,7 +115,7 @@ public class AccountService {
     public Response processTotpRemove() {
         UserModel user = getUserFromAuthManager();
         user.setTotp(false);
-        return Flows.forms(realm, request, uriInfo).setError("successTotpRemoved").setErrorType(FormFlows.ErrorType.SUCCESS)
+        return Flows.forms(realm, request, uriInfo).setError("successTotpRemoved").setErrorType(FormFlows.MessageType.SUCCESS)
                 .setUser(user).forwardToTotp();
     }
 
@@ -152,7 +152,7 @@ public class AccountService {
 
         user.setTotp(true);
 
-        return Flows.forms(realm, request, uriInfo).setError("successTotp").setErrorType(FormFlows.ErrorType.SUCCESS)
+        return Flows.forms(realm, request, uriInfo).setError("successTotp").setErrorType(FormFlows.MessageType.SUCCESS)
                 .setUser(user).forwardToTotp();
     }
 

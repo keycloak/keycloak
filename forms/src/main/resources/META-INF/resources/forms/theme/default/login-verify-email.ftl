@@ -8,11 +8,6 @@
 
     Email verification
 
-    <#elseif section = "feedback">
-    <div class="feedback warning show">
-        <p><strong>Your account is not enabled because you need to verify your email.</strong><br>Please follow the steps below.</p>
-    </div>
-
     <#elseif section = "form">
 
     <div class="app-form">

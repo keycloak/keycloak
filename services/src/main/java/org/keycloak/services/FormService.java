@@ -44,9 +44,9 @@ public interface FormService {
 
         private RealmModel realm;
         private UserModel userModel;
-        private String error;
+        private String message;
 
-        private FormFlows.ErrorType errorType;
+        private FormFlows.MessageType messageType;
 
         private MultivaluedMap<String, String> formData;
         private URI baseURI;
@@ -81,11 +81,11 @@ public interface FormService {
 
         private String contextPath;
 
-        public FormServiceDataBean(RealmModel realm, UserModel userModel, MultivaluedMap<String, String> formData, String error){
+        public FormServiceDataBean(RealmModel realm, UserModel userModel, MultivaluedMap<String, String> formData, String message){
             this.realm = realm;
             this.userModel = userModel;
             this.formData = formData;
-            this.error = error;
+            this.message = message;
         }
 
         public URI getBaseURI() {
@@ -96,12 +96,12 @@ public interface FormService {
             this.baseURI = baseURI;
         }
 
-        public String getError() {
-            return error;
+        public String getMessage() {
+            return message;
         }
 
-        public void setError(String error) {
-            this.error = error;
+        public void setMessage(String message) {
+            this.message = message;
         }
 
         public MultivaluedMap<String, String> getFormData() {
@@ -128,12 +128,12 @@ public interface FormService {
             this.userModel = userModel;
         }
 
-        public FormFlows.ErrorType getErrorType() {
-            return errorType;
+        public FormFlows.MessageType getMessageType() {
+            return messageType;
         }
 
-        public void setErrorType(FormFlows.ErrorType errorType) {
-            this.errorType = errorType;
+        public void setMessageType(FormFlows.MessageType messageType) {
+            this.messageType = messageType;
         }
 
         /* OAuth Part */

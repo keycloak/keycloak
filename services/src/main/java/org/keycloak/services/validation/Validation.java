@@ -38,6 +38,22 @@ public class Validation {
         return null;
     }
 
+    public static String validateUpdateProfileForm(MultivaluedMap<String, String> formData) {
+        if (isEmpty(formData.getFirst("firstName"))) {
+            return Messages.MISSING_FIRST_NAME;
+        }
+
+        if (isEmpty(formData.getFirst("lastName"))) {
+            return Messages.MISSING_LAST_NAME;
+        }
+
+        if (isEmpty(formData.getFirst("email"))) {
+            return Messages.MISSING_EMAIL;
+        }
+
+        return null;
+    }
+
     public static boolean isEmpty(String s) {
         return s == null || s.length() == 0;
     }
