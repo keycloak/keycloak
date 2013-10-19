@@ -19,38 +19,46 @@ window.keycloak = (function () {
             }
         }
 
-        var token = getTokenFromCode();
-        if (token) {
-            var t = parseToken(token);
-            kc.user = t.prn;
-            kc.authenticated = true;
-            kc.token = token;
-        } else {
-            kc.authenticated = false;
-        }
+        processCallback();
     }
 
     kc.login = function () {
-        var state = createUUID();
-        var url = config.baseUrl + '/rest/realms/' + encodeURIComponent(config.realm) + '/tokens/login?response_type=code&client_id='
-            + encodeURIComponent(config.clientId) + '&redirect_uri=' + encodeURIComponent(config.redirectUri) + '&state=' + encodeURIComponent(state);
-
-        sessionStorage.state = state;
-
-        window.location.href = url;
+        window.location.href = getLoginUrl();
     }
 
     return kc;
+
+    function getLoginUrl(fragment) {
+        var state = createUUID();
+        if (fragment) {
+            state += '#' + fragment;
+        }
+        sessionStorage.state = state;
+        var url = config.baseUrl + '/rest/realms/' + encodeURIComponent(config.realm) + '/tokens/login?response_type=code&client_id='
+            + encodeURIComponent(config.clientId) + '&redirect_uri=' + encodeURIComponent(config.redirectUri) + '&state=' + encodeURIComponent(state);
+        return url;
+    }
 
     function parseToken(token) {
         return JSON.parse(atob(token.split('.')[1]));
     }
 
-    function getTokenFromCode() {
+    function processCallback() {
         var code = getQueryParam('code');
+        var error = getQueryParam('error');
         var state = getQueryParam('state');
-        if (code && state === sessionStorage.state) {
-            window.history.replaceState({}, document.title, location.protocol + "//" + location.host + location.pathname);
+
+        if (!(code || error)) {
+            return false;
+        }
+
+        if (state != sessionStorage.state) {
+            console.error('Invalid state');
+            return true;
+        }
+
+        if (code) {
+            console.info('Received code');
 
             var clientId = encodeURIComponent(config.clientId);
             var clientSecret = encodeURIComponent(config.clientSecret);
@@ -65,10 +73,30 @@ window.keycloak = (function () {
 
             http.send(params);
             if (http.status == 200) {
-                return JSON.parse(http.responseText)['access_token'];
+                kc.token = JSON.parse(http.responseText)['access_token'];
+                kc.tokenParsed = parseToken(kc.token);
+                kc.authenticated = true;
+                kc.user = kc.tokenParsed.prn;
+
+                console.info('Authenticated');
             }
+
+            updateLocation(state);
+            return true;
+        } else if (error) {
+            console.info('Error ' + error);
+            updateLocation(state);
+            return true;
         }
-        return undefined;
+    }
+
+    function updateLocation(state) {
+        var fragment = '';
+        if (state && state.indexOf('#') != -1) {
+            fragment = state.substr(state.indexOf('#'));
+        }
+
+        window.history.replaceState({}, document.title, location.protocol + "//" + location.host + location.pathname + fragment);
     }
 
     function getQueryParam(name) {

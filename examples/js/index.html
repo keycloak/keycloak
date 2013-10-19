@@ -17,7 +17,7 @@
 		if (keycloak.authenticated) {
 			document.write('User: ' + keycloak.user);
 		} else {
-			document.write('<a href="#" id="login" onclick="keycloak.login()">Login</a>');
+			document.write('<a href="#" id="login" onclick="keycloak.login(location.hash)">Login</a>');
 		}
 	</script>
 
