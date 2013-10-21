@@ -50,6 +50,7 @@ public class KeycloakApplication extends Application {
         singletons.add(new SaasService(tokenManager));
         singletons.add(new SocialResource(tokenManager, new SocialRequestManager()));
         classes.add(SkeletonKeyContextResolver.class);
+        classes.add(QRCodeResource.class);
     }
 
     protected KeycloakSessionFactory createSessionFactory() {
