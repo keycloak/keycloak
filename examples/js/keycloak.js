@@ -1,120 +1,124 @@
-window.keycloak = (function() {
-	var kc = {};
-	var config = null;
+window.keycloak = (function () {
+    var kc = {};
+    var config = {
+        baseUrl: null,
+        clientId: null,
+        clientSecret: null,
+        realm: null,
+        redirectUri: null
+    };
 
-	kc.init = function(c) {
-		config = c;
+    kc.init = function (c) {
+        for (var prop in config) {
+            if (c[prop]) {
+                config[prop] = c[prop];
+            }
 
-		var token = getTokenFromCode();
-		if (token) {
-			var t = parseToken(token);
-			kc.user = t.prn;
-			kc.authenticated = true;
-		} else {
-			kc.authenticated = false;
-		}
-	}
+            if (!config[prop]) {
+                throw new Error(prop + 'not defined');
+            }
+        }
 
-	kc.login = function() {
-		var clientId = encodeURIComponent(config.clientId);
-		var redirectUri = encodeURIComponent(window.location.href);
-		var state = encodeURIComponent(createUUID());
-		var realm = encodeURIComponent(config.realm);
-		var url = config.baseUrl + '/rest/realms/' + realm + '/tokens/login?response_type=code&client_id=' + clientId + '&redirect_uri=' + redirectUri
-				+ '&state=' + state;
-		window.location.href = url;
-	}
+        processCallback();
+    }
 
-	return kc;
+    kc.login = function () {
+        window.location.href = getLoginUrl();
+    }
 
-	function parseToken(token) {
-		var t = base64Decode(token.split('.')[1]);
-		return JSON.parse(t);
-	}
+    return kc;
 
-	function getTokenFromCode() {
-		var code = getQueryParam('code');
-		if (code) {
-			window.history.replaceState({}, document.title, location.protocol + "//" + location.host + location.pathname);
-			
-			var clientId = encodeURIComponent(config.clientId);
-			var clientSecret = encodeURIComponent(config.clientSecret);
-			var realm = encodeURIComponent(config.realm);
+    function getLoginUrl(fragment) {
+        var state = createUUID();
+        if (fragment) {
+            state += '#' + fragment;
+        }
+        sessionStorage.state = state;
+        var url = config.baseUrl + '/rest/realms/' + encodeURIComponent(config.realm) + '/tokens/login?response_type=code&client_id='
+            + encodeURIComponent(config.clientId) + '&redirect_uri=' + encodeURIComponent(config.redirectUri) + '&state=' + encodeURIComponent(state);
+        return url;
+    }
 
-			var params = 'code=' + code + '&client_id=' + config.clientId + '&password=' + config.clientSecret;
-			var url = config.baseUrl + '/rest/realms/' + realm + '/tokens/access/codes'
+    function parseToken(token) {
+        return JSON.parse(atob(token.split('.')[1]));
+    }
 
-			var http = new XMLHttpRequest();
-			http.open('POST', url, false);
-			http.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+    function processCallback() {
+        var code = getQueryParam('code');
+        var error = getQueryParam('error');
+        var state = getQueryParam('state');
 
-			http.send(params);
-			if (http.status == 200) {
-				return JSON.parse(http.responseText)['access_token'];
-			}
-		}
-		return undefined;
-	}
+        if (!(code || error)) {
+            return false;
+        }
 
-	function getQueryParam(name) {
-		var params = window.location.search.substring(1).split('&');
-		for ( var i = 0; i < params.length; i++) {
-			var p = params[i].split('=');
-			if (decodeURIComponent(p[0]) == name) {
-				return p[1];
-			}
-		}
-	}
+        if (state != sessionStorage.state) {
+            console.error('Invalid state');
+            return true;
+        }
 
-	function createUUID() {
-		var s = [];
-		var hexDigits = '0123456789abcdef';
-		for ( var i = 0; i < 36; i++) {
-			s[i] = hexDigits.substr(Math.floor(Math.random() * 0x10), 1);
-		}
-		s[14] = '4';
-		s[19] = hexDigits.substr((s[19] & 0x3) | 0x8, 1);
-		s[8] = s[13] = s[18] = s[23] = '-';
-		var uuid = s.join('');
-		return uuid;
-	}
+        if (code) {
+            console.info('Received code');
 
-	function base64Decode (data) {
-		  var b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
-		  var o1, o2, o3, h1, h2, h3, h4, bits, i = 0,
-		    ac = 0,
-		    dec = "",
-		    tmp_arr = [];
+            var clientId = encodeURIComponent(config.clientId);
+            var clientSecret = encodeURIComponent(config.clientSecret);
+            var realm = encodeURIComponent(config.realm);
 
-		  if (!data) {
-		    return data;
-		  }
+            var params = 'code=' + code + '&client_id=' + clientId + '&password=' + clientSecret;
+            var url = config.baseUrl + '/rest/realms/' + realm + '/tokens/access/codes'
 
-		  data += '';
+            var http = new XMLHttpRequest();
+            http.open('POST', url, false);
+            http.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
 
-		  do {
-		    h1 = b64.indexOf(data.charAt(i++));
-		    h2 = b64.indexOf(data.charAt(i++));
-		    h3 = b64.indexOf(data.charAt(i++));
-		    h4 = b64.indexOf(data.charAt(i++));
+            http.send(params);
+            if (http.status == 200) {
+                kc.token = JSON.parse(http.responseText)['access_token'];
+                kc.tokenParsed = parseToken(kc.token);
+                kc.authenticated = true;
+                kc.user = kc.tokenParsed.prn;
 
-		    bits = h1 << 18 | h2 << 12 | h3 << 6 | h4;
+                console.info('Authenticated');
+            }
 
-		    o1 = bits >> 16 & 0xff;
-		    o2 = bits >> 8 & 0xff;
-		    o3 = bits & 0xff;
+            updateLocation(state);
+            return true;
+        } else if (error) {
+            console.info('Error ' + error);
+            updateLocation(state);
+            return true;
+        }
+    }
 
-		    if (h3 == 64) {
-		      tmp_arr[ac++] = String.fromCharCode(o1);
-		    } else if (h4 == 64) {
-		      tmp_arr[ac++] = String.fromCharCode(o1, o2);
-		    } else {
-		      tmp_arr[ac++] = String.fromCharCode(o1, o2, o3);
-		    }
-		  } while (i < data.length);
+    function updateLocation(state) {
+        var fragment = '';
+        if (state && state.indexOf('#') != -1) {
+            fragment = state.substr(state.indexOf('#'));
+        }
 
-		  dec = tmp_arr.join('');
+        window.history.replaceState({}, document.title, location.protocol + "//" + location.host + location.pathname + fragment);
+    }
 
-		  return dec;
-		}
+    function getQueryParam(name) {
+        var params = window.location.search.substring(1).split('&');
+        for (var i = 0; i < params.length; i++) {
+            var p = params[i].split('=');
+            if (decodeURIComponent(p[0]) == name) {
+                return p[1];
+            }
+        }
+    }
+
+    function createUUID() {
+        var s = [];
+        var hexDigits = '0123456789abcdef';
+        for (var i = 0; i < 36; i++) {
+            s[i] = hexDigits.substr(Math.floor(Math.random() * 0x10), 1);
+        }
+        s[14] = '4';
+        s[19] = hexDigits.substr((s[19] & 0x3) | 0x8, 1);
+        s[8] = s[13] = s[18] = s[23] = '-';
+        var uuid = s.join('');
+        return uuid;
+    }
 })();

@@ -22,6 +22,7 @@ public class UserAdapter implements UserModel {
     private static final String REQUIRED_ACTIONS_ATTR = "requiredActions";
 
     private static final String REDIRECT_URIS = "redirectUris";
+    private static final String WEB_ORIGINS = "webOrigins";
 
     protected User user;
     protected IdentityManager idm;
@@ -159,6 +160,26 @@ public class UserAdapter implements UserModel {
     @Override
     public void removeRedirectUri(String redirectUri) {
         removeFromAttributeSet(REDIRECT_URIS, redirectUri);
+    }
+
+    @Override
+    public Set<String> getWebOrigins() {
+        return getAttributeSet(WEB_ORIGINS);
+    }
+
+    @Override
+    public void setWebOrigins(Set<String> webOrigins) {
+        setAttributeSet(WEB_ORIGINS, webOrigins);
+    }
+
+    @Override
+    public void addWebOrigin(String webOrigin) {
+        addToAttributeSet(WEB_ORIGINS, webOrigin);
+    }
+
+    @Override
+    public void removeWebOrigin(String webOrigin) {
+        removeFromAttributeSet(WEB_ORIGINS, webOrigin);
     }
 
     @Override

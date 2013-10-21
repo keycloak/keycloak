@@ -54,6 +54,9 @@
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown"><span class="icon-user">Icon: user</span>
                     ${user.firstName!''} ${user.lastName!''}</a>
                 </li>
+                <li>
+                    <a href="${url.logoutUrl}">Logout</a>
+                </li>
             </ul>
         </div>
     </div>

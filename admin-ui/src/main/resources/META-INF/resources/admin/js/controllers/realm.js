@@ -104,7 +104,7 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $ht
                             }
                         }
                         $location.url("/realms/" + id);
-                        Notifications.success("Created realm");
+                        Notifications.success("The realm has been created.");
                     });
                 });
             } else {
@@ -122,7 +122,7 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $ht
                         }
                     });
                     $location.url("/realms/" + id);
-                    Notifications.success("Saved changes to realm");
+                    Notifications.success("Your changes have been saved to the realm.");
                 });
             }
         } else {
@@ -300,7 +300,7 @@ module.controller('RoleDetailCtrl', function($scope, realm, role, Role, $locatio
             }, $scope.role, function() {
                 $scope.changed = false;
                 role = angular.copy($scope.role);
-                Notifications.success("Saved changes to role");
+                Notifications.success("Your changes have been saved to the role.");
             });
         }
     };

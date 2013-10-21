@@ -16,6 +16,7 @@ public class RealmRepresentation {
     protected Integer accessCodeLifespan;
     protected Integer accessCodeLifespanUserAction;
     protected Boolean enabled;
+    protected Boolean accountManagement;
     protected Boolean sslNotRequired;
     protected Boolean cookieLoginAllowed;
     protected Boolean registrationAllowed;
@@ -99,6 +100,14 @@ public class RealmRepresentation {
 
     public void setEnabled(Boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public Boolean isAccountManagement() {
+        return accountManagement;
+    }
+
+    public void setAccountManagement(Boolean accountManagement) {
+        this.accountManagement = accountManagement;
     }
 
     public Boolean isSslNotRequired() {

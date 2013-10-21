@@ -131,8 +131,8 @@ body {
 }
 .header.rcue .navbar.primary .nav > li .select-rcue select option {
   background-color: #fff;
-  color: black;
-  padding: 4px 10px;
+  color: #333;
+  padding: 0.36363636363636em 0.90909090909091em;
 }
 .header.rcue .navbar.primary .nav > li a#refresh {
   border: none;
@@ -313,10 +313,6 @@ body {
   top: 70px;
   width: 877.5px;
 }
-/* Page: Realm Users */
-.realm-users caption {
-  display: none;
-}
 table thead tr th {
   font-size: 1.1em;
 }
@@ -331,6 +327,9 @@ table thead tr:first-child th {
 }
 table a:hover {
   color: #0099D3;
+}
+table + .feedback.inline.warning {
+  margin-top: 1em;
 }
 .advanced-search-comp {
   position: relative;

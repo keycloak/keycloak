@@ -123,7 +123,7 @@ public class ResetPasswordTest {
         resetPasswordPage.assertCurrent();
 
         Assert.assertNotEquals("Success!", resetPasswordPage.getMessage());
-        Assert.assertEquals("Error!", resetPasswordPage.getMessage());
+        Assert.assertEquals("Invalid username or email.", resetPasswordPage.getMessage());
     }
 
     @Test
@@ -138,7 +138,7 @@ public class ResetPasswordTest {
         resetPasswordPage.assertCurrent();
 
         Assert.assertNotEquals("Success!", resetPasswordPage.getMessage());
-        Assert.assertEquals("Error!", resetPasswordPage.getMessage());
+        Assert.assertEquals("Invalid username or email.", resetPasswordPage.getMessage());
     }
 
 }

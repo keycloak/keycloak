@@ -25,7 +25,7 @@ package org.keycloak.testsuite.pages;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class AppPage extends Page {
+public class AppPage extends AbstractPage {
 
     private String baseUrl = "http://localhost:8081/app";
 

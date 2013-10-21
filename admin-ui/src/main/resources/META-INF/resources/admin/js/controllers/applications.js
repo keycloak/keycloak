@@ -196,6 +196,20 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
         }
     }, true);
 
+    $scope.deleteWebOrigin = function(index) {
+        $scope.application.webOrigins.splice(index, 1);
+    }
+    $scope.addWebOrigin = function() {
+        $scope.application.webOrigins.push($scope.newWebOrigin);
+        $scope.newWebOrigin = "";
+    }
+    $scope.deleteRedirectUri = function(index) {
+        $scope.application.redirectUris.splice(index, 1);
+    }
+    $scope.addRedirectUri = function() {
+        $scope.application.redirectUris.push($scope.newRedirectUri);
+        $scope.newRedirectUri = "";
+    }
 
     $scope.save = function() {
         if ($scope.applicationForm.$valid) {
@@ -208,7 +222,7 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
                     var l = headers().location;
                     var id = l.substring(l.lastIndexOf("/") + 1);
                     $location.url("/realms/" + realm.id + "/applications/" + id);
-                    Notifications.success("Created application");
+                    Notifications.success("The application has been created.");
                 });
             } else {
                 Application.update({

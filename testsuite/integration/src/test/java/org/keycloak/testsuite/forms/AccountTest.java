@@ -21,11 +21,7 @@
  */
 package org.keycloak.testsuite.forms;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.models.RealmModel;
@@ -97,13 +93,12 @@ public class AccountTest {
 
     @Test
     public void changePassword() {
-        loginPage.open();
+        changePasswordPage.open();
         loginPage.login("test-user@localhost", "password");
 
-        changePasswordPage.open();
         changePasswordPage.changePassword("password", "new-password", "new-password");
 
-        oauth.openLogout();
+        changePasswordPage.logout();
 
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
@@ -118,10 +113,8 @@ public class AccountTest {
 
     @Test
     public void changeProfile() {
-        loginPage.open();
-        loginPage.login("test-user@localhost", "password");
-
         profilePage.open();
+        loginPage.login("test-user@localhost", "password");
 
         Assert.assertEquals("", profilePage.getFirstName());
         Assert.assertEquals("", profilePage.getLastName());
@@ -136,10 +129,8 @@ public class AccountTest {
 
     @Test
     public void setupTotp() {
-        loginPage.open();
-        loginPage.login("test-user@localhost", "password");
-
         totpPage.open();
+        loginPage.login("test-user@localhost", "password");
 
         Assert.assertTrue(totpPage.isCurrent());
 

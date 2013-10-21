@@ -19,43 +19,24 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.keycloak.forms;
+package org.keycloak.testsuite.pages;
 
-import org.keycloak.services.resources.flows.FormFlows;
+import org.junit.Assert;
+import org.keycloak.testsuite.rule.WebResource;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class ErrorBean {
+public abstract class AbstractAccountPage extends  AbstractPage {
 
-    private String summary;
+    @FindBy(linkText = "Logout")
+    private WebElement logoutLink;
 
-    private FormFlows.ErrorType type;
-
-    // Message is considered ERROR by default
-    public ErrorBean(String summary) {
-        this(summary, FormFlows.ErrorType.ERROR);
-    }
-
-    public ErrorBean(String summary, FormFlows.ErrorType type) {
-        this.summary = summary;
-        this.type = type;
-    }
-
-    public String getSummary() {
-        return summary;
-    }
-
-    public boolean isSuccess(){
-        return FormFlows.ErrorType.SUCCESS.equals(this.type);
-    }
-
-    public boolean isWarning(){
-        return FormFlows.ErrorType.WARNING.equals(this.type);
-    }
-
-    public boolean isError(){
-        return FormFlows.ErrorType.ERROR.equals(this.type);
+    public void logout() {
+        logoutLink.click();
     }
 
 }

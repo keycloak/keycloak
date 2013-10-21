@@ -151,7 +151,7 @@ module.controller('UserDetailCtrl', function($scope, realm, user, User, $locatio
                 user = angular.copy($scope.user);
 
                 $location.url("/realms/" + realm.id + "/users/" + $scope.user.username);
-                Notifications.success("Created user");
+                Notifications.success("The user has been created.");
             });
         } else {
             User.update({
@@ -160,7 +160,7 @@ module.controller('UserDetailCtrl', function($scope, realm, user, User, $locatio
             }, $scope.user, function () {
                 $scope.changed = false;
                 user = angular.copy($scope.user);
-                Notifications.success("Saved changes to user");
+                Notifications.success("Your changes have been saved to the user.");
             });
 
         }

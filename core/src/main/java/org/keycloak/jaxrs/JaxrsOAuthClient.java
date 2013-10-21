@@ -22,7 +22,14 @@ import java.net.URI;
 public class JaxrsOAuthClient extends AbstractOAuthClient {
     protected static final Logger logger = Logger.getLogger(JaxrsOAuthClient.class);
     public Response redirect(UriInfo uriInfo, String redirectUri) {
+        return redirect(uriInfo, redirectUri, null);
+    }
+
+    public Response redirect(UriInfo uriInfo, String redirectUri, String path) {
         String state = getStateCode();
+        if (path != null) {
+            state += "#" + path;
+        }
 
         URI url = UriBuilder.fromUri(authUrl)
                 .queryParam("client_id", clientId)
@@ -58,13 +65,18 @@ public class JaxrsOAuthClient extends AbstractOAuthClient {
         return uriInfo.getQueryParameters().getFirst("code");
     }
 
-    public void checkStateCookie(UriInfo uriInfo, HttpHeaders headers) {
+    public String checkStateCookie(UriInfo uriInfo, HttpHeaders headers) {
         Cookie stateCookie = headers.getCookies().get(stateCookieName);
         if (stateCookie == null) throw new BadRequestException("state cookie not set");
         String state = uriInfo.getQueryParameters().getFirst("state");
         if (state == null) throw new BadRequestException("state parameter was null");
         if (!state.equals(stateCookie.getValue())) {
             throw new BadRequestException("state parameter invalid");
+        }
+        if (state.indexOf('#') != -1) {
+            return state.substring(state.indexOf('#') + 1);
+        } else {
+            return null;
         }
     }
 }

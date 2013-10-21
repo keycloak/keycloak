@@ -28,7 +28,7 @@ import org.openqa.selenium.support.FindBy;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class AccountPasswordPage extends Page {
+public class AccountPasswordPage extends AbstractAccountPage {
 
     private static String PATH = Constants.AUTH_SERVER_ROOT + "/rest/realms/test/account/password";
 

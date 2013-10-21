@@ -27,7 +27,7 @@ import org.openqa.selenium.support.FindBy;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class RegisterPage extends Page {
+public class RegisterPage extends AbstractPage {
 
     @FindBy(id = "firstName")
     private WebElement firstNameInput;
@@ -83,6 +83,22 @@ public class RegisterPage extends Page {
 
     public String getError() {
         return loginErrorMessage != null ? loginErrorMessage.getText() : null;
+    }
+
+    public String getFirstName() {
+        return firstNameInput.getAttribute("value");
+    }
+
+    public String getLastName() {
+        return lastNameInput.getAttribute("value");
+    }
+
+    public String getEmail() {
+        return emailInput.getAttribute("value");
+    }
+
+    public String getUsername() {
+        return usernameInput.getAttribute("value");
     }
 
     public boolean isCurrent() {

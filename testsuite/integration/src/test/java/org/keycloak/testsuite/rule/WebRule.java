@@ -25,7 +25,7 @@ import java.lang.reflect.Field;
 
 import org.junit.rules.ExternalResource;
 import org.keycloak.testsuite.OAuthClient;
-import org.keycloak.testsuite.pages.Page;
+import org.keycloak.testsuite.pages.AbstractPage;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
@@ -78,7 +78,7 @@ public class WebRule extends ExternalResource {
                     Class<?> type = f.getType();
                     if (type.equals(WebDriver.class)) {
                         set(f, o, driver);
-                    } else if (Page.class.isAssignableFrom(type)) {
+                    } else if (AbstractPage.class.isAssignableFrom(type)) {
                         set(f, o, getPage(f.getType()));
                     } else if (type.equals(OAuthClient.class)) {
                         set(f, o, oauth);

@@ -72,6 +72,36 @@
                                        data-ng-model="application.adminUrl">
                             </div>
                         </div>
+                        <div class="form-group">
+                            <label for="newWebOrigin" class="control-label">Web Origin</label>
+                            <div class="controls">
+                                <div ng-repeat="webOrigin in application.webOrigins" class="item-deletable">
+                                    <input  class="input-small" type="text" data-ng-class="{'input-below':!$first}"
+                                            name="webOrigin" id="webOrigin" data-ng-model="webOrigin" readonly />
+                                    <button type="button" data-ng-click="deleteWebOrigin($index)" class="btn-delete">
+                                        Delete</button>
+                                </div>
+                                <input class="input-small" type="text" name="newWebOrigin" id="newWebOrigin"
+                                       placeholder="New Web Origin..." data-ng-model="newWebOrigin"
+                                       data-ng-class="{'input-below':application.webOrigins.length}" />
+                                <button data-ng-click="addWebOrigin()" ng-show="newWebOrigin.length > 0">Add</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="newRedirectUri" class="control-label">Redirect URI</label>
+                            <div class="controls">
+                                <div ng-repeat="redirectUri in application.redirectUris" class="item-deletable">
+                                    <input  class="input-small" type="text" data-ng-class="{'input-below':!$first}"
+                                            name="redirectUri" id="redirectUri" data-ng-model="redirectUri" readonly />
+                                    <button type="button" data-ng-click="deleteRedirectUri($index)" class="btn-delete">
+                                        Delete</button>
+                                </div>
+                                <input class="input-small" type="text" name="newRedirectUri" id="newRedirectUri"
+                                       placeholder="New Redirect URI..." data-ng-model="newRedirectUri"
+                                       data-ng-class="{'input-below':application.redirectUris.length}" />
+                                <button data-ng-click="addRedirectUri()" ng-show="newRedirectUri.length > 0">Add</button>
+                            </div>
+                        </div>
                     </fieldset>
                     <div class="form-actions" data-ng-show="create">
                         <button type="submit" data-ng-click="save()" class="primary">Save

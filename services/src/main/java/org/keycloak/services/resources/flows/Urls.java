@@ -35,12 +35,16 @@ public class Urls {
         return accountBase(baseUri).path(AccountService.class, "accessPage").build(realmId);
     }
 
-    private static UriBuilder accountBase(URI baseUri) {
+    public static UriBuilder accountBase(URI baseUri) {
         return realmBase(baseUri).path(RealmsResource.class, "getAccountService");
     }
 
     public static URI accountPage(URI baseUri, String realmId) {
-        return accountBase(baseUri).path(AccountService.class, "accountPage").build(realmId);
+        return accountPageBuilder(baseUri).build(realmId);
+    }
+
+    public static UriBuilder accountPageBuilder(URI baseUri) {
+        return accountBase(baseUri).path(AccountService.class, "accountPage");
     }
 
     public static URI accountPasswordPage(URI baseUri, String realmId) {
@@ -57,6 +61,10 @@ public class Urls {
 
     public static URI accountTotpRemove(URI baseUri, String realmId) {
         return accountBase(baseUri).path(AccountService.class, "processTotpRemove").build(realmId);
+    }
+
+    public static URI accountLogout(URI baseUri, String realmId) {
+        return accountBase(baseUri).path(AccountService.class, "logout").build(realmId);
     }
 
     public static URI loginActionUpdatePassword(URI baseUri, String realmId) {

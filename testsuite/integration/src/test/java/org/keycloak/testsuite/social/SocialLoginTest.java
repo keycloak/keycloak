@@ -35,6 +35,7 @@ import org.keycloak.testsuite.OAuthClient.AccessTokenResponse;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.KeycloakRule.KeycloakSetup;
 import org.keycloak.testsuite.rule.WebResource;
@@ -69,6 +70,9 @@ public class SocialLoginTest {
     protected LoginPage loginPage;
 
     @WebResource
+    protected RegisterPage registerPage;
+
+    @WebResource
     protected OAuthClient oauth;
 
     @BeforeClass
@@ -95,6 +99,43 @@ public class SocialLoginTest {
 
         Assert.assertEquals(1, token.getRealmAccess().getRoles().size());
         Assert.assertTrue(token.getRealmAccess().isUserInRole("user"));
+    }
+
+    @Test
+    public void registerRequired() {
+        keycloakRule.configure(new KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                appRealm.setAutomaticRegistrationAfterSocialLogin(false);
+            }
+        });
+
+        try {
+            loginPage.open();
+
+            loginPage.clickSocial("dummy");
+
+            driver.findElement(By.id("username")).sendKeys("dummy-user-reg");
+            driver.findElement(By.id("submit")).click();
+
+            registerPage.isCurrent();
+
+            Assert.assertEquals("", registerPage.getFirstName());
+            Assert.assertEquals("", registerPage.getLastName());
+            Assert.assertEquals("dummy-user-reg@dummy-social", registerPage.getEmail());
+            Assert.assertEquals("dummy-user-reg", registerPage.getUsername());
+
+            registerPage.register("Dummy", "User", "dummy-user-reg@dummy-social", "dummy-user-reg", "password", "password");
+
+            Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        } finally {
+            keycloakRule.configure(new KeycloakSetup() {
+                @Override
+                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                    appRealm.setAutomaticRegistrationAfterSocialLogin(true);
+                }
+            });
+        }
     }
 
 }

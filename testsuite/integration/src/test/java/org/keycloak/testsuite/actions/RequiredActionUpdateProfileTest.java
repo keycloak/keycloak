@@ -44,8 +44,8 @@ import org.openqa.selenium.WebDriver;
  */
 public class RequiredActionUpdateProfileTest {
 
-    @ClassRule
-    public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakSetup() {
+    @Rule
+    public KeycloakRule keycloakRule = new KeycloakRule(new KeycloakSetup() {
 
         @Override
         public void config(RealmManager manager, RealmModel defaultRealm, RealmModel appRealm) {
@@ -82,5 +82,51 @@ public class RequiredActionUpdateProfileTest {
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
     }
+
+    @Test
+    public void updateProfileMissingFirstName() {
+        loginPage.open();
+
+        loginPage.login("test-user@localhost", "password");
+
+        updateProfilePage.assertCurrent();
+
+        updateProfilePage.update("", "New last", "new@email.com");
+
+        updateProfilePage.assertCurrent();
+
+        Assert.assertEquals("Please specify first name", updateProfilePage.getError());
+    }
+
+    @Test
+    public void updateProfileMissingLastName() {
+        loginPage.open();
+
+        loginPage.login("test-user@localhost", "password");
+
+        updateProfilePage.assertCurrent();
+
+        updateProfilePage.update("New first", "", "new@email.com");
+
+        updateProfilePage.assertCurrent();
+
+        Assert.assertEquals("Please specify last name", updateProfilePage.getError());
+    }
+
+    @Test
+    public void updateProfileMissingEmail() {
+        loginPage.open();
+
+        loginPage.login("test-user@localhost", "password");
+
+        updateProfilePage.assertCurrent();
+
+        updateProfilePage.update("New first", "New last", "");
+
+        updateProfilePage.assertCurrent();
+
+        Assert.assertEquals("Please specify email", updateProfilePage.getError());
+    }
+
 
 }

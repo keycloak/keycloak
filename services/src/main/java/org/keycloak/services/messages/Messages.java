@@ -44,6 +44,8 @@ public class Messages {
 
     public static final String MISSING_PASSWORD = "missingPassword";
 
+    public static final String NOTMATCH_PASSWORD = "notMatchPassword";
+
     public static final String MISSING_USERNAME = "missingUsername";
 
     public static final String MISSING_TOTP = "missingTotp";
@@ -51,6 +53,14 @@ public class Messages {
     public static final String INVALID_TOTP = "invalidTotp";
 
     public static final String USERNAME_EXISTS = "usernameExists";
+
+    public static final String ACTION_WARN_TOTP = "actionTotpWarning";
+
+    public static final String ACTION_WARN_PROFILE = "actionProfileWarning";
+
+    public static final String ACTION_WARN_PASSWD = "actionPasswordWarning";
+
+    public static final String ACTION_WARN_EMAIL = "actionEmailWarning";
 
     public static final String ERROR = "error";
 

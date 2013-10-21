@@ -27,7 +27,7 @@ import org.openqa.selenium.support.FindBy;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class LoginPasswordResetPage extends Page {
+public class LoginPasswordResetPage extends AbstractPage {
 
     @FindBy(id = "username")
     private WebElement usernameInput;
