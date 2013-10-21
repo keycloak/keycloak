@@ -85,6 +85,22 @@ public class RegisterPage extends AbstractPage {
         return loginErrorMessage != null ? loginErrorMessage.getText() : null;
     }
 
+    public String getFirstName() {
+        return firstNameInput.getAttribute("value");
+    }
+
+    public String getLastName() {
+        return lastNameInput.getAttribute("value");
+    }
+
+    public String getEmail() {
+        return emailInput.getAttribute("value");
+    }
+
+    public String getUsername() {
+        return usernameInput.getAttribute("value");
+    }
+
     public boolean isCurrent() {
         return driver.getTitle().equals("Register with test");
     }
