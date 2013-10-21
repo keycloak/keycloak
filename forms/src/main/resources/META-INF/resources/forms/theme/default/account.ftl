@@ -15,7 +15,7 @@
             </div>
             <div class="form-group">
                 <label for="email">${rb.getString('email')}</label><span class="required">*</span>
-                <input type="email" id="email" name="email" autofocus value="${user.email!''}"/>
+                <input type="text" id="email" name="email" autofocus value="${user.email!''}"/>
             </div>
             <div class="form-group">
                 <label for="lastName">${rb.getString('lastName')}</label><span class="required">*</span>
@@ -27,7 +27,7 @@
             </div>
         </fieldset>
         <div class="form-actions">
-            <a href="#">« Back to my application</a>
+            <#--a href="#">« Back to my application</a-->
             <button type="submit" class="primary">Save</button>
             <button type="submit">Cancel</button>
         </div>

@@ -131,12 +131,20 @@ public class AccountService {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processAccountUpdate(final MultivaluedMap<String, String> formData) {
+
         UserModel user = getUser(true);
+
+        String error = Validation.validateUpdateProfileForm(formData);
+        if (error != null) {
+            return Flows.forms(realm, request, uriInfo).setUser(user).setError(error).forwardToAccount();
+        }
+
         user.setFirstName(formData.getFirst("firstName"));
         user.setLastName(formData.getFirst("lastName"));
         user.setEmail(formData.getFirst("email"));
 
-        return Flows.forms(realm, request, uriInfo).setUser(user).forwardToAccount();
+        return Flows.forms(realm, request, uriInfo).setUser(user).setError("accountUpdated")
+                .setErrorType(FormFlows.MessageType.SUCCESS).forwardToAccount();
     }
 
     @Path("totp-remove")
@@ -205,7 +213,8 @@ public class AccountService {
 
         realm.updateCredential(user, credentials);
 
-        return Flows.forms(realm, request, uriInfo).setUser(user).forwardToPassword();
+        return Flows.forms(realm, request, uriInfo).setUser(user).setError("accountPasswordUpdated")
+                .setErrorType(FormFlows.MessageType.SUCCESS).forwardToPassword();
     }
 
     @Path("login-redirect")

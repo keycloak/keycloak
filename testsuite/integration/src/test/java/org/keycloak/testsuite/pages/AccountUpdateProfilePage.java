@@ -44,6 +44,9 @@ public class AccountUpdateProfilePage extends AbstractAccountPage {
     @FindBy(css = "button[type=\"submit\"]")
     private WebElement submitButton;
 
+    @FindBy(css = ".feedback > p > strong")
+    private WebElement feedbackMessage;
+
     public void updateProfile(String firstName, String lastName, String email) {
         firstNameInput.clear();
         firstNameInput.sendKeys(firstName);
@@ -75,4 +78,11 @@ public class AccountUpdateProfilePage extends AbstractAccountPage {
         driver.navigate().to(PATH);
     }
 
+    public boolean isSuccess(){
+        return feedbackMessage != null && "Success!".equals(feedbackMessage.getText());
+    }
+
+    public boolean isError(){
+        return feedbackMessage != null && "Error!".equals(feedbackMessage.getText());
+    }
 }
