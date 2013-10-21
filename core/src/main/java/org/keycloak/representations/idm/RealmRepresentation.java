@@ -37,6 +37,7 @@ public class RealmRepresentation {
     protected List<ScopeMappingRepresentation> scopeMappings;
     protected List<SocialMappingRepresentation> socialMappings;
     protected List<ApplicationRepresentation> applications;
+    protected Map<String, String> socialProviders;
     protected Map<String, String> smtpServer;
 
     public String getSelf() {
@@ -281,6 +282,14 @@ public class RealmRepresentation {
 
     public void setAutomaticRegistrationAfterSocialLogin(Boolean automaticRegistrationAfterSocialLogin) {
         this.automaticRegistrationAfterSocialLogin = automaticRegistrationAfterSocialLogin;
+    }
+
+    public Map<String, String> getSocialProviders() {
+        return socialProviders;
+    }
+
+    public void setSocialProviders(Map<String, String> socialProviders) {
+        this.socialProviders = socialProviders;
     }
 
     public Map<String, String> getSmtpServer() {
