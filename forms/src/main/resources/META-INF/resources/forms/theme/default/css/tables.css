@@ -30,14 +30,6 @@ table thead tr th {
 .rcue-table-actions {
   padding: 1px;
 }
-/*
-.rcue-table-actions button {
-  padding: 3px 8px;
-  font-size: 11px;
-  box-shadow: 1px 2px 2px #e3e3e3;
-  margin: 4px;
-}
-*/
 .rcue-table-number {
   text-align: right;
   width: 100px;
@@ -54,11 +46,7 @@ table thead tr th {
   background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0, #fafafa), color-stop(1, 0, #eeeeee));
   border-bottom: 1px #cedede solid;
 }
-/*
-table tbody tr td:first-child {
-  color: #0099d3;
-}
-*/
+
 table thead tr th:last-child {
   border-right: none;
 }
@@ -70,12 +58,7 @@ table tbody tr:first-child td {
 table tbody tr td:last-child {
   border-right: none;
 }
-/*
-table tbody tr:hover {
-  cursor: pointer;
-  background-color: #ebebeb;
-}
-*/
+
 /* Styles from Gabriel */
 .rcue-table-actions button + button,
 .rcue-table-actions .button + button {
@@ -109,23 +92,7 @@ table tbody tr td.token-cell button {
   margin-bottom: 7px;
   margin-top: 8px;
 }
-table tbody.selectable-rows tr:hover {
-  cursor: pointer;
-  background-color: #ebebeb;
-}
-table tbody.selectable-rows tr:first-child td {
-  padding-top: 9px;
-}
-table tbody.selectable-rows tr.selected,
-table tbody.selectable-rows tr.selected:hover {
-  background-color: #eaf5fb;
-}
-table tbody.selectable-rows tr.selected td:first-child,
-table tbody.selectable-rows tr.selected:hover td:first-child {
-  background-image: url(img/icon-row-selected.svg);
-  background-position: 0.2em center;
-  background-repeat: no-repeat;
-}
+
 table tfoot tr {
   border-top: 1px solid #cecece;
 }

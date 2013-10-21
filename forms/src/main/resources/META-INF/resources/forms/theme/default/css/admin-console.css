@@ -185,43 +185,6 @@ table a:hover {
   font-weight: normal;
   margin-left: 1em;
 }
-.tooltip-box {
-  position: absolute;
-  font-size: 1em;
-  background-image: url("img/tooltip-box-arrow-right-up.svg");
-  background-position: right top;
-  background-repeat: no-repeat;
-  padding-top: 1em;
-  right: 0;
-  top: 1.5em;
-  font-size: 0.90909090909091em;
-}
-.tooltip-box fieldset {
-  width: 30.8em;
-  padding-left: 1.5em;
-  padding-right: 1.5em;
-  padding-top: .5em;
-  background-color: #fff;
-  border: 1px solid #b6b6b6;
-  border-top: none;
-  border-radius: 0 2px 2px 2px;
-  box-shadow: 0px 2px 2px rgba(0, 0, 0, 0.15);
-}
-.tooltip-box fieldset legend {
-  display: none;
-}
-.tooltip-box fieldset label {
-  width: 6em;
-}
-.tooltip-box fieldset .form-actions {
-  margin: 0;
-  padding: 1em 1.5em 1em 0;
-  background-color: #f8f8f8;
-  display: block;
-  float: none;
-  margin-right: -1.5em;
-  margin-left: -1.5em;
-}
 td.token-cell button {
   margin-top: -1px;
 }

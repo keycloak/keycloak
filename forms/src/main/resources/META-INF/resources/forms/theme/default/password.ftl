@@ -15,15 +15,15 @@
             </div>
             <div class="form-group">
                 <label for="password-new">${rb.getString('passwordNew')}</label>
-                <input type="password" id="password-new" name="password-new" placeholder="At least 6 characters" class="error">
+                <input type="password" id="password-new" name="password-new">
             </div>
             <div class="form-group">
                 <label for="password-confirm" class="two-lines">${rb.getString('passwordConfirm')}</label>
-                <input type="password" id="password-confirm" name="password-confirm" class="error">
+                <input type="password" id="password-confirm" name="password-confirm">
             </div>
         </fieldset>
         <div class="form-actions">
-            <a href="#">« Back to my application</a>
+            <#--a href="#">« Back to my application</a-->
             <button type="submit" class="primary">Save</button>
             <button type="submit">Cancel</button>
         </div>
