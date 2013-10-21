@@ -110,23 +110,32 @@ public class SocialLoginTest {
             }
         });
 
-        loginPage.open();
+        try {
+            loginPage.open();
 
-        loginPage.clickSocial("dummy");
+            loginPage.clickSocial("dummy");
 
-        driver.findElement(By.id("username")).sendKeys("dummy-user");
-        driver.findElement(By.id("submit")).click();
+            driver.findElement(By.id("username")).sendKeys("dummy-user-reg");
+            driver.findElement(By.id("submit")).click();
 
-        registerPage.isCurrent();
+            registerPage.isCurrent();
 
-        Assert.assertEquals("", registerPage.getFirstName());
-        Assert.assertEquals("", registerPage.getLastName());
-        Assert.assertEquals("dummy-user@dummy-social", registerPage.getEmail());
-        Assert.assertEquals("dummy-user", registerPage.getUsername());
+            Assert.assertEquals("", registerPage.getFirstName());
+            Assert.assertEquals("", registerPage.getLastName());
+            Assert.assertEquals("dummy-user-reg@dummy-social", registerPage.getEmail());
+            Assert.assertEquals("dummy-user-reg", registerPage.getUsername());
 
-        registerPage.register("Dummy", "User", "dummy-user@dummy-social", "dummy-user", "password", "password");
+            registerPage.register("Dummy", "User", "dummy-user-reg@dummy-social", "dummy-user-reg", "password", "password");
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        } finally {
+            keycloakRule.configure(new KeycloakSetup() {
+                @Override
+                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                    appRealm.setAutomaticRegistrationAfterSocialLogin(true);
+                }
+            });
+        }
     }
 
 }
