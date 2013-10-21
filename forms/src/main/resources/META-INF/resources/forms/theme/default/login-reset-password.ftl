@@ -11,15 +11,6 @@
     <#elseif section = "form">
 
     <div id="form">
-        <#if message?has_content>
-            <#if message.success>
-                <div class="feedback success bottom-left show"><p><strong>${rb.getString('successHeader')}</strong> ${rb.getString(message.summary)}</p></div>
-            </#if>
-            <#if message.error>
-                <div class="feedback error bottom-left show"><p><strong>${rb.getString('errorHeader')}</strong><br/>${rb.getString(message.summary)}</p></div>
-            </#if>
-        </#if>
-
         <p class="instruction">${rb.getString('emailInstruction')}</p>
         <form action="${url.loginPasswordResetUrl}" method="post">
             <div>

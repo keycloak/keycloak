@@ -13,6 +13,7 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.services.resources.AccountService;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.SaasService;
 
@@ -61,6 +62,11 @@ public class AuthenticationManager {
         return createLoginCookie(realm, user, cookieName, cookiePath);
     }
 
+    public NewCookie createAccountIdentityCookie(RealmModel realm, UserModel user, URI uri) {
+        String cookieName = AccountService.ACCOUNT_IDENTITY_COOKIE;
+        String cookiePath = uri.getPath();
+        return createLoginCookie(realm, user, cookieName, cookiePath);
+    }
 
     protected NewCookie createLoginCookie(RealmModel realm, UserModel user, String cookieName, String cookiePath) {
         SkeletonKeyToken identityToken = createIdentityToken(realm, user.getLoginName());
@@ -99,6 +105,11 @@ public class AuthenticationManager {
         expireCookie(SaasService.SAAS_IDENTITY_COOKIE, cookiePath);
     }
 
+    public void expireAccountIdentityCookie(URI uri) {
+        String cookiePath = uri.getPath();
+        expireCookie(AccountService.ACCOUNT_IDENTITY_COOKIE, cookiePath);
+    }
+
     public void expireCookie(String cookieName, String path) {
         HttpResponse response = ResteasyProviderFactory.getContextData(HttpResponse.class);
         if (response == null) {
@@ -117,6 +128,11 @@ public class AuthenticationManager {
 
     public UserModel authenticateSaasIdentityCookie(RealmModel realm, UriInfo uriInfo, HttpHeaders headers) {
         String cookieName = SaasService.SAAS_IDENTITY_COOKIE;
+        return authenticateIdentityCookie(realm, uriInfo, headers, cookieName);
+    }
+
+    public UserModel authenticateAccountIdentityCookie(RealmModel realm, UriInfo uriInfo, HttpHeaders headers) {
+        String cookieName = AccountService.ACCOUNT_IDENTITY_COOKIE;
         return authenticateIdentityCookie(realm, uriInfo, headers, cookieName);
     }
 

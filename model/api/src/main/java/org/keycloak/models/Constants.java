@@ -11,4 +11,6 @@ public interface Constants {
     String APPLICATION_ROLE = "KEYCLOAK_APPLICATION";
     String IDENTITY_REQUESTER_ROLE = "KEYCLOAK_IDENTITY_REQUESTER";
     String WILDCARD_ROLE = "*";
+
+    String ACCOUNT_MANAGEMENT_APPLICATION = "Account Management";
 }

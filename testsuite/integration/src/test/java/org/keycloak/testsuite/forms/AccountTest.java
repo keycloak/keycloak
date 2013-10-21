@@ -21,11 +21,7 @@
  */
 package org.keycloak.testsuite.forms;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.models.RealmModel;
@@ -43,6 +39,8 @@ import org.keycloak.testsuite.rule.KeycloakRule.KeycloakSetup;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
 import org.picketlink.idm.credential.util.TimeBasedOTP;
 
 /**
@@ -97,13 +95,22 @@ public class AccountTest {
 
     @Test
     public void changePassword() {
-        loginPage.open();
+        changePasswordPage.open();
         loginPage.login("test-user@localhost", "password");
 
-        changePasswordPage.open();
+        changePasswordPage.changePassword("", "new-password", "new-password");
+
+        Assert.assertTrue(profilePage.isError());
+
+        changePasswordPage.changePassword("password", "new-password", "new-password2");
+
+        Assert.assertTrue(profilePage.isError());
+
         changePasswordPage.changePassword("password", "new-password", "new-password");
 
-        oauth.openLogout();
+        Assert.assertTrue(profilePage.isSuccess());
+
+        changePasswordPage.logout();
 
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
@@ -118,17 +125,38 @@ public class AccountTest {
 
     @Test
     public void changeProfile() {
-        loginPage.open();
+        profilePage.open();
         loginPage.login("test-user@localhost", "password");
 
-        profilePage.open();
+        Assert.assertEquals("", profilePage.getFirstName());
+        Assert.assertEquals("", profilePage.getLastName());
+        Assert.assertEquals("test-user@localhost", profilePage.getEmail());
 
+        // All fields are required, so there should be an error when something is missing.
+        profilePage.updateProfile("", "New last", "new@email.com");
+
+        Assert.assertTrue(profilePage.isError());
+        Assert.assertEquals("", profilePage.getFirstName());
+        Assert.assertEquals("", profilePage.getLastName());
+        Assert.assertEquals("test-user@localhost", profilePage.getEmail());
+
+        profilePage.updateProfile("New first", "", "new@email.com");
+
+        Assert.assertTrue(profilePage.isError());
+        Assert.assertEquals("", profilePage.getFirstName());
+        Assert.assertEquals("", profilePage.getLastName());
+        Assert.assertEquals("test-user@localhost", profilePage.getEmail());
+
+        profilePage.updateProfile("New first", "New last", "");
+
+        Assert.assertTrue(profilePage.isError());
         Assert.assertEquals("", profilePage.getFirstName());
         Assert.assertEquals("", profilePage.getLastName());
         Assert.assertEquals("test-user@localhost", profilePage.getEmail());
 
         profilePage.updateProfile("New first", "New last", "new@email.com");
 
+        Assert.assertTrue(profilePage.isSuccess());
         Assert.assertEquals("New first", profilePage.getFirstName());
         Assert.assertEquals("New last", profilePage.getLastName());
         Assert.assertEquals("new@email.com", profilePage.getEmail());
@@ -136,16 +164,21 @@ public class AccountTest {
 
     @Test
     public void setupTotp() {
-        loginPage.open();
-        loginPage.login("test-user@localhost", "password");
-
         totpPage.open();
+        loginPage.login("test-user@localhost", "password");
 
         Assert.assertTrue(totpPage.isCurrent());
 
         Assert.assertFalse(driver.getPageSource().contains("Remove Google"));
 
+        // Error with false code
+        totpPage.configure(totp.generate(totpPage.getTotpSecret()+"123"));
+
+        Assert.assertTrue(profilePage.isError());
+
         totpPage.configure(totp.generate(totpPage.getTotpSecret()));
+
+        Assert.assertTrue(profilePage.isSuccess());
 
         Assert.assertTrue(driver.getPageSource().contains("Remove Google"));
     }

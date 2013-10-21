@@ -31,10 +31,10 @@
             <div class="form-area ${(realm.social)?string('social','')} clearfix">
                 <div class="section app-form">
                     <h3>Application login area</h3>
-                    <#if error?has_content>
+                    <#if message?has_content && message.error>
                         <div class="feedback error bottom-left show">
                             <p>
-                                <strong id="loginError">${rb.getString(error.summary)}</strong><br/>${rb.getString('emailErrorInfo')}
+                                <strong id="loginError">${rb.getString(message.summary)}</strong><br/>${rb.getString('emailErrorInfo')}
                             </p>
                         </div>
                     </#if>

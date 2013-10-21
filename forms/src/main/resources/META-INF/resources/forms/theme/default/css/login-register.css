@@ -3,9 +3,9 @@ body {
   min-height: 60em;
   min-width: 120em;
 }
+
 .rcue-login-register {
   background-color: #1D2226;
-  background-image: url("img/login-screen-background.jpg");
   background-position: top left;
   background-size: auto;
   background-repeat: no-repeat;
@@ -17,6 +17,7 @@ body {
   /* Info area */
 
 }
+
 .rcue-login-register h1 a {
   position: absolute;
   top: 5em;
@@ -61,12 +62,12 @@ body {
   padding-right: 4.5em;
 }
 .rcue-login-register .form-area {
-  background-image: url(img/login-register-separator.svg);
+  background-image: url(img/login-register-separator.png);
   background-repeat: no-repeat;
   background-position: 40.2em center;
 }
 .rcue-login-register .form-area.social {
-  background-image: url(img/login-register-social-separators.svg);
+  background-image: url(img/login-register-social-separators.png);
   background-position: 39.6em center;
 }
 .rcue-login-register .section > p {
@@ -267,10 +268,6 @@ a.zocial:before {
 .rcue-login-register.register form > div.aside-btn p {
   line-height: 1.3em;
 }
-/* Customer login */
-.rcue-login-register.customer {
-  background-image: url("img/customer-login-screen-bg2.jpg");
-}
 .rcue-login-register p.powered {
   font-size: 1.1em;
   margin-top: 1.27272727272727em;
@@ -290,9 +287,6 @@ a.zocial:before {
 }
 .rcue-login-register.reset .background-area .section.app-form {
   width: 43.2em;
-}
-.rcue-login-register.reset .feedback {
-  left: 35.7em;
 }
 
 .rcue-login-register.oauth .form-actions {
@@ -404,11 +398,6 @@ a.zocial:before {
 }
 .rcue-login-register.email label {
   width: 6.78571428571429em;
-}
-.rcue-login-register.email .form-area.email {
-  background-position: 40.6em center;
-  background-image: url(img/login-register-email-separator.svg);
-  background-repeat: no-repeat;
 }
 .rcue-login-register.email .feedback.bottom-left {
   left: 38.3em;

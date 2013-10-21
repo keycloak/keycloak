@@ -4,16 +4,15 @@
 <head>
     <meta charset="utf-8">
     <title>Edit Account - <#nested "title"></title>
+    <!-- TODO replace with actual logo once
     <link rel="icon" href="img/favicon.ico">
 
     <!-- Frameworks -->
     <link rel="stylesheet" href="${template.formsPath}/theme/${template.theme}/css/reset.css">
-    <!--link rel="stylesheet" href="bootstrap-3.0.0-wip/css/bootstrap.css"-->
     <link href="${template.formsPath}/lib/bootstrap/css/bootstrap.css" rel="stylesheet" />
     <link href="${template.formsPath}/theme/${template.theme}/css/zocial/zocial.css" rel="stylesheet">
 
     <link rel="stylesheet" href="${template.formsPath}/theme/${template.theme}/css/sprites.css">
-    <link rel="stylesheet" href="${template.formsPath}/theme/${template.theme}/css/select2.css">
     <!-- TODO remove external links -->
     <link rel="stylesheet" href='http://fonts.googleapis.com/css?family=Open+Sans:400,300,300italic,400italic,600,600italic,700,700italic,800,800italic'>
 
@@ -21,15 +20,11 @@
     <link rel="stylesheet" href="${template.formsPath}/theme/${template.theme}/css/base.css">
     <link rel="stylesheet" href="${template.formsPath}/theme/${template.theme}/css/forms.css">
     <link rel="stylesheet" href="${template.formsPath}/theme/${template.theme}/css/header.css">
-    <link rel="stylesheet" href="${template.formsPath}/theme/${template.theme}/css/tabs.css">
     <link rel="stylesheet" href="${template.formsPath}/theme/${template.theme}/css/icons.css">
     <link rel="stylesheet" href="${template.formsPath}/theme/${template.theme}/css/tables.css">
 
     <!-- Page styles -->
     <link rel="stylesheet" href="${template.formsPath}/theme/${template.theme}/css/admin-console.css">
-
-    <script src="${template.formsPath}/lib/jquery/jquery-2.0.3.min.js"></script>
-    <script src="${template.formsPath}/lib/bootstrap/js/bootstrap.js"></script>
 
 </head>
 <body class="admin-console user ${bodyClass}">
@@ -54,6 +49,9 @@
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown"><span class="icon-user">Icon: user</span>
                     ${user.firstName!''} ${user.lastName!''}</a>
                 </li>
+                <li>
+                    <a href="${url.logoutUrl}">Logout</a>
+                </li>
             </ul>
         </div>
     </div>
@@ -67,7 +65,7 @@
                 <li class="<#if active=='password'>active</#if>"><a href="${url.passwordUrl}">Password</a></li>
                 <li class="<#if active=='totp'>active</#if>"><a href="${url.totpUrl}">Authenticator</a></li>
                 <#--<li class="<#if active=='social'>active</#if>"><a href="${url.socialUrl}">Social Accounts</a></li>-->
-                <li class="<#if active=='access'>active</#if>"><a href="${url.accessUrl}">Authorized Access</a></li>
+                <#--<li class="<#if active=='access'>active</#if>"><a href="${url.accessUrl}">Authorized Access</a></li>-->
             </ul>
         </div>
 

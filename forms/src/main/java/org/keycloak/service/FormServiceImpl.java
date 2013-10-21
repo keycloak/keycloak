@@ -32,7 +32,7 @@ import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
 import org.jboss.resteasy.logging.Logger;
-import org.keycloak.forms.ErrorBean;
+import org.keycloak.forms.MessageBean;
 import org.keycloak.forms.LoginBean;
 import org.keycloak.forms.OAuthGrantBean;
 import org.keycloak.forms.RealmBean;
@@ -69,8 +69,7 @@ public class FormServiceImpl implements FormService {
         commandMap.put(Pages.TOTP, new CommandTotp());
         commandMap.put(Pages.LOGIN_CONFIG_TOTP, new CommandTotp());
         commandMap.put(Pages.LOGIN_TOTP, new CommandLoginTotp());
-        commandMap.put(Pages.LOGIN_VERIFY_EMAIL, new CommandLoginTotp());
-        commandMap.put(Pages.ERROR, new CommandError());
+        commandMap.put(Pages.LOGIN_VERIFY_EMAIL, new CommandVerifyEmail());
         commandMap.put(Pages.OAUTH_GRANT, new CommandOAuthGrant());
     }
 
@@ -82,8 +81,8 @@ public class FormServiceImpl implements FormService {
 
         Map<String, Object> attributes = new HashMap<String, Object>();
 
-        if (dataBean.getError() != null){
-            attributes.put("message", new ErrorBean(dataBean.getError(), dataBean.getErrorType()));
+        if (dataBean.getMessage() != null){
+            attributes.put("message", new MessageBean(dataBean.getMessage(), dataBean.getMessageType()));
         }
 
         RealmBean realm = new RealmBean(dataBean.getRealm());
@@ -161,9 +160,6 @@ public class FormServiceImpl implements FormService {
 
     private class CommandLoginTotp implements Command {
         public void exec(Map<String, Object> attributes, FormServiceDataBean dataBean) {
-            if (dataBean.getError() != null){
-                attributes.put("error", new ErrorBean(dataBean.getError()));
-            }
 
             RealmBean realm = new RealmBean(dataBean.getRealm());
 
@@ -206,10 +202,6 @@ public class FormServiceImpl implements FormService {
 
     private class CommandLogin implements Command {
         public void exec(Map<String, Object> attributes, FormServiceDataBean dataBean) {
-            if (dataBean.getError() != null){
-                attributes.put("error", new ErrorBean(dataBean.getError()));
-            }
-
             RealmBean realm = new RealmBean(dataBean.getRealm());
 
             attributes.put("realm", realm);
@@ -230,9 +222,6 @@ public class FormServiceImpl implements FormService {
 
     private class CommandRegister implements Command {
         public void exec(Map<String, Object> attributes, FormServiceDataBean dataBean) {
-            if (dataBean.getError() != null){
-                attributes.put("error", new ErrorBean(dataBean.getError()));
-            }
 
             RealmBean realm = new RealmBean(dataBean.getRealm());
 
@@ -252,14 +241,6 @@ public class FormServiceImpl implements FormService {
         }
     }
 
-    private class CommandError implements Command {
-        public void exec(Map<String, Object> attributes, FormServiceDataBean dataBean) {
-            if (dataBean.getError() != null){
-                attributes.put("error", new ErrorBean(dataBean.getError()));
-            }
-        }
-    }
-
     private class CommandOAuthGrant implements Command {
         public void exec(Map<String, Object> attributes, FormServiceDataBean dataBean) {
 
@@ -271,6 +252,20 @@ public class FormServiceImpl implements FormService {
             oauth.setRealmRolesRequested(dataBean.getOAuthRealmRolesRequested());
 
             attributes.put("oauth", oauth);
+        }
+    }
+
+    private class CommandVerifyEmail implements Command {
+        public void exec(Map<String, Object> attributes, FormServiceDataBean dataBean) {
+
+            RealmBean realm = new RealmBean(dataBean.getRealm());
+
+            attributes.put("realm", realm);
+
+            UrlBean url = new UrlBean(realm, dataBean.getBaseURI());
+            url.setSocialRegistration(dataBean.getSocialRegistration());
+
+            attributes.put("url", url);
         }
     }
 

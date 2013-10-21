@@ -196,6 +196,20 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
         }
     }, true);
 
+    $scope.deleteWebOrigin = function(index) {
+        $scope.application.webOrigins.splice(index, 1);
+    }
+    $scope.addWebOrigin = function() {
+        $scope.application.webOrigins.push($scope.newWebOrigin);
+        $scope.newWebOrigin = "";
+    }
+    $scope.deleteRedirectUri = function(index) {
+        $scope.application.redirectUris.splice(index, 1);
+    }
+    $scope.addRedirectUri = function() {
+        $scope.application.redirectUris.push($scope.newRedirectUri);
+        $scope.newRedirectUri = "";
+    }
 
     $scope.save = function() {
         if ($scope.applicationForm.$valid) {

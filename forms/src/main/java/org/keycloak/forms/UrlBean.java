@@ -124,6 +124,10 @@ public class UrlBean {
         return Urls.accountTotpRemove(baseURI, realm.getId()).toString();
     }
 
+    public String getLogoutUrl() {
+        return Urls.accountLogout(baseURI, realm.getId()).toString();
+    }
+
     public String getLoginPasswordResetUrl() {
         return Urls.loginPasswordReset(baseURI, realm.getId()).toString();
     }

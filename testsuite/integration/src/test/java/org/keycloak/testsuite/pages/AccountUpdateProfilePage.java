@@ -28,7 +28,7 @@ import org.openqa.selenium.support.FindBy;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class AccountUpdateProfilePage extends Page {
+public class AccountUpdateProfilePage extends AbstractAccountPage {
 
     private static String PATH = Constants.AUTH_SERVER_ROOT + "/rest/realms/test/account";
 
@@ -43,6 +43,9 @@ public class AccountUpdateProfilePage extends Page {
 
     @FindBy(css = "button[type=\"submit\"]")
     private WebElement submitButton;
+
+    @FindBy(css = ".feedback > p > strong")
+    private WebElement feedbackMessage;
 
     public void updateProfile(String firstName, String lastName, String email) {
         firstNameInput.clear();
@@ -75,4 +78,11 @@ public class AccountUpdateProfilePage extends Page {
         driver.navigate().to(PATH);
     }
 
+    public boolean isSuccess(){
+        return feedbackMessage != null && "Success!".equals(feedbackMessage.getText());
+    }
+
+    public boolean isError(){
+        return feedbackMessage != null && "Error!".equals(feedbackMessage.getText());
+    }
 }

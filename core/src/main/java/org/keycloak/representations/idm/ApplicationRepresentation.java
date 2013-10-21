@@ -21,6 +21,7 @@ public class ApplicationRepresentation {
     protected List<UserRoleMappingRepresentation> roleMappings;
     protected List<ScopeMappingRepresentation> scopeMappings;
     protected List<String> redirectUris;
+    protected List<String> webOrigins;
 
     public String getSelf() {
         return self;
@@ -154,5 +155,13 @@ public class ApplicationRepresentation {
 
     public void setRedirectUris(List<String> redirectUris) {
         this.redirectUris = redirectUris;
+    }
+
+    public List<String> getWebOrigins() {
+        return webOrigins;
+    }
+
+    public void setWebOrigins(List<String> webOrigins) {
+        this.webOrigins = webOrigins;
     }
 }

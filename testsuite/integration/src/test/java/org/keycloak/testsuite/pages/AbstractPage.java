@@ -28,7 +28,7 @@ import org.openqa.selenium.WebDriver;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public abstract class Page {
+public abstract class AbstractPage {
 
     @WebResource
     protected WebDriver driver;

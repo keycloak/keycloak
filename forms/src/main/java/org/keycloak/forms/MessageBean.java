@@ -19,45 +19,43 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.keycloak.testsuite.pages;
+package org.keycloak.forms;
 
-import org.keycloak.testsuite.Constants;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.FindBy;
+import org.keycloak.services.resources.flows.FormFlows;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class AccountPasswordPage extends AbstractAccountPage {
+public class MessageBean {
 
-    private static String PATH = Constants.AUTH_SERVER_ROOT + "/rest/realms/test/account/password";
+    private String summary;
 
-    @FindBy(id = "password")
-    private WebElement passwordInput;
+    private FormFlows.MessageType type;
 
-    @FindBy(id = "password-new")
-    private WebElement newPasswordInput;
-
-    @FindBy(id = "password-confirm")
-    private WebElement passwordConfirmInput;
-
-    @FindBy(css = "button[type=\"submit\"].primary")
-    private WebElement submitButton;
-
-    public void changePassword(String password, String newPassword, String passwordConfirm) {
-        passwordInput.sendKeys(password);
-        newPasswordInput.sendKeys(newPassword);
-        passwordConfirmInput.sendKeys(passwordConfirm);
-
-        submitButton.click();
+    // Message is considered ERROR by default
+    public MessageBean(String summary) {
+        this(summary, FormFlows.MessageType.ERROR);
     }
 
-    public boolean isCurrent() {
-        return driver.getPageSource().contains("Change Password");
+    public MessageBean(String summary, FormFlows.MessageType type) {
+        this.summary = summary;
+        this.type = type;
     }
 
-    public void open() {
-        driver.navigate().to(PATH);
+    public String getSummary() {
+        return summary;
+    }
+
+    public boolean isSuccess(){
+        return FormFlows.MessageType.SUCCESS.equals(this.type);
+    }
+
+    public boolean isWarning(){
+        return FormFlows.MessageType.WARNING.equals(this.type);
+    }
+
+    public boolean isError(){
+        return FormFlows.MessageType.ERROR.equals(this.type);
     }
 
 }
