@@ -2,6 +2,7 @@ package org.keycloak.representations.idm;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -36,7 +37,8 @@ public class RealmRepresentation {
     protected List<ScopeMappingRepresentation> scopeMappings;
     protected List<SocialMappingRepresentation> socialMappings;
     protected List<ApplicationRepresentation> applications;
-
+    protected Map<String, String> socialProviders;
+    protected Map<String, String> smtpServer;
 
     public String getSelf() {
         return self;
@@ -280,5 +282,21 @@ public class RealmRepresentation {
 
     public void setAutomaticRegistrationAfterSocialLogin(Boolean automaticRegistrationAfterSocialLogin) {
         this.automaticRegistrationAfterSocialLogin = automaticRegistrationAfterSocialLogin;
+    }
+
+    public Map<String, String> getSocialProviders() {
+        return socialProviders;
+    }
+
+    public void setSocialProviders(Map<String, String> socialProviders) {
+        this.socialProviders = socialProviders;
+    }
+
+    public Map<String, String> getSmtpServer() {
+        return smtpServer;
+    }
+
+    public void setSmtpServer(Map<String, String> smtpServer) {
+        this.smtpServer = smtpServer;
     }
 }

@@ -22,6 +22,7 @@
 package org.keycloak.services.email;
 
 import java.net.URI;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
@@ -52,20 +53,15 @@ public class EmailSender {
 
     private Properties properties;
 
-    public EmailSender() {
+    public EmailSender(Map<String, String> config) {
         properties = new Properties();
-        for (Entry<Object, Object> e : System.getProperties().entrySet()) {
-            String key = (String) e.getKey();
-            if (key.startsWith("keycloak.mail.smtp.")) {
-                key = key.replace("keycloak.mail.smtp.", "mail.smtp.");
-                properties.put(key, e.getValue());
-            }
+        for (Entry<String, String> e : config.entrySet()) {
+            properties.put("mail.smtp." + e.getKey(), e.getValue());
         }
     }
 
-    public void send(String address, String subject, String body) throws AddressException, MessagingException {
-
-        Session session = Session.getDefaultInstance(properties);
+    public void send(String address, String subject, String body) throws MessagingException {
+        Session session = Session.getInstance(properties);
 
         Message msg = new MimeMessage(session);
         msg.setFrom(new InternetAddress(properties.getProperty("mail.smtp.from")));

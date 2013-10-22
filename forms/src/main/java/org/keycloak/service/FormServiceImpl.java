@@ -174,7 +174,7 @@ public class FormServiceImpl implements FormService {
 
             RegisterBean register = new RegisterBean(dataBean.getFormData(), dataBean.getSocialRegistration());
 
-            SocialBean social = new SocialBean(realm, register, url);
+            SocialBean social = new SocialBean(realm, dataBean.getSocialProviders(), register, url);
             attributes.put("social", social);
         }
     }
@@ -215,7 +215,7 @@ public class FormServiceImpl implements FormService {
 
             RegisterBean register = new RegisterBean(dataBean.getFormData(), dataBean.getSocialRegistration());
 
-            SocialBean social = new SocialBean(realm, register, url);
+            SocialBean social = new SocialBean(realm, dataBean.getSocialProviders(), register, url);
             attributes.put("social", social);
         }
     }
@@ -236,7 +236,7 @@ public class FormServiceImpl implements FormService {
             RegisterBean register = new RegisterBean(dataBean.getFormData(), dataBean.getSocialRegistration());
             attributes.put("register", register);
 
-            SocialBean social = new SocialBean(realm, register, url);
+            SocialBean social = new SocialBean(realm, dataBean.getSocialProviders(), register, url);
             attributes.put("social", social);
         }
     }

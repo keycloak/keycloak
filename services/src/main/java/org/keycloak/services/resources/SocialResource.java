@@ -136,8 +136,8 @@ public class SocialResource {
             return oauth.forwardToSecurityFailure("Login requester not enabled.");
         }
 
-        String key = System.getProperty("keycloak.social." + requestData.getProviderId() + ".key");
-        String secret = System.getProperty("keycloak.social." + requestData.getProviderId() + ".secret");
+        String key = realm.getSocialConfig().get(requestData.getProviderId() + ".key");
+        String secret = realm.getSocialConfig().get(requestData.getProviderId() + ".secret");
         String callbackUri = Urls.socialCallback(uriInfo.getBaseUri()).toString();
         SocialProviderConfig config = new SocialProviderConfig(key, secret, callbackUri);
 
@@ -228,8 +228,8 @@ public class SocialResource {
             return Flows.forms(realm, request, uriInfo).setError("Social provider not found").forwardToErrorPage();
         }
 
-        String key = System.getProperty("keycloak.social." + providerId + ".key");
-        String secret = System.getProperty("keycloak.social." + providerId + ".secret");
+        String key = realm.getSocialConfig().get(providerId + ".key");
+        String secret = realm.getSocialConfig().get(providerId + ".secret");
         String callbackUri = Urls.socialCallback(uriInfo.getBaseUri()).toString();
 
         SocialProviderConfig config = new SocialProviderConfig(key, secret, callbackUri);
