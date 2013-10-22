@@ -89,7 +89,7 @@ public class FormFlows {
             case UPDATE_PASSWORD:
                 return forwardToActionForm(Pages.LOGIN_UPDATE_PASSWORD, Messages.ACTION_WARN_PASSWD);
             case VERIFY_EMAIL:
-                new EmailSender().sendEmailVerification(userModel, realm, accessCode, uriInfo);
+                new EmailSender(realm.getSmtpConfig()).sendEmailVerification(userModel, realm, accessCode, uriInfo);
                 return forwardToActionForm(Pages.LOGIN_VERIFY_EMAIL, Messages.ACTION_WARN_EMAIL);
             default:
                 return Response.serverError().build();

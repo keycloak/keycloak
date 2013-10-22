@@ -16,6 +16,11 @@
     "requiredApplicationCredentials": [ "password" ],
     "requiredOAuthClientCredentials": [ "password" ],
     "defaultRoles": [ "user" ],
+    "smtpServer": {
+        "from": "auto@keycloak.org",
+        "host": "localhost",
+        "port":"3025"
+    },
     "users" : [
         {
             "username" : "test-user@localhost",
