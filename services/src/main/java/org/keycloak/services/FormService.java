@@ -88,18 +88,20 @@ public interface FormService {
 
         private String contextPath;
 
-        public FormServiceDataBean(RealmModel realm, UserModel userModel, MultivaluedMap<String, String> formData, String message){
+        public FormServiceDataBean(RealmModel realm, UserModel userModel, MultivaluedMap<String, String> formData, String message) {
             this.realm = realm;
             this.userModel = userModel;
             this.formData = formData;
             this.message = message;
 
             socialProviders = new LinkedList<SocialProvider>();
-            HashMap<String,String> socialConfig = realm.getSocialConfig();
-            for (Iterator<SocialProvider> itr = ServiceRegistry.lookupProviders(org.keycloak.social.SocialProvider.class); itr.hasNext();) {
-                SocialProvider p = itr.next();
-                if (socialConfig.containsKey(p.getId() + ".key") && socialConfig.containsKey(p.getId() + ".secret")) {
-                    socialProviders.add(p);
+            HashMap<String, String> socialConfig = realm.getSocialConfig();
+            if (socialConfig != null) {
+                for (Iterator<SocialProvider> itr = ServiceRegistry.lookupProviders(org.keycloak.social.SocialProvider.class); itr.hasNext(); ) {
+                    SocialProvider p = itr.next();
+                    if (socialConfig.containsKey(p.getId() + ".key") && socialConfig.containsKey(p.getId() + ".secret")) {
+                        socialProviders.add(p);
+                    }
                 }
             }
         }
