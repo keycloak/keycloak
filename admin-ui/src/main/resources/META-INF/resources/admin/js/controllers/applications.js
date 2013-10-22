@@ -222,7 +222,7 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
                     var l = headers().location;
                     var id = l.substring(l.lastIndexOf("/") + 1);
                     $location.url("/realms/" + realm.id + "/applications/" + id);
-                    Notifications.success("Created application");
+                    Notifications.success("The application has been created.");
                 });
             } else {
                 Application.update({

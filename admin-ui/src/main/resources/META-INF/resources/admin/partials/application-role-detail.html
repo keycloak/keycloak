@@ -4,20 +4,38 @@
         <div id="content-area" class="col-md-9" role="main">
             <div class="top-nav">
                 <ul class="rcue-tabs">
-                    <li class="active"><a href="#/create/role/{{realm.id}}/applications/{{application.id}}">New {{application.name}} Role</a></li>
-                    <li><a href="#/realms/{{realm.id}}/applications/{{application.id}}/roles">{{application.name}} Roles</a></li>
-                    <li><a href="#/realms/{{realm.id}}/applications/{{application.id}}">{{application.name}} Settings</a></li>
+                    <li><a href="#/realms/{{realm.id}}/applications/{{application.id}}">Settings</a></li>
+                    <li><a href="#/realms/{{realm.id}}/applications/{{application.id}}/credentials">Credentials</a></li>
+                    <li><a href="#">Installation</a></li>
+                    <li class="active"><a href="#/realms/{{realm.id}}/applications/{{application.id}}/roles">Roles</a></li>
+                    <li><a href="#/realms/{{realm.id}}/applications/{{application.id}}/scope-mappings">Scope</a></li>
+                    <li><a href="#">Sessions</a></li>
                 </ul>
             </div>
             <div id="content">
-                <h2 class="pull-left" data-ng-show="create">New Application {{application.name}} Role</h2>
-                <h2 class="pull-left" data-ng-hide="create">Application {{application.name}} Role <span>{{role.name}}</span></h2>
+                <ol class="breadcrumb" data-ng-show="create">
+                    <li><a href="#/realms/{{realm.id}}">{{realm.realm}}</a></li>
+                    <li><a href="#/realms/{{realm.id}}/applications">Applications</a></li>
+                    <li><a href="#/realms/{{realm.id}}/applications/{{application.id}}">{{application.name}}</a></li>
+                    <li><a href="#/realms/{{realm.id}}/applications/{{application.id}}/roles">Roles</a></li>
+                    <li class="active">Add role</li>
+                </ol>
+                <h2 class="pull-left" data-ng-show="create"><span>{{application.name}}</span> Add Role</h2>
                 <p class="subtitle" data-ng-show="create"><span class="required">*</span> Required fields</p>
+                
+                <ol class="breadcrumb" data-ng-hide="create">
+                    <li><a href="#/realms/{{realm.id}}">{{realm.realm}}</a></li>
+                    <li><a href="#/realms/{{realm.id}}/applications">Applications</a></li>
+                    <li><a href="#/realms/{{realm.id}}/applications/{{application.id}}">{{application.name}}</a></li>
+                    <li><a href="#/realms/{{realm.id}}/applications/{{application.id}}/roles">Roles</a></li>
+                    <li class="active">{{role.name}}</li>
+                </ol>
+
+                <h2 class="pull-left" data-ng-hide="create"><span>{{application.name}}</span> {{role.name}}</h2>
                 <form name="realmForm" novalidate>
-                    <fieldset>
-                        <legend uncollapsed><span class="text">Details</span> </legend>
+                    <fieldset class="border-top">
                         <div class="form-group">
-                            <label for="name">Role name </label><span class="required" data-ng-show="create">*</span>
+                            <label for="name">Role name <span class="required" data-ng-show="create">*</span></label>
 
                             <div class="controls">
                                 <input type="text" id="name" name="name" data-ng-model="role.name" autofocus
@@ -28,8 +46,10 @@
                             <label for="description">Description </label>
 
                             <div class="controls">
-                                <input type="text" id="description" name="description" data-ng-model="role.description" autofocus
-                                       required>
+                                <textarea rows="5" cols="50" id="description" name="description" data-ng-model="role.description" required></textarea>
+                            
+<!-- Replaced by the textarea above <input type="text" id="description" name="description" data-ng-model="role.description" autofocus
+                                       required> -->
                             </div>
                         </div>
                     </fieldset>
@@ -43,11 +63,10 @@
 
                     <div class="form-actions" data-ng-show="!create">
                         <button type="submit" data-ng-click="save()" class="primary" data-ng-show="changed">Save
-                            changes
                         </button>
                         <button type="submit" data-ng-click="reset()" data-ng-show="changed">Clear changes
                         </button>
-                        <button type="submit" data-ng-click="remove()" class="danger" data-ng-hide="changed">
+                        <button type="submit" data-ng-click="remove()" class="destructive" data-ng-hide="changed">
                             Delete
                         </button>
                     </div>

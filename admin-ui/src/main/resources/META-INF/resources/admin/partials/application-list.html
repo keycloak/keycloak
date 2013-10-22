@@ -4,16 +4,21 @@
         <div id="content-area" class="col-md-9" role="main">
             <div class="top-nav">
                 <ul class="rcue-tabs">
-                    <li><a href="#/create/application/{{realm.id}}">New Application</a></li>
-                    <li class="active"><a href="#">Applications</a></li>
+                    <li></li>
                 </ul>
             </div>
             <div id="content">
-                <h2 class="pull-left">Applications</h2>
+                <ol class="breadcrumb">
+                    <li><a href="#/realms/{{realm.id}}">{{realm.realm}}</a></li>
+                    <li class="active">Applications</li>
+                </ol>
+                <h2><span>{{realm.realm}}</span> Applications</h2>
+                <div class="feedback info" data-ng-show="!applications || applications.length == 0">
+                    <p><strong>You have not configured applications.</strong><br><a class="button" href="#/create/application/{{realm.id}}">Add Application</a></p>
+                </div>
                 <table>
-                    <caption data-ng-show="!applications || applications.length == 0">No configured applications...</caption>
                     <thead>
-                    <tr >
+                    <tr>
                         <th class="rcue-table-actions" colspan="3">
                             <div class="search-comp clearfix">
                                 <input type="text" placeholder="Search..." class="search">
@@ -23,8 +28,7 @@
                                 </button>
                             </div>
                             <div class="actions">
-                                <a class="button" href="#/create/application/{{realm.id}}">Add</a>
-                                <button class="remove disabled">Remove</button>
+                                <a class="button" href="#/create/application/{{realm.id}}">Add Application</a>
                             </div>
                         </th>
                     </tr>
@@ -46,7 +50,7 @@
                         </td>
                     </tr>
                     </tfoot>
-                    <tbody class="selectable-rows">
+                    <tbody>
                     <tr ng-repeat="app in applications">
                         <td><a href="#/realms/{{realm.id}}/applications/{{app.id}}">{{app.name}}</a></td>
                         <td>{{app.enabled}}</td>
@@ -54,6 +58,9 @@
                     </tr>
                     </tbody>
                 </table>
+                <div class="feedback warning inline">
+                    <p><strong>Your search returned no results.</strong><br>Try modifying the query and try again.</p>
+                </div>
             </div>
         </div>
         <div id="container-right-bg"></div>

@@ -6,9 +6,14 @@ fieldset {
   color: #838383;
   font-style: italic;
 }
+select:-moz-focusring {
+  color: transparent;
+  text-shadow: 0 0 0 #333;
+}
 input[type="text"],
 input[type="password"],
-input[type="email"] {
+input[type="email"],
+textarea {
   font-size: 1.1em;
   padding: 0 0.545454545454545em;
   min-width: 18.1818181818182em;
@@ -20,18 +25,21 @@ input[type="email"] {
 }
 input[type="text"]:hover,
 input[type="password"]:hover,
-input[type="email"]:hover {
+input[type="email"]:hover,
+textarea:hover {
   border-color: #62afdb;
 }
 input[type="text"]:focus,
 input[type="password"]:focus,
-input[type="email"]:focus {
+input[type="email"]:focus,
+textarea:focus {
   border-color: #62afdb;
   box-shadow: #62afdb 0 0 5px;
 }
 input[type="text"].error,
 input[type="password"].error,
-input[type="email"].error {
+input[type="email"].error,
+textarea.error {
   border-color: #ba1212;
   transition: all 0.33s ease-in-out;
   -moz-transition: all 0.33s ease-in-out;
@@ -39,15 +47,20 @@ input[type="email"].error {
 }
 input[type="text"].error:focus,
 input[type="password"].error:focus,
-input[type="email"].error:focus {
+input[type="email"].error:focus,
+textarea.error:focus {
   box-shadow: 0 0 5px #ba1212;
 }
+textarea {
+  padding: 0.45em 0.545454545454545em;
+  height: auto;
+}
 .input-below {
-    clear: both;
-    display: inline-block;
-    margin-left: 10.9090909090909em;
-    margin-top: 0.45454545454545em;
-    padding-left: 3.63636363636364em;
+  clear: both;
+  display: inline-block;
+  margin-left: 10.9090909090909em;
+  margin-top: 0.45454545454545em;
+  padding-left: 3.63636363636364em;
 }
 input[type="button"],
 button,
@@ -171,6 +184,23 @@ button.primary:enabled:active,
   background-color: #0099d4;
   box-shadow: inset 0 0 5px 3px #0074ae;
 }
+.destructive {
+  background-image: linear-gradient(top, #d90000 0%, #ad0101 100%);
+  background-image: -o-linear-gradient(top, #d90000 0%, #ad0101 100%);
+  background-image: -moz-linear-gradient(top, #d90000 0%, #ad0101 100%);
+  background-image: -webkit-linear-gradient(top, #d90000 0%, #ad0101 100%);
+  background-image: -ms-linear-gradient(top, #d90000 0%, #ad0101 100%);
+  background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0, #d90000), color-stop(1, 0, #ad0101));
+  border-color: #350000;
+  color: #FFFFFF;
+}
+.destructive:hover {
+  background-color: #AD0101;
+}
+.destructive:enabled:active {
+  background-color: #AD0101;
+  box-shadow: 0 0 5px 3px #750101 inset;
+}
 /* Code from Gabriel */
 button.primary,
 .button.primary {
@@ -285,6 +315,24 @@ button.primary:focus,
   background-image: url(img/feedback-warning-sign.svg);
   background-color: #fef1e9;
 }
+.feedback.info p {
+  border-color: #5994b2;
+  background-image: url(img/feedback-info-sign.svg);
+  background-color: #e4f3fa;
+}
+.feedback.inline {
+  opacity: 1;
+  position: relative;
+  margin-bottom: 20px;
+}
+.feedback.inline p {
+  border-width: 1px;
+}
+.feedback .button {
+  display: inline-block;
+  font-size: 0.90909090909091em;
+  margin-left: 0.90909090909091em;
+}
 button,
 a.button {
   background-color: #eeeeee;
@@ -366,6 +414,7 @@ fieldset.border-top {
   margin-bottom: 0;
   float: left;
   margin-top: 0.45454545454545em;
+  font-weight: 400;
 }
 .form-group > label.two-lines {
   margin-top: -2px;
@@ -612,6 +661,9 @@ input[type="email"].tiny {
   border-bottom: 1px solid #a7d7f1;
   color: #4d5258;
 }
+.select2-container-multi .select2-choices {
+  width: 40em;
+}
 .input-group input + .select-rcue {
   border-radius: 0 2px 2px 0;
   border-left: 0;
@@ -720,6 +772,9 @@ input[type="email"].tiny {
   font-size: 1.1em;
   margin-right: 0.90909090909091em;
 }
+.changing-selectors.application {
+  padding-left: 12em;
+}
 .changing-selectors .select-title {
   display: inline-block;
 }
@@ -782,12 +837,4 @@ input[type="email"].tiny {
 }
 .breadcrumb > li + li:before {
   content: "» ";
-}
-
-.item-deletable:hover .btn-delete {
-    display: inline-block;
-}
-
-.btn-delete {
-    display: none;
 }

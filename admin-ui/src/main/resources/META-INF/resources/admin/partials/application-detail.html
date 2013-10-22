@@ -4,8 +4,6 @@
         <div id="content-area" class="col-md-9" role="main">
             <div class="top-nav" data-ng-show="!create">
                 <ul class="rcue-tabs">
-                    <li><a href="#/create/application/{{realm.id}}">New Application</a></li>
-                    <li><a href="#/realms/{{realm.id}}/applications">Applications</a></li>
                     <li class="active"><a href="#/realms/{{realm.id}}/applications/{{application.id}}">Settings</a></li>
                     <li><a href="#/realms/{{realm.id}}/applications/{{application.id}}/credentials">Credentials</a></li>
                     <li><a href="#">Installation</a></li>
@@ -16,19 +14,28 @@
             </div>
             <div class="top-nav" data-ng-show="create">
                 <ul class="rcue-tabs">
-                    <li class="active"><a href="#/create/application/{{realm.id}}">New Application</a></li>
-                    <li><a href="#/realms/{{realm.id}}/applications">Applications</a></li>
+                    <li></li>
                 </ul>
             </div>
             <div id="content">
-                <h2 class="pull-left" data-ng-show="create">New Application</h2>
-                <h2 class="pull-left" data-ng-hide="create">Application <span>{{application.name}}</span></h2>
-                <p class="subtitle"><span class="required">*</span> Required fields</p>
+                <ol class="breadcrumb" data-ng-show="create">
+                    <li><a href="#/realms/{{realm.id}}">{{realm.realm}}</a></li>
+                    <li><a href="#/realms/{{realm.id}}/applications">Applications</a></li>
+                    <li class="active">Add Application</li>
+                </ol>
+                <h2 class="pull-left" data-ng-show="create"><span>{{realm.realm}}</span> Add Application</h2>
+                <p class="subtitle" data-ng-show="create"><span class="required">*</span> Required fields</p>
+                <ol class="breadcrumb" data-ng-hide="create">
+                    <li><a href="#/realms/{{realm.id}}">{{realm.realm}}</a></li>
+                    <li><a href="#/realms/{{realm.id}}/applications">Applications</a></li>
+                    <li><a href="#/realms/{{realm.id}}/applications/{{application.id}}">{{application.name}}</a></li>
+                    <li class="active">Settings</li>
+                </ol>
+                <h2 data-ng-hide="create"><span>{{application.name}}</span> Settings</h2>
                 <form name="applicationForm" novalidate>
-                    <fieldset>
-                        <legend uncollapsed><span class="text">Application Settings</span></legend>
+                    <fieldset class="border-top">
                         <div class="form-group">
-                            <label for="name">Name</label><span class="required">*</span>
+                            <label for="name">Name <span class="required" data-ng-show="create">*</span></label>
                             <div class="controls">
                             <input type="text" id="name" name="name" data-ng-model="application.name" autofocus
                                    required>
@@ -36,7 +43,7 @@
                         </div>
 
                         <div class="form-group clearfix block">
-                            <label class="control-label">Enabled</label>
+                            <label for="enabled" class="control-label">Enabled</label>
                             <div class="onoffswitch">
                                 <input type="checkbox" data-ng-model="application.enabled" class="onoffswitch-checkbox"
                                        name="enabled" id="enabled">
@@ -106,11 +113,10 @@
 
                     <div class="form-actions" data-ng-show="!create">
                         <button type="submit" data-ng-click="save()" class="primary" data-ng-show="changed">Save
-                            changes
                         </button>
                         <button type="submit" data-ng-click="reset()" data-ng-show="changed">Clear changes
                         </button>
-                        <button type="submit" data-ng-click="remove()" class="danger">
+                        <button type="submit" data-ng-click="remove()" class="destructive">
                             Delete
                         </button>
                     </div>

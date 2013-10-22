@@ -23,9 +23,11 @@
             <ul class="nav pull-left">
                 <li>
                     <span class="dropdown-label" data-ng-show="showNav()">Realm:</span>
-                    <div class="dropdown" data-ng-show="showNav()">
+                    <div class="select-rcue" data-ng-show="showNav()">
                         <select ng-change="changeRealm()" ng-model="current.realm" ng-options="r.realm for r in current.realms"></select>
                     </div>
+                    <a href="#/realms/{{realm.id}}" id="refresh"><span class="icon-spinner6">Icon: spinner</span></a>
+
                 </li>
             </ul>
             <div class="pull-right" data-ng-show="auth.loggedIn">
