@@ -55,6 +55,25 @@ textarea {
   padding: 0.45em 0.545454545454545em;
   height: auto;
 }
+input[type="text"][readonly],
+input[type="password"][readonly],
+input[type="email"][readonly],
+textarea[readonly] {
+  background-color: #f0f0f0;
+}
+input[type="text"][readonly]:hover,
+input[type="password"][readonly]:hover,
+input[type="email"][readonly]:hover,
+textarea[readonly]:hover {
+  border-color: #62afdb;
+}
+input[type="text"][readonly]:focus,
+input[type="password"][readonly]:focus,
+input[type="email"][readonly]:focus,
+textarea[readonly]:focus {
+  border-color: #b6b6b6;
+  box-shadow: none;
+}
 .input-below {
   clear: both;
   display: inline-block;
@@ -235,9 +254,14 @@ button.primary:focus,
   right: 0.2em;
   top: 0.4em;
   opacity: 0.5;
+  filter: alpha(opacity=50);
 }
-.search-comp .icon-search:hover {
+.search-comp .icon-search:hover,
+.search-comp .icon-search:active,
+.search-comp .icon-search:focus {
+  background-image: url('img/sprites.png');
   opacity: 1;
+  filter: alpha(opacity=100);
   -webkit-transition: ease-in-out opacity 0.25s;
   -moz-transition: ease-in-out opacity 0.25s;
   -o-transition: ease-in-out opacity 0.25s;

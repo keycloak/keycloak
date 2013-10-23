@@ -56,6 +56,22 @@ textarea {
     height: auto;
 }
 
+input[type="text"][readonly],
+input[type="password"][readonly],
+input[type="email"][readonly],
+textarea[readonly] {
+    background-color: #f0f0f0;
+    
+    &:hover {
+        border-color: #62afdb;
+    }
+    
+    &:focus {
+        border-color: #b6b6b6;
+        box-shadow: none;
+    }
+}
+
 .input-below {
     clear: both;
     display: inline-block;
@@ -266,9 +282,14 @@ button.primary,
         right: 0.2em;
         top: 0.4em;
         opacity: 0.5;
+        filter: alpha(opacity=50);
         
-        &:hover {
+        &:hover,
+        &:active,
+        &:focus {
+            background-image: url('img/sprites.png');
             opacity: 1;
+            filter: alpha(opacity=100);
             -webkit-transition: ease-in-out opacity 0.25s;
             -moz-transition: ease-in-out opacity 0.25s;
             -o-transition: ease-in-out opacity 0.25s;
