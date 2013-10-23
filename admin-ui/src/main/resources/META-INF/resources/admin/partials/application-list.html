@@ -13,8 +13,8 @@
                     <li class="active">Applications</li>
                 </ol>
                 <h2><span>{{realm.realm}}</span> Applications</h2>
-                <div class="feedback info" data-ng-show="!applications || applications.length == 0">
-                    <p><strong>You have not configured applications.</strong><br><a class="button" href="#/create/application/{{realm.id}}">Add Application</a></p>
+                <div class="feedback info inline" data-ng-show="!applications || applications.length == 0">
+                    <p><strong>You have not configured applications.</strong> <a class="button" href="#/create/application/{{realm.id}}">Add Application</a></p>
                 </div>
                 <table>
                     <thead>

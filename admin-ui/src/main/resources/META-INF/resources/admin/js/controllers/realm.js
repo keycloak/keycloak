@@ -145,7 +145,7 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $ht
             Realm.remove($scope.realm, function() {
                 Current.realms = Realm.get();
                 $location.url("/realms");
-                Notifications.success("Deleted realm");
+                Notifications.success("The realm has been deleted.");
             });
         });
     };
@@ -182,7 +182,7 @@ module.controller('RealmRequiredCredentialsCtrl', function($scope, Realm, realm,
             $scope.changed = false;
             Realm.update(realmCopy, function () {
                 $location.url("/realms/" + realm.id + "/required-credentials");
-                Notifications.success("Saved changes to realm");
+                Notifications.success("Your changes have been saved to the realm.");
             });
         } else {
             $scope.realmForm.showErrors = true;
@@ -235,7 +235,7 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
             $scope.changed = false;
             Realm.update(realmCopy, function () {
                 $location.url("/realms/" + realm.id + "/token-settings");
-                Notifications.success("Saved changes to realm");
+                Notifications.success("Your changes have been saved to the realm.");
             });
         } else {
             $scope.realmForm.showErrors = true;
@@ -290,7 +290,7 @@ module.controller('RoleDetailCtrl', function($scope, realm, role, Role, $locatio
                 var l = headers().location;
                 var id = l.substring(l.lastIndexOf("/") + 1);
                 $location.url("/realms/" + realm.id + "/roles/" + id);
-                Notifications.success("Created role");
+                Notifications.success("The role has been created.");
 
             });
         } else {
@@ -322,7 +322,7 @@ module.controller('RoleDetailCtrl', function($scope, realm, role, Role, $locatio
                 role : $scope.role.name
             }, function() {
                 $location.url("/realms/" + realm.id + "/roles");
-                Notifications.success("Deleted role");
+                Notifications.success("The role has been deleted.");
             });
         });
     };

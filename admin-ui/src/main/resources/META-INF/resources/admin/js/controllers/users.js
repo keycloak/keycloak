@@ -182,7 +182,7 @@ module.controller('UserDetailCtrl', function($scope, realm, user, User, $locatio
                 userId : $scope.user.username
             }, function() {
                 $location.url("/realms/" + realm.id + "/users");
-                Notifications.success("Deleted user");
+                Notifications.success("The user has been deleted.");
             });
         });
     };
@@ -210,7 +210,7 @@ module.controller('RoleMappingCtrl', function($scope, realm, User, users, role, 
                         realm : $scope.realmId,
                         role : role
                     });
-                    Notifications.success("Added role mapping for user");
+                    Notifications.success("The role mapping has been added for the user.");
                 });
             }
         }
@@ -229,7 +229,7 @@ module.controller('RoleMappingCtrl', function($scope, realm, User, users, role, 
                         role : role
                     });
 
-                    Notifications.success("Removed role mapping for user");
+                    Notifications.success("The role mapping has been removed for the user.");
                 });
             }
         }
