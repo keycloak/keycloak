@@ -54,7 +54,7 @@
                     <tr ng-repeat="app in applications">
                         <td><a href="#/realms/{{realm.id}}/applications/{{app.id}}">{{app.name}}</a></td>
                         <td>{{app.enabled}}</td>
-                        <td></td>
+                        <td ng-class="{'text-muted': !app.baseUrl}">{{app.baseUrl || "Not defined"}}</td>
                     </tr>
                     </tbody>
                 </table>
