@@ -40,7 +40,6 @@ module.controller('RealmDropdownCtrl', function($scope, Realm, Current, Auth, $l
     };
     $scope.showNav = function() {
         var show = Current.realms.length > 0;
-        console.log('Show dropdown? ' + show);
         return Auth.loggedIn && show;
     }
 });
@@ -137,11 +136,12 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $ht
     };
 
     $scope.cancel = function() {
-        $location.url("/realms");
+        //$location.url("/realms");
+        window.history.back();
     };
 
     $scope.remove = function() {
-        Dialog.confirmDelete($scope.realm.name, 'realm', function() {
+        Dialog.confirmDelete($scope.realm.realm, 'realm', function() {
             Realm.remove($scope.realm, function() {
                 Current.realms = Realm.get();
                 $location.url("/realms");
