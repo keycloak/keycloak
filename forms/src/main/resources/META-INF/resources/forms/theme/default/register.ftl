@@ -14,28 +14,22 @@
     <form action="${url.registrationAction}" method="post">
         <p class="subtitle">${rb.getString('allRequired')}</p>
         <div>
-            <label for="firstName">${rb.getString('firstName')}</label>
-            <input type="text" id="firstName" name="firstName" value="${register.formData.firstName!''}" />
+            <label for="firstName">${rb.getString('firstName')}</label><input type="text" id="firstName" name="firstName" value="${register.formData.firstName!''}" />
         </div>
         <div>
-            <label for="lastName">${rb.getString('lastName')}</label>
-            <input type="text" id="lastName" name="lastName" value="${register.formData.lastName!''}" />
+            <label for="lastName">${rb.getString('lastName')}</label><input type="text" id="lastName" name="lastName" value="${register.formData.lastName!''}" />
         </div>
         <div>
-            <label for="email">${rb.getString('email')}</label>
-            <input type="text" id="email" name="email" value="${register.formData.email!''}" />
+            <label for="email">${rb.getString('email')}</label><input type="text" id="email" name="email" value="${register.formData.email!''}" />
         </div>
         <div>
-            <label for="username">${rb.getString('username')}</label>
-            <input type="text" id="username" name="username" value="${register.formData.username!''}" />
+            <label for="username">${rb.getString('username')}</label><input type="text" id="username" name="username" value="${register.formData.username!''}" />
         </div>
         <div>
-            <label for="password">${rb.getString('password')}</label>
-            <input type="password" id="password" name="password" />
+            <label for="password">${rb.getString('password')}</label><input type="password" id="password" name="password" />
         </div>
         <div>
-            <label for="password-confirm">${rb.getString('passwordConfirm')}</label>
-            <input type="password" id="password-confirm" name="password-confirm" />
+            <label for="password-confirm">${rb.getString('passwordConfirm')}</label><input type="password" id="password-confirm" name="password-confirm" />
         </div>
 
         <div class="aside-btn">

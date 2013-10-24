@@ -16,8 +16,7 @@
         <input id="password" name="password" value="${login.password!''}" type="hidden" />
 
         <div>
-            <label for="totp">${rb.getString('authenticatorCode')}</label>
-            <input id="totp" name="totp" type="text" />
+            <label for="totp">${rb.getString('authenticatorCode')}</label><input id="totp" name="totp" type="text" />
         </div>
 
         <div class="aside-btn">
