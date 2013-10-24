@@ -85,6 +85,20 @@ public class OAuthFlows {
         return location.build();
     }
 
+    public Response redirectError(UserModel client, String error, String state, String redirect) {
+        Set<String> redirectUris = client.getRedirectUris();
+        if (!redirectUris.isEmpty() && !redirectUris.contains(redirect)) {
+            return forwardToSecurityFailure("Invalid redirect_uri " + redirect);
+        }
+
+        UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam("error", error);
+        if (state != null) {
+            redirectUri.queryParam("state", state);
+        }
+
+        return Response.status(302).location(redirectUri.build()).build();
+    }
+
     public Response processAccessCode(String scopeParam, String state, String redirect, UserModel client, UserModel user) {
         RoleModel resourceRole = realm.getRole(Constants.APPLICATION_ROLE);
         RoleModel identityRequestRole = realm.getRole(Constants.IDENTITY_REQUESTER_ROLE);

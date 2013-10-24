@@ -19,7 +19,9 @@ window.keycloak = (function () {
             }
         }
 
-        processCallback();
+        if (!processCallback()) {
+            window.location.href = getLoginUrl() + '&prompt=none';
+        }
     }
 
     kc.login = function () {
