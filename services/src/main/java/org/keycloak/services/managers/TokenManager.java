@@ -11,6 +11,7 @@ import org.keycloak.representations.SkeletonKeyToken;
 import javax.ws.rs.core.MultivaluedMap;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -116,6 +117,12 @@ public class TokenManager {
         token.issuedFor(client.getLoginName());
         if (realm.getTokenLifespan() > 0) {
             token.expiration((System.currentTimeMillis() / 1000) + realm.getTokenLifespan());
+        }
+        Set<String> allowedOrigins = client.getWebOrigins();
+        if (allowedOrigins != null && allowedOrigins.size() > 0) {
+            List<String> allowed = new ArrayList<String>();
+            allowed.addAll(allowedOrigins);
+            token.setAllowedOrigins(allowed);
         }
         return token;
     }

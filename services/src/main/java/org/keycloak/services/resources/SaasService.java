@@ -95,6 +95,17 @@ public class SaasService {
         }
     }
 
+    /**  test code for screwing around with CORS
+
+    @Path("set-cookie")
+    @GET
+    @NoCache
+    @Produces("text/plain")
+    public Response cookie(@Context HttpHeaders headers) {
+        return Response.ok("cookie set", MediaType.TEXT_PLAIN_TYPE).cookie(new NewCookie("testcookie", "value")).build();
+    }
+
+
     @Path("ping")
     @GET
     @NoCache
@@ -102,7 +113,11 @@ public class SaasService {
     public String ping(@Context HttpHeaders headers) {
         logger.info("************** GET PING");
         for (String header : headers.getRequestHeaders().keySet()) {
-            logger.info("   " + header + ": " + headers.getHeaderString(header));
+            logger.info("   header --- " + header + ": " + headers.getHeaderString(header));
+        }
+        for (String cookieName : headers.getCookies().keySet()) {
+            logger.info("   cookie --- " + cookieName);
+
         }
         return "ping";
     }
@@ -116,10 +131,17 @@ public class SaasService {
         for (String header : headers.getRequestHeaders().keySet()) {
             logger.info("   " + header + ": " + headers.getHeaderString(header));
         }
+        for (String cookieName : headers.getCookies().keySet()) {
+            logger.info("   cookie --- " + cookieName);
+
+        }
         return Response.ok()
                .header("Access-Control-Allow-Origin", "*")
-               .header("Access-Control-Allow-Headers", HttpHeaders.AUTHORIZATION).build();
+                .header("Access-Control-Allow-Headers", HttpHeaders.AUTHORIZATION)
+                .header("Access-Control-Allow-Credentials", "true")
+               .build();
     }
+     */
 
 
     @Path("keepalive")
