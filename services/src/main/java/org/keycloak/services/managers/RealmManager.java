@@ -91,10 +91,12 @@ public class RealmManager {
             realm.updateDefaultRoles(rep.getDefaultRoles());
         }
 
-        if (rep.isAccountManagement()) {
-            enableAccountManagement(realm);
-        } else {
-            disableAccountManagement(realm);
+        if (rep.isAccountManagement() != null){
+            if (rep.isAccountManagement()) {
+                enableAccountManagement(realm);
+            } else {
+                disableAccountManagement(realm);
+            }
         }
 
         if (rep.getSmtpServer() != null) {
