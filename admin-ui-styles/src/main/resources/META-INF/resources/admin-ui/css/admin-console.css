@@ -25,22 +25,22 @@ body {
 }
 .alert.alert-success {
   border-color: #4b9e39;
-  background-image: url(img/feedback-success-sign.svg);
+  background-image: url(img/feedback-success-sign.png);
   background-color: #e4f1e1;
 }
 .alert.alert-error {
   border-color: #b91415;
-  background-image: url(img/feedback-error-sign.svg);
+  background-image: url(img/feedback-error-sign.png);
   background-color: #f8e7e7;
 }
 .alert.alert-warning {
   border-color: #f17528;
-  background-image: url(img/feedback-warning-sign.svg);
+  background-image: url(img/feedback-warning-sign.png);
   background-color: #fef1e9;
 }
 .alert.alert-info {
   border-color: #5994b2;
-  background-image: url(img/feedback-info-sign.svg);
+  background-image: url(img/feedback-info-sign.png);
   background-color: #e4f3fa;
 }
 /* Header */
@@ -65,9 +65,39 @@ body {
   min-height: 42px;
   max-width: 1170px;
 }
+.header.rcue .navbar.primary .select-rcue {
+  font-size: 0.76923076923077em;
+  margin-left: 1em;
+  margin-top: 0.7em;
+  display: inline-block;
+  vertical-align: middle;
+  background-color: #555a5e;
+  background-image: none;
+  background-image: url(img/sprite-arrow-down.png);
+  background-repeat: no-repeat;
+  background-position: right -26px;
+  border: 1px solid #676c6e;
+  border-radius: 2px;
+  padding-left: 0;
+}
+.header.rcue .navbar.primary .select-rcue:hover {
+  border-color: #7e8385;
+}
+.header.rcue .navbar.primary .select-rcue select {
+  color: #fff;
+}
+.header.rcue .navbar.primary .select-rcue select:-moz-focusring {
+  color: transparent;
+  text-shadow: 0 0 0 #fff;
+}
+.header.rcue .navbar.primary .select-rcue select option {
+  background-color: #fff;
+  color: #333;
+  padding: 0.36363636363636em 0.90909090909091em;
+}
 .header.rcue .navbar.primary .nav > li {
   /*
-            .dropdown {
+            .dropdown { 
                 display: inline-block;
                 margin-left: 0.53846153846154em;
                 margin-top: 0.46153846153846em;
@@ -402,7 +432,7 @@ table + .feedback.inline.warning {
 .tooltip-box {
   position: absolute;
   font-size: 1em;
-  background-image: url("img/tooltip-box-arrow-right-up.svg");
+  background-image: url("img/tooltip-box-arrow-right-up.png");
   background-position: right top;
   background-repeat: no-repeat;
   padding-top: 1em;

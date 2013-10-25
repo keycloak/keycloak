@@ -35,8 +35,8 @@
                                     </select>
                                 </div>
                                 <div class="middle-buttons">
-                                    <button type="submit" ng-click="addRealmRole()" data-original-title="Move right" class="tooltipRightTrigger"><span class="icon-arrow-right">Move right</span></button>
-                                    <button type="submit" ng-click="deleteRealmRole()" data-original-title="Move left" class="tooltipRightTrigger"><span class="icon-arrow-left">Move left</span></button>
+                                    <button type="submit" ng-click="addRealmRole()" tooltip="Move right" tooltip-placement="right"><span class="icon-arrow-right">Move right</span></button>
+                                    <button type="submit" ng-click="deleteRealmRole()" tooltip="Move left" tooltip-placement="right"><span class="icon-arrow-left">Move left</span></button>
                                 </div>
                                 <div class="select-title">
                                     <label for="assigned">Assigned Roles</label>
@@ -57,11 +57,12 @@
                             <div class="input-group">
                                 <div class="select-rcue">
                                     <select id="applications" name="applications" ng-change="changeApplication()" ng-model="targetApp" ng-options="a.name for a in applications">
+                                        <option value="" selected> Select an Application </option>
                                     </select>
                                 </div>
                             </div>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group" ng-show="targetApp">
                             <div class="controls changing-selectors application">
                                 <div class="select-title">
                                     <label for="app-available">Available Roles</label>
@@ -72,8 +73,8 @@
                                     </select>
                                 </div>
                                 <div class="middle-buttons">
-                                    <button type="submit" ng-click="addApplicationRole()" data-original-title="Move right" class="tooltipRightTrigger"><span class="icon-arrow-right">Move right</span></button>
-                                    <button type="submit" ng-click="deleteApplicationRole()" data-original-title="Move left" class="tooltipRightTrigger"><span class="icon-arrow-left">Move left</span></button>
+                                    <button type="submit" ng-click="addApplicationRole()" tooltip="Move right" tooltip-placement="right"><span class="icon-arrow-right">Move right</span></button>
+                                    <button type="submit" ng-click="deleteApplicationRole()" tooltip="Move left" tooltip-placement="right"><span class="icon-arrow-left">Move left</span></button>
                                 </div>
                                 <div class="select-title">
                                     <label for="app-assigned">Assigned Roles</label>

@@ -40,7 +40,6 @@ module.controller('RealmDropdownCtrl', function($scope, Realm, Current, Auth, $l
     };
     $scope.showNav = function() {
         var show = Current.realms.length > 0;
-        console.log('Show dropdown? ' + show);
         return Auth.loggedIn && show;
     }
 });
@@ -137,11 +136,12 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $ht
     };
 
     $scope.cancel = function() {
-        $location.url("/realms");
+        //$location.url("/realms");
+        window.history.back();
     };
 
     $scope.remove = function() {
-        Dialog.confirmDelete($scope.realm.name, 'realm', function() {
+        Dialog.confirmDelete($scope.realm.realm, 'realm', function() {
             Realm.remove($scope.realm, function() {
                 Current.realms = Realm.get();
                 $location.url("/realms");
@@ -200,9 +200,10 @@ module.controller('RealmRequiredCredentialsCtrl', function($scope, Realm, realm,
 module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, $location, Dialog, Notifications) {
     console.log('RealmTokenDetailCtrl');
 
-    $scope.realm = { id : realm.id, realm : realm.realm, social : realm.social, tokenLifespan : realm.tokenLifespan,  accessCodeLifespan : realm.accessCodeLifespan };
+    $scope.realm = { id : realm.id, realm : realm.realm, social : realm.social, tokenLifespan : realm.tokenLifespan,  accessCodeLifespan : realm.accessCodeLifespan ,  accessCodeLifespanUserAction : realm.accessCodeLifespanUserAction  };
     $scope.realm.tokenLifespanUnit = 'Seconds';
     $scope.realm.accessCodeLifespanUnit = 'Seconds';
+    $scope.realm.accessCodeLifespanUserActionUnit = 'Seconds';
 
     var oldCopy = angular.copy($scope.realm);
     $scope.changed = false;
@@ -218,6 +219,7 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
             var realmCopy = angular.copy($scope.realm);
             delete realmCopy["tokenLifespanUnit"];
             delete realmCopy["accessCodeLifespanUnit"];
+            delete realmCopy["accessCodeLifespanUserActionUnit"];
             if ($scope.realm.tokenLifespanUnit == 'Minutes') {
                 realmCopy.tokenLifespan = $scope.realm.tokenLifespan * 60;
             } else if ($scope.realm.tokenLifespanUnit == 'Hours') {
@@ -231,6 +233,13 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
                 realmCopy.accessCodeLifespan = $scope.realm.accessCodeLifespan * 60 * 60;
             } else if ($scope.realm.accessCodeLifespanUnit == 'Days') {
                 realmCopy.accessCodeLifespan = $scope.realm.accessCodeLifespan * 60 * 60 * 24;
+            }
+            if ($scope.realm.accessCodeLifespanUserActionUnit == 'Minutes') {
+                realmCopy.accessCodeLifespanUserAction = $scope.realm.accessCodeLifespanUserAction * 60;
+            } else if ($scope.realm.accessCodeLifespanUserActionUnit == 'Hours') {
+                realmCopy.accessCodeLifespanUserAction = $scope.realm.accessCodeLifespanUserAction * 60 * 60;
+            } else if ($scope.realm.accessCodeLifespanUserActionUnit == 'Days') {
+                realmCopy.accessCodeLifespanUserAction = $scope.realm.accessCodeLifespanUserAction * 60 * 60 * 24;
             }
             $scope.changed = false;
             Realm.update(realmCopy, function () {

@@ -134,7 +134,7 @@ module.controller('UserDetailCtrl', function($scope, realm, user, User, $locatio
     $scope.user = angular.copy(user);
     $scope.create = !user.username;
 
-    $scope.changed = $scope.create;
+    $scope.changed = false; // $scope.create;
 
     $scope.$watch('user', function() {
         if (!angular.equals($scope.user, user)) {
@@ -176,7 +176,7 @@ module.controller('UserDetailCtrl', function($scope, realm, user, User, $locatio
     };
 
     $scope.remove = function() {
-        Dialog.confirmDelete($scope.user.userId, 'user', function() {
+        Dialog.confirmDelete($scope.user.username, 'user', function() {
             $scope.user.$remove({
                 realm : realm.id,
                 userId : $scope.user.username
