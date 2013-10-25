@@ -21,16 +21,13 @@
             </div>
             <p class="subtitle">All fields required</p>
 	        <div>
-    	        <label for="email">${rb.getString('email')}</label>
-            	<input type="text" id="email" name="email" value="${user.email!''}" />
+    	        <label for="email">${rb.getString('email')}</label><input type="text" id="email" name="email" value="${user.email!''}" />
 	        </div>
             <div>
-                <label for="firstName">${rb.getString('firstName')}</label>
-                <input type="text" id="firstName" name="firstName" value="${user.firstName!''}" />
+                <label for="firstName">${rb.getString('firstName')}</label><input type="text" id="firstName" name="firstName" value="${user.firstName!''}" />
             </div>
             <div>
-                <label for="lastName">${rb.getString('lastName')}</label>
-                <input type="text" id="lastName" name="lastName" value="${user.lastName!''}" />
+                <label for="lastName">${rb.getString('lastName')}</label><input type="text" id="lastName" name="lastName" value="${user.lastName!''}" />
             </div>
 
             <div class="aside-btn">

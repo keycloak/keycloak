@@ -18,7 +18,7 @@
 <body class="rcue-login-register ${bodyClass}">
     <#if (template.themeConfig.logo)?has_content>
         <h1>
-            <a href="#" title="Go to the home page"><img src="${template.themeConfig.logo}" alt="Logo" /></a>
+            <a href="#" title="Go to the login page"><img src="${template.themeConfig.logo}" alt="Red Hat Logo" /></a>
         </h1>
     </#if>
 

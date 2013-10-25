@@ -13,13 +13,12 @@
     <div id="form">
         <form action="${url.loginAction}" method="post">
             <div>
-                <label for="username">${rb.getString('username')}</label>
-                <input id="username" name="username" value="${login.username!''}" type="text" />
+                <label for="username">${rb.getString('username')}</label><input id="username" name="username" value="${login.username!''}" type="text" />
             </div>
 
             <#list login.requiredCredentials as c>
                 <div>
-                    <label for="${c.name}">${rb.getString(c.label)}</label> <input id="${c.name}" name="${c.name}" type="${c.inputType}" />
+                    <label for="${c.name}">${rb.getString(c.label)}</label><input id="${c.name}" name="${c.name}" type="${c.inputType}" />
                 </div>
             </#list>
 

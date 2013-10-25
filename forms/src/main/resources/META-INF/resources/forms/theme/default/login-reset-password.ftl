@@ -23,9 +23,6 @@
         </form>
     </div>
     <#elseif section = "info" >
-
-    <div id="info">
-    </div>
-
+        <p><a href="#">&laquo; Back to Login</a></p>
     </#if>
 </@layout.registrationLayout>
