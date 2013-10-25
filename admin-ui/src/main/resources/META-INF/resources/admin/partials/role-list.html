@@ -5,21 +5,21 @@
             <div class="top-nav">
                 <ul class="rcue-tabs">
                     <li><a href="#/realms/{{realm.id}}">General</a></li>
-                    <li data-ng-show="realm.social"><a href="#">Social</a></li>
+                    <li data-ng-show="realm.social"><a href="#/realms/{{realm.id}}/social-settings">Social</a></li>
                     <li class="active"><a href="#/realms/{{realm.id}}/roles">Roles</a></li>
                     <li><a href="#/realms/{{realm.id}}/required-credentials">Credentials</a></li>
                     <li><a href="#/realms/{{realm.id}}/token-settings">Token</a></li>
                 </ul>
             </div>
             <div id="content">
-                <ol class="breadcrumb" data-ng-hide="createRealm">
+                <ol class="breadcrumb">
                     <li><a href="#/realms/{{realm.id}}">{{realm.realm}}</a></li>
-                    <li><a href="#/realms/{{realm.id}}">Settings</a></li>
+                    <li><a href="#/realms/{{realm.id}}">Settings</a></li>   
                     <li class="active">Roles</li>
                 </ol>
-                <h2 class="pull-left"><span>{{realm.realm}}</span> Roles</h2>
-                <div class="feedback info" data-ng-show="!roles || roles.length == 0">
-                    <p><strong>You have not configured realm roles.</strong><br><a class="button" href="#/create/role/{{realm.id}}">Add Role</a></p>
+                <h2><span>{{realm.realm}}</span> Roles</h2>
+                <div class="feedback info inline" data-ng-show="!roles || roles.length == 0">
+                    <p><strong>You have not configured realm roles.</strong> <a class="button" href="#/create/role/{{realm.id}}">Add Role</a></p>
                 </div>
                 <table>
                     <caption class="hidden" data-ng-show="roles && roles.length > 0">Table of realm roles</caption>
@@ -36,8 +36,8 @@
                             <th class="rcue-table-actions" colspan="2">
                                 <div class="search-comp clearfix">
                                     <input type="text" placeholder="Search..." class="search">
-                                    <button class="icon-search tooltipRightTrigger"
-                                            data-original-title="Search by role name.">
+                                    <button class="icon-search" tooltip-placement="right"
+                                            tooltip="Search by role name.">
                                         Icon: search
                                     </button>
                                 </div>

@@ -10,6 +10,14 @@ body {
   background-size: auto;
   background-repeat: no-repeat;
   color: #fff;
+  /*
+    .form-area {
+        background-image: url(img/login-register-separator.svg);
+        background-repeat: no-repeat;
+        background-position: 40.2em center;
+    }
+    */
+
   /* Login area */
 
   /* Social login area */
@@ -59,11 +67,6 @@ body {
 }
 .rcue-login-register .background-area section:first-child {
   padding-right: 4.5em;
-}
-.rcue-login-register .form-area {
-  background-image: url(img/login-register-separator.svg);
-  background-repeat: no-repeat;
-  background-position: 40.2em center;
 }
 .rcue-login-register .form-area.social {
   background-image: url(img/login-register-social-separators.svg);
@@ -137,6 +140,9 @@ body {
   left: 32.7em;
   top: -9.2em;
   min-width: 35em;
+}
+.rcue-login-register.reset .feedback {
+  left: 35.7em;
 }
 .rcue-login-register section.social-login > span {
   display: none;

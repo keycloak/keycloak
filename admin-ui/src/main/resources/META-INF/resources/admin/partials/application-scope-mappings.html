@@ -4,8 +4,6 @@
         <div id="content-area" class="col-md-9" role="main">
             <div class="top-nav">
                 <ul class="rcue-tabs">
-                    <li><a href="#/create/application/{{realm.id}}">New Application</a></li>
-                    <li><a href="#/realms/{{realm.id}}/applications">Applications</a></li>
                     <li><a href="#/realms/{{realm.id}}/applications/{{application.id}}">Settings</a></li>
                     <li><a href="#/realms/{{realm.id}}/applications/{{application.id}}/credentials">Credentials</a></li>
                     <li><a href="#">Installation</a></li>
@@ -15,11 +13,17 @@
                 </ul>
             </div>
             <div id="content">
+                <ol class="breadcrumb" data-ng-hide="create">
+                    <li><a href="#/realms/{{realm.id}}">{{realm.realm}}</a></li>
+                    <li><a href="#/realms/{{realm.id}}/applications">Applications</a></li>
+                    <li><a href="#/realms/{{realm.id}}/applications/{{application.id}}">{{application.name}}</a></li>
+                    <li class="active">Scope</li>
+                </ol>
                 <h2 class="pull-left"><span>{{application.name}}</span> Scope Mappings</h2>
                 <p class="subtitle"></p>
                 <form name="realmForm" novalidate>
-                    <legend uncollapsed><span class="text">Realm Roles</span> </legend>
-                    <fieldset class="border-top">
+                    <fieldset>
+                        <legend uncollapsed><span class="text">Realm Roles</span></legend>
                         <div class="form-group">
                             <div class="controls changing-selectors">
                                 <div class="select-title">
@@ -31,8 +35,8 @@
                                     </select>
                                 </div>
                                 <div class="middle-buttons">
-                                    <button type="submit" ng-click="addRealmRole()" data-original-title="Move right" class="tooltipRightTrigger"><span class="icon-arrow-right">Move right</span></button>
-                                    <button type="submit" ng-click="deleteRealmRole()" data-original-title="Move left" class="tooltipRightTrigger"><span class="icon-arrow-left">Move left</span></button>
+                                    <button type="submit" ng-click="addRealmRole()" tooltip="Move right" tooltip-placement="right"><span class="icon-arrow-right">Move right</span></button>
+                                    <button type="submit" ng-click="deleteRealmRole()" tooltip="Move left" tooltip-placement="right"><span class="icon-arrow-left">Move left</span></button>
                                 </div>
                                 <div class="select-title">
                                     <label for="assigned">Assigned Roles</label>
@@ -49,16 +53,17 @@
                     <fieldset ng-show="applications.length > 0">
                         <legend collapsed><span class="text">Application Roles</span> </legend>
                         <div class="form-group input-select">
-                            <label for="applications">Application: </label>
+                            <label for="applications">Application</label>
                             <div class="input-group">
                                 <div class="select-rcue">
                                     <select id="applications" name="applications" ng-change="changeApplication()" ng-model="targetApp" ng-options="a.name for a in applications">
+                                        <option value="" selected> Select an Application </option>
                                     </select>
                                 </div>
                             </div>
                         </div>
-                        <div class="form-group">
-                            <div class="controls changing-selectors">
+                        <div class="form-group" ng-show="targetApp">
+                            <div class="controls changing-selectors application">
                                 <div class="select-title">
                                     <label for="app-available">Available Roles</label>
                                     <select id="app-available" class="form-control" multiple size="5"
@@ -68,8 +73,8 @@
                                     </select>
                                 </div>
                                 <div class="middle-buttons">
-                                    <button type="submit" ng-click="addApplicationRole()" data-original-title="Move right" class="tooltipRightTrigger"><span class="icon-arrow-right">Move right</span></button>
-                                    <button type="submit" ng-click="deleteApplicationRole()" data-original-title="Move left" class="tooltipRightTrigger"><span class="icon-arrow-left">Move left</span></button>
+                                    <button type="submit" ng-click="addApplicationRole()" tooltip="Move right" tooltip-placement="right"><span class="icon-arrow-right">Move right</span></button>
+                                    <button type="submit" ng-click="deleteApplicationRole()" tooltip="Move left" tooltip-placement="right"><span class="icon-arrow-left">Move left</span></button>
                                 </div>
                                 <div class="select-title">
                                     <label for="app-assigned">Assigned Roles</label>

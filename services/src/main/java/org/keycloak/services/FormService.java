@@ -22,14 +22,19 @@
 package org.keycloak.services;
 
 import java.net.URI;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 
+import javax.imageio.spi.ServiceRegistry;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.resources.flows.FormFlows;
+import org.keycloak.social.SocialProvider;
 
 /**
  * @author <a href="mailto:vrockai@redhat.com">Viliam Rockai</a>
@@ -50,6 +55,8 @@ public interface FormService {
 
         private MultivaluedMap<String, String> formData;
         private URI baseURI;
+
+        private List<SocialProvider> socialProviders;
 
         public Boolean getSocialRegistration() {
             return socialRegistration;
@@ -81,11 +88,22 @@ public interface FormService {
 
         private String contextPath;
 
-        public FormServiceDataBean(RealmModel realm, UserModel userModel, MultivaluedMap<String, String> formData, String message){
+        public FormServiceDataBean(RealmModel realm, UserModel userModel, MultivaluedMap<String, String> formData, String message) {
             this.realm = realm;
             this.userModel = userModel;
             this.formData = formData;
             this.message = message;
+
+            socialProviders = new LinkedList<SocialProvider>();
+            HashMap<String, String> socialConfig = realm.getSocialConfig();
+            if (socialConfig != null) {
+                for (Iterator<SocialProvider> itr = ServiceRegistry.lookupProviders(org.keycloak.social.SocialProvider.class); itr.hasNext(); ) {
+                    SocialProvider p = itr.next();
+                    if (socialConfig.containsKey(p.getId() + ".key") && socialConfig.containsKey(p.getId() + ".secret")) {
+                        socialProviders.add(p);
+                    }
+                }
+            }
         }
 
         public URI getBaseURI() {
@@ -126,6 +144,10 @@ public interface FormService {
 
         public void setUserModel(UserModel userModel) {
             this.userModel = userModel;
+        }
+
+        public List<SocialProvider> getSocialProviders() {
+            return socialProviders;
         }
 
         public FormFlows.MessageType getMessageType() {

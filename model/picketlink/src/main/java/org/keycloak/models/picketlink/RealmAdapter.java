@@ -679,7 +679,7 @@ public class RealmAdapter implements RealmModel {
     @Override
     public void addScopeMapping(UserModel agent, RoleModel role) {
         ScopeRelationship scope = new ScopeRelationship();
-        scope.setClient(((UserAdapter)agent).getUser());
+        scope.setClient(((UserAdapter) agent).getUser());
         scope.setScope(((RoleAdapter)role).getRole());
         getRelationshipManager().add(scope);
     }
@@ -872,5 +872,27 @@ public class RealmAdapter implements RealmModel {
             userModels.add(new UserAdapter(user, idm));
         }
         return userModels;
+    }
+
+    @Override
+    public HashMap<String, String> getSmtpConfig() {
+        return realm.getSmtpConfig();
+    }
+
+    @Override
+    public void setSmtpConfig(HashMap<String, String> smtpConfig) {
+        realm.setSmtpConfig(smtpConfig);
+        updateRealm();
+    }
+
+    @Override
+    public HashMap<String, String> getSocialConfig() {
+        return realm.getSocialConfig();
+    }
+
+    @Override
+    public void setSocialConfig(HashMap<String, String> socialConfig) {
+        realm.setSocialConfig(socialConfig);
+        updateRealm();
     }
 }

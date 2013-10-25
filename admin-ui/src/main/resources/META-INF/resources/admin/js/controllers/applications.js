@@ -120,7 +120,7 @@ module.controller('ApplicationRoleDetailCtrl', function($scope, realm, applicati
                 var l = headers().location;
                 var id = l.substring(l.lastIndexOf("/") + 1);
                 $location.url("/realms/" + realm.id + "/applications/" + application.id + "/roles/" + id);
-                Notifications.success("Created role");
+                Notifications.success("The role has been created.");
 
             });
         } else {
@@ -131,7 +131,7 @@ module.controller('ApplicationRoleDetailCtrl', function($scope, realm, applicati
             }, $scope.role, function() {
                 $scope.changed = false;
                 role = angular.copy($scope.role);
-                Notifications.success("Saved changes to role");
+                Notifications.success("Your changes have been saved to the role.");
             });
         }
     };
@@ -154,7 +154,7 @@ module.controller('ApplicationRoleDetailCtrl', function($scope, realm, applicati
                 role : $scope.role.name
             }, function() {
                 $location.url("/realms/" + realm.id + "/applications/" + application.id + "/roles");
-                Notifications.success("Deleted role");
+                Notifications.success("The role has been deleted.");
             });
         });
     };
@@ -222,7 +222,7 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
                     var l = headers().location;
                     var id = l.substring(l.lastIndexOf("/") + 1);
                     $location.url("/realms/" + realm.id + "/applications/" + id);
-                    Notifications.success("Created application");
+                    Notifications.success("The application has been created.");
                 });
             } else {
                 Application.update({
@@ -231,7 +231,7 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
                 }, $scope.application, function() {
                     $scope.changed = false;
                     application = angular.copy($scope.application);
-                    Notifications.success("Saved changes to application");
+                    Notifications.success("Your changes have been saved to the application.");
                 });
             }
 
@@ -257,7 +257,7 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
                 id : $scope.application.id
             }, function() {
                 $location.url("/realms/" + realm.id + "/applications");
-                Notifications.success("Deleted application");
+                Notifications.success("The application has been deleted.");
             });
         });
     };

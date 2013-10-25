@@ -5,11 +5,9 @@ import org.picketlink.idm.jpa.annotations.OwnerReference;
 import org.picketlink.idm.jpa.annotations.entity.IdentityManaged;
 import org.picketlink.idm.jpa.model.sample.simple.PartitionTypeEntity;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.OneToOne;
+import javax.persistence.*;
 import java.io.Serializable;
+import java.util.HashMap;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -56,6 +54,12 @@ public class RealmEntity implements Serializable {
     private String privateKeyPem;
     @AttributeValue
     private String[] defaultRoles;
+    @AttributeValue
+    @Lob
+    private HashMap<String, String> smtpConfig;
+    @AttributeValue
+    @Lob
+    private HashMap<String, String> socialConfig;
 
 
     public PartitionTypeEntity getPartitionTypeEntity() {
@@ -176,5 +180,21 @@ public class RealmEntity implements Serializable {
 
     public void setPrivateKeyPem(String privateKeyPem) {
         this.privateKeyPem = privateKeyPem;
+    }
+
+    public HashMap<String, String> getSmtpConfig() {
+        return smtpConfig;
+    }
+
+    public void setSmtpConfig(HashMap<String, String> smtpConfig) {
+        this.smtpConfig = smtpConfig;
+    }
+
+    public HashMap<String, String> getSocialConfig() {
+        return socialConfig;
+    }
+
+    public void setSocialConfig(HashMap<String, String> socialConfig) {
+        this.socialConfig = socialConfig;
     }
 }

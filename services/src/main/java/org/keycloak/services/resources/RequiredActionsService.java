@@ -260,7 +260,7 @@ public class RequiredActionsService {
         accessCode.setRequiredActions(requiredActions);
         accessCode.setExpiration(System.currentTimeMillis() / 1000 + realm.getAccessCodeLifespanUserAction());
 
-        new EmailSender().sendPasswordReset(user, realm, accessCode, uriInfo);
+        new EmailSender(realm.getSmtpConfig()).sendPasswordReset(user, realm, accessCode, uriInfo);
 
         return Flows.forms(realm, request, uriInfo).setError("emailSent").setErrorType(FormFlows.MessageType.SUCCESS)
                 .forwardToPasswordReset();

@@ -43,6 +43,9 @@ import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -54,6 +57,11 @@ public class SocialLoginTest {
         public void config(RealmManager manager, RealmModel defaultRealm, RealmModel appRealm) {
             appRealm.setSocial(true);
             appRealm.setAutomaticRegistrationAfterSocialLogin(true);
+
+            HashMap<String, String> socialConfig = new HashMap<String, String>();
+            socialConfig.put("dummy.key", "1234");
+            socialConfig.put("dummy.secret", "1234");
+            appRealm.setSocialConfig(socialConfig);
         }
     });
 

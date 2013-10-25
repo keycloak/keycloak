@@ -11,10 +11,16 @@ fieldset {
     font-style: italic;
 }
 
+select:-moz-focusring {
+    color: transparent;
+    text-shadow: 0 0 0 #333;
+}
+
+
 input[type="text"],
 input[type="password"],
 input[type="email"],
- {
+textarea {
     font-size: 1.1em;
     padding: 0 0.545454545454545em;
     min-width: 18.1818181818182em;
@@ -43,6 +49,35 @@ input[type="email"],
             box-shadow: 0 0 5px #ba1212;
         }
     }
+}
+
+textarea {
+    padding: 0.45em 0.545454545454545em;
+    height: auto;
+}
+
+input[type="text"][readonly],
+input[type="password"][readonly],
+input[type="email"][readonly],
+textarea[readonly] {
+    background-color: #f0f0f0;
+    
+    &:hover {
+        border-color: #62afdb;
+    }
+    
+    &:focus {
+        border-color: #b6b6b6;
+        box-shadow: none;
+    }
+}
+
+.input-below {
+    clear: both;
+    display: inline-block;
+    margin-left: 10.9090909090909em;
+    margin-top: 0.45454545454545em;
+    padding-left: 3.63636363636364em;
 }
 
 input[type="button"],
@@ -180,6 +215,32 @@ button.primary:enabled:active,
   box-shadow: inset 0 0 5px 3px #0074ae;
 }
 
+.destructive {
+    background-image: linear-gradient(top, #D90000 0%, #AD0101 100%);
+    background-image: -o-linear-gradient(top, #D90000 0%, #AD0101 100%);
+    background-image: -moz-linear-gradient(top, #D90000 0%, #AD0101 100%);
+    background-image: -webkit-linear-gradient(top, #D90000 0%, #AD0101 100%);
+    background-image: -ms-linear-gradient(top, #D90000 0%, #AD0101 100%);
+    background-image: -webkit-gradient(
+        linear,
+        left top,
+        left bottom,
+        color-stop(0.0, #D90000),
+        color-stop(1,0, #AD0101)
+        );
+    border-color: #350000;
+    color: #FFFFFF;
+    
+    &:hover {
+        background-color: #AD0101;
+    }
+    
+    &:enabled:active {
+        background-color: #AD0101;
+        box-shadow: 0 0 5px 3px #750101 inset;
+    }
+}
+
 
 /* Code from Gabriel */
 
@@ -221,9 +282,14 @@ button.primary,
         right: 0.2em;
         top: 0.4em;
         opacity: 0.5;
+        filter: alpha(opacity=50);
         
-        &:hover {
+        &:hover,
+        &:active,
+        &:focus {
+            background-image: url('img/sprites.png');
             opacity: 1;
+            filter: alpha(opacity=100);
             -webkit-transition: ease-in-out opacity 0.25s;
             -moz-transition: ease-in-out opacity 0.25s;
             -o-transition: ease-in-out opacity 0.25s;
@@ -292,21 +358,21 @@ button.primary,
     }
 
     &.error {
-        background-image: url(img/feedback-error-arrow-down.svg);
+        background-image: url(img/feedback-error-arrow-down.png);
         
         p {
             border-color: #b91415;
-            background-image: url(img/feedback-error-sign.svg);
+            background-image: url(img/feedback-error-sign.png);
             background-color: #f8e7e7;
         }
     }
     
     &.success {
-        background-image: url(img/feedback-success-arrow-down.svg);
+        background-image: url(img/feedback-success-arrow-down.png);
                 
         p {
             border-color: #4b9e39;
-            background-image: url(img/feedback-success-sign.svg);
+            background-image: url(img/feedback-success-sign.png);
             background-color: #e4f1e1;
         }
     }
@@ -315,10 +381,36 @@ button.primary,
         
         p {
             border-color: #f17528;
-            background-image: url(img/feedback-warning-sign.svg);
+            background-image: url(img/feedback-warning-sign.png);
             background-color: #fef1e9;
         }
         
+    }
+    
+    &.info {
+        
+        p {
+            border-color: #5994b2;
+            background-image: url(img/feedback-info-sign.png);
+            background-color: #e4f3fa;
+        }
+        
+    }
+    
+    &.inline {
+        opacity: 1;
+        position: relative;
+        margin-bottom: 20px;
+        
+        p {
+            border-width: 1px;
+        }
+    }
+    
+    .button {
+        display: inline-block;
+        font-size: 0.90909090909091em;
+        margin-left: 0.90909090909091em;
     }
 }
 
@@ -416,6 +508,7 @@ fieldset.border-top {
         margin-bottom: 0;
         float: left;
         margin-top: 0.45454545454545em;
+        font-weight: 400;
         
         &.two-lines {
             margin-top: -2px;
@@ -731,6 +824,10 @@ input[type="email"] {
     }
 }
 
+.select2-container-multi .select2-choices  {
+    width: 40em;
+}
+
 .input-group input + .select-rcue {
     border-radius: 0 2px 2px 0;
     border-left: 0;
@@ -856,6 +953,10 @@ input[type="email"] {
 
 .changing-selectors {
 
+    &.application {
+        padding-left: 12em;
+    }
+
     .select-title {
     
         display: inline-block;
@@ -927,7 +1028,7 @@ input[type="email"] {
 .breadcrumb {
     
     background: none;
-    margin: 5px 0 5px 0;
+    margin: 5px 0 0 0;
     padding: 0;
     
     li {

@@ -19,21 +19,21 @@
                         <tr>
                             <th class="rcue-table-actions" colspan="4">
                                 <div class="search-comp clearfix">
-                                    <input type="text" placeholder="Search..." data-ng-model="search" class="search">
-                                    <button data-ng-click="searchQuery()"
-                                            class="icon-search tooltipRightTrigger"
-                                            data-original-title="Search by full name, last name, email, or username.">
+                                    <input type="text" placeholder="Search..." data-ng-model="search" class="search"
+                                           onkeyup="if(event.keyCode == 13){$(this).next('button').click();}">
+                                    <button data-ng-click="searchQuery()" type="submit"
+                                            class="icon-search" tooltip-placement="right"
+                                            tooltip="Search by full name, last name, email, or username.">
                                         Icon: search
                                     </button>
                                 </div>
                                 <div class="actions">
                                     <a class="button" href="#/create/user/{{realm.id}}">Add User</a>
-                                    <button class="remove disabled">Remove</button>
                                 </div>
                             </th>
                         </tr>
                         <tr>
-                            <tr data-ng-show="users && search">
+                            <tr data-ng-show="users.length > 0">
                                 <th>Username</th>
                                 <th>Last Name</th>
                                 <th>First Name</th>
@@ -53,7 +53,7 @@
                         </td>
                     </tr>
                     </tfoot>
-                    <tbody class="selectable-rows">
+                    <tbody>
                     <tr ng-repeat="user in users">
                         <td><a href="#/realms/{{realm.id}}/users/{{user.username}}">{{user.username}}</a></td>
                         <td>{{user.lastName}}</td>
@@ -62,6 +62,9 @@
                     </tr>
                     </tbody>
                 </table>
+                <div class="feedback warning inline" data-ng-show="users.length == 0">
+                    <p><strong>Your search returned no results.</strong><br>Try modifying the query and try again.</p>
+                </div>
             </div>
         </div>
         <div id="container-right-bg"></div>

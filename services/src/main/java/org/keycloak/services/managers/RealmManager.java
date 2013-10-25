@@ -91,10 +91,18 @@ public class RealmManager {
             realm.updateDefaultRoles(rep.getDefaultRoles());
         }
 
-        if (rep.isAccountManagement()) {
+        if (rep.getAccountManagement() != null && rep.getAccountManagement()) {
             enableAccountManagement(realm);
         } else {
             disableAccountManagement(realm);
+        }
+
+        if (rep.getSmtpServer() != null) {
+            realm.setSmtpConfig(new HashMap(rep.getSmtpServer()));
+        }
+
+        if (rep.getSocialProviders() != null) {
+            realm.setSocialConfig(new HashMap(rep.getSocialProviders()));
         }
     }
 
@@ -245,8 +253,16 @@ public class RealmManager {
             }
         }
 
-        if (rep.isAccountManagement() != null && rep.isAccountManagement()) {
+        if (rep.getAccountManagement() != null && rep.getAccountManagement()) {
             enableAccountManagement(newRealm);
+        }
+
+        if (rep.getSmtpServer() != null) {
+            newRealm.setSmtpConfig(new HashMap(rep.getSmtpServer()));
+        }
+
+        if (rep.getSocialProviders() != null) {
+            newRealm.setSocialConfig(new HashMap(rep.getSocialProviders()));
         }
     }
 
@@ -403,6 +419,8 @@ public class RealmManager {
         rep.setTokenLifespan(realm.getTokenLifespan());
         rep.setAccessCodeLifespan(realm.getAccessCodeLifespan());
         rep.setAccessCodeLifespanUserAction(realm.getAccessCodeLifespanUserAction());
+        rep.setSmtpServer(realm.getSmtpConfig());
+        rep.setSocialProviders(realm.getSocialConfig());
 
         ApplicationModel accountManagementApplication = realm.getApplicationNameMap().get(Constants.ACCOUNT_MANAGEMENT_APPLICATION);
         rep.setAccountManagement(accountManagementApplication != null && accountManagementApplication.isEnabled());

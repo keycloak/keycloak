@@ -55,9 +55,10 @@ module.factory('Notifications', function($rootScope, $timeout) {
 		$rootScope.notifications = [];
 	}
 
-	notifications.message = function(type, message) {
+	notifications.message = function(type, header, message) {
 		$rootScope.notification = {
 			type : type,
+			header: header,
 			message : message
 		};
 
@@ -65,19 +66,19 @@ module.factory('Notifications', function($rootScope, $timeout) {
 	}
 
 	notifications.info = function(message) {
-		notifications.message("info", message);
+		notifications.message("info", "Info!", message);
 	};
 
 	notifications.success = function(message) {
-		notifications.message("success", message);
+		notifications.message("success", "Success!", message);
 	};
 
 	notifications.error = function(message) {
-		notifications.message("error", message);
+		notifications.message("error", "Error!", message);
 	};
 
 	notifications.warn = function(message) {
-		notifications.message("warn", message);
+		notifications.message("warn", "Warning!", message);
 	};
 
 	return notifications;

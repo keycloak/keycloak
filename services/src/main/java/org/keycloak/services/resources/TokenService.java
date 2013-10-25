@@ -42,10 +42,7 @@ import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Providers;
 
 import java.security.PrivateKey;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -446,7 +443,7 @@ public class TokenService {
     @GET
     public Response loginPage(final @QueryParam("response_type") String responseType,
             final @QueryParam("redirect_uri") String redirect, final @QueryParam("client_id") String clientId,
-            final @QueryParam("scope") String scopeParam, final @QueryParam("state") String state) {
+            final @QueryParam("scope") String scopeParam, final @QueryParam("state") String state, final @QueryParam("prompt") String prompt) {
         OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
 
         if (!realm.isEnabled()) {
@@ -481,6 +478,10 @@ public class TokenService {
         if (user != null) {
             logger.info(user.getLoginName() + " already logged in.");
             return oauth.processAccessCode(scopeParam, state, redirect, client, user);
+        }
+
+        if (prompt != null && prompt.equals("none")) {
+            return oauth.redirectError(client, "access_denied", state, redirect);
         }
 
         return Flows.forms(realm, request, uriInfo).forwardToLogin();

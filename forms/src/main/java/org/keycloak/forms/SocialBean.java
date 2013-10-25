@@ -22,9 +22,7 @@
 package org.keycloak.forms;
 
 import java.net.URI;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 import javax.imageio.spi.ServiceRegistry;
 import javax.ws.rs.core.UriBuilder;
@@ -45,7 +43,7 @@ public class SocialBean {
 
     private List<SocialProvider> providers;
 
-    public SocialBean(RealmBean realm, RegisterBean registerBean, UrlBean url) {
+    public SocialBean(RealmBean realm, List<org.keycloak.social.SocialProvider> providers, RegisterBean registerBean, UrlBean url) {
         this.realm = realm;
         this.registerBean = registerBean;
         this.url = url;
@@ -54,13 +52,10 @@ public class SocialBean {
 
         UriBuilder socialLoginUrlBuilder = UriBuilder.fromUri(Urls.socialRedirectToProviderAuth(baseURI, realm.getId()));
 
-        providers = new LinkedList<SocialProvider>();
-        for (Iterator<org.keycloak.social.SocialProvider> itr = ServiceRegistry
-                .lookupProviders(org.keycloak.social.SocialProvider.class); itr.hasNext();) {
-            org.keycloak.social.SocialProvider p = itr.next();
-
+        this.providers = new LinkedList<SocialProvider>();
+        for (org.keycloak.social.SocialProvider p : providers) {
             String loginUrl = socialLoginUrlBuilder.replaceQueryParam("provider_id", p.getId()).build().toString();
-            providers.add(new SocialProvider(p.getId(), p.getName(), loginUrl));
+            this.providers.add(new SocialProvider(p.getId(), p.getName(), loginUrl));
         }
     }
 
@@ -70,7 +65,7 @@ public class SocialBean {
 
     // Display panel with social providers just in case that social is enabled for realm, but we are not in the middle of registration with social
     public boolean isDisplaySocialProviders() {
-        return realm.isSocial() && !registerBean.isSocialRegistration();
+        return realm.isSocial() && !providers.isEmpty() && !registerBean.isSocialRegistration();
     }
 
     public RealmBean getRealm() {

@@ -3,6 +3,7 @@ package org.keycloak.services.email;
 import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.SocketException;
+import java.util.HashMap;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.AddressException;
@@ -19,6 +20,7 @@ import com.icegreen.greenmail.util.ServerSetup;
 public class EmailSenderTest {
 
     private GreenMail greenMail;
+    private EmailSender emailSender;
 
     @Before
     public void before() {
@@ -27,9 +29,12 @@ public class EmailSenderTest {
         greenMail = new GreenMail(setup);
         greenMail.start();
 
-        System.setProperty("keycloak.mail.smtp.from", "auto@keycloak.org");
-        System.setProperty("keycloak.mail.smtp.host", "localhost");
-        System.setProperty("keycloak.mail.smtp.port", "3025");
+        HashMap<String,String> config = new HashMap<String, String>();
+        config.put("from", "auto@keycloak.org");
+        config.put("host", "localhost");
+        config.put("port", "3025");
+
+        emailSender = new EmailSender(config);
     }
 
     @After
@@ -53,7 +58,6 @@ public class EmailSenderTest {
 
     @Test
     public void sendMail() throws AddressException, MessagingException, IOException {
-        EmailSender emailSender = new EmailSender();
         emailSender.send("test@test.com", "Test subject", "Test body");
 
         MimeMessage[] receivedMessages = greenMail.getReceivedMessages();

@@ -134,7 +134,7 @@ module.controller('UserDetailCtrl', function($scope, realm, user, User, $locatio
     $scope.user = angular.copy(user);
     $scope.create = !user.username;
 
-    $scope.changed = $scope.create;
+    $scope.changed = false; // $scope.create;
 
     $scope.$watch('user', function() {
         if (!angular.equals($scope.user, user)) {
@@ -151,7 +151,7 @@ module.controller('UserDetailCtrl', function($scope, realm, user, User, $locatio
                 user = angular.copy($scope.user);
 
                 $location.url("/realms/" + realm.id + "/users/" + $scope.user.username);
-                Notifications.success("Created user");
+                Notifications.success("The user has been created.");
             });
         } else {
             User.update({
@@ -160,7 +160,7 @@ module.controller('UserDetailCtrl', function($scope, realm, user, User, $locatio
             }, $scope.user, function () {
                 $scope.changed = false;
                 user = angular.copy($scope.user);
-                Notifications.success("Saved changes to user");
+                Notifications.success("Your changes have been saved to the user.");
             });
 
         }
@@ -176,13 +176,13 @@ module.controller('UserDetailCtrl', function($scope, realm, user, User, $locatio
     };
 
     $scope.remove = function() {
-        Dialog.confirmDelete($scope.user.userId, 'user', function() {
+        Dialog.confirmDelete($scope.user.username, 'user', function() {
             $scope.user.$remove({
                 realm : realm.id,
                 userId : $scope.user.username
             }, function() {
                 $location.url("/realms/" + realm.id + "/users");
-                Notifications.success("Deleted user");
+                Notifications.success("The user has been deleted.");
             });
         });
     };
@@ -210,7 +210,7 @@ module.controller('RoleMappingCtrl', function($scope, realm, User, users, role, 
                         realm : $scope.realmId,
                         role : role
                     });
-                    Notifications.success("Added role mapping for user");
+                    Notifications.success("The role mapping has been added for the user.");
                 });
             }
         }
@@ -229,7 +229,7 @@ module.controller('RoleMappingCtrl', function($scope, realm, User, users, role, 
                         role : role
                     });
 
-                    Notifications.success("Removed role mapping for user");
+                    Notifications.success("The role mapping has been removed for the user.");
                 });
             }
         }

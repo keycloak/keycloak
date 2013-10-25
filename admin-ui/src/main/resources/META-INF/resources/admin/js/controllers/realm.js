@@ -40,7 +40,6 @@ module.controller('RealmDropdownCtrl', function($scope, Realm, Current, Auth, $l
     };
     $scope.showNav = function() {
         var show = Current.realms.length > 0;
-        console.log('Show dropdown? ' + show);
         return Auth.loggedIn && show;
     }
 });
@@ -104,7 +103,7 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $ht
                             }
                         }
                         $location.url("/realms/" + id);
-                        Notifications.success("Created realm");
+                        Notifications.success("The realm has been created.");
                     });
                 });
             } else {
@@ -122,7 +121,7 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $ht
                         }
                     });
                     $location.url("/realms/" + id);
-                    Notifications.success("Saved changes to realm");
+                    Notifications.success("Your changes have been saved to the realm.");
                 });
             }
         } else {
@@ -137,15 +136,16 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $ht
     };
 
     $scope.cancel = function() {
-        $location.url("/realms");
+        //$location.url("/realms");
+        window.history.back();
     };
 
     $scope.remove = function() {
-        Dialog.confirmDelete($scope.realm.name, 'realm', function() {
+        Dialog.confirmDelete($scope.realm.realm, 'realm', function() {
             Realm.remove($scope.realm, function() {
                 Current.realms = Realm.get();
                 $location.url("/realms");
-                Notifications.success("Deleted realm");
+                Notifications.success("The realm has been deleted.");
             });
         });
     };
@@ -182,7 +182,7 @@ module.controller('RealmRequiredCredentialsCtrl', function($scope, Realm, realm,
             $scope.changed = false;
             Realm.update(realmCopy, function () {
                 $location.url("/realms/" + realm.id + "/required-credentials");
-                Notifications.success("Saved changes to realm");
+                Notifications.success("Your changes have been saved to the realm.");
             });
         } else {
             $scope.realmForm.showErrors = true;
@@ -196,13 +196,131 @@ module.controller('RealmRequiredCredentialsCtrl', function($scope, Realm, realm,
     };
 });
 
+module.controller('RealmSocialCtrl', function($scope, realm, Realm, $location, Notifications) {
+    console.log('RealmSocialCtrl');
+
+    $scope.realm = { id : realm.id, realm : realm.realm, social : realm.social, tokenLifespan : realm.tokenLifespan,  accessCodeLifespan : realm.accessCodeLifespan };
+
+    if (!realm["socialProviders"]){
+        $scope.realm["socialProviders"] = {};
+    } else {
+        $scope.realm["socialProviders"] = realm.socialProviders;
+    }
+
+    // Hardcoded provider list
+    $scope.availableProviders = [ "google", "facebook", "twitter"];
+
+    var oldCopy = angular.copy($scope.realm);
+    $scope.changed = false;
+    $scope.callbackUrl = $location.absUrl().replace(/\/admin.*/, "/rest/social/callback");
+
+    // To get rid of the "undefined" option in the provider select list
+    // Setting the 1st option from the list (if the list is not empty)
+    var selectFirstProvider = function(){
+        if ($scope.unsetProviders.length > 0){
+            $scope.newProviderId = $scope.unsetProviders[0];
+        } else {
+            $scope.newProviderId = null;
+        }
+    }
+
+    // Fill in configured providers
+    var initSocial = function() {
+        $scope.unsetProviders = [];
+        $scope.configuredProviders = [];
+
+        for (var providerConfig in $scope.realm.socialProviders){
+            // Get the provider ID which is before the '.' (i.e. google in google.key or google.secret)
+            if ($scope.realm.socialProviders.hasOwnProperty(providerConfig)){
+                var pId = providerConfig.split('.')[0];
+                if ($scope.configuredProviders.indexOf(pId) < 0){
+                    $scope.configuredProviders.push(pId);
+                }
+            }
+        }
+
+        // If no providers are already configured, you can add any of them
+        if ($scope.configuredProviders.length == 0){
+            $scope.unsetProviders = $scope.availableProviders;
+        } else {
+            for (var i = 0; i < $scope.availableProviders.length; i++){
+                var providerId = $scope.availableProviders[i];
+                if ($scope.configuredProviders.indexOf(providerId) < 0){
+                    $scope.unsetProviders.push(providerId);
+                }
+            }
+        }
+
+        selectFirstProvider();
+    };
+
+    initSocial();
+
+    $scope.addProvider = function() {
+        if ($scope.availableProviders.indexOf($scope.newProviderId) > -1){
+            $scope.realm.socialProviders[$scope.newProviderId+".key"]="";
+            $scope.realm.socialProviders[$scope.newProviderId+".secret"]="";
+            $scope.configuredProviders.push($scope.newProviderId);
+            $scope.unsetProviders.remove($scope.unsetProviders.indexOf($scope.newProviderId));
+            selectFirstProvider();
+        }
+    };
+
+    $scope.removeProvider = function(pId) {
+        delete $scope.realm.socialProviders[pId+".key"];
+        delete $scope.realm.socialProviders[pId+".secret"];
+        $scope.configuredProviders.remove($scope.configuredProviders.indexOf(pId));
+        $scope.unsetProviders.push(pId);
+    };
+
+    $scope.$watch('realm', function() {
+        if (!angular.equals($scope.realm, oldCopy)) {
+            $scope.changed = true;
+        }
+    }, true);
+
+    $scope.save = function() {
+        $scope.saveClicked = true;
+
+        if ($scope.realmForm.$valid) {
+            var realmCopy = angular.copy($scope.realm);
+            realmCopy.social = true;
+            $scope.changed = false;
+            Realm.update(realmCopy, function () {
+                $location.url("/realms/" + realm.id + "/social-settings");
+                Notifications.success("Saved changes to realm");
+            });
+        } else {
+            $scope.realmForm.showErrors = true;
+            Notifications.error("Some required fields are missing values.");
+        }
+    };
+
+    $scope.reset = function() {
+        $scope.realm = angular.copy(oldCopy);
+        $scope.changed = false;
+        // Initialize lists of configured and unset providers again
+        initSocial();
+    };
+
+    $scope.openHelp = function(pId) {
+        $scope.helpPId = pId;
+        $scope.providerHelpModal = true;
+    };
+
+    $scope.closeHelp = function() {
+        $scope.providerHelpModal = false;
+    };
+
+});
 
 module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, $location, Dialog, Notifications) {
     console.log('RealmTokenDetailCtrl');
 
-    $scope.realm = { id : realm.id, realm : realm.realm, social : realm.social, tokenLifespan : realm.tokenLifespan,  accessCodeLifespan : realm.accessCodeLifespan };
+    $scope.realm = { id : realm.id, realm : realm.realm, social : realm.social, tokenLifespan : realm.tokenLifespan,  accessCodeLifespan : realm.accessCodeLifespan ,  accessCodeLifespanUserAction : realm.accessCodeLifespanUserAction  };
     $scope.realm.tokenLifespanUnit = 'Seconds';
     $scope.realm.accessCodeLifespanUnit = 'Seconds';
+    $scope.realm.accessCodeLifespanUserActionUnit = 'Seconds';
 
     var oldCopy = angular.copy($scope.realm);
     $scope.changed = false;
@@ -218,6 +336,7 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
             var realmCopy = angular.copy($scope.realm);
             delete realmCopy["tokenLifespanUnit"];
             delete realmCopy["accessCodeLifespanUnit"];
+            delete realmCopy["accessCodeLifespanUserActionUnit"];
             if ($scope.realm.tokenLifespanUnit == 'Minutes') {
                 realmCopy.tokenLifespan = $scope.realm.tokenLifespan * 60;
             } else if ($scope.realm.tokenLifespanUnit == 'Hours') {
@@ -232,10 +351,17 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
             } else if ($scope.realm.accessCodeLifespanUnit == 'Days') {
                 realmCopy.accessCodeLifespan = $scope.realm.accessCodeLifespan * 60 * 60 * 24;
             }
+            if ($scope.realm.accessCodeLifespanUserActionUnit == 'Minutes') {
+                realmCopy.accessCodeLifespanUserAction = $scope.realm.accessCodeLifespanUserAction * 60;
+            } else if ($scope.realm.accessCodeLifespanUserActionUnit == 'Hours') {
+                realmCopy.accessCodeLifespanUserAction = $scope.realm.accessCodeLifespanUserAction * 60 * 60;
+            } else if ($scope.realm.accessCodeLifespanUserActionUnit == 'Days') {
+                realmCopy.accessCodeLifespanUserAction = $scope.realm.accessCodeLifespanUserAction * 60 * 60 * 24;
+            }
             $scope.changed = false;
             Realm.update(realmCopy, function () {
                 $location.url("/realms/" + realm.id + "/token-settings");
-                Notifications.success("Saved changes to realm");
+                Notifications.success("Your changes have been saved to the realm.");
             });
         } else {
             $scope.realmForm.showErrors = true;
@@ -290,7 +416,7 @@ module.controller('RoleDetailCtrl', function($scope, realm, role, Role, $locatio
                 var l = headers().location;
                 var id = l.substring(l.lastIndexOf("/") + 1);
                 $location.url("/realms/" + realm.id + "/roles/" + id);
-                Notifications.success("Created role");
+                Notifications.success("The role has been created.");
 
             });
         } else {
@@ -300,7 +426,7 @@ module.controller('RoleDetailCtrl', function($scope, realm, role, Role, $locatio
             }, $scope.role, function() {
                 $scope.changed = false;
                 role = angular.copy($scope.role);
-                Notifications.success("Saved changes to role");
+                Notifications.success("Your changes have been saved to the role.");
             });
         }
     };
@@ -322,7 +448,7 @@ module.controller('RoleDetailCtrl', function($scope, realm, role, Role, $locatio
                 role : $scope.role.name
             }, function() {
                 $location.url("/realms/" + realm.id + "/roles");
-                Notifications.success("Deleted role");
+                Notifications.success("The role has been deleted.");
             });
         });
     };

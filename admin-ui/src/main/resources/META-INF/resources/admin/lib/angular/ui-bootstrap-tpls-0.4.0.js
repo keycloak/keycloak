@@ -970,8 +970,8 @@ dialogModule.provider("$dialog", function(){
     transitionClass: 'fade',
     triggerClass: 'in',
     resolve:{},
-    backdropFade: false,
-    dialogFade:false,
+    backdropFade: true,
+    dialogFade: true,
     keyboard: true, // close with esc key
     backdropClick: true // only in conjunction with backdrop=true
     /* other options: template, templateUrl, controller */
@@ -1027,6 +1027,7 @@ dialogModule.provider("$dialog", function(){
         this.modalEl.addClass(options.transitionClass);
         this.modalEl.removeClass(options.triggerClass);
       }
+      this.modalEl.css("display", "block"); /* FIXME: For BS 3.x support */
 
       this.handledEscapeKey = function(e) {
         if (e.which === 27) {
@@ -2997,6 +2998,8 @@ angular.module("template/datepicker/datepicker.html", []).run(["$templateCache",
 
 angular.module("template/dialog/message.html", []).run(["$templateCache", function($templateCache) {
   $templateCache.put("template/dialog/message.html",
+    "<div class=\"modal-dialog\">\n" +
+    "<div class=\"modal-content\">\n" +
     "<div class=\"modal-header\">\n" +
     "	<h3>{{ title }}</h3>\n" +
     "</div>\n" +
@@ -3005,6 +3008,8 @@ angular.module("template/dialog/message.html", []).run(["$templateCache", functi
     "</div>\n" +
     "<div class=\"modal-footer\">\n" +
     "	<button ng-repeat=\"btn in buttons\" ng-click=\"close(btn.result)\" class=\"btn\" ng-class=\"btn.cssClass\">{{ btn.label }}</button>\n" +
+    "</div>\n" +
+    "</div>\n" +
     "</div>\n" +
     "");
 }]);

@@ -5,7 +5,7 @@
             <div class="top-nav">
                 <ul class="rcue-tabs">
                     <li><a href="#/realms/{{realm.id}}">General</a></li>
-                    <li data-ng-show="realm.social"><a href="#">Social</a></li>
+                    <li data-ng-show="realm.social"><a href="#/realms/{{realm.id}}/social-settings">Social</a></li>
                     <li class="active"><a href="#/realms/{{realm.id}}/roles">Roles</a></li>
                     <li><a href="#/realms/{{realm.id}}/required-credentials">Credentials</a></li>
                     <li><a href="#/realms/{{realm.id}}/token-settings">Token</a></li>
@@ -25,7 +25,7 @@
                     <li><a href="#/realms/{{realm.id}}/roles">Roles</a></li>
                     <li class="active">Add Role</li>
                 </ol>
-                <h2 class="pull-left" data-ng-show="create">Add Realm Role</h2>
+                <h2 class="pull-left" data-ng-show="create"><span>{{realm.realm}}</span> Add Role</h2>
                 <p class="subtitle" data-ng-show="create"><span class="required">*</span> Required fields</p>
                 <form name="realmForm" novalidate>
                     <fieldset class="border-top">
@@ -42,7 +42,6 @@
 
                             <div class="controls">
                                 <textarea rows="5" cols="50" id="description" name="description" data-ng-model="role.description" required></textarea>
-                                <!-- Replaced by the textarea above <input type="text" id="description" name="description" data-ng-model="role.description" required> -->
                             </div>
                         </div>
                     </fieldset>
@@ -59,7 +58,7 @@
                         </button>
                         <button type="submit" data-ng-click="reset()" data-ng-show="changed">Clear changes
                         </button>
-                        <button type="submit" data-ng-click="remove()" class="danger" data-ng-hide="changed">
+                        <button type="submit" data-ng-click="remove()" class="destructive" data-ng-hide="changed">
                             Delete
                         </button>
                     </div>

@@ -1,7 +1,9 @@
 package org.keycloak.test;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -51,6 +53,16 @@ public class ModelTest extends AbstractKeycloakServerTest {
         realm.setPrivateKeyPem("1234234");
         realm.addDefaultRole("default-role");
 
+        HashMap<String, String> smtp = new HashMap<String,String>();
+        smtp.put("from", "auto@keycloak");
+        smtp.put("hostname", "localhost");
+        realm.setSmtpConfig(smtp);
+
+        HashMap<String, String> social = new HashMap<String,String>();
+        social.put("google.key", "1234");
+        social.put("google.secret", "5678");
+        realm.setSmtpConfig(social);
+
         RealmModel peristed = manager.getRealm(realm.getId());
         assertEquals(realm, peristed);
 
@@ -75,6 +87,9 @@ public class ModelTest extends AbstractKeycloakServerTest {
         Assert.assertEquals(expected.getPrivateKeyPem(), actual.getPrivateKeyPem());
 
         assertEquals(expected.getDefaultRoles(), actual.getDefaultRoles());
+
+        Assert.assertEquals(expected.getSmtpConfig(), actual.getSmtpConfig());
+        Assert.assertEquals(expected.getSocialConfig(), actual.getSocialConfig());
     }
 
     public static void assertEquals(List<RoleModel> expected, List<RoleModel> actual) {

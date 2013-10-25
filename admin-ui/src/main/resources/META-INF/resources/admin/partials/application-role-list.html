@@ -4,32 +4,53 @@
         <div id="content-area" class="col-md-9" role="main">
             <div class="top-nav">
                 <ul class="rcue-tabs">
-                    <li><a href="#/create/role/{{realm.id}}/applications/{{application.id}}">New {{application.name}} Role</a></li>
-                    <li class="active"><a href="#/realms/{{realm.id}}/applications/{{application.id}}/roles">{{application.name}} Roles</a></li>
-                    <li><a href="#/realms/{{realm.id}}/applications/{{application.id}}">{{application.name}} Settings</a></li>
+                    <li><a href="#/realms/{{realm.id}}/applications/{{application.id}}">Settings</a></li>
+                    <li><a href="#/realms/{{realm.id}}/applications/{{application.id}}/credentials">Credentials</a></li>
+                    <li><a href="#">Installation</a></li>
+                    <li class="active"><a href="#/realms/{{realm.id}}/applications/{{application.id}}/roles">Roles</a></li>
+                    <li><a href="#/realms/{{realm.id}}/applications/{{application.id}}/scope-mappings">Scope</a></li>
+                    <li><a href="#">Sessions</a></li>
                 </ul>
             </div>
             <div id="content">
-                <h2 class="pull-left">Application <span>{{application.name}}</span> Roles</h2>
+                <ol class="breadcrumb" data-ng-hide="create">
+                    <li><a href="#/realms/{{realm.id}}">{{realm.realm}}</a></li>
+                    <li><a href="#/realms/{{realm.id}}/applications">Applications</a></li>
+                    <li><a href="#/realms/{{realm.id}}/applications/{{application.id}}">{{application.name}}</a></li>
+                    <li class="active">Roles</li>
+                </ol>
+                <h2><span>{{application.name}}</span> Roles</h2>
+                <div class="feedback info" data-ng-show="!roles || roles.length == 0">
+                    <p><strong>You have not configured application roles.</strong><br><a class="button" href="#/create/role/{{realm.id}}/applications/{{application.id}}">Add Role</a></p>
+                </div>
+                                
+
                 <table>
-                    <caption data-ng-show="roles && roles.length > 0">Table of realm roles</caption>
-                    <caption data-ng-show="!roles || roles.length == 0">No configured realm roles...</caption>
+                    <caption data-ng-show="roles && roles.length > 0" class="hidden">Table of realm roles</caption>
                     <thead>
-                    <tr data-ng-show="roles && roles.length > 5">
-                        <th class="rcue-table-actions" colspan="2">
-                            <div class="search-comp clearfix">
-                                <input type="text" placeholder="Search..." class="search">
-                                <button class="icon-search tooltipRightTrigger"
-                                        data-original-title="Search by role name.">
-                                    Icon: search
-                                </button>
-                            </div>
-                        </th>
-                    </tr>
-                    <tr>
-                        <th>Role Name</th>
-                        <th>Description</th>
-                    </tr>
+                        <tr>
+                            <th class="rcue-table-actions" colspan="2">
+                                <div class="actions">
+                                    <a class="button" href="#/create/role/{{realm.id}}/applications/{{application.id}}">Add Role</a>
+                                    <!-- <button class="remove disabled">Remove</button> -->
+                                </div>
+                            </th>
+                        </tr>
+                        <tr data-ng-show="roles && roles.length > 5">
+                            <th class="rcue-table-actions" colspan="2">
+                                <div class="search-comp clearfix">
+                                    <input type="text" placeholder="Search..." class="search">
+                                    <button class="icon-search" tooltip-placement="right"
+                                            tooltip="Search by role name.">
+                                        Icon: search
+                                    </button>
+                                </div>
+                            </th>
+                        </tr>
+                        <tr>
+                            <th>Role Name</th>
+                            <th>Description</th>
+                        </tr>
                     </thead>
                     <tfoot data-ng-show="roles && roles.length > 5"> <!-- todo -->
                     <tr>
@@ -43,7 +64,7 @@
                         </td>
                     </tr>
                     </tfoot>
-                    <tbody class="selectable-rows">
+                    <tbody>
                     <tr ng-repeat="role in roles">
                         <td><a href="#/realms/{{realm.id}}/applications/{{application.id}}/roles/{{role.id}}">{{role.name}}</a></td>
                         <td>{{role.description}}</td>
