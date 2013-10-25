@@ -25,11 +25,15 @@ import io.undertow.Undertow;
 import io.undertow.Undertow.Builder;
 import io.undertow.server.handlers.resource.*;
 import io.undertow.servlet.Servlets;
+import io.undertow.servlet.api.DefaultServletConfig;
 import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.FilterInfo;
 
 import java.io.*;
 import java.net.URL;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.servlet.DispatcherType;
 
@@ -247,6 +251,10 @@ public class KeycloakServer {
         di.setDeploymentName("Keycloak");
         di.setResourceManager(new KeycloakResourceManager(config.getResourcesHome()));
 
+        Set<String> allowed = new HashSet<String>(Arrays.asList(new String[]{"js", "css", "png", "jpg", "gif", "html", "svg"}));
+        di.setDefaultServletConfig(new DefaultServletConfig(false, allowed));
+        di.addWelcomePage("index.html");
+
         FilterInfo filter = Servlets.filter("SessionFilter", KeycloakSessionServletFilter.class);
         di.addFilter(filter);
         di.addFilterUrlMapping("SessionFilter", "/rest/*", DispatcherType.REQUEST);
@@ -292,23 +300,16 @@ public class KeycloakServer {
         public Resource getResource(String path) throws IOException {
             if (resourcesHome == null) {
                 String realPath = "META-INF/resources" + path;
-
-                if (realPath.endsWith("/admin/")) {
-                    realPath += "index.html";
-                }
-
                 URL url = getClass().getClassLoader().getResource(realPath);
-
                 return new URLResource(url, url.openConnection(), path);
             } else {
                 File file;
-                if (path.startsWith("/forms")) {
+                if (path.startsWith("/forms/")) {
                     file = file(resourcesHome, "forms", "src", "main", "resources", "META-INF", "resources", path.replace('/', File.separatorChar));
-                } else if (path.startsWith("/admin")) {
+                } else if (path.startsWith("/admin/")) {
                     file = file(resourcesHome, "admin-ui", "src", "main", "resources", "META-INF", "resources", path.replace('/', File.separatorChar));
-                    if (!file.isFile()) {
-                        file = file(resourcesHome, "admin-ui-styles", "src", "main", "resources", "META-INF", "resources", path.replace('/', File.separatorChar));
-                    }
+                } else if (path.startsWith("/admin-ui/")) {
+                    file = file(resourcesHome, "admin-ui-styles", "src", "main", "resources", "META-INF", "resources", path.replace('/', File.separatorChar));
                 } else {
                     throw new IOException("Unknown resource " + path);
                 }
