@@ -253,7 +253,7 @@ public class RealmManager {
             }
         }
 
-        if (rep.isAccountManagement() != null && rep.isAccountManagement()) {
+        if (rep.getAccountManagement() != null && rep.getAccountManagement()) {
             enableAccountManagement(newRealm);
         }
 
