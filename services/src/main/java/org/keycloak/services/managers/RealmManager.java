@@ -91,7 +91,7 @@ public class RealmManager {
             realm.updateDefaultRoles(rep.getDefaultRoles());
         }
 
-        if (rep.isAccountManagement()) {
+        if (rep.getAccountManagement() != null && rep.getAccountManagement()) {
             enableAccountManagement(realm);
         } else {
             disableAccountManagement(realm);
@@ -253,7 +253,7 @@ public class RealmManager {
             }
         }
 
-        if (rep.isAccountManagement() != null && rep.isAccountManagement()) {
+        if (rep.getAccountManagement() != null && rep.getAccountManagement()) {
             enableAccountManagement(newRealm);
         }
 

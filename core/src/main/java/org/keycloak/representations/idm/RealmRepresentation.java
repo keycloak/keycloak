@@ -104,7 +104,7 @@ public class RealmRepresentation {
         this.enabled = enabled;
     }
 
-    public Boolean isAccountManagement() {
+    public Boolean getAccountManagement() {
         return accountManagement;
     }
 

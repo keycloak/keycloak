@@ -48,6 +48,20 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="form-group input-select">
+                            <label for="accessCodeLifespanUserAction">Access code user action lifespan</label>
+                            <div class="input-group">
+                                <input type="text" data-ng-model="realm.accessCodeLifespanUserAction" id="accessCodeLifespanUserAction" name="accessCodeLifespanUserAction" class="tiny">
+                                <div class="select-rcue">
+                                    <select name="accessCodeLifespanUserActionUnit" data-ng-model="realm.accessCodeLifespanUserActionUnit">
+                                        <option data-ng-selected="!realm.accessCodeLifespanUserActionUnit">Seconds</option>
+                                        <option>Minutes</option>
+                                        <option>Hours</option>
+                                        <option>Days</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
                      </fieldset>
                     <div class="form-actions">
                         <button type="submit" data-ng-click="save()" class="primary" data-ng-show="changed">Save
