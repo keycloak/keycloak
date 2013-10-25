@@ -1,22 +1,26 @@
-<p>
-    Mock page for <i>Facebook provider help</i>.
-</p>
+<p>Open <a href="https://developers.facebook.com/apps" target="_blank">https://developers.facebook.com/apps</a>. Click on <i>Create New App</i></p>
 
-<p>Fill in name, description and website. For <i>Callback URL</i> use the following value:</p>
+<p>Use any app name that you'd like, click <i>Continue</i></p>
+
+<p>Select <i>Disabled</i> for <i>Sandbox Mode</i></p>
+
+<p>Under <i>Select how your app integrates with Facebook</i> select <i>Website with Facebook login</i>. Fill in the form with the following values:</p>
 
 <ul>
-    <li><b>Callback URL:</b> {{callbackUrl}}</li>
+    <li><b>Site URL:</b> {{callbackUrl}}</li>
 </ul>
+
+<p>Click on <i>Save changes</i>. Insert <i>App ID</i> and <i>App Secret</i> in the form below.</p>
 
 <form class="form-horizontal" name="fbHelpForm">
     <div class="control-group">
-        <label class="control-label" for="providerHelp.key">Consumer key </label>
+        <label class="control-label" for="providerHelp.key">App ID </label>
         <div class="controls">
             <input type="text" class="input-xlarge" id="providerHelp.key" ng-model="realm.socialProviders[helpPId+'.key']">
         </div>
     </div>
     <div class="control-group">
-        <label class="control-label" for="providerHelp.secret">Consumer secret </label>
+        <label class="control-label" for="providerHelp.secret">App Secret </label>
         <div class="controls">
             <input type="text" class="input-xlarge" id="providerHelp.secret" ng-model="realm.socialProviders[helpPId+'.secret']">
         </div>

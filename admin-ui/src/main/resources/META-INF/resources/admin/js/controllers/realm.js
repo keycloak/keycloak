@@ -212,7 +212,7 @@ module.controller('RealmSocialCtrl', function($scope, realm, Realm, $location, N
 
     var oldCopy = angular.copy($scope.realm);
     $scope.changed = false;
-    $scope.callbackUrl = "http://mock.url.org/don/t/know/what/to/place/here";
+    $scope.callbackUrl = $location.absUrl().replace(/\/admin.*/, "/rest/social/callback");
 
     // To get rid of the "undefined" option in the provider select list
     // Setting the 1st option from the list (if the list is not empty)
