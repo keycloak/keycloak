@@ -120,7 +120,6 @@ body {
 .rcue-login-register form > div.aside-btn input[type="checkbox"] {
   margin-bottom: 0.54545454545455em;
   /* 6px */
-
 }
 .rcue-login-register form > input[type="button"],
 .rcue-login-register form > input[type="submit"]{
@@ -137,12 +136,9 @@ body {
   top: -0.636363636363636em;
 }
 .rcue-login-register .feedback.bottom-left {
-  left: 32.7em;
+  left: 35.7em;
   top: -9.2em;
   min-width: 35em;
-}
-.rcue-login-register.reset .feedback.bottom-left {
-  left: 35.7em;  
 }
 .rcue-login-register input.error[type="text"],
 .rcue-login-register input.error[type="password"],

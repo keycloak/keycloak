@@ -567,6 +567,59 @@ td.token-cell button {
 }
 
 
+/* Modal boxes */
+
+.modal {
+    
+    .modal-dialog {
+        padding-top: 10em;
+    }
+    
+    .modal-content {
+        box-shadow: none;
+        border-radius: 0;
+        border: 1px solid #666;
+    }
+    
+    .modal-header {
+        background-color: #f8f8f8;
+        padding: 1.5em 2em;
+        border-bottom: none;
+        
+        h3 {
+            font-size: 1.3em;
+            font-weight: bold;
+            font-family: @open-sans;
+            margin: 0;
+        }
+    }
+    
+    .modal-body {
+        
+        p {
+            font-size: 1.1em;
+            
+            &.primary {
+                font-size: 1.1em;
+                font-weight: bold;
+                margin-bottom: 0.45454545454545em;
+            }
+        }
+    }
+    
+    .modal-footer {
+        border-top: 0;
+        
+        .primary,
+        .destructive {
+            float: right;
+            margin-left: 0.90909090909091em;
+        }
+        
+    }
+}
+
+
 /* Page: User Account */
 
 .user {

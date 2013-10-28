@@ -788,7 +788,8 @@ input[type="email"].tiny {
   margin-top: 3em;
   margin-bottom: 5em;
 }
-.form-actions .primary {
+.form-actions .primary,
+.form-actions .destructive {
   float: right;
   margin-left: 0.90909090909091em;
 }

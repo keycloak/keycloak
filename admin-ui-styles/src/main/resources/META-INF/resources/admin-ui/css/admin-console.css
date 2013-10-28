@@ -469,6 +469,42 @@ table + .feedback.inline.warning {
 td.token-cell button {
   margin-top: -1px;
 }
+/* Modal boxes */
+.modal .modal-dialog {
+  padding-top: 10em;
+}
+.modal .modal-content {
+  box-shadow: none;
+  border-radius: 0;
+  border: 1px solid #666;
+}
+.modal .modal-header {
+  background-color: #f8f8f8;
+  padding: 1.5em 2em;
+  border-bottom: none;
+}
+.modal .modal-header h3 {
+  font-size: 1.3em;
+  font-weight: bold;
+  font-family: "Open Sans", sans-serif;
+  margin: 0;
+}
+.modal .modal-body p {
+  font-size: 1.1em;
+}
+.modal .modal-body p.primary {
+  font-size: 1.1em;
+  font-weight: bold;
+  margin-bottom: 0.45454545454545em;
+}
+.modal .modal-footer {
+  border-top: 0;
+}
+.modal .modal-footer .primary,
+.modal .modal-footer .destructive {
+  float: right;
+  margin-left: 0.90909090909091em;
+}
 /* Page: User Account */
 .user form fieldset div:first-child {
   margin-top: 1em;
