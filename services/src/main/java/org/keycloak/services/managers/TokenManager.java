@@ -89,8 +89,6 @@ public class TokenManager {
 
 
         createToken(code, realm, client, user);
-        logger.info("tokenmanager: access code id: " + code.getId());
-        logger.info("accesscode setExpiration: " + (System.currentTimeMillis() / 1000) + realm.getAccessCodeLifespan());
         code.setRealm(realm);
         code.setExpiration((System.currentTimeMillis() / 1000) + realm.getAccessCodeLifespan());
         code.setClient(client);
@@ -119,10 +117,8 @@ public class TokenManager {
             token.expiration((System.currentTimeMillis() / 1000) + realm.getTokenLifespan());
         }
         Set<String> allowedOrigins = client.getWebOrigins();
-        if (allowedOrigins != null && allowedOrigins.size() > 0) {
-            List<String> allowed = new ArrayList<String>();
-            allowed.addAll(allowedOrigins);
-            token.setAllowedOrigins(allowed);
+        if (allowedOrigins != null) {
+            token.setAllowedOrigins(allowedOrigins);
         }
         return token;
     }

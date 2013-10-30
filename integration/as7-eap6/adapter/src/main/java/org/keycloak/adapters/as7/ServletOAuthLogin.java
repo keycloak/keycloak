@@ -76,7 +76,7 @@ public class ServletOAuthLogin {
 
     protected void sendRedirect(String url) {
         try {
-            log.info("Sending redirect to: " + url);
+            log.debugv("Sending redirect to: {0}", url);
             response.sendRedirect(url);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -175,7 +175,7 @@ public class ServletOAuthLogin {
             return false;
         }
         // reset the cookie
-        log.info("** reseting application state cookie");
+        log.debug("** reseting application state cookie");
         Cookie reset = new Cookie(realmInfo.getStateCookieName(), "");
         reset.setPath(getDefaultCookiePath());
         reset.setMaxAge(0);
@@ -257,7 +257,7 @@ public class ServletOAuthLogin {
         tokenString = tokenResponse.getToken();
         try {
             token = RSATokenVerifier.verifyToken(tokenString, realmInfo.getMetadata());
-            log.info("Token Verification succeeded!");
+            log.debug("Token Verification succeeded!");
         } catch (VerificationException e) {
             log.error("failed verification of token");
             sendError(Response.Status.FORBIDDEN.getStatusCode());

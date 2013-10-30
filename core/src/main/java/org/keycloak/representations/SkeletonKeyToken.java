@@ -55,7 +55,7 @@ public class SkeletonKeyToken extends JsonWebToken {
     protected Set<String> trustedCertificates;
 
     @JsonProperty("allowed-origins")
-    protected List<String> allowedOrigins;
+    protected Set<String> allowedOrigins;
 
     @JsonProperty("realm_access")
     protected Access realmAccess;
@@ -143,11 +143,11 @@ public class SkeletonKeyToken extends JsonWebToken {
         return (SkeletonKeyToken) super.type(type);
     }
 
-    public List<String> getAllowedOrigins() {
+    public Set<String> getAllowedOrigins() {
         return allowedOrigins;
     }
 
-    public void setAllowedOrigins(List<String> allowedOrigins) {
+    public void setAllowedOrigins(Set<String> allowedOrigins) {
         this.allowedOrigins = allowedOrigins;
     }
 

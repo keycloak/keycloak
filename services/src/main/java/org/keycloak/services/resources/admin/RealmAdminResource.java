@@ -60,7 +60,7 @@ public class RealmAdminResource extends RoleContainerResource {
     @PUT
     @Consumes("application/json")
     public void updateRealm(final RealmRepresentation rep) {
-        logger.info("updating realm: " + realm.getName());
+        logger.debug("updating realm: " + realm.getName());
         new RealmManager(session).updateRealm(rep, realm);
     }
 

@@ -43,7 +43,7 @@ public class RealmsAdminResource {
     @NoCache
     @Produces("application/json")
     public List<RealmRepresentation> getRealms() {
-        logger.info(("getRealms()"));
+        logger.debug(("getRealms()"));
         RealmManager realmManager = new RealmManager(session);
         List<RealmModel> realms = session.getRealms(admin);
         List<RealmRepresentation> reps = new ArrayList<RealmRepresentation>();
@@ -64,11 +64,11 @@ public class RealmsAdminResource {
     @POST
     @Consumes("application/json")
     public Response importRealm(@Context final UriInfo uriInfo, final RealmRepresentation rep) {
-        logger.info("importRealm: " + rep.getRealm());
+        logger.debug("importRealm: {0}", rep.getRealm());
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = realmManager.importRealm(rep, admin);
         URI location = realmUrl(uriInfo).build(realm.getId());
-        logger.info("imported realm success, sending back: " + location.toString());
+        logger.debug("imported realm success, sending back: {0}", location.toString());
         return Response.created(location).build();
     }
 

@@ -12,10 +12,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -54,7 +51,7 @@ public class ApplicationResource extends RoleContainerResource {
     @PUT
     @Consumes("application/json")
     public void updateCredentials(List<CredentialRepresentation> credentials) {
-        logger.info("updateCredentials");
+        logger.debug("updateCredentials");
         if (credentials == null) return;
 
         for (CredentialRepresentation rep : credentials) {
@@ -67,6 +64,33 @@ public class ApplicationResource extends RoleContainerResource {
     public ScopeMappedResource getScopeMappedResource() {
         return new ScopeMappedResource(realm, application.getApplicationUser(), session);
     }
+
+    @Path("allowed-origins")
+    @GET
+    @Produces("application/json")
+    public Set<String> getAllowedOrigins()
+    {
+        return application.getApplicationUser().getWebOrigins();
+    }
+
+    @Path("allowed-origins")
+    @PUT
+    @Consumes("application/json")
+    public void updateAllowedOrigins(Set<String> allowedOrigins)
+    {
+        application.getApplicationUser().setWebOrigins(allowedOrigins);
+    }
+
+    @Path("allowed-origins")
+    @DELETE
+    @Consumes("application/json")
+    public void deleteAllowedOrigins(Set<String> allowedOrigins)
+    {
+        for (String origin : allowedOrigins) {
+            application.getApplicationUser().removeWebOrigin(origin);
+        }
+    }
+
 
 
 }

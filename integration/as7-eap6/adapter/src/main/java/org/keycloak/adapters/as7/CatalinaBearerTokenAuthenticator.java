@@ -29,13 +29,11 @@ public class CatalinaBearerTokenAuthenticator {
     protected String tokenString;
     protected SkeletonKeyToken token;
     private Principal principal;
-    protected boolean propagateToken;
     protected boolean useResourceRoleMappings;
 
-    public CatalinaBearerTokenAuthenticator(ResourceMetadata resourceMetadata, boolean propagateToken, boolean challenge, boolean useResourceRoleMappings) {
+    public CatalinaBearerTokenAuthenticator(ResourceMetadata resourceMetadata, boolean challenge, boolean useResourceRoleMappings) {
         this.resourceMetadata = resourceMetadata;
         this.challenge = challenge;
-        this.propagateToken = propagateToken;
         this.useResourceRoleMappings = useResourceRoleMappings;
     }
 
@@ -109,11 +107,9 @@ public class CatalinaBearerTokenAuthenticator {
         principal = new CatalinaSecurityContextHelper().createPrincipal(request.getContext().getRealm(), skeletonKeyPrincipal, roles);
         request.setUserPrincipal(principal);
         request.setAuthType("OAUTH_BEARER");
-        if (propagateToken) {
-            SkeletonKeySession skSession = new SkeletonKeySession(tokenString, resourceMetadata);
-            request.setAttribute(SkeletonKeySession.class.getName(), skSession);
-            ResteasyProviderFactory.pushContext(SkeletonKeySession.class, skSession);
-        }
+        SkeletonKeySession skSession = new SkeletonKeySession(tokenString, token, resourceMetadata);
+        request.setAttribute(SkeletonKeySession.class.getName(), skSession);
+        ResteasyProviderFactory.pushContext(SkeletonKeySession.class, skSession);
 
         return true;
     }

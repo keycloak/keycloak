@@ -5,6 +5,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import org.jboss.resteasy.logging.Logger;
 import org.keycloak.models.*;
 import org.keycloak.representations.idm.*;
 
@@ -13,6 +14,7 @@ import org.keycloak.representations.idm.*;
  * @version $Revision: 1 $
  */
 public class ApplicationManager {
+    protected Logger logger = Logger.getLogger(ApplicationManager.class);
 
     protected RealmManager realmManager;
 
@@ -21,6 +23,7 @@ public class ApplicationManager {
     }
 
     public ApplicationModel createApplication(RealmModel realm, RoleModel loginRole, ApplicationRepresentation resourceRep) {
+        logger.debug("************ CREATE APPLICATION: {0}" + resourceRep.getName());
         ApplicationModel applicationModel = realm.addApplication(resourceRep.getName());
         applicationModel.setEnabled(resourceRep.isEnabled());
         applicationModel.setManagementUrl(resourceRep.getAdminUrl());
@@ -44,6 +47,7 @@ public class ApplicationManager {
         }
         if (resourceRep.getWebOrigins() != null) {
             for (String webOrigin : resourceRep.getWebOrigins()) {
+                logger.debug("Application: {0} webOrigin: {1}", resourceUser.getLoginName(), webOrigin);
                 resourceUser.addWebOrigin(webOrigin);
             }
         }

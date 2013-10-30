@@ -95,22 +95,13 @@ public class SaasService {
         }
     }
 
-    /**  test code for screwing around with CORS
-
-    @Path("set-cookie")
-    @GET
-    @NoCache
-    @Produces("text/plain")
-    public Response cookie(@Context HttpHeaders headers) {
-        return Response.ok("cookie set", MediaType.TEXT_PLAIN_TYPE).cookie(new NewCookie("testcookie", "value")).build();
-    }
-
+    /** CORS TESTING, Keep for later
 
     @Path("ping")
     @GET
     @NoCache
     @Produces("text/plain")
-    public String ping(@Context HttpHeaders headers) {
+    public Response ping(@Context HttpHeaders headers) {
         logger.info("************** GET PING");
         for (String header : headers.getRequestHeaders().keySet()) {
             logger.info("   header --- " + header + ": " + headers.getHeaderString(header));
@@ -119,8 +110,25 @@ public class SaasService {
             logger.info("   cookie --- " + cookieName);
 
         }
-        return "ping";
+        return Response.ok("ping", MediaType.TEXT_PLAIN_TYPE).header("Access-Control-Allow-Origin", headers.getHeaderString("Origin")).build();
     }
+
+    @Path("ping")
+    @DELETE
+    @NoCache
+    @Produces("text/plain")
+    public Response deletePing(@Context HttpHeaders headers) {
+        logger.info("************** DELETE PING");
+        for (String header : headers.getRequestHeaders().keySet()) {
+            logger.info("   header --- " + header + ": " + headers.getHeaderString(header));
+        }
+        for (String cookieName : headers.getCookies().keySet()) {
+            logger.info("   cookie --- " + cookieName);
+
+        }
+        return Response.ok("ping", MediaType.TEXT_PLAIN_TYPE).header("Access-Control-Allow-Origin", headers.getHeaderString("Origin")).build();
+    }
+
 
     @Path("ping")
     @OPTIONS
@@ -135,9 +143,13 @@ public class SaasService {
             logger.info("   cookie --- " + cookieName);
 
         }
-        return Response.ok()
-               .header("Access-Control-Allow-Origin", "*")
-                .header("Access-Control-Allow-Headers", HttpHeaders.AUTHORIZATION)
+        Response.ResponseBuilder ok = Response.ok();
+        ok
+                .header("Access-Control-Allow-Origin", headers.getHeaderString("Origin"));
+        if (headers.getHeaderString("Access-Control-Request-Method") != null) {
+            ok.header("Access-Control-Allow-Methods", headers.getHeaderString("Access-Control-Request-Method"));
+        }
+        return        ok.header("Access-Control-Allow-Headers", HttpHeaders.AUTHORIZATION)
                 .header("Access-Control-Allow-Credentials", "true")
                .build();
     }
@@ -240,11 +252,11 @@ public class SaasService {
 
         JaxrsOAuthClient oauth = new JaxrsOAuthClient();
         String authUrl = TokenService.loginPageUrl(uriInfo).build(Constants.ADMIN_REALM).toString();
-        logger.info("authUrl: " + authUrl);
+        logger.debug("authUrl: {0}", authUrl);
         oauth.setAuthUrl(authUrl);
         oauth.setClientId(Constants.ADMIN_CONSOLE_APPLICATION);
         URI redirectUri = uriInfo.getBaseUriBuilder().path(SaasService.class).path(SaasService.class, "loginRedirect").build();
-        logger.info("redirectUri: " + redirectUri.toString());
+        logger.debug("redirectUri: {0}", redirectUri.toString());
         oauth.setStateCookiePath(redirectUri.getPath());
         return oauth.redirect(uriInfo, redirectUri.toString());
     }
@@ -259,7 +271,7 @@ public class SaasService {
 
                                   ) {
         try {
-            logger.info("loginRedirect ********************** <---");
+            logger.debug("loginRedirect ********************** <---");
             if (error != null) {
                 logger.debug("error from oauth");
                 throw new ForbiddenException("error");
@@ -325,7 +337,7 @@ public class SaasService {
                 logger.debug("not allowed");
                 throw new ForbiddenException();
             }
-            logger.info("loginRedirect SUCCESS");
+            logger.debug("loginRedirect SUCCESS");
             NewCookie cookie = authManager.createSaasIdentityCookie(realm, accessCode.getUser(), uriInfo);
             return Response.status(302).cookie(cookie).location(contextRoot(uriInfo).path(adminPath).build()).build();
         } finally {
@@ -357,7 +369,7 @@ public class SaasService {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processLogin(final MultivaluedMap<String, String> formData) {
-        logger.info("processLogin start");
+        logger.debug("processLogin start");
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = getAdminstrationRealm(realmManager);
         if (realm == null)
