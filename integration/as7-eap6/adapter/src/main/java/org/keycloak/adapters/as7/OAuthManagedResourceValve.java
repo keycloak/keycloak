@@ -70,6 +70,7 @@ public class OAuthManagedResourceValve extends FormAuthenticator implements Life
         managedResourceConfigLoader.init(true);
         resourceMetadata = managedResourceConfigLoader.getResourceMetadata();
         remoteSkeletonKeyConfig = managedResourceConfigLoader.getRemoteSkeletonKeyConfig();
+
         realmConfiguration = new RealmConfiguration();
         String authUrl = remoteSkeletonKeyConfig.getAuthUrl();
         if (authUrl == null) {
@@ -91,11 +92,16 @@ public class OAuthManagedResourceValve extends FormAuthenticator implements Life
         realmConfiguration.setClient(client);
         realmConfiguration.setAuthUrl(UriBuilder.fromUri(authUrl).queryParam("client_id", resourceMetadata.getResourceName()));
         realmConfiguration.setCodeUrl(client.target(tokenUrl));
+        AuthenticatedActionsValve actions = new AuthenticatedActionsValve(remoteSkeletonKeyConfig, getNext(), getContainer(), getController());
+        setNext(actions);
     }
 
     @Override
     public void invoke(Request request, Response response) throws IOException, ServletException {
         try {
+            if (remoteSkeletonKeyConfig.isCors() && new CorsPreflightChecker(remoteSkeletonKeyConfig).checkCorsPreflight(request, response)) {
+                return;
+            }
             String requestURI = request.getDecodedRequestURI();
             if (requestURI.endsWith("j_admin_request")) {
                 adminRequest(request, response);
@@ -163,7 +169,7 @@ public class OAuthManagedResourceValve extends FormAuthenticator implements Life
 
     protected void remoteLogout(JWSInput token, HttpServletResponse response) throws IOException {
         try {
-            log.info("->> remoteLogout: ");
+            log.debug("->> remoteLogout: ");
             LogoutAction action = JsonSerialization.fromBytes(LogoutAction.class, token.getContent());
             if (action.isExpired()) {
                 log.warn("admin request failed, expired token");
@@ -183,10 +189,10 @@ public class OAuthManagedResourceValve extends FormAuthenticator implements Life
             }
            String user = action.getUser();
             if (user != null) {
-                log.info("logout of session for: " + user);
+                log.debug("logout of session for: " + user);
                 userSessionManagement.logout(user);
             } else {
-                log.info("logout of all sessions");
+                log.debug("logout of all sessions");
                 userSessionManagement.logoutAll();
             }
         } catch (Exception e) {
@@ -197,7 +203,7 @@ public class OAuthManagedResourceValve extends FormAuthenticator implements Life
     }
 
     protected boolean bearer(boolean challenge, Request request, HttpServletResponse response) throws LoginException, IOException {
-        CatalinaBearerTokenAuthenticator bearer = new CatalinaBearerTokenAuthenticator(realmConfiguration.getMetadata(), !remoteSkeletonKeyConfig.isCancelPropagation(), challenge, remoteSkeletonKeyConfig.isUseResourceRoleMappings());
+        CatalinaBearerTokenAuthenticator bearer = new CatalinaBearerTokenAuthenticator(realmConfiguration.getMetadata(), challenge, remoteSkeletonKeyConfig.isUseResourceRoleMappings());
         if (bearer.login(request, response)) {
             return true;
         }
@@ -212,7 +218,7 @@ public class OAuthManagedResourceValve extends FormAuthenticator implements Life
         request.setUserPrincipal(principal);
         request.setAuthType("OAUTH");
         Session session = request.getSessionInternal();
-        if (session != null && !remoteSkeletonKeyConfig.isCancelPropagation()) {
+        if (session != null) {
             SkeletonKeySession skSession = (SkeletonKeySession) session.getNote(SkeletonKeySession.class.getName());
             if (skSession != null) {
                 request.setAttribute(SkeletonKeySession.class.getName(), skSession);
@@ -256,10 +262,8 @@ public class OAuthManagedResourceValve extends FormAuthenticator implements Life
             Session session = request.getSessionInternal(true);
             session.setPrincipal(principal);
             session.setAuthType("OAUTH");
-            if (!remoteSkeletonKeyConfig.isCancelPropagation()) {
-                SkeletonKeySession skSession = new SkeletonKeySession(oauth.getTokenString(), realmConfiguration.getMetadata());
-                session.setNote(SkeletonKeySession.class.getName(), skSession);
-            }
+            SkeletonKeySession skSession = new SkeletonKeySession(oauth.getTokenString(), token, realmConfiguration.getMetadata());
+            session.setNote(SkeletonKeySession.class.getName(), skSession);
 
             String username = token.getPrincipal();
             log.debug("userSessionManage.login: " + username);

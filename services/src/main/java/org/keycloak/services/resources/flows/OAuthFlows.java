@@ -75,7 +75,7 @@ public class OAuthFlows {
 
         String code = accessCode.getCode();
         UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam("code", code);
-        log.info("redirectAccessCode: state: " + state);
+        log.debug("redirectAccessCode: state: {0}", state);
         if (state != null)
             redirectUri.queryParam("state", state);
         Response.ResponseBuilder location = Response.status(302).location(redirectUri.build());
@@ -107,9 +107,9 @@ public class OAuthFlows {
             return forwardToSecurityFailure("Login requester not allowed to request login.");
         }
         AccessCodeEntry accessCode = tokenManager.createAccessCode(scopeParam, state, redirect, realm, client, user);
-        log.info("processAccessCode: isResource: " + isResource);
-        log.info("processAccessCode: go to oauth page?: "
-                + (!isResource && (accessCode.getRealmRolesRequested().size() > 0 || accessCode.getResourceRolesRequested()
+        log.debug("processAccessCode: isResource: {0}", isResource);
+        log.debug("processAccessCode: go to oauth page?: {0}",
+                (!isResource && (accessCode.getRealmRolesRequested().size() > 0 || accessCode.getResourceRolesRequested()
                         .size() > 0)));
 
         Set<RequiredAction> requiredActions = user.getRequiredActions();

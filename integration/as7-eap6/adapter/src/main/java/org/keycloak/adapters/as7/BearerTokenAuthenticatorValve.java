@@ -49,11 +49,17 @@ public class BearerTokenAuthenticatorValve extends AuthenticatorBase implements 
         remoteSkeletonKeyConfig = managedResourceConfigLoader.getRemoteSkeletonKeyConfig();
         managedResourceConfigLoader.init(false);
         resourceMetadata = managedResourceConfigLoader.getResourceMetadata();
+        AuthenticatedActionsValve actions = new AuthenticatedActionsValve(remoteSkeletonKeyConfig, getNext(), getContainer(), getController());
+        setNext(actions);
     }
 
     @Override
     public void invoke(Request request, Response response) throws IOException, ServletException {
         try {
+            log.debugv("{0} {1}", request.getMethod(), request.getRequestURI());
+            if (remoteSkeletonKeyConfig.isCors() && new CorsPreflightChecker(remoteSkeletonKeyConfig).checkCorsPreflight(request, response)) {
+                return;
+            }
             super.invoke(request, response);
         } finally {
             ResteasyProviderFactory.clearContextData(); // to clear push of SkeletonKeySession
@@ -63,7 +69,7 @@ public class BearerTokenAuthenticatorValve extends AuthenticatorBase implements 
     @Override
     protected boolean authenticate(Request request, HttpServletResponse response, LoginConfig config) throws IOException {
         try {
-            CatalinaBearerTokenAuthenticator bearer = new CatalinaBearerTokenAuthenticator(resourceMetadata, !remoteSkeletonKeyConfig.isCancelPropagation(), true, remoteSkeletonKeyConfig.isUseResourceRoleMappings());
+            CatalinaBearerTokenAuthenticator bearer = new CatalinaBearerTokenAuthenticator(resourceMetadata, true, remoteSkeletonKeyConfig.isUseResourceRoleMappings());
             if (bearer.login(request, response)) {
                 return true;
             }

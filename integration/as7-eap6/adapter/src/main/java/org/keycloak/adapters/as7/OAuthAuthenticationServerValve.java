@@ -561,7 +561,7 @@ public class OAuthAuthenticationServerValve extends FormAuthenticator implements
 
     public boolean bearer(Request request, HttpServletResponse response, boolean propagate) throws IOException {
         if (request.getHeader("Authorization") != null) {
-            CatalinaBearerTokenAuthenticator bearer = new CatalinaBearerTokenAuthenticator(resourceMetadata, true, false, false);
+            CatalinaBearerTokenAuthenticator bearer = new CatalinaBearerTokenAuthenticator(resourceMetadata, false, false);
             try {
                 if (bearer.login(request, response)) {
                     return true;
@@ -582,7 +582,7 @@ public class OAuthAuthenticationServerValve extends FormAuthenticator implements
             if (gp != null) {
                 SkeletonKeyToken token = buildToken(gp);
                 String stringToken = buildTokenString(realmPrivateKey, token);
-                SkeletonKeySession skSession = new SkeletonKeySession(stringToken, resourceMetadata);
+                SkeletonKeySession skSession = new SkeletonKeySession(stringToken, token, resourceMetadata);
                 request.setAttribute(SkeletonKeySession.class.getName(), skSession);
                 ResteasyProviderFactory.pushContext(SkeletonKeySession.class, skSession);
                 request.getSessionInternal(true).setNote(SkeletonKeySession.class.getName(), skSession);

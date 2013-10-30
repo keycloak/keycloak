@@ -25,7 +25,7 @@ public class CustomerDatabaseClient
       try
       {
          Response response = client.target("http://localhost:8080/database/customers").request()
-                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + session.getToken()).get();
+                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + session.getTokenString()).get();
          return response.readEntity(new GenericType<List<String>>(){});
       }
       finally

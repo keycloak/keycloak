@@ -30,7 +30,7 @@ public class ResourceAdminManager {
                 .build();
 
         List<ApplicationModel> resources = realm.getApplications();
-        logger.info("logging out " + resources.size() + " resoures.");
+        logger.debug("logging out {0} resources ", resources.size());
         for (ApplicationModel resource : resources) {
             logoutResource(realm, resource, user, client);
         }
@@ -43,7 +43,7 @@ public class ResourceAdminManager {
             String token = new TokenManager().encodeToken(realm, adminAction);
             Form form = new Form();
             form.param("token", token);
-            logger.info("logout user: " + user + " resource: " + resource.getName() + " url" + managementUrl);
+            logger.debug("logout user: {0} resource: {1} url: {2}", user, resource.getName(), managementUrl);
             Response response = client.target(managementUrl).queryParam("action", "logout").request().post(Entity.form(form));
             boolean success = response.getStatus() == 204;
             response.close();

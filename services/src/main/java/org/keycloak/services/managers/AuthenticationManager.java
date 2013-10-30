@@ -72,7 +72,7 @@ public class AuthenticationManager {
         SkeletonKeyToken identityToken = createIdentityToken(realm, user.getLoginName());
         String encoded = encodeToken(realm, identityToken);
         boolean secureOnly = !realm.isSslNotRequired();
-        logger.info("creatingLoginCookie - name: " + cookieName + " path: " + cookiePath);
+        logger.debug("creatingLoginCookie - name: {0} path: {1}", cookieName, cookiePath);
         NewCookie cookie = new NewCookie(cookieName, encoded, cookiePath, null, null, NewCookie.DEFAULT_MAX_AGE, secureOnly, true);
         return cookie;
     }
@@ -93,7 +93,7 @@ public class AuthenticationManager {
 
     public void expireIdentityCookie(RealmModel realm, UriInfo uriInfo) {
         URI uri = RealmsResource.realmBaseUrl(uriInfo).build(realm.getId());
-        logger.info("Expiring identity cookie");
+        logger.debug("Expiring identity cookie");
         String path = uri.getPath();
         String cookieName = KEYCLOAK_IDENTITY_COOKIE;
         expireCookie(cookieName, path);
@@ -113,10 +113,10 @@ public class AuthenticationManager {
     public void expireCookie(String cookieName, String path) {
         HttpResponse response = ResteasyProviderFactory.getContextData(HttpResponse.class);
         if (response == null) {
-            logger.info("can't expire identity cookie, no HttpResponse");
+            logger.debug("can't expire identity cookie, no HttpResponse");
             return;
         }
-        logger.info("Expiring cookie: " + cookieName + " path: " + path);
+        logger.debug("Expiring cookie: {0} path: {1}", cookieName, path);
         NewCookie expireIt = new NewCookie(cookieName, "", path, null, "Expiring cookie", 0, false);
         response.addNewCookie(expireIt);
     }
@@ -147,7 +147,7 @@ public class AuthenticationManager {
     protected UserModel authenticateIdentityCookie(RealmModel realm, UriInfo uriInfo, HttpHeaders headers, String cookieName) {
         Cookie cookie = headers.getCookies().get(cookieName);
         if (cookie == null) {
-            logger.info("authenticateCookie could not find cookie: " + cookieName);
+            logger.debug("authenticateCookie could not find cookie: {0}", cookieName);
             return null;
         }
 
@@ -155,19 +155,19 @@ public class AuthenticationManager {
         try {
             SkeletonKeyToken token = RSATokenVerifier.verifyToken(tokenString, realm.getPublicKey(), realm.getId());
             if (!token.isActive()) {
-                logger.info("identity cookie expired");
+                logger.debug("identity cookie expired");
                 expireIdentityCookie(realm, uriInfo);
                 return null;
             }
             UserModel user = realm.getUser(token.getPrincipal());
             if (user == null || !user.isEnabled()) {
-                logger.info("Unknown user in identity cookie");
+                logger.debug("Unknown user in identity cookie");
                 expireIdentityCookie(realm, uriInfo);
                 return null;
             }
             return user;
         } catch (VerificationException e) {
-            logger.info("Failed to verify identity cookie", e);
+            logger.debug("Failed to verify identity cookie", e);
             expireIdentityCookie(realm, uriInfo);
         }
         return null;
@@ -204,12 +204,12 @@ public class AuthenticationManager {
 
     public AuthenticationStatus authenticateForm(RealmModel realm, UserModel user, MultivaluedMap<String, String> formData) {
         if (user == null) {
-            logger.info("Not Authenticated! Incorrect user name");
+            logger.debug("Not Authenticated! Incorrect user name");
             return AuthenticationStatus.INVALID_USER;
         }
 
         if (!user.isEnabled()) {
-            logger.info("Account is disabled, contact admin.");
+            logger.debug("Account is disabled, contact admin.");
             return AuthenticationStatus.ACCOUNT_DISABLED;
         }
 
@@ -241,12 +241,12 @@ public class AuthenticationManager {
                     logger.warn("TOTP token not provided");
                     return AuthenticationStatus.MISSING_TOTP;
                 }
-                logger.info("validating TOTP");
+                logger.debug("validating TOTP");
                 if (!realm.validateTOTP(user, password, token)) {
                     return AuthenticationStatus.INVALID_CREDENTIALS;
                 }
             } else {
-                logger.info("validating password for user: " + user.getLoginName());
+                logger.debug("validating password for user: " + user.getLoginName());
                 if (!realm.validatePassword(user, password)) {
                     return AuthenticationStatus.INVALID_CREDENTIALS;
                 }

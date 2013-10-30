@@ -1,5 +1,7 @@
 package org.keycloak;
 
+import org.keycloak.representations.SkeletonKeyToken;
+
 import java.io.Serializable;
 
 /**
@@ -7,19 +9,25 @@ import java.io.Serializable;
  * @version $Revision: 1 $
  */
 public class SkeletonKeySession implements Serializable {
-    protected String token;
+    protected String tokenString;
+    protected SkeletonKeyToken token;
     protected transient ResourceMetadata metadata;
 
     public SkeletonKeySession() {
     }
 
-    public SkeletonKeySession(String token, ResourceMetadata metadata) {
+    public SkeletonKeySession(String tokenString, SkeletonKeyToken token, ResourceMetadata metadata) {
+        this.tokenString = tokenString;
         this.token = token;
         this.metadata = metadata;
     }
 
-    public String getToken() {
+    public SkeletonKeyToken getToken() {
         return token;
+    }
+
+    public String getTokenString() {
+        return tokenString;
     }
 
     public ResourceMetadata getMetadata() {

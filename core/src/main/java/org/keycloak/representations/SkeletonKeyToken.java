@@ -4,10 +4,7 @@ import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.jboss.resteasy.jwt.JsonWebToken;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -57,6 +54,8 @@ public class SkeletonKeyToken extends JsonWebToken {
     @JsonProperty("trusted-certs")
     protected Set<String> trustedCertificates;
 
+    @JsonProperty("allowed-origins")
+    protected Set<String> allowedOrigins;
 
     @JsonProperty("realm_access")
     protected Access realmAccess;
@@ -142,6 +141,14 @@ public class SkeletonKeyToken extends JsonWebToken {
     @Override
     public SkeletonKeyToken type(String type) {
         return (SkeletonKeyToken) super.type(type);
+    }
+
+    public Set<String> getAllowedOrigins() {
+        return allowedOrigins;
+    }
+
+    public void setAllowedOrigins(Set<String> allowedOrigins) {
+        this.allowedOrigins = allowedOrigins;
     }
 
     public Access getRealmAccess() {

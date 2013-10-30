@@ -142,13 +142,13 @@ public class RequiredActionsService {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response updatePassword(final MultivaluedMap<String, String> formData) {
-        logger.info("updatePassword");
+        logger.debug("updatePassword");
         AccessCodeEntry accessCode = getAccessCodeEntry(RequiredAction.UPDATE_PASSWORD);
         if (accessCode == null) {
-            logger.info("updatePassword access code is null");
+            logger.debug("updatePassword access code is null");
             return forwardToErrorPage();
         }
-        logger.info("updatePassword has access code");
+        logger.debug("updatePassword has access code");
 
         UserModel user = getUser(accessCode);
 
@@ -168,7 +168,7 @@ public class RequiredActionsService {
 
         realm.updateCredential(user, credentials);
 
-        logger.info("updatePassword updated credential");
+        logger.debug("updatePassword updated credential");
 
         user.removeRequiredAction(RequiredAction.UPDATE_PASSWORD);
         if (accessCode != null) {
@@ -269,7 +269,7 @@ public class RequiredActionsService {
     private AccessCodeEntry getAccessCodeEntry(RequiredAction requiredAction) {
         String code = uriInfo.getQueryParameters().getFirst(FormFlows.CODE);
         if (code == null) {
-            logger.info("getAccessCodeEntry code as not in query param");
+            logger.debug("getAccessCodeEntry code as not in query param");
             return null;
         }
 
@@ -278,31 +278,31 @@ public class RequiredActionsService {
         try {
             verifiedCode = RSAProvider.verify(input, realm.getPublicKey());
         } catch (Exception ignored) {
-            logger.info("getAccessCodeEntry code failed verification");
+            logger.debug("getAccessCodeEntry code failed verification");
             return null;
         }
 
         if (!verifiedCode) {
-            logger.info("getAccessCodeEntry code failed verification2");
+            logger.debug("getAccessCodeEntry code failed verification2");
             return null;
         }
 
         String key = input.readContent(String.class);
         AccessCodeEntry accessCodeEntry = tokenManager.getAccessCode(key);
         if (accessCodeEntry == null) {
-            logger.info("getAccessCodeEntry access code entry null");
+            logger.debug("getAccessCodeEntry access code entry null");
             return null;
         }
 
         if (accessCodeEntry.isExpired()) {
-            logger.info("getAccessCodeEntry: access code id: " + accessCodeEntry.getId());
-            logger.info("getAccessCodeEntry access code entry expired: " + accessCodeEntry.getExpiration());
-            logger.info("getAccessCodeEntry current time: " + (System.currentTimeMillis() / 1000));
+            logger.debug("getAccessCodeEntry: access code id: {0}", accessCodeEntry.getId());
+            logger.debug("getAccessCodeEntry access code entry expired: {0}", accessCodeEntry.getExpiration());
+            logger.debug("getAccessCodeEntry current time: {0}", (System.currentTimeMillis() / 1000));
             return null;
         }
 
         if (accessCodeEntry.getRequiredActions() == null || !accessCodeEntry.getRequiredActions().contains(requiredAction)) {
-            logger.info("getAccessCodeEntry required actions null || entry does not contain required action: " + (accessCodeEntry.getRequiredActions() == null) + "|" + !accessCodeEntry.getRequiredActions().contains(requiredAction) );
+            logger.debug("getAccessCodeEntry required actions null || entry does not contain required action: {0}|{1}", (accessCodeEntry.getRequiredActions() == null),!accessCodeEntry.getRequiredActions().contains(requiredAction) );
             return null;
         }
 
@@ -323,7 +323,7 @@ public class RequiredActionsService {
             return Flows.forms(realm, request, uriInfo).setAccessCode(accessCode).setUser(user)
                     .forwardToAction(requiredActions.iterator().next());
         } else {
-            logger.info("redirectOauth: redirecting to: " + accessCode.getRedirectUri());
+            logger.debug("redirectOauth: redirecting to: {0}", accessCode.getRedirectUri());
             accessCode.setExpiration((System.currentTimeMillis() / 1000) + realm.getAccessCodeLifespan());
             return Flows.oauth(realm, request, uriInfo, authManager, tokenManager).redirectAccessCode(accessCode,
                     accessCode.getState(), accessCode.getRedirectUri());
