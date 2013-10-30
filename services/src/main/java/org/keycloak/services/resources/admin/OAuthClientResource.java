@@ -50,7 +50,7 @@ public class OAuthClientResource  {
     @PUT
     @Consumes("application/json")
     public void updateCredentials(List<CredentialRepresentation> credentials) {
-        logger.info("updateCredentials");
+        logger.debug("updateCredentials");
         if (credentials == null) return;
 
         for (CredentialRepresentation rep : credentials) {

@@ -192,8 +192,8 @@ public class SocialResource {
                 socialRequestManager.addRequest(requestId, reqDetailsBuilder.build());
                 boolean secureOnly = !realm.isSslNotRequired();
                 String cookiePath = Urls.socialBase(uriInfo.getBaseUri()).build().getPath();
-                logger.info("creating cookie for social registration - name: " + SocialConstants.SOCIAL_REGISTRATION_COOKIE
-                        + " path: " + cookiePath);
+                logger.debug("creating cookie for social registration - name: {0} path: {1}", SocialConstants.SOCIAL_REGISTRATION_COOKIE,
+                        cookiePath);
                 NewCookie newCookie = new NewCookie(SocialConstants.SOCIAL_REGISTRATION_COOKIE, requestId,
                         cookiePath, null, "Added social cookie", NewCookie.DEFAULT_MAX_AGE, secureOnly);
                 response.addNewCookie(newCookie);
@@ -303,7 +303,7 @@ public class SocialResource {
         String cookiePath = Urls.socialBase(uriInfo.getBaseUri()).build().getPath();
         NewCookie newCookie = new NewCookie(SocialConstants.SOCIAL_REGISTRATION_COOKIE, "", cookiePath, null,
                 "Expire social cookie", 0, false);
-        logger.info("Expiring social registration cookie: " + SocialConstants.SOCIAL_REGISTRATION_COOKIE + ", path: " + cookiePath);
+        logger.debug("Expiring social registration cookie: {0}, path: {1}", SocialConstants.SOCIAL_REGISTRATION_COOKIE, cookiePath);
         response.addNewCookie(newCookie);
         socialRequestManager.retrieveData(requestId);
 

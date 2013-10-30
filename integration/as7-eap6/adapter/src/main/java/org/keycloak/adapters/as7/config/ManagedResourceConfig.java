@@ -5,6 +5,7 @@ import org.codehaus.jackson.annotate.JsonPropertyOrder;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -49,8 +50,16 @@ public class ManagedResourceConfig {
     protected Map<String, String> credentials = new HashMap<String, String>();
     @JsonProperty("connection-pool-size")
     protected int connectionPoolSize;
-    @JsonProperty("cancel-propagation")
-    protected boolean cancelPropagation;
+    @JsonProperty("enable-cors")
+    protected boolean cors;
+    @JsonProperty("cors-max-age")
+    protected int corsMaxAge = -1;
+    @JsonProperty("cors-allowed-headers")
+    protected String corsAllowedHeaders;
+    @JsonProperty("cors-allowed-methods")
+    protected String corsAllowedMethods;
+    @JsonProperty("expose-token")
+    protected boolean exposeToken;
 
     public boolean isUseResourceRoleMappings() {
         return useResourceRoleMappings;
@@ -184,19 +193,51 @@ public class ManagedResourceConfig {
         this.connectionPoolSize = connectionPoolSize;
     }
 
-    public boolean isCancelPropagation() {
-        return cancelPropagation;
-    }
-
-    public void setCancelPropagation(boolean cancelPropagation) {
-        this.cancelPropagation = cancelPropagation;
-    }
-
     public String getAdminRole() {
         return adminRole;
     }
 
     public void setAdminRole(String adminRole) {
         this.adminRole = adminRole;
+    }
+
+    public boolean isCors() {
+        return cors;
+    }
+
+    public void setCors(boolean cors) {
+        this.cors = cors;
+    }
+
+    public int getCorsMaxAge() {
+        return corsMaxAge;
+    }
+
+    public void setCorsMaxAge(int corsMaxAge) {
+        this.corsMaxAge = corsMaxAge;
+    }
+
+    public String getCorsAllowedHeaders() {
+        return corsAllowedHeaders;
+    }
+
+    public void setCorsAllowedHeaders(String corsAllowedHeaders) {
+        this.corsAllowedHeaders = corsAllowedHeaders;
+    }
+
+    public String getCorsAllowedMethods() {
+        return corsAllowedMethods;
+    }
+
+    public void setCorsAllowedMethods(String corsAllowedMethods) {
+        this.corsAllowedMethods = corsAllowedMethods;
+    }
+
+    public boolean isExposeToken() {
+        return exposeToken;
+    }
+
+    public void setExposeToken(boolean exposeToken) {
+        this.exposeToken = exposeToken;
     }
 }

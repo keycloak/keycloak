@@ -67,7 +67,7 @@ public class JaxrsBearerTokenFilter implements ContainerRequestFilter {
 
         try {
             SkeletonKeyToken token = RSATokenVerifier.verifyToken(tokenString, resourceMetadata);
-            SkeletonKeySession skSession = new SkeletonKeySession(tokenString, resourceMetadata);
+            SkeletonKeySession skSession = new SkeletonKeySession(tokenString, token, resourceMetadata);
             ResteasyProviderFactory.pushContext(SkeletonKeySession.class, skSession);
             String callerPrincipal = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
 

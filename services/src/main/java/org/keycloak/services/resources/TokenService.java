@@ -175,7 +175,7 @@ public class TokenService {
     public Response processLogin(@QueryParam("client_id") final String clientId, @QueryParam("scope") final String scopeParam,
             @QueryParam("state") final String state, @QueryParam("redirect_uri") final String redirect,
             final MultivaluedMap<String, String> formData) {
-        logger.info("TokenService.processLogin");
+        logger.debug("TokenService.processLogin");
         OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
 
         if (!realm.isEnabled()) {
@@ -228,7 +228,7 @@ public class TokenService {
         for (RequiredCredentialModel c : realm.getRequiredCredentials()) {
             if (c.getType().equals(CredentialRepresentation.TOTP) && !user.isTotp()) {
                 user.addRequiredAction(RequiredAction.CONFIGURE_TOTP);
-                logger.info("User is required to configure totp");
+                logger.debug("User is required to configure totp");
             }
         }
     }
@@ -236,7 +236,7 @@ public class TokenService {
     private void isEmailVerificationRequired(UserModel user) {
         if (realm.isVerifyEmail() && !user.isEmailVerified()) {
             user.addRequiredAction(RequiredAction.VERIFY_EMAIL);
-            logger.info("User is required to verify email");
+            logger.debug("User is required to verify email");
         }
     }
 
@@ -320,7 +320,7 @@ public class TokenService {
     @POST
     @Produces("application/json")
     public Response accessCodeToToken(final MultivaluedMap<String, String> formData) {
-        logger.info("accessRequest <---");
+        logger.debug("accessRequest <---");
         if (!realm.isEnabled()) {
             throw new NotAuthorizedException("Realm not enabled");
         }
@@ -410,7 +410,7 @@ public class TokenService {
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res)
                     .build();
         }
-        logger.info("accessRequest SUCCESS");
+        logger.debug("accessRequest SUCCESS");
         AccessTokenResponse res = accessTokenResponse(realm.getPrivateKey(), accessCode.getToken());
 
         return Cors.add(request, Response.ok(res)).allowedOrigins(client.getWebOrigins()).build();
@@ -476,7 +476,7 @@ public class TokenService {
 
         UserModel user = authManager.authenticateIdentityCookie(realm, uriInfo, headers);
         if (user != null) {
-            logger.info(user.getLoginName() + " already logged in.");
+            logger.debug(user.getLoginName() + " already logged in.");
             return oauth.processAccessCode(scopeParam, state, redirect, client, user);
         }
 
@@ -523,7 +523,7 @@ public class TokenService {
 
         UserModel user = authManager.authenticateIdentityCookie(realm, uriInfo, headers);
         if (user != null) {
-            logger.info("Logging out: " + user.getLoginName());
+            logger.debug("Logging out: {0}", user.getLoginName());
             authManager.expireIdentityCookie(realm, uriInfo);
             resourceAdminManager.singleLogOut(realm, user.getLoginName());
         }

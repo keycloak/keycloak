@@ -192,6 +192,19 @@ module.factory('ApplicationCredentials', function($resource) {
     });
 });
 
+module.factory('ApplicationOrigins', function($resource) {
+    return $resource('/auth-server/rest/saas/admin/realms/:realm/applications/:application/allowed-origins', {
+        realm : '@realm',
+        application : '@application'
+    },  {
+        update : {
+            method : 'PUT',
+            isArray : true
+        }
+    });
+});
+
+
 
 
 module.factory('Current', function($resource) {

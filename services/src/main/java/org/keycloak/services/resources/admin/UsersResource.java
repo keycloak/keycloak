@@ -189,7 +189,7 @@ public class UsersResource {
     @POST
     @Consumes("application/json")
     public void addRealmRoleMappings(@PathParam("username") String username, List<RoleRepresentation> roles) {
-        logger.info("** addRealmRoleMappings: " + roles);
+        logger.debug("** addRealmRoleMappings: {0}", roles);
         UserModel user = realm.getUser(username);
         if (user == null) {
             throw new NotFoundException();
@@ -210,7 +210,7 @@ public class UsersResource {
     @DELETE
     @Consumes("application/json")
     public void deleteRealmRoleMappings(@PathParam("username") String username, List<RoleRepresentation> roles) {
-        logger.info("deleteRealmRoleMappings");
+        logger.debug("deleteRealmRoleMappings");
         UserModel user = realm.getUser(username);
         if (user == null) {
             throw new NotFoundException();
@@ -238,7 +238,7 @@ public class UsersResource {
     @Produces("application/json")
     @NoCache
     public List<RoleRepresentation> getApplicationRoleMappings(@PathParam("username") String username, @PathParam("appId") String appId) {
-        logger.info("getApplicationRoleMappings");
+        logger.debug("getApplicationRoleMappings");
 
         UserModel user = realm.getUser(username);
         if (user == null) {
@@ -256,7 +256,7 @@ public class UsersResource {
         for (RoleModel roleModel : mappings) {
             mapRep.add(RealmManager.toRepresentation(roleModel));
         }
-        logger.info("getApplicationRoleMappings.size() = " + mapRep.size());
+        logger.debug("getApplicationRoleMappings.size() = {0}", mapRep.size());
         return mapRep;
     }
 
@@ -264,7 +264,7 @@ public class UsersResource {
     @POST
     @Consumes("application/json")
     public void addApplicationRoleMapping(@PathParam("username") String username, @PathParam("appId") String appId, List<RoleRepresentation> roles) {
-        logger.info("addApplicationRoleMapping");
+        logger.debug("addApplicationRoleMapping");
         UserModel user = realm.getUser(username);
         if (user == null) {
             throw new NotFoundException();
