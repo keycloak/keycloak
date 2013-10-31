@@ -34,7 +34,7 @@
 
     <div id="info">
         <#if realm.registrationAllowed>
-            <p>${rb.getString('noAccount')} <a href="${url.registrationUrl}">${rb.getString('register')}</a>.</p>
+            <p>${rb.getString('noAccount')} <a href="#">${rb.getString('register')}</a>.</p>
         </#if>
     </div>
 

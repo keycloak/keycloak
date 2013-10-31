@@ -24,7 +24,7 @@ textarea {
     font-size: 1.1em;
     padding: 0 0.545454545454545em;
     min-width: 18.1818181818182em;
-    height: 2.36363636363636em;
+    height: 2.36363636363636em; /* 26px */
     border: 1px #b6b6b6 solid;
     border-radius: 2px;
     box-shadow: inset 0px 2px 2px rgba(0,0,0,0.1);
@@ -656,7 +656,7 @@ input[type="email"] {
 
 .select-rcue,
 .select2-container .select2-choice {
-    height: 26px;
+    height: 2.6em;
     border: 1px #b6b6b6 solid;
     border-radius: 2px;
     box-shadow: inset 0px 2px 2px rgba(0,0,0,0.1);
@@ -707,7 +707,7 @@ input[type="email"] {
     
     option {
         line-height: 2em;
-        padding-left: 0.90909090909091em;
+        padding: 0.363636em 0.909091em;
         
         &:hover {
             background-color: #d5ecf9;
@@ -940,7 +940,8 @@ input[type="email"] {
     margin-top: 3em;
     margin-bottom: 5em;
     
-    .primary {
+    .primary,
+    .destructive {
         float: right;
         margin-left: 0.90909090909091em;
     }

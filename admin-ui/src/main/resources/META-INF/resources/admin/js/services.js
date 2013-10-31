@@ -24,7 +24,7 @@ module.service('Dialog', function($dialog) {
 		}, {
 			result : 'ok',
 			label : 'Delete this ' + type,
-			cssClass : 'btn-primary'
+			cssClass : 'destructive'
 		} ];
 
 		$dialog.messageBox(title, msg, btns).open().then(function(result) {

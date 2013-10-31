@@ -5,12 +5,6 @@
     <meta charset="utf-8">
     <title>Keycloak</title>
 
-    <style type="text/css">
-        #idletimeout { background:#CC5100; border:3px solid #FF6500; color:#fff; font-family:arial, sans-serif; text-align:center; font-size:12px; padding:10px; position:relative; top:0px; left:0; right:0; z-index:100000; display:none; }
-        #idletimeout a { color:#fff; font-weight:bold }
-        #idletimeout span { font-weight:bold }
-    </style>
-
     <link rel="icon" href="/auth-server/admin-ui/img/favicon.ico">
 
     <!-- Frameworks -->
@@ -59,7 +53,7 @@
 
 <body class="admin-console" data-ng-controller="GlobalCtrl">
 <div id="idletimeout">
-    You will be logged off in <span></span>&nbsp;seconds due to inactivity.
+    You will be logged off in <strong><span></span> seconds</strong> due to inactivity.
     <a id="idletimeout-resume" href="#">Click here to continue using this web page</a>.
 </div>
 
