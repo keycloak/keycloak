@@ -4,7 +4,6 @@ import java.util.UUID;
 
 import org.keycloak.social.AuthCallback;
 import org.keycloak.social.AuthRequest;
-import org.keycloak.social.AuthRequestBuilder;
 import org.keycloak.social.SocialProvider;
 import org.keycloak.social.SocialProviderConfig;
 import org.keycloak.social.SocialProviderException;
@@ -23,12 +22,8 @@ public class DummySocial implements SocialProvider {
     public AuthRequest getAuthUrl(SocialProviderConfig config) throws SocialProviderException {
         String state = UUID.randomUUID().toString();
 
-        AuthRequestBuilder b = AuthRequestBuilder.create(state, AUTH_PATH).setQueryParam("response_type", "token")
-                .setQueryParam("redirect_uri", config.getCallbackUrl()).setQueryParam("state", state);
-
-        b.setAttribute("state", state);
-
-        return b.build();
+        return AuthRequest.create(state, AUTH_PATH).setQueryParam("response_type", "token")
+                .setQueryParam("redirect_uri", config.getCallbackUrl()).setQueryParam("state", state).setAttribute("state", state).build();
     }
 
     @Override

@@ -21,7 +21,9 @@
  */
 package org.keycloak.social;
 
+import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -35,7 +37,15 @@ public class AuthRequest {
 
     private Map<String, String> attributes;
 
-    AuthRequest(String id, URI authUri, Map<String, String> attributes) {
+    public static AuthRequestBuilder create(String id, String path) {
+        AuthRequestBuilder req = new AuthRequestBuilder();
+        req.id = id;
+        req.b = UriBuilder.fromUri(path);
+        req.attributes = new HashMap<String, String>();
+        return req;
+    }
+
+    private AuthRequest(String id, URI authUri, Map<String, String> attributes) {
         this.id = id;
         this.authUri = authUri;
         this.attributes = attributes;
@@ -51,6 +61,33 @@ public class AuthRequest {
 
     public Map<String, String> getAttributes() {
         return attributes;
+    }
+
+    public static class AuthRequestBuilder {
+
+        private UriBuilder b;
+
+        private Map<String, String> attributes;
+
+        private String id;
+
+        private AuthRequestBuilder() {
+        }
+
+        public AuthRequestBuilder setQueryParam(String name, String value) {
+            b.queryParam(name, value);
+            return this;
+        }
+
+        public AuthRequestBuilder setAttribute(String name, String value) {
+            attributes.put(name, value);
+            return this;
+        }
+
+        public AuthRequest build() {
+            return new AuthRequest(id, b.build(), attributes);
+        }
+
     }
 
 }

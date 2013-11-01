@@ -61,7 +61,6 @@ import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.social.AuthCallback;
 import org.keycloak.social.AuthRequest;
 import org.keycloak.social.RequestDetails;
-import org.keycloak.social.RequestDetailsBuilder;
 import org.keycloak.social.SocialConstants;
 import org.keycloak.social.SocialProvider;
 import org.keycloak.social.SocialProviderConfig;
@@ -185,10 +184,8 @@ public class SocialResource {
                 // Redirect user to registration screen with prefilled data from social provider
                 MultivaluedMap<String, String> formData = fillRegistrationFormWithSocialData(socialUser);
 
-                RequestDetailsBuilder reqDetailsBuilder = RequestDetailsBuilder.createFromRequestDetails(requestData);
-
                 String requestId = UUID.randomUUID().toString();
-                socialRequestManager.addRequest(requestId, reqDetailsBuilder.build());
+                socialRequestManager.addRequest(requestId, RequestDetails.create(requestData).build());
                 boolean secureOnly = !realm.isSslNotRequired();
                 String cookiePath = Urls.socialBase(uriInfo.getBaseUri()).build().getPath();
                 logger.debug("creating cookie for social registration - name: {0} path: {1}", SocialConstants.SOCIAL_REGISTRATION_COOKIE,
@@ -236,7 +233,7 @@ public class SocialResource {
         try {
             AuthRequest authRequest = provider.getAuthUrl(config);
 
-            RequestDetails socialRequest = RequestDetailsBuilder.create(providerId)
+            RequestDetails socialRequest = RequestDetails.create(providerId)
                     .putSocialAttributes(authRequest.getAttributes()).putClientAttribute("realmId", realmId)
                     .putClientAttribute("clientId", clientId).putClientAttribute("scope", scope)
                     .putClientAttribute("state", state).putClientAttribute("redirectUri", redirectUri).build();

@@ -14,7 +14,6 @@ import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.keycloak.social.AuthCallback;
 import org.keycloak.social.AuthRequest;
-import org.keycloak.social.AuthRequestBuilder;
 import org.keycloak.social.SocialProvider;
 import org.keycloak.social.SocialProviderConfig;
 import org.keycloak.social.SocialProviderException;
@@ -46,13 +45,9 @@ public class FacebookProvider implements SocialProvider {
     public AuthRequest getAuthUrl(SocialProviderConfig config) throws SocialProviderException {
         String state = UUID.randomUUID().toString();
 
-        AuthRequestBuilder b = AuthRequestBuilder.create(state, AUTHENTICATION_ENDPOINT_URL).setQueryParam("client_id", config.getKey())
+        return AuthRequest.create(state, AUTHENTICATION_ENDPOINT_URL).setQueryParam("client_id", config.getKey())
                 .setQueryParam("response_type", DEFAULT_RESPONSE_TYPE).setQueryParam("scope", DEFAULT_SCOPE)
-                .setQueryParam("redirect_uri", config.getCallbackUrl()).setQueryParam("state", state);
-
-        b.setAttribute("state", state);
-
-        return b.build();
+                .setQueryParam("redirect_uri", config.getCallbackUrl()).setQueryParam("state", state).setAttribute("state", state).build();
     }
 
     @Override
