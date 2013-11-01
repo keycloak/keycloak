@@ -33,9 +33,9 @@ public class AuthRequest {
 
     private URI authUri;
 
-    private Map<String, Object> attributes;
+    private Map<String, String> attributes;
 
-    AuthRequest(String id, URI authUri, Map<String, Object> attributes) {
+    AuthRequest(String id, URI authUri, Map<String, String> attributes) {
         this.id = id;
         this.authUri = authUri;
         this.attributes = attributes;
@@ -49,7 +49,7 @@ public class AuthRequest {
         return authUri;
     }
 
-    public Map<String, Object> getAttributes() {
+    public Map<String, String> getAttributes() {
         return attributes;
     }
 

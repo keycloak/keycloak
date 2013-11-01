@@ -28,11 +28,11 @@ import java.util.Map;
  */
 public class AuthCallback {
     
-    private Map<String, Object> attributes;
+    private Map<String, String> attributes;
 
     private Map<String, String[]> queryParams;
 
-    public AuthCallback(Map<String, Object> attributes, Map<String, String[]> queryParams) {
+    public AuthCallback(Map<String, String> attributes, Map<String, String[]> queryParams) {
         this.attributes = attributes;
         this.queryParams = queryParams;
     }

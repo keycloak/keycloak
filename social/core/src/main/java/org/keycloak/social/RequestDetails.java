@@ -32,9 +32,9 @@ public class RequestDetails {
 
     private Map<String, String> clientAttributes;
 
-    private Map<String, Object> socialAttributes;
+    private Map<String, String> socialAttributes;
 
-    RequestDetails(String providerId, Map<String, String> clientAttributes, Map<String, Object> socialAttributes) {
+    RequestDetails(String providerId, Map<String, String> clientAttributes, Map<String, String> socialAttributes) {
         this.providerId = providerId;
         this.clientAttributes = clientAttributes;
         this.socialAttributes = socialAttributes;
@@ -52,11 +52,11 @@ public class RequestDetails {
         return clientAttributes;
     }
 
-    public Object getSocialAttribute(String name) {
+    public String getSocialAttribute(String name) {
         return socialAttributes.get(name);
     }
 
-    public Map<String, Object> getSocialAttributes() {
+    public Map<String, String> getSocialAttributes() {
         return socialAttributes;
     }
 

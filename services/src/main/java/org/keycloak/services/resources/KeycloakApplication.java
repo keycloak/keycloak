@@ -8,7 +8,7 @@ import org.keycloak.models.picketlink.PicketlinkKeycloakSessionFactory;
 import org.keycloak.models.picketlink.mappings.ApplicationEntity;
 import org.keycloak.models.picketlink.mappings.RealmEntity;
 import org.keycloak.services.utils.PropertiesManager;
-import org.keycloak.social.SocialRequestManager;
+import org.keycloak.services.managers.SocialRequestManager;
 import org.picketlink.idm.PartitionManager;
 import org.picketlink.idm.config.IdentityConfigurationBuilder;
 import org.picketlink.idm.internal.DefaultPartitionManager;
