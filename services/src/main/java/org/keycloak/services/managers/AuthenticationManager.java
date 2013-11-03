@@ -173,7 +173,7 @@ public class AuthenticationManager {
                 return null;
             }
 
-            Auth auth = new Auth();
+            Auth auth = new Auth(token);
 
             UserModel user = realm.getUser(token.getPrincipal());
             if (user == null || !user.isEnabled()) {
@@ -220,7 +220,7 @@ public class AuthenticationManager {
                 throw new NotAuthorizedException("token_expired");
             }
 
-            Auth auth = new Auth();
+            Auth auth = new Auth(token);
 
             UserModel user = realm.getUser(token.getPrincipal());
             if (user == null || !user.isEnabled()) {
@@ -309,8 +309,17 @@ public class AuthenticationManager {
     }
 
     public static class Auth {
+        private SkeletonKeyToken token;
         private UserModel user;
         private UserModel client;
+
+        public Auth(SkeletonKeyToken token) {
+            this.token = token;
+        }
+
+        public SkeletonKeyToken getToken() {
+            return token;
+        }
 
         public UserModel getUser() {
             return user;

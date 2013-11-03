@@ -22,16 +22,12 @@
 package org.keycloak.services.resources;
 
 import java.net.URI;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
-import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.ext.Providers;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.jose.jws.JWSInput;
 import org.jboss.resteasy.jose.jws.crypto.RSAProvider;
 import org.jboss.resteasy.logging.Logger;
@@ -39,15 +35,13 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.AbstractOAuthClient;
 import org.keycloak.jaxrs.JaxrsOAuthClient;
 import org.keycloak.models.*;
+import org.keycloak.representations.SkeletonKeyToken;
 import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.email.EmailSender;
 import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.FormFlows;
 import org.keycloak.services.resources.flows.Pages;
@@ -99,13 +93,13 @@ public class AccountService {
         }
     }
 
-    @Path("")
+    @Path("/")
     @OPTIONS
     public Response accountPreflight() {
         return Cors.add(request, Response.ok()).auth().preflight().build();
     }
 
-    @Path("")
+    @Path("/")
     @GET
     public Response accountPage() {
         List<MediaType> types = headers.getAcceptableMediaTypes();
@@ -113,6 +107,10 @@ public class AccountService {
             return forwardToPage(null, Pages.ACCOUNT);
         } else if (types.contains(MediaType.APPLICATION_JSON_TYPE)) {
             AuthenticationManager.Auth auth = getAuth(true);
+            if (!hasAccess(auth, Constants.ACCOUNT_PROFILE_ROLE)) {
+                throw new ForbiddenException();
+            }
+
             return Cors.add(request, Response.ok(RealmManager.toRepresentation(auth.getUser()))).auth().allowedOrigins(auth.getClient()).build();
         } else {
             return Response.notAcceptable(Variant.VariantListBuilder.newInstance().mediaTypes(MediaType.TEXT_HTML_TYPE, MediaType.APPLICATION_JSON_TYPE).build()).build();
@@ -143,7 +141,7 @@ public class AccountService {
         return forwardToPage("access", Pages.ACCESS);
     }
 
-    @Path("")
+    @Path("/")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processAccountUpdate(final MultivaluedMap<String, String> formData) {
@@ -330,7 +328,7 @@ public class AccountService {
         String authUrl = Urls.realmLoginPage(uriInfo.getBaseUri(), realm.getId()).toString();
         oauth.setAuthUrl(authUrl);
 
-        oauth.setClientId(Constants.ACCOUNT_MANAGEMENT_APPLICATION);
+        oauth.setClientId(Constants.ACCOUNT_APPLICATION);
 
         URI accountUri = Urls.accountPageBuilder(uriInfo.getBaseUri()).path(AccountService.class, "loginRedirect").build(realm.getId());
 
@@ -344,6 +342,29 @@ public class AccountService {
             throw new ForbiddenException();
         }
         return auth;
+    }
+
+    private boolean hasAccess(AuthenticationManager.Auth auth, String requiredRole) {
+        UserModel client = auth.getClient();
+
+        if (realm.hasRole(client, Constants.APPLICATION_ROLE)) {
+            return true;
+        }
+
+        SkeletonKeyToken token = auth.getToken();
+        SkeletonKeyToken.Access access = token.getResourceAccess(application.getName());
+
+        if (access != null) {
+            if (access.isUserInRole(Constants.ACCOUNT_MANAGE_ROLE)) {
+                return true;
+            }
+
+            if (access.isUserInRole(Constants.ACCOUNT_PROFILE_ROLE)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
 }

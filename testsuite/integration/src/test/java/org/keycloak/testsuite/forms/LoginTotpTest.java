@@ -93,7 +93,7 @@ public class LoginTotpTest {
     }
 
     @Test
-    public void loginWithTotpFailure() {
+    public void loginWithTotpFailure() throws Exception {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
 
@@ -106,7 +106,7 @@ public class LoginTotpTest {
     }
 
     @Test
-    public void loginWithTotpSuccess() {
+    public void loginWithTotpSuccess() throws Exception {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
 

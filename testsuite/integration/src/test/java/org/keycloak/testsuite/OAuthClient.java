@@ -32,6 +32,7 @@ import java.util.Map;
 
 import javax.ws.rs.core.UriBuilder;
 
+import com.google.api.client.repackaged.org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -41,11 +42,16 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
+import org.jboss.resteasy.jose.Base64Url;
+import org.jboss.resteasy.jwt.JsonSerialization;
 import org.jboss.resteasy.security.PemUtils;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.keycloak.RSATokenVerifier;
+import org.keycloak.VerificationException;
+import org.keycloak.representations.SkeletonKeyScope;
 import org.keycloak.representations.SkeletonKeyToken;
+import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
@@ -68,17 +74,21 @@ public class OAuthClient {
 
     private String redirectUri = "http://localhost:8081/app/auth";
 
-    private String scope;
+    private SkeletonKeyScope scope;
 
     private String state;
 
     private PublicKey realmPublicKey;
 
-    public OAuthClient(WebDriver driver) throws Exception {
+    public OAuthClient(WebDriver driver) {
         this.driver = driver;
 
-        JSONObject realmJson = new JSONObject(IOUtils.toString(getClass().getResourceAsStream("/testrealm.json")));
-        realmPublicKey = PemUtils.decodePublicKey(realmJson.getString("publicKey"));
+        try {
+            JSONObject realmJson = new JSONObject(IOUtils.toString(getClass().getResourceAsStream("/testrealm.json")));
+            realmPublicKey = PemUtils.decodePublicKey(realmJson.getString("publicKey"));
+        } catch (Exception e) {
+            throw new AssertionError("Failed to retrieve realm public key", e);
+        }
     }
 
     public AuthorizationCodeResponse doLogin(String username, String password) {
@@ -91,7 +101,15 @@ public class OAuthClient {
         return new AuthorizationCodeResponse(this);
     }
 
-    public AccessTokenResponse doAccessTokenRequest(String code, String password) throws Exception {
+    public void doLoginGrant(String username, String password) {
+        openLoginForm();
+
+        driver.findElement(By.id("username")).sendKeys(username);
+        driver.findElement(By.id("password")).sendKeys(password);
+        driver.findElement(By.cssSelector("input[type=\"submit\"]")).click();
+    }
+
+    public AccessTokenResponse doAccessTokenRequest(String code, String password) {
         HttpClient client = new DefaultHttpClient();
         HttpPost post = new HttpPost(getAccessTokenUrl());
 
@@ -115,27 +133,19 @@ public class OAuthClient {
         UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, Charset.forName("UTF-8"));
         post.setEntity(formEntity);
 
-        return new AccessTokenResponse(client.execute(post));
+        try {
+            return new AccessTokenResponse(client.execute(post));
+        } catch (Exception e) {
+            throw new AssertionError("Failed to retrieve access token", e);
+        }
     }
 
-    public SkeletonKeyToken verifyToken(String token) throws Exception {
-        return RSATokenVerifier.verifyToken(token, realmPublicKey, realm);
-    }
-
-    public boolean isAuthorizationResponse() {
-        return getCurrentRequest().equals(redirectUri) && getCurrentQuery().containsKey("code");
-    }
-
-    public String getState() {
-        return state;
-    }
-
-    public String getClientId() {
-        return clientId;
-    }
-
-    public String getResponseType() {
-        return responseType;
+    public SkeletonKeyToken verifyToken(String token) {
+        try {
+            return RSATokenVerifier.verifyToken(token, realmPublicKey, realm);
+        } catch (VerificationException e) {
+            throw new AssertionError("Failed to verify token", e);
+        }
     }
 
     public String getCurrentRequest() {
@@ -175,10 +185,6 @@ public class OAuthClient {
         return redirectUri;
     }
 
-    public String getScope() {
-        return scope;
-    }
-
     public String getLoginFormUrl() {
         UriBuilder b = UriBuilder.fromUri(baseUrl + "/realms/" + realm + "/tokens/login");
         if (responseType != null) {
@@ -191,7 +197,12 @@ public class OAuthClient {
             b.queryParam("redirect_uri", redirectUri);
         }
         if (scope != null) {
-            b.queryParam("scope", scope);
+            try {
+
+                b.queryParam("scope", Base64Url.encode(JsonSerialization.toByteArray(scope, false)));
+            } catch (Exception e) {
+                throw new AssertionError("Failed to serialize scope", e);
+            }
         }
         if (state != null) {
             b.queryParam("state", state);
@@ -224,8 +235,11 @@ public class OAuthClient {
         return this;
     }
 
-    public OAuthClient scope(String scope) {
-        this.scope = scope;
+    public OAuthClient addScope(String resource, String... roles) {
+        if (scope == null) {
+            scope = new SkeletonKeyScope();
+        }
+        scope.addAll(resource, roles);
         return this;
     }
 

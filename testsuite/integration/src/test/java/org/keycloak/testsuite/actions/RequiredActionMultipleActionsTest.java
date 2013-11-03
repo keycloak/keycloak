@@ -76,7 +76,7 @@ public class RequiredActionMultipleActionsTest {
     protected LoginUpdateProfilePage updateProfilePage;
 
     @Test
-    public void updateProfileAndPassword() {
+    public void updateProfileAndPassword() throws Exception {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
 

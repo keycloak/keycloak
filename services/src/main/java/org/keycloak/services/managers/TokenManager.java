@@ -11,10 +11,7 @@ import org.keycloak.representations.SkeletonKeyToken;
 import javax.ws.rs.core.MultivaluedMap;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -54,6 +51,9 @@ public class TokenManager {
             if (scope.size() > 0) {
                 Set<String> scopeRequest = null;
                 if (scopeMap != null) {
+                    if (scopeRequest == null) {
+                        scopeRequest = new HashSet<String>();
+                    }
                     scopeRequest.addAll(scopeMap.get("realm"));
                     if (scopeRequest.contains(Constants.WILDCARD_ROLE)) scopeRequest = null;
                 }
@@ -73,6 +73,9 @@ public class TokenManager {
                 if (scope.size() > 0) {
                     Set<String> scopeRequest = null;
                     if (scopeMap != null) {
+                        if (scopeRequest == null) {
+                            scopeRequest = new HashSet<String>();
+                        }
                         scopeRequest.addAll(scopeMap.get(resource.getName()));
                         if (scopeRequest.contains(Constants.WILDCARD_ROLE)) scopeRequest = null;
                     }

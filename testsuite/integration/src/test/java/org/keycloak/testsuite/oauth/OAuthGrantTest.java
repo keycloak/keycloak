@@ -22,14 +22,15 @@
 package org.keycloak.testsuite.oauth;
 
 import java.io.IOException;
+import java.util.Map;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.representations.SkeletonKeyToken;
 import org.keycloak.testsuite.OAuthClient;
-import org.keycloak.testsuite.OAuthGrantServlet;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.rule.KeycloakRule;
@@ -44,11 +45,6 @@ public class OAuthGrantTest {
 
     @ClassRule
     public static KeycloakRule keycloakRule = new KeycloakRule();
-
-    @BeforeClass
-    public static void before() {
-        keycloakRule.deployServlet("grant", "/grant", OAuthGrantServlet.class);
-    }
 
     @Rule
     public WebRule webRule = new WebRule(this);
@@ -65,28 +61,13 @@ public class OAuthGrantTest {
     @WebResource
     protected OAuthGrantPage grantPage;
 
-    private static String GRANT_APP_URL = "http://localhost:8081/grant/";
-
-    private static String ACCESS_GRANTED = "Access rights granted.";
-    private static String ACCESS_NOT_GRANTED = "Access rights not granted.";
-
     private static String ROLE_USER = "Have User privileges";
     private static String ROLE_CUSTOMER = "Have Customer User privileges";
 
-    private static String GRANT_ROLE = "user";
-    private static String GRANT_APP = "test-app";
-    private static String GRANT_APP_ROLE = "customer-user";
-
     @Test
     public void oauthGrantAcceptTest() throws IOException {
-
-        driver.navigate().to(GRANT_APP_URL);
-
-        Assert.assertFalse(driver.getPageSource().contains(ACCESS_GRANTED));
-        Assert.assertFalse(driver.getPageSource().contains(ACCESS_NOT_GRANTED));
-
-        loginPage.isCurrent();
-        loginPage.login("test-user@localhost", "password");
+        oauth.clientId("third-party");
+        oauth.doLoginGrant("test-user@localhost", "password");
 
         grantPage.assertCurrent();
         Assert.assertTrue(driver.getPageSource().contains(ROLE_USER));
@@ -94,23 +75,50 @@ public class OAuthGrantTest {
 
         grantPage.accept();
 
-        Assert.assertTrue(driver.getPageSource().contains(ACCESS_GRANTED));
-        Assert.assertFalse(driver.getPageSource().contains(ACCESS_NOT_GRANTED));
+        Assert.assertTrue(oauth.getCurrentQuery().containsKey("code"));
+        OAuthClient.AccessTokenResponse accessToken = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get("code"), "password");
 
-        Assert.assertTrue(driver.getPageSource().contains("Role:"+ GRANT_ROLE +"."));
-        Assert.assertTrue(driver.getPageSource().contains("App:"+ GRANT_APP +";"+ GRANT_APP_ROLE +"."));
+        SkeletonKeyToken token = oauth.verifyToken(accessToken.getAccessToken());
+
+        SkeletonKeyToken.Access realmAccess = token.getRealmAccess();
+        Assert.assertEquals(1, realmAccess.getRoles().size());
+        Assert.assertTrue(realmAccess.isUserInRole("user"));
+
+        Map<String,SkeletonKeyToken.Access> resourceAccess = token.getResourceAccess();
+        Assert.assertEquals(1, resourceAccess.size());
+        Assert.assertEquals(1, resourceAccess.get("test-app").getRoles().size());
+        Assert.assertTrue(resourceAccess.get("test-app").isUserInRole("customer-user"));
+    }
+
+    @Test
+    public void oauthGrantAcceptTestWithScope() throws IOException {
+        oauth.addScope("test-app", "customer-user");
+        oauth.clientId("third-party");
+        oauth.doLoginGrant("test-user@localhost", "password");
+
+        grantPage.assertCurrent();
+        Assert.assertTrue(driver.getPageSource().contains(ROLE_CUSTOMER));
+
+        grantPage.accept();
+
+        Assert.assertTrue(oauth.getCurrentQuery().containsKey("code"));
+        OAuthClient.AccessTokenResponse accessToken = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get("code"), "password");
+
+        SkeletonKeyToken token = oauth.verifyToken(accessToken.getAccessToken());
+
+        SkeletonKeyToken.Access realmAccess = token.getRealmAccess();
+        Assert.assertNull(realmAccess);
+
+        Map<String,SkeletonKeyToken.Access> resourceAccess = token.getResourceAccess();
+        Assert.assertEquals(1, resourceAccess.size());
+        Assert.assertEquals(1, resourceAccess.get("test-app").getRoles().size());
+        Assert.assertTrue(resourceAccess.get("test-app").isUserInRole("customer-user"));
     }
 
     @Test
     public void oauthGrantCancelTest() throws IOException {
-
-        driver.navigate().to(GRANT_APP_URL);
-
-        Assert.assertFalse(driver.getPageSource().contains(ACCESS_GRANTED));
-        Assert.assertFalse(driver.getPageSource().contains(ACCESS_NOT_GRANTED));
-
-        loginPage.isCurrent();
-        loginPage.login("test-user@localhost", "password");
+        oauth.clientId("third-party");
+        oauth.doLoginGrant("test-user@localhost", "password");
 
         grantPage.assertCurrent();
         Assert.assertTrue(driver.getPageSource().contains(ROLE_USER));
@@ -118,7 +126,7 @@ public class OAuthGrantTest {
 
         grantPage.cancel();
 
-        Assert.assertFalse(driver.getPageSource().contains(ACCESS_GRANTED));
-        Assert.assertTrue(driver.getPageSource().contains(ACCESS_NOT_GRANTED));
+        Assert.assertTrue(oauth.getCurrentQuery().containsKey("error"));
+        Assert.assertEquals("access_denied", oauth.getCurrentQuery().get("error"));
     }
 }

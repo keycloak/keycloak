@@ -18,6 +18,7 @@ import org.keycloak.testsuite.Constants;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
@@ -30,6 +31,7 @@ import java.io.IOException;
 import java.net.URI;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -46,6 +48,14 @@ public class ProfileTest {
             user.setLastName("Last");
             user.setAttribute("key1", "value1");
             user.setAttribute("key2", "value2");
+
+            ApplicationModel accountApp = appRealm.getApplicationNameMap().get(org.keycloak.models.Constants.ACCOUNT_APPLICATION);
+
+            accountApp.grantRole(user, accountApp.getRole(org.keycloak.models.Constants.ACCOUNT_PROFILE_ROLE));
+            accountApp.grantRole(user, accountApp.getRole(org.keycloak.models.Constants.ACCOUNT_MANAGE_ROLE));
+
+            UserModel thirdParty = appRealm.getUser("third-party");
+            accountApp.addScopeMapping(thirdParty, org.keycloak.models.Constants.ACCOUNT_PROFILE_ROLE);
 
             for (ApplicationModel app : appRealm.getApplications()) {
                 if (app.getName().equals("test-app")) {
@@ -69,6 +79,9 @@ public class ProfileTest {
 
     @WebResource
     protected LoginPage loginPage;
+
+    @WebResource
+    protected OAuthGrantPage grantPage;
 
     @Test
     public void getProfile() throws Exception {
@@ -136,6 +149,35 @@ public class ProfileTest {
     @Test
     public void getProfileNoAuth() throws Exception {
         HttpResponse response = doGetProfile(null, null);
+        assertEquals(403, response.getStatusLine().getStatusCode());
+    }
+
+    @Test
+    public void getProfileOAuthClient() throws Exception {
+        oauth.addScope(org.keycloak.models.Constants.ACCOUNT_APPLICATION, org.keycloak.models.Constants.ACCOUNT_PROFILE_ROLE);
+        oauth.clientId("third-party");
+        oauth.doLoginGrant("test-user@localhost", "password");
+
+        grantPage.accept();
+
+        String token = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get("code"), "password").getAccessToken();
+        HttpResponse response = doGetProfile(token, null);
+
+        assertEquals(200, response.getStatusLine().getStatusCode());
+        JSONObject profile = new JSONObject(IOUtils.toString(response.getEntity().getContent()));
+
+        assertEquals("test-user@localhost", profile.getString("username"));
+    }
+
+    @Test
+    public void getProfileOAuthClientNoScope() throws Exception {
+        oauth.addScope(org.keycloak.models.Constants.ACCOUNT_APPLICATION);
+        oauth.clientId("third-party");
+        oauth.doLoginGrant("test-user@localhost", "password");
+
+        String token = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get("code"), "password").getAccessToken();
+        HttpResponse response = doGetProfile(token, null);
+
         assertEquals(403, response.getStatusLine().getStatusCode());
     }
 

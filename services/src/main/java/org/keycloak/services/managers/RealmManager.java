@@ -107,9 +107,11 @@ public class RealmManager {
     }
 
     private void enableAccountManagement(RealmModel realm) {
-        ApplicationModel application = realm.getApplicationById(Constants.ACCOUNT_MANAGEMENT_APPLICATION);
+        ApplicationModel application = realm.getApplicationById(Constants.ACCOUNT_APPLICATION);
         if (application == null) {
-            application = realm.addApplication(Constants.ACCOUNT_MANAGEMENT_APPLICATION);
+            application = realm.addApplication(Constants.ACCOUNT_APPLICATION);
+            application.addRole(Constants.ACCOUNT_PROFILE_ROLE);
+            application.addRole(Constants.ACCOUNT_MANAGE_ROLE);
 
             UserCredentialModel password = new UserCredentialModel();
             password.setType(UserCredentialModel.PASSWORD);
@@ -124,7 +126,7 @@ public class RealmManager {
     }
 
     private void disableAccountManagement(RealmModel realm) {
-        ApplicationModel application = realm.getApplicationNameMap().get(Constants.ACCOUNT_MANAGEMENT_APPLICATION);
+        ApplicationModel application = realm.getApplicationNameMap().get(Constants.ACCOUNT_APPLICATION);
         if (application != null) {
             application.setEnabled(false); // TODO Should we delete the application instead?
         }
@@ -424,7 +426,7 @@ public class RealmManager {
         rep.setSmtpServer(realm.getSmtpConfig());
         rep.setSocialProviders(realm.getSocialConfig());
 
-        ApplicationModel accountManagementApplication = realm.getApplicationNameMap().get(Constants.ACCOUNT_MANAGEMENT_APPLICATION);
+        ApplicationModel accountManagementApplication = realm.getApplicationNameMap().get(Constants.ACCOUNT_APPLICATION);
         rep.setAccountManagement(accountManagementApplication != null && accountManagementApplication.isEnabled());
 
         List<RoleModel> defaultRoles = realm.getDefaultRoles();

@@ -41,6 +41,6 @@ public abstract class AbstractPage {
 
     abstract boolean isCurrent();
 
-    abstract void open();
+    abstract void open() throws Exception;
 
 }
