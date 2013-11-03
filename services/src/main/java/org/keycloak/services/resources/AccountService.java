@@ -23,6 +23,7 @@ package org.keycloak.services.resources;
 
 import java.net.URI;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import javax.ws.rs.*;
@@ -39,6 +40,7 @@ import org.keycloak.AbstractOAuthClient;
 import org.keycloak.jaxrs.JaxrsOAuthClient;
 import org.keycloak.models.*;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.email.EmailSender;
 import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -89,18 +91,32 @@ public class AccountService {
     }
 
     private Response forwardToPage(String path, String template) {
-        UserModel user = getUser(false);
-        if (user != null) {
-            return Flows.forms(realm, request, uriInfo).setUser(user).forwardToForm(template);
+        AuthenticationManager.Auth auth = getAuth(false);
+        if (auth != null) {
+            return Flows.forms(realm, request, uriInfo).setUser(auth.getUser()).forwardToForm(template);
         } else {
             return login(path);
         }
     }
 
     @Path("")
+    @OPTIONS
+    public Response accountPreflight() {
+        return Cors.add(request, Response.ok()).auth().preflight().build();
+    }
+
+    @Path("")
     @GET
     public Response accountPage() {
-        return forwardToPage(null, Pages.ACCOUNT);
+        List<MediaType> types = headers.getAcceptableMediaTypes();
+        if (types.contains(MediaType.WILDCARD_TYPE) || (types.contains(MediaType.TEXT_HTML_TYPE))) {
+            return forwardToPage(null, Pages.ACCOUNT);
+        } else if (types.contains(MediaType.APPLICATION_JSON_TYPE)) {
+            AuthenticationManager.Auth auth = getAuth(true);
+            return Cors.add(request, Response.ok(RealmManager.toRepresentation(auth.getUser()))).auth().allowedOrigins(auth.getClient()).build();
+        } else {
+            return Response.notAcceptable(Variant.VariantListBuilder.newInstance().mediaTypes(MediaType.TEXT_HTML_TYPE, MediaType.APPLICATION_JSON_TYPE).build()).build();
+        }
     }
 
     @Path("social")
@@ -131,8 +147,8 @@ public class AccountService {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processAccountUpdate(final MultivaluedMap<String, String> formData) {
-
-        UserModel user = getUser(true);
+        AuthenticationManager.Auth auth = getAuth(true);
+        UserModel user = auth.getUser();
 
         String error = Validation.validateUpdateProfileForm(formData);
         if (error != null) {
@@ -150,7 +166,9 @@ public class AccountService {
     @Path("totp-remove")
     @GET
     public Response processTotpRemove() {
-        UserModel user = getUser(true);
+        AuthenticationManager.Auth auth = getAuth(true);
+        UserModel user = auth.getUser();
+
         user.setTotp(false);
         return Flows.forms(realm, request, uriInfo).setError("successTotpRemoved").setErrorType(FormFlows.MessageType.SUCCESS)
                 .setUser(user).forwardToTotp();
@@ -160,7 +178,8 @@ public class AccountService {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processTotpUpdate(final MultivaluedMap<String, String> formData) {
-        UserModel user = getUser(true);
+        AuthenticationManager.Auth auth = getAuth(true);
+        UserModel user = auth.getUser();
 
         String totp = formData.getFirst("totp");
         String totpSecret = formData.getFirst("totpSecret");
@@ -187,7 +206,8 @@ public class AccountService {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processPasswordUpdate(final MultivaluedMap<String, String> formData) {
-        UserModel user = getUser(true);
+        AuthenticationManager.Auth auth = getAuth(true);
+        UserModel user = auth.getUser();
 
         FormFlows forms = Flows.forms(realm, request, uriInfo).setUser(user);
 
@@ -288,7 +308,7 @@ public class AccountService {
             }
             URI redirectUri = redirectBuilder.build(realm.getId());
 
-            NewCookie cookie = authManager.createAccountIdentityCookie(realm, accessCode.getUser(), Urls.accountBase(uriInfo.getBaseUri()).build(realm.getId()));
+            NewCookie cookie = authManager.createAccountIdentityCookie(realm, accessCode.getUser(), client, Urls.accountBase(uriInfo.getBaseUri()).build(realm.getId()));
             return Response.status(302).cookie(cookie).location(redirectUri).build();
         } finally {
             authManager.expireCookie(AbstractOAuthClient.OAUTH_TOKEN_REQUEST_STATE, uriInfo.getAbsolutePath().getPath());
@@ -318,11 +338,12 @@ public class AccountService {
         return oauth.redirect(uriInfo, accountUri.toString(), path);
     }
 
-    private UserModel getUser(boolean required) {
-        UserModel user = authManager.authenticateAccountIdentityCookie(realm, uriInfo, headers);
-        if (user == null && required) {
+    private AuthenticationManager.Auth getAuth(boolean required) {
+        AuthenticationManager.Auth auth = authManager.authenticateAccountIdentity(realm, uriInfo, headers);
+        if (auth == null && required) {
             throw new ForbiddenException();
         }
-        return user;
+        return auth;
     }
+
 }

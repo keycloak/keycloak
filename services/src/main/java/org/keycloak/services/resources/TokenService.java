@@ -413,7 +413,7 @@ public class TokenService {
         logger.debug("accessRequest SUCCESS");
         AccessTokenResponse res = accessTokenResponse(realm.getPrivateKey(), accessCode.getToken());
 
-        return Cors.add(request, Response.ok(res)).allowedOrigins(client.getWebOrigins()).build();
+        return Cors.add(request, Response.ok(res)).allowedOrigins(client).build();
     }
 
     protected AccessTokenResponse accessTokenResponse(PrivateKey privateKey, SkeletonKeyToken token) {
