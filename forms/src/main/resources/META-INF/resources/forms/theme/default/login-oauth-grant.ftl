@@ -18,18 +18,20 @@
                     <span>${role.description}</span>
                 </li>
             </#list>
-        </ul>
 
-        <#list oauth.resourceRolesRequested?keys as resourceRole>
-            <p class="instruction"><strong>${resourceRole}</strong> requests access to:</p>
-            <ul>
-                <#list oauth.resourceRolesRequested[resourceRole] as role>
-                    <li>
-                        <span><#if role.description??>${role.description}<#else>${role.name}</#if></span>
-                    </li>
-                </#list>
-            </ul>
-        </#list>
+            <#list oauth.resourceRolesRequested?keys as resourceRole>
+                <li>
+                    <strong>${resourceRole}</strong>
+                    <ul>
+                        <#list oauth.resourceRolesRequested[resourceRole] as role>
+                            <li>
+                                <span><#if role.description??>${role.description}<#else>${role.name}</#if></span>
+                            </li>
+                        </#list>
+                    </ul>
+                </li>
+            </#list>
+        </ul>
 
         <p class="terms">Keycloak Central Login and Google will use this information in accordance with their respective terms of service and privacy policies.</p>
         <form class="form-actions" action="${oauth.action}" method="POST">
