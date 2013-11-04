@@ -16,7 +16,6 @@ input[type="email"],
 textarea {
   font-size: 1.1em;
   padding: 0 0.545454545454545em;
-  min-width: 18.1818181818182em;
   height: 2.36363636363636em;
   /* 26px */
 
@@ -24,6 +23,7 @@ textarea {
   border-radius: 2px;
   box-shadow: inset 0px 2px 2px rgba(0, 0, 0, 0.1);
   color: #333;
+  width: 18.1818em;
 }
 input[type="text"]:hover,
 input[type="password"]:hover,
@@ -52,6 +52,36 @@ input[type="password"].error:focus,
 input[type="email"].error:focus,
 textarea.error:focus {
   box-shadow: 0 0 5px #ba1212;
+}
+input[type="text"].tiny,
+input[type="password"].tiny,
+input[type="email"].tiny,
+textarea.tiny {
+  width: 4.54545454545455em;
+}
+input[type="text"].small,
+input[type="password"].small,
+input[type="email"].small,
+textarea.small {
+  width: 9.09090909090909em;
+}
+input[type="text"].medium,
+input[type="password"].medium,
+input[type="email"].medium,
+textarea.medium {
+  width: 18.1818em;
+}
+input[type="text"].large,
+input[type="password"].large,
+input[type="email"].large,
+textarea.large {
+  width: 27.2727272727273em;
+}
+input[type="text"].xlarge,
+input[type="password"].xlarge,
+input[type="email"].xlarge,
+textarea.xlarge {
+  width: 36.3636363636364em;
 }
 textarea {
   padding: 0.45em 0.545454545454545em;
@@ -254,7 +284,7 @@ button.primary:focus,
 .search-comp .icon-search {
   position: absolute;
   right: 0.2em;
-  top: 0.4em;
+  top: 0.6em;
   opacity: 0.5;
   filter: alpha(opacity=50);
 }
@@ -459,6 +489,8 @@ fieldset.border-top {
 .form-group .required {
   font-size: 1.1em;
   color: #CB2915;
+  display: inline-block;
+  margin-top: -0.09090909090909em;
 }
 legend + .form-group {
   padding-top: 1em;
