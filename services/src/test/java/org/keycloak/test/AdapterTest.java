@@ -73,7 +73,7 @@ public class AdapterTest extends AbstractKeycloakTest {
         Assert.assertEquals(realmModel.getPublicKeyPem(), "0234234");
         Assert.assertEquals(realmModel.isAutomaticRegistrationAfterSocialLogin(), true);
         Assert.assertEquals(1, realmModel.getDefaultRoles().size());
-        Assert.assertEquals("foo", realmModel.getDefaultRoles().get(0).getName());
+        Assert.assertEquals("foo", realmModel.getDefaultRoles().get(0));
     }
 
     @Test
@@ -102,7 +102,7 @@ public class AdapterTest extends AbstractKeycloakTest {
         Assert.assertEquals(realmModel.getPublicKeyPem(), "0234234");
         Assert.assertEquals(realmModel.isAutomaticRegistrationAfterSocialLogin(), true);
         Assert.assertEquals(1, realmModel.getDefaultRoles().size());
-        Assert.assertEquals("foo", realmModel.getDefaultRoles().get(0).getName());
+        Assert.assertEquals("foo", realmModel.getDefaultRoles().get(0));
 
         String id = realmModel.getId();
         System.out.println("id: " + id);

@@ -34,6 +34,9 @@ public class ApplicationEntity implements Serializable {
     @AttributeValue
     private String baseUrl;
 
+    @AttributeValue
+    private String[] defaultRoles;
+
     @OneToOne
     @AttributeValue
     AccountTypeEntity resourceUser;
@@ -94,4 +97,13 @@ public class ApplicationEntity implements Serializable {
     public void setResourceUser(AccountTypeEntity resourceUser) {
         this.resourceUser = resourceUser;
     }
+
+    public String[] getDefaultRoles() {
+        return defaultRoles;
+    }
+
+    public void setDefaultRoles(String[] defaultRoles) {
+        this.defaultRoles = defaultRoles;
+    }
+
 }

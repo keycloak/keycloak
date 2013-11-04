@@ -18,6 +18,7 @@ public class ApplicationRepresentation {
     protected boolean enabled;
     protected List<CredentialRepresentation> credentials;
     protected List<RoleRepresentation> roles;
+    protected String[] defaultRoles;
     protected List<UserRoleMappingRepresentation> roleMappings;
     protected List<ScopeMappingRepresentation> scopeMappings;
     protected List<String> redirectUris;
@@ -163,5 +164,13 @@ public class ApplicationRepresentation {
 
     public void setWebOrigins(List<String> webOrigins) {
         this.webOrigins = webOrigins;
+    }
+
+    public String[] getDefaultRoles() {
+        return defaultRoles;
+    }
+
+    public void setDefaultRoles(String[] defaultRoles) {
+        this.defaultRoles = defaultRoles;
     }
 }

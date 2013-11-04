@@ -110,8 +110,8 @@ public class RealmManager {
         ApplicationModel application = realm.getApplicationById(Constants.ACCOUNT_APPLICATION);
         if (application == null) {
             application = realm.addApplication(Constants.ACCOUNT_APPLICATION);
-            application.addRole(Constants.ACCOUNT_PROFILE_ROLE);
-            application.addRole(Constants.ACCOUNT_MANAGE_ROLE);
+            application.addDefaultRole(Constants.ACCOUNT_PROFILE_ROLE);
+            application.addDefaultRole(Constants.ACCOUNT_MANAGE_ROLE);
 
             UserCredentialModel password = new UserCredentialModel();
             password.setType(UserCredentialModel.PASSWORD);
@@ -429,13 +429,9 @@ public class RealmManager {
         ApplicationModel accountManagementApplication = realm.getApplicationNameMap().get(Constants.ACCOUNT_APPLICATION);
         rep.setAccountManagement(accountManagementApplication != null && accountManagementApplication.isEnabled());
 
-        List<RoleModel> defaultRoles = realm.getDefaultRoles();
-        if (defaultRoles.size() > 0) {
-            String[] d = new String[defaultRoles.size()];
-            for (int i = 0; i < d.length; i++) {
-                d[i] = defaultRoles.get(i).getName();
-            }
-            rep.setDefaultRoles(d);
+        List<String> defaultRoles = realm.getDefaultRoles();
+        if (!defaultRoles.isEmpty()) {
+            rep.setDefaultRoles((String[]) realm.getDefaultRoles().toArray());
         }
 
         List<RequiredCredentialModel> requiredCredentialModels = realm.getRequiredCredentials();

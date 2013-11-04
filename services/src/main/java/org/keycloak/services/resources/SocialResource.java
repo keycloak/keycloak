@@ -176,10 +176,6 @@ public class SocialResource {
                 }
 
                 realm.addSocialLink(user, socialLink);
-
-                for (RoleModel role : realm.getDefaultRoles()) {
-                    realm.grantRole(user, role);
-                }
             }  else {
                 // Redirect user to registration screen with prefilled data from social provider
                 MultivaluedMap<String, String> formData = fillRegistrationFormWithSocialData(socialUser);

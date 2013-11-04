@@ -15,6 +15,7 @@ public class ApplicationData extends AbstractPartition {
     private String managementUrl;
     private String baseUrl;
     private User resourceUser;
+    private String[] defaultRoles;
 
     public ApplicationData() {
         super(null);
@@ -74,6 +75,15 @@ public class ApplicationData extends AbstractPartition {
 
     public void setBaseUrl(String baseUrl) {
         this.baseUrl = baseUrl;
+    }
+
+    @AttributeProperty
+    public String[] getDefaultRoles() {
+        return defaultRoles;
+    }
+
+    public void setDefaultRoles(String[] defaultRoles) {
+        this.defaultRoles = defaultRoles;
     }
 
 }

@@ -29,13 +29,7 @@ import java.io.StringWriter;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Meant to be a per-request object
@@ -754,17 +748,13 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public List<RoleModel> getDefaultRoles() {
-        List<RoleModel> defaultRoleModels = new ArrayList<RoleModel>();
+    public List<String> getDefaultRoles() {
         if (realm.getDefaultRoles() != null) {
-            for (String name : realm.getDefaultRoles()) {
-                RoleAdapter role = getRole(name);
-                if (role != null) {
-                    defaultRoleModels.add(role);
-                }
-            }
+            return Arrays.asList(realm.getDefaultRoles());
         }
-        return defaultRoleModels;
+        else {
+            return Collections.emptyList();
+        }
     }
 
     @Override

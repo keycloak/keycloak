@@ -34,4 +34,9 @@ public interface ApplicationModel extends RoleContainerModel, RoleMapperModel, S
 
     void setBaseUrl(String url);
 
+    List<String> getDefaultRoles();
+
+    void addDefaultRole(String name);
+
+    void updateDefaultRoles(String[] defaultRoles);
 }

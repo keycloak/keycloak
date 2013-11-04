@@ -42,6 +42,8 @@ public class ApplicationModelTest extends AbstractKeycloakServerTest {
         application.setName("app-name");
         application.addRole("role-1");
         application.addRole("role-2");
+        application.addDefaultRole("role-1");
+        application.addDefaultRole("role-2");
 
         application.getApplicationUser().addRedirectUri("redirect-1");
         application.getApplicationUser().addRedirectUri("redirect-2");
@@ -80,6 +82,7 @@ public class ApplicationModelTest extends AbstractKeycloakServerTest {
         Assert.assertEquals(expected.getName(), actual.getName());
         Assert.assertEquals(expected.getBaseUrl(), actual.getBaseUrl());
         Assert.assertEquals(expected.getManagementUrl(), actual.getManagementUrl());
+        Assert.assertEquals(expected.getDefaultRoles(), actual.getDefaultRoles());
 
         UserModel auser = actual.getApplicationUser();
         UserModel euser = expected.getApplicationUser();

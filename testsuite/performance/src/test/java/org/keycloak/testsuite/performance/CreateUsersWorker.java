@@ -78,13 +78,6 @@ public class CreateUsersWorker implements Worker {
             user.setEmail(username + "@email.com");
         }
 
-        // Adding default roles of realm to user
-        if (addDefaultRoles) {
-            for (RoleModel role : realm.getDefaultRoles()) {
-                realm.grantRole(user, role);
-            }
-        }
-
         // Creating password (will be same as username)
         if (addPassword) {
             UserCredentialModel password = new UserCredentialModel();

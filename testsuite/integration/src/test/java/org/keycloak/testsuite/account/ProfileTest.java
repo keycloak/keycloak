@@ -29,6 +29,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.net.URI;
+import java.util.Collections;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -51,17 +53,13 @@ public class ProfileTest {
 
             ApplicationModel accountApp = appRealm.getApplicationNameMap().get(org.keycloak.models.Constants.ACCOUNT_APPLICATION);
 
-            accountApp.grantRole(user, accountApp.getRole(org.keycloak.models.Constants.ACCOUNT_PROFILE_ROLE));
-            accountApp.grantRole(user, accountApp.getRole(org.keycloak.models.Constants.ACCOUNT_MANAGE_ROLE));
+            ApplicationModel app = appRealm.getApplicationNameMap().get("test-app");
+            accountApp.addScopeMapping(app.getApplicationUser(), org.keycloak.models.Constants.ACCOUNT_PROFILE_ROLE);
+
+            app.getApplicationUser().addWebOrigin("http://localtest.me:8081");
 
             UserModel thirdParty = appRealm.getUser("third-party");
             accountApp.addScopeMapping(thirdParty, org.keycloak.models.Constants.ACCOUNT_PROFILE_ROLE);
-
-            for (ApplicationModel app : appRealm.getApplications()) {
-                if (app.getName().equals("test-app")) {
-                    app.getApplicationUser().addWebOrigin("http://localtest.me:8081");
-                }
-            }
         }
     });
 
@@ -82,6 +80,8 @@ public class ProfileTest {
 
     @WebResource
     protected OAuthGrantPage grantPage;
+
+    private List<String> defaultRoles;
 
     @Test
     public void getProfile() throws Exception {
@@ -119,7 +119,7 @@ public class ProfileTest {
     }
 
     @Test
-     public void getProfileCorsInvalidOrigin() throws Exception {
+    public void getProfileCorsInvalidOrigin() throws Exception {
         oauth.doLogin("test-user@localhost", "password");
 
         String code = oauth.getCurrentQuery().get("code");
@@ -150,6 +150,35 @@ public class ProfileTest {
     public void getProfileNoAuth() throws Exception {
         HttpResponse response = doGetProfile(null, null);
         assertEquals(403, response.getStatusLine().getStatusCode());
+    }
+
+    @Test
+    public void getProfileNoAccess() throws Exception {
+        try {
+            keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+                @Override
+                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                    ApplicationModel app = appRealm.getApplicationNameMap().get(org.keycloak.models.Constants.ACCOUNT_APPLICATION);
+                    defaultRoles = app.getDefaultRoles();
+                    app.updateDefaultRoles(new String[0]);
+                }
+            });
+
+            oauth.doLogin("test-user@localhost", "password");
+
+            String code = oauth.getCurrentQuery().get("code");
+            String token = oauth.doAccessTokenRequest(code, "password").getAccessToken();
+
+            HttpResponse response = doGetProfile(token, null);
+            assertEquals(403, response.getStatusLine().getStatusCode());
+        } finally {
+            keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+                @Override
+                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                    appRealm.getApplicationNameMap().get(org.keycloak.models.Constants.ACCOUNT_APPLICATION).updateDefaultRoles((String[]) defaultRoles.toArray());
+                }
+            });
+        }
     }
 
     @Test
@@ -209,7 +238,7 @@ public class ProfileTest {
         sb.append("req.send(null);\n");
         sb.append("return req.status + '///' + req.responseText;\n");
 
-        JavascriptExecutor js  = (JavascriptExecutor) driver;
+        JavascriptExecutor js = (JavascriptExecutor) driver;
         String response = (String) js.executeScript(sb.toString());
         return response.split("///");
     }

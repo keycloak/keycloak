@@ -309,10 +309,6 @@ public class TokenService {
             realm.updateCredential(user, credentials);
         }
 
-        for (RoleModel role : realm.getDefaultRoles()) {
-            realm.grantRole(user, role);
-        }
-
         return null;
     }
 

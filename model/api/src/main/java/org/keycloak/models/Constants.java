@@ -13,6 +13,6 @@ public interface Constants {
     String WILDCARD_ROLE = "*";
 
     String ACCOUNT_APPLICATION = "Account";
-    String ACCOUNT_PROFILE_ROLE = "KEYCLOAK_ACCOUNT_PROFILE";
-    String ACCOUNT_MANAGE_ROLE = "KEYCLOAK_ACCOUNT_MANAGE";
+    String ACCOUNT_PROFILE_ROLE = "view-profile";
+    String ACCOUNT_MANAGE_ROLE = "manage-account";
 }

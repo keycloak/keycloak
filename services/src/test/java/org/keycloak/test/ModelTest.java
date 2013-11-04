@@ -86,7 +86,7 @@ public class ModelTest extends AbstractKeycloakServerTest {
         Assert.assertEquals(expected.getPublicKeyPem(), actual.getPublicKeyPem());
         Assert.assertEquals(expected.getPrivateKeyPem(), actual.getPrivateKeyPem());
 
-        assertEquals(expected.getDefaultRoles(), actual.getDefaultRoles());
+        Assert.assertEquals(expected.getDefaultRoles(), actual.getDefaultRoles());
 
         Assert.assertEquals(expected.getSmtpConfig(), actual.getSmtpConfig());
         Assert.assertEquals(expected.getSocialConfig(), actual.getSocialConfig());

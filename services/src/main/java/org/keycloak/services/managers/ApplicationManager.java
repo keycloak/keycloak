@@ -61,6 +61,11 @@ public class ApplicationManager {
                 if (roleRep.getDescription() != null) role.setDescription(roleRep.getDescription());
             }
         }
+
+        if (resourceRep.getDefaultRoles() != null) {
+            applicationModel.updateDefaultRoles(resourceRep.getDefaultRoles());
+        }
+
         if (resourceRep.getRoleMappings() != null) {
             for (UserRoleMappingRepresentation mapping : resourceRep.getRoleMappings()) {
                 UserModel user = realm.getUser(mapping.getUsername());
@@ -102,6 +107,10 @@ public class ApplicationManager {
         resource.setSurrogateAuthRequired(rep.isSurrogateAuthRequired());
         resource.updateApplication();
 
+        if (rep.getDefaultRoles() != null) {
+            resource.updateDefaultRoles(rep.getDefaultRoles());
+        }
+
         List<String> redirectUris = rep.getRedirectUris();
         if (redirectUris != null) {
             resource.getApplicationUser().setRedirectUris(new HashSet<String>(redirectUris));
@@ -130,6 +139,10 @@ public class ApplicationManager {
         Set<String> webOrigins = applicationModel.getApplicationUser().getWebOrigins();
         if (webOrigins != null) {
             rep.setWebOrigins(new LinkedList<String>(webOrigins));
+        }
+
+        if (!applicationModel.getDefaultRoles().isEmpty()) {
+            rep.setDefaultRoles((String[]) applicationModel.getDefaultRoles().toArray());
         }
 
         return rep;
