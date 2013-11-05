@@ -4,29 +4,31 @@ var module = angular.module('keycloak', [ 'keycloak.services', 'keycloak.loaders
 var resourceRequests = 0;
 
 module.config([ '$routeProvider', function($routeProvider) {
-	
-	$routeProvider
 
-	.when('/create/realm', {
-		templateUrl : 'partials/realm-detail.html',
-		resolve : {
-			realm : function(RealmLoader) {
-				return {};
-			}
-		},
-		controller : 'RealmDetailCtrl'
-	}).when('/realms/:realm', {
-		templateUrl : 'partials/realm-detail.html',
-		resolve : {
-			realm : function(RealmLoader) {
-				return RealmLoader();
-			}
-		},
-		controller : 'RealmDetailCtrl'
-	}).when('/realms', {
-		templateUrl : 'partials/realm-list.html',
-		controller : 'RealmListCtrl'
-	}).when('/realms/:realm/token-settings', {
+    $routeProvider
+        .when('/create/realm', {
+            templateUrl : 'partials/realm-detail.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return {};
+                }
+            },
+            controller : 'RealmDetailCtrl'
+        })
+        .when('/realms/:realm', {
+            templateUrl : 'partials/realm-detail.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                }
+            },
+            controller : 'RealmDetailCtrl'
+        })
+        .when('/realms', {
+            templateUrl : 'partials/realm-list.html',
+            controller : 'RealmListCtrl'
+        })
+        .when('/realms/:realm/token-settings', {
             templateUrl : 'partials/realm-tokens.html',
             resolve : {
                 realm : function(RealmLoader) {
@@ -34,7 +36,8 @@ module.config([ '$routeProvider', function($routeProvider) {
                 }
             },
             controller : 'RealmTokenDetailCtrl'
-        }).when('/realms/:realm/social-settings', {
+        })
+        .when('/realms/:realm/social-settings', {
             templateUrl : 'partials/realm-social.html',
             resolve : {
                 realm : function(RealmLoader) {
@@ -52,18 +55,28 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmRequiredCredentialsCtrl'
         })
-	.when('/create/user/:realm', {
-		templateUrl : 'partials/user-detail.html',
-		resolve : {
-			realm : function(RealmLoader) {
-				return RealmLoader();
-			},
-			user : function() {
-				return {};
-			}
-		},
-		controller : 'UserDetailCtrl'
-	}).when('/realms/:realm/users/:user', {
+        .when('/realms/:realm/smtp-settings', {
+            templateUrl : 'partials/realm-smtp.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                }
+            },
+            controller : 'RealmSMTPSettingsCtrl'
+        })
+        .when('/create/user/:realm', {
+            templateUrl : 'partials/user-detail.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                user : function() {
+                    return {};
+                }
+            },
+            controller : 'UserDetailCtrl'
+        })
+        .when('/realms/:realm/users/:user', {
             templateUrl : 'partials/user-detail.html',
             resolve : {
                 realm : function(RealmLoader) {
@@ -74,7 +87,8 @@ module.config([ '$routeProvider', function($routeProvider) {
                 }
             },
             controller : 'UserDetailCtrl'
-        }).when('/realms/:realm/users/:user/role-mappings', {
+        })
+        .when('/realms/:realm/users/:user/role-mappings', {
             templateUrl : 'partials/role-mappings.html',
             resolve : {
                 realm : function(RealmLoader) {
@@ -91,15 +105,16 @@ module.config([ '$routeProvider', function($routeProvider) {
                 }
             },
             controller : 'UserRoleMappingCtrl'
-        }).when('/realms/:realm/users', {
-		templateUrl : 'partials/user-list.html',
-		resolve : {
-			realm : function(RealmLoader) {
-				return RealmLoader();
-			}
-        },
-		controller : 'UserListCtrl'
-	})
+        })
+        .when('/realms/:realm/users', {
+            templateUrl : 'partials/user-list.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                }
+            },
+            controller : 'UserListCtrl'
+        })
 
         .when('/create/role/:realm', {
             templateUrl : 'partials/role-detail.html',
@@ -112,7 +127,8 @@ module.config([ '$routeProvider', function($routeProvider) {
                 }
             },
             controller : 'RoleDetailCtrl'
-        }).when('/realms/:realm/roles/:role', {
+        })
+        .when('/realms/:realm/roles/:role', {
             templateUrl : 'partials/role-detail.html',
             resolve : {
                 realm : function(RealmLoader) {
@@ -123,7 +139,8 @@ module.config([ '$routeProvider', function($routeProvider) {
                 }
             },
             controller : 'RoleDetailCtrl'
-        }).when('/realms/:realm/roles', {
+        })
+        .when('/realms/:realm/roles', {
             templateUrl : 'partials/role-list.html',
             resolve : {
                 realm : function(RealmLoader) {
@@ -150,7 +167,8 @@ module.config([ '$routeProvider', function($routeProvider) {
                 }
             },
             controller : 'ApplicationRoleDetailCtrl'
-        }).when('/realms/:realm/applications/:application/roles/:role', {
+        })
+        .when('/realms/:realm/applications/:application/roles/:role', {
             templateUrl : 'partials/application-role-detail.html',
             resolve : {
                 realm : function(RealmLoader) {
@@ -164,7 +182,8 @@ module.config([ '$routeProvider', function($routeProvider) {
                 }
             },
             controller : 'ApplicationRoleDetailCtrl'
-        }).when('/realms/:realm/applications/:application/credentials', {
+        })
+        .when('/realms/:realm/applications/:application/credentials', {
             templateUrl : 'partials/application-credentials.html',
             resolve : {
                 realm : function(RealmLoader) {
@@ -175,7 +194,8 @@ module.config([ '$routeProvider', function($routeProvider) {
                 }
             },
             controller : 'ApplicationCredentialsCtrl'
-        }).when('/realms/:realm/applications/:application/roles', {
+        })
+        .when('/realms/:realm/applications/:application/roles', {
             templateUrl : 'partials/application-role-list.html',
             resolve : {
                 realm : function(RealmLoader) {
@@ -189,7 +209,8 @@ module.config([ '$routeProvider', function($routeProvider) {
                 }
             },
             controller : 'ApplicationRoleListCtrl'
-        }).when('/realms/:realm/applications/:application/scope-mappings', {
+        })
+        .when('/realms/:realm/applications/:application/scope-mappings', {
             templateUrl : 'partials/application-scope-mappings.html',
             resolve : {
                 realm : function(RealmLoader) {
@@ -208,8 +229,6 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'ApplicationScopeMappingCtrl'
         })
 
-
-
         .when('/create/application/:realm', {
             templateUrl : 'partials/application-detail.html',
             resolve : {
@@ -224,7 +243,8 @@ module.config([ '$routeProvider', function($routeProvider) {
                 }
             },
             controller : 'ApplicationDetailCtrl'
-        }).when('/realms/:realm/applications/:application', {
+        })
+        .when('/realms/:realm/applications/:application', {
             templateUrl : 'partials/application-detail.html',
             resolve : {
                 realm : function(RealmLoader) {
@@ -238,7 +258,8 @@ module.config([ '$routeProvider', function($routeProvider) {
                 }
             },
             controller : 'ApplicationDetailCtrl'
-        }).when('/realms/:realm/applications', {
+        })
+        .when('/realms/:realm/applications', {
             templateUrl : 'partials/application-list.html',
             resolve : {
                 realm : function(RealmLoader) {
@@ -250,33 +271,33 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'ApplicationListCtrl'
         })
-	.otherwise({
-		templateUrl : 'partials/home.html'
-	});
+        .otherwise({
+            templateUrl : 'partials/home.html'
+        });
 } ]);
 
 module.config(function($httpProvider) {
-	$httpProvider.responseInterceptors.push('errorInterceptor');
+    $httpProvider.responseInterceptors.push('errorInterceptor');
 
-	var spinnerFunction = function(data, headersGetter) {
-		if (resourceRequests == 0) {
-			$('#loading').show();
-		}
-		resourceRequests++;
-		return data;
-	};
-	$httpProvider.defaults.transformRequest.push(spinnerFunction);
+    var spinnerFunction = function(data, headersGetter) {
+        if (resourceRequests == 0) {
+            $('#loading').show();
+        }
+        resourceRequests++;
+        return data;
+    };
+    $httpProvider.defaults.transformRequest.push(spinnerFunction);
 
-	$httpProvider.responseInterceptors.push('spinnerInterceptor');
+    $httpProvider.responseInterceptors.push('spinnerInterceptor');
 
 });
 
 module.factory('errorInterceptor', function($q, $window, $rootScope, $location, Auth) {
-	return function(promise) {
-		return promise.then(function(response) {
-			$rootScope.httpProviderError = null;
-			return response;
-		}, function(response) {
+    return function(promise) {
+        return promise.then(function(response) {
+            $rootScope.httpProviderError = null;
+            return response;
+        }, function(response) {
             if (response.status == 401) {
                 console.log('session timeout?');
                 Auth.loggedIn = false;
@@ -284,28 +305,28 @@ module.factory('errorInterceptor', function($q, $window, $rootScope, $location, 
             } else {
                 $rootScope.httpProviderError = response.status;
             }
-			return $q.reject(response);
-		});
-	};
+            return $q.reject(response);
+        });
+    };
 });
 
 module.factory('spinnerInterceptor', function($q, $window, $rootScope, $location) {
-	return function(promise) {
-		return promise.then(function(response) {
-			resourceRequests--;
-			if (resourceRequests == 0) {
-				$('#loading').hide();
-			}
-			return response;
-		}, function(response) {
-			resourceRequests--;
-			if (resourceRequests == 0) {
-				$('#loading').hide();
-			}
+    return function(promise) {
+        return promise.then(function(response) {
+            resourceRequests--;
+            if (resourceRequests == 0) {
+                $('#loading').hide();
+            }
+            return response;
+        }, function(response) {
+            resourceRequests--;
+            if (resourceRequests == 0) {
+                $('#loading').hide();
+            }
 
-			return $q.reject(response);
-		});
-	};
+            return $q.reject(response);
+        });
+    };
 });
 
 // collapsable form fieldsets
@@ -354,80 +375,80 @@ module.directive('collapsed', function() {
 
 
 module.directive('kcInput', function() {
-	var d = {
-		scope : true,
-		replace : false,
-		link : function(scope, element, attrs) {
-			var form = element.children('form');
-			var label = element.children('label');
-			var input = element.children('input');
+    var d = {
+        scope : true,
+        replace : false,
+        link : function(scope, element, attrs) {
+            var form = element.children('form');
+            var label = element.children('label');
+            var input = element.children('input');
 
-			var id = form.attr('name') + '.' + input.attr('name');
+            var id = form.attr('name') + '.' + input.attr('name');
 
-			element.attr('class', 'control-group');
+            element.attr('class', 'control-group');
 
-			label.attr('class', 'control-label');
-			label.attr('for', id);
+            label.attr('class', 'control-label');
+            label.attr('for', id);
 
-			input.wrap('<div class="controls"/>');
-			input.attr('id', id);
+            input.wrap('<div class="controls"/>');
+            input.attr('id', id);
 
-			if (!input.attr('placeHolder')) {
-				input.attr('placeHolder', label.text());
-			}
+            if (!input.attr('placeHolder')) {
+                input.attr('placeHolder', label.text());
+            }
 
-			if (input.attr('required')) {
-				label.append(' <span class="required">*</span>');
-			}
-		}
-	};
-	return d;
+            if (input.attr('required')) {
+                label.append(' <span class="required">*</span>');
+            }
+        }
+    };
+    return d;
 });
 
 module.directive('kcEnter', function() {
-	return function(scope, element, attrs) {
-		element.bind("keydown keypress", function(event) {
-			if (event.which === 13) {
-				scope.$apply(function() {
-					scope.$eval(attrs.kcEnter);
-				});
+    return function(scope, element, attrs) {
+        element.bind("keydown keypress", function(event) {
+            if (event.which === 13) {
+                scope.$apply(function() {
+                    scope.$eval(attrs.kcEnter);
+                });
 
-				event.preventDefault();
-			}
-		});
-	};
+                event.preventDefault();
+            }
+        });
+    };
 });
 
 
 module.filter('remove', function() {
-	return function(input, remove, attribute) {
-		if (!input || !remove) {
-			return input;
-		}
+    return function(input, remove, attribute) {
+        if (!input || !remove) {
+            return input;
+        }
 
-		var out = [];
-		for ( var i = 0; i < input.length; i++) {
-			var e = input[i];
+        var out = [];
+        for ( var i = 0; i < input.length; i++) {
+            var e = input[i];
 
-			for (var j = 0; j < remove.length; j++) {
-				if (attribute) {
-					if (remove[j][attribute] == e[attribute]) {
-						e = null;
-						break;
-					}
-				} else {
-					if (remove[j] == e) {
-						e = null;
-						break;
-					}
-				}
-			}
+            for (var j = 0; j < remove.length; j++) {
+                if (attribute) {
+                    if (remove[j][attribute] == e[attribute]) {
+                        e = null;
+                        break;
+                    }
+                } else {
+                    if (remove[j] == e) {
+                        e = null;
+                        break;
+                    }
+                }
+            }
 
-			if (e != null) {
-				out.push(e);
-			}
-		}
+            if (e != null) {
+                out.push(e);
+            }
+        }
 
-		return out;
-	};
+        return out;
+    };
 });
