@@ -51,26 +51,53 @@ public class EmailSender {
 
     private static final Logger log = Logger.getLogger(EmailSender.class);
 
-    private Properties properties;
+    private Map<String, String> config;
 
     public EmailSender(Map<String, String> config) {
-        properties = new Properties();
-        for (Entry<String, String> e : config.entrySet()) {
-            properties.put("mail.smtp." + e.getKey(), e.getValue());
-        }
+        this.config = config;
     }
 
     public void send(String address, String subject, String body) throws MessagingException {
-        Session session = Session.getInstance(properties);
+        Properties props = new Properties();
+        props.setProperty("mail.smtp.host", config.get("host"));
+
+        boolean auth = "true".equals(config.get("auth"));
+        boolean ssl = "true".equals(config.get("ssl"));
+        boolean starttls = "true".equals(config.get("starttls"));
+
+        if (config.containsKey("port")) {
+            props.setProperty("mail.smtp.port", config.get("port"));
+        }
+
+        if (auth) {
+            props.put("mail.smtp.auth", "true");
+        }
+
+        if (ssl) {
+            props.put("mail.smtp.socketFactory.port", config.get("port"));
+            props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
+        }
+
+        if (starttls) {
+            props.put("mail.smtp.starttls.enable", "true");
+        }
+
+        String from = config.get("from");
+
+        Session session = Session.getInstance(props);
 
         Message msg = new MimeMessage(session);
-        msg.setFrom(new InternetAddress(properties.getProperty("mail.smtp.from")));
+        msg.setFrom(new InternetAddress(from));
         msg.setSubject(subject);
         msg.setText(body);
         msg.saveChanges();
 
         Transport transport = session.getTransport("smtp");
-        transport.connect(properties.getProperty("mail.smtp.user"), properties.getProperty("mail.smtp.password"));
+        if (auth) {
+            transport.connect(config.get("user"), config.get("password"));
+        } else {
+            transport.connect();
+        }
         transport.sendMessage(msg, new InternetAddress[] { new InternetAddress(address) });
     }
 
