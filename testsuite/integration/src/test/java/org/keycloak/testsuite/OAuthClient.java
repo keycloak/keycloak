@@ -32,7 +32,6 @@ import java.util.Map;
 
 import javax.ws.rs.core.UriBuilder;
 
-import com.google.api.client.repackaged.org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -51,7 +50,6 @@ import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
 import org.keycloak.representations.SkeletonKeyScope;
 import org.keycloak.representations.SkeletonKeyToken;
-import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
@@ -87,7 +85,7 @@ public class OAuthClient {
             JSONObject realmJson = new JSONObject(IOUtils.toString(getClass().getResourceAsStream("/testrealm.json")));
             realmPublicKey = PemUtils.decodePublicKey(realmJson.getString("publicKey"));
         } catch (Exception e) {
-            throw new AssertionError("Failed to retrieve realm public key", e);
+            throw new RuntimeException("Failed to retrieve realm public key", e);
         }
     }
 
@@ -136,7 +134,7 @@ public class OAuthClient {
         try {
             return new AccessTokenResponse(client.execute(post));
         } catch (Exception e) {
-            throw new AssertionError("Failed to retrieve access token", e);
+            throw new RuntimeException("Failed to retrieve access token", e);
         }
     }
 
@@ -144,7 +142,7 @@ public class OAuthClient {
         try {
             return RSATokenVerifier.verifyToken(token, realmPublicKey, realm);
         } catch (VerificationException e) {
-            throw new AssertionError("Failed to verify token", e);
+            throw new RuntimeException("Failed to verify token", e);
         }
     }
 
@@ -201,7 +199,7 @@ public class OAuthClient {
 
                 b.queryParam("scope", Base64Url.encode(JsonSerialization.toByteArray(scope, false)));
             } catch (Exception e) {
-                throw new AssertionError("Failed to serialize scope", e);
+                throw new RuntimeException("Failed to serialize scope", e);
             }
         }
         if (state != null) {
