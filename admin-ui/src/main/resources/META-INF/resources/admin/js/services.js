@@ -16,14 +16,15 @@ module.service('Auth', function() {
 module.service('Dialog', function($dialog) {
 	var dialog = {};
 	dialog.confirmDelete = function(name, type, success) {
-		var title = 'Delete ' + name;
-		var msg = 'Are you sure you want to permanently delete this ' + type + '?';
+		var title = 'Delete ' + type.charAt(0).toUpperCase() + type.slice(1);
+		var msg = '<p class="primary">Are you sure you want to permanently delete the ' + type + ' "' + name + '"?</p>' +
+            '<p>This action can\'t be undone.</p>';
 		var btns = [ {
 			result : 'cancel',
 			label : 'Cancel'
 		}, {
 			result : 'ok',
-			label : 'Delete this ' + type,
+			label : 'Delete',
 			cssClass : 'destructive'
 		} ];
 
