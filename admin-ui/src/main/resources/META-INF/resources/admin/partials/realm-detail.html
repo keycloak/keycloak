@@ -77,6 +77,32 @@
                             </div>
                         </div>
                         <div class="form-group clearfix block">
+                            <label for="resetPasswordAllowed" class="control-label">Reset password</label>
+                            <div class="onoffswitch">
+                                <input type="checkbox" data-ng-model="realm.resetPasswordAllowed" class="onoffswitch-checkbox" name="resetPasswordAllowed" id="resetPasswordAllowed">
+                                <label for="resetPasswordAllowed" class="onoffswitch-label">
+                                            <span class="onoffswitch-inner">
+                                                <span class="onoffswitch-active">ON</span>
+                                                <span class="onoffswitch-inactive">OFF</span>
+                                            </span>
+                                    <span class="onoffswitch-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group clearfix block">
+                            <label for="verifyEmail" class="control-label">Verify email</label>
+                            <div class="onoffswitch">
+                                <input type="checkbox" data-ng-model="realm.verifyEmail" class="onoffswitch-checkbox" name="verifyEmail" id="verifyEmail">
+                                <label for="verifyEmail" class="onoffswitch-label">
+                                            <span class="onoffswitch-inner">
+                                                <span class="onoffswitch-active">ON</span>
+                                                <span class="onoffswitch-inactive">OFF</span>
+                                            </span>
+                                    <span class="onoffswitch-switch"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group clearfix block">
                             <label for="accountManagement" class="control-label two-lines">User account management</label>
                             <div class="onoffswitch">
                                 <input type="checkbox" data-ng-model="realm.accountManagement" class="onoffswitch-checkbox"
