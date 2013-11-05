@@ -453,3 +453,38 @@ module.controller('RoleDetailCtrl', function($scope, realm, role, Role, $locatio
         });
     };
 });
+
+module.controller('RealmSMTPSettingsCtrl', function($scope, Current, Realm, realm, $http, $location, Dialog, Notifications) {
+    $scope.realm = {
+        id : realm.id, realm : realm.realm, social : realm.social,
+        smtpServer: realm.smtpServer
+    };
+
+    var oldCopy = angular.copy($scope.realm);
+    $scope.changed = false;
+
+    $scope.$watch('realm', function() {
+        if (!angular.equals($scope.realm, oldCopy)) {
+            $scope.changed = true;
+        }
+    }, true);
+
+    $scope.save = function() {
+        if ($scope.realmForm.$valid) {
+            var realmCopy = angular.copy($scope.realm);
+            $scope.changed = false;
+            Realm.update(realmCopy, function () {
+                $location.url("/realms/" + realm.id + "/smtp-settings");
+                Notifications.success("Your changes have been saved to the realm.");
+            });
+        } else {
+            $scope.realmForm.showErrors = true;
+        }
+    };
+
+    $scope.reset = function() {
+        $scope.realm = angular.copy(oldCopy);
+        $scope.changed = false;
+        $scope.realmForm.showErrors = false;
+    };
+});
