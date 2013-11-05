@@ -57,7 +57,7 @@ public class EmailSenderTest {
     }
 
     @Test
-    public void sendMail() throws AddressException, MessagingException, IOException {
+    public void sendMail() throws MessagingException, IOException {
         emailSender.send("test@test.com", "Test subject", "Test body");
 
         MimeMessage[] receivedMessages = greenMail.getReceivedMessages();
@@ -68,38 +68,6 @@ public class EmailSenderTest {
         Assert.assertEquals("auto@keycloak.org", msg.getFrom()[0].toString());
         Assert.assertEquals("Test subject", msg.getSubject());
         Assert.assertEquals("Test body", ((String) msg.getContent()).trim());
-    }
-
-    @Test
-    public void googleTTLS() throws MessagingException, IOException {
-        HashMap<String,String> config = new HashMap<String, String>();
-        config.put("from", "stianst@gmail.com");
-        config.put("host", "smtp.gmail.com");
-        config.put("port", "587");
-        config.put("auth", "true");
-        config.put("user", "stianst@gmail.com");
-        config.put("password", "ahqsbktqbfhwmhrw");
-        config.put("starttls", "true");
-
-        emailSender = new EmailSender(config);
-
-        emailSender.send("stianst@gmail.com", "TTLS " + System.currentTimeMillis(), "Test body");
-    }
-
-    @Test
-    public void googleSSL() throws MessagingException, IOException {
-        HashMap<String,String> config = new HashMap<String, String>();
-        config.put("from", "stianst@gmail.com");
-        config.put("host", "smtp.gmail.com");
-        config.put("port", "465");
-        config.put("auth", "true");
-        config.put("user", "stianst@gmail.com");
-        config.put("password", "ahqsbktqbfhwmhrw");
-        config.put("ssl", "true");
-
-        emailSender = new EmailSender(config);
-
-        emailSender.send("stianst@gmail.com", "SSL " + System.currentTimeMillis(), "Test body");
     }
 
 }
