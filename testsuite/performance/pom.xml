@@ -146,6 +146,7 @@
                                 <artifactId>jboss-logging</artifactId>
                                 <version>${jboss.logging.version}</version>
                             </dependency>
+                            <!--
                             <dependency>
                                 <groupId>org.picketlink</groupId>
                                 <artifactId>picketlink-idm-impl</artifactId>
@@ -161,6 +162,7 @@
                                 <artifactId>picketlink-config</artifactId>
                                 <version>${picketlink.version}</version>
                             </dependency>
+                            -->
                             <dependency>
                                 <groupId>org.mongodb</groupId>
                                 <artifactId>mongo-java-driver</artifactId>

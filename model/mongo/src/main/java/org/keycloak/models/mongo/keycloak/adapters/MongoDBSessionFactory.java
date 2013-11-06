@@ -1,7 +1,5 @@
 package org.keycloak.models.mongo.keycloak.adapters;
 
-import java.net.UnknownHostException;
-
 import com.mongodb.DB;
 import com.mongodb.MongoClient;
 import org.jboss.logging.Logger;
@@ -9,6 +7,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.mongo.api.NoSQL;
 import org.keycloak.models.mongo.api.NoSQLObject;
+import org.keycloak.models.mongo.impl.MongoDBImpl;
 import org.keycloak.models.mongo.keycloak.data.ApplicationData;
 import org.keycloak.models.mongo.keycloak.data.OAuthClientData;
 import org.keycloak.models.mongo.keycloak.data.RealmData;
@@ -16,9 +15,10 @@ import org.keycloak.models.mongo.keycloak.data.RequiredCredentialData;
 import org.keycloak.models.mongo.keycloak.data.RoleData;
 import org.keycloak.models.mongo.keycloak.data.SocialLinkData;
 import org.keycloak.models.mongo.keycloak.data.UserData;
-import org.keycloak.models.mongo.impl.MongoDBImpl;
 import org.keycloak.models.mongo.keycloak.data.credentials.OTPData;
 import org.keycloak.models.mongo.keycloak.data.credentials.PasswordData;
+
+import java.net.UnknownHostException;
 
 /**
  * NoSQL implementation based on MongoDB

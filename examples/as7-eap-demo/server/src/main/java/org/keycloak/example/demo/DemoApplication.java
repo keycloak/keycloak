@@ -1,11 +1,11 @@
 package org.keycloak.example.demo;
 
 import org.jboss.resteasy.jwt.JsonSerialization;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
 import org.keycloak.services.resources.KeycloakApplication;
 
 import javax.servlet.ServletContext;

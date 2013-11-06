@@ -1,8 +1,5 @@
 package org.keycloak.test;
 
-import java.util.Iterator;
-import java.util.List;
-
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -15,6 +12,9 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
+
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -89,6 +89,9 @@ public class UserModelTest extends AbstractKeycloakServerTest {
         Assert.assertTrue(user.getRequiredActions().isEmpty());
 
         user.addRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP);
+        String id = realm.getId();
+        commit();
+        realm = manager.getRealm(id);
         user = realm.getUser("user");
 
         Assert.assertEquals(1, user.getRequiredActions().size());
@@ -117,6 +120,14 @@ public class UserModelTest extends AbstractKeycloakServerTest {
         user = realm.getUser("user");
 
         Assert.assertTrue(user.getRequiredActions().isEmpty());
+    }
+
+    protected void commit() {
+        identitySession.getTransaction().commit();
+        identitySession.close();
+        identitySession = factory.createSession();
+        identitySession.getTransaction().begin();
+        manager = new RealmManager(identitySession);
     }
 
     public static void assertEquals(UserModel expected, UserModel actual) {

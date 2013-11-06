@@ -26,9 +26,9 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.models.RealmModel;
 import org.keycloak.representations.SkeletonKeyToken;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.models.RealmModel;
 import org.keycloak.testsuite.DummySocialServlet;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.OAuthClient.AccessTokenResponse;
@@ -44,7 +44,6 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
 import java.util.HashMap;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

@@ -1,7 +1,5 @@
 package org.keycloak.models.mongo.keycloak.data;
 
-import java.util.List;
-
 import org.jboss.logging.Logger;
 import org.keycloak.models.mongo.api.NoSQL;
 import org.keycloak.models.mongo.api.NoSQLCollection;
@@ -9,6 +7,8 @@ import org.keycloak.models.mongo.api.NoSQLField;
 import org.keycloak.models.mongo.api.NoSQLId;
 import org.keycloak.models.mongo.api.NoSQLObject;
 import org.keycloak.models.mongo.api.query.NoSQLQuery;
+
+import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

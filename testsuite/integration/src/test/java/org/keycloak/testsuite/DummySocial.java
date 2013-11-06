@@ -1,7 +1,5 @@
 package org.keycloak.testsuite;
 
-import java.util.UUID;
-
 import org.keycloak.social.AuthCallback;
 import org.keycloak.social.AuthRequest;
 import org.keycloak.social.AuthRequestBuilder;
@@ -9,6 +7,8 @@ import org.keycloak.social.SocialProvider;
 import org.keycloak.social.SocialProviderConfig;
 import org.keycloak.social.SocialProviderException;
 import org.keycloak.social.SocialUser;
+
+import java.util.UUID;
 
 public class DummySocial implements SocialProvider {
 

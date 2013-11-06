@@ -21,16 +21,6 @@
  */
 package org.keycloak.social.google;
 
-import java.util.UUID;
-
-import org.keycloak.social.AuthCallback;
-import org.keycloak.social.AuthRequest;
-import org.keycloak.social.AuthRequestBuilder;
-import org.keycloak.social.SocialProvider;
-import org.keycloak.social.SocialProviderConfig;
-import org.keycloak.social.SocialProviderException;
-import org.keycloak.social.SocialUser;
-
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeTokenRequest;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse;
@@ -39,6 +29,15 @@ import com.google.api.client.json.jackson.JacksonFactory;
 import com.google.api.services.oauth2.Oauth2;
 import com.google.api.services.oauth2.model.Tokeninfo;
 import com.google.api.services.oauth2.model.Userinfo;
+import org.keycloak.social.AuthCallback;
+import org.keycloak.social.AuthRequest;
+import org.keycloak.social.AuthRequestBuilder;
+import org.keycloak.social.SocialProvider;
+import org.keycloak.social.SocialProviderConfig;
+import org.keycloak.social.SocialProviderException;
+import org.keycloak.social.SocialUser;
+
+import java.util.UUID;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

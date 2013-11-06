@@ -13,7 +13,6 @@ import org.keycloak.PemUtils;
 import org.keycloak.ResourceMetadata;
 import org.keycloak.representations.idm.PublishedRealmRepresentation;
 
-import javax.ws.rs.client.WebTarget;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;

@@ -1,11 +1,10 @@
 package org.keycloak.services.resources;
 
-import java.util.Set;
+import org.jboss.resteasy.spi.HttpRequest;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
-
-import org.jboss.resteasy.spi.HttpRequest;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

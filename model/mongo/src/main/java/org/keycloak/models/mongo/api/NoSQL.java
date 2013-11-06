@@ -1,10 +1,9 @@
 package org.keycloak.models.mongo.api;
 
-import java.util.List;
-
 import org.keycloak.models.mongo.api.query.NoSQLQuery;
 import org.keycloak.models.mongo.api.query.NoSQLQueryBuilder;
-import org.picketlink.common.properties.Property;
+
+import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

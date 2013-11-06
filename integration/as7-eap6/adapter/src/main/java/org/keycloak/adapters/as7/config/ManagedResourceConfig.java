@@ -5,7 +5,6 @@ import org.codehaus.jackson.annotate.JsonPropertyOrder;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

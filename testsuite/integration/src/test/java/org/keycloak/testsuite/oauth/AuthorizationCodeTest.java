@@ -21,9 +21,6 @@
  */
 package org.keycloak.testsuite.oauth;
 
-import java.io.IOException;
-
-import org.apache.http.client.ClientProtocolException;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -40,6 +37,8 @@ import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
+
+import java.io.IOException;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

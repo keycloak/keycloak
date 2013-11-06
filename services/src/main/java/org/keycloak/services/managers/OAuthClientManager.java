@@ -26,19 +26,16 @@ public class OAuthClientManager {
 
     public OAuthClientModel create(OAuthClientRepresentation rep) {
         OAuthClientModel model = create(rep.getName());
-        model.setBaseUrl(rep.getBaseUrl());
         model.getOAuthAgent().setEnabled(rep.isEnabled());
         return model;
     }
 
     public void update(OAuthClientRepresentation rep, OAuthClientModel model) {
-        model.setBaseUrl(rep.getBaseUrl());
     }
 
     public static OAuthClientRepresentation toRepresentation(OAuthClientModel model) {
         OAuthClientRepresentation rep = new OAuthClientRepresentation();
         rep.setId(model.getId());
-        rep.setBaseUrl(model.getBaseUrl());
         rep.setName(model.getOAuthAgent().getLoginName());
         rep.setEnabled(model.getOAuthAgent().isEnabled());
         return rep;

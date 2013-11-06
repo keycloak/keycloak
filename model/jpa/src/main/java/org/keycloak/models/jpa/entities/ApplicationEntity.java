@@ -1,6 +1,14 @@
 package org.keycloak.models.jpa.entities;
 
-import javax.persistence.*;
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.JoinTable;
+import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
+import java.util.ArrayList;
 import java.util.Collection;
 
 /**
@@ -8,35 +16,25 @@ import java.util.Collection;
  * @version $Revision: 1 $
  */
 @Entity
-public class ResourceEntity {
+public class ApplicationEntity {
     @Id
     @GeneratedValue
     private String id;
 
-    private String resourceName;
+    private String name;
     private boolean enabled;
     private boolean surrogateAuthRequired;
     private String managementUrl;
-    @ManyToOne
-    private UserEntity resourceUser;
 
-    @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
-    Collection<RoleEntity> roles;
+    @OneToOne(fetch = FetchType.EAGER)
+    private UserEntity applicationUser;
+
+    @OneToMany(fetch = FetchType.EAGER, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
+    @JoinTable(name="APPLICATION_ROLES")
+    Collection<RoleEntity> roles = new ArrayList<RoleEntity>();
 
     public String getId() {
         return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getResourceName() {
-        return resourceName;
-    }
-
-    public void setResourceName(String resourceName) {
-        this.resourceName = resourceName;
     }
 
     public boolean isEnabled() {
@@ -63,12 +61,12 @@ public class ResourceEntity {
         this.managementUrl = managementUrl;
     }
 
-    public UserEntity getResourceUser() {
-        return resourceUser;
+    public UserEntity getApplicationUser() {
+        return applicationUser;
     }
 
-    public void setResourceUser(UserEntity resourceUser) {
-        this.resourceUser = resourceUser;
+    public void setApplicationUser(UserEntity applicationUser) {
+        this.applicationUser = applicationUser;
     }
 
     public Collection<RoleEntity> getRoles() {
@@ -77,5 +75,13 @@ public class ResourceEntity {
 
     public void setRoles(Collection<RoleEntity> roles) {
         this.roles = roles;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }

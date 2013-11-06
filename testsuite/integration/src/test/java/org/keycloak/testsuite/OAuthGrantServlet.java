@@ -21,22 +21,21 @@
  */
 package org.keycloak.testsuite;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.security.PublicKey;
-import java.util.Map;
+import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
+import org.keycloak.PemUtils;
+import org.keycloak.RSATokenVerifier;
+import org.keycloak.representations.SkeletonKeyToken;
+import org.keycloak.servlet.ServletOAuthClient;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.UriBuilder;
-
-import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
-import org.keycloak.PemUtils;
-import org.keycloak.RSATokenVerifier;
-import org.keycloak.representations.SkeletonKeyToken;
-import org.keycloak.servlet.ServletOAuthClient;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.security.PublicKey;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:vrockai@redhat.com">Viliam Rockai</a>

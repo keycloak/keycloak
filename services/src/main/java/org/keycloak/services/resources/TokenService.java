@@ -8,7 +8,15 @@ import org.jboss.resteasy.jwt.JsonSerialization;
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
-import org.keycloak.models.*;
+import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakTransaction;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredCredentialModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.SkeletonKeyToken;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -18,7 +26,6 @@ import org.keycloak.services.managers.AuthenticationManager.AuthenticationStatus
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.OAuthFlows;
 import org.keycloak.services.validation.Validation;
@@ -40,9 +47,11 @@ import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Providers;
-
 import java.security.PrivateKey;
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -262,18 +271,22 @@ public class TokenService {
         OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
 
         if (!realm.isEnabled()) {
+            logger.warn("Realm not enabled");
             return oauth.forwardToSecurityFailure("Realm not enabled");
         }
         UserModel client = realm.getUser(clientId);
         if (client == null) {
+            logger.warn("Unknown login requester.");
             return oauth.forwardToSecurityFailure("Unknown login requester.");
         }
 
         if (!client.isEnabled()) {
+            logger.warn("Login requester not enabled.");
             return oauth.forwardToSecurityFailure("Login requester not enabled.");
         }
 
         if (!realm.isRegistrationAllowed()) {
+            logger.warn("Registration not allowed");
             return oauth.forwardToSecurityFailure("Registration not allowed");
         }
 
@@ -297,6 +310,7 @@ public class TokenService {
         }
 
         user = realm.addUser(username);
+        user.setEnabled(true);
         user.setFirstName(formData.getFirst("firstName"));
         user.setLastName(formData.getFirst("lastName"));
 
@@ -444,36 +458,41 @@ public class TokenService {
     public Response loginPage(final @QueryParam("response_type") String responseType,
             final @QueryParam("redirect_uri") String redirect, final @QueryParam("client_id") String clientId,
             final @QueryParam("scope") String scopeParam, final @QueryParam("state") String state, final @QueryParam("prompt") String prompt) {
+        logger.info("TokenService.loginPage");
         OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
 
         if (!realm.isEnabled()) {
+            logger.warn("Realm not enabled");
             oauth.forwardToSecurityFailure("Realm not enabled");
             return null;
         }
         UserModel client = realm.getUser(clientId);
         if (client == null) {
+            logger.warn("Unknown login requester.");
             oauth.forwardToSecurityFailure("Unknown login requester.");
             transaction.rollback();
             return null;
         }
 
         if (!client.isEnabled()) {
+            logger.warn("Login requester not enabled.");
             oauth.forwardToSecurityFailure("Login requester not enabled.");
             transaction.rollback();
             session.close();
             return null;
         }
-
+        logger.info("Checking roles...");
         RoleModel resourceRole = realm.getRole(Constants.APPLICATION_ROLE);
         RoleModel identityRequestRole = realm.getRole(Constants.IDENTITY_REQUESTER_ROLE);
         boolean isResource = realm.hasRole(client, resourceRole);
         if (!isResource && !realm.hasRole(client, identityRequestRole)) {
+            logger.warn("Login requester not allowed to request login.");
             oauth.forwardToSecurityFailure("Login requester not allowed to request login.");
             transaction.rollback();
             session.close();
             return null;
         }
-
+        logger.info("Checking cookie...");
         UserModel user = authManager.authenticateIdentityCookie(realm, uriInfo, headers);
         if (user != null) {
             logger.debug(user.getLoginName() + " already logged in.");
@@ -483,7 +502,7 @@ public class TokenService {
         if (prompt != null && prompt.equals("none")) {
             return oauth.redirectError(client, "access_denied", state, redirect);
         }
-
+        logger.info("forwardToLogin() now...");
         return Flows.forms(realm, request, uriInfo).forwardToLogin();
     }
 
@@ -492,21 +511,26 @@ public class TokenService {
     public Response registerPage(final @QueryParam("response_type") String responseType,
             final @QueryParam("redirect_uri") String redirect, final @QueryParam("client_id") String clientId,
             final @QueryParam("scope") String scopeParam, final @QueryParam("state") String state) {
+        logger.info("**********registerPage()");
         OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
 
         if (!realm.isEnabled()) {
+            logger.warn("Realm not enabled");
             return oauth.forwardToSecurityFailure("Realm not enabled");
         }
         UserModel client = realm.getUser(clientId);
         if (client == null) {
+            logger.warn("Unknown login requester.");
             return oauth.forwardToSecurityFailure("Unknown login requester.");
         }
 
         if (!client.isEnabled()) {
+            logger.warn("Login requester not enabled.");
             return oauth.forwardToSecurityFailure("Login requester not enabled.");
         }
 
         if (!realm.isRegistrationAllowed()) {
+            logger.warn("Registration not allowed");
             return oauth.forwardToSecurityFailure("Registration not allowed");
         }
 

@@ -21,7 +21,12 @@
  */
 package org.keycloak.services.resources.flows;
 
-import org.keycloak.services.resources.*;
+import org.keycloak.services.resources.AccountService;
+import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.services.resources.RequiredActionsService;
+import org.keycloak.services.resources.SaasService;
+import org.keycloak.services.resources.SocialResource;
+import org.keycloak.services.resources.TokenService;
 
 import javax.ws.rs.core.UriBuilder;
 import java.net.URI;

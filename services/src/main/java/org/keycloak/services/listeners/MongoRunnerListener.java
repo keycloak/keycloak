@@ -1,8 +1,5 @@
 package org.keycloak.services.listeners;
 
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
-
 import de.flapdoodle.embed.mongo.MongodExecutable;
 import de.flapdoodle.embed.mongo.MongodProcess;
 import de.flapdoodle.embed.mongo.MongodStarter;
@@ -11,6 +8,9 @@ import de.flapdoodle.embed.mongo.distribution.Version;
 import de.flapdoodle.embed.process.runtime.Network;
 import org.jboss.resteasy.logging.Logger;
 import org.keycloak.services.utils.PropertiesManager;
+
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContextListener;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

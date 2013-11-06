@@ -1,5 +1,6 @@
-<%@ page import="org.keycloak.models.*,org.keycloak.services.resources.*,javax.ws.rs.core.*,java.util.*" language="java" contentType="text/html; charset=ISO-8859-1"
+<%@ page import="org.keycloak.models.RealmModel,org.keycloak.models.RoleModel,org.keycloak.models.UserModel,javax.ws.rs.core.MultivaluedMap" language="java" contentType="text/html; charset=ISO-8859-1"
  pageEncoding="ISO-8859-1"%>
+<%@ page import="java.util.List" %>
 <%
         RealmModel realm = (RealmModel)request.getAttribute(RealmModel.class.getName());
         String username = (String)request.getAttribute("username");

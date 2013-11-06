@@ -2,11 +2,25 @@ package org.keycloak.models.picketlink;
 
 import org.bouncycastle.openssl.PEMWriter;
 import org.keycloak.PemUtils;
-import org.keycloak.models.*;
-import org.keycloak.models.picketlink.mappings.RealmData;
+import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.IdGenerator;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OAuthClientModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredCredentialModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.SocialLinkModel;
+import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.picketlink.mappings.ApplicationData;
-import org.keycloak.models.picketlink.relationships.*;
+import org.keycloak.models.picketlink.mappings.RealmData;
+import org.keycloak.models.picketlink.relationships.ApplicationRelationship;
+import org.keycloak.models.picketlink.relationships.OAuthClientRelationship;
+import org.keycloak.models.picketlink.relationships.OAuthClientRequiredCredentialRelationship;
 import org.keycloak.models.picketlink.relationships.RequiredApplicationCredentialRelationship;
+import org.keycloak.models.picketlink.relationships.RequiredCredentialRelationship;
+import org.keycloak.models.picketlink.relationships.ScopeRelationship;
+import org.keycloak.models.picketlink.relationships.SocialLinkRelationship;
 import org.picketlink.idm.IdentityManager;
 import org.picketlink.idm.PartitionManager;
 import org.picketlink.idm.RelationshipManager;
@@ -601,7 +615,6 @@ public class RealmAdapter implements RealmModel {
         idm.add(resourceUser);
         applicationData.setResourceUser(resourceUser);
         applicationData.setResourceName(name);
-        applicationData.setResourceUser(resourceUser);
         partitionManager.add(applicationData);
         ApplicationRelationship resourceRelationship = new ApplicationRelationship();
         resourceRelationship.setRealm(realm.getName());
@@ -875,23 +888,23 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public HashMap<String, String> getSmtpConfig() {
+    public Map<String, String> getSmtpConfig() {
         return realm.getSmtpConfig();
     }
 
     @Override
-    public void setSmtpConfig(HashMap<String, String> smtpConfig) {
+    public void setSmtpConfig(Map<String, String> smtpConfig) {
         realm.setSmtpConfig(smtpConfig);
         updateRealm();
     }
 
     @Override
-    public HashMap<String, String> getSocialConfig() {
+    public Map<String, String> getSocialConfig() {
         return realm.getSocialConfig();
     }
 
     @Override
-    public void setSocialConfig(HashMap<String, String> socialConfig) {
+    public void setSocialConfig(Map<String, String> socialConfig) {
         realm.setSocialConfig(socialConfig);
         updateRealm();
     }

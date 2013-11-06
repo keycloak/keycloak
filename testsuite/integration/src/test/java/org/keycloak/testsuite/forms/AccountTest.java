@@ -21,12 +21,17 @@
  */
 package org.keycloak.testsuite.forms;
 
-import org.junit.*;
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.services.managers.RealmManager;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Rule;
+import org.junit.Test;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.TimeBasedOTP;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
 import org.keycloak.testsuite.pages.AccountTotpPage;
@@ -39,9 +44,6 @@ import org.keycloak.testsuite.rule.KeycloakRule.KeycloakSetup;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.FindBy;
-import org.picketlink.idm.credential.util.TimeBasedOTP;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

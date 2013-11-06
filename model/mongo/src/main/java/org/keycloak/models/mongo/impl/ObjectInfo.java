@@ -1,13 +1,13 @@
 package org.keycloak.models.mongo.impl;
 
+import org.keycloak.models.mongo.api.NoSQLObject;
+import org.picketlink.common.properties.Property;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.keycloak.models.mongo.api.NoSQLObject;
-import org.picketlink.common.properties.Property;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

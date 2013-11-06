@@ -21,28 +21,25 @@
  */
 package org.keycloak.services.email;
 
-import java.net.URI;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Properties;
-import java.util.concurrent.TimeUnit;
+import org.jboss.resteasy.logging.Logger;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.services.managers.AccessCodeEntry;
+import org.keycloak.services.resources.flows.Urls;
 
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.Session;
 import javax.mail.Transport;
-import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
-
-import org.jboss.resteasy.logging.Logger;
-import org.keycloak.services.managers.AccessCodeEntry;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.services.resources.AccountService;
-import org.keycloak.services.resources.flows.Urls;
+import java.net.URI;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

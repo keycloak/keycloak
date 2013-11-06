@@ -21,10 +21,9 @@
  */
 package org.keycloak.social;
 
+import javax.ws.rs.core.UriBuilder;
 import java.util.HashMap;
 import java.util.Map;
-
-import javax.ws.rs.core.UriBuilder;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

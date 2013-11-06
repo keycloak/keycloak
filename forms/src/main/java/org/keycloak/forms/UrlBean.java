@@ -21,9 +21,9 @@
  */
 package org.keycloak.forms;
 
-import java.net.URI;
-
 import org.keycloak.services.resources.flows.Urls;
+
+import java.net.URI;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

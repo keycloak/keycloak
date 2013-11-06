@@ -1,7 +1,5 @@
 package org.keycloak.testsuite.performance;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jorphan.logging.LoggingManager;
 import org.apache.log.Logger;
@@ -12,6 +10,8 @@ import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

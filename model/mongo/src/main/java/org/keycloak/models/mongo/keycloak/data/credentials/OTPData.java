@@ -1,10 +1,10 @@
 package org.keycloak.models.mongo.keycloak.data.credentials;
 
-import java.util.Date;
-
 import org.keycloak.models.mongo.api.AbstractNoSQLObject;
 import org.keycloak.models.mongo.api.NoSQLCollection;
 import org.keycloak.models.mongo.api.NoSQLField;
+
+import java.util.Date;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

@@ -1,28 +1,16 @@
 package org.keycloak.services.resources;
 
 import org.keycloak.SkeletonKeyContextResolver;
-import org.keycloak.services.managers.TokenManager;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.picketlink.PicketlinkKeycloakSession;
-import org.keycloak.models.picketlink.PicketlinkKeycloakSessionFactory;
-import org.keycloak.models.picketlink.mappings.ApplicationEntity;
-import org.keycloak.models.picketlink.mappings.RealmEntity;
+import org.keycloak.models.ModelProvider;
+import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.utils.PropertiesManager;
 import org.keycloak.social.SocialRequestManager;
-import org.picketlink.idm.PartitionManager;
-import org.picketlink.idm.config.IdentityConfigurationBuilder;
-import org.picketlink.idm.internal.DefaultPartitionManager;
-import org.picketlink.idm.jpa.internal.JPAContextInitializer;
-import org.picketlink.idm.jpa.model.sample.simple.*;
 
 import javax.annotation.PreDestroy;
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
 import javax.servlet.ServletContext;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Context;
-
 import java.lang.reflect.Constructor;
 import java.util.HashSet;
 import java.util.Set;
@@ -62,14 +50,32 @@ public class KeycloakApplication extends Application {
             return buildMongoDBSessionFactory();
         } else if (PropertiesManager.isPicketlinkSessionFactory()) {
             return buildPicketlinkSessionFactory();
+        } else if (PropertiesManager.isJpaSessionFactory()) {
+            return buildJpaSessionFactory();
         } else {
             throw new IllegalStateException("Unknown session factory type: " + PropertiesManager.getSessionFactoryType());
         }
     }
 
+    private static KeycloakSessionFactory buildJpaSessionFactory() {
+        ModelProvider provider = null;
+        try {
+            provider = (ModelProvider)Class.forName("org.keycloak.models.jpa.JpaModelProvider").newInstance();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return provider.createFactory();
+    }
+
+
     private static KeycloakSessionFactory buildPicketlinkSessionFactory() {
-        EntityManagerFactory emf = Persistence.createEntityManagerFactory("keycloak-identity-store");
-        return new PicketlinkKeycloakSessionFactory(emf, buildPartitionManager());
+        ModelProvider provider = null;
+        try {
+            provider = (ModelProvider)Class.forName("org.keycloak.models.picketlink.PicketlinkModelProvider").newInstance();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return provider.createFactory();
     }
 
     private static KeycloakSessionFactory buildMongoDBSessionFactory() {
@@ -97,46 +103,7 @@ public class KeycloakApplication extends Application {
         factory.close();
     }
 
-    public PartitionManager createPartitionManager() {
-        return buildPartitionManager();
-    }
 
-    public static PartitionManager buildPartitionManager() {
-        IdentityConfigurationBuilder builder = new IdentityConfigurationBuilder();
-
-        builder
-                .named("KEYCLOAK_JPA_CONFIG")
-                .stores()
-                .jpa()
-                .mappedEntity(
-                        AttributedTypeEntity.class,
-                        AccountTypeEntity.class,
-                        RoleTypeEntity.class,
-                        GroupTypeEntity.class,
-                        IdentityTypeEntity.class,
-                        RelationshipTypeEntity.class,
-                        RelationshipIdentityTypeEntity.class,
-                        PartitionTypeEntity.class,
-                        PasswordCredentialTypeEntity.class,
-                        DigestCredentialTypeEntity.class,
-                        X509CredentialTypeEntity.class,
-                        OTPCredentialTypeEntity.class,
-                        AttributeTypeEntity.class,
-                        RealmEntity.class,
-                        ApplicationEntity.class
-                )
-                .supportGlobalRelationship(org.picketlink.idm.model.Relationship.class)
-                .addContextInitializer(new JPAContextInitializer(null) {
-                    @Override
-                    public EntityManager getEntityManager() {
-                        return PicketlinkKeycloakSession.currentEntityManager.get();
-                    }
-                })
-                .supportAllFeatures();
-
-        DefaultPartitionManager partitionManager = new DefaultPartitionManager(builder.buildAll());
-        return partitionManager;
-    }
 
 
     @Override

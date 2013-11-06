@@ -1,11 +1,11 @@
 package org.keycloak.models.mongo.test;
 
-import java.util.List;
-
 import org.keycloak.models.mongo.api.AbstractNoSQLObject;
 import org.keycloak.models.mongo.api.NoSQLCollection;
 import org.keycloak.models.mongo.api.NoSQLField;
 import org.keycloak.models.mongo.api.NoSQLId;
+
+import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

@@ -1,14 +1,14 @@
 package org.keycloak.models.mongo.keycloak.adapters;
 
+import org.keycloak.models.UserModel;
+import org.keycloak.models.mongo.api.NoSQL;
+import org.keycloak.models.mongo.keycloak.data.UserData;
+
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import org.keycloak.models.UserModel;
-import org.keycloak.models.mongo.api.NoSQL;
-import org.keycloak.models.mongo.keycloak.data.UserData;
 
 /**
  * Wrapper around UserData object, which will persist wrapped object after each set operation (compatibility with picketlink based impl)
@@ -148,5 +148,45 @@ public class UserAdapter implements UserModel {
     public void setTotp(boolean totp) {
         user.setTotp(totp);
         noSQL.saveObject(user);
+    }
+
+    @Override
+    public Set<String> getWebOrigins() {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public void setWebOrigins(Set<String> webOrigins) {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public void addWebOrigin(String webOrigin) {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public void removeWebOrigin(String webOrigin) {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public Set<String> getRedirectUris() {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public void setRedirectUris(Set<String> redirectUris) {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public void addRedirectUri(String redirectUri) {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public void removeRedirectUri(String redirectUri) {
+        //To change body of implemented methods use File | Settings | File Templates.
     }
 }

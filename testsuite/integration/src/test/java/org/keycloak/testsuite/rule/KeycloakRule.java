@@ -23,13 +23,6 @@ package org.keycloak.testsuite.rule;
 
 import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.ServletInfo;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-
-import javax.servlet.Servlet;
-
 import org.jboss.resteasy.jwt.JsonSerialization;
 import org.junit.rules.ExternalResource;
 import org.keycloak.models.Constants;
@@ -39,6 +32,11 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.ApplicationServlet;
 import org.keycloak.testutils.KeycloakServer;
+
+import javax.servlet.Servlet;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

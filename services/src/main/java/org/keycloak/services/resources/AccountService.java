@@ -21,37 +21,46 @@
  */
 package org.keycloak.services.resources;
 
-import java.net.URI;
-import java.util.HashSet;
-import java.util.Set;
-
-import javax.ws.rs.*;
-import javax.ws.rs.core.*;
-import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.ext.Providers;
-
-import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.jose.jws.JWSInput;
 import org.jboss.resteasy.jose.jws.crypto.RSAProvider;
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.AbstractOAuthClient;
 import org.keycloak.jaxrs.JaxrsOAuthClient;
-import org.keycloak.models.*;
+import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.Constants;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.services.email.EmailSender;
 import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.FormFlows;
 import org.keycloak.services.resources.flows.Pages;
 import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.services.validation.Validation;
-import org.picketlink.idm.credential.util.TimeBasedOTP;
+
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.ForbiddenException;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.NewCookie;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriInfo;
+import javax.ws.rs.ext.Providers;
+import java.net.URI;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
