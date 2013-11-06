@@ -44,10 +44,19 @@ module.controller('RealmDropdownCtrl', function($scope, Realm, Current, Auth, $l
     }
 });
 
-module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $http, $location, Dialog, Notifications) {
+module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, roles, $http, $location, Dialog, Notifications) {
     $scope.createRealm = !realm.id;
 
     console.log('RealmDetailCtrl');
+
+    var systemRoles = ["*", "KEYCLOAK_APPLICATION","KEYCLOAK_IDENTITY_REQUESTER"];
+    var availableRoles = getAvailableRoles(roles, systemRoles);
+
+    $scope.realmDefaultRolesOptions = {
+        'multiple' : true,
+        'simple_tags' : true,
+        'tags' : availableRoles
+    };
 
     if ($scope.createRealm) {
         $scope.realm = {

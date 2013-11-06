@@ -11,6 +11,9 @@ module.config([ '$routeProvider', function($routeProvider) {
             resolve : {
                 realm : function(RealmLoader) {
                     return {};
+                },
+                roles : function() {
+                    return {};
                 }
             },
             controller : 'RealmDetailCtrl'
@@ -20,6 +23,9 @@ module.config([ '$routeProvider', function($routeProvider) {
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
+                },
+                roles : function(RoleListLoader) {
+                    return RoleListLoader();
                 }
             },
             controller : 'RealmDetailCtrl'
@@ -240,6 +246,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 application : function() {
                     return {};
+                },
+                roles : function() {
+                    return {};
                 }
             },
             controller : 'ApplicationDetailCtrl'
@@ -255,6 +264,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 application : function(ApplicationLoader) {
                     return ApplicationLoader();
+                },
+                roles : function(ApplicationRoleListLoader) {
+                    return ApplicationRoleListLoader();
                 }
             },
             controller : 'ApplicationDetailCtrl'

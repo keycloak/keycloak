@@ -143,6 +143,16 @@
                             </div>
                         </div>
                     </fieldset>
+                    <fieldset>
+                        <legend uncollapsed><span class="text">Default Roles</span></legend>
+                        <div class="form-group">
+                            <label for="default-roles" class="control-label two-lines">Default Realm Roles</label>
+
+                            <div class="controls">
+                                <input id="default-roles" type="text" ui-select2="realmDefaultRolesOptions" ng-model="realm.defaultRoles" placeholder="Type a role and enter">
+                            </div>
+                        </div>
+                    </fieldset>
                     <div class="form-actions" data-ng-show="createRealm">
                         <button type="submit" data-ng-click="save()" class="primary" data-ng-show="changed">Save
                         </button>
