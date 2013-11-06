@@ -21,13 +21,12 @@
  */
 package org.keycloak.forms;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.ws.rs.core.MultivaluedMap;
-
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+
+import javax.ws.rs.core.MultivaluedMap;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author <a href="mailto:vrockai@redhat.com">Viliam Rockai</a>

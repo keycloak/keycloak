@@ -1,21 +1,20 @@
 package org.keycloak.test;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.services.managers.RealmManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
+
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 
 public class ModelTest extends AbstractKeycloakServerTest {
     private KeycloakSessionFactory factory;

@@ -1,6 +1,5 @@
 package org.keycloak.test.common;
 
-import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.services.utils.PropertiesManager;
 
 /**

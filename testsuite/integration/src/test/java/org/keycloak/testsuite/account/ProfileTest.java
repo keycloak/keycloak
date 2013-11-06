@@ -175,7 +175,7 @@ public class ProfileTest {
             keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
                 @Override
                 public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                    appRealm.getApplicationNameMap().get(org.keycloak.models.Constants.ACCOUNT_APPLICATION).updateDefaultRoles((String[]) defaultRoles.toArray());
+                    appRealm.getApplicationNameMap().get(org.keycloak.models.Constants.ACCOUNT_APPLICATION).updateDefaultRoles((String[]) defaultRoles.toArray(new String[0]));
                 }
             });
         }

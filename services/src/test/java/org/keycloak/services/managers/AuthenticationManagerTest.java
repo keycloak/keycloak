@@ -1,26 +1,21 @@
 package org.keycloak.services.managers;
 
-import java.util.UUID;
-
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.MultivaluedMap;
-
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.services.managers.AuthenticationManager.AuthenticationStatus;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
-import org.keycloak.services.resources.KeycloakApplication;
+import org.keycloak.models.utils.TimeBasedOTP;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.services.managers.AuthenticationManager.AuthenticationStatus;
 import org.keycloak.test.common.AbstractKeycloakTest;
 import org.keycloak.test.common.SessionFactoryTestContext;
-import org.picketlink.idm.credential.util.TimeBasedOTP;
+
+import javax.ws.rs.core.MultivaluedHashMap;
+import javax.ws.rs.core.MultivaluedMap;
+import java.util.UUID;
 
 public class AuthenticationManagerTest extends AbstractKeycloakTest {
 
@@ -144,6 +139,7 @@ public class AuthenticationManagerTest extends AbstractKeycloakTest {
         am = new AuthenticationManager();
 
         user = realm.addUser("test");
+        user.setEnabled(true);
 
         UserCredentialModel credential = new UserCredentialModel();
         credential.setType(CredentialRepresentation.PASSWORD);

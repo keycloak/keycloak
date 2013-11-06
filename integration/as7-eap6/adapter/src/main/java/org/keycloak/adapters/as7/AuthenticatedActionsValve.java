@@ -7,7 +7,6 @@ import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
 import org.apache.catalina.valves.ValveBase;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.SkeletonKeySession;
 import org.keycloak.adapters.as7.config.ManagedResourceConfig;
 import org.keycloak.representations.SkeletonKeyToken;

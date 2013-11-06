@@ -1,16 +1,5 @@
 package org.keycloak.models.mongo.keycloak.adapters;
 
-import java.io.IOException;
-import java.io.StringWriter;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import org.bouncycastle.openssl.PEMWriter;
 import org.keycloak.PemUtils;
 import org.keycloak.models.ApplicationModel;
@@ -21,21 +10,31 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.mongo.api.query.NoSQLQueryBuilder;
-import org.keycloak.models.mongo.keycloak.data.OAuthClientData;
-import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.models.mongo.api.NoSQL;
 import org.keycloak.models.mongo.api.query.NoSQLQuery;
+import org.keycloak.models.mongo.api.query.NoSQLQueryBuilder;
 import org.keycloak.models.mongo.keycloak.credentials.PasswordCredentialHandler;
 import org.keycloak.models.mongo.keycloak.credentials.TOTPCredentialHandler;
 import org.keycloak.models.mongo.keycloak.data.ApplicationData;
+import org.keycloak.models.mongo.keycloak.data.OAuthClientData;
 import org.keycloak.models.mongo.keycloak.data.RealmData;
 import org.keycloak.models.mongo.keycloak.data.RequiredCredentialData;
 import org.keycloak.models.mongo.keycloak.data.RoleData;
 import org.keycloak.models.mongo.keycloak.data.SocialLinkData;
 import org.keycloak.models.mongo.keycloak.data.UserData;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.picketlink.idm.credential.Credentials;
-import org.picketlink.idm.model.sample.User;
+
+import java.io.IOException;
+import java.io.StringWriter;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -597,20 +596,6 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public boolean isRealmAdmin(UserModel agent) {
-        List<String> realmAdmins = realm.getRealmAdmins();
-        String userId = ((UserAdapter)agent).getUser().getId();
-        return realmAdmins.contains(userId);
-    }
-
-    @Override
-    public void addRealmAdmin(UserModel agent) {
-        UserData userData = ((UserAdapter)agent).getUser();
-
-        noSQL.pushItemToList(realm, "realmAdmins", userData.getId());
-    }
-
-    @Override
     public RoleModel getRoleById(String id) {
         RoleData role = noSQL.loadObject(RoleData.class, id);
         if (role == null) {
@@ -858,5 +843,25 @@ public class RealmAdapter implements RealmModel {
             userModels.add(new UserAdapter(user, noSQL));
         }
         return userModels;
+    }
+
+    @Override
+    public Map<String, String> getSmtpConfig() {
+        throw new RuntimeException("Not implemented");
+    }
+
+    @Override
+    public void setSmtpConfig(Map<String, String> smtpConfig) {
+        throw new RuntimeException("Not implemented");
+    }
+
+    @Override
+    public Map<String, String> getSocialConfig() {
+        throw new RuntimeException("Not implemented");
+    }
+
+    @Override
+    public void setSocialConfig(Map<String, String> socialConfig) {
+        throw new RuntimeException("Not implemented");
     }
 }

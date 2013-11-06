@@ -41,14 +41,4 @@ public class OAuthClientAdapter implements OAuthClientModel {
         return oauthAgent;
     }
 
-    @Override
-    public String getBaseUrl() {
-        return delegate.getBaseUrl();
-    }
-
-    @Override
-    public void setBaseUrl(String base) {
-        delegate.setBaseUrl(base);
-        noSQL.saveObject(delegate);
-    }
 }

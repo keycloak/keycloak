@@ -21,13 +21,30 @@
  */
 package org.keycloak.services.resources;
 
-import java.net.URISyntaxException;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.UUID;
+import org.jboss.resteasy.logging.Logger;
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+import org.jboss.resteasy.spi.HttpRequest;
+import org.jboss.resteasy.spi.HttpResponse;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.SocialLinkModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.managers.TokenManager;
+import org.keycloak.services.resources.flows.Flows;
+import org.keycloak.services.resources.flows.OAuthFlows;
+import org.keycloak.services.resources.flows.Urls;
+import org.keycloak.social.AuthCallback;
+import org.keycloak.social.AuthRequest;
+import org.keycloak.social.RequestDetails;
+import org.keycloak.social.SocialConstants;
+import org.keycloak.social.SocialProvider;
+import org.keycloak.social.SocialProviderConfig;
+import org.keycloak.social.SocialProviderException;
+import org.keycloak.services.managers.SocialRequestManager;
+import org.keycloak.social.SocialUser;
 
 import javax.imageio.spi.ServiceRegistry;
 import javax.ws.rs.Consumes;
@@ -46,27 +63,13 @@ import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
-
-import org.jboss.resteasy.logging.Logger;
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
-import org.jboss.resteasy.spi.HttpRequest;
-import org.jboss.resteasy.spi.HttpResponse;
-import org.keycloak.models.*;
-import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.managers.TokenManager;
-import org.keycloak.services.resources.flows.Flows;
-import org.keycloak.services.resources.flows.OAuthFlows;
-import org.keycloak.services.resources.flows.Urls;
-import org.keycloak.social.AuthCallback;
-import org.keycloak.social.AuthRequest;
-import org.keycloak.social.RequestDetails;
-import org.keycloak.social.SocialConstants;
-import org.keycloak.social.SocialProvider;
-import org.keycloak.social.SocialProviderConfig;
-import org.keycloak.social.SocialProviderException;
-import org.keycloak.services.managers.SocialRequestManager;
-import org.keycloak.social.SocialUser;
+import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.UUID;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -170,6 +173,7 @@ public class SocialResource {
                     // already registered. But actually Keycloak allows duplicate emails
                 } else {
                     user = realm.addUser(socialUser.getUsername());
+                    user.setEnabled(true);
                     user.setFirstName(socialUser.getFirstName());
                     user.setLastName(socialUser.getLastName());
                     user.setEmail(socialUser.getEmail());

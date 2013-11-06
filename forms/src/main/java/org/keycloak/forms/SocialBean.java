@@ -21,14 +21,13 @@
  */
 package org.keycloak.forms;
 
-import java.net.URI;
-import java.util.*;
-
-import javax.imageio.spi.ServiceRegistry;
-import javax.ws.rs.core.UriBuilder;
-
 import org.keycloak.forms.model.SocialProvider;
 import org.keycloak.services.resources.flows.Urls;
+
+import javax.ws.rs.core.UriBuilder;
+import java.net.URI;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

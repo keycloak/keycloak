@@ -21,21 +21,16 @@
  */
 package org.keycloak.services.resources.flows;
 
-import java.net.URI;
-import java.util.Iterator;
-import java.util.List;
-
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyUriInfo;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.services.FormService;
 import org.keycloak.services.email.EmailSender;
 import org.keycloak.services.managers.AccessCodeEntry;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.services.messages.Messages;
-import org.picketlink.idm.model.sample.Realm;
 
 import javax.imageio.spi.ServiceRegistry;
 import javax.ws.rs.core.MediaType;
@@ -43,6 +38,9 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
+import java.net.URI;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -51,7 +49,6 @@ public class FormFlows {
 
     public static final String DATA = "KEYCLOAK_FORMS_DATA";
     public static final String ERROR_MESSAGE = "KEYCLOAK_FORMS_ERROR_MESSAGE";
-    public static final String REALM = Realm.class.getName();
     public static final String USER = UserModel.class.getName();
     public static final String SOCIAL_REGISTRATION = "socialRegistration";
     public static final String CODE = "code";

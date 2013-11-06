@@ -1,9 +1,5 @@
 package org.keycloak.test.common;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -14,6 +10,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -34,7 +33,8 @@ public abstract class AbstractKeycloakTest {
     {
         // TODO: MongoDB disabled by default
         TEST_CONTEXTS = new SessionFactoryTestContext[] {
-                new PicketlinkSessionFactoryTestContext(),
+                //new PicketlinkSessionFactoryTestContext(),
+                new JpaSessionFactoryTestContext(),
                 // new MongoDBSessionFactoryTestContext()
         };
     }

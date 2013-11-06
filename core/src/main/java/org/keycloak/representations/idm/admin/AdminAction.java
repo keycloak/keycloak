@@ -1,7 +1,6 @@
 package org.keycloak.representations.idm.admin;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
-import org.codehaus.jackson.annotate.JsonProperty;
 
 /**
  * Posted to managed client from admin server.

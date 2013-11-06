@@ -1,12 +1,5 @@
 package org.keycloak.models.mongo.impl;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
@@ -24,16 +17,23 @@ import org.keycloak.models.mongo.api.query.NoSQLQuery;
 import org.keycloak.models.mongo.api.query.NoSQLQueryBuilder;
 import org.keycloak.models.mongo.api.types.Converter;
 import org.keycloak.models.mongo.api.types.TypeConverter;
-import org.keycloak.models.mongo.impl.types.EnumToStringConverter;
-import org.keycloak.models.mongo.impl.types.ListConverter;
 import org.keycloak.models.mongo.impl.types.BasicDBListConverter;
 import org.keycloak.models.mongo.impl.types.BasicDBObjectConverter;
+import org.keycloak.models.mongo.impl.types.EnumToStringConverter;
+import org.keycloak.models.mongo.impl.types.ListConverter;
 import org.keycloak.models.mongo.impl.types.NoSQLObjectConverter;
 import org.keycloak.models.mongo.impl.types.SimpleConverter;
 import org.keycloak.models.mongo.impl.types.StringToEnumConverter;
 import org.picketlink.common.properties.Property;
 import org.picketlink.common.properties.query.AnnotatedPropertyCriteria;
 import org.picketlink.common.properties.query.PropertyQueries;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

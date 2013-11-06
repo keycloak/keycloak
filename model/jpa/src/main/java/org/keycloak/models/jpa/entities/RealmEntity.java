@@ -1,43 +1,272 @@
 package org.keycloak.models.jpa.entities;
 
 
-import javax.persistence.*;
+import javax.persistence.CascadeType;
+import javax.persistence.CollectionTable;
+import javax.persistence.Column;
+import javax.persistence.ElementCollection;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.Id;
+import javax.persistence.JoinTable;
+import javax.persistence.MapKeyColumn;
+import javax.persistence.OneToMany;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@Entity
 public class RealmEntity {
     @Id
     protected String id;
 
-    protected String realmName;
+    protected String name;
     protected boolean enabled;
     protected boolean sslNotRequired;
     protected boolean cookieLoginAllowed;
     protected boolean registrationAllowed;
+    protected boolean verifyEmail;
+    protected boolean resetPasswordAllowed;
+    protected boolean social;
+    protected boolean automaticRegistrationAfterSocialLogin;
+
     protected int tokenLifespan;
     protected int accessCodeLifespan;
+    protected int accessCodeLifespanUserAction;
+
     @Column(length = 2048)
     protected String publicKeyPem;
     @Column(length = 2048)
     protected String privateKeyPem;
-    protected String[] defaultRoles;
-    @Lob
-    protected HashMap<String, String> smtpConfig;
-    @Lob
-    protected HashMap<String, String> socialConfig;
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true)
-    Collection<RequiredCredentailEntity> requiredCredentials;
+    @JoinTable(name="USER_REQUIRED_CREDENTIALS")
+    Collection<RequiredCredentialEntity> requiredCredentials = new ArrayList<RequiredCredentialEntity>();
+
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true)
-    Collection<ResourceEntity> resources;
+    @JoinTable(name="APPLICATION_REQUIRED_CREDENTIALS")
+    Collection<RequiredCredentialEntity> requiredApplicationCredentials = new ArrayList<RequiredCredentialEntity>();
+
+    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true)
+    @JoinTable(name="OAUTH_CLIENT_REQUIRED_CREDENTIALS")
+    Collection<RequiredCredentialEntity> requiredOAuthClientCredentials = new ArrayList<RequiredCredentialEntity>();
+
+    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true)
+    Collection<ApplicationEntity> applications = new ArrayList<ApplicationEntity>();
+
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
-    Collection<RoleEntity> roles;
+    @JoinTable(name="REALM_ROLES")
+    Collection<RoleEntity> roles = new ArrayList<RoleEntity>();
 
+    @ElementCollection
+    @MapKeyColumn(name="name")
+    @Column(name="value")
+    @CollectionTable
+    protected Map<String, String> smtpConfig = new HashMap<String, String>();
 
+    @ElementCollection
+    @MapKeyColumn(name="name")
+    @Column(name="value")
+    @CollectionTable
+    protected Map<String, String> socialConfig = new HashMap<String, String>();
 
+    @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
+    @JoinTable(name="REALM_DEFAULT_ROLES")
+    Collection<RoleEntity> defaultRoles = new ArrayList<RoleEntity>();
 
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
+    public boolean isSslNotRequired() {
+        return sslNotRequired;
+    }
+
+    public void setSslNotRequired(boolean sslNotRequired) {
+        this.sslNotRequired = sslNotRequired;
+    }
+
+    public boolean isCookieLoginAllowed() {
+        return cookieLoginAllowed;
+    }
+
+    public void setCookieLoginAllowed(boolean cookieLoginAllowed) {
+        this.cookieLoginAllowed = cookieLoginAllowed;
+    }
+
+    public boolean isRegistrationAllowed() {
+        return registrationAllowed;
+    }
+
+    public void setRegistrationAllowed(boolean registrationAllowed) {
+        this.registrationAllowed = registrationAllowed;
+    }
+
+    public boolean isVerifyEmail() {
+        return verifyEmail;
+    }
+
+    public void setVerifyEmail(boolean verifyEmail) {
+        this.verifyEmail = verifyEmail;
+    }
+
+    public boolean isResetPasswordAllowed() {
+        return resetPasswordAllowed;
+    }
+
+    public void setResetPasswordAllowed(boolean resetPasswordAllowed) {
+        this.resetPasswordAllowed = resetPasswordAllowed;
+    }
+
+    public boolean isSocial() {
+        return social;
+    }
+
+    public void setSocial(boolean social) {
+        this.social = social;
+    }
+
+    public boolean isAutomaticRegistrationAfterSocialLogin() {
+        return automaticRegistrationAfterSocialLogin;
+    }
+
+    public void setAutomaticRegistrationAfterSocialLogin(boolean automaticRegistrationAfterSocialLogin) {
+        this.automaticRegistrationAfterSocialLogin = automaticRegistrationAfterSocialLogin;
+    }
+
+    public int getTokenLifespan() {
+        return tokenLifespan;
+    }
+
+    public void setTokenLifespan(int tokenLifespan) {
+        this.tokenLifespan = tokenLifespan;
+    }
+
+    public int getAccessCodeLifespan() {
+        return accessCodeLifespan;
+    }
+
+    public void setAccessCodeLifespan(int accessCodeLifespan) {
+        this.accessCodeLifespan = accessCodeLifespan;
+    }
+
+    public int getAccessCodeLifespanUserAction() {
+        return accessCodeLifespanUserAction;
+    }
+
+    public void setAccessCodeLifespanUserAction(int accessCodeLifespanUserAction) {
+        this.accessCodeLifespanUserAction = accessCodeLifespanUserAction;
+    }
+
+    public String getPublicKeyPem() {
+        return publicKeyPem;
+    }
+
+    public void setPublicKeyPem(String publicKeyPem) {
+        this.publicKeyPem = publicKeyPem;
+    }
+
+    public String getPrivateKeyPem() {
+        return privateKeyPem;
+    }
+
+    public void setPrivateKeyPem(String privateKeyPem) {
+        this.privateKeyPem = privateKeyPem;
+    }
+
+    public Collection<RequiredCredentialEntity> getRequiredCredentials() {
+        return requiredCredentials;
+    }
+
+    public void setRequiredCredentials(Collection<RequiredCredentialEntity> requiredCredentials) {
+        this.requiredCredentials = requiredCredentials;
+    }
+
+    public Collection<RequiredCredentialEntity> getRequiredApplicationCredentials() {
+        return requiredApplicationCredentials;
+    }
+
+    public void setRequiredApplicationCredentials(Collection<RequiredCredentialEntity> requiredApplicationCredentials) {
+        this.requiredApplicationCredentials = requiredApplicationCredentials;
+    }
+
+    public Collection<RequiredCredentialEntity> getRequiredOAuthClientCredentials() {
+        return requiredOAuthClientCredentials;
+    }
+
+    public void setRequiredOAuthClientCredentials(Collection<RequiredCredentialEntity> requiredOAuthClientCredentials) {
+        this.requiredOAuthClientCredentials = requiredOAuthClientCredentials;
+    }
+
+    public Collection<ApplicationEntity> getApplications() {
+        return applications;
+    }
+
+    public void setApplications(Collection<ApplicationEntity> applications) {
+        this.applications = applications;
+    }
+
+    public Collection<RoleEntity> getRoles() {
+        return roles;
+    }
+
+    public void setRoles(Collection<RoleEntity> roles) {
+        this.roles = roles;
+    }
+
+    public void addRole(RoleEntity role) {
+        if (roles == null) {
+            roles = new ArrayList<RoleEntity>();
+        }
+        roles.add(role);
+    }
+
+    public Map<String, String> getSmtpConfig() {
+        return smtpConfig;
+    }
+
+    public void setSmtpConfig(Map<String, String> smtpConfig) {
+        this.smtpConfig = smtpConfig;
+    }
+
+    public Map<String, String> getSocialConfig() {
+        return socialConfig;
+    }
+
+    public void setSocialConfig(Map<String, String> socialConfig) {
+        this.socialConfig = socialConfig;
+    }
+
+    public Collection<RoleEntity> getDefaultRoles() {
+        return defaultRoles;
+    }
+
+    public void setDefaultRoles(Collection<RoleEntity> defaultRoles) {
+        this.defaultRoles = defaultRoles;
+    }
 }

@@ -1,21 +1,19 @@
 package org.keycloak.services.email;
 
-import java.io.IOException;
-import java.lang.Thread.UncaughtExceptionHandler;
-import java.net.SocketException;
-import java.util.HashMap;
-
-import javax.mail.MessagingException;
-import javax.mail.internet.AddressException;
-import javax.mail.internet.MimeMessage;
-
+import com.icegreen.greenmail.util.GreenMail;
+import com.icegreen.greenmail.util.ServerSetup;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.icegreen.greenmail.util.GreenMail;
-import com.icegreen.greenmail.util.ServerSetup;
+import javax.mail.MessagingException;
+import javax.mail.internet.AddressException;
+import javax.mail.internet.MimeMessage;
+import java.io.IOException;
+import java.lang.Thread.UncaughtExceptionHandler;
+import java.net.SocketException;
+import java.util.HashMap;
 
 public class EmailSenderTest {
 

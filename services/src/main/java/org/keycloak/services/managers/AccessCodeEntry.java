@@ -1,10 +1,10 @@
 package org.keycloak.services.managers;
 
 import org.keycloak.models.RealmModel;
-import org.keycloak.representations.SkeletonKeyToken;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
+import org.keycloak.representations.SkeletonKeyToken;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;

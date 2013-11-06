@@ -3,8 +3,6 @@ package org.keycloak.models.mongo.api.types;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.picketlink.common.reflection.Reflections;
-
 /**
  * Registry of converters, which allow to convert application object to database objects. TypeConverter is main entry point to be used by application.
  * Application can create instance of TypeConverter and then register required Converter objects.

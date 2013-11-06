@@ -21,19 +21,12 @@
  */
 package org.keycloak.service;
 
-import java.io.IOException;
-import java.io.StringWriter;
-import java.io.Writer;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.ResourceBundle;
-
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
 import org.jboss.resteasy.logging.Logger;
-import org.keycloak.forms.MessageBean;
 import org.keycloak.forms.LoginBean;
+import org.keycloak.forms.MessageBean;
 import org.keycloak.forms.OAuthGrantBean;
 import org.keycloak.forms.RealmBean;
 import org.keycloak.forms.RegisterBean;
@@ -44,6 +37,13 @@ import org.keycloak.forms.UrlBean;
 import org.keycloak.forms.UserBean;
 import org.keycloak.services.FormService;
 import org.keycloak.services.resources.flows.Pages;
+
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.ResourceBundle;
 
 /**
  * @author <a href="mailto:vrockai@redhat.com">Viliam Rockai</a>

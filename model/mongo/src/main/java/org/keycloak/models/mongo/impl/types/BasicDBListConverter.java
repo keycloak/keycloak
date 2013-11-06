@@ -1,11 +1,11 @@
 package org.keycloak.models.mongo.impl.types;
 
-import java.util.ArrayList;
-
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import org.keycloak.models.mongo.api.types.Converter;
 import org.keycloak.models.mongo.api.types.TypeConverter;
+
+import java.util.ArrayList;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

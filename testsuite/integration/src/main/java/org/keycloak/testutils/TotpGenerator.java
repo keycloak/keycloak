@@ -1,11 +1,12 @@
 package org.keycloak.testutils;
 
+import org.keycloak.models.utils.Base32;
+import org.keycloak.models.utils.TimeBasedOTP;
+
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
-import org.picketlink.common.util.Base32;
-import org.picketlink.idm.credential.util.TimeBasedOTP;
 
 public class TotpGenerator {
 

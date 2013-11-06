@@ -33,6 +33,12 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-model-picketlink</artifactId>
             <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-model-jpa</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
         <!--<dependency>

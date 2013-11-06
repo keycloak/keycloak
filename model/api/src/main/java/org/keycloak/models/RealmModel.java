@@ -2,7 +2,6 @@ package org.keycloak.models;
 
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -138,11 +137,11 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
 
     List<OAuthClientModel> getOAuthClients();
 
-    HashMap<String, String> getSmtpConfig();
+    Map<String, String> getSmtpConfig();
 
-    void setSmtpConfig(HashMap<String, String> smtpConfig);
+    void setSmtpConfig(Map<String, String> smtpConfig);
 
-    HashMap<String, String> getSocialConfig();
+    Map<String, String> getSocialConfig();
 
-    void setSocialConfig(HashMap<String, String> socialConfig);
+    void setSocialConfig(Map<String, String> socialConfig);
 }

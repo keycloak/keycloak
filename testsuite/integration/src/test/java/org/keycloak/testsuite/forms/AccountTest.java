@@ -24,6 +24,7 @@ package org.keycloak.testsuite.forms;
 import org.apache.http.HttpResponse;
 import org.junit.*;
 import org.keycloak.models.*;
+import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.OAuthClient;
@@ -36,7 +37,6 @@ import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
-import org.picketlink.idm.credential.util.TimeBasedOTP;
 
 import java.util.List;
 
@@ -208,7 +208,7 @@ public class AccountTest {
             keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
                 @Override
                 public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                    appRealm.getApplicationNameMap().get(org.keycloak.models.Constants.ACCOUNT_APPLICATION).updateDefaultRoles((String[]) defaultRoles.toArray());
+                    appRealm.getApplicationNameMap().get(org.keycloak.models.Constants.ACCOUNT_APPLICATION).updateDefaultRoles((String[]) defaultRoles.toArray(new String[0]));
                 }
             });
         }

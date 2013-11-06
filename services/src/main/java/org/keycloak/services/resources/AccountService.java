@@ -28,6 +28,7 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.AbstractOAuthClient;
 import org.keycloak.jaxrs.JaxrsOAuthClient;
 import org.keycloak.models.*;
+import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.SkeletonKeyToken;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.AccessCodeEntry;
@@ -40,7 +41,6 @@ import org.keycloak.services.resources.flows.FormFlows;
 import org.keycloak.services.resources.flows.Pages;
 import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.services.validation.Validation;
-import org.picketlink.idm.credential.util.TimeBasedOTP;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;

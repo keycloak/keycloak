@@ -1,16 +1,16 @@
 package org.keycloak.models.mongo.keycloak.adapters;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.mongo.api.NoSQL;
 import org.keycloak.models.mongo.api.query.NoSQLQuery;
 import org.keycloak.models.mongo.keycloak.data.RealmData;
-import org.keycloak.models.mongo.api.NoSQL;
 import org.keycloak.models.utils.KeycloakSessionUtils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

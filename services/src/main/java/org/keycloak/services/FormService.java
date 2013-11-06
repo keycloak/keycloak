@@ -21,20 +21,19 @@
  */
 package org.keycloak.services;
 
-import java.net.URI;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-
-import javax.imageio.spi.ServiceRegistry;
-import javax.ws.rs.core.MultivaluedMap;
-
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.resources.flows.FormFlows;
 import org.keycloak.social.SocialProvider;
+
+import javax.imageio.spi.ServiceRegistry;
+import javax.ws.rs.core.MultivaluedMap;
+import java.net.URI;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:vrockai@redhat.com">Viliam Rockai</a>
@@ -95,7 +94,7 @@ public interface FormService {
             this.message = message;
 
             socialProviders = new LinkedList<SocialProvider>();
-            HashMap<String, String> socialConfig = realm.getSocialConfig();
+            Map<String, String> socialConfig = realm.getSocialConfig();
             if (socialConfig != null) {
                 for (Iterator<SocialProvider> itr = ServiceRegistry.lookupProviders(org.keycloak.social.SocialProvider.class); itr.hasNext(); ) {
                     SocialProvider p = itr.next();

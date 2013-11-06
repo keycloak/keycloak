@@ -21,12 +21,11 @@
  */
 package org.keycloak.forms;
 
-import java.util.LinkedList;
-import java.util.List;
+import org.keycloak.forms.model.RequiredCredential;
 
 import javax.ws.rs.core.MultivaluedMap;
-
-import org.keycloak.forms.model.RequiredCredential;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
