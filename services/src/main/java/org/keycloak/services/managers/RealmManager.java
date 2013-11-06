@@ -110,7 +110,7 @@ public class RealmManager {
             realm.updateRequiredApplicationCredentials(rep.getRequiredApplicationCredentials());
         }
         if (rep.getDefaultRoles() != null) {
-            realm.updateDefaultRoles(rep.getDefaultRoles());
+            realm.updateDefaultRoles(rep.getDefaultRoles().toArray(new String[rep.getDefaultRoles().size()]));
         }
 
         if (rep.getAccountManagement() != null && rep.getAccountManagement()) {
@@ -129,9 +129,11 @@ public class RealmManager {
     }
 
     private void enableAccountManagement(RealmModel realm) {
-        ApplicationModel application = realm.getApplicationById(Constants.ACCOUNT_MANAGEMENT_APPLICATION);
+        ApplicationModel application = realm.getApplicationById(Constants.ACCOUNT_APPLICATION);
         if (application == null) {
-            application = realm.addApplication(Constants.ACCOUNT_MANAGEMENT_APPLICATION);
+            application = realm.addApplication(Constants.ACCOUNT_APPLICATION);
+            application.addDefaultRole(Constants.ACCOUNT_PROFILE_ROLE);
+            application.addDefaultRole(Constants.ACCOUNT_MANAGE_ROLE);
 
             UserCredentialModel password = new UserCredentialModel();
             password.setType(UserCredentialModel.PASSWORD);
@@ -146,7 +148,7 @@ public class RealmManager {
     }
 
     private void disableAccountManagement(RealmModel realm) {
-        ApplicationModel application = realm.getApplicationNameMap().get(Constants.ACCOUNT_MANAGEMENT_APPLICATION);
+        ApplicationModel application = realm.getApplicationNameMap().get(Constants.ACCOUNT_APPLICATION);
         if (application != null) {
             application.setEnabled(false); // TODO Should we delete the application instead?
         }
@@ -410,9 +412,11 @@ public class RealmManager {
         rep.setLastName(user.getLastName());
         rep.setFirstName(user.getFirstName());
         rep.setEmail(user.getEmail());
-        Map<String, String> attrs = new HashMap<String, String>();
-        attrs.putAll(user.getAttributes());
-        rep.setAttributes(attrs);
+        if (user.getAttributes() != null && !user.getAttributes().isEmpty()) {
+            Map<String, String> attrs = new HashMap<String, String>();
+            attrs.putAll(user.getAttributes());
+            rep.setAttributes(attrs);
+        }
         return rep;
     }
 
@@ -444,16 +448,14 @@ public class RealmManager {
         rep.setSmtpServer(realm.getSmtpConfig());
         rep.setSocialProviders(realm.getSocialConfig());
 
-        ApplicationModel accountManagementApplication = realm.getApplicationNameMap().get(Constants.ACCOUNT_MANAGEMENT_APPLICATION);
+        ApplicationModel accountManagementApplication = realm.getApplicationNameMap().get(Constants.ACCOUNT_APPLICATION);
         rep.setAccountManagement(accountManagementApplication != null && accountManagementApplication.isEnabled());
 
-        List<RoleModel> defaultRoles = realm.getDefaultRoles();
-        if (defaultRoles.size() > 0) {
-            String[] d = new String[defaultRoles.size()];
-            for (int i = 0; i < d.length; i++) {
-                d[i] = defaultRoles.get(i).getName();
-            }
-            rep.setDefaultRoles(d);
+        List<String> defaultRoles = realm.getDefaultRoles();
+        if (!defaultRoles.isEmpty()) {
+            List<String> roleStrings = new ArrayList<String>();
+            roleStrings.addAll(defaultRoles);
+            rep.setDefaultRoles(roleStrings);
         }
 
         List<RequiredCredentialModel> requiredCredentialModels = realm.getRequiredCredentials();

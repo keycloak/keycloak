@@ -50,8 +50,4 @@ public class SocialProviderConfig {
         return secret;
     }
 
-    public void setSecret(String secret) {
-        this.secret = secret;
-    }
-
 }

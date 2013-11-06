@@ -54,6 +54,7 @@ public class WebRule extends ExternalResource {
 
         if (browser.equals("htmlunit")) {
             HtmlUnitDriver d = new HtmlUnitDriver();
+            d.getWebClient().getOptions().setJavaScriptEnabled(true);
             d.getWebClient().getOptions().setCssEnabled(false);
             driver = d;
         } else if (browser.equals("chrome")) {

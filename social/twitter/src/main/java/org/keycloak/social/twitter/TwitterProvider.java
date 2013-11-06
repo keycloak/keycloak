@@ -23,7 +23,6 @@ package org.keycloak.social.twitter;
 
 import org.keycloak.social.AuthCallback;
 import org.keycloak.social.AuthRequest;
-import org.keycloak.social.AuthRequestBuilder;
 import org.keycloak.social.SocialProvider;
 import org.keycloak.social.SocialProviderConfig;
 import org.keycloak.social.SocialProviderException;
@@ -50,7 +49,7 @@ public class TwitterProvider implements SocialProvider {
 
             RequestToken requestToken = twitter.getOAuthRequestToken(request.getCallbackUrl());
 
-            return AuthRequestBuilder.create(requestToken.getToken(), requestToken.getAuthenticationURL())
+            return AuthRequest.create(requestToken.getToken(), requestToken.getAuthenticationURL())
                     .setAttribute("token", requestToken.getToken()).setAttribute("tokenSecret", requestToken.getTokenSecret())
                     .build();
         } catch (Exception e) {

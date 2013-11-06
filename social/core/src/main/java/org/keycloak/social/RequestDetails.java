@@ -21,6 +21,7 @@
  */
 package org.keycloak.social;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -32,9 +33,27 @@ public class RequestDetails {
 
     private Map<String, String> clientAttributes;
 
-    private Map<String, Object> socialAttributes;
+    private Map<String, String> socialAttributes;
 
-    RequestDetails(String providerId, Map<String, String> clientAttributes, Map<String, Object> socialAttributes) {
+    public static RequestDetailsBuilder create(String providerId) {
+        RequestDetailsBuilder req = new RequestDetailsBuilder();
+        req.providerId = providerId;
+        req.clientAttributes = new HashMap<String, String>();
+        req.socialAttributes = new HashMap<String, String>();
+        return req;
+    }
+
+    public static RequestDetailsBuilder create(RequestDetails from) {
+        RequestDetailsBuilder req = new RequestDetailsBuilder();
+        req.providerId = from.getProviderId();
+        req.clientAttributes = new HashMap<String, String>();
+        req.clientAttributes.putAll(from.getClientAttributes());
+        req.socialAttributes = new HashMap<String, String>();
+        req.socialAttributes.putAll(from.getSocialAttributes());
+        return req;
+    }
+
+    private RequestDetails(String providerId, Map<String, String> clientAttributes, Map<String, String> socialAttributes) {
         this.providerId = providerId;
         this.clientAttributes = clientAttributes;
         this.socialAttributes = socialAttributes;
@@ -52,12 +71,50 @@ public class RequestDetails {
         return clientAttributes;
     }
 
-    public Object getSocialAttribute(String name) {
+    public String getSocialAttribute(String name) {
         return socialAttributes.get(name);
     }
 
-    public Map<String, Object> getSocialAttributes() {
+    public Map<String, String> getSocialAttributes() {
         return socialAttributes;
+    }
+
+
+    public static class RequestDetailsBuilder {
+
+        private String providerId;
+
+        private Map<String, String> clientAttributes;
+
+        private Map<String, String> socialAttributes;
+
+        private RequestDetailsBuilder() {
+        }
+
+        public RequestDetailsBuilder putClientAttribute(String name, String value) {
+            clientAttributes.put(name, value);
+            return this;
+        }
+
+        public RequestDetailsBuilder putClientAttributes(Map<String, String> attributes) {
+            clientAttributes.putAll(attributes);
+            return this;
+        }
+
+        public RequestDetailsBuilder putSocialAttribute(String name, String value) {
+            socialAttributes.put(name, value);
+            return this;
+        }
+
+        public RequestDetailsBuilder putSocialAttributes(Map<String, String> attributes) {
+            socialAttributes.putAll(attributes);
+            return this;
+        }
+
+        public RequestDetails build() {
+            return new RequestDetails(providerId, clientAttributes, socialAttributes);
+        }
+
     }
 
 }

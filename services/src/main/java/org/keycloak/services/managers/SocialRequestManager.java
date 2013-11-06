@@ -19,7 +19,9 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.keycloak.social;
+package org.keycloak.services.managers;
+
+import org.keycloak.social.RequestDetails;
 
 import java.util.HashMap;
 import java.util.Iterator;

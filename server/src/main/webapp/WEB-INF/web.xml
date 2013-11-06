@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://java.sun.com/xml/ns/javaee"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
+      version="3.0">
+
+	<module-name>auth-server</module-name>
+
+    <servlet>
+        <servlet-name>Resteasy</servlet-name>
+        <servlet-class>org.jboss.resteasy.plugins.server.servlet.HttpServlet30Dispatcher</servlet-class>
+        <init-param>
+            <param-name>javax.ws.rs.Application</param-name>
+            <param-value>org.keycloak.server.KeycloakServerApplication</param-value>
+        </init-param>
+        <init-param>
+            <param-name>resteasy.servlet.mapping.prefix</param-name>
+            <param-value>/rest</param-value>
+        </init-param>
+        <load-on-startup>1</load-on-startup>
+        <async-supported>true</async-supported>
+    </servlet>
+
+    <filter>
+        <filter-name>Keycloak Session Management</filter-name>
+        <filter-class>org.keycloak.services.filters.KeycloakSessionServletFilter</filter-class>
+    </filter>
+
+    <filter-mapping>
+        <filter-name>Keycloak Session Management</filter-name>
+        <url-pattern>/rest/*</url-pattern>
+    </filter-mapping>
+
+    <servlet-mapping>
+        <servlet-name>Resteasy</servlet-name>
+        <url-pattern>/rest/*</url-pattern>
+    </servlet-mapping>
+
+</web-app>

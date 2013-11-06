@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<assembly xmlns="urn:maven:assembly:1.1.0-SNAPSHOT">
+    <id>distro</id>
+
+    <formats>
+        <format>zip</format>
+        <format>tar.gz</format>
+    </formats>
+
+    <includeBaseDirectory>false</includeBaseDirectory>
+
+    <fileSets>
+        <fileSet>
+            <directory>${build.target.dir}</directory>
+            <outputDirectory>keycloak-${project.version}</outputDirectory>
+            <excludes>
+                <exclude>**/*.sh</exclude>
+                <exclude>domain/tmp/auth</exclude>
+                <exclude>domain/tmp/auth</exclude>
+                <exclude>**/*-users.properties</exclude>
+            </excludes>
+        </fileSet>
+        <fileSet>
+            <directory>${build.target.dir}</directory>
+            <outputDirectory>keycloak-${project.version}</outputDirectory>
+            <includes>
+                <include>**/*.sh</include>
+            </includes>
+            <fileMode>0755</fileMode>
+        </fileSet>
+        <fileSet>
+            <directory>${build.target.dir}</directory>
+            <outputDirectory>keycloak-${project.version}</outputDirectory>
+            <includes>
+                <include>**/*-users.properties</include>
+            </includes>
+            <fileMode>0600</fileMode>
+        </fileSet>
+        <fileSet>
+            <directory>${build.target.dir}</directory>
+            <outputDirectory>keycloak-${project.version}</outputDirectory>
+            <includes>
+                <include>domain/tmp/auth</include>
+                <include>standalone/tmp/auth</include>
+            </includes>
+            <directoryMode>0700</directoryMode>
+        </fileSet>
+    </fileSets>
+
+</assembly>

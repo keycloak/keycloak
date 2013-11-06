@@ -3,9 +3,9 @@ package org.keycloak.services.resources;
 import org.keycloak.SkeletonKeyContextResolver;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ModelProvider;
+import org.keycloak.services.managers.SocialRequestManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.utils.PropertiesManager;
-import org.keycloak.social.SocialRequestManager;
 
 import javax.annotation.PreDestroy;
 import javax.servlet.ServletContext;

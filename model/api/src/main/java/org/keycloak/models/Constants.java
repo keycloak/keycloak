@@ -12,5 +12,9 @@ public interface Constants {
     String IDENTITY_REQUESTER_ROLE = "KEYCLOAK_IDENTITY_REQUESTER";
     String WILDCARD_ROLE = "*";
 
+    String ACCOUNT_APPLICATION = "Account";
+    String ACCOUNT_PROFILE_ROLE = "view-profile";
+    String ACCOUNT_MANAGE_ROLE = "manage-account";
+
     String ACCOUNT_MANAGEMENT_APPLICATION = "Account Management";
 }

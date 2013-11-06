@@ -27,15 +27,13 @@ import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.AbstractOAuthClient;
 import org.keycloak.jaxrs.JaxrsOAuthClient;
-import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.Constants;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserModel;
+import org.keycloak.models.*;
 import org.keycloak.models.utils.TimeBasedOTP;
+import org.keycloak.representations.SkeletonKeyToken;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Flows;
@@ -44,23 +42,11 @@ import org.keycloak.services.resources.flows.Pages;
 import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.services.validation.Validation;
 
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.ForbiddenException;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.NewCookie;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
+import javax.ws.rs.*;
+import javax.ws.rs.core.*;
 import javax.ws.rs.ext.Providers;
 import java.net.URI;
+import java.util.List;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -98,18 +84,42 @@ public class AccountService {
     }
 
     private Response forwardToPage(String path, String template) {
-        UserModel user = getUser(false);
-        if (user != null) {
-            return Flows.forms(realm, request, uriInfo).setUser(user).forwardToForm(template);
+        AuthenticationManager.Auth auth = getAuth(false);
+        if (auth != null) {
+            if (!hasAccess(auth)) {
+                return noAccess();
+            }
+            return Flows.forms(realm, request, uriInfo).setUser(auth.getUser()).forwardToForm(template);
         } else {
             return login(path);
         }
     }
 
-    @Path("")
+    private Response noAccess() {
+        return Flows.forms(realm, request, uriInfo).setError("No access").forwardToErrorPage();
+    }
+
+    @Path("/")
+    @OPTIONS
+    public Response accountPreflight() {
+        return Cors.add(request, Response.ok()).auth().preflight().build();
+    }
+
+    @Path("/")
     @GET
     public Response accountPage() {
-        return forwardToPage(null, Pages.ACCOUNT);
+        List<MediaType> types = headers.getAcceptableMediaTypes();
+        if (types.contains(MediaType.WILDCARD_TYPE) || (types.contains(MediaType.TEXT_HTML_TYPE))) {
+            return forwardToPage(null, Pages.ACCOUNT);
+        } else if (types.contains(MediaType.APPLICATION_JSON_TYPE)) {
+            AuthenticationManager.Auth auth = getAuth(true);
+            if (!hasAccess(auth, Constants.ACCOUNT_PROFILE_ROLE)) {
+                return Response.status(Response.Status.FORBIDDEN).build();
+            }
+            return Cors.add(request, Response.ok(RealmManager.toRepresentation(auth.getUser()))).auth().allowedOrigins(auth.getClient()).build();
+        } else {
+            return Response.notAcceptable(Variant.VariantListBuilder.newInstance().mediaTypes(MediaType.TEXT_HTML_TYPE, MediaType.APPLICATION_JSON_TYPE).build()).build();
+        }
     }
 
     @Path("social")
@@ -136,12 +146,16 @@ public class AccountService {
         return forwardToPage("access", Pages.ACCESS);
     }
 
-    @Path("")
+    @Path("/")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processAccountUpdate(final MultivaluedMap<String, String> formData) {
+        AuthenticationManager.Auth auth = getAuth(true);
+        if (!hasAccess(auth)) {
+            return noAccess();
+        }
 
-        UserModel user = getUser(true);
+        UserModel user = auth.getUser();
 
         String error = Validation.validateUpdateProfileForm(formData);
         if (error != null) {
@@ -159,7 +173,13 @@ public class AccountService {
     @Path("totp-remove")
     @GET
     public Response processTotpRemove() {
-        UserModel user = getUser(true);
+        AuthenticationManager.Auth auth = getAuth(true);
+        if (!hasAccess(auth)) {
+            return noAccess();
+        }
+
+        UserModel user = auth.getUser();
+
         user.setTotp(false);
         return Flows.forms(realm, request, uriInfo).setError("successTotpRemoved").setErrorType(FormFlows.MessageType.SUCCESS)
                 .setUser(user).forwardToTotp();
@@ -169,7 +189,12 @@ public class AccountService {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processTotpUpdate(final MultivaluedMap<String, String> formData) {
-        UserModel user = getUser(true);
+        AuthenticationManager.Auth auth = getAuth(true);
+        if (!hasAccess(auth)) {
+            return noAccess();
+        }
+
+        UserModel user = auth.getUser();
 
         String totp = formData.getFirst("totp");
         String totpSecret = formData.getFirst("totpSecret");
@@ -196,7 +221,12 @@ public class AccountService {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processPasswordUpdate(final MultivaluedMap<String, String> formData) {
-        UserModel user = getUser(true);
+        AuthenticationManager.Auth auth = getAuth(true);
+        if (!hasAccess(auth)) {
+            return noAccess();
+        }
+
+        UserModel user = auth.getUser();
 
         FormFlows forms = Flows.forms(realm, request, uriInfo).setUser(user);
 
@@ -297,7 +327,7 @@ public class AccountService {
             }
             URI redirectUri = redirectBuilder.build(realm.getId());
 
-            NewCookie cookie = authManager.createAccountIdentityCookie(realm, accessCode.getUser(), Urls.accountBase(uriInfo.getBaseUri()).build(realm.getId()));
+            NewCookie cookie = authManager.createAccountIdentityCookie(realm, accessCode.getUser(), client, Urls.accountBase(uriInfo.getBaseUri()).build(realm.getId()));
             return Response.status(302).cookie(cookie).location(redirectUri).build();
         } finally {
             authManager.expireCookie(AbstractOAuthClient.OAUTH_TOKEN_REQUEST_STATE, uriInfo.getAbsolutePath().getPath());
@@ -319,7 +349,7 @@ public class AccountService {
         String authUrl = Urls.realmLoginPage(uriInfo.getBaseUri(), realm.getId()).toString();
         oauth.setAuthUrl(authUrl);
 
-        oauth.setClientId(Constants.ACCOUNT_MANAGEMENT_APPLICATION);
+        oauth.setClientId(Constants.ACCOUNT_APPLICATION);
 
         URI accountUri = Urls.accountPageBuilder(uriInfo.getBaseUri()).path(AccountService.class, "loginRedirect").build(realm.getId());
 
@@ -327,11 +357,42 @@ public class AccountService {
         return oauth.redirect(uriInfo, accountUri.toString(), path);
     }
 
-    private UserModel getUser(boolean required) {
-        UserModel user = authManager.authenticateAccountIdentityCookie(realm, uriInfo, headers);
-        if (user == null && required) {
+    private AuthenticationManager.Auth getAuth(boolean error) {
+        AuthenticationManager.Auth auth = authManager.authenticateAccountIdentity(realm, uriInfo, headers);
+        if (auth == null && error) {
             throw new ForbiddenException();
         }
-        return user;
+        return auth;
     }
+
+    private boolean hasAccess(AuthenticationManager.Auth auth) {
+        return hasAccess(auth, null);
+    }
+
+    private boolean hasAccess(AuthenticationManager.Auth auth, String role) {
+        UserModel client = auth.getClient();
+        if (realm.hasRole(client, Constants.APPLICATION_ROLE)) {
+            // Tokens from cookies don't have roles
+            if (hasRole(client, Constants.ACCOUNT_MANAGE_ROLE) || (role != null && hasRole(client, role))) {
+                return true;
+            }
+        }
+
+        SkeletonKeyToken.Access access = auth.getToken().getResourceAccess(application.getName());
+        if (access != null) {
+            if (access.isUserInRole(Constants.ACCOUNT_MANAGE_ROLE) || (role != null && access.isUserInRole(role))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean hasRole(UserModel user, String role) {
+        if (application.getDefaultRoles().contains(role)) {
+            return true;
+        }
+        return application.hasRole(user, role);
+    }
+
 }

@@ -39,12 +39,11 @@ import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.social.AuthCallback;
 import org.keycloak.social.AuthRequest;
 import org.keycloak.social.RequestDetails;
-import org.keycloak.social.RequestDetailsBuilder;
 import org.keycloak.social.SocialConstants;
 import org.keycloak.social.SocialProvider;
 import org.keycloak.social.SocialProviderConfig;
 import org.keycloak.social.SocialProviderException;
-import org.keycloak.social.SocialRequestManager;
+import org.keycloak.services.managers.SocialRequestManager;
 import org.keycloak.social.SocialUser;
 
 import javax.imageio.spi.ServiceRegistry;
@@ -181,19 +180,12 @@ public class SocialResource {
                 }
 
                 realm.addSocialLink(user, socialLink);
-
-                for (RoleModel role : realm.getDefaultRoles()) {
-                    realm.grantRole(user, role);
-                }
             }  else {
                 // Redirect user to registration screen with prefilled data from social provider
                 MultivaluedMap<String, String> formData = fillRegistrationFormWithSocialData(socialUser);
 
-                RequestDetailsBuilder reqDetailsBuilder = RequestDetailsBuilder.createFromRequestDetails(requestData);
-                reqDetailsBuilder.putSocialAttribute(SocialConstants.ATTR_SOCIAL_LINK, socialLink);
-
                 String requestId = UUID.randomUUID().toString();
-                socialRequestManager.addRequest(requestId, reqDetailsBuilder.build());
+                socialRequestManager.addRequest(requestId, RequestDetails.create(requestData).build());
                 boolean secureOnly = !realm.isSslNotRequired();
                 String cookiePath = Urls.socialBase(uriInfo.getBaseUri()).build().getPath();
                 logger.debug("creating cookie for social registration - name: {0} path: {1}", SocialConstants.SOCIAL_REGISTRATION_COOKIE,
@@ -241,7 +233,7 @@ public class SocialResource {
         try {
             AuthRequest authRequest = provider.getAuthUrl(config);
 
-            RequestDetails socialRequest = RequestDetailsBuilder.create(providerId)
+            RequestDetails socialRequest = RequestDetails.create(providerId)
                     .putSocialAttributes(authRequest.getAttributes()).putClientAttribute("realmId", realmId)
                     .putClientAttribute("clientId", clientId).putClientAttribute("scope", scope)
                     .putClientAttribute("state", state).putClientAttribute("redirectUri", redirectUri).build();
@@ -285,7 +277,6 @@ public class SocialResource {
         String scope = requestData.getClientAttribute("scope");
         String state = requestData.getClientAttribute("state");
         String redirectUri = requestData.getClientAttribute("redirectUri");
-        SocialLinkModel socialLink = (SocialLinkModel)requestData.getSocialAttribute(SocialConstants.ATTR_SOCIAL_LINK);
 
         Response response1 = tokenService.processRegisterImpl(clientId, scope, state, redirectUri, formData, true);
 
@@ -301,7 +292,7 @@ public class SocialResource {
             // Normally shouldn't happen
             throw new IllegalStateException("User " + username + " not found in the realm");
         }
-        realm.addSocialLink(user, socialLink);
+        realm.addSocialLink(user, new SocialLinkModel(requestData.getProviderId(), username));
 
         // Expire cookie and invalidate requestData
         String cookiePath = Urls.socialBase(uriInfo.getBaseUri()).build().getPath();

@@ -33,6 +33,10 @@ public class ApplicationEntity {
     @JoinTable(name="APPLICATION_ROLES")
     Collection<RoleEntity> roles = new ArrayList<RoleEntity>();
 
+    @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
+    @JoinTable(name="APPLICATION_DEFAULT_ROLES")
+    Collection<RoleEntity> defaultRoles = new ArrayList<RoleEntity>();
+
     public String getId() {
         return id;
     }
@@ -83,5 +87,13 @@ public class ApplicationEntity {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public Collection<RoleEntity> getDefaultRoles() {
+        return defaultRoles;
+    }
+
+    public void setDefaultRoles(Collection<RoleEntity> defaultRoles) {
+        this.defaultRoles = defaultRoles;
     }
 }

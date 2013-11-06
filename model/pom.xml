@@ -37,6 +37,6 @@
         <module>api</module>
         <module>picketlink</module>
         <module>jpa</module>
-        <module>mongo</module>
+        <!-- <module>mongo</module> -->
     </modules>
 </project>

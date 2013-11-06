@@ -457,12 +457,12 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public List<RoleModel> getDefaultRoles() {
+    public List<String> getDefaultRoles() {
         Collection<RoleEntity> entities = realm.getDefaultRoles();
-        List<RoleModel> roles = new ArrayList<RoleModel>();
+        List<String> roles = new ArrayList<String>();
         if (entities == null) return roles;
         for (RoleEntity entity : entities) {
-            roles.add(new RoleAdapter(entity));
+            roles.add(entity.getName());
         }
         return roles;
     }
@@ -504,8 +504,8 @@ public class RealmAdapter implements RealmModel {
         }
         for (RoleEntity entity : remove) {
             entities.remove(entity);
-            em.remove(entity);
         }
+        em.flush();
         for (String roleName : defaultRoles) {
             if (!already.contains(roleName)) {
                 addDefaultRole(roleName);
@@ -543,6 +543,7 @@ public class RealmAdapter implements RealmModel {
         em.persist(user);
         applicationData.setApplicationUser(user);
         applicationData.setName(name);
+        applicationData.setEnabled(true);
         realm.getApplications().add(applicationData);
         em.persist(applicationData);
         em.flush();

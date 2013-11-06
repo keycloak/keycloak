@@ -15,6 +15,7 @@ import org.keycloak.representations.SkeletonKeyToken;
 import javax.ws.rs.core.MultivaluedMap;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -51,12 +52,16 @@ public class TokenManager {
         List<RoleModel> realmRolesRequested = code.getRealmRolesRequested();
         MultivaluedMap<String, RoleModel> resourceRolesRequested = code.getResourceRolesRequested();
         Set<String> realmMapping = realm.getRoleMappingValues(user);
+        realmMapping.addAll(realm.getDefaultRoles());
 
         if (realmMapping != null && realmMapping.size() > 0 && (scopeMap == null || scopeMap.containsKey("realm"))) {
             Set<String> scope = realm.getScopeMappingValues(client);
             if (scope.size() > 0) {
                 Set<String> scopeRequest = null;
                 if (scopeMap != null) {
+                    if (scopeRequest == null) {
+                        scopeRequest = new HashSet<String>();
+                    }
                     scopeRequest.addAll(scopeMap.get("realm"));
                     if (scopeRequest.contains(Constants.WILDCARD_ROLE)) scopeRequest = null;
                 }
@@ -71,11 +76,15 @@ public class TokenManager {
         }
         for (ApplicationModel resource : realm.getApplications()) {
             Set<String> mapping = resource.getRoleMappingValues(user);
+            mapping.addAll(resource.getDefaultRoles());
             if (mapping != null && mapping.size() > 0 && (scopeMap == null || scopeMap.containsKey(resource.getName()))) {
                 Set<String> scope = resource.getScopeMappingValues(client);
                 if (scope.size() > 0) {
                     Set<String> scopeRequest = null;
                     if (scopeMap != null) {
+                        if (scopeRequest == null) {
+                            scopeRequest = new HashSet<String>();
+                        }
                         scopeRequest.addAll(scopeMap.get(resource.getName()));
                         if (scopeRequest.contains(Constants.WILDCARD_ROLE)) scopeRequest = null;
                     }

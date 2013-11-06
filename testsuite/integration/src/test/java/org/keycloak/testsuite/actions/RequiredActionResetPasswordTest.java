@@ -81,7 +81,7 @@ public class RequiredActionResetPasswordTest {
     protected LoginPasswordUpdatePage changePasswordPage;
 
     @Test
-    public void tempPassword() {
+    public void tempPassword() throws Exception {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
 

@@ -323,10 +323,6 @@ public class TokenService {
             realm.updateCredential(user, credentials);
         }
 
-        for (RoleModel role : realm.getDefaultRoles()) {
-            realm.grantRole(user, role);
-        }
-
         return null;
     }
 
@@ -427,7 +423,7 @@ public class TokenService {
         logger.debug("accessRequest SUCCESS");
         AccessTokenResponse res = accessTokenResponse(realm.getPrivateKey(), accessCode.getToken());
 
-        return Cors.add(request, Response.ok(res)).allowedOrigins(client.getWebOrigins()).build();
+        return Cors.add(request, Response.ok(res)).allowedOrigins(client).build();
     }
 
     protected AccessTokenResponse accessTokenResponse(PrivateKey privateKey, SkeletonKeyToken token) {
@@ -468,7 +464,7 @@ public class TokenService {
         }
         UserModel client = realm.getUser(clientId);
         if (client == null) {
-            logger.warn("Unknown login requester.");
+            logger.warn("Unknown login requester: " + clientId);
             oauth.forwardToSecurityFailure("Unknown login requester.");
             transaction.rollback();
             return null;

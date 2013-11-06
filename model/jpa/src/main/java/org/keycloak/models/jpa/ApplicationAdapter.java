@@ -272,4 +272,61 @@ public class ApplicationAdapter implements ApplicationModel {
         return query;
     }
 
+    @Override
+    public List<String> getDefaultRoles() {
+        Collection<RoleEntity> entities = application.getDefaultRoles();
+        List<String> roles = new ArrayList<String>();
+        if (entities == null) return roles;
+        for (RoleEntity entity : entities) {
+            roles.add(entity.getName());
+        }
+        return roles;
+    }
+
+    @Override
+    public void addDefaultRole(String name) {
+        RoleModel role = getRole(name);
+        if (role == null) {
+            role = addRole(name);
+        }
+        Collection<RoleEntity> entities = application.getDefaultRoles();
+        for (RoleEntity entity : entities) {
+            if (entity.getId().equals(role.getId())) {
+                return;
+            }
+        }
+        entities.add(((RoleAdapter) role).getRole());
+        em.flush();
+    }
+
+    public static boolean contains(String str, String[] array) {
+        for (String s : array) {
+            if (str.equals(s)) return true;
+        }
+        return false;
+    }
+
+    @Override
+    public void updateDefaultRoles(String[] defaultRoles) {
+        Collection<RoleEntity> entities = application.getDefaultRoles();
+        Set<String> already = new HashSet<String>();
+        List<RoleEntity> remove = new ArrayList<RoleEntity>();
+        for (RoleEntity rel : entities) {
+            if (!contains(rel.getName(), defaultRoles)) {
+                remove.add(rel);
+            } else {
+                already.add(rel.getName());
+            }
+        }
+        for (RoleEntity entity : remove) {
+            entities.remove(entity);
+        }
+        em.flush();
+        for (String roleName : defaultRoles) {
+            if (!already.contains(roleName)) {
+                addDefaultRole(roleName);
+            }
+        }
+        em.flush();
+    }
 }

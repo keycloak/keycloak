@@ -281,4 +281,19 @@ public class ApplicationAdapter implements ApplicationModel {
         }
         return result;
     }
+
+    @Override
+    public List<String> getDefaultRoles() {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public void addDefaultRole(String name) {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public void updateDefaultRoles(String[] defaultRoles) {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
 }

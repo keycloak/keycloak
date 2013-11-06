@@ -15,10 +15,7 @@ import org.picketlink.idm.model.sample.SampleModel;
 import org.picketlink.idm.query.IdentityQuery;
 import org.picketlink.idm.query.RelationshipQuery;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -255,6 +252,46 @@ public class ApplicationAdapter implements ApplicationModel {
             if (rel.getScope().getPartition().getId().equals(applicationData.getId())) roles.add(new RoleAdapter(rel.getScope(), getIdm()));
         }
         return roles;
+    }
+
+    @Override
+    public List<String> getDefaultRoles() {
+        if ( applicationData.getDefaultRoles() != null) {
+            return Arrays.asList(applicationData.getDefaultRoles());
+        }
+        else {
+            return Collections.emptyList();
+        }
+    }
+
+    @Override
+    public void addDefaultRole(String name) {
+        if (getRole(name) == null) {
+            addRole(name);
+        }
+
+        String[] defaultRoles = applicationData.getDefaultRoles();
+        if (defaultRoles == null) {
+            defaultRoles = new String[1];
+        } else {
+            defaultRoles = Arrays.copyOf(defaultRoles, defaultRoles.length + 1);
+        }
+        defaultRoles[defaultRoles.length - 1] = name;
+
+        applicationData.setDefaultRoles(defaultRoles);
+        updateApplication();
+    }
+
+    @Override
+    public void updateDefaultRoles(String[] defaultRoles) {
+        for (String name : defaultRoles) {
+            if (getRole(name) == null) {
+                addRole(name);
+            }
+        }
+
+        applicationData.setDefaultRoles(defaultRoles);
+        updateApplication();
     }
 
 }

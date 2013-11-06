@@ -21,29 +21,26 @@
  */
 package org.keycloak.testsuite.forms;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserModel;
+import org.apache.http.HttpResponse;
+import org.junit.*;
+import org.keycloak.models.*;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.OAuthClient;
-import org.keycloak.testsuite.pages.AccountPasswordPage;
-import org.keycloak.testsuite.pages.AccountTotpPage;
-import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
-import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testsuite.pages.*;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
-import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.KeycloakRule.KeycloakSetup;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
+
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -77,7 +74,12 @@ public class AccountTest {
     @WebResource
     protected AccountTotpPage totpPage;
 
+    @WebResource
+    protected ErrorPage errorPage;
+
     private TimeBasedOTP totp = new TimeBasedOTP();
+
+    private List<String> defaultRoles;
 
     @After
     public void after() {
@@ -183,6 +185,33 @@ public class AccountTest {
         Assert.assertTrue(profilePage.isSuccess());
 
         Assert.assertTrue(driver.getPageSource().contains("Remove Google"));
+    }
+
+    @Test
+    public void changeProfileNoAccess() throws Exception {
+        try {
+            keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+                @Override
+                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                    ApplicationModel app = appRealm.getApplicationNameMap().get(Constants.ACCOUNT_APPLICATION);
+                    defaultRoles = app.getDefaultRoles();
+                    app.updateDefaultRoles(new String[0]);
+                }
+            });
+
+            profilePage.open();
+            loginPage.login("test-user@localhost", "password");
+
+            Assert.assertTrue(errorPage.isCurrent());
+            Assert.assertEquals("No access", errorPage.getError());
+        } finally {
+            keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+                @Override
+                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                    appRealm.getApplicationNameMap().get(org.keycloak.models.Constants.ACCOUNT_APPLICATION).updateDefaultRoles((String[]) defaultRoles.toArray(new String[0]));
+                }
+            });
+        }
     }
 
 }

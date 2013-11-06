@@ -9,6 +9,7 @@
                     <li><a href="#/realms/{{realm.id}}/roles">Roles</a></li>
                     <li><a href="#/realms/{{realm.id}}/required-credentials">Credentials</a></li>
                     <li><a href="#/realms/{{realm.id}}/token-settings">Token</a></li>
+                    <li><a href="#/realms/{{realm.id}}/smtp-settings">SMTP</a></li>
                 </ul>
             </div>
             <div id="content">
@@ -92,7 +93,7 @@
                 <div ng-include src="'partials/provider/'+ helpPId +'-help.html'"></div>
             </div>
             <div class="modal-footer">
-                <button class="btn" ng-click="closeHelp()">Close</button>
+                <button ng-click="closeHelp()">Close</button>
             </div>
         </div>
     </div>

@@ -1,5 +1,7 @@
 package org.keycloak.models;
 
+import java.util.List;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -31,4 +33,9 @@ public interface ApplicationModel extends RoleContainerModel, RoleMapperModel, S
 
     void setBaseUrl(String url);
 
+    List<String> getDefaultRoles();
+
+    void addDefaultRole(String name);
+
+    void updateDefaultRoles(String[] defaultRoles);
 }

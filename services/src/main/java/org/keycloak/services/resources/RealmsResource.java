@@ -69,7 +69,7 @@ public class RealmsResource {
             throw new NotFoundException();
         }
 
-        ApplicationModel application = realm.getApplicationNameMap().get(Constants.ACCOUNT_MANAGEMENT_APPLICATION);
+        ApplicationModel application = realm.getApplicationNameMap().get(Constants.ACCOUNT_APPLICATION);
         if (application == null || !application.isEnabled()) {
             logger.debug("account management not enabled");
             throw new NotFoundException();

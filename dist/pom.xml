@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.keycloak</groupId>
+        <artifactId>keycloak-parent</artifactId>
+        <version>1.0-alpha-1</version>
+    </parent>
+
+    <artifactId>keycloak-dist</artifactId>
+    <name>Keycloak Dist</name>
+    <packaging>pom</packaging>
+
+    <properties>
+        <build.target.dir>${project.build.directory}/keycloak-${project.version}</build.target.dir>
+    </properties>
+
+    <profiles>
+        <profile>
+            <id>release</id>
+            <activation>
+                <property>
+                    <name>release</name>
+                    <value>true</value>
+                </property>
+            </activation>
+
+            <dependencies>
+                <dependency>
+                    <groupId>org.keycloak</groupId>
+                    <artifactId>keycloak-server</artifactId>
+                    <version>1.0-alpha-1</version>
+                    <type>war</type>
+                </dependency>
+                <dependency>
+                    <groupId>org.jboss.as</groupId>
+                    <artifactId>jboss-as-dist</artifactId>
+                    <version>${jboss.version}</version>
+                    <type>zip</type>
+                </dependency>
+            </dependencies>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>1.7</version>
+                        <executions>
+                            <execution>
+                                <id>build</id>
+                                <phase>compile</phase>
+                                <configuration>
+                                    <target>
+                                        <ant antfile="build.xml" inheritRefs="false">
+                                            <target name="all"/>
+                                        </ant>
+                                    </target>
+                                </configuration>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>assemble</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>single</goal>
+                                </goals>
+                                <configuration>
+                                    <descriptors>
+                                        <descriptor>assembly.xml</descriptor>
+                                    </descriptors>
+                                    <finalName>keycloak-${project.version}</finalName>
+                                    <appendAssemblyId>false</appendAssemblyId>
+                                    <outputDirectory>target/</outputDirectory>
+                                    <workDirectory>target/assembly/work</workDirectory>
+                                    <tarLongFileMode>gnu</tarLongFileMode>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+</project>
