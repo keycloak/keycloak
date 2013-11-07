@@ -73,6 +73,8 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $ht
         $scope.realm.requireSsl = !realm.sslNotRequired;
     }
 
+    $scope.social = $scope.realm.social;
+
     var oldCopy = angular.copy($scope.realm);
 
 
@@ -104,6 +106,7 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $ht
                         }
                         $location.url("/realms/" + id);
                         Notifications.success("The realm has been created.");
+                        $scope.social = $scope.realm.social;
                     });
                 });
             } else {
@@ -122,6 +125,7 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $ht
                     });
                     $location.url("/realms/" + id);
                     Notifications.success("Your changes have been saved to the realm.");
+                    $scope.social = $scope.realm.social;
                 });
             }
         } else {
@@ -207,8 +211,13 @@ module.controller('RealmSocialCtrl', function($scope, realm, Realm, $location, N
         $scope.realm["socialProviders"] = realm.socialProviders;
     }
 
-    // Hardcoded provider list
-    $scope.availableProviders = [ "google", "facebook", "twitter"];
+    // Hardcoded provider list in form of map providerId:providerName
+    $scope.allProviders = { google:"Google", facebook:"Facebook", twitter:"Twitter" };
+    $scope.availableProviders = [];
+
+    for (var provider in $scope.allProviders){
+        $scope.availableProviders.push(provider);
+    }
 
     var oldCopy = angular.copy($scope.realm);
     $scope.changed = false;
@@ -226,6 +235,9 @@ module.controller('RealmSocialCtrl', function($scope, realm, Realm, $location, N
 
     // Fill in configured providers
     var initSocial = function() {
+        // postSaveProviders is used for remembering providers which were already validated after pressing the save button
+        // thanks to this it's easy to distinguish between newly added fields and those already tried to be saved
+        $scope.postSaveProviders = [];
         $scope.unsetProviders = [];
         $scope.configuredProviders = [];
 
@@ -241,7 +253,7 @@ module.controller('RealmSocialCtrl', function($scope, realm, Realm, $location, N
 
         // If no providers are already configured, you can add any of them
         if ($scope.configuredProviders.length == 0){
-            $scope.unsetProviders = $scope.availableProviders;
+            $scope.unsetProviders = $scope.availableProviders.slice(0);
         } else {
             for (var i = 0; i < $scope.availableProviders.length; i++){
                 var providerId = $scope.availableProviders[i];
@@ -270,6 +282,13 @@ module.controller('RealmSocialCtrl', function($scope, realm, Realm, $location, N
         delete $scope.realm.socialProviders[pId+".key"];
         delete $scope.realm.socialProviders[pId+".secret"];
         $scope.configuredProviders.remove($scope.configuredProviders.indexOf(pId));
+
+        // Removing from postSaveProviders, so the empty fields are not red if the provider is added to the list again
+        var rId = $scope.postSaveProviders.indexOf(pId);
+        if (rId > -1){
+            $scope.postSaveProviders.remove(rId)
+        }
+
         $scope.unsetProviders.push(pId);
     };
 
@@ -280,8 +299,6 @@ module.controller('RealmSocialCtrl', function($scope, realm, Realm, $location, N
     }, true);
 
     $scope.save = function() {
-        $scope.saveClicked = true;
-
         if ($scope.realmForm.$valid) {
             var realmCopy = angular.copy($scope.realm);
             realmCopy.social = true;
@@ -289,10 +306,12 @@ module.controller('RealmSocialCtrl', function($scope, realm, Realm, $location, N
             Realm.update(realmCopy, function () {
                 $location.url("/realms/" + realm.id + "/social-settings");
                 Notifications.success("Saved changes to realm");
+                oldCopy = realmCopy;
             });
         } else {
             $scope.realmForm.showErrors = true;
             Notifications.error("Some required fields are missing values.");
+            $scope.postSaveProviders = $scope.configuredProviders.slice(0);
         }
     };
 
