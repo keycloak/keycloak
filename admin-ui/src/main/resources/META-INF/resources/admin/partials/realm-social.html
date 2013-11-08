@@ -30,7 +30,8 @@
                                         <div class="actions">
                                             <div class="select-rcue">
                                                 <select ng-model="newProviderId"
-                                                        ng-options="p for p in unsetProviders"></select>
+                                                        ng-options="p as allProviders[p] for p in unsetProviders"
+                                                        placeholder="Please select"></select>
                                             </div>
                                             <div>
                                                 <button ng-click="addProvider()" ng-disabled="">Add Provider</button>
@@ -49,16 +50,16 @@
                                 <tr ng-repeat="pId in configuredProviders">
                                     <td>
                                         <div class="clearfix">
-                                            <input class="input-small disabled" type="text" placeholder="Key" value="{{pId}}" readonly>
+                                            <input class="input-small disabled" type="text" value="{{allProviders[pId]}}" readonly>
                                         </div>
                                     </td>
                                     <td>
                                         <input class="input-small" type="text" placeholder="Key" ng-model="realm.socialProviders[pId+'.key']"
-                                               ng-class="{'dirty': saveClicked}" required>
+                                               ng-class="{'dirty': postSaveProviders.indexOf(pId) > -1}" required>
                                     </td>
                                     <td>
                                         <input class="input-small" type="text" placeholder="Secret" ng-model="realm.socialProviders[pId+'.secret']"
-                                               ng-class="{'dirty': saveClicked}" required>
+                                               ng-class="{'dirty': postSaveProviders.indexOf(pId) > -1}" required>
                                     </td>
                                     <td>
                                         <div class="action-div"><i class="icon-question" ng-click="openHelp(pId)"></i></div>
