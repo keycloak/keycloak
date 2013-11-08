@@ -7,6 +7,7 @@
     <title>
         <#nested "title">
     </title>
+    <link rel="icon" href="${template.formsPath}/theme/${template.theme}/img/favicon.ico">
     <link href="${template.themeConfig.styles}" rel="stylesheet" />
     <style type="text/css">
         body.rcue-login-register {
