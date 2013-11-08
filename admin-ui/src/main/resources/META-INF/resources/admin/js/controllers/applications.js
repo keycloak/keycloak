@@ -171,7 +171,7 @@ module.controller('ApplicationListCtrl', function($scope, realm, applications, A
     });
 });
 
-module.controller('ApplicationDetailCtrl', function($scope, realm, application, Application, $location, Dialog, Notifications) {
+module.controller('ApplicationDetailCtrl', function($scope, realm, application, roles, Application, $location, Dialog, Notifications) {
     console.log('ApplicationDetailCtrl');
 
     $scope.realm = realm;
@@ -181,6 +181,17 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
     } else {
         $scope.application = {};
     }
+
+    console.log(application);
+
+    var systemRoles = ["*", "KEYCLOAK_APPLICATION","KEYCLOAK_IDENTITY_REQUESTER"];
+    var availableRoles = getAvailableRoles(roles, systemRoles);
+
+    $scope.appDefaultRolesOptions = {
+        'multiple' : true,
+        'simple_tags' : true,
+        'tags' : availableRoles
+    };
 
     $scope.$watch(function() {
         return $location.path();

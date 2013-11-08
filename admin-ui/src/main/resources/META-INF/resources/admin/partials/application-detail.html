@@ -93,6 +93,16 @@
                             </div>
                         </div>
                     </fieldset>
+                    <fieldset>
+                        <legend uncollapsed><span class="text">Default Roles</span></legend>
+                        <div class="form-group">
+                            <label for="default-roles" class="control-label two-lines">Default Application Roles</label>
+
+                            <div class="controls">
+                                <input id="default-roles" type="text" ui-select2="appDefaultRolesOptions" ng-model="application.defaultRoles" placeholder="Type a role and enter">
+                            </div>
+                        </div>
+                    </fieldset>
                     <div class="form-actions" data-ng-show="create">
                         <button type="submit" data-ng-click="save()" data-ng-show="changed" class="primary">Save
                         </button>
