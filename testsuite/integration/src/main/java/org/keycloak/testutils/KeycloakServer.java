@@ -261,7 +261,7 @@ public class KeycloakServer {
         di.setDeploymentName("Keycloak");
         di.setResourceManager(new KeycloakResourceManager(config.getResourcesHome()));
 
-        Set<String> allowed = new HashSet<String>(Arrays.asList(new String[]{"js", "css", "png", "jpg", "gif", "html", "svg"}));
+        Set<String> allowed = new HashSet<String>(Arrays.asList(new String[]{"js", "css", "png", "jpg", "gif", "html", "svg", "ico"}));
         di.setDefaultServletConfig(new DefaultServletConfig(false, allowed));
         di.addWelcomePage("index.html");
 
