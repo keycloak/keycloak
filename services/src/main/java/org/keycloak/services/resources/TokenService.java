@@ -8,6 +8,7 @@ import org.jboss.resteasy.jwt.JsonSerialization;
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
+import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
@@ -322,6 +323,17 @@ public class TokenService {
             credentials.setValue(formData.getFirst("password"));
             realm.updateCredential(user, credentials);
         }
+
+        for (String r : realm.getDefaultRoles()) {
+            realm.grantRole(user, realm.getRole(r));
+        }
+
+        for (ApplicationModel application : realm.getApplications()) {
+            for (String r : application.getDefaultRoles()) {
+                application.grantRole(user, application.getRole(r));
+            }
+        }
+
 
         return null;
     }

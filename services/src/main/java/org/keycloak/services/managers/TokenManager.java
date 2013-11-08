@@ -52,7 +52,6 @@ public class TokenManager {
         List<RoleModel> realmRolesRequested = code.getRealmRolesRequested();
         MultivaluedMap<String, RoleModel> resourceRolesRequested = code.getResourceRolesRequested();
         Set<String> realmMapping = realm.getRoleMappingValues(user);
-        realmMapping.addAll(realm.getDefaultRoles());
 
         if (realmMapping != null && realmMapping.size() > 0 && (scopeMap == null || scopeMap.containsKey("realm"))) {
             Set<String> scope = realm.getScopeMappingValues(client);
@@ -76,7 +75,6 @@ public class TokenManager {
         }
         for (ApplicationModel resource : realm.getApplications()) {
             Set<String> mapping = resource.getRoleMappingValues(user);
-            mapping.addAll(resource.getDefaultRoles());
             if (mapping != null && mapping.size() > 0 && (scopeMap == null || scopeMap.containsKey(resource.getName()))) {
                 Set<String> scope = resource.getScopeMappingValues(client);
                 if (scope.size() > 0) {
