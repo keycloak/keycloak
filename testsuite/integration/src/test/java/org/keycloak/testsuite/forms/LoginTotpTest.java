@@ -102,7 +102,7 @@ public class LoginTotpTest {
         loginTotpPage.login("123456");
 
         loginPage.assertCurrent();
-        Assert.assertEquals("Invalid username or password", loginPage.getError());
+        Assert.assertEquals("Invalid username or password.", loginPage.getError());
     }
 
     @Test

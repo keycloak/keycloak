@@ -90,7 +90,7 @@ public class RegisterTest {
         registerPage.register("firstName", "lastName", "email", "registerUserMissingPassword", null, null);
 
         registerPage.assertCurrent();
-        Assert.assertEquals("Please specify password", registerPage.getError());
+        Assert.assertEquals("Please specify password.", registerPage.getError());
     }
 
     @Test

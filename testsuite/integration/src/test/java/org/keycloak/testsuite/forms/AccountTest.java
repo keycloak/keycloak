@@ -119,7 +119,7 @@ public class AccountTest {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
 
-        Assert.assertEquals("Invalid username or password", loginPage.getError());
+        Assert.assertEquals("Invalid username or password.", loginPage.getError());
 
         loginPage.open();
         loginPage.login("test-user@localhost", "new-password");
