@@ -303,6 +303,7 @@ a.zocial:before {
 .rcue-login-register .background-area .content-area ul li {
     border-top: 1px solid #34393C;
     padding: 2em;
+    position: relative;
 }
 .rcue-login-register .background-area .content-area ul li span {
     font-size: 1.3em;
@@ -316,7 +317,8 @@ a.zocial:before {
 .rcue-login-register .background-area .content-area ul li span.parent {
     position: absolute;
     left: 26em;
-    padding-right: 1.53846153846154em;
+    top: 1.53846153846154em;
+    width: 12.3076923076923em;
 }
 
 .rcue-login-register .background-area .content-area ul li span.icon-info {
