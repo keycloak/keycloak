@@ -304,9 +304,21 @@ a.zocial:before {
     border-top: 1px solid #34393C;
     padding: 2em;
 }
-.rcue-login-register .background-area .content-area ul li span:first-child {
+.rcue-login-register .background-area .content-area ul li span {
     font-size: 1.3em;
+    line-height: 1.3em;
 }
+
+.rcue-login-register .background-area .content-area ul li span:first-child {
+    padding-right: 11.5384615384615em;
+}
+
+.rcue-login-register .background-area .content-area ul li span.parent {
+    position: absolute;
+    left: 26em;
+    padding-right: 1.53846153846154em;
+}
+
 .rcue-login-register .background-area .content-area ul li span.icon-info {
     float: right;
     margin-top: 0.5em;
