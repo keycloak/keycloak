@@ -28,6 +28,7 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.AbstractOAuthClient;
 import org.keycloak.jaxrs.JaxrsOAuthClient;
 import org.keycloak.models.*;
+import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.SkeletonKeyToken;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.AccessCodeEntry;
@@ -40,7 +41,6 @@ import org.keycloak.services.resources.flows.FormFlows;
 import org.keycloak.services.resources.flows.Pages;
 import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.services.validation.Validation;
-import org.picketlink.idm.credential.util.TimeBasedOTP;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
@@ -373,7 +373,8 @@ public class AccountService {
         UserModel client = auth.getClient();
         if (realm.hasRole(client, Constants.APPLICATION_ROLE)) {
             // Tokens from cookies don't have roles
-            if (hasRole(client, Constants.ACCOUNT_MANAGE_ROLE) || (role != null && hasRole(client, role))) {
+            UserModel user = auth.getUser();
+            if (hasRole(user, Constants.ACCOUNT_MANAGE_ROLE) || (role != null && hasRole(user, role))) {
                 return true;
             }
         }
@@ -389,9 +390,6 @@ public class AccountService {
     }
 
     private boolean hasRole(UserModel user, String role) {
-        if (application.getDefaultRoles().contains(role)) {
-            return true;
-        }
         return application.hasRole(user, role);
     }
 

@@ -1,9 +1,5 @@
 package org.keycloak.models.mongo.keycloak.credentials;
 
-import java.util.Date;
-import java.util.Map;
-import java.util.UUID;
-
 import org.keycloak.models.mongo.api.NoSQL;
 import org.keycloak.models.mongo.api.query.NoSQLQuery;
 import org.keycloak.models.mongo.keycloak.data.UserData;
@@ -11,6 +7,10 @@ import org.keycloak.models.mongo.keycloak.data.credentials.PasswordData;
 import org.picketlink.idm.credential.Credentials;
 import org.picketlink.idm.credential.encoder.PasswordEncoder;
 import org.picketlink.idm.credential.encoder.SHAPasswordEncoder;
+
+import java.util.Date;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * Defacto forked from {@link org.picketlink.idm.credential.handler.PasswordCredentialHandler}

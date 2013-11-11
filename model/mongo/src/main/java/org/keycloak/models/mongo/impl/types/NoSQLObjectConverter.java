@@ -1,8 +1,5 @@
 package org.keycloak.models.mongo.impl.types;
 
-import java.util.Collection;
-import java.util.Map;
-
 import com.mongodb.BasicDBObject;
 import org.keycloak.models.mongo.api.AttributedNoSQLObject;
 import org.keycloak.models.mongo.api.NoSQLObject;
@@ -11,6 +8,9 @@ import org.keycloak.models.mongo.api.types.TypeConverter;
 import org.keycloak.models.mongo.impl.MongoDBImpl;
 import org.keycloak.models.mongo.impl.ObjectInfo;
 import org.picketlink.common.properties.Property;
+
+import java.util.Collection;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

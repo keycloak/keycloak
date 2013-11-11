@@ -21,11 +21,12 @@
  */
 package org.keycloak.forms;
 
+import org.keycloak.models.utils.Base32;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Random;
 
-import org.picketlink.common.util.Base32;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

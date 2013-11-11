@@ -1,24 +1,23 @@
 package org.keycloak.models.jpa.entities;
 
-import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
+import javax.persistence.MappedSuperclass;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-@Entity
-public class UserRoleMappingEntity {
+@MappedSuperclass
+public abstract class UserRoleMappingEntity {
     @Id
     @GeneratedValue
-    private long id;
-
+    protected long id;
     @ManyToOne
-    private UserEntity user;
+    protected UserEntity user;
     @ManyToOne
-    private RoleEntity role;
+    protected RoleEntity role;
 
     public long getId() {
         return id;

@@ -44,17 +44,7 @@
 
                         <div class="form-group clearfix block">
                             <label for="enabled" class="control-label">Enabled</label>
-                            <div class="onoffswitch">
-                                <input type="checkbox" data-ng-model="application.enabled" class="onoffswitch-checkbox"
-                                       name="enabled" id="enabled">
-                                <label for="enabled" class="onoffswitch-label">
-                                            <span class="onoffswitch-inner">
-                                                <span class="onoffswitch-active">ON</span>
-                                                <span class="onoffswitch-inactive">OFF</span>
-                                            </span>
-                                    <span class="onoffswitch-switch"></span>
-                                </label>
-                            </div>
+                            <input ng-model="application.enabled" name="enabled" id="enabled" onoffswitch />
                         </div>
                         <div class="form-group">
                             <label for="baseUrl" class="control-label">Base URL</label>
@@ -100,6 +90,16 @@
                                        placeholder="New Redirect URI..." data-ng-model="newRedirectUri"
                                        data-ng-class="{'input-below':application.redirectUris.length}" />
                                 <button data-ng-click="addRedirectUri()" ng-show="newRedirectUri.length > 0">Add</button>
+                            </div>
+                        </div>
+                    </fieldset>
+                    <fieldset>
+                        <legend uncollapsed><span class="text">Default Roles</span></legend>
+                        <div class="form-group">
+                            <label for="default-roles" class="control-label two-lines">Default Application Roles</label>
+
+                            <div class="controls">
+                                <input id="default-roles" type="text" ui-select2="appDefaultRolesOptions" ng-model="application.defaultRoles" placeholder="Type a role and enter">
                             </div>
                         </div>
                     </fieldset>

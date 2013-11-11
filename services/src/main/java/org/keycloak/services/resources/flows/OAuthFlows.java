@@ -21,24 +21,23 @@
  */
 package org.keycloak.services.resources.flows;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.models.Constants;
-import org.keycloak.services.managers.AccessCodeEntry;
-import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.TokenManager;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
+import org.keycloak.services.managers.AccessCodeEntry;
+import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.resources.TokenService;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -68,7 +67,8 @@ public class OAuthFlows {
     }
 
     public Response redirectAccessCode(AccessCodeEntry accessCode, String state, String redirect) {
-        Set<String> redirectUris = accessCode.getClient().getRedirectUris();
+        UserModel client = realm.getUser(accessCode.getClient().getLoginName());
+        Set<String> redirectUris = client.getRedirectUris();
         if (!redirectUris.isEmpty() && !redirectUris.contains(redirect)) {
             return forwardToSecurityFailure("Invalid redirect_uri " + redirect);
         }

@@ -4,8 +4,7 @@
 <head>
     <meta charset="utf-8">
     <title>Edit Account - <#nested "title"></title>
-    <!-- TODO replace with actual logo once
-    <link rel="icon" href="img/favicon.ico">
+    <link rel="icon" href="${template.formsPath}/theme/${template.theme}/img/favicon.ico">
 
     <!-- Frameworks -->
     <link rel="stylesheet" href="${template.formsPath}/theme/${template.theme}/css/reset.css">

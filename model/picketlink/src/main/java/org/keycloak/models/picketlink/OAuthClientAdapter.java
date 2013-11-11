@@ -31,14 +31,4 @@ public class OAuthClientAdapter implements OAuthClientModel {
        return new UserAdapter(delegate.getOauthAgent(), idm);
     }
 
-    @Override
-    public String getBaseUrl() {
-        return delegate.getBaseUrl();
-    }
-
-    @Override
-    public void setBaseUrl(String base) {
-        delegate.setBaseUrl(base);
-        relationshipManager.update(delegate);
-    }
 }

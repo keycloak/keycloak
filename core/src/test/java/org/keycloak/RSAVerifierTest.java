@@ -6,13 +6,10 @@ import org.bouncycastle.openssl.PEMWriter;
 import org.bouncycastle.x509.X509V1CertificateGenerator;
 import org.jboss.resteasy.jose.jws.JWSBuilder;
 import org.jboss.resteasy.jwt.JsonSerialization;
-import org.keycloak.RSATokenVerifier;
-import org.keycloak.ResourceMetadata;
-import org.keycloak.VerificationException;
-import org.keycloak.representations.SkeletonKeyToken;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.keycloak.representations.SkeletonKeyToken;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.IOException;

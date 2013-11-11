@@ -4,14 +4,21 @@ import org.jboss.resteasy.jose.Base64Url;
 import org.jboss.resteasy.jose.jws.JWSBuilder;
 import org.jboss.resteasy.jwt.JsonSerialization;
 import org.jboss.resteasy.logging.Logger;
-import org.keycloak.models.*;
+import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.Constants;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.representations.SkeletonKeyScope;
 import org.keycloak.representations.SkeletonKeyToken;
 
 import javax.ws.rs.core.MultivaluedMap;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -45,7 +52,6 @@ public class TokenManager {
         List<RoleModel> realmRolesRequested = code.getRealmRolesRequested();
         MultivaluedMap<String, RoleModel> resourceRolesRequested = code.getResourceRolesRequested();
         Set<String> realmMapping = realm.getRoleMappingValues(user);
-        realmMapping.addAll(realm.getDefaultRoles());
 
         if (realmMapping != null && realmMapping.size() > 0 && (scopeMap == null || scopeMap.containsKey("realm"))) {
             Set<String> scope = realm.getScopeMappingValues(client);
@@ -69,8 +75,6 @@ public class TokenManager {
         }
         for (ApplicationModel resource : realm.getApplications()) {
             Set<String> mapping = resource.getRoleMappingValues(user);
-            mapping.addAll(resource.getDefaultRoles());
-
             if (mapping != null && mapping.size() > 0 && (scopeMap == null || scopeMap.containsKey(resource.getName()))) {
                 Set<String> scope = resource.getScopeMappingValues(client);
                 if (scope.size() > 0) {
@@ -188,7 +192,6 @@ public class TokenManager {
         }
 
         Set<String> realmMapping = realm.getRoleMappingValues(user);
-        realmMapping.addAll(realm.getDefaultRoles());
 
         if (realmMapping != null && realmMapping.size() > 0) {
             SkeletonKeyToken.Access access = new SkeletonKeyToken.Access();
@@ -200,8 +203,6 @@ public class TokenManager {
         if (resources != null) {
             for (ApplicationModel resource : resources) {
                 Set<String> mapping = resource.getRoleMappingValues(user);
-                mapping.addAll(resource.getDefaultRoles());
-
                 if (mapping == null) continue;
                 SkeletonKeyToken.Access access = token.addAccess(resource.getName())
                         .verifyCaller(resource.isSurrogateAuthRequired());

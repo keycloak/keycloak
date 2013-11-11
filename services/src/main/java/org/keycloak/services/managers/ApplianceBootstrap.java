@@ -1,6 +1,12 @@
 package org.keycloak.services.managers;
 
-import org.keycloak.models.*;
+import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 
 import java.util.UUID;

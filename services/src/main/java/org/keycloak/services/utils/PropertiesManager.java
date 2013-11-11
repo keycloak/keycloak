@@ -8,6 +8,7 @@ public class PropertiesManager {
     private static final String SESSION_FACTORY = "keycloak.sessionFactory";
     public static final String SESSION_FACTORY_PICKETLINK = "picketlink";
     public static final String SESSION_FACTORY_MONGO = "mongo";
+    public static final String SESSION_FACTORY_JPA = "jpa";
 
     private static final String MONGO_HOST = "keycloak.mongodb.host";
     private static final String MONGO_PORT = "keycloak.mongodb.port";
@@ -25,7 +26,7 @@ public class PropertiesManager {
     public static final int MONGO_DEFAULT_PORT_UNIT_TESTS = 27777;
 
     public static String getSessionFactoryType() {
-        return System.getProperty(SESSION_FACTORY, SESSION_FACTORY_PICKETLINK);
+        return System.getProperty(SESSION_FACTORY, SESSION_FACTORY_JPA);
     }
 
     public static void setSessionFactoryType(String sessionFactoryType) {
@@ -33,7 +34,7 @@ public class PropertiesManager {
     }
 
     public static void setDefaultSessionFactoryType() {
-        System.setProperty(SESSION_FACTORY, SESSION_FACTORY_PICKETLINK);
+        System.setProperty(SESSION_FACTORY, SESSION_FACTORY_JPA);
     }
 
     public static boolean isMongoSessionFactory() {
@@ -43,6 +44,11 @@ public class PropertiesManager {
     public static boolean isPicketlinkSessionFactory() {
         return getSessionFactoryType().equals(SESSION_FACTORY_PICKETLINK);
     }
+
+    public static boolean isJpaSessionFactory() {
+        return getSessionFactoryType().equals(SESSION_FACTORY_JPA);
+    }
+
 
     public static String getMongoHost() {
         return System.getProperty(MONGO_HOST, "localhost");

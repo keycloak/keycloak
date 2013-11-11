@@ -1,13 +1,22 @@
 package org.keycloak.services.managers;
 
+import org.jboss.resteasy.logging.Logger;
+import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.Constants;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.ApplicationRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.ScopeMappingRepresentation;
+import org.keycloak.representations.idm.UserRoleMappingRepresentation;
+
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-
-import org.jboss.resteasy.logging.Logger;
-import org.keycloak.models.*;
-import org.keycloak.representations.idm.*;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -69,12 +78,15 @@ public class ApplicationManager {
         if (resourceRep.getRoleMappings() != null) {
             for (UserRoleMappingRepresentation mapping : resourceRep.getRoleMappings()) {
                 UserModel user = realm.getUser(mapping.getUsername());
+                if (user == null) {
+                    throw new RuntimeException("User not found");
+                }
                 for (String roleString : mapping.getRoles()) {
                     RoleModel role = applicationModel.getRole(roleString.trim());
                     if (role == null) {
                         role = applicationModel.addRole(roleString.trim());
                     }
-                    realm.grantRole(user, role);
+                    applicationModel.grantRole(user, role);
                 }
             }
         }
@@ -142,7 +154,7 @@ public class ApplicationManager {
         }
 
         if (!applicationModel.getDefaultRoles().isEmpty()) {
-            rep.setDefaultRoles((String[]) applicationModel.getDefaultRoles().toArray());
+            rep.setDefaultRoles(applicationModel.getDefaultRoles().toArray(new String[0]));
         }
 
         return rep;

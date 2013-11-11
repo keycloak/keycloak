@@ -1,10 +1,5 @@
 package org.keycloak.models.mongo.test;
 
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import com.mongodb.DB;
 import com.mongodb.MongoClient;
 import org.junit.After;
@@ -14,6 +9,11 @@ import org.keycloak.models.mongo.api.NoSQL;
 import org.keycloak.models.mongo.api.NoSQLObject;
 import org.keycloak.models.mongo.api.query.NoSQLQuery;
 import org.keycloak.models.mongo.impl.MongoDBImpl;
+
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

@@ -21,18 +21,17 @@
  */
 package org.keycloak.testsuite.forms;
 
-import java.net.MalformedURLException;
-
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.services.managers.RealmManager;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.TimeBasedOTP;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -43,7 +42,8 @@ import org.keycloak.testsuite.rule.KeycloakRule.KeycloakSetup;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
-import org.picketlink.idm.credential.util.TimeBasedOTP;
+
+import java.net.MalformedURLException;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -102,7 +102,7 @@ public class LoginTotpTest {
         loginTotpPage.login("123456");
 
         loginPage.assertCurrent();
-        Assert.assertEquals("Invalid username or password", loginPage.getError());
+        Assert.assertEquals("Invalid username or password.", loginPage.getError());
     }
 
     @Test

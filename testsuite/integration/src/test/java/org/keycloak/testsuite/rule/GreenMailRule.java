@@ -21,18 +21,13 @@
  */
 package org.keycloak.testsuite.rule;
 
-import java.lang.Thread.UncaughtExceptionHandler;
-import java.net.SocketException;
-import java.util.Iterator;
-import java.util.Map.Entry;
-import java.util.Properties;
-
-import javax.mail.internet.MimeMessage;
-
-import org.junit.rules.ExternalResource;
-
 import com.icegreen.greenmail.util.GreenMail;
 import com.icegreen.greenmail.util.ServerSetup;
+import org.junit.rules.ExternalResource;
+
+import javax.mail.internet.MimeMessage;
+import java.lang.Thread.UncaughtExceptionHandler;
+import java.net.SocketException;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

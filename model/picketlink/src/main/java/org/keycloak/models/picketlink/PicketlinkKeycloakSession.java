@@ -5,7 +5,6 @@ import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.picketlink.mappings.RealmData;
-import org.keycloak.models.picketlink.relationships.RealmAdminRelationship;
 import org.keycloak.models.picketlink.relationships.RealmListingRelationship;
 import org.keycloak.models.utils.KeycloakSessionUtils;
 import org.picketlink.idm.PartitionManager;
@@ -15,7 +14,6 @@ import org.picketlink.idm.query.RelationshipQuery;
 import javax.persistence.EntityManager;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

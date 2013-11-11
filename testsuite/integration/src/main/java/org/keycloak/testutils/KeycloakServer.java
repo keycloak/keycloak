@@ -23,30 +23,41 @@ package org.keycloak.testutils;
 
 import io.undertow.Undertow;
 import io.undertow.Undertow.Builder;
-import io.undertow.server.handlers.resource.*;
+import io.undertow.server.handlers.resource.FileResource;
+import io.undertow.server.handlers.resource.FileResourceManager;
+import io.undertow.server.handlers.resource.Resource;
+import io.undertow.server.handlers.resource.ResourceChangeListener;
+import io.undertow.server.handlers.resource.ResourceManager;
+import io.undertow.server.handlers.resource.URLResource;
 import io.undertow.servlet.Servlets;
 import io.undertow.servlet.api.DefaultServletConfig;
 import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.FilterInfo;
-
-import java.io.*;
-import java.net.URL;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
-
-import javax.servlet.DispatcherType;
-
 import org.jboss.resteasy.jwt.JsonSerialization;
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
 import org.jboss.resteasy.spi.ResteasyDeployment;
-import org.keycloak.models.*;
+import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.filters.KeycloakSessionServletFilter;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
+
+import javax.servlet.DispatcherType;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -251,8 +262,7 @@ public class KeycloakServer {
         di.setDeploymentName("Keycloak");
         di.setResourceManager(new KeycloakResourceManager(config.getResourcesHome()));
 
-        Set<String> allowed = new HashSet<String>(Arrays.asList(new String[]{"js", "css", "png", "jpg", "gif", "html", "svg"}));
-        di.setDefaultServletConfig(new DefaultServletConfig(false, allowed));
+        di.setDefaultServletConfig(new DefaultServletConfig(true));
         di.addWelcomePage("index.html");
 
         FilterInfo filter = Servlets.filter("SessionFilter", KeycloakSessionServletFilter.class);
@@ -316,6 +326,24 @@ public class KeycloakServer {
                 return new FileResource(file, new FileResourceManager(file.getParentFile(), 1), path);
             }
         }
+
+        @Override
+        public boolean isResourceChangeListenerSupported() {
+            return false;
+        }
+
+        @Override
+        public void registerResourceChangeListener(ResourceChangeListener listener) {
+        }
+
+        @Override
+        public void removeResourceChangeListener(ResourceChangeListener listener) {
+        }
+
+        @Override
+        public void close() throws IOException {
+        }
+
     }
 
     private static File file(String... path) {

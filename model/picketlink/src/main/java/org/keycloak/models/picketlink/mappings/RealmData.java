@@ -3,8 +3,7 @@ package org.keycloak.models.picketlink.mappings;
 import org.picketlink.idm.model.AbstractPartition;
 import org.picketlink.idm.model.annotation.AttributeProperty;
 
-import java.io.Serializable;
-import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -26,8 +25,8 @@ public class RealmData extends AbstractPartition {
     private String publicKeyPem;
     private String privateKeyPem;
     private String[] defaultRoles;
-    private HashMap<String, String> smtpConfig;
-    private HashMap<String, String> socialConfig;
+    private Map<String, String> smtpConfig;
+    private Map<String, String> socialConfig;
 
     public RealmData() {
         super(null);
@@ -170,20 +169,20 @@ public class RealmData extends AbstractPartition {
     }
 
     @AttributeProperty
-    public HashMap<String, String> getSmtpConfig() {
+    public Map<String, String> getSmtpConfig() {
         return smtpConfig;
     }
 
-    public void setSmtpConfig(HashMap<String, String> smtpConfig) {
+    public void setSmtpConfig(Map<String, String> smtpConfig) {
         this.smtpConfig = smtpConfig;
     }
 
     @AttributeProperty
-    public HashMap<String, String> getSocialConfig() {
+    public Map<String, String> getSocialConfig() {
         return socialConfig;
     }
 
-    public void setSocialConfig(HashMap<String, String> socialConfig) {
+    public void setSocialConfig(Map<String, String> socialConfig) {
         this.socialConfig = socialConfig;
     }
 }

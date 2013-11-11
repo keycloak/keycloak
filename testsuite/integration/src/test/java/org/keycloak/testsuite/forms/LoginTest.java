@@ -60,7 +60,7 @@ public class LoginTest {
 
         loginPage.assertCurrent();
 
-        Assert.assertEquals("Invalid username or password", loginPage.getError());
+        Assert.assertEquals("Invalid username or password.", loginPage.getError());
     }
 
     @Test
@@ -70,7 +70,7 @@ public class LoginTest {
 
         loginPage.assertCurrent();
 
-        Assert.assertEquals("Invalid username or password", loginPage.getError());
+        Assert.assertEquals("Invalid username or password.", loginPage.getError());
     }
 
     @Test

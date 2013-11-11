@@ -1,5 +1,5 @@
 <#import "template-login-action.ftl" as layout>
-<@layout.registrationLayout bodyClass=""; section>
+<@layout.registrationLayout bodyClass="" isSeparator=false forceSeparator=true; section>
     <#if section = "title">
 
     Update Account Information

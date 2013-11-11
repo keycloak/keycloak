@@ -1,10 +1,5 @@
 package org.keycloak.models.mongo.keycloak.adapters;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
@@ -13,6 +8,11 @@ import org.keycloak.models.mongo.api.query.NoSQLQuery;
 import org.keycloak.models.mongo.keycloak.data.ApplicationData;
 import org.keycloak.models.mongo.keycloak.data.RoleData;
 import org.keycloak.models.mongo.keycloak.data.UserData;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -280,5 +280,20 @@ public class ApplicationAdapter implements ApplicationModel {
             }
         }
         return result;
+    }
+
+    @Override
+    public List<String> getDefaultRoles() {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public void addDefaultRole(String name) {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public void updateDefaultRoles(String[] defaultRoles) {
+        //To change body of implemented methods use File | Settings | File Templates.
     }
 }

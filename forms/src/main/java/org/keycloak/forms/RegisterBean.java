@@ -21,10 +21,9 @@
  */
 package org.keycloak.forms;
 
+import javax.ws.rs.core.MultivaluedMap;
 import java.util.HashMap;
 import java.util.Map;
-
-import javax.ws.rs.core.MultivaluedMap;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

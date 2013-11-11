@@ -1,12 +1,12 @@
 package org.keycloak.models.mongo.impl;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-
 import com.mongodb.BasicDBObject;
 import org.bson.types.ObjectId;
 import org.keycloak.models.mongo.api.query.NoSQLQueryBuilder;
+
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

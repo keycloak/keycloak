@@ -21,8 +21,7 @@
  */
 package org.keycloak.testsuite.rule;
 
-import java.lang.reflect.Field;
-
+import com.gargoylesoftware.htmlunit.WebClient;
 import org.junit.rules.ExternalResource;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AbstractPage;
@@ -31,7 +30,7 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.support.PageFactory;
 
-import com.gargoylesoftware.htmlunit.WebClient;
+import java.lang.reflect.Field;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

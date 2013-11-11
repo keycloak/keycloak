@@ -12,7 +12,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.Constants;
 import org.keycloak.testsuite.OAuthClient;
@@ -52,6 +54,16 @@ public class ProfileTest {
             user.setAttribute("key2", "value2");
 
             ApplicationModel accountApp = appRealm.getApplicationNameMap().get(org.keycloak.models.Constants.ACCOUNT_APPLICATION);
+            for (String r : accountApp.getDefaultRoles()) {
+                accountApp.grantRole(user, accountApp.getRole(r));
+            }
+
+            UserModel user2 = appRealm.addUser("test-user-no-access@localhost");
+            user2.setEnabled(true);
+            UserCredentialModel creds = new UserCredentialModel();
+            creds.setType(CredentialRepresentation.PASSWORD);
+            creds.setValue("password");
+            appRealm.updateCredential(user2, creds);
 
             ApplicationModel app = appRealm.getApplicationNameMap().get("test-app");
             accountApp.addScopeMapping(app.getApplicationUser(), org.keycloak.models.Constants.ACCOUNT_PROFILE_ROLE);
@@ -80,8 +92,6 @@ public class ProfileTest {
 
     @WebResource
     protected OAuthGrantPage grantPage;
-
-    private List<String> defaultRoles;
 
     @Test
     public void getProfile() throws Exception {
@@ -154,31 +164,13 @@ public class ProfileTest {
 
     @Test
     public void getProfileNoAccess() throws Exception {
-        try {
-            keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
-                @Override
-                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                    ApplicationModel app = appRealm.getApplicationNameMap().get(org.keycloak.models.Constants.ACCOUNT_APPLICATION);
-                    defaultRoles = app.getDefaultRoles();
-                    app.updateDefaultRoles(new String[0]);
-                }
-            });
+        oauth.doLogin("test-user-no-access@localhost", "password");
 
-            oauth.doLogin("test-user@localhost", "password");
+        String code = oauth.getCurrentQuery().get("code");
+        String token = oauth.doAccessTokenRequest(code, "password").getAccessToken();
 
-            String code = oauth.getCurrentQuery().get("code");
-            String token = oauth.doAccessTokenRequest(code, "password").getAccessToken();
-
-            HttpResponse response = doGetProfile(token, null);
-            assertEquals(403, response.getStatusLine().getStatusCode());
-        } finally {
-            keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
-                @Override
-                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                    appRealm.getApplicationNameMap().get(org.keycloak.models.Constants.ACCOUNT_APPLICATION).updateDefaultRoles((String[]) defaultRoles.toArray());
-                }
-            });
-        }
+        HttpResponse response = doGetProfile(token, null);
+        assertEquals(403, response.getStatusLine().getStatusCode());
     }
 
     @Test

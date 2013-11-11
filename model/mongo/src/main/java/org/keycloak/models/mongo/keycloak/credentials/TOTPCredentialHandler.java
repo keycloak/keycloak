@@ -1,8 +1,5 @@
 package org.keycloak.models.mongo.keycloak.credentials;
 
-import java.util.Date;
-import java.util.Map;
-
 import org.keycloak.models.mongo.api.NoSQL;
 import org.keycloak.models.mongo.api.query.NoSQLQuery;
 import org.keycloak.models.mongo.keycloak.data.UserData;
@@ -10,11 +7,11 @@ import org.keycloak.models.mongo.keycloak.data.credentials.OTPData;
 import org.picketlink.idm.credential.Credentials;
 import org.picketlink.idm.credential.util.TimeBasedOTP;
 
+import java.util.Date;
+import java.util.Map;
+
 import static org.picketlink.common.util.StringUtil.isNullOrEmpty;
-import static org.picketlink.idm.credential.util.TimeBasedOTP.DEFAULT_ALGORITHM;
-import static org.picketlink.idm.credential.util.TimeBasedOTP.DEFAULT_DELAY_WINDOW;
-import static org.picketlink.idm.credential.util.TimeBasedOTP.DEFAULT_INTERVAL_SECONDS;
-import static org.picketlink.idm.credential.util.TimeBasedOTP.DEFAULT_NUMBER_DIGITS;
+import static org.picketlink.idm.credential.util.TimeBasedOTP.*;
 
 /**
  * Defacto forked from {@link org.picketlink.idm.credential.handler.TOTPCredentialHandler}

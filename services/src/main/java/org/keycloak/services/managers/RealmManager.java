@@ -1,14 +1,36 @@
 package org.keycloak.services.managers;
 
 import org.jboss.resteasy.logging.Logger;
-import org.keycloak.models.*;
-import org.keycloak.representations.idm.*;
+import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredCredentialModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.SocialLinkModel;
+import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
+import org.keycloak.representations.idm.ApplicationRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.ScopeMappingRepresentation;
+import org.keycloak.representations.idm.SocialLinkRepresentation;
+import org.keycloak.representations.idm.SocialMappingRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.UserRoleMappingRepresentation;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -88,7 +110,7 @@ public class RealmManager {
             realm.updateRequiredApplicationCredentials(rep.getRequiredApplicationCredentials());
         }
         if (rep.getDefaultRoles() != null) {
-            realm.updateDefaultRoles(rep.getDefaultRoles());
+            realm.updateDefaultRoles(rep.getDefaultRoles().toArray(new String[rep.getDefaultRoles().size()]));
         }
 
         if (rep.getAccountManagement() != null && rep.getAccountManagement()) {
@@ -431,7 +453,9 @@ public class RealmManager {
 
         List<String> defaultRoles = realm.getDefaultRoles();
         if (!defaultRoles.isEmpty()) {
-            rep.setDefaultRoles((String[]) realm.getDefaultRoles().toArray());
+            List<String> roleStrings = new ArrayList<String>();
+            roleStrings.addAll(defaultRoles);
+            rep.setDefaultRoles(roleStrings);
         }
 
         List<RequiredCredentialModel> requiredCredentialModels = realm.getRequiredCredentials();

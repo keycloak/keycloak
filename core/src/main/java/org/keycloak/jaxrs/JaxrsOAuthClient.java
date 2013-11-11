@@ -37,7 +37,8 @@ public class JaxrsOAuthClient extends AbstractOAuthClient {
                 .queryParam("state", state)
                 .build();
         NewCookie cookie = new NewCookie(getStateCookieName(), state, getStateCookiePath(uriInfo), null, null, -1, isSecure, true);
-        logger.info("NewCookie: " + cookie.toString());
+        logger.debug("NewCookie: " + cookie.toString());
+        logger.debug("Oauth Redirect to: " + url);
         return Response.status(302)
                 .location(url)
                 .cookie(cookie).build();

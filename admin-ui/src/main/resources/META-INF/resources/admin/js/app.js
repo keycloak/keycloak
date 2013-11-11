@@ -11,6 +11,9 @@ module.config([ '$routeProvider', function($routeProvider) {
             resolve : {
                 realm : function(RealmLoader) {
                     return {};
+                },
+                roles : function() {
+                    return {};
                 }
             },
             controller : 'RealmDetailCtrl'
@@ -20,6 +23,9 @@ module.config([ '$routeProvider', function($routeProvider) {
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
+                },
+                roles : function(RoleListLoader) {
+                    return RoleListLoader();
                 }
             },
             controller : 'RealmDetailCtrl'
@@ -240,6 +246,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 application : function() {
                     return {};
+                },
+                roles : function() {
+                    return {};
                 }
             },
             controller : 'ApplicationDetailCtrl'
@@ -255,6 +264,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 application : function(ApplicationLoader) {
                     return ApplicationLoader();
+                },
+                roles : function(ApplicationRoleListLoader) {
+                    return ApplicationRoleListLoader();
                 }
             },
             controller : 'ApplicationDetailCtrl'
@@ -368,10 +380,42 @@ module.directive('collapsed', function() {
     }
 });
 
+/**
+ * Directive for presenting an ON-OFF switch for checkbox.
+ * Usage: <input ng-model="mmm" name="nnn" id="iii" onoffswitch [on-text="ooo" off-text="fff"] />
+ */
+module.directive('onoffswitch', function() {
+    return {
+        restrict: "EA",
+        require: 'ngModel',
+        replace: true,
+        scope: {
+            ngModel: '=',
+            ngBind: '=',
+            name: '=',
+            id: '=',
+            onText: '@onText',
+            offText: '@offText'
+        },
+        compile: function(element, attrs) {
+            if (!attrs.onText) { attrs.onText = "ON"; }
+            if (!attrs.offText) { attrs.offText = "OFF"; }
 
+            var html = "<div class=\"onoffswitch\">" +
+                "<input type=\"checkbox\" data-ng-model=\"ngModel\" class=\"onoffswitch-checkbox\" name=\"" + attrs.name + "\" id=\"" + attrs.id + "\">" +
+                "<label for=\"" + attrs.id + "\" class=\"onoffswitch-label\">" +
+                "<span class=\"onoffswitch-inner\">" +
+                "<span class=\"onoffswitch-active\">{{onText}}</span>" +
+                "<span class=\"onoffswitch-inactive\">{{offText}}</span>" +
+                "</span>" +
+                "<span class=\"onoffswitch-switch\"></span>" +
+                "</label>" +
+                "</div>";
 
-
-
+            element.replaceWith($(html));
+        }
+    }
+});
 
 
 module.directive('kcInput', function() {

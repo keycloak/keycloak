@@ -1,24 +1,16 @@
 package org.keycloak.test;
 
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.services.managers.RealmManager;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
-import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.RoleModel;
 import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.services.resources.KeycloakApplication;
-import org.keycloak.services.resources.SaasService;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.test.common.AbstractKeycloakTest;
 import org.keycloak.test.common.SessionFactoryTestContext;
 

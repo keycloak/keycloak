@@ -2,8 +2,8 @@ package org.keycloak.services.resources;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.logging.Logger;
-import org.keycloak.representations.idm.PublishedRealmRepresentation;
 import org.keycloak.models.RealmModel;
+import org.keycloak.representations.idm.PublishedRealmRepresentation;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
