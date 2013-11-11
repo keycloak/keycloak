@@ -1,5 +1,5 @@
 <#import "template-login-action.ftl" as layout>
-<@layout.registrationLayout bodyClass="reset" isSeparator=true forceSeparator=true; section>
+<@layout.registrationLayout bodyClass="reset" isSeparator=false forceSeparator=true; section>
     <#if section = "title">
 
     ${rb.getString('emailUpdateHeader')}
