@@ -26,6 +26,7 @@ import io.undertow.Undertow.Builder;
 import io.undertow.server.handlers.resource.FileResource;
 import io.undertow.server.handlers.resource.FileResourceManager;
 import io.undertow.server.handlers.resource.Resource;
+import io.undertow.server.handlers.resource.ResourceChangeListener;
 import io.undertow.server.handlers.resource.ResourceManager;
 import io.undertow.server.handlers.resource.URLResource;
 import io.undertow.servlet.Servlets;
@@ -261,8 +262,7 @@ public class KeycloakServer {
         di.setDeploymentName("Keycloak");
         di.setResourceManager(new KeycloakResourceManager(config.getResourcesHome()));
 
-        Set<String> allowed = new HashSet<String>(Arrays.asList(new String[]{"js", "css", "png", "jpg", "gif", "html", "svg", "ico"}));
-        di.setDefaultServletConfig(new DefaultServletConfig(false, allowed));
+        di.setDefaultServletConfig(new DefaultServletConfig(true));
         di.addWelcomePage("index.html");
 
         FilterInfo filter = Servlets.filter("SessionFilter", KeycloakSessionServletFilter.class);
@@ -326,6 +326,24 @@ public class KeycloakServer {
                 return new FileResource(file, new FileResourceManager(file.getParentFile(), 1), path);
             }
         }
+
+        @Override
+        public boolean isResourceChangeListenerSupported() {
+            return false;
+        }
+
+        @Override
+        public void registerResourceChangeListener(ResourceChangeListener listener) {
+        }
+
+        @Override
+        public void removeResourceChangeListener(ResourceChangeListener listener) {
+        }
+
+        @Override
+        public void close() throws IOException {
+        }
+
     }
 
     private static File file(String... path) {
