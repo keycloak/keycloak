@@ -19,17 +19,13 @@
                 </li>
             </#list>
 
-            <#list oauth.resourceRolesRequested?keys as resourceRole>
-                <li>
-                    <strong>${resourceRole}</strong>
-                    <ul>
-                        <#list oauth.resourceRolesRequested[resourceRole] as role>
-                            <li>
-                                <span><#if role.description??>${role.description}<#else>${role.name}</#if></span>
-                            </li>
-                        </#list>
-                    </ul>
-                </li>
+            <#list oauth.resourceRolesRequested?keys as resource>
+                <#list oauth.resourceRolesRequested[resource] as role>
+                    <li>
+                        <span><#if role.description??>${role.description}<#else>${role.name}</#if></span>
+                        <span class="parent">in <strong>${resource}</strong></span>
+                    </li>
+                </#list>
             </#list>
         </ul>
 
