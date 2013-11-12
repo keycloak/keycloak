@@ -2,6 +2,7 @@
 
 var module = angular.module('keycloak', [ 'keycloak.services', 'keycloak.loaders', 'keycloak.controllers', 'ui.bootstrap', 'ui.select2' ]);
 var resourceRequests = 0;
+var loadingTimer = -1;
 
 module.config([ '$routeProvider', function($routeProvider) {
 
@@ -293,7 +294,10 @@ module.config(function($httpProvider) {
 
     var spinnerFunction = function(data, headersGetter) {
         if (resourceRequests == 0) {
-            $('#loading').show();
+            loadingTimer = window.setTimeout(function() {
+                $('#loading').show();
+                loadingTimer = -1;
+            }, 500);
         }
         resourceRequests++;
         return data;
@@ -327,12 +331,20 @@ module.factory('spinnerInterceptor', function($q, $window, $rootScope, $location
         return promise.then(function(response) {
             resourceRequests--;
             if (resourceRequests == 0) {
+                if(loadingTimer != -1) {
+                    window.clearTimeout(loadingTimer);
+                    loadingTimer = -1;
+                }
                 $('#loading').hide();
             }
             return response;
         }, function(response) {
             resourceRequests--;
             if (resourceRequests == 0) {
+                if(loadingTimer != -1) {
+                    window.clearTimeout(loadingTimer);
+                    loadingTimer = -1;
+                }
                 $('#loading').hide();
             }
 
