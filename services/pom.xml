@@ -31,14 +31,15 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-picketlink</artifactId>
+            <artifactId>keycloak-model-jpa</artifactId>
             <version>${project.version}</version>
-            <scope>provided</scope>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-jpa</artifactId>
+            <artifactId>keycloak-model-picketlink</artifactId>
             <version>${project.version}</version>
+            <scope>test</scope>
         </dependency>
 
         <!--<dependency>

@@ -22,7 +22,7 @@ public class BaseJMeterPerformanceTest extends AbstractJavaSamplerClient {
 
         @Override
         public KeycloakSessionFactory call() throws Exception {
-            return KeycloakApplication.buildSessionFactory();
+            return KeycloakApplication.createSessionFactory();
         }
 
     });

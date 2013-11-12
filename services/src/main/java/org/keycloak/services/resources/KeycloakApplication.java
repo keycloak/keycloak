@@ -1,18 +1,19 @@
 package org.keycloak.services.resources;
 
+import org.jboss.resteasy.logging.Logger;
 import org.keycloak.SkeletonKeyContextResolver;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ModelProvider;
 import org.keycloak.services.managers.SocialRequestManager;
 import org.keycloak.services.managers.TokenManager;
-import org.keycloak.services.utils.PropertiesManager;
 
 import javax.annotation.PreDestroy;
 import javax.servlet.ServletContext;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Context;
-import java.lang.reflect.Constructor;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.ServiceLoader;
 import java.util.Set;
 
 /**
@@ -21,14 +22,19 @@ import java.util.Set;
  */
 public class KeycloakApplication extends Application {
 
+    private static final Logger log = Logger.getLogger(KeycloakApplication.class);
+
+    private static final String MODEL_PROVIDER = "keycloak.model";
+    private static final String DEFAULT_MODEL_PROVIDER = "jpa";
+
     protected Set<Object> singletons = new HashSet<Object>();
     protected Set<Class<?>> classes = new HashSet<Class<?>>();
 
     protected KeycloakSessionFactory factory;
 
     public KeycloakApplication(@Context ServletContext context) {
-        KeycloakSessionFactory f = createSessionFactory();
-        this.factory = f;
+        this.factory = createSessionFactory();
+
         context.setAttribute(KeycloakSessionFactory.class.getName(), factory);
         //classes.add(KeycloakSessionCleanupFilter.class);
 
@@ -41,57 +47,36 @@ public class KeycloakApplication extends Application {
         classes.add(QRCodeResource.class);
     }
 
-    protected KeycloakSessionFactory createSessionFactory() {
-        return buildSessionFactory();
-    }
+    public static KeycloakSessionFactory createSessionFactory() {
+        ServiceLoader<ModelProvider> providers = ServiceLoader.load(ModelProvider.class);
+        String configuredProvider = System.getProperty(MODEL_PROVIDER);
+        ModelProvider provider = null;
 
-    public static KeycloakSessionFactory buildSessionFactory() {
-        if (PropertiesManager.isMongoSessionFactory()) {
-            return buildMongoDBSessionFactory();
-        } else if (PropertiesManager.isPicketlinkSessionFactory()) {
-            return buildPicketlinkSessionFactory();
-        } else if (PropertiesManager.isJpaSessionFactory()) {
-            return buildJpaSessionFactory();
+        if (configuredProvider != null) {
+            for (ModelProvider p : providers) {
+                if (p.getId().equals(configuredProvider)) {
+                    provider = p;
+                }
+            }
         } else {
-            throw new IllegalStateException("Unknown session factory type: " + PropertiesManager.getSessionFactoryType());
+            for (ModelProvider p : providers) {
+                if (provider == null) {
+                    provider = p;
+                }
+
+                if (p.getId().equals(DEFAULT_MODEL_PROVIDER)) {
+                    provider = p;
+                    break;
+                }
+            }
         }
-    }
 
-    private static KeycloakSessionFactory buildJpaSessionFactory() {
-        ModelProvider provider = null;
-        try {
-            provider = (ModelProvider)Class.forName("org.keycloak.models.jpa.JpaModelProvider").newInstance();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        if (provider != null) {
+            log.debug("Model provider: " + provider.getId());
+            return provider.createFactory();
         }
-        return provider.createFactory();
-    }
 
-
-    private static KeycloakSessionFactory buildPicketlinkSessionFactory() {
-        ModelProvider provider = null;
-        try {
-            provider = (ModelProvider)Class.forName("org.keycloak.models.picketlink.PicketlinkModelProvider").newInstance();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        return provider.createFactory();
-    }
-
-    private static KeycloakSessionFactory buildMongoDBSessionFactory() {
-        String host = PropertiesManager.getMongoHost();
-        int port = PropertiesManager.getMongoPort();
-        String dbName = PropertiesManager.getMongoDbName();
-        boolean dropDatabaseOnStartup = PropertiesManager.dropDatabaseOnStartup();
-
-        // Create MongoDBSessionFactory via reflection now
-        try {
-            Class<? extends KeycloakSessionFactory> mongoDBSessionFactoryClass = (Class<? extends KeycloakSessionFactory>)Class.forName("org.keycloak.models.mongo.keycloak.adapters.MongoDBSessionFactory");
-            Constructor<? extends KeycloakSessionFactory> constr = mongoDBSessionFactoryClass.getConstructor(String.class, int.class, String.class, boolean.class);
-            return constr.newInstance(host, port, dbName, dropDatabaseOnStartup);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        throw new RuntimeException("Model provider not found");
     }
 
     public KeycloakSessionFactory getFactory() {
@@ -102,9 +87,6 @@ public class KeycloakApplication extends Application {
     public void destroy() {
         factory.close();
     }
-
-
-
 
     @Override
     public Set<Class<?>> getClasses() {

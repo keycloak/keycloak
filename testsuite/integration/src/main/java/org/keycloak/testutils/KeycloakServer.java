@@ -271,7 +271,7 @@ public class KeycloakServer {
 
         server.deploy(di);
 
-        factory = KeycloakApplication.buildSessionFactory();
+        factory = KeycloakApplication.createSessionFactory();
 
         setupDefaultRealm();
 

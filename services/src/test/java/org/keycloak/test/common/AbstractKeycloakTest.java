@@ -72,7 +72,7 @@ public abstract class AbstractKeycloakTest {
     @Before
     public void before() throws Exception {
         testContext.initEnvironment();
-        factory = KeycloakApplication.buildSessionFactory();
+        factory = KeycloakApplication.createSessionFactory();
         identitySession = factory.createSession();
         identitySession.getTransaction().begin();
         realmManager = new RealmManager(identitySession);

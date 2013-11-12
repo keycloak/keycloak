@@ -23,7 +23,7 @@ public class ModelTest extends AbstractKeycloakServerTest {
 
     @Before
     public void before() throws Exception {
-        factory = KeycloakApplication.buildSessionFactory();
+        factory = KeycloakApplication.createSessionFactory();
         identitySession = factory.createSession();
         identitySession.getTransaction().begin();
         manager = new RealmManager(identitySession);
