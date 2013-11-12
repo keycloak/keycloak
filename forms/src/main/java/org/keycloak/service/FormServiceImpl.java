@@ -104,7 +104,7 @@ public class FormServiceImpl implements FormService {
         Configuration cfg = new Configuration();
 
         try {
-            cfg.setClassForTemplateLoading(FormServiceImpl.class,"/META-INF/resources");
+            cfg.setClassForTemplateLoading(FormServiceImpl.class,"/META-INF/resources/forms/theme/default");
             Template template = cfg.getTemplate(temp);
 
             template.process(input, out);

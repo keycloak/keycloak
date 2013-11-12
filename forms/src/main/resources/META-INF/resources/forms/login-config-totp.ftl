@@ -1,1 +1,0 @@
-<#include "./theme/" + template.theme + "/login-config-totp.ftl">
