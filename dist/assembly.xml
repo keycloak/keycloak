@@ -16,7 +16,7 @@
             <excludes>
                 <exclude>**/*.sh</exclude>
                 <exclude>domain/tmp/auth</exclude>
-                <exclude>domain/tmp/auth</exclude>
+                <exclude>standalone/tmp/auth</exclude>
                 <exclude>**/*-users.properties</exclude>
             </excludes>
         </fileSet>

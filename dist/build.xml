@@ -1,19 +1,20 @@
 <project name="keycloak-dist" basedir=".">
-    <target name="jboss">
-        <unzip src="${org.jboss.as:jboss-as-dist:zip}" dest="${project.build.directory}"/>
+    <target name="wildfly">
+        <unzip src="${org.wildfly:wildfly-dist:zip}" dest="${project.build.directory}"/>
         <chmod perm="755">
-            <fileset dir="${project.build.directory}/jboss-as-${jboss.version}/bin">
+            <fileset dir="${project.build.directory}/wildfly-${wildfly.version}/bin">
                 <include name="**/*.sh"/>
             </fileset>
         </chmod>
         <move todir="${build.target.dir}" overwrite="true">
-            <fileset dir="${project.build.directory}/jboss-as-${jboss.version}">
+            <fileset dir="${project.build.directory}/wildfly-${wildfly.version}">
                 <include name="**/*"/>
             </fileset>
         </move>
-        <delete dir="${project.build.directory}/jboss-as-${jboss.version}"/>
+        <delete dir="${project.build.directory}/wildfly-${wildfly.version}"/>
     </target>
 
+    <!--    
     <target name="resteasy-modules">
         <get src="http://sourceforge.net/projects/resteasy/files/Resteasy%20JAX-RS/${resteasy.version}/resteasy-jaxrs-${resteasy.version}-all.zip"
              dest="${project.build.directory}" skipexisting="true"/>
@@ -27,11 +28,12 @@
         <unzip src="${project.build.directory}/resteasy-jboss-modules-${resteasy.version}.zip"
                dest="${build.target.dir}/modules"/>
     </target>
+    -->
 
     <target name="keycloak-server">
         <copy file="${org.keycloak:keycloak-server:war}"
               tofile="${build.target.dir}/standalone/deployments/auth-server.war" overwrite="true"/>
     </target>
 
-    <target name="all" depends="jboss, resteasy-modules, keycloak-server"/>
+    <target name="all" depends="wildfly, keycloak-server"/>
 </project>

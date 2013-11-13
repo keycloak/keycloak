@@ -35,9 +35,9 @@
                     <type>war</type>
                 </dependency>
                 <dependency>
-                    <groupId>org.jboss.as</groupId>
-                    <artifactId>jboss-as-dist</artifactId>
-                    <version>${jboss.version}</version>
+                    <groupId>org.wildfly</groupId>
+                    <artifactId>wildfly-dist</artifactId>
+                    <version>${wildfly.version}</version>
                     <type>zip</type>
                 </dependency>
             </dependencies>
@@ -62,6 +62,34 @@
                                 <goals>
                                     <goal>run</goal>
                                 </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>xml-maven-plugin</artifactId>
+                        <version>1.0</version>
+                        <executions>
+                            <execution>
+                                <id>generate-resources</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>transform</goal>
+                                </goals>
+                                <configuration>
+                                    <transformationSets>
+                                        <transformationSet>
+                                            <dir>${build.target.dir}/standalone/configuration</dir>
+                                            <stylesheet>src/main/xslt/standalone.xsl</stylesheet>
+                                            <includes>
+                                                <include>standalone*.xml</include>
+                                            </includes>
+                                            <outputDir>${build.target.dir}/standalone/configuration</outputDir>
+                                        </transformationSet>
+                                    </transformationSets>
+                                    <targetDirectory>${project.build.directory}</targetDirectory>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
