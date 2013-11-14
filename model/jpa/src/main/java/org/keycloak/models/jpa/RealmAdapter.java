@@ -658,7 +658,7 @@ public class RealmAdapter implements RealmModel {
             } else {
                 builder.append(" and ");
             }
-            builder.append(attribute).append("='").append(entry.getValue()).append("'");
+            builder.append(attribute).append(" like lower('%").append(entry.getValue().toLowerCase()).append("%')");
         }
         TypedQuery<UserEntity> query = em.createQuery(builder.toString(), UserEntity.class);
         List<UserEntity> results = query.getResultList();
