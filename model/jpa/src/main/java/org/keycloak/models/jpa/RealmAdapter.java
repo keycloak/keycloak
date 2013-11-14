@@ -643,13 +643,13 @@ public class RealmAdapter implements RealmModel {
         for (Map.Entry<String, String> entry : attributes.entrySet()) {
             String attribute = null;
             if (entry.getKey().equals(UserModel.LOGIN_NAME)) {
-                attribute = "loginName";
+                attribute = "lower(loginName)";
             } else if (entry.getKey().equalsIgnoreCase(UserModel.FIRST_NAME)) {
-                attribute = "firstName";
+                attribute = "lower(firstName)";
             } else if (entry.getKey().equalsIgnoreCase(UserModel.LAST_NAME)) {
-                attribute = "lastName";
+                attribute = "lower(lastName)";
             } else if (entry.getKey().equalsIgnoreCase(UserModel.EMAIL)) {
-                attribute = "email";
+                attribute = "lower(email)";
             }
             if (attribute == null) continue;
             if (first) {
@@ -658,9 +658,11 @@ public class RealmAdapter implements RealmModel {
             } else {
                 builder.append(" and ");
             }
-            builder.append(attribute).append(" like lower('%").append(entry.getValue().toLowerCase()).append("%')");
+            builder.append(attribute).append(" like '%").append(entry.getValue().toLowerCase()).append("%'");
         }
-        TypedQuery<UserEntity> query = em.createQuery(builder.toString(), UserEntity.class);
+        String q = builder.toString();
+        System.out.println(q);
+        TypedQuery<UserEntity> query = em.createQuery(q, UserEntity.class);
         List<UserEntity> results = query.getResultList();
         List<UserModel> users = new ArrayList<UserModel>();
         for (UserEntity entity : results) users.add(new UserAdapter(entity));

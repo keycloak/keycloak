@@ -199,6 +199,15 @@ public class AdapterTest extends AbstractKeycloakTest {
             Assert.assertEquals(bburke.getEmail(), "bburke@redhat.com");
         }
 
+        {
+            List<UserModel> userModels = adapter.searchUsers("bil burk", realmModel);
+            Assert.assertEquals(userModels.size(), 1);
+            UserModel bburke = userModels.get(0);
+            Assert.assertEquals(bburke.getFirstName(), "Bill");
+            Assert.assertEquals(bburke.getLastName(), "Burke");
+            Assert.assertEquals(bburke.getEmail(), "bburke@redhat.com");
+        }
+
 
         {
             List<UserModel> userModels = adapter.searchUsers("bburke@redhat.com", realmModel);
@@ -210,7 +219,25 @@ public class AdapterTest extends AbstractKeycloakTest {
         }
 
         {
+            List<UserModel> userModels = adapter.searchUsers("rke@redhat.com", realmModel);
+            Assert.assertEquals(userModels.size(), 1);
+            UserModel bburke = userModels.get(0);
+            Assert.assertEquals(bburke.getFirstName(), "Bill");
+            Assert.assertEquals(bburke.getLastName(), "Burke");
+            Assert.assertEquals(bburke.getEmail(), "bburke@redhat.com");
+        }
+
+        {
             List<UserModel> userModels = adapter.searchUsers("bburke", realmModel);
+            Assert.assertEquals(userModels.size(), 1);
+            UserModel bburke = userModels.get(0);
+            Assert.assertEquals(bburke.getFirstName(), "Bill");
+            Assert.assertEquals(bburke.getLastName(), "Burke");
+            Assert.assertEquals(bburke.getEmail(), "bburke@redhat.com");
+        }
+
+        {
+            List<UserModel> userModels = adapter.searchUsers("BurK", realmModel);
             Assert.assertEquals(userModels.size(), 1);
             UserModel bburke = userModels.get(0);
             Assert.assertEquals(bburke.getFirstName(), "Bill");
