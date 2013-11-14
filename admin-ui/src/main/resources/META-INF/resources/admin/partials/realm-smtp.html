@@ -6,6 +6,7 @@
                 <ul class="rcue-tabs">
                     <li><a href="#/realms/{{realm.id}}">General</a></li>
                     <li data-ng-show="realm.social"><a href="#/realms/{{realm.id}}/social-settings">Social</a></li>
+                    <li data-ng-show="realm.registrationAllowed"><a href="#/realms/{{realm.id}}/registration-settings">Registration</a></li>
                     <li><a href="#/realms/{{realm.id}}/roles">Roles</a></li>
                     <li><a href="#/realms/{{realm.id}}/required-credentials">Credentials</a></li>
                     <li><a href="#/realms/{{realm.id}}/token-settings">Token</a></li>

@@ -20,17 +20,3 @@ function randomString(len) {
     }
     return randomString;
 }
-
-function getAvailableRoles(roles, systemRoles){
-    var complement = [];
-
-    for (var i = 0; i < roles.length; i++){
-        var roleName = roles[i].name;
-
-        if (systemRoles.indexOf(roleName) < 0){
-            complement.push(roleName);
-        }
-    }
-
-    return complement;
-}
