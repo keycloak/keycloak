@@ -83,11 +83,6 @@ public class KeycloakApplication extends Application {
         return factory;
     }
 
-    @PreDestroy
-    public void destroy() {
-        factory.close();
-    }
-
     @Override
     public Set<Class<?>> getClasses() {
         return classes;
