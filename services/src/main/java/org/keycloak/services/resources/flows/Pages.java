@@ -26,34 +26,34 @@ package org.keycloak.services.resources.flows;
  */
 public class Pages {
 
-    public final static String ACCESS = "/forms/access.ftl";
+    public final static String ACCESS = "access.ftl";
 
-    public final static String ACCOUNT = "/forms/account.ftl";
+    public final static String ACCOUNT = "account.ftl";
 
-    public final static String LOGIN = "/forms/login.ftl";
+    public final static String LOGIN = "login.ftl";
 
-    public final static String LOGIN_TOTP = "/forms/login-totp.ftl";
+    public final static String LOGIN_TOTP = "login-totp.ftl";
 
-    public final static String LOGIN_CONFIG_TOTP = "/forms/login-config-totp.ftl";
+    public final static String LOGIN_CONFIG_TOTP = "login-config-totp.ftl";
 
-    public final static String LOGIN_VERIFY_EMAIL = "/forms/login-verify-email.ftl";
+    public final static String LOGIN_VERIFY_EMAIL = "login-verify-email.ftl";
 
-    public final static String OAUTH_GRANT = "/forms/login-oauth-grant.ftl";
+    public final static String OAUTH_GRANT = "login-oauth-grant.ftl";
 
-    public final static String PASSWORD = "/forms/password.ftl";
+    public final static String PASSWORD = "password.ftl";
 
-    public final static String LOGIN_RESET_PASSWORD = "/forms/login-reset-password.ftl";
+    public final static String LOGIN_RESET_PASSWORD = "login-reset-password.ftl";
 
-    public final static String LOGIN_UPDATE_PASSWORD = "/forms/login-update-password.ftl";
+    public final static String LOGIN_UPDATE_PASSWORD = "login-update-password.ftl";
 
-    public final static String REGISTER = "/forms/register.ftl";
+    public final static String REGISTER = "register.ftl";
 
-    public final static String ERROR = "/forms/error.ftl";
+    public final static String ERROR = "error.ftl";
 
-    public final static String SOCIAL = "/forms/social.ftl";
+    public final static String SOCIAL = "social.ftl";
 
-    public final static String TOTP = "/forms/totp.ftl";
+    public final static String TOTP = "totp.ftl";
 
-    public final static String LOGIN_UPDATE_PROFILE = "/forms/login-update-profile.ftl";
+    public final static String LOGIN_UPDATE_PROFILE = "login-update-profile.ftl";
 
 }

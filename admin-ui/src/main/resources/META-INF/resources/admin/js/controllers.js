@@ -20,4 +20,3 @@ function randomString(len) {
     }
     return randomString;
 }
-

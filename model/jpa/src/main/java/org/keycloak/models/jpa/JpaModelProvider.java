@@ -11,6 +11,12 @@ import javax.persistence.Persistence;
  * @version $Revision: 1 $
  */
 public class JpaModelProvider implements ModelProvider {
+
+    @Override
+    public String getId() {
+        return "jpa";
+    }
+
     @Override
     public KeycloakSessionFactory createFactory() {
         EntityManagerFactory emf = Persistence.createEntityManagerFactory("jpa-keycloak-identity-store");

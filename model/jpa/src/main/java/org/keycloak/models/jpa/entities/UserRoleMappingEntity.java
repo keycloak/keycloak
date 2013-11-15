@@ -1,6 +1,7 @@
 package org.keycloak.models.jpa.entities;
 
 import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.MappedSuperclass;
@@ -12,7 +13,7 @@ import javax.persistence.MappedSuperclass;
 @MappedSuperclass
 public abstract class UserRoleMappingEntity {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     protected long id;
     @ManyToOne
     protected UserEntity user;

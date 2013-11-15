@@ -48,7 +48,23 @@ import static org.junit.Assert.assertEquals;
 public class AccountTest {
 
     @ClassRule
-    public static KeycloakRule keycloakRule = new KeycloakRule();
+    public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakSetup() {
+        @Override
+        public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+            UserModel user = appRealm.getUser("test-user@localhost");
+            ApplicationModel accountApp = appRealm.getApplicationNameMap().get(org.keycloak.models.Constants.ACCOUNT_APPLICATION);
+            for (String r : accountApp.getDefaultRoles()) {
+                accountApp.grantRole(user, accountApp.getRole(r));
+            }
+
+            UserModel user2 = appRealm.addUser("test-user-no-access@localhost");
+            user2.setEnabled(true);
+            UserCredentialModel creds = new UserCredentialModel();
+            creds.setType(CredentialRepresentation.PASSWORD);
+            creds.setValue("password");
+            appRealm.updateCredential(user2, creds);
+        }
+    });
 
     @Rule
     public WebRule webRule = new WebRule(this);
@@ -78,8 +94,6 @@ public class AccountTest {
     protected ErrorPage errorPage;
 
     private TimeBasedOTP totp = new TimeBasedOTP();
-
-    private List<String> defaultRoles;
 
     @After
     public void after() {
@@ -119,7 +133,7 @@ public class AccountTest {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
 
-        Assert.assertEquals("Invalid username or password", loginPage.getError());
+        Assert.assertEquals("Invalid username or password.", loginPage.getError());
 
         loginPage.open();
         loginPage.login("test-user@localhost", "new-password");
@@ -176,7 +190,7 @@ public class AccountTest {
         Assert.assertFalse(driver.getPageSource().contains("Remove Google"));
 
         // Error with false code
-        totpPage.configure(totp.generate(totpPage.getTotpSecret()+"123"));
+        totpPage.configure(totp.generate(totpPage.getTotpSecret() + "123"));
 
         Assert.assertTrue(profilePage.isError());
 
@@ -189,29 +203,11 @@ public class AccountTest {
 
     @Test
     public void changeProfileNoAccess() throws Exception {
-        try {
-            keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
-                @Override
-                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                    ApplicationModel app = appRealm.getApplicationNameMap().get(Constants.ACCOUNT_APPLICATION);
-                    defaultRoles = app.getDefaultRoles();
-                    app.updateDefaultRoles(new String[0]);
-                }
-            });
+        profilePage.open();
+        loginPage.login("test-user-no-access@localhost", "password");
 
-            profilePage.open();
-            loginPage.login("test-user@localhost", "password");
-
-            Assert.assertTrue(errorPage.isCurrent());
-            Assert.assertEquals("No access", errorPage.getError());
-        } finally {
-            keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
-                @Override
-                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                    appRealm.getApplicationNameMap().get(org.keycloak.models.Constants.ACCOUNT_APPLICATION).updateDefaultRoles((String[]) defaultRoles.toArray(new String[0]));
-                }
-            });
-        }
+        Assert.assertTrue(errorPage.isCurrent());
+        Assert.assertEquals("No access", errorPage.getError());
     }
 
 }

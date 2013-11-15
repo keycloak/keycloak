@@ -63,7 +63,7 @@ public class AccessTokenTest {
 
         Assert.assertEquals(200, response.getStatusCode());
 
-        Assert.assertTrue(response.getExpiresIn() <= 300 && response.getExpiresIn() >= 250);
+        Assert.assertTrue(response.getExpiresIn() <= 600 && response.getExpiresIn() >= 550);
 
         Assert.assertEquals("bearer", response.getTokenType());
 
@@ -73,6 +73,9 @@ public class AccessTokenTest {
 
         Assert.assertEquals(1, token.getRealmAccess().getRoles().size());
         Assert.assertTrue(token.getRealmAccess().isUserInRole("user"));
+
+        Assert.assertEquals(1, token.getResourceAccess(oauth.getClientId()).getRoles().size());
+        Assert.assertTrue(token.getResourceAccess(oauth.getClientId()).isUserInRole("customer-user"));
     }
 
 }

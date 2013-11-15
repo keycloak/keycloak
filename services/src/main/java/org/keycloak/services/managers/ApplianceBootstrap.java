@@ -1,5 +1,6 @@
 package org.keycloak.services.managers;
 
+import org.jboss.resteasy.logging.Logger;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -17,12 +18,15 @@ import java.util.UUID;
  */
 public class ApplianceBootstrap {
 
-
-    public void initKeycloakAdminRealm(RealmModel realm) {
-
-    }
+    private static final Logger logger = Logger.getLogger(ApplianceBootstrap.class);
 
     public void bootstrap(KeycloakSession session) {
+        if (session.getRealm(Constants.ADMIN_REALM) != null) {
+            return;
+        }
+
+        logger.info("Initializing " + Constants.ADMIN_REALM + " realm");
+
         RealmManager manager = new RealmManager(session);
         RealmModel realm = manager.createRealm(Constants.ADMIN_REALM, Constants.ADMIN_REALM);
         realm.setName(Constants.ADMIN_REALM);
@@ -37,7 +41,6 @@ public class ApplianceBootstrap {
         realm.setCookieLoginAllowed(true);
         realm.setRegistrationAllowed(false);
         manager.generateRealmKeys(realm);
-        initKeycloakAdminRealm(realm);
 
         ApplicationModel adminConsole = realm.addApplication(Constants.ADMIN_CONSOLE_APPLICATION);
         adminConsole.setEnabled(true);
@@ -59,8 +62,6 @@ public class ApplianceBootstrap {
         adminUser.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
 
         adminConsole.grantRole(adminUser, adminRole);
-
-
-
     }
+
 }

@@ -145,6 +145,10 @@ public class OAuthClient {
         }
     }
 
+    public String getClientId() {
+        return clientId;
+    }
+
     public String getCurrentRequest() {
         return driver.getCurrentUrl().substring(0, driver.getCurrentUrl().indexOf('?'));
     }

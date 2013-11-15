@@ -103,9 +103,6 @@ public class SocialLoginTest {
         SkeletonKeyToken token = oauth.verifyToken(response.getAccessToken());
 
         Assert.assertEquals("dummy-user", token.getPrincipal());
-
-        Assert.assertEquals(1, token.getRealmAccess().getRoles().size());
-        Assert.assertTrue(token.getRealmAccess().isUserInRole("user"));
     }
 
     @Test

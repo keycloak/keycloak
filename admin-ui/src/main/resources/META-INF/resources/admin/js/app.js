@@ -2,6 +2,7 @@
 
 var module = angular.module('keycloak', [ 'keycloak.services', 'keycloak.loaders', 'keycloak.controllers', 'ui.bootstrap', 'ui.select2' ]);
 var resourceRequests = 0;
+var loadingTimer = -1;
 
 module.config([ '$routeProvider', function($routeProvider) {
 
@@ -45,6 +46,21 @@ module.config([ '$routeProvider', function($routeProvider) {
                 }
             },
             controller : 'RealmSocialCtrl'
+        })
+        .when('/realms/:realm/registration-settings', {
+            templateUrl : 'partials/realm-registration.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                applications : function(ApplicationListLoader) {
+                    return ApplicationListLoader();
+                },
+                roles : function(RoleListLoader) {
+                    return RoleListLoader();
+                }
+            },
+            controller : 'RealmRegistrationCtrl'
         })
         .when('/realms/:realm/required-credentials', {
             templateUrl : 'partials/realm-credentials.html',
@@ -281,7 +297,10 @@ module.config(function($httpProvider) {
 
     var spinnerFunction = function(data, headersGetter) {
         if (resourceRequests == 0) {
-            $('#loading').show();
+            loadingTimer = window.setTimeout(function() {
+                $('#loading').show();
+                loadingTimer = -1;
+            }, 500);
         }
         resourceRequests++;
         return data;
@@ -301,7 +320,7 @@ module.factory('errorInterceptor', function($q, $window, $rootScope, $location, 
             if (response.status == 401) {
                 console.log('session timeout?');
                 Auth.loggedIn = false;
-                $location.url('/');
+                window.location = '/auth-server/rest/saas/login?path=' + $location.path();
             } else {
                 $rootScope.httpProviderError = response.status;
             }
@@ -315,12 +334,20 @@ module.factory('spinnerInterceptor', function($q, $window, $rootScope, $location
         return promise.then(function(response) {
             resourceRequests--;
             if (resourceRequests == 0) {
+                if(loadingTimer != -1) {
+                    window.clearTimeout(loadingTimer);
+                    loadingTimer = -1;
+                }
                 $('#loading').hide();
             }
             return response;
         }, function(response) {
             resourceRequests--;
             if (resourceRequests == 0) {
+                if(loadingTimer != -1) {
+                    window.clearTimeout(loadingTimer);
+                    loadingTimer = -1;
+                }
                 $('#loading').hide();
             }
 
@@ -368,10 +395,42 @@ module.directive('collapsed', function() {
     }
 });
 
+/**
+ * Directive for presenting an ON-OFF switch for checkbox.
+ * Usage: <input ng-model="mmm" name="nnn" id="iii" onoffswitch [on-text="ooo" off-text="fff"] />
+ */
+module.directive('onoffswitch', function() {
+    return {
+        restrict: "EA",
+        require: 'ngModel',
+        replace: true,
+        scope: {
+            ngModel: '=',
+            ngBind: '=',
+            name: '=',
+            id: '=',
+            onText: '@onText',
+            offText: '@offText'
+        },
+        compile: function(element, attrs) {
+            if (!attrs.onText) { attrs.onText = "ON"; }
+            if (!attrs.offText) { attrs.offText = "OFF"; }
 
+            var html = "<div class=\"onoffswitch\">" +
+                "<input type=\"checkbox\" data-ng-model=\"ngModel\" class=\"onoffswitch-checkbox\" name=\"" + attrs.name + "\" id=\"" + attrs.id + "\">" +
+                "<label for=\"" + attrs.id + "\" class=\"onoffswitch-label\">" +
+                "<span class=\"onoffswitch-inner\">" +
+                "<span class=\"onoffswitch-active\">{{onText}}</span>" +
+                "<span class=\"onoffswitch-inactive\">{{offText}}</span>" +
+                "</span>" +
+                "<span class=\"onoffswitch-switch\"></span>" +
+                "</label>" +
+                "</div>";
 
-
-
+            element.replaceWith($(html));
+        }
+    }
+});
 
 
 module.directive('kcInput', function() {
@@ -430,16 +489,28 @@ module.filter('remove', function() {
         for ( var i = 0; i < input.length; i++) {
             var e = input[i];
 
-            for (var j = 0; j < remove.length; j++) {
+            if (Array.isArray(remove)) {
+                for (var j = 0; j < remove.length; j++) {
+                    if (attribute) {
+                        if (remove[j][attribute] == e[attribute]) {
+                            e = null;
+                            break;
+                        }
+                    } else {
+                        if (remove[j] == e) {
+                            e = null;
+                            break;
+                        }
+                    }
+                }
+            } else {
                 if (attribute) {
-                    if (remove[j][attribute] == e[attribute]) {
+                    if (remove[attribute] == e[attribute]) {
                         e = null;
-                        break;
                     }
                 } else {
-                    if (remove[j] == e) {
+                    if (remove == e) {
                         e = null;
-                        break;
                     }
                 }
             }

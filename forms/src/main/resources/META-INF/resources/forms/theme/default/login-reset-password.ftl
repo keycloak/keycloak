@@ -1,5 +1,5 @@
 <#import "template-login-action.ftl" as layout>
-<@layout.registrationLayout bodyClass="reset"; section>
+<@layout.registrationLayout bodyClass="reset" isSeparator=true forceSeparator=true; section>
     <#if section = "title">
 
     ${rb.getString('emailForgotHeader')}
@@ -23,6 +23,6 @@
         </form>
     </div>
     <#elseif section = "info" >
-        <p><a href="#">&laquo; Back to Login</a></p>
+        <p><a href="${url.loginUrl}">&laquo; Back to Login</a></p>
     </#if>
 </@layout.registrationLayout>

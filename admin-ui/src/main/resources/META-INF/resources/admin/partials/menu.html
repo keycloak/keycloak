@@ -3,7 +3,7 @@
         <div class="navbar-inner clearfix container">
             <h1><a href="#/realms/{{realm.id}}"><strong>Keycloak</strong> Central Login</a></h1>
             <ul class="nav pull-right" data-ng-hide="auth.loggedIn">
-                <li><a href="/auth-server/rest/saas/login">Login</a></li>
+                <li><a href="/auth-server/rest/saas/login?path={{fragment}}">Login</a></li>
                 <li><a href="/auth-server/rest/saas/registrations">Register</a></li>
             </ul>
             <ul class="nav pull-right" data-ng-show="auth.loggedIn">
@@ -25,7 +25,7 @@
                     <span class="dropdown-label" data-ng-show="showNav()">Realm:</span>
                     <div class="select-rcue" data-ng-show="showNav()">
                         <select ng-change="changeRealm()" ng-model="current.realm" ng-options="r.realm for r in current.realms"></select>
-                    </div><a href="#/realms/{{realm.id}}" id="refresh" data-ng-show="showNav()"><span class="icon-spinner6">Icon: spinner</span></a>
+                    </div><a href="#/realms/{{current.realm.id}}" id="refresh" data-ng-show="showNav()"><span class="icon-spinner6">Icon: spinner</span></a>
                 </li>
             </ul>
             <div class="pull-right" data-ng-show="auth.loggedIn">

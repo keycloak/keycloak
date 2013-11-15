@@ -262,8 +262,7 @@ public class KeycloakServer {
         di.setDeploymentName("Keycloak");
         di.setResourceManager(new KeycloakResourceManager(config.getResourcesHome()));
 
-        Set<String> allowed = new HashSet<String>(Arrays.asList(new String[]{"js", "css", "png", "jpg", "gif", "html", "svg"}));
-        di.setDefaultServletConfig(new DefaultServletConfig(false, allowed));
+        di.setDefaultServletConfig(new DefaultServletConfig(true));
         di.addWelcomePage("index.html");
 
         FilterInfo filter = Servlets.filter("SessionFilter", KeycloakSessionServletFilter.class);
@@ -272,7 +271,7 @@ public class KeycloakServer {
 
         server.deploy(di);
 
-        factory = KeycloakApplication.buildSessionFactory();
+        factory = KeycloakApplication.createSessionFactory();
 
         setupDefaultRealm();
 
@@ -330,23 +329,21 @@ public class KeycloakServer {
 
         @Override
         public boolean isResourceChangeListenerSupported() {
-            return false;  //To change body of implemented methods use File | Settings | File Templates.
+            return false;
         }
 
         @Override
-        public void registerResourceChangeListener(ResourceChangeListener resourceChangeListener) {
-            //To change body of implemented methods use File | Settings | File Templates.
+        public void registerResourceChangeListener(ResourceChangeListener listener) {
         }
 
         @Override
-        public void removeResourceChangeListener(ResourceChangeListener resourceChangeListener) {
-            //To change body of implemented methods use File | Settings | File Templates.
+        public void removeResourceChangeListener(ResourceChangeListener listener) {
         }
 
         @Override
         public void close() throws IOException {
-            //To change body of implemented methods use File | Settings | File Templates.
         }
+
     }
 
     private static File file(String... path) {

@@ -50,8 +50,7 @@ public class ImportTest extends AbstractKeycloakTest {
         UserModel user = realm.getUser("loginclient");
         Assert.assertNotNull(user);
         Set<String> scopes = realm.getScopeMappingValues(user);
-        System.out.println("Scopes size: " + scopes.size());
-        Assert.assertTrue(scopes.contains("*"));
+        Assert.assertEquals(0, scopes.size());
         Assert.assertEquals(0, realm.getSocialLinks(user).size());
 
         List<ApplicationModel> resources = realm.getApplications();

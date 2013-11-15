@@ -5,5 +5,7 @@ package org.keycloak.models;
  * @version $Revision: 1 $
  */
 public interface ModelProvider {
+    String getId();
+
     KeycloakSessionFactory createFactory();
 }

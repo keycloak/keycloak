@@ -17,8 +17,8 @@ module.service('Dialog', function($dialog) {
 	var dialog = {};
 	dialog.confirmDelete = function(name, type, success) {
 		var title = 'Delete ' + type.charAt(0).toUpperCase() + type.slice(1);
-		var msg = '<p class="primary">Are you sure you want to permanently delete the ' + type + ' "' + name + '"?</p>' +
-            '<p>This action can\'t be undone.</p>';
+		var msg = '<span class="primary">Are you sure you want to permanently delete the ' + type + ' "' + name + '"?</span>' +
+            '<span>This action can\'t be undone.</span>';
 		var btns = [ {
 			result : 'cancel',
 			label : 'Cancel'

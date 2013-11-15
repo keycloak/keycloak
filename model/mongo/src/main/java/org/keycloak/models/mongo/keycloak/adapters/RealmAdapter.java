@@ -451,8 +451,6 @@ public class RealmAdapter implements RealmModel {
         noSQL.saveObject(appData);
 
         ApplicationModel resource = new ApplicationAdapter(appData, noSQL);
-        resource.addRole("*");
-        resource.addScopeMapping(resourceUser, "*");
         return resource;
     }
 

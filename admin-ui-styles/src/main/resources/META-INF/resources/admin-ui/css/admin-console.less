@@ -74,19 +74,46 @@ body {
     }
 }
 
+.loading-backdrop {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1031;
+  background-color: #FFFFFF;
+  opacity: 0.75;
+}
+
 .loading {
-    
+    position: fixed;
+    z-index: 1032;
+    top: 50%;
+    left: 50%;
+    width: 6em;
+    height: 6em;
+    margin-top: -3em;
+    margin-left: -3em;
+    text-align: center;
+
+    img {
+        width: 3em;
+        height: 3em;
+        background-color: #f0f0f0;
+        display: inline-block;
+        padding: 0.3em;
+        border-radius: 0.4em;
+    }
+
     span {
         background: url(img/loader.gif) no-repeat center top;
-        position: fixed;
-        z-index: 1000;
-        top: 50%;
-        left: 50%;
+        font-size: 1.2em;
+        color: #666;
+        display: inline-block;
+        padding-top: 0.36363636363636em;
         margin-top: -2.27272727272727em;
         margin-left: -2.27272727272727em;
         padding-top: 2.90909090909091em;
-        font-size: 1.1em;
-        color: #666;
     }
 }
 
@@ -592,11 +619,11 @@ td.token-cell button {
     
     .modal-body {
         
-        p {
+        p span {
+            display: block;
             font-size: 1.1em;
-            
+        
             &.primary {
-                font-size: 1.1em;
                 font-weight: bold;
                 margin-bottom: 0.45454545454545em;
             }

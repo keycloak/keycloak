@@ -11,6 +11,7 @@ import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.entities.ApplicationEntity;
+import org.keycloak.models.jpa.entities.ApplicationUserRoleMappingEntity;
 import org.keycloak.models.jpa.entities.CredentialEntity;
 import org.keycloak.models.jpa.entities.OAuthClientEntity;
 import org.keycloak.models.jpa.entities.RealmEntity;
@@ -457,6 +458,25 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public boolean deleteUser(String name) {
+        TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUserByLoginName", UserEntity.class);
+        query.setParameter("loginName", name);
+        query.setParameter("realm", realm);
+        List<UserEntity> results = query.getResultList();
+        if (results.size() == 0) return false;
+
+        UserEntity user = results.get(0);
+
+        for (Class r : UserEntity.RELATIONSHIPS) {
+            em.createQuery("delete from " + r.getSimpleName() + " where user = :user").setParameter("user", user).executeUpdate();
+        }
+
+        em.remove(user);
+
+        return true;
+    }
+
+    @Override
     public List<String> getDefaultRoles() {
         Collection<RoleEntity> entities = realm.getDefaultRoles();
         List<String> roles = new ArrayList<String>();
@@ -548,8 +568,6 @@ public class RealmAdapter implements RealmModel {
         em.persist(applicationData);
         em.flush();
         ApplicationModel resource = new ApplicationAdapter(em, applicationData);
-        resource.addRole("*");
-        resource.addScopeMapping(new UserAdapter(user), "*");
         em.flush();
         return resource;
     }
@@ -643,13 +661,13 @@ public class RealmAdapter implements RealmModel {
         for (Map.Entry<String, String> entry : attributes.entrySet()) {
             String attribute = null;
             if (entry.getKey().equals(UserModel.LOGIN_NAME)) {
-                attribute = "loginName";
+                attribute = "lower(loginName)";
             } else if (entry.getKey().equalsIgnoreCase(UserModel.FIRST_NAME)) {
-                attribute = "firstName";
+                attribute = "lower(firstName)";
             } else if (entry.getKey().equalsIgnoreCase(UserModel.LAST_NAME)) {
-                attribute = "lastName";
+                attribute = "lower(lastName)";
             } else if (entry.getKey().equalsIgnoreCase(UserModel.EMAIL)) {
-                attribute = "email";
+                attribute = "lower(email)";
             }
             if (attribute == null) continue;
             if (first) {
@@ -658,9 +676,10 @@ public class RealmAdapter implements RealmModel {
             } else {
                 builder.append(" and ");
             }
-            builder.append(attribute).append("='").append(entry.getValue()).append("'");
+            builder.append(attribute).append(" like '%").append(entry.getValue().toLowerCase()).append("%'");
         }
-        TypedQuery<UserEntity> query = em.createQuery(builder.toString(), UserEntity.class);
+        String q = builder.toString();
+        TypedQuery<UserEntity> query = em.createQuery(q, UserEntity.class);
         List<UserEntity> results = query.getResultList();
         List<UserModel> users = new ArrayList<UserModel>();
         for (UserEntity entity : results) users.add(new UserAdapter(entity));

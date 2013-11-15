@@ -519,6 +519,16 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public boolean deleteUser(String name) {
+        User user = findPicketlinkUser(name);
+        if (user == null) {
+            return false;
+        }
+        getIdm().remove(user);
+        return true;
+    }
+
+    @Override
     public RoleAdapter getRole(String name) {
         Role role = SampleModel.getRole(getIdm(), name);
         if (role == null) return null;
@@ -615,8 +625,6 @@ public class RealmAdapter implements RealmModel {
         resourceRelationship.setApplication(applicationData.getName());
         getRelationshipManager().add(resourceRelationship);
         ApplicationModel resource = new ApplicationAdapter(applicationData, this, partitionManager);
-        resource.addRole("*");
-        resource.addScopeMapping(new UserAdapter(resourceUser, idm), "*");
         return resource;
     }
 

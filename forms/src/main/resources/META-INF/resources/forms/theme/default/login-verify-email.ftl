@@ -1,5 +1,5 @@
 <#import "template-login-action.ftl" as layout>
-<@layout.registrationLayout bodyClass="email"; section>
+<@layout.registrationLayout bodyClass="email" isSeparator=false forceSeparator=true; section>
     <#if section = "title">
 
     Email verification

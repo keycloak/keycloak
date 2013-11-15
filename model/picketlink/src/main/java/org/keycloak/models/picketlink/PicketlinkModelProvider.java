@@ -37,6 +37,11 @@ public class PicketlinkModelProvider implements ModelProvider {
         return new PicketlinkKeycloakSessionFactory(emf, buildPartitionManager());
     }
 
+    @Override
+    public String getId() {
+        return "picketlink";
+    }
+
     public static PartitionManager buildPartitionManager() {
         IdentityConfigurationBuilder builder = new IdentityConfigurationBuilder();
 

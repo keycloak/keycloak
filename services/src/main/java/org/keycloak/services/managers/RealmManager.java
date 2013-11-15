@@ -68,7 +68,6 @@ public class RealmManager {
     public RealmModel createRealm(String id, String name) {
         RealmModel realm = identitySession.createRealm(id, name);
         realm.setName(name);
-        realm.addRole(Constants.WILDCARD_ROLE);
         realm.addRole(Constants.APPLICATION_ROLE);
         realm.addRole(Constants.IDENTITY_REQUESTER_ROLE);
         return realm;
@@ -129,7 +128,7 @@ public class RealmManager {
     }
 
     private void enableAccountManagement(RealmModel realm) {
-        ApplicationModel application = realm.getApplicationById(Constants.ACCOUNT_APPLICATION);
+        ApplicationModel application = realm.getApplicationNameMap().get(Constants.ACCOUNT_APPLICATION);
         if (application == null) {
             application = realm.addApplication(Constants.ACCOUNT_APPLICATION);
             application.addDefaultRole(Constants.ACCOUNT_PROFILE_ROLE);
@@ -224,6 +223,14 @@ public class RealmManager {
             }
         }
 
+        if (rep.getClients() != null) {
+            for (UserRepresentation clientRep : rep.getClients()) {
+                UserModel client = createUser(newRealm, clientRep);
+                newRealm.grantRole(client, newRealm.getRole(Constants.IDENTITY_REQUESTER_ROLE));
+                userMap.put(client.getLoginName(), client);
+            }
+        }
+
         if (rep.getRoles() != null) {
             for (RoleRepresentation roleRep : rep.getRoles()) {
                 createRole(newRealm, roleRep);
@@ -237,7 +244,10 @@ public class RealmManager {
         }
 
         if (rep.getApplications() != null) {
-            createApplications(rep, newRealm);
+            Map<String, ApplicationModel> appMap = createApplications(rep, newRealm);
+            for (ApplicationModel app : appMap.values()) {
+                userMap.put(app.getApplicationUser().getLoginName(), app.getApplicationUser());
+            }
         }
 
         if (rep.getRoleMappings() != null) {
@@ -398,12 +408,15 @@ public class RealmManager {
     }
 
 
-    protected void createApplications(RealmRepresentation rep, RealmModel realm) {
+    protected Map<String, ApplicationModel> createApplications(RealmRepresentation rep, RealmModel realm) {
+        Map<String, ApplicationModel> appMap = new HashMap<String, ApplicationModel>();
         RoleModel loginRole = realm.getRole(Constants.APPLICATION_ROLE);
         ApplicationManager manager = new ApplicationManager(this);
         for (ApplicationRepresentation resourceRep : rep.getApplications()) {
-            manager.createApplication(realm, loginRole, resourceRep);
+            ApplicationModel app = manager.createApplication(realm, loginRole, resourceRep);
+            appMap.put(app.getName(), app);
         }
+        return appMap;
     }
 
     public static UserRepresentation toRepresentation(UserModel user) {

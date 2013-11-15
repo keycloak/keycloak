@@ -2,6 +2,7 @@ package org.keycloak.models.jpa.entities;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
@@ -17,7 +18,7 @@ import javax.persistence.NamedQuery;
 @Entity
 public class CredentialEntity {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     protected String id;
 
     protected String type;

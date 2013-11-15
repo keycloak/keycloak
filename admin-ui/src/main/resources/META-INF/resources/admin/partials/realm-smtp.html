@@ -6,6 +6,7 @@
                 <ul class="rcue-tabs">
                     <li><a href="#/realms/{{realm.id}}">General</a></li>
                     <li data-ng-show="realm.social"><a href="#/realms/{{realm.id}}/social-settings">Social</a></li>
+                    <li data-ng-show="realm.registrationAllowed"><a href="#/realms/{{realm.id}}/registration-settings">Registration</a></li>
                     <li><a href="#/realms/{{realm.id}}/roles">Roles</a></li>
                     <li><a href="#/realms/{{realm.id}}/required-credentials">Credentials</a></li>
                     <li><a href="#/realms/{{realm.id}}/token-settings">Token</a></li>
@@ -42,45 +43,18 @@
                         </div>
                         <div class="form-group clearfix">
                             <label for="smtpSSL" class="control-label">Enable SSL</label>
-                            <div class="onoffswitch">
-                                <input type="checkbox" data-ng-model="realm.smtpServer.ssl" class="onoffswitch-checkbox" name="smtpSSL" id="smtpSSL">
-                                <label for="smtpSSL" class="onoffswitch-label">
-                                        <span class="onoffswitch-inner">
-                                            <span class="onoffswitch-active">ON</span>
-                                            <span class="onoffswitch-inactive">OFF</span>
-                                        </span>
-                                    <span class="onoffswitch-switch"></span>
-                                </label>
-                            </div>
+                            <input ng-model="realm.smtpServer.ssl" name="smtpSSL" id="smtpSSL" onoffswitch />
                         </div>
                         <div class="form-group clearfix">
                             <label for="smtpStartTLS" class="control-label">Enable StartTLS</label>
-                            <div class="onoffswitch">
-                                <input type="checkbox" data-ng-model="realm.smtpServer.starttls" class="onoffswitch-checkbox" name="smtpStartTLS" id="smtpStartTLS">
-                                <label for="smtpStartTLS" class="onoffswitch-label">
-                                        <span class="onoffswitch-inner">
-                                            <span class="onoffswitch-active">ON</span>
-                                            <span class="onoffswitch-inactive">OFF</span>
-                                        </span>
-                                    <span class="onoffswitch-switch"></span>
-                                </label>
-                            </div>
+                            <input ng-model="realm.smtpServer.starttls" name="smtpStartTLS" id="smtpStartTLS" onoffswitch />
                         </div>
                     </fieldset>
                     <fieldset>
                         <legend collapsed><span class="text">Authentication</span></legend>
                         <div class="form-group clearfix">
                             <label for="smtpAuth" class="control-label">Enabled</label>
-                            <div class="onoffswitch">
-                                <input type="checkbox" data-ng-model="realm.smtpServer.auth" class="onoffswitch-checkbox" name="smtpAuth" id="smtpAuth">
-                                <label for="smtpAuth" class="onoffswitch-label">
-                                        <span class="onoffswitch-inner">
-                                            <span class="onoffswitch-active">ON</span>
-                                            <span class="onoffswitch-inactive">OFF</span>
-                                        </span>
-                                    <span class="onoffswitch-switch"></span>
-                                </label>
-                            </div>
+                            <input ng-model="realm.smtpServer.auth" name="smtpAuth" id="smtpAuth" onoffswitch />
                         </div>
                         <div class="form-group clearfix">
                             <label for="smtpUsername" class="control-label">Username <span class="required" ng-show="realm.smtpServer.auth">*</span></label>

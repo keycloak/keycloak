@@ -14,7 +14,6 @@ public class ApplicationRepresentation {
     protected String adminUrl;
     protected String baseUrl;
     protected boolean surrogateAuthRequired;
-    protected boolean useRealmMappings;
     protected boolean enabled;
     protected List<CredentialRepresentation> credentials;
     protected List<RoleRepresentation> roles;
@@ -140,14 +139,6 @@ public class ApplicationRepresentation {
         cred.setValue(value);
         credentials.add(cred);
         return this;
-    }
-
-    public boolean isUseRealmMappings() {
-        return useRealmMappings;
-    }
-
-    public void setUseRealmMappings(boolean useRealmMappings) {
-        this.useRealmMappings = useRealmMappings;
     }
 
     public List<String> getRedirectUris() {

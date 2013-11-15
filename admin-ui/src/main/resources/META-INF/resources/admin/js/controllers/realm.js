@@ -15,6 +15,7 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location
     $scope.$watch(function() {
         return $location.path();
     }, function() {
+        $scope.fragment = $location.path();
         $scope.path = $location.path().substring(1).split("/");
     });
 
@@ -73,6 +74,9 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $ht
         $scope.realm.requireSsl = !realm.sslNotRequired;
     }
 
+    $scope.social = $scope.realm.social;
+    $scope.registrationAllowed = $scope.realm.registrationAllowed;
+
     var oldCopy = angular.copy($scope.realm);
 
 
@@ -104,6 +108,8 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $ht
                         }
                         $location.url("/realms/" + id);
                         Notifications.success("The realm has been created.");
+                        $scope.social = $scope.realm.social;
+                        $scope.registrationAllowed = $scope.realm.registrationAllowed;
                     });
                 });
             } else {
@@ -122,6 +128,8 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $ht
                     });
                     $location.url("/realms/" + id);
                     Notifications.success("Your changes have been saved to the realm.");
+                    $scope.social = $scope.realm.social;
+                    $scope.registrationAllowed = $scope.realm.registrationAllowed;
                 });
             }
         } else {
@@ -158,7 +166,8 @@ module.controller('RealmRequiredCredentialsCtrl', function($scope, Realm, realm,
         id : realm.id, realm : realm.realm, social : realm.social,
         requiredCredentials : realm.requiredCredentials,
         requiredApplicationCredentials : realm.requiredApplicationCredentials,
-        requiredOAuthClientCredentials : realm.requiredOAuthClientCredentials
+        requiredOAuthClientCredentials : realm.requiredOAuthClientCredentials,
+        registrationAllowed : realm.registrationAllowed
     };
 
     $scope.userCredentialOptions = {
@@ -196,10 +205,156 @@ module.controller('RealmRequiredCredentialsCtrl', function($scope, Realm, realm,
     };
 });
 
+module.controller('RealmRegistrationCtrl', function ($scope, Realm, realm, applications, roles, Notifications, ApplicationRole, Application) {
+
+    console.log('RealmRegistrationCtrl');
+
+    $scope.realm = realm;
+
+    $scope.availableRealmRoles = [];
+    $scope.selectedRealmRoles = [];
+    $scope.selectedRealmDefRoles = [];
+
+    $scope.applications = angular.copy(applications);
+
+    $scope.availableAppRoles = [];
+    $scope.selectedAppRoles = [];
+    $scope.selectedAppDefRoles = [];
+
+    if (!$scope.realm.hasOwnProperty('defaultRoles') || $scope.realm.defaultRoles === null) {
+        $scope.realm.defaultRoles = [];
+    }
+
+    // Populate available roles. Available roles are neither already assigned or system roles.
+    for (var i = 0; i < roles.length; i++) {
+        var item = roles[i].name;
+
+        if ($scope.realm.defaultRoles.indexOf(item) < 0) {
+            $scope.availableRealmRoles.push(item);
+        }
+    }
+
+    $scope.addRealmDefaultRole = function () {
+
+        // Remove selected roles from the Available roles and add them to realm default roles (move from left to right).
+        for (var i = 0; i < $scope.selectedRealmRoles.length; i++) {
+            var selectedRole = $scope.selectedRealmRoles[i];
+
+            $scope.realm.defaultRoles.push(selectedRole);
+
+            var index = $scope.availableRealmRoles.indexOf(selectedRole);
+            if (index > -1) {
+                $scope.availableRealmRoles.splice(index, 1);
+            }
+        }
+
+        // Update/save the realm with new default roles.
+        Realm.update($scope.realm, function () {
+            Notifications.success("Realm default roles updated.");
+        });
+    };
+
+    $scope.deleteRealmDefaultRole = function () {
+
+        // Remove selected roles from the realm default roles and add them to available roles (move from right to left).
+        for (var i = 0; i < $scope.selectedRealmDefRoles.length; i++) {
+            $scope.availableRealmRoles.push($scope.selectedRealmDefRoles[i]);
+
+            var index = $scope.realm.defaultRoles.indexOf($scope.selectedRealmDefRoles[i]);
+            if (index > -1) {
+                $scope.realm.defaultRoles.splice(index, 1);
+            }
+        }
+
+        // Update/save the realm with new default roles.
+        //var realmCopy = angular.copy($scope.realm);
+        Realm.update($scope.realm, function () {
+            Notifications.success("Realm default roles updated.");
+        });
+    };
+
+    $scope.changeApplication = function () {
+
+        $scope.selectedAppRoles = [];
+        $scope.selectedAppDefRoles = [];
+
+        // Populate available roles for selected application
+        var appDefaultRoles = ApplicationRole.query({realm: $scope.realm.id, application: $scope.application.id}, function () {
+
+            if (!$scope.application.hasOwnProperty('defaultRoles') || $scope.application.defaultRoles === null) {
+                $scope.application.defaultRoles = [];
+            }
+
+            $scope.availableAppRoles = [];
+
+            for (var i = 0; i < appDefaultRoles.length; i++) {
+                var roleName = appDefaultRoles[i].name;
+
+                if (systemRoles.indexOf(roleName) < 0 && $scope.application.defaultRoles.indexOf(roleName) < 0) {
+                    $scope.availableAppRoles.push(roleName);
+                }
+            }
+        });
+    };
+
+    $scope.addAppDefaultRole = function () {
+
+        // Remove selected roles from the app available roles and add them to app default roles (move from left to right).
+        for (var i = 0; i < $scope.selectedAppRoles.length; i++) {
+            var role = $scope.selectedAppRoles[i];
+
+            var idx = $scope.application.defaultRoles.indexOf(role);
+            if (idx < 0) {
+                $scope.application.defaultRoles.push(role);
+            }
+
+            idx = $scope.availableAppRoles.indexOf(role);
+
+            if (idx != -1) {
+                $scope.availableAppRoles.splice(idx, 1);
+            }
+        }
+
+        // Update/save the selected application with new default roles.
+        Application.update({
+            realm: $scope.realm.id,
+            id: $scope.application.id
+        }, $scope.application, function () {
+            Notifications.success("Your changes have been saved to the application.");
+        });
+    };
+
+    $scope.rmAppDefaultRole = function () {
+
+        // Remove selected roles from the app default roles and add them to app available roles (move from right to left).
+        for (var i = 0; i < $scope.selectedAppDefRoles.length; i++) {
+            var role = $scope.selectedAppDefRoles[i];
+            var idx = $scope.application.defaultRoles.indexOf(role);
+            if (idx != -1) {
+                $scope.application.defaultRoles.splice(idx, 1);
+            }
+            idx = $scope.availableAppRoles.indexOf(role);
+            if (idx < 0) {
+                $scope.availableAppRoles.push(role);
+            }
+        }
+
+        // Update/save the selected application with new default roles.
+        Application.update({
+            realm: $scope.realm.id,
+            id: $scope.application.id
+        }, $scope.application, function () {
+            Notifications.success("Your changes have been saved to the application.");
+        });
+    };
+
+});
+
 module.controller('RealmSocialCtrl', function($scope, realm, Realm, $location, Notifications) {
     console.log('RealmSocialCtrl');
 
-    $scope.realm = { id : realm.id, realm : realm.realm, social : realm.social, tokenLifespan : realm.tokenLifespan,  accessCodeLifespan : realm.accessCodeLifespan };
+    $scope.realm = { id : realm.id, realm : realm.realm, social : realm.social, registrationAllowed : realm.registrationAllowed,
+        tokenLifespan : realm.tokenLifespan,  accessCodeLifespan : realm.accessCodeLifespan };
 
     if (!realm["socialProviders"]){
         $scope.realm["socialProviders"] = {};
@@ -207,8 +362,13 @@ module.controller('RealmSocialCtrl', function($scope, realm, Realm, $location, N
         $scope.realm["socialProviders"] = realm.socialProviders;
     }
 
-    // Hardcoded provider list
-    $scope.availableProviders = [ "google", "facebook", "twitter"];
+    // Hardcoded provider list in form of map providerId:providerName
+    $scope.allProviders = { google:"Google", facebook:"Facebook", twitter:"Twitter" };
+    $scope.availableProviders = [];
+
+    for (var provider in $scope.allProviders){
+        $scope.availableProviders.push(provider);
+    }
 
     var oldCopy = angular.copy($scope.realm);
     $scope.changed = false;
@@ -226,6 +386,9 @@ module.controller('RealmSocialCtrl', function($scope, realm, Realm, $location, N
 
     // Fill in configured providers
     var initSocial = function() {
+        // postSaveProviders is used for remembering providers which were already validated after pressing the save button
+        // thanks to this it's easy to distinguish between newly added fields and those already tried to be saved
+        $scope.postSaveProviders = [];
         $scope.unsetProviders = [];
         $scope.configuredProviders = [];
 
@@ -241,7 +404,7 @@ module.controller('RealmSocialCtrl', function($scope, realm, Realm, $location, N
 
         // If no providers are already configured, you can add any of them
         if ($scope.configuredProviders.length == 0){
-            $scope.unsetProviders = $scope.availableProviders;
+            $scope.unsetProviders = $scope.availableProviders.slice(0);
         } else {
             for (var i = 0; i < $scope.availableProviders.length; i++){
                 var providerId = $scope.availableProviders[i];
@@ -270,6 +433,13 @@ module.controller('RealmSocialCtrl', function($scope, realm, Realm, $location, N
         delete $scope.realm.socialProviders[pId+".key"];
         delete $scope.realm.socialProviders[pId+".secret"];
         $scope.configuredProviders.remove($scope.configuredProviders.indexOf(pId));
+
+        // Removing from postSaveProviders, so the empty fields are not red if the provider is added to the list again
+        var rId = $scope.postSaveProviders.indexOf(pId);
+        if (rId > -1){
+            $scope.postSaveProviders.remove(rId)
+        }
+
         $scope.unsetProviders.push(pId);
     };
 
@@ -280,8 +450,6 @@ module.controller('RealmSocialCtrl', function($scope, realm, Realm, $location, N
     }, true);
 
     $scope.save = function() {
-        $scope.saveClicked = true;
-
         if ($scope.realmForm.$valid) {
             var realmCopy = angular.copy($scope.realm);
             realmCopy.social = true;
@@ -289,10 +457,12 @@ module.controller('RealmSocialCtrl', function($scope, realm, Realm, $location, N
             Realm.update(realmCopy, function () {
                 $location.url("/realms/" + realm.id + "/social-settings");
                 Notifications.success("Saved changes to realm");
+                oldCopy = realmCopy;
             });
         } else {
             $scope.realmForm.showErrors = true;
             Notifications.error("Some required fields are missing values.");
+            $scope.postSaveProviders = $scope.configuredProviders.slice(0);
         }
     };
 
@@ -317,7 +487,10 @@ module.controller('RealmSocialCtrl', function($scope, realm, Realm, $location, N
 module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, $location, Dialog, Notifications) {
     console.log('RealmTokenDetailCtrl');
 
-    $scope.realm = { id : realm.id, realm : realm.realm, social : realm.social, tokenLifespan : realm.tokenLifespan,  accessCodeLifespan : realm.accessCodeLifespan ,  accessCodeLifespanUserAction : realm.accessCodeLifespanUserAction  };
+    $scope.realm = { id : realm.id, realm : realm.realm, social : realm.social, registrationAllowed : realm.registrationAllowed,
+        tokenLifespan : realm.tokenLifespan,  accessCodeLifespan : realm.accessCodeLifespan,
+        accessCodeLifespanUserAction : realm.accessCodeLifespanUserAction  };
+
     $scope.realm.tokenLifespanUnit = 'Seconds';
     $scope.realm.accessCodeLifespanUnit = 'Seconds';
     $scope.realm.accessCodeLifespanUserActionUnit = 'Seconds';
@@ -376,6 +549,7 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
 });
 
 module.controller('RoleListCtrl', function($scope, $location, realm, roles) {
+
     $scope.realm = realm;
     $scope.roles = roles;
 
@@ -456,7 +630,7 @@ module.controller('RoleDetailCtrl', function($scope, realm, role, Role, $locatio
 
 module.controller('RealmSMTPSettingsCtrl', function($scope, Current, Realm, realm, $http, $location, Dialog, Notifications) {
     $scope.realm = {
-        id : realm.id, realm : realm.realm, social : realm.social,
+        id : realm.id, realm : realm.realm, social : realm.social, registrationAllowed : realm.registrationAllowed,
         smtpServer: realm.smtpServer
     };
 
