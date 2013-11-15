@@ -22,8 +22,9 @@ import org.keycloak.RealmConfiguration;
 import org.keycloak.ResourceMetadata;
 import org.keycloak.SkeletonKeyPrincipal;
 import org.keycloak.SkeletonKeySession;
-import org.keycloak.adapters.as7.config.ManagedResourceConfig;
-import org.keycloak.adapters.as7.config.ManagedResourceConfigLoader;
+import org.keycloak.adapters.as7.config.CatalinaManagedResourceConfigLoader;
+import org.keycloak.adapters.config.ManagedResourceConfig;
+import org.keycloak.adapters.config.ManagedResourceConfigLoader;
 import org.keycloak.representations.SkeletonKeyToken;
 import org.keycloak.representations.idm.admin.LogoutAction;
 
@@ -66,32 +67,12 @@ public class OAuthManagedResourceValve extends FormAuthenticator implements Life
     }
 
     protected void init() {
-        ManagedResourceConfigLoader managedResourceConfigLoader = new ManagedResourceConfigLoader(context);
+        ManagedResourceConfigLoader managedResourceConfigLoader = new CatalinaManagedResourceConfigLoader(context);
         managedResourceConfigLoader.init(true);
         resourceMetadata = managedResourceConfigLoader.getResourceMetadata();
         remoteSkeletonKeyConfig = managedResourceConfigLoader.getRemoteSkeletonKeyConfig();
 
-        realmConfiguration = new RealmConfiguration();
-        String authUrl = remoteSkeletonKeyConfig.getAuthUrl();
-        if (authUrl == null) {
-            throw new RuntimeException("You must specify auth-url");
-        }
-        String tokenUrl = remoteSkeletonKeyConfig.getCodeUrl();
-        if (tokenUrl == null) {
-            throw new RuntimeException("You mut specify code-url");
-        }
-        realmConfiguration.setMetadata(resourceMetadata);
-        realmConfiguration.setSslRequired(!remoteSkeletonKeyConfig.isSslNotRequired());
-
-        for (Map.Entry<String, String> entry : managedResourceConfigLoader.getRemoteSkeletonKeyConfig().getCredentials().entrySet()) {
-            realmConfiguration.getResourceCredentials().param(entry.getKey(), entry.getValue());
-        }
-
-        ResteasyClient client = managedResourceConfigLoader.getClient();
-
-        realmConfiguration.setClient(client);
-        realmConfiguration.setAuthUrl(UriBuilder.fromUri(authUrl).queryParam("client_id", resourceMetadata.getResourceName()));
-        realmConfiguration.setCodeUrl(client.target(tokenUrl));
+        realmConfiguration = managedResourceConfigLoader.getRealmConfiguration();
         AuthenticatedActionsValve actions = new AuthenticatedActionsValve(remoteSkeletonKeyConfig, getNext(), getContainer(), getController());
         setNext(actions);
     }

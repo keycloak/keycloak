@@ -16,6 +16,7 @@
 
     <modules>
         <module>as7-eap6/adapter</module>
+        <module>undertow</module>
         <!-- <module>as7-eap6/jboss-modules</module> -->
     </modules>
 </project>

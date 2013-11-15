@@ -1,4 +1,4 @@
-package org.keycloak.adapters.as7.config;
+package org.keycloak.adapters.config;
 
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.annotate.JsonPropertyOrder;
@@ -59,6 +59,8 @@ public class ManagedResourceConfig {
     protected String corsAllowedMethods;
     @JsonProperty("expose-token")
     protected boolean exposeToken;
+    @JsonProperty("bearer-only")
+    protected boolean bearerOnly;
 
     public boolean isUseResourceRoleMappings() {
         return useResourceRoleMappings;
@@ -238,5 +240,13 @@ public class ManagedResourceConfig {
 
     public void setExposeToken(boolean exposeToken) {
         this.exposeToken = exposeToken;
+    }
+
+    public boolean isBearerOnly() {
+        return bearerOnly;
+    }
+
+    public void setBearerOnly(boolean bearerOnly) {
+        this.bearerOnly = bearerOnly;
     }
 }

@@ -26,6 +26,7 @@ import io.undertow.Undertow.Builder;
 import io.undertow.server.handlers.resource.FileResource;
 import io.undertow.server.handlers.resource.FileResourceManager;
 import io.undertow.server.handlers.resource.Resource;
+import io.undertow.server.handlers.resource.ResourceChangeListener;
 import io.undertow.server.handlers.resource.ResourceManager;
 import io.undertow.server.handlers.resource.URLResource;
 import io.undertow.servlet.Servlets;
@@ -325,6 +326,26 @@ public class KeycloakServer {
                 }
                 return new FileResource(file, new FileResourceManager(file.getParentFile(), 1), path);
             }
+        }
+
+        @Override
+        public boolean isResourceChangeListenerSupported() {
+            return false;  //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public void registerResourceChangeListener(ResourceChangeListener resourceChangeListener) {
+            //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public void removeResourceChangeListener(ResourceChangeListener resourceChangeListener) {
+            //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public void close() throws IOException {
+            //To change body of implemented methods use File | Settings | File Templates.
         }
     }
 

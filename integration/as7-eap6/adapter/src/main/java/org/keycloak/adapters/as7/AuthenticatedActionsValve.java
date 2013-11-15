@@ -8,7 +8,7 @@ import org.apache.catalina.connector.Response;
 import org.apache.catalina.valves.ValveBase;
 import org.jboss.logging.Logger;
 import org.keycloak.SkeletonKeySession;
-import org.keycloak.adapters.as7.config.ManagedResourceConfig;
+import org.keycloak.adapters.config.ManagedResourceConfig;
 import org.keycloak.representations.SkeletonKeyToken;
 
 import javax.management.ObjectName;
@@ -66,6 +66,7 @@ public class AuthenticatedActionsValve extends ValveBase {
     protected void queryBearerToken(Request request, Response response, SkeletonKeySession session) throws IOException, ServletException {
         log.debugv("queryBearerToken {0}",request.getRequestURI());
         if (abortTokenResponse(request, response, session)) return;
+        response.setStatus(200);
         response.setContentType("text/plain");
         response.getOutputStream().write(session.getTokenString().getBytes());
         response.getOutputStream().flush();

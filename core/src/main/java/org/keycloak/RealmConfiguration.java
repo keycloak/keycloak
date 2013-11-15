@@ -2,6 +2,7 @@ package org.keycloak;
 
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
+import org.keycloak.adapters.config.ManagedResourceConfig;
 
 import javax.ws.rs.core.Form;
 import javax.ws.rs.core.UriBuilder;
@@ -18,6 +19,12 @@ public class RealmConfiguration {
     protected Form resourceCredentials = new Form();
     protected boolean sslRequired = true;
     protected String stateCookieName = "OAuth_Token_Request_State";
+
+    public RealmConfiguration() {
+    }
+
+    public RealmConfiguration(ManagedResourceConfig config) {
+    }
 
     public ResourceMetadata getMetadata() {
         return metadata;

@@ -1,60 +1,57 @@
-package org.keycloak.adapters.as7.config;
+package org.keycloak.adapters.config;
 
-import org.apache.catalina.Context;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
-import org.jboss.logging.Logger;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.plugins.providers.RegisterBuiltin;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.EnvUtil;
 import org.keycloak.PemUtils;
+import org.keycloak.RealmConfiguration;
 import org.keycloak.ResourceMetadata;
 import org.keycloak.representations.idm.PublishedRealmRepresentation;
 
+import javax.ws.rs.core.UriBuilder;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.KeyStore;
 import java.security.PublicKey;
+import java.util.Map;
 
+/**
+ * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @version $Revision: 1 $
+ */
 public class ManagedResourceConfigLoader {
-    static final Logger log = Logger.getLogger(ManagedResourceConfigLoader.class);
     protected ManagedResourceConfig remoteSkeletonKeyConfig;
     protected ResourceMetadata resourceMetadata;
     protected KeyStore clientCertKeystore;
     protected KeyStore truststore;
     protected ResteasyClient client;
+    protected RealmConfiguration realmConfiguration;
 
-    public ManagedResourceConfigLoader(Context context) {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.setSerializationInclusion(JsonSerialize.Inclusion.NON_DEFAULT);
-        InputStream is = null;
-        String path = context.getServletContext().getInitParameter("keycloak.config.file");
-        if (path == null) {
-            is = context.getServletContext().getResourceAsStream("/WEB-INF/resteasy-oauth.json");
-        } else {
-            try {
-                is = new FileInputStream(path);
-            } catch (FileNotFoundException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        remoteSkeletonKeyConfig = null;
-        try {
-            remoteSkeletonKeyConfig = mapper.readValue(is, ManagedResourceConfig.class);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    public ManagedResourceConfigLoader() {
+    }
+
+    public ManagedResourceConfigLoader(InputStream is) {
+        loadConfig(is);
+    }
+
+
+    public static KeyStore loadKeyStore(String filename, String password) throws Exception {
+        KeyStore trustStore = KeyStore.getInstance(KeyStore
+                .getDefaultType());
+        File truststoreFile = new File(filename);
+        FileInputStream trustStream = new FileInputStream(truststoreFile);
+        trustStore.load(trustStream, password.toCharArray());
+        trustStream.close();
+        return trustStore;
     }
 
     public void init(boolean setupClient) {
-
-
-
         String truststorePath = remoteSkeletonKeyConfig.getTruststore();
         if (truststorePath != null) {
             truststorePath = EnvUtil.replace(truststorePath);
@@ -127,6 +124,31 @@ public class ManagedResourceConfigLoader {
         resourceMetadata.setClientKeyPassword(clientKeyPassword);
         resourceMetadata.setTruststore(this.truststore);
 
+        if (!setupClient || remoteSkeletonKeyConfig.isBearerOnly()) return;
+
+        realmConfiguration = new RealmConfiguration();
+        String authUrl = remoteSkeletonKeyConfig.getAuthUrl();
+        if (authUrl == null) {
+            throw new RuntimeException("You must specify auth-url");
+        }
+        String tokenUrl = remoteSkeletonKeyConfig.getCodeUrl();
+        if (tokenUrl == null) {
+            throw new RuntimeException("You mut specify code-url");
+        }
+        realmConfiguration.setMetadata(resourceMetadata);
+        realmConfiguration.setSslRequired(!remoteSkeletonKeyConfig.isSslNotRequired());
+
+        for (Map.Entry<String, String> entry : getRemoteSkeletonKeyConfig().getCredentials().entrySet()) {
+            realmConfiguration.getResourceCredentials().param(entry.getKey(), entry.getValue());
+        }
+
+        ResteasyClient client = getClient();
+
+        realmConfiguration.setClient(client);
+        realmConfiguration.setAuthUrl(UriBuilder.fromUri(authUrl).queryParam("client_id", resourceMetadata.getResourceName()));
+        realmConfiguration.setCodeUrl(client.target(tokenUrl));
+
+
     }
 
     protected void initClient() {
@@ -158,16 +180,6 @@ public class ManagedResourceConfigLoader {
         client = builder.build();
     }
 
-    public static KeyStore loadKeyStore(String filename, String password) throws Exception {
-        KeyStore trustStore = KeyStore.getInstance(KeyStore
-                .getDefaultType());
-        File truststoreFile = new File(filename);
-        FileInputStream trustStream = new FileInputStream(truststoreFile);
-        trustStore.load(trustStream, password.toCharArray());
-        trustStream.close();
-        return trustStore;
-    }
-
     public ManagedResourceConfig getRemoteSkeletonKeyConfig() {
         return remoteSkeletonKeyConfig;
     }
@@ -186,5 +198,20 @@ public class ManagedResourceConfigLoader {
 
     public KeyStore getTruststore() {
         return truststore;
+    }
+
+    public RealmConfiguration getRealmConfiguration() {
+        return realmConfiguration;
+    }
+
+    protected void loadConfig(InputStream is) {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.setSerializationInclusion(JsonSerialize.Inclusion.NON_DEFAULT);
+        remoteSkeletonKeyConfig = null;
+        try {
+            remoteSkeletonKeyConfig = mapper.readValue(is, ManagedResourceConfig.class);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

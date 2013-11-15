@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+
+<body>
+
+<script type="text/javascript">
+    console.log('here!!!!!');
+    var xhr1 = new XMLHttpRequest();
+    xhr1.open('GET', '/customer-portal/K_QUERY_BEARER_TOKEN');
+    xhr1.onreadystatechange = function () {
+        console.log('got here');
+        if (this.status == 200 && this.readyState == 4) {
+            var token = this.responseText;
+            console.log('Access token: ' + token);
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', 'http://localhost:8080/database/customers');
+            xhr.withCredentials = true;
+            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+            xhr.onreadystatechange = function () {
+                console.log('got auth success');
+                if (this.status == 200 && this.readyState == 4) {
+                    console.log('db response: ' + this.responseText);
+                } else if (this.status != 200) {
+                    console.log('there was an error:' + this.status);
+                }
+            };
+            xhr.send();
+        } else if (this.status != 200) {
+            console.log('there was an error on get bearer token:' + this.status);
+        }
+    };
+    xhr1.send();
+
+
+</script>
+
+</body>
+</html>
