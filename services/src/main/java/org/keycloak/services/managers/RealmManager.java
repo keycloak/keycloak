@@ -129,7 +129,7 @@ public class RealmManager {
     }
 
     private void enableAccountManagement(RealmModel realm) {
-        ApplicationModel application = realm.getApplicationById(Constants.ACCOUNT_APPLICATION);
+        ApplicationModel application = realm.getApplicationNameMap().get(Constants.ACCOUNT_APPLICATION);
         if (application == null) {
             application = realm.addApplication(Constants.ACCOUNT_APPLICATION);
             application.addDefaultRole(Constants.ACCOUNT_PROFILE_ROLE);
