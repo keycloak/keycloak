@@ -11,6 +11,7 @@ import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.entities.ApplicationEntity;
+import org.keycloak.models.jpa.entities.ApplicationUserRoleMappingEntity;
 import org.keycloak.models.jpa.entities.CredentialEntity;
 import org.keycloak.models.jpa.entities.OAuthClientEntity;
 import org.keycloak.models.jpa.entities.RealmEntity;
@@ -454,6 +455,25 @@ public class RealmAdapter implements RealmModel {
         em.persist(entity);
         em.flush();
         return new UserAdapter(entity);
+    }
+
+    @Override
+    public boolean deleteUser(String name) {
+        TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUserByLoginName", UserEntity.class);
+        query.setParameter("loginName", name);
+        query.setParameter("realm", realm);
+        List<UserEntity> results = query.getResultList();
+        if (results.size() == 0) return false;
+
+        UserEntity user = results.get(0);
+
+        for (Class r : UserEntity.RELATIONSHIPS) {
+            em.createQuery("delete from " + r.getSimpleName() + " where user = :user").setParameter("user", user).executeUpdate();
+        }
+
+        em.remove(user);
+
+        return true;
     }
 
     @Override

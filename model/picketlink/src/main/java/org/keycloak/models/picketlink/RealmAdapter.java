@@ -519,6 +519,16 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public boolean deleteUser(String name) {
+        User user = findPicketlinkUser(name);
+        if (user == null) {
+            return false;
+        }
+        getIdm().remove(user);
+        return true;
+    }
+
+    @Override
     public RoleAdapter getRole(String name) {
         Role role = SampleModel.getRole(getIdm(), name);
         if (role == null) return null;

@@ -4,11 +4,13 @@ import org.junit.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -171,6 +173,34 @@ public class AdapterTest extends AbstractKeycloakTest {
         Assert.assertTrue(realmModel.hasRole(oauth.getOAuthAgent(), Constants.IDENTITY_REQUESTER_ROLE));
 
 
+    }
+
+    @Test
+    public void deleteUser() throws Exception {
+        test1CreateRealm();
+
+        UserModel user = realmModel.addUser("bburke");
+        user.setAttribute("attr1", "val1");
+        user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+
+        RoleModel testRole = realmModel.addRole("test");
+        realmModel.grantRole(user, testRole);
+
+        ApplicationModel app = realmModel.addApplication("test-app");
+        RoleModel appRole = app.addRole("test");
+        app.grantRole(user, appRole);
+
+        SocialLinkModel socialLink = new SocialLinkModel("google", user.getLoginName());
+        realmModel.addSocialLink(user, socialLink);
+
+        UserCredentialModel cred = new UserCredentialModel();
+        cred.setType(CredentialRepresentation.PASSWORD);
+        cred.setValue("password");
+        realmModel.updateCredential(user, cred);
+
+        Assert.assertTrue(realmModel.deleteUser("bburke"));
+        Assert.assertFalse(realmModel.deleteUser("bburke"));
+        Assert.assertNull(realmModel.getUser("bburke"));
     }
 
     @Test

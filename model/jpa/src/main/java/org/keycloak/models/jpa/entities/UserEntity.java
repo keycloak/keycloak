@@ -2,6 +2,7 @@ package org.keycloak.models.jpa.entities;
 
 import org.keycloak.models.UserModel;
 
+import javax.persistence.CascadeType;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
@@ -33,6 +34,9 @@ import java.util.Set;
 })
 @Entity
 public class UserEntity {
+
+    public static final Class[] RELATIONSHIPS = new Class[] { ApplicationUserRoleMappingEntity.class, RealmUserRoleMappingEntity.class, SocialLinkEntity.class };
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     protected String id;
@@ -66,7 +70,7 @@ public class UserEntity {
     @CollectionTable
     protected Set<String> redirectUris = new HashSet<String>();
 
-    @OneToMany
+    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true)
     protected Collection<CredentialEntity> credentials = new ArrayList<CredentialEntity>();
 
     public String getId() {

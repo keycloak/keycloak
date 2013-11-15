@@ -107,6 +107,13 @@ public class UsersResource {
         return new RealmManager(session).toRepresentation(user);
     }
 
+    @Path("{username}")
+    @DELETE
+    @NoCache
+    public void deleteUser(final @PathParam("username") String username) {
+        realm.deleteUser(username);
+    }
+
     @GET
     @NoCache
     @Produces("application/json")
