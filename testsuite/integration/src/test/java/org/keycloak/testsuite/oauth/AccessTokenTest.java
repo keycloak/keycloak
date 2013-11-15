@@ -63,7 +63,7 @@ public class AccessTokenTest {
 
         Assert.assertEquals(200, response.getStatusCode());
 
-        Assert.assertTrue(response.getExpiresIn() <= 300 && response.getExpiresIn() >= 250);
+        Assert.assertTrue(response.getExpiresIn() <= 600 && response.getExpiresIn() >= 550);
 
         Assert.assertEquals("bearer", response.getTokenType());
 

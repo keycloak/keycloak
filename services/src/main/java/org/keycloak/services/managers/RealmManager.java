@@ -224,6 +224,14 @@ public class RealmManager {
             }
         }
 
+        if (rep.getClients() != null) {
+            for (UserRepresentation clientRep : rep.getClients()) {
+                UserModel client = createUser(newRealm, clientRep);
+                newRealm.grantRole(client, newRealm.getRole(Constants.IDENTITY_REQUESTER_ROLE));
+                userMap.put(client.getLoginName(), client);
+            }
+        }
+
         if (rep.getRoles() != null) {
             for (RoleRepresentation roleRep : rep.getRoles()) {
                 createRole(newRealm, roleRep);

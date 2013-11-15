@@ -2,8 +2,8 @@
     "id": "test",
     "realm": "test",
     "enabled": true,
-    "tokenLifespan": 300,
-    "accessCodeLifespan": 10,
+    "tokenLifespan": 600,
+    "accessCodeLifespan": 600,
     "accessCodeLifespanUserAction": 600,
     "sslNotRequired": true,
     "cookieLoginAllowed": true,
@@ -30,7 +30,9 @@
                 { "type" : "password",
                     "value" : "password" }
             ]
-        },
+        }
+    ],
+    "clients" : [
         {
             "username" : "third-party",
             "enabled": true,
@@ -54,10 +56,6 @@
         {
             "username": "test-user@localhost",
             "roles": ["user"]
-        },
-        {
-            "username": "third-party",
-            "roles": ["KEYCLOAK_IDENTITY_REQUESTER"]
         }
     ],
     "scopeMappings": [

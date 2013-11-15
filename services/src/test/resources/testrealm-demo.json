@@ -23,7 +23,9 @@
                 { "type" : "Password",
                     "value" : "password" }
             ]
-        },
+        }
+    ],
+    "clients" : [
         {
             "username" : "third-party",
             "enabled": true,
@@ -47,10 +49,6 @@
         {
             "username": "bburke@redhat.com",
             "roles": ["user"]
-        },
-        {
-            "username": "third-party",
-            "roles": ["KEYCLOAK_IDENTITY_REQUESTER"]
         }
     ],
     "scopeMappings": [

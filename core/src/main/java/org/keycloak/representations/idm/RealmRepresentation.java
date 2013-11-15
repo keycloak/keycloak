@@ -33,6 +33,7 @@ public class RealmRepresentation {
     protected Set<String> requiredApplicationCredentials;
     protected Set<String> requiredOAuthClientCredentials;
     protected List<UserRepresentation> users;
+    protected List<UserRepresentation> clients;
     protected List<UserRoleMappingRepresentation> roleMappings;
     protected List<ScopeMappingRepresentation> scopeMappings;
     protected List<SocialMappingRepresentation> socialMappings;
@@ -68,6 +69,10 @@ public class RealmRepresentation {
         return users;
     }
 
+    public List<UserRepresentation> getClients() {
+        return clients;
+    }
+
     public List<ApplicationRepresentation> getApplications() {
         return applications;
     }
@@ -82,6 +87,10 @@ public class RealmRepresentation {
 
     public void setUsers(List<UserRepresentation> users) {
         this.users = users;
+    }
+
+    public void setClients(List<UserRepresentation> clients) {
+        this.clients = clients;
     }
 
     public UserRepresentation user(String username) {

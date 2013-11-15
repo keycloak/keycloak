@@ -3,6 +3,7 @@ package org.keycloak.services.resources.admin;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.logging.Logger;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -98,7 +99,7 @@ public class UsersResource {
     @Produces("application/json")
     public UserRepresentation getUser(final @PathParam("username") String username) {
         UserModel user = realm.getUser(username);
-        if (user == null) {
+        if (user == null || !isUser(user)) {
             throw new NotFoundException();
         }
         return new RealmManager(session).toRepresentation(user);
@@ -117,7 +118,9 @@ public class UsersResource {
         if (search != null) {
             List<UserModel> userModels = manager.searchUsers(search, realm);
             for (UserModel user : userModels) {
-                results.add(manager.toRepresentation(user));
+                if (isUser(user)) {
+                    results.add(manager.toRepresentation(user));
+                }
             }
         } else {
             Map<String, String> attributes = new HashMap<String, String>();
@@ -140,6 +143,10 @@ public class UsersResource {
 
         }
         return results;
+    }
+
+    private boolean isUser(UserModel user) {
+        return !realm.hasRole(user, realm.getRole(Constants.IDENTITY_REQUESTER_ROLE)) && !realm.hasRole(user, realm.getRole(Constants.APPLICATION_ROLE));
     }
 
     @Path("{username}/role-mappings")

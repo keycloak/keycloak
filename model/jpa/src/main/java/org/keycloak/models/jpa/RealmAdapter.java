@@ -661,7 +661,6 @@ public class RealmAdapter implements RealmModel {
             builder.append(attribute).append(" like '%").append(entry.getValue().toLowerCase()).append("%'");
         }
         String q = builder.toString();
-        System.out.println(q);
         TypedQuery<UserEntity> query = em.createQuery(q, UserEntity.class);
         List<UserEntity> results = query.getResultList();
         List<UserModel> users = new ArrayList<UserModel>();
