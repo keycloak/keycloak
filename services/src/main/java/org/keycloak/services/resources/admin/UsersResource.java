@@ -67,8 +67,10 @@ public class UsersResource {
         user.setEmail(rep.getEmail());
         user.setFirstName(rep.getFirstName());
         user.setLastName(rep.getLastName());
-        for (Map.Entry<String, String> attr : rep.getAttributes().entrySet()) {
-            user.setAttribute(attr.getKey(), attr.getValue());
+        if (rep.getAttributes() != null) {
+            for (Map.Entry<String, String> attr : rep.getAttributes().entrySet()) {
+                user.setAttribute(attr.getKey(), attr.getValue());
+            }
         }
     }
 
