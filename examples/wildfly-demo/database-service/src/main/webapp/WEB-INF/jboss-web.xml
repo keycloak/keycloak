@@ -1,0 +1,5 @@
+<jboss-web>
+    <valve>
+        <class-name>org.keycloak.adapters.as7.BearerTokenAuthenticatorValve</class-name>
+    </valve>
+</jboss-web>

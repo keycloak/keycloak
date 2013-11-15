@@ -12,8 +12,9 @@ import org.apache.catalina.deploy.LoginConfig;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.ResourceMetadata;
-import org.keycloak.adapters.as7.config.ManagedResourceConfig;
-import org.keycloak.adapters.as7.config.ManagedResourceConfigLoader;
+import org.keycloak.adapters.as7.config.CatalinaManagedResourceConfigLoader;
+import org.keycloak.adapters.config.ManagedResourceConfig;
+import org.keycloak.adapters.config.ManagedResourceConfigLoader;
 
 import javax.security.auth.login.LoginException;
 import javax.servlet.ServletException;
@@ -45,7 +46,7 @@ public class BearerTokenAuthenticatorValve extends AuthenticatorBase implements 
     }
 
     protected void init() {
-        ManagedResourceConfigLoader managedResourceConfigLoader = new ManagedResourceConfigLoader(context);
+        ManagedResourceConfigLoader managedResourceConfigLoader = new CatalinaManagedResourceConfigLoader(context);
         remoteSkeletonKeyConfig = managedResourceConfigLoader.getRemoteSkeletonKeyConfig();
         managedResourceConfigLoader.init(false);
         resourceMetadata = managedResourceConfigLoader.getResourceMetadata();
