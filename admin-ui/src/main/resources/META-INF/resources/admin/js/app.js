@@ -320,7 +320,7 @@ module.factory('errorInterceptor', function($q, $window, $rootScope, $location, 
             if (response.status == 401) {
                 console.log('session timeout?');
                 Auth.loggedIn = false;
-                $location.url('/');
+                window.location = '/auth-server/rest/saas/login?path=' + $location.path();
             } else {
                 $rootScope.httpProviderError = response.status;
             }

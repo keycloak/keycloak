@@ -15,6 +15,7 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location
     $scope.$watch(function() {
         return $location.path();
     }, function() {
+        $scope.fragment = $location.path();
         $scope.path = $location.path().substring(1).split("/");
     });
 

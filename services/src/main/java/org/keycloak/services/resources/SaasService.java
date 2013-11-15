@@ -263,7 +263,7 @@ public class SaasService {
     @Path("login")
     @GET
     @NoCache
-    public Response loginPage() {
+    public Response loginPage(@QueryParam("path") String path) {
         logger.debug("loginPage ********************** <---");
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = getAdminstrationRealm(realmManager);
@@ -277,7 +277,7 @@ public class SaasService {
         URI redirectUri = uriInfo.getBaseUriBuilder().path(SaasService.class).path(SaasService.class, "loginRedirect").build();
         logger.debug("redirectUri: {0}", redirectUri.toString());
         oauth.setStateCookiePath(redirectUri.getPath());
-        return oauth.redirect(uriInfo, redirectUri.toString());
+        return oauth.redirect(uriInfo, redirectUri.toString(), path);
     }
 
     @Path("login-redirect")
@@ -316,7 +316,7 @@ public class SaasService {
                 logger.debug("state not specified");
                 throw new BadRequestException();
             }
-            new JaxrsOAuthClient().checkStateCookie(uriInfo, headers);
+            String path = new JaxrsOAuthClient().checkStateCookie(uriInfo, headers);
 
             JWSInput input = new JWSInput(code, providers);
             boolean verifiedCode = false;
@@ -358,7 +358,12 @@ public class SaasService {
             }
             logger.debug("loginRedirect SUCCESS");
             NewCookie cookie = authManager.createSaasIdentityCookie(realm, accessCode.getUser(), uriInfo);
-            return Response.status(302).cookie(cookie).location(contextRoot(uriInfo).path(adminPath).build()).build();
+
+            URI redirectUri = contextRoot(uriInfo).path(adminPath).build();
+            if (path != null) {
+                redirectUri = redirectUri.resolve("#" + path);
+            }
+            return Response.status(302).cookie(cookie).location(redirectUri).build();
         } finally {
             authManager.expireCookie(AbstractOAuthClient.OAUTH_TOKEN_REQUEST_STATE, uriInfo.getAbsolutePath().getPath());
         }
