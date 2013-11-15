@@ -350,7 +350,7 @@ public class AdapterTest extends AbstractKeycloakTest {
         realmModel.addRole("admin");
         realmModel.addRole("user");
         List<RoleModel> roles = realmModel.getRoles();
-        Assert.assertEquals(6, roles.size());
+        Assert.assertEquals(5, roles.size());
         UserModel user = realmModel.addUser("bburke");
         RoleModel role = realmModel.getRole("user");
         realmModel.grantRole(user, role);

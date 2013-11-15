@@ -208,7 +208,6 @@ module.controller('RealmRequiredCredentialsCtrl', function($scope, Realm, realm,
 module.controller('RealmRegistrationCtrl', function ($scope, Realm, realm, applications, roles, Notifications, ApplicationRole, Application) {
 
     console.log('RealmRegistrationCtrl');
-    var systemRoles = ["*", "KEYCLOAK_APPLICATION", "KEYCLOAK_IDENTITY_REQUESTER"];
 
     $scope.realm = realm;
 
@@ -230,7 +229,7 @@ module.controller('RealmRegistrationCtrl', function ($scope, Realm, realm, appli
     for (var i = 0; i < roles.length; i++) {
         var item = roles[i].name;
 
-        if ((systemRoles.indexOf(item) < 0) && ($scope.realm.defaultRoles.indexOf(item) < 0)) {
+        if ($scope.realm.defaultRoles.indexOf(item) < 0) {
             $scope.availableRealmRoles.push(item);
         }
     }

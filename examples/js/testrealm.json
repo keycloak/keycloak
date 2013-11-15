@@ -48,7 +48,6 @@
             "name": "test-app",
             "enabled": true,
             "adminUrl": "http://localhost:8081/app/logout",
-            "useRealmMappings": true,
             "webOrigins": [ "http://localhost", "http://localhost:8000", "http://localhost:8080" ],
             "credentials": [
                 {

@@ -11,11 +11,8 @@ public interface Constants {
     String ADMIN_CONSOLE_ADMIN_ROLE = "admin";
     String APPLICATION_ROLE = INTERNAL_ROLE + "_APPLICATION";
     String IDENTITY_REQUESTER_ROLE = INTERNAL_ROLE + "_IDENTITY_REQUESTER";
-    String WILDCARD_ROLE = "*";
 
     String ACCOUNT_APPLICATION = "Account";
     String ACCOUNT_PROFILE_ROLE = "view-profile";
     String ACCOUNT_MANAGE_ROLE = "manage-account";
-
-    String ACCOUNT_MANAGEMENT_APPLICATION = "Account Management";
 }

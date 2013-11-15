@@ -102,7 +102,6 @@ public class ApplicationManager {
                 }
             }
         }
-        if (resourceRep.isUseRealmMappings()) realm.addScopeMapping(applicationModel.getApplicationUser(), "*");
         return applicationModel;
     }
 

@@ -64,12 +64,6 @@
             "roles": ["admin"]
         }
     ],
-    "scopeMappings": [
-        {
-            "username": "loginclient",
-            "roles": ["*"]
-        }
-    ],
     "socialMappings": [
         {
             "username": "mySocialUser",

@@ -625,8 +625,6 @@ public class RealmAdapter implements RealmModel {
         resourceRelationship.setApplication(applicationData.getName());
         getRelationshipManager().add(resourceRelationship);
         ApplicationModel resource = new ApplicationAdapter(applicationData, this, partitionManager);
-        resource.addRole("*");
-        resource.addScopeMapping(new UserAdapter(resourceUser, idm), "*");
         return resource;
     }
 

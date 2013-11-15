@@ -73,6 +73,9 @@ public class AccessTokenTest {
 
         Assert.assertEquals(1, token.getRealmAccess().getRoles().size());
         Assert.assertTrue(token.getRealmAccess().isUserInRole("user"));
+
+        Assert.assertEquals(1, token.getResourceAccess(oauth.getClientId()).getRoles().size());
+        Assert.assertTrue(token.getResourceAccess(oauth.getClientId()).isUserInRole("customer-user"));
     }
 
 }

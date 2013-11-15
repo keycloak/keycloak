@@ -489,16 +489,28 @@ module.filter('remove', function() {
         for ( var i = 0; i < input.length; i++) {
             var e = input[i];
 
-            for (var j = 0; j < remove.length; j++) {
+            if (Array.isArray(remove)) {
+                for (var j = 0; j < remove.length; j++) {
+                    if (attribute) {
+                        if (remove[j][attribute] == e[attribute]) {
+                            e = null;
+                            break;
+                        }
+                    } else {
+                        if (remove[j] == e) {
+                            e = null;
+                            break;
+                        }
+                    }
+                }
+            } else {
                 if (attribute) {
-                    if (remove[j][attribute] == e[attribute]) {
+                    if (remove[attribute] == e[attribute]) {
                         e = null;
-                        break;
                     }
                 } else {
-                    if (remove[j] == e) {
+                    if (remove == e) {
                         e = null;
-                        break;
                     }
                 }
             }

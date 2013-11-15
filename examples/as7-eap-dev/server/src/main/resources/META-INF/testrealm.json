@@ -65,7 +65,6 @@
             "name": "customer-portal",
             "enabled": true,
             "adminUrl": "http://localhost:8080/customer-portal/j_admin_request",
-            "useRealmMappings": true,
             "webOrigins" : [ "http://localhost1:8080"],
             "credentials": [
                 {
@@ -78,7 +77,6 @@
             "name": "product-portal",
             "enabled": true,
             "adminUrl": "http://localhost:8080/product-portal/j_admin_request",
-            "useRealmMappings": true,
             "credentials": [
                 {
                     "type": "password",

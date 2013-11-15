@@ -46,6 +46,8 @@ public class TokenManager {
 
 
     public AccessCodeEntry createAccessCode(String scopeParam, String state, String redirect, RealmModel realm, UserModel client, UserModel user) {
+        boolean applicationResource = realm.hasRole(client, realm.getRole(Constants.APPLICATION_ROLE));
+
         AccessCodeEntry code = new AccessCodeEntry();
         SkeletonKeyScope scopeMap = null;
         if (scopeParam != null) scopeMap = decodeScope(scopeParam);
@@ -56,42 +58,26 @@ public class TokenManager {
         if (realmMapping != null && realmMapping.size() > 0 && (scopeMap == null || scopeMap.containsKey("realm"))) {
             Set<String> scope = realm.getScopeMappingValues(client);
             if (scope.size() > 0) {
-                Set<String> scopeRequest = null;
-                if (scopeMap != null) {
-                    if (scopeRequest == null) {
-                        scopeRequest = new HashSet<String>();
-                    }
-                    scopeRequest.addAll(scopeMap.get("realm"));
-                    if (scopeRequest.contains(Constants.WILDCARD_ROLE)) scopeRequest = null;
-                }
+                Set<String> scopeRequest = scopeMap != null ? new HashSet<String>(scopeMap.get("realm")) : null;
                 for (String role : realmMapping) {
-                    if (
-                            (scopeRequest == null || scopeRequest.contains(role)) &&
-                                    (scope.contains("*") || scope.contains(role))
-                            )
+                    if ((scopeRequest == null || scopeRequest.contains(role)) && scope.contains(role))
                         realmRolesRequested.add(realm.getRole(role));
                 }
             }
         }
         for (ApplicationModel resource : realm.getApplications()) {
-            Set<String> mapping = resource.getRoleMappingValues(user);
-            if (mapping != null && mapping.size() > 0 && (scopeMap == null || scopeMap.containsKey(resource.getName()))) {
-                Set<String> scope = resource.getScopeMappingValues(client);
-                if (scope.size() > 0) {
-                    Set<String> scopeRequest = null;
-                    if (scopeMap != null) {
-                        if (scopeRequest == null) {
-                            scopeRequest = new HashSet<String>();
+            if (applicationResource && resource.getApplicationUser().getLoginName().equals(client.getLoginName())) {
+                resourceRolesRequested.addAll(resource.getName(), resource.getRoles());
+            } else {
+                Set<String> mapping = resource.getRoleMappingValues(user);
+                if (mapping != null && mapping.size() > 0 && (scopeMap == null || scopeMap.containsKey(resource.getName()))) {
+                    Set<String> scope = resource.getScopeMappingValues(client);
+                    if (scope.size() > 0) {
+                        Set<String> scopeRequest = scopeMap != null ? new HashSet<String>(scopeMap.get(resource.getName())) : null;
+                        for (String role : mapping) {
+                            if ((scopeRequest == null || scopeRequest.contains(role)) && scope.contains(role))
+                                resourceRolesRequested.add(resource.getName(), resource.getRole(role));
                         }
-                        scopeRequest.addAll(scopeMap.get(resource.getName()));
-                        if (scopeRequest.contains(Constants.WILDCARD_ROLE)) scopeRequest = null;
-                    }
-                    for (String role : mapping) {
-                        if (
-                                (scopeRequest == null || scopeRequest.contains(role)) &&
-                                        (scope.contains("*") || scope.contains(role))
-                                )
-                            resourceRolesRequested.add(resource.getName(), resource.getRole(role));
                     }
                 }
             }

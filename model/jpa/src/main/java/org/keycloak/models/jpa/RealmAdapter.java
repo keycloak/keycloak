@@ -568,8 +568,6 @@ public class RealmAdapter implements RealmModel {
         em.persist(applicationData);
         em.flush();
         ApplicationModel resource = new ApplicationAdapter(em, applicationData);
-        resource.addRole("*");
-        resource.addScopeMapping(new UserAdapter(user), "*");
         em.flush();
         return resource;
     }

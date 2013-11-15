@@ -62,6 +62,10 @@
         {
             "username": "third-party",
             "roles": ["user"]
+        },
+        {
+            "username": "test-app",
+            "roles": ["user"]
         }
     ],
     "applications": [
@@ -69,7 +73,6 @@
             "name": "test-app",
             "enabled": true,
             "adminUrl": "http://localhost:8081/app/logout",
-            "useRealmMappings": true,
             "credentials": [
                 {
                     "type": "password",
