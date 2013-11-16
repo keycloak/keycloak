@@ -361,7 +361,7 @@ public class SaasService {
 
             URI redirectUri = contextRoot(uriInfo).path(adminPath).build();
             if (path != null) {
-                redirectUri = redirectUri.resolve("#" + path);
+                redirectUri = redirectUri.resolve("#" + UriBuilder.fromPath(path).build().toString());
             }
             return Response.status(302).cookie(cookie).location(redirectUri).build();
         } finally {
