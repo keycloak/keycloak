@@ -9,8 +9,8 @@
         <version>1.0-alpha-1</version>
     </parent>
 
-    <artifactId>keycloak-dist</artifactId>
-    <name>Keycloak Dist</name>
+    <artifactId>keycloak-dist-as7</artifactId>
+    <name>Keycloak Dist AS7</name>
     <packaging>pom</packaging>
 
     <properties>
@@ -19,7 +19,7 @@
 
     <profiles>
         <profile>
-            <id>release</id>
+            <id>release-as7</id>
 
             <dependencies>
                 <dependency>
@@ -29,9 +29,9 @@
                     <type>war</type>
                 </dependency>
                 <dependency>
-                    <groupId>org.wildfly</groupId>
-                    <artifactId>wildfly-dist</artifactId>
-                    <version>${wildfly.version}</version>
+                    <groupId>org.jboss.as</groupId>
+                    <artifactId>jboss-as-dist</artifactId>
+                    <version>${jboss.version}</version>
                     <type>zip</type>
                 </dependency>
             </dependencies>

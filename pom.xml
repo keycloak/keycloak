@@ -20,6 +20,7 @@
         <dom4j.version>1.6.1</dom4j.version>
         <mysql.version>5.1.25</mysql.version>
         <slf4j.version>1.6.1</slf4j.version>
+        <jboss.version>7.1.1.Final</jboss.version>
         <wildfly.version>8.0.0.Beta1</wildfly.version>
     </properties>
 
@@ -75,6 +76,7 @@
         <module>testsuite</module>
         <module>server</module>
         <module>dist</module>
+        <module>dist-as7</module>    
     </modules>
 
     <dependencyManagement>
