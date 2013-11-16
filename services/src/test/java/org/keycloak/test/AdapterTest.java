@@ -176,7 +176,7 @@ public class AdapterTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void deleteUser() throws Exception {
+    public void testDeleteUser() throws Exception {
         test1CreateRealm();
 
         UserModel user = realmModel.addUser("bburke");
@@ -198,9 +198,31 @@ public class AdapterTest extends AbstractKeycloakTest {
         cred.setValue("password");
         realmModel.updateCredential(user, cred);
 
-        Assert.assertTrue(realmModel.deleteUser("bburke"));
-        Assert.assertFalse(realmModel.deleteUser("bburke"));
+        Assert.assertTrue(realmModel.removeUser("bburke"));
+        Assert.assertFalse(realmModel.removeUser("bburke"));
         Assert.assertNull(realmModel.getUser("bburke"));
+    }
+
+    @Test
+    public void testRemoveApplication() throws Exception {
+        test1CreateRealm();
+
+        UserModel user = realmModel.addUser("bburke");
+
+        OAuthClientModel client = realmModel.addOAuthClient("client");
+
+        ApplicationModel app = realmModel.addApplication("test-app");
+
+        RoleModel appRole = app.addRole("test");
+        app.grantRole(user, appRole);
+        app.addScopeMapping(client.getOAuthAgent(), appRole);
+
+        RoleModel realmRole = realmModel.addRole("test");
+        realmModel.addScopeMapping(app.getApplicationUser(), realmRole);
+
+        Assert.assertTrue(realmModel.removeApplication(app.getId()));
+        Assert.assertFalse(realmModel.removeApplication(app.getId()));
+        Assert.assertNull(realmModel.getApplicationById(app.getId()));
     }
 
     @Test

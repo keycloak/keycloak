@@ -54,6 +54,12 @@ public class ApplicationResource extends RoleContainerResource {
         return applicationManager.toRepresentation(application);
     }
 
+    @DELETE
+    @NoCache
+    public void deleteApplication() {
+        realm.removeApplication(application.getId());
+    }
+
     @Path("credentials")
     @PUT
     @Consumes("application/json")

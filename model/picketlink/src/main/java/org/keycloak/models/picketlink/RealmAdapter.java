@@ -519,7 +519,7 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public boolean deleteUser(String name) {
+    public boolean removeUser(String name) {
         User user = findPicketlinkUser(name);
         if (user == null) {
             return false;
@@ -626,6 +626,19 @@ public class RealmAdapter implements RealmModel {
         getRelationshipManager().add(resourceRelationship);
         ApplicationModel resource = new ApplicationAdapter(applicationData, this, partitionManager);
         return resource;
+    }
+
+    @Override
+    public boolean removeApplication(String id) {
+        RelationshipQuery<ApplicationRelationship> query = getRelationshipManager().createRelationshipQuery(ApplicationRelationship.class);
+        query.setParameter(ApplicationRelationship.REALM, realm.getName());
+        query.setParameter(ApplicationRelationship.APPLICATION, id);
+        List<ApplicationRelationship> results = query.getResultList();
+        if (results.size() == 0) return false;
+        ApplicationRelationship relationship = results.get(0);
+        ApplicationData application = partitionManager.getPartition(ApplicationData.class, relationship.getApplication());
+        partitionManager.remove(application);
+        return true;
     }
 
     @Override

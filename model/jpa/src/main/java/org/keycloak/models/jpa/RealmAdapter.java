@@ -11,6 +11,7 @@ import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.entities.ApplicationEntity;
+import org.keycloak.models.jpa.entities.ApplicationScopeMappingEntity;
 import org.keycloak.models.jpa.entities.ApplicationUserRoleMappingEntity;
 import org.keycloak.models.jpa.entities.CredentialEntity;
 import org.keycloak.models.jpa.entities.OAuthClientEntity;
@@ -458,22 +459,23 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public boolean deleteUser(String name) {
+    public boolean removeUser(String name) {
         TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUserByLoginName", UserEntity.class);
         query.setParameter("loginName", name);
         query.setParameter("realm", realm);
         List<UserEntity> results = query.getResultList();
         if (results.size() == 0) return false;
-
-        UserEntity user = results.get(0);
-
-        for (Class r : UserEntity.RELATIONSHIPS) {
-            em.createQuery("delete from " + r.getSimpleName() + " where user = :user").setParameter("user", user).executeUpdate();
-        }
-
-        em.remove(user);
-
+        removeUser(results.get(0));
         return true;
+    }
+
+    private void removeUser(UserEntity user) {
+        em.createQuery("delete from " + ApplicationScopeMappingEntity.class.getSimpleName() + " where user = :user").setParameter("user", user).executeUpdate();
+        em.createQuery("delete from " + ApplicationUserRoleMappingEntity.class.getSimpleName() + " where user = :user").setParameter("user", user).executeUpdate();
+        em.createQuery("delete from " + RealmScopeMappingEntity.class.getSimpleName() + " where user = :user").setParameter("user", user).executeUpdate();
+        em.createQuery("delete from " + RealmUserRoleMappingEntity.class.getSimpleName() + " where user = :user").setParameter("user", user).executeUpdate();
+        em.createQuery("delete from " + SocialLinkEntity.class.getSimpleName() + " where user = :user").setParameter("user", user).executeUpdate();
+        em.remove(user);
     }
 
     @Override
@@ -570,6 +572,25 @@ public class RealmAdapter implements RealmModel {
         ApplicationModel resource = new ApplicationAdapter(em, applicationData);
         em.flush();
         return resource;
+    }
+
+    @Override
+    public boolean removeApplication(String id) {
+        ApplicationEntity application = null;
+        for (ApplicationEntity a : realm.getApplications()) {
+            if (a.getId().equals(id)) {
+                application = a;
+            }
+        }
+        if (application == null) {
+            return false;
+        }
+        realm.getApplications().remove(application);
+        removeUser(application.getApplicationUser());
+        em.createQuery("delete from " + ApplicationScopeMappingEntity.class.getSimpleName() + " where application = :application").setParameter("application", application).executeUpdate();
+        em.createQuery("delete from " + ApplicationUserRoleMappingEntity.class.getSimpleName() + " where application = :application").setParameter("application", application).executeUpdate();
+        em.remove(application);
+        return true;
     }
 
     @Override
