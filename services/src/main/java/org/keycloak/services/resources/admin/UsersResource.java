@@ -111,7 +111,7 @@ public class UsersResource {
     @DELETE
     @NoCache
     public void deleteUser(final @PathParam("username") String username) {
-        realm.deleteUser(username);
+        realm.removeUser(username);
     }
 
     @GET

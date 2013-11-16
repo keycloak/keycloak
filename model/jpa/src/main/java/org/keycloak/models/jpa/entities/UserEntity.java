@@ -34,9 +34,6 @@ import java.util.Set;
 })
 @Entity
 public class UserEntity {
-
-    public static final Class[] RELATIONSHIPS = new Class[] { ApplicationUserRoleMappingEntity.class, RealmUserRoleMappingEntity.class, SocialLinkEntity.class };
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     protected String id;
