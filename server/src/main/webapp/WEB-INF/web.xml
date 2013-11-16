@@ -20,7 +20,11 @@
         <load-on-startup>1</load-on-startup>
         <async-supported>true</async-supported>
     </servlet>
-    
+
+    <listener>
+        <listener-class>org.keycloak.services.listeners.KeycloakSessionDestroyListener</listener-class>
+    </listener>
+
     <welcome-file-list>
         <welcome-file>index.html</welcome-file>
     </welcome-file-list>
