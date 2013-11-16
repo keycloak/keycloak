@@ -548,6 +548,21 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
     };
 });
 
+module.controller('RealmKeysDetailCtrl', function($scope, Realm, realm, $http, $location, Dialog, Notifications) {
+    $scope.realm = realm;
+
+    $scope.generate = function() {
+        Dialog.confirmGenerateKeys($scope.realm.realm, 'realm', function() {
+                Realm.update({ id: realm.id, publicKey : 'GENERATE' }, function () {
+                Notifications.success('New keys generated for realm.');
+                Realm.get({ id : realm.id }, function(updated) {
+                    $scope.realm = updated;
+                })
+            });
+        });
+    };
+});
+
 module.controller('RoleListCtrl', function($scope, $location, realm, roles) {
 
     $scope.realm = realm;

@@ -125,6 +125,10 @@ public class RealmManager {
         if (rep.getSocialProviders() != null) {
             realm.setSocialConfig(new HashMap(rep.getSocialProviders()));
         }
+
+        if ("GENERATE".equals(rep.getPublicKey())) {
+            generateRealmKeys(realm);
+        }
     }
 
     private void enableAccountManagement(RealmModel realm) {

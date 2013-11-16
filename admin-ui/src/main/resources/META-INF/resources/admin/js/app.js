@@ -38,6 +38,15 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmTokenDetailCtrl'
         })
+        .when('/realms/:realm/keys-settings', {
+            templateUrl : 'partials/realm-keys.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                }
+            },
+            controller : 'RealmKeysDetailCtrl'
+        })
         .when('/realms/:realm/social-settings', {
             templateUrl : 'partials/realm-social.html',
             resolve : {

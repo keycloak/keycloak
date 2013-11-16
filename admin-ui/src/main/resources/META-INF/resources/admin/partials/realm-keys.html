@@ -1,0 +1,43 @@
+<div id="wrapper" class="container" xmlns="http://www.w3.org/1999/html">
+    <div class="row">
+        <div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="'partials/realm-menu.html'"></div>
+        <div id="content-area" class="col-md-9" role="main">
+            <div class="top-nav" data-ng-hide="createRealm">
+                <ul class="rcue-tabs">
+                    <li><a href="#/realms/{{realm.id}}">General</a></li>
+                    <li data-ng-show="realm.social"><a href="#/realms/{{realm.id}}/social-settings">Social</a></li>
+                    <li data-ng-show="realm.registrationAllowed"><a href="#/realms/{{realm.id}}/registration-settings">Registration</a></li>
+                    <li><a href="#/realms/{{realm.id}}/roles">Roles</a></li>
+                    <li><a href="#/realms/{{realm.id}}/required-credentials">Credentials</a></li>
+                    <li><a href="#/realms/{{realm.id}}/token-settings">Token</a></li>
+                    <li class="active"><a href="#/realms/{{realm.id}}/keys-settings">Keys</a></li>
+                    <li><a href="#/realms/{{realm.id}}/smtp-settings">SMTP</a></li>
+                </ul>
+            </div>
+            <div id="content">
+                <ol class="breadcrumb">
+                    <li><a href="#/realms/{{realm.id}}">{{realm.realm}}</a></li>
+                    <li><a href="#/realms/{{realm.id}}">Settings</a></li>
+                    <li class="active">Keys</li>
+                </ol>
+                <h2><span>{{realm.realm}}</span> Keys</h2>
+                <form name="realmForm" novalidate>
+                    <fieldset>
+                        <div class="form-group">
+                            <label for="publicKey">Public key</label>
+
+                            <div class="controls">
+                                <textarea type="text" id="publicKey" name="publicKey" class="xlarge" rows="5">{{realm.publicKey}}</textarea>
+                            </div>
+                        </div>
+                    </fieldset>
+                    <div class="form-actions">
+                        <button type="submit" data-ng-click="generate()" class="destructive">Generate new keys</button>
+                    </div>
+               </form>
+
+            </div>
+        </div>
+        <div id="container-right-bg"></div>
+    </div>
+</div>

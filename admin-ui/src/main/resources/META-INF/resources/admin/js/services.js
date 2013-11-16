@@ -34,6 +34,27 @@ module.service('Dialog', function($dialog) {
 			}
 		});
 	}
+
+    dialog.confirmGenerateKeys = function(name, type, success) {
+        var title = 'Generate new keys for realm';
+        var msg = '<span class="primary">Are you sure you want to permanently generate new keys for ' + name + '"?</span>' +
+            '<span>This action can\'t be undone.</span>';
+        var btns = [ {
+            result : 'cancel',
+            label : 'Cancel'
+        }, {
+            result : 'ok',
+            label : 'Generate new keys',
+            cssClass : 'destructive'
+        } ];
+
+        $dialog.messageBox(title, msg, btns).open().then(function(result) {
+            if (result == "ok") {
+                success();
+            }
+        });
+    }
+
 	return dialog
 });
 
