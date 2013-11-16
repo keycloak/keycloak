@@ -350,49 +350,7 @@ public class RealmManager {
         if (searchString == null) {
             return Collections.emptyList();
         }
-
-        String search = searchString.trim();
-        if (search.contains(" ")) { //first and last name
-            String[] split = search.split(" ");
-            if (split.length != 2) {
-                return Collections.emptyList();
-            }
-            Map<String, String> attributes = new HashMap<String, String>();
-            attributes.put(UserModel.FIRST_NAME, split[0]);
-            attributes.put(UserModel.LAST_NAME, split[1]);
-            return realmModel.searchForUserByAttributes(attributes);
-        } else if (search.contains("@")) { // email
-            Map<String, String> attributes = new HashMap<String, String>();
-            attributes.put(UserModel.EMAIL, search);
-            return realmModel.searchForUserByAttributes(attributes);
-        } else { // username and lastname
-            Map<String, String> attributes = new HashMap<String, String>();
-            attributes.put(UserModel.LOGIN_NAME, search);
-            List<UserModel> usernameQuery = realmModel.searchForUserByAttributes(attributes);
-            attributes.clear();
-            attributes.put(UserModel.LAST_NAME, search);
-            List<UserModel> lastnameQuery = realmModel.searchForUserByAttributes(attributes);
-            if (usernameQuery.size() == 0) {
-                return lastnameQuery;
-            } else if (lastnameQuery.size() == 0) {
-                return usernameQuery;
-            }
-            List<UserModel> results = new ArrayList<UserModel>();
-            results.addAll(usernameQuery);
-            for (UserModel lastnameUser : lastnameQuery) {
-                boolean found = false;
-                for (UserModel usernameUser : usernameQuery) {
-                    if (usernameUser.getLoginName().equals(lastnameUser.getLoginName())) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    results.add(lastnameUser);
-                }
-            }
-            return results;
-        }
+        return realmModel.searchForUser(searchString.trim());
     }
 
     public void addRequiredCredential(RealmModel newRealm, String requiredCred) {

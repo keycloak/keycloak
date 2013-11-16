@@ -36,6 +36,7 @@ import org.picketlink.idm.model.sample.Role;
 import org.picketlink.idm.model.sample.SampleModel;
 import org.picketlink.idm.model.sample.User;
 import org.picketlink.idm.query.IdentityQuery;
+import org.picketlink.idm.query.QueryParameter;
 import org.picketlink.idm.query.RelationshipQuery;
 
 import java.io.IOException;
@@ -874,6 +875,26 @@ public class RealmAdapter implements RealmModel {
         relationship.setRealm(realm.getName());
 
         getRelationshipManager().remove(relationship);
+    }
+
+    @Override
+    public List<UserModel> searchForUser(String search) {
+        QueryParameter[] params = new QueryParameter[] { User.LOGIN_NAME, User.FIRST_NAME, User.LAST_NAME, User.EMAIL };
+
+        Map<String, User> users = new HashMap<String, User>();
+        for (QueryParameter p : params) {
+            IdentityQuery<User> query = getIdm().createIdentityQuery(User.class);
+            query.setParameter(p, search.toLowerCase());
+            for (User u : query.getResultList()) {
+                users.put(u.getLoginName(), u);
+            }
+        }
+
+        List<UserModel> userModels = new ArrayList<UserModel>();
+        for (User user : users.values()) {
+            userModels.add(new UserAdapter(user, idm));
+        }
+        return userModels;
     }
 
     @Override
