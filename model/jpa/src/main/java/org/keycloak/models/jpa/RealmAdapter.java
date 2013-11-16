@@ -676,6 +676,16 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public List<UserModel> searchForUser(String search) {
+        TypedQuery<UserEntity> query = em.createQuery("select u from UserEntity u where lower(u.loginName) like :search or lower(concat(u.firstName, ' ', u.lastName)) like :search or u.email like :search", UserEntity.class);
+        query.setParameter("search", "%" + search.toLowerCase() + "%");
+        List<UserEntity> results = query.getResultList();
+        List<UserModel> users = new ArrayList<UserModel>();
+        for (UserEntity entity : results) users.add(new UserAdapter(entity));
+        return users;
+    }
+
+    @Override
     public List<UserModel> searchForUserByAttributes(Map<String, String> attributes) {
         StringBuilder builder = new StringBuilder("select u from UserEntity u");
         boolean first = true;

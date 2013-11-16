@@ -20,6 +20,8 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.test.common.AbstractKeycloakTest;
 import org.keycloak.test.common.SessionFactoryTestContext;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -233,6 +235,16 @@ public class AdapterTest extends AbstractKeycloakTest {
             user.setLastName("Burke");
             user.setFirstName("Bill");
             user.setEmail("bburke@redhat.com");
+
+            UserModel user2 = realmModel.addUser("doublefirst");
+            user2.setFirstName("Knut Ole");
+            user2.setLastName("Alver");
+            user2.setEmail("knut@redhat.com");
+
+            UserModel user3 = realmModel.addUser("doublelast");
+            user3.setFirstName("Ole");
+            user3.setLastName("Alver Veland");
+            user3.setEmail("knut@redhat.com");
         }
 
         RealmManager adapter = getRealmManager();
@@ -252,7 +264,7 @@ public class AdapterTest extends AbstractKeycloakTest {
         }
 
         {
-            List<UserModel> userModels = adapter.searchUsers("bil burk", realmModel);
+            List<UserModel> userModels = adapter.searchUsers("bill burk", realmModel);
             Assert.assertEquals(userModels.size(), 1);
             UserModel bburke = userModels.get(0);
             Assert.assertEquals(bburke.getFirstName(), "Bill");
@@ -260,6 +272,15 @@ public class AdapterTest extends AbstractKeycloakTest {
             Assert.assertEquals(bburke.getEmail(), "bburke@redhat.com");
         }
 
+        {
+            ArrayList<String> users = new ArrayList<String>();
+            for (UserModel u : adapter.searchUsers("ole alver", realmModel)) {
+                users.add(u.getLoginName());
+            }
+            String[] usernames = users.toArray(new String[users.size()]);
+            Arrays.sort(usernames);
+            Assert.assertArrayEquals(new String[] { "doublefirst", "doublelast"}, usernames);
+        }
 
         {
             List<UserModel> userModels = adapter.searchUsers("bburke@redhat.com", realmModel);
