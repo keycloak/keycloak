@@ -83,6 +83,10 @@
                 {
                     "name": "customer-user",
                     "description": "Have Customer User privileges"
+                },
+                {
+                    "name": "customer-admin",
+                    "description": "Have Customer Admin privileges"
                 }
             ],
             "roleMappings": [

@@ -67,7 +67,9 @@ public class TokenManager {
         }
         for (ApplicationModel resource : realm.getApplications()) {
             if (applicationResource && resource.getApplicationUser().getLoginName().equals(client.getLoginName())) {
-                resourceRolesRequested.addAll(resource.getName(), resource.getRoles());
+                for (String role : resource.getRoleMappingValues(user)) {
+                    resourceRolesRequested.addAll(resource.getName(), resource.getRole(role));
+                }
             } else {
                 Set<String> mapping = resource.getRoleMappingValues(user);
                 if (mapping != null && mapping.size() > 0 && (scopeMap == null || scopeMap.containsKey(resource.getName()))) {
