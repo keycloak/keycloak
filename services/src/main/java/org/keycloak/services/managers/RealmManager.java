@@ -387,6 +387,9 @@ public class RealmManager {
         rep.setLastName(user.getLastName());
         rep.setFirstName(user.getFirstName());
         rep.setEmail(user.getEmail());
+        rep.setEnabled(user.isEnabled());
+        rep.setEmailVerified(user.isEmailVerified());
+        rep.setTotp(user.isTotp());
         if (user.getAttributes() != null && !user.getAttributes().isEmpty()) {
             Map<String, String> attrs = new HashMap<String, String>();
             attrs.putAll(user.getAttributes());
