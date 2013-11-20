@@ -32,7 +32,7 @@ module.controller('ApplicationCredentialsCtrl', function($scope, $location, real
 
     $scope.changePassword = function() {
         if ($scope.password != $scope.confirmPassword) {
-            Notifications.error("Password not confirmed");
+            Notifications.error("Password and confirmation does not match.");
             $scope.password = "";
             $scope.confirmPassword = "";
             return;
@@ -46,12 +46,12 @@ module.controller('ApplicationCredentialsCtrl', function($scope, $location, real
 
         ApplicationCredentials.update({ realm : realm.id, application : application.id }, creds,
             function() {
-                Notifications.success('Change password successful');
+                Notifications.success('The password has been changed.');
                 $scope.password = null;
                 $scope.confirmPassword = null;
             },
             function() {
-                Notifications.error("Change password failed");
+                Notifications.error("The password was not changed due to a problem.");
                 $scope.password = null;
                 $scope.confirmPassword = null;
             }
@@ -68,11 +68,11 @@ module.controller('ApplicationCredentialsCtrl', function($scope, $location, real
 
         ApplicationCredentials.update({ realm : realm.id, application : application.id }, creds,
             function() {
-                Notifications.success('Change totp successful');
+                Notifications.success('The totp was changed.');
                 $scope.totp = null;
             },
             function() {
-                Notifications.error("Change totp failed");
+                Notifications.error("The totp was not changed due to a problem.");
                 $scope.totp = null;
             }
         );

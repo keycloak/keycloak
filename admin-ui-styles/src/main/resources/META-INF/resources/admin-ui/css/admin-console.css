@@ -261,6 +261,9 @@ body {
   background-image: url('img/sprites-white.png');
   background-color: transparent;
 }
+.header.rcue .navbar.primary .nav > li .tooltip {
+  font-size: 0.84615384615385em;
+}
 .header.rcue .navbar.primary .button {
   font-size: 0.84615384615385em;
   margin-right: 1.36363636363636em;
