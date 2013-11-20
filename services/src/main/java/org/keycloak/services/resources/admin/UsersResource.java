@@ -64,19 +64,7 @@ public class UsersResource {
         if (user == null) {
             throw new NotFoundException();
         }
-        user.setEmail(rep.getEmail());
-        user.setFirstName(rep.getFirstName());
-        user.setLastName(rep.getLastName());
-
-        user.setEnabled(rep.isEnabled());
-        user.setTotp(rep.isTotp());
-        user.setEmailVerified(rep.isEmailVerified());
-
-        if (rep.getAttributes() != null) {
-            for (Map.Entry<String, String> attr : rep.getAttributes().entrySet()) {
-                user.setAttribute(attr.getKey(), attr.getValue());
-            }
-        }
+        updateUserFromRep(user, rep);
     }
 
     @POST
@@ -89,6 +77,13 @@ public class UsersResource {
         if (user == null) {
             throw new NotFoundException();
         }
+
+        updateUserFromRep(user, rep);
+
+        return Response.created(uriInfo.getAbsolutePathBuilder().path(user.getLoginName()).build()).build();
+    }
+
+    private void updateUserFromRep(UserModel user, UserRepresentation rep){
         user.setEmail(rep.getEmail());
         user.setFirstName(rep.getFirstName());
         user.setLastName(rep.getLastName());
@@ -97,12 +92,21 @@ public class UsersResource {
         user.setTotp(rep.isTotp());
         user.setEmailVerified(rep.isEmailVerified());
 
+        List<String> reqActions = rep.getRequiredActions();
+
+        for(UserModel.RequiredAction ra : UserModel.RequiredAction.values()){
+            if (reqActions.contains(ra.name())) {
+                user.addRequiredAction(ra);
+            } else {
+                user.removeRequiredAction(ra);
+            }
+        }
+
         if (rep.getAttributes() != null) {
             for (Map.Entry<String, String> attr : rep.getAttributes().entrySet()) {
                 user.setAttribute(attr.getKey(), attr.getValue());
             }
         }
-        return Response.created(uriInfo.getAbsolutePathBuilder().path(user.getLoginName()).build()).build();
     }
 
     @Path("{username}")

@@ -78,7 +78,13 @@
                             <label for="emailVerified" class="control-label">Email verified</label>
                             <input ng-model="user.emailVerified" name="emailVerified" id="emailVerified" onoffswitch />
                         </div>
+                        <div class="form-group clearfix">
+                            <label for="reqActions" class="control-label two-lines">Required User Actions</label>
 
+                            <div class="controls">
+                                <input type="text" ui-select2="userReqActionsOptions" ng-model="userActions" id="reqActions"/>
+                            </div>
+                        </div>
                     </fieldset>
                     <div class="form-actions" data-ng-show="create">
                         <button type="submit" data-ng-click="save()" class="primary" data-ng-show="changed">Save
