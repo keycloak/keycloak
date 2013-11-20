@@ -14,6 +14,8 @@ public class UserRepresentation {
     protected String self; // link
     protected String username;
     protected boolean enabled;
+    protected boolean totp;
+    protected boolean emailVerified;
     protected String firstName;
     protected String lastName;
     protected String email;
@@ -67,6 +69,22 @@ public class UserRepresentation {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public boolean isTotp() {
+        return totp;
+    }
+
+    public void setTotp(boolean totp) {
+        this.totp = totp;
+    }
+
+    public boolean isEmailVerified() {
+        return emailVerified;
+    }
+
+    public void setEmailVerified(boolean emailVerified) {
+        this.emailVerified = emailVerified;
     }
 
     public Map<String, String> getAttributes() {

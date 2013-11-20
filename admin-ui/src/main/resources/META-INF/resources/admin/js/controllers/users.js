@@ -136,6 +136,39 @@ module.controller('UserDetailCtrl', function($scope, realm, user, User, $locatio
 
     $scope.changed = false; // $scope.create;
 
+    // ID - Name map for required actions. IDs are enum names.
+    var userReqActionList = [
+        {id: "VERIFY_EMAIL", text: "Verify Email"},
+        {id: "UPDATE_PROFILE", text: "Update Profile"},
+        {id: "CONFIGURE_TOTP", text: "Configure Totp"},
+        {id: "UPDATE_PASSWORD", text: "Update Password"}
+    ];
+
+    // Options for the req actions tag selector
+    $scope.userReqActionsOptions = {
+        'multiple' : true,
+        'tags' : userReqActionList
+    };
+
+    // Model for the req actions tag selector
+    $scope.userActions = [];
+    for (var i = 0; i < userReqActionList.length; i++){
+        var action = userReqActionList[i];
+
+        if ($scope.user.requiredActions.indexOf(action.id) > -1){
+            $scope.userActions.push({id: action.id, text: action.text});
+        }
+    }
+
+    // Watching ui-select2 model to properly format the req actions for user
+    $scope.$watch("userActions", function(newValue, oldValue) {
+        $scope.user.requiredActions = [];
+        for (var i=0; i < newValue.length; i++){
+            var action = newValue[i];
+            $scope.user.requiredActions.push(action.id);
+        }
+    });
+
     $scope.$watch('user', function() {
         if (!angular.equals($scope.user, user)) {
             $scope.changed = true;
