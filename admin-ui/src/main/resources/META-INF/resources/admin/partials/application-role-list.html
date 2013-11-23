@@ -20,12 +20,10 @@
                     <li class="active">Roles</li>
                 </ol>
                 <h2><span>{{application.name}}</span> Roles</h2>
-                <div class="feedback info" data-ng-show="!roles || roles.length == 0">
-                    <p><strong>You have not configured application roles.</strong><br><a class="button" href="#/create/role/{{realm.id}}/applications/{{application.id}}">Add Role</a></p>
+                <div class="feedback info inline" data-ng-show="!roles || roles.length == 0">
+                    <p><strong>You have not configured application roles.</strong> <a class="button" href="#/create/role/{{realm.id}}/applications/{{application.id}}">Add Role</a></p>
                 </div>
-                                
-
-                <table>
+                <table data-ng-hide="!roles || roles.length == 0">
                     <caption data-ng-show="roles && roles.length > 0" class="hidden">Table of realm roles</caption>
                     <thead>
                         <tr>
