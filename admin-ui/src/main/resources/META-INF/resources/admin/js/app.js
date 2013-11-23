@@ -1,6 +1,6 @@
 'use strict';
 
-var module = angular.module('keycloak', [ 'keycloak.services', 'keycloak.loaders', 'keycloak.controllers', 'ui.bootstrap', 'ui.select2' ]);
+var module = angular.module('keycloak', [ 'keycloak.services', 'keycloak.loaders', 'ui.bootstrap', 'ui.select2' ]);
 var resourceRequests = 0;
 var loadingTimer = -1;
 

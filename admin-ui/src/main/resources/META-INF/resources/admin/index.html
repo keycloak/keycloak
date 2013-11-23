@@ -41,7 +41,6 @@
     <script src="/auth-server/admin-ui/js/bootstrap-tokenfield.js"></script>
     -->
     <script src="js/app.js"></script>
-    <script src="js/controllers.js"></script>
     <script src="js/controllers/realm.js"></script>
     <script src="js/controllers/applications.js"></script>
     <script src="js/controllers/users.js"></script>
@@ -51,7 +50,7 @@
 
 </head>
 
-<body class="admin-console" data-ng-controller="GlobalCtrl">
+<body class="admin-console" data-ng-controller="GlobalCtrl" ng-cloak>
 <div id="idletimeout">
     You will be logged off in <strong><span></span> seconds</strong> due to inactivity.
     <a id="idletimeout-resume" href="#">Click here to continue using this web page</a>.
