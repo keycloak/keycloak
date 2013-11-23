@@ -13,7 +13,7 @@
     <div id="form">
         <form action="${url.loginAction}" method="post">
             <div>
-                <label for="username">${rb.getString('username')}</label><input id="username" name="username" value="${login.username!''}" type="text" />
+                <label for="username">${rb.getString('username')}</label><input id="username" name="username" value="${login.username!''}" type="text" autofocus />
             </div>
 
             <#list login.requiredCredentials as c>
@@ -22,11 +22,11 @@
                 </div>
             </#list>
 
+            <input class="btn-primary" type="submit" value="Log In"/>
+
             <div class="aside-btn">
                 <p>Forgot <a href="${url.loginPasswordResetUrl}">Password</a>?</p>
             </div>
-
-            <input class="btn-primary" type="submit" value="Log In"/>
         </form>
     </div>
 
