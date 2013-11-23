@@ -155,7 +155,7 @@ module.controller('UserDetailCtrl', function($scope, realm, user, User, $locatio
     for (var i = 0; i < userReqActionList.length; i++){
         var action = userReqActionList[i];
 
-        if ($scope.user.requiredActions.indexOf(action.id) > -1){
+        if ($scope.user.requiredActions && $scope.user.requiredActions.indexOf(action.id) > -1){
             $scope.userActions.push({id: action.id, text: action.text});
         }
     }
