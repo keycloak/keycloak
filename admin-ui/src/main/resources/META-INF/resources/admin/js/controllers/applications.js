@@ -131,7 +131,6 @@ module.controller('ApplicationRoleDetailCtrl', function($scope, realm, applicati
                 var id = l.substring(l.lastIndexOf("/") + 1);
                 $location.url("/realms/" + realm.id + "/applications/" + application.id + "/roles/" + id);
                 Notifications.success("The role has been created.");
-
             });
         } else {
             ApplicationRole.update({
@@ -149,7 +148,6 @@ module.controller('ApplicationRoleDetailCtrl', function($scope, realm, applicati
     $scope.reset = function() {
         $scope.role = angular.copy(role);
         $scope.changed = false;
-        $scope.roleForm.showErrors = false;
     };
 
     $scope.cancel = function() {
@@ -222,38 +220,31 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
     }
 
     $scope.save = function() {
-        if ($scope.applicationForm.$valid) {
-
-            if ($scope.create) {
-                Application.save({
-                    realm: realm.id
-                }, $scope.application, function (data, headers) {
-                    $scope.changed = false;
-                    var l = headers().location;
-                    var id = l.substring(l.lastIndexOf("/") + 1);
-                    $location.url("/realms/" + realm.id + "/applications/" + id);
-                    Notifications.success("The application has been created.");
-                });
-            } else {
-                Application.update({
-                    realm : realm.id,
-                    id : application.id
-                }, $scope.application, function() {
-                    $scope.changed = false;
-                    application = angular.copy($scope.application);
-                    Notifications.success("Your changes have been saved to the application.");
-                });
-            }
-
+        if ($scope.create) {
+            Application.save({
+                realm: realm.id
+            }, $scope.application, function (data, headers) {
+                $scope.changed = false;
+                var l = headers().location;
+                var id = l.substring(l.lastIndexOf("/") + 1);
+                $location.url("/realms/" + realm.id + "/applications/" + id);
+                Notifications.success("The application has been created.");
+            });
         } else {
-            $scope.applicationForm.showErrors = true;
+            Application.update({
+                realm : realm.id,
+                id : application.id
+            }, $scope.application, function() {
+                $scope.changed = false;
+                application = angular.copy($scope.application);
+                Notifications.success("Your changes have been saved to the application.");
+            });
         }
     };
 
     $scope.reset = function() {
         $scope.application = angular.copy(application);
         $scope.changed = false;
-        $scope.applicationForm.showErrors = false;
     };
 
     $scope.cancel = function() {

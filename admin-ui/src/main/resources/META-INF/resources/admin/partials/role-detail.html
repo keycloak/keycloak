@@ -42,12 +42,12 @@
                             <label for="description">Description </label>
 
                             <div class="controls">
-                                <textarea rows="5" cols="50" id="description" name="description" data-ng-model="role.description" required></textarea>
+                                <textarea rows="5" cols="50" id="description" name="description" data-ng-model="role.description"></textarea>
                             </div>
                         </div>
                     </fieldset>
                     <div class="form-actions" data-ng-show="create">
-                        <button type="submit" data-ng-click="save()" class="primary" data-ng-show="changed">Save
+                        <button type="submit" kc-save class="primary" data-ng-show="changed">Save
                         </button>
                         <button type="submit" data-ng-click="cancel()" data-ng-click="cancel()"
                                 data-ng-show="changed">Cancel
@@ -55,9 +55,9 @@
                     </div>
 
                     <div class="form-actions" data-ng-show="!create">
-                        <button type="submit" data-ng-click="save()" class="primary" data-ng-show="changed">Save
+                        <button type="submit" kc-save class="primary" data-ng-show="changed">Save
                         </button>
-                        <button type="submit" data-ng-click="reset()" data-ng-show="changed">Clear changes
+                        <button type="submit" kc-reset data-ng-show="changed">Clear changes
                         </button>
                         <button type="submit" data-ng-click="remove()" class="destructive" data-ng-hide="changed">
                             Delete

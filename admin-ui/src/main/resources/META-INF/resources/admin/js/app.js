@@ -487,6 +487,46 @@ module.directive('kcEnter', function() {
     };
 });
 
+module.directive('kcSave', function ($compile, Notifications) {
+    return {
+        restrict: 'A',
+        link: function ($scope, elem, attr, ctrl) {
+            elem.bind('click', function() {
+                $scope.$apply(function() {
+                    var form = elem.closest('form');
+                    if (form && form.attr('name')) {
+                        if ($scope[form.attr('name')].$valid) {
+                            form.find('.ng-valid').removeClass('error');
+                            $scope['save']();
+                        } else {
+                            Notifications.error("Missing or invalid field")
+                            form.find('.ng-invalid').addClass('error');
+                            form.find('.ng-valid').removeClass('error');
+                        }
+                    }
+                });
+            })
+        }
+    }
+});
+
+module.directive('kcReset', function ($compile, Notifications) {
+    return {
+        restrict: 'A',
+        link: function ($scope, elem, attr, ctrl) {
+            elem.bind('click', function() {
+                $scope.$apply(function() {
+                    var form = elem.closest('form');
+                    if (form && form.attr('name')) {
+                        form.find('.ng-valid').removeClass('error');
+                        form.find('.ng-invalid').removeClass('error');
+                        $scope['reset']();
+                    }
+                })
+            })
+        }
+    }
+});
 
 module.filter('remove', function() {
     return function(input, remove, attribute) {

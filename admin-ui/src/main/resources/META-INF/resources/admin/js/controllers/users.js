@@ -195,7 +195,6 @@ module.controller('UserDetailCtrl', function($scope, realm, user, User, $locatio
                 user = angular.copy($scope.user);
                 Notifications.success("Your changes have been saved to the user.");
             });
-
         }
     };
 

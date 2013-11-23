@@ -72,16 +72,16 @@
                     </fieldset>
 
                     <div class="form-actions" data-ng-show="createRealm">
-                        <button type="submit" data-ng-click="save()" class="primary" data-ng-show="changed">Save
+                        <button type="submit" kc-save class="primary" data-ng-show="changed">Save
                         </button>
                         <button type="submit" data-ng-click="cancel()">Cancel
                         </button>
                     </div>
 
                     <div class="form-actions" data-ng-show="!createRealm">
-                        <button type="submit" data-ng-click="save()" class="primary" data-ng-show="changed">Save
+                        <button type="submit" kc-save class="primary" data-ng-show="changed">Save
                         </button>
-                        <button type="submit" data-ng-click="reset()" data-ng-show="changed">Clear changes
+                        <button type="submit" kc-reset data-ng-show="changed">Clear changes
                         </button>
                         <button type="submit" data-ng-click="remove()" class="destructive" data-ng-hide="changed">
                             Delete
