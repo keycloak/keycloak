@@ -22,7 +22,7 @@
                 </ol>
                 <h2><span>{{realm.realm}}</span> Keys</h2>
                 <form name="realmForm" novalidate>
-                    <fieldset>
+                    <fieldset class="border-top">
                         <div class="form-group">
                             <label for="publicKey">Public key</label>
 
@@ -32,7 +32,7 @@
                         </div>
                     </fieldset>
                     <div class="form-actions">
-                        <button type="submit" data-ng-click="generate()" class="destructive">Generate new keys</button>
+                        <button type="submit" data-ng-click="generate()">Generate new keys</button>
                     </div>
                </form>
 
