@@ -18,14 +18,6 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location
         $scope.fragment = $location.path();
         $scope.path = $location.path().substring(1).split("/");
     });
-
-    $http.get('/auth-server/rest/saas/admin/realms').success(function(data) {
-        Current.realms = data;
-        if (data.length > 0) {
-            Current.realm = data[0];
-            //$location.url("/realms/" + Current.realm.id);
-        }
-    });
 });
 
 module.controller('RealmListCtrl', function($scope, Realm, Current) {

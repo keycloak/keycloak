@@ -229,11 +229,22 @@ module.factory('ApplicationOrigins', function($resource) {
 
 
 
-module.factory('Current', function($resource) {
-    return {
-        realm : null,
-        realms : {},
-        application : null,
-        applications : {}
-    };
+module.factory('Current', function(Realm, $route) {
+    var current = {};
+
+    current.realm = null;
+    current.realms = Realm.query(null, function(realms) {
+        if ($route.current.params.realm) {
+            for (var i = 0; i < realms.length; i++) {
+                if (realms[i].id == $route.current.params.realm) {
+                    current.realm =  realms[i];
+                }
+            }
+        }
+    });
+
+    current.applications = {};
+    current.application = null;
+
+    return current;
 });

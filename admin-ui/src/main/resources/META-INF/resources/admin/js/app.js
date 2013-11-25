@@ -296,8 +296,11 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'ApplicationListCtrl'
         })
-        .otherwise({
+        .when('/', {
             templateUrl : 'partials/home.html'
+        })
+        .otherwise({
+            templateUrl : 'partials/notfound.html'
         });
 } ]);
 
