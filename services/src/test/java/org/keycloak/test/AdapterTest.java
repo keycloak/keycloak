@@ -229,6 +229,34 @@ public class AdapterTest extends AbstractKeycloakTest {
 
 
     @Test
+    public void testRemoveRealm() throws Exception {
+        test1CreateRealm();
+
+        UserModel user = realmModel.addUser("bburke");
+
+        UserCredentialModel cred = new UserCredentialModel();
+        cred.setType(CredentialRepresentation.PASSWORD);
+        cred.setValue("password");
+        realmModel.updateCredential(user, cred);
+
+        OAuthClientModel client = realmModel.addOAuthClient("client");
+
+        ApplicationModel app = realmModel.addApplication("test-app");
+
+        RoleModel appRole = app.addRole("test");
+        app.grantRole(user, appRole);
+        app.addScopeMapping(client.getOAuthAgent(), appRole);
+
+        RoleModel realmRole = realmModel.addRole("test");
+        realmModel.addScopeMapping(app.getApplicationUser(), realmRole);
+
+        Assert.assertTrue(identitySession.removeRealm(realmModel.getId()));
+        Assert.assertFalse(identitySession.removeRealm(realmModel.getId()));
+        Assert.assertNull(identitySession.getRealm(realmModel.getId()));
+    }
+
+
+    @Test
     public void testRemoveRole() throws Exception {
         test1CreateRealm();
 

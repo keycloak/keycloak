@@ -95,9 +95,13 @@ public class PicketlinkKeycloakSession implements KeycloakSession {
     }
 
     @Override
-    public void deleteRealm(RealmModel realm) {
-        throw new RuntimeException("Not Implemented Yet");
-
+    public boolean removeRealm(String id) {
+        RealmData partition = partitionManager.getPartition(RealmData.class, id);
+        if (partition == null) {
+            return false;
+        }
+        partitionManager.remove(partition);
+        return true;
     }
 
     @Override

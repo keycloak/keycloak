@@ -8,11 +8,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
 
@@ -65,6 +61,12 @@ public class RealmAdminResource extends RoleContainerResource {
         new RealmManager(session).updateRealm(rep, realm);
     }
 
+    @DELETE
+    public void deleteRealms() {
+        if (!session.removeRealm(realm.getId())) {
+            throw new NotFoundException();
+        }
+    }
 
     @Path("users")
     public UsersResource users() {

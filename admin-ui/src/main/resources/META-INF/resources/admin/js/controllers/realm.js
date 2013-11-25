@@ -137,7 +137,7 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $ht
 
     $scope.remove = function() {
         Dialog.confirmDelete($scope.realm.realm, 'realm', function() {
-            Realm.remove($scope.realm, function() {
+            Realm.remove({ id : $scope.realm.id }, function() {
                 Current.realms = Realm.get();
                 $location.url("/realms");
                 Notifications.success("The realm has been deleted.");

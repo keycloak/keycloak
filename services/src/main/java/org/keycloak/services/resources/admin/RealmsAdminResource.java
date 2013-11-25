@@ -9,13 +9,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.SaasService;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Context;
@@ -94,6 +88,4 @@ public class RealmsAdminResource {
         resourceContext.initResource(adminResource);
         return adminResource;
     }
-
-
 }

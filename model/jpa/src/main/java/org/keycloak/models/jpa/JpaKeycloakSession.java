@@ -1,15 +1,13 @@
 package org.keycloak.models.jpa;
 
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakTransaction;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.jpa.entities.RealmEntity;
+import org.keycloak.models.*;
+import org.keycloak.models.jpa.entities.*;
 import org.keycloak.models.utils.KeycloakSessionUtils;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -62,8 +60,26 @@ public class JpaKeycloakSession implements KeycloakSession {
     }
 
     @Override
-    public void deleteRealm(RealmModel realm) {
-        throw new RuntimeException("Not Implemented Yet");
+    public boolean removeRealm(String id) {
+        RealmEntity realm = em.find(RealmEntity.class, id);
+        if (realm == null) {
+            return false;
+        }
+
+        RealmAdapter adapter = new RealmAdapter(em, realm);
+        for (ApplicationEntity a : new LinkedList<ApplicationEntity>(realm.getApplications())) {
+            adapter.removeApplication(a.getId());
+        }
+
+        for (UserEntity u : em.createQuery("from UserEntity", UserEntity.class).getResultList()) {
+            adapter.removeUser(u.getLoginName());
+        }
+
+        em.createQuery("delete from " + OAuthClientEntity.class.getSimpleName() + " where realm = :realm").setParameter("realm", realm).executeUpdate();
+
+        em.remove(realm);
+
+        return true;
     }
 
     @Override
