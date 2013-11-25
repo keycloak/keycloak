@@ -20,8 +20,25 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location
     });
 });
 
-module.controller('HomeCtrl', function($scope, Realm, Current) {
-   console.debug("home");
+module.controller('HomeCtrl', function(Realm, $location) {
+    Realm.query(null, function(realms) {
+        var realm;
+        if (realms.length == 1) {
+            realm = realms[0].id;
+        } else if (realms.length == 2) {
+            if (realms[0].realm == 'Keycloak Administration') {
+                realm = realms[1].id;
+            } else if (realms[1].realm == 'Keycloak Administration') {
+                realm = realms[0].id;
+            }
+        }
+
+        if (realm) {
+            $location.url('/realms/' + realm);
+        } else {
+            $location.url('/realms');
+        }
+    });
 });
 
 module.controller('RealmListCtrl', function($scope, Realm, Current) {
@@ -145,9 +162,9 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $ht
     $scope.remove = function() {
         Dialog.confirmDelete($scope.realm.realm, 'realm', function() {
             Realm.remove({ id : $scope.realm.id }, function() {
-                Current.realms = Realm.get();
-                $location.url("/realms");
+                Current.realms = Realm.query();
                 Notifications.success("The realm has been deleted.");
+                $location.url("/");
             });
         });
     };

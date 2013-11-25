@@ -297,7 +297,8 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'ApplicationListCtrl'
         })
         .when('/', {
-            templateUrl : 'partials/home.html'
+            templateUrl : 'partials/home.html',
+            controller : 'HomeCtrl'
         })
         .otherwise({
             templateUrl : 'partials/notfound.html'
@@ -332,6 +333,8 @@ module.factory('errorInterceptor', function($q, $window, $rootScope, $location, 
                 console.log('session timeout?');
                 Auth.loggedIn = false;
                 window.location = '/auth-server/rest/saas/login?path=' + $location.path();
+            } else if (response.status == 404) {
+                Notifications.error("Not found");
             } else if (response.status) {
                 if (response.data && response.data.errorMessage) {
                     Notifications.error(response.data.errorMessage);
