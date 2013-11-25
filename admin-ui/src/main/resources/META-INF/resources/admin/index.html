@@ -64,13 +64,7 @@
 <div id="wrap">
     <div data-ng-include data-src="'partials/menu.html'"></div>
 
-    <div data-ng-view id="view" data-ng-hide="httpProviderError"></div>
-
-    <div id="httpProviderError" data-ng-show="httpProviderError">
-        <button class="btn btn-danger" data-ng-click="httpProviderError=null">
-            <strong>Error</strong> {{httpProviderError}}
-        </button>
-    </div>
+    <div data-ng-view id="view"></div>
 
     <div id="loading" class="loading-backdrop">
         <div class="loading">

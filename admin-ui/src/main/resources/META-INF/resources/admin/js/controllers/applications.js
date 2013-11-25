@@ -159,7 +159,7 @@ module.controller('ApplicationRoleDetailCtrl', function($scope, realm, applicati
             $scope.role.$remove({
                 realm : realm.id,
                 application : application.id,
-                role : $scope.role.name
+                roleId : $scope.role.id
             }, function() {
                 $location.url("/realms/" + realm.id + "/applications/" + application.id + "/roles");
                 Notifications.success("The role has been deleted.");

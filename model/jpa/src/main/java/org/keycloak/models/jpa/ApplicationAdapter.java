@@ -3,10 +3,7 @@ package org.keycloak.models.jpa;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.jpa.entities.ApplicationEntity;
-import org.keycloak.models.jpa.entities.ApplicationScopeMappingEntity;
-import org.keycloak.models.jpa.entities.ApplicationUserRoleMappingEntity;
-import org.keycloak.models.jpa.entities.RoleEntity;
+import org.keycloak.models.jpa.entities.*;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
@@ -103,7 +100,7 @@ public class ApplicationAdapter implements ApplicationModel {
                 return new RoleAdapter(role);
             }
         }
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     @Override
@@ -116,6 +113,26 @@ public class ApplicationAdapter implements ApplicationModel {
         application.getRoles().add(entity);
         em.flush();
         return new RoleAdapter(entity);
+    }
+
+    @Override
+    public boolean removeRole(String id) {
+        RoleEntity role = em.find(RoleEntity.class, id);
+        if (role == null) {
+            return false;
+        }
+
+        application.getRoles().remove(role);
+        application.getDefaultRoles().remove(role);
+
+        em.createQuery("delete from " + ApplicationScopeMappingEntity.class.getSimpleName() + " where role = :role").setParameter("role", role).executeUpdate();
+        em.createQuery("delete from " + ApplicationUserRoleMappingEntity.class.getSimpleName() + " where role = :role").setParameter("role", role).executeUpdate();
+        em.createQuery("delete from " + RealmScopeMappingEntity.class.getSimpleName() + " where role = :role").setParameter("role", role).executeUpdate();
+        em.createQuery("delete from " + RealmUserRoleMappingEntity.class.getSimpleName() + " where role = :role").setParameter("role", role).executeUpdate();
+
+        em.remove(role);
+
+        return true;
     }
 
     @Override

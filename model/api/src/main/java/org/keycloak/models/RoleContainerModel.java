@@ -11,6 +11,8 @@ public interface RoleContainerModel {
 
     RoleModel addRole(String name);
 
+    boolean removeRole(String id);
+
     List<RoleModel> getRoles();
 
     RoleModel getRoleById(String id);

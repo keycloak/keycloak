@@ -5,6 +5,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.picketlink.mappings.ApplicationData;
 import org.keycloak.models.picketlink.relationships.ScopeRelationship;
+import org.picketlink.idm.IdentityManagementException;
 import org.picketlink.idm.IdentityManager;
 import org.picketlink.idm.PartitionManager;
 import org.picketlink.idm.RelationshipManager;
@@ -152,6 +153,16 @@ public class ApplicationAdapter implements ApplicationModel {
         Role role = new Role(name);
         getIdm().add(role);
         return new RoleAdapter(role, getIdm());
+    }
+
+    @Override
+    public boolean removeRole(String id) {
+        try {
+            getIdm().remove(getIdm().lookupIdentityById(Role.class, id));
+            return true;
+        } catch (IdentityManagementException e) {
+            return false;
+        }
     }
 
     @Override

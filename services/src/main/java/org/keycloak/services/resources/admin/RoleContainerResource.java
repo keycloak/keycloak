@@ -5,16 +5,9 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.services.resources.flows.Flows;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.InternalServerErrorException;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
@@ -64,6 +57,15 @@ public class RoleContainerResource {
     }
 
     @Path("roles/{id}")
+    @DELETE
+    @NoCache
+    public void deleteRole(final @PathParam("id") String id) {
+        if (!roleContainer.removeRole(id)) {
+            throw new NotFoundException();
+        }
+    }
+
+    @Path("roles/{id}")
     @PUT
     @Consumes("application/json")
     public void updateRole(final @PathParam("id") String id, final RoleRepresentation rep) {
@@ -80,7 +82,7 @@ public class RoleContainerResource {
     @Consumes("application/json")
     public Response createRole(final @Context UriInfo uriInfo, final RoleRepresentation rep) {
         if (roleContainer.getRole(rep.getName()) != null || rep.getName().startsWith(Constants.INTERNAL_ROLE)) {
-            throw new InternalServerErrorException(); // todo appropriate status here.
+            return Flows.errors().exists("Role with name " + rep.getName() + " already exists");
         }
         RoleModel role = roleContainer.addRole(rep.getName());
         if (role == null) {

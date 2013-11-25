@@ -10,18 +10,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.jpa.entities.ApplicationEntity;
-import org.keycloak.models.jpa.entities.ApplicationScopeMappingEntity;
-import org.keycloak.models.jpa.entities.ApplicationUserRoleMappingEntity;
-import org.keycloak.models.jpa.entities.CredentialEntity;
-import org.keycloak.models.jpa.entities.OAuthClientEntity;
-import org.keycloak.models.jpa.entities.RealmEntity;
-import org.keycloak.models.jpa.entities.RealmScopeMappingEntity;
-import org.keycloak.models.jpa.entities.RealmUserRoleMappingEntity;
-import org.keycloak.models.jpa.entities.RequiredCredentialEntity;
-import org.keycloak.models.jpa.entities.RoleEntity;
-import org.keycloak.models.jpa.entities.SocialLinkEntity;
-import org.keycloak.models.jpa.entities.UserEntity;
+import org.keycloak.models.jpa.entities.*;
 import org.keycloak.models.utils.SHAPasswordEncoder;
 import org.keycloak.models.utils.TimeBasedOTP;
 
@@ -797,6 +786,26 @@ public class RealmAdapter implements RealmModel {
         realm.getRoles().add(entity);
         em.flush();
         return new RoleAdapter(entity);
+    }
+
+    @Override
+    public boolean removeRole(String id) {
+        RoleEntity role = em.find(RoleEntity.class, id);
+        if (role == null) {
+            return false;
+        }
+
+        realm.getRoles().remove(role);
+        realm.getDefaultRoles().remove(role);
+
+        em.createQuery("delete from " + ApplicationScopeMappingEntity.class.getSimpleName() + " where role = :role").setParameter("role", role).executeUpdate();
+        em.createQuery("delete from " + ApplicationUserRoleMappingEntity.class.getSimpleName() + " where role = :role").setParameter("role", role).executeUpdate();
+        em.createQuery("delete from " + RealmScopeMappingEntity.class.getSimpleName() + " where role = :role").setParameter("role", role).executeUpdate();
+        em.createQuery("delete from " + RealmUserRoleMappingEntity.class.getSimpleName() + " where role = :role").setParameter("role", role).executeUpdate();
+
+        em.remove(role);
+
+        return true;
     }
 
     @Override

@@ -9,12 +9,9 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.representations.idm.ApplicationMappingsRepresentation;
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.representations.idm.MappingsRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.*;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.resources.flows.Flows;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -71,7 +68,7 @@ public class UsersResource {
     @Consumes("application/json")
     public Response createUser(final @Context UriInfo uriInfo, final UserRepresentation rep) {
         if (realm.getUser(rep.getUsername()) != null) {
-            throw new InternalServerErrorException(); // todo appropriate status here.
+            return Flows.errors().exists("User with username " + rep.getUsername() + " already exists");
         }
         UserModel user = realm.addUser(rep.getUsername());
         if (user == null) {

@@ -21,6 +21,7 @@ import org.keycloak.models.picketlink.relationships.RequiredApplicationCredentia
 import org.keycloak.models.picketlink.relationships.RequiredCredentialRelationship;
 import org.keycloak.models.picketlink.relationships.ScopeRelationship;
 import org.keycloak.models.picketlink.relationships.SocialLinkRelationship;
+import org.picketlink.idm.IdentityManagementException;
 import org.picketlink.idm.IdentityManager;
 import org.picketlink.idm.PartitionManager;
 import org.picketlink.idm.RelationshipManager;
@@ -550,6 +551,16 @@ public class RealmAdapter implements RealmModel {
         Role role = new Role(name);
         getIdm().add(role);
         return new RoleAdapter(role, getIdm());
+    }
+
+    @Override
+    public boolean removeRole(String id) {
+        try {
+            getIdm().remove(getIdm().lookupIdentityById(Role.class, id));
+            return true;
+        } catch (IdentityManagementException e) {
+            return false;
+        }
     }
 
     @Override

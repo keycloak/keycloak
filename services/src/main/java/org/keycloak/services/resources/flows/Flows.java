@@ -45,4 +45,8 @@ public class Flows {
         return new OAuthFlows(realm, request, uriInfo, authManager, tokenManager);
     }
 
+    public static ErrorFlows errors() {
+        return new ErrorFlows();
+    }
+
 }

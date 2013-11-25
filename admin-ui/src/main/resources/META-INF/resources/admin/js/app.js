@@ -320,18 +320,21 @@ module.config(function($httpProvider) {
 
 });
 
-module.factory('errorInterceptor', function($q, $window, $rootScope, $location, Auth) {
+module.factory('errorInterceptor', function($q, $window, $rootScope, $location, Auth, Notifications) {
     return function(promise) {
         return promise.then(function(response) {
-            $rootScope.httpProviderError = null;
             return response;
         }, function(response) {
             if (response.status == 401) {
                 console.log('session timeout?');
                 Auth.loggedIn = false;
                 window.location = '/auth-server/rest/saas/login?path=' + $location.path();
-            } else {
-                $rootScope.httpProviderError = response.status;
+            } else if (response.status) {
+                if (response.data && response.data.errorMessage) {
+                    Notifications.error(response.data.errorMessage);
+                } else {
+                    Notifications.error("An unexpected server error has occurred");
+                }
             }
             return $q.reject(response);
         });

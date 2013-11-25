@@ -23,7 +23,7 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location
         Current.realms = data;
         if (data.length > 0) {
             Current.realm = data[0];
-            $location.url("/realms/" + Current.realm.id);
+            //$location.url("/realms/" + Current.realm.id);
         }
     });
 });
@@ -611,7 +611,7 @@ module.controller('RoleDetailCtrl', function($scope, realm, role, Role, $locatio
         Dialog.confirmDelete($scope.role.name, 'role', function() {
             $scope.role.$remove({
                 realm : realm.id,
-                role : $scope.role.name
+                roleId : $scope.role.id
             }, function() {
                 $location.url("/realms/" + realm.id + "/roles");
                 Notifications.success("The role has been deleted.");
