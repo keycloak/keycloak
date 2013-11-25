@@ -20,8 +20,12 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location
     });
 });
 
+module.controller('HomeCtrl', function($scope, Realm, Current) {
+   console.debug("home");
+});
+
 module.controller('RealmListCtrl', function($scope, Realm, Current) {
-    $scope.realms = Realm.get();
+    $scope.realms = Realm.query();
     Current.realms = $scope.realms;
 });
 
@@ -34,6 +38,9 @@ module.controller('RealmDropdownCtrl', function($scope, Realm, Current, Auth, $l
     $scope.showNav = function() {
         var show = Current.realms.length > 0;
         return Auth.loggedIn && show;
+    }
+    $scope.refresh = function() {
+         Current.refresh();
     }
 });
 
