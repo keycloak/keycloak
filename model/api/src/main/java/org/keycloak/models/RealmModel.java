@@ -140,6 +140,8 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
     OAuthClientModel addOAuthClient(String name);
 
     OAuthClientModel getOAuthClient(String name);
+    OAuthClientModel getOAuthClientById(String id);
+    boolean removeOAuthClient(String id);
 
     List<OAuthClientModel> getOAuthClients();
 

@@ -4,12 +4,9 @@
         <div id="content-area" class="col-md-9" role="main">
             <div class="top-nav" data-ng-show="!create">
                 <ul class="rcue-tabs">
-                    <li class="active"><a href="#/realms/{{realm.id}}/applications/{{application.id}}">Settings</a></li>
-                    <li><a href="#/realms/{{realm.id}}/applications/{{application.id}}/credentials">Credentials</a></li>
-                    <li><a href="#/realms/{{realm.id}}/applications/{{application.id}}/installation">Installation</a></li>
-                    <li><a href="#/realms/{{realm.id}}/applications/{{application.id}}/roles">Roles</a></li>
-                    <li><a href="#/realms/{{realm.id}}/applications/{{application.id}}/scope-mappings">Scope</a></li>
-                    <li><a href="#">Sessions</a></li>
+                    <li class="active"><a href="#/realms/{{realm.id}}/oauth-clients/{{oauth.id}}">Settings</a></li>
+                    <li><a href="#/realms/{{realm.id}}/oauth-clients/{{oauth.id}}/credentials">Credentials</a></li>
+                    <li><a href="#/realms/{{realm.id}}/oauth-clients/{{oauth.id}}/scope-mappings">Scope</a></li>
                 </ul>
             </div>
             <div class="top-nav" data-ng-show="create">
@@ -20,44 +17,36 @@
             <div id="content">
                 <ol class="breadcrumb" data-ng-show="create">
                     <li><a href="#/realms/{{realm.id}}">{{realm.realm}}</a></li>
-                    <li><a href="#/realms/{{realm.id}}/applications">Applications</a></li>
-                    <li class="active">Add Application</li>
+                    <li><a href="#/realms/{{realm.id}}/oauth-clients">OAuth Clients</a></li>
+                    <li class="active">Add OAuth Client</li>
                 </ol>
-                <h2 class="pull-left" data-ng-show="create"><span>{{realm.realm}}</span> Add Application</h2>
+                <h2 class="pull-left" data-ng-show="create"><span>{{realm.realm}}</span> Add OAuth Client</h2>
                 <p class="subtitle" data-ng-show="create"><span class="required">*</span> Required fields</p>
                 <ol class="breadcrumb" data-ng-hide="create">
                     <li><a href="#/realms/{{realm.id}}">{{realm.realm}}</a></li>
-                    <li><a href="#/realms/{{realm.id}}/applications">Applications</a></li>
-                    <li><a href="#/realms/{{realm.id}}/applications/{{application.id}}">{{application.name}}</a></li>
+                    <li><a href="#/realms/{{realm.id}}/oauth-clients">OAuth Clients</a></li>
+                    <li><a href="#/realms/{{realm.id}}/oauth-clients/{{oauth.id}}">{{oauth.name}}</a></li>
                     <li class="active">Settings</li>
                 </ol>
-                <h2 data-ng-hide="create"><span>{{application.name}}</span> Settings</h2>
-                <form name="applicationForm" novalidate>
+                <h2 data-ng-hide="create"><span>{{oauth.name}}</span> Settings</h2>
+                <form name="oauthForm" novalidate>
                     <fieldset class="border-top">
                         <div class="form-group">
                             <label for="name">Name <span class="required" data-ng-show="create">*</span></label>
                             <div class="controls">
-                            <input type="text" id="name" name="name" data-ng-model="application.name" autofocus
+                            <input type="text" id="name" name="name" data-ng-model="oauth.name" autofocus
                                    required>
                             </div>
                         </div>
 
                         <div class="form-group clearfix block">
                             <label for="enabled" class="control-label">Enabled</label>
-                            <input ng-model="application.enabled" name="enabled" id="enabled" onoffswitch />
-                        </div>
-                        <div class="form-group">
-                            <label for="adminUrl" class="control-label">Admin URL</label>
-
-                            <div class="controls">
-                                <input class="input-small" type="text" name="adminUrl" id="adminUrl"
-                                       data-ng-model="application.adminUrl">
-                            </div>
+                            <input ng-model="oauth.enabled" name="enabled" id="enabled" onoffswitch />
                         </div>
                         <div class="form-group">
                             <label for="newWebOrigin" class="control-label">Web Origin</label>
                             <div class="controls">
-                                <div ng-repeat="webOrigin in application.webOrigins" class="item-deletable">
+                                <div ng-repeat="webOrigin in oauth.webOrigins" class="item-deletable">
                                     <input  class="input-small" type="text" data-ng-class="{'input-below':!$first}"
                                             name="webOrigin" id="webOrigin" data-ng-model="webOrigin" readonly />
                                     <button type="button" data-ng-click="deleteWebOrigin($index)" class="btn-delete">
@@ -65,14 +54,14 @@
                                 </div>
                                 <input class="input-small" type="text" name="newWebOrigin" id="newWebOrigin"
                                        placeholder="New Web Origin..." data-ng-model="newWebOrigin"
-                                       data-ng-class="{'input-below':application.webOrigins.length}" />
+                                       data-ng-class="{'input-below':oauth.webOrigins.length}" />
                                 <button data-ng-click="addWebOrigin()" ng-show="newWebOrigin.length > 0">Add</button>
                             </div>
                         </div>
                         <div class="form-group">
                             <label for="newRedirectUri" class="control-label">Redirect URI</label>
                             <div class="controls">
-                                <div ng-repeat="redirectUri in application.redirectUris" class="item-deletable">
+                                <div ng-repeat="redirectUri in oauth.redirectUris" class="item-deletable">
                                     <input  class="input-small" type="text" data-ng-class="{'input-below':!$first}"
                                             name="redirectUri" id="redirectUri" data-ng-model="redirectUri" readonly />
                                     <button type="button" data-ng-click="deleteRedirectUri($index)" class="btn-delete">
@@ -80,7 +69,7 @@
                                 </div>
                                 <input class="input-small" type="text" name="newRedirectUri" id="newRedirectUri"
                                        placeholder="New Redirect URI..." data-ng-model="newRedirectUri"
-                                       data-ng-class="{'input-below':application.redirectUris.length}" />
+                                       data-ng-class="{'input-below':oauth.redirectUris.length}" />
                                 <button data-ng-click="addRedirectUri()" ng-show="newRedirectUri.length > 0">Add</button>
                             </div>
                         </div>

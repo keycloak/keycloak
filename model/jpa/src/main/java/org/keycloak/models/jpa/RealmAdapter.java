@@ -575,9 +575,13 @@ public class RealmAdapter implements RealmModel {
             return false;
         }
         realm.getApplications().remove(application);
-        removeUser(application.getApplicationUser());
         em.createQuery("delete from " + ApplicationScopeMappingEntity.class.getSimpleName() + " where application = :application").setParameter("application", application).executeUpdate();
         em.createQuery("delete from " + ApplicationUserRoleMappingEntity.class.getSimpleName() + " where application = :application").setParameter("application", application).executeUpdate();
+        em.createQuery("delete from " + ApplicationScopeMappingEntity.class.getSimpleName() + " where user = :user").setParameter("user", application.getApplicationUser()).executeUpdate();
+        em.createQuery("delete from " + RealmScopeMappingEntity.class.getSimpleName() + " where user = :user").setParameter("user", application.getApplicationUser()).executeUpdate();
+        em.createQuery("delete from " + ApplicationUserRoleMappingEntity.class.getSimpleName() + " where user = :user").setParameter("user", application.getApplicationUser()).executeUpdate();
+        em.createQuery("delete from " + RealmUserRoleMappingEntity.class.getSimpleName() + " where user = :user").setParameter("user", application.getApplicationUser()).executeUpdate();
+        removeUser(application.getApplicationUser());
         em.remove(application);
         return true;
     }
@@ -724,6 +728,19 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public boolean removeOAuthClient(String id) {
+        OAuthClientEntity client = em.find(OAuthClientEntity.class, id);
+        em.createQuery("delete from " + ApplicationScopeMappingEntity.class.getSimpleName() + " where user = :user").setParameter("user", client.getAgent()).executeUpdate();
+        em.createQuery("delete from " + RealmScopeMappingEntity.class.getSimpleName() + " where user = :user").setParameter("user", client.getAgent()).executeUpdate();
+        em.createQuery("delete from " + ApplicationUserRoleMappingEntity.class.getSimpleName() + " where user = :user").setParameter("user", client.getAgent()).executeUpdate();
+        em.createQuery("delete from " + RealmUserRoleMappingEntity.class.getSimpleName() + " where user = :user").setParameter("user", client.getAgent()).executeUpdate();
+        removeUser(client.getAgent());
+        em.remove(client);
+        return true;
+    }
+
+
+    @Override
     public OAuthClientModel getOAuthClient(String name) {
         TypedQuery<OAuthClientEntity> query = em.createNamedQuery("findOAuthClientByUser", OAuthClientEntity.class);
         query.setParameter("name", name);
@@ -731,7 +748,15 @@ public class RealmAdapter implements RealmModel {
         List<OAuthClientEntity> entities = query.getResultList();
         if (entities.size() == 0) return null;
         return new OAuthClientAdapter(entities.get(0));
-     }
+    }
+
+    @Override
+    public OAuthClientModel getOAuthClientById(String id) {
+        OAuthClientEntity client = em.find(OAuthClientEntity.class, id);
+        if (client == null) return null;
+        return new OAuthClientAdapter(client);
+    }
+
 
     @Override
     public List<OAuthClientModel> getOAuthClients() {

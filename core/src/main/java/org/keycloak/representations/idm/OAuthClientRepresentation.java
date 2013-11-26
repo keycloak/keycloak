@@ -10,9 +10,10 @@ import java.util.List;
 public class OAuthClientRepresentation {
     protected String id;
     protected String name;
-    protected String baseUrl;
+    protected List<String> redirectUris;
+    protected List<String> webOrigins;
     protected boolean enabled;
-    protected List<ScopeMappingRepresentation> scopeMappings;
+    protected List<CredentialRepresentation> credentials;
 
     public String getId() {
         return id;
@@ -38,23 +39,27 @@ public class OAuthClientRepresentation {
         this.enabled = enabled;
     }
 
-    public List<ScopeMappingRepresentation> getScopeMappings() {
-        return scopeMappings;
+    public List<String> getRedirectUris() {
+        return redirectUris;
     }
 
-    public ScopeMappingRepresentation scopeMapping(String username) {
-        ScopeMappingRepresentation mapping = new ScopeMappingRepresentation();
-        mapping.setUsername(username);
-        if (scopeMappings == null) scopeMappings = new ArrayList<ScopeMappingRepresentation>();
-        scopeMappings.add(mapping);
-        return mapping;
+    public void setRedirectUris(List<String> redirectUris) {
+        this.redirectUris = redirectUris;
     }
 
-    public String getBaseUrl() {
-        return baseUrl;
+    public List<String> getWebOrigins() {
+        return webOrigins;
     }
 
-    public void setBaseUrl(String baseUrl) {
-        this.baseUrl = baseUrl;
+    public void setWebOrigins(List<String> webOrigins) {
+        this.webOrigins = webOrigins;
+    }
+
+    public List<CredentialRepresentation> getCredentials() {
+        return credentials;
+    }
+
+    public void setCredentials(List<CredentialRepresentation> credentials) {
+        this.credentials = credentials;
     }
 }

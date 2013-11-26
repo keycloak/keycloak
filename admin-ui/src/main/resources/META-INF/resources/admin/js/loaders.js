@@ -135,3 +135,20 @@ module.factory('RoleMappingLoader', function(Loader, RoleMapping, $route, $q) {
 		}
 	});
 });
+
+module.factory('OAuthClientLoader', function(Loader, OAuthClient, $route, $q) {
+    return Loader.get(OAuthClient, function() {
+        return {
+            realm : $route.current.params.realm,
+            id : $route.current.params.oauth
+        }
+    });
+});
+
+module.factory('OAuthClientListLoader', function(Loader, OAuthClient, $route, $q) {
+    return Loader.query(OAuthClient, function() {
+        return {
+            realm : $route.current.params.realm
+        }
+    });
+});

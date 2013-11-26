@@ -35,6 +35,5 @@
     </build>
     <modules>
         <module>as7-eap-demo</module>
-        <module>as7-eap-dev</module>
     </modules>
 </project>

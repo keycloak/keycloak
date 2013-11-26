@@ -33,11 +33,11 @@ public class RealmRepresentation {
     protected Set<String> requiredApplicationCredentials;
     protected Set<String> requiredOAuthClientCredentials;
     protected List<UserRepresentation> users;
-    protected List<UserRepresentation> clients;
     protected List<UserRoleMappingRepresentation> roleMappings;
     protected List<ScopeMappingRepresentation> scopeMappings;
     protected List<SocialMappingRepresentation> socialMappings;
     protected List<ApplicationRepresentation> applications;
+    protected List<OAuthClientRepresentation> oauthClients;
     protected Map<String, String> socialProviders;
     protected Map<String, String> smtpServer;
 
@@ -69,10 +69,6 @@ public class RealmRepresentation {
         return users;
     }
 
-    public List<UserRepresentation> getClients() {
-        return clients;
-    }
-
     public List<ApplicationRepresentation> getApplications() {
         return applications;
     }
@@ -87,10 +83,6 @@ public class RealmRepresentation {
 
     public void setUsers(List<UserRepresentation> users) {
         this.users = users;
-    }
-
-    public void setClients(List<UserRepresentation> clients) {
-        this.clients = clients;
     }
 
     public UserRepresentation user(String username) {
@@ -307,5 +299,13 @@ public class RealmRepresentation {
 
     public void setSmtpServer(Map<String, String> smtpServer) {
         this.smtpServer = smtpServer;
+    }
+
+    public List<OAuthClientRepresentation> getOauthClients() {
+        return oauthClients;
+    }
+
+    public void setOauthClients(List<OAuthClientRepresentation> oauthClients) {
+        this.oauthClients = oauthClients;
     }
 }

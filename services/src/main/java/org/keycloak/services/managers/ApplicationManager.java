@@ -36,13 +36,20 @@ public class ApplicationManager {
         this.realmManager = realmManager;
     }
 
+    /**
+     * Does not create scope or role mappings!
+     *
+     * @param realm
+     * @param loginRole
+     * @param resourceRep
+     * @return
+     */
     public ApplicationModel createApplication(RealmModel realm, RoleModel loginRole, ApplicationRepresentation resourceRep) {
         logger.debug("************ CREATE APPLICATION: {0}" + resourceRep.getName());
         ApplicationModel applicationModel = realm.addApplication(resourceRep.getName());
         applicationModel.setEnabled(resourceRep.isEnabled());
         applicationModel.setManagementUrl(resourceRep.getAdminUrl());
         applicationModel.setSurrogateAuthRequired(resourceRep.isSurrogateAuthRequired());
-        applicationModel.setBaseUrl(resourceRep.getBaseUrl());
         applicationModel.updateApplication();
 
         UserModel resourceUser = applicationModel.getApplicationUser();
@@ -80,6 +87,10 @@ public class ApplicationManager {
             applicationModel.updateDefaultRoles(resourceRep.getDefaultRoles());
         }
 
+        return applicationModel;
+    }
+
+    public void createMappings(RealmModel realm, ApplicationRepresentation resourceRep, ApplicationModel applicationModel) {
         if (resourceRep.getRoleMappings() != null) {
             for (UserRoleMappingRepresentation mapping : resourceRep.getRoleMappings()) {
                 UserModel user = realm.getUser(mapping.getUsername());
@@ -107,7 +118,6 @@ public class ApplicationManager {
                 }
             }
         }
-        return applicationModel;
     }
 
     public ApplicationModel createApplication(RealmModel realm, ApplicationRepresentation resourceRep) {
@@ -119,7 +129,6 @@ public class ApplicationManager {
         resource.setName(rep.getName());
         resource.setEnabled(rep.isEnabled());
         resource.setManagementUrl(rep.getAdminUrl());
-        resource.setBaseUrl(rep.getBaseUrl());
         resource.setSurrogateAuthRequired(rep.isSurrogateAuthRequired());
         resource.updateApplication();
 
@@ -145,7 +154,6 @@ public class ApplicationManager {
         rep.setEnabled(applicationModel.isEnabled());
         rep.setAdminUrl(applicationModel.getManagementUrl());
         rep.setSurrogateAuthRequired(applicationModel.isSurrogateAuthRequired());
-        rep.setBaseUrl(applicationModel.getBaseUrl());
 
         Set<String> redirectUris = applicationModel.getApplicationUser().getRedirectUris();
         if (redirectUris != null) {

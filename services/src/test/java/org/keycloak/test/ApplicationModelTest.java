@@ -40,7 +40,6 @@ public class ApplicationModelTest extends AbstractKeycloakServerTest {
 
         realm = manager.createRealm("original");
         application = realm.addApplication("application");
-        application.setBaseUrl("http://base");
         application.setManagementUrl("http://management");
         application.setName("app-name");
         application.addRole("role-1");
@@ -83,7 +82,6 @@ public class ApplicationModelTest extends AbstractKeycloakServerTest {
 
     public static void assertEquals(ApplicationModel expected, ApplicationModel actual) {
         Assert.assertEquals(expected.getName(), actual.getName());
-        Assert.assertEquals(expected.getBaseUrl(), actual.getBaseUrl());
         Assert.assertEquals(expected.getManagementUrl(), actual.getManagementUrl());
         Assert.assertEquals(expected.getDefaultRoles(), actual.getDefaultRoles());
 

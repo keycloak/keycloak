@@ -307,6 +307,77 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'ApplicationListCtrl'
         })
+
+        // OAUTH Client
+
+        .when('/realms/:realm/oauth-clients/:oauth/credentials', {
+            templateUrl : 'partials/oauth-client-credentials.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                application : function(OAuthClientLoader) {
+                    return OAuthClientLoader();
+                }
+            },
+            controller : 'OAuthClientCredentialsCtrl'
+        })
+        .when('/realms/:realm/oauth-clients/:oauth/scope-mappings', {
+            templateUrl : 'partials/oauth-client-scope-mappings.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                oauth : function(OAuthClientLoader) {
+                    return OAuthClientLoader();
+                },
+                applications : function(ApplicationListLoader) {
+                    return ApplicationListLoader();
+                },
+                roles : function(RoleListLoader) {
+                    return RoleListLoader();
+                }
+            },
+            controller : 'OAuthClientScopeMappingCtrl'
+        })
+
+        .when('/create/oauth-client/:realm', {
+            templateUrl : 'partials/oauth-client-detail.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                oauth : function() {
+                    return {};
+                }
+            },
+            controller : 'OAuthClientDetailCtrl'
+        })
+        .when('/realms/:realm/oauth-clients/:oauth', {
+            templateUrl : 'partials/oauth-client-detail.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                oauth : function(OAuthClientLoader) {
+                    return OAuthClientLoader();
+                }
+            },
+            controller : 'OAuthClientDetailCtrl'
+        })
+        .when('/realms/:realm/oauth-clients', {
+            templateUrl : 'partials/oauth-client-list.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                oauthClients : function(OAuthClientListLoader) {
+                    return OAuthClientListLoader();
+                }
+            },
+            controller : 'OAuthClientListCtrl'
+        })
+
         .when('/', {
             templateUrl : 'partials/home.html',
             controller : 'HomeCtrl'
