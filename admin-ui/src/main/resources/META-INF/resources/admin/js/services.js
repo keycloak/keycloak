@@ -15,9 +15,16 @@ module.service('Auth', function() {
 
 module.service('Dialog', function($dialog) {
 	var dialog = {};
+
+	var escapeHtml = function(str) {
+		var div = document.createElement('div');
+		div.appendChild(document.createTextNode(str));
+		return div.innerHTML;
+	};
+
 	dialog.confirmDelete = function(name, type, success) {
-		var title = 'Delete ' + type.charAt(0).toUpperCase() + type.slice(1);
-		var msg = '<span class="primary">Are you sure you want to permanently delete the ' + type + ' "' + name + '"?</span>' +
+		var title = 'Delete ' + escapeHtml(type.charAt(0).toUpperCase() + type.slice(1));
+		var msg = '<span class="primary">Are you sure you want to permanently delete the ' + escapeHtml(type) + ' "' + escapeHtml(name) + '"?</span>' +
             '<span>This action can\'t be undone.</span>';
 		var btns = [ {
 			result : 'cancel',
@@ -200,6 +207,22 @@ module.factory('Application', function($resource) {
             method : 'PUT'
         }
     });
+});
+
+module.factory('ApplicationInstallation', function($resource) {
+    var url = '/auth-server/rest/saas/admin/realms/:realm/applications/:application/installation';
+    var resource = $resource('/auth-server/rest/saas/admin/realms/:realm/applications/:application/installation', {
+        realm : '@realm',
+        application : '@application'
+    },  {
+        update : {
+            method : 'PUT'
+        }
+    });
+    resource.url = function(parameters) {
+        return url.replace(':realm', parameters.realm).replace(':application', parameters.application);
+    }
+    return resource;
 });
 
 module.factory('ApplicationCredentials', function($resource) {

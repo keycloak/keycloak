@@ -1,11 +1,13 @@
 package org.keycloak.services.resources.admin;
 
+import org.codehaus.jackson.map.ObjectMapper;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.logging.Logger;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
+import org.keycloak.representations.idm.ApplicationInstallationRepresentation;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.ApplicationManager;
@@ -17,7 +19,10 @@ import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.UriInfo;
+import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
@@ -30,6 +35,8 @@ public class ApplicationResource extends RoleContainerResource {
     protected RealmModel realm;
     protected ApplicationModel application;
     protected KeycloakSession session;
+    @Context
+    protected UriInfo uriInfo;
 
     public ApplicationResource(RealmModel realm, ApplicationModel applicationModel, KeycloakSession session) {
         super(applicationModel);
@@ -52,6 +59,20 @@ public class ApplicationResource extends RoleContainerResource {
     public ApplicationRepresentation getApplication() {
         ApplicationManager applicationManager = new ApplicationManager(new RealmManager(session));
         return applicationManager.toRepresentation(application);
+    }
+
+
+    @GET
+    @NoCache
+    @Path("installation")
+    @Produces(MediaType.APPLICATION_JSON)
+    public String getInstallation() throws IOException {
+        ApplicationManager applicationManager = new ApplicationManager(new RealmManager(session));
+        ApplicationInstallationRepresentation rep = applicationManager.toInstallationRepresentation(realm, application, uriInfo.getBaseUri());
+
+        // TODO Temporary solution to pretty-print
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(rep);
     }
 
     @DELETE

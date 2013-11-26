@@ -8,15 +8,20 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ApplicationRepresentation;
+import org.keycloak.representations.idm.ApplicationInstallationRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.ScopeMappingRepresentation;
 import org.keycloak.representations.idm.UserRoleMappingRepresentation;
+import org.keycloak.services.resources.flows.Urls;
 
+import java.net.URI;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -166,5 +171,26 @@ public class ApplicationManager {
 
         return rep;
 
+    }
+
+    public ApplicationInstallationRepresentation toInstallationRepresentation(RealmModel realmModel, ApplicationModel applicationModel, URI baseUri) {
+        ApplicationInstallationRepresentation rep = new ApplicationInstallationRepresentation();
+        rep.setRealm(realmModel.getId());
+        rep.setRealmPublicKey(realmModel.getPublicKeyPem());
+        rep.setSslNotRequired(realmModel.isSslNotRequired());
+
+        rep.setAuthUrl(Urls.realmLoginPage(baseUri, realmModel.getId()).toString());
+        rep.setCodeUrl(Urls.realmCode(baseUri, realmModel.getId()).toString());
+
+        rep.setResource(applicationModel.getId());
+
+        Map<String, String> creds = new HashMap<String, String>();
+        creds.put(CredentialRepresentation.PASSWORD, "INSERT APPLICATION PASSWORD");
+        if (applicationModel.getApplicationUser().isTotp()) {
+            creds.put(CredentialRepresentation.TOTP, "INSERT APPLICATION TOTP");
+        }
+        rep.setCredentials(creds);
+
+        return rep;
     }
 }

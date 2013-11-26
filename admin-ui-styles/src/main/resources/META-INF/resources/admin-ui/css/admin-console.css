@@ -94,6 +94,24 @@ body {
   margin-left: -2.27272727272727em;
   padding-top: 2.90909090909091em;
 }
+.error-container {
+  width: 54em;
+  margin-top: 6em;
+  margin-left: 8em;
+}
+.error-container h2 {
+  text-transform: uppercase;
+  font-size: 2.3em;
+  font-family: Overpass, sans-serif;
+  margin-bottom: 1.52173913043478em;
+}
+.error-container p.instruction {
+  font-size: 1.3em;
+}
+.error-container .link-right {
+  float: right;
+  font-size: 1.3em;
+}
 /* Header */
 .header.rcue {
   z-index: 50;
@@ -648,6 +666,7 @@ table.list tbody tr.expanded .form-actions {
   .header.rcue .navbar.utility .navbar-inner,
   .header.rcue .navbar.primary .navbar-inner {
     max-width: 970px;
+    min-width: 560px;
   }
   #container-right-bg {
     margin-left: 242.5px;
@@ -661,12 +680,16 @@ table.list tbody tr.expanded .form-actions {
   }
   .bs-sidebar,
   .user .bs-sidebar {
-    padding-top: 1em;
     width: 100%;
+    padding-top: 0;
   }
   .bs-sidebar ul li,
   .user .bs-sidebar ul li {
     margin-left: 0;
+  }
+  .bs-sidebar ul li:first-child,
+  .user .bs-sidebar ul li:first-child {
+    margin-top: 1em;
   }
   .bs-sidebar ul li a,
   .user .bs-sidebar ul li a {
@@ -704,8 +727,16 @@ table.list tbody tr.expanded .form-actions {
   #content-area {
     border: none;
   }
+  .bs-sidebar + #content-area {
+    margin-top: 0;
+  }
   #container-right-bg {
     border: none;
     width: 100%;
+  }
+  .error-container {
+    width: inherit;
+    margin-right: 6em;
+    margin-left: 6em;
   }
 }

@@ -253,7 +253,18 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'ApplicationScopeMappingCtrl'
         })
-
+        .when('/realms/:realm/applications/:application/installation', {
+            templateUrl : 'partials/application-installation.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                installation : function(ApplicationInstallationLoader) {
+                    return ApplicationInstallationLoader();
+                }
+            },
+            controller : 'ApplicationInstallationCtrl'
+        })
         .when('/create/application/:realm', {
             templateUrl : 'partials/application-detail.html',
             resolve : {
@@ -502,8 +513,8 @@ module.directive('onoffswitch', function() {
             offText: '@offText'
         },
         compile: function(element, attrs) {
-            if (!attrs.onText) { attrs.onText = "YES"; }
-            if (!attrs.offText) { attrs.offText = "NO"; }
+            if (!attrs.onText) { attrs.onText = "ON"; }
+            if (!attrs.offText) { attrs.offText = "OFF"; }
 
             var html = "<div class=\"onoffswitch\">" +
                 "<input type=\"checkbox\" data-ng-model=\"ngModel\" class=\"onoffswitch-checkbox\" name=\"" + attrs.name + "\" id=\"" + attrs.id + "\">" +

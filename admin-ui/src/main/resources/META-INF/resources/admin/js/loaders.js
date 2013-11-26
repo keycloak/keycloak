@@ -87,6 +87,15 @@ module.factory('ApplicationRoleLoader', function(Loader, ApplicationRole, $route
     });
 });
 
+module.factory('ApplicationInstallationLoader', function(Loader, ApplicationInstallation, $route, $q) {
+    return Loader.get(ApplicationInstallation, function() {
+        return {
+            realm : $route.current.params.realm,
+            application : $route.current.params.application
+        }
+    });
+});
+
 module.factory('ApplicationRoleListLoader', function(Loader, ApplicationRole, $route, $q) {
     return Loader.query(ApplicationRole, function() {
         return {
