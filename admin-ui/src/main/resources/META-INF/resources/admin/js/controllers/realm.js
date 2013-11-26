@@ -484,16 +484,29 @@ module.controller('RealmSocialCtrl', function($scope, realm, Realm, $location, N
 
 });
 
-module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, $location, Dialog, Notifications) {
+module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, $location, Dialog, Notifications, TimeUnit) {
     console.log('RealmTokenDetailCtrl');
 
-    $scope.realm = { id : realm.id, realm : realm.realm, social : realm.social, registrationAllowed : realm.registrationAllowed,
-        tokenLifespan : realm.tokenLifespan,  accessCodeLifespan : realm.accessCodeLifespan,
-        accessCodeLifespanUserAction : realm.accessCodeLifespanUserAction  };
+    $scope.realm = { id : realm.id, realm : realm.realm, social : realm.social, registrationAllowed : realm.registrationAllowed };
 
-    $scope.realm.tokenLifespanUnit = 'Seconds';
-    $scope.realm.accessCodeLifespanUnit = 'Seconds';
-    $scope.realm.accessCodeLifespanUserActionUnit = 'Seconds';
+    $scope.realm.tokenLifespanUnit = TimeUnit.autoUnit(realm.tokenLifespan);
+    $scope.realm.tokenLifespan = TimeUnit.toUnit(realm.tokenLifespan, $scope.realm.tokenLifespanUnit);
+    $scope.$watch('realm.tokenLifespanUnit', function(to, from) {
+        $scope.realm.tokenLifespan = TimeUnit.convert($scope.realm.tokenLifespan, from, to);
+    });
+
+    $scope.realm.accessCodeLifespanUnit = TimeUnit.autoUnit(realm.accessCodeLifespan);
+    $scope.realm.accessCodeLifespan = TimeUnit.toUnit(realm.accessCodeLifespan, $scope.realm.accessCodeLifespanUnit);
+    $scope.$watch('realm.accessCodeLifespanUnit', function(to, from) {
+        $scope.realm.accessCodeLifespan = TimeUnit.convert($scope.realm.accessCodeLifespan, from, to);
+    });
+
+    $scope.realm.accessCodeLifespanUserActionUnit = TimeUnit.autoUnit(realm.accessCodeLifespanUserAction);
+    $scope.realm.accessCodeLifespanUserAction = TimeUnit.toUnit(realm.accessCodeLifespanUserAction, $scope.realm.accessCodeLifespanUserActionUnit);
+    $scope.$watch('realm.accessCodeLifespanUserActionUnit', function(to, from) {
+        $scope.realm.accessCodeLifespanUserAction = TimeUnit.convert($scope.realm.accessCodeLifespanUserAction, from, to);
+    });
+
 
     var oldCopy = angular.copy($scope.realm);
     $scope.changed = false;
@@ -509,27 +522,11 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
         delete realmCopy["tokenLifespanUnit"];
         delete realmCopy["accessCodeLifespanUnit"];
         delete realmCopy["accessCodeLifespanUserActionUnit"];
-        if ($scope.realm.tokenLifespanUnit == 'Minutes') {
-            realmCopy.tokenLifespan = $scope.realm.tokenLifespan * 60;
-        } else if ($scope.realm.tokenLifespanUnit == 'Hours') {
-            realmCopy.tokenLifespan = $scope.realm.tokenLifespan * 60 * 60;
-        } else if ($scope.realm.tokenLifespanUnit == 'Days') {
-            realmCopy.tokenLifespan = $scope.realm.tokenLifespan * 60 * 60 * 24;
-        }
-        if ($scope.realm.accessCodeLifespanUnit == 'Minutes') {
-            realmCopy.accessCodeLifespan = $scope.realm.accessCodeLifespan * 60;
-        } else if ($scope.realm.accessCodeLifespanUnit == 'Hours') {
-            realmCopy.accessCodeLifespan = $scope.realm.accessCodeLifespan * 60 * 60;
-        } else if ($scope.realm.accessCodeLifespanUnit == 'Days') {
-            realmCopy.accessCodeLifespan = $scope.realm.accessCodeLifespan * 60 * 60 * 24;
-        }
-        if ($scope.realm.accessCodeLifespanUserActionUnit == 'Minutes') {
-            realmCopy.accessCodeLifespanUserAction = $scope.realm.accessCodeLifespanUserAction * 60;
-        } else if ($scope.realm.accessCodeLifespanUserActionUnit == 'Hours') {
-            realmCopy.accessCodeLifespanUserAction = $scope.realm.accessCodeLifespanUserAction * 60 * 60;
-        } else if ($scope.realm.accessCodeLifespanUserActionUnit == 'Days') {
-            realmCopy.accessCodeLifespanUserAction = $scope.realm.accessCodeLifespanUserAction * 60 * 60 * 24;
-        }
+
+        realmCopy.tokenLifespan = TimeUnit.toSeconds($scope.realm.tokenLifespan, $scope.realm.tokenLifespanUnit)
+        realmCopy.accessCodeLifespan = TimeUnit.toSeconds($scope.realm.accessCodeLifespan, $scope.realm.accessCodeLifespanUnit)
+        realmCopy.accessCodeLifespanUserAction = TimeUnit.toSeconds($scope.realm.accessCodeLifespanUserAction, $scope.realm.accessCodeLifespanUserActionUnit)
+
         $scope.changed = false;
         Realm.update(realmCopy, function () {
             $location.url("/realms/" + realm.id + "/token-settings");

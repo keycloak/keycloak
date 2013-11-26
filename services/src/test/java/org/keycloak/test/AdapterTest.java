@@ -303,6 +303,7 @@ public class AdapterTest extends AbstractKeycloakTest {
         }
 
         RealmManager adapter = getRealmManager();
+        adapter.createRealm("other").addUser("bburke");
 
         {
             List<UserModel> userModels = adapter.searchUsers("total junk query", realmModel);
