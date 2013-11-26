@@ -431,8 +431,8 @@ module.directive('onoffswitch', function() {
             offText: '@offText'
         },
         compile: function(element, attrs) {
-            if (!attrs.onText) { attrs.onText = "YES"; }
-            if (!attrs.offText) { attrs.offText = "NO"; }
+            if (!attrs.onText) { attrs.onText = "ON"; }
+            if (!attrs.offText) { attrs.offText = "OFF"; }
 
             var html = "<div class=\"onoffswitch\">" +
                 "<input type=\"checkbox\" data-ng-model=\"ngModel\" class=\"onoffswitch-checkbox\" name=\"" + attrs.name + "\" id=\"" + attrs.id + "\">" +
