@@ -117,6 +117,28 @@ body {
     }
 }
 
+.error-container {
+    width: 54em;
+    margin-top: 6em;
+    margin-left: 8em;
+    
+    h2 {
+        text-transform: uppercase;
+        font-size: 2.3em;
+        font-family: Overpass, sans-serif;
+        margin-bottom: 1.52173913043478em;
+    }
+    
+    p.instruction {
+        font-size: 1.3em;
+    }
+    
+    .link-right {
+        float: right;
+        font-size: 1.3em;
+    }
+}
+
 
 /* Header */
 
@@ -808,6 +830,7 @@ table.list {
         .navbar.utility .navbar-inner,
         .navbar.primary .navbar-inner {
             max-width: 970px;
+            min-width: 560px;
         }
     }
     
@@ -829,12 +852,16 @@ table.list {
     
     .bs-sidebar,
     .user .bs-sidebar {
-        padding-top: 1em;
         width: 100%;
+        padding-top: 0;
         
         ul li {
         
             margin-left: 0;
+            
+            &:first-child {
+                margin-top: 1em;
+            }
             
             a {
                 border-width: 1px;
@@ -889,8 +916,18 @@ table.list {
         border: none;
     }
     
+    .bs-sidebar + #content-area {
+        margin-top: 0;
+    }
+    
     #container-right-bg {
         border: none;
         width: 100%;
+    }
+    
+    .error-container {
+        width: inherit;
+        margin-right: 6em;
+        margin-left: 6em;
     }
 }
