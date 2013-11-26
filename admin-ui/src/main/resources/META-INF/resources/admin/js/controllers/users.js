@@ -119,10 +119,13 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, ro
 module.controller('UserListCtrl', function($scope, realm, User) {
     $scope.realm = realm;
     $scope.searchQuery = function() {
+        $scope.currentSearch = $scope.search;
         $scope.searchLoaded = false;
-        $scope.users = User.query({ realm: realm.id, search : $scope.search }, function() {
-            $scope.searchLoaded = true;
-        });
+        if ($scope.search) {
+            $scope.users = User.query({ realm: realm.id, search : $scope.search }, function() {
+                $scope.searchLoaded = true;
+            });
+        }
     };
 });
 
