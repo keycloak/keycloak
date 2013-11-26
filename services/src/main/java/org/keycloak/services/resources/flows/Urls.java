@@ -120,6 +120,10 @@ public class Urls {
         return tokenBase(baseUri).path(TokenService.class, "registerPage").build(realmId);
     }
 
+    public static URI realmCode(URI baseUri, String realmId) {
+        return tokenBase(baseUri).path(TokenService.class, "accessCodeToToken").build(realmId);
+    }
+
     private static UriBuilder saasBase(URI baseUri) {
         return UriBuilder.fromUri(baseUri).path(SaasService.class);
     }

@@ -253,7 +253,18 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'ApplicationScopeMappingCtrl'
         })
-
+        .when('/realms/:realm/applications/:application/installation', {
+            templateUrl : 'partials/application-installation.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                installation : function(ApplicationInstallationLoader) {
+                    return ApplicationInstallationLoader();
+                }
+            },
+            controller : 'ApplicationInstallationCtrl'
+        })
         .when('/create/application/:realm', {
             templateUrl : 'partials/application-detail.html',
             resolve : {

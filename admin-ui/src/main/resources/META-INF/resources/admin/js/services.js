@@ -209,6 +209,22 @@ module.factory('Application', function($resource) {
     });
 });
 
+module.factory('ApplicationInstallation', function($resource) {
+    var url = '/auth-server/rest/saas/admin/realms/:realm/applications/:application/installation';
+    var resource = $resource('/auth-server/rest/saas/admin/realms/:realm/applications/:application/installation', {
+        realm : '@realm',
+        application : '@application'
+    },  {
+        update : {
+            method : 'PUT'
+        }
+    });
+    resource.url = function(parameters) {
+        return url.replace(':realm', parameters.realm).replace(':application', parameters.application);
+    }
+    return resource;
+});
+
 module.factory('ApplicationCredentials', function($resource) {
     return $resource('/auth-server/rest/saas/admin/realms/:realm/applications/:application/credentials', {
         realm : '@realm',
