@@ -28,16 +28,6 @@
             ]
         }
     ],
-    "clients" : [
-        {
-            "username" : "third-party",
-            "enabled": true,
-            "credentials" : [
-                { "type" : "password",
-                    "value" : "password" }
-            ]
-        }
-    ],
     "roles": [
         {
             "name": "user",
@@ -58,7 +48,16 @@
         {
             "username": "third-party",
             "roles": ["user"]
+        },
+        {
+            "username": "customer-portal",
+            "roles": ["user"]
+        },
+        {
+            "username": "product-portal",
+            "roles": ["user"]
         }
+
     ],
     "applications": [
         {
@@ -83,5 +82,18 @@
                 }
             ]
         }
+    ],
+    "oauthClients": [
+        {
+            "name": "third-party",
+            "enabled": true,
+            "credentials": [
+                {
+                    "type": "password",
+                    "value": "password"
+                }
+            ]
+        }
     ]
+
 }

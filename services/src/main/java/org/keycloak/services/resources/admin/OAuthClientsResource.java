@@ -54,12 +54,12 @@ public class OAuthClientsResource {
     public Response createOAuthClient(final @Context UriInfo uriInfo, final OAuthClientRepresentation rep) {
         OAuthClientManager resourceManager = new OAuthClientManager(realm);
         OAuthClientModel oauth = resourceManager.create(rep);
-        return Response.created(uriInfo.getAbsolutePathBuilder().path(oauth.getOAuthAgent().getLoginName()).build()).build();
+        return Response.created(uriInfo.getAbsolutePathBuilder().path(oauth.getId()).build()).build();
     }
 
     @Path("{id}")
     public OAuthClientResource getOAuthClient(final @PathParam("id") String id) {
-        OAuthClientModel oauth = realm.getOAuthClient(id);
+        OAuthClientModel oauth = realm.getOAuthClientById(id);
         if (oauth == null) {
             throw new NotFoundException();
         }

@@ -226,6 +226,45 @@ module.factory('ApplicationOrigins', function($resource) {
     });
 });
 
+module.factory('OAuthClient', function($resource) {
+    return $resource('/auth-server/rest/saas/admin/realms/:realm/oauth-clients/:id', {
+        realm : '@realm',
+        id : '@id'
+    },  {
+        update : {
+            method : 'PUT'
+        }
+    });
+});
+
+module.factory('OAuthClientCredentials', function($resource) {
+    return $resource('/auth-server/rest/saas/admin/realms/:realm/oauth-clients/:oauth/credentials', {
+        realm : '@realm',
+        oauth : '@oauth'
+    },  {
+        update : {
+            method : 'PUT',
+            isArray : true
+        }
+    });
+});
+
+module.factory('OAuthClientRealmScopeMapping', function($resource) {
+    return $resource('/auth-server/rest/saas/admin/realms/:realm/oauth-clients/:oauth/scope-mappings/realm', {
+        realm : '@realm',
+        oauth : '@oauth'
+    });
+});
+
+module.factory('OAuthClientApplicationScopeMapping', function($resource) {
+    return $resource('/auth-server/rest/saas/admin/realms/:realm/oauth-clients/:oauth/scope-mappings/applications/:targetApp', {
+        realm : '@realm',
+        oauth : '@oauth',
+        targetApp : '@targetApp'
+    });
+});
+
+
 module.factory('Current', function(Realm, $route) {
     var current = {};
 

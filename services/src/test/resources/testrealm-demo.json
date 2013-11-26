@@ -25,9 +25,9 @@
             ]
         }
     ],
-    "clients" : [
+    "oauthClients" : [
         {
-            "username" : "third-party",
+            "name" : "third-party",
             "enabled": true,
             "credentials" : [
                 { "type" : "Password",

@@ -12,6 +12,7 @@ import org.keycloak.services.managers.OAuthClientManager;
 import org.keycloak.services.managers.RealmManager;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -46,9 +47,14 @@ public class OAuthClientResource  {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public OAuthClientRepresentation getApplication() {
-        OAuthClientManager manager = new OAuthClientManager(realm);
+    public OAuthClientRepresentation getOAuthClient() {
         return OAuthClientManager.toRepresentation(oauthClient);
+    }
+
+    @DELETE
+    @NoCache
+    public void deleteOAuthClient() {
+        realm.removeOAuthClient(oauthClient.getId());
     }
 
     @Path("credentials")

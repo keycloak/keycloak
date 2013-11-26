@@ -106,17 +106,6 @@ public class ApplicationAdapter implements ApplicationModel {
     }
 
     @Override
-    public String getBaseUrl() {
-        return applicationData.getBaseUrl();
-    }
-
-    @Override
-    public void setBaseUrl(String url) {
-        applicationData.setBaseUrl(url);
-        updateApplication();
-    }
-
-    @Override
     public RoleAdapter getRole(String name) {
         Role role = SampleModel.getRole(getIdm(), name);
         if (role == null) return null;

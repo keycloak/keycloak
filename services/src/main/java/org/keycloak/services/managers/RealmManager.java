@@ -4,6 +4,7 @@ import org.jboss.resteasy.logging.Logger;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
@@ -13,6 +14,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.OAuthClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.ScopeMappingRepresentation;
@@ -227,14 +229,6 @@ public class RealmManager {
             }
         }
 
-        if (rep.getClients() != null) {
-            for (UserRepresentation clientRep : rep.getClients()) {
-                UserModel client = createUser(newRealm, clientRep);
-                newRealm.grantRole(client, newRealm.getRole(Constants.IDENTITY_REQUESTER_ROLE));
-                userMap.put(client.getLoginName(), client);
-            }
-        }
-
         if (rep.getRoles() != null) {
             for (RoleRepresentation roleRep : rep.getRoles()) {
                 createRole(newRealm, roleRep);
@@ -247,12 +241,33 @@ public class RealmManager {
             }
         }
 
+        Map<String, ApplicationModel> appMap = null;
         if (rep.getApplications() != null) {
-            Map<String, ApplicationModel> appMap = createApplications(rep, newRealm);
+            appMap = createApplications(rep, newRealm);
             for (ApplicationModel app : appMap.values()) {
                 userMap.put(app.getApplicationUser().getLoginName(), app.getApplicationUser());
             }
         }
+
+        if (rep.getOauthClients() != null) {
+            Map<String, OAuthClientModel> oauthMap = createOAuthClients(rep, newRealm);
+            for (OAuthClientModel app : oauthMap.values()) {
+                userMap.put(app.getOAuthAgent().getLoginName(), app.getOAuthAgent());
+            }
+
+        }
+
+        // Now that all possible users are created (users, apps, and oauth clients), do role mappings and scope mappings
+
+        if (rep.getApplications() != null) {
+            ApplicationManager manager = new ApplicationManager(this);
+            for (ApplicationRepresentation appRep : rep.getApplications()) {
+                ApplicationModel model = appMap.get(appRep.getName());
+                manager.createMappings(newRealm, appRep, model);
+
+            }
+        }
+
 
         if (rep.getRoleMappings() != null) {
             for (UserRoleMappingRepresentation mapping : rep.getRoleMappings()) {
@@ -380,6 +395,17 @@ public class RealmManager {
         }
         return appMap;
     }
+
+    protected Map<String, OAuthClientModel> createOAuthClients(RealmRepresentation realmRep, RealmModel realm) {
+        Map<String, OAuthClientModel> appMap = new HashMap<String, OAuthClientModel>();
+        OAuthClientManager manager = new OAuthClientManager(realm);
+        for (OAuthClientRepresentation rep : realmRep.getOauthClients()) {
+            OAuthClientModel app = manager.create(rep);
+            appMap.put(app.getOAuthAgent().getLoginName(), app);
+        }
+        return appMap;
+    }
+
 
     public static UserRepresentation toRepresentation(UserModel user) {
         UserRepresentation rep = new UserRepresentation();

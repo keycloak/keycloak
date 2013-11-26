@@ -747,6 +747,19 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public boolean removeOAuthClient(String id) {
+        RelationshipQuery<OAuthClientRelationship> query = getRelationshipManager().createRelationshipQuery(OAuthClientRelationship.class);
+        query.setParameter(OAuthClientRelationship.REALM, realm.getName());
+        query.setParameter(OAuthClientRelationship.ID, id);
+        List<OAuthClientRelationship> results = query.getResultList();
+        if (results.size() == 0) return false;
+        OAuthClientRelationship relationship = results.get(0);
+        getRelationshipManager().remove(relationship);
+        return true;
+    }
+
+
+    @Override
     public OAuthClientModel getOAuthClient(String name) {
         User user = findPicketlinkUser(name);
         if (user == null) return null;
@@ -756,6 +769,17 @@ public class RealmAdapter implements RealmModel {
         if (results.size() == 0) return null;
         return new OAuthClientAdapter(results.get(0), getIdm(), getRelationshipManager());
     }
+
+    @Override
+    public OAuthClientModel getOAuthClientById(String id) {
+        RelationshipQuery<OAuthClientRelationship> query = getRelationshipManager().createRelationshipQuery(OAuthClientRelationship.class);
+        query.setParameter(OAuthClientRelationship.REALM, realm.getName());
+        query.setParameter(OAuthClientRelationship.ID, id);
+        List<OAuthClientRelationship> results = query.getResultList();
+        if (results.size() == 0) return null;
+        return new OAuthClientAdapter(results.get(0), getIdm(), getRelationshipManager());
+    }
+
 
     @Override
     public List<OAuthClientModel> getOAuthClients() {

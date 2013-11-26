@@ -29,10 +29,6 @@ public interface ApplicationModel extends RoleContainerModel, RoleMapperModel, S
 
     void setManagementUrl(String url);
 
-    String getBaseUrl();
-
-    void setBaseUrl(String url);
-
     List<String> getDefaultRoles();
 
     void addDefaultRole(String name);
