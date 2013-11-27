@@ -8,9 +8,10 @@
 <%
    String logoutUri = UriBuilder.fromUri("http://localhost:8080/auth-server/rest/realms/demo/tokens/logout")
                                      .queryParam("redirect_uri", "http://localhost:8080/product-portal").build().toString();
+    String acctUri =   UriBuilder.fromUri("http://localhost:8080/auth-server/rest/realms/demo/account").build().toString();
 %>
 
-<p>Goto: <a href="http://localhost:8080/customer-portal">customers</a> | <a href="<%=logoutUri%>">logout</a></p>
+<p>Goto: <a href="http://localhost:8080/customer-portal">customers</a> | <a href="<%=logoutUri%>">logout</a> | <a href="<%=acctUri%>">manage acct</a></p>
 User <b><%=request.getUserPrincipal().getName()%></b> made this request.
 <h2>Product Listing</h2>
 <%
