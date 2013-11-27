@@ -241,14 +241,12 @@ public class RealmManager {
             }
         }
 
-        Map<String, ApplicationModel> appMap = null;
         if (rep.getApplications() != null) {
-            appMap = createApplications(rep, newRealm);
+            Map<String, ApplicationModel> appMap = createApplications(rep, newRealm);
             for (ApplicationModel app : appMap.values()) {
                 userMap.put(app.getApplicationUser().getLoginName(), app.getApplicationUser());
             }
         }
-
         if (rep.getOauthClients() != null) {
             Map<String, OAuthClientModel> oauthMap = createOAuthClients(rep, newRealm);
             for (OAuthClientModel app : oauthMap.values()) {
@@ -257,16 +255,36 @@ public class RealmManager {
 
         }
 
-        // Now that all possible users are created (users, apps, and oauth clients), do role mappings and scope mappings
+        if (rep.getAccountManagement() != null && rep.getAccountManagement()) {
+            enableAccountManagement(newRealm);
+        }
 
-        if (rep.getApplications() != null) {
+        // Now that all possible users and applications are created (users, apps, and oauth clients), do role mappings and scope mappings
+
+        Map<String, ApplicationModel> appMap = newRealm.getApplicationNameMap();
+
+        if (rep.getApplicationRoleMappings() != null) {
             ApplicationManager manager = new ApplicationManager(this);
-            for (ApplicationRepresentation appRep : rep.getApplications()) {
-                ApplicationModel model = appMap.get(appRep.getName());
-                manager.createMappings(newRealm, appRep, model);
-
+            for (Map.Entry<String, List<UserRoleMappingRepresentation>> entry : rep.getApplicationRoleMappings().entrySet()) {
+                ApplicationModel app = appMap.get(entry.getKey());
+                if (app == null) {
+                    throw new RuntimeException("Unable to find application role mappings for app: " + entry.getKey());
+                }
+                manager.createRoleMappings(newRealm, app, entry.getValue());
             }
         }
+
+        if (rep.getApplicationScopeMappings() != null) {
+            ApplicationManager manager = new ApplicationManager(this);
+            for (Map.Entry<String, List<ScopeMappingRepresentation>> entry : rep.getApplicationScopeMappings().entrySet()) {
+                ApplicationModel app = appMap.get(entry.getKey());
+                if (app == null) {
+                    throw new RuntimeException("Unable to find application role mappings for app: " + entry.getKey());
+                }
+                manager.createScopeMappings(newRealm, app, entry.getValue());
+            }
+        }
+
 
 
         if (rep.getRoleMappings() != null) {
@@ -304,10 +322,6 @@ public class RealmManager {
                     newRealm.addSocialLink(user, mappingModel);
                 }
             }
-        }
-
-        if (rep.getAccountManagement() != null && rep.getAccountManagement()) {
-            enableAccountManagement(newRealm);
         }
 
         if (rep.getSmtpServer() != null) {

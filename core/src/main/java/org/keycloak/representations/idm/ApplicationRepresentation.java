@@ -17,8 +17,6 @@ public class ApplicationRepresentation {
     protected List<CredentialRepresentation> credentials;
     protected List<RoleRepresentation> roles;
     protected String[] defaultRoles;
-    protected List<UserRoleMappingRepresentation> roleMappings;
-    protected List<ScopeMappingRepresentation> scopeMappings;
     protected List<String> redirectUris;
     protected List<String> webOrigins;
 
@@ -81,30 +79,6 @@ public class ApplicationRepresentation {
         if (this.roles == null) this.roles = new ArrayList<RoleRepresentation>();
         this.roles.add(new RoleRepresentation(role, description));
         return this;
-    }
-
-    public List<UserRoleMappingRepresentation> getRoleMappings() {
-        return roleMappings;
-    }
-
-    public UserRoleMappingRepresentation roleMapping(String username) {
-        UserRoleMappingRepresentation mapping = new UserRoleMappingRepresentation();
-        mapping.setUsername(username);
-        if (roleMappings == null) roleMappings = new ArrayList<UserRoleMappingRepresentation>();
-        roleMappings.add(mapping);
-        return mapping;
-    }
-
-    public List<ScopeMappingRepresentation> getScopeMappings() {
-        return scopeMappings;
-    }
-
-    public ScopeMappingRepresentation scopeMapping(String username) {
-        ScopeMappingRepresentation mapping = new ScopeMappingRepresentation();
-        mapping.setUsername(username);
-        if (scopeMappings == null) scopeMappings = new ArrayList<ScopeMappingRepresentation>();
-        scopeMappings.add(mapping);
-        return mapping;
     }
 
     public String getAdminUrl() {

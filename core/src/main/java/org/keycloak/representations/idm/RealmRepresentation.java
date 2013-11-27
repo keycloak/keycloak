@@ -35,6 +35,8 @@ public class RealmRepresentation {
     protected List<UserRepresentation> users;
     protected List<UserRoleMappingRepresentation> roleMappings;
     protected List<ScopeMappingRepresentation> scopeMappings;
+    protected Map<String, List<UserRoleMappingRepresentation>> applicationRoleMappings;
+    protected Map<String, List<ScopeMappingRepresentation>> applicationScopeMappings;
     protected List<SocialMappingRepresentation> socialMappings;
     protected List<ApplicationRepresentation> applications;
     protected List<OAuthClientRepresentation> oauthClients;
@@ -307,5 +309,21 @@ public class RealmRepresentation {
 
     public void setOauthClients(List<OAuthClientRepresentation> oauthClients) {
         this.oauthClients = oauthClients;
+    }
+
+    public Map<String, List<UserRoleMappingRepresentation>> getApplicationRoleMappings() {
+        return applicationRoleMappings;
+    }
+
+    public void setApplicationRoleMappings(Map<String, List<UserRoleMappingRepresentation>> applicationRoleMappings) {
+        this.applicationRoleMappings = applicationRoleMappings;
+    }
+
+    public Map<String, List<ScopeMappingRepresentation>> getApplicationScopeMappings() {
+        return applicationScopeMappings;
+    }
+
+    public void setApplicationScopeMappings(Map<String, List<ScopeMappingRepresentation>> applicationScopeMappings) {
+        this.applicationScopeMappings = applicationScopeMappings;
     }
 }

@@ -88,19 +88,23 @@
                     "name": "customer-admin",
                     "description": "Have Customer Admin privileges"
                 }
-            ],
-            "roleMappings": [
-                {
-                    "username": "test-user@localhost",
-                    "roles": ["customer-user"]
-                }
-            ],
-            "scopeMappings": [
-                {
-                    "username": "third-party",
-                    "roles": ["customer-user"]
-                }
             ]
-        }
-    ]
+         }
+    ],
+    "applicationRoleMappings": {
+        "test-app": [
+            {
+                "username": "test-user@localhost",
+                "roles": ["customer-user"]
+            }
+        ]
+    },
+    "applicationScopeMappings": {
+        "test-app": [
+            {
+                "username": "third-party",
+                "roles": ["customer-user"]
+            }
+        ]
+    }
 }

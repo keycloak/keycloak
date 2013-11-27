@@ -90,32 +90,31 @@ public class ApplicationManager {
         return applicationModel;
     }
 
-    public void createMappings(RealmModel realm, ApplicationRepresentation resourceRep, ApplicationModel applicationModel) {
-        if (resourceRep.getRoleMappings() != null) {
-            for (UserRoleMappingRepresentation mapping : resourceRep.getRoleMappings()) {
-                UserModel user = realm.getUser(mapping.getUsername());
-                if (user == null) {
-                    throw new RuntimeException("User not found");
+    public void createRoleMappings(RealmModel realm, ApplicationModel applicationModel, List<UserRoleMappingRepresentation> mappings) {
+        for (UserRoleMappingRepresentation mapping : mappings) {
+            UserModel user = realm.getUser(mapping.getUsername());
+            if (user == null) {
+                throw new RuntimeException("User not found");
+            }
+            for (String roleString : mapping.getRoles()) {
+                RoleModel role = applicationModel.getRole(roleString.trim());
+                if (role == null) {
+                    role = applicationModel.addRole(roleString.trim());
                 }
-                for (String roleString : mapping.getRoles()) {
-                    RoleModel role = applicationModel.getRole(roleString.trim());
-                    if (role == null) {
-                        role = applicationModel.addRole(roleString.trim());
-                    }
-                    applicationModel.grantRole(user, role);
-                }
+                applicationModel.grantRole(user, role);
             }
         }
-        if (resourceRep.getScopeMappings() != null) {
-            for (ScopeMappingRepresentation mapping : resourceRep.getScopeMappings()) {
-                UserModel user = realm.getUser(mapping.getUsername());
-                for (String roleString : mapping.getRoles()) {
-                    RoleModel role = applicationModel.getRole(roleString.trim());
-                    if (role == null) {
-                        role = applicationModel.addRole(roleString.trim());
-                    }
-                    applicationModel.addScopeMapping(user, role.getName());
+    }
+
+    public void createScopeMappings(RealmModel realm, ApplicationModel applicationModel, List<ScopeMappingRepresentation> mappings) {
+        for (ScopeMappingRepresentation mapping : mappings) {
+            UserModel user = realm.getUser(mapping.getUsername());
+            for (String roleString : mapping.getRoles()) {
+                RoleModel role = applicationModel.getRole(roleString.trim());
+                if (role == null) {
+                    role = applicationModel.addRole(roleString.trim());
                 }
+                applicationModel.addScopeMapping(user, role.getName());
             }
         }
     }

@@ -94,22 +94,6 @@
                 {
                     "name": "user"
                 }
-            ],
-            "roleMappings": [
-                {
-                    "username": "wburke",
-                    "roles": ["user"]
-                },
-                {
-                    "username": "admin",
-                    "roles": ["admin"]
-                }
-            ],
-            "scopeMappings": [
-                {
-                    "username": "oauthclient",
-                    "roles": ["user"]
-                }
             ]
         },
         {
@@ -122,20 +106,41 @@
                 {
                     "name": "user"
                 }
-            ],
-            "roleMappings": [
-                {
-                    "username": "wburke",
-                    "roles": ["user"]
-                },
-                {
-                    "username": "admin",
-                    "roles": ["admin"]
-                }
             ]
         }
 
-    ]
+    ],
+    "applicationRoleMappings": {
+        "Application": [
+            {
+                "username": "wburke",
+                "roles": ["user"]
+            },
+            {
+                "username": "admin",
+                "roles": ["admin"]
+            }
+        ],
+        "OtherApp": [
+            {
+                "username": "wburke",
+                "roles": ["user"]
+            },
+            {
+                "username": "admin",
+                "roles": ["admin"]
+            }
+        ]
+    },
+    "applicationScopeMappings": {
+        "Application": [
+            {
+                "username": "oauthclient",
+                "roles": ["user"]
+            }
+        ]
+
+    }
 
 
 }

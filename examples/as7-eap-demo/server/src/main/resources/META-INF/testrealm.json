@@ -1,9 +1,10 @@
 {
     "realm": "demo",
     "enabled": true,
-    "tokenLifespan": 300,
+    "tokenLifespan": 3000,
     "accessCodeLifespan": 10,
-    "accessCodeLifespanUserAction": 600,
+    "accessCodeLifespanUserAction": 6000,
+    "accountManagement": true,
     "sslNotRequired": true,
     "cookieLoginAllowed": true,
     "registrationAllowed": true,
@@ -94,6 +95,14 @@
                 }
             ]
         }
-    ]
+    ],
+    "applicationRoleMappings": {
+        "Account": [
+            {
+                "username": "bburke@redhat.com",
+                "roles": ["manage-account"]
+            }
+        ]
+    }
 
 }
