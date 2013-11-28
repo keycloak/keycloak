@@ -30,11 +30,11 @@ TOTP codes
 
 To generate totp codes without Google authenticator run:
 
-    mvn exec:java -Ptotp -Dsecret='PJBX GURY NZIT C2JX I44T S3D2 JBKD G6SB'
+    mvn exec:java -Ptotp
     
 or run org.keycloak.testutils.TotpGenerator from your favourite IDE!
 
-Replace value of -Dsecret with the secret from the totp configuration page (remember quotes!)
+Once started copy/paste the totp secret and press enter. To use a new secret just copy/paste and press enter again.
 
 Mail server
 -----------
