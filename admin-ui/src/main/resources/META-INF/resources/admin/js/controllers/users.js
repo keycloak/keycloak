@@ -225,6 +225,52 @@ module.controller('UserDetailCtrl', function($scope, realm, user, User, $locatio
     };
 });
 
+module.controller('UserCredentialsCtrl', function($scope, realm, user, User, UserCredentials, Notifications) {
+    console.log('UserCredentialsCtrl');
+
+    $scope.realm = realm;
+    $scope.user = angular.copy(user);
+
+    $scope.resetPassword = function() {
+
+        if ($scope.password != $scope.confirmPassword) {
+            Notifications.error("Password and confirmation does not match.");
+            $scope.password = "";
+            $scope.confirmPassword = "";
+            return;
+        }
+
+        if (!$scope.user.hasOwnProperty('requiredActions')){
+            $scope.user.requiredActions = [];
+        }
+        if ($scope.user.requiredActions.indexOf("UPDATE_PASSWORD") < 0){
+            $scope.user.requiredActions.push("UPDATE_PASSWORD");
+        }
+
+        var credentials = [ { type : "password", value : $scope.password } ];
+
+        User.update({
+            realm: realm.id,
+            userId: $scope.user.username
+        }, $scope.user, function () {
+
+            UserCredentials.update({
+                realm: realm.id,
+                userId: $scope.user.username
+            }, credentials, function () {
+                Notifications.success("The user password has been reset. The user is required to change his password on" +
+                    " the next login.");
+            }, function () {
+                Notifications.error("Error while resetting user password. Be aware that the update password required action" +
+                    " was already set.");
+            });
+
+        }, function () {
+            Notifications.error("Error while adding update password required action. Password was not reset.");
+        });
+    };
+});
+
 module.controller('RoleMappingCtrl', function($scope, realm, User, users, role, RoleMapping, Notifications) {
     $scope.realm = realm;
     $scope.realmId = realm.realm || realm.id;

@@ -134,6 +134,18 @@ module.factory('User', function($resource) {
 	});
 });
 
+module.factory('UserCredentials', function($resource) {
+    return $resource('/auth-server/rest/saas/admin/realms/:realm/users/:userId/credentials', {
+        realm : '@realm',
+        userId : '@userId'
+    }, {
+        update : {
+            method : 'PUT',
+            isArray : true
+        }
+    });
+});
+
 module.factory('RealmRoleMapping', function($resource) {
     return $resource('/auth-server/rest/saas/admin/realms/:realm/users/:userId/role-mappings/realm', {
         realm : '@realm',

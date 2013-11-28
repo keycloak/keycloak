@@ -113,6 +113,18 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'UserDetailCtrl'
         })
+        .when('/realms/:realm/users/:user/user-credentials', {
+            templateUrl : 'partials/user-credentials.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                user : function(UserLoader) {
+                    return UserLoader();
+                }
+            },
+            controller : 'UserCredentialsCtrl'
+        })
         .when('/realms/:realm/users/:user/role-mappings', {
             templateUrl : 'partials/role-mappings.html',
             resolve : {
