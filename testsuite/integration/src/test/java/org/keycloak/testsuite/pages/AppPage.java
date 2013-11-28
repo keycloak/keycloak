@@ -22,12 +22,18 @@
 package org.keycloak.testsuite.pages;
 
 
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class AppPage extends AbstractPage {
 
     private String baseUrl = "http://localhost:8081/app";
+
+    @FindBy(id = "account")
+    private WebElement accountLink;
 
     @Override
     public void open() {
@@ -41,6 +47,10 @@ public class AppPage extends AbstractPage {
 
     public RequestType getRequestType() {
         return RequestType.valueOf(driver.getTitle());
+    }
+
+    public void openAccount() {
+        accountLink.click();
     }
 
     public enum RequestType {

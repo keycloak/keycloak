@@ -54,6 +54,7 @@
                         <input type="hidden" id="totpSecret" name="totpSecret" value="${totp.totpSecret}" />
                     </div>
                     <div class="form-actions">
+                        <#if url.referrerURI??><a href="${url.referrerURI}">Back to application</a></#if>
                         <button type="submit" class="primary">Submit</button>
                     </div>
                 </form>

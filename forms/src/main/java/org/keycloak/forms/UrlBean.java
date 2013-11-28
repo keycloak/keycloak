@@ -36,6 +36,8 @@ public class UrlBean {
 
     private boolean socialRegistration;
 
+    private String referrerURI;
+
     public boolean isSocialRegistration() {
         return socialRegistration;
     }
@@ -44,9 +46,10 @@ public class UrlBean {
         this.socialRegistration = socialRegistration;
     }
 
-    public UrlBean(RealmBean realm, URI baseURI){
+    public UrlBean(RealmBean realm, URI baseURI, String referrerURI){
         this.realm = realm;
         this.baseURI = baseURI;
+        this.referrerURI = referrerURI;
     }
 
     public RealmBean getRealm() {
@@ -134,6 +137,10 @@ public class UrlBean {
 
     public String getLoginEmailVerificationUrl() {
         return Urls.loginActionEmailVerification(baseURI, realm.getId()).toString();
+    }
+
+    public String getReferrerURI() {
+        return referrerURI;
     }
 
 }

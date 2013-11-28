@@ -30,7 +30,7 @@ import org.openqa.selenium.support.FindBy;
  */
 public class AccountUpdateProfilePage extends AbstractAccountPage {
 
-    private static String PATH = Constants.AUTH_SERVER_ROOT + "/rest/realms/test/account";
+    public static String PATH = Constants.AUTH_SERVER_ROOT + "/rest/realms/test/account";
 
     @FindBy(id = "firstName")
     private WebElement firstNameInput;
@@ -40,6 +40,10 @@ public class AccountUpdateProfilePage extends AbstractAccountPage {
 
     @FindBy(id = "email")
     private WebElement emailInput;
+
+
+    @FindBy(linkText = "Back to application")
+    private WebElement backToApplicationLink;
 
     @FindBy(css = "button[type=\"submit\"]")
     private WebElement submitButton;
@@ -76,6 +80,10 @@ public class AccountUpdateProfilePage extends AbstractAccountPage {
 
     public void open() {
         driver.navigate().to(PATH);
+    }
+
+    public void backToApplication() {
+        backToApplicationLink.click();
     }
 
     public boolean isSuccess(){

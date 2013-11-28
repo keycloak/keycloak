@@ -23,7 +23,7 @@
             </div>
         </fieldset>
         <div class="form-actions">
-            <#--a href="#">« Back to my application</a-->
+            <#if url.referrerURI??><a href="${url.referrerURI}">Back to application</a></#if>
             <button type="submit" class="primary">Save</button>
             <button type="submit">Cancel</button>
         </div>

@@ -112,6 +112,28 @@ public class AccountTest {
     }
 
     @Test
+    public void returnToAppFromHeader() {
+        appPage.open();
+        appPage.openAccount();
+        loginPage.login("test-user@localhost", "password");
+
+        Assert.assertTrue(profilePage.isCurrent());
+        profilePage.backToApplication();
+
+        Assert.assertTrue(appPage.isCurrent());
+    }
+
+    @Test
+    public void returnToAppFromQueryParam() {
+        driver.navigate().to(AccountUpdateProfilePage.PATH + "?referrer=test-app");
+        loginPage.login("test-user@localhost", "password");
+        Assert.assertTrue(profilePage.isCurrent());
+        profilePage.backToApplication();
+
+        Assert.assertTrue(appPage.isCurrent());
+    }
+
+    @Test
     public void changePassword() {
         changePasswordPage.open();
         loginPage.login("test-user@localhost", "password");

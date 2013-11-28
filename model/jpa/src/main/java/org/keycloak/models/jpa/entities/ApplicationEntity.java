@@ -25,6 +25,7 @@ public class ApplicationEntity {
     private String name;
     private boolean enabled;
     private boolean surrogateAuthRequired;
+    private String baseUrl;
     private String managementUrl;
 
     @OneToOne(fetch = FetchType.EAGER)
@@ -56,6 +57,14 @@ public class ApplicationEntity {
 
     public void setSurrogateAuthRequired(boolean surrogateAuthRequired) {
         this.surrogateAuthRequired = surrogateAuthRequired;
+    }
+
+    public String getBaseUrl() {
+        return baseUrl;
+    }
+
+    public void setBaseUrl(String baseUrl) {
+        this.baseUrl = baseUrl;
     }
 
     public String getManagementUrl() {

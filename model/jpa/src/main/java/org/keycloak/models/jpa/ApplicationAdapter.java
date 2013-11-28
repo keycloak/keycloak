@@ -83,6 +83,16 @@ public class ApplicationAdapter implements ApplicationModel {
     }
 
     @Override
+    public String getBaseUrl() {
+        return application.getBaseUrl();
+    }
+
+    @Override
+    public void setBaseUrl(String url) {
+        application.setBaseUrl(url);
+    }
+
+    @Override
     public RoleModel getRole(String name) {
         Collection<RoleEntity> roles = application.getRoles();
         if (roles == null) return null;

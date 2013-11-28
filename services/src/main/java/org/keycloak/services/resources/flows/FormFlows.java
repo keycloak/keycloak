@@ -39,18 +39,16 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class FormFlows {
 
-    public static final String DATA = "KEYCLOAK_FORMS_DATA";
-    public static final String ERROR_MESSAGE = "KEYCLOAK_FORMS_ERROR_MESSAGE";
-    public static final String USER = UserModel.class.getName();
-    public static final String SOCIAL_REGISTRATION = "socialRegistration";
     public static final String CODE = "code";
 
     // TODO refactor/rename "error" to "message" everywhere where it makes sense
@@ -60,6 +58,8 @@ public class FormFlows {
     private MessageType messageType = MessageType.ERROR;
 
     private MultivaluedMap<String, String> formData;
+
+    private Map<String, String> queryParams;
 
     private RealmModel realm;
 
@@ -118,6 +118,12 @@ public class FormFlows {
             uriBuilder.queryParam(CODE, accessCode.getCode());
         }
 
+        if (queryParams != null) {
+            for (Map.Entry<String, String> q : queryParams.entrySet()) {
+                uriBuilder.replaceQueryParam(q.getKey(), q.getValue());
+            }
+        }
+
         URI baseURI = uriBuilder.build();
         formDataBean.setBaseURI(baseURI);
 
@@ -140,7 +146,7 @@ public class FormFlows {
 
     public Response forwardToForm(String template) {
 
-        FormService.FormServiceDataBean formDataBean = new FormService.FormServiceDataBean(realm, userModel, formData, error);
+        FormService.FormServiceDataBean formDataBean = new FormService.FormServiceDataBean(realm, userModel, formData, queryParams, error);
         formDataBean.setMessageType(messageType);
 
         return forwardToForm(template, formDataBean);
@@ -192,7 +198,7 @@ public class FormFlows {
 
     public Response forwardToOAuthGrant(){
 
-        FormService.FormServiceDataBean formDataBean = new FormService.FormServiceDataBean(realm, userModel, formData, error);
+        FormService.FormServiceDataBean formDataBean = new FormService.FormServiceDataBean(realm, userModel, formData, queryParams, error);
 
         formDataBean.setOAuthRealmRolesRequested((List<RoleModel>) request.getAttribute("realmRolesRequested"));
         formDataBean.setOAuthResourceRolesRequested((MultivaluedMap<String, RoleModel>) request.getAttribute("resourceRolesRequested"));
@@ -205,6 +211,14 @@ public class FormFlows {
 
     public FormFlows setAccessCode(AccessCodeEntry accessCode) {
         this.accessCode = accessCode;
+        return this;
+    }
+
+    public FormFlows setQueryParam(String key, String value) {
+        if (queryParams == null) {
+            queryParams = new HashMap<String, String>();
+        }
+        queryParams.put(key, value);
         return this;
     }
 

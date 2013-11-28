@@ -39,23 +39,11 @@ import java.util.List;
  */
 public class ApplicationServlet extends HttpServlet {
 
+    private static final String LINK = "<a href=\"%s\" id=\"%s\">%s</a>";
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String title = "";
-        String body = "";
-
-        StringBuffer sb = req.getRequestURL();
-        sb.append("?");
-        sb.append(req.getQueryString());
-
-        List<NameValuePair> query = null;
-
-        try {
-            query = URLEncodedUtils.parse(new URI(sb.toString()), "UTF-8");
-        } catch (URISyntaxException e) {
-            throw new ServletException(e);
-        }
-
         if (req.getRequestURI().endsWith("auth")) {
             title = "AUTH_RESPONSE";
         } else if (req.getRequestURI().endsWith("logout")) {
@@ -65,7 +53,11 @@ public class ApplicationServlet extends HttpServlet {
         }
 
         PrintWriter pw = resp.getWriter();
-        pw.printf("<html><head><title>%s</title></head><body>%s</body>", title, body);
+        pw.printf("<html><head><title>%s</title></head><body>", title);
+
+        pw.printf(LINK, "http://localhost:8081/auth-server/rest/realms/test/account", "account", "account");
+
+        pw.print("</body></html>");
         pw.flush();
     }
 

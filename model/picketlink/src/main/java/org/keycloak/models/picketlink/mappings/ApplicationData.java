@@ -13,6 +13,7 @@ public class ApplicationData extends AbstractPartition {
     private boolean enabled;
     private boolean surrogateAuthRequired;
     private String managementUrl;
+    private String baseUrl;
     private User resourceUser;
     private String[] defaultRoles;
 
@@ -56,6 +57,15 @@ public class ApplicationData extends AbstractPartition {
 
     public void setSurrogateAuthRequired(boolean surrogateAuthRequired) {
         this.surrogateAuthRequired = surrogateAuthRequired;
+    }
+
+    @AttributeProperty
+    public String getBaseUrl() {
+        return baseUrl;
+    }
+
+    public void setBaseUrl(String baseUrl) {
+        this.baseUrl = baseUrl;
     }
 
     @AttributeProperty

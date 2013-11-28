@@ -31,6 +31,8 @@ public class ApplicationEntity implements Serializable {
     private boolean surrogateAuthRequired;
     @AttributeValue
     private String managementUrl;
+    @AttributeValue
+    private String baseUrl;
 
     @AttributeValue
     private String[] defaultRoles;

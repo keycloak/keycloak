@@ -53,6 +53,7 @@ public interface FormService {
         private FormFlows.MessageType messageType;
 
         private MultivaluedMap<String, String> formData;
+        private Map<String, String> queryParams;
         private URI baseURI;
 
         private List<SocialProvider> socialProviders;
@@ -87,10 +88,11 @@ public interface FormService {
 
         private String contextPath;
 
-        public FormServiceDataBean(RealmModel realm, UserModel userModel, MultivaluedMap<String, String> formData, String message) {
+        public FormServiceDataBean(RealmModel realm, UserModel userModel, MultivaluedMap<String, String> formData, Map<String, String> queryParams, String message) {
             this.realm = realm;
             this.userModel = userModel;
             this.formData = formData;
+            this.queryParams = queryParams;
             this.message = message;
 
             socialProviders = new LinkedList<SocialProvider>();
@@ -124,6 +126,16 @@ public interface FormService {
         public MultivaluedMap<String, String> getFormData() {
             return formData;
         }
+
+        public Map<String, String> getQueryParams() {
+            return queryParams;
+        }
+
+
+        public String getQueryParam(String key) {
+            return queryParams != null ? queryParams.get(key) : null;
+        }
+
 
         public void setFormData(MultivaluedMap<String, String> formData) {
             this.formData = formData;

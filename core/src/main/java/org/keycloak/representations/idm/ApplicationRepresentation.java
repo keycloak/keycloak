@@ -12,6 +12,7 @@ public class ApplicationRepresentation {
     protected String id;
     protected String name;
     protected String adminUrl;
+    protected String baseUrl;
     protected boolean surrogateAuthRequired;
     protected boolean enabled;
     protected List<CredentialRepresentation> credentials;
@@ -87,6 +88,14 @@ public class ApplicationRepresentation {
 
     public void setAdminUrl(String adminUrl) {
         this.adminUrl = adminUrl;
+    }
+
+    public String getBaseUrl() {
+        return baseUrl;
+    }
+
+    public void setBaseUrl(String baseUrl) {
+        this.baseUrl = baseUrl;
     }
 
     public List<CredentialRepresentation> getCredentials() {

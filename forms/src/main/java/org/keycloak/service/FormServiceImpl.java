@@ -35,6 +35,7 @@ import org.keycloak.forms.TemplateBean;
 import org.keycloak.forms.TotpBean;
 import org.keycloak.forms.UrlBean;
 import org.keycloak.forms.UserBean;
+import org.keycloak.models.ApplicationModel;
 import org.keycloak.services.FormService;
 import org.keycloak.services.resources.flows.Pages;
 
@@ -54,22 +55,22 @@ public class FormServiceImpl implements FormService {
 
     private static final String ID = "FormServiceId";
     private static final String BUNDLE = "org.keycloak.forms.messages";
-    private final Map<String, Command> commandMap = new HashMap<String,Command>();
+    private final Map<String, CommandCommon> commandMap = new HashMap<String, CommandCommon>();
 
     public FormServiceImpl(){
         commandMap.put(Pages.LOGIN, new CommandLogin());
         commandMap.put(Pages.REGISTER, new CommandRegister());
-        commandMap.put(Pages.ACCOUNT, new CommandAccount());
-        commandMap.put(Pages.LOGIN_UPDATE_PROFILE, new CommandPassword());
-        commandMap.put(Pages.PASSWORD, new CommandPassword());
-        commandMap.put(Pages.LOGIN_RESET_PASSWORD, new CommandPassword());
-        commandMap.put(Pages.LOGIN_UPDATE_PASSWORD, new CommandPassword());
-        commandMap.put(Pages.ACCESS, new CommandAccess());
-        commandMap.put(Pages.SOCIAL, new CommandSocial());
+        commandMap.put(Pages.ACCOUNT, new CommandCommon());
+        commandMap.put(Pages.LOGIN_UPDATE_PROFILE, new CommandCommon());
+        commandMap.put(Pages.PASSWORD, new CommandCommon());
+        commandMap.put(Pages.LOGIN_RESET_PASSWORD, new CommandCommon());
+        commandMap.put(Pages.LOGIN_UPDATE_PASSWORD, new CommandCommon());
+        commandMap.put(Pages.ACCESS, new CommandCommon());
+        commandMap.put(Pages.SOCIAL, new CommandCommon());
         commandMap.put(Pages.TOTP, new CommandTotp());
         commandMap.put(Pages.LOGIN_CONFIG_TOTP, new CommandTotp());
         commandMap.put(Pages.LOGIN_TOTP, new CommandLoginTotp());
-        commandMap.put(Pages.LOGIN_VERIFY_EMAIL, new CommandVerifyEmail());
+        commandMap.put(Pages.LOGIN_VERIFY_EMAIL, new CommandCommon());
         commandMap.put(Pages.OAUTH_GRANT, new CommandOAuthGrant());
     }
 
@@ -117,121 +118,69 @@ public class FormServiceImpl implements FormService {
         return out.toString();
     }
 
-    private class CommandTotp implements Command {
+    private class CommandCommon {
+        protected RealmBean realm;
+        protected UrlBean url;
+        protected UserBean user;
+        protected LoginBean login;
+
         public void exec(Map<String, Object> attributes, FormServiceDataBean dataBean) {
-            RealmBean realm = new RealmBean(dataBean.getRealm());
+            realm = new RealmBean(dataBean.getRealm());
+
+            String referrer = dataBean.getQueryParam("referrer");
+            String referrerUri = null;
+            if (referrer != null) {
+                for (ApplicationModel a : dataBean.getRealm().getApplications()) {
+                    if (a.getName().equals(referrer)) {
+                        referrerUri = a.getBaseUrl();
+                        break;
+                    }
+                }
+            }
+
+            url = new UrlBean(realm, dataBean.getBaseURI(), referrerUri);
+            url.setSocialRegistration(dataBean.getSocialRegistration());
+            user = new UserBean(dataBean.getUserModel());
+            login = new LoginBean(realm, dataBean.getFormData());
 
             attributes.put("realm", realm);
-            attributes.put("url", new UrlBean(realm, dataBean.getBaseURI()));
-
-            UserBean user = new UserBean(dataBean.getUserModel());
+            attributes.put("url", url);
             attributes.put("user", user);
-
-            TotpBean totp = new TotpBean(user, dataBean.getContextPath());
-            attributes.put("totp", totp);
-
-            attributes.put("login", new LoginBean(realm, dataBean.getFormData()));
+            attributes.put("login", login);
         }
     }
 
-    private class CommandSocial implements Command {
+    private class CommandTotp extends CommandCommon {
         public void exec(Map<String, Object> attributes, FormServiceDataBean dataBean) {
-            RealmBean realm = new RealmBean(dataBean.getRealm());
-            attributes.put("user", new UserBean(dataBean.getUserModel()));
-            attributes.put("url", new UrlBean(realm, dataBean.getBaseURI()));
+            super.exec(attributes, dataBean);
+
+            attributes.put("totp", new TotpBean(user, dataBean.getContextPath()));
         }
     }
 
-    private class CommandEmail implements Command {
+    private class CommandLoginTotp extends CommandCommon {
         public void exec(Map<String, Object> attributes, FormServiceDataBean dataBean) {
-        }
-    }
-
-    private class CommandPassword implements Command {
-        public void exec(Map<String, Object> attributes, FormServiceDataBean dataBean) {
-            RealmBean realm = new RealmBean(dataBean.getRealm());
-
-            attributes.put("realm", realm);
-            attributes.put("url", new UrlBean(realm, dataBean.getBaseURI()));
-            attributes.put("user", new UserBean(dataBean.getUserModel()));
-            attributes.put("login", new LoginBean(realm, dataBean.getFormData()));
-        }
-    }
-
-    private class CommandLoginTotp implements Command {
-        public void exec(Map<String, Object> attributes, FormServiceDataBean dataBean) {
-
-            RealmBean realm = new RealmBean(dataBean.getRealm());
-
-            attributes.put("realm", realm);
-
-            UrlBean url = new UrlBean(realm, dataBean.getBaseURI());
-            url.setSocialRegistration(dataBean.getSocialRegistration());
-
-            attributes.put("url", url);
-            attributes.put("user", new UserBean(dataBean.getUserModel()));
-            attributes.put("login", new LoginBean(realm, dataBean.getFormData()));
+            super.exec(attributes, dataBean);
 
             RegisterBean register = new RegisterBean(dataBean.getFormData(), dataBean.getSocialRegistration());
-
             SocialBean social = new SocialBean(realm, dataBean.getSocialProviders(), register, url);
             attributes.put("social", social);
         }
     }
 
-    private class CommandAccess implements Command {
+    private class CommandLogin extends CommandCommon {
         public void exec(Map<String, Object> attributes, FormServiceDataBean dataBean) {
-            RealmBean realm = new RealmBean(dataBean.getRealm());
-
-            attributes.put("realm", realm);
-            attributes.put("user", new UserBean(dataBean.getUserModel()));
-            attributes.put("url", new UrlBean(realm, dataBean.getBaseURI()));
-        }
-    }
-
-    private class CommandAccount implements Command {
-        public void exec(Map<String, Object> attributes, FormServiceDataBean dataBean) {
-            RealmBean realm = new RealmBean(dataBean.getRealm());
-
-            attributes.put("realm", realm);
-            attributes.put("url", new UrlBean(realm, dataBean.getBaseURI()));
-            attributes.put("user", new UserBean(dataBean.getUserModel()));
-            attributes.put("login", new LoginBean(realm, dataBean.getFormData()));
-        }
-    }
-
-    private class CommandLogin implements Command {
-        public void exec(Map<String, Object> attributes, FormServiceDataBean dataBean) {
-            RealmBean realm = new RealmBean(dataBean.getRealm());
-
-            attributes.put("realm", realm);
-
-            UrlBean url = new UrlBean(realm, dataBean.getBaseURI());
-            url.setSocialRegistration(dataBean.getSocialRegistration());
-
-            attributes.put("url", url);
-            attributes.put("user", new UserBean(dataBean.getUserModel()));
-            attributes.put("login", new LoginBean(realm, dataBean.getFormData()));
+            super.exec(attributes, dataBean);
 
             RegisterBean register = new RegisterBean(dataBean.getFormData(), dataBean.getSocialRegistration());
-
             SocialBean social = new SocialBean(realm, dataBean.getSocialProviders(), register, url);
             attributes.put("social", social);
         }
     }
 
-    private class CommandRegister implements Command {
+    private class CommandRegister extends CommandCommon {
         public void exec(Map<String, Object> attributes, FormServiceDataBean dataBean) {
-
-            RealmBean realm = new RealmBean(dataBean.getRealm());
-
-            attributes.put("realm", realm);
-
-            UrlBean url = new UrlBean(realm, dataBean.getBaseURI());
-            url.setSocialRegistration(dataBean.getSocialRegistration());
-
-            attributes.put("url", url);
-            attributes.put("user", new UserBean(dataBean.getUserModel()));
+            super.exec(attributes, dataBean);
 
             RegisterBean register = new RegisterBean(dataBean.getFormData(), dataBean.getSocialRegistration());
             attributes.put("register", register);
@@ -241,8 +190,9 @@ public class FormServiceImpl implements FormService {
         }
     }
 
-    private class CommandOAuthGrant implements Command {
+    private class CommandOAuthGrant extends CommandCommon {
         public void exec(Map<String, Object> attributes, FormServiceDataBean dataBean) {
+            super.exec(attributes, dataBean);
 
             OAuthGrantBean oauth = new OAuthGrantBean();
             oauth.setAction(dataBean.getOAuthAction());
@@ -253,24 +203,6 @@ public class FormServiceImpl implements FormService {
 
             attributes.put("oauth", oauth);
         }
-    }
-
-    private class CommandVerifyEmail implements Command {
-        public void exec(Map<String, Object> attributes, FormServiceDataBean dataBean) {
-
-            RealmBean realm = new RealmBean(dataBean.getRealm());
-
-            attributes.put("realm", realm);
-
-            UrlBean url = new UrlBean(realm, dataBean.getBaseURI());
-            url.setSocialRegistration(dataBean.getSocialRegistration());
-
-            attributes.put("url", url);
-        }
-    }
-
-    private interface Command {
-        public void exec(Map<String, Object> attributes, FormServiceDataBean dataBean);
     }
 
 }

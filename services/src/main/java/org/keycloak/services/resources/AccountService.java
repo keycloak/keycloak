@@ -46,6 +46,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 import javax.ws.rs.ext.Providers;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 
 /**
@@ -89,7 +90,15 @@ public class AccountService {
             if (!hasAccess(auth)) {
                 return noAccess();
             }
-            return Flows.forms(realm, request, uriInfo).setUser(auth.getUser()).forwardToForm(template);
+
+            FormFlows forms = Flows.forms(realm, request, uriInfo).setUser(auth.getUser());
+
+            String referrer = getReferrer();
+            if (referrer != null) {
+                forms.setQueryParam("referrer", referrer);
+            }
+
+            return forms.forwardToForm(template);
         } else {
             return login(path);
         }
@@ -321,11 +330,8 @@ public class AccountService {
                 throw new BadRequestException();
             }
 
-            UriBuilder redirectBuilder = Urls.accountBase(uriInfo.getBaseUri());
-            if (path != null) {
-                redirectBuilder.path(path);
-            }
-            URI redirectUri = redirectBuilder.build(realm.getId());
+            URI accountUri = Urls.accountBase(uriInfo.getBaseUri()).path("/").build(realm.getId());
+            URI redirectUri = path != null ? accountUri.resolve(path) : accountUri;
 
             NewCookie cookie = authManager.createAccountIdentityCookie(realm, accessCode.getUser(), client, Urls.accountBase(uriInfo.getBaseUri()).build(realm.getId()));
             return Response.status(302).cookie(cookie).location(redirectUri).build();
@@ -352,6 +358,11 @@ public class AccountService {
         oauth.setClientId(Constants.ACCOUNT_APPLICATION);
 
         URI accountUri = Urls.accountPageBuilder(uriInfo.getBaseUri()).path(AccountService.class, "loginRedirect").build(realm.getId());
+
+        String referrer = getReferrer();
+        if (referrer != null) {
+            path = (path != null ? path : "") + "?referrer=" + referrer;
+        }
 
         oauth.setStateCookiePath(accountUri.getPath());
         return oauth.redirect(uriInfo, accountUri.toString(), path);
@@ -391,6 +402,25 @@ public class AccountService {
 
     private boolean hasRole(UserModel user, String role) {
         return application.hasRole(user, role);
+    }
+
+    private String getReferrer() {
+        String referrer = uriInfo.getQueryParameters().getFirst("referrer");
+        if (referrer != null) {
+            return referrer;
+        }
+
+        String referrerUrl = headers.getHeaderString("Referer");
+        if (referrerUrl != null) {
+            for (ApplicationModel a : realm.getApplications()) {
+                if (a.getBaseUrl() != null && referrerUrl.startsWith(a.getBaseUrl())) {
+                    return a.getName();
+                }
+            }
+            return null;
+        }
+
+        return null;
     }
 
 }

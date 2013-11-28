@@ -36,11 +36,12 @@
                     <tr data-ng-show="applications.length > 0">
                         <th>Application Name</th>
                         <th>Enabled</th>
+                        <th>Base URL</th>
                     </tr>
                     </thead>
                     <tfoot data-ng-show="applications && applications.length > 5"> <!-- todo -->
                     <tr>
-                        <td colspan="2">
+                        <td colspan="3">
                             <div class="table-nav">
                                 <a href="#" class="first disabled">First page</a><a href="#" class="prev disabled">Previous
                                 page</a><span><strong>1-8</strong> of <strong>10</strong></span><a href="#"
@@ -54,6 +55,7 @@
                     <tr ng-repeat="app in applications">
                         <td><a href="#/realms/{{realm.id}}/applications/{{app.id}}">{{app.name}}</a></td>
                         <td>{{app.enabled}}</td>
+                        <td ng-class="{'text-muted': !app.baseUrl}">{{app.baseUrl || "Not defined"}}</td>
                     </tr>
                     </tbody>
                 </table>
