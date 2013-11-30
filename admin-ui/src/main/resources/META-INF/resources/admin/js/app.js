@@ -4,6 +4,23 @@ var module = angular.module('keycloak', [ 'keycloak.services', 'keycloak.loaders
 var resourceRequests = 0;
 var loadingTimer = -1;
 
+angular.element(document).ready(function ($http) {
+    $http.get('/auth-server/rest/saas/whoami').success(function(data) {
+        var auth = {};
+        auth.user = data;
+        auth.loggedIn = true;
+
+        module.factory('Auth', function() {
+            return auth;
+        });
+        angular.bootstrap(document, ["keycloak"]);
+    }).error(function() {
+        var path = window.location.hash && window.location.hash.substring(1) || '/';
+        window.location = '/auth-server/rest/saas/login?path=' + path;
+    });
+});
+
+
 module.config([ '$routeProvider', function($routeProvider) {
 
     $routeProvider

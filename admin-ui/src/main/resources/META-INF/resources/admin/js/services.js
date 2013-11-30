@@ -2,17 +2,6 @@
 
 var module = angular.module('keycloak.services', [ 'ngResource' ]);
 
-module.service('Auth', function() {
-	var auth = {
-		loggedIn : false
-	};
-	auth.user = {
-		userId : null,
-		displayName : null
-	};
-	return auth;
-});
-
 module.service('Dialog', function($dialog) {
 	var dialog = {};
 
