@@ -564,6 +564,12 @@ legend + table {
   color: #FFFFFF;
   padding-left: 10px;
 }
+.onoffswitch.disabled .onoffswitch-inner .onoffswitch-active,
+.onoffswitch.disabled .onoffswitch-inner .onoffswitch-inactive {
+  background-image: none;
+  background-color: #e5e5e5;
+  color: #9d9fa1;
+}
 .onoffswitch .onoffswitch-inner .onoffswitch-inactive {
   background: linear-gradient(#fefefe, #e8e8e8) repeat scroll 0 0 transparent;
   color: #4d5258;
