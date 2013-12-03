@@ -93,7 +93,7 @@ public class OAuthClient {
 
         driver.findElement(By.id("username")).sendKeys(username);
         driver.findElement(By.id("password")).sendKeys(password);
-        driver.findElement(By.cssSelector("input[type=\"submit\"]")).click();
+        driver.findElement(By.name("login")).click();
 
         return new AuthorizationCodeResponse(this);
     }
@@ -103,7 +103,7 @@ public class OAuthClient {
 
         driver.findElement(By.id("username")).sendKeys(username);
         driver.findElement(By.id("password")).sendKeys(password);
-        driver.findElement(By.cssSelector("input[type=\"submit\"]")).click();
+        driver.findElement(By.name("login")).click();
     }
 
     public AccessTokenResponse doAccessTokenRequest(String code, String password) {

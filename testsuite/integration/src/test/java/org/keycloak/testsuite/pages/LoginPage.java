@@ -44,8 +44,11 @@ public class LoginPage extends AbstractPage {
     @FindBy(id = "totp")
     private WebElement totp;
 
-    @FindBy(css = "input[type=\"submit\"]")
+    @FindBy(name = "login")
     private WebElement submitButton;
+
+    @FindBy(name = "cancel")
+    private WebElement cancelButton;
 
     @FindBy(linkText = "Register")
     private WebElement registerLink;
@@ -64,6 +67,10 @@ public class LoginPage extends AbstractPage {
         passwordInput.sendKeys(password);
 
         submitButton.click();
+    }
+
+    public void cancel() {
+        cancelButton.click();
     }
 
     public void loginTotp(String username, String password, String code) {

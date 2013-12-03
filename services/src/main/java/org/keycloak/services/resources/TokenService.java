@@ -199,6 +199,10 @@ public class TokenService {
             return oauth.forwardToSecurityFailure("Login requester not enabled.");
         }
 
+        if (formData.containsKey("cancel")) {
+            return oauth.redirectError(client, "access_denied", state, redirect);
+        }
+
         String username = formData.getFirst("username");
         UserModel user = realm.getUser(username);
 

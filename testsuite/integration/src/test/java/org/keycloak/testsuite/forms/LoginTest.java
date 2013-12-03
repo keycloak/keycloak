@@ -25,6 +25,7 @@ import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -43,6 +44,10 @@ public class LoginTest {
 
     @Rule
     public WebRule webRule = new WebRule(this);
+
+    @WebResource
+    protected OAuthClient oauth;
+
 
     @WebResource
     protected WebDriver driver;
@@ -79,6 +84,17 @@ public class LoginTest {
         loginPage.login("test-user@localhost", "password");
         
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assert.assertNotNull(oauth.getCurrentQuery().get("code"));
+    }
+
+    @Test
+    public void loginCancel() {
+        loginPage.open();
+        loginPage.cancel();
+
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        Assert.assertEquals("access_denied", oauth.getCurrentQuery().get("error"));
     }
 
 }

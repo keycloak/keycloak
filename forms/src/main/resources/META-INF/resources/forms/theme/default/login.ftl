@@ -22,7 +22,10 @@
                 </div>
             </#list>
 
-            <input class="btn-primary" type="submit" value="Log In"/>
+            <div class="form-buttons">
+                <input class="btn-primary" name="login" type="submit" value="Log In"/>
+                <input class="btn-secondary" name="cancel" type="submit" value="Cancel"/>
+            </div>
 
             <div class="aside-btn">
                 <p>Forgot <a href="${url.loginPasswordResetUrl}">Password</a>?</p>
