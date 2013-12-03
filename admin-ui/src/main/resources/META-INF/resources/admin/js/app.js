@@ -535,6 +535,7 @@ module.directive('onoffswitch', function() {
         replace: true,
         scope: {
             ngModel: '=',
+            ngDisabled: '=',
             ngBind: '=',
             name: '=',
             id: '=',
@@ -544,9 +545,11 @@ module.directive('onoffswitch', function() {
         compile: function(element, attrs) {
             if (!attrs.onText) { attrs.onText = "ON"; }
             if (!attrs.offText) { attrs.offText = "OFF"; }
+            if (!attrs.ngDisabled) { attrs.ngDisabled = false; }
 
-            var html = "<div class=\"onoffswitch\">" +
-                "<input type=\"checkbox\" data-ng-model=\"ngModel\" class=\"onoffswitch-checkbox\" name=\"" + attrs.name + "\" id=\"" + attrs.id + "\">" +
+            var html = "<span><div class=\"onoffswitch\" data-ng-class=\"{disabled: ngDisabled}\">" +
+                "<input type=\"checkbox\" data-ng-model=\"ngModel\" ng-disabled=\"ngDisabled\"" +
+                " class=\"onoffswitch-checkbox\" name=\"" + attrs.name + "\" id=\"" + attrs.id + "\">" +
                 "<label for=\"" + attrs.id + "\" class=\"onoffswitch-label\">" +
                 "<span class=\"onoffswitch-inner\">" +
                 "<span class=\"onoffswitch-active\">{{onText}}</span>" +
@@ -554,13 +557,12 @@ module.directive('onoffswitch', function() {
                 "</span>" +
                 "<span class=\"onoffswitch-switch\"></span>" +
                 "</label>" +
-                "</div>";
+                "</div></span>";
 
             element.replaceWith($(html));
         }
     }
 });
-
 
 module.directive('kcInput', function() {
     var d = {
