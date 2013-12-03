@@ -255,6 +255,11 @@ public class AccountService {
             return forms.setError(Messages.INVALID_PASSWORD_EXISTING).forwardToPassword();
         }
 
+        String error = Validation.validatePassword(formData, realm.getPasswordPolicy());
+        if (error != null) {
+            return forms.setError(error).forwardToPassword();
+        }
+
         UserCredentialModel credentials = new UserCredentialModel();
         credentials.setType(CredentialRepresentation.PASSWORD);
         credentials.setValue(passwordNew);

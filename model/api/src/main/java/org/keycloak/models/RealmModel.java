@@ -74,6 +74,10 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
 
     void addRequiredCredential(String cred);
 
+    PasswordPolicy getPasswordPolicy();
+
+    void setPasswordPolicy(PasswordPolicy policy);
+
     boolean validatePassword(UserModel user, String password);
 
     boolean validateTOTP(UserModel user, String password, String token);

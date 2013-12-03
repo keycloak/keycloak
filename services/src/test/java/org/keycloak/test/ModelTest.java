@@ -6,6 +6,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -46,6 +47,7 @@ public class ModelTest extends AbstractKeycloakServerTest {
         realm.setSslNotRequired(true);
         realm.setVerifyEmail(true);
         realm.setTokenLifespan(1000);
+        realm.setPasswordPolicy(new PasswordPolicy("length"));
         realm.setAccessCodeLifespan(1001);
         realm.setAccessCodeLifespanUserAction(1002);
         realm.setPublicKeyPem("0234234");

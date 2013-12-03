@@ -6,6 +6,7 @@ import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.IdGenerator;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuthClientModel;
+import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
@@ -62,6 +63,7 @@ public class RealmAdapter implements RealmModel {
     protected PartitionManager partitionManager;
     protected RelationshipManager relationshipManager;
     protected KeycloakSession session;
+    private PasswordPolicy passwordPolicy;
 
     public RealmAdapter(KeycloakSession session, RealmData realm, PartitionManager partitionManager) {
         this.session = session;
@@ -975,6 +977,21 @@ public class RealmAdapter implements RealmModel {
     @Override
     public void setSocialConfig(Map<String, String> socialConfig) {
         realm.setSocialConfig(socialConfig);
+        updateRealm();
+    }
+
+    @Override
+    public PasswordPolicy getPasswordPolicy() {
+        if (passwordPolicy == null) {
+            passwordPolicy = new PasswordPolicy(realm.getPasswordPolicy());
+        }
+        return passwordPolicy;
+    }
+
+    @Override
+    public void setPasswordPolicy(PasswordPolicy policy) {
+        this.passwordPolicy = policy;
+        realm.setPasswordPolicy(policy.toString());
         updateRealm();
     }
 }

@@ -297,6 +297,10 @@ public class TokenService {
         }
 
         String error = Validation.validateRegistrationForm(formData, requiredCredentialTypes);
+        if (error == null) {
+            error = Validation.validatePassword(formData, realm.getPasswordPolicy());
+        }
+
         if (error != null) {
             return Flows.forms(realm, request, uriInfo).setError(error).setFormData(formData)
                     .setSocialRegistration(isSocialRegistration).forwardToRegistration();

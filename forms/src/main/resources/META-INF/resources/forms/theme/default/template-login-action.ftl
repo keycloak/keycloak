@@ -20,7 +20,7 @@
     <div class="feedback-aligner">
         <#if message?has_content && message.warning>
         <div class="feedback warning show">
-            <p><strong>${rb.getString('actionWarningHeader')} ${rb.getString(message.summary)}</strong><br/>${rb.getString('actionFollow')}</p>
+            <p><strong>${rb.getString('actionWarningHeader')} ${message.summary}</strong><br/>${rb.getString('actionFollow')}</p>
         </div>
         </#if>
     </div>
@@ -47,13 +47,13 @@
                         <#if message.error>
                             <div class="feedback error bottom-left show">
                                 <p>
-                                    <strong id="loginError">${rb.getString(message.summary)}</strong><br/>${rb.getString('emailErrorInfo')}
+                                    <strong id="loginError">${message.summary}</strong><br/>${rb.getString('emailErrorInfo')}
                                 </p>
                             </div>
                         <#elseif message.success>
                             <div class="feedback success bottom-left show">
                                 <p>
-                                    <strong>${rb.getString('successHeader')}</strong> ${rb.getString(message.summary)}
+                                    <strong>${rb.getString('successHeader')}</strong> ${message.summary}
                                 </p>
                             </div>
                         </#if>

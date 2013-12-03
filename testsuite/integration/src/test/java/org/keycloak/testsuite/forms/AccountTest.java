@@ -164,6 +164,36 @@ public class AccountTest {
     }
 
     @Test
+    public void changePasswordWithPasswordPolicy() {
+        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                appRealm.setPasswordPolicy(new PasswordPolicy("length"));
+            }
+        });
+
+        try {
+            changePasswordPage.open();
+            loginPage.login("test-user@localhost", "password");
+
+            changePasswordPage.changePassword("", "new", "new");
+
+            Assert.assertTrue(profilePage.isError());
+
+            changePasswordPage.changePassword("password", "new-password", "new-password");
+
+            Assert.assertTrue(profilePage.isSuccess());
+        } finally {
+            keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+                @Override
+                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                    appRealm.setPasswordPolicy(new PasswordPolicy(null));
+                }
+            });
+        }
+    }
+
+    @Test
     public void changeProfile() {
         profilePage.open();
         loginPage.login("test-user@localhost", "password");

@@ -34,6 +34,7 @@ public class RealmEntity {
     protected boolean resetPasswordAllowed;
     protected boolean social;
     protected boolean automaticRegistrationAfterSocialLogin;
+    protected String passwordPolicy;
 
     protected int tokenLifespan;
     protected int accessCodeLifespan;
@@ -269,4 +270,13 @@ public class RealmEntity {
     public void setDefaultRoles(Collection<RoleEntity> defaultRoles) {
         this.defaultRoles = defaultRoles;
     }
+
+    public String getPasswordPolicy() {
+        return passwordPolicy;
+    }
+
+    public void setPasswordPolicy(String passwordPolicy) {
+        this.passwordPolicy = passwordPolicy;
+    }
 }
+
