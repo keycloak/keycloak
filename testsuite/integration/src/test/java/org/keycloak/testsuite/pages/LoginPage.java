@@ -73,19 +73,6 @@ public class LoginPage extends AbstractPage {
         cancelButton.click();
     }
 
-    public void loginTotp(String username, String password, String code) {
-        usernameInput.clear();
-        usernameInput.sendKeys(username);
-
-        passwordInput.clear();
-        passwordInput.sendKeys(password);
-
-        totp.clear();
-        totp.sendKeys(code);
-
-        submitButton.click();
-    }
-
     public String getError() {
         return loginErrorMessage != null ? loginErrorMessage.getText() : null;
     }
