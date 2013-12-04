@@ -181,13 +181,131 @@ module.controller('RealmRequiredCredentialsCtrl', function($scope, Realm, realm,
         registrationAllowed : realm.registrationAllowed
     };
 
+    if (realm.hasOwnProperty('passwordPolicy')){
+        $scope.realm['passwordPolicy'] = realm.passwordPolicy;
+    } else {
+        $scope.realm['passwordPolicy'] = "";
+        realm['passwordPolicy'] = "";
+    }
+
+    var oldCopy = angular.copy($scope.realm);
+
+    /* Map used in the table when hovering over (i) icon */
+    $scope.policyMessages = {
+        length:         "Minimal password length. Default value is 8.",
+        digits:         "Minimal number of digits in password. Default value is 1.",
+        lowerCase:      "Minimal number of lowercase characters in password. Default value is 1.",
+        upperCase:      "Minimal number of uppercase characters in password. Default value is 1.",
+        specialChars:   "Minimal number of special characters in password. Default value is 1."
+    }
+
+    // $scope.policy is an object representing passwordPolicy string
+    $scope.policy = {};
+    // All available policies
+    $scope.allPolicies = ['length', 'digits', 'lowerCase', 'upperCase', 'specialChars'];
+    // List of configured policies
+    $scope.configuredPolicies = [];
+    // List of not configured policies
+    $scope.availablePolicies = $scope.allPolicies.slice(0);
+
+    $scope.addPolicy = function(){
+        $scope.policy[$scope.newPolicyId] = "";
+        updateConfigured();
+    }
+
+    $scope.removePolicy = function(pId){
+        delete $scope.policy[pId];
+        updateConfigured();
+    }
+
+    // Updating lists of configured and non-configured policies based on the $scope.policy object
+    var updateConfigured = function(){
+
+        for (var i = 0; i < $scope.allPolicies.length; i++){
+
+            var policy = $scope.allPolicies[i];
+
+            if($scope.policy.hasOwnProperty(policy)){
+
+                var ind = $scope.configuredPolicies.indexOf(policy);
+
+                if(ind < 0){
+                    $scope.configuredPolicies.push(policy);
+                }
+
+                ind = $scope.availablePolicies.indexOf(policy);
+                if(ind > -1){
+                    $scope.availablePolicies.splice(ind, 1);
+                }
+            } else {
+
+                var ind = $scope.configuredPolicies.indexOf(policy);
+
+                if(ind > -1){
+                    $scope.configuredPolicies.splice(ind, 1);
+                }
+
+                ind = $scope.availablePolicies.indexOf(policy);
+                if(ind < 0){
+                    $scope.availablePolicies.push(policy);
+                }
+            }
+        }
+
+        if ($scope.availablePolicies.length > 0){
+            $scope.newPolicyId = $scope.availablePolicies[0];
+        }
+    }
+
+    // Creating object from policy string
+    var evaluatePolicy = function(policyString){
+
+        var policyObject = {};
+
+        if (!policyString || policyString.length == 0){
+            return policyObject;
+        }
+
+        var policyArray = policyString.split(" and ");
+
+        for (var i = 0; i < policyArray.length; i ++){
+            var policyToken = policyArray[i];
+            var re = /(\w+)\(*(\d*)\)*/;
+
+            var policyEntry = re.exec(policyToken);
+            policyObject[policyEntry[1]] = policyEntry[2];
+        }
+
+        return policyObject;
+    }
+
+    // Creating policy string based on policy object
+    var generatePolicy = function(policyObject){
+        var policyString = "";
+
+        for (var key in policyObject){
+            policyString += key;
+            var value = policyObject[key];
+            if ( value != ""){
+                policyString += "("+value+")";
+            }
+            policyString += " and ";
+        }
+
+        policyString = policyString.substring(0, policyString.length - 5);
+
+        return policyString;
+    }
+
+    $scope.policy = evaluatePolicy(realm.passwordPolicy);
+    updateConfigured();
+
     $scope.userCredentialOptions = {
         'multiple' : true,
         'simple_tags' : true,
         'tags' : ['password', 'totp', 'cert']
     };
 
-    var oldCopy = angular.copy($scope.realm);
     $scope.changed = false;
 
     $scope.$watch('realm', function() {
@@ -196,17 +314,31 @@ module.controller('RealmRequiredCredentialsCtrl', function($scope, Realm, realm,
         }
     }, true);
 
+    $scope.$watch('policy', function() {
+        $scope.realm.passwordPolicy = generatePolicy($scope.policy);
+        if ($scope.realm.passwordPolicy != realm.passwordPolicy){
+            $scope.changed = true;
+        }
+    }, true);
+
     $scope.save = function() {
-        var realmCopy = angular.copy($scope.realm);
         $scope.changed = false;
-        Realm.update(realmCopy, function () {
+
+        Realm.update($scope.realm, function () {
             $location.url("/realms/" + realm.id + "/required-credentials");
             Notifications.success("Your changes have been saved to the realm.");
+            oldCopy = angular.copy($scope.realm);
         });
     };
 
     $scope.reset = function() {
         $scope.realm = angular.copy(oldCopy);
+
+        $scope.configuredPolicies = [];
+        $scope.availablePolicies = $scope.allPolicies.slice(0);
+        $scope.policy = evaluatePolicy(oldCopy.passwordPolicy);
+        updateConfigured();
+
         $scope.changed = false;
     };
 });
