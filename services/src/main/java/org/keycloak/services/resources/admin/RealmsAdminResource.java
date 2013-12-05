@@ -8,6 +8,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.SaasService;
+import org.keycloak.services.resources.flows.Flows;
 
 import javax.ws.rs.*;
 import javax.ws.rs.container.ResourceContext;
@@ -71,6 +72,10 @@ public class RealmsAdminResource {
     public Response importRealm(@Context final UriInfo uriInfo, final RealmRepresentation rep) {
         logger.debug("importRealm: {0}", rep.getRealm());
         RealmManager realmManager = new RealmManager(session);
+        if (realmManager.getRealm(rep.getRealm()) != null) {
+            return Flows.errors().exists("Realm " + rep.getRealm() + " already exists");
+        }
+
         RealmModel realm = realmManager.importRealm(rep, admin);
         URI location = realmUrl(uriInfo).build(realm.getId());
         logger.debug("imported realm success, sending back: {0}", location.toString());

@@ -67,12 +67,6 @@ public class OAuthFlows {
     }
 
     public Response redirectAccessCode(AccessCodeEntry accessCode, String state, String redirect) {
-        UserModel client = realm.getUser(accessCode.getClient().getLoginName());
-        Set<String> redirectUris = client.getRedirectUris();
-        if (!redirectUris.isEmpty() && !redirectUris.contains(redirect)) {
-            return forwardToSecurityFailure("Invalid redirect_uri " + redirect);
-        }
-
         String code = accessCode.getCode();
         UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam("code", code);
         log.debug("redirectAccessCode: state: {0}", state);
@@ -86,11 +80,6 @@ public class OAuthFlows {
     }
 
     public Response redirectError(UserModel client, String error, String state, String redirect) {
-        Set<String> redirectUris = client.getRedirectUris();
-        if (!redirectUris.isEmpty() && !redirectUris.contains(redirect)) {
-            return forwardToSecurityFailure("Invalid redirect_uri " + redirect);
-        }
-
         UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam("error", error);
         if (state != null) {
             redirectUri.queryParam("state", state);

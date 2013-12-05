@@ -40,7 +40,7 @@
                     <#if message?has_content && message.error>
                         <div class="feedback error bottom-left show">
                             <p>
-                                <strong id="loginError">${rb.getString(message.summary)}</strong><br/>${rb.getString('emailErrorInfo')}
+                                <strong id="loginError">${message.summary}</strong><br/>${rb.getString('emailErrorInfo')}
                             </p>
                         </div>
                     </#if>

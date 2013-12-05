@@ -231,20 +231,27 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, User, Use
     $scope.realm = realm;
     $scope.user = angular.copy(user);
 
+    $scope.isTotp = false;
+    if(!!user.totp){
+        $scope.isTotp = user.totp;
+    }
+
     $scope.resetPassword = function() {
 
-        if ($scope.password != $scope.confirmPassword) {
-            Notifications.error("Password and confirmation does not match.");
-            $scope.password = "";
-            $scope.confirmPassword = "";
-            return;
-        }
+        if ($scope.pwdChange) {
+            if ($scope.password != $scope.confirmPassword) {
+                Notifications.error("Password and confirmation does not match.");
+                $scope.password = "";
+                $scope.confirmPassword = "";
+                return;
+            }
 
-        if (!$scope.user.hasOwnProperty('requiredActions')){
-            $scope.user.requiredActions = [];
-        }
-        if ($scope.user.requiredActions.indexOf("UPDATE_PASSWORD") < 0){
-            $scope.user.requiredActions.push("UPDATE_PASSWORD");
+            if (!$scope.user.hasOwnProperty('requiredActions')){
+                $scope.user.requiredActions = [];
+            }
+            if ($scope.user.requiredActions.indexOf("UPDATE_PASSWORD") < 0){
+                $scope.user.requiredActions.push("UPDATE_PASSWORD");
+            }
         }
 
         var credentials = [ { type : "password", value : $scope.password } ];
@@ -254,20 +261,64 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, User, Use
             userId: $scope.user.username
         }, $scope.user, function () {
 
-            UserCredentials.update({
-                realm: realm.id,
-                userId: $scope.user.username
-            }, credentials, function () {
-                Notifications.success("The user password has been reset. The user is required to change his password on" +
-                    " the next login.");
-            }, function () {
-                Notifications.error("Error while resetting user password. Be aware that the update password required action" +
-                    " was already set.");
-            });
+            $scope.isTotp = $scope.user.totp;
+
+            if ($scope.pwdChange){
+                UserCredentials.update({
+                    realm: realm.id,
+                    userId: $scope.user.username
+                }, credentials, function () {
+                    Notifications.success("The password has been reset. The user is required to change his password on" +
+                        " the next login.");
+                    $scope.password = "";
+                    $scope.confirmPassword = "";
+                    $scope.pwdChange = false;
+                    $scope.isTotp = user.totp;
+                    $scope.userChange = false;
+                }, function () {
+                    Notifications.error("Error while resetting user password. Be aware that the update password required action" +
+                        " was already set.");
+                });
+            } else {
+                Notifications.success("User settings was updated.");
+                $scope.isTotp = user.totp;
+                $scope.userChange = false;
+            }
 
         }, function () {
-            Notifications.error("Error while adding update password required action. Password was not reset.");
+            Notifications.error("Error while updating user settings.");
         });
+    };
+
+    $scope.$watch('user', function() {
+        if (!angular.equals($scope.user, user)) {
+            $scope.userChange = true;
+        } else {
+            $scope.userChange = false;
+        }
+    }, true);
+
+    $scope.$watch('password', function() {
+        if (!!$scope.password){
+            $scope.pwdChange = true;
+        } else {
+            $scope.pwdChange = false;
+        }
+    }, true);
+
+    $scope.reset = function() {
+        $scope.password = "";
+        $scope.confirmPassword = "";
+
+        $scope.user = angular.copy(user);
+
+        $scope.isTotp = false;
+        if(!!user.totp){
+            $scope.isTotp = user.totp;
+        }
+
+        $scope.pwdChange = false;
+        $scope.userChange = false;
     };
 });
 

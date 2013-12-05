@@ -5,6 +5,7 @@ import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuthClientModel;
+import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
@@ -64,7 +65,7 @@ public class RealmManager {
     }
 
     public RealmModel createRealm(String name) {
-        return createRealm(generateId(), name);
+        return createRealm(name, name);
     }
 
     public RealmModel createRealm(String id, String name) {
@@ -110,6 +111,9 @@ public class RealmManager {
         if (rep.getRequiredApplicationCredentials() != null) {
             realm.updateRequiredApplicationCredentials(rep.getRequiredApplicationCredentials());
         }
+
+        realm.setPasswordPolicy(new PasswordPolicy(rep.getPasswordPolicy()));
+
         if (rep.getDefaultRoles() != null) {
             realm.updateDefaultRoles(rep.getDefaultRoles().toArray(new String[rep.getDefaultRoles().size()]));
         }
@@ -221,6 +225,8 @@ public class RealmManager {
         } else {
             addOAuthClientRequiredCredential(newRealm, CredentialRepresentation.PASSWORD);
         }
+
+        newRealm.setPasswordPolicy(new PasswordPolicy(rep.getPasswordPolicy()));
 
         if (rep.getUsers() != null) {
             for (UserRepresentation userRep : rep.getUsers()) {
@@ -473,6 +479,9 @@ public class RealmManager {
         rep.setAccessCodeLifespanUserAction(realm.getAccessCodeLifespanUserAction());
         rep.setSmtpServer(realm.getSmtpConfig());
         rep.setSocialProviders(realm.getSocialConfig());
+        if (realm.getPasswordPolicy() != null) {
+            rep.setPasswordPolicy(realm.getPasswordPolicy().toString());
+        }
 
         ApplicationModel accountManagementApplication = realm.getApplicationNameMap().get(Constants.ACCOUNT_APPLICATION);
         rep.setAccountManagement(accountManagementApplication != null && accountManagementApplication.isEnabled());

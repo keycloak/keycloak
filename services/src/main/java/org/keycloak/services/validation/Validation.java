@@ -1,5 +1,6 @@
 package org.keycloak.services.validation;
 
+import org.keycloak.models.PasswordPolicy;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.messages.Messages;
 
@@ -36,6 +37,10 @@ public class Validation {
         }
 
         return null;
+    }
+
+    public static String validatePassword(MultivaluedMap<String, String> formData, PasswordPolicy policy) {
+        return policy.validate(formData.getFirst("password"));
     }
 
     public static String validateUpdateProfileForm(MultivaluedMap<String, String> formData) {

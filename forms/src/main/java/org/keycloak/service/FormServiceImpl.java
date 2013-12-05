@@ -79,18 +79,17 @@ public class FormServiceImpl implements FormService {
     }
 
     public String process(String pageId, FormServiceDataBean dataBean){
-
         Map<String, Object> attributes = new HashMap<String, Object>();
 
+        ResourceBundle rb = ResourceBundle.getBundle(BUNDLE);
+        attributes.put("rb", rb);
+
         if (dataBean.getMessage() != null){
-            attributes.put("message", new MessageBean(dataBean.getMessage(), dataBean.getMessageType()));
+            attributes.put("message", new MessageBean(dataBean.getMessage(), dataBean.getMessageType(), rb));
         }
 
         RealmBean realm = new RealmBean(dataBean.getRealm());
         attributes.put("template", new TemplateBean(realm, dataBean.getContextPath()));
-
-        ResourceBundle rb = ResourceBundle.getBundle(BUNDLE);
-        attributes.put("rb", rb);
 
         if (commandMap.containsKey(pageId)){
             commandMap.get(pageId).exec(attributes, dataBean);

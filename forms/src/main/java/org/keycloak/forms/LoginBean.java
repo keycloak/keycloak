@@ -38,8 +38,6 @@ public class LoginBean {
 
     private String password;
 
-    private List<RequiredCredential> requiredCredentials;
-
     public LoginBean(RealmBean realm, MultivaluedMap<String, String> formData){
 
         this.realm = realm;
@@ -48,14 +46,6 @@ public class LoginBean {
             username = formData.getFirst("username");
             password = formData.getFirst("password");
         }
-
-        requiredCredentials = new LinkedList<RequiredCredential>();
-        for (org.keycloak.models.RequiredCredentialModel c : realm.getRealm().getRequiredCredentials()) {
-            if (c.isInput()) {
-                requiredCredentials.add(new RequiredCredential(c.getType(), c.isSecret(), c.getFormLabel()));
-            }
-        }
-
     }
 
     public String getUsername() {
@@ -64,10 +54,6 @@ public class LoginBean {
 
     public String getPassword() {
         return password;
-    }
-
-    public List<RequiredCredential> getRequiredCredentials() {
-        return requiredCredentials;
     }
 
     public RealmBean getRealm() {

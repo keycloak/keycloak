@@ -16,13 +16,14 @@
                 <label for="username">${rb.getString('username')}</label><input id="username" name="username" value="${login.username!''}" type="text" autofocus />
             </div>
 
-            <#list login.requiredCredentials as c>
-                <div>
-                    <label for="${c.name}">${rb.getString(c.label)}</label><input id="${c.name}" name="${c.name}" type="${c.inputType}" />
-                </div>
-            </#list>
+            <div>
+                <label for="password">${rb.getString('password')}</label><input id="password" name="password" type="password" />
+            </div>
 
-            <input class="btn-primary" type="submit" value="Log In"/>
+            <div class="form-buttons">
+                <input class="btn-primary" name="login" type="submit" value="Log In"/>
+                <input class="btn-secondary" name="cancel" type="submit" value="Cancel"/>
+            </div>
 
             <div class="aside-btn">
                 <p>Forgot <a href="${url.loginPasswordResetUrl}">Password</a>?</p>

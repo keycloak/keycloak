@@ -1,0 +1,174 @@
+/*
+ * JBoss, Home of Professional Open Source.
+ * Copyright 2012, Red Hat, Inc., and individual contributors
+ * as indicated by the @author tags. See the copyright.txt file in the
+ * distribution for a full listing of individual contributors.
+ *
+ * This is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This software is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
+package org.keycloak.testsuite.oauth;
+
+import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Rule;
+import org.junit.Test;
+import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.representations.SkeletonKeyToken;
+import org.keycloak.services.managers.RealmManager;
+import org.keycloak.testsuite.OAuthClient;
+import org.keycloak.testsuite.pages.ErrorPage;
+import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.OAuthGrantPage;
+import org.keycloak.testsuite.rule.KeycloakRule;
+import org.keycloak.testsuite.rule.WebResource;
+import org.keycloak.testsuite.rule.WebRule;
+import org.openqa.selenium.WebDriver;
+
+import java.io.IOException;
+import java.util.Map;
+
+/**
+ * @author <a href="mailto:vrockai@redhat.com">Viliam Rockai</a>
+ */
+public class OAuthRedirectUriTest {
+
+    @ClassRule
+    public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakRule.KeycloakSetup() {
+        @Override
+        public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+            ApplicationModel app = appRealm.getApplicationNameMap().get("test-app");
+            app.getApplicationUser().addRedirectUri("http://localhost:8081/app");
+        }
+    });
+
+    @Rule
+    public WebRule webRule = new WebRule(this);
+
+    @WebResource
+    protected WebDriver driver;
+
+    @WebResource
+    protected OAuthClient oauth;
+
+    @WebResource
+    protected LoginPage loginPage;
+
+    @WebResource
+    protected ErrorPage errorPage;
+
+    @Test
+    public void testNoParam() throws IOException {
+        oauth.redirectUri(null);
+        OAuthClient.AuthorizationCodeResponse response = oauth.doLogin("test-user@localhost", "password");
+
+        Assert.assertNotNull(response.getCode());
+        Assert.assertEquals(oauth.getCurrentRequest(), "http://localhost:8081/app");
+    }
+
+    @Test
+    public void testNoParamMultipleValidUris() throws IOException {
+        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                appRealm.getApplicationNameMap().get("test-app").getApplicationUser().addRedirectUri("http://localhost:8081/app2");
+            }
+        });
+
+        try {
+            oauth.redirectUri(null);
+            oauth.openLoginForm();
+
+            Assert.assertTrue(errorPage.isCurrent());
+            Assert.assertEquals("Invalid redirect_uri.", errorPage.getError());
+        } finally {
+            keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+                @Override
+                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                    appRealm.getApplicationNameMap().get("test-app").getApplicationUser().removeRedirectUri("http://localhost:8081/app2");
+                }
+            });
+        }
+    }
+
+    @Test
+    public void testNoParamNoValidUris() throws IOException {
+        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                appRealm.getApplicationNameMap().get("test-app").getApplicationUser().removeRedirectUri("http://localhost:8081/app");
+            }
+        });
+
+        try {
+            oauth.redirectUri(null);
+            oauth.openLoginForm();
+
+            Assert.assertTrue(errorPage.isCurrent());
+            Assert.assertEquals("Invalid redirect_uri.", errorPage.getError());
+        } finally {
+            keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+                @Override
+                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                    appRealm.getApplicationNameMap().get("test-app").getApplicationUser().addRedirectUri("http://localhost:8081/app");
+                }
+            });
+        }
+    }
+
+    @Test
+    public void testNoValidUris() throws IOException {
+        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                appRealm.getApplicationNameMap().get("test-app").getApplicationUser().removeRedirectUri("http://localhost:8081/app");
+            }
+        });
+
+        try {
+            OAuthClient.AuthorizationCodeResponse response = oauth.doLogin("test-user@localhost", "password");
+
+            Assert.assertNotNull(response.getCode());
+            Assert.assertEquals(oauth.getCurrentRequest(), "http://localhost:8081/app/auth");
+        } finally {
+            keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+                @Override
+                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                    appRealm.getApplicationNameMap().get("test-app").getApplicationUser().addRedirectUri("http://localhost:8081/app");
+                }
+            });
+        }
+    }
+
+    @Test
+    public void testInvalid() throws IOException {
+        oauth.redirectUri("http://localhost:8081/app2");
+        oauth.openLoginForm();
+
+        Assert.assertTrue(errorPage.isCurrent());
+        Assert.assertEquals("Invalid redirect_uri.", errorPage.getError());
+    }
+
+    @Test
+    public void testWithParams() throws IOException {
+        oauth.redirectUri("http://localhost:8081/app?key=value");
+        OAuthClient.AuthorizationCodeResponse response = oauth.doLogin("test-user@localhost", "password");
+
+        Assert.assertNotNull(response.getCode());
+        Assert.assertTrue(driver.getCurrentUrl().startsWith("http://localhost:8081/app?key=value&code="));
+    }
+
+}

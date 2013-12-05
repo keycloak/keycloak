@@ -35,6 +35,7 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.KeycloakRule.KeycloakSetup;
@@ -69,6 +70,9 @@ public class RequiredActionTotpSetupTest {
 
     @WebResource
     protected LoginPage loginPage;
+
+    @WebResource
+    protected LoginTotpPage loginTotpPage;
 
     @WebResource
     protected LoginConfigTotpPage totpPage;
@@ -113,7 +117,8 @@ public class RequiredActionTotpSetupTest {
         oauth.openLogout();
 
         loginPage.open();
-        loginPage.loginTotp("test-user@localhost", "password", totp.generate(totpSecret));
+        loginPage.login("test-user@localhost", "password");
+        loginTotpPage.login(totp.generate(totpSecret));
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
     }
@@ -146,7 +151,7 @@ public class RequiredActionTotpSetupTest {
         Assert.assertFalse(totpPage.isCurrent());
 
         // Login with one-time password
-        loginPage.loginTotp("setupTotp2", "password2", totp.generate(totpCode));
+        loginTotpPage.login(totp.generate(totpCode));
 
         // Open account page
         accountTotpPage.open();

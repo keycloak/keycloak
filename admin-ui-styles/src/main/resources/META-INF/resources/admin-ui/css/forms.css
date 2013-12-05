@@ -13,12 +13,12 @@ select:-moz-focusring {
 input[type="text"],
 input[type="password"],
 input[type="email"],
+input[type="number"],
 textarea {
   font-size: 1.1em;
   padding: 0 0.545454545454545em;
   height: 2.36363636363636em;
   /* 26px */
-
   border: 1px #b6b6b6 solid;
   border-radius: 2px;
   box-shadow: inset 0px 2px 2px rgba(0, 0, 0, 0.1);
@@ -28,12 +28,14 @@ textarea {
 input[type="text"]:hover,
 input[type="password"]:hover,
 input[type="email"]:hover,
+input[type="number"]:hover,
 textarea:hover {
   border-color: #62afdb;
 }
 input[type="text"]:focus,
 input[type="password"]:focus,
 input[type="email"]:focus,
+input[type="number"]:focus,
 textarea:focus {
   border-color: #62afdb;
   box-shadow: #62afdb 0 0 5px;
@@ -41,6 +43,7 @@ textarea:focus {
 input[type="text"].error,
 input[type="password"].error,
 input[type="email"].error,
+input[type="number"].error,
 textarea.error {
   border-color: #ba1212;
   transition: all 0.33s ease-in-out;
@@ -50,36 +53,42 @@ textarea.error {
 input[type="text"].error:focus,
 input[type="password"].error:focus,
 input[type="email"].error:focus,
+input[type="number"].error:focus,
 textarea.error:focus {
   box-shadow: 0 0 5px #ba1212;
 }
 input[type="text"].tiny,
 input[type="password"].tiny,
 input[type="email"].tiny,
+input[type="number"].tiny,
 textarea.tiny {
   width: 4.54545454545455em;
 }
 input[type="text"].small,
 input[type="password"].small,
 input[type="email"].small,
+input[type="number"].small,
 textarea.small {
   width: 9.09090909090909em;
 }
 input[type="text"].medium,
 input[type="password"].medium,
 input[type="email"].medium,
+input[type="number"].medium,
 textarea.medium {
   width: 18.1818em;
 }
 input[type="text"].large,
 input[type="password"].large,
 input[type="email"].large,
+input[type="number"].large,
 textarea.large {
   width: 27.2727272727273em;
 }
 input[type="text"].xlarge,
 input[type="password"].xlarge,
 input[type="email"].xlarge,
+input[type="number"].xlarge,
 textarea.xlarge {
   width: 36.3636363636364em;
 }
@@ -90,18 +99,21 @@ textarea {
 input[type="text"][readonly],
 input[type="password"][readonly],
 input[type="email"][readonly],
+input[type="number"][readonly],
 textarea[readonly] {
   background-color: #f0f0f0;
 }
 input[type="text"][readonly]:hover,
 input[type="password"][readonly]:hover,
 input[type="email"][readonly]:hover,
+input[type="number"][readonly]:hover,
 textarea[readonly]:hover {
   border-color: #62afdb;
 }
 input[type="text"][readonly]:focus,
 input[type="password"][readonly]:focus,
 input[type="email"][readonly]:focus,
+input[type="number"][readonly]:focus,
 textarea[readonly]:focus {
   border-color: #b6b6b6;
   box-shadow: none;

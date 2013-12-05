@@ -25,6 +25,9 @@ import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.models.PasswordPolicy;
+import org.keycloak.models.RealmModel;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -91,6 +94,37 @@ public class RegisterTest {
 
         registerPage.assertCurrent();
         Assert.assertEquals("Please specify password.", registerPage.getError());
+    }
+
+    @Test
+    public void registerPasswordPolicy() {
+        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                appRealm.setPasswordPolicy(new PasswordPolicy("length"));
+            }
+        });
+
+        try {
+            loginPage.open();
+            loginPage.clickRegister();
+            registerPage.assertCurrent();
+
+            registerPage.register("firstName", "lastName", "email", "registerPasswordPolicy", "pass", "pass");
+
+            registerPage.assertCurrent();
+            Assert.assertEquals("Invalid password: minimum length 8", registerPage.getError());
+
+            registerPage.register("firstName", "lastName", "email", "registerPasswordPolicy", "password", "password");
+            Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        } finally {
+            keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+                @Override
+                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                    appRealm.setPasswordPolicy(new PasswordPolicy(null));
+                }
+            });
+        }
     }
 
     @Test

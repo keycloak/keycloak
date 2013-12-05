@@ -23,6 +23,8 @@ package org.keycloak.forms;
 
 import org.keycloak.services.resources.flows.FormFlows;
 
+import java.util.ResourceBundle;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -32,13 +34,12 @@ public class MessageBean {
 
     private FormFlows.MessageType type;
 
-    // Message is considered ERROR by default
-    public MessageBean(String summary) {
-        this(summary, FormFlows.MessageType.ERROR);
-    }
-
-    public MessageBean(String summary, FormFlows.MessageType type) {
-        this.summary = summary;
+    public MessageBean(String summary, FormFlows.MessageType type, ResourceBundle rb) {
+        if (rb.containsKey(summary)) {
+            this.summary = rb.getString(summary);
+        } else {
+            this.summary = summary;
+        }
         this.type = type;
     }
 

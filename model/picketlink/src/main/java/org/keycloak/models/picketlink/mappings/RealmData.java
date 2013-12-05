@@ -27,6 +27,7 @@ public class RealmData extends AbstractPartition {
     private String[] defaultRoles;
     private Map<String, String> smtpConfig;
     private Map<String, String> socialConfig;
+    private String passwordPolicy;
 
     public RealmData() {
         super(null);
@@ -184,5 +185,14 @@ public class RealmData extends AbstractPartition {
 
     public void setSocialConfig(Map<String, String> socialConfig) {
         this.socialConfig = socialConfig;
+    }
+
+    @AttributeProperty
+    public String getPasswordPolicy() {
+        return passwordPolicy;
+    }
+
+    public void setPasswordPolicy(String passwordPolicy) {
+        this.passwordPolicy = passwordPolicy;
     }
 }

@@ -98,31 +98,6 @@ public class AuthorizationCodeTest {
     }
 
     @Test
-    public void authorizationRequestInvalidRedirectUri() throws IOException {
-        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                for (ApplicationModel app : appRealm.getApplications()) {
-                    if (app.getName().equals("test-app")) {
-                        UserModel client = app.getApplicationUser();
-                        client.addRedirectUri(oauth.getRedirectUri());
-                    }
-                }
-            }
-        });
-
-        oauth.redirectUri("http://invalid");
-        oauth.state("mystate");
-
-        AuthorizationCodeResponse response = oauth.doLogin("test-user@localhost", "password");
-
-        Assert.assertFalse(response.isRedirected());
-
-        Assert.assertTrue(errorPage.isCurrent());
-        Assert.assertEquals("Invalid redirect_uri http://invalid", errorPage.getError());
-    }
-
-    @Test
     public void authorizationRequestNoState() throws IOException {
         AuthorizationCodeResponse response = oauth.doLogin("test-user@localhost", "password");
 

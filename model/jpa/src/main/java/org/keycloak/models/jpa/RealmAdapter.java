@@ -4,6 +4,7 @@ import org.bouncycastle.openssl.PEMWriter;
 import org.keycloak.PemUtils;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.OAuthClientModel;
+import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
@@ -37,6 +38,7 @@ public class RealmAdapter implements RealmModel {
     protected EntityManager em;
     protected volatile transient PublicKey publicKey;
     protected volatile transient PrivateKey privateKey;
+    private PasswordPolicy passwordPolicy;
 
     public RealmAdapter(EntityManager em, RealmEntity realm) {
         this.em = em;
@@ -1037,4 +1039,18 @@ public class RealmAdapter implements RealmModel {
         em.flush();
     }
 
+    @Override
+    public PasswordPolicy getPasswordPolicy() {
+        if (passwordPolicy == null) {
+            passwordPolicy = new PasswordPolicy(realm.getPasswordPolicy());
+        }
+        return passwordPolicy;
+    }
+
+    @Override
+    public void setPasswordPolicy(PasswordPolicy policy) {
+        this.passwordPolicy = policy;
+        realm.setPasswordPolicy(policy.toString());
+        em.flush();
+    }
 }

@@ -54,26 +54,32 @@ public class RegisterPage extends AbstractPage {
     private WebElement loginErrorMessage;
 
     public void register(String firstName, String lastName, String email, String username, String password, String passwordConfirm) {
+        firstNameInput.clear();
         if (firstName != null) {
             firstNameInput.sendKeys(firstName);
         }
 
+        lastNameInput.clear();
         if (lastName != null) {
             lastNameInput.sendKeys(lastName);
         }
 
+        emailInput.clear();
         if (email != null) {
             emailInput.sendKeys(email);
         }
 
+        usernameInput.clear();
         if (username != null) {
             usernameInput.sendKeys(username);
         }
 
+        passwordInput.clear();
         if (password != null) {
             passwordInput.sendKeys(password);
         }
 
+        passwordConfirmInput.clear();
         if (passwordConfirm != null) {
             passwordConfirmInput.sendKeys(passwordConfirm);
         }

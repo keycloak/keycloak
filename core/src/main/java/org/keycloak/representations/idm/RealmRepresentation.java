@@ -32,6 +32,7 @@ public class RealmRepresentation {
     protected Set<String> requiredCredentials;
     protected Set<String> requiredApplicationCredentials;
     protected Set<String> requiredOAuthClientCredentials;
+    protected String passwordPolicy;
     protected List<UserRepresentation> users;
     protected List<UserRoleMappingRepresentation> roleMappings;
     protected List<ScopeMappingRepresentation> scopeMappings;
@@ -197,6 +198,14 @@ public class RealmRepresentation {
 
     public void setRequiredOAuthClientCredentials(Set<String> requiredOAuthClientCredentials) {
         this.requiredOAuthClientCredentials = requiredOAuthClientCredentials;
+    }
+
+    public String getPasswordPolicy() {
+        return passwordPolicy;
+    }
+
+    public void setPasswordPolicy(String passwordPolicy) {
+        this.passwordPolicy = passwordPolicy;
     }
 
     public Integer getAccessCodeLifespan() {

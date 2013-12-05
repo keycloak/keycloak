@@ -183,7 +183,7 @@ public class TokenService {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processLogin(@QueryParam("client_id") final String clientId, @QueryParam("scope") final String scopeParam,
-            @QueryParam("state") final String state, @QueryParam("redirect_uri") final String redirect,
+            @QueryParam("state") final String state, @QueryParam("redirect_uri") String redirect,
             final MultivaluedMap<String, String> formData) {
         logger.debug("TokenService.processLogin");
         OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
@@ -197,6 +197,15 @@ public class TokenService {
         }
         if (!client.isEnabled()) {
             return oauth.forwardToSecurityFailure("Login requester not enabled.");
+        }
+
+        redirect = verifyRedirectUri(redirect, client);
+        if (redirect == null) {
+            return oauth.forwardToSecurityFailure("Invalid redirect_uri.");
+        }
+
+        if (formData.containsKey("cancel")) {
+            return oauth.redirectError(client, "access_denied", state, redirect);
         }
 
         String username = formData.getFirst("username");
@@ -286,6 +295,11 @@ public class TokenService {
             return oauth.forwardToSecurityFailure("Login requester not enabled.");
         }
 
+        redirect = verifyRedirectUri(redirect, client);
+        if (redirect == null) {
+            return oauth.forwardToSecurityFailure("Invalid redirect_uri.");
+        }
+
         if (!realm.isRegistrationAllowed()) {
             logger.warn("Registration not allowed");
             return oauth.forwardToSecurityFailure("Registration not allowed");
@@ -297,6 +311,10 @@ public class TokenService {
         }
 
         String error = Validation.validateRegistrationForm(formData, requiredCredentialTypes);
+        if (error == null) {
+            error = Validation.validatePassword(formData, realm.getPasswordPolicy());
+        }
+
         if (error != null) {
             return Flows.forms(realm, request, uriInfo).setError(error).setFormData(formData)
                     .setSocialRegistration(isSocialRegistration).forwardToRegistration();
@@ -464,7 +482,7 @@ public class TokenService {
     @Path("login")
     @GET
     public Response loginPage(final @QueryParam("response_type") String responseType,
-            final @QueryParam("redirect_uri") String redirect, final @QueryParam("client_id") String clientId,
+            @QueryParam("redirect_uri") String redirect, final @QueryParam("client_id") String clientId,
             final @QueryParam("scope") String scopeParam, final @QueryParam("state") String state, final @QueryParam("prompt") String prompt) {
         logger.info("TokenService.loginPage");
         OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
@@ -489,6 +507,11 @@ public class TokenService {
             session.close();
             return null;
         }
+        redirect = verifyRedirectUri(redirect, client);
+        if (redirect == null) {
+            return oauth.forwardToSecurityFailure("Invalid redirect_uri.");
+        }
+
         logger.info("Checking roles...");
         RoleModel resourceRole = realm.getRole(Constants.APPLICATION_ROLE);
         RoleModel identityRequestRole = realm.getRole(Constants.IDENTITY_REQUESTER_ROLE);
@@ -517,7 +540,7 @@ public class TokenService {
     @Path("registrations")
     @GET
     public Response registerPage(final @QueryParam("response_type") String responseType,
-            final @QueryParam("redirect_uri") String redirect, final @QueryParam("client_id") String clientId,
+            @QueryParam("redirect_uri") String redirect, final @QueryParam("client_id") String clientId,
             final @QueryParam("scope") String scopeParam, final @QueryParam("state") String state) {
         logger.info("**********registerPage()");
         OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
@@ -535,6 +558,11 @@ public class TokenService {
         if (!client.isEnabled()) {
             logger.warn("Login requester not enabled.");
             return oauth.forwardToSecurityFailure("Login requester not enabled.");
+        }
+
+        redirect = verifyRedirectUri(redirect, client);
+        if (redirect == null) {
+            return oauth.forwardToSecurityFailure("Invalid redirect_uri.");
         }
 
         if (!realm.isRegistrationAllowed()) {
@@ -603,6 +631,17 @@ public class TokenService {
             redirectUri.queryParam("state", state);
         Response.ResponseBuilder location = Response.status(302).location(redirectUri.build());
         return location.build();
+    }
+
+    protected String verifyRedirectUri(String redirectUri, UserModel client) {
+        if (redirectUri == null) {
+            return client.getRedirectUris().size() == 1 ? client.getRedirectUris().iterator().next() : null;
+        } else if (client.getRedirectUris().isEmpty()) {
+            return redirectUri;
+        } else {
+            String r = redirectUri.indexOf('?') != -1 ? redirectUri.substring(0, redirectUri.indexOf('?')) : redirectUri;
+            return client.getRedirectUris().contains(r) ? redirectUri : null;
+        }
     }
 
 }
