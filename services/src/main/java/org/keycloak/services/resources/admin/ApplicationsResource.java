@@ -8,6 +8,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.services.managers.ApplicationManager;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.resources.flows.Flows;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -58,6 +59,9 @@ public class ApplicationsResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createApplication(final @Context UriInfo uriInfo, final ApplicationRepresentation rep) {
+        if (realm.getApplicationNameMap().containsKey(rep.getName())) {
+            return Flows.errors().exists("Application " + rep.getName() + " already exists");
+        }
         ApplicationManager resourceManager = new ApplicationManager(new RealmManager(session));
         ApplicationModel applicationModel = resourceManager.createApplication(realm, rep);
         return Response.created(uriInfo.getAbsolutePathBuilder().path(applicationModel.getId()).build()).build();
