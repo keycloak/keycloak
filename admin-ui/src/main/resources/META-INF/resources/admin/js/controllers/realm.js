@@ -562,7 +562,7 @@ module.controller('RealmSocialCtrl', function($scope, realm, Realm, $location, N
             $scope.realm.socialProviders[$scope.newProviderId+".key"]="";
             $scope.realm.socialProviders[$scope.newProviderId+".secret"]="";
             $scope.configuredProviders.push($scope.newProviderId);
-            $scope.unsetProviders.remove($scope.unsetProviders.indexOf($scope.newProviderId));
+            $scope.unsetProviders.splice($scope.unsetProviders.indexOf($scope.newProviderId),1);
             selectFirstProvider();
         }
     };
@@ -570,12 +570,12 @@ module.controller('RealmSocialCtrl', function($scope, realm, Realm, $location, N
     $scope.removeProvider = function(pId) {
         delete $scope.realm.socialProviders[pId+".key"];
         delete $scope.realm.socialProviders[pId+".secret"];
-        $scope.configuredProviders.remove($scope.configuredProviders.indexOf(pId));
+        $scope.configuredProviders.splice($scope.configuredProviders.indexOf(pId),1);
 
         // Removing from postSaveProviders, so the empty fields are not red if the provider is added to the list again
         var rId = $scope.postSaveProviders.indexOf(pId);
         if (rId > -1){
-            $scope.postSaveProviders.remove(rId)
+            $scope.postSaveProviders.splice(rId,1)
         }
 
         $scope.unsetProviders.push(pId);
