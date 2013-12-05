@@ -15,7 +15,7 @@
     <dependencies>
         <dependency>
             <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk16</artifactId>
+            <artifactId>bcprov-jdk15on</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -156,11 +156,11 @@
             <artifactId>hibernate-entitymanager</artifactId>
             <scope>test</scope>
         </dependency>
-		<dependency>
-    		<groupId>com.icegreen</groupId>
-    		<artifactId>greenmail</artifactId>
+        <dependency>
+            <groupId>com.icegreen</groupId>
+            <artifactId>greenmail</artifactId>
             <scope>test</scope>
-		</dependency>        
+        </dependency>
     </dependencies>
     <build>
         <plugins>

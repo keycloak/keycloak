@@ -2,17 +2,10 @@ package org.keycloak.models.jpa;
 
 import org.bouncycastle.openssl.PEMWriter;
 import org.keycloak.PemUtils;
-import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.OAuthClientModel;
-import org.keycloak.models.PasswordPolicy;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RequiredCredentialModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.SocialLinkModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserModel;
+import org.keycloak.models.*;
 import org.keycloak.models.jpa.entities.*;
-import org.keycloak.models.utils.SHAPasswordEncoder;
+import org.keycloak.models.utils.PasswordEncoder;
+import org.keycloak.models.utils.SCryptPasswordEncoder;
 import org.keycloak.models.utils.TimeBasedOTP;
 
 import javax.persistence.EntityManager;
@@ -21,13 +14,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -39,6 +26,7 @@ public class RealmAdapter implements RealmModel {
     protected volatile transient PublicKey publicKey;
     protected volatile transient PrivateKey privateKey;
     private PasswordPolicy passwordPolicy;
+    private PasswordEncoder passwordEncoder = new SCryptPasswordEncoder();
 
     public RealmAdapter(EntityManager em, RealmEntity realm) {
         this.em = em;
@@ -996,7 +984,10 @@ public class RealmAdapter implements RealmModel {
     public boolean validatePassword(UserModel user, String password) {
         for (CredentialEntity cred : ((UserAdapter)user).getUser().getCredentials()) {
             if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
-                return new SHAPasswordEncoder(512).verify(password, cred.getValue(), cred.getSalt());
+                UserCredentialModel model = new UserCredentialModel();
+                model.setValue(password);
+                model.setSalt(cred.getSalt());
+                return passwordEncoder.verify(cred.toUserCredentialModel(), model);
             }
         }
         return false;
@@ -1032,7 +1023,7 @@ public class RealmAdapter implements RealmModel {
         }
         if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
             credentialEntity.setSalt(cred.getSalt());
-            credentialEntity.setValue(new SHAPasswordEncoder(512).encode(cred.getValue(), cred.getSalt()));
+            credentialEntity.setValue(passwordEncoder.encode(cred));
         } else {
             credentialEntity.setValue(cred.getValue());
         }
