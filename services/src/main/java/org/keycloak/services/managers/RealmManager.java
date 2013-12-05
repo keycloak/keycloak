@@ -65,7 +65,7 @@ public class RealmManager {
     }
 
     public RealmModel createRealm(String name) {
-        return createRealm(generateId(), name);
+        return createRealm(name, name);
     }
 
     public RealmModel createRealm(String id, String name) {
