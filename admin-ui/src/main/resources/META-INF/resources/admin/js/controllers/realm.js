@@ -192,11 +192,11 @@ module.controller('RealmRequiredCredentialsCtrl', function($scope, Realm, realm,
 
     /* Map used in the table when hovering over (i) icon */
     $scope.policyMessages = {
-        length:         "Minimal password length. Default value is 8.",
-        digits:         "Minimal number of digits in password. Default value is 1.",
-        lowerCase:      "Minimal number of lowercase characters in password. Default value is 1.",
-        upperCase:      "Minimal number of uppercase characters in password. Default value is 1.",
-        specialChars:   "Minimal number of special characters in password. Default value is 1."
+        length:         "Minimal password length (integer type). Default value is 8.",
+        digits:         "Minimal number (integer type) of digits in password. Default value is 1.",
+        lowerCase:      "Minimal number (integer type) of lowercase characters in password. Default value is 1.",
+        upperCase:      "Minimal number (integer type) of uppercase characters in password. Default value is 1.",
+        specialChars:   "Minimal number (integer type) of special characters in password. Default value is 1."
     }
 
     // $scope.policy is an object representing passwordPolicy string
