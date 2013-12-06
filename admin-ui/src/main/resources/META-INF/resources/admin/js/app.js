@@ -288,6 +288,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 realm : function(RealmLoader) {
                     return RealmLoader();
                 },
+                application : function(ApplicationLoader) {
+                    return ApplicationLoader();
+                },
                 installation : function(ApplicationInstallationLoader) {
                     return ApplicationInstallationLoader();
                 }
