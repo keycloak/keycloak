@@ -915,21 +915,26 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public List<UserModel> getUsers() {
+        List<UserModel> userModels = new ArrayList<UserModel>();
+        IdentityQuery<User> query = getIdm().createIdentityQuery(User.class);
+        for (User u : query.getResultList()) {
+            userModels.add(new UserAdapter(u, idm));
+        }
+        return userModels;
+    }
+
+    @Override
     public List<UserModel> searchForUser(String search) {
         QueryParameter[] params = new QueryParameter[] { User.LOGIN_NAME, User.FIRST_NAME, User.LAST_NAME, User.EMAIL };
 
-        Map<String, User> users = new HashMap<String, User>();
+        List<UserModel> userModels = new ArrayList<UserModel>();
         for (QueryParameter p : params) {
             IdentityQuery<User> query = getIdm().createIdentityQuery(User.class);
             query.setParameter(p, search.toLowerCase());
             for (User u : query.getResultList()) {
-                users.put(u.getLoginName(), u);
+                userModels.add(new UserAdapter(u, idm));
             }
-        }
-
-        List<UserModel> userModels = new ArrayList<UserModel>();
-        for (User user : users.values()) {
-            userModels.add(new UserAdapter(user, idm));
         }
         return userModels;
     }
