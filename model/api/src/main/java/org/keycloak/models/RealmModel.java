@@ -137,6 +137,8 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
 
     public void setAutomaticRegistrationAfterSocialLogin(boolean automaticRegistrationAfterSocialLogin);
 
+    List<UserModel> getUsers();
+
     List<UserModel> searchForUser(String search);
 
     List<UserModel> searchForUserByAttributes(Map<String, String> attributes);

@@ -14,7 +14,7 @@
                 </ol>
                 <h2><span>{{realm.realm}}</span> Users</h2>
                 <table>
-                    <caption data-ng-show="users && search" class="hidden">Table of realm users</caption>
+                    <caption data-ng-show="users" class="hidden">Table of realm users</caption>
                     <thead>
                         <tr>
                             <th class="rcue-table-actions" colspan="4">
@@ -66,7 +66,7 @@
                 <div class="feedback warning inline" data-ng-show="searchLoaded && users.length == 0">
                     <p><strong>Your search returned no results.</strong><br>Try modifying the query and try again.</p>
                 </div>
-                <div class="feedback info inline" data-ng-show="!currentSearch">
+                <div class="feedback info inline" data-ng-show="!users">
                     <br/>
                     <p><strong>Search for users.</strong><br>Please enter a search to display users.</p>
                 </div>

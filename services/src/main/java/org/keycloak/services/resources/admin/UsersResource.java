@@ -135,14 +135,10 @@ public class UsersResource {
                                              @QueryParam("username") String username) {
         RealmManager manager = new RealmManager(session);
         List<UserRepresentation> results = new ArrayList<UserRepresentation>();
+        List<UserModel> userModels;
         if (search != null) {
-            List<UserModel> userModels = manager.searchUsers(search, realm);
-            for (UserModel user : userModels) {
-                if (isUser(user)) {
-                    results.add(manager.toRepresentation(user));
-                }
-            }
-        } else {
+            userModels = manager.searchUsers(search, realm);
+        } else if (last != null || first != null || email != null || username != null) {
             Map<String, String> attributes = new HashMap<String, String>();
             if (last != null) {
                 attributes.put(UserModel.LAST_NAME, last);
@@ -156,11 +152,18 @@ public class UsersResource {
             if (username != null) {
                 attributes.put(UserModel.LOGIN_NAME, username);
             }
-            List<UserModel> userModels = realm.searchForUserByAttributes(attributes);
+            userModels = realm.searchForUserByAttributes(attributes);
             for (UserModel user : userModels) {
                 results.add(manager.toRepresentation(user));
             }
+        } else {
+            userModels = realm.getUsers();
+        }
 
+        for (UserModel user : userModels) {
+            if (isUser(user)) {
+                results.add(manager.toRepresentation(user));
+            }
         }
         return results;
     }
