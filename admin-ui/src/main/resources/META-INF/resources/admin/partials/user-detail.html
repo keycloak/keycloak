@@ -36,8 +36,9 @@
                         <div class="form-group">
                             <label for="username">Username <span class="required" data-ng-show="create">*</span></label>
                             <div class="controls">
+                                <!-- Characters >,<,/,\ are forbidden in username -->
                                 <input type="text" id="username" name="username" data-ng-model="user.username" autofocus
-                                       required data-ng-readonly="!create">
+                                       required ng-pattern="/^[^\<\>\\\/]*$/" data-ng-readonly="!create">
                             </div>
                         </div>
 
@@ -45,7 +46,7 @@
                             <label for="email" class="control-label">Email</label>
 
                             <div class="controls">
-                                <input class="input-small" type="text" name="email" id="email"
+                                <input class="input-small" type="email" name="email" id="email"
                                        data-ng-model="user.email">
                             </div>
                         </div>
