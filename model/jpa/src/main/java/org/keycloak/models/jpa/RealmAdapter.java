@@ -672,7 +672,8 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public List<UserModel> getUsers() {
-        TypedQuery<UserEntity> query = em.createQuery("select u from UserEntity u", UserEntity.class);
+        TypedQuery<UserEntity> query = em.createQuery("select u from UserEntity u where u.realm = :realm", UserEntity.class);
+        query.setParameter("realm", realm);
         List<UserEntity> results = query.getResultList();
         List<UserModel> users = new ArrayList<UserModel>();
         for (UserEntity entity : results) users.add(new UserAdapter(entity));
@@ -681,7 +682,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public List<UserModel> searchForUser(String search) {
-        TypedQuery<UserEntity> query = em.createQuery("select u from UserEntity u where u.realm = :realm and lower(u.loginName) like :search or lower(concat(u.firstName, ' ', u.lastName)) like :search or u.email like :search", UserEntity.class);
+        TypedQuery<UserEntity> query = em.createQuery("select u from UserEntity u where u.realm = :realm and ( lower(u.loginName) like :search or lower(concat(u.firstName, ' ', u.lastName)) like :search or u.email like :search )", UserEntity.class);
         query.setParameter("realm", realm);
         query.setParameter("search", "%" + search.toLowerCase() + "%");
         List<UserEntity> results = query.getResultList();
