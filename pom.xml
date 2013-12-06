@@ -3,6 +3,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <name>Keycloak</name>
+    <description>
+        Keycloak SSO
+    </description>
     <groupId>org.keycloak</groupId>
     <artifactId>keycloak-parent</artifactId>
     <version>1.0-alpha-1-12062013</version>
@@ -33,6 +36,12 @@
             <distribution>repo</distribution>
         </license>
     </licenses>
+
+    <scm>
+        <connection>scm:git:git://github.com/keycloak/keycloak.git</connection>
+        <developerConnection>scm:git:git@github.com:keycloak/keycloak.git</developerConnection>
+        <url>http://github.com/keycloak/keycloak/tree/master/</url>
+    </scm>
 
     <distributionManagement>
         <repository>
