@@ -288,6 +288,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 realm : function(RealmLoader) {
                     return RealmLoader();
                 },
+                application : function(ApplicationLoader) {
+                    return ApplicationLoader();
+                },
                 installation : function(ApplicationInstallationLoader) {
                     return ApplicationInstallationLoader();
                 }
@@ -646,6 +649,28 @@ module.directive('kcReset', function ($compile, Notifications) {
                     }
                 })
             })
+        }
+    }
+});
+
+/*
+*  Used to select the element (invoke $(elem).select()) on specified action list.
+*  Usages kc-select-action="click mouseover"
+*  When used in the textarea element, this will select/highlight the textarea content on specified action (i.e. click).
+*/
+module.directive('kcSelectAction', function ($compile, Notifications) {
+    return {
+        restrict: 'A',
+        compile: function (elem, attrs) {
+
+            var events = attrs.kcSelectAction.split(" ");
+
+            for(var i=0; i < events.length; i++){
+
+                elem.bind(events[i], function(){
+                    elem.select();
+                });
+            }
         }
     }
 });

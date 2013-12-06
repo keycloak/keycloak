@@ -179,8 +179,10 @@ module.controller('ApplicationListCtrl', function($scope, realm, applications, A
     });
 });
 
-module.controller('ApplicationInstallationCtrl', function($scope, realm, installation, ApplicationInstallation, $routeParams) {
+module.controller('ApplicationInstallationCtrl', function($scope, realm, installation, application, ApplicationInstallation, $routeParams) {
+    console.log('ApplicationInstallationCtrl');
     $scope.realm = realm;
+    $scope.application = application;
     $scope.installation = installation;
     $scope.download = ApplicationInstallation.url({ realm: $routeParams.realm, application: $routeParams.application });
 });
