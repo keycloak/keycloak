@@ -4,7 +4,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.0-alpha-1</version>
+        <version>1.0-alpha-1-12062013</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -15,11 +15,6 @@
     <description/>
 
     <dependencies>
-        <dependency>
-            <groupId>org.jboss.resteasy</groupId>
-            <artifactId>jose-jwt</artifactId>
-            <scope>provided</scope>
-        </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-core</artifactId>
@@ -75,6 +70,7 @@
             <artifactId>keycloak-admin-ui-styles</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <!--
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-jaxrs</artifactId>
@@ -99,6 +95,7 @@
             <artifactId>jaxrs-api</artifactId>
             <scope>provided</scope>
         </dependency>
+        -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
@@ -121,6 +118,37 @@
             <groupId>org.jboss.spec.javax.servlet</groupId>
             <artifactId>jboss-servlet-api_3.0_spec</artifactId>
             <scope>provided</scope>
+        </dependency>
+        <!-- resteasy -->
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>jose-jwt</artifactId>
+            <version>${resteasy.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-jaxrs</artifactId>
+            <version>${resteasy.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-client</artifactId>
+            <version>${resteasy.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>async-http-servlet-3.0</artifactId>
+            <version>${resteasy.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>jaxrs-api</artifactId>
+            <version>${resteasy.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-jackson-provider</artifactId>
+            <version>${resteasy.version}</version>
         </dependency>
     </dependencies>
 

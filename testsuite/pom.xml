@@ -3,7 +3,7 @@
 	<parent>
 		<artifactId>keycloak-parent</artifactId>
 		<groupId>org.keycloak</groupId>
-		<version>1.0-alpha-1</version>
+		<version>1.0-alpha-1-12062013</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 	<modelVersion>4.0.0</modelVersion>
@@ -12,6 +12,17 @@
     <packaging>pom</packaging>
     <name>Keycloak TestSuite</name>
 	<description />
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
     <modules>
         <module>integration</module>
         <module>performance</module>

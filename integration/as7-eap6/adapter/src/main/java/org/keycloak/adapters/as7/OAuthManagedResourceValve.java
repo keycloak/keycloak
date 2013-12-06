@@ -13,7 +13,6 @@ import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.deploy.LoginConfig;
 import org.apache.catalina.realm.GenericPrincipal;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.jose.jws.JWSInput;
 import org.jboss.resteasy.jose.jws.crypto.RSAProvider;
 import org.jboss.resteasy.jwt.JsonSerialization;
@@ -31,10 +30,8 @@ import org.keycloak.representations.idm.admin.LogoutAction;
 import javax.security.auth.login.LoginException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 /**

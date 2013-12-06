@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-parent</artifactId>
-        <version>1.0-alpha-1</version>
+        <version>1.0-alpha-1-12062013</version>
     </parent>
 
     <artifactId>keycloak-dist</artifactId>
@@ -25,7 +25,7 @@
                 <dependency>
                     <groupId>org.keycloak</groupId>
                     <artifactId>keycloak-server</artifactId>
-                    <version>1.0-alpha-1</version>
+                    <version>1.0-alpha-1-12062013</version>
                     <type>war</type>
                 </dependency>
                 <dependency>
@@ -38,6 +38,13 @@
 
             <build>
                 <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-deploy-plugin</artifactId>
+                        <configuration>
+                            <skip>true</skip>
+                        </configuration>
+                    </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-antrun-plugin</artifactId>
