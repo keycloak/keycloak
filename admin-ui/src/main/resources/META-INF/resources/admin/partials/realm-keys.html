@@ -27,7 +27,8 @@
                             <label for="publicKey">Public key</label>
 
                             <div class="controls">
-                                <textarea type="text" id="publicKey" name="publicKey" class="xlarge" rows="5">{{realm.publicKey}}</textarea>
+                                <textarea type="text" id="publicKey" name="publicKey" class="xlarge" rows="5"
+                                          kc-select-action="click" readonly>{{realm.publicKey}}</textarea>
                             </div>
                         </div>
                     </fieldset>
