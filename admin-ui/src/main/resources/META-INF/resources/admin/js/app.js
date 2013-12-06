@@ -1,6 +1,6 @@
 'use strict';
 
-var module = angular.module('keycloak', [ 'keycloak.services', 'keycloak.loaders', 'ui.bootstrap', 'ui.select2' ]);
+var module = angular.module('keycloak', [ 'keycloak.services', 'keycloak.loaders', 'ui.bootstrap', 'ui.select2', 'angularFileUpload' ]);
 var resourceRequests = 0;
 var loadingTimer = -1;
 
@@ -24,6 +24,7 @@ angular.element(document).ready(function ($http) {
 module.config([ '$routeProvider', function($routeProvider) {
 
     $routeProvider
+        /*
         .when('/create/realm', {
             templateUrl : 'partials/realm-detail.html',
             resolve : {
@@ -32,6 +33,14 @@ module.config([ '$routeProvider', function($routeProvider) {
                 }
             },
             controller : 'RealmDetailCtrl'
+        })
+        */
+        .when('/create/realm', {
+            templateUrl : 'partials/realm-create.html',
+            resolve : {
+
+            },
+            controller : 'RealmCreateCtrl'
         })
         .when('/realms/:realm', {
             templateUrl : 'partials/realm-detail.html',

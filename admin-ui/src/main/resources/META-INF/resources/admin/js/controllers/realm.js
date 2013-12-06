@@ -61,6 +61,83 @@ module.controller('RealmDropdownCtrl', function($scope, Realm, Current, Auth, $l
     }
 });
 
+module.controller('RealmCreateCtrl', function($scope, Current, Realm, $upload, $http, $location, Dialog, Notifications) {
+    console.log('RealmCreateCtrl');
+
+    $scope.realm = {
+        enabled: true
+    };
+
+    $scope.changed = false;
+    $scope.files = [];
+
+    var oldCopy = angular.copy($scope.realm);
+
+    $scope.onFileSelect = function($files) {
+        $scope.files = $files;
+    };
+
+
+    $scope.uploadFile = function() {
+        //$files: an array of files selected, each file has name, size, and type.
+        for (var i = 0; i < $scope.files.length; i++) {
+            var $file = $scope.files[i];
+            $scope.upload = $upload.upload({
+                url: '/auth-server/rest/saas/admin/realms', //upload.php script, node.js route, or servlet url
+                // method: POST or PUT,
+                // headers: {'headerKey': 'headerValue'}, withCredential: true,
+                data: {myObj: ""},
+                file: $file
+                /* set file formData name for 'Content-Desposition' header. Default: 'file' */
+                //fileFormDataName: myFile,
+                /* customize how data is added to formData. See #40#issuecomment-28612000 for example */
+                //formDataAppender: function(formData, key, val){}
+            }).progress(function(evt) {
+                    console.log('percent: ' + parseInt(100.0 * evt.loaded / evt.total));
+                }).success(function(data, status, headers, config) {
+                    Notifications.success("The realm has been uploaded.");
+                    $location.url("/realms");
+                })
+            .error(function() {
+                    Notifications.error("Error uploading.");
+
+                });
+            //.then(success, error, progress);
+        }
+    };
+
+    $scope.$watch('realm', function() {
+        if (!angular.equals($scope.realm, oldCopy)) {
+            $scope.changed = true;
+        }
+    }, true);
+
+    $scope.save = function() {
+        var realmCopy = angular.copy($scope.realm);
+        Realm.save(realmCopy, function(data, headers) {
+            console.log('creating new realm');
+            var l = headers().location;
+            var id = l.substring(l.lastIndexOf("/") + 1);
+            var data = Realm.query(function() {
+                Current.realms = data;
+                for (var i = 0; i < Current.realms.length; i++) {
+                    if (Current.realms[i].id == id) {
+                        Current.realm = Current.realms[i];
+                    }
+                }
+                $location.url("/realms/" + id);
+                Notifications.success("The realm has been created.");
+            });
+        });
+    };
+
+    $scope.cancel = function() {
+        //$location.url("/realms");
+        window.history.back();
+    };
+});
+
+
 module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $http, $location, Dialog, Notifications) {
     $scope.createRealm = !realm.id;
 

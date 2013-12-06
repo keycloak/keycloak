@@ -99,6 +99,11 @@
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-multipart-provider</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-undertow</artifactId>
             <scope>test</scope>
         </dependency>

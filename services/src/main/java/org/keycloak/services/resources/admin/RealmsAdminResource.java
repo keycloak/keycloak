@@ -2,6 +2,9 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.logging.Logger;
+import org.jboss.resteasy.plugins.providers.multipart.InputPart;
+import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
+import org.jboss.resteasy.util.GenericType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -15,12 +18,16 @@ import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
+import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -80,6 +87,21 @@ public class RealmsAdminResource {
         URI location = realmUrl(uriInfo).build(realm.getId());
         logger.debug("imported realm success, sending back: {0}", location.toString());
         return Response.created(location).build();
+    }
+
+    @POST
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    public Response uploadRealm(MultipartFormDataInput input) throws IOException  {
+        Map<String, List<InputPart>> uploadForm = input.getFormDataMap();
+        List<InputPart> inputParts = uploadForm.get("file");
+
+        RealmManager realmManager = new RealmManager(session);
+        for (InputPart inputPart : inputParts) {
+            inputPart.setMediaType(MediaType.APPLICATION_JSON_TYPE);
+            RealmRepresentation rep = inputPart.getBody(new GenericType<RealmRepresentation>(){});
+            realmManager.importRealm(rep, admin);
+        }
+        return Response.noContent().build();
     }
 
     @Path("{id}")
