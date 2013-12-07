@@ -90,7 +90,7 @@ public class RequiredActionsService {
     public Response updateProfile(final MultivaluedMap<String, String> formData) {
         AccessCodeEntry accessCode = getAccessCodeEntry(RequiredAction.UPDATE_PROFILE);
         if (accessCode == null) {
-            return forwardToErrorPage();
+            return unauthorized();
         }
 
         UserModel user = getUser(accessCode);
@@ -116,7 +116,7 @@ public class RequiredActionsService {
     public Response updateTotp(final MultivaluedMap<String, String> formData) {
         AccessCodeEntry accessCode = getAccessCodeEntry(RequiredAction.CONFIGURE_TOTP);
         if (accessCode == null) {
-            return forwardToErrorPage();
+            return unauthorized();
         }
 
         UserModel user = getUser(accessCode);
@@ -152,7 +152,7 @@ public class RequiredActionsService {
         AccessCodeEntry accessCode = getAccessCodeEntry(RequiredAction.UPDATE_PASSWORD);
         if (accessCode == null) {
             logger.debug("updatePassword access code is null");
-            return forwardToErrorPage();
+            return unauthorized();
         }
         logger.debug("updatePassword has access code");
 
@@ -196,7 +196,7 @@ public class RequiredActionsService {
             AccessCodeEntry accessCode = tokenManager.getAccessCode(uriInfo.getQueryParameters().getFirst("key"));
             if (accessCode == null || accessCode.isExpired()
                     || !accessCode.getRequiredActions().contains(RequiredAction.VERIFY_EMAIL)) {
-                return forwardToErrorPage();
+                return unauthorized();
             }
 
             UserModel user = getUser(accessCode);
@@ -209,7 +209,7 @@ public class RequiredActionsService {
         } else {
             AccessCodeEntry accessCode = getAccessCodeEntry(RequiredAction.VERIFY_EMAIL);
             if (accessCode == null) {
-                return forwardToErrorPage();
+                return unauthorized();
             }
 
             return Flows.forms(realm, request, uriInfo).setAccessCode(accessCode).setUser(accessCode.getUser())
@@ -224,7 +224,7 @@ public class RequiredActionsService {
             AccessCodeEntry accessCode = tokenManager.getAccessCode(uriInfo.getQueryParameters().getFirst("key"));
             if (accessCode == null || accessCode.isExpired()
                     || !accessCode.getRequiredActions().contains(RequiredAction.UPDATE_PASSWORD)) {
-                return forwardToErrorPage();
+                return unauthorized();
             }
             return Flows.forms(realm, request, uriInfo).setAccessCode(accessCode).forwardToAction(RequiredAction.UPDATE_PASSWORD);
         } else {
@@ -378,8 +378,8 @@ public class RequiredActionsService {
         }
     }
 
-    private Response forwardToErrorPage() {
-        return Flows.forms(realm, request, uriInfo).forwardToErrorPage();
+    private Response unauthorized() {
+        return Flows.forms(realm, request, uriInfo).setError("Unauthorized request").forwardToErrorPage();
     }
 
 }

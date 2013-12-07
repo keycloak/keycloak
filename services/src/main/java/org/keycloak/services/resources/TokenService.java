@@ -489,23 +489,17 @@ public class TokenService {
 
         if (!realm.isEnabled()) {
             logger.warn("Realm not enabled");
-            oauth.forwardToSecurityFailure("Realm not enabled");
-            return null;
+            return oauth.forwardToSecurityFailure("Realm not enabled");
         }
         UserModel client = realm.getUser(clientId);
         if (client == null) {
             logger.warn("Unknown login requester: " + clientId);
-            oauth.forwardToSecurityFailure("Unknown login requester.");
-            transaction.rollback();
-            return null;
+            return oauth.forwardToSecurityFailure("Unknown login requester.");
         }
 
         if (!client.isEnabled()) {
             logger.warn("Login requester not enabled.");
-            oauth.forwardToSecurityFailure("Login requester not enabled.");
-            transaction.rollback();
-            session.close();
-            return null;
+            return oauth.forwardToSecurityFailure("Login requester not enabled.");
         }
         redirect = verifyRedirectUri(redirect, client);
         if (redirect == null) {
@@ -518,10 +512,7 @@ public class TokenService {
         boolean isResource = realm.hasRole(client, resourceRole);
         if (!isResource && !realm.hasRole(client, identityRequestRole)) {
             logger.warn("Login requester not allowed to request login.");
-            oauth.forwardToSecurityFailure("Login requester not allowed to request login.");
-            transaction.rollback();
-            session.close();
-            return null;
+            return oauth.forwardToSecurityFailure("Login requester not allowed to request login.");
         }
         logger.info("Checking cookie...");
         UserModel user = authManager.authenticateIdentityCookie(realm, uriInfo, headers);

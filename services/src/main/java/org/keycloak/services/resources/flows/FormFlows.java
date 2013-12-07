@@ -105,7 +105,7 @@ public class FormFlows {
         return forwardToForm(Pages.ACCOUNT);
     }
 
-    private Response forwardToForm(String template, FormService.FormServiceDataBean formDataBean) {
+    private Response forwardToForm(String template, FormService.FormServiceDataBean formDataBean, Response.Status status) {
 
         // Getting URI needed by form processing service
         ResteasyUriInfo uriInfo = request.getUri();
@@ -142,10 +142,10 @@ public class FormFlows {
         while (itr.hasNext()) {
             FormService provider = itr.next();
             if (provider.getId().equals("FormServiceId"))
-                return Response.status(200).type(MediaType.TEXT_HTML).entity(provider.process(template, formDataBean)).build();
+                return Response.status(status).type(MediaType.TEXT_HTML).entity(provider.process(template, formDataBean)).build();
         }
 
-        return Response.status(200).entity("form provider not found").build();
+        return Response.status(status).entity("form provider not found").build();
     }
 
     public Response forwardToForm(String template) {
@@ -153,7 +153,15 @@ public class FormFlows {
         FormService.FormServiceDataBean formDataBean = new FormService.FormServiceDataBean(realm, userModel, formData, queryParams, message);
         formDataBean.setMessageType(messageType);
 
-        return forwardToForm(template, formDataBean);
+        return forwardToForm(template, formDataBean, Response.Status.OK);
+    }
+
+    public Response forwardToForm(String template, Response.Status status) {
+
+        FormService.FormServiceDataBean formDataBean = new FormService.FormServiceDataBean(realm, userModel, formData, queryParams, message);
+        formDataBean.setMessageType(messageType);
+
+        return forwardToForm(template, formDataBean, status);
     }
 
     private Response forwardToActionForm(String template, String warningSummary) {
@@ -201,7 +209,7 @@ public class FormFlows {
     }
 
     public Response forwardToErrorPage() {
-        return forwardToForm(Pages.ERROR);
+        return forwardToForm(Pages.ERROR, Response.Status.INTERNAL_SERVER_ERROR);
     }
 
     public Response forwardToOAuthGrant(){
@@ -214,7 +222,7 @@ public class FormFlows {
         formDataBean.setOAuthCode((String)request.getAttribute("code"));
         formDataBean.setOAuthAction((String)request.getAttribute("action"));
 
-        return forwardToForm(Pages.OAUTH_GRANT, formDataBean);
+        return forwardToForm(Pages.OAUTH_GRANT, formDataBean, Response.Status.OK);
     }
 
     public FormFlows setAccessCode(AccessCodeEntry accessCode) {
