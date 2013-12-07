@@ -80,7 +80,7 @@ public class ResetPasswordTest {
 
         resetPasswordPage.assertCurrent();
 
-        resetPasswordPage.changePassword("test-user@localhost", "test-user@localhost");
+        resetPasswordPage.changePassword("test-user@localhost");
 
         resetPasswordPage.assertCurrent();
 
@@ -111,33 +111,18 @@ public class ResetPasswordTest {
     }
 
     @Test
-    public void resetPasswordWrongUsername() throws IOException, MessagingException {
-        loginPage.open();
-        loginPage.resetPassword();
-
-        resetPasswordPage.assertCurrent();
-
-        resetPasswordPage.changePassword("invalid", "test-user@localhost");
-
-        resetPasswordPage.assertCurrent();
-
-        Assert.assertNotEquals("Success!", resetPasswordPage.getMessage());
-        Assert.assertEquals("Invalid username or email.", resetPasswordPage.getMessage());
-    }
-
-    @Test
     public void resetPasswordWrongEmail() throws IOException, MessagingException {
         loginPage.open();
         loginPage.resetPassword();
 
         resetPasswordPage.assertCurrent();
 
-        resetPasswordPage.changePassword("test-user@localhost", "invalid");
+        resetPasswordPage.changePassword("invalid");
 
         resetPasswordPage.assertCurrent();
 
         Assert.assertNotEquals("Success!", resetPasswordPage.getMessage());
-        Assert.assertEquals("Invalid username or email.", resetPasswordPage.getMessage());
+        Assert.assertEquals("Invalid email.", resetPasswordPage.getMessage());
     }
 
 }

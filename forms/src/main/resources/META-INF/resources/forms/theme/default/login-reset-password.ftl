@@ -13,9 +13,6 @@
     <div id="form">
         <p class="instruction">${rb.getString('emailInstruction')}</p>
         <form action="${url.loginPasswordResetUrl}" method="post">
-            <div>
-                <label for="username">${rb.getString('username')}</label><input id="username" name="username" type="text" />
-            </div>
         	<div>
       	    	<label for="email">${rb.getString('email')}</label><input type="text" id="email" name="email" />
 			</div>

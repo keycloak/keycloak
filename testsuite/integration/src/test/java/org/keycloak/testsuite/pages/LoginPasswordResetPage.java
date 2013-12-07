@@ -29,9 +29,6 @@ import org.openqa.selenium.support.FindBy;
  */
 public class LoginPasswordResetPage extends AbstractPage {
 
-    @FindBy(id = "username")
-    private WebElement usernameInput;
-
     @FindBy(id = "email")
     private WebElement emailInput;
 
@@ -41,8 +38,7 @@ public class LoginPasswordResetPage extends AbstractPage {
     @FindBy(css = ".feedback > p > strong")
     private WebElement emailErrorMessage;
 
-    public void changePassword(String username, String email) {
-        usernameInput.sendKeys(username);
+    public void changePassword(String email) {
         emailInput.sendKeys(email);
 
         submitButton.click();

@@ -103,7 +103,7 @@ public class LoginRecoverUsernameTest {
 
         recoverUsernamePage.assertCurrent();
 
-        Assert.assertEquals("Invalid username or email.", recoverUsernamePage.getMessage());
+        Assert.assertEquals("Invalid email.", recoverUsernamePage.getMessage());
     }
 
 }

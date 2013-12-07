@@ -236,7 +236,6 @@ public class RequiredActionsService {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response sendPasswordReset(final MultivaluedMap<String, String> formData) {
-        String username = formData.getFirst("username");
         String email = formData.getFirst("email");
 
         String scopeParam = uriInfo.getQueryParameters().getFirst("scope");
@@ -254,8 +253,8 @@ public class RequiredActionsService {
                     "Login requester not enabled.");
         }
 
-        UserModel user = realm.getUser(username);
-        if (user == null || !email.equals(user.getEmail())) {
+        UserModel user = realm.getUserByEmail(email);
+        if (user == null) {
             return Flows.forms(realm, request, uriInfo).setError("emailError").forwardToPasswordReset();
         }
 
