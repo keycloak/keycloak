@@ -26,7 +26,7 @@
                         <div class="form-group input-select">
                             <label for="tokenLifespan">Token lifespan</label>
                             <div class="input-group">
-                                <input type="number" data-ng-model="realm.tokenLifespan" id="tokenLifespan" name="tokenLifespan" class="tiny">
+                                <input type="number" required min="1" max="31536000" data-ng-model="realm.tokenLifespan" id="tokenLifespan" name="tokenLifespan" class="tiny">
                                 <div class="select-rcue">
                                     <select name="tokenLifespanUnit" data-ng-model="realm.tokenLifespanUnit" >
                                         <option data-ng-selected="!realm.tokenLifespanUnit">Seconds</option>
@@ -40,7 +40,7 @@
                         <div class="form-group input-select">
                             <label for="accessCodeLifespan">Access code lifespan</label>
                             <div class="input-group">
-                                <input type="number" data-ng-model="realm.accessCodeLifespan" id="accessCodeLifespan" name="accessCodeLifespan" class="tiny">
+                                <input type="number" required min="1" max="31536000" data-ng-model="realm.accessCodeLifespan" id="accessCodeLifespan" name="accessCodeLifespan" class="tiny">
                                 <div class="select-rcue">
                                     <select name="accessCodeLifespanUnit" data-ng-model="realm.accessCodeLifespanUnit">
                                         <option data-ng-selected="!realm.accessCodeLifespanUnit">Seconds</option>
@@ -54,7 +54,7 @@
                         <div class="form-group input-select">
                             <label for="accessCodeLifespanUserAction" class="two-lines">Access code user action lifespan</label>
                             <div class="input-group">
-                                <input type="number" data-ng-model="realm.accessCodeLifespanUserAction" id="accessCodeLifespanUserAction" name="accessCodeLifespanUserAction" class="tiny">
+                                <input type="number" required min="1" max="31536000" data-ng-model="realm.accessCodeLifespanUserAction" id="accessCodeLifespanUserAction" name="accessCodeLifespanUserAction" class="tiny">
                                 <div class="select-rcue">
                                     <select name="accessCodeLifespanUserActionUnit" data-ng-model="realm.accessCodeLifespanUserActionUnit">
                                         <option data-ng-selected="!realm.accessCodeLifespanUserActionUnit">Seconds</option>
