@@ -32,10 +32,6 @@
             <label for="password-confirm">${rb.getString('passwordConfirm')}</label><input type="password" id="password-confirm" name="password-confirm" />
         </div>
 
-        <div class="aside-btn">
-            <p>By registering you agree to the <a href="#">Terms of Service</a> and the <a href="#">Privacy Policy</a>.</p>
-        </div>
-
         <input class="btn-primary" type="submit" value="Register"/>
     </form>
 
