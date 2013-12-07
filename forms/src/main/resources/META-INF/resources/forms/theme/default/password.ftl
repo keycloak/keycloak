@@ -8,7 +8,6 @@
     <p class="subtitle">All fields required</p>
     <form action="${url.passwordUrl}" method="post">
         <fieldset class="border-top">
-            <p class="info">Password updated 2 days ago by Admin.</p>
             <div class="form-group">
                 <label for="password">${rb.getString('password')}</label>
                 <input type="password" id="password" name="password" autofocus>
