@@ -100,6 +100,14 @@ public class Urls {
         return requiredActionsBase(baseUri).path(RequiredActionsService.class, "passwordReset");
     }
 
+    public static URI loginUsernameReminder(URI baseUri, String realmId) {
+        return loginUsernameReminderBuilder(baseUri).build(realmId);
+    }
+
+    public static UriBuilder loginUsernameReminderBuilder(URI baseUri) {
+        return requiredActionsBase(baseUri).path(RequiredActionsService.class, "usernameReminder");
+    }
+
     private static UriBuilder realmBase(URI baseUri) {
         return UriBuilder.fromUri(baseUri).path(RealmsResource.class);
     }

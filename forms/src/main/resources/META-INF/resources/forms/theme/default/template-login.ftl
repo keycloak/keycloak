@@ -44,6 +44,13 @@
                             </p>
                         </div>
                     </#if>
+                    <#if message?has_content && message.success>
+                        <div class="feedback success bottom-left show">
+                            <p>
+                                <strong>${rb.getString('successHeader')}</strong><br/>${message.summary}
+                            </p>
+                        </div>
+                    </#if>
                     <#nested "form">
                 </div>
 

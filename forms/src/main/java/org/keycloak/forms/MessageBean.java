@@ -47,6 +47,10 @@ public class MessageBean {
         return summary;
     }
 
+    public String getType() {
+        return this.type.toString().toLowerCase();
+    }
+
     public boolean isSuccess(){
         return FormFlows.MessageType.SUCCESS.equals(this.type);
     }

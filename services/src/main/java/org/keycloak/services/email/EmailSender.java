@@ -108,16 +108,17 @@ public class EmailSender {
 
         URI uri = builder.build(realm.getId());
 
-        StringBuilder sb = new StringBuilder();
-        sb.append("Hi ").append(user.getFirstName()).append(",\n\n");
+
+        StringBuilder sb = getHeader(user);
+
         sb.append("Someone has created a Keycloak account with this email address. ");
         sb.append("If this was you, click the link below to verify your email address:\n");
         sb.append(uri.toString());
         sb.append("\n\nThis link will expire within ").append(TimeUnit.SECONDS.toMinutes(realm.getAccessCodeLifespanUserAction()));
         sb.append(" minutes.\n\n");
-        sb.append("If you didn't create this account, just ignore this message.\n\n");
-        sb.append("Thanks,\n");
-        sb.append("The Keycloak Team");
+        sb.append("If you didn't create this account, just ignore this message.\n");
+
+        addFooter(sb);
 
         send(user.getEmail(), "Verify email", sb.toString());
     }
@@ -128,19 +129,44 @@ public class EmailSender {
 
         URI uri = builder.build(realm.getId());
 
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = getHeader(user);
 
-        sb.append("Hi ").append(user.getFirstName()).append(",\n\n");
         sb.append("Someone just requested to change your Keycloak account's password. ");
         sb.append("If this was you, click on the link below to set a new password:\n");
         sb.append(uri.toString());
         sb.append("\n\nThis link will expire within ").append(TimeUnit.SECONDS.toMinutes(realm.getAccessCodeLifespanUserAction()));
         sb.append(" minutes.\n\n");
-        sb.append("If you don't want to reset your password, just ignore this message and nothing will be changed.\n\n");
-        sb.append("Thanks,\n");
-        sb.append("The Keycloak Team");
+        sb.append("If you don't want to reset your password, just ignore this message and nothing will be changed.\n");
+
+        addFooter(sb);
 
         send(user.getEmail(), "Reset password link", sb.toString());
     }
+
+    public void sendUsernameReminder(UserModel user) throws EmailException {
+        StringBuilder sb = getHeader(user);
+
+        sb.append("The username for your Keycloak account is ").append(user.getLoginName()).append(".\n");
+
+        addFooter(sb);
+
+        send(user.getEmail(), "Username reminder", sb.toString());
+    }
+
+    private StringBuilder getHeader(UserModel user) {
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("Hi");
+        if (user.getFirstName() != null) {
+            sb.append(" ").append(user.getFirstName());
+        }
+        sb.append(",\n\n");
+        return sb;
+    }
+
+    private void addFooter(StringBuilder sb) {
+        sb.append("\nThanks,\nThe Keycloak Team");
+    }
+
 
 }

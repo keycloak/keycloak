@@ -176,6 +176,10 @@ public class FormFlows {
         return forwardToForm(Pages.LOGIN_RESET_PASSWORD);
     }
 
+    public Response forwardToUsernameReminder() {
+        return forwardToForm(Pages.LOGIN_USERNAME_REMINDER);
+    }
+
     public Response forwardToLoginTotp() {
         return forwardToForm(Pages.LOGIN_TOTP);
     }

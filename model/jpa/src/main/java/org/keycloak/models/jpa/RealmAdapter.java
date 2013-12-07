@@ -440,6 +440,15 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public UserModel getUserByEmail(String email) {
+        TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUserByEmail", UserEntity.class);
+        query.setParameter("email", email);
+        query.setParameter("realm", realm);
+        List<UserEntity> results = query.getResultList();
+        return results.isEmpty()? null : new UserAdapter(results.get(0));
+    }
+
+    @Override
     public UserModel addUser(String username) {
         UserEntity entity = new UserEntity();
         entity.setLoginName(username);

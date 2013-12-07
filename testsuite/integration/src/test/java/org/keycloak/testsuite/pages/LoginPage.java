@@ -56,6 +56,9 @@ public class LoginPage extends AbstractPage {
     @FindBy(linkText = "Password")
     private WebElement resetPasswordLink;
 
+    @FindBy(linkText = "Username")
+    private WebElement recoverUsernameLink;
+
     @FindBy(id = "loginError")
     private WebElement loginErrorMessage;
 
@@ -92,6 +95,11 @@ public class LoginPage extends AbstractPage {
     public void resetPassword() {
         resetPasswordLink.click();
     }
+
+    public void recoverUsername() {
+        recoverUsernameLink.click();
+    }
+
 
     @Override
     public void open() {

@@ -46,6 +46,8 @@ public class Pages {
 
     public final static String LOGIN_UPDATE_PASSWORD = "login-update-password.ftl";
 
+    public final static String LOGIN_USERNAME_REMINDER = "login-username-reminder.ftl";
+
     public final static String REGISTER = "register.ftl";
 
     public final static String ERROR = "error.ftl";

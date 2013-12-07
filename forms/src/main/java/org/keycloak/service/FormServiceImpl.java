@@ -64,6 +64,7 @@ public class FormServiceImpl implements FormService {
         commandMap.put(Pages.LOGIN_UPDATE_PROFILE, new CommandCommon());
         commandMap.put(Pages.PASSWORD, new CommandCommon());
         commandMap.put(Pages.LOGIN_RESET_PASSWORD, new CommandCommon());
+        commandMap.put(Pages.LOGIN_USERNAME_REMINDER, new CommandCommon());
         commandMap.put(Pages.LOGIN_UPDATE_PASSWORD, new CommandCommon());
         commandMap.put(Pages.ACCESS, new CommandCommon());
         commandMap.put(Pages.SOCIAL, new CommandCommon());

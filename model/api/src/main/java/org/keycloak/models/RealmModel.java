@@ -86,6 +86,8 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
 
     UserModel getUser(String name);
 
+    UserModel getUserByEmail(String email);
+
     UserModel addUser(String username);
 
     boolean removeUser(String name);

@@ -276,6 +276,45 @@ public class RequiredActionsService {
         return Flows.forms(realm, request, uriInfo).setSuccess("emailSent").forwardToPasswordReset();
     }
 
+
+    @Path("username-reminder")
+    @GET
+    public Response usernameReminder() {
+        return Flows.forms(realm, request, uriInfo).forwardToUsernameReminder();
+    }
+
+    @Path("username-reminder")
+    @POST
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    public Response sendUsernameReminder(final MultivaluedMap<String, String> formData) {
+        String email = formData.getFirst("email");
+        String clientId = uriInfo.getQueryParameters().getFirst("client_id");
+
+        UserModel client = realm.getUser(clientId);
+        if (client == null) {
+            return Flows.oauth(realm, request, uriInfo, authManager, tokenManager).forwardToSecurityFailure(
+                    "Unknown login requester.");
+        }
+        if (!client.isEnabled()) {
+            return Flows.oauth(realm, request, uriInfo, authManager, tokenManager).forwardToSecurityFailure(
+                    "Login requester not enabled.");
+        }
+
+        UserModel user = realm.getUserByEmail(email);
+        if (user == null) {
+            return Flows.forms(realm, request, uriInfo).setError("emailError").forwardToUsernameReminder();
+        }
+
+        try {
+            new EmailSender(realm.getSmtpConfig()).sendUsernameReminder(user);
+        } catch (EmailException e) {
+            logger.error("Failed to send username reminder email", e);
+            return Flows.forms(realm, request, uriInfo).setError("emailSendError").forwardToErrorPage();
+        }
+
+        return Flows.forms(realm, request, uriInfo).setSuccess("emailUsernameSent").forwardToLogin();
+    }
+
     private AccessCodeEntry getAccessCodeEntry(RequiredAction requiredAction) {
         String code = uriInfo.getQueryParameters().getFirst(FormFlows.CODE);
         if (code == null) {

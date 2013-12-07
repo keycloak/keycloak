@@ -509,6 +509,14 @@ public class RealmAdapter implements RealmModel {
         return new UserAdapter(user, getIdm());
     }
 
+    @Override
+    public UserModel getUserByEmail(String email) {
+        IdentityQuery<User> query = getIdm().createIdentityQuery(User.class);
+        query.setParameter(User.EMAIL, email);
+        List<User> users = query.getResultList();
+        return users.isEmpty() ? null : new UserAdapter(users.get(0), getIdm());
+    }
+
     protected User findPicketlinkUser(String name) {
         return SampleModel.getUser(getIdm(), name);
     }

@@ -135,6 +135,10 @@ public class UrlBean {
         return Urls.loginPasswordReset(baseURI, realm.getId()).toString();
     }
 
+    public String getLoginUsernameReminderUrl() {
+        return Urls.loginUsernameReminder(baseURI, realm.getId()).toString();
+    }
+
     public String getLoginEmailVerificationUrl() {
         return Urls.loginActionEmailVerification(baseURI, realm.getId()).toString();
     }

@@ -19,52 +19,41 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.keycloak.forms;
+package org.keycloak.testsuite.pages;
 
-import org.keycloak.models.Constants;
-import org.keycloak.models.RealmModel;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class RealmBean {
+public class LoginRecoverUsernamePage extends AbstractPage {
 
-    private RealmModel realm;
+    @FindBy(id = "email")
+    private WebElement emailInput;
 
-    private boolean saas;
+    @FindBy(css = "input[type=\"submit\"]")
+    private WebElement submitButton;
 
+    @FindBy(css = ".feedback > p > strong")
+    private WebElement emailErrorMessage;
 
-    public RealmBean(RealmModel realmModel) {
-        realm = realmModel;
-        saas = Constants.ADMIN_REALM.equals(realmModel.getId());
+    public void recoverUsername(String email) {
+        emailInput.sendKeys(email);
+
+        submitButton.click();
     }
 
-    public String getId() {
-        return realm.getId();
+    public boolean isCurrent() {
+        return driver.getTitle().equals("Forgot Your Username?");
     }
 
-    public String getName() {
-        return saas ? "Keycloak" : realm.getName();
+    public void open() {
+        throw new UnsupportedOperationException();
     }
 
-    public RealmModel getRealm() {
-        return realm;
+    public String getMessage() {
+        return emailErrorMessage != null ? emailErrorMessage.getText() : null;
     }
 
-    public boolean isSaas() {
-        return saas;
-    }
-
-    public boolean isSocial() {
-        return realm.isSocial();
-    }
-
-    public boolean isRegistrationAllowed() {
-        return realm.isRegistrationAllowed();
-    }
-
-    public boolean isResetPasswordAllowed() {
-        return realm.isResetPasswordAllowed();
-    }
-    
 }

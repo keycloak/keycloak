@@ -24,10 +24,6 @@
                 <input class="btn-primary" name="login" type="submit" value="Log In"/>
                 <input class="btn-secondary" name="cancel" type="submit" value="Cancel"/>
             </div>
-
-            <div class="aside-btn">
-                <p>Forgot <a href="${url.loginPasswordResetUrl}">Password</a>?</p>
-            </div>
         </form>
     </div>
 
@@ -36,6 +32,9 @@
     <div id="info">
         <#if realm.registrationAllowed>
             <p>${rb.getString('noAccount')} <a href="${url.registrationUrl}">${rb.getString('register')}</a>.</p>
+        </#if>
+        <#if realm.resetPasswordAllowed>
+            <p>Forgot <a href="${url.loginUsernameReminderUrl}">Username</a> / <a href="${url.loginPasswordResetUrl}">Password</a>?</p>
         </#if>
     </div>
 
