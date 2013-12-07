@@ -215,7 +215,7 @@ public class SaasService {
         oauth.setClientId(Constants.ADMIN_CONSOLE_APPLICATION);
         URI redirectUri = uriInfo.getBaseUriBuilder().path(SaasService.class).path(SaasService.class, "loginRedirect").build();
         logger.debug("redirectUri: {0}", redirectUri.toString());
-        oauth.setStateCookiePath(redirectUri.getPath());
+        oauth.setStateCookiePath(redirectUri.getRawPath());
         return oauth.redirect(uriInfo, redirectUri.toString(), path);
     }
 

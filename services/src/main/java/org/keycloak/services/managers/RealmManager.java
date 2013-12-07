@@ -137,7 +137,7 @@ public class RealmManager {
         }
     }
 
-    private void enableAccountManagement(RealmModel realm) {
+    public void enableAccountManagement(RealmModel realm) {
         ApplicationModel application = realm.getApplicationNameMap().get(Constants.ACCOUNT_APPLICATION);
         if (application == null) {
             application = realm.addApplication(Constants.ACCOUNT_APPLICATION);
@@ -156,7 +156,7 @@ public class RealmManager {
         application.setEnabled(true);
     }
 
-    private void disableAccountManagement(RealmModel realm) {
+    public void disableAccountManagement(RealmModel realm) {
         ApplicationModel application = realm.getApplicationNameMap().get(Constants.ACCOUNT_APPLICATION);
         if (application != null) {
             application.setEnabled(false); // TODO Should we delete the application instead?

@@ -46,7 +46,7 @@ public class JaxrsOAuthClient extends AbstractOAuthClient {
 
     public String getStateCookiePath(UriInfo uriInfo) {
         if (stateCookiePath != null) return stateCookiePath;
-        return uriInfo.getBaseUri().getPath();
+        return uriInfo.getBaseUri().getRawPath();
     }
 
     public String getBearerToken(UriInfo uriInfo, HttpHeaders headers) throws BadRequestException, InternalServerErrorException {

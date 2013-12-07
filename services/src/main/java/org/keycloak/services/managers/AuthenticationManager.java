@@ -55,20 +55,20 @@ public class AuthenticationManager {
     public NewCookie createLoginCookie(RealmModel realm, UserModel user, UriInfo uriInfo) {
         String cookieName = KEYCLOAK_IDENTITY_COOKIE;
         URI uri = RealmsResource.realmBaseUrl(uriInfo).build(realm.getId());
-        String cookiePath = uri.getPath();
+        String cookiePath = uri.getRawPath();
         return createLoginCookie(realm, user, null, cookieName, cookiePath);
     }
 
     public NewCookie createSaasIdentityCookie(RealmModel realm, UserModel user, UriInfo uriInfo) {
         String cookieName = SaasService.SAAS_IDENTITY_COOKIE;
         URI uri = SaasService.saasCookiePath(uriInfo).build();
-        String cookiePath = uri.getPath();
+        String cookiePath = uri.getRawPath();
         return createLoginCookie(realm, user, null, cookieName, cookiePath);
     }
 
     public NewCookie createAccountIdentityCookie(RealmModel realm, UserModel user, UserModel client, URI uri) {
         String cookieName = AccountService.ACCOUNT_IDENTITY_COOKIE;
-        String cookiePath = uri.getPath();
+        String cookiePath = uri.getRawPath();
         return createLoginCookie(realm, user, client, cookieName, cookiePath);
     }
 
@@ -101,19 +101,19 @@ public class AuthenticationManager {
     public void expireIdentityCookie(RealmModel realm, UriInfo uriInfo) {
         URI uri = RealmsResource.realmBaseUrl(uriInfo).build(realm.getId());
         logger.debug("Expiring identity cookie");
-        String path = uri.getPath();
+        String path = uri.getRawPath();
         String cookieName = KEYCLOAK_IDENTITY_COOKIE;
         expireCookie(cookieName, path);
     }
 
     public void expireSaasIdentityCookie(UriInfo uriInfo) {
         URI uri = SaasService.saasCookiePath(uriInfo).build();
-        String cookiePath = uri.getPath();
+        String cookiePath = uri.getRawPath();
         expireCookie(SaasService.SAAS_IDENTITY_COOKIE, cookiePath);
     }
 
     public void expireAccountIdentityCookie(URI uri) {
-        String cookiePath = uri.getPath();
+        String cookiePath = uri.getRawPath();
         expireCookie(AccountService.ACCOUNT_IDENTITY_COOKIE, cookiePath);
     }
 

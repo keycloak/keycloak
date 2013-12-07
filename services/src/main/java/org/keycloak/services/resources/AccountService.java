@@ -336,7 +336,7 @@ public class AccountService {
             NewCookie cookie = authManager.createAccountIdentityCookie(realm, accessCode.getUser(), client, Urls.accountBase(uriInfo.getBaseUri()).build(realm.getId()));
             return Response.status(302).cookie(cookie).location(redirectUri).build();
         } finally {
-            authManager.expireCookie(AbstractOAuthClient.OAUTH_TOKEN_REQUEST_STATE, uriInfo.getAbsolutePath().getPath());
+            authManager.expireCookie(AbstractOAuthClient.OAUTH_TOKEN_REQUEST_STATE, uriInfo.getAbsolutePath().getRawPath());
         }
     }
 
@@ -364,7 +364,7 @@ public class AccountService {
             path = (path != null ? path : "") + "?referrer=" + referrer;
         }
 
-        oauth.setStateCookiePath(accountUri.getPath());
+        oauth.setStateCookiePath(accountUri.getRawPath());
         return oauth.redirect(uriInfo, accountUri.toString(), path);
     }
 
