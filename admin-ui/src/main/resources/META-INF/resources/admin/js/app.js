@@ -359,6 +359,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 application : function(OAuthClientLoader) {
                     return OAuthClientLoader();
+                },
+                oauth : function(OAuthClientLoader) {
+                    return OAuthClientLoader();
                 }
             },
             controller : 'OAuthClientCredentialsCtrl'
