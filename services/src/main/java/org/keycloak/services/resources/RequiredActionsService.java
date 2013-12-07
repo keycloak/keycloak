@@ -31,6 +31,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.services.email.EmailException;
 import org.keycloak.services.email.EmailSender;
 import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -265,10 +266,14 @@ public class RequiredActionsService {
         accessCode.setRequiredActions(requiredActions);
         accessCode.setExpiration(System.currentTimeMillis() / 1000 + realm.getAccessCodeLifespanUserAction());
 
-        new EmailSender(realm.getSmtpConfig()).sendPasswordReset(user, realm, accessCode, uriInfo);
+        try {
+            new EmailSender(realm.getSmtpConfig()).sendPasswordReset(user, realm, accessCode, uriInfo);
+        } catch (EmailException e) {
+            logger.error("Failed to send password reset email", e);
+            return Flows.forms(realm, request, uriInfo).setError("emailSendError").forwardToErrorPage();
+        }
 
-        return Flows.forms(realm, request, uriInfo).setError("emailSent").setErrorType(FormFlows.MessageType.SUCCESS)
-                .forwardToPasswordReset();
+        return Flows.forms(realm, request, uriInfo).setSuccess("emailSent").forwardToPasswordReset();
     }
 
     private AccessCodeEntry getAccessCodeEntry(RequiredAction requiredAction) {

@@ -54,7 +54,7 @@ public class EmailSender {
         this.config = config;
     }
 
-    public void send(String address, String subject, String body) throws MessagingException {
+    public void send(String address, String subject, String body) throws EmailException {
         Properties props = new Properties();
         props.setProperty("mail.smtp.host", config.get("host"));
 
@@ -81,24 +81,28 @@ public class EmailSender {
 
         String from = config.get("from");
 
-        Session session = Session.getInstance(props);
+        try {
+            Session session = Session.getInstance(props);
 
-        Message msg = new MimeMessage(session);
-        msg.setFrom(new InternetAddress(from));
-        msg.setSubject(subject);
-        msg.setText(body);
-        msg.saveChanges();
+            Message msg = new MimeMessage(session);
+            msg.setFrom(new InternetAddress(from));
+            msg.setSubject(subject);
+            msg.setText(body);
+            msg.saveChanges();
 
-        Transport transport = session.getTransport("smtp");
-        if (auth) {
-            transport.connect(config.get("user"), config.get("password"));
-        } else {
-            transport.connect();
+            Transport transport = session.getTransport("smtp");
+            if (auth) {
+                transport.connect(config.get("user"), config.get("password"));
+            } else {
+                transport.connect();
+            }
+            transport.sendMessage(msg, new InternetAddress[]{new InternetAddress(address)});
+        } catch (Exception e) {
+            throw new EmailException(e);
         }
-        transport.sendMessage(msg, new InternetAddress[] { new InternetAddress(address) });
     }
 
-    public void sendEmailVerification(UserModel user, RealmModel realm, AccessCodeEntry accessCode, UriInfo uriInfo) {
+    public void sendEmailVerification(UserModel user, RealmModel realm, AccessCodeEntry accessCode, UriInfo uriInfo) throws EmailException {
         UriBuilder builder = Urls.loginActionEmailVerificationBuilder(uriInfo.getBaseUri());
         builder.queryParam("key", accessCode.getId());
 
@@ -115,14 +119,10 @@ public class EmailSender {
         sb.append("Thanks,\n");
         sb.append("The Keycloak Team");
 
-        try {
-            send(user.getEmail(), "Verify email", sb.toString());
-        } catch (Exception e1) {
-            log.warn("Failed to send email verification");
-        }
+        send(user.getEmail(), "Verify email", sb.toString());
     }
 
-    public void sendPasswordReset(UserModel user, RealmModel realm, AccessCodeEntry accessCode, UriInfo uriInfo) {
+    public void sendPasswordReset(UserModel user, RealmModel realm, AccessCodeEntry accessCode, UriInfo uriInfo) throws EmailException {
         UriBuilder builder = Urls.loginPasswordResetBuilder(uriInfo.getBaseUri());
         builder.queryParam("key", accessCode.getId());
 
@@ -140,11 +140,7 @@ public class EmailSender {
         sb.append("Thanks,\n");
         sb.append("The Keycloak Team");
 
-        try {
-            send(user.getEmail(), "Reset password link", sb.toString());
-        } catch (Exception e) {
-            log.warn("Failed to send reset password link", e);
-        }
+        send(user.getEmail(), "Reset password link", sb.toString());
     }
 
 }

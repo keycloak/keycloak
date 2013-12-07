@@ -28,6 +28,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.services.FormService;
+import org.keycloak.services.email.EmailException;
 import org.keycloak.services.email.EmailSender;
 import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.messages.Messages;
@@ -51,8 +52,7 @@ public class FormFlows {
 
     public static final String CODE = "code";
 
-    // TODO refactor/rename "error" to "message" everywhere where it makes sense
-    private String error;
+    private String message;
 
     public static enum MessageType {SUCCESS, WARNING, ERROR};
     private MessageType messageType = MessageType.ERROR;
@@ -86,7 +86,11 @@ public class FormFlows {
             case UPDATE_PASSWORD:
                 return forwardToActionForm(Pages.LOGIN_UPDATE_PASSWORD, Messages.ACTION_WARN_PASSWD);
             case VERIFY_EMAIL:
-                new EmailSender(realm.getSmtpConfig()).sendEmailVerification(userModel, realm, accessCode, uriInfo);
+                try {
+                    new EmailSender(realm.getSmtpConfig()).sendEmailVerification(userModel, realm, accessCode, uriInfo);
+                } catch (EmailException e) {
+                    return setError("emailSendError").forwardToErrorPage();
+                }
                 return forwardToActionForm(Pages.LOGIN_VERIFY_EMAIL, Messages.ACTION_WARN_EMAIL);
             default:
                 return Response.serverError().build();
@@ -146,7 +150,7 @@ public class FormFlows {
 
     public Response forwardToForm(String template) {
 
-        FormService.FormServiceDataBean formDataBean = new FormService.FormServiceDataBean(realm, userModel, formData, queryParams, error);
+        FormService.FormServiceDataBean formDataBean = new FormService.FormServiceDataBean(realm, userModel, formData, queryParams, message);
         formDataBean.setMessageType(messageType);
 
         return forwardToForm(template, formDataBean);
@@ -156,9 +160,9 @@ public class FormFlows {
 
         // If no other message is set, notify user about required action in the warning window
         // so it's clear that this is a req. action form not a login form
-        if (error == null){
+        if (message == null){
             messageType = MessageType.WARNING;
-            error = warningSummary;
+            message = warningSummary;
         }
 
         return forwardToForm(template);
@@ -198,7 +202,7 @@ public class FormFlows {
 
     public Response forwardToOAuthGrant(){
 
-        FormService.FormServiceDataBean formDataBean = new FormService.FormServiceDataBean(realm, userModel, formData, queryParams, error);
+        FormService.FormServiceDataBean formDataBean = new FormService.FormServiceDataBean(realm, userModel, formData, queryParams, message);
 
         formDataBean.setOAuthRealmRolesRequested((List<RoleModel>) request.getAttribute("realmRolesRequested"));
         formDataBean.setOAuthResourceRolesRequested((MultivaluedMap<String, RoleModel>) request.getAttribute("resourceRolesRequested"));
@@ -222,13 +226,21 @@ public class FormFlows {
         return this;
     }
 
-    public FormFlows setError(String error) {
-        this.error = error;
+    public FormFlows setError(String message) {
+        this.message = message;
+        this.messageType = MessageType.ERROR;
         return this;
     }
 
-    public FormFlows setErrorType(MessageType errorType) {
-        this.messageType = errorType;
+    public FormFlows setSuccess(String message) {
+        this.message = message;
+        this.messageType = MessageType.SUCCESS;
+        return this;
+    }
+
+    public FormFlows setWarning(String message) {
+        this.message = message;
+        this.messageType = MessageType.WARNING;
         return this;
     }
 

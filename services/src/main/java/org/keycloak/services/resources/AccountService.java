@@ -46,7 +46,6 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 import javax.ws.rs.ext.Providers;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.List;
 
 /**
@@ -175,8 +174,7 @@ public class AccountService {
         user.setLastName(formData.getFirst("lastName"));
         user.setEmail(formData.getFirst("email"));
 
-        return Flows.forms(realm, request, uriInfo).setUser(user).setError("accountUpdated")
-                .setErrorType(FormFlows.MessageType.SUCCESS).forwardToAccount();
+        return Flows.forms(realm, request, uriInfo).setUser(user).setSuccess("accountUpdated").forwardToAccount();
     }
 
     @Path("totp-remove")
@@ -190,8 +188,7 @@ public class AccountService {
         UserModel user = auth.getUser();
 
         user.setTotp(false);
-        return Flows.forms(realm, request, uriInfo).setError("successTotpRemoved").setErrorType(FormFlows.MessageType.SUCCESS)
-                .setUser(user).forwardToTotp();
+        return Flows.forms(realm, request, uriInfo).setSuccess("successTotpRemoved").setUser(user).forwardToTotp();
     }
 
     @Path("totp")
@@ -222,8 +219,7 @@ public class AccountService {
 
         user.setTotp(true);
 
-        return Flows.forms(realm, request, uriInfo).setError("successTotp").setErrorType(FormFlows.MessageType.SUCCESS)
-                .setUser(user).forwardToTotp();
+        return Flows.forms(realm, request, uriInfo).setSuccess("successTotp").setUser(user).forwardToTotp();
     }
 
     @Path("password")
@@ -266,8 +262,7 @@ public class AccountService {
 
         realm.updateCredential(user, credentials);
 
-        return Flows.forms(realm, request, uriInfo).setUser(user).setError("accountPasswordUpdated")
-                .setErrorType(FormFlows.MessageType.SUCCESS).forwardToPassword();
+        return Flows.forms(realm, request, uriInfo).setUser(user).setSuccess("accountPasswordUpdated").forwardToPassword();
     }
 
     @Path("login-redirect")

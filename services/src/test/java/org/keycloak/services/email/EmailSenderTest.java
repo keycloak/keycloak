@@ -55,7 +55,7 @@ public class EmailSenderTest {
     }
 
     @Test
-    public void sendMail() throws MessagingException, IOException {
+    public void sendMail() throws Exception {
         emailSender.send("test@test.com", "Test subject", "Test body");
 
         MimeMessage[] receivedMessages = greenMail.getReceivedMessages();
