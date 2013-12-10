@@ -133,9 +133,13 @@ body {
     display: inline;
     float: right;
     margin-top: 0.76923076923077em;
-  /* 10px */
-
+    margin-bottom: 0;0.53846153846154
 }
+.rcue-login-register div.form-buttons input + input {
+    margin-left: 0.53846153846154em;
+}
+
+
 .rcue-login-register p.subtitle {
   font-size: 1.1em;
   color: #999;
@@ -393,6 +397,13 @@ a.zocial:before {
 .rcue-login-register.totp ol li form {
   width: 357px;
 }
+.rcue-login-register.totp ol li form input[type="text"] {
+    width: 22em;
+}
+.rcue-login-register.totp ol li form input[type="submit"] {
+    float: right;
+}
+
 .rcue-login-register.totp ol li:last-child {
   margin-bottom: 0;
 }

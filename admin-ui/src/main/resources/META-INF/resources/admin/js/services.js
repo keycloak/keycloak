@@ -41,7 +41,7 @@ module.service('Dialog', function($dialog) {
         }, {
             result : 'ok',
             label : 'Generate new keys',
-            cssClass : 'destructive'
+            cssClass : 'primary'
         } ];
 
         $dialog.messageBox(title, msg, btns).open().then(function(result) {

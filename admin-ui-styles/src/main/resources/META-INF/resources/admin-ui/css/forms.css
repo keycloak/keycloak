@@ -19,6 +19,7 @@ textarea {
   padding: 0 0.545454545454545em;
   height: 2.36363636363636em;
   /* 26px */
+
   border: 1px #b6b6b6 solid;
   border-radius: 2px;
   box-shadow: inset 0px 2px 2px rgba(0, 0, 0, 0.1);
@@ -314,6 +315,19 @@ button.primary:focus,
 .search-comp .icon-search + .tooltip {
   width: 20em;
   font-weight: normal;
+}
+.search-comp + span {
+  font-size: 1.1em;
+  font-weight: normal;
+  color: #A1A1A1;
+}
+.search-comp + span span {
+  margin-left: 0.45454545454545em;
+  margin-right: 0.45454545454545em;
+  display: inline-block;
+}
+.search-comp + span .link {
+  font-size: 0.90909090909091em;
 }
 .feedback-aligner {
   position: fixed;

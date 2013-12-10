@@ -33,7 +33,9 @@
             <div class="aside-btn">
             </div>
 
-            <input class="btn-primary" type="submit" value="Submit" />
+            <div class="form-buttons">
+                <input class="btn-primary" type="submit" value="Submit" />
+            </div>
         </form>
     </div>
     </#if>
