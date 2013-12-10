@@ -86,6 +86,7 @@ public class EmailSender {
 
             Message msg = new MimeMessage(session);
             msg.setFrom(new InternetAddress(from));
+            msg.setHeader("To", address);
             msg.setSubject(subject);
             msg.setText(body);
             msg.saveChanges();
