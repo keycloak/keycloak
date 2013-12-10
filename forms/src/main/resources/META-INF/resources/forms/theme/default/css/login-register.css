@@ -129,10 +129,10 @@ body {
   margin-bottom: 0.54545454545455em;
   /* 6px */
 }
-.rcue-login-register div.form-buttons {
-    display: inline;
-    float: right;
-    margin-top: 0.76923076923077em;
+.rcue-login-register form > input[type="button"],
+.rcue-login-register form > input[type="submit"]{
+  float: right;
+  margin-top: 0.76923076923077em;
   /* 10px */
 
 }

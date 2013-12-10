@@ -20,10 +20,8 @@
                 <label for="password">${rb.getString('password')}</label><input id="password" name="password" type="password" />
             </div>
 
-            <div class="form-buttons">
                 <input class="btn-primary" name="login" type="submit" value="Log In"/>
                 <input class="btn-secondary" name="cancel" type="submit" value="Cancel"/>
-            </div>
         </form>
     </div>
 
