@@ -22,7 +22,7 @@
     </servlet>
 
     <listener>
-        <listener-class>org.keycloak.services.listeners.MongoRunnerListener</listener-class>
+        <listener-class>org.keycloak.services.listeners.KeycloakSessionDestroyListener</listener-class>
     </listener>
 
     <filter>
