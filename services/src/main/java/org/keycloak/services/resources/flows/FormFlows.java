@@ -33,7 +33,6 @@ import org.keycloak.services.email.EmailSender;
 import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.messages.Messages;
 
-import javax.imageio.spi.ServiceRegistry;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -44,6 +43,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.ServiceLoader;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -137,7 +137,7 @@ public class FormFlows {
         formDataBean.setSocialRegistration(socialRegistration);
 
         // Find the service and process relevant template
-        Iterator<FormService> itr = ServiceRegistry.lookupProviders(FormService.class);
+        Iterator<FormService> itr = ServiceLoader.load(FormService.class).iterator();
 
         while (itr.hasNext()) {
             FormService provider = itr.next();

@@ -45,7 +45,6 @@ import org.keycloak.social.SocialProviderException;
 import org.keycloak.services.managers.SocialRequestManager;
 import org.keycloak.social.SocialUser;
 
-import javax.imageio.spi.ServiceRegistry;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -68,6 +67,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.ServiceLoader;
 import java.util.UUID;
 
 /**
@@ -305,7 +305,7 @@ public class SocialResource {
     }
 
     private RequestDetails getRequestDetails(Map<String, String[]> queryParams) {
-        Iterator<SocialProvider> itr = ServiceRegistry.lookupProviders(SocialProvider.class);
+        Iterator<SocialProvider> itr = ServiceLoader.load(SocialProvider.class).iterator();
 
         while (itr.hasNext()) {
             SocialProvider provider = itr.next();
@@ -322,7 +322,7 @@ public class SocialResource {
     }
 
     private SocialProvider getProvider(String providerId) {
-        Iterator<SocialProvider> itr = ServiceRegistry.lookupProviders(SocialProvider.class);
+        Iterator<SocialProvider> itr = ServiceLoader.load(SocialProvider.class).iterator();
 
         while (itr.hasNext()) {
             SocialProvider provider = itr.next();
