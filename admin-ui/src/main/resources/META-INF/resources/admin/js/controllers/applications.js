@@ -94,9 +94,10 @@ module.controller('ApplicationCredentialsCtrl', function($scope, $location, real
     });
 });
 
-
-
-
+module.controller('ApplicationSessionsCtrl', function($scope, $location, realm, application) {
+    $scope.realm = realm;
+    $scope.application = application;
+});
 
 module.controller('ApplicationRoleDetailCtrl', function($scope, realm, application, role, ApplicationRole, $location, Dialog, Notifications) {
     $scope.realm = realm;

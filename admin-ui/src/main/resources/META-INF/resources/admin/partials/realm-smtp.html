@@ -34,13 +34,13 @@
                         <div class="form-group clearfix">
                             <label for="smtpPort" class="control-label">Port <span class="required">*</span></label>
                             <div class="controls">
-                                <input id="smtpPort" type="text" ng-model="realm.smtpServer.port" placeholder="SMTP Port (defaults to 25)" required>
+                                <input id="smtpPort" type="number" ng-model="realm.smtpServer.port" placeholder="SMTP Port (defaults to 25)" required>
                             </div>
                         </div>
                         <div class="form-group clearfix">
                             <label for="smtpFrom" class="control-label">From <span class="required">*</span></label>
                             <div class="controls">
-                                <input id="smtpFrom" type="text" ng-model="realm.smtpServer.from" placeholder="SMTP From" required>
+                                <input id="smtpFrom" type="email" ng-model="realm.smtpServer.from" placeholder="SMTP From" required>
                             </div>
                         </div>
                         <div class="form-group clearfix">

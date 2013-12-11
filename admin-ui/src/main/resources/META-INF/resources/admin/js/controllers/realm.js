@@ -843,9 +843,13 @@ module.controller('RoleDetailCtrl', function($scope, realm, role, Role, $locatio
 });
 
 module.controller('RealmSMTPSettingsCtrl', function($scope, Current, Realm, realm, $http, $location, Dialog, Notifications) {
+    console.log('RealmSMTPSettingsCtrl');
+
+    var booleanSmtpAtts = ["auth","ssl","starttls"];
+
     $scope.realm = {
         id : realm.id, realm : realm.realm, social : realm.social, registrationAllowed : realm.registrationAllowed,
-        smtpServer: realm.smtpServer
+        smtpServer: typeObject(realm.smtpServer)
     };
 
     var oldCopy = angular.copy($scope.realm);
@@ -859,6 +863,7 @@ module.controller('RealmSMTPSettingsCtrl', function($scope, Current, Realm, real
 
     $scope.save = function() {
         var realmCopy = angular.copy($scope.realm);
+        realmCopy['smtpServer'] = detypeObject(realmCopy.smtpServer);
         $scope.changed = false;
         Realm.update(realmCopy, function () {
             $location.url("/realms/" + realm.id + "/smtp-settings");
@@ -870,4 +875,38 @@ module.controller('RealmSMTPSettingsCtrl', function($scope, Current, Realm, real
         $scope.realm = angular.copy(oldCopy);
         $scope.changed = false;
     };
+
+    /* Convert string attributes containing a boolean to actual boolean type + convert an integer string (port) to integer. */
+    function typeObject(obj){
+        for (var att in obj){
+            if (booleanSmtpAtts.indexOf(att) < 0)
+                continue;
+            if (obj[att] === "true"){
+                obj[att] = true;
+            } else if (obj[att] === "false"){
+                obj[att] = false;
+            }
+        }
+
+        obj['port'] = parseInt(obj['port']);
+
+        return obj;
+    }
+
+    /* Convert all non-string values to strings to invert changes caused by the typeObject function. */
+    function detypeObject(obj){
+        for (var att in obj){
+            if (booleanSmtpAtts.indexOf(att) < 0)
+                continue;
+            if (obj[att] === true){
+                obj[att] = "true";
+            } else if (obj[att] === false){
+                obj[att] = "false"
+            }
+        }
+
+        obj['port'] = obj['port'].toString();
+
+        return obj;
+    }
 });
