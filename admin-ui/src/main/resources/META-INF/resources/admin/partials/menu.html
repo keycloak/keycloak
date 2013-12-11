@@ -25,7 +25,7 @@
                     <span class="dropdown-label" data-ng-show="showNav()">Realm:</span>
                     <div class="select-rcue" data-ng-show="showNav()">
                         <select ng-change="changeRealm()" ng-model="current.realm" ng-options="r.realm for r in current.realms"></select>
-                    </div><a data-ng-click="refresh()" id="refresh" data-ng-show="showNav()" class="tooltipBottomTrigger" data-original-title="Refresh"><span class="icon-spinner6">Icon: spinner</span></a>
+                    </div><a data-ng-click="refresh()" id="refresh" data-ng-show="showNav()" tooltip-placement="bottom" tooltip="Refresh"><span class="icon-spinner6">Icon: spinner</span></a>
                 </li>
             </ul>
             <div class="pull-right" data-ng-show="auth.loggedIn">
@@ -35,3 +35,10 @@
         </div>
     </div>
 </div>
+
+<!-- TODO remove once this page is properly styled -->
+<style type="text/css">
+    .icon-spinner6 {
+        cursor: pointer;
+    }
+</style>
