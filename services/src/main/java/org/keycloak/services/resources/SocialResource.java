@@ -39,6 +39,7 @@ import org.keycloak.social.AuthCallback;
 import org.keycloak.social.AuthRequest;
 import org.keycloak.social.RequestDetails;
 import org.keycloak.social.SocialConstants;
+import org.keycloak.social.SocialLoader;
 import org.keycloak.social.SocialProvider;
 import org.keycloak.social.SocialProviderConfig;
 import org.keycloak.social.SocialProviderException;
@@ -63,11 +64,9 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 import java.net.URISyntaxException;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.ServiceLoader;
 import java.util.UUID;
 
 /**
@@ -114,7 +113,7 @@ public class SocialResource {
         Map<String, String[]> queryParams = getQueryParams();
 
         RequestDetails requestData = getRequestDetails(queryParams);
-        SocialProvider provider = getProvider(requestData.getProviderId());
+        SocialProvider provider = SocialLoader.load(requestData.getProviderId());
 
         String realmId = requestData.getClientAttribute("realmId");
 
@@ -179,7 +178,7 @@ public class SocialResource {
                 }
 
                 realm.addSocialLink(user, socialLink);
-            }  else {
+            } else {
                 // Redirect user to registration screen with prefilled data from social provider
                 MultivaluedMap<String, String> formData = fillRegistrationFormWithSocialData(socialUser);
 
@@ -212,13 +211,13 @@ public class SocialResource {
     @GET
     @Path("{realm}/login")
     public Response redirectToProviderAuth(@PathParam("realm") final String realmId,
-            @QueryParam("provider_id") final String providerId, @QueryParam("client_id") final String clientId,
-            @QueryParam("scope") final String scope, @QueryParam("state") final String state,
-            @QueryParam("redirect_uri") final String redirectUri) {
+                                           @QueryParam("provider_id") final String providerId, @QueryParam("client_id") final String clientId,
+                                           @QueryParam("scope") final String scope, @QueryParam("state") final String state,
+                                           @QueryParam("redirect_uri") final String redirectUri) {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = realmManager.getRealm(realmId);
 
-        SocialProvider provider = getProvider(providerId);
+        SocialProvider provider = SocialLoader.load(providerId);
         if (provider == null) {
             return Flows.forms(realm, request, uriInfo).setError("Social provider not found").forwardToErrorPage();
         }
@@ -305,29 +304,12 @@ public class SocialResource {
     }
 
     private RequestDetails getRequestDetails(Map<String, String[]> queryParams) {
-        Iterator<SocialProvider> itr = ServiceLoader.load(SocialProvider.class).iterator();
-
-        while (itr.hasNext()) {
-            SocialProvider provider = itr.next();
-
+        for (SocialProvider provider : SocialLoader.load()) {
             if (queryParams.containsKey(provider.getRequestIdParamName())) {
                 String requestId = queryParams.get(provider.getRequestIdParamName())[0];
                 if (socialRequestManager.isRequestId(requestId)) {
                     return socialRequestManager.retrieveData(requestId);
                 }
-            }
-        }
-
-        return null;
-    }
-
-    private SocialProvider getProvider(String providerId) {
-        Iterator<SocialProvider> itr = ServiceLoader.load(SocialProvider.class).iterator();
-
-        while (itr.hasNext()) {
-            SocialProvider provider = itr.next();
-            if (provider.getId().equals(providerId)) {
-                return provider;
             }
         }
 

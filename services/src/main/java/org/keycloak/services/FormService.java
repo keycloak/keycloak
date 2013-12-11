@@ -25,15 +25,14 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.resources.flows.FormFlows;
+import org.keycloak.social.SocialLoader;
 import org.keycloak.social.SocialProvider;
 
 import javax.ws.rs.core.MultivaluedMap;
 import java.net.URI;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.ServiceLoader;
 
 /**
  * @author <a href="mailto:vrockai@redhat.com">Viliam Rockai</a>
@@ -98,8 +97,7 @@ public interface FormService {
             socialProviders = new LinkedList<SocialProvider>();
             Map<String, String> socialConfig = realm.getSocialConfig();
             if (socialConfig != null) {
-                for (Iterator<SocialProvider> itr = ServiceLoader.load(org.keycloak.social.SocialProvider.class).iterator(); itr.hasNext(); ) {
-                    SocialProvider p = itr.next();
+                for (SocialProvider p : SocialLoader.load()) {
                     if (socialConfig.containsKey(p.getId() + ".key") && socialConfig.containsKey(p.getId() + ".secret")) {
                         socialProviders.add(p);
                     }
