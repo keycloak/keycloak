@@ -574,7 +574,7 @@ module.directive('onoffswitch', function() {
             if (!attrs.offText) { attrs.offText = "OFF"; }
             if (!attrs.ngDisabled) { attrs.ngDisabled = false; }
 
-            var html = "<span><div class=\"onoffswitch\" data-ng-class=\"{disabled: ngDisabled}\">" +
+            var html = "<span><div class=\"onoffswitch\" data-ng-class=\"{disabled: ngDisabled}\" tabindex=\"0\" onkeydown=\"var code = event.keyCode || event.which; if (code === 32 || code === 13) { event.stopImmediatePropagation(); event.preventDefault(); $(event.target).find('input').click();}\">" +
                 "<input type=\"checkbox\" data-ng-model=\"ngModel\" ng-disabled=\"ngDisabled\"" +
                 " class=\"onoffswitch-checkbox\" name=\"" + attrs.name + "\" id=\"" + attrs.id + "\">" +
                 "<label for=\"" + attrs.id + "\" class=\"onoffswitch-label\">" +
