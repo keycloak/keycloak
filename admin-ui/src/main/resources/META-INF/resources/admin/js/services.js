@@ -55,6 +55,9 @@ module.service('Dialog', function($dialog) {
 });
 
 module.factory('Notifications', function($rootScope, $timeout) {
+	// time (in ms) the notifications are shown
+	var delay = 5000;
+
 	var notifications = {};
 
 	var scheduled = null;
@@ -66,7 +69,7 @@ module.factory('Notifications', function($rootScope, $timeout) {
 		scheduled = $timeout(function() {
 			$rootScope.notification = null;
 			scheduled = null;
-		}, 3000);
+		}, delay);
 	};
 
 	if (!$rootScope.notifications) {
