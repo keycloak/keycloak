@@ -55,37 +55,38 @@ public class EmailSender {
     }
 
     public void send(String address, String subject, String body) throws EmailException {
-        Properties props = new Properties();
-        props.setProperty("mail.smtp.host", config.get("host"));
-
-        boolean auth = "true".equals(config.get("auth"));
-        boolean ssl = "true".equals(config.get("ssl"));
-        boolean starttls = "true".equals(config.get("starttls"));
-
-        if (config.containsKey("port")) {
-            props.setProperty("mail.smtp.port", config.get("port"));
-        }
-
-        if (auth) {
-            props.put("mail.smtp.auth", "true");
-        }
-
-        if (ssl) {
-            props.put("mail.smtp.socketFactory.port", config.get("port"));
-            props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
-        }
-
-        if (starttls) {
-            props.put("mail.smtp.starttls.enable", "true");
-        }
-
-        String from = config.get("from");
-
         try {
+            Properties props = new Properties();
+            props.setProperty("mail.smtp.host", config.get("host"));
+
+            boolean auth = "true".equals(config.get("auth"));
+            boolean ssl = "true".equals(config.get("ssl"));
+            boolean starttls = "true".equals(config.get("starttls"));
+
+            if (config.containsKey("port")) {
+                props.setProperty("mail.smtp.port", config.get("port"));
+            }
+
+            if (auth) {
+                props.put("mail.smtp.auth", "true");
+            }
+
+            if (ssl) {
+                props.put("mail.smtp.socketFactory.port", config.get("port"));
+                props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
+            }
+
+            if (starttls) {
+                props.put("mail.smtp.starttls.enable", "true");
+            }
+
+            String from = config.get("from");
+
             Session session = Session.getInstance(props);
 
             Message msg = new MimeMessage(session);
             msg.setFrom(new InternetAddress(from));
+            msg.setHeader("To", address);
             msg.setSubject(subject);
             msg.setText(body);
             msg.saveChanges();
