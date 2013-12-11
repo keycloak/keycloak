@@ -133,6 +133,7 @@ body {
 .rcue-login-register form > input[type="submit"]{
   float: right;
   margin-top: 0.76923076923077em;
+  margin-left: 0.90909090909091em;
   /* 10px */
 
 }
@@ -393,6 +394,13 @@ a.zocial:before {
 .rcue-login-register.totp ol li form {
   width: 357px;
 }
+.rcue-login-register.totp ol li form input[type="text"] {
+    width: 22em;
+}
+.rcue-login-register.totp ol li form input[type="submit"] {
+    float: right;
+}
+
 .rcue-login-register.totp ol li:last-child {
   margin-bottom: 0;
 }

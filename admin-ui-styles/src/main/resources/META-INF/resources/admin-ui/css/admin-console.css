@@ -143,90 +143,6 @@ body {
   min-height: 42px;
   max-width: 1170px;
 }
-.header.rcue .navbar.primary .nav > li {
-  /*
-            .dropdown { 
-                display: inline-block;
-                margin-left: 0.53846153846154em;
-                margin-top: 0.46153846153846em;
-                min-width: 15.3846153846154em;
-                width: auto;
-                
-                .dropdown-toggle {
-                    font-size: 0.84615384615385em;
-                    color: #fff;
-                    display: inline-block;
-                    line-height: 2.36363636363636em;
-                    border: 1px solid #676c6e;
-                    border-radius: 2px;
-                    padding: 0 0.54545454545455em;
-                    background: #555a5e url(img/sprite-arrow-down.svg) no-repeat right -26px;
-                    display: block;
-                    
-                    &:hover,
-                    &:focus {
-                        text-decoration: none;
-                    }
-                    
-                    &:hover {
-                        border-color: #7e8385;
-                    }
-                }
-                
-                .dropdown-menu {
-                
-                    left: 0;
-                    min-width: 0;
-                    width: 100%;
-                    overflow: hidden;
-                
-                    li,
-                    li.selected {
-                        width: auto;
-                        
-                        a {
-                            width: auto;
-                            border-top: 1px solid transparent;
-                            border-bottom: 1px solid transparent;
-                            
-                            &:hover {
-                                background-color: #D5ECF9;
-                                background-image: none;
-                                border-bottom: 1px solid #A7D7F1;
-                                border-top: 1px solid #A7D7F1;
-                                color: #4D5258;
-                            }
-                        }
-                    }
-                    
-                    li.selected a {
-                        background-color: #2B99C0;
-                        background-image: linear-gradient(top, #2EA1CA 0%, #2792B6 100%);
-                        background-image: -o-linear-gradient(top, #2EA1CA 0%, #2792B6 100%);
-                        background-image: -moz-linear-gradient(top, #2EA1CA 0%, #2792B6 100%);
-                        background-image: -webkit-linear-gradient(top, #2EA1CA 0%, #2792B6 100%);
-                        background-image: -ms-linear-gradient(top, #2EA1CA 0%, #2792B6 100%);
-                        background-image: -webkit-gradient(
-                          linear,
-                          left top,
-                          left bottom,
-                          color-stop(0.0, #2EA1CA),
-                          color-stop(1,0, #2792B6)
-                        );
-                        background-repeat: repeat-x;
-                        color: #FFFFFF;
-                    }
-                }
-            
-                &.open .dropdown-toggle {
-                    text-decoration: none;
-                    box-shadow: inset 0px 2px 5px rgba(0,0,0,0.2);
-                    border-color: #7e8385;
-                }
-            }
-    */
-
-}
 .header.rcue .navbar.primary .nav > li .dropdown-label {
   font-size: 0.84615384615385em;
   color: #dbdada;
@@ -402,7 +318,8 @@ body {
   display: inline-table;
   width: 20em;
 }
-#content-area #content .input-group input[type="text"] {
+#content-area #content .input-group input[type="text"],
+#content-area #content .input-group input[type="number"] {
   border-radius: 2px 0 0 2px;
 }
 #content-area #content .input-group button {
@@ -416,6 +333,9 @@ body {
   font-size: 1.1em;
   display: inline-block;
   margin-top: 1.36363636363636em;
+}
+#content-area #content .form-group > label + span {
+  margin-top: 0;
 }
 .tooltip {
   font-family: "Open Sans", sans-serif;

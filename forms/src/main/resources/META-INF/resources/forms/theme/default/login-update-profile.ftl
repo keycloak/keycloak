@@ -30,9 +30,6 @@
                 <label for="lastName">${rb.getString('lastName')}</label><input type="text" id="lastName" name="lastName" value="${user.lastName!''}" />
             </div>
 
-            <div class="aside-btn">
-            </div>
-
             <input class="btn-primary" type="submit" value="Submit" />
         </form>
     </div>

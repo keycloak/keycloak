@@ -648,7 +648,7 @@ module.directive('kcSave', function ($compile, Notifications) {
                             form.find('.ng-valid').removeClass('error');
                             $scope['save']();
                         } else {
-                            Notifications.error("Missing or invalid field")
+                            Notifications.error("Missing or invalid field(s). Please verify the fields in red.")
                             form.find('.ng-invalid').addClass('error');
                             form.find('.ng-valid').removeClass('error');
                         }

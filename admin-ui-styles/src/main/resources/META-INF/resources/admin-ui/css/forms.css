@@ -315,6 +315,19 @@ button.primary:focus,
   width: 20em;
   font-weight: normal;
 }
+.search-comp + span {
+  font-size: 1.1em;
+  font-weight: normal;
+  color: #A1A1A1;
+}
+.search-comp + span span {
+  margin-left: 0.45454545454545em;
+  margin-right: 0.45454545454545em;
+  display: inline-block;
+}
+.search-comp + span .link {
+  font-size: 0.90909090909091em;
+}
 .feedback-aligner {
   position: fixed;
   top: 1.5em;

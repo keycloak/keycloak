@@ -24,9 +24,11 @@ table thead tr th {
   padding: 1px;
   border-top: none;
 }
+/*
 .rcue-table-actions span:last-child {
   float: right;
 }
+*/
 .rcue-table-actions {
   padding: 1px;
 }
@@ -61,6 +63,10 @@ table tbody tr td:first-child {
 */
 table thead tr th:last-child {
   border-right: none;
+}
+table thead tr th button,
+table thead tr th .button {
+  margin-left: 0.72727272727273em;
 }
 table tbody tr:first-child td {
   border-top: 1px solid #f2f2f2;
