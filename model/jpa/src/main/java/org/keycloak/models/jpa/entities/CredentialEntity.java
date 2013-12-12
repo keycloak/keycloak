@@ -1,12 +1,8 @@
 package org.keycloak.models.jpa.entities;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.ManyToOne;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
+import org.keycloak.models.UserCredentialModel;
+
+import javax.persistence.*;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -21,8 +17,11 @@ public class CredentialEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     protected String id;
 
-    protected String type;
+    @Column(length = 344)
     protected String value;
+
+    protected String type;
+    protected String salt;
     protected String device;
 
     @ManyToOne
@@ -66,5 +65,20 @@ public class CredentialEntity {
 
     public void setUser(UserEntity user) {
         this.user = user;
+    }
+
+    public String getSalt() {
+        return salt;
+    }
+
+    public void setSalt(String salt) {
+        this.salt = salt;
+    }
+
+    public UserCredentialModel toUserCredentialModel() {
+        UserCredentialModel model = new UserCredentialModel();
+        model.setSalt(this.getSalt());
+        model.setValue(this.getValue());
+        return model;
     }
 }
