@@ -8,6 +8,10 @@ body {
 .feedback-aligner {
   top: 0.9em;
 }
+.header.rcue .navbar.utility {
+  background-color: #393F45;
+  border-bottom: 1px solid #53565B;
+}
 .bs-sidebar {
   background-color: #f9f9f9;
   padding-top: 4.3em;
