@@ -41,15 +41,11 @@
 
 <div class="header rcue">
     <div class="navbar utility">
-        <div class="navbar-inner clearfix">
+        <div class="navbar-inner clearfix container">
             <h1><a href="#"><strong>Keycloak</strong> Central Login</a></h1>
             <ul class="nav pull-right">
-                <li class="dropdown">
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown"><span class="icon-user">Icon: user</span>
-                    ${user.firstName!''} ${user.lastName!''}</a>
-                </li>
                 <li>
-                    <a href="${url.logoutUrl}">Logout</a>
+                    <a href="${url.logoutUrl}">Sign Out</a>
                 </li>
             </ul>
         </div>
