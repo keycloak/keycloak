@@ -7,8 +7,7 @@ import io.undertow.servlet.ServletExtension;
 import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.ServletSessionConfig;
 import org.jboss.logging.Logger;
-import org.keycloak.adapters.config.ManagedResourceConfig;
-import org.keycloak.adapters.config.ManagedResourceConfigLoader;
+import org.keycloak.adapters.config.AdapterConfig;
 
 import javax.servlet.ServletContext;
 import java.io.InputStream;
@@ -30,9 +29,9 @@ public class KeycloakServletExtension implements ServletExtension {
         deploymentInfo.setIgnoreStandardAuthenticationMechanism(true);
         InputStream is = servletContext.getResourceAsStream("/WEB-INF/keycloak.json");
         if (is == null) throw new RuntimeException("Unable to find /WEB-INF/keycloak.json configuration file");
-        ManagedResourceConfigLoader loader = new ManagedResourceConfigLoader(is);
+        RealmConfigurationLoader loader = new RealmConfigurationLoader(is);
         loader.init(true);
-        ManagedResourceConfig keycloakConfig = loader.getRemoteSkeletonKeyConfig();
+        AdapterConfig keycloakConfig = loader.getAdapterConfig();
         PreflightCorsHandler.Wrapper preflight = new PreflightCorsHandler.Wrapper(keycloakConfig);
         ServletKeycloakAuthenticationMechanism auth = new ServletKeycloakAuthenticationMechanism(loader.getResourceMetadata(),
                 keycloakConfig,

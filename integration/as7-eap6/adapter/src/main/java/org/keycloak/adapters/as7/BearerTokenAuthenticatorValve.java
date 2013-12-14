@@ -12,9 +12,9 @@ import org.apache.catalina.deploy.LoginConfig;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.ResourceMetadata;
-import org.keycloak.adapters.as7.config.CatalinaManagedResourceConfigLoader;
-import org.keycloak.adapters.config.ManagedResourceConfig;
-import org.keycloak.adapters.config.ManagedResourceConfigLoader;
+import org.keycloak.adapters.as7.config.CatalinaAdapterConfigLoader;
+import org.keycloak.adapters.config.AdapterConfig;
+import org.keycloak.adapters.config.AdapterConfigLoader;
 
 import javax.security.auth.login.LoginException;
 import javax.servlet.ServletException;
@@ -30,7 +30,7 @@ import java.io.IOException;
  */
 public class BearerTokenAuthenticatorValve extends AuthenticatorBase implements LifecycleListener {
     private static final Logger log = Logger.getLogger(BearerTokenAuthenticatorValve.class);
-    protected ManagedResourceConfig remoteSkeletonKeyConfig;
+    protected AdapterConfig adapterConfig;
     protected ResourceMetadata resourceMetadata;
 
     @Override
@@ -46,11 +46,11 @@ public class BearerTokenAuthenticatorValve extends AuthenticatorBase implements 
     }
 
     protected void init() {
-        ManagedResourceConfigLoader managedResourceConfigLoader = new CatalinaManagedResourceConfigLoader(context);
-        remoteSkeletonKeyConfig = managedResourceConfigLoader.getRemoteSkeletonKeyConfig();
-        managedResourceConfigLoader.init(false);
-        resourceMetadata = managedResourceConfigLoader.getResourceMetadata();
-        AuthenticatedActionsValve actions = new AuthenticatedActionsValve(remoteSkeletonKeyConfig, getNext(), getContainer(), getController());
+        AdapterConfigLoader adapterConfigLoader = new CatalinaAdapterConfigLoader(context);
+        adapterConfig = adapterConfigLoader.getAdapterConfig();
+        adapterConfigLoader.init();
+        resourceMetadata = adapterConfigLoader.getResourceMetadata();
+        AuthenticatedActionsValve actions = new AuthenticatedActionsValve(adapterConfig, getNext(), getContainer(), getController());
         setNext(actions);
     }
 
@@ -58,7 +58,7 @@ public class BearerTokenAuthenticatorValve extends AuthenticatorBase implements 
     public void invoke(Request request, Response response) throws IOException, ServletException {
         try {
             log.debugv("{0} {1}", request.getMethod(), request.getRequestURI());
-            if (remoteSkeletonKeyConfig.isCors() && new CorsPreflightChecker(remoteSkeletonKeyConfig).checkCorsPreflight(request, response)) {
+            if (adapterConfig.isCors() && new CorsPreflightChecker(adapterConfig).checkCorsPreflight(request, response)) {
                 return;
             }
             super.invoke(request, response);
@@ -70,7 +70,7 @@ public class BearerTokenAuthenticatorValve extends AuthenticatorBase implements 
     @Override
     protected boolean authenticate(Request request, HttpServletResponse response, LoginConfig config) throws IOException {
         try {
-            CatalinaBearerTokenAuthenticator bearer = new CatalinaBearerTokenAuthenticator(resourceMetadata, true, remoteSkeletonKeyConfig.isUseResourceRoleMappings());
+            CatalinaBearerTokenAuthenticator bearer = new CatalinaBearerTokenAuthenticator(resourceMetadata, true, adapterConfig.isUseResourceRoleMappings());
             if (bearer.login(request, response)) {
                 return true;
             }

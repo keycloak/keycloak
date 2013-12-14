@@ -5,7 +5,7 @@ import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.servlet.handlers.ServletRequestContext;
 import org.keycloak.SkeletonKeySession;
-import org.keycloak.adapters.config.ManagedResourceConfig;
+import org.keycloak.adapters.config.AdapterConfig;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -16,14 +16,14 @@ import javax.servlet.http.HttpSession;
  */
 public class ServletAuthenticatedActionsHandler extends AuthenticatedActionsHandler {
 
-    protected ServletAuthenticatedActionsHandler(ManagedResourceConfig config, HttpHandler next) {
+    protected ServletAuthenticatedActionsHandler(AdapterConfig config, HttpHandler next) {
         super(config, next);
     }
 
     public static class Wrapper implements HandlerWrapper {
-        protected ManagedResourceConfig config;
+        protected AdapterConfig config;
 
-        public Wrapper(ManagedResourceConfig config) {
+        public Wrapper(AdapterConfig config) {
             this.config = config;
         }
 

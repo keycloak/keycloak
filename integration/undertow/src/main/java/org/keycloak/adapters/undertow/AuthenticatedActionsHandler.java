@@ -5,7 +5,7 @@ import io.undertow.server.HttpServerExchange;
 import io.undertow.util.Headers;
 import org.jboss.logging.Logger;
 import org.keycloak.SkeletonKeySession;
-import org.keycloak.adapters.config.ManagedResourceConfig;
+import org.keycloak.adapters.config.AdapterConfig;
 import org.keycloak.representations.SkeletonKeyToken;
 
 import javax.servlet.ServletException;
@@ -25,11 +25,11 @@ import java.util.Set;
  */
 public class AuthenticatedActionsHandler implements HttpHandler {
     private static final Logger log = Logger.getLogger(AuthenticatedActionsHandler.class);
-    protected ManagedResourceConfig config;
+    protected AdapterConfig adapterConfig;
     protected HttpHandler next;
 
-    protected AuthenticatedActionsHandler(ManagedResourceConfig config, HttpHandler next) {
-        this.config = config;
+    protected AuthenticatedActionsHandler(AdapterConfig config, HttpHandler next) {
+        this.adapterConfig = config;
         this.next = next;
     }
 
@@ -68,12 +68,12 @@ public class AuthenticatedActionsHandler implements HttpHandler {
             exchange.endExchange();
             return true;
         }
-        if (!config.isExposeToken()) {
+        if (!adapterConfig.isExposeToken()) {
             exchange.setResponseCode(200);
             exchange.endExchange();
             return true;
         }
-        if (!config.isCors() && exchange.getRequestHeaders().getFirst(Headers.ORIGIN) != null) {
+        if (!adapterConfig.isCors() && exchange.getRequestHeaders().getFirst(Headers.ORIGIN) != null) {
             exchange.setResponseCode(200);
             exchange.endExchange();
             return true;
@@ -82,7 +82,7 @@ public class AuthenticatedActionsHandler implements HttpHandler {
     }
 
     protected boolean corsRequest(HttpServerExchange exchange, SkeletonKeySession session) throws IOException {
-        if (!config.isCors()) return false;
+        if (!adapterConfig.isCors()) return false;
         log.debugv("CORS enabled + request.getRequestURI()");
         String origin = exchange.getRequestHeaders().getFirst("Origin");
         log.debugv("Origin: {0} uri: {1}", origin, exchange.getRequestURI());

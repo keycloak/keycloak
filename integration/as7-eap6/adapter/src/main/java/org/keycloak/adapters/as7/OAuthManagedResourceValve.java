@@ -21,9 +21,9 @@ import org.keycloak.RealmConfiguration;
 import org.keycloak.ResourceMetadata;
 import org.keycloak.SkeletonKeyPrincipal;
 import org.keycloak.SkeletonKeySession;
-import org.keycloak.adapters.as7.config.CatalinaManagedResourceConfigLoader;
-import org.keycloak.adapters.config.ManagedResourceConfig;
-import org.keycloak.adapters.config.ManagedResourceConfigLoader;
+import org.keycloak.adapters.as7.config.CatalinaAdapterConfigLoader;
+import org.keycloak.adapters.as7.config.RealmConfigurationLoader;
+import org.keycloak.adapters.config.AdapterConfig;
 import org.keycloak.representations.SkeletonKeyToken;
 import org.keycloak.representations.idm.admin.LogoutAction;
 
@@ -47,7 +47,7 @@ public class OAuthManagedResourceValve extends FormAuthenticator implements Life
     protected RealmConfiguration realmConfiguration;
     private static final Logger log = Logger.getLogger(OAuthManagedResourceValve.class);
     protected UserSessionManagement userSessionManagement = new UserSessionManagement();
-    protected ManagedResourceConfig remoteSkeletonKeyConfig;
+    protected AdapterConfig adapterConfig;
     protected ResourceMetadata resourceMetadata;
 
 
@@ -64,20 +64,20 @@ public class OAuthManagedResourceValve extends FormAuthenticator implements Life
     }
 
     protected void init() {
-        ManagedResourceConfigLoader managedResourceConfigLoader = new CatalinaManagedResourceConfigLoader(context);
-        managedResourceConfigLoader.init(true);
-        resourceMetadata = managedResourceConfigLoader.getResourceMetadata();
-        remoteSkeletonKeyConfig = managedResourceConfigLoader.getRemoteSkeletonKeyConfig();
+        RealmConfigurationLoader configLoader = new CatalinaAdapterConfigLoader(context);
+        configLoader.init(true);
+        resourceMetadata = configLoader.getResourceMetadata();
+        adapterConfig = configLoader.getAdapterConfig();
 
-        realmConfiguration = managedResourceConfigLoader.getRealmConfiguration();
-        AuthenticatedActionsValve actions = new AuthenticatedActionsValve(remoteSkeletonKeyConfig, getNext(), getContainer(), getController());
+        realmConfiguration = configLoader.getRealmConfiguration();
+        AuthenticatedActionsValve actions = new AuthenticatedActionsValve(adapterConfig, getNext(), getContainer(), getController());
         setNext(actions);
     }
 
     @Override
     public void invoke(Request request, Response response) throws IOException, ServletException {
         try {
-            if (remoteSkeletonKeyConfig.isCors() && new CorsPreflightChecker(remoteSkeletonKeyConfig).checkCorsPreflight(request, response)) {
+            if (adapterConfig.isCors() && new CorsPreflightChecker(adapterConfig).checkCorsPreflight(request, response)) {
                 return;
             }
             String requestURI = request.getDecodedRequestURI();
@@ -181,7 +181,7 @@ public class OAuthManagedResourceValve extends FormAuthenticator implements Life
     }
 
     protected boolean bearer(boolean challenge, Request request, HttpServletResponse response) throws LoginException, IOException {
-        CatalinaBearerTokenAuthenticator bearer = new CatalinaBearerTokenAuthenticator(realmConfiguration.getMetadata(), challenge, remoteSkeletonKeyConfig.isUseResourceRoleMappings());
+        CatalinaBearerTokenAuthenticator bearer = new CatalinaBearerTokenAuthenticator(realmConfiguration.getMetadata(), challenge, adapterConfig.isUseResourceRoleMappings());
         if (bearer.login(request, response)) {
             return true;
         }
@@ -228,7 +228,7 @@ public class OAuthManagedResourceValve extends FormAuthenticator implements Life
 
             SkeletonKeyToken token = oauth.getToken();
             Set<String> roles = new HashSet<String>();
-            if (remoteSkeletonKeyConfig.isUseResourceRoleMappings()) {
+            if (adapterConfig.isUseResourceRoleMappings()) {
                 SkeletonKeyToken.Access access = token.getResourceAccess(resourceMetadata.getResourceName());
                 if (access != null) roles.addAll(access.getRoles());
             } else {

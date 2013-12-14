@@ -8,7 +8,7 @@ import org.apache.catalina.connector.Response;
 import org.apache.catalina.valves.ValveBase;
 import org.jboss.logging.Logger;
 import org.keycloak.SkeletonKeySession;
-import org.keycloak.adapters.config.ManagedResourceConfig;
+import org.keycloak.adapters.config.AdapterConfig;
 import org.keycloak.representations.SkeletonKeyToken;
 
 import javax.management.ObjectName;
@@ -29,9 +29,9 @@ import java.util.Set;
  */
 public class AuthenticatedActionsValve extends ValveBase {
     private static final Logger log = Logger.getLogger(AuthenticatedActionsValve.class);
-    protected ManagedResourceConfig config;
+    protected AdapterConfig config;
 
-    public AuthenticatedActionsValve(ManagedResourceConfig config, Valve next, Container container, ObjectName controller) {
+    public AuthenticatedActionsValve(AdapterConfig config, Valve next, Container container, ObjectName controller) {
         this.config = config;
         if (next == null) throw new RuntimeException("WTF is next null?!");
         setNext(next);

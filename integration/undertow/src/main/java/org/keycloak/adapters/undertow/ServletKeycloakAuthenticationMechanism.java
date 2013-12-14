@@ -6,7 +6,7 @@ import io.undertow.servlet.handlers.ServletRequestContext;
 import org.keycloak.RealmConfiguration;
 import org.keycloak.ResourceMetadata;
 import org.keycloak.SkeletonKeySession;
-import org.keycloak.adapters.config.ManagedResourceConfig;
+import org.keycloak.adapters.config.AdapterConfig;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -18,7 +18,7 @@ import javax.servlet.http.HttpSession;
 public class ServletKeycloakAuthenticationMechanism extends KeycloakAuthenticationMechanism {
     protected ConfidentialPortManager portManager;
 
-    public ServletKeycloakAuthenticationMechanism(ResourceMetadata resourceMetadata, ManagedResourceConfig config, RealmConfiguration realmConfig, ConfidentialPortManager portManager) {
+    public ServletKeycloakAuthenticationMechanism(ResourceMetadata resourceMetadata, AdapterConfig config, RealmConfiguration realmConfig, ConfidentialPortManager portManager) {
         super(resourceMetadata, config, realmConfig);
         this.portManager = portManager;
     }

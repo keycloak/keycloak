@@ -11,7 +11,8 @@ import java.util.Map;
  * @version $Revision: 1 $
  */
 @JsonPropertyOrder({"realm-url", "realm", "resource", "realm-public-key", "admin-role", "auth-url", "code-url", "allow-any-hostname", "disable-trust-manager", "truststore", "truststore-password", "client-id", "client-credentials"})
-public class ManagedResourceConfig {
+public class AdapterConfig
+{
     @JsonProperty("realm-url")
     protected String realmUrl;
     @JsonProperty("realm")
@@ -20,9 +21,7 @@ public class ManagedResourceConfig {
     protected String resource;
     @JsonProperty("realm-public-key")
     protected String realmKey;
-    @JsonProperty("admin-role")
-    protected String adminRole;
-    @JsonProperty("auth-url")
+   @JsonProperty("auth-url")
     protected String authUrl;
     @JsonProperty("code-url")
     protected String codeUrl;
@@ -194,15 +193,7 @@ public class ManagedResourceConfig {
         this.connectionPoolSize = connectionPoolSize;
     }
 
-    public String getAdminRole() {
-        return adminRole;
-    }
-
-    public void setAdminRole(String adminRole) {
-        this.adminRole = adminRole;
-    }
-
-    public boolean isCors() {
+   public boolean isCors() {
         return cors;
     }
 
