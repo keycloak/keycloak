@@ -3,7 +3,7 @@ package org.keycloak.adapters.as7;
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
 import org.jboss.logging.Logger;
-import org.keycloak.adapters.config.ManagedResourceConfig;
+import org.keycloak.adapters.config.AdapterConfig;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -11,9 +11,9 @@ import org.keycloak.adapters.config.ManagedResourceConfig;
  */
 public class CorsPreflightChecker {
     private static final Logger log = Logger.getLogger(CorsPreflightChecker.class);
-    protected ManagedResourceConfig config;
+    protected AdapterConfig config;
 
-    public CorsPreflightChecker(ManagedResourceConfig config) {
+    public CorsPreflightChecker(AdapterConfig config) {
         this.config = config;
     }
 

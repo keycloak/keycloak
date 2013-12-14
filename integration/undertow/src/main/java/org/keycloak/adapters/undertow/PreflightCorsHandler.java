@@ -5,7 +5,7 @@ import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HttpString;
 import org.jboss.logging.Logger;
-import org.keycloak.adapters.config.ManagedResourceConfig;
+import org.keycloak.adapters.config.AdapterConfig;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -13,7 +13,7 @@ import org.keycloak.adapters.config.ManagedResourceConfig;
  */
 public class PreflightCorsHandler implements HttpHandler {
     private static final Logger log = Logger.getLogger(PreflightCorsHandler.class);
-    protected ManagedResourceConfig config;
+    protected AdapterConfig adapterConfig;
     protected HttpHandler next;
 
     public static final HttpString ACCESS_CONTROL_ALLOW_ORIGIN = new HttpString("Access-Control-Allow-Origin");
@@ -23,9 +23,9 @@ public class PreflightCorsHandler implements HttpHandler {
     public static final HttpString ACCESS_CONTROL_MAX_AGE = new HttpString("Access-Control-Max-Age");
 
     public static class Wrapper implements HandlerWrapper {
-        protected ManagedResourceConfig config;
+        protected AdapterConfig config;
 
-        public Wrapper(ManagedResourceConfig config) {
+        public Wrapper(AdapterConfig config) {
             this.config = config;
         }
 
@@ -35,8 +35,8 @@ public class PreflightCorsHandler implements HttpHandler {
         }
     }
 
-    protected PreflightCorsHandler(ManagedResourceConfig config, HttpHandler next) {
-        this.config = config;
+    protected PreflightCorsHandler(AdapterConfig config, HttpHandler next) {
+        this.adapterConfig = config;
         this.next = next;
     }
 
@@ -60,20 +60,20 @@ public class PreflightCorsHandler implements HttpHandler {
         exchange.getResponseHeaders().put(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
         String requestMethods = exchange.getRequestHeaders().getFirst("Access-Control-Request-Method");
         if (requestMethods != null) {
-            if (config.getCorsAllowedMethods() != null) {
-                requestMethods = config.getCorsAllowedMethods();
+            if (adapterConfig.getCorsAllowedMethods() != null) {
+                requestMethods = adapterConfig.getCorsAllowedMethods();
             }
             exchange.getResponseHeaders().put(ACCESS_CONTROL_ALLOW_METHODS, requestMethods);
         }
         String allowHeaders = exchange.getRequestHeaders().getFirst("Access-Control-Request-Headers");
         if (allowHeaders != null) {
-            if (config.getCorsAllowedHeaders() != null) {
-                allowHeaders = config.getCorsAllowedHeaders();
+            if (adapterConfig.getCorsAllowedHeaders() != null) {
+                allowHeaders = adapterConfig.getCorsAllowedHeaders();
             }
             exchange.getResponseHeaders().put(ACCESS_CONTROL_ALLOW_HEADERS, allowHeaders);
         }
-        if (config.getCorsMaxAge() > -1) {
-            exchange.getResponseHeaders().put(ACCESS_CONTROL_MAX_AGE, Integer.toString(config.getCorsMaxAge()));
+        if (adapterConfig.getCorsMaxAge() > -1) {
+            exchange.getResponseHeaders().put(ACCESS_CONTROL_MAX_AGE, Integer.toString(adapterConfig.getCorsMaxAge()));
         }
         exchange.endExchange();
     }

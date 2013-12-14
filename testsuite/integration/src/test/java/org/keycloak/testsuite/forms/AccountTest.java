@@ -134,6 +134,7 @@ public class AccountTest {
     }
 
     @Test
+    @Ignore
     public void changePassword() {
         changePasswordPage.open();
         loginPage.login("test-user@localhost", "password");

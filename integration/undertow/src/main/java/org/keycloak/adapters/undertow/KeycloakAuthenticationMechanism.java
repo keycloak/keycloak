@@ -10,15 +10,12 @@ import org.keycloak.RealmConfiguration;
 import org.keycloak.ResourceMetadata;
 import org.keycloak.SkeletonKeyPrincipal;
 import org.keycloak.SkeletonKeySession;
-import org.keycloak.adapters.config.ManagedResourceConfig;
+import org.keycloak.adapters.config.AdapterConfig;
 import org.keycloak.representations.SkeletonKeyToken;
 
 import java.security.Principal;
 import java.util.Collections;
 import java.util.Set;
-
-import static io.undertow.util.Headers.WWW_AUTHENTICATE;
-import static io.undertow.util.StatusCodes.UNAUTHORIZED;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -31,20 +28,20 @@ public class KeycloakAuthenticationMechanism implements AuthenticationMechanism 
     public static final AttachmentKey<SkeletonKeySession> SKELETON_KEY_SESSION_ATTACHMENT_KEY = AttachmentKey.create(SkeletonKeySession.class);
 
     protected ResourceMetadata resourceMetadata;
-    protected ManagedResourceConfig config;
+    protected AdapterConfig adapterConfig;
     protected RealmConfiguration realmConfig;
     protected int sslRedirectPort;
 
-    public KeycloakAuthenticationMechanism(ResourceMetadata resourceMetadata, ManagedResourceConfig config, RealmConfiguration realmConfig, int sslRedirectPort) {
+    public KeycloakAuthenticationMechanism(ResourceMetadata resourceMetadata, AdapterConfig config, RealmConfiguration realmConfig, int sslRedirectPort) {
         this.resourceMetadata = resourceMetadata;
-        this.config = config;
+        this.adapterConfig = config;
         this.realmConfig = realmConfig;
         this.sslRedirectPort = sslRedirectPort;
     }
 
-    public KeycloakAuthenticationMechanism(ResourceMetadata resourceMetadata, ManagedResourceConfig config, RealmConfiguration realmConfig) {
+    public KeycloakAuthenticationMechanism(ResourceMetadata resourceMetadata, AdapterConfig config, RealmConfiguration realmConfig) {
         this.resourceMetadata = resourceMetadata;
-        this.config = config;
+        this.adapterConfig = config;
         this.realmConfig = realmConfig;
     }
 
@@ -64,7 +61,7 @@ public class KeycloakAuthenticationMechanism implements AuthenticationMechanism 
             completeAuthentication(exchange, securityContext, token, surrogate);
             return AuthenticationMechanismOutcome.AUTHENTICATED;
         }
-        else if (config.isBearerOnly()) {
+        else if (adapterConfig.isBearerOnly()) {
             exchange.putAttachment(KEYCLOAK_CHALLENGE_ATTACHMENT_KEY, bearer.getChallenge());
             return AuthenticationMechanismOutcome.NOT_ATTEMPTED;
         }
@@ -92,13 +89,13 @@ public class KeycloakAuthenticationMechanism implements AuthenticationMechanism 
     }
 
     protected BearerTokenAuthenticator createBearerTokenAuthenticator() {
-        return new BearerTokenAuthenticator(resourceMetadata, config.isUseResourceRoleMappings());
+        return new BearerTokenAuthenticator(resourceMetadata, adapterConfig.isUseResourceRoleMappings());
     }
 
     protected void completeAuthentication(HttpServerExchange exchange, SecurityContext securityContext, SkeletonKeyToken token, String surrogate) {
         final SkeletonKeyPrincipal skeletonKeyPrincipal = new SkeletonKeyPrincipal(token.getPrincipal(), surrogate);
         Set<String> roles = null;
-        if (config.isUseResourceRoleMappings()) {
+        if (adapterConfig.isUseResourceRoleMappings()) {
             SkeletonKeyToken.Access access = token.getResourceAccess(resourceMetadata.getResourceName());
             if (access != null) roles = access.getRoles();
         } else {
