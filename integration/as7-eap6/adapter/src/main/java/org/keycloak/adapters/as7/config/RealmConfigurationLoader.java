@@ -4,7 +4,7 @@ import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.plugins.providers.RegisterBuiltin;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.keycloak.RealmConfiguration;
+import org.keycloak.adapters.RealmConfiguration;
 import org.keycloak.adapters.config.AdapterConfigLoader;
 
 import javax.ws.rs.core.UriBuilder;

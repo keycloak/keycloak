@@ -1,13 +1,12 @@
 package org.keycloak.services.resources;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.jose.jws.JWSBuilder;
-import org.jboss.resteasy.jose.jws.JWSInput;
-import org.jboss.resteasy.jose.jws.crypto.RSAProvider;
-import org.jboss.resteasy.jwt.JsonSerialization;
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
+import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -406,7 +405,7 @@ public class TokenService {
             return Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build();
         }
 
-        JWSInput input = new JWSInput(code, providers);
+        JWSInput input = new JWSInput(code);
         boolean verifiedCode = false;
         try {
             verifiedCode = RSAProvider.verify(input, realm.getPublicKey());
@@ -420,7 +419,7 @@ public class TokenService {
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res)
                     .build();
         }
-        String key = input.readContent(String.class);
+        String key = input.readContentAsString();
         AccessCodeEntry accessCode = tokenManager.pullAccessCode(key);
         if (accessCode == null) {
             Map<String, String> res = new HashMap<String, String>();
@@ -457,13 +456,7 @@ public class TokenService {
     }
 
     protected AccessTokenResponse accessTokenResponse(PrivateKey privateKey, SkeletonKeyToken token) {
-        byte[] tokenBytes = null;
-        try {
-            tokenBytes = JsonSerialization.toByteArray(token, false);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        String encodedToken = new JWSBuilder().content(tokenBytes).rsa256(privateKey);
+        String encodedToken = new JWSBuilder().jsonContent(token).rsa256(privateKey);
 
         return accessTokenResponse(token, encodedToken);
     }
@@ -589,7 +582,7 @@ public class TokenService {
         OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
 
         String code = formData.getFirst("code");
-        JWSInput input = new JWSInput(code, providers);
+        JWSInput input = new JWSInput(code);
         boolean verifiedCode = false;
         try {
             verifiedCode = RSAProvider.verify(input, realm.getPublicKey());
@@ -599,7 +592,7 @@ public class TokenService {
         if (!verifiedCode) {
             return oauth.forwardToSecurityFailure("Illegal access code.");
         }
-        String key = input.readContent(String.class);
+        String key = input.readContentAsString();
         AccessCodeEntry accessCodeEntry = tokenManager.getAccessCode(key);
         if (accessCodeEntry == null) {
             return oauth.forwardToSecurityFailure("Unknown access code.");

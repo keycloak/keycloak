@@ -2,8 +2,6 @@ package org.keycloak.representations.idm;
 
 import org.codehaus.jackson.annotate.JsonProperty;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 /**

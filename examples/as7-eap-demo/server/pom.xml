@@ -16,8 +16,17 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk16</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-core-jaxrs</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -120,11 +129,6 @@
             <scope>provided</scope>
         </dependency>
         <!-- resteasy -->
-        <dependency>
-            <groupId>org.jboss.resteasy</groupId>
-            <artifactId>jose-jwt</artifactId>
-            <version>${resteasy.version}</version>
-        </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-jaxrs</artifactId>

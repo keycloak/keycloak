@@ -13,19 +13,19 @@ import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.deploy.LoginConfig;
 import org.apache.catalina.realm.GenericPrincipal;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.jose.jws.JWSInput;
-import org.jboss.resteasy.jose.jws.crypto.RSAProvider;
-import org.jboss.resteasy.jwt.JsonSerialization;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.keycloak.RealmConfiguration;
+import org.keycloak.adapters.RealmConfiguration;
 import org.keycloak.ResourceMetadata;
 import org.keycloak.SkeletonKeyPrincipal;
 import org.keycloak.SkeletonKeySession;
 import org.keycloak.adapters.as7.config.CatalinaAdapterConfigLoader;
 import org.keycloak.adapters.as7.config.RealmConfigurationLoader;
 import org.keycloak.adapters.config.AdapterConfig;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.representations.SkeletonKeyToken;
 import org.keycloak.representations.idm.admin.LogoutAction;
+import org.keycloak.util.JsonSerialization;
 
 import javax.security.auth.login.LoginException;
 import javax.servlet.ServletException;
@@ -148,7 +148,7 @@ public class OAuthManagedResourceValve extends FormAuthenticator implements Life
     protected void remoteLogout(JWSInput token, HttpServletResponse response) throws IOException {
         try {
             log.debug("->> remoteLogout: ");
-            LogoutAction action = JsonSerialization.fromBytes(LogoutAction.class, token.getContent());
+            LogoutAction action = JsonSerialization.readValue(token.getContent(), LogoutAction.class);
             if (action.isExpired()) {
                 log.warn("admin request failed, expired token");
                 response.sendError(400, "Expired token");

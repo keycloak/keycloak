@@ -3,7 +3,6 @@
         <!-- This allows you to define additional dependencies, it is the same as using the Dependencies: manifest attribute -->
         <dependencies>
             <module name="org.bouncycastle"/>
-             <module name="org.jboss.resteasy.jose-jwt" />
         </dependencies>
     </deployment>
 </jboss-deployment-structure>

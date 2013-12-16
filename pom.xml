@@ -74,6 +74,7 @@
 
     <modules>
         <module>core</module>
+        <module>core-jaxrs</module>
         <module>model</module>
         <module>services</module>
         <module>integration</module>
@@ -117,12 +118,12 @@
             </dependency>
             <dependency>
                 <groupId>org.jboss.resteasy</groupId>
-                <artifactId>resteasy-client</artifactId>
+                <artifactId>resteasy-jackson-provider</artifactId>
                 <version>${resteasy.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.resteasy</groupId>
-                <artifactId>jose-jwt</artifactId>
+                <artifactId>resteasy-client</artifactId>
                 <version>${resteasy.version}</version>
             </dependency>
             <dependency>

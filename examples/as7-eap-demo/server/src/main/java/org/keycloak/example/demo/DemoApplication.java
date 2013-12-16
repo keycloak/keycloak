@@ -1,6 +1,6 @@
 package org.keycloak.example.demo;
 
-import org.jboss.resteasy.jwt.JsonSerialization;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -10,7 +10,6 @@ import org.keycloak.services.resources.KeycloakApplication;
 
 import javax.servlet.ServletContext;
 import javax.ws.rs.core.Context;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 /**
@@ -39,17 +38,8 @@ public class DemoApplication extends KeycloakApplication {
     public static RealmRepresentation loadJson(String path)
     {
         InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(path);
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
-        int c;
         try {
-            while ( (c = is.read()) != -1)
-            {
-                os.write(c);
-            }
-            byte[] bytes = os.toByteArray();
-            //System.out.println(new String(bytes));
-
-            return JsonSerialization.fromBytes(RealmRepresentation.class, bytes);
+            return JsonSerialization.readValue(is, RealmRepresentation.class);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

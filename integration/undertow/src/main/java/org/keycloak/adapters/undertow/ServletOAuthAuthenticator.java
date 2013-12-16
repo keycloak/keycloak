@@ -2,7 +2,7 @@ package org.keycloak.adapters.undertow;
 
 import io.undertow.server.HttpServerExchange;
 import io.undertow.servlet.api.ConfidentialPortManager;
-import org.keycloak.RealmConfiguration;
+import org.keycloak.adapters.RealmConfiguration;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

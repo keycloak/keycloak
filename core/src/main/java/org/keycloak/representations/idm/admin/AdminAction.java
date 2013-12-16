@@ -41,8 +41,7 @@ public class AdminAction {
     }
 
     @JsonIgnore
-    public boolean isExpired()
-    {
+    public boolean isExpired() {
         long time = System.currentTimeMillis() / 1000;
         return time > expiration;
     }

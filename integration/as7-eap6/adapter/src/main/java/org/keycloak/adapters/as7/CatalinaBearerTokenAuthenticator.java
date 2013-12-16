@@ -72,7 +72,7 @@ public class CatalinaBearerTokenAuthenticator {
         tokenString = split[1];
 
         try {
-            token = RSATokenVerifier.verifyToken(tokenString, resourceMetadata);
+            token = RSATokenVerifier.verifyToken(tokenString, resourceMetadata.getRealmKey(), resourceMetadata.getRealm());
         } catch (VerificationException e) {
             log.error("Failed to verify token", e);
             challengeResponse(response, "invalid_token", e.getMessage());

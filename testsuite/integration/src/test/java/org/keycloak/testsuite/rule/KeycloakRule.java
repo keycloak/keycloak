@@ -23,8 +23,8 @@ package org.keycloak.testsuite.rule;
 
 import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.ServletInfo;
-import org.jboss.resteasy.jwt.JsonSerialization;
 import org.junit.rules.ExternalResource;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -93,7 +93,7 @@ public class KeycloakRule extends ExternalResource {
             os.write(c);
         }
         byte[] bytes = os.toByteArray();
-        return JsonSerialization.fromBytes(RealmRepresentation.class, bytes);
+        return JsonSerialization.readValue(bytes, RealmRepresentation.class);
     }
 
     public void configure(KeycloakSetup configurer) {

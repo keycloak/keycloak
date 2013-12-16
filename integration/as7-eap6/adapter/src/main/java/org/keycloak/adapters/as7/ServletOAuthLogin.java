@@ -2,7 +2,7 @@ package org.keycloak.adapters.as7;
 
 import org.jboss.logging.Logger;
 import org.keycloak.RSATokenVerifier;
-import org.keycloak.RealmConfiguration;
+import org.keycloak.adapters.RealmConfiguration;
 import org.keycloak.VerificationException;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.SkeletonKeyToken;
@@ -256,7 +256,7 @@ public class ServletOAuthLogin {
 
         tokenString = tokenResponse.getToken();
         try {
-            token = RSATokenVerifier.verifyToken(tokenString, realmInfo.getMetadata());
+            token = RSATokenVerifier.verifyToken(tokenString, realmInfo.getMetadata().getRealmKey(), realmInfo.getMetadata().getRealm());
             log.debug("Token Verification succeeded!");
         } catch (VerificationException e) {
             log.error("failed verification of token");

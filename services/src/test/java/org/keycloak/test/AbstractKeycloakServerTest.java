@@ -4,12 +4,12 @@ import io.undertow.servlet.Servlets;
 import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.FilterInfo;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
-import org.jboss.resteasy.jwt.JsonSerialization;
 import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
 import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.keycloak.SkeletonKeyContextResolver;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.filters.KeycloakSessionServletFilter;
 import org.keycloak.services.resources.KeycloakApplication;
@@ -65,6 +65,6 @@ public class AbstractKeycloakServerTest {
         byte[] bytes = os.toByteArray();
         System.out.println(new String(bytes));
 
-        return JsonSerialization.fromBytes(RealmRepresentation.class, bytes);
+        return JsonSerialization.readValue(bytes, RealmRepresentation.class);
     }
 }

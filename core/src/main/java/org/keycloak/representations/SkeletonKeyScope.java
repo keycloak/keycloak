@@ -1,6 +1,7 @@
 package org.keycloak.representations;
 
-import javax.ws.rs.core.MultivaluedHashMap;
+
+import org.keycloak.util.MultivaluedHashMap;
 
 /**
  * Key is resource desired.  Values are roles desired for that resource

@@ -1,11 +1,11 @@
 package org.keycloak;
 
 import junit.framework.Assert;
-import org.jboss.resteasy.jose.jws.JWSBuilder;
-import org.jboss.resteasy.jose.jws.JWSInput;
-import org.jboss.resteasy.jose.jws.crypto.RSAProvider;
-import org.jboss.resteasy.jwt.JsonSerialization;
 import org.junit.Test;
+import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.crypto.RSAProvider;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.representations.SkeletonKeyScope;
 import org.keycloak.representations.SkeletonKeyToken;
 
@@ -26,7 +26,7 @@ public class SkeletonKeyTokenTest
       scope2.add("one", "admin");
       scope2.add("one", "buyer");
       scope2.add("two", "seller");
-      String json = JsonSerialization.toString(scope2, true);
+       String json = JsonSerialization.writeValueAsString(scope2);
       System.out.println(json);
 
 
@@ -40,10 +40,10 @@ public class SkeletonKeyTokenTest
       token.addAccess("foo").addRole("admin");
       token.addAccess("bar").addRole("user");
 
-      String json = JsonSerialization.toString(token, true);
+       String json = JsonSerialization.writeValueAsString(token);
       System.out.println(json);
 
-      token = JsonSerialization.fromString(SkeletonKeyToken.class, json);
+      token = JsonSerialization.readValue(json, SkeletonKeyToken.class);
       Assert.assertEquals("111", token.getId());
       SkeletonKeyToken.Access foo = token.getResourceAccess("foo");
       Assert.assertNotNull(foo);
@@ -60,18 +60,16 @@ public class SkeletonKeyTokenTest
       token.addAccess("bar").addRole("user");
 
       KeyPair keyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
-      byte[] tokenBytes = JsonSerialization.toByteArray(token, true);
 
       String encoded = new JWSBuilder()
-              .content(tokenBytes)
+              .jsonContent(token)
               .rsa256(keyPair.getPrivate());
 
       System.out.println(encoded);
 
       JWSInput input = new JWSInput(encoded);
-      byte[] content = input.getContent();
 
-      token = JsonSerialization.fromBytes(SkeletonKeyToken.class, content);
+      token = input.readJsonContent(SkeletonKeyToken.class);
       Assert.assertEquals("111", token.getId());
       Assert.assertTrue(RSAProvider.verify(input, keyPair.getPublic()));
    }

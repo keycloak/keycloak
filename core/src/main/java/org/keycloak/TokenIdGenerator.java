@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class TokenIdGenerator {
     private static final AtomicLong counter = new AtomicLong();
+
     public static String generateId() {
         return UUID.randomUUID().toString() + "-" + System.currentTimeMillis();
     }

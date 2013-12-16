@@ -1,9 +1,9 @@
 package org.keycloak.representations.idm;
 
 /**
-* @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
-* @version $Revision: 1 $
-*/
+ * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @version $Revision: 1 $
+ */
 public class CredentialRepresentation {
     public static final String PASSWORD = "password";
     public static final String TOTP = "totp";

@@ -1,6 +1,7 @@
 package org.keycloak;
 
-import org.jboss.resteasy.util.Base64;
+
+import org.keycloak.util.Base64;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;

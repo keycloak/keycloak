@@ -78,7 +78,7 @@ public class BearerTokenAuthenticator {
         }
 
         try {
-            token = RSATokenVerifier.verifyToken(tokenString, resourceMetadata);
+            token = RSATokenVerifier.verifyToken(tokenString, resourceMetadata.getRealmKey(), resourceMetadata.getRealm());
         } catch (VerificationException e) {
             log.error("Failed to verify token", e);
             challenge = challengeResponse(exchange, "invalid_token", e.getMessage());
