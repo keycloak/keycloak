@@ -21,10 +21,10 @@
  */
 package org.keycloak.services.resources;
 
-import org.jboss.resteasy.jose.jws.JWSInput;
-import org.jboss.resteasy.jose.jws.crypto.RSAProvider;
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
@@ -321,7 +321,7 @@ public class RequiredActionsService {
             return null;
         }
 
-        JWSInput input = new JWSInput(code, providers);
+        JWSInput input = new JWSInput(code);
         boolean verifiedCode = false;
         try {
             verifiedCode = RSAProvider.verify(input, realm.getPublicKey());
@@ -335,7 +335,7 @@ public class RequiredActionsService {
             return null;
         }
 
-        String key = input.readContent(String.class);
+        String key = input.readContentAsString();
         AccessCodeEntry accessCodeEntry = tokenManager.getAccessCode(key);
         if (accessCodeEntry == null) {
             logger.debug("getAccessCodeEntry access code entry null");

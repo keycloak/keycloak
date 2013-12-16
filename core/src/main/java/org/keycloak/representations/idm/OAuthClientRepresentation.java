@@ -1,6 +1,5 @@
 package org.keycloak.representations.idm;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**

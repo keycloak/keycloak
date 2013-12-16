@@ -33,10 +33,10 @@ import io.undertow.servlet.Servlets;
 import io.undertow.servlet.api.DefaultServletConfig;
 import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.FilterInfo;
-import org.jboss.resteasy.jwt.JsonSerialization;
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
 import org.jboss.resteasy.spi.ResteasyDeployment;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -49,15 +49,11 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
 
 import javax.servlet.DispatcherType;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -100,13 +96,7 @@ public class KeycloakServer {
 
     private static <T> T loadJson(InputStream is, Class<T> type) {
         try {
-            ByteArrayOutputStream os = new ByteArrayOutputStream();
-            int c;
-            while ((c = is.read()) != -1) {
-                os.write(c);
-            }
-            byte[] bytes = os.toByteArray();
-            return JsonSerialization.fromBytes(type, bytes);
+            return JsonSerialization.readValue(is, type);
         } catch (IOException e) {
             throw new RuntimeException("Failed to parse json", e);
         }

@@ -5,7 +5,6 @@
             <module name="org.bouncycastle"/>
             <module name="org.jboss.resteasy.resteasy-jaxrs" services="import"/>
             <module name="org.jboss.resteasy.resteasy-jackson-provider" services="import"/>
-            <module name="org.jboss.resteasy.jose-jwt" />
         </dependencies>
     </deployment>
 </jboss-deployment-structure>

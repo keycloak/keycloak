@@ -4,11 +4,10 @@ import junit.framework.Assert;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMWriter;
 import org.bouncycastle.x509.X509V1CertificateGenerator;
-import org.jboss.resteasy.jose.jws.JWSBuilder;
-import org.jboss.resteasy.jwt.JsonSerialization;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.representations.SkeletonKeyToken;
 
 import javax.security.auth.x500.X500Principal;
@@ -30,94 +29,80 @@ import java.util.Date;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class RSAVerifierTest
-{
-   private static X509Certificate[] idpCertificates;
-   private static KeyPair idpPair;
-   private static KeyPair badPair;
-   private static KeyPair clientPair;
-   private static X509Certificate[] clientCertificateChain;
-   private ResourceMetadata metadata;
-   private SkeletonKeyToken token;
+public class RSAVerifierTest {
+    private static X509Certificate[] idpCertificates;
+    private static KeyPair idpPair;
+    private static KeyPair badPair;
+    private static KeyPair clientPair;
+    private static X509Certificate[] clientCertificateChain;
+    private SkeletonKeyToken token;
 
-   static
-   {
-      if (Security.getProvider("BC") == null) Security.addProvider(new BouncyCastleProvider());
-   }
+    static {
+        if (Security.getProvider("BC") == null) Security.addProvider(new BouncyCastleProvider());
+    }
 
-   public static X509Certificate generateTestCertificate(String subject, String issuer, KeyPair pair) throws InvalidKeyException,
-           NoSuchProviderException, SignatureException
-   {
+    public static X509Certificate generateTestCertificate(String subject, String issuer, KeyPair pair) throws InvalidKeyException,
+            NoSuchProviderException, SignatureException {
 
-      X509V1CertificateGenerator certGen = new X509V1CertificateGenerator();
+        X509V1CertificateGenerator certGen = new X509V1CertificateGenerator();
 
-      certGen.setSerialNumber(BigInteger.valueOf(System.currentTimeMillis()));
-      certGen.setIssuerDN(new X500Principal(issuer));
-      certGen.setNotBefore(new Date(System.currentTimeMillis() - 10000));
-      certGen.setNotAfter(new Date(System.currentTimeMillis() + 10000));
-      certGen.setSubjectDN(new X500Principal(subject));
-      certGen.setPublicKey(pair.getPublic());
-      certGen.setSignatureAlgorithm("SHA256WithRSAEncryption");
+        certGen.setSerialNumber(BigInteger.valueOf(System.currentTimeMillis()));
+        certGen.setIssuerDN(new X500Principal(issuer));
+        certGen.setNotBefore(new Date(System.currentTimeMillis() - 10000));
+        certGen.setNotAfter(new Date(System.currentTimeMillis() + 10000));
+        certGen.setSubjectDN(new X500Principal(subject));
+        certGen.setPublicKey(pair.getPublic());
+        certGen.setSignatureAlgorithm("SHA256WithRSAEncryption");
 
-      return certGen.generateX509Certificate(pair.getPrivate(), "BC");
-   }
+        return certGen.generateX509Certificate(pair.getPrivate(), "BC");
+    }
 
-   @BeforeClass
-   public static void setupCerts() throws NoSuchAlgorithmException, InvalidKeyException, NoSuchProviderException, SignatureException
-   {
-      badPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
-      idpPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
-      idpCertificates = new X509Certificate[]{generateTestCertificate("CN=IDP", "CN=IDP", idpPair)};
-      clientPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
-      clientCertificateChain = new X509Certificate[]{generateTestCertificate("CN=Client", "CN=IDP", idpPair)};
-   }
+    @BeforeClass
+    public static void setupCerts() throws NoSuchAlgorithmException, InvalidKeyException, NoSuchProviderException, SignatureException {
+        badPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
+        idpPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
+        idpCertificates = new X509Certificate[]{generateTestCertificate("CN=IDP", "CN=IDP", idpPair)};
+        clientPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
+        clientCertificateChain = new X509Certificate[]{generateTestCertificate("CN=Client", "CN=IDP", idpPair)};
+    }
 
-   @Before
-   public void initTest()
-   {
-      metadata = new ResourceMetadata();
-      metadata.setResourceName("service");
-      metadata.setRealm("domain");
-      metadata.setRealmKey(idpPair.getPublic());
+    @Before
+    public void initTest() {
 
-      token = new SkeletonKeyToken();
-      token.principal("CN=Client")
-              .audience("domain")
-              .addAccess("service").addRole("admin");
-   }
+        token = new SkeletonKeyToken();
+        token.principal("CN=Client")
+                .audience("domain")
+                .addAccess("service").addRole("admin");
+    }
 
-   @Test
-   public void testPemWriter() throws Exception
-   {
-      PublicKey realmPublicKey = idpPair.getPublic();
-      StringWriter sw = new StringWriter();
-      PEMWriter writer = new PEMWriter(sw);
-      try
-      {
-         writer.writeObject(realmPublicKey);
-         writer.flush();
-      }
-      catch (IOException e)
-      {
-         throw new RuntimeException(e);
-      }
-      System.out.println(sw.toString());
-   }
+    @Test
+    public void testPemWriter() throws Exception {
+        PublicKey realmPublicKey = idpPair.getPublic();
+        StringWriter sw = new StringWriter();
+        PEMWriter writer = new PEMWriter(sw);
+        try {
+            writer.writeObject(realmPublicKey);
+            writer.flush();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        System.out.println(sw.toString());
+    }
 
 
-   @Test
-   public void testSimpleVerification() throws Exception
-   {
+    @Test
+    public void testSimpleVerification() throws Exception {
+        String encoded = new JWSBuilder()
+                .jsonContent(token)
+                .rsa256(idpPair.getPrivate());
+        SkeletonKeyToken token = verifySkeletonKeyToken(encoded);
+        Assert.assertTrue(token.getResourceAccess("service").getRoles().contains("admin"));
+        Assert.assertEquals("CN=Client", token.getPrincipal());
+    }
 
-      byte[] tokenBytes = JsonSerialization.toByteArray(token, false);
-
-      String encoded = new JWSBuilder()
-              .content(tokenBytes)
-              .rsa256(idpPair.getPrivate());
-      SkeletonKeyToken token =  RSATokenVerifier.verifyToken(encoded, metadata);
-      Assert.assertTrue(token.getResourceAccess("service").getRoles().contains("admin"));
-      Assert.assertEquals("CN=Client", token.getPrincipal());
-   }
+    private SkeletonKeyToken verifySkeletonKeyToken(String encoded) throws VerificationException {
+        return RSATokenVerifier.verifyToken(encoded, idpPair.getPublic(), "domain");
+    }
 
    /*
    @Test
@@ -143,137 +128,105 @@ public class RSAVerifierTest
    */
 
 
-   @Test
-   public void testBadSignature() throws Exception
-   {
+    @Test
+    public void testBadSignature() throws Exception {
 
-      byte[] tokenBytes = JsonSerialization.toByteArray(token, false);
+        String encoded = new JWSBuilder()
+                .jsonContent(token)
+                .rsa256(badPair.getPrivate());
 
-      String encoded = new JWSBuilder()
-              .content(tokenBytes)
-              .rsa256(badPair.getPrivate());
+        SkeletonKeyToken v = null;
+        try {
+            v = verifySkeletonKeyToken(encoded);
+            Assert.fail();
+        } catch (VerificationException ignored) {
+        }
+    }
 
-      SkeletonKeyToken v = null;
-      try
-      {
-         v = RSATokenVerifier.verifyToken(encoded, metadata);
-         Assert.fail();
-      }
-      catch (VerificationException ignored)
-      {
-      }
-   }
+    @Test
+    public void testNotBeforeGood() throws Exception {
+        token.notBefore((System.currentTimeMillis() / 1000) - 100);
 
-   @Test
-   public void testNotBeforeGood() throws Exception
-   {
-      token.notBefore((System.currentTimeMillis()/1000) - 100);
-      byte[] tokenBytes = JsonSerialization.toByteArray(token, false);
+        String encoded = new JWSBuilder()
+                .jsonContent(token)
+                .rsa256(idpPair.getPrivate());
 
-      String encoded = new JWSBuilder()
-              .content(tokenBytes)
-              .rsa256(idpPair.getPrivate());
+        SkeletonKeyToken v = null;
+        try {
+            v = verifySkeletonKeyToken(encoded);
+        } catch (VerificationException ignored) {
+            throw ignored;
+        }
+    }
 
-      SkeletonKeyToken v = null;
-      try
-      {
-         v = RSATokenVerifier.verifyToken(encoded, metadata);
-      }
-      catch (VerificationException ignored)
-      {
-        throw ignored;
-      }
-   }
+    @Test
+    public void testNotBeforeBad() throws Exception {
+        token.notBefore((System.currentTimeMillis() / 1000) + 100);
 
-   @Test
-   public void testNotBeforeBad() throws Exception
-   {
-      token.notBefore((System.currentTimeMillis()/1000) + 100);
-      byte[] tokenBytes = JsonSerialization.toByteArray(token, false);
+        String encoded = new JWSBuilder()
+                .jsonContent(token)
+                .rsa256(idpPair.getPrivate());
 
-      String encoded = new JWSBuilder()
-              .content(tokenBytes)
-              .rsa256(idpPair.getPrivate());
+        SkeletonKeyToken v = null;
+        try {
+            v = verifySkeletonKeyToken(encoded);
+            Assert.fail();
+        } catch (VerificationException ignored) {
+            System.out.println(ignored.getMessage());
+        }
+    }
 
-      SkeletonKeyToken v = null;
-      try
-      {
-         v = RSATokenVerifier.verifyToken(encoded, metadata);
-         Assert.fail();
-      }
-      catch (VerificationException ignored)
-      {
-         System.out.println(ignored.getMessage());
-      }
-   }
+    @Test
+    public void testExpirationGood() throws Exception {
+        token.expiration((System.currentTimeMillis() / 1000) + 100);
 
-   @Test
-   public void testExpirationGood() throws Exception
-   {
-      token.expiration((System.currentTimeMillis()/1000) + 100);
-      byte[] tokenBytes = JsonSerialization.toByteArray(token, false);
+        String encoded = new JWSBuilder()
+                .jsonContent(token)
+                .rsa256(idpPair.getPrivate());
 
-      String encoded = new JWSBuilder()
-              .content(tokenBytes)
-              .rsa256(idpPair.getPrivate());
+        SkeletonKeyToken v = null;
+        try {
+            v = verifySkeletonKeyToken(encoded);
+        } catch (VerificationException ignored) {
+            throw ignored;
+        }
+    }
 
-      SkeletonKeyToken v = null;
-      try
-      {
-         v = RSATokenVerifier.verifyToken(encoded, metadata);
-      }
-      catch (VerificationException ignored)
-      {
-         throw ignored;
-      }
-   }
+    @Test
+    public void testExpirationBad() throws Exception {
+        token.expiration((System.currentTimeMillis() / 1000) - 100);
 
-   @Test
-   public void testExpirationBad() throws Exception
-   {
-      token.expiration((System.currentTimeMillis()/1000) - 100);
-      byte[] tokenBytes = JsonSerialization.toByteArray(token, false);
+        String encoded = new JWSBuilder()
+                .jsonContent(token)
+                .rsa256(idpPair.getPrivate());
 
-      String encoded = new JWSBuilder()
-              .content(tokenBytes)
-              .rsa256(idpPair.getPrivate());
+        SkeletonKeyToken v = null;
+        try {
+            v = verifySkeletonKeyToken(encoded);
+            Assert.fail();
+        } catch (VerificationException ignored) {
+            System.out.println(ignored.getMessage());
+        }
+    }
 
-      SkeletonKeyToken v = null;
-      try
-      {
-         v = RSATokenVerifier.verifyToken(encoded, metadata);
-         Assert.fail();
-      }
-      catch (VerificationException ignored)
-      {
-         System.out.println(ignored.getMessage());
-      }
-   }
+    @Test
+    public void testTokenAuth() throws Exception {
+        token = new SkeletonKeyToken();
+        token.principal("CN=Client")
+                .audience("domain")
+                .addAccess("service").addRole("admin").verifyCaller(true);
 
-   @Test
-   public void testTokenAuth() throws Exception
-   {
-      token = new SkeletonKeyToken();
-      token.principal("CN=Client")
-              .audience("domain")
-              .addAccess("service").addRole("admin").verifyCaller(true);
-      byte[] tokenBytes = JsonSerialization.toByteArray(token, false);
+        String encoded = new JWSBuilder()
+                .jsonContent(token)
+                .rsa256(idpPair.getPrivate());
 
-      String encoded = new JWSBuilder()
-              .content(tokenBytes)
-              .rsa256(idpPair.getPrivate());
-
-      SkeletonKeyToken v = null;
-      try
-      {
-         v = RSATokenVerifier.verifyToken(encoded, metadata);
-      }
-      catch (VerificationException ignored)
-      {
-         System.out.println(ignored.getMessage());
-      }
-   }
-
+        SkeletonKeyToken v = null;
+        try {
+            v = verifySkeletonKeyToken(encoded);
+        } catch (VerificationException ignored) {
+            System.out.println(ignored.getMessage());
+        }
+    }
 
 
 }

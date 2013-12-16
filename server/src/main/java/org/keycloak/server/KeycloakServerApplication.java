@@ -1,7 +1,7 @@
 package org.keycloak.server;
 
-import org.jboss.resteasy.jwt.JsonSerialization;
 import org.jboss.resteasy.logging.Logger;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.RealmManager;
@@ -11,7 +11,6 @@ import org.keycloak.services.resources.KeycloakApplication;
 
 import javax.servlet.ServletContext;
 import javax.ws.rs.core.Context;
-import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -63,13 +62,7 @@ public class KeycloakServerApplication extends KeycloakApplication {
 
     private static <T> T loadJson(InputStream is, Class<T> type) {
         try {
-            ByteArrayOutputStream os = new ByteArrayOutputStream();
-            int c;
-            while ((c = is.read()) != -1) {
-                os.write(c);
-            }
-            byte[] bytes = os.toByteArray();
-            return JsonSerialization.fromBytes(type, bytes);
+             return JsonSerialization.readValue(is, type);
         } catch (IOException e) {
             throw new RuntimeException("Failed to parse json", e);
         }

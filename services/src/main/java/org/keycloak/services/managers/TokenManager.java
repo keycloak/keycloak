@@ -1,9 +1,8 @@
 package org.keycloak.services.managers;
 
-import org.jboss.resteasy.jose.Base64Url;
-import org.jboss.resteasy.jose.jws.JWSBuilder;
-import org.jboss.resteasy.jwt.JsonSerialization;
 import org.jboss.resteasy.logging.Logger;
+import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
@@ -11,6 +10,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.SkeletonKeyScope;
 import org.keycloak.representations.SkeletonKeyToken;
+import org.keycloak.util.Base64Url;
 
 import javax.ws.rs.core.MultivaluedMap;
 import java.io.IOException;
@@ -149,7 +149,7 @@ public class TokenManager {
     public String encodeScope(SkeletonKeyScope scope) {
         String token = null;
         try {
-            token = JsonSerialization.toString(scope, false);
+            token = JsonSerialization.writeValueAsString(scope);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -160,7 +160,7 @@ public class TokenManager {
         SkeletonKeyScope scope = null;
         byte[] bytes = Base64Url.decode(scopeParam);
         try {
-            scope = JsonSerialization.fromBytes(SkeletonKeyScope.class, bytes);
+            scope = JsonSerialization.readValue(bytes, SkeletonKeyScope.class);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -204,14 +204,8 @@ public class TokenManager {
 
 
     public String encodeToken(RealmModel realm, Object token) {
-        byte[] tokenBytes = null;
-        try {
-            tokenBytes = JsonSerialization.toByteArray(token, false);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
         String encodedToken = new JWSBuilder()
-                .content(tokenBytes)
+                .jsonContent(token)
                 .rsa256(realm.getPrivateKey());
         return encodedToken;
     }

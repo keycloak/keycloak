@@ -1,8 +1,7 @@
 package org.keycloak;
 
-import org.jboss.resteasy.jose.jws.JWSInput;
-import org.jboss.resteasy.jose.jws.crypto.RSAProvider;
-import org.jboss.resteasy.jwt.JsonSerialization;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.representations.SkeletonKeyToken;
 
 import java.io.IOException;
@@ -13,11 +12,6 @@ import java.security.PublicKey;
  * @version $Revision: 1 $
  */
 public class RSATokenVerifier {
-    public static SkeletonKeyToken verifyToken(String tokenString, ResourceMetadata metadata) throws VerificationException {
-        PublicKey realmKey = metadata.getRealmKey();
-        String realm = metadata.getRealm();
-        return verifyToken(tokenString, realmKey, realm);
-    }
 
     public static SkeletonKeyToken verifyToken(String tokenString, PublicKey realmKey, String realm) throws VerificationException {
         JWSInput input = new JWSInput(tokenString);
@@ -31,7 +25,7 @@ public class RSATokenVerifier {
 
         SkeletonKeyToken token = null;
         try {
-            token = JsonSerialization.fromBytes(SkeletonKeyToken.class, input.getContent());
+            token = input.readJsonContent(SkeletonKeyToken.class);
         } catch (IOException e) {
             throw new VerificationException(e);
         }

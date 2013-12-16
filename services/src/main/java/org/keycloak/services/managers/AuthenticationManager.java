@@ -1,12 +1,11 @@
 package org.keycloak.services.managers;
 
-import org.jboss.resteasy.jose.jws.JWSBuilder;
-import org.jboss.resteasy.jwt.JsonSerialization;
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
+import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
@@ -85,14 +84,8 @@ public class AuthenticationManager {
     }
 
     protected String encodeToken(RealmModel realm, Object token) {
-        byte[] tokenBytes = null;
-        try {
-            tokenBytes = JsonSerialization.toByteArray(token, false);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
         String encodedToken = new JWSBuilder()
-                .content(tokenBytes)
+                .jsonContent(token)
                 .rsa256(realm.getPrivateKey());
         return encodedToken;
     }

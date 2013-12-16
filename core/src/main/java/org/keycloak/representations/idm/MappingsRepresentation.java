@@ -19,7 +19,7 @@ public class MappingsRepresentation {
         this.realmMappings = realmMappings;
     }
 
-    public Map<String,ApplicationMappingsRepresentation> getApplicationMappings() {
+    public Map<String, ApplicationMappingsRepresentation> getApplicationMappings() {
         return applicationMappings;
     }
 

@@ -21,12 +21,12 @@
  */
 package org.keycloak.services.resources;
 
-import org.jboss.resteasy.jose.jws.JWSInput;
-import org.jboss.resteasy.jose.jws.crypto.RSAProvider;
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.AbstractOAuthClient;
 import org.keycloak.jaxrs.JaxrsOAuthClient;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.*;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.SkeletonKeyToken;
@@ -295,7 +295,7 @@ public class AccountService {
             }
             String path = new JaxrsOAuthClient().checkStateCookie(uriInfo, headers);
 
-            JWSInput input = new JWSInput(code, providers);
+            JWSInput input = new JWSInput(code);
             boolean verifiedCode = false;
             try {
                 verifiedCode = RSAProvider.verify(input, realm.getPublicKey());
@@ -306,7 +306,7 @@ public class AccountService {
                 logger.debug("unverified access code");
                 throw new BadRequestException();
             }
-            String key = input.readContent(String.class);
+            String key = input.readContentAsString();
             AccessCodeEntry accessCode = tokenManager.pullAccessCode(key);
             if (accessCode == null) {
                 logger.debug("bad access code");

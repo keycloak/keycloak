@@ -3,7 +3,7 @@ package org.keycloak.adapters.undertow;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.servlet.api.ConfidentialPortManager;
 import io.undertow.servlet.handlers.ServletRequestContext;
-import org.keycloak.RealmConfiguration;
+import org.keycloak.adapters.RealmConfiguration;
 import org.keycloak.ResourceMetadata;
 import org.keycloak.SkeletonKeySession;
 import org.keycloak.adapters.config.AdapterConfig;

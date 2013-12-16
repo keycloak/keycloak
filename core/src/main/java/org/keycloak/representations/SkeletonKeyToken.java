@@ -2,7 +2,7 @@ package org.keycloak.representations;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
-import org.jboss.resteasy.jwt.JsonWebToken;
+import org.keycloak.jwt.JsonWebToken;
 
 import java.util.HashMap;
 import java.util.HashSet;

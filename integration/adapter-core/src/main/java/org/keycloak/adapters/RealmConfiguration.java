@@ -1,7 +1,8 @@
-package org.keycloak;
+package org.keycloak.adapters;
 
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
+import org.keycloak.ResourceMetadata;
 
 import javax.ws.rs.core.Form;
 import javax.ws.rs.core.UriBuilder;

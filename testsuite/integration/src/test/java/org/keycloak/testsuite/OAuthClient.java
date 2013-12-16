@@ -30,15 +30,15 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
-import org.jboss.resteasy.jose.Base64Url;
-import org.jboss.resteasy.jwt.JsonSerialization;
 import org.jboss.resteasy.security.PemUtils;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.representations.SkeletonKeyScope;
 import org.keycloak.representations.SkeletonKeyToken;
+import org.keycloak.util.Base64Url;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
@@ -200,7 +200,7 @@ public class OAuthClient {
         if (scope != null) {
             try {
 
-                b.queryParam("scope", Base64Url.encode(JsonSerialization.toByteArray(scope, false)));
+                b.queryParam("scope", Base64Url.encode(JsonSerialization.writeValueAsBytes(scope)));
             } catch (Exception e) {
                 throw new RuntimeException("Failed to serialize scope", e);
             }
