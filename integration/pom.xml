@@ -16,6 +16,8 @@
 
     <modules>
         <module>adapter-core</module>
+        <module>jaxrs-oauth-client</module>
+        <module>servlet-oauth-client</module>
         <module>as7-eap6/adapter</module>
         <module>undertow</module>
         <!-- <module>as7-eap6/jboss-modules</module> -->

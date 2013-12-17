@@ -18,9 +18,9 @@ import java.util.Set;
 
 /**
  * Pre-installed actions that must be authenticated
- *
+ * <p/>
  * Actions include:
- *
+ * <p/>
  * CORS Origin Check and Response headers
  * K_QUERY_BEARER_TOKEN: Get bearer token from server for Javascripts CORS requests
  *
@@ -47,24 +47,24 @@ public class AuthenticatedActionsValve extends ValveBase {
         if (corsRequest(request, response, session)) return;
         String requestUri = request.getRequestURI();
         if (requestUri.endsWith("K_QUERY_BEARER_TOKEN")) {
-           queryBearerToken(request, response, session);
-           return;
+            queryBearerToken(request, response, session);
+            return;
         }
         getNext().invoke(request, response);
     }
 
     public SkeletonKeySession getSkeletonKeySession(Request request) {
-        SkeletonKeySession skSession = (SkeletonKeySession)request.getAttribute(SkeletonKeySession.class.getName());
+        SkeletonKeySession skSession = (SkeletonKeySession) request.getAttribute(SkeletonKeySession.class.getName());
         if (skSession != null) return skSession;
         Session session = request.getSessionInternal();
         if (session != null) {
-           return (SkeletonKeySession) session.getNote(SkeletonKeySession.class.getName());
+            return (SkeletonKeySession) session.getNote(SkeletonKeySession.class.getName());
         }
         return null;
     }
 
     protected void queryBearerToken(Request request, Response response, SkeletonKeySession session) throws IOException, ServletException {
-        log.debugv("queryBearerToken {0}",request.getRequestURI());
+        log.debugv("queryBearerToken {0}", request.getRequestURI());
         if (abortTokenResponse(request, response, session)) return;
         response.setStatus(200);
         response.setContentType("text/plain");
@@ -75,7 +75,7 @@ public class AuthenticatedActionsValve extends ValveBase {
 
     protected boolean abortTokenResponse(Request request, Response response, SkeletonKeySession session) throws IOException {
         if (session == null) {
-            log.debugv("session was null, sending back 401: {0}",request.getRequestURI());
+            log.debugv("session was null, sending back 401: {0}", request.getRequestURI());
             response.sendError(401);
             return true;
         }

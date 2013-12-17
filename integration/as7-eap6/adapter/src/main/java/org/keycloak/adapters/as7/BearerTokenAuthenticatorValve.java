@@ -10,8 +10,8 @@ import org.apache.catalina.connector.Response;
 import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.deploy.LoginConfig;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.ResourceMetadata;
+import org.keycloak.SkeletonKeySession;
 import org.keycloak.adapters.as7.config.CatalinaAdapterConfigLoader;
 import org.keycloak.adapters.config.AdapterConfig;
 import org.keycloak.adapters.config.AdapterConfigLoader;
@@ -63,7 +63,7 @@ public class BearerTokenAuthenticatorValve extends AuthenticatorBase implements 
             }
             super.invoke(request, response);
         } finally {
-            ResteasyProviderFactory.clearContextData(); // to clear push of SkeletonKeySession
+            SkeletonKeySession.clearContext();
         }
     }
 

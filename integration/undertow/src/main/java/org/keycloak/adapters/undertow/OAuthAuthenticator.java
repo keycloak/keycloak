@@ -8,16 +8,14 @@ import io.undertow.server.handlers.CookieImpl;
 import io.undertow.util.Headers;
 import org.jboss.logging.Logger;
 import org.keycloak.RSATokenVerifier;
-import org.keycloak.adapters.RealmConfiguration;
+import org.keycloak.adapters.config.RealmConfiguration;
 import org.keycloak.VerificationException;
+import org.keycloak.adapters.TokenGrantRequest;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.SkeletonKeyToken;
-import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.util.KeycloakUriBuilder;
 
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.Form;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
+import java.io.IOException;
 import java.util.Deque;
 import java.util.Map;
 import java.util.UUID;
@@ -60,7 +58,7 @@ public class OAuthAuthenticator {
     }
 
     protected String getRequestUrl() {
-        UriBuilder uriBuilder = UriBuilder.fromUri(exchange.getRequestURI())
+        KeycloakUriBuilder uriBuilder = KeycloakUriBuilder.fromUri(exchange.getRequestURI())
                 .replaceQuery(exchange.getQueryString());
         if (!exchange.isHostIncludedInRequestURI()) uriBuilder.scheme(exchange.getRequestScheme()).host(exchange.getHostAndPort());
         return uriBuilder.build().toString();
@@ -107,7 +105,7 @@ public class OAuthAuthenticator {
                 // disabled?
                 return null;
             }
-            UriBuilder secureUrl = UriBuilder.fromUri(url).scheme("https").port(-1);
+            KeycloakUriBuilder secureUrl = KeycloakUriBuilder.fromUri(url).scheme("https").port(-1);
             if (port != 443) secureUrl.port(port);
             url = secureUrl.build().toString();
         }
@@ -237,34 +235,20 @@ public class OAuthAuthenticator {
         KeycloakChallenge challenge = checkStateCookie();
         if (challenge != null) return challenge;
 
-        String client_id = realmInfo.getMetadata().getResourceName();
-        String password = realmInfo.getResourceCredentials().asMap().getFirst("password");
-        //String authHeader = BasicAuthHelper.createHeader(client_id, password);
-        redirectUri = stripOauthParametersFromRedirect();
-        Form form = new Form();
-        form.param("grant_type", "authorization_code")
-                .param("code", code)
-                .param("client_id", client_id)
-                .param(CredentialRepresentation.PASSWORD, password)
-                .param("redirect_uri", redirectUri);
-
-        Response res = realmInfo.getCodeUrl().request()
-                .post(Entity.form(form));
-        AccessTokenResponse tokenResponse;
+        AccessTokenResponse tokenResponse = null;
         try {
-            if (res.getStatus() != 200) {
-                log.error("failed to turn code into token");
-                log.error("status from server: " + res.getStatus());
-                if (res.getStatus() == 400 && res.getMediaType() != null) {
-                    log.error("   " + res.readEntity(String.class));
-                }
-                return challenge(403);
+            tokenResponse = TokenGrantRequest.invoke(realmInfo, code, redirectUri);
+        } catch (TokenGrantRequest.HttpFailure failure) {
+            log.error("failed to turn code into token");
+            log.error("status from server: " + failure.getStatus());
+            if (failure.getStatus() == 400 && failure.getError() != null) {
+                log.error("   " + failure.getError());
             }
-            log.debug("media type: " + res.getMediaType());
-            log.debug("Content-Type header: " + res.getHeaderString("Content-Type"));
-            tokenResponse = res.readEntity(AccessTokenResponse.class);
-        } finally {
-            res.close();
+            return challenge(403);
+
+        } catch (IOException e) {
+            log.error("failed to turn code into token");
+            return challenge(403);
         }
 
         tokenString = tokenResponse.getToken();
@@ -283,7 +267,7 @@ public class OAuthAuthenticator {
      * strip out unwanted query parameters and redirect so bookmarks don't retain oauth protocol bits
      */
     protected String stripOauthParametersFromRedirect() {
-        UriBuilder builder = UriBuilder.fromUri(exchange.getRequestURI())
+        KeycloakUriBuilder builder = KeycloakUriBuilder.fromUri(exchange.getRequestURI())
                 .replaceQuery(exchange.getQueryString())
                 .replaceQueryParam("code", null)
                 .replaceQueryParam("state", null);

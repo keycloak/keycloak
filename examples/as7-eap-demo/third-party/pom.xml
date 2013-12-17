@@ -22,18 +22,8 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.jboss.resteasy</groupId>
-            <artifactId>resteasy-client</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-core</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-core-jaxrs</artifactId>
+            <artifactId>keycloak-servlet-oauth-client</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

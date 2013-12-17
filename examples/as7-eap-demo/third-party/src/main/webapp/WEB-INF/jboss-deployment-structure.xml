@@ -2,8 +2,6 @@
     <deployment>
         <!-- This allows you to define additional dependencies, it is the same as using the Dependencies: manifest attribute -->
         <dependencies>
-            <module name="org.jboss.resteasy.resteasy-jaxrs" services="import"/>
-            <module name="org.jboss.resteasy.resteasy-jackson-provider" services="import"/>
         </dependencies>
     </deployment>
 </jboss-deployment-structure>

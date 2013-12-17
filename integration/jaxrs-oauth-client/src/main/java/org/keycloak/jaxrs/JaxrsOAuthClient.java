@@ -1,11 +1,17 @@
 package org.keycloak.jaxrs;
 
+import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.logging.Logger;
+import org.jboss.resteasy.util.BasicAuthHelper;
 import org.keycloak.AbstractOAuthClient;
+import org.keycloak.representations.AccessTokenResponse;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.InternalServerErrorException;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Cookie;
+import javax.ws.rs.core.Form;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
@@ -21,6 +27,56 @@ import java.net.URI;
  */
 public class JaxrsOAuthClient extends AbstractOAuthClient {
     protected static final Logger logger = Logger.getLogger(JaxrsOAuthClient.class);
+    protected Client client;
+
+    /**
+     * Creates a Client for obtaining access token from code
+     */
+    public void start() {
+        if (client == null) {
+            client = new ResteasyClientBuilder().trustStore(truststore)
+                    .hostnameVerification(ResteasyClientBuilder.HostnameVerificationPolicy.ANY)
+                    .connectionPoolSize(10)
+                    .build();
+        }
+    }
+
+    /**
+     * closes cllient
+     */
+    public void stop() {
+        client.close();
+    }
+    public Client getClient() {
+        return client;
+    }
+
+    public void setClient(Client client) {
+        this.client = client;
+    }
+
+    public String resolveBearerToken(String redirectUri, String code) {
+        redirectUri = stripOauthParametersFromRedirect(redirectUri);
+        String authHeader = BasicAuthHelper.createHeader(clientId, password);
+        Form codeForm = new Form()
+                .param("grant_type", "authorization_code")
+                .param("code", code)
+                .param("client_id", clientId)
+                .param("password", password)
+                .param("redirect_uri", redirectUri);
+        Response res = client.target(codeUrl).request().header(HttpHeaders.AUTHORIZATION, authHeader).post(Entity.form(codeForm));
+        try {
+            if (res.getStatus() == 400) {
+                throw new BadRequestException();
+            } else if (res.getStatus() != 200) {
+                throw new InternalServerErrorException(new Exception("Unknown error when getting acess token"));
+            }
+            AccessTokenResponse tokenResponse = res.readEntity(AccessTokenResponse.class);
+            return tokenResponse.getToken();
+        } finally {
+            res.close();
+        }
+    }
     public Response redirect(UriInfo uriInfo, String redirectUri) {
         return redirect(uriInfo, redirectUri, null);
     }

@@ -21,7 +21,7 @@ public class AdapterConfig
     protected String resource;
     @JsonProperty("realm-public-key")
     protected String realmKey;
-   @JsonProperty("auth-url")
+    @JsonProperty("auth-url")
     protected String authUrl;
     @JsonProperty("code-url")
     protected String codeUrl;

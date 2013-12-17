@@ -76,8 +76,8 @@
         <module>core</module>
         <module>core-jaxrs</module>
         <module>model</module>
-        <module>services</module>
         <module>integration</module>
+        <module>services</module>
         <module>social</module>
         <module>forms</module>
         <module>admin-ui-styles</module>
@@ -327,7 +327,14 @@
                 <artifactId>mysql-connector-java</artifactId>
                 <version>${mysql.version}</version>
             </dependency>
-
+            <!-- Keep this at 4.1.2 to make sure we're compatible with AS7 -->
+            <!-- the dependency seems to override Resteasy 3.0.5's dependeing on 4.2.1
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpclient</artifactId>
+                <version>4.1.2</version>
+            </dependency>
+             -->
         </dependencies>
     </dependencyManagement>
 
