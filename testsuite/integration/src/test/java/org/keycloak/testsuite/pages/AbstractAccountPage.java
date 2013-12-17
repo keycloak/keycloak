@@ -29,7 +29,7 @@ import org.openqa.selenium.support.FindBy;
  */
 public abstract class AbstractAccountPage extends  AbstractPage {
 
-    @FindBy(linkText = "Logout")
+    @FindBy(linkText = "Sign Out")
     private WebElement logoutLink;
 
     public void logout() {
