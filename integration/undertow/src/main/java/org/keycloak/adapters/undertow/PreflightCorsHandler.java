@@ -5,7 +5,7 @@ import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HttpString;
 import org.jboss.logging.Logger;
-import org.keycloak.adapters.config.AdapterConfig;
+import org.keycloak.representations.config.AdapterConfig;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

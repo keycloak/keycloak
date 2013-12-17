@@ -8,7 +8,7 @@ import org.apache.catalina.connector.Response;
 import org.apache.catalina.valves.ValveBase;
 import org.jboss.logging.Logger;
 import org.keycloak.SkeletonKeySession;
-import org.keycloak.adapters.config.AdapterConfig;
+import org.keycloak.representations.config.AdapterConfig;
 import org.keycloak.representations.SkeletonKeyToken;
 
 import javax.management.ObjectName;

@@ -17,7 +17,7 @@ import org.keycloak.ResourceMetadata;
 import org.keycloak.SkeletonKeyPrincipal;
 import org.keycloak.SkeletonKeySession;
 import org.keycloak.adapters.as7.config.CatalinaAdapterConfigLoader;
-import org.keycloak.adapters.config.AdapterConfig;
+import org.keycloak.representations.config.AdapterConfig;
 import org.keycloak.adapters.config.RealmConfiguration;
 import org.keycloak.adapters.config.RealmConfigurationLoader;
 import org.keycloak.jose.jws.JWSInput;

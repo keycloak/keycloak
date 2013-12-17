@@ -5,7 +5,7 @@ import io.undertow.server.HttpServerExchange;
 import io.undertow.util.Headers;
 import org.jboss.logging.Logger;
 import org.keycloak.SkeletonKeySession;
-import org.keycloak.adapters.config.AdapterConfig;
+import org.keycloak.representations.config.AdapterConfig;
 import org.keycloak.representations.SkeletonKeyToken;
 
 import javax.servlet.ServletException;

@@ -7,8 +7,9 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.config.AdapterConfig;
+import org.keycloak.representations.config.BaseAdapterConfig;
 import org.keycloak.representations.idm.ApplicationRepresentation;
-import org.keycloak.representations.idm.ApplicationInstallationRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.ScopeMappingRepresentation;
@@ -175,16 +176,17 @@ public class ApplicationManager {
 
     }
 
-    public ApplicationInstallationRepresentation toInstallationRepresentation(RealmModel realmModel, ApplicationModel applicationModel, URI baseUri) {
-        ApplicationInstallationRepresentation rep = new ApplicationInstallationRepresentation();
+    public BaseAdapterConfig toInstallationRepresentation(RealmModel realmModel, ApplicationModel applicationModel, URI baseUri) {
+        BaseAdapterConfig rep = new BaseAdapterConfig();
         rep.setRealm(realmModel.getId());
-        rep.setRealmPublicKey(realmModel.getPublicKeyPem());
+        rep.setRealmKey(realmModel.getPublicKeyPem());
         rep.setSslNotRequired(realmModel.isSslNotRequired());
 
         rep.setAuthUrl(Urls.realmLoginPage(baseUri, realmModel.getId()).toString());
         rep.setCodeUrl(Urls.realmCode(baseUri, realmModel.getId()).toString());
+        rep.setUseResourceRoleMappings(applicationModel.getRoles().size() > 0);
 
-        rep.setResource(applicationModel.getId());
+        rep.setResource(applicationModel.getName());
 
         Map<String, String> creds = new HashMap<String, String>();
         creds.put(CredentialRepresentation.PASSWORD, "INSERT APPLICATION PASSWORD");
