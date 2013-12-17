@@ -7,11 +7,13 @@ import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
-import org.keycloak.representations.idm.ApplicationInstallationRepresentation;
+import org.keycloak.representations.config.AdapterConfig;
+import org.keycloak.representations.config.BaseAdapterConfig;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.ApplicationManager;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -68,11 +70,10 @@ public class ApplicationResource extends RoleContainerResource {
     @Produces(MediaType.APPLICATION_JSON)
     public String getInstallation() throws IOException {
         ApplicationManager applicationManager = new ApplicationManager(new RealmManager(session));
-        ApplicationInstallationRepresentation rep = applicationManager.toInstallationRepresentation(realm, application, uriInfo.getBaseUri());
+        BaseAdapterConfig rep = applicationManager.toInstallationRepresentation(realm, application, uriInfo.getBaseUri());
 
         // TODO Temporary solution to pretty-print
-        ObjectMapper mapper = new ObjectMapper();
-        return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(rep);
+        return JsonSerialization.mapper.writerWithDefaultPrettyPrinter().writeValueAsString(rep);
     }
 
     @DELETE

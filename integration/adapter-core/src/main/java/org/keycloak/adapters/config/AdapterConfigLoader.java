@@ -5,6 +5,7 @@ import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.keycloak.EnvUtil;
 import org.keycloak.PemUtils;
 import org.keycloak.ResourceMetadata;
+import org.keycloak.representations.config.AdapterConfig;
 
 import java.io.File;
 import java.io.FileInputStream;
