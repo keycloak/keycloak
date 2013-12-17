@@ -1,15 +1,18 @@
-package org.jboss.resteasy.example.oauth;
+package org.keycloak.example.oauth;
 
-import org.jboss.resteasy.client.jaxrs.ResteasyClient;
-import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.keycloak.adapters.TokenGrantRequest;
 import org.keycloak.servlet.ServletOAuthClient;
+import org.keycloak.util.JsonSerialization;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.core.GenericType;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -31,6 +34,8 @@ public class ProductDatabaseClient {
         }
     }
 
+    static class TypedList extends ArrayList<String> {}
+
     public static List<String> getProducts(HttpServletRequest request) {
         // This is really the worst code ever. The ServletOAuthClient is obtained by getting a context attribute
         // that is set in the Bootstrap context listenr in this project.
@@ -38,32 +43,30 @@ public class ProductDatabaseClient {
         // and obtain the ServletOAuthClient.  I actually suggest downloading the ServletOAuthClient code
         // and take a look how it works.
         ServletOAuthClient oAuthClient = (ServletOAuthClient) request.getServletContext().getAttribute(ServletOAuthClient.class.getName());
-        String token = oAuthClient.getBearerToken(request);
-        ResteasyClient client = new ResteasyClientBuilder()
-                .trustStore(oAuthClient.getTruststore())
-                .hostnameVerification(ResteasyClientBuilder.HostnameVerificationPolicy.ANY).build();
+        String token = null;
         try {
-            // invoke without the Authorization header
-            Response response = client.target("http://localhost:8080/database/products").request().get();
-            response.close();
-            if (response.getStatus() != 401) {
-                response.close();
-                client.close();
-                throw new RuntimeException("Expecting an auth status code: " + response.getStatus());
-            }
-        } finally {
+            token = oAuthClient.getBearerToken(request);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (TokenGrantRequest.HttpFailure failure) {
+            throw new RuntimeException(failure);
         }
+
+        HttpClient client = oAuthClient.getClient();
+
+        HttpGet get = new HttpGet("http://localhost:8080/database/products");
+        get.addHeader("Authorization", "Bearer " + token);
         try {
-            Response response = client.target("http://localhost:8080/database/products").request()
-                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + token).get();
-            if (response.getStatus() != 200) {
-               response.close();
-               throw new RuntimeException("Failed to access!: " + response.getStatus());
+            HttpResponse response = client.execute(get);
+            HttpEntity entity = response.getEntity();
+            InputStream is = entity.getContent();
+            try {
+                return JsonSerialization.readValue(is, TypedList.class);
+            } finally {
+                is.close();
             }
-                return response.readEntity(new GenericType<List<String>>() {
-                });
-        } finally {
-            client.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 }

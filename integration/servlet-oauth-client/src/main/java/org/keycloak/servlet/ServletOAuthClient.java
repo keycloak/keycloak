@@ -1,23 +1,58 @@
 package org.keycloak.servlet;
 
-import org.jboss.resteasy.plugins.server.servlet.ServletUtil;
-import org.jboss.resteasy.spi.ResteasyUriInfo;
+import org.apache.http.client.HttpClient;
 import org.keycloak.AbstractOAuthClient;
+import org.keycloak.adapters.HttpClientBuilder;
+import org.keycloak.adapters.TokenGrantRequest;
+import org.keycloak.util.KeycloakUriBuilder;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.InternalServerErrorException;
-import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class ServletOAuthClient extends AbstractOAuthClient {
+    protected HttpClient client;
+
+    /**
+     * Creates a Client for obtaining access token from code
+     */
+    public void start() {
+        if (client == null) {
+            client = new HttpClientBuilder().trustStore(truststore)
+                    .hostnameVerification(HttpClientBuilder.HostnameVerificationPolicy.ANY)
+                    .connectionPoolSize(10)
+                    .build();
+        }
+    }
+
+    /**
+     * closes cllient
+     */
+    public void stop() {
+        client.getConnectionManager().shutdown();
+    }
+    public HttpClient getClient() {
+        return client;
+    }
+
+    public void setClient(HttpClient client) {
+        this.client = client;
+    }
+
+    public String resolveBearerToken(String redirectUri, String code) throws IOException, TokenGrantRequest.HttpFailure {
+        Map<String, String> credentials = new HashMap<String, String>();
+        credentials.put("password", password);
+        return TokenGrantRequest.invoke(client, code, codeUrl, redirectUri, clientId, credentials).getToken();
+    }
+
     /**
      * Start the process of obtaining an access token by redirecting the browser
      * to the authentication server
@@ -28,8 +63,11 @@ public class ServletOAuthClient extends AbstractOAuthClient {
      * @throws IOException
      */
     public void redirectRelative(String relativePath, HttpServletRequest request, HttpServletResponse response) throws IOException {
-        ResteasyUriInfo uriInfo = ServletUtil.extractUriInfo(request, null);
-        String redirect = uriInfo.getBaseUriBuilder().path(relativePath).toTemplate();
+        KeycloakUriBuilder builder = KeycloakUriBuilder.fromUri(request.getRequestURL().toString())
+                .replacePath(request.getContextPath())
+                .replaceQuery(null)
+                .path(relativePath);
+        String redirect = builder.toTemplate();
         redirect(redirect, request, response);
     }
 
@@ -46,7 +84,7 @@ public class ServletOAuthClient extends AbstractOAuthClient {
     public void redirect(String redirectUri, HttpServletRequest request, HttpServletResponse response) throws IOException {
         String state = getStateCode();
 
-        URI url = UriBuilder.fromUri(authUrl)
+        URI url = KeycloakUriBuilder.fromUri(authUrl)
                 .queryParam("client_id", clientId)
                 .queryParam("redirect_uri", redirectUri)
                 .queryParam("state", state)
@@ -92,24 +130,24 @@ public class ServletOAuthClient extends AbstractOAuthClient {
      *
      * @param request
      * @return
-     * @throws BadRequestException
-     * @throws InternalServerErrorException
+     * @throws IOException
+     * @throws org.keycloak.adapters.TokenGrantRequest.HttpFailure
      */
-    public String getBearerToken(HttpServletRequest request) throws BadRequestException, InternalServerErrorException {
+    public String getBearerToken(HttpServletRequest request) throws IOException, TokenGrantRequest.HttpFailure {
         String error = request.getParameter("error");
-        if (error != null) throw new BadRequestException(new Exception("OAuth error: " + error));
+        if (error != null) throw new IOException("OAuth error: " + error);
         String redirectUri = request.getRequestURL().append("?").append(request.getQueryString()).toString();
         String stateCookie = getCookieValue(stateCookieName, request);
-        if (stateCookie == null) throw new BadRequestException(new Exception("state cookie not set"));
+        if (stateCookie == null) throw new IOException("state cookie not set");
         // we can call get parameter as this should be a redirect
         String state = request.getParameter("state");
         String code = request.getParameter("code");
 
-        if (state == null) throw new BadRequestException(new Exception("state parameter was null"));
+        if (state == null) throw new IOException("state parameter was null");
         if (!state.equals(stateCookie)) {
-            throw new BadRequestException(new Exception("state parameter invalid"));
+            throw new IOException("state parameter invalid");
         }
-        if (code == null) throw new BadRequestException(new Exception("code parameter was null"));
+        if (code == null) throw new IOException("code parameter was null");
         return resolveBearerToken(redirectUri, code);
     }
 

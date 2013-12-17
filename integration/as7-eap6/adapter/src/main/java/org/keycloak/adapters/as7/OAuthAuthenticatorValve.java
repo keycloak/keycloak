@@ -13,14 +13,13 @@ import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.deploy.LoginConfig;
 import org.apache.catalina.realm.GenericPrincipal;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.keycloak.adapters.RealmConfiguration;
 import org.keycloak.ResourceMetadata;
 import org.keycloak.SkeletonKeyPrincipal;
 import org.keycloak.SkeletonKeySession;
 import org.keycloak.adapters.as7.config.CatalinaAdapterConfigLoader;
-import org.keycloak.adapters.as7.config.RealmConfigurationLoader;
 import org.keycloak.adapters.config.AdapterConfig;
+import org.keycloak.adapters.config.RealmConfiguration;
+import org.keycloak.adapters.config.RealmConfigurationLoader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.representations.SkeletonKeyToken;
@@ -43,9 +42,9 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class OAuthManagedResourceValve extends FormAuthenticator implements LifecycleListener {
+public class OAuthAuthenticatorValve extends FormAuthenticator implements LifecycleListener {
     protected RealmConfiguration realmConfiguration;
-    private static final Logger log = Logger.getLogger(OAuthManagedResourceValve.class);
+    private static final Logger log = Logger.getLogger(OAuthAuthenticatorValve.class);
     protected UserSessionManagement userSessionManagement = new UserSessionManagement();
     protected AdapterConfig adapterConfig;
     protected ResourceMetadata resourceMetadata;
@@ -87,7 +86,7 @@ public class OAuthManagedResourceValve extends FormAuthenticator implements Life
             }
             super.invoke(request, response);
         } finally {
-            ResteasyProviderFactory.clearContextData(); // to clear push of SkeletonKeySession
+            SkeletonKeySession.clearContext();
         }
     }
 
@@ -165,7 +164,7 @@ public class OAuthManagedResourceValve extends FormAuthenticator implements Life
                 return;
 
             }
-           String user = action.getUser();
+            String user = action.getUser();
             if (user != null) {
                 log.debug("logout of session for: " + user);
                 userSessionManagement.logout(user);
@@ -200,7 +199,7 @@ public class OAuthManagedResourceValve extends FormAuthenticator implements Life
             SkeletonKeySession skSession = (SkeletonKeySession) session.getNote(SkeletonKeySession.class.getName());
             if (skSession != null) {
                 request.setAttribute(SkeletonKeySession.class.getName(), skSession);
-                ResteasyProviderFactory.pushContext(SkeletonKeySession.class, skSession);
+                SkeletonKeySession.pushContext(skSession);
 
             }
         }

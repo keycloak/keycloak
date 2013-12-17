@@ -1,5 +1,5 @@
 <jboss-web>
     <valve>
-        <class-name>org.keycloak.adapters.as7.OAuthManagedResourceValve</class-name>
+        <class-name>org.keycloak.adapters.as7.OAuthAuthenticatorValve</class-name>
     </valve>
 </jboss-web>

@@ -2,19 +2,16 @@ package org.keycloak.adapters.as7;
 
 import org.jboss.logging.Logger;
 import org.keycloak.RSATokenVerifier;
-import org.keycloak.adapters.RealmConfiguration;
 import org.keycloak.VerificationException;
+import org.keycloak.adapters.TokenGrantRequest;
+import org.keycloak.adapters.config.RealmConfiguration;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.SkeletonKeyToken;
-import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.util.KeycloakUriBuilder;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.Form;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
@@ -137,7 +134,7 @@ public class ServletOAuthLogin {
                 // disabled?
                 return null;
             }
-            UriBuilder secureUrl = UriBuilder.fromUri(url).scheme("https").port(-1);
+            KeycloakUriBuilder secureUrl = KeycloakUriBuilder.fromUri(url).scheme("https").port(-1);
             if (port != 443) secureUrl.port(port);
             url = secureUrl.build().toString();
         }
@@ -159,7 +156,7 @@ public class ServletOAuthLogin {
         String state = getStateCode();
         String redirect = getRedirectUri(state);
         if (redirect == null) {
-            sendError(Response.Status.FORBIDDEN.getStatusCode());
+            sendError(HttpServletResponse.SC_FORBIDDEN);
             return;
         }
         setCookie(realmInfo.getStateCookieName(), state, null, getDefaultCookiePath(), realmInfo.isSslRequired());
@@ -216,42 +213,28 @@ public class ServletOAuthLogin {
         // abort if not HTTPS
         if (realmInfo.isSslRequired() && !isRequestSecure()) {
             log.error("SSL is required");
-            sendError(Response.Status.FORBIDDEN.getStatusCode());
+            sendError(HttpServletResponse.SC_FORBIDDEN);
             return false;
         }
 
         if (!checkStateCookie()) return false;
 
-        String client_id = realmInfo.getMetadata().getResourceName();
-        String password = realmInfo.getResourceCredentials().asMap().getFirst("password");
-        //String authHeader = BasicAuthHelper.createHeader(client_id, password);
         String redirectUri = stripOauthParametersFromRedirect();
-        Form form = new Form();
-        form.param("grant_type", "authorization_code")
-                .param("code", code)
-                .param("client_id", client_id)
-                .param(CredentialRepresentation.PASSWORD, password)
-                .param("redirect_uri", redirectUri);
-
-        Response res = realmInfo.getCodeUrl().request()
-                //.header(HttpHeaders.AUTHORIZATION, authHeader)
-                .post(Entity.form(form));
-        AccessTokenResponse tokenResponse;
+        AccessTokenResponse tokenResponse = null;
         try {
-            if (res.getStatus() != 200) {
-                log.error("failed to turn code into token");
-                log.error("status from server: " + res.getStatus());
-                if (res.getStatus() == 400 && res.getMediaType() != null) {
-                    log.error("   " + res.readEntity(String.class));
-                }
-                sendError(Response.Status.FORBIDDEN.getStatusCode());
-                return false;
+            tokenResponse = TokenGrantRequest.invoke(realmInfo, code, redirectUri);
+        } catch (TokenGrantRequest.HttpFailure failure) {
+            log.error("failed to turn code into token");
+            log.error("status from server: " + failure.getStatus());
+            if (failure.getStatus() == 400 && failure.getError() != null) {
+                log.error("   " + failure.getError());
             }
-            log.debug("media type: " + res.getMediaType());
-            log.debug("Content-Type header: " + res.getHeaderString("Content-Type"));
-            tokenResponse = res.readEntity(AccessTokenResponse.class);
-        } finally {
-            res.close();
+            sendError(HttpServletResponse.SC_FORBIDDEN);
+            return false;
+
+        } catch (IOException e) {
+            log.error("failed to turn code into token");
+            sendError(HttpServletResponse.SC_FORBIDDEN);
         }
 
         tokenString = tokenResponse.getToken();
@@ -260,7 +243,7 @@ public class ServletOAuthLogin {
             log.debug("Token Verification succeeded!");
         } catch (VerificationException e) {
             log.error("failed verification of token");
-            sendError(Response.Status.FORBIDDEN.getStatusCode());
+            sendError(HttpServletResponse.SC_FORBIDDEN);
             return false;
         }
         // redirect to URL without oauth query parameters
@@ -273,7 +256,7 @@ public class ServletOAuthLogin {
      */
     protected String stripOauthParametersFromRedirect() {
         StringBuffer buf = request.getRequestURL().append("?").append(request.getQueryString());
-        UriBuilder builder = UriBuilder.fromUri(buf.toString())
+        KeycloakUriBuilder builder = KeycloakUriBuilder.fromUri(buf.toString())
                 .replaceQueryParam("code", null)
                 .replaceQueryParam("state", null);
         return builder.build().toString();

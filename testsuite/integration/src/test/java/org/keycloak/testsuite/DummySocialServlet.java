@@ -9,6 +9,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.List;
 
@@ -34,7 +35,13 @@ public class DummySocialServlet extends HttpServlet {
         String state = null;
         String redirectUri = null;
 
-        List<NameValuePair> query = URLEncodedUtils.parse(req.getQueryString(), Charset.forName("UTF-8"));
+        List<NameValuePair> query = null;
+        try {
+            URI uri = URI.create(req.getRequestURL().append('?').append(req.getQueryString()).toString());
+            query = URLEncodedUtils.parse(uri, "UTF-8");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
         for (NameValuePair p : query) {
             if ("state".equals(p.getName())) {
                 state = p.getValue();

@@ -7,7 +7,7 @@
 	<module-name>oauth-client</module-name>
 
     <listener>
-        <listener-class>org.jboss.resteasy.example.oauth.Bootstrap</listener-class>
+        <listener-class>org.keycloak.example.oauth.Bootstrap</listener-class>
     </listener>
     <!--
     <security-constraint>

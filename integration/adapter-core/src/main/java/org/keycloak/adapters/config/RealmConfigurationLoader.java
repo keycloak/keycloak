@@ -1,22 +1,17 @@
-package org.keycloak.adapters.undertow;
+package org.keycloak.adapters.config;
 
-import org.jboss.resteasy.client.jaxrs.ResteasyClient;
-import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
-import org.jboss.resteasy.plugins.providers.RegisterBuiltin;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.keycloak.adapters.RealmConfiguration;
-import org.keycloak.adapters.config.AdapterConfigLoader;
+import org.apache.http.client.HttpClient;
+import org.keycloak.adapters.HttpClientBuilder;
+import org.keycloak.util.KeycloakUriBuilder;
 
-import javax.ws.rs.core.UriBuilder;
 import java.io.InputStream;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class RealmConfigurationLoader extends AdapterConfigLoader {
-    protected ResteasyClient client;
+    protected HttpClient client;
     protected RealmConfiguration realmConfiguration;
 
     public RealmConfigurationLoader() {
@@ -45,36 +40,23 @@ public class RealmConfigurationLoader extends AdapterConfigLoader {
         }
         realmConfiguration.setMetadata(resourceMetadata);
         realmConfiguration.setSslRequired(!adapterConfig.isSslNotRequired());
+        realmConfiguration.setResourceCredentials(adapterConfig.getCredentials());
 
-        for (Map.Entry<String, String> entry : getAdapterConfig().getCredentials().entrySet()) {
-            realmConfiguration.getResourceCredentials().param(entry.getKey(), entry.getValue());
-        }
-
-        ResteasyClient client = getClient();
+        HttpClient client = getClient();
 
         realmConfiguration.setClient(client);
-        realmConfiguration.setAuthUrl(UriBuilder.fromUri(authUrl).queryParam("client_id", resourceMetadata.getResourceName()));
-        realmConfiguration.setCodeUrl(client.target(tokenUrl));
+        realmConfiguration.setAuthUrl(KeycloakUriBuilder.fromUri(authUrl).queryParam("client_id", resourceMetadata.getResourceName()));
+        realmConfiguration.setCodeUrl(tokenUrl);
     }
 
     protected void initClient() {
         int size = 10;
         if (adapterConfig.getConnectionPoolSize() > 0)
             size = adapterConfig.getConnectionPoolSize();
-        ResteasyClientBuilder.HostnameVerificationPolicy policy = ResteasyClientBuilder.HostnameVerificationPolicy.WILDCARD;
+        HttpClientBuilder.HostnameVerificationPolicy policy = HttpClientBuilder.HostnameVerificationPolicy.WILDCARD;
         if (adapterConfig.isAllowAnyHostname())
-            policy = ResteasyClientBuilder.HostnameVerificationPolicy.ANY;
-        ResteasyProviderFactory providerFactory = new ResteasyProviderFactory();
-        ClassLoader old = Thread.currentThread().getContextClassLoader();
-        Thread.currentThread().setContextClassLoader(RealmConfigurationLoader.class.getClassLoader());
-        try {
-            ResteasyProviderFactory.getInstance(); // initialize builtins
-            RegisterBuiltin.register(providerFactory);
-        } finally {
-            Thread.currentThread().setContextClassLoader(old);
-        }
-        ResteasyClientBuilder builder = new ResteasyClientBuilder()
-                .providerFactory(providerFactory)
+            policy = HttpClientBuilder.HostnameVerificationPolicy.ANY;
+        HttpClientBuilder builder = new HttpClientBuilder()
                 .connectionPoolSize(size)
                 .hostnameVerification(policy)
                 .keyStore(clientCertKeystore, adapterConfig.getClientKeyPassword());
@@ -86,7 +68,7 @@ public class RealmConfigurationLoader extends AdapterConfigLoader {
         client = builder.build();
     }
 
-    public ResteasyClient getClient() {
+    public HttpClient getClient() {
         return client;
     }
 

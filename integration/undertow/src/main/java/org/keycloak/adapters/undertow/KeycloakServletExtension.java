@@ -8,6 +8,7 @@ import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.ServletSessionConfig;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.config.AdapterConfig;
+import org.keycloak.adapters.config.RealmConfigurationLoader;
 
 import javax.servlet.ServletContext;
 import java.io.InputStream;
