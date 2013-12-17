@@ -10,16 +10,37 @@
                         <legend uncollapsed><span class="text">Import Realm</span></legend>
                         <div class="form-group">
                             <label for="name">Choose JSON File: </label>
-
                             <div class="controls">
                                 <input type="file" ng-file-select="onFileSelect($files)" >
                             </div>
                         </div>
-                        <div class="form-actions">
-                            <button type="submit" data-ng-click="uploadFile()" class="primary" data-ng-show="files.length > 0">Upload
-                            </button>
+                        <div class="form-actions inside">
+                            <button type="submit" data-ng-click="uploadFile()" class="primary" data-ng-show="files.length > 0">Upload</button>
                         </div>
-                     </fieldset>
+                        
+                        
+                        <!-- THIS APPEARS INITIALLY
+                        
+<div class="form-group clearfix">
+                            <label for="upload">Upload JSON File</label>
+                            <div class="controls button-input-file">
+                                <a class="button" href="#"><span class="icon-upload">Icon: Upload</span>Choose a JSON File...</a>
+                                <input type="file" ng-file-select="onFileSelect($files)" class="transparent" id="upload">
+                            </div>
+                        </div>
+-->
+                        <!-- THE DIV ABOVE IS REPLACED BY THIS AFTER CHOOSING A FILE
+                        
+<div class="form-group clearfix">
+                            <label for="upload">Upload JSON File </label>
+                            <span class="uploaded-file">a-new-realm-uploaded.json</span>
+                            <div class="link-input-file">
+                                <button class="link">Change</button>
+                                <input type="file" ng-file-select="onFileSelect($files)" class="transparent" id="upload">
+                            </div>
+                        </div>
+-->
+                    </fieldset>
                 </form>
                 <form name="realmForm" novalidate>
                     <fieldset>
