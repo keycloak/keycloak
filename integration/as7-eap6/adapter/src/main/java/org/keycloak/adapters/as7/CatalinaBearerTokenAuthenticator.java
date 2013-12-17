@@ -2,7 +2,6 @@ package org.keycloak.adapters.as7;
 
 import org.apache.catalina.connector.Request;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.ResourceMetadata;
 import org.keycloak.SkeletonKeyPrincipal;
@@ -109,7 +108,7 @@ public class CatalinaBearerTokenAuthenticator {
         request.setAuthType("OAUTH_BEARER");
         SkeletonKeySession skSession = new SkeletonKeySession(tokenString, token, resourceMetadata);
         request.setAttribute(SkeletonKeySession.class.getName(), skSession);
-        ResteasyProviderFactory.pushContext(SkeletonKeySession.class, skSession);
+        SkeletonKeySession.pushContext(skSession);
 
         return true;
     }

@@ -2,7 +2,7 @@
  pageEncoding="ISO-8859-1"%>
 <html>
 <head>
-    <title>Customer Admin Iterface</title>
+    <title>Customer Admin Interface</title>
 </head>
 <body bgcolor="#E3F6CE">
 <h1>Customer Admin Interface</h1>

@@ -1,13 +1,13 @@
 package org.keycloak.adapters.as7.config;
 
 import org.apache.catalina.Context;
+import org.keycloak.adapters.config.RealmConfigurationLoader;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 
-public class CatalinaAdapterConfigLoader extends RealmConfigurationLoader
-{
+public class CatalinaAdapterConfigLoader extends RealmConfigurationLoader {
 
     public CatalinaAdapterConfigLoader(Context context) {
         InputStream is = null;

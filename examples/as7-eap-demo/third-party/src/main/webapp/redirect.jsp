@@ -1,3 +1,3 @@
-<%
-   org.jboss.resteasy.example.oauth.ProductDatabaseClient.redirect(request, response);
+<%@ page import="org.keycloak.example.oauth.ProductDatabaseClient" %><%
+   ProductDatabaseClient.redirect(request, response);
 %>

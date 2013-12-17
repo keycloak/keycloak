@@ -43,6 +43,7 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.core.UriBuilder;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
@@ -127,7 +128,12 @@ public class OAuthClient {
             parameters.add(new BasicNameValuePair("password", password));
         }
 
-        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, Charset.forName("UTF-8"));
+        UrlEncodedFormEntity formEntity = null;
+        try {
+            formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
         post.setEntity(formEntity);
 
         try {
