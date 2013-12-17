@@ -99,7 +99,7 @@ module.controller('RealmCreateCtrl', function($scope, Current, Realm, $upload, $
                     $location.url("/realms");
                 })
             .error(function() {
-                    Notifications.error("Error uploading.");
+                    Notifications.error("The realm can not be uploaded. Please verify the file.");
 
                 });
             //.then(success, error, progress);

@@ -19,6 +19,7 @@ textarea {
   padding: 0 0.545454545454545em;
   height: 2.36363636363636em;
   /* 26px */
+
   border: 1px #b6b6b6 solid;
   border-radius: 2px;
   box-shadow: inset 0px 2px 2px rgba(0, 0, 0, 0.1);
@@ -853,6 +854,10 @@ input[type="email"].tiny {
   margin-top: 3em;
   margin-bottom: 5em;
 }
+.form-actions.inside {
+  margin-top: 0;
+  margin-bottom: 1em;
+}
 .form-actions .primary,
 .form-actions .destructive {
   float: right;
@@ -927,4 +932,52 @@ input[type="email"].tiny {
 }
 .breadcrumb > li + li:before {
   content: "» ";
+}
+/* Input file button  */
+.button-input-file {
+  float: left;
+  position: relative;
+  overflow: hidden;
+}
+.button-input-file .transparent {
+  position: absolute;
+  width: 30em;
+  height: 30em;
+  bottom: 0;
+  right: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.button-input-file:hover .button {
+  background-image: none;
+}
+.uploaded-file {
+  font-weight: bold;
+  margin-right: 0.90909090909091em;
+  padding-top: 0.454545em;
+  float: left;
+}
+.link-input-file {
+  display: inline-block;
+  position: relative;
+  overflow: hidden;
+  margin-top: 0.1em;
+}
+.link-input-file:hover .link {
+  text-decoration: underline;
+}
+.link-input-file .link {
+  font-size: 1.1em;
+}
+.link-input-file .transparent {
+  position: absolute;
+  width: 30em;
+  height: 30em;
+  bottom: 0;
+  right: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.link-input-file .link:hover {
+  cursor: pointer;
 }

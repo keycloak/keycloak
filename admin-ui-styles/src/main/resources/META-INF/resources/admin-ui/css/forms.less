@@ -987,6 +987,11 @@ input[type="email"] {
     margin-top: 3em;
     margin-bottom: 5em;
     
+    &.inside {
+        margin-top: 0;
+        margin-bottom: 1em;
+    }
+    
     .primary,
     .destructive {
         float: right;
@@ -1088,5 +1093,63 @@ input[type="email"] {
     
     > li + li:before {
         content: "» ";
+    }
+}
+
+/* Input file button  */
+
+.button-input-file {
+    float: left;
+    position: relative;
+    overflow: hidden;  
+    
+    .transparent {
+        position: absolute;
+        width: 30em;
+        height: 30em;
+        bottom: 0;
+        right: 0;
+        opacity: 0;
+        cursor: pointer;
+    }
+    
+    &:hover .button {
+        background-image: none;
+    }
+}
+
+.uploaded-file {
+    font-weight: bold;
+    margin-right: 0.90909090909091em;
+    padding-top: 0.454545em;
+    float: left;
+}
+
+.link-input-file {
+    display: inline-block;
+    position: relative;
+    overflow: hidden;
+    margin-top: 0.1em;
+    
+    &:hover .link {
+        text-decoration: underline;
+    }
+    
+    .link {
+        font-size: 1.1em;
+    }
+    
+    .transparent {
+        position: absolute;
+        width: 30em;
+        height: 30em;
+        bottom: 0;
+        right: 0;
+        opacity: 0;
+        cursor: pointer;
+    }
+    
+    .link:hover {
+        cursor: pointer;
     }
 }
