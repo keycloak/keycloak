@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * Any class that extends JsonWebToken will use NON_DEFAULT inclusion
+ * Utility class to handle simple JSON serializable for Keycloak.
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $

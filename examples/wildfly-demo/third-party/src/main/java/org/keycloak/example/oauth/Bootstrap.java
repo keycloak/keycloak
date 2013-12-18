@@ -1,6 +1,5 @@
-package org.jboss.resteasy.example.oauth;
+package org.keycloak.example.oauth;
 
-import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.keycloak.servlet.ServletOAuthClient;
 
 import javax.servlet.ServletContextEvent;
@@ -55,7 +54,6 @@ public class Bootstrap implements ServletContextListener {
         client.setPassword("password");
         client.setAuthUrl("http://localhost:8080/auth-server/rest/realms/demo/tokens/login");
         client.setCodeUrl("http://localhost:8080/auth-server/rest/realms/demo/tokens/access/codes");
-        client.setClient(new ResteasyClientBuilder().build());
         client.start();
         sce.getServletContext().setAttribute(ServletOAuthClient.class.getName(), client);
 

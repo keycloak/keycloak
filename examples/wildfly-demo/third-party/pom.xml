@@ -11,7 +11,7 @@
     <groupId>org.keycloak.example.wildfly.demo</groupId>
     <artifactId>oauth-client-example</artifactId>
     <packaging>war</packaging>
-    <name>Simple OAuth Wildfly Client</name>
+    <name>Simple OAuth Client</name>
     <description/>
 
     <dependencies>
@@ -22,18 +22,8 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.jboss.resteasy</groupId>
-            <artifactId>resteasy-client</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-core</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-adapter-core</artifactId>
+            <artifactId>keycloak-servlet-oauth-client</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>
@@ -44,7 +34,7 @@
             <plugin>
                 <groupId>org.jboss.as.plugins</groupId>
                 <artifactId>jboss-as-maven-plugin</artifactId>
-                <version>7.5.Final</version>
+                <version>7.4.Final</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

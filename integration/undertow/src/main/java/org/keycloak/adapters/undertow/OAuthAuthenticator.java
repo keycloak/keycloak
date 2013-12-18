@@ -32,7 +32,6 @@ public class OAuthAuthenticator {
     protected String tokenString;
     protected SkeletonKeyToken token;
     protected HttpServerExchange exchange;
-    protected String redirectUri;
     protected KeycloakChallenge challenge;
 
     public OAuthAuthenticator(HttpServerExchange exchange, RealmConfiguration realmInfo,  int sslRedirectPort) {
@@ -51,10 +50,6 @@ public class OAuthAuthenticator {
 
     public SkeletonKeyToken getToken() {
         return token;
-    }
-
-    public String getRedirectUri() {
-        return redirectUri;
     }
 
     protected String getRequestUrl() {
@@ -236,6 +231,7 @@ public class OAuthAuthenticator {
         if (challenge != null) return challenge;
 
         AccessTokenResponse tokenResponse = null;
+        String redirectUri = stripOauthParametersFromRedirect();
         try {
             tokenResponse = TokenGrantRequest.invoke(realmInfo, code, redirectUri);
         } catch (TokenGrantRequest.HttpFailure failure) {

@@ -16,7 +16,7 @@
 User <b><%=request.getUserPrincipal().getName()%></b> made this request.
 <h2>Customer Listing</h2>
 <%
-java.util.List<String> list = CustomerDatabaseClient.getCustomers();
+java.util.List<String> list = CustomerDatabaseClient.getCustomers(request);
 for (String cust : list)
 {
    out.print("<p>");

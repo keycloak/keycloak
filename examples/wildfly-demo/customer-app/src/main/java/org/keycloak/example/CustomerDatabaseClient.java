@@ -24,6 +24,7 @@ public class CustomerDatabaseClient {
 
     public static List<String> getCustomers(HttpServletRequest req) {
         SkeletonKeySession session = (SkeletonKeySession)req.getAttribute(SkeletonKeySession.class.getName());
+
         HttpClient client = new HttpClientBuilder()
                 .trustStore(session.getMetadata().getTruststore())
                 .hostnameVerification(HttpClientBuilder.HostnameVerificationPolicy.ANY).build();
