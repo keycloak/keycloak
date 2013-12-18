@@ -34,6 +34,4 @@ public class SkeletonKeySession implements Serializable {
         return metadata;
     }
 
-    protected static ThreadLocal<SkeletonKeySession> local = new ThreadLocal<SkeletonKeySession>();
-
 }
