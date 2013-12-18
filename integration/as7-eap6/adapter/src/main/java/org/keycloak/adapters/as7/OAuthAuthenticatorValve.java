@@ -86,7 +86,6 @@ public class OAuthAuthenticatorValve extends FormAuthenticator implements Lifecy
             }
             super.invoke(request, response);
         } finally {
-            SkeletonKeySession.clearContext();
         }
     }
 
@@ -199,8 +198,6 @@ public class OAuthAuthenticatorValve extends FormAuthenticator implements Lifecy
             SkeletonKeySession skSession = (SkeletonKeySession) session.getNote(SkeletonKeySession.class.getName());
             if (skSession != null) {
                 request.setAttribute(SkeletonKeySession.class.getName(), skSession);
-                SkeletonKeySession.pushContext(skSession);
-
             }
         }
         return true;
