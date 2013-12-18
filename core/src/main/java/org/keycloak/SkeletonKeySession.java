@@ -34,18 +34,4 @@ public class SkeletonKeySession implements Serializable {
         return metadata;
     }
 
-    protected static ThreadLocal<SkeletonKeySession> local = new ThreadLocal<SkeletonKeySession>();
-
-    public static void pushContext(SkeletonKeySession session) {
-        local.set(session);
-    }
-
-    public static void clearContext() {
-        local.set(null);
-    }
-
-    public static SkeletonKeySession getContext() {
-        return local.get();
-    }
-
 }

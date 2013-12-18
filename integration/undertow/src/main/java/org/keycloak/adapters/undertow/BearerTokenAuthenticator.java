@@ -104,7 +104,7 @@ public class BearerTokenAuthenticator {
             X509Certificate[] chain = new X509Certificate[0];
             try {
                 chain = exchange.getConnection().getSslSessionInfo().getPeerCertificateChain();
-            } catch (SSLPeerUnverifiedException ignore) {
+            } catch (Exception ignore) {
 
             }
             if (chain == null || chain.length == 0) {

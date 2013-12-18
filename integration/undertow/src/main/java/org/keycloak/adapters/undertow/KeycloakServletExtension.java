@@ -1,10 +1,15 @@
 package org.keycloak.adapters.undertow;
 
+import io.undertow.security.api.AuthenticationMechanism;
+import io.undertow.security.api.AuthenticationMechanismFactory;
 import io.undertow.security.idm.Account;
 import io.undertow.security.idm.Credential;
 import io.undertow.security.idm.IdentityManager;
+import io.undertow.server.handlers.form.FormParserFactory;
 import io.undertow.servlet.ServletExtension;
+import io.undertow.servlet.api.AuthMethodConfig;
 import io.undertow.servlet.api.DeploymentInfo;
+import io.undertow.servlet.api.LoginConfig;
 import io.undertow.servlet.api.ServletSessionConfig;
 import org.jboss.logging.Logger;
 import org.keycloak.representations.config.AdapterConfig;
@@ -12,6 +17,7 @@ import org.keycloak.adapters.config.RealmConfigurationLoader;
 
 import javax.servlet.ServletContext;
 import java.io.InputStream;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -20,21 +26,34 @@ import java.io.InputStream;
 public class KeycloakServletExtension implements ServletExtension {
     protected Logger log = Logger.getLogger(KeycloakServletExtension.class);
 
+    // todo when this DeploymentInfo method of the same name is fixed.
+    public boolean isAuthenticationMechanismPresent(DeploymentInfo deploymentInfo, final String mechanismName) {
+        LoginConfig loginConfig = deploymentInfo.getLoginConfig();
+        if(loginConfig != null) {
+            for(AuthMethodConfig method : loginConfig.getAuthMethods()) {
+                if(method.getName().equalsIgnoreCase(mechanismName)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+
     @Override
     public void handleDeployment(DeploymentInfo deploymentInfo, ServletContext servletContext) {
-        if (deploymentInfo.getLoginConfig() == null || !deploymentInfo.getLoginConfig().getAuthMethod().equalsIgnoreCase("keycloak")) {
+        if (!isAuthenticationMechanismPresent(deploymentInfo, "KEYCLOAK")) {
             log.info("auth-method is not keycloak!");
             return;
         }
         log.info("KeycloakServletException initialization");
-        deploymentInfo.setIgnoreStandardAuthenticationMechanism(true);
         InputStream is = servletContext.getResourceAsStream("/WEB-INF/keycloak.json");
         if (is == null) throw new RuntimeException("Unable to find /WEB-INF/keycloak.json configuration file");
         RealmConfigurationLoader loader = new RealmConfigurationLoader(is);
         loader.init(true);
         AdapterConfig keycloakConfig = loader.getAdapterConfig();
         PreflightCorsHandler.Wrapper preflight = new PreflightCorsHandler.Wrapper(keycloakConfig);
-        ServletKeycloakAuthenticationMechanism auth = new ServletKeycloakAuthenticationMechanism(loader.getResourceMetadata(),
+        final ServletKeycloakAuthenticationMechanism auth = new ServletKeycloakAuthenticationMechanism(loader.getResourceMetadata(),
                 keycloakConfig,
                 loader.getRealmConfiguration(),
                 deploymentInfo.getConfidentialPortManager());
@@ -43,7 +62,12 @@ public class KeycloakServletExtension implements ServletExtension {
         // setup handlers
 
         deploymentInfo.addInitialHandlerChainWrapper(preflight); // cors preflight
-        deploymentInfo.addAuthenticationMechanism(auth); // authentication
+        deploymentInfo.addAuthenticationMechanism("KEYCLOAK", new AuthenticationMechanismFactory() {
+            @Override
+            public AuthenticationMechanism create(String s, FormParserFactory formParserFactory, Map<String, String> stringStringMap) {
+                return auth;
+            }
+        }); // authentication
         deploymentInfo.addInnerHandlerChainWrapper(ServletPropagateSessionHandler.WRAPPER); // propagates SkeletonKeySession
         deploymentInfo.addInnerHandlerChainWrapper(actions); // handles authenticated actions and cors.
 

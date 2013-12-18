@@ -108,7 +108,6 @@ public class CatalinaBearerTokenAuthenticator {
         request.setAuthType("OAUTH_BEARER");
         SkeletonKeySession skSession = new SkeletonKeySession(tokenString, token, resourceMetadata);
         request.setAttribute(SkeletonKeySession.class.getName(), skSession);
-        SkeletonKeySession.pushContext(skSession);
 
         return true;
     }

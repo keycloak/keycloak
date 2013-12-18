@@ -115,7 +115,7 @@ public class KeycloakAuthenticationMechanism implements AuthenticationMechanism 
                 return accountRoles;
             }
         };
-        securityContext.authenticationComplete(account, "FORM");
+        securityContext.authenticationComplete(account, "KEYCLOAK", true);
     }
 
     protected void propagateBearer(HttpServerExchange exchange, SkeletonKeySession session) {

@@ -63,7 +63,6 @@ public class BearerTokenAuthenticatorValve extends AuthenticatorBase implements 
             }
             super.invoke(request, response);
         } finally {
-            SkeletonKeySession.clearContext();
         }
     }
 
