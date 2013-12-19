@@ -65,7 +65,8 @@
                     </tbody>
                 </table>
                 <div class="feedback warning inline" data-ng-show="searchLoaded && users.length == 0">
-                    <p><strong>Your search returned no results.</strong><br>Try modifying the query and try again.</p>
+                    <p data-ng-show="lastSearch != null"><strong>Your search returned no results.</strong><br>Try modifying the query and try again.</p>
+                    <p data-ng-show="lastSearch == null"><strong>No users present.</strong><br>Create some using the "Add User" button.</p>
                 </div>
                 <div class="feedback info inline" data-ng-show="!users">
                     <br/>

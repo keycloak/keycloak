@@ -129,6 +129,7 @@ module.controller('UserListCtrl', function($scope, realm, User) {
 
         $scope.users = User.query(params, function() {
             $scope.searchLoaded = true;
+            $scope.lastSearch = params.search;
         });
     };
 });
