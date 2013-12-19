@@ -3,7 +3,7 @@ package org.keycloak.adapters.as7;
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
 import org.jboss.logging.Logger;
-import org.keycloak.representations.config.AdapterConfig;
+import org.keycloak.representations.adapters.config.AdapterConfig;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

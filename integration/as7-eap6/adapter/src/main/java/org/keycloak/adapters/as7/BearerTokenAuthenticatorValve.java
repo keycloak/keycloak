@@ -10,10 +10,9 @@ import org.apache.catalina.connector.Response;
 import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.deploy.LoginConfig;
 import org.jboss.logging.Logger;
-import org.keycloak.ResourceMetadata;
-import org.keycloak.SkeletonKeySession;
+import org.keycloak.adapters.ResourceMetadata;
 import org.keycloak.adapters.as7.config.CatalinaAdapterConfigLoader;
-import org.keycloak.representations.config.AdapterConfig;
+import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.adapters.config.AdapterConfigLoader;
 
 import javax.security.auth.login.LoginException;

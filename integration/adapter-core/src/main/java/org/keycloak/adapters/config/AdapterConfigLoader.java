@@ -2,10 +2,10 @@ package org.keycloak.adapters.config;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
-import org.keycloak.EnvUtil;
-import org.keycloak.PemUtils;
-import org.keycloak.ResourceMetadata;
-import org.keycloak.representations.config.AdapterConfig;
+import org.keycloak.util.EnvUtil;
+import org.keycloak.util.PemUtils;
+import org.keycloak.adapters.ResourceMetadata;
+import org.keycloak.representations.adapters.config.AdapterConfig;
 
 import java.io.File;
 import java.io.FileInputStream;

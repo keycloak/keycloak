@@ -1,14 +1,12 @@
 package org.keycloak.services.resources.admin;
 
-import org.codehaus.jackson.map.ObjectMapper;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.logging.Logger;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
-import org.keycloak.representations.config.AdapterConfig;
-import org.keycloak.representations.config.BaseAdapterConfig;
+import org.keycloak.representations.adapters.config.BaseAdapterConfig;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.ApplicationManager;

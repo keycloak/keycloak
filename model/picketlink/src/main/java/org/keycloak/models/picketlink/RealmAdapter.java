@@ -1,7 +1,7 @@
 package org.keycloak.models.picketlink;
 
 import org.bouncycastle.openssl.PEMWriter;
-import org.keycloak.PemUtils;
+import org.keycloak.util.PemUtils;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.IdGenerator;
 import org.keycloak.models.KeycloakSession;
@@ -493,7 +493,7 @@ public class RealmAdapter implements RealmModel {
         } else if (cred.getType().equals(UserCredentialModel.CLIENT_CERT)) {
             X509Certificate cert = null;
             try {
-                cert = org.keycloak.PemUtils.decodeCertificate(cred.getValue());
+                cert = PemUtils.decodeCertificate(cred.getValue());
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

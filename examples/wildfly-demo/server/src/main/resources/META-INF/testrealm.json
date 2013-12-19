@@ -63,7 +63,7 @@
         {
             "name": "customer-portal",
             "enabled": true,
-            "adminUrl": "http://localhost:8080/customer-portal/j_admin_request",
+            "adminUrl": "http://localhost:8080/customer-portal",
             "credentials": [
                 {
                     "type": "password",
@@ -74,7 +74,7 @@
         {
             "name": "product-portal",
             "enabled": true,
-            "adminUrl": "http://localhost:8080/product-portal/j_admin_request",
+            "adminUrl": "http://localhost:8080/product-portal",
             "credentials": [
                 {
                     "type": "password",

@@ -3,7 +3,7 @@ package org.keycloak.adapters.as7;
 import org.apache.catalina.connector.Request;
 import org.jboss.logging.Logger;
 import org.keycloak.RSATokenVerifier;
-import org.keycloak.ResourceMetadata;
+import org.keycloak.adapters.ResourceMetadata;
 import org.keycloak.SkeletonKeyPrincipal;
 import org.keycloak.SkeletonKeySession;
 import org.keycloak.VerificationException;

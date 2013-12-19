@@ -1,7 +1,7 @@
 package org.keycloak.models.jpa;
 
 import org.bouncycastle.openssl.PEMWriter;
-import org.keycloak.PemUtils;
+import org.keycloak.util.PemUtils;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;

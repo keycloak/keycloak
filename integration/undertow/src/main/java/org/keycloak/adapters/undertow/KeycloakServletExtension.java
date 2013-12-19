@@ -12,7 +12,8 @@ import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.LoginConfig;
 import io.undertow.servlet.api.ServletSessionConfig;
 import org.jboss.logging.Logger;
-import org.keycloak.representations.config.AdapterConfig;
+import org.keycloak.adapters.config.RealmConfiguration;
+import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.adapters.config.RealmConfigurationLoader;
 
 import javax.servlet.ServletContext;
@@ -52,20 +53,30 @@ public class KeycloakServletExtension implements ServletExtension {
         RealmConfigurationLoader loader = new RealmConfigurationLoader(is);
         loader.init(true);
         AdapterConfig keycloakConfig = loader.getAdapterConfig();
+        RealmConfiguration realmConfiguration = loader.getRealmConfiguration();
         PreflightCorsHandler.Wrapper preflight = new PreflightCorsHandler.Wrapper(keycloakConfig);
-        final ServletKeycloakAuthenticationMechanism auth = new ServletKeycloakAuthenticationMechanism(loader.getResourceMetadata(),
+        UserSessionManagement userSessionManagement = new UserSessionManagement(realmConfiguration);
+        ServletKeycloakAuthenticationMechanism auth = null;
+        if (keycloakConfig.isBearerOnly()) {
+            auth = new ServletKeycloakAuthenticationMechanism(keycloakConfig, loader.getResourceMetadata(), deploymentInfo.getConfidentialPortManager());
+        } else {
+            auth = new ServletKeycloakAuthenticationMechanism(
+                userSessionManagement,
                 keycloakConfig,
-                loader.getRealmConfiguration(),
+                realmConfiguration,
                 deploymentInfo.getConfidentialPortManager());
+        }
         ServletAuthenticatedActionsHandler.Wrapper actions = new ServletAuthenticatedActionsHandler.Wrapper(keycloakConfig);
 
         // setup handlers
 
         deploymentInfo.addInitialHandlerChainWrapper(preflight); // cors preflight
+        deploymentInfo.addOuterHandlerChainWrapper(new ServletAdminActionsHandler.Wrapper(realmConfiguration, userSessionManagement));
+        final ServletKeycloakAuthenticationMechanism theAuth = auth;
         deploymentInfo.addAuthenticationMechanism("KEYCLOAK", new AuthenticationMechanismFactory() {
             @Override
             public AuthenticationMechanism create(String s, FormParserFactory formParserFactory, Map<String, String> stringStringMap) {
-                return auth;
+                return theAuth;
             }
         }); // authentication
         deploymentInfo.addInnerHandlerChainWrapper(ServletPropagateSessionHandler.WRAPPER); // propagates SkeletonKeySession

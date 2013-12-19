@@ -13,21 +13,24 @@ import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.deploy.LoginConfig;
 import org.apache.catalina.realm.GenericPrincipal;
 import org.jboss.logging.Logger;
-import org.keycloak.ResourceMetadata;
+import org.keycloak.adapters.AdapterAdminResourceConstants;
+import org.keycloak.adapters.ResourceMetadata;
 import org.keycloak.SkeletonKeyPrincipal;
 import org.keycloak.SkeletonKeySession;
 import org.keycloak.adapters.as7.config.CatalinaAdapterConfigLoader;
-import org.keycloak.representations.config.AdapterConfig;
+import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.adapters.config.RealmConfiguration;
 import org.keycloak.adapters.config.RealmConfigurationLoader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.representations.SkeletonKeyToken;
-import org.keycloak.representations.idm.admin.LogoutAction;
+import org.keycloak.representations.adapters.action.LogoutAction;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.StreamUtil;
 
 import javax.security.auth.login.LoginException;
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.HashSet;
@@ -80,8 +83,12 @@ public class OAuthAuthenticatorValve extends FormAuthenticator implements Lifecy
                 return;
             }
             String requestURI = request.getDecodedRequestURI();
-            if (requestURI.endsWith("j_admin_request")) {
-                adminRequest(request, response);
+            if (requestURI.endsWith(AdapterAdminResourceConstants.LOGOUT)) {
+                JWSInput input = verifyAdminRequest(request, response);
+                if (input == null) {
+                    return; // we failed to verify the request
+                }
+                remoteLogout(input, response);
                 return;
             }
             super.invoke(request, response);
@@ -115,12 +122,12 @@ public class OAuthAuthenticatorValve extends FormAuthenticator implements Lifecy
         return false;
     }
 
-    protected void adminRequest(Request request, HttpServletResponse response) throws IOException {
-        String token = request.getParameter("token");
+    protected JWSInput verifyAdminRequest(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String token = StreamUtil.readString(request.getInputStream());
         if (token == null) {
             log.warn("admin request failed, no token");
             response.sendError(403, "no token");
-            return;
+            return null;
         }
 
         JWSInput input = new JWSInput(token);
@@ -132,15 +139,9 @@ public class OAuthAuthenticatorValve extends FormAuthenticator implements Lifecy
         if (!verified) {
             log.warn("admin request failed, unable to verify token");
             response.sendError(403, "verification failed");
-            return;
+            return null;
         }
-        String action = request.getParameter("action");
-        if (LogoutAction.LOGOUT_ACTION.equals(action)) {
-            remoteLogout(input, response);
-        } else {
-            log.warn("admin request failed, unknown action");
-            response.sendError(403, "Unknown action");
-        }
+        return input;
     }
 
     protected void remoteLogout(JWSInput token, HttpServletResponse response) throws IOException {
@@ -150,11 +151,6 @@ public class OAuthAuthenticatorValve extends FormAuthenticator implements Lifecy
             if (action.isExpired()) {
                 log.warn("admin request failed, expired token");
                 response.sendError(400, "Expired token");
-                return;
-            }
-            if (!LogoutAction.LOGOUT_ACTION.equals(action.getAction())) {
-                log.warn("Action doesn't match");
-                response.sendError(400, "Action does not match");
                 return;
             }
             if (!resourceMetadata.getResourceName().equals(action.getResource())) {

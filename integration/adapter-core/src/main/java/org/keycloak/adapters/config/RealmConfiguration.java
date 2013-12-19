@@ -1,7 +1,7 @@
 package org.keycloak.adapters.config;
 
 import org.apache.http.client.HttpClient;
-import org.keycloak.ResourceMetadata;
+import org.keycloak.adapters.ResourceMetadata;
 import org.keycloak.util.KeycloakUriBuilder;
 
 import java.util.HashMap;
