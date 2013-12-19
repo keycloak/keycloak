@@ -1,5 +1,6 @@
 package org.keycloak;
 
+import org.keycloak.adapters.ResourceMetadata;
 import org.keycloak.representations.SkeletonKeyToken;
 
 import java.io.Serializable;

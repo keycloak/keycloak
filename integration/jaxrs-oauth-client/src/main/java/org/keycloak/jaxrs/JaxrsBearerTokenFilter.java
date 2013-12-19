@@ -3,7 +3,7 @@ package org.keycloak.jaxrs;
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.RSATokenVerifier;
-import org.keycloak.ResourceMetadata;
+import org.keycloak.adapters.ResourceMetadata;
 import org.keycloak.SkeletonKeyPrincipal;
 import org.keycloak.SkeletonKeySession;
 import org.keycloak.VerificationException;

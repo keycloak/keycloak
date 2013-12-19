@@ -4,9 +4,10 @@ import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.logging.Logger;
 import org.keycloak.TokenIdGenerator;
+import org.keycloak.adapters.AdapterAdminResourceConstants;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.representations.idm.admin.LogoutAction;
+import org.keycloak.representations.adapters.action.LogoutAction;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Form;
@@ -44,7 +45,7 @@ public class ResourceAdminManager {
             Form form = new Form();
             form.param("token", token);
             logger.debug("logout user: {0} resource: {1} url: {2}", user, resource.getName(), managementUrl);
-            Response response = client.target(managementUrl).queryParam("action", "logout").request().post(Entity.form(form));
+            Response response = client.target(managementUrl).path(AdapterAdminResourceConstants.LOGOUT).request().post(Entity.form(form));
             boolean success = response.getStatus() == 204;
             response.close();
             return success;

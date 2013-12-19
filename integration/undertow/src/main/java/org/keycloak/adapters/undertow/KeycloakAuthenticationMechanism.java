@@ -7,10 +7,10 @@ import io.undertow.server.HttpServerExchange;
 import io.undertow.util.AttachmentKey;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.config.RealmConfiguration;
-import org.keycloak.ResourceMetadata;
+import org.keycloak.adapters.ResourceMetadata;
 import org.keycloak.SkeletonKeyPrincipal;
 import org.keycloak.SkeletonKeySession;
-import org.keycloak.representations.config.AdapterConfig;
+import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.representations.SkeletonKeyToken;
 
 import java.security.Principal;

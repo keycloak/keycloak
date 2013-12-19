@@ -4,9 +4,9 @@ import io.undertow.server.HttpServerExchange;
 import io.undertow.servlet.api.ConfidentialPortManager;
 import io.undertow.servlet.handlers.ServletRequestContext;
 import org.keycloak.adapters.config.RealmConfiguration;
-import org.keycloak.ResourceMetadata;
+import org.keycloak.adapters.ResourceMetadata;
 import org.keycloak.SkeletonKeySession;
-import org.keycloak.representations.config.AdapterConfig;
+import org.keycloak.representations.adapters.config.AdapterConfig;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
