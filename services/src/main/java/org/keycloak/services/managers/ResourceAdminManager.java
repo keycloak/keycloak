@@ -42,10 +42,8 @@ public class ResourceAdminManager {
         if (managementUrl != null) {
             LogoutAction adminAction = new LogoutAction(TokenIdGenerator.generateId(), System.currentTimeMillis() / 1000 + 30, resource.getName(), user);
             String token = new TokenManager().encodeToken(realm, adminAction);
-            Form form = new Form();
-            form.param("token", token);
             logger.debug("logout user: {0} resource: {1} url: {2}", user, resource.getName(), managementUrl);
-            Response response = client.target(managementUrl).path(AdapterAdminResourceConstants.LOGOUT).request().post(Entity.form(form));
+            Response response = client.target(managementUrl).path(AdapterAdminResourceConstants.LOGOUT).request().post(Entity.text(token));
             boolean success = response.getStatus() == 204;
             response.close();
             return success;

@@ -32,16 +32,21 @@ public class KeycloakAuthenticationMechanism implements AuthenticationMechanism 
     protected RealmConfiguration realmConfig;
     protected int sslRedirectPort;
 
-    public KeycloakAuthenticationMechanism(ResourceMetadata resourceMetadata, AdapterConfig config, RealmConfiguration realmConfig, int sslRedirectPort) {
-        this.resourceMetadata = resourceMetadata;
+    public KeycloakAuthenticationMechanism(AdapterConfig config, RealmConfiguration realmConfig, int sslRedirectPort) {
+        this.resourceMetadata = realmConfig.getMetadata();
         this.adapterConfig = config;
         this.realmConfig = realmConfig;
         this.sslRedirectPort = sslRedirectPort;
     }
 
-    public KeycloakAuthenticationMechanism(ResourceMetadata resourceMetadata, AdapterConfig config, RealmConfiguration realmConfig) {
+    public KeycloakAuthenticationMechanism(AdapterConfig adapterConfig, ResourceMetadata resourceMetadata) {
         this.resourceMetadata = resourceMetadata;
-        this.adapterConfig = config;
+        this.adapterConfig = adapterConfig;
+    }
+
+    public KeycloakAuthenticationMechanism(AdapterConfig adapterConfig, RealmConfiguration realmConfig) {
+        this.resourceMetadata = realmConfig.getMetadata();
+        this.adapterConfig = adapterConfig;
         this.realmConfig = realmConfig;
     }
 
@@ -57,8 +62,8 @@ public class KeycloakAuthenticationMechanism implements AuthenticationMechanism 
             final SkeletonKeyToken token = bearer.getToken();
             String surrogate = bearer.getSurrogate();
             SkeletonKeySession session = new SkeletonKeySession(bearer.getTokenString(), token, resourceMetadata);
-            propagateBearer(exchange, session);
-            completeAuthentication(exchange, securityContext, token, surrogate);
+            SkeletonKeyPrincipal principal = completeAuthentication(securityContext, token, surrogate);
+            propagateBearer(exchange, session, principal);
             return AuthenticationMechanismOutcome.AUTHENTICATED;
         }
         else if (adapterConfig.isBearerOnly()) {
@@ -78,8 +83,8 @@ public class KeycloakAuthenticationMechanism implements AuthenticationMechanism 
 
         }
         SkeletonKeySession session = new SkeletonKeySession(oauth.getTokenString(), oauth.getToken(), resourceMetadata);
-        propagateOauth(exchange, session);
-        completeAuthentication(exchange, securityContext, oauth.getToken(), null);
+        SkeletonKeyPrincipal principal = completeAuthentication(securityContext, oauth.getToken(), null);
+        propagateOauth(exchange, session, principal);
         log.info("AUTHENTICATED");
         return AuthenticationMechanismOutcome.AUTHENTICATED;
     }
@@ -92,7 +97,7 @@ public class KeycloakAuthenticationMechanism implements AuthenticationMechanism 
         return new BearerTokenAuthenticator(resourceMetadata, adapterConfig.isUseResourceRoleMappings());
     }
 
-    protected void completeAuthentication(HttpServerExchange exchange, SecurityContext securityContext, SkeletonKeyToken token, String surrogate) {
+    protected SkeletonKeyPrincipal completeAuthentication(SecurityContext securityContext, SkeletonKeyToken token, String surrogate) {
         final SkeletonKeyPrincipal skeletonKeyPrincipal = new SkeletonKeyPrincipal(token.getPrincipal(), surrogate);
         Set<String> roles = null;
         if (adapterConfig.isUseResourceRoleMappings()) {
@@ -116,14 +121,15 @@ public class KeycloakAuthenticationMechanism implements AuthenticationMechanism 
             }
         };
         securityContext.authenticationComplete(account, "KEYCLOAK", true);
+        return skeletonKeyPrincipal;
     }
 
-    protected void propagateBearer(HttpServerExchange exchange, SkeletonKeySession session) {
+    protected void propagateBearer(HttpServerExchange exchange, SkeletonKeySession session, SkeletonKeyPrincipal principal) {
         exchange.putAttachment(SKELETON_KEY_SESSION_ATTACHMENT_KEY, session);
 
     }
 
-    protected void propagateOauth(HttpServerExchange exchange, SkeletonKeySession session) {
+    protected void propagateOauth(HttpServerExchange exchange, SkeletonKeySession session, SkeletonKeyPrincipal principal) {
         exchange.putAttachment(SKELETON_KEY_SESSION_ATTACHMENT_KEY, session);
     }
 

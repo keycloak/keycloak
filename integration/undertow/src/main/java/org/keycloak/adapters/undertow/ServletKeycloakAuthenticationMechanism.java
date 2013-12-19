@@ -3,6 +3,7 @@ package org.keycloak.adapters.undertow;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.servlet.api.ConfidentialPortManager;
 import io.undertow.servlet.handlers.ServletRequestContext;
+import org.keycloak.SkeletonKeyPrincipal;
 import org.keycloak.adapters.config.RealmConfiguration;
 import org.keycloak.adapters.ResourceMetadata;
 import org.keycloak.SkeletonKeySession;
@@ -17,11 +18,20 @@ import javax.servlet.http.HttpSession;
  */
 public class ServletKeycloakAuthenticationMechanism extends KeycloakAuthenticationMechanism {
     protected ConfidentialPortManager portManager;
+    protected UserSessionManagement userSessionManagement;
 
-    public ServletKeycloakAuthenticationMechanism(ResourceMetadata resourceMetadata, AdapterConfig config, RealmConfiguration realmConfig, ConfidentialPortManager portManager) {
-        super(resourceMetadata, config, realmConfig);
+    public ServletKeycloakAuthenticationMechanism(UserSessionManagement userSessionManagement, AdapterConfig config, RealmConfiguration realmConfig, ConfidentialPortManager portManager) {
+        super(config, realmConfig);
         this.portManager = portManager;
+        this.userSessionManagement = userSessionManagement;
     }
+
+    public ServletKeycloakAuthenticationMechanism(AdapterConfig config, ResourceMetadata metadata, ConfidentialPortManager portManager) {
+        super(config, metadata);
+        this.portManager = portManager;
+        this.userSessionManagement = userSessionManagement;
+    }
+
 
     @Override
     protected OAuthAuthenticator createOAuthAuthenticator(HttpServerExchange exchange) {
@@ -29,20 +39,21 @@ public class ServletKeycloakAuthenticationMechanism extends KeycloakAuthenticati
     }
 
     @Override
-    protected void propagateBearer(HttpServerExchange exchange, SkeletonKeySession session) {
-        super.propagateBearer(exchange, session);
+    protected void propagateBearer(HttpServerExchange exchange, SkeletonKeySession skSession, SkeletonKeyPrincipal principal) {
+        super.propagateBearer(exchange, skSession, principal);
         final ServletRequestContext servletRequestContext = exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
         HttpServletRequest req = (HttpServletRequest) servletRequestContext.getServletRequest();
-        req.setAttribute(SkeletonKeySession.class.getName(), session);
+        req.setAttribute(SkeletonKeySession.class.getName(), skSession);
     }
 
     @Override
-    protected void propagateOauth(HttpServerExchange exchange, SkeletonKeySession skSession) {
-        super.propagateOauth(exchange, skSession);
+    protected void propagateOauth(HttpServerExchange exchange, SkeletonKeySession skSession, SkeletonKeyPrincipal principal) {
+        super.propagateBearer(exchange, skSession, principal);
         final ServletRequestContext servletRequestContext = exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
         HttpServletRequest req = (HttpServletRequest) servletRequestContext.getServletRequest();
         req.setAttribute(SkeletonKeySession.class.getName(), skSession);
         HttpSession session = req.getSession(true);
         session.setAttribute(SkeletonKeySession.class.getName(), skSession);
+        userSessionManagement.login(servletRequestContext.getDeployment().getSessionManager(), session, principal.getName());
     }
 }

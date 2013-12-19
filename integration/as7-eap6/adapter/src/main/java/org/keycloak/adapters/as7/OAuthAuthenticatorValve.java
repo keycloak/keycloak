@@ -26,9 +26,11 @@ import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.representations.SkeletonKeyToken;
 import org.keycloak.representations.adapters.action.LogoutAction;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.StreamUtil;
 
 import javax.security.auth.login.LoginException;
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.HashSet;
@@ -120,8 +122,8 @@ public class OAuthAuthenticatorValve extends FormAuthenticator implements Lifecy
         return false;
     }
 
-    protected JWSInput verifyAdminRequest(Request request, HttpServletResponse response) throws IOException {
-        String token = request.getParameter("token");
+    protected JWSInput verifyAdminRequest(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String token = StreamUtil.readString(request.getInputStream());
         if (token == null) {
             log.warn("admin request failed, no token");
             response.sendError(403, "no token");

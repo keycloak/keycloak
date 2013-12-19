@@ -12,11 +12,10 @@ import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.KeycloakUriBuilder;
+import org.keycloak.util.StreamUtil;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -89,32 +88,12 @@ public class TokenGrantRequest {
     }
 
 
-    protected static String readString(InputStream in) throws IOException
-    {
-        char[] buffer = new char[1024];
-        StringBuilder builder = new StringBuilder();
-        BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-        int wasRead = 0;
-        do
-        {
-            wasRead = reader.read(buffer, 0, 1024);
-            if (wasRead > 0)
-            {
-                builder.append(buffer, 0, wasRead);
-            }
-        }
-        while (wasRead > -1);
-
-        return builder.toString();
-    }
-
-
     protected static void error(int status, HttpEntity entity) throws HttpFailure, IOException {
        String body = null;
         if (entity != null) {
             InputStream is = entity.getContent();
             try {
-                body = readString(is);
+                body = StreamUtil.readString(is);
             } catch (IOException e) {
 
             } finally {
