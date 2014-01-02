@@ -12,6 +12,7 @@
     <packaging>pom</packaging>
 
     <properties>
+        <apache.httpcomponents.version>4.1.2</apache.httpcomponents.version>
         <resteasy.version>3.0.5.Final</resteasy.version>
         <undertow.version>1.0.0.Beta28</undertow.version>
         <picketlink.version>2.5.0.Beta6</picketlink.version>
@@ -327,12 +328,11 @@
                 <artifactId>mysql-connector-java</artifactId>
                 <version>${mysql.version}</version>
             </dependency>
-            <!-- Keep this at 4.1.2 to make sure we're compatible with AS7 -->
             <!-- the dependency seems to override Resteasy 3.0.5's dependeing on 4.2.1
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpclient</artifactId>
-                <version>4.1.2</version>
+                <version>${apache.httpcomponents.version}</version>
             </dependency>
              -->
         </dependencies>
