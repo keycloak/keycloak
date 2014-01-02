@@ -1,12 +1,11 @@
 package org.keycloak.example.demo;
 
-import org.keycloak.util.JsonSerialization;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
+import org.keycloak.util.JsonSerialization;
 
 import javax.servlet.ServletContext;
 import javax.ws.rs.core.Context;
@@ -22,8 +21,6 @@ public class DemoApplication extends KeycloakApplication {
         super(servletContext);
         KeycloakSession session = factory.createSession();
         session.getTransaction().begin();
-        ApplianceBootstrap bootstrap = new ApplianceBootstrap();
-        bootstrap.bootstrap(session);
         install(new RealmManager(session));
         session.getTransaction().commit();
     }

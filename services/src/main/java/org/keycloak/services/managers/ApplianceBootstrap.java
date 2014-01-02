@@ -4,6 +4,7 @@ import org.jboss.resteasy.logging.Logger;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
@@ -19,6 +20,19 @@ import java.util.UUID;
 public class ApplianceBootstrap {
 
     private static final Logger logger = Logger.getLogger(ApplianceBootstrap.class);
+
+    public void bootstrap(KeycloakSessionFactory factory) {
+        KeycloakSession session = factory.createSession();
+        session.getTransaction().begin();
+
+        try {
+            bootstrap(session);
+            session.getTransaction().commit();
+        } finally {
+            session.close();
+        }
+
+    }
 
     public void bootstrap(KeycloakSession session) {
         if (session.getRealm(Constants.ADMIN_REALM) != null) {

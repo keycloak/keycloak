@@ -1,13 +1,12 @@
 package org.keycloak.server;
 
 import org.jboss.resteasy.logging.Logger;
-import org.keycloak.util.JsonSerialization;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.services.managers.ApplianceBootstrap;
-import org.keycloak.services.managers.RealmManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
+import org.keycloak.util.JsonSerialization;
 
 import javax.servlet.ServletContext;
 import javax.ws.rs.core.Context;
@@ -22,21 +21,19 @@ public class KeycloakServerApplication extends KeycloakApplication {
 
     public KeycloakServerApplication(@Context ServletContext servletContext) throws FileNotFoundException {
         super(servletContext);
-        KeycloakSession session = factory.createSession();
-        session.getTransaction().begin();
-        ApplianceBootstrap bootstrap = new ApplianceBootstrap();
-        bootstrap.bootstrap(session);
 
         String importRealm = System.getProperty("keycloak.import");
         if (importRealm != null) {
+            KeycloakSession session = factory.createSession();
+            session.getTransaction().begin();
             RealmRepresentation rep = loadJson(new FileInputStream(importRealm), RealmRepresentation.class);
             importRealm(session, rep);
+            session.getTransaction().commit();
         }
 
-        session.getTransaction().commit();
     }
 
-    public void importRealm(KeycloakSession session, RealmRepresentation rep ) {
+    public void importRealm(KeycloakSession session, RealmRepresentation rep) {
         try {
             RealmManager manager = new RealmManager(session);
 
@@ -62,7 +59,7 @@ public class KeycloakServerApplication extends KeycloakApplication {
 
     private static <T> T loadJson(InputStream is, Class<T> type) {
         try {
-             return JsonSerialization.readValue(is, type);
+            return JsonSerialization.readValue(is, type);
         } catch (IOException e) {
             throw new RuntimeException("Failed to parse json", e);
         }
