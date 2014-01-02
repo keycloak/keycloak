@@ -138,12 +138,15 @@ public class ServletOAuthLogin {
             if (port != 443) secureUrl.port(port);
             url = secureUrl.build().toString();
         }
-        return realmInfo.getAuthUrl().clone()
+        KeycloakUriBuilder uriBuilder = realmInfo.getAuthUrl().clone()
                 .queryParam("client_id", realmInfo.getMetadata().getResourceName())
                 .queryParam("redirect_uri", url)
                 .queryParam("state", state)
-                .queryParam("login", "true")
-                .build().toString();
+                .queryParam("login", "true");
+        if (realmInfo.getMetadata().getScope() != null) {
+            uriBuilder.queryParam("scope", realmInfo.getMetadata().getScope());
+        }
+        return uriBuilder.build().toString();
     }
 
     protected static final AtomicLong counter = new AtomicLong();

@@ -2,7 +2,10 @@ package org.keycloak.adapters.config;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
+import org.keycloak.representations.SkeletonKeyScope;
+import org.keycloak.util.Base64Url;
 import org.keycloak.util.EnvUtil;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.PemUtils;
 import org.keycloak.adapters.ResourceMetadata;
 import org.keycloak.representations.adapters.config.AdapterConfig;
@@ -64,6 +67,11 @@ public class AdapterConfigLoader {
         resourceMetadata.setClientKeyPassword(clientKeyPassword);
         resourceMetadata.setTruststore(this.truststore);
 
+        if (adapterConfig.getScope() != null) {
+            String scope = encodeScope(adapterConfig.getScope());
+            resourceMetadata.setScope(scope);
+        }
+
     }
 
     public AdapterConfig getAdapterConfig() {
@@ -117,6 +125,15 @@ public class AdapterConfigLoader {
             } catch (Exception e) {
                 throw new RuntimeException("Failed to load keystore", e);
             }
+        }
+    }
+
+    protected String encodeScope(SkeletonKeyScope scope) {
+        try {
+            byte[] scopeBytes = JsonSerialization.writeValueAsBytes(scope);
+            return Base64Url.encode(scopeBytes);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 }

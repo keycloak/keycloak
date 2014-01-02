@@ -5,5 +5,8 @@
   "ssl-not-required" : true,
    "credentials" : {
       "password" : "password"
+   },
+   "scope": {
+      "realm": [ "user" ]
    }
 }
