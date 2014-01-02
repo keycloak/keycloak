@@ -6,9 +6,6 @@
 
 	<module-name>oauth-client</module-name>
 
-    <listener>
-        <listener-class>org.keycloak.example.oauth.Bootstrap</listener-class>
-    </listener>
     <!--
     <security-constraint>
         <web-resource-collection>

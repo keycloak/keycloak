@@ -1,0 +1,9 @@
+{
+  "resource" : "third-party",
+  "auth-url" : "http://localhost:8080/auth-server/rest/realms/demo/tokens/login",
+  "code-url" : "http://localhost:8080/auth-server/rest/realms/demo/tokens/access/codes",
+  "ssl-not-required" : true,
+   "credentials" : {
+      "password" : "password"
+   }
+}

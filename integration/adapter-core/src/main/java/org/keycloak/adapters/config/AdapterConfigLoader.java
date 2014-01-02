@@ -35,29 +35,8 @@ public class AdapterConfigLoader {
     }
 
     public void init() {
-        String truststorePath = adapterConfig.getTruststore();
-        if (truststorePath != null) {
-            truststorePath = EnvUtil.replace(truststorePath);
-            String truststorePassword = adapterConfig.getTruststorePassword();
-            truststorePath = null;
-            try {
-                this.truststore = loadKeyStore(truststorePath, truststorePassword);
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to load truststore", e);
-            }
-        }
-        String clientKeystore = adapterConfig.getClientKeystore();
-        String clientKeyPassword = null;
-        if (clientKeystore != null) {
-            clientKeystore = EnvUtil.replace(clientKeystore);
-            String clientKeystorePassword = adapterConfig.getClientKeystorePassword();
-            clientCertKeystore = null;
-            try {
-                clientCertKeystore = loadKeyStore(clientKeystore, clientKeystorePassword);
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to load keystore", e);
-            }
-        }
+        initTruststore();
+        initClientKeystore();
 
         String realm = adapterConfig.getRealm();
         if (realm == null) throw new RuntimeException("Must set 'realm' in config");
@@ -81,7 +60,7 @@ public class AdapterConfigLoader {
         resourceMetadata.setResourceName(resource);
         resourceMetadata.setRealmKey(realmKey);
         resourceMetadata.setClientKeystore(clientCertKeystore);
-        clientKeyPassword = adapterConfig.getClientKeyPassword();
+        String clientKeyPassword = adapterConfig.getClientKeyPassword();
         resourceMetadata.setClientKeyPassword(clientKeyPassword);
         resourceMetadata.setTruststore(this.truststore);
 
@@ -111,6 +90,33 @@ public class AdapterConfigLoader {
             adapterConfig = mapper.readValue(is, AdapterConfig.class);
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    protected void initTruststore() {
+        String truststorePath = adapterConfig.getTruststore();
+        if (truststorePath != null) {
+            truststorePath = EnvUtil.replace(truststorePath);
+            String truststorePassword = adapterConfig.getTruststorePassword();
+            try {
+                this.truststore = loadKeyStore(truststorePath, truststorePassword);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to load truststore", e);
+            }
+        }
+    }
+
+    protected void initClientKeystore() {
+        String clientKeystore = adapterConfig.getClientKeystore();
+        if (clientKeystore != null) {
+            clientKeystore = EnvUtil.replace(clientKeystore);
+            String clientKeystorePassword = adapterConfig.getClientKeystorePassword();
+            clientCertKeystore = null;
+            try {
+                clientCertKeystore = loadKeyStore(clientKeystore, clientKeystorePassword);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to load keystore", e);
+            }
         }
     }
 }
