@@ -1,6 +1,6 @@
 Login, Distributed SSO, Distributed Logout, and Oauth Token Grant AS7 Examples
 ===================================
-The following examples requires JBoss AS7 or EAP 6.1, and Resteasy 3.0.2 and has been tested on version EAP 6.1.  Here's the highlights of the examples
+The following examples requires JBoss AS7 or EAP 6.2, and Resteasy 3.0.6 and has been tested on version EAP 6.2.  Here's the highlights of the examples
 * Delegating authentication of a web app to the remote authentication server via OAuth 2 protocols
 * Distributed Single-Sign-On and Single-Logout
 * Transferring identity and role mappings via a special bearer token (Skeleton Key Token).
@@ -21,7 +21,7 @@ The UI of each of these applications is very crude and exists just to show our O
 
 Step 1: Make sure you've upgraded Resteasy
 --------------------------------------
-The first thing you is upgrade Resteasy to 3.0.4 within JBoss as described [here](http://docs.jboss.org/resteasy/docs/3.0.4.Final/userguide/html/Installation_Configuration.html#upgrading-as7)
+The first thing you is upgrade Resteasy to 3.0.6 within JBoss as described [here](http://docs.jboss.org/resteasy/docs/3.0.6.Final/userguide/html/Installation_Configuration.html#upgrading-as7)
 
 
 Step 2: Boot JBoss
@@ -32,9 +32,10 @@ Step 3: Build and deploy
 ---------------------------------------
 next you must build and deploy
 
-1. cd as7-eap-demo
-2. mvn clean install
-3. mvn jboss-as:deploy
+1. mvn clean install
+2. cd examples/as7-eap-demo
+3. mvn clean package
+4. mvn jboss-as:deploy
 
 Step 4: Login and Observe Apps
 ---------------------------------------
@@ -67,13 +68,10 @@ Admin Console
 You'll have to first register and create an account
 
 Login:
-[http://localhost:8080/auth-server/rest/saas/login](http://localhost:8080/auth-server/rest/saas/login)
+[http://localhost:8080/auth-server/admin/index.html](http://localhost:8080/auth-server/admin/index.html)
+Enter username: admin and password: admin. Admin console will force you to change password later on.
 
 Register:
-[http://localhost:8080/auth-server/rest/saas/registrations](http://localhost:8080/auth-server/rest/saas/registrations)
 
 2. Next you'll be brought to the admin console.  Click "New Realm" button and start doing stuff.
-
-
-
 
