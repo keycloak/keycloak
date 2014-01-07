@@ -1,10 +1,21 @@
 <jboss-deployment-structure>
     <deployment>
-        <!-- This allows you to define additional dependencies, it is the same as using the Dependencies: manifest attribute -->
-        <dependencies>
-            <module name="org.jboss.resteasy.jose-jwt"/>
-            <module name="org.jboss.resteasy.resteasy-crypto"/>
-            <module name="org.bouncycastle"/>
-        </dependencies>
+        <exclusions>
+
+            <!-- Exclude Version cxf of JBOSS -->
+            <module name="org.apache.cxf" />
+            <!-- Exclude JAVA EE of JBOSS (javax.ws..) => Add dependency javax.annotation -->
+            <module name="javaee.api" />
+            <!-- Exclude RestEasy conflict (javax.ws.rs.ext.RunDelegate) -->
+            <module name="org.jboss.resteasy.resteasy-atom-provider" />
+            <module name="org.jboss.resteasy.resteasy-cdi" />
+            <module name="org.jboss.resteasy.resteasy-jackson-provider" />
+            <module name="org.jboss.resteasy.resteasy-jaxb-provider" />
+            <module name="org.jboss.resteasy.resteasy-jaxrs" />
+            <module name="org.jboss.resteasy.resteasy-jettison-provider" />
+            <module name="org.jboss.resteasy.resteasy-jsapi" />
+            <module name="org.jboss.resteasy.resteasy-multipart-provider" />
+            <module name="org.jboss.resteasy.resteasy-yaml-provider" />
+        </exclusions>
     </deployment>
 </jboss-deployment-structure>

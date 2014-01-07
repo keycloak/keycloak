@@ -39,6 +39,7 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-undertow-adapter</artifactId>
             <version>${project.version}</version>
+            <scope>provided</scope>
             <!--
             <exclusions>
                 <exclusion>

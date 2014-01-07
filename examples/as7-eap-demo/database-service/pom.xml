@@ -39,14 +39,15 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-as7-adapter</artifactId>
             <version>${project.version}</version>
+            <scope>provided</scope>
             <!--
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.httpcomponents</groupId>
-                    <artifactId>httpclient</artifactId>
-                </exclusion>
-            </exclusions>
-            -->
+             <exclusions>
+                 <exclusion>
+                     <groupId>org.apache.httpcomponents</groupId>
+                     <artifactId>httpclient</artifactId>
+                 </exclusion>
+             </exclusions>
+             -->
         </dependency>
     </dependencies>
 

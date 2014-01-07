@@ -1,15 +1,14 @@
-Login, Distributed SSO, Distributed Logout, and Oauth Token Grant AS7 Examples
+Login, Distributed SSO, Distributed Logout, and Oauth Token Grant Wildfly Examples
 ===================================
-The following examples requires JBoss AS7 or EAP 6.1, and Resteasy 3.0.2 and has been tested on version EAP 6.1.  Here's the highlights of the examples
+The following examples requires Wildfly 8.0.0.  Here's the highlights of the examples
 * Delegating authentication of a web app to the remote authentication server via OAuth 2 protocols
 * Distributed Single-Sign-On and Single-Logout
 * Transferring identity and role mappings via a special bearer token (Skeleton Key Token).
 * Bearer token authentication and authorization of JAX-RS services
 * Obtaining bearer tokens via the OAuth2 protocol
 
-There are 5 WAR projects.  These all will run on the same jboss instance, but pretend each one is running on a different
+There are multiple WAR projects.  These all will run on the same jboss instance, but pretend each one is running on a different
 machine on the network or Internet.
-* **auth-server**: This is the keycloak SSO auth server
 * **customer-app** A WAR applications that does remote login using OAUTH2 browser redirects with the auth server
 * **product-app** A WAR applications that does remote login using OAUTH2 browser redirects with the auth server
 * **database-service** JAX-RS services authenticated by bearer tokens only.  The customer and product app invoke on it
@@ -18,25 +17,51 @@ machine on the network or Internet.
 
 The UI of each of these applications is very crude and exists just to show our OAuth2 implementation in action.
 
+_This demo is meant to run on the same server instance as the Keycloak Server!_
 
-Step 1: Make sure you've upgraded Resteasy
+
+Step 1: Make sure you've set up the Keycloak Server
 --------------------------------------
-The first thing you is upgrade Resteasy to 3.0.4 within JBoss as described [here](http://docs.jboss.org/resteasy/docs/3.0.4.Final/userguide/html/Installation_Configuration.html#upgrading-as7)
+If you've downloaded the Keycloak Appliance Distribution, there is already a Wildfly distro all set up for you.  This
+Wildfly distro has the adapter jboss modules all installed as well as the keycloak server all set up.
 
+If you want to install Keycloak Server and run the demo on an existing Wildfly instance:
 
-Step 2: Boot JBoss
+Obtain latest keycloak-war-dist-all.zip.  This distro is used to install keycloak onto an existing JBoss installation
+
+$ cd ${jboss.home}/standalone
+$ cp -r ${keycloak-war-dist-all}/deployments .
+
+To install the adapter:
+$ cd ${jboss.home}
+$ unzip ${keycloak-war-dist-al}/adapters/keycloak-wildfly-adapter-dist.zip
+
+Step 2: Boot Keycloak Server
 ---------------------------------------
-Boot JBoss in 'standalone' mode.
+Where you go to start up the Keycloak Server depends on which distro you installed.
 
-Step 3: Build and deploy
+$ ./standalone.sh
+
+Step 3: Import the Test Realm
+---------------------------------------
+Next thing you have to do is import the test realm for the demo.  Clicking on the below link will bring you to the
+create realm page in the admin UI.  The username/password is admin/admin to login in.  Keycloak will ask you to
+create a new password admin password before you can go to the create realm page.
+
+[http://localhost:8080/auth-server/admin/index.html#/create/realm](http://localhost:8080/auth-server/admin/index.html#/create/realm)
+
+Import the testrealm.json file that is in the wildfly-demo/ example directory.
+
+
+Step 4: Build and deploy
 ---------------------------------------
 next you must build and deploy
 
-1. cd as7-eap-demo
+1. cd wildfly-demo
 2. mvn clean install
 3. mvn jboss-as:deploy
 
-Step 4: Login and Observe Apps
+Step 5: Login and Observe Apps
 ---------------------------------------
 Try going to the customer app and viewing customer data:
 
@@ -49,7 +74,7 @@ are still happening, but the auth-server knows you are already logged in so the 
 
 If you click on the logout link of either of the product or customer app, you'll be logged out of all the applications.
 
-Step 5: Traditional OAuth2 Example
+Step 6: Traditional OAuth2 Example
 ----------------------------------
 The customer and product apps are logins.  The third-party app is the traditional OAuth2 usecase of a client wanting
 to get permission to access a user's data.  To run this example
@@ -62,17 +87,11 @@ an oauth grant page.  This page asks you if you want to grant certain permission
 Admin Console
 ==========================
 
-1. Register or login
-
-You'll have to first register and create an account
+1. Login
 
 Login:
 [http://localhost:8080/auth-server/rest/saas/login](http://localhost:8080/auth-server/rest/saas/login)
 
-Register:
-[http://localhost:8080/auth-server/rest/saas/registrations](http://localhost:8080/auth-server/rest/saas/registrations)
-
-2. Next you'll be brought to the admin console.  Click "New Realm" button and start doing stuff.
 
 
 

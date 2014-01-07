@@ -34,7 +34,7 @@
         </plugins>
     </build>
     <modules>
-        <module>server</module>
+        <!-- <module>server</module> -->
         <module>customer-app</module>
         <module>product-app</module>
         <module>database-service</module>

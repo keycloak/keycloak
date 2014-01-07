@@ -2,6 +2,12 @@
     <deployment>
         <!-- This allows you to define additional dependencies, it is the same as using the Dependencies: manifest attribute -->
         <dependencies>
+            <!-- The keycloak-as7-adapter is required -->
+            <module name="org.keycloak.keycloak-as7-adapter"/>
+            <!-- the Demo code uses classes in these modules.  These are optional to import if you are not using
+                 Apache Http Client or the HttpClientBuilder that comes with the adapter core -->
+            <module name="org.apache.httpcomponents" />
+            <module name="org.keycloak.keycloak-adapter-core"/>
         </dependencies>
     </deployment>
 </jboss-deployment-structure>
