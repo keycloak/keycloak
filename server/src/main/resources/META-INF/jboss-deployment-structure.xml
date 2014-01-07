@@ -1,8 +1,0 @@
-<jboss-deployment-structure>
-    <deployment>
-        <dependencies>
-            <module name="org.apache.httpcomponents"/>
-            <module name="org.codehaus.jackson.jackson-core-asl"/>
-        </dependencies>
-    </deployment>
-</jboss-deployment-structure>

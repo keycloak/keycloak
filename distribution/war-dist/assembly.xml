@@ -1,0 +1,43 @@
+<assembly>
+    <id>war-dist</id>
+
+    <formats>
+        <format>zip</format>
+    </formats>
+    <includeBaseDirectory>true</includeBaseDirectory>
+
+    <fileSets>
+        <fileSet>
+            <directory>${project.build.directory}/unpacked</directory>
+            <outputDirectory></outputDirectory>
+        </fileSet>
+    </fileSets>
+    <dependencySets>
+        <dependencySet>
+            <unpack>false</unpack>
+            <useTransitiveDependencies>false</useTransitiveDependencies>
+            <includes>
+                <include>org.keycloak:keycloak-wildfly-adapter-dist:zip</include>
+                <include>org.keycloak:keycloak-as7-adapter-dist:zip</include>
+                <include>org.keycloak:keycloak-eap6-adapter-dist:zip</include>
+            </includes>
+            <outputDirectory>adapters</outputDirectory>
+        </dependencySet>
+    </dependencySets>
+    <!--
+    <moduleSets>
+        <moduleSet>
+            <useAllReactorProjects>true</useAllReactorProjects>
+            <includes>
+                <include>org.keycloak:keycloak-wildfly-adapter-dist</include>
+            </includes>
+            <binaries>
+                <outputDirectory>adapters</outputDirectory>
+                <attachmentClassifier>zip</attachmentClassifier>
+                <includeDependencies>false</includeDependencies>
+                <unpack>false</unpack>
+            </binaries>
+        </moduleSet>
+    </moduleSets>
+    -->
+</assembly>

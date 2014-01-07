@@ -1,0 +1,23 @@
+<assembly>
+    <id>war-dist</id>
+
+    <formats>
+        <format>zip</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+
+    <fileSets>
+        <fileSet>
+            <directory>${project.build.directory}/unpacked</directory>
+            <outputDirectory></outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>${basedir}</directory>
+            <includes>
+                <include>keycloak-ds.xml</include>
+                <include>auth-server.war.dodeploy</include>
+            </includes>
+            <outputDirectory>deployments</outputDirectory>
+        </fileSet>
+    </fileSets>
+</assembly>

@@ -2,6 +2,8 @@
     <deployment>
         <!-- This allows you to define additional dependencies, it is the same as using the Dependencies: manifest attribute -->
         <dependencies>
+            <!-- The keycloak-as7-adapter is required -->
+            <module name="org.keycloak.keycloak-as7-adapter"/>
         </dependencies>
     </deployment>
 </jboss-deployment-structure>

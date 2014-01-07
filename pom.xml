@@ -12,7 +12,7 @@
     <packaging>pom</packaging>
 
     <properties>
-        <apache.httpcomponents.version>4.1.2</apache.httpcomponents.version>
+        <keycloak.apache.httpcomponents.version>4.1.2</keycloak.apache.httpcomponents.version>
         <resteasy.version>3.0.5.Final</resteasy.version>
         <undertow.version>1.0.0.Beta28</undertow.version>
         <picketlink.version>2.5.0.Beta6</picketlink.version>
@@ -25,7 +25,7 @@
         <mysql.version>5.1.25</mysql.version>
         <slf4j.version>1.6.1</slf4j.version>
         <jboss.version>7.1.1.Final</jboss.version>
-        <wildfly.version>8.0.0.Beta1</wildfly.version>
+        <wildfly.version>8.0.0.CR1</wildfly.version>
     </properties>
 
     <url>http://keycloak.org</url>
@@ -86,8 +86,6 @@
         <module>examples</module>
         <module>testsuite</module>
         <module>server</module>
-        <module>dist</module>
-        <module>dist-as7</module>    
     </modules>
 
     <dependencyManagement>
@@ -328,11 +326,11 @@
                 <artifactId>mysql-connector-java</artifactId>
                 <version>${mysql.version}</version>
             </dependency>
-            <!-- the dependency seems to override Resteasy 3.0.5's dependeing on 4.2.1
+            <!-- the dependency seems to override Resteasy 3.0.5's depending on 4.2.1
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpclient</artifactId>
-                <version>${apache.httpcomponents.version}</version>
+                <version>${keycloak.apache.httpcomponents.version}</version>
             </dependency>
              -->
         </dependencies>

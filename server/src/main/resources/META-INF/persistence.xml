@@ -3,7 +3,7 @@
     xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_1_0.xsd"
     version="1.0">
     <persistence-unit name="jpa-keycloak-identity-store" transaction-type="RESOURCE_LOCAL">
-        <jta-data-source>java:jboss/datasources/KeycloakDS</jta-data-source>
+        <jta-data-source>java:jboss/datasources/ExampleDS</jta-data-source>
         <class>org.keycloak.models.jpa.entities.ApplicationEntity</class>
         <class>org.keycloak.models.jpa.entities.ApplicationScopeMappingEntity</class>
         <class>org.keycloak.models.jpa.entities.ApplicationUserRoleMappingEntity</class>

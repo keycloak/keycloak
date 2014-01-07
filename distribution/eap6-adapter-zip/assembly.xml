@@ -1,0 +1,31 @@
+<assembly>
+    <id>war-dist</id>
+
+    <formats>
+        <format>zip</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+
+    <fileSets>
+        <fileSet>
+            <directory>${project.build.directory}/unpacked</directory>
+            <excludes>
+                <exclude>org/keycloak/keycloak-undertow-adapter/**</exclude>
+            </excludes>
+            <outputDirectory>modules/system/layers/base</outputDirectory>
+        </fileSet>
+    </fileSets>
+    <!--
+    <dependencySets>
+        <dependencySet>
+            <unpack>false</unpack>
+            <useTransitiveDependencies>true</useTransitiveDependencies>
+            <useTransitiveFiltering>true</useTransitiveFiltering>
+            <includes>
+                <include>org.keycloak:keycloak-as7-adapter</include>
+            </includes>
+            <outputDirectory>lib/as7-eap6-adapter</outputDirectory>
+        </dependencySet>
+    </dependencySets>
+    -->
+</assembly>
