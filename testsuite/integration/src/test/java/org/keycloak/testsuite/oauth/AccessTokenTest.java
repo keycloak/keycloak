@@ -69,7 +69,7 @@ public class AccessTokenTest {
 
         SkeletonKeyToken token = oauth.verifyToken(response.getAccessToken());
 
-        Assert.assertEquals("test-user@localhost", token.getPrincipal());
+        Assert.assertEquals("test-user@localhost", token.getSubject());
 
         Assert.assertEquals(1, token.getRealmAccess().getRoles().size());
         Assert.assertTrue(token.getRealmAccess().isUserInRole("user"));

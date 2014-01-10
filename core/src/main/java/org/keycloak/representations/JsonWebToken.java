@@ -22,8 +22,8 @@ public class JsonWebToken implements Serializable {
     protected String issuer;
     @JsonProperty("aud")
     protected String audience;
-    @JsonProperty("prn")
-    protected String principal;
+    @JsonProperty("sub")
+    protected String subject;
     @JsonProperty("typ")
     protected String type;
 
@@ -116,12 +116,12 @@ public class JsonWebToken implements Serializable {
         return this;
     }
 
-    public String getPrincipal() {
-        return principal;
+    public String getSubject() {
+        return subject;
     }
 
     public JsonWebToken principal(String principal) {
-        this.principal = principal;
+        this.subject = principal;
         return this;
     }
 

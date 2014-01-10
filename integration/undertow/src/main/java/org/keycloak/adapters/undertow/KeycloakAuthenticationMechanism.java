@@ -98,7 +98,7 @@ public class KeycloakAuthenticationMechanism implements AuthenticationMechanism 
     }
 
     protected SkeletonKeyPrincipal completeAuthentication(SecurityContext securityContext, SkeletonKeyToken token, String surrogate) {
-        final SkeletonKeyPrincipal skeletonKeyPrincipal = new SkeletonKeyPrincipal(token.getPrincipal(), surrogate);
+        final SkeletonKeyPrincipal skeletonKeyPrincipal = new SkeletonKeyPrincipal(token.getSubject(), surrogate);
         Set<String> roles = null;
         if (adapterConfig.isUseResourceRoleMappings()) {
             SkeletonKeyToken.Access access = token.getResourceAccess(resourceMetadata.getResourceName());

@@ -172,7 +172,7 @@ public class AuthenticationManager {
 
             Auth auth = new Auth(token);
 
-            UserModel user = realm.getUser(token.getPrincipal());
+            UserModel user = realm.getUser(token.getSubject());
             if (user == null || !user.isEnabled()) {
                 logger.debug("Unknown user in identity cookie");
                 expireIdentityCookie(realm, uriInfo);
@@ -219,7 +219,7 @@ public class AuthenticationManager {
 
             Auth auth = new Auth(token);
 
-            UserModel user = realm.getUser(token.getPrincipal());
+            UserModel user = realm.getUser(token.getSubject());
             if (user == null || !user.isEnabled()) {
                 throw new NotAuthorizedException("invalid_user");
             }

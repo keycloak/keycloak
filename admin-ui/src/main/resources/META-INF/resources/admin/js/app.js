@@ -396,7 +396,21 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'OAuthClientScopeMappingCtrl'
         })
-
+        .when('/realms/:realm/oauth-clients/:oauth/installation', {
+            templateUrl : 'partials/oauth-client-installation.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                oauth : function(OAuthClientLoader) {
+                    return OAuthClientLoader();
+                },
+                installation : function(OAuthClientInstallationLoader) {
+                    return OAuthClientInstallationLoader();
+                }
+            },
+            controller : 'OAuthClientInstallationCtrl'
+        })
         .when('/create/oauth-client/:realm', {
             templateUrl : 'partials/oauth-client-detail.html',
             resolve : {
