@@ -440,7 +440,7 @@ module.controller('RealmRegistrationCtrl', function ($scope, Realm, realm, appli
         $scope.realm.defaultRoles = [];
     }
 
-    // Populate available roles. Available roles are neither already assigned or system roles.
+    // Populate available roles. Available roles are neither already assigned
     for (var i = 0; i < roles.length; i++) {
         var item = roles[i].name;
 
@@ -504,8 +504,7 @@ module.controller('RealmRegistrationCtrl', function ($scope, Realm, realm, appli
 
             for (var i = 0; i < appDefaultRoles.length; i++) {
                 var roleName = appDefaultRoles[i].name;
-
-                if (systemRoles.indexOf(roleName) < 0 && $scope.application.defaultRoles.indexOf(roleName) < 0) {
+                if ($scope.application.defaultRoles.indexOf(roleName) < 0) {
                     $scope.availableAppRoles.push(roleName);
                 }
             }
