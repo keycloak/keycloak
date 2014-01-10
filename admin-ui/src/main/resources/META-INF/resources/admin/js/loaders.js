@@ -152,3 +152,12 @@ module.factory('OAuthClientListLoader', function(Loader, OAuthClient, $route, $q
         }
     });
 });
+
+module.factory('OAuthClientInstallationLoader', function(Loader, OAuthClientInstallation, $route, $q) {
+    return Loader.get(OAuthClientInstallation, function() {
+        return {
+            realm : $route.current.params.realm,
+            oauth : $route.current.params.oauth
+        }
+    });
+});

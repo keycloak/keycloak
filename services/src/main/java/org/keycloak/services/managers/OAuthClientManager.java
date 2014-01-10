@@ -1,17 +1,23 @@
 package org.keycloak.services.managers;
 
+import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.adapters.config.BaseAdapterConfig;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
+import org.keycloak.services.resources.flows.Urls;
 
+import java.net.URI;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -74,6 +80,28 @@ public class OAuthClientManager {
         if (webOrigins != null) {
             rep.setWebOrigins(new LinkedList<String>(webOrigins));
         }
+        return rep;
+    }
+
+    public BaseAdapterConfig toInstallationRepresentation(RealmModel realmModel, OAuthClientModel model, URI baseUri) {
+        BaseAdapterConfig rep = new BaseAdapterConfig();
+        rep.setRealm(realmModel.getId());
+        rep.setRealmKey(realmModel.getPublicKeyPem());
+        rep.setSslNotRequired(realmModel.isSslNotRequired());
+
+        rep.setAuthUrl(Urls.realmLoginPage(baseUri, realmModel.getId()).toString());
+        rep.setCodeUrl(Urls.realmCode(baseUri, realmModel.getId()).toString());
+        rep.setUseResourceRoleMappings(false);
+
+        rep.setResource(model.getOAuthAgent().getLoginName());
+
+        Map<String, String> creds = new HashMap<String, String>();
+        creds.put(CredentialRepresentation.PASSWORD, "INSERT CLIENT PASSWORD");
+        if (model.getOAuthAgent().isTotp()) {
+            creds.put(CredentialRepresentation.TOTP, "INSERT CLIENT TOTP");
+        }
+        rep.setCredentials(creds);
+
         return rep;
     }
 }
