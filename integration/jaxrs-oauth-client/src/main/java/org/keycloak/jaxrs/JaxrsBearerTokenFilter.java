@@ -71,7 +71,7 @@ public class JaxrsBearerTokenFilter implements ContainerRequestFilter {
             ResteasyProviderFactory.pushContext(SkeletonKeySession.class, skSession);
             String callerPrincipal = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
 
-            final SkeletonKeyPrincipal principal = new SkeletonKeyPrincipal(token.getPrincipal(), callerPrincipal);
+            final SkeletonKeyPrincipal principal = new SkeletonKeyPrincipal(token.getSubject(), callerPrincipal);
             final boolean isSecure = securityContext.isSecure();
             final SkeletonKeyToken.Access access;
             if (resourceMetadata.getResourceName() != null) {

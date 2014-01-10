@@ -32,7 +32,7 @@ public class RSATokenVerifier {
         if (!token.isActive()) {
             throw new VerificationException("Token is not active.");
         }
-        String user = token.getPrincipal();
+        String user = token.getSubject();
         if (user == null) {
             throw new VerificationException("Token user was null");
         }

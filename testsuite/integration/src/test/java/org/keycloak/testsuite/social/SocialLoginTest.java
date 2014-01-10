@@ -102,7 +102,7 @@ public class SocialLoginTest {
 
         SkeletonKeyToken token = oauth.verifyToken(response.getAccessToken());
 
-        Assert.assertEquals("dummy-user", token.getPrincipal());
+        Assert.assertEquals("dummy-user", token.getSubject());
     }
 
     @Test

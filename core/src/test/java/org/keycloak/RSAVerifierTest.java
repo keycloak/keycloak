@@ -97,7 +97,7 @@ public class RSAVerifierTest {
                 .rsa256(idpPair.getPrivate());
         SkeletonKeyToken token = verifySkeletonKeyToken(encoded);
         Assert.assertTrue(token.getResourceAccess("service").getRoles().contains("admin"));
-        Assert.assertEquals("CN=Client", token.getPrincipal());
+        Assert.assertEquals("CN=Client", token.getSubject());
     }
 
     private SkeletonKeyToken verifySkeletonKeyToken(String encoded) throws VerificationException {

@@ -227,7 +227,7 @@ public class OAuthAuthenticatorValve extends FormAuthenticator implements Lifecy
                 SkeletonKeyToken.Access access = token.getRealmAccess();
                 if (access != null) roles.addAll(access.getRoles());
             }
-            SkeletonKeyPrincipal skp = new SkeletonKeyPrincipal(token.getPrincipal(), null);
+            SkeletonKeyPrincipal skp = new SkeletonKeyPrincipal(token.getSubject(), null);
             GenericPrincipal principal = new CatalinaSecurityContextHelper().createPrincipal(context.getRealm(), skp, roles);
             Session session = request.getSessionInternal(true);
             session.setPrincipal(principal);
@@ -235,7 +235,7 @@ public class OAuthAuthenticatorValve extends FormAuthenticator implements Lifecy
             SkeletonKeySession skSession = new SkeletonKeySession(oauth.getTokenString(), token, realmConfiguration.getMetadata());
             session.setNote(SkeletonKeySession.class.getName(), skSession);
 
-            String username = token.getPrincipal();
+            String username = token.getSubject();
             log.debug("userSessionManage.login: " + username);
             userSessionManagement.login(session, username);
         }
