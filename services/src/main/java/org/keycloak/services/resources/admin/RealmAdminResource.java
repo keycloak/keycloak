@@ -43,6 +43,7 @@ public class RealmAdminResource extends RoleContainerResource {
     @Path("oauth-clients")
     public OAuthClientsResource getOAuthClients() {
         OAuthClientsResource oauth = new OAuthClientsResource(realm, session);
+        resourceContext.initResource(oauth);
         return oauth;
     }
 

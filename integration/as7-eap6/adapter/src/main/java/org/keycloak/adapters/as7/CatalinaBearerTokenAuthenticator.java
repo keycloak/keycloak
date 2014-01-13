@@ -102,7 +102,7 @@ public class CatalinaBearerTokenAuthenticator {
             }
             surrogate = chain[0].getSubjectX500Principal().getName();
         }
-        SkeletonKeyPrincipal skeletonKeyPrincipal = new SkeletonKeyPrincipal(token.getPrincipal(), surrogate);
+        SkeletonKeyPrincipal skeletonKeyPrincipal = new SkeletonKeyPrincipal(token.getSubject(), surrogate);
         principal = new CatalinaSecurityContextHelper().createPrincipal(request.getContext().getRealm(), skeletonKeyPrincipal, roles);
         request.setUserPrincipal(principal);
         request.setAuthType("OAUTH_BEARER");

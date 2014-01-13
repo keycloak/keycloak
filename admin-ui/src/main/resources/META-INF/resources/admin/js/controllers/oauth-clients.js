@@ -294,3 +294,11 @@ module.controller('OAuthClientScopeMappingCtrl', function($scope, $http, realm, 
 
 
 });
+
+
+module.controller('OAuthClientInstallationCtrl', function($scope, realm, installation, oauth, OAuthClientInstallation, $routeParams) {
+    $scope.realm = realm;
+    $scope.oauth = oauth;
+    $scope.installation = installation;
+    $scope.download = OAuthClientInstallation.url({ realm: $routeParams.realm, oauth: $routeParams.oauth });
+});

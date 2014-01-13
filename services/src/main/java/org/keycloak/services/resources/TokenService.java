@@ -32,6 +32,7 @@ import org.keycloak.services.validation.Validation;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotAcceptableException;
 import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -129,6 +130,10 @@ public class TokenService {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.APPLICATION_JSON)
     public Response grantIdentityToken(final MultivaluedMap<String, String> form) {
+        if (!checkSsl()) {
+            throw new NotAcceptableException("HTTPS required");
+        }
+
         String username = form.getFirst(AuthenticationManager.FORM_USERNAME);
         if (username == null) {
             throw new NotAuthorizedException("No user");
@@ -155,6 +160,10 @@ public class TokenService {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.APPLICATION_JSON)
     public Response grantAccessToken(final MultivaluedMap<String, String> form) {
+        if (!checkSsl()) {
+            throw new NotAcceptableException("HTTPS required");
+        }
+
         String username = form.getFirst(AuthenticationManager.FORM_USERNAME);
         if (username == null) {
             throw new NotAuthorizedException("No user");
@@ -186,6 +195,10 @@ public class TokenService {
             final MultivaluedMap<String, String> formData) {
         logger.debug("TokenService.processLogin");
         OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
+
+        if (!checkSsl()) {
+            return oauth.forwardToSecurityFailure("HTTPS required");
+        }
 
         if (!realm.isEnabled()) {
             return oauth.forwardToSecurityFailure("Realm not enabled.");
@@ -360,6 +373,11 @@ public class TokenService {
     @Produces("application/json")
     public Response accessCodeToToken(final MultivaluedMap<String, String> formData) {
         logger.debug("accessRequest <---");
+
+        if (!checkSsl()) {
+            throw new NotAcceptableException("HTTPS required");
+        }
+
         if (!realm.isEnabled()) {
             throw new NotAuthorizedException("Realm not enabled");
         }
@@ -480,6 +498,10 @@ public class TokenService {
         logger.info("TokenService.loginPage");
         OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
 
+        if (!checkSsl()) {
+            return oauth.forwardToSecurityFailure("HTTPS required");
+        }
+
         if (!realm.isEnabled()) {
             logger.warn("Realm not enabled");
             return oauth.forwardToSecurityFailure("Realm not enabled");
@@ -528,6 +550,10 @@ public class TokenService {
             final @QueryParam("scope") String scopeParam, final @QueryParam("state") String state) {
         logger.info("**********registerPage()");
         OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
+
+        if (!checkSsl()) {
+            return oauth.forwardToSecurityFailure("HTTPS required");
+        }
 
         if (!realm.isEnabled()) {
             logger.warn("Realm not enabled");
@@ -581,6 +607,10 @@ public class TokenService {
     public Response processOAuth(final MultivaluedMap<String, String> formData) {
         OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
 
+        if (!checkSsl()) {
+            return oauth.forwardToSecurityFailure("HTTPS required");
+        }
+
         String code = formData.getFirst("code");
         JWSInput input = new JWSInput(code);
         boolean verifiedCode = false;
@@ -626,6 +656,22 @@ public class TokenService {
             String r = redirectUri.indexOf('?') != -1 ? redirectUri.substring(0, redirectUri.indexOf('?')) : redirectUri;
             return client.getRedirectUris().contains(r) ? redirectUri : null;
         }
+    }
+
+    private boolean checkSsl() {
+        if (realm.isSslNotRequired()) {
+            return true;
+        }
+
+        if (uriInfo.getBaseUri().getScheme().equals("https")) {
+            return true;
+        }
+
+        if ("https".equals(headers.getHeaderString("X-Forwarded-Proto"))) {
+            return true;
+        }
+
+        return false;
     }
 
 }

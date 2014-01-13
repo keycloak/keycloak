@@ -291,6 +291,22 @@ module.factory('OAuthClientApplicationScopeMapping', function($resource) {
     });
 });
 
+module.factory('OAuthClientInstallation', function($resource) {
+    var url = '/auth-server/rest/saas/admin/realms/:realm/oauth-clients/:oauth/installation';
+    var resource = $resource('/auth-server/rest/saas/admin/realms/:realm/oauth-clients/:oauth/installation', {
+        realm : '@realm',
+        oauth : '@oauth'
+    },  {
+        update : {
+            method : 'PUT'
+        }
+    });
+    resource.url = function(parameters) {
+        return url.replace(':realm', parameters.realm).replace(':oauth', parameters.oauth);
+    }
+    return resource;
+});
+
 
 module.factory('Current', function(Realm, $route) {
     var current = {};

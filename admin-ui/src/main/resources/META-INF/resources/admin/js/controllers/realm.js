@@ -77,6 +77,10 @@ module.controller('RealmCreateCtrl', function($scope, Current, Realm, $upload, $
         $scope.files = $files;
     };
 
+    $scope.changeFileSelect = function() {
+        $scope.files = null;
+        document.getElementById('import-file').click();
+    }
 
     $scope.uploadFile = function() {
         //$files: an array of files selected, each file has name, size, and type.
@@ -440,7 +444,7 @@ module.controller('RealmRegistrationCtrl', function ($scope, Realm, realm, appli
         $scope.realm.defaultRoles = [];
     }
 
-    // Populate available roles. Available roles are neither already assigned or system roles.
+    // Populate available roles. Available roles are neither already assigned
     for (var i = 0; i < roles.length; i++) {
         var item = roles[i].name;
 
@@ -504,8 +508,7 @@ module.controller('RealmRegistrationCtrl', function ($scope, Realm, realm, appli
 
             for (var i = 0; i < appDefaultRoles.length; i++) {
                 var roleName = appDefaultRoles[i].name;
-
-                if (systemRoles.indexOf(roleName) < 0 && $scope.application.defaultRoles.indexOf(roleName) < 0) {
+                if ($scope.application.defaultRoles.indexOf(roleName) < 0) {
                     $scope.availableAppRoles.push(roleName);
                 }
             }

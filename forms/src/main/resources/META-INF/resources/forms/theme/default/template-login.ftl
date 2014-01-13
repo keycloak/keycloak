@@ -75,7 +75,7 @@
 
         <#if template.themeConfig['displayPoweredBy']>
             <p class="powered">
-                <a href="#">${rb.getString('poweredByKeycloak')}</a>
+                <a href="http://www.keycloak.org">${rb.getString('poweredByKeycloak')}</a>
             </p>
         </#if>
     </div>
