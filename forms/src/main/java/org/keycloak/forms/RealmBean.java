@@ -44,7 +44,7 @@ public class RealmBean {
     }
 
     public String getName() {
-        return saas ? "Keycloak" : realm.getName();
+        return realm.getName();
     }
 
     public RealmModel getRealm() {

@@ -51,15 +51,9 @@ public class TemplateBean {
 
         themeConfig.put("styles", themeUrl + "/styles.css");
 
-        // TODO move this into CSS
-        if (realm.isSaas()) {
-            themeConfig.put("logo", themeUrl + "/img/red-hat-logo.png");
-            themeConfig.put("background", themeUrl + "/img/login-screen-background.jpg");
-            themeConfig.put("displayPoweredBy", false);
-        } else {
-            themeConfig.put("background", themeUrl + "/img/customer-login-screen-bg2.jpg");
-            themeConfig.put("displayPoweredBy", true);
-        }
+        themeConfig.put("logo", themeUrl + "/img/red-hat-logo.png");
+        themeConfig.put("background", themeUrl + "/img/login-screen-background.jpg");
+        themeConfig.put("displayPoweredBy", true);
     }
 
     public String getFormsPath() {
