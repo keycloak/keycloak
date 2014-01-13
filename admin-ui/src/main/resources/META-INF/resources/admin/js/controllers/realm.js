@@ -77,6 +77,10 @@ module.controller('RealmCreateCtrl', function($scope, Current, Realm, $upload, $
         $scope.files = $files;
     };
 
+    $scope.changeFileSelect = function() {
+        $scope.files = null;
+        document.getElementById('import-file').click();
+    }
 
     $scope.uploadFile = function() {
         //$files: an array of files selected, each file has name, size, and type.
