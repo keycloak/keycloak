@@ -51,9 +51,9 @@ import java.net.URI;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-@Path("/saas")
-public class SaasService {
-    protected static final Logger logger = Logger.getLogger(SaasService.class);
+@Path("/admin")
+public class AdminService {
+    protected static final Logger logger = Logger.getLogger(AdminService.class);
     public static final String REALM_CREATOR_ROLE = "realm-creator";
     public static final String SAAS_IDENTITY_COOKIE = "KEYCLOAK_SAAS_IDENTITY";
 
@@ -80,7 +80,7 @@ public class SaasService {
     protected AuthenticationManager authManager = new AuthenticationManager();
     protected TokenManager tokenManager;
 
-    public SaasService(TokenManager tokenManager) {
+    public AdminService(TokenManager tokenManager) {
         this.tokenManager = tokenManager;
     }
 
@@ -168,14 +168,14 @@ public class SaasService {
     }
 
     public static UriBuilder contextRoot(UriInfo uriInfo) {
-        return UriBuilder.fromUri(uriInfo.getBaseUri()).replacePath("/auth-server");
+        return UriBuilder.fromUri(uriInfo.getBaseUri()).replacePath("/auth");
     }
 
     public static UriBuilder saasCookiePath(UriInfo uriInfo) {
-        return contextRoot(uriInfo).path("rest").path(SaasService.class);
+        return contextRoot(uriInfo).path("rest").path(AdminService.class);
     }
 
-    @Path("admin/realms")
+    @Path("realms")
     public RealmsAdminResource getRealmsAdmin(@Context final HttpHeaders headers) {
         RealmManager realmManager = new RealmManager(session);
         RealmModel saasRealm = getAdminstrationRealm(realmManager);
@@ -213,7 +213,7 @@ public class SaasService {
         logger.debug("authUrl: {0}", authUrl);
         oauth.setAuthUrl(authUrl);
         oauth.setClientId(Constants.ADMIN_CONSOLE_APPLICATION);
-        URI redirectUri = uriInfo.getBaseUriBuilder().path(SaasService.class).path(SaasService.class, "loginRedirect").build();
+        URI redirectUri = uriInfo.getBaseUriBuilder().path(AdminService.class).path(AdminService.class, "loginRedirect").build();
         logger.debug("redirectUri: {0}", redirectUri.toString());
         oauth.setStateCookiePath(redirectUri.getRawPath());
         return oauth.redirect(uriInfo, redirectUri.toString(), path);
@@ -317,7 +317,7 @@ public class SaasService {
         authManager.expireSaasIdentityCookie(uriInfo);
         authManager.expireIdentityCookie(realm, uriInfo);
 
-        return Response.status(302).location(uriInfo.getBaseUriBuilder().path(SaasService.class).path(SaasService.class, "loginPage").build()).build();
+        return Response.status(302).location(uriInfo.getBaseUriBuilder().path(AdminService.class).path(AdminService.class, "loginPage").build()).build();
     }
 
     @Path("logout-cookie")

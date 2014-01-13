@@ -10,7 +10,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.resources.SaasService;
+import org.keycloak.services.resources.AdminService;
 import org.keycloak.services.resources.flows.Flows;
 
 import javax.ws.rs.*;
@@ -19,7 +19,6 @@ import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
@@ -71,7 +70,7 @@ public class RealmsAdminResource {
     }
 
     public static UriBuilder realmsUrl(UriInfo uriInfo) {
-        return uriInfo.getBaseUriBuilder().path(SaasService.class).path(SaasService.class, "getRealmsAdmin");
+        return uriInfo.getBaseUriBuilder().path(AdminService.class).path(AdminService.class, "getRealmsAdmin");
     }
 
     @POST

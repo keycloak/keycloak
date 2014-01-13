@@ -50,7 +50,7 @@ Next thing you have to do is import the test realm for the demo.  Clicking on th
 create realm page in the admin UI.  The username/password is admin/admin to login in.  Keycloak will ask you to
 create a new password admin password before you can go to the create realm page.
 
-[http://localhost:8080/auth-server/admin/index.html#/create/realm](http://localhost:8080/auth-server/admin/index.html#/create/realm)
+[http://localhost:8080/auth/admin/index.html#/create/realm](http://localhost:8080/auth/admin/index.html#/create/realm)
 
 Import the testrealm.json file that is in the as7-eap6-demo/ example directory.
 
@@ -92,7 +92,7 @@ Admin Console
 1. Login
 
 Login:
-[http://localhost:8080/auth-server/rest/saas/login](http://localhost:8080/auth-server/rest/saas/login)
+[http://localhost:8080/auth/rest/admin/login](http://localhost:8080/auth/rest/admin/login)
 
 
 

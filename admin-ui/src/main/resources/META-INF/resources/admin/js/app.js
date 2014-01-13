@@ -5,7 +5,7 @@ var resourceRequests = 0;
 var loadingTimer = -1;
 
 angular.element(document).ready(function ($http) {
-    $http.get('/auth-server/rest/saas/whoami').success(function(data) {
+    $http.get('/auth/rest/admin/whoami').success(function(data) {
         var auth = {};
         auth.user = data;
         auth.loggedIn = true;
@@ -16,7 +16,7 @@ angular.element(document).ready(function ($http) {
         angular.bootstrap(document, ["keycloak"]);
     }).error(function() {
         var path = window.location.hash && window.location.hash.substring(1) || '/';
-        window.location = '/auth-server/rest/saas/login?path=' + path;
+        window.location = '/auth/rest/admin/login?path=' + path;
     });
 });
 
@@ -484,7 +484,7 @@ module.factory('errorInterceptor', function($q, $window, $rootScope, $location, 
             if (response.status == 401) {
                 console.log('session timeout?');
                 Auth.loggedIn = false;
-                window.location = '/auth-server/rest/saas/login?path=' + $location.path();
+                window.location = '/auth/rest/admin/login?path=' + $location.path();
             } else if (response.status == 404) {
                 Notifications.error("Not found");
             } else if (response.status) {

@@ -2,13 +2,9 @@ package org.keycloak.services.resources;
 
 import org.jboss.resteasy.logging.Logger;
 import org.keycloak.SkeletonKeyContextResolver;
-import org.keycloak.models.Constants;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ModelProvider;
-import org.keycloak.models.UserModel;
 import org.keycloak.services.managers.ApplianceBootstrap;
-import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.SocialRequestManager;
 import org.keycloak.services.managers.TokenManager;
 
@@ -44,7 +40,7 @@ public class KeycloakApplication extends Application {
         TokenManager tokenManager = new TokenManager();
 
         singletons.add(new RealmsResource(tokenManager));
-        singletons.add(new SaasService(tokenManager));
+        singletons.add(new AdminService(tokenManager));
         singletons.add(new SocialResource(tokenManager, new SocialRequestManager()));
         classes.add(SkeletonKeyContextResolver.class);
         classes.add(QRCodeResource.class);

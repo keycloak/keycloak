@@ -1,4 +1,4 @@
 keycloak
 ========
 
-SSO SaaS
+SSO Service for web apps and REST services.
