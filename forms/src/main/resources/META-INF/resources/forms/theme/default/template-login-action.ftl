@@ -26,7 +26,7 @@
     </div>
     <#if (template.themeConfig.logo)?has_content>
         <h1>
-            <a href="${url.loginUrl}" title="Go to the login page"><img src="${template.themeConfig.logo}" alt="Red Hat Logo" /></a>
+            <a href="${url.loginUrl}" title="Go to the login page"><img src="${template.themeConfig.logo}" alt="Keycloak" /></a>
         </h1>
     </#if>
 
