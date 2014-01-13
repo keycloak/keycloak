@@ -1,0 +1,369 @@
+<chapter id="server-installation">
+    <title>Installation and Configuration of Keycloak Server</title>
+
+    <para>
+        The Keycloak Server has two downloadable distributions.
+    </para>
+    <para>
+        <itemizedlist>
+
+            <listitem>
+                keycloak-appliance-dist-all-1.0-alpha-1-SNAPSHOT.zip
+            </listitem>
+
+            <listitem>
+                keycloak-war-dist-all-1.0-alpha-1-SNAPSHOT.zip
+            </listitem>
+
+        </itemizedlist>
+
+    </para>
+    <section>
+        <title>Appliance Install</title>
+        <para>
+            The
+            <literal>keycloak-appliance-dist-all.zip</literal>
+            is quite large, but contains a complete server (backed by Wildfly)
+            that runs out of the box. The only thing you'll have to enable and configure is SSL. Unzipping it, the
+            directory layout looks
+            something like this:
+        </para>
+
+        <para>
+<programlisting>
+keycloak-appliance-dist-all-1.0-alpha-1-SNAPSHOT/
+    keycloak/
+        bin/
+            standalone.sh
+            standalone.bat
+            standalone/deployments/
+                                   auth-server.war/
+                                   keycloak-ds.xml
+
+    adapters/
+        keycloak-as7-adapter-dist-1.0-alpha-1-SNAPSHOT.zip
+        keycloak-as7-adapter-dist-1.0-alpha-1-SNAPSHOT.zip
+        keycloak-as7-adapter-dist-1.0-alpha-1-SNAPSHOT.zip
+    examples/
+    docs/
+</programlisting>
+        </para>
+        <para>
+            The
+            <literal>standalone.sh</literal>
+            or
+            <literal>standalone.bat</literal>
+            script is used to start the server.
+            After executing that, log into the admin console at<ulink
+                url="http://localhost:8080/auth-server/rest/saas/login">
+            http://localhost:8080/auth-server/rest/saas/login</ulink>.
+            Username:
+            <emphasis>admin</emphasis>
+            Password:<emphasis>admin</emphasis>. Keycloak with then prompt you to
+            enter in a new password.
+        </para>
+    </section>
+    <section>
+        <title>WAR Distribution Installation</title>
+        <para>
+            The
+            <literal>keycloak-war-dist-all.zip</literal>
+            contains
+            just the bits you need to install keycloak on your favorite web container. We currently only support
+            installing it on top of an existing JBoss AS 7.1.1, JBoss EAP 6.x, or Wildfly 8 distribution. We may in the
+            future provide directions on how to install it on another web container like Tomcat or Jetty. If anybody
+            in the community is interested in pulling this together, please contact us. Its mostly Maven pom work.
+        </para>
+        <para>
+            The directory structure of this distro looks like this:
+        </para>
+        <para>
+<programlisting>
+keycloak-war-dist-all-1.0-alpha-1-SNAPSHOT/
+    deployments/
+        auth-server.war/
+        keycloak-ds.xml
+    adapters/
+        keycloak-as7-adapter-dist-1.0-alpha-1-SNAPSHOT.zip
+        keycloak-as7-adapter-dist-1.0-alpha-1-SNAPSHOT.zip
+        keycloak-as7-adapter-dist-1.0-alpha-1-SNAPSHOT.zip
+    examples/
+    docs/
+</programlisting>
+        </para>
+        <para>
+            After unzipping this file, copy the <literal>deployments/</literal> directory into to the <literal>standalone/</literal>
+            of your JBoss or Wildfly distro.
+        </para>
+        <para>
+<programlisting>
+    $ cd keycloak-war-dist-all-1.0-alpha-1-SNAPSHOT
+    $ cp -r deployments $JBOSS_HOME/standalone
+</programlisting>
+        </para>
+        <para>
+            After booting up the JBoss or Wildfly distro, you can then make sure it is installed properly
+            by logging into the admin console at<ulink
+                url="http://localhost:8080/auth-server/rest/saas/login">
+            http://localhost:8080/auth-server/rest/saas/login</ulink>.
+            Username:
+            <emphasis>admin</emphasis>
+            Password:<emphasis>admin</emphasis>. Keycloak with then prompt you to
+            enter in a new password.
+        </para>
+    </section>
+    <section>
+        <title>Configuring the Server</title>
+        <para>
+            Although the Keycloak Server is designed to run out of the box, there's some things you'll need
+            to configure before you go into production.  Specifically:
+            <itemizedlist>
+
+                <listitem>
+                    Configuring keycloak to use a production database.
+                </listitem>
+
+                <listitem>
+                    Setting up SSL/HTTPS
+                </listitem>
+
+                <listitem>
+                    Enforcing HTTPS connections
+                </listitem>
+            </itemizedlist>
+        </para>
+        <section>
+            <title>Database Configuration</title>
+            <para>
+                The datasource used to store Keycloak data is configured in the <literal>.../standalone/deployments/keycloak-ds.xml</literal>
+                file of your Keycloak Server installation.  A good thing to delete this file and move its configuration text into the
+                centrally managed <literal>.../standalone/configuration/standalone.xml</literal> file.  This will allow
+                you to manage the database connection pool from the Wildfly/JBoss adminstration console.  Here's what
+                <literal>.../standalone/configuration/standalone.xml</literal> should look like after you've done this:
+            </para>
+            <para>
+<programlisting><![CDATA[
+<subsystem xmlns="urn:jboss:domain:datasources:2.0">
+   <datasources>
+      <datasource jndi-name="java:jboss/datasources/ExampleDS"
+                  pool-name="ExampleDS" enabled="true" use-java-context="true">
+         <connection-url>jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE</connection-url>
+         <driver>h2</driver>
+         <security>
+            <user-name>sa</user-name>
+            <password>sa</password>
+         </security>
+      </datasource>
+      <datasource jndi-name="java:jboss/datasources/KeycloakDS"
+                  pool-name="KeycloakDS" enabled="true" use-java-context="true">
+         <connection-url>jdbc:h2:${jboss.server.data.dir}/keycloak;AUTO_SERVER=TRUE</connection-url>
+         <driver>h2</driver>
+         <security>
+            <user-name>sa</user-name>
+            <password>sa</password>
+        </security>
+      </datasource>
+      <drivers>
+         <driver name="h2" module="com.h2database.h2">
+            <xa-datasource-class>org.h2.jdbcx.JdbcDataSource</xa-datasource-class>
+         </driver>
+      </drivers>
+            </datasources>
+        </subsystem>
+]]>
+</programlisting>
+            </para>
+            <para>
+                Besides moving the database config into the central <literal>standalone.xml</literal> configuration file
+                you might want to use a better relational database for Keycloak like Oracle or something.  You might also
+                want to tweak the configuration settings of the datasource.  Please see the <ulink url="https://docs.jboss.org/author/display/WFLY8/DataSource+configuration">Wildfly</ulink>,
+                <ulink url="https://docs.jboss.org/author/display/AS71/DataSource+configuration">JBoss AS7</ulink>,
+                or <ulink url="https://docs.jboss.org/author/display/AS71/DataSource+configuration">JBoss EAP 6.x</ulink> documentation on how to do this.
+            </para>
+            <para>
+                Keycloak also runs on a Hibernate/JPA backend which is configured in the
+                <literal>.../standalone/deployments/auth-server.war/WEB-INF/classes/META-INF/persistence.xml</literal>.
+                Please see the <ulink url="http://hibernate.org/orm/documentation/">Hibernate and JPA documentation</ulink> for more information on tweaking the backend datamodel.
+            </para>
+        </section>
+        <section>
+            <title>SSL/HTTPS Setup</title>
+            <warning>
+                <para>
+                    Keycloak is not set up by default to handle SSL/HTTPS in either the
+                    war distribution or appliance.  It is highly recommended that you enable it!
+                </para>
+            </warning>
+            <para>
+                The following things need to be done
+                <itemizedlist>
+
+                    <listitem>
+                        Generate a self signed or third-party signed certificate and import it into a Java keystore
+                        using <literal>keytool</literal>.
+                    </listitem>
+
+                    <listitem>
+                        Enable JBoss or Wildfly to use this certificate and turn on SSL/HTTPS.
+                    </listitem>
+
+                    <listitem>
+                        Configure the Keycloak Server to enforce HTTPS connections.
+                    </listitem>
+                </itemizedlist>
+            </para>
+            <section>
+                <title>Creating the Certificate and Java Keystore</title>
+                <para>
+                    In order to allow HTTPS connections, you need to obtain a self signed or third-party signed certificate
+                    and import it into a Java keystore before you can enable HTTPS in the web container you are deploying
+                    the Keycloak Server to.
+                </para>
+                <section>
+                    <title>Self Signed Certificate</title>
+                    <para>
+                        In development, you will probably not have a third party signed certificate available to test
+                        a Keycloak deployment so you'll need to generate a self-signed on.  Generate one is very easy
+                        to do with the <literal>keytool</literal> utility that comes with the Java jdk.
+                    </para>
+                    <para>
+<programlisting>
+$ keytool -genkey -alias localhost -keyalg RSA -keystore keycloak.jks -validity 10950
+    Enter keystore password: secret
+    Re-enter new password: secret
+    What is your first and last name?
+    [Unknown]:  localhost
+    What is the name of your organizational unit?
+    [Unknown]:  Keycloak
+    What is the name of your organization?
+    [Unknown]:  Red Hat
+    What is the name of your City or Locality?
+    [Unknown]:  Westford
+    What is the name of your State or Province?
+    [Unknown]:  MA
+    What is the two-letter country code for this unit?
+    [Unknown]:  US
+    Is CN=localhost, OU=Keycloak, O=Test, L=Westford, ST=MA, C=US correct?
+    [no]:  yes
+</programlisting>
+                    </para>
+                    <para>
+                        You should answer the <literal>What is your first and last name?</literal> question with
+                        the DNS name of the machine you're installing the server on.  For testing purposes,
+                        <literal>localhost</literal> should be used.  After executing this command, the
+                        <literal>keycloak.jks</literal> file will be generated in the same directory as you executed
+                        the <literal>keytool</literal> command in.
+                    </para>
+                    <para>
+                        If you want a third-party signed certificate, but don't have one, you can obtain one for free
+                        at <ulink url="http://cacert.org">cacert.org</ulink>.  You'll have to do a little set up first
+                        before doing this though.
+                    </para>
+                    <para>
+                        The first thing to do is generate a Certificate Request:
+                        <programlisting>
+                            $ keytool -certreq -alias yourdomain -keystore keycloak.jks > keycloak.careq
+                        </programlisting>
+                    </para>
+                    <para>
+                         Where <literal>yourdomain</literal> is a DNS name for which this certificate is generated for.
+                         Keytool generates the request:
+<programlisting>
+     -----BEGIN NEW CERTIFICATE REQUEST-----
+     MIIC2jCCAcICAQAwZTELMAkGA1UEBhMCVVMxCzAJBgNVBAgTAk1BMREwDwYDVQQHEwhXZXN0Zm9y
+     ZDEQMA4GA1UEChMHUmVkIEhhdDEQMA4GA1UECxMHUmVkIEhhdDESMBAGA1UEAxMJbG9jYWxob3N0
+     MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAr7kck2TaavlEOGbcpi9c0rncY4HhdzmY
+     Ax2nZfq1eZEaIPqI5aTxwQZzzLDK9qbeAd8Ji79HzSqnRDxNYaZu7mAYhFKHgixsolE3o5Yfzbw1
+     29Rvy+eUVe+WZxv5oo9wolVVpdSINIMEL2LaFhtX/c1dqiqYVpfnvFshZQaIg2nL8juzZcBjj4as
+     H98gIS7khql/dkZKsw9NLvyxgJvp7PaXurX29fNf3ihG+oFrL22oFyV54BWWxXCKU/GPn61EGZGw
+     Ft2qSIGLdctpMD1aJR2bcnlhEjZKDksjQZoQ5YMXaAGkcYkG6QkgrocDE2YXDbi7GIdf9MegVJ35
+     2DQMpwIDAQABoDAwLgYJKoZIhvcNAQkOMSEwHzAdBgNVHQ4EFgQUQwlZJBA+fjiDdiVzaO9vrE/i
+     n2swDQYJKoZIhvcNAQELBQADggEBAC5FRvMkhal3q86tHPBYWBuTtmcSjs4qUm6V6f63frhveWHf
+     PzRrI1xH272XUIeBk0gtzWo0nNZnf0mMCtUBbHhhDcG82xolikfqibZijoQZCiGiedVjHJFtniDQ
+     9bMDUOXEMQ7gHZg5q6mJfNG9MbMpQaUVEEFvfGEQQxbiFK7hRWU8S23/d80e8nExgQxdJWJ6vd0X
+     MzzFK6j4Dj55bJVuM7GFmfdNC52pNOD5vYe47Aqh8oajHX9XTycVtPXl45rrWAH33ftbrS8SrZ2S
+     vqIFQeuLL3BaHwpl3t7j2lMWcK1p80laAxEASib/fAwrRHpLHBXRcq6uALUOZl4Alt8=
+     -----END NEW CERTIFICATE REQUEST-----
+ </programlisting>
+                    </para>
+                    <para>
+                        Send this ca request to your CA.  The CA will issue you a signed certificate and send it to you.
+                        Before you import your new cert, you must obtain and import the root certificate of the CA.
+                        You can download the cert from CA (ie.: root.crt) and import as follows:
+<programlisting>
+$ keytool -import -keystore keycloak.jks -file root.crt -alias root
+</programlisting>
+                    </para>
+                    <para>
+                        Last step is import your new CA generated certificate to your keystore:
+<programlisting>
+$ keytool -import -alias yourdomain -keystore keycloak.jks -file your-certificate.cer
+</programlisting>
+                    </para>
+                </section>
+            </section>
+            <section>
+                <title>Installing the keystore</title>
+                <para>
+                    Now that you have a Java keystore with the appropriate certificates, you need to configure your
+                    JBoss or Wildfly installation to use it.  First step is to move the keystore file to a directory
+                    you can reference in configuration.  I like to put it in <literal>standalone/configuration</literal>.
+                    Then you need to edit <literal>standalone/configuration/standalone.xml</literal> to enable SSL/HTTPS.
+                </para>
+                <para>
+<programlisting><![CDATA[]
+<subsystem xmlns="urn:jboss:domain:web:1.1" default-virtual-server="default-host" native="false">
+   <connector name="http" protocol="HTTP/1.1" scheme="http" socket-binding="http"  redirect-port="443" />
+   <connector name="https" scheme="https" protocol="HTTP/1.1" socket-binding="https"
+              enable-lookups="false" secure="true">
+       <ssl name="localhost-ssl" password="secret" protocol="TLSv1"
+            key-alias="localhost" certificate-key-file="${jboss.server.config.dir}/foo.keystore" />
+   </connector>
+        ...
+</subsystem>
+]]>
+</programlisting>
+                </para>
+                <para>
+                    Check the <ulink url="https://docs.jboss.org/author/display/WFLY8/SSL+setup+guide">Wildfly</ulink>
+                    or <ulink url="https://docs.jboss.org/author/display/AS71/SSL+setup+guide">JBoss</ulink> documentation for more information on fine tuning the socket connections.
+                </para>
+            </section>
+            <section>
+                <title>Enforce HTTPS For Server Connections</title>
+                <para>
+                    Servlet containers can force browsers and other HTTP clients to use HTTPS.  You have to configure this in
+                    <literal>.../standalone/deployments/auth-server.war/WEB-INF/web.xml</literal>.  All you have to do is
+                    uncomment out the security constraint.
+                </para>
+                <para>
+ <programlisting><![CDATA[]
+ <web-app>
+ ...
+       <security-constraint>
+           <web-resource-collection>
+               <url-pattern>/*</url-pattern>
+           </web-resource-collection>
+           <user-data-constraint>
+               <transport-guarantee>CONFIDENTIAL</transport-guarantee>
+           </user-data-constraint>
+       </security-constraint>
+</web-app>
+]]>
+   </programlisting>
+                </para>
+            </section>
+            <section>
+                <title>Enforce HTTPS at Realm Level</title>
+                <para>
+                    In Keycloak, each realm has an "Require SSL" switch that you should turn on.  Log into the
+                    adminstration console and set this switch for each realm that Keycloak manages.  This switch is on
+                    the <literal>Settings>>General</literal> page.  While this switch does do similar checks as the security
+                    constraint in <literal>web.xml</literal>, it will also force applications and oauth clients to only
+                    register HTTPS based redirect URLs.
+                </para>
+            </section>
+        </section>
+
+    </section>
+</chapter>

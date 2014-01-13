@@ -1,0 +1,127 @@
+<chapter id="Overview">
+    <title>Overview</title>
+
+    <para>
+        Keycloak is an SSO solution for web apps and RESTful web services.  It is an authentication server where users
+        can centrally login, logout, register, and manage their user accounts.  The Keycloak admin UI can manage roles
+        and role mappings for any application secured by Keycloak.  The Keycloak Server can also be used to perform
+        social logins via the user's favorite social media site i.e. Google, Facebook, Twitter etc.
+    </para>
+    <para>
+
+
+    </para>
+    <para>
+        Features:
+        <itemizedlist>
+
+            <listitem>
+                SSO and Single Log Out for browser applications
+            </listitem>
+
+            <listitem>
+                Social Broker.  Enable Google, Facebook, Yahoo, Twitter social login with no code required.
+            </listitem>
+
+            <listitem>
+                Optional User Registration
+            </listitem>
+
+            <listitem>
+                Password and TOTP support (via Google Authenticator).  Client cert auth coming soon.
+            </listitem>
+
+            <listitem>
+                OAuth Bearer token auth for REST Services
+            </listitem>
+
+            <listitem>
+                Integrated Browser App to REST Service token propagation
+            </listitem>
+            <listitem>
+                OAuth Bearer token auth for REST Services
+            </listitem>
+            <listitem>
+                OAuth 2.0 Grant requests
+            </listitem>
+            <listitem>
+                CORS Support
+            </listitem>
+            <listitem>
+                CORS Web Origin management and validation
+            </listitem>
+            <listitem>
+                Completely centrally managed user and role mapping metadata.  Minimal configuration at the application side
+            </listitem>
+            <listitem>
+                Admin Console for managing users, roles, role mappings, applications, user sessions, allowed CORS web origins, and OAuth clients.
+            </listitem>
+            <listitem>
+                Deployable as a WAR, appliance, or on Openshift.
+            </listitem>
+            <listitem>
+                Supports JBoss AS7, EAP 6.x, and Wildfly applications.  Plans to support Node.js, RAILS, GRAILS, and other non-Java application
+            </listitem>
+        </itemizedlist>
+    </para>
+    <section>
+        <title>Key Concepts in Keycloak</title>
+        <para>
+            The core concept in Keycloak is a <emphasis>Realm</emphasis>.  A realm secures and manages security metadata for
+            for a set of users, applications, and registered oauth clients.  Users can be created within a specific realm
+            within the Administration console.  Roles (permission types) can be defined at the realm level and you can also
+            set up user role mappings to assign these permissions to specific users.
+        </para>
+        <para>
+            An <emphasis>application</emphasis> is a service that is secured by a realm.  When a user browses an
+            application's web site, the application can redirect the user agent to the Keycloak Server and request a login.
+            Once a user is logged in, they can visit any other application managed by the realm and not have to re-enter
+            credentials.  This also hold true for logging out.  Roles can also be defined at the application level and
+            assigned to specific users.  Depending on the application type, you may also be able to view and manage
+            user sessions from the adminstration console.
+        </para>
+        <para>
+            An <emphasis>oauth client</emphasis> is similar to an application in that it can request something like a login
+            when a user visits the site of the oauth client.  The difference is that oauth clients are not immediately granted
+            all permissions of the user.  In addition to requesting the login credentials of the user, the Keycloak Server
+            will also display a grant page asking the user if it is ok to grant allowed permissions to the oauth client.
+        </para>
+    </section>
+    <section>
+        <title>How Does Security Work in Keycloak?</title>
+        <para>
+            Keycloak uses <emphasis>access tokens</emphasis>.  Access tokens are contains security metadata specifying the
+            identity of the user as well as the role mappings for that user.  The format of these tokens is a Keycloak
+            extension to the <ulink url="http://tools.ietf.org/html/draft-ietf-oauth-json-web-token-14">JSON Web Token</ulink> specification.  Each realm  has a private and public key pair
+            which it uses to digitally sign the access token using the <ulink url="http://tools.ietf.org/html/draft-ietf-jose-json-web-signature-19">JSON Web Signature</ulink> specification.
+            Applications can verify the integrity of the digitally signed
+            access token using the public key of the realm.  The protocols used to obtain this token is defined by the
+            <ulink url="http://tools.ietf.org/html/rfc6749">OAuth 2.0</ulink> specification.
+        </para>
+        <para>
+            The interesting thing about using these <emphasis>smart</emphasis> access tokens is that applications themselves are completely stateless
+            as far as security metadata goes.  All the information they need about the user is contained in the token and there's
+            no need for them to store any security metadata locally other than the public key of the realm.
+        </para>
+        <para>
+            Signed access tokens can also be proprogated by REST client requests within an <literal>Authorization</literal>
+            header.  This is great for distributed integration as applications can request a login from a client to obtain
+            an access token, then invoke any aggregated REST invocations to other services using that access token.  So,
+            you have a distributed security model that is centrally managed, yet does not require a Keycloak Server hit
+            per request, only for the initial login.
+        </para>
+        <section>
+            <title>Permission Scopes</title>
+            <para>
+                Each application and oauth client are configured with a set of permission scopes.  These are a set
+                of roles that an application or oauth client is allowed to ask permission for.  Access tokens are always
+                granted at the request of a specific application or oauth client.  This also holds true for SSO.  As you visit
+                different sites, the application will redirect back to the Keycloak Server via the OAuth 2.0 protocol to obtain an access
+                token specific to that application.  The role mappings contained within the token are the union
+                between the set of user role mappings and the permission scope of the application/oauth client.  So,
+                access tokens are tailor made for each application/oauth client and contain only the information required
+                for by them.
+            </para>
+        </section>
+    </section>
+</chapter>

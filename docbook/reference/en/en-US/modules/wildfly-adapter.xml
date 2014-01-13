@@ -1,0 +1,107 @@
+<section>
+    <title>Wildfly 8 Adapter</title>
+    <section>
+        <title>Wildfly Adapter Installation</title>
+    <para>
+       The Wildfly 8 Adapter is contained in the Keycloak distribution within the <literal>adapters/keycloak-wildfly-adapter-dist.zip</literal>
+       file.  To install it:
+    </para>
+    <para>
+<programlisting>
+        $ cd $WILDFLY_HOME
+        $ unzip keycloak-wildfly-adapter-dist.zip
+</programlisting>
+    </para>
+    <para>
+        This zip file creates new JBoss Modules specific to the Wildfly Keycloak Adapter within your Wildfly distro.
+    </para>
+    </section>
+    <section>
+        <title>Wildfly 8 Adapter Configuration</title>
+        <para>
+            The Wildfly 8 Adapter is enabled per WAR application.  The adapter code is contained in a JBoss Module
+            so you must first create a <literal>jboss-deployment-structure.xml</literal> within your WAR's
+            <literal>WEB-INF</literal> directory that imports the Wildfly Keycloak Adapter.
+        </para>
+        <para>
+<programlisting><![CDATA[
+<jboss-deployment-structure>
+    <deployment>
+        <dependencies>
+            <module name="org.keycloak.keycloak-undertow-adapter" services="import"/>
+        </dependencies>
+    </deployment>
+</jboss-deployment-structure>]]>
+</programlisting>
+        </para>
+        <para>
+            It is possible to add the adapter jars directory to your WAR, but its best to do module imports because
+            the adapter's dependencies may conflict with your application's.
+        </para>
+        <para>
+            After creating the <literal>jboss-deployment-structure.xml</literal> configuration file, you must create
+            a <literal>keycloak.json</literal> adapter config file within the <literal>WEB-INF</literal> directory
+            of your WAR.  The format of this config file is describe in the <link linkend='adapter-config'>general adapter configuration</link>
+            section.
+        </para>
+        <para>
+            Finally you must set the <literal>auth-method</literal> to <literal>KEYCLOAK</literal> in <literal>web.xml</literal>.  You also
+            have to use standard servlet security to specify role-base constraints on your URLs.  Here's an example
+            pulled from one of the examples that comes distributed with Keycloak.
+        </para>
+        <para>
+<programlisting>
+<![CDATA[
+<web-app xmlns="http://java.sun.com/xml/ns/javaee"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
+      version="3.0">
+
+	<module-name>customer-portal</module-name>
+
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>Admins</web-resource-name>
+            <url-pattern>/admin/*</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <role-name>admin</role-name>
+        </auth-constraint>
+    </security-constraint>
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>Customers</web-resource-name>
+            <url-pattern>/customers/*</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <role-name>user</role-name>
+        </auth-constraint>
+    </security-constraint>
+
+    <security-constraint>
+        <web-resource-collection>
+            <url-pattern>/*</url-pattern>
+        </web-resource-collection>
+        <user-data-constraint>
+            <transport-guarantee>CONFIDENTIAL</transport-guarantee>
+        </user-data-constraint>
+    </security-constraint>
+
+    <login-config>
+        <auth-method>KEYCLOAK</auth-method>
+        <realm-name>this is ignored currently/realm-name>
+    </login-config>
+
+    <security-role>
+        <role-name>admin</role-name>
+    </security-role>
+    <security-role>
+        <role-name>user</role-name>
+    </security-role>
+</web-app>
+]]>
+</programlisting>
+        </para>
+    </section>        ]
+
+</section>

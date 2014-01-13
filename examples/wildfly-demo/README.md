@@ -28,7 +28,7 @@ If you want to install Keycloak Server and run the demo on an existing Wildfly i
 
 Obtain latest keycloak-war-dist-all.zip.  This distro is used to install keycloak onto an existing JBoss installation
 
-    $ cd ${jboss.home}/standalone
+    $ cd ${wildfly.home}/standalone
     $ cp -r ${keycloak-war-dist-all}/deployments .
 
 To install the adapter:
@@ -40,7 +40,13 @@ Step 2: Boot Keycloak Server
 ---------------------------------------
 Where you go to start up the Keycloak Server depends on which distro you installed.
 
-    $ ./bin/standalone.sh
+From appliance:
+$ cd keycloak/bin
+$ ./standalone.sh
+
+From existing Wildfly distro
+$ cd ${wildfly.home}
+$ ./standalone.sh
 
 Step 3: Import the Test Realm
 ---------------------------------------
