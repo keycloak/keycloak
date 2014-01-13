@@ -13,8 +13,8 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.SkeletonKeyToken;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.resources.AccountService;
+import org.keycloak.services.resources.AdminService;
 import org.keycloak.services.resources.RealmsResource;
-import org.keycloak.services.resources.SaasService;
 
 import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.core.Cookie;
@@ -59,8 +59,8 @@ public class AuthenticationManager {
     }
 
     public NewCookie createSaasIdentityCookie(RealmModel realm, UserModel user, UriInfo uriInfo) {
-        String cookieName = SaasService.SAAS_IDENTITY_COOKIE;
-        URI uri = SaasService.saasCookiePath(uriInfo).build();
+        String cookieName = AdminService.SAAS_IDENTITY_COOKIE;
+        URI uri = AdminService.saasCookiePath(uriInfo).build();
         String cookiePath = uri.getRawPath();
         return createLoginCookie(realm, user, null, cookieName, cookiePath);
     }
@@ -100,9 +100,9 @@ public class AuthenticationManager {
     }
 
     public void expireSaasIdentityCookie(UriInfo uriInfo) {
-        URI uri = SaasService.saasCookiePath(uriInfo).build();
+        URI uri = AdminService.saasCookiePath(uriInfo).build();
         String cookiePath = uri.getRawPath();
-        expireCookie(SaasService.SAAS_IDENTITY_COOKIE, cookiePath);
+        expireCookie(AdminService.SAAS_IDENTITY_COOKIE, cookiePath);
     }
 
     public void expireAccountIdentityCookie(URI uri) {
@@ -128,7 +128,7 @@ public class AuthenticationManager {
     }
 
     public UserModel authenticateSaasIdentityCookie(RealmModel realm, UriInfo uriInfo, HttpHeaders headers) {
-        String cookieName = SaasService.SAAS_IDENTITY_COOKIE;
+        String cookieName = AdminService.SAAS_IDENTITY_COOKIE;
         Auth auth = authenticateIdentityCookie(realm, uriInfo, headers, cookieName);
         return auth != null ? auth.getUser() : null;
     }

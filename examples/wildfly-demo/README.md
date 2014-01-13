@@ -54,7 +54,7 @@ Next thing you have to do is import the test realm for the demo.  Clicking on th
 create realm page in the Admin UI.  The username/password is admin/admin to login in.  Keycloak will ask you to
 create a new admin password before you can go to the create realm page.
 
-[http://localhost:8080/auth-server/admin/index.html#/create/realm](http://localhost:8080/auth-server/admin/index.html#/create/realm)
+[http://localhost:8080/auth/admin/index.html#/create/realm](http://localhost:8080/auth/admin/index.html#/create/realm)
 
 Import the testrealm.json file that is in the wildfly-demo/ example directory.
 
@@ -93,7 +93,7 @@ an oauth grant page.  This page asks you if you want to grant certain permission
 Admin Console
 ==========================
 
-[http://localhost:8080/auth-server/admin/index.html](http://localhost:8080/auth-server/admin/index.html)
+[http://localhost:8080/auth/admin/index.html](http://localhost:8080/auth/admin/index.html)
 
 
 

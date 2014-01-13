@@ -4,7 +4,7 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location
     };
 
     $scope.auth = Auth;
-    $http.get('/auth-server/rest/saas/whoami').success(function(data, status) {
+    $http.get('/auth/rest/admin/whoami').success(function(data, status) {
         Auth.user = data;
         Auth.loggedIn = true;
     })
@@ -87,7 +87,7 @@ module.controller('RealmCreateCtrl', function($scope, Current, Realm, $upload, $
         for (var i = 0; i < $scope.files.length; i++) {
             var $file = $scope.files[i];
             $scope.upload = $upload.upload({
-                url: '/auth-server/rest/saas/admin/realms', //upload.php script, node.js route, or servlet url
+                url: '/auth/rest/admin/realms', //upload.php script, node.js route, or servlet url
                 // method: POST or PUT,
                 // headers: {'headerKey': 'headerValue'}, withCredential: true,
                 data: {myObj: ""},

@@ -22,9 +22,9 @@
 package org.keycloak.services.resources.flows;
 
 import org.keycloak.services.resources.AccountService;
+import org.keycloak.services.resources.AdminService;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.RequiredActionsService;
-import org.keycloak.services.resources.SaasService;
 import org.keycloak.services.resources.SocialResource;
 import org.keycloak.services.resources.TokenService;
 
@@ -133,23 +133,23 @@ public class Urls {
     }
 
     private static UriBuilder saasBase(URI baseUri) {
-        return UriBuilder.fromUri(baseUri).path(SaasService.class);
+        return UriBuilder.fromUri(baseUri).path(AdminService.class);
     }
 
     public static URI saasLoginAction(URI baseUri) {
-        return saasBase(baseUri).path(SaasService.class, "processLogin").build();
+        return saasBase(baseUri).path(AdminService.class, "processLogin").build();
     }
 
     public static URI saasLoginPage(URI baseUri) {
-        return saasBase(baseUri).path(SaasService.class, "loginPage").build();
+        return saasBase(baseUri).path(AdminService.class, "loginPage").build();
     }
 
     public static URI saasRegisterAction(URI baseUri) {
-        return saasBase(baseUri).path(SaasService.class, "processRegister").build();
+        return saasBase(baseUri).path(AdminService.class, "processRegister").build();
     }
 
     public static URI saasRegisterPage(URI baseUri) {
-        return saasBase(baseUri).path(SaasService.class, "registerPage").build();
+        return saasBase(baseUri).path(AdminService.class, "registerPage").build();
     }
 
     public static UriBuilder socialBase(URI baseUri) {

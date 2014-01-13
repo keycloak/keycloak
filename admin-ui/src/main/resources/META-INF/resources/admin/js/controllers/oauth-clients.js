@@ -209,7 +209,7 @@ module.controller('OAuthClientScopeMappingCtrl', function($scope, $http, realm, 
     });
 
     $scope.addRealmRole = function() {
-        $http.post('/auth-server/rest/saas/admin/realms/' + realm.id + '/oauth-clients/' + oauth.id + '/scope-mappings/realm',
+        $http.post('/auth/rest/admin/realms/' + realm.id + '/oauth-clients/' + oauth.id + '/scope-mappings/realm',
                 $scope.selectedRealmRoles).success(function() {
                 for (var i = 0; i < $scope.selectedRealmRoles.length; i++) {
                     var role = $scope.selectedRealmRoles[i];
@@ -224,7 +224,7 @@ module.controller('OAuthClientScopeMappingCtrl', function($scope, $http, realm, 
     };
 
     $scope.deleteRealmRole = function() {
-        $http.delete('/auth-server/rest/saas/admin/realms/' + realm.id + '/oauth-clients/' + oauth.id +  '/scope-mappings/realm',
+        $http.delete('/auth/rest/admin/realms/' + realm.id + '/oauth-clients/' + oauth.id +  '/scope-mappings/realm',
             {data : $scope.selectedRealmMappings, headers : {"content-type" : "application/json"}}).success(function() {
                 for (var i = 0; i < $scope.selectedRealmMappings.length; i++) {
                     var role = $scope.selectedRealmMappings[i];
@@ -239,7 +239,7 @@ module.controller('OAuthClientScopeMappingCtrl', function($scope, $http, realm, 
     };
 
     $scope.addApplicationRole = function() {
-        $http.post('/auth-server/rest/saas/admin/realms/' + realm.id + '/oauth-clients/' + oauth.id +  '/scope-mappings/applications/' + $scope.targetApp.id,
+        $http.post('/auth/rest/admin/realms/' + realm.id + '/oauth-clients/' + oauth.id +  '/scope-mappings/applications/' + $scope.targetApp.id,
                 $scope.selectedApplicationRoles).success(function() {
                 for (var i = 0; i < $scope.selectedApplicationRoles.length; i++) {
                     var role = $scope.selectedApplicationRoles[i];
@@ -254,7 +254,7 @@ module.controller('OAuthClientScopeMappingCtrl', function($scope, $http, realm, 
     };
 
     $scope.deleteApplicationRole = function() {
-        $http.delete('/auth-server/rest/saas/admin/realms/' + realm.id + '/oauth-clients/' + oauth.id +  '/scope-mappings/applications/' + $scope.targetApp.id,
+        $http.delete('/auth/rest/admin/realms/' + realm.id + '/oauth-clients/' + oauth.id +  '/scope-mappings/applications/' + $scope.targetApp.id,
             {data : $scope.selectedApplicationMappings, headers : {"content-type" : "application/json"}}).success(function() {
                 for (var i = 0; i < $scope.selectedApplicationMappings.length; i++) {
                     var role = $scope.selectedApplicationMappings[i];

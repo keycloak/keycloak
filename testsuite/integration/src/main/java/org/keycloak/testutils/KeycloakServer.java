@@ -250,7 +250,7 @@ public class KeycloakServer {
 
         DeploymentInfo di = server.undertowDeployment(deployment, "rest");
         di.setClassLoader(getClass().getClassLoader());
-        di.setContextPath("/auth-server");
+        di.setContextPath("/auth");
         di.setDeploymentName("Keycloak");
         di.setResourceManager(new KeycloakResourceManager(config.getResourcesHome()));
 
@@ -275,7 +275,7 @@ public class KeycloakServer {
             info("Loading resources from " + config.getResourcesHome());
         }
 
-        info("Started Keycloak (http://" + config.getHost() + ":" + config.getPort() + "/auth-server) in "
+        info("Started Keycloak (http://" + config.getHost() + ":" + config.getPort() + "/auth) in "
                 + (System.currentTimeMillis() - start) + " ms\n");
     }
 

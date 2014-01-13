@@ -55,8 +55,8 @@ keycloak-appliance-dist-all-1.0-alpha-1-SNAPSHOT/
             <literal>standalone.bat</literal>
             script is used to start the server.
             After executing that, log into the admin console at<ulink
-                url="http://localhost:8080/auth-server/rest/saas/login">
-            http://localhost:8080/auth-server/rest/saas/login</ulink>.
+                url="http://localhost:8080/auth/rest/admin/login">
+            http://localhost:8080/auth/rest/admin/login</ulink>.
             Username:
             <emphasis>admin</emphasis>
             Password:<emphasis>admin</emphasis>. Keycloak with then prompt you to
@@ -104,8 +104,8 @@ keycloak-war-dist-all-1.0-alpha-1-SNAPSHOT/
         <para>
             After booting up the JBoss or Wildfly distro, you can then make sure it is installed properly
             by logging into the admin console at<ulink
-                url="http://localhost:8080/auth-server/rest/saas/login">
-            http://localhost:8080/auth-server/rest/saas/login</ulink>.
+                url="http://localhost:8080/auth/rest/admin/login">
+            http://localhost:8080/auth/rest/admin/login</ulink>.
             Username:
             <emphasis>admin</emphasis>
             Password:<emphasis>admin</emphasis>. Keycloak with then prompt you to

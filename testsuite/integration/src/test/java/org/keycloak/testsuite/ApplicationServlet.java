@@ -55,7 +55,7 @@ public class ApplicationServlet extends HttpServlet {
         PrintWriter pw = resp.getWriter();
         pw.printf("<html><head><title>%s</title></head><body>", title);
 
-        pw.printf(LINK, "http://localhost:8081/auth-server/rest/realms/test/account", "account", "account");
+        pw.printf(LINK, "http://localhost:8081/auth/rest/realms/test/account", "account", "account");
 
         pw.print("</body></html>");
         pw.flush();
