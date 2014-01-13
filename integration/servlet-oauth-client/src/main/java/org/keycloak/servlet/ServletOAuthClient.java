@@ -84,11 +84,15 @@ public class ServletOAuthClient extends AbstractOAuthClient {
     public void redirect(String redirectUri, HttpServletRequest request, HttpServletResponse response) throws IOException {
         String state = getStateCode();
 
-        URI url = KeycloakUriBuilder.fromUri(authUrl)
+        KeycloakUriBuilder uriBuilder =  KeycloakUriBuilder.fromUri(authUrl)
                 .queryParam("client_id", clientId)
                 .queryParam("redirect_uri", redirectUri)
-                .queryParam("state", state)
-                .build();
+                .queryParam("state", state);
+        if (scope != null) {
+            uriBuilder.queryParam("scope", scope);
+        }
+        URI url = uriBuilder.build();
+
         String stateCookiePath = this.stateCookiePath;
         if (stateCookiePath == null) stateCookiePath = request.getContextPath();
         if (stateCookiePath.equals("")) stateCookiePath = "/";

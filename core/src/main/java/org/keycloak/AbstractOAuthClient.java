@@ -17,6 +17,7 @@ public class AbstractOAuthClient {
     protected KeyStore truststore;
     protected String authUrl;
     protected String codeUrl;
+    protected String scope;
     protected String stateCookieName = OAUTH_TOKEN_REQUEST_STATE;
     protected String stateCookiePath;
     protected boolean isSecure;
@@ -66,6 +67,14 @@ public class AbstractOAuthClient {
 
     public void setCodeUrl(String codeUrl) {
         this.codeUrl = codeUrl;
+    }
+
+    public String getScope() {
+        return scope;
+    }
+
+    public void setScope(String scope) {
+        this.scope = scope;
     }
 
     public String getStateCookieName() {

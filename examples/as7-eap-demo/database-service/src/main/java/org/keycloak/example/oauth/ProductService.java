@@ -1,4 +1,4 @@
-package org.jboss.resteasy.example.oauth;
+package org.keycloak.example.oauth;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -10,17 +10,17 @@ import java.util.List;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-@Path("customers")
-public class CustomerService
+@Path("products")
+public class ProductService
 {
    @GET
    @Produces("application/json")
-   public List<String> getCustomers()
+   public List<String> getProducts()
    {
       ArrayList<String> rtn = new ArrayList<String>();
-      rtn.add("Bill Burke");
-      rtn.add("Ron Sigal");
-      rtn.add("Weinan Li");
+      rtn.add("iphone");
+      rtn.add("ipad");
+      rtn.add("ipod");
       return rtn;
    }
 }

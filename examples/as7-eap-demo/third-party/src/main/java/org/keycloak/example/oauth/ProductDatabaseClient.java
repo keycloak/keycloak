@@ -21,11 +21,11 @@ import java.util.List;
  */
 public class ProductDatabaseClient {
     public static void redirect(HttpServletRequest request, HttpServletResponse response) {
-        // This is really the worst code ever. The ServletOAuthClient is obtained by getting a context attribute
-        // that is set in the Bootstrap context listenr in this project.
+        // The ServletOAuthClient is obtained by getting a context attribute
+        // that is set in the Bootstrap context listener in this project.
         // You really should come up with a better way to initialize
         // and obtain the ServletOAuthClient.  I actually suggest downloading the ServletOAuthClient code
-        // and take a look how it works.
+        // and take a look how it works. You can also take a look at third-party-cdi example
         ServletOAuthClient oAuthClient = (ServletOAuthClient) request.getServletContext().getAttribute(ServletOAuthClient.class.getName());
         try {
             oAuthClient.redirectRelative("pull_data.jsp", request, response);
@@ -37,11 +37,11 @@ public class ProductDatabaseClient {
     static class TypedList extends ArrayList<String> {}
 
     public static List<String> getProducts(HttpServletRequest request) {
-        // This is really the worst code ever. The ServletOAuthClient is obtained by getting a context attribute
-        // that is set in the Bootstrap context listenr in this project.
+        // The ServletOAuthClient is obtained by getting a context attribute
+        // that is set in the Bootstrap context listener in this project.
         // You really should come up with a better way to initialize
         // and obtain the ServletOAuthClient.  I actually suggest downloading the ServletOAuthClient code
-        // and take a look how it works.
+        // and take a look how it works. You can also take a look at third-party-cdi example
         ServletOAuthClient oAuthClient = (ServletOAuthClient) request.getServletContext().getAttribute(ServletOAuthClient.class.getName());
         String token = null;
         try {

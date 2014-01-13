@@ -18,6 +18,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
+import java.net.URL;
 
 /**
  * Helper code to obtain oauth access tokens via browser redirects
@@ -87,11 +88,15 @@ public class JaxrsOAuthClient extends AbstractOAuthClient {
             state += "#" + path;
         }
 
-        URI url = UriBuilder.fromUri(authUrl)
+        UriBuilder uriBuilder = UriBuilder.fromUri(authUrl)
                 .queryParam("client_id", clientId)
                 .queryParam("redirect_uri", redirectUri)
-                .queryParam("state", state)
-                .build();
+                .queryParam("state", state);
+        if (scope != null) {
+            uriBuilder.queryParam("scope", scope);
+        }
+        URI url = uriBuilder.build();
+
         NewCookie cookie = new NewCookie(getStateCookieName(), state, getStateCookiePath(uriInfo), null, null, -1, isSecure, true);
         logger.debug("NewCookie: " + cookie.toString());
         logger.debug("Oauth Redirect to: " + url);
