@@ -16,6 +16,7 @@
             <outputDirectory>keycloak</outputDirectory>
             <excludes>
                 <exclude>**/*.sh</exclude>
+                <exclude>welcome-content/*</exclude>
             </excludes>
         </fileSet>
         <fileSet>
@@ -33,6 +34,13 @@
         <fileSet>
             <directory>${project.build.directory}/unpacked/adapter</directory>
             <outputDirectory>keycloak</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>${project.build.directory}/unpacked/deployments/auth-server.war</directory>
+            <outputDirectory>keycloak/welcome-content</outputDirectory>
+            <includes>
+                <include>*.*</include>
+            </includes>            
         </fileSet>
     </fileSets>
     <dependencySets>
