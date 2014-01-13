@@ -51,7 +51,7 @@ public class TemplateBean {
 
         themeConfig.put("styles", themeUrl + "/styles.css");
 
-        themeConfig.put("logo", themeUrl + "/img/red-hat-logo.png");
+        themeConfig.put("logo", themeUrl + "/img/keycloak-logo.png");
         themeConfig.put("background", themeUrl + "/img/login-screen-background.jpg");
         themeConfig.put("displayPoweredBy", true);
     }
