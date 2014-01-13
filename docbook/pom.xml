@@ -1,0 +1,119 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>org.keycloak</groupId>
+    <artifactId>keycloak-reference-guide-${translation}</artifactId>
+    <version>1.0-alpha-1-SNAPSHOT</version>
+    <packaging>jdocbook</packaging>
+    <name>Keycloak Reference Guide (${translation})</name>
+    <description/>
+    <repositories>
+        <repository>
+            <id>jboss</id>
+            <url>http://repository.jboss.org/nexus/content/groups/public/</url>
+        </repository>
+        <!--
+       <repository>
+           <id>repo1.maven.org</id>
+           <url>http://repo1.maven.org/maven2</url>
+       </repository> -->
+    </repositories>
+    <pluginRepositories>
+        <pluginRepository>
+            <id>jboss</id>
+            <url>http://repository.jboss.org/nexus/content/groups/public/</url>
+        </pluginRepository>
+        <!--
+        <pluginRepository>
+            <id>maven2-repository.dev.java.net</id>
+            <url>http://download.java.net/maven/2</url>
+        </pluginRepository>
+        <pluginRepository>
+            <id>plugin repo1.maven.org</id>
+            <url>http://repo1.maven.org/maven2</url>
+        </pluginRepository>
+        -->
+    </pluginRepositories>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.jboss.maven.plugins</groupId>
+                <artifactId>maven-jdocbook-plugin</artifactId>
+                <version>2.3.8</version>
+                <extensions>true</extensions>
+
+                <dependencies>
+                    <dependency>
+                        <groupId>org.jboss.pressgang</groupId>
+                        <artifactId>pressgang-xslt-ns</artifactId>
+                        <version>2.0.2</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.jboss.pressgang</groupId>
+                        <artifactId>pressgang-jdocbook-style</artifactId>
+                        <type>jdocbook-style</type>
+                        <version>2.0.2</version>
+                    </dependency>
+                </dependencies>
+
+                <configuration>
+                    <sourceDocumentName>master.xml</sourceDocumentName>
+                    <masterTranslation>en-US</masterTranslation>
+                    <sourceDirectory>reference/en</sourceDirectory>
+                    <imageResource>
+                        <directory>reference/en</directory>
+                        <includes>
+                            <include>images/*</include>
+                        </includes>
+                    </imageResource>
+                    <formats>
+                        <format>
+                            <formatName>html_single</formatName>
+                            <stylesheetResource>classpath:/xslt/org/jboss/xhtml-single.xsl</stylesheetResource>
+                            <finalName>index.html</finalName>
+                            <!-- <profilingTypeName>two_pass</profilingTypeName> -->
+                        </format>
+                        <format>
+                            <formatName>html</formatName>
+                            <stylesheetResource>classpath:/xslt/org/jboss/xhtml.xsl</stylesheetResource>
+                            <finalName>index.html</finalName>
+                            <!-- <profilingTypeName>two_pass</profilingTypeName> -->
+                        </format>
+                        <format>
+                            <formatName>pdf</formatName>
+                            <stylesheetResource>classpath:/xslt/org/jboss/pdf.xsl</stylesheetResource>
+                            <finalName>${project.artifactId}.pdf</finalName>
+                        </format>
+                        <!--<format>-->
+                        <!--<formatName>eclipse</formatName>-->
+                        <!--<stylesheetResource>classpath:/xslt/org/jboss/eclipse.xsl</stylesheetResource>-->
+                        <!--<finalName>${project.artifactId}.html</finalName>-->
+                        <!--</format>-->
+                    </formats>
+                    <injections>
+                        <injection>
+                            <name>project.version</name>
+                            <value>${project.version}</value>
+                        </injection>
+                    </injections>
+                    <options>
+                        <xmlTransformerType>saxon</xmlTransformerType>
+                        <xincludeSupported>true</xincludeSupported>
+                        <useRelativeImageUris>true</useRelativeImageUris>
+                        <!-- TODO Probably obsolete after the upgrade to maven-jdocbook-plugin 2.3.0 -->
+                        <docbookVersion>1.72.0</docbookVersion>
+                        <!-- <localeSeparator>-</localeSeparator> -->
+                    </options>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <properties>
+        <translation>en-US</translation>
+    </properties>
+</project>

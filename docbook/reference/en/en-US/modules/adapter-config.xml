@@ -1,0 +1,273 @@
+<section id="adapter-config">
+    <title>General Adapter Config</title>
+    <para>
+        Each adapter supported by Keycloak can be configured by a simple JSON text file.  This is what one might
+        look like:
+    </para>
+    <para>
+<programlisting><![CDATA[{
+  "realm" : "demo",
+  "resource" : "customer-portal",
+  "realm-public-key" : "MIGfMA0GCSqGSIb3D...31LwIDAQAB",
+  "auth-url" : "https://localhost:8443/.../realms/demo/tokens/login",
+  "code-url" : "https://localhost:8443/.../realms/demo/tokens/access/codes",
+  "ssl-not-required" : false,
+  "user-resource-role-mappings" : false,
+  "enable-cors" : true,
+  "cors-max-age" : 1000,
+  "cors-allowed-methods" : [ "POST", "PUT", "DELETE", "GET" ],
+  "bearer-only" : false,
+  "expose-token" : true,
+   "credentials" : {
+      "password" : "password"
+   }
+
+   "connection-pool-size" : 5,
+   "allo-any-hostname" : false,
+   "disable-trust-manager" false,
+   "truststore" : "path/to/truststore.jks",
+   "truststore-password" : "geheim",
+   "client-keystore" : "path/to/client-keystore.jks",
+   "client-keystore-password" : "geheim",
+   "client-key-password" : "geheim"
+}]]>
+
+</programlisting>
+    </para>
+    <para>
+        Some of these configuration switches may be adapter specific and some are common across all adapters.
+        For Java adapters you can use <literal>${...}</literal> enclosure as System property replacement.
+        For example <literal>${jboss.server.config.dir}</literal>.  Also, you can obtain a template
+        for this config file from the admin console.  Go to the realm and application you want a template for.
+        Go to the <literal>Installation</literal> tab and this will provide you with a template that includes
+        the public key of the realm.
+    </para>
+    <para>
+        Here is a description of each item:
+    </para>
+    <para>
+        <variablelist>
+            <varlistentry>
+                <term>realm</term>
+                <listitem>
+                    <para>
+                        Name of the realm representing the users of your distributed applications and services.
+                        This is
+                        <emphasis>REQUIRED.</emphasis>
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>resource</term>
+                <listitem>
+                    <para>
+                        Username of the application. Each application has a username that is used when the
+                        application connects with the Keycloak server to turn an access code into an access token
+                        (part of the OAuth 2.0 protocol). This is
+                        <emphasis>REQUIRED.</emphasis>
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>realm-public-key</term>
+                <listitem>
+                    <para>
+                        PEM format of public key. You can obtain this from the administration console.
+                        This is
+                        <emphasis>REQUIRED.</emphasis>
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>auth-url</term>
+                <listitem>
+                    <para>
+                        URL of the realm's login page of the Keycloak Server's token service. You can obtain
+                        this URL from the admin console.
+                        This is
+                        <emphasis>REQUIRED.</emphasis>
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>code-url</term>
+                <listitem>
+                    <para>
+                        URL to turn an access code into an access token. You can obtain
+                        this URL from the admin console.
+                        This is
+                        <emphasis>REQUIRED.</emphasis>
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>ssl-not-required</term>
+                <listitem>
+                    <para>
+                        Ensures that all communication to and from the Keycloak server from the adapter is over HTTPS.
+                        This is<emphasis>OPTIONAL</emphasis>. The default value is
+                        <emphasis>false</emphasis>
+                        meaning
+                        that HTTPS is required by default.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>user-resource-role-mappings</term>
+                <listitem>
+                    <para>
+                        If set to true, the adapter will look inside the token for application level role mappings for
+                        the
+                        user. If false, it will look at the realm level for user role mappings.
+                        This is<emphasis>OPTIONAL</emphasis>. The default value is<emphasis>false</emphasis>.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>enable-cors</term>
+                <listitem>
+                    <para>
+                        This enables CORS support. It will handle CORS preflight requests. It will also look into
+                        the access token to determine valid origins.
+                        This is<emphasis>OPTIONAL</emphasis>. The default value is<emphasis>false</emphasis>.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>cors-max-age</term>
+                <listitem>
+                    <para>
+                        If CORS is enabled, this sets the value of the
+                        <literal>Access-Control-Max-Age</literal>
+                        header.
+                        This is<emphasis>OPTIONAL</emphasis>. If not set, this header is not returned in CORS
+                        responses.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>cors-allowed-methods</term>
+                <listitem>
+                    <para>
+                        If CORS is enabled, this sets the value of the
+                        <literal>Access-Control-Allow-Methods</literal>
+                        header. This should be a JSON list of strings.
+                        This is<emphasis>OPTIONAL</emphasis>. If not set, this header is not returned in CORS
+                        responses.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>bearer-only</term>
+                <listitem>
+                    <para>
+                        This tells the adapter to only to bearer token authentication. That is, it will not do
+                        OAuth 2.0 redirects, but only accept bearer tokens through the
+                        <literal>Authorization</literal>
+                        header.
+                        This is<emphasis>OPTIONAL</emphasis>. The default value is<emphasis>false</emphasis>.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>expose-token</term>
+                <listitem>
+                    <para>
+                        If<literal>true</literal>, an authenticated browser client (via a Javascript HTTP invocation)
+                        can obtain the signed access token via the URL<literal>root/K_QUERY_BEARER_TOKEN</literal>.
+                        This is<emphasis>OPTIONAL</emphasis>. The default value is<emphasis>false</emphasis>.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>credentials</term>
+                <listitem>
+                    <para>
+                        Specify the credentials of the application. This is an object notation where the key
+                        is the credential type and the value if the value of the credential type. Currently only
+                        <literal>password</literal>
+                        is supported.
+                        This is<emphasis>REQUIRED</emphasis>.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>truststore</term>
+                <listitem>
+                    <para>
+                        This setting is for Java adapters. This is the file path to a Java keystore file.
+                        Used for outgoing HTTPS communications to the Keycloak server. Client making HTTPS
+                        requests need a way to verify the host of the server they are talking to. THis is
+                        what the trustore does. The keystore contains one or more trusted
+                        host certificates or certificate authorities. You can
+                        create this truststore by extracting the public certificate of the Keycloak server's SSL
+                        keystore.
+                        This is
+                        <emphasis>OPTIONAL</emphasis>
+                        if
+                        <literal>ssl-not-required</literal>
+                        is
+                        <literal>false</literal>
+                        or
+                        <literal>disable-trust-manager</literal>
+                        is<literal>true</literal>. The default value is<emphasis>false</emphasis>.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>truststore-password</term>
+                <listitem>
+                    <para>
+                        Password for the truststore keystore.
+                        This is
+                        <emphasis>REQUIRED</emphasis>
+                        if
+                        <literal>truststore</literal>
+                        is set.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>client-keystore</term>
+                <listitem>
+                    <para>
+                        <emphasis>Not supported yet, but we will support in future versions.</emphasis>
+
+                        This setting is for Java adapters. This is the file path to a Java keystore file.
+                        This keystore contains client certificate for two-way SSL when the adapter makes
+                        HTTPS requests to the Keycloak server.
+                        This is<emphasis>OPTIONAL</emphasis>.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>client-keystore-password</term>
+                <listitem>
+                    <para>
+                        <emphasis>Not supported yet, but we will support in future versions.</emphasis>
+                        Password for the client keystore.
+                        This is
+                        <emphasis>REQUIRED</emphasis>
+                        if
+                        <literal>client-keystore</literal>
+                        is set.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>client-key-password</term>
+                <listitem>
+                    <para>
+                        <emphasis>Not supported yet, but we will support in future versions.</emphasis>
+                        Password for the client's key.
+                        This is
+                        <emphasis>REQUIRED</emphasis>
+                        if
+                        <literal>client-keystore</literal>
+                        is set.
+                    </para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </para>
+</section>

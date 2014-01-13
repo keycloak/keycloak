@@ -1,0 +1,59 @@
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
+                         "http://www.docbook.org/xml/4.4/docbookx.dtd"
+        [
+                <!ENTITY License SYSTEM "modules/License.xml">
+                <!ENTITY Overview SYSTEM "modules/Overview.xml">
+                <!ENTITY Installation SYSTEM "modules/server-installation.xml">
+                <!ENTITY AdapterConfig SYSTEM "modules/adapter-config.xml">
+                <!ENTITY WildflyAdapter SYSTEM "modules/wildfly-adapter.xml">
+                <!ENTITY EAP6Adapter SYSTEM "modules/eap6-adapter.xml">
+                ]>
+
+<book>
+
+   <bookinfo>
+      <title>Keycloak Reference Guide</title>
+      <subtitle>SSO for Web Apps and REST Services</subtitle>
+      <releaseinfo>1.0-alpha-1-SNAPSHOT</releaseinfo>
+   </bookinfo>
+
+   <toc/>
+
+   <preface id="preface" revision="1">
+      <title>Preface</title>
+      <para>
+         In some of the example listings, what is meant to be displayed on one line does not fit
+         inside the available page width. These lines have been broken up. A '\' at the end of a
+         line means that a break has been introduced to fit in the page, with the following lines
+         indented. So:
+         <programlisting>
+            Let's pretend to have an extremely \
+            long line that \
+            does not fit
+            This one is short
+         </programlisting>
+         Is really:
+         <programlisting>
+            Let's pretend to have an extremely long line that does not fit
+            This one is short
+         </programlisting>
+      </para>
+   </preface>
+
+    &License;
+    &Overview;
+    &Installation;
+    <chapter>
+        <title>Adapters</title>
+        <para>
+            Keycloak can secure a wide variety of application types.  This section defines which application
+            types are supported and how to configure and install them so that you can use Keycloak to secure
+            your applications.
+        </para>
+        &AdapterConfig;
+        &WildflyAdapter;
+        &EAP6Adapter;
+    </chapter>
+
+</book>
+
