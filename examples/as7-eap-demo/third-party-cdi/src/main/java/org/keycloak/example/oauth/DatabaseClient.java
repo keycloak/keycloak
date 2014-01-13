@@ -31,6 +31,7 @@ import java.util.List;
 public class DatabaseClient {
 
     @Inject
+    @ServletRequestQualifier
     private HttpServletRequest request;
 
     @Inject

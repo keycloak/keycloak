@@ -22,6 +22,7 @@ public class CDIResourcesProducer {
 
     @Produces
     @RequestScoped
+    @ServletRequestQualifier
     public HttpServletRequest produceServletRequest() {
         return (HttpServletRequest)FacesContext.getCurrentInstance().getExternalContext().getRequest();
     }

@@ -17,6 +17,7 @@ import javax.servlet.http.HttpServletRequest;
 public class MessagesChecker {
 
     @Inject
+    @ServletRequestQualifier
     private HttpServletRequest request;
 
     @Inject
