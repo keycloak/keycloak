@@ -33,9 +33,11 @@ import io.undertow.servlet.Servlets;
 import io.undertow.servlet.api.DefaultServletConfig;
 import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.FilterInfo;
+import io.undertow.servlet.api.ServletInfo;
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
 import org.jboss.resteasy.spi.ResteasyDeployment;
+import org.keycloak.services.tmp.TmpAdminRedirectServlet;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -258,6 +260,10 @@ public class KeycloakServer {
         FilterInfo filter = Servlets.filter("SessionFilter", KeycloakSessionServletFilter.class);
         di.addFilter(filter);
         di.addFilterUrlMapping("SessionFilter", "/rest/*", DispatcherType.REQUEST);
+
+        ServletInfo tmpAdminRedirectServlet = Servlets.servlet("TmpAdminRedirectServlet", TmpAdminRedirectServlet.class);
+        tmpAdminRedirectServlet.addMappings("/admin", "/admin/");
+        di.addServlet(tmpAdminRedirectServlet);
 
         server.deploy(di);
 

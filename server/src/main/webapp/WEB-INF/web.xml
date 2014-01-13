@@ -21,6 +21,11 @@
         <async-supported>true</async-supported>
     </servlet>
 
+    <servlet>
+        <servlet-name>TmpAdminRedirectServlet</servlet-name>
+        <servlet-class>org.keycloak.services.tmp.TmpAdminRedirectServlet</servlet-class>
+    </servlet>
+
     <listener>
         <listener-class>org.keycloak.services.listeners.KeycloakSessionDestroyListener</listener-class>
     </listener>
@@ -42,6 +47,12 @@
     <servlet-mapping>
         <servlet-name>Resteasy</servlet-name>
         <url-pattern>/rest/*</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>TmpAdminRedirectServlet</servlet-name>
+        <url-pattern>/admin</url-pattern>
+        <url-pattern>/admin/</url-pattern>
     </servlet-mapping>
 
     <!--
