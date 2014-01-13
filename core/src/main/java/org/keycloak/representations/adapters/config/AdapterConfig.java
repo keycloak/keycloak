@@ -13,7 +13,7 @@ import org.codehaus.jackson.annotate.JsonPropertyOrder;
         "resource", "credentials",
         "use-resource-role-mappings",
         "enable-cors", "cors-max-age", "cors-allowed-methods",
-        "expose-token", "bearer-only",
+        "expose-token", "bearer-only", "scope",
         "connection-pool-size",
         "allow-any-hostname", "disable-trust-manager", "truststore", "truststore-password",
         "client-keystore", "client-keystore-password", "client-key-password"

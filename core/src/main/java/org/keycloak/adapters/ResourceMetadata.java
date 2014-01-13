@@ -14,6 +14,7 @@ public class ResourceMetadata {
     protected String clientKeyPassword;
     protected KeyStore truststore;
     protected PublicKey realmKey;
+    protected String scope;
 
     public String getResourceName() {
         return resourceName;
@@ -77,5 +78,13 @@ public class ResourceMetadata {
 
     public void setRealmKey(PublicKey realmKey) {
         this.realmKey = realmKey;
+    }
+
+    public String getScope() {
+        return scope;
+    }
+
+    public void setScope(String scope) {
+        this.scope = scope;
     }
 }

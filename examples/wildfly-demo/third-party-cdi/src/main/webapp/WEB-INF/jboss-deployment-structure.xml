@@ -1,0 +1,7 @@
+<jboss-deployment-structure>
+    <deployment>
+        <!-- This allows you to define additional dependencies, it is the same as using the Dependencies: manifest attribute -->
+        <dependencies>
+        </dependencies>
+    </deployment>
+</jboss-deployment-structure>

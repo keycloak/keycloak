@@ -1,4 +1,4 @@
-package org.jboss.resteasy.example.oauth;
+package org.keycloak.example.oauth;
 
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;

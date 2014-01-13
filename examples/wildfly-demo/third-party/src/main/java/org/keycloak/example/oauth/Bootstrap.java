@@ -1,15 +1,19 @@
 package org.keycloak.example.oauth;
 
 import org.keycloak.servlet.ServletOAuthClient;
+import org.keycloak.servlet.ServletOAuthClientConfigLoader;
 
+import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.security.KeyStore;
 
 /**
- * Stupid init code to load up the truststore so we can make appropriate SSL connections
+ * Init code to load up the truststore so we can make appropriate SSL connections
  * You really should use a better way of initializing this stuff.
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -32,36 +36,34 @@ public class Bootstrap implements ServletContextListener {
     @Override
     public void contextInitialized(ServletContextEvent sce) {
         client = new ServletOAuthClient();
-/*
-       // hardcoded, WARNING, you should really have a better way of doing this
-      // configuration.  Either use something like Spring or CDI, or even pull
-      // config vales from context-params
-      String truststorePath = "${jboss.server.config.dir}/client-truststore.ts";
-      String truststorePassword = "password";
-      truststorePath = EnvUtil.replace(truststorePath);
-      KeyStore truststore = null;
-      try
-      {
-         truststore = loadKeyStore(truststorePath, truststorePassword);
-      }
-      catch (Exception e)
-      {
-         throw new RuntimeException(e);
-      }
-      client.setTruststore(truststore);
-      */
-        client.setClientId("third-party");
-        client.setPassword("password");
-        client.setAuthUrl("http://localhost:8080/auth-server/rest/realms/demo/tokens/login");
-        client.setCodeUrl("http://localhost:8080/auth-server/rest/realms/demo/tokens/access/codes");
+        ServletContext context = sce.getServletContext();
+
+        configureClient(context);
+
         client.start();
-        sce.getServletContext().setAttribute(ServletOAuthClient.class.getName(), client);
-
-
+        context.setAttribute(ServletOAuthClient.class.getName(), client);
     }
 
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
         client.stop();
+    }
+
+    private void configureClient(ServletContext context) {
+        InputStream is = null;
+        String path = context.getInitParameter("keycloak.config.file");
+        if (path == null) {
+            is = context.getResourceAsStream("/WEB-INF/keycloak.json");
+        } else {
+            try {
+                is = new FileInputStream(path);
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        ServletOAuthClientConfigLoader loader = new ServletOAuthClientConfigLoader(is);
+        loader.initOAuthClientConfiguration(true);
+        loader.configureServletOAuthClient(client);
     }
 }

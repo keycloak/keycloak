@@ -1,0 +1,37 @@
+<!DOCTYPE html
+        PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:ui="http://java.sun.com/jsf/facelets" xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:f="http://java.sun.com/jsf/core">
+    <body>
+        <h1>Third Party App That Pulls Data Using OAuth</h1>
+        <h:form>
+            #{userData.accessTokenAvailabilityMessage}
+            <br />
+            <h:commandButton id="retrieve_token" value="Retrieve/refresh access token" action="#{databaseClient.retrieveAccessToken}"/>
+            <h:commandButton id="products_request" value="Load products list" action="#{databaseClient.sendProductsRequest}"/>
+            <h:commandButton id="customers_request" value="Load customers list" action="#{databaseClient.sendCustomersRequest}"/>
+        </h:form>
+
+        <ui:fragment rendered="#{userData.hasProducts}">
+            <hr />
+            <h3>Products data available</h3>
+            <ui:repeat value="#{userData.products}" var="product">
+                #{product}<br/>
+            </ui:repeat>
+        </ui:fragment>
+
+        <ui:fragment rendered="#{userData.hasCustomers}">
+            <hr />
+            <h3>Customers data available</h3>
+            <ui:repeat value="#{userData.customers}" var="customer">
+                #{customer}<br/>
+            </ui:repeat>
+        </ui:fragment>
+
+        <div style="color: red">
+            #{messagesChecker.checkMessage}
+            <h:messages globalOnly="true"/>
+        </div>
+    </body>
+</html>
