@@ -5,6 +5,7 @@ import io.undertow.server.HttpServerExchange;
 import io.undertow.util.Headers;
 import org.jboss.logging.Logger;
 import org.keycloak.SkeletonKeySession;
+import org.keycloak.adapters.AdapterConstants;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.representations.SkeletonKeyToken;
 
@@ -18,7 +19,7 @@ import java.util.Set;
  * Actions include:
  *
  * CORS Origin Check and Response headers
- * K_QUERY_BEARER_TOKEN: Get bearer token from server for Javascripts CORS requests
+ * k_query_bearer_token: Get bearer token from server for Javascripts CORS requests
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -39,7 +40,7 @@ public class AuthenticatedActionsHandler implements HttpHandler {
         SkeletonKeySession session = getSkeletonKeySession(exchange);
         if (corsRequest(exchange, session)) return;
         String requestUri = exchange.getRequestURI();
-        if (requestUri.endsWith("K_QUERY_BEARER_TOKEN")) {
+        if (requestUri.endsWith(AdapterConstants.K_QUERY_BEARER_TOKEN)) {
             queryBearerToken(exchange, session);
             return;
         }

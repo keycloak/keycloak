@@ -8,6 +8,7 @@ import org.apache.catalina.connector.Response;
 import org.apache.catalina.valves.ValveBase;
 import org.jboss.logging.Logger;
 import org.keycloak.SkeletonKeySession;
+import org.keycloak.adapters.AdapterConstants;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.representations.SkeletonKeyToken;
 
@@ -22,7 +23,7 @@ import java.util.Set;
  * Actions include:
  * <p/>
  * CORS Origin Check and Response headers
- * K_QUERY_BEARER_TOKEN: Get bearer token from server for Javascripts CORS requests
+ * k_query_bearer_token: Get bearer token from server for Javascripts CORS requests
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -46,7 +47,7 @@ public class AuthenticatedActionsValve extends ValveBase {
         SkeletonKeySession session = getSkeletonKeySession(request);
         if (corsRequest(request, response, session)) return;
         String requestUri = request.getRequestURI();
-        if (requestUri.endsWith("K_QUERY_BEARER_TOKEN")) {
+        if (requestUri.endsWith(AdapterConstants.K_QUERY_BEARER_TOKEN)) {
             queryBearerToken(request, response, session);
             return;
         }

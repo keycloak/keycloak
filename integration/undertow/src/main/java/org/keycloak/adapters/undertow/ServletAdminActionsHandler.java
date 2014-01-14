@@ -6,7 +6,7 @@ import io.undertow.server.HttpServerExchange;
 import io.undertow.server.session.SessionManager;
 import io.undertow.servlet.handlers.ServletRequestContext;
 import org.jboss.logging.Logger;
-import org.keycloak.adapters.AdapterAdminResourceConstants;
+import org.keycloak.adapters.AdapterConstants;
 import org.keycloak.adapters.config.RealmConfiguration;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
@@ -82,7 +82,7 @@ public class ServletAdminActionsHandler implements HttpHandler {
         HttpServletResponse response = (HttpServletResponse) servletRequestContext.getServletResponse();
         SessionManager manager = servletRequestContext.getDeployment().getSessionManager();
         String requestUri = exchange.getRequestURI();
-        if (requestUri.endsWith(AdapterAdminResourceConstants.LOGOUT)) {
+        if (requestUri.endsWith(AdapterConstants.K_LOGOUT)) {
             JWSInput token = verifyAdminRequest(request, response);
             if (token == null) return;
             userSessionManagement.remoteLogout(token, manager, response);
