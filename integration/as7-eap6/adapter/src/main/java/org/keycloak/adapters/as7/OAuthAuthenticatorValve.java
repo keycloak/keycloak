@@ -13,7 +13,7 @@ import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.deploy.LoginConfig;
 import org.apache.catalina.realm.GenericPrincipal;
 import org.jboss.logging.Logger;
-import org.keycloak.adapters.AdapterAdminResourceConstants;
+import org.keycloak.adapters.AdapterConstants;
 import org.keycloak.adapters.ResourceMetadata;
 import org.keycloak.SkeletonKeyPrincipal;
 import org.keycloak.SkeletonKeySession;
@@ -83,7 +83,7 @@ public class OAuthAuthenticatorValve extends FormAuthenticator implements Lifecy
                 return;
             }
             String requestURI = request.getDecodedRequestURI();
-            if (requestURI.endsWith(AdapterAdminResourceConstants.LOGOUT)) {
+            if (requestURI.endsWith(AdapterConstants.K_LOGOUT)) {
                 JWSInput input = verifyAdminRequest(request, response);
                 if (input == null) {
                     return; // we failed to verify the request

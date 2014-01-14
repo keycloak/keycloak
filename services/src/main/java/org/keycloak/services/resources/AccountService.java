@@ -330,10 +330,10 @@ public class AccountService {
                 throw new BadRequestException();
             }
 
-            URI accountUri = Urls.accountBase(uriInfo.getBaseUri()).path("/").build(realm.getId());
+            URI accountUri = Urls.accountBase(uriInfo.getBaseUri()).path("/").build(realm.getName());
             URI redirectUri = path != null ? accountUri.resolve(path) : accountUri;
 
-            NewCookie cookie = authManager.createAccountIdentityCookie(realm, accessCode.getUser(), client, Urls.accountBase(uriInfo.getBaseUri()).build(realm.getId()));
+            NewCookie cookie = authManager.createAccountIdentityCookie(realm, accessCode.getUser(), client, Urls.accountBase(uriInfo.getBaseUri()).build(realm.getName()));
             return Response.status(302).cookie(cookie).location(redirectUri).build();
         } finally {
             authManager.expireCookie(AbstractOAuthClient.OAUTH_TOKEN_REQUEST_STATE, uriInfo.getAbsolutePath().getRawPath());
@@ -344,7 +344,7 @@ public class AccountService {
     @GET
     public Response logout() {
         // TODO Should use single-sign out via TokenService
-        URI baseUri = Urls.accountBase(uriInfo.getBaseUri()).build(realm.getId());
+        URI baseUri = Urls.accountBase(uriInfo.getBaseUri()).build(realm.getName());
         authManager.expireIdentityCookie(realm, uriInfo);
         authManager.expireAccountIdentityCookie(baseUri);
         return Response.status(302).location(baseUri).build();
@@ -352,12 +352,12 @@ public class AccountService {
 
     private Response login(String path) {
         JaxrsOAuthClient oauth = new JaxrsOAuthClient();
-        String authUrl = Urls.realmLoginPage(uriInfo.getBaseUri(), realm.getId()).toString();
+        String authUrl = Urls.realmLoginPage(uriInfo.getBaseUri(), realm.getName()).toString();
         oauth.setAuthUrl(authUrl);
 
         oauth.setClientId(Constants.ACCOUNT_APPLICATION);
 
-        URI accountUri = Urls.accountPageBuilder(uriInfo.getBaseUri()).path(AccountService.class, "loginRedirect").build(realm.getId());
+        URI accountUri = Urls.accountPageBuilder(uriInfo.getBaseUri()).path(AccountService.class, "loginRedirect").build(realm.getName());
 
         String referrer = getReferrer();
         if (referrer != null) {

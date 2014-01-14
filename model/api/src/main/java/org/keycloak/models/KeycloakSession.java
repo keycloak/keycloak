@@ -12,6 +12,7 @@ public interface KeycloakSession {
     RealmModel createRealm(String name);
     RealmModel createRealm(String id, String name);
     RealmModel getRealm(String id);
+    RealmModel getRealmByName(String name);
     List<RealmModel> getRealms(UserModel admin);
     boolean removeRealm(String id);
 

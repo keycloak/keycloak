@@ -13,7 +13,7 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, ro
 
 
 
-    $scope.realmMappings = RealmRoleMapping.query({realm : realm.id, userId : user.username}, function(){
+    $scope.realmMappings = RealmRoleMapping.query({realm : realm.realm, userId : user.username}, function(){
         for (var i = 0; i < $scope.realmMappings.length; i++) {
             var role = $scope.realmMappings[i];
             for (var j = 0; j < $scope.realmRoles.length; j++) {
@@ -30,7 +30,7 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, ro
     });
 
     $scope.addRealmRole = function() {
-        $http.post('/auth/rest/admin/realms/' + realm.id + '/users/' + user.username + '/role-mappings/realm',
+        $http.post('/auth/rest/admin/realms/' + realm.realm + '/users/' + user.username + '/role-mappings/realm',
                 $scope.selectedRealmRoles).success(function() {
                 for (var i = 0; i < $scope.selectedRealmRoles.length; i++) {
                     var role = $scope.selectedRealmRoles[i];
@@ -45,7 +45,7 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, ro
     };
 
     $scope.deleteRealmRole = function() {
-        $http.delete('/auth/rest/admin/realms/' + realm.id + '/users/' + user.username + '/role-mappings/realm',
+        $http.delete('/auth/rest/admin/realms/' + realm.realm + '/users/' + user.username + '/role-mappings/realm',
             {data : $scope.selectedRealmMappings, headers : {"content-type" : "application/json"}}).success(function() {
                 for (var i = 0; i < $scope.selectedRealmMappings.length; i++) {
                     var role = $scope.selectedRealmMappings[i];
@@ -60,7 +60,7 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, ro
     };
 
     $scope.addApplicationRole = function() {
-        $http.post('/auth/rest/admin/realms/' + realm.id + '/users/' + user.username + '/role-mappings/applications/' + $scope.application.id,
+        $http.post('/auth/rest/admin/realms/' + realm.realm + '/users/' + user.username + '/role-mappings/applications/' + $scope.application.id,
                 $scope.selectedApplicationRoles).success(function() {
                 for (var i = 0; i < $scope.selectedApplicationRoles.length; i++) {
                     var role = $scope.selectedApplicationRoles[i];
@@ -75,7 +75,7 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, ro
     };
 
     $scope.deleteApplicationRole = function() {
-        $http.delete('/auth/rest/admin/realms/' + realm.id + '/users/' + user.username + '/role-mappings/applications/' + $scope.application.id,
+        $http.delete('/auth/rest/admin/realms/' + realm.realm + '/users/' + user.username + '/role-mappings/applications/' + $scope.application.id,
             {data : $scope.selectedApplicationMappings, headers : {"content-type" : "application/json"}}).success(function() {
                 for (var i = 0; i < $scope.selectedApplicationMappings.length; i++) {
                     var role = $scope.selectedApplicationMappings[i];
@@ -91,8 +91,8 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, ro
 
 
     $scope.changeApplication = function() {
-        $scope.applicationRoles = ApplicationRole.query({realm : realm.id, userId : user.username, application : $scope.application.id}, function() {
-                $scope.applicationMappings = ApplicationRoleMapping.query({realm : realm.id, userId : user.username, application : $scope.application.id}, function(){
+        $scope.applicationRoles = ApplicationRole.query({realm : realm.realm, userId : user.username, application : $scope.application.id}, function() {
+                $scope.applicationMappings = ApplicationRoleMapping.query({realm : realm.realm, userId : user.username, application : $scope.application.id}, function(){
                     for (var i = 0; i < $scope.applicationMappings.length; i++) {
                         var role = $scope.applicationMappings[i];
                         for (var j = 0; j < $scope.applicationRoles.length; j++) {
@@ -122,7 +122,7 @@ module.controller('UserListCtrl', function($scope, realm, User) {
         $scope.searchLoaded = false;
         $scope.currentSearch = $scope.search;
 
-        var params = { realm: realm.id };
+        var params = { realm: realm.realm };
         if ($scope.search) {
             params.search = $scope.search;
         }
@@ -185,17 +185,17 @@ module.controller('UserDetailCtrl', function($scope, realm, user, User, $locatio
     $scope.save = function() {
         if ($scope.create) {
             User.save({
-                realm: realm.id
+                realm: realm.realm
             }, $scope.user, function () {
                 $scope.changed = false;
                 user = angular.copy($scope.user);
 
-                $location.url("/realms/" + realm.id + "/users/" + $scope.user.username);
+                $location.url("/realms/" + realm.realm + "/users/" + $scope.user.username);
                 Notifications.success("The user has been created.");
             });
         } else {
             User.update({
-                realm: realm.id,
+                realm: realm.realm,
                 userId: $scope.user.username
             }, $scope.user, function () {
                 $scope.changed = false;
@@ -211,16 +211,16 @@ module.controller('UserDetailCtrl', function($scope, realm, user, User, $locatio
     };
 
     $scope.cancel = function() {
-        $location.url("/realms/" + realm.id + "/users");
+        $location.url("/realms/" + realm.realm + "/users");
     };
 
     $scope.remove = function() {
         Dialog.confirmDelete($scope.user.username, 'user', function() {
             $scope.user.$remove({
-                realm : realm.id,
+                realm : realm.realm,
                 userId : $scope.user.username
             }, function() {
-                $location.url("/realms/" + realm.id + "/users");
+                $location.url("/realms/" + realm.realm + "/users");
                 Notifications.success("The user has been deleted.");
             });
         });
@@ -259,7 +259,7 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, User, Use
         var credentials = [ { type : "password", value : $scope.password } ];
 
         User.update({
-            realm: realm.id,
+            realm: realm.realm,
             userId: $scope.user.username
         }, $scope.user, function () {
 
@@ -267,7 +267,7 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, User, Use
 
             if ($scope.pwdChange){
                 UserCredentials.update({
-                    realm: realm.id,
+                    realm: realm.realm,
                     userId: $scope.user.username
                 }, credentials, function () {
                     Notifications.success("The password has been reset. The user is required to change his password on" +
@@ -326,7 +326,7 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, User, Use
 
 module.controller('RoleMappingCtrl', function($scope, realm, User, users, role, RoleMapping, Notifications) {
     $scope.realm = realm;
-    $scope.realmId = realm.realm || realm.id;
+    $scope.realmId = realm.realm || realm.realm;
     $scope.allUsers = User.query({ realm : $scope.realmId });
     $scope.users = users;
     $scope.role = role;

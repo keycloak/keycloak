@@ -174,7 +174,7 @@
                 <listitem>
                     <para>
                         If<literal>true</literal>, an authenticated browser client (via a Javascript HTTP invocation)
-                        can obtain the signed access token via the URL<literal>root/K_QUERY_BEARER_TOKEN</literal>.
+                        can obtain the signed access token via the URL<literal>root/k_query_bearer_token</literal>.
                         This is<emphasis>OPTIONAL</emphasis>. The default value is<emphasis>false</emphasis>.
                     </para>
                 </listitem>

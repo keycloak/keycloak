@@ -50,10 +50,10 @@ public class PublicRealmResource {
     public String getRealmHtml(@PathParam("realm") String id) {
         StringBuffer html = new StringBuffer();
 
-        String authUri = TokenService.loginPageUrl(uriInfo).build(realm.getId()).toString();
-        String codeUri = TokenService.accessCodeToTokenUrl(uriInfo).build(realm.getId()).toString();
-        String grantUrl = TokenService.grantAccessTokenUrl(uriInfo).build(realm.getId()).toString();
-        String idGrantUrl = TokenService.grantIdentityTokenUrl(uriInfo).build(realm.getId()).toString();
+        String authUri = TokenService.loginPageUrl(uriInfo).build(realm.getName()).toString();
+        String codeUri = TokenService.accessCodeToTokenUrl(uriInfo).build(realm.getName()).toString();
+        String grantUrl = TokenService.grantAccessTokenUrl(uriInfo).build(realm.getName()).toString();
+        String idGrantUrl = TokenService.grantIdentityTokenUrl(uriInfo).build(realm.getName()).toString();
 
         html.append("<html><body><h1>Realm: ").append(realm.getName()).append("</h1>");
         html.append("<p>auth: ").append(authUri).append("</p>");
@@ -74,10 +74,10 @@ public class PublicRealmResource {
         rep.setPublicKeyPem(realm.getPublicKeyPem());
         rep.setAdminRole(ADMIN_ROLE);
 
-        rep.setAuthorizationUrl(TokenService.loginPageUrl(uriInfo).build(realm.getId()).toString());
-        rep.setCodeUrl(TokenService.accessCodeToTokenUrl(uriInfo).build(realm.getId()).toString());
-        rep.setGrantUrl(TokenService.grantAccessTokenUrl(uriInfo).build(realm.getId()).toString());
-        String idGrantUrl = TokenService.grantIdentityTokenUrl(uriInfo).build(realm.getId()).toString();
+        rep.setAuthorizationUrl(TokenService.loginPageUrl(uriInfo).build(realm.getName()).toString());
+        rep.setCodeUrl(TokenService.accessCodeToTokenUrl(uriInfo).build(realm.getName()).toString());
+        rep.setGrantUrl(TokenService.grantAccessTokenUrl(uriInfo).build(realm.getName()).toString());
+        String idGrantUrl = TokenService.grantIdentityTokenUrl(uriInfo).build(realm.getName()).toString();
         rep.setIdentityGrantUrl(idGrantUrl);
         return rep;
     }

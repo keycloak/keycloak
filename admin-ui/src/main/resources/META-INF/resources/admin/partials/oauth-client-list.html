@@ -9,12 +9,12 @@
             </div>
             <div id="content">
                 <ol class="breadcrumb">
-                    <li><a href="#/realms/{{realm.id}}">{{realm.realm}}</a></li>
+                    <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
                     <li class="active">OAuth Clients</li>
                 </ol>
                 <h2><span>{{realm.realm}}</span> OAuth Clients</h2>
                 <div class="feedback info inline" data-ng-show="!oauthClients || oauthClients.length == 0">
-                    <p><strong>You have not configured oauth clients.</strong> <a class="button" href="#/create/oauth-client/{{realm.id}}">Add OAuth Client</a></p>
+                    <p><strong>You have not configured oauth clients.</strong> <a class="button" href="#/create/oauth-client/{{realm.realm}}">Add OAuth Client</a></p>
                 </div>
                 <table data-ng-hide="oauthClients.length == 0">
                     <thead>
@@ -29,7 +29,7 @@
                                 </button>
                             </div>
                             <div class="actions">
-                                <a class="button" href="#/create/oauth-client/{{realm.id}}">Add OAuth Client</a>
+                                <a class="button" href="#/create/oauth-client/{{realm.realm}}">Add OAuth Client</a>
                             </div>
                         </th>
                     </tr>
@@ -52,7 +52,7 @@
                     </tfoot>
                     <tbody>
                     <tr ng-repeat="client in oauthClients">
-                        <td><a href="#/realms/{{realm.id}}/oauth-clients/{{client.id}}">{{client.name}}</a></td>
+                        <td><a href="#/realms/{{realm.realm}}/oauth-clients/{{client.id}}">{{client.name}}</a></td>
                         <td>{{client.enabled}}</td>
                     </tr>
                     </tbody>

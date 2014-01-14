@@ -1,4 +1,4 @@
-package org.keycloak.services.resources;
+package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.logging.Logger;
@@ -21,7 +21,7 @@ import org.keycloak.services.managers.AuthenticationManager.AuthenticationStatus
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.services.resources.admin.RealmsAdminResource;
+import org.keycloak.services.resources.TokenService;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.OAuthFlows;
 

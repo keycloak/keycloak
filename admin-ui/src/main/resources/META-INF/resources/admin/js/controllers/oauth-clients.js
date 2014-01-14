@@ -42,7 +42,7 @@ module.controller('OAuthClientCredentialsCtrl', function($scope, $location, real
             }
         ];
 
-        OAuthClientCredentials.update({ realm : realm.id, oauth : oauth.id }, creds,
+        OAuthClientCredentials.update({ realm : realm.realm, oauth : oauth.id }, creds,
             function() {
                 Notifications.success('The password has been changed.');
                 $scope.password = null;
@@ -64,7 +64,7 @@ module.controller('OAuthClientCredentialsCtrl', function($scope, $location, real
             }
         ];
 
-        OAuthClientCredentials.update({ realm : realm.id, oauth : oauth.id }, creds,
+        OAuthClientCredentials.update({ realm : realm.realm, oauth : oauth.id }, creds,
             function() {
                 Notifications.success('The totp was changed.');
                 $scope.totp = null;
@@ -133,17 +133,17 @@ module.controller('OAuthClientDetailCtrl', function($scope, realm, oauth, OAuthC
     $scope.save = function() {
         if ($scope.create) {
             OAuthClient.save({
-                realm: realm.id
+                realm: realm.realm
             }, $scope.oauth, function (data, headers) {
                 $scope.changed = false;
                 var l = headers().location;
                 var id = l.substring(l.lastIndexOf("/") + 1);
-                $location.url("/realms/" + realm.id + "/oauth-clients/" + id);
+                $location.url("/realms/" + realm.realm + "/oauth-clients/" + id);
                 Notifications.success("The oauth client has been created.");
             });
         } else {
             OAuthClient.update({
-                realm : realm.id,
+                realm : realm.realm,
                 id : oauth.id
             }, $scope.oauth, function() {
                 $scope.changed = false;
@@ -159,16 +159,16 @@ module.controller('OAuthClientDetailCtrl', function($scope, realm, oauth, OAuthC
     };
 
     $scope.cancel = function() {
-        $location.url("/realms/" + realm.id + "/oauth-clients");
+        $location.url("/realms/" + realm.realm + "/oauth-clients");
     };
 
     $scope.remove = function() {
         Dialog.confirmDelete($scope.oauth.name, 'oauth', function() {
             $scope.oauth.$remove({
-                realm : realm.id,
+                realm : realm.realm,
                 id : $scope.oauth.id
             }, function() {
-                $location.url("/realms/" + realm.id + "/oauth-clients");
+                $location.url("/realms/" + realm.realm + "/oauth-clients");
                 Notifications.success("The oauth client has been deleted.");
             });
         });
@@ -192,7 +192,7 @@ module.controller('OAuthClientScopeMappingCtrl', function($scope, $http, realm, 
 
 
 
-    $scope.realmMappings = OAuthClientRealmScopeMapping.query({realm : realm.id, oauth : oauth.id}, function(){
+    $scope.realmMappings = OAuthClientRealmScopeMapping.query({realm : realm.realm, oauth : oauth.id}, function(){
         for (var i = 0; i < $scope.realmMappings.length; i++) {
             var role = $scope.realmMappings[i];
             for (var j = 0; j < $scope.realmRoles.length; j++) {
@@ -209,7 +209,7 @@ module.controller('OAuthClientScopeMappingCtrl', function($scope, $http, realm, 
     });
 
     $scope.addRealmRole = function() {
-        $http.post('/auth/rest/admin/realms/' + realm.id + '/oauth-clients/' + oauth.id + '/scope-mappings/realm',
+        $http.post('/auth/rest/admin/realms/' + realm.realm + '/oauth-clients/' + oauth.id + '/scope-mappings/realm',
                 $scope.selectedRealmRoles).success(function() {
                 for (var i = 0; i < $scope.selectedRealmRoles.length; i++) {
                     var role = $scope.selectedRealmRoles[i];
@@ -224,7 +224,7 @@ module.controller('OAuthClientScopeMappingCtrl', function($scope, $http, realm, 
     };
 
     $scope.deleteRealmRole = function() {
-        $http.delete('/auth/rest/admin/realms/' + realm.id + '/oauth-clients/' + oauth.id +  '/scope-mappings/realm',
+        $http.delete('/auth/rest/admin/realms/' + realm.realm + '/oauth-clients/' + oauth.id +  '/scope-mappings/realm',
             {data : $scope.selectedRealmMappings, headers : {"content-type" : "application/json"}}).success(function() {
                 for (var i = 0; i < $scope.selectedRealmMappings.length; i++) {
                     var role = $scope.selectedRealmMappings[i];
@@ -239,7 +239,7 @@ module.controller('OAuthClientScopeMappingCtrl', function($scope, $http, realm, 
     };
 
     $scope.addApplicationRole = function() {
-        $http.post('/auth/rest/admin/realms/' + realm.id + '/oauth-clients/' + oauth.id +  '/scope-mappings/applications/' + $scope.targetApp.id,
+        $http.post('/auth/rest/admin/realms/' + realm.realm + '/oauth-clients/' + oauth.id +  '/scope-mappings/applications/' + $scope.targetApp.id,
                 $scope.selectedApplicationRoles).success(function() {
                 for (var i = 0; i < $scope.selectedApplicationRoles.length; i++) {
                     var role = $scope.selectedApplicationRoles[i];
@@ -254,7 +254,7 @@ module.controller('OAuthClientScopeMappingCtrl', function($scope, $http, realm, 
     };
 
     $scope.deleteApplicationRole = function() {
-        $http.delete('/auth/rest/admin/realms/' + realm.id + '/oauth-clients/' + oauth.id +  '/scope-mappings/applications/' + $scope.targetApp.id,
+        $http.delete('/auth/rest/admin/realms/' + realm.realm + '/oauth-clients/' + oauth.id +  '/scope-mappings/applications/' + $scope.targetApp.id,
             {data : $scope.selectedApplicationMappings, headers : {"content-type" : "application/json"}}).success(function() {
                 for (var i = 0; i < $scope.selectedApplicationMappings.length; i++) {
                     var role = $scope.selectedApplicationMappings[i];
@@ -270,8 +270,8 @@ module.controller('OAuthClientScopeMappingCtrl', function($scope, $http, realm, 
 
 
     $scope.changeApplication = function() {
-        $scope.applicationRoles = ApplicationRole.query({realm : realm.id, application : $scope.targetApp.id}, function() {
-                $scope.applicationMappings = OAuthClientApplicationScopeMapping.query({realm : realm.id, oauth : oauth.id, targetApp : $scope.targetApp.id}, function(){
+        $scope.applicationRoles = ApplicationRole.query({realm : realm.realm, application : $scope.targetApp.id}, function() {
+                $scope.applicationMappings = OAuthClientApplicationScopeMapping.query({realm : realm.realm, oauth : oauth.id, targetApp : $scope.targetApp.id}, function(){
                     for (var i = 0; i < $scope.applicationMappings.length; i++) {
                         var role = $scope.applicationMappings[i];
                         for (var j = 0; j < $scope.applicationRoles.length; j++) {

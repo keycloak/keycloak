@@ -7,6 +7,7 @@ import org.keycloak.models.ModelProvider;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.SocialRequestManager;
 import org.keycloak.services.managers.TokenManager;
+import org.keycloak.services.resources.admin.AdminService;
 
 import javax.servlet.ServletContext;
 import javax.ws.rs.core.Application;

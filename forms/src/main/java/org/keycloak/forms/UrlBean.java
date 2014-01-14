@@ -52,6 +52,10 @@ public class UrlBean {
         this.referrerURI = referrerURI;
     }
 
+    protected String getRealmIdentifier() {
+        return realm.getName();
+    }
+
     public RealmBean getRealm() {
         return realm;
     }
@@ -61,11 +65,11 @@ public class UrlBean {
     }
 
     public String getAccessUrl() {
-        return Urls.accountAccessPage(baseURI, realm.getId()).toString();
+        return Urls.accountAccessPage(baseURI, getRealmIdentifier()).toString();
     }
 
     public String getAccountUrl() {
-        return Urls.accountPage(baseURI, realm.getId()).toString();
+        return Urls.accountPage(baseURI, getRealmIdentifier()).toString();
     }
 
     URI getBaseURI() {
@@ -73,24 +77,24 @@ public class UrlBean {
     }
 
     public String getLoginAction() {
-        return Urls.realmLoginAction(baseURI, realm.getId()).toString();
+        return Urls.realmLoginAction(baseURI, getRealmIdentifier()).toString();
     }
 
     public String getLoginUrl() {
-        return Urls.realmLoginPage(baseURI, realm.getId()).toString();
+        return Urls.realmLoginPage(baseURI, getRealmIdentifier()).toString();
     }
 
     public String getPasswordUrl() {
-        return Urls.accountPasswordPage(baseURI, realm.getId()).toString();
+        return Urls.accountPasswordPage(baseURI, getRealmIdentifier()).toString();
     }
 
     public String getRegistrationAction() {
         if (realm.isSaas()) {
             return Urls.saasRegisterAction(baseURI).toString();
         } else if (socialRegistration){
-            return Urls.socialRegisterAction(baseURI, realm.getId()).toString();
+            return Urls.socialRegisterAction(baseURI, getRealmIdentifier()).toString();
         } else {
-            return Urls.realmRegisterAction(baseURI, realm.getId()).toString();
+            return Urls.realmRegisterAction(baseURI, getRealmIdentifier()).toString();
         }
     }
 
@@ -99,48 +103,48 @@ public class UrlBean {
             // TODO: saas social registration
             return Urls.saasRegisterPage(baseURI).toString();
         } else {
-            return Urls.realmRegisterPage(baseURI, realm.getId()).toString();
+            return Urls.realmRegisterPage(baseURI, getRealmIdentifier()).toString();
         }
     }
 
     public String getLoginUpdatePasswordUrl() {
-        return Urls.loginActionUpdatePassword(baseURI, realm.getId()).toString();
+        return Urls.loginActionUpdatePassword(baseURI, getRealmIdentifier()).toString();
     }
 
     public String getLoginUpdateTotpUrl() {
-        return Urls.loginActionUpdateTotp(baseURI, realm.getId()).toString();
+        return Urls.loginActionUpdateTotp(baseURI, getRealmIdentifier()).toString();
     }
 
     public String getLoginUpdateProfileUrl() {
-        return Urls.loginActionUpdateProfile(baseURI, realm.getId()).toString();
+        return Urls.loginActionUpdateProfile(baseURI, getRealmIdentifier()).toString();
     }
 
     public String getSocialUrl() {
-        return Urls.accountSocialPage(baseURI, realm.getId()).toString();
+        return Urls.accountSocialPage(baseURI, getRealmIdentifier()).toString();
     }
 
     public String getTotpUrl() {
-        return Urls.accountTotpPage(baseURI, realm.getId()).toString();
+        return Urls.accountTotpPage(baseURI, getRealmIdentifier()).toString();
     }
 
     public String getTotpRemoveUrl() {
-        return Urls.accountTotpRemove(baseURI, realm.getId()).toString();
+        return Urls.accountTotpRemove(baseURI, getRealmIdentifier()).toString();
     }
 
     public String getLogoutUrl() {
-        return Urls.accountLogout(baseURI, realm.getId()).toString();
+        return Urls.accountLogout(baseURI, getRealmIdentifier()).toString();
     }
 
     public String getLoginPasswordResetUrl() {
-        return Urls.loginPasswordReset(baseURI, realm.getId()).toString();
+        return Urls.loginPasswordReset(baseURI, getRealmIdentifier()).toString();
     }
 
     public String getLoginUsernameReminderUrl() {
-        return Urls.loginUsernameReminder(baseURI, realm.getId()).toString();
+        return Urls.loginUsernameReminder(baseURI, getRealmIdentifier()).toString();
     }
 
     public String getLoginEmailVerificationUrl() {
-        return Urls.loginActionEmailVerification(baseURI, realm.getId()).toString();
+        return Urls.loginActionEmailVerification(baseURI, getRealmIdentifier()).toString();
     }
 
     public String getReferrerURI() {
