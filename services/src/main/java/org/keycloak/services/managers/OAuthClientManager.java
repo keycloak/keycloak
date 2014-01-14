@@ -85,12 +85,12 @@ public class OAuthClientManager {
 
     public BaseAdapterConfig toInstallationRepresentation(RealmModel realmModel, OAuthClientModel model, URI baseUri) {
         BaseAdapterConfig rep = new BaseAdapterConfig();
-        rep.setRealm(realmModel.getId());
+        rep.setRealm(realmModel.getName());
         rep.setRealmKey(realmModel.getPublicKeyPem());
         rep.setSslNotRequired(realmModel.isSslNotRequired());
 
-        rep.setAuthUrl(Urls.realmLoginPage(baseUri, realmModel.getId()).toString());
-        rep.setCodeUrl(Urls.realmCode(baseUri, realmModel.getId()).toString());
+        rep.setAuthUrl(Urls.realmLoginPage(baseUri, realmModel.getName()).toString());
+        rep.setCodeUrl(Urls.realmCode(baseUri, realmModel.getName()).toString());
         rep.setUseResourceRoleMappings(false);
 
         rep.setResource(model.getOAuthAgent().getLoginName());

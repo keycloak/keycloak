@@ -126,7 +126,7 @@ public class OAuthFlows {
         request.setAttribute("realmRolesRequested", accessCode.getRealmRolesRequested());
         request.setAttribute("resourceRolesRequested", accessCode.getResourceRolesRequested());
         request.setAttribute("client", client);
-        request.setAttribute("action", TokenService.processOAuthUrl(uriInfo).build(realm.getId()).toString());
+        request.setAttribute("action", TokenService.processOAuthUrl(uriInfo).build(realm.getName()).toString());
         request.setAttribute("code", accessCode.getCode());
 
         return Flows.forms(realm, request, uriInfo).setAccessCode(accessCode).forwardToOAuthGrant();

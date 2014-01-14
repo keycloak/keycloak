@@ -172,7 +172,11 @@ public class RealmManager {
     }
 
     public RealmModel importRealm(RealmRepresentation rep, UserModel realmCreator) {
-        RealmModel realm = createRealm(rep.getRealm());
+        String id = rep.getId();
+        if (id == null) {
+            id = generateId();
+        }
+        RealmModel realm = createRealm(id, rep.getRealm());
         importRealm(rep, realm);
         return realm;
     }

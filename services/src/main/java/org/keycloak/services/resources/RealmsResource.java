@@ -59,8 +59,7 @@ public class RealmsResource {
     protected RealmModel locateRealm(String name, RealmManager realmManager) {
         RealmModel realm = realmManager.getRealmByName(name);
         if (realm == null) {
-            logger.debug("realm not found");
-            throw new NotFoundException();
+            throw new NotFoundException("Realm " + name + " not found");
         }
         return realm;
     }

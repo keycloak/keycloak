@@ -43,7 +43,7 @@ public class AuthenticationManager {
         token.id(RealmManager.generateId());
         token.issuedNow();
         token.principal(username);
-        token.audience(realm.getId());
+        token.audience(realm.getName());
         if (realm.getTokenLifespan() > 0) {
             token.expiration((System.currentTimeMillis() / 1000) + realm.getTokenLifespan());
         }
@@ -53,8 +53,7 @@ public class AuthenticationManager {
 
     public NewCookie createLoginCookie(RealmModel realm, UserModel user, UriInfo uriInfo) {
         String cookieName = KEYCLOAK_IDENTITY_COOKIE;
-        URI uri = RealmsResource.realmBaseUrl(uriInfo).build(realm.getId());
-        String cookiePath = uri.getRawPath();
+        String cookiePath = getIdentityCookiePath(realm, uriInfo);
         return createLoginCookie(realm, user, null, cookieName, cookiePath);
     }
 
@@ -92,11 +91,15 @@ public class AuthenticationManager {
 
 
     public void expireIdentityCookie(RealmModel realm, UriInfo uriInfo) {
-        URI uri = RealmsResource.realmBaseUrl(uriInfo).build(realm.getId());
         logger.debug("Expiring identity cookie");
-        String path = uri.getRawPath();
+        String path = getIdentityCookiePath(realm, uriInfo);
         String cookieName = KEYCLOAK_IDENTITY_COOKIE;
         expireCookie(cookieName, path);
+    }
+
+    protected String getIdentityCookiePath(RealmModel realm, UriInfo uriInfo) {
+        URI uri = RealmsResource.realmBaseUrl(uriInfo).build(realm.getName());
+        return uri.getRawPath();
     }
 
     public void expireSaasIdentityCookie(UriInfo uriInfo) {
@@ -163,7 +166,7 @@ public class AuthenticationManager {
 
         String tokenString = cookie.getValue();
         try {
-            SkeletonKeyToken token = RSATokenVerifier.verifyToken(tokenString, realm.getPublicKey(), realm.getId());
+            SkeletonKeyToken token = RSATokenVerifier.verifyToken(tokenString, realm.getPublicKey(), realm.getName());
             if (!token.isActive()) {
                 logger.debug("identity cookie expired");
                 expireIdentityCookie(realm, uriInfo);
@@ -212,7 +215,7 @@ public class AuthenticationManager {
 
 
         try {
-            SkeletonKeyToken token = RSATokenVerifier.verifyToken(tokenString, realm.getPublicKey(), realm.getId());
+            SkeletonKeyToken token = RSATokenVerifier.verifyToken(tokenString, realm.getPublicKey(), realm.getName());
             if (!token.isActive()) {
                 throw new NotAuthorizedException("token_expired");
             }

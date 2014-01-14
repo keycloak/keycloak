@@ -107,7 +107,7 @@ public class EmailSender {
         UriBuilder builder = Urls.loginActionEmailVerificationBuilder(uriInfo.getBaseUri());
         builder.queryParam("key", accessCode.getId());
 
-        URI uri = builder.build(realm.getId());
+        URI uri = builder.build(realm.getName());
 
 
         StringBuilder sb = getHeader(user);
@@ -128,7 +128,7 @@ public class EmailSender {
         UriBuilder builder = Urls.loginPasswordResetBuilder(uriInfo.getBaseUri());
         builder.queryParam("key", accessCode.getId());
 
-        URI uri = builder.build(realm.getId());
+        URI uri = builder.build(realm.getName());
 
         StringBuilder sb = getHeader(user);
 

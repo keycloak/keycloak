@@ -174,7 +174,7 @@ public class TokenManager {
         token.id(RealmManager.generateId());
         token.issuedNow();
         token.principal(user.getLoginName());
-        token.audience(realm.getId());
+        token.audience(realm.getName());
         if (realm.getTokenLifespan() > 0) {
             token.expiration((System.currentTimeMillis() / 1000) + realm.getTokenLifespan());
         }
