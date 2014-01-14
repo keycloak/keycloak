@@ -64,11 +64,16 @@ public class RealmManager {
         return identitySession.getRealm(id);
     }
 
+    public RealmModel getRealmByName(String name) {
+        return identitySession.getRealm(name);
+    }
+
     public RealmModel createRealm(String name) {
         return createRealm(name, name);
     }
 
     public RealmModel createRealm(String id, String name) {
+        if (id == null) id = generateId();
         RealmModel realm = identitySession.createRealm(id, name);
         realm.setName(name);
         realm.addRole(Constants.APPLICATION_ROLE);

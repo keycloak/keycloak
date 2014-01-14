@@ -22,7 +22,7 @@
 package org.keycloak.services.resources.flows;
 
 import org.keycloak.services.resources.AccountService;
-import org.keycloak.services.resources.AdminService;
+import org.keycloak.services.resources.admin.AdminService;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.RequiredActionsService;
 import org.keycloak.services.resources.SocialResource;

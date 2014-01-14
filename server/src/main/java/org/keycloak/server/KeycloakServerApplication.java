@@ -41,7 +41,7 @@ public class KeycloakServerApplication extends KeycloakApplication {
                 throw new RuntimeException("Realm id not specified");
             }
 
-            if (manager.getRealm(rep.getId()) != null) {
+            if (manager.getRealmByName(rep.getRealm()) != null) {
                 log.info("Not importing realm " + rep.getRealm() + " realm already exists");
                 return;
             }

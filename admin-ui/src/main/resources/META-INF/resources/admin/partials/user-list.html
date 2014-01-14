@@ -9,7 +9,7 @@
             </div>
             <div id="content">
                 <ol class="breadcrumb">
-                    <li><a href="#/realms/{{realm.id}}">{{realm.realm}}</a></li>
+                    <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
                     <li class="active">Users</li>
                 </ol>
                 <h2><span>{{realm.realm}}</span> Users</h2>
@@ -29,7 +29,7 @@
                                 </div>
                                 <span><span>or</span><button class="link" ng-click="search = null; searchQuery()">View all users</button></span>
                                 <div class="actions">
-                                    <a class="button" href="#/create/user/{{realm.id}}">Add User</a>
+                                    <a class="button" href="#/create/user/{{realm.realm}}">Add User</a>
                                 </div>
                             </th>
                         </tr>
@@ -57,7 +57,7 @@
                     </tfoot>-->
                     <tbody>
                     <tr ng-repeat="user in users">
-                        <td><a href="#/realms/{{realm.id}}/users/{{user.username}}">{{user.username}}</a></td>
+                        <td><a href="#/realms/{{realm.realm}}/users/{{user.username}}">{{user.username}}</a></td>
                         <td>{{user.lastName}}</td>
                         <td>{{user.firstName}}</td>
                         <td>{{user.email}}</td>

@@ -9,24 +9,24 @@
             </div>
             <div class="top-nav" data-ng-show="!create">
                 <ul class="rcue-tabs" >
-                    <li class="active"><a href="#/realms/{{realm.id}}/users/{{user.username}}">Attributes</a></li>
-                    <li><a href="#/realms/{{realm.id}}/users/{{user.username}}/user-credentials">Credentials</a></li>
-                    <li><a href="#/realms/{{realm.id}}/users/{{user.username}}/role-mappings">Role Mappings</a></li>
+                    <li class="active"><a href="#/realms/{{realm.realm}}/users/{{user.username}}">Attributes</a></li>
+                    <li><a href="#/realms/{{realm.realm}}/users/{{user.username}}/user-credentials">Credentials</a></li>
+                    <li><a href="#/realms/{{realm.realm}}/users/{{user.username}}/role-mappings">Role Mappings</a></li>
                 </ul>
             </div>
             <div id="content">
                 <ol class="breadcrumb" data-ng-show="create">
-                    <li><a href="#/realms/{{realm.id}}">{{realm.realm}}</a></li>
-                    <li><a href="#/realms/{{realm.id}}/users">Users</a></li>
+                    <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
+                    <li><a href="#/realms/{{realm.realm}}/users">Users</a></li>
                     <li class="active">Add</li>
                 </ol>
                 <h2 class="pull-left" data-ng-show="create">Add User</h2>
                 <p class="subtitle" data-ng-show="create"><span class="required">*</span> Required fields</p>
 
                 <ol class="breadcrumb" data-ng-hide="create">
-                    <li><a href="#/realms/{{realm.id}}">{{realm.realm}}</a></li>
-                    <li><a href="#/realms/{{realm.id}}/users">Users</a></li>
-                    <li><a href="#/realms/{{realm.id}}/users/{{user.username}}">{{user.username}}</a></li>
+                    <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
+                    <li><a href="#/realms/{{realm.realm}}/users">Users</a></li>
+                    <li><a href="#/realms/{{realm.realm}}/users/{{user.username}}">{{user.username}}</a></li>
                     <li class="active">Attributes</li>
                 </ol>
                 <h2 class="pull-left" data-ng-hide="create"><span>{{user.username}}'s</span> Attributes</h2>

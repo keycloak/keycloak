@@ -4,30 +4,30 @@
         <div id="content-area" class="col-md-9" role="main">
             <div class="top-nav">
                 <ul class="rcue-tabs">
-                    <li><a href="#/realms/{{realm.id}}/applications/{{application.id}}">Settings</a></li>
-                    <li><a href="#/realms/{{realm.id}}/applications/{{application.id}}/credentials">Credentials</a></li>
-                    <li><a href="#/realms/{{realm.id}}/applications/{{application.id}}/installation">Installation</a></li>
-                    <li class="active"><a href="#/realms/{{realm.id}}/applications/{{application.id}}/roles">Roles</a></li>
-                    <li><a href="#/realms/{{realm.id}}/applications/{{application.id}}/scope-mappings">Scope</a></li>
-                    <li><a href="#/realms/{{realm.id}}/applications/{{application.id}}/sessions">Sessions</a></li>
+                    <li><a href="#/realms/{{realm.realm}}/applications/{{application.id}}">Settings</a></li>
+                    <li><a href="#/realms/{{realm.realm}}/applications/{{application.id}}/credentials">Credentials</a></li>
+                    <li><a href="#/realms/{{realm.realm}}/applications/{{application.id}}/installation">Installation</a></li>
+                    <li class="active"><a href="#/realms/{{realm.realm}}/applications/{{application.id}}/roles">Roles</a></li>
+                    <li><a href="#/realms/{{realm.realm}}/applications/{{application.id}}/scope-mappings">Scope</a></li>
+                    <li><a href="#/realms/{{realm.realm}}/applications/{{application.id}}/sessions">Sessions</a></li>
                 </ul>
             </div>
             <div id="content">
                 <ol class="breadcrumb" data-ng-show="create">
-                    <li><a href="#/realms/{{realm.id}}">{{realm.realm}}</a></li>
-                    <li><a href="#/realms/{{realm.id}}/applications">Applications</a></li>
-                    <li><a href="#/realms/{{realm.id}}/applications/{{application.id}}">{{application.name}}</a></li>
-                    <li><a href="#/realms/{{realm.id}}/applications/{{application.id}}/roles">Roles</a></li>
+                    <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
+                    <li><a href="#/realms/{{realm.realm}}/applications">Applications</a></li>
+                    <li><a href="#/realms/{{realm.realm}}/applications/{{application.id}}">{{application.name}}</a></li>
+                    <li><a href="#/realms/{{realm.realm}}/applications/{{application.id}}/roles">Roles</a></li>
                     <li class="active">Add role</li>
                 </ol>
                 <h2 class="pull-left" data-ng-show="create"><span>{{application.name}}</span> Add Role</h2>
                 <p class="subtitle" data-ng-show="create"><span class="required">*</span> Required fields</p>
                 
                 <ol class="breadcrumb" data-ng-hide="create">
-                    <li><a href="#/realms/{{realm.id}}">{{realm.realm}}</a></li>
-                    <li><a href="#/realms/{{realm.id}}/applications">Applications</a></li>
-                    <li><a href="#/realms/{{realm.id}}/applications/{{application.id}}">{{application.name}}</a></li>
-                    <li><a href="#/realms/{{realm.id}}/applications/{{application.id}}/roles">Roles</a></li>
+                    <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
+                    <li><a href="#/realms/{{realm.realm}}/applications">Applications</a></li>
+                    <li><a href="#/realms/{{realm.realm}}/applications/{{application.id}}">{{application.name}}</a></li>
+                    <li><a href="#/realms/{{realm.realm}}/applications/{{application.id}}/roles">Roles</a></li>
                     <li class="active">{{role.name}}</li>
                 </ol>
 

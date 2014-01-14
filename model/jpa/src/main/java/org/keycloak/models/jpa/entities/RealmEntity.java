@@ -10,6 +10,8 @@ import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.JoinTable;
 import javax.persistence.MapKeyColumn;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -21,7 +23,10 @@ import java.util.Map;
  * @version $Revision: 1 $
  */
 @Entity
-public class RealmEntity {
+@NamedQueries({
+        @NamedQuery(name="getAllRealms", query="select realm from RealmEntity realm"),
+        @NamedQuery(name="getRealmByName", query="select realm from RealmEntity realm where realm.name = :name"),
+})public class RealmEntity {
     @Id
     protected String id;
 

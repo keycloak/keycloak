@@ -48,26 +48,27 @@ public class RealmsResource {
     }
 
     @Path("{realm}/tokens")
-    public TokenService getTokenService(final @PathParam("realm") String id) {
+    public TokenService getTokenService(final @PathParam("realm") String name) {
         RealmManager realmManager = new RealmManager(session);
-        RealmModel realm = realmManager.getRealm(id);
-        if (realm == null) {
-            logger.debug("realm not found");
-            throw new NotFoundException();
-        }
+        RealmModel realm = locateRealm(name, realmManager);
         TokenService tokenService = new TokenService(realm, tokenManager);
         resourceContext.initResource(tokenService);
         return tokenService;
     }
 
-    @Path("{realm}/account")
-    public AccountService getAccountService(final @PathParam("realm") String id) {
-        RealmManager realmManager = new RealmManager(session);
-        RealmModel realm = realmManager.getRealm(id);
+    protected RealmModel locateRealm(String name, RealmManager realmManager) {
+        RealmModel realm = realmManager.getRealmByName(name);
         if (realm == null) {
             logger.debug("realm not found");
             throw new NotFoundException();
         }
+        return realm;
+    }
+
+    @Path("{realm}/account")
+    public AccountService getAccountService(final @PathParam("realm") String name) {
+        RealmManager realmManager = new RealmManager(session);
+        RealmModel realm = locateRealm(name, realmManager);
 
         ApplicationModel application = realm.getApplicationNameMap().get(Constants.ACCOUNT_APPLICATION);
         if (application == null || !application.isEnabled()) {
@@ -81,13 +82,9 @@ public class RealmsResource {
     }
 
     @Path("{realm}")
-    public PublicRealmResource getRealmResource(final @PathParam("realm") String id) {
+    public PublicRealmResource getRealmResource(final @PathParam("realm") String name) {
         RealmManager realmManager = new RealmManager(session);
-        RealmModel realm = realmManager.getRealm(id);
-        if (realm == null) {
-            logger.debug("realm not found");
-            throw new NotFoundException();
-        }
+        RealmModel realm = locateRealm(name, realmManager);
         PublicRealmResource realmResource = new PublicRealmResource(realm);
         resourceContext.initResource(realmResource);
         return realmResource;

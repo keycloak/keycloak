@@ -50,13 +50,22 @@ public class JpaKeycloakSession implements KeycloakSession {
 
     @Override
     public List<RealmModel> getRealms(UserModel admin) {
-        TypedQuery<RealmEntity> query = em.createQuery("select r from RealmEntity r", RealmEntity.class);
+        TypedQuery<RealmEntity> query = em.createNamedQuery("getAllRealms", RealmEntity.class);
         List<RealmEntity> entities = query.getResultList();
         List<RealmModel> realms = new ArrayList<RealmModel>();
         for (RealmEntity entity : entities) {
             realms.add(new RealmAdapter(em, entity));
         }
         return realms;
+    }
+
+    @Override
+    public RealmModel getRealmByName(String name) {
+        TypedQuery<RealmEntity> query = em.createNamedQuery("getRealmByName", RealmEntity.class);
+        query.setParameter("name", name);
+        RealmEntity realm = query.getSingleResult();
+        if (realm == null) return null;
+        return new RealmAdapter(em, realm);
     }
 
     @Override

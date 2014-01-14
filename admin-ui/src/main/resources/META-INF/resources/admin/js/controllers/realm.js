@@ -50,7 +50,7 @@ module.controller('RealmDropdownCtrl', function($scope, Realm, Current, Auth, $l
 //    Current.realms = Realm.get();
     $scope.current = Current;
     $scope.changeRealm = function() {
-        $location.url("/realms/" + $scope.current.realm.id);
+        $location.url("/realms/" + $scope.current.realm.realm);
     };
     $scope.showNav = function() {
         var show = Current.realms.length > 0;
@@ -143,7 +143,7 @@ module.controller('RealmCreateCtrl', function($scope, Current, Realm, $upload, $
 
 
 module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $http, $location, Dialog, Notifications) {
-    $scope.createRealm = !realm.id;
+    $scope.createRealm = !realm.realm;
 
     console.log('RealmDetailCtrl');
 
@@ -154,15 +154,15 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $ht
             cookieLoginAllowed: true
         };
     } else {
-        if (Current.realm == null || Current.realm.id != realm.id) {
+        if (Current.realm == null || Current.realm.realm != realm.realm) {
             for (var i = 0; i < Current.realms.length; i++) {
-                if (realm.id == Current.realms[i].id) {
+                if (realm.realm == Current.realms[i].id) {
                     Current.realm = Current.realms[i];
                     break;
                 }
             }
         }
-        if (Current.realm == null || Current.realm.id != realm.id) {
+        if (Current.realm == null || Current.realm.realm != realm.realm) {
             console.log('should be unreachable');
             console.log('Why? ' + Current.realms.length + ' ' + Current.realm);
             return;
@@ -242,7 +242,7 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $ht
 
     $scope.remove = function() {
         Dialog.confirmDelete($scope.realm.realm, 'realm', function() {
-            Realm.remove({ id : $scope.realm.id }, function() {
+            Realm.remove({ id : $scope.realm.realm }, function() {
                 Current.realms = Realm.query();
                 Notifications.success("The realm has been deleted.");
                 $location.url("/");
@@ -255,7 +255,7 @@ module.controller('RealmRequiredCredentialsCtrl', function($scope, Realm, realm,
     console.log('RealmRequiredCredentialsCtrl');
 
     $scope.realm = {
-        id : realm.id, realm : realm.realm, social : realm.social,
+        id : realm.realm, realm : realm.realm, social : realm.social,
         requiredCredentials : realm.requiredCredentials,
         requiredApplicationCredentials : realm.requiredApplicationCredentials,
         requiredOAuthClientCredentials : realm.requiredOAuthClientCredentials,
@@ -406,7 +406,7 @@ module.controller('RealmRequiredCredentialsCtrl', function($scope, Realm, realm,
         $scope.changed = false;
 
         Realm.update($scope.realm, function () {
-            $location.url("/realms/" + realm.id + "/required-credentials");
+            $location.url("/realms/" + realm.realm + "/required-credentials");
             Notifications.success("Your changes have been saved to the realm.");
             oldCopy = angular.copy($scope.realm);
         });
@@ -498,7 +498,7 @@ module.controller('RealmRegistrationCtrl', function ($scope, Realm, realm, appli
         $scope.selectedAppDefRoles = [];
 
         // Populate available roles for selected application
-        var appDefaultRoles = ApplicationRole.query({realm: $scope.realm.id, application: $scope.application.id}, function () {
+        var appDefaultRoles = ApplicationRole.query({realm: $scope.realm.realm, application: $scope.application.id}, function () {
 
             if (!$scope.application.hasOwnProperty('defaultRoles') || $scope.application.defaultRoles === null) {
                 $scope.application.defaultRoles = [];
@@ -535,7 +535,7 @@ module.controller('RealmRegistrationCtrl', function ($scope, Realm, realm, appli
 
         // Update/save the selected application with new default roles.
         Application.update({
-            realm: $scope.realm.id,
+            realm: $scope.realm.realm,
             id: $scope.application.id
         }, $scope.application, function () {
             Notifications.success("Your changes have been saved to the application.");
@@ -559,7 +559,7 @@ module.controller('RealmRegistrationCtrl', function ($scope, Realm, realm, appli
 
         // Update/save the selected application with new default roles.
         Application.update({
-            realm: $scope.realm.id,
+            realm: $scope.realm.realm,
             id: $scope.application.id
         }, $scope.application, function () {
             Notifications.success("Your changes have been saved to the application.");
@@ -672,7 +672,7 @@ module.controller('RealmSocialCtrl', function($scope, realm, Realm, $location, N
         realmCopy.social = true;
         $scope.changed = false;
         Realm.update(realmCopy, function () {
-            $location.url("/realms/" + realm.id + "/social-settings");
+            $location.url("/realms/" + realm.realm + "/social-settings");
             Notifications.success("Saved changes to realm");
             oldCopy = realmCopy;
         });
@@ -741,7 +741,7 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
 
         $scope.changed = false;
         Realm.update(realmCopy, function () {
-            $location.url("/realms/" + realm.id + "/token-settings");
+            $location.url("/realms/" + realm.realm + "/token-settings");
             Notifications.success("Your changes have been saved to the realm.");
         });
     };
@@ -757,9 +757,9 @@ module.controller('RealmKeysDetailCtrl', function($scope, Realm, realm, $http, $
 
     $scope.generate = function() {
         Dialog.confirmGenerateKeys($scope.realm.realm, 'realm', function() {
-                Realm.update({ id: realm.id, publicKey : 'GENERATE' }, function () {
+                Realm.update({ id: realm.realm, publicKey : 'GENERATE' }, function () {
                 Notifications.success('New keys generated for realm.');
-                Realm.get({ id : realm.id }, function(updated) {
+                Realm.get({ id : realm.realm }, function(updated) {
                     $scope.realm = updated;
                 })
             });
@@ -801,19 +801,19 @@ module.controller('RoleDetailCtrl', function($scope, realm, role, Role, $locatio
     $scope.save = function() {
         if ($scope.create) {
             Role.save({
-                realm: realm.id
+                realm: realm.realm
             }, $scope.role, function (data, headers) {
                 $scope.changed = false;
                 role = angular.copy($scope.role);
 
                 var l = headers().location;
                 var id = l.substring(l.lastIndexOf("/") + 1);
-                $location.url("/realms/" + realm.id + "/roles/" + id);
+                $location.url("/realms/" + realm.realm + "/roles/" + id);
                 Notifications.success("The role has been created.");
             });
         } else {
             Role.update({
-                realm : realm.id,
+                realm : realm.realm,
                 roleId : role.id
             }, $scope.role, function() {
                 $scope.changed = false;
@@ -829,16 +829,16 @@ module.controller('RoleDetailCtrl', function($scope, realm, role, Role, $locatio
     };
 
     $scope.cancel = function() {
-        $location.url("/realms/" + realm.id + "/roles");
+        $location.url("/realms/" + realm.realm + "/roles");
     };
 
     $scope.remove = function() {
         Dialog.confirmDelete($scope.role.name, 'role', function() {
             $scope.role.$remove({
-                realm : realm.id,
+                realm : realm.realm,
                 roleId : $scope.role.id
             }, function() {
-                $location.url("/realms/" + realm.id + "/roles");
+                $location.url("/realms/" + realm.realm + "/roles");
                 Notifications.success("The role has been deleted.");
             });
         });
@@ -869,7 +869,7 @@ module.controller('RealmSMTPSettingsCtrl', function($scope, Current, Realm, real
         realmCopy['smtpServer'] = detypeObject(realmCopy.smtpServer);
         $scope.changed = false;
         Realm.update(realmCopy, function () {
-            $location.url("/realms/" + realm.id + "/smtp-settings");
+            $location.url("/realms/" + realm.realm + "/smtp-settings");
             Notifications.success("Your changes have been saved to the realm.");
         });
     };

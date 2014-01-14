@@ -4,16 +4,16 @@
         <div id="content-area" class="col-md-9" role="main">
             <div class="top-nav">
                 <ul class="rcue-tabs" >
-                    <li><a href="#/realms/{{realm.id}}/users/{{user.username}}">Attributes</a></li>
-                    <li><a href="#/realms/{{realm.id}}/users/{{user.username}}/user-credentials">Credentials</a></li>
-                    <li class="active"><a href="#/realms/{{realm.id}}/users/{{user.username}}/role-mappings">Role Mappings</a></li>
+                    <li><a href="#/realms/{{realm.realm}}/users/{{user.username}}">Attributes</a></li>
+                    <li><a href="#/realms/{{realm.realm}}/users/{{user.username}}/user-credentials">Credentials</a></li>
+                    <li class="active"><a href="#/realms/{{realm.realm}}/users/{{user.username}}/role-mappings">Role Mappings</a></li>
                 </ul>
             </div>
             <div id="content">
                 <ol class="breadcrumb">
-                    <li><a href="#/realms/{{realm.id}}">{{realm.realm}}</a></li>
-                    <li><a href="#/realms/{{realm.id}}/users">Users</a></li>
-                    <li><a href="#/realms/{{realm.id}}/users/{{user.username}}">{{user.username}}</a></li>
+                    <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
+                    <li><a href="#/realms/{{realm.realm}}/users">Users</a></li>
+                    <li><a href="#/realms/{{realm.realm}}/users/{{user.username}}">{{user.username}}</a></li>
                     <li class="active">Role Mappings</li>
                 </ol>
                 <h2 class="pull-left"><span>{{user.username}}'s</span> Role Mappings</h2>

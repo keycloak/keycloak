@@ -10,7 +10,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.resources.AdminService;
 import org.keycloak.services.resources.flows.Flows;
 
 import javax.ws.rs.*;
@@ -78,12 +77,12 @@ public class RealmsAdminResource {
     public Response importRealm(@Context final UriInfo uriInfo, final RealmRepresentation rep) {
         logger.debug("importRealm: {0}", rep.getRealm());
         RealmManager realmManager = new RealmManager(session);
-        if (realmManager.getRealm(rep.getRealm()) != null) {
+        if (realmManager.getRealmByName(rep.getRealm()) != null) {
             return Flows.errors().exists("Realm " + rep.getRealm() + " already exists");
         }
 
         RealmModel realm = realmManager.importRealm(rep, admin);
-        URI location = realmUrl(uriInfo).build(realm.getId());
+        URI location = realmUrl(uriInfo).build(realm.getName());
         logger.debug("imported realm success, sending back: {0}", location.toString());
         return Response.created(location).build();
     }
@@ -103,11 +102,11 @@ public class RealmsAdminResource {
         return Response.noContent().build();
     }
 
-    @Path("{id}")
+    @Path("{realm}")
     public RealmAdminResource getRealmAdmin(@Context final HttpHeaders headers,
-                                            @PathParam("id") final String id) {
+                                            @PathParam("realm") final String name) {
         RealmManager realmManager = new RealmManager(session);
-        RealmModel realm = realmManager.getRealm(id);
+        RealmModel realm = realmManager.getRealmByName(name);
         if (realm == null) throw new NotFoundException();
 
         RealmAdminResource adminResource = new RealmAdminResource(admin, realm);
