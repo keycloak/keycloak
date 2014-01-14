@@ -24,15 +24,15 @@ module.controller('HomeCtrl', function(Realm, $location) {
     Realm.query(null, function(realms) {
         var realm;
         if (realms.length == 1) {
-            realm = realms[0].id;
+            realm = realms[0].realm;
         } else if (realms.length == 2) {
             if (realms[0].realm == 'Keycloak Administration') {
-                realm = realms[1].id;
+                realm = realms[1].realm;
             } else if (realms[1].realm == 'Keycloak Administration') {
-                realm = realms[0].id;
+                realm = realms[0].realm;
             }
         }
-
+        console.log("****** HomeCtrl ******");
         if (realm) {
             $location.url('/realms/' + realm);
         } else {
@@ -118,18 +118,16 @@ module.controller('RealmCreateCtrl', function($scope, Current, Realm, $upload, $
 
     $scope.save = function() {
         var realmCopy = angular.copy($scope.realm);
-        Realm.save(realmCopy, function(data, headers) {
-            console.log('creating new realm');
-            var l = headers().location;
-            var id = l.substring(l.lastIndexOf("/") + 1);
+        console.log('creating new realm **');
+        Realm.create(realmCopy, function(data, headers) {
             var data = Realm.query(function() {
                 Current.realms = data;
                 for (var i = 0; i < Current.realms.length; i++) {
-                    if (Current.realms[i].id == id) {
+                    if (Current.realms[i].realm == realmCopy.realm) {
                         Current.realm = Current.realms[i];
                     }
                 }
-                $location.url("/realms/" + id);
+                $location.url("/realms/" + realmCopy.realm);
                 Notifications.success("The realm has been created.");
             });
         });
@@ -156,17 +154,26 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $ht
     } else {
         if (Current.realm == null || Current.realm.realm != realm.realm) {
             for (var i = 0; i < Current.realms.length; i++) {
-                if (realm.realm == Current.realms[i].id) {
+                if (realm.realm == Current.realms[i].realm) {
                     Current.realm = Current.realms[i];
                     break;
                 }
             }
         }
+        console.log('realm name: ' + realm.realm);
+        for (var i = 0; i < Current.realms.length; i++) {
+            console.log('checking Current.realm:' + Current.realms[i].realm);
+            if (Current.realms[i].realm == realm.realm) {
+                Current.realm = Current.realms[i];
+            }
+        }
+        /*
         if (Current.realm == null || Current.realm.realm != realm.realm) {
             console.log('should be unreachable');
             console.log('Why? ' + Current.realms.length + ' ' + Current.realm);
             return;
         }
+        */
         $scope.realm = angular.copy(realm);
         $scope.realm.requireSsl = !realm.sslNotRequired;
     }
@@ -193,16 +200,14 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $ht
         if ($scope.createRealm) {
             Realm.save(realmCopy, function(data, headers) {
                 console.log('creating new realm');
-                var l = headers().location;
-                var id = l.substring(l.lastIndexOf("/") + 1);
                 var data = Realm.query(function() {
                     Current.realms = data;
                     for (var i = 0; i < Current.realms.length; i++) {
-                        if (Current.realms[i].id == id) {
+                        if (Current.realms[i].realm == realmCopy.realm) {
                             Current.realm = Current.realms[i];
                         }
                     }
-                    $location.url("/realms/" + id);
+                    $location.url("/realms/" + realmCopy.realm);
                     Notifications.success("The realm has been created.");
                     $scope.social = $scope.realm.social;
                     $scope.registrationAllowed = $scope.realm.registrationAllowed;
@@ -211,18 +216,18 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $ht
         } else {
             console.log('updating realm...');
             $scope.changed = false;
-            Realm.update(realmCopy, function () {
-                var id = realmCopy.id;
+            console.log('oldCopy.realm - ' + oldCopy.realm);
+            Realm.update({ id : oldCopy.realm}, realmCopy, function () {
                 var data = Realm.query(function () {
                     Current.realms = data;
                     for (var i = 0; i < Current.realms.length; i++) {
-                        if (Current.realms[i].id == id) {
+                        if (Current.realms[i].realm == realmCopy.realm) {
                             Current.realm = Current.realms[i];
                             oldCopy = angular.copy($scope.realm);
                         }
                     }
                 });
-                $location.url("/realms/" + id);
+                $location.url("/realms/" + realmCopy.realm);
                 Notifications.success("Your changes have been saved to the realm.");
                 $scope.social = $scope.realm.social;
                 $scope.registrationAllowed = $scope.realm.registrationAllowed;

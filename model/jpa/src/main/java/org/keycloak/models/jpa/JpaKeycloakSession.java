@@ -63,7 +63,10 @@ public class JpaKeycloakSession implements KeycloakSession {
     public RealmModel getRealmByName(String name) {
         TypedQuery<RealmEntity> query = em.createNamedQuery("getRealmByName", RealmEntity.class);
         query.setParameter("name", name);
-        RealmEntity realm = query.getSingleResult();
+        List<RealmEntity> entities = query.getResultList();
+        if (entities.size() == 0) return null;
+        if (entities.size() > 1) throw new IllegalStateException("Should not be more than one realm with same name");
+        RealmEntity realm = query.getResultList().get(0);
         if (realm == null) return null;
         return new RealmAdapter(em, realm);
     }

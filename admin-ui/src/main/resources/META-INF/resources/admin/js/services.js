@@ -107,12 +107,17 @@ module.factory('Notifications', function($rootScope, $timeout) {
 
 module.factory('Realm', function($resource) {
 	return $resource('/auth/rest/admin/realms/:id', {
-		id : '@id'
+		id : '@realm'
 	}, {
 		update : {
 			method : 'PUT'
-		}
-	});
+		},
+        create : {
+            method : 'POST',
+            params : { id : ''}
+        }
+
+    });
 });
 
 module.factory('User', function($resource) {
@@ -120,9 +125,9 @@ module.factory('User', function($resource) {
 		realm : '@realm',
 		userId : '@userId'
 	}, {
-		update : {
-			method : 'PUT'
-		}
+        update : {
+            method : 'PUT'
+        }
 	});
 });
 
@@ -321,7 +326,7 @@ module.factory('Current', function(Realm, $route) {
         current.realms = Realm.query(null, function(realms) {
             if ($route.current.params.realm) {
                 for (var i = 0; i < realms.length; i++) {
-                    if (realms[i].id == $route.current.params.realm) {
+                    if (realms[i].realm == $route.current.params.realm) {
                         current.realm =  realms[i];
                     }
                 }

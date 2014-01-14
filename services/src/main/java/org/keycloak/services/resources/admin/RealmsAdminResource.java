@@ -107,7 +107,7 @@ public class RealmsAdminResource {
                                             @PathParam("realm") final String name) {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = realmManager.getRealmByName(name);
-        if (realm == null) throw new NotFoundException();
+        if (realm == null) throw new NotFoundException("{realm} = " + name);
 
         RealmAdminResource adminResource = new RealmAdminResource(admin, realm);
         resourceContext.initResource(adminResource);

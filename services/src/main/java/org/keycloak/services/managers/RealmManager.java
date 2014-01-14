@@ -65,7 +65,7 @@ public class RealmManager {
     }
 
     public RealmModel getRealmByName(String name) {
-        return identitySession.getRealm(name);
+        return identitySession.getRealmByName(name);
     }
 
     public RealmModel createRealm(String name) {
@@ -93,7 +93,10 @@ public class RealmManager {
     }
 
     public void updateRealm(RealmRepresentation rep, RealmModel realm) {
-        if (rep.getRealm() != null) realm.setName(rep.getRealm());
+        if (rep.getRealm() != null) {
+            logger.info("Updating realm name to " + rep.getRealm());
+            realm.setName(rep.getRealm());
+        }
         if (rep.isEnabled() != null) realm.setEnabled(rep.isEnabled());
         if (rep.isSocial() != null) realm.setSocial(rep.isSocial());
         if (rep.isCookieLoginAllowed() != null) realm.setCookieLoginAllowed(rep.isCookieLoginAllowed());
@@ -169,7 +172,6 @@ public class RealmManager {
     }
 
     public RealmModel importRealm(RealmRepresentation rep, UserModel realmCreator) {
-        //verifyRealmRepresentation(rep);
         RealmModel realm = createRealm(rep.getRealm());
         importRealm(rep, realm);
         return realm;
