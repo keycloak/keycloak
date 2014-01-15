@@ -112,6 +112,7 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
     List<RequiredCredentialModel> getRequiredOAuthClientCredentials();
 
     ApplicationModel getApplicationById(String id);
+    ApplicationModel getApplicationByName(String name);
 
     void addRequiredOAuthClientCredential(String type);
 

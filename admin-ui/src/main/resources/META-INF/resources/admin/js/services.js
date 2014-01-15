@@ -208,9 +208,9 @@ module.factory('ApplicationRole', function($resource) {
 
 
 module.factory('Application', function($resource) {
-    return $resource('/auth/rest/admin/realms/:realm/applications/:id', {
+    return $resource('/auth/rest/admin/realms/:realm/applications/:application', {
         realm : '@realm',
-        id : '@id'
+        application : '@name'
     },  {
         update : {
             method : 'PUT'

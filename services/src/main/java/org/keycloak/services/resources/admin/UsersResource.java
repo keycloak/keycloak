@@ -282,11 +282,11 @@ public class UsersResource {
         }
     }
 
-    @Path("{username}/role-mappings/applications/{appId}")
+    @Path("{username}/role-mappings/applications/{app}")
     @GET
     @Produces("application/json")
     @NoCache
-    public List<RoleRepresentation> getApplicationRoleMappings(@PathParam("username") String username, @PathParam("appId") String appId) {
+    public List<RoleRepresentation> getApplicationRoleMappings(@PathParam("username") String username, @PathParam("app") String appName) {
         logger.debug("getApplicationRoleMappings");
 
         UserModel user = realm.getUser(username);
@@ -294,7 +294,7 @@ public class UsersResource {
             throw new NotFoundException();
         }
 
-        ApplicationModel application = realm.getApplicationById(appId);
+        ApplicationModel application = realm.getApplicationByName(appName);
 
         if (application == null) {
             throw new NotFoundException();
@@ -309,17 +309,17 @@ public class UsersResource {
         return mapRep;
     }
 
-    @Path("{username}/role-mappings/applications/{appId}")
+    @Path("{username}/role-mappings/applications/{app}")
     @POST
     @Consumes("application/json")
-    public void addApplicationRoleMapping(@PathParam("username") String username, @PathParam("appId") String appId, List<RoleRepresentation> roles) {
+    public void addApplicationRoleMapping(@PathParam("username") String username, @PathParam("app") String appName, List<RoleRepresentation> roles) {
         logger.debug("addApplicationRoleMapping");
         UserModel user = realm.getUser(username);
         if (user == null) {
             throw new NotFoundException();
         }
 
-        ApplicationModel application = realm.getApplicationById(appId);
+        ApplicationModel application = realm.getApplicationByName(appName);
 
         if (application == null) {
             throw new NotFoundException();
@@ -335,16 +335,16 @@ public class UsersResource {
 
     }
 
-    @Path("{username}/role-mappings/applications/{appId}")
+    @Path("{username}/role-mappings/applications/{app}")
     @DELETE
     @Consumes("application/json")
-    public void deleteApplicationRoleMapping(@PathParam("username") String username, @PathParam("appId") String appId, List<RoleRepresentation> roles) {
+    public void deleteApplicationRoleMapping(@PathParam("username") String username, @PathParam("app") String appName, List<RoleRepresentation> roles) {
         UserModel user = realm.getUser(username);
         if (user == null) {
             throw new NotFoundException();
         }
 
-        ApplicationModel application = realm.getApplicationById(appId);
+        ApplicationModel application = realm.getApplicationByName(appName);
 
         if (application == null) {
             throw new NotFoundException();

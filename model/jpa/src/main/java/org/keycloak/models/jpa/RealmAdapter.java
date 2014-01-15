@@ -605,6 +605,11 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public ApplicationModel getApplicationByName(String name) {
+        return getApplicationNameMap().get(name);
+    }
+
+    @Override
     public UserModel getUserBySocialLink(SocialLinkModel socialLink) {
         TypedQuery<UserEntity> query = em.createNamedQuery("findUserByLinkAndRealm", UserEntity.class);
         query.setParameter("realm", realm);

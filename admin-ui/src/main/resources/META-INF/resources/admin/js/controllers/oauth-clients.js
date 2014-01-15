@@ -239,7 +239,7 @@ module.controller('OAuthClientScopeMappingCtrl', function($scope, $http, realm, 
     };
 
     $scope.addApplicationRole = function() {
-        $http.post('/auth/rest/admin/realms/' + realm.realm + '/oauth-clients/' + oauth.id +  '/scope-mappings/applications/' + $scope.targetApp.id,
+        $http.post('/auth/rest/admin/realms/' + realm.realm + '/oauth-clients/' + oauth.id +  '/scope-mappings/applications/' + $scope.targetApp.name,
                 $scope.selectedApplicationRoles).success(function() {
                 for (var i = 0; i < $scope.selectedApplicationRoles.length; i++) {
                     var role = $scope.selectedApplicationRoles[i];
@@ -254,7 +254,7 @@ module.controller('OAuthClientScopeMappingCtrl', function($scope, $http, realm, 
     };
 
     $scope.deleteApplicationRole = function() {
-        $http.delete('/auth/rest/admin/realms/' + realm.realm + '/oauth-clients/' + oauth.id +  '/scope-mappings/applications/' + $scope.targetApp.id,
+        $http.delete('/auth/rest/admin/realms/' + realm.realm + '/oauth-clients/' + oauth.id +  '/scope-mappings/applications/' + $scope.targetApp.name,
             {data : $scope.selectedApplicationMappings, headers : {"content-type" : "application/json"}}).success(function() {
                 for (var i = 0; i < $scope.selectedApplicationMappings.length; i++) {
                     var role = $scope.selectedApplicationMappings[i];
@@ -270,8 +270,8 @@ module.controller('OAuthClientScopeMappingCtrl', function($scope, $http, realm, 
 
 
     $scope.changeApplication = function() {
-        $scope.applicationRoles = ApplicationRole.query({realm : realm.realm, application : $scope.targetApp.id}, function() {
-                $scope.applicationMappings = OAuthClientApplicationScopeMapping.query({realm : realm.realm, oauth : oauth.id, targetApp : $scope.targetApp.id}, function(){
+        $scope.applicationRoles = ApplicationRole.query({realm : realm.realm, application : $scope.targetApp.name}, function() {
+                $scope.applicationMappings = OAuthClientApplicationScopeMapping.query({realm : realm.realm, oauth : oauth.id, targetApp : $scope.targetApp.name}, function(){
                     for (var i = 0; i < $scope.applicationMappings.length; i++) {
                         var role = $scope.applicationMappings[i];
                         for (var j = 0; j < $scope.applicationRoles.length; j++) {
