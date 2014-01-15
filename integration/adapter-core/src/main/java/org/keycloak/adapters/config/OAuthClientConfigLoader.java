@@ -3,6 +3,8 @@ package org.keycloak.adapters.config;
 import java.io.InputStream;
 
 import org.keycloak.AbstractOAuthClient;
+import org.keycloak.ServiceUrlConstants;
+import org.keycloak.util.KeycloakUriBuilder;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -27,8 +29,14 @@ public abstract class OAuthClientConfigLoader extends RealmConfigurationLoader {
     public void configureOAuthClient(AbstractOAuthClient oauthClient) {
         oauthClient.setClientId(adapterConfig.getResource());
         oauthClient.setPassword(adapterConfig.getCredentials().get("password"));
-        oauthClient.setAuthUrl(adapterConfig.getAuthUrl());
-        oauthClient.setCodeUrl(adapterConfig.getCodeUrl());
+        if (adapterConfig.getAuthServerUrl() == null) {
+            throw new RuntimeException("You must specify auth-url");
+        }
+        KeycloakUriBuilder serverBuilder = KeycloakUriBuilder.fromUri(adapterConfig.getAuthServerUrl());
+        String authUrl = serverBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_LOGIN_PATH).build(adapterConfig.getRealm()).toString();
+        String tokenUrl = serverBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_ACCESS_CODE_PATH).build(adapterConfig.getRealm()).toString();
+        oauthClient.setAuthUrl(authUrl);
+        oauthClient.setCodeUrl(tokenUrl);
         oauthClient.setTruststore(truststore);
         if (adapterConfig.getScope() != null) {
             String scope = encodeScope(adapterConfig.getScope());

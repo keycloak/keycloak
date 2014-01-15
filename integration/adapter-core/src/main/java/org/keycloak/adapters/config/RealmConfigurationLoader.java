@@ -1,6 +1,7 @@
 package org.keycloak.adapters.config;
 
 import org.apache.http.client.HttpClient;
+import org.keycloak.ServiceUrlConstants;
 import org.keycloak.adapters.HttpClientBuilder;
 import org.keycloak.util.KeycloakUriBuilder;
 
@@ -30,14 +31,13 @@ public class RealmConfigurationLoader extends AdapterConfigLoader {
         if (!setupClient || adapterConfig.isBearerOnly()) return;
         initClient();
         realmConfiguration = new RealmConfiguration();
-        String authUrl = adapterConfig.getAuthUrl();
-        if (authUrl == null) {
+        if (adapterConfig.getAuthServerUrl() == null) {
             throw new RuntimeException("You must specify auth-url");
         }
-        String tokenUrl = adapterConfig.getCodeUrl();
-        if (tokenUrl == null) {
-            throw new RuntimeException("You mut specify code-url");
-        }
+        KeycloakUriBuilder serverBuilder = KeycloakUriBuilder.fromUri(adapterConfig.getAuthServerUrl());
+        String authUrl = serverBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_LOGIN_PATH).build(adapterConfig.getRealm()).toString();
+        String tokenUrl = serverBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_ACCESS_CODE_PATH).build(adapterConfig.getRealm()).toString();
+
         realmConfiguration.setMetadata(resourceMetadata);
         realmConfiguration.setSslRequired(!adapterConfig.isSslNotRequired());
         realmConfiguration.setResourceCredentials(adapterConfig.getCredentials());

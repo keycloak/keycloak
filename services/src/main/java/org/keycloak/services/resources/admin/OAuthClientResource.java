@@ -12,6 +12,7 @@ import org.keycloak.representations.idm.OAuthClientRepresentation;
 import org.keycloak.services.managers.ApplicationManager;
 import org.keycloak.services.managers.OAuthClientManager;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.Consumes;
@@ -20,6 +21,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
@@ -37,6 +39,13 @@ public class OAuthClientResource  {
     protected KeycloakSession session;
     @Context
     protected UriInfo uriInfo;
+
+    @Context
+    protected Application application;
+
+    protected KeycloakApplication getApplication() {
+        return (KeycloakApplication)application;
+    }
 
     public OAuthClientResource(RealmModel realm, OAuthClientModel oauthClient, KeycloakSession session) {
         this.realm = realm;
@@ -65,7 +74,7 @@ public class OAuthClientResource  {
     @Produces(MediaType.APPLICATION_JSON)
     public String getInstallation() throws IOException {
         OAuthClientManager manager = new OAuthClientManager(realm);
-        BaseAdapterConfig rep = manager.toInstallationRepresentation(realm, oauthClient, uriInfo.getBaseUri());
+        BaseAdapterConfig rep = manager.toInstallationRepresentation(realm, oauthClient, getApplication().getBaseUri(uriInfo));
 
         // TODO Temporary solution to pretty-print
         return JsonSerialization.mapper.writerWithDefaultPrettyPrinter().writeValueAsString(rep);

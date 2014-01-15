@@ -96,7 +96,7 @@
         }
     ],
     "applicationRoleMappings": {
-        "Account": [
+        "account": [
             {
                 "username": "bburke@redhat.com",
                 "roles": ["manage-account"]

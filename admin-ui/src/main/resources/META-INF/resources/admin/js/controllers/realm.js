@@ -26,13 +26,12 @@ module.controller('HomeCtrl', function(Realm, $location) {
         if (realms.length == 1) {
             realm = realms[0].realm;
         } else if (realms.length == 2) {
-            if (realms[0].realm == 'Keycloak Administration') {
+            if (realms[0].realm == 'keycloak-admin') {
                 realm = realms[1].realm;
-            } else if (realms[1].realm == 'Keycloak Administration') {
+            } else if (realms[1].realm == 'keycloak-admin') {
                 realm = realms[0].realm;
             }
         }
-        console.log("****** HomeCtrl ******");
         if (realm) {
             $location.url('/realms/' + realm);
         } else {

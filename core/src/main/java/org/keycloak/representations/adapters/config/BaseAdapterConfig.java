@@ -13,7 +13,7 @@ import java.util.Map;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-@JsonPropertyOrder({"realm", "realm-public-key", "auth-url", "code-url", "ssl-not-required",
+@JsonPropertyOrder({"realm", "realm-public-key", "auth-server-url", "ssl-not-required",
         "resource", "credentials",
         "use-resource-role-mappings",
         "enable-cors", "cors-max-age", "cors-allowed-methods",

@@ -181,8 +181,7 @@ public class ApplicationManager {
         rep.setRealmKey(realmModel.getPublicKeyPem());
         rep.setSslNotRequired(realmModel.isSslNotRequired());
 
-        rep.setAuthUrl(Urls.realmLoginPage(baseUri, realmModel.getName()).toString());
-        rep.setCodeUrl(Urls.realmCode(baseUri, realmModel.getName()).toString());
+        rep.setAuthServerUrl(baseUri.toString());
         rep.setUseResourceRoleMappings(applicationModel.getRoles().size() > 0);
 
         rep.setResource(applicationModel.getName());
