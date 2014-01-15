@@ -11,6 +11,7 @@ import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.ApplicationManager;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.Consumes;
@@ -19,6 +20,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
@@ -37,6 +39,13 @@ public class ApplicationResource extends RoleContainerResource {
     protected KeycloakSession session;
     @Context
     protected UriInfo uriInfo;
+
+    @Context
+    protected Application keycloak;
+
+    protected KeycloakApplication getKeycloakApplication() {
+        return (KeycloakApplication)keycloak;
+    }
 
     public ApplicationResource(RealmModel realm, ApplicationModel applicationModel, KeycloakSession session) {
         super(applicationModel);
@@ -68,7 +77,7 @@ public class ApplicationResource extends RoleContainerResource {
     @Produces(MediaType.APPLICATION_JSON)
     public String getInstallation() throws IOException {
         ApplicationManager applicationManager = new ApplicationManager(new RealmManager(session));
-        BaseAdapterConfig rep = applicationManager.toInstallationRepresentation(realm, application, uriInfo.getBaseUri());
+        BaseAdapterConfig rep = applicationManager.toInstallationRepresentation(realm, application, getKeycloakApplication().getBaseUri(uriInfo));
 
         // TODO Temporary solution to pretty-print
         return JsonSerialization.mapper.writerWithDefaultPrettyPrinter().writeValueAsString(rep);

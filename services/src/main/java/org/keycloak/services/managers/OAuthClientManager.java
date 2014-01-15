@@ -88,9 +88,7 @@ public class OAuthClientManager {
         rep.setRealm(realmModel.getName());
         rep.setRealmKey(realmModel.getPublicKeyPem());
         rep.setSslNotRequired(realmModel.isSslNotRequired());
-
-        rep.setAuthUrl(Urls.realmLoginPage(baseUri, realmModel.getName()).toString());
-        rep.setCodeUrl(Urls.realmCode(baseUri, realmModel.getName()).toString());
+        rep.setAuthServerUrl(baseUri.toString());
         rep.setUseResourceRoleMappings(false);
 
         rep.setResource(model.getOAuthAgent().getLoginName());

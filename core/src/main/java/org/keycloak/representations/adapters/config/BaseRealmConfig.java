@@ -9,16 +9,14 @@ import org.codehaus.jackson.annotate.JsonPropertyOrder;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-@JsonPropertyOrder({"realm", "realm-public-key", "auth-url", "code-url", "ssl-not-required"})
+@JsonPropertyOrder({"realm", "realm-public-key", "auth-server-url", "ssl-not-required"})
 public class BaseRealmConfig {
     @JsonProperty("realm")
     protected String realm;
     @JsonProperty("realm-public-key")
     protected String realmKey;
-    @JsonProperty("auth-url")
-    protected String authUrl;
-    @JsonProperty("code-url")
-    protected String codeUrl;
+    @JsonProperty("auth-server-url")
+    protected String authServerUrl;
     @JsonProperty("ssl-not-required")
     protected boolean sslNotRequired;
 
@@ -46,19 +44,11 @@ public class BaseRealmConfig {
         this.realmKey = realmKey;
     }
 
-    public String getAuthUrl() {
-        return authUrl;
+    public String getAuthServerUrl() {
+        return authServerUrl;
     }
 
-    public void setAuthUrl(String authUrl) {
-        this.authUrl = authUrl;
-    }
-
-    public String getCodeUrl() {
-        return codeUrl;
-    }
-
-    public void setCodeUrl(String codeUrl) {
-        this.codeUrl = codeUrl;
+    public void setAuthServerUrl(String authServerUrl) {
+        this.authServerUrl = authServerUrl;
     }
 }

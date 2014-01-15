@@ -12,6 +12,8 @@ import org.keycloak.services.resources.admin.AdminService;
 import javax.servlet.ServletContext;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.UriInfo;
+import java.net.URI;
 import java.util.HashSet;
 import java.util.ServiceLoader;
 import java.util.Set;
@@ -31,10 +33,11 @@ public class KeycloakApplication extends Application {
     protected Set<Class<?>> classes = new HashSet<Class<?>>();
 
     protected KeycloakSessionFactory factory;
+    protected String contextPath;
 
     public KeycloakApplication(@Context ServletContext context) {
         this.factory = createSessionFactory();
-
+        this.contextPath = context.getContextPath();
         context.setAttribute(KeycloakSessionFactory.class.getName(), factory);
         //classes.add(KeycloakSessionCleanupFilter.class);
 
@@ -47,6 +50,20 @@ public class KeycloakApplication extends Application {
         classes.add(QRCodeResource.class);
 
         setupDefaultRealm();
+    }
+
+    public String getContextPath() {
+        return contextPath;
+    }
+
+    /**
+     * Get base URI of WAR distribution, not JAX-RS
+     *
+     * @param uriInfo
+     * @return
+     */
+    public URI getBaseUri(UriInfo uriInfo) {
+        return uriInfo.getBaseUriBuilder().replacePath(getContextPath()).build();
     }
 
     protected void setupDefaultRealm() {
