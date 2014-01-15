@@ -9,8 +9,7 @@
   "realm" : "demo",
   "resource" : "customer-portal",
   "realm-public-key" : "MIGfMA0GCSqGSIb3D...31LwIDAQAB",
-  "auth-url" : "https://localhost:8443/.../realms/demo/tokens/login",
-  "code-url" : "https://localhost:8443/.../realms/demo/tokens/access/codes",
+  "auth-server-url" : "https://localhost:8443/auth",
   "ssl-not-required" : false,
   "user-resource-role-mappings" : false,
   "enable-cors" : true,
@@ -22,9 +21,9 @@
       "password" : "password"
    }
 
-   "connection-pool-size" : 5,
-   "allo-any-hostname" : false,
+   "connection-pool-size" : 20,
    "disable-trust-manager" false,
+   "allow-any-hostname" : false,
    "truststore" : "path/to/truststore.jks",
    "truststore-password" : "geheim",
    "client-keystore" : "path/to/client-keystore.jks",
@@ -79,22 +78,11 @@
                 </listitem>
             </varlistentry>
             <varlistentry>
-                <term>auth-url</term>
+                <term>auth-server-url</term>
                 <listitem>
                     <para>
-                        URL of the realm's login page of the Keycloak Server's token service. You can obtain
-                        this URL from the admin console.
-                        This is
-                        <emphasis>REQUIRED.</emphasis>
-                    </para>
-                </listitem>
-            </varlistentry>
-            <varlistentry>
-                <term>code-url</term>
-                <listitem>
-                    <para>
-                        URL to turn an access code into an access token. You can obtain
-                        this URL from the admin console.
+                        The base URL of the Keycloak Server.  All other Keycloak pages and REST services are derived
+                        from this.  It is usually of the form <literal>https://host:port/auth</literal>
                         This is
                         <emphasis>REQUIRED.</emphasis>
                     </para>
@@ -191,6 +179,41 @@
                     </para>
                 </listitem>
             </varlistentry>
+
+            <varlistentry>
+                <term>connection-pool-size</term>
+                <listitem>
+                    <para>
+                        Adapters will make separate HTTP invocations to the Keycloak Server to turn an access code
+                        into an access token.  This config option defines how many connections to the Keycloak Server
+                        should be pooled.
+                        This is<emphasis>OPTIONAL</emphasis>.  The default value is <literal>20</literal>.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>disable-trust-manager</term>
+                <listitem>
+                    <para>
+                        If the Keycloak Server requires HTTPS and this config option is set to <literal>true</literal>
+                        you do not have to specify a truststore.  While convenient,  this setting is not recommended
+                        as you will not be verifying the host name of the Keycloak Server.
+                        This is<emphasis>OPTIONAL</emphasis>.  The default value is <literal>false</literal>.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>allow-any-hostname</term>
+                <listitem>
+                    <para>
+                        If the Keycloak Server requires HTTPS and this config option is set to <literal>true</literal>
+                        the Keycloak Server's certificate is validated via the truststore, but host name validation is
+                        not done.  This is not a recommended.  This seting may be useful in test environments
+                        This is<emphasis>OPTIONAL</emphasis>.  The default value is <literal>false</literal>.
+                    </para>
+                </listitem>
+            </varlistentry>
+
             <varlistentry>
                 <term>truststore</term>
                 <listitem>

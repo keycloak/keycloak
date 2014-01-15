@@ -26,7 +26,8 @@ import java.util.Map;
 @NamedQueries({
         @NamedQuery(name="getAllRealms", query="select realm from RealmEntity realm"),
         @NamedQuery(name="getRealmByName", query="select realm from RealmEntity realm where realm.name = :name"),
-})public class RealmEntity {
+})
+public class RealmEntity {
     @Id
     protected String id;
 

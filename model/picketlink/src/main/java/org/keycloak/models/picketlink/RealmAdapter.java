@@ -618,6 +618,12 @@ public class RealmAdapter implements RealmModel {
         return model;
     }
 
+    @Override
+    public ApplicationModel getApplicationByName(String name) {
+        return getApplicationNameMap().get(name);
+    }
+
+
 
     @Override
     public List<ApplicationModel> getApplications() {

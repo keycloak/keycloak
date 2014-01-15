@@ -28,7 +28,7 @@ module.controller('HomeCtrl', function(Realm, $location) {
         } else if (realms.length == 2) {
             if (realms[0].realm == 'keycloak-admin') {
                 realm = realms[1].realm;
-            } else if (realms[1].realm == 'keycloak-admin') {
+            } else if (realms[1].realm == 'administration') {
                 realm = realms[0].realm;
             }
         }
@@ -502,7 +502,7 @@ module.controller('RealmRegistrationCtrl', function ($scope, Realm, realm, appli
         $scope.selectedAppDefRoles = [];
 
         // Populate available roles for selected application
-        var appDefaultRoles = ApplicationRole.query({realm: $scope.realm.realm, application: $scope.application.id}, function () {
+        var appDefaultRoles = ApplicationRole.query({realm: $scope.realm.realm, application: $scope.application.name}, function () {
 
             if (!$scope.application.hasOwnProperty('defaultRoles') || $scope.application.defaultRoles === null) {
                 $scope.application.defaultRoles = [];
@@ -540,7 +540,7 @@ module.controller('RealmRegistrationCtrl', function ($scope, Realm, realm, appli
         // Update/save the selected application with new default roles.
         Application.update({
             realm: $scope.realm.realm,
-            id: $scope.application.id
+            id: $scope.application.name
         }, $scope.application, function () {
             Notifications.success("Your changes have been saved to the application.");
         });
@@ -564,7 +564,7 @@ module.controller('RealmRegistrationCtrl', function ($scope, Realm, realm, appli
         // Update/save the selected application with new default roles.
         Application.update({
             realm: $scope.realm.realm,
-            id: $scope.application.id
+            id: $scope.application.name
         }, $scope.application, function () {
             Notifications.success("Your changes have been saved to the application.");
         });

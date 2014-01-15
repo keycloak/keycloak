@@ -126,12 +126,12 @@ public class ScopeMappedResource {
         }
     }
 
-    @Path("applications/{appId}")
+    @Path("applications/{app}")
     @GET
     @Produces("application/json")
     @NoCache
-    public List<RoleRepresentation> getApplicationScopeMappings(@PathParam("appId") String appId) {
-        ApplicationModel app = realm.getApplicationById(appId);
+    public List<RoleRepresentation> getApplicationScopeMappings(@PathParam("app") String appName) {
+        ApplicationModel app = realm.getApplicationByName(appName);
 
         if (app == null) {
             throw new NotFoundException();
@@ -145,11 +145,11 @@ public class ScopeMappedResource {
         return mapRep;
     }
 
-    @Path("applications/{appId}")
+    @Path("applications/{app}")
     @POST
     @Consumes("application/json")
-    public void addApplicationScopeMapping(@PathParam("appId") String appId, List<RoleRepresentation> roles) {
-        ApplicationModel app = realm.getApplicationById(appId);
+    public void addApplicationScopeMapping(@PathParam("app") String appName, List<RoleRepresentation> roles) {
+        ApplicationModel app = realm.getApplicationByName(appName);
 
         if (app == null) {
             throw new NotFoundException();
@@ -165,11 +165,11 @@ public class ScopeMappedResource {
 
     }
 
-    @Path("applications/{appId}")
+    @Path("applications/{app}")
     @DELETE
     @Consumes("application/json")
-    public void deleteApplicationRoleMapping(@PathParam("appId") String appId, List<RoleRepresentation> roles) {
-        ApplicationModel app = realm.getApplicationById(appId);
+    public void deleteApplicationRoleMapping(@PathParam("app") String appName, List<RoleRepresentation> roles) {
+        ApplicationModel app = realm.getApplicationByName(appName);
 
         if (app == null) {
             throw new NotFoundException();
@@ -190,4 +190,5 @@ public class ScopeMappedResource {
                 app.deleteScopeMapping(agent, roleModel);
             }
         }
-    }}
+    }
+}

@@ -64,12 +64,12 @@ public class ApplicationsResource {
         }
         ApplicationManager resourceManager = new ApplicationManager(new RealmManager(session));
         ApplicationModel applicationModel = resourceManager.createApplication(realm, rep);
-        return Response.created(uriInfo.getAbsolutePathBuilder().path(applicationModel.getId()).build()).build();
+        return Response.created(uriInfo.getAbsolutePathBuilder().path(applicationModel.getName()).build()).build();
     }
 
-    @Path("{id}")
-    public ApplicationResource getApplication(final @PathParam("id") String id) {
-        ApplicationModel applicationModel = realm.getApplicationById(id);
+    @Path("{app-name}")
+    public ApplicationResource getApplication(final @PathParam("app-name") String name) {
+        ApplicationModel applicationModel = realm.getApplicationByName(name);
         if (applicationModel == null) {
             throw new NotFoundException();
         }

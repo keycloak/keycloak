@@ -60,7 +60,7 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, ro
     };
 
     $scope.addApplicationRole = function() {
-        $http.post('/auth/rest/admin/realms/' + realm.realm + '/users/' + user.username + '/role-mappings/applications/' + $scope.application.id,
+        $http.post('/auth/rest/admin/realms/' + realm.realm + '/users/' + user.username + '/role-mappings/applications/' + $scope.application.name,
                 $scope.selectedApplicationRoles).success(function() {
                 for (var i = 0; i < $scope.selectedApplicationRoles.length; i++) {
                     var role = $scope.selectedApplicationRoles[i];
@@ -75,7 +75,7 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, ro
     };
 
     $scope.deleteApplicationRole = function() {
-        $http.delete('/auth/rest/admin/realms/' + realm.realm + '/users/' + user.username + '/role-mappings/applications/' + $scope.application.id,
+        $http.delete('/auth/rest/admin/realms/' + realm.realm + '/users/' + user.username + '/role-mappings/applications/' + $scope.application.name,
             {data : $scope.selectedApplicationMappings, headers : {"content-type" : "application/json"}}).success(function() {
                 for (var i = 0; i < $scope.selectedApplicationMappings.length; i++) {
                     var role = $scope.selectedApplicationMappings[i];
@@ -91,8 +91,8 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, ro
 
 
     $scope.changeApplication = function() {
-        $scope.applicationRoles = ApplicationRole.query({realm : realm.realm, userId : user.username, application : $scope.application.id}, function() {
-                $scope.applicationMappings = ApplicationRoleMapping.query({realm : realm.realm, userId : user.username, application : $scope.application.id}, function(){
+        $scope.applicationRoles = ApplicationRole.query({realm : realm.realm, userId : user.username, application : $scope.application.name}, function() {
+                $scope.applicationMappings = ApplicationRoleMapping.query({realm : realm.realm, userId : user.username, application : $scope.application.name}, function(){
                     for (var i = 0; i < $scope.applicationMappings.length; i++) {
                         var role = $scope.applicationMappings[i];
                         for (var j = 0; j < $scope.applicationRoles.length; j++) {

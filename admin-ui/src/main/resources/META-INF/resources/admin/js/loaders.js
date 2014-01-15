@@ -111,7 +111,7 @@ module.factory('ApplicationLoader', function(Loader, Application, $route, $q) {
     return Loader.get(Application, function() {
         return {
             realm : $route.current.params.realm,
-            id : $route.current.params.application
+            application : $route.current.params.application
         }
     });
 });
