@@ -137,7 +137,7 @@ module.controller('ApplicationRoleDetailCtrl', function($scope, realm, applicati
             ApplicationRole.update({
                 realm : realm.realm,
                 application : application.name,
-                roleId : role.id
+                role : role.name
             }, $scope.role, function() {
                 $scope.changed = false;
                 role = angular.copy($scope.role);
@@ -160,7 +160,7 @@ module.controller('ApplicationRoleDetailCtrl', function($scope, realm, applicati
             $scope.role.$remove({
                 realm : realm.realm,
                 application : application.name,
-                roleId : $scope.role.id
+                role : $scope.role.name
             }, function() {
                 $location.url("/realms/" + realm.realm + "/applications/" + application.name + "/roles");
                 Notifications.success("The role has been deleted.");

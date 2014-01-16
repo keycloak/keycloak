@@ -184,9 +184,9 @@ module.factory('RealmRoles', function($resource) {
 
 
 module.factory('Role', function($resource) {
-    return $resource('/auth/rest/admin/realms/:realm/roles/:roleId', {
+    return $resource('/auth/rest/admin/realms/:realm/roles/:role', {
         realm : '@realm',
-        roleId : '@roleId'
+        role : '@role'
     },  {
         update : {
             method : 'PUT'
@@ -195,10 +195,10 @@ module.factory('Role', function($resource) {
 });
 
 module.factory('ApplicationRole', function($resource) {
-    return $resource('/auth/rest/admin/realms/:realm/applications/:application/roles/:roleId', {
+    return $resource('/auth/rest/admin/realms/:realm/applications/:application/roles/:role', {
         realm : '@realm',
         application : "@application",
-        roleId : '@roleId'
+        role : '@role'
     },  {
         update : {
             method : 'PUT'

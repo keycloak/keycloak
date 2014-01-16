@@ -42,36 +42,40 @@ public class RoleContainerResource {
         return roles;
     }
 
-    @Path("roles/{id}")
+    @Path("roles/{role-name}")
     @GET
     @NoCache
     @Produces("application/json")
-    public RoleRepresentation getRole(final @PathParam("id") String id) {
-        RoleModel roleModel = roleContainer.getRoleById(id);
+    public RoleRepresentation getRole(final @PathParam("role-name") String roleName) {
+        RoleModel roleModel = roleContainer.getRole(roleName);
         if (roleModel == null || roleModel.getName().startsWith(Constants.INTERNAL_ROLE)) {
-            throw new NotFoundException();
+            throw new NotFoundException("Could not find role: " + roleName);
         }
         RoleRepresentation rep = new RoleRepresentation(roleModel.getName(), roleModel.getDescription());
         rep.setId(roleModel.getId());
         return rep;
     }
 
-    @Path("roles/{id}")
+    @Path("roles/{role-name}")
     @DELETE
     @NoCache
-    public void deleteRole(final @PathParam("id") String id) {
-        if (!roleContainer.removeRole(id)) {
+    public void deleteRole(final @PathParam("role-name") String roleName) {
+        RoleModel role = roleContainer.getRole(roleName);
+        if (role == null) {
+            throw new NotFoundException("Could not find role: " + roleName);
+        }
+        if (!roleContainer.removeRoleById(role.getId())) {
             throw new NotFoundException();
         }
     }
 
-    @Path("roles/{id}")
+    @Path("roles/{role-name}")
     @PUT
     @Consumes("application/json")
-    public void updateRole(final @PathParam("id") String id, final RoleRepresentation rep) {
-        RoleModel role = roleContainer.getRoleById(id);
+    public void updateRole(final @PathParam("role-name") String roleName, final RoleRepresentation rep) {
+        RoleModel role = roleContainer.getRole(roleName);
         if (role == null || role.getName().startsWith(Constants.INTERNAL_ROLE)) {
-            throw new NotFoundException();
+            throw new NotFoundException("Could not find role: " + roleName);
         }
         role.setName(rep.getName());
         role.setDescription(rep.getDescription());
@@ -89,6 +93,6 @@ public class RoleContainerResource {
             throw new NotFoundException();
         }
         role.setDescription(rep.getDescription());
-        return Response.created(uriInfo.getAbsolutePathBuilder().path(role.getId()).build()).build();
+        return Response.created(uriInfo.getAbsolutePathBuilder().path(role.getName()).build()).build();
     }
 }

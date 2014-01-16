@@ -273,12 +273,12 @@ public class AdapterTest extends AbstractKeycloakTest {
         RoleModel realmRole = realmModel.addRole("test");
         realmModel.addScopeMapping(app.getApplicationUser(), realmRole);
 
-        Assert.assertTrue(realmModel.removeRole(realmRole.getId()));
-        Assert.assertFalse(realmModel.removeRole(realmRole.getId()));
+        Assert.assertTrue(realmModel.removeRoleById(realmRole.getId()));
+        Assert.assertFalse(realmModel.removeRoleById(realmRole.getId()));
         Assert.assertNull(realmModel.getRole(realmRole.getName()));
 
-        Assert.assertTrue(app.removeRole(appRole.getId()));
-        Assert.assertFalse(app.removeRole(appRole.getId()));
+        Assert.assertTrue(app.removeRoleById(appRole.getId()));
+        Assert.assertFalse(app.removeRoleById(appRole.getId()));
         Assert.assertNull(app.getRole(appRole.getName()));
     }
 

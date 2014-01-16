@@ -64,7 +64,7 @@ module.factory('RoleLoader', function(Loader, Role, $route, $q) {
     return Loader.get(Role, function() {
         return {
             realm : $route.current.params.realm,
-            roleId : $route.current.params.role
+            role : $route.current.params.role
         }
     });
 });
@@ -82,7 +82,7 @@ module.factory('ApplicationRoleLoader', function(Loader, ApplicationRole, $route
         return {
             realm : $route.current.params.realm,
             application : $route.current.params.application,
-            roleId : $route.current.params.role
+            role : $route.current.params.role
         }
     });
 });
