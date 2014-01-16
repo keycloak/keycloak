@@ -15,7 +15,7 @@
         <ul>
             <#list oauth.realmRolesRequested as role>
                 <li>
-                    <span>${role.description}</span>
+                    <span><#if role.description??>${role.description}<#else>${role.name}</#if></span>
                 </li>
             </#list>
 
