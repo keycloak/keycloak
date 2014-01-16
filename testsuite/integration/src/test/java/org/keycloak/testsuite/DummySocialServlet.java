@@ -12,6 +12,7 @@ import java.io.PrintWriter;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.List;
+import java.util.UUID;
 
 public class DummySocialServlet extends HttpServlet {
 
@@ -31,7 +32,6 @@ public class DummySocialServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String accessToken = req.getParameter("username");
         String state = null;
         String redirectUri = null;
 
@@ -50,7 +50,7 @@ public class DummySocialServlet extends HttpServlet {
             }
         }
 
-        String redirect = redirectUri + "?access_token=" + accessToken + "&token_type=bearer&state=" + state;
+        String redirect = redirectUri + "?username=" + req.getParameter("username") + "&state=" + state + "&code=" + UUID.randomUUID().toString();
         resp.sendRedirect(redirect);
     }
 

@@ -57,16 +57,6 @@ public interface FormService {
 
         private List<SocialProvider> socialProviders;
 
-        public Boolean getSocialRegistration() {
-            return socialRegistration;
-        }
-
-        public void setSocialRegistration(Boolean socialRegistration) {
-            this.socialRegistration = socialRegistration;
-        }
-
-        private Boolean socialRegistration;
-
         public String getCode() {
             return code;
         }

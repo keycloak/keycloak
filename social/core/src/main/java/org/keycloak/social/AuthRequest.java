@@ -21,8 +21,10 @@
  */
 package org.keycloak.social;
 
-import javax.ws.rs.core.UriBuilder;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -40,7 +42,10 @@ public class AuthRequest {
     public static AuthRequestBuilder create(String id, String path) {
         AuthRequestBuilder req = new AuthRequestBuilder();
         req.id = id;
-        req.b = UriBuilder.fromUri(path);
+
+        req.b = new StringBuilder();
+        req.b.append(path);
+
         req.attributes = new HashMap<String, String>();
         return req;
     }
@@ -65,18 +70,33 @@ public class AuthRequest {
 
     public static class AuthRequestBuilder {
 
-        private UriBuilder b;
+        private StringBuilder b;
+
+        private char sep;
 
         private Map<String, String> attributes;
 
         private String id;
 
         private AuthRequestBuilder() {
+            sep = '?';
         }
 
         public AuthRequestBuilder setQueryParam(String name, String value) {
-            b.queryParam(name, value);
-            return this;
+            try {
+                if (sep == '?') {
+                    b.append(sep);
+                    sep = '&';
+                } else {
+                    b.append(sep);
+                }
+                b.append(URLEncoder.encode(name, "UTF-8"));
+                b.append("=");
+                b.append(URLEncoder.encode(value, "UTF-8"));
+                return this;
+            } catch (UnsupportedEncodingException e) {
+                throw new IllegalStateException(e);
+            }
         }
 
         public AuthRequestBuilder setAttribute(String name, String value) {
@@ -85,7 +105,11 @@ public class AuthRequest {
         }
 
         public AuthRequest build() {
-            return new AuthRequest(id, b.build(), attributes);
+            try {
+                return new AuthRequest(id, new URI(b.toString()), attributes);
+            } catch (URISyntaxException e) {
+                throw new IllegalArgumentException(e);
+            }
         }
 
     }

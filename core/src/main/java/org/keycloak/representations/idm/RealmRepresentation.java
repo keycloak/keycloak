@@ -23,7 +23,7 @@ public class RealmRepresentation {
     protected Boolean verifyEmail;
     protected Boolean resetPasswordAllowed;
     protected Boolean social;
-    protected Boolean automaticRegistrationAfterSocialLogin;
+    protected Boolean updateProfileOnInitialSocialLogin;
     protected String privateKey;
     protected String publicKey;
     protected List<RoleRepresentation> roles;
@@ -279,12 +279,12 @@ public class RealmRepresentation {
         this.social = social;
     }
 
-    public Boolean isAutomaticRegistrationAfterSocialLogin() {
-        return automaticRegistrationAfterSocialLogin;
+    public Boolean isUpdateProfileOnInitialSocialLogin() {
+        return updateProfileOnInitialSocialLogin;
     }
 
-    public void setAutomaticRegistrationAfterSocialLogin(Boolean automaticRegistrationAfterSocialLogin) {
-        this.automaticRegistrationAfterSocialLogin = automaticRegistrationAfterSocialLogin;
+    public void setUpdateProfileOnInitialSocialLogin(Boolean updateProfileOnInitialSocialLogin) {
+        this.updateProfileOnInitialSocialLogin = updateProfileOnInitialSocialLogin;
     }
 
     public Map<String, String> getSocialProviders() {

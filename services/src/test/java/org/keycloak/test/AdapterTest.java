@@ -65,7 +65,7 @@ public class AdapterTest extends AbstractKeycloakTest {
         realmModel.setPrivateKeyPem("0234234");
         realmModel.setPublicKeyPem("0234234");
         realmModel.setTokenLifespan(1000);
-        realmModel.setAutomaticRegistrationAfterSocialLogin(true);
+        realmModel.setUpdateProfileOnInitialSocialLogin(true);
         realmModel.addDefaultRole("foo");
 
         System.out.println(realmModel.getId());
@@ -78,7 +78,7 @@ public class AdapterTest extends AbstractKeycloakTest {
         Assert.assertEquals(realmModel.getName(), "JUGGLER");
         Assert.assertEquals(realmModel.getPrivateKeyPem(), "0234234");
         Assert.assertEquals(realmModel.getPublicKeyPem(), "0234234");
-        Assert.assertEquals(realmModel.isAutomaticRegistrationAfterSocialLogin(), true);
+        Assert.assertEquals(realmModel.isUpdateProfileOnInitialSocialLogin(), true);
         Assert.assertEquals(1, realmModel.getDefaultRoles().size());
         Assert.assertEquals("foo", realmModel.getDefaultRoles().get(0));
     }
@@ -93,7 +93,7 @@ public class AdapterTest extends AbstractKeycloakTest {
         realmModel.setPrivateKeyPem("0234234");
         realmModel.setPublicKeyPem("0234234");
         realmModel.setTokenLifespan(1000);
-        realmModel.setAutomaticRegistrationAfterSocialLogin(true);
+        realmModel.setUpdateProfileOnInitialSocialLogin(true);
         realmModel.addDefaultRole("foo");
 
         System.out.println(realmModel.getId());
@@ -106,7 +106,7 @@ public class AdapterTest extends AbstractKeycloakTest {
         Assert.assertEquals(realmModel.getName(), "JUGGLER");
         Assert.assertEquals(realmModel.getPrivateKeyPem(), "0234234");
         Assert.assertEquals(realmModel.getPublicKeyPem(), "0234234");
-        Assert.assertEquals(realmModel.isAutomaticRegistrationAfterSocialLogin(), true);
+        Assert.assertEquals(realmModel.isUpdateProfileOnInitialSocialLogin(), true);
         Assert.assertEquals(1, realmModel.getDefaultRoles().size());
         Assert.assertEquals("foo", realmModel.getDefaultRoles().get(0));
 

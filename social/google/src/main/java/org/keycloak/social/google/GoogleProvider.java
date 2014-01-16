@@ -21,23 +21,16 @@
  */
 package org.keycloak.social.google;
 
-import java.util.UUID;
-
+import org.json.JSONObject;
 import org.keycloak.social.AuthCallback;
 import org.keycloak.social.AuthRequest;
+import org.keycloak.social.utils.SimpleHttp;
 import org.keycloak.social.SocialProvider;
 import org.keycloak.social.SocialProviderConfig;
 import org.keycloak.social.SocialProviderException;
 import org.keycloak.social.SocialUser;
 
-import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeTokenRequest;
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
-import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse;
-import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.json.jackson.JacksonFactory;
-import com.google.api.services.oauth2.Oauth2;
-import com.google.api.services.oauth2.model.Tokeninfo;
-import com.google.api.services.oauth2.model.Userinfo;
+import java.util.UUID;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -48,11 +41,11 @@ public class GoogleProvider implements SocialProvider {
 
     private static final String AUTH_PATH = "https://accounts.google.com/o/oauth2/auth";
 
-    private static final String DEFAULT_SCOPE = "https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email";
+    private static final String TOKEN_PATH = "https://accounts.google.com/o/oauth2/token";
 
-    private static final JacksonFactory JSON_FACTORY = new JacksonFactory();
+    private static final String PROFILE_PATH = "https://www.googleapis.com/plus/v1/people/me/openIdConnect";
 
-    private static final NetHttpTransport TRANSPORT = new NetHttpTransport();
+    private static final String DEFAULT_SCOPE = "openid profile email";
 
     @Override
     public String getId() {
@@ -82,32 +75,22 @@ public class GoogleProvider implements SocialProvider {
                 throw new SocialProviderException("Invalid state");
             }
 
-            GoogleTokenResponse tokenResponse = new GoogleAuthorizationCodeTokenRequest(TRANSPORT, JSON_FACTORY,
-                    config.getKey(), config.getSecret(), code, config.getCallbackUrl().toString())
-                    .execute();
+            JSONObject token = SimpleHttp.doPost(TOKEN_PATH).param("code", code).param("client_id", config.getKey())
+                    .param("client_secret", config.getSecret())
+                    .param("redirect_uri", config.getCallbackUrl())
+                    .param("grant_type", "authorization_code").asJson();
 
-            GoogleCredential credential = new GoogleCredential.Builder().setJsonFactory(JSON_FACTORY).setTransport(TRANSPORT)
-                    .setClientSecrets(config.getKey(), config.getSecret()).build()
-                    .setFromTokenResponse(tokenResponse);
+            String accessToken = token.getString("access_token");
 
-            Oauth2 oauth2 = new Oauth2.Builder(TRANSPORT, JSON_FACTORY, credential).build();
+            JSONObject profile = SimpleHttp.doGet(PROFILE_PATH).header("Authorization", "Bearer " + accessToken).asJson();
 
-            Tokeninfo tokenInfo = oauth2.tokeninfo().setAccessToken(credential.getAccessToken()).execute();
+            SocialUser user = new SocialUser(profile.getString("sub"));
 
-            if (tokenInfo.containsKey("error")) {
-                throw new SocialProviderException((String) tokenInfo.get("error"));
-            }
+            user.setUsername(profile.getString("email"));
 
-            Userinfo userInfo = oauth2.userinfo().get().execute();
-
-            SocialUser user = new SocialUser(userInfo.getId());
-
-            // Use email as username for Google
-            user.setUsername(userInfo.getEmail());
-
-            user.setFirstName(userInfo.getGivenName());
-            user.setLastName(userInfo.getFamilyName());
-            user.setEmail(userInfo.getEmail());
+            user.setFirstName(profile.optString("given_name"));
+            user.setLastName(profile.optString("family_name"));
+            user.setEmail(profile.optString("email"));
 
             return user;
         } catch (Exception e) {

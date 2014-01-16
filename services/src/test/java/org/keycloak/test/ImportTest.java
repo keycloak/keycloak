@@ -37,7 +37,7 @@ public class ImportTest extends AbstractKeycloakTest {
 
         Assert.assertTrue(realm.isVerifyEmail());
 
-        Assert.assertFalse(realm.isAutomaticRegistrationAfterSocialLogin());
+        Assert.assertFalse(realm.isUpdateProfileOnInitialSocialLogin());
         List<RequiredCredentialModel> creds = realm.getRequiredCredentials();
         Assert.assertEquals(1, creds.size());
         RequiredCredentialModel cred = creds.get(0);
@@ -94,7 +94,7 @@ public class ImportTest extends AbstractKeycloakTest {
         RealmModel realm = manager.createRealm("demo", rep.getRealm());
         manager.importRealm(rep, realm);
 
-        Assert.assertTrue(realm.isAutomaticRegistrationAfterSocialLogin());
+        Assert.assertFalse(realm.isUpdateProfileOnInitialSocialLogin());
         Assert.assertEquals(600, realm.getAccessCodeLifespanUserAction());
         verifyRequiredCredentials(realm.getRequiredCredentials(), "password");
         verifyRequiredCredentials(realm.getRequiredApplicationCredentials(), "totp");

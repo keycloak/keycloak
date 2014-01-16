@@ -35,6 +35,7 @@ import org.keycloak.testsuite.OAuthClient.AccessTokenResponse;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.KeycloakRule.KeycloakSetup;
@@ -55,7 +56,7 @@ public class SocialLoginTest {
         @Override
         public void config(RealmManager manager, RealmModel defaultRealm, RealmModel appRealm) {
             appRealm.setSocial(true);
-            appRealm.setAutomaticRegistrationAfterSocialLogin(true);
+            appRealm.setUpdateProfileOnInitialSocialLogin(false);
 
             HashMap<String, String> socialConfig = new HashMap<String, String>();
             socialConfig.put("dummy.key", "1234");
@@ -77,7 +78,7 @@ public class SocialLoginTest {
     protected LoginPage loginPage;
 
     @WebResource
-    protected RegisterPage registerPage;
+    protected LoginUpdateProfilePage profilePage;
 
     @WebResource
     protected OAuthClient oauth;
@@ -106,11 +107,11 @@ public class SocialLoginTest {
     }
 
     @Test
-    public void registerRequired() {
+    public void profileUpdateRequired() {
         keycloakRule.configure(new KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                appRealm.setAutomaticRegistrationAfterSocialLogin(false);
+                appRealm.setUpdateProfileOnInitialSocialLogin(true);
             }
         });
 
@@ -122,21 +123,20 @@ public class SocialLoginTest {
             driver.findElement(By.id("username")).sendKeys("dummy-user-reg");
             driver.findElement(By.id("submit")).click();
 
-            registerPage.isCurrent();
+            profilePage.isCurrent();
 
-            Assert.assertEquals("", registerPage.getFirstName());
-            Assert.assertEquals("", registerPage.getLastName());
-            Assert.assertEquals("dummy-user-reg@dummy-social", registerPage.getEmail());
-            Assert.assertEquals("dummy-user-reg", registerPage.getUsername());
+            Assert.assertEquals("", profilePage.getFirstName());
+            Assert.assertEquals("", profilePage.getLastName());
+            Assert.assertEquals("dummy-user-reg@dummy-social", profilePage.getEmail());
 
-            registerPage.register("Dummy", "User", "dummy-user-reg@dummy-social", "dummy-user-reg", "password", "password");
+            profilePage.update("Dummy", "User", "dummy-user-reg@dummy-social");
 
             Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         } finally {
             keycloakRule.configure(new KeycloakSetup() {
                 @Override
                 public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                    appRealm.setAutomaticRegistrationAfterSocialLogin(true);
+                    appRealm.setUpdateProfileOnInitialSocialLogin(false);
                 }
             });
         }

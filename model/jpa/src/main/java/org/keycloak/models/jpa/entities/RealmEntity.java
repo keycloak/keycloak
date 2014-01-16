@@ -38,7 +38,7 @@ public class RealmEntity {
     protected boolean verifyEmail;
     protected boolean resetPasswordAllowed;
     protected boolean social;
-    protected boolean automaticRegistrationAfterSocialLogin;
+    protected boolean updateProfileOnInitialSocialLogin;
     protected String passwordPolicy;
 
     protected int tokenLifespan;
@@ -149,12 +149,12 @@ public class RealmEntity {
         this.social = social;
     }
 
-    public boolean isAutomaticRegistrationAfterSocialLogin() {
-        return automaticRegistrationAfterSocialLogin;
+    public boolean isUpdateProfileOnInitialSocialLogin() {
+        return updateProfileOnInitialSocialLogin;
     }
 
-    public void setAutomaticRegistrationAfterSocialLogin(boolean automaticRegistrationAfterSocialLogin) {
-        this.automaticRegistrationAfterSocialLogin = automaticRegistrationAfterSocialLogin;
+    public void setUpdateProfileOnInitialSocialLogin(boolean updateProfileOnInitialSocialLogin) {
+        this.updateProfileOnInitialSocialLogin = updateProfileOnInitialSocialLogin;
     }
 
     public int getTokenLifespan() {

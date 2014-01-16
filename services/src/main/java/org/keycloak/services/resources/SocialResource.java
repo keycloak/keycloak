@@ -143,7 +143,7 @@ public class SocialResource {
 
         AuthCallback callback = new AuthCallback(requestData.getSocialAttributes(), queryParams);
 
-        SocialUser socialUser = null;
+        SocialUser socialUser;
         try {
             socialUser = provider.processCallback(config, callback);
         } catch (SocialProviderException e) {
@@ -160,41 +160,26 @@ public class SocialResource {
             }
 
             // Automatically register user into realm with his social username (don't redirect to registration screen)
-            if (realm.isAutomaticRegistrationAfterSocialLogin()) {
+            if (realm.getUser(socialUser.getUsername()) != null) {
+                // TODO: Username is already in realm. Show message and let user to bind accounts after he re-authenticate
+                throw new IllegalStateException("Username " + socialUser.getUsername() +
+                        " already registered in the realm. TODO: bind accounts...");
 
-                if (realm.getUser(socialUser.getUsername()) != null) {
-                    // TODO: Username is already in realm. Show message and let user to bind accounts after he re-authenticate
-                    throw new IllegalStateException("Username " + socialUser.getUsername() +
-                            " already registered in the realm. TODO: bind accounts...");
-
-                    // TODO: Maybe we should search also by email and bind accounts if user with this email is
-                    // already registered. But actually Keycloak allows duplicate emails
-                } else {
-                    user = realm.addUser(socialUser.getUsername());
-                    user.setEnabled(true);
-                    user.setFirstName(socialUser.getFirstName());
-                    user.setLastName(socialUser.getLastName());
-                    user.setEmail(socialUser.getEmail());
-                }
-
-                realm.addSocialLink(user, socialLink);
+                // TODO: Maybe we should search also by email and bind accounts if user with this email is
+                // already registered. But actually Keycloak allows duplicate emails
             } else {
-                // Redirect user to registration screen with prefilled data from social provider
-                MultivaluedMap<String, String> formData = fillRegistrationFormWithSocialData(socialUser);
+                user = realm.addUser(socialUser.getUsername());
+                user.setEnabled(true);
+                user.setFirstName(socialUser.getFirstName());
+                user.setLastName(socialUser.getLastName());
+                user.setEmail(socialUser.getEmail());
 
-                String requestId = UUID.randomUUID().toString();
-                socialRequestManager.addRequest(requestId, RequestDetails.create(requestData).build());
-                boolean secureOnly = !realm.isSslNotRequired();
-                String cookiePath = Urls.socialBase(uriInfo.getBaseUri()).build().getPath();
-                logger.debug("creating cookie for social registration - name: {0} path: {1}", SocialConstants.SOCIAL_REGISTRATION_COOKIE,
-                        cookiePath);
-                NewCookie newCookie = new NewCookie(SocialConstants.SOCIAL_REGISTRATION_COOKIE, requestId,
-                        cookiePath, null, "Added social cookie", NewCookie.DEFAULT_MAX_AGE, secureOnly);
-                response.addNewCookie(newCookie);
-
-                return Flows.forms(realm, request, uriInfo).setFormData(formData).setSocialRegistration(true)
-                        .forwardToRegistration();
+                if (realm.isUpdateProfileOnInitialSocialLogin()) {
+                    user.addRequiredAction(UserModel.RequiredAction.UPDATE_PROFILE);
+                }
             }
+
+            realm.addSocialLink(user, socialLink);
         }
 
         if (!user.isEnabled()) {
@@ -213,7 +198,7 @@ public class SocialResource {
     public Response redirectToProviderAuth(@PathParam("realm") final String realmId,
                                            @QueryParam("provider_id") final String providerId, @QueryParam("client_id") final String clientId,
                                            @QueryParam("scope") final String scope, @QueryParam("state") final String state,
-                                           @QueryParam("redirect_uri") final String redirectUri) {
+                                           @QueryParam("redirect_uri") String redirectUri) {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = realmManager.getRealm(realmId);
 
@@ -227,6 +212,21 @@ public class SocialResource {
         String callbackUri = Urls.socialCallback(uriInfo.getBaseUri()).toString();
 
         SocialProviderConfig config = new SocialProviderConfig(key, secret, callbackUri);
+
+        UserModel client = realm.getUser(clientId);
+        if (client == null) {
+            logger.warn("Unknown login requester: " + clientId);
+            return Flows.forms(realm, request, uriInfo).setError("Unknown login requester.").forwardToErrorPage();
+        }
+
+        if (!client.isEnabled()) {
+            logger.warn("Login requester not enabled.");
+            return Flows.forms(realm, request, uriInfo).setError("Login requester not enabled.").forwardToErrorPage();
+        }
+        redirectUri = TokenService.verifyRedirectUri(redirectUri, client);
+        if (redirectUri == null) {
+            return Flows.forms(realm, request, uriInfo).setError("Invalid redirect_uri.").forwardToErrorPage();
+        }
 
         try {
             AuthRequest authRequest = provider.getAuthUrl(config);
@@ -242,65 +242,6 @@ public class SocialResource {
         } catch (Throwable t) {
             return Flows.forms(realm, request, uriInfo).setError("Failed to redirect to social auth").forwardToErrorPage();
         }
-    }
-
-    @POST
-    @Path("{realm}/socialRegistration")
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response socialRegistration(@PathParam("realm") final String realmId,
-                                       final MultivaluedMap<String, String> formData) {
-        RealmManager realmManager = new RealmManager(session);
-        RealmModel realm = realmManager.getRealm(realmId);
-
-        Cookie cookie = headers.getCookies().get(SocialConstants.SOCIAL_REGISTRATION_COOKIE);
-        if (cookie == null) {
-            return Flows.forms(realm, request, uriInfo).setError("Social registration cookie not found").forwardToErrorPage();
-        }
-
-        String requestId = cookie.getValue();
-        if (!socialRequestManager.isRequestId(requestId)) {
-            logger.error("Unknown requestId found in cookie. Maybe it's expired. requestId=" + requestId);
-            return Flows.forms(realm, request, uriInfo).setError("Unknown requestId found in cookie. Maybe it's expired.").forwardToErrorPage();
-        }
-
-        RequestDetails requestData = socialRequestManager.getData(requestId);
-
-        if (realm == null || !realm.isEnabled()) {
-            return Flows.forms(realm, request, uriInfo).setError("Realm doesn't exists or is not enabled.").forwardToErrorPage();
-        }
-        TokenService tokenService = new TokenService(realm, tokenManager);
-        resourceContext.initResource(tokenService);
-
-        String clientId = requestData.getClientAttribute("clientId");
-        String scope = requestData.getClientAttribute("scope");
-        String state = requestData.getClientAttribute("state");
-        String redirectUri = requestData.getClientAttribute("redirectUri");
-
-        Response response1 = tokenService.processRegisterImpl(clientId, scope, state, redirectUri, formData, true);
-
-        // Some error occured during registration
-        if (response1 != null || request.wasForwarded()) {
-            logger.warn("Registration attempt wasn't successful. Request already forwarded or redirected.");
-            return response1;
-        }
-
-        String username = formData.getFirst("username");
-        UserModel user = realm.getUser(username);
-        if (user == null) {
-            // Normally shouldn't happen
-            throw new IllegalStateException("User " + username + " not found in the realm");
-        }
-        realm.addSocialLink(user, new SocialLinkModel(requestData.getProviderId(), username));
-
-        // Expire cookie and invalidate requestData
-        String cookiePath = Urls.socialBase(uriInfo.getBaseUri()).build().getPath();
-        NewCookie newCookie = new NewCookie(SocialConstants.SOCIAL_REGISTRATION_COOKIE, "", cookiePath, null,
-                "Expire social cookie", 0, false);
-        logger.debug("Expiring social registration cookie: {0}, path: {1}", SocialConstants.SOCIAL_REGISTRATION_COOKIE, cookiePath);
-        response.addNewCookie(newCookie);
-        socialRequestManager.retrieveData(requestId);
-
-        return tokenService.processLogin(clientId, scope, state, redirectUri, formData);
     }
 
     private RequestDetails getRequestDetails(Map<String, String[]> queryParams) {
@@ -322,27 +263,6 @@ public class SocialResource {
             queryParams.put(e.getKey(), e.getValue().toArray(new String[e.getValue().size()]));
         }
         return queryParams;
-    }
-
-    protected MultivaluedMap<String, String> fillRegistrationFormWithSocialData(SocialUser socialUser) {
-        MultivaluedMap<String, String> formData = new MultivaluedMapImpl<String, String>();
-        formData.putSingle("username", socialUser.getUsername());
-
-        if (socialUser.getEmail() != null) {
-            formData.putSingle("email", socialUser.getEmail());
-        }
-
-        String fullName = null;
-        if (socialUser.getFirstName() == null) {
-            fullName = socialUser.getLastName();
-        } else if (socialUser.getLastName() == null) {
-            fullName = socialUser.getFirstName();
-        } else {
-            fullName = socialUser.getFirstName() + " " + socialUser.getLastName();
-        }
-
-        formData.putSingle("name", fullName);
-        return formData;
     }
 
 }
