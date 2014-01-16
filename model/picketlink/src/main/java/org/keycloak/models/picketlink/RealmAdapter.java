@@ -564,7 +564,7 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public boolean removeRole(String id) {
+    public boolean removeRoleById(String id) {
         try {
             getIdm().remove(getIdm().lookupIdentityById(Role.class, id));
             return true;

@@ -117,7 +117,7 @@ public class ApplicationAdapter implements ApplicationModel {
     }
 
     @Override
-    public boolean removeRole(String id) {
+    public boolean removeRoleById(String id) {
         RoleEntity role = em.find(RoleEntity.class, id);
         if (role == null) {
             return false;
