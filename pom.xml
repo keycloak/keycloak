@@ -26,6 +26,7 @@
         <slf4j.version>1.6.1</slf4j.version>
         <jboss.version>7.1.1.Final</jboss.version>
         <wildfly.version>8.0.0.CR1</wildfly.version>
+        <json.version>20131018</json.version>
     </properties>
 
     <url>http://keycloak.org</url>
@@ -244,6 +245,12 @@
                 <groupId>org.freemarker</groupId>
                 <artifactId>freemarker</artifactId>
                 <version>2.3.19</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.json</groupId>
+                <artifactId>json</artifactId>
+                <version>${json.version}</version>
             </dependency>
             
             <!-- Google+ -->

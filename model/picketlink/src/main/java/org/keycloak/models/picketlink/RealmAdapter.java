@@ -125,13 +125,13 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public boolean isAutomaticRegistrationAfterSocialLogin() {
-        return realm.isAutomaticRegistrationAfterSocialLogin();
+    public boolean isUpdateProfileOnInitialSocialLogin() {
+        return realm.isUpdateProfileOnInitialSocialLogin();
     }
 
     @Override
-    public void setAutomaticRegistrationAfterSocialLogin(boolean automaticRegistrationAfterSocialLogin) {
-        realm.setAutomaticRegistrationAfterSocialLogin(automaticRegistrationAfterSocialLogin);
+    public void setUpdateProfileOnInitialSocialLogin(boolean updateProfileOnInitialSocialLogin) {
+        realm.setUpdateProfileOnInitialSocialLogin(updateProfileOnInitialSocialLogin);
         updateRealm();
     }
 

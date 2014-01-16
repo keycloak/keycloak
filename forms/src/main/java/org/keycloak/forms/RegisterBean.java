@@ -32,13 +32,9 @@ public class RegisterBean {
 
     private Map<String, String> formData = new HashMap<String, String>();
 
-    private boolean socialRegistration;
-
-    public RegisterBean(MultivaluedMap<String, String> formData, boolean socialRegistration) {
+    public RegisterBean(MultivaluedMap<String, String> formData) {
 
         this.formData = new HashMap<String, String>();
-
-        this.socialRegistration = socialRegistration;
 
         if (formData != null) {
             for (String k : formData.keySet()) {
@@ -49,10 +45,6 @@ public class RegisterBean {
 
     public Map<String, String> getFormData() {
         return formData;
-    }
-
-    public boolean isSocialRegistration() {
-        return socialRegistration;
     }
 
 }

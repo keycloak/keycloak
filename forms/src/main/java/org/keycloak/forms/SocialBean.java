@@ -64,7 +64,7 @@ public class SocialBean {
 
     // Display panel with social providers just in case that social is enabled for realm, but we are not in the middle of registration with social
     public boolean isDisplaySocialProviders() {
-        return realm.isSocial() && !providers.isEmpty() && !registerBean.isSocialRegistration();
+        return realm.isSocial() && !providers.isEmpty();
     }
 
     public RealmBean getRealm() {

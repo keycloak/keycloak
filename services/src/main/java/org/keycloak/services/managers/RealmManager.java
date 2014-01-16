@@ -102,8 +102,8 @@ public class RealmManager {
         if (rep.isRegistrationAllowed() != null) realm.setRegistrationAllowed(rep.isRegistrationAllowed());
         if (rep.isVerifyEmail() != null) realm.setVerifyEmail(rep.isVerifyEmail());
         if (rep.isResetPasswordAllowed() != null) realm.setResetPasswordAllowed(rep.isResetPasswordAllowed());
-        if (rep.isAutomaticRegistrationAfterSocialLogin() != null)
-            realm.setAutomaticRegistrationAfterSocialLogin(rep.isAutomaticRegistrationAfterSocialLogin());
+        if (rep.isUpdateProfileOnInitialSocialLogin() != null)
+            realm.setUpdateProfileOnInitialSocialLogin(rep.isUpdateProfileOnInitialSocialLogin());
         if (rep.isSslNotRequired() != null) realm.setSslNotRequired((rep.isSslNotRequired()));
         if (rep.getAccessCodeLifespan() != null) realm.setAccessCodeLifespan(rep.getAccessCodeLifespan());
         if (rep.getAccessCodeLifespanUserAction() != null)
@@ -200,8 +200,8 @@ public class RealmManager {
         if (rep.isRegistrationAllowed() != null) newRealm.setRegistrationAllowed(rep.isRegistrationAllowed());
         if (rep.isVerifyEmail() != null) newRealm.setVerifyEmail(rep.isVerifyEmail());
         if (rep.isResetPasswordAllowed() != null) newRealm.setResetPasswordAllowed(rep.isResetPasswordAllowed());
-        if (rep.isAutomaticRegistrationAfterSocialLogin() != null)
-            newRealm.setAutomaticRegistrationAfterSocialLogin(rep.isAutomaticRegistrationAfterSocialLogin());
+        if (rep.isUpdateProfileOnInitialSocialLogin() != null)
+            newRealm.setUpdateProfileOnInitialSocialLogin(rep.isUpdateProfileOnInitialSocialLogin());
         if (rep.getPrivateKey() == null || rep.getPublicKey() == null) {
             generateRealmKeys(newRealm);
         } else {
@@ -475,7 +475,7 @@ public class RealmManager {
         rep.setRealm(realm.getName());
         rep.setEnabled(realm.isEnabled());
         rep.setSocial(realm.isSocial());
-        rep.setAutomaticRegistrationAfterSocialLogin(realm.isAutomaticRegistrationAfterSocialLogin());
+        rep.setUpdateProfileOnInitialSocialLogin(realm.isUpdateProfileOnInitialSocialLogin());
         rep.setSslNotRequired(realm.isSslNotRequired());
         rep.setPublicKey(realm.getPublicKeyPem());
         rep.setPrivateKey(realm.getPrivateKeyPem());

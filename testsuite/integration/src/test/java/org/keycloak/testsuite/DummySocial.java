@@ -42,7 +42,7 @@ public class DummySocial implements SocialProvider {
             throw new SocialProviderException("Invalid state");
         }
 
-        String username = callback.getQueryParam("access_token");
+        String username = callback.getQueryParam("username");
         SocialUser user = new SocialUser(username);
         user.setEmail(username + "@dummy-social");
         user.setUsername(username);

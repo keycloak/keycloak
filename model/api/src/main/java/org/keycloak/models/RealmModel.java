@@ -132,9 +132,9 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
 
     void setSocial(boolean social);
 
-    public boolean isAutomaticRegistrationAfterSocialLogin();
+    public boolean isUpdateProfileOnInitialSocialLogin();
 
-    public void setAutomaticRegistrationAfterSocialLogin(boolean automaticRegistrationAfterSocialLogin);
+    public void setUpdateProfileOnInitialSocialLogin(boolean updateProfileOnInitialSocialLogin);
 
     List<UserModel> getUsers();
 
