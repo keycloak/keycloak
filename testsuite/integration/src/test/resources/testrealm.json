@@ -6,7 +6,6 @@
     "accessCodeLifespan": 600,
     "accessCodeLifespanUserAction": 600,
     "sslNotRequired": true,
-    "cookieLoginAllowed": true,
     "registrationAllowed": true,
     "accountManagement": true,
     "resetPasswordAllowed": true,

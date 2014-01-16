@@ -73,9 +73,7 @@ public class OAuthFlows {
         if (state != null)
             redirectUri.queryParam("state", state);
         Response.ResponseBuilder location = Response.status(302).location(redirectUri.build());
-        if (realm.isCookieLoginAllowed()) {
-            location.cookie(authManager.createLoginCookie(realm, accessCode.getUser(), uriInfo));
-        }
+        location.cookie(authManager.createLoginCookie(realm, accessCode.getUser(), uriInfo));
         return location.build();
     }
 

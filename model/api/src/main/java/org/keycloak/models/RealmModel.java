@@ -26,10 +26,6 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
 
     void setSslNotRequired(boolean sslNotRequired);
 
-    boolean isCookieLoginAllowed();
-
-    void setCookieLoginAllowed(boolean cookieLoginAllowed);
-
     boolean isRegistrationAllowed();
 
     void setRegistrationAllowed(boolean registrationAllowed);

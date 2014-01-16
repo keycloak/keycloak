@@ -60,7 +60,6 @@ public class AdapterTest extends AbstractKeycloakTest {
         realmModel = getRealmManager().createRealm("JUGGLER");
         realmModel.setAccessCodeLifespan(100);
         realmModel.setAccessCodeLifespanUserAction(600);
-        realmModel.setCookieLoginAllowed(true);
         realmModel.setEnabled(true);
         realmModel.setName("JUGGLER");
         realmModel.setPrivateKeyPem("0234234");
@@ -89,7 +88,6 @@ public class AdapterTest extends AbstractKeycloakTest {
         realmModel = getRealmManager().createRealm("JUGGLER");
         realmModel.setAccessCodeLifespan(100);
         realmModel.setAccessCodeLifespanUserAction(600);
-        realmModel.setCookieLoginAllowed(true);
         realmModel.setEnabled(true);
         realmModel.setName("JUGGLER");
         realmModel.setPrivateKeyPem("0234234");

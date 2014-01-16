@@ -147,17 +147,6 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public boolean isCookieLoginAllowed() {
-        return realm.isCookieLoginAllowed();
-    }
-
-    @Override
-    public void setCookieLoginAllowed(boolean cookieLoginAllowed) {
-        realm.setCookieLoginAllowed(cookieLoginAllowed);
-        updateRealm();
-    }
-
-    @Override
     public boolean isRegistrationAllowed() {
         return realm.isRegistrationAllowed();
     }

@@ -6,7 +6,6 @@
     "accessCodeLifespanUserAction": 6000,
     "accountManagement": true,
     "sslNotRequired": true,
-    "cookieLoginAllowed": true,
     "registrationAllowed": false,
     "social": false,
     "automaticRegistrationAfterSocialLogin": false,

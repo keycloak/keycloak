@@ -13,7 +13,6 @@ public class RealmData extends AbstractPartition {
     private String realmName;
     private boolean enabled;
     private boolean sslNotRequired;
-    private boolean cookieLoginAllowed;
     private boolean registrationAllowed;
     private boolean verifyEmail;
     private boolean resetPasswordAllowed;
@@ -79,15 +78,6 @@ public class RealmData extends AbstractPartition {
 
     public void setSslNotRequired(boolean sslNotRequired) {
         this.sslNotRequired = sslNotRequired;
-    }
-
-    @AttributeProperty
-    public boolean isCookieLoginAllowed() {
-        return cookieLoginAllowed;
-    }
-
-    public void setCookieLoginAllowed(boolean cookieLoginAllowed) {
-        this.cookieLoginAllowed = cookieLoginAllowed;
     }
 
     @AttributeProperty

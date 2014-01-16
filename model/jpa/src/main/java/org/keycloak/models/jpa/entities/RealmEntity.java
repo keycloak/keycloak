@@ -34,7 +34,6 @@ public class RealmEntity {
     protected String name;
     protected boolean enabled;
     protected boolean sslNotRequired;
-    protected boolean cookieLoginAllowed;
     protected boolean registrationAllowed;
     protected boolean verifyEmail;
     protected boolean resetPasswordAllowed;
@@ -116,14 +115,6 @@ public class RealmEntity {
 
     public void setSslNotRequired(boolean sslNotRequired) {
         this.sslNotRequired = sslNotRequired;
-    }
-
-    public boolean isCookieLoginAllowed() {
-        return cookieLoginAllowed;
-    }
-
-    public void setCookieLoginAllowed(boolean cookieLoginAllowed) {
-        this.cookieLoginAllowed = cookieLoginAllowed;
     }
 
     public boolean isRegistrationAllowed() {
