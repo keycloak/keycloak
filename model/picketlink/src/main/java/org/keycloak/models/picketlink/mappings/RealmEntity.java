@@ -33,8 +33,6 @@ public class RealmEntity implements Serializable {
     @AttributeValue
     private boolean sslNotRequired;
     @AttributeValue
-    private boolean cookieLoginAllowed;
-    @AttributeValue
     private boolean registrationAllowed;
     @AttributeValue
     private boolean verifyEmail;
@@ -96,14 +94,6 @@ public class RealmEntity implements Serializable {
 
     public void setSslNotRequired(boolean sslNotRequired) {
         this.sslNotRequired = sslNotRequired;
-    }
-
-    public boolean isCookieLoginAllowed() {
-        return cookieLoginAllowed;
-    }
-
-    public void setCookieLoginAllowed(boolean cookieLoginAllowed) {
-        this.cookieLoginAllowed = cookieLoginAllowed;
     }
 
     public boolean isRegistrationAllowed() {

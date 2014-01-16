@@ -19,7 +19,6 @@ public class RealmRepresentation {
     protected Boolean enabled;
     protected Boolean accountManagement;
     protected Boolean sslNotRequired;
-    protected Boolean cookieLoginAllowed;
     protected Boolean registrationAllowed;
     protected Boolean verifyEmail;
     protected Boolean resetPasswordAllowed;
@@ -122,14 +121,6 @@ public class RealmRepresentation {
 
     public void setSslNotRequired(Boolean sslNotRequired) {
         this.sslNotRequired = sslNotRequired;
-    }
-
-    public Boolean isCookieLoginAllowed() {
-        return cookieLoginAllowed;
-    }
-
-    public void setCookieLoginAllowed(Boolean cookieLoginAllowed) {
-        this.cookieLoginAllowed = cookieLoginAllowed;
     }
 
     public Integer getTokenLifespan() {

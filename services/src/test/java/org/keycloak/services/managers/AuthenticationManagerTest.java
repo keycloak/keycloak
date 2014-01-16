@@ -128,7 +128,6 @@ public class AuthenticationManagerTest extends AbstractKeycloakTest {
         super.before();
         realm = getRealmManager().createRealm("Test");
         realm.setAccessCodeLifespan(100);
-        realm.setCookieLoginAllowed(true);
         realm.setEnabled(true);
         realm.setName("Test");
         realm.setPrivateKeyPem("0234234");

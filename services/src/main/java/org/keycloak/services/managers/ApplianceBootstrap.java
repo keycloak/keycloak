@@ -52,7 +52,6 @@ public class ApplianceBootstrap {
         realm.setAccessCodeLifespan(60);
         realm.setAccessCodeLifespanUserAction(300);
         realm.setSslNotRequired(true);
-        realm.setCookieLoginAllowed(true);
         realm.setRegistrationAllowed(false);
         manager.generateRealmKeys(realm);
 

@@ -40,7 +40,6 @@ public class ModelTest extends AbstractKeycloakServerTest {
     @Test
     public void importExportRealm() {
         RealmModel realm = manager.createRealm("original");
-        realm.setCookieLoginAllowed(true);
         realm.setRegistrationAllowed(true);
         realm.setResetPasswordAllowed(true);
         realm.setSocial(true);
@@ -74,7 +73,6 @@ public class ModelTest extends AbstractKeycloakServerTest {
     public static void assertEquals(RealmModel expected, RealmModel actual) {
         Assert.assertEquals(expected.isAutomaticRegistrationAfterSocialLogin(),
                 actual.isAutomaticRegistrationAfterSocialLogin());
-        Assert.assertEquals(expected.isCookieLoginAllowed(), actual.isCookieLoginAllowed());
         Assert.assertEquals(expected.isRegistrationAllowed(), actual.isRegistrationAllowed());
         Assert.assertEquals(expected.isResetPasswordAllowed(), actual.isResetPasswordAllowed());
         Assert.assertEquals(expected.isSocial(), actual.isSocial());

@@ -147,8 +147,7 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $ht
     if ($scope.createRealm) {
         $scope.realm = {
             enabled: true,
-            requireSsl: true,
-            cookieLoginAllowed: true
+            requireSsl: true
         };
     } else {
         if (Current.realm == null || Current.realm.realm != realm.realm) {

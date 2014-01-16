@@ -99,7 +99,6 @@ public class RealmManager {
         }
         if (rep.isEnabled() != null) realm.setEnabled(rep.isEnabled());
         if (rep.isSocial() != null) realm.setSocial(rep.isSocial());
-        if (rep.isCookieLoginAllowed() != null) realm.setCookieLoginAllowed(rep.isCookieLoginAllowed());
         if (rep.isRegistrationAllowed() != null) realm.setRegistrationAllowed(rep.isRegistrationAllowed());
         if (rep.isVerifyEmail() != null) realm.setVerifyEmail(rep.isVerifyEmail());
         if (rep.isResetPasswordAllowed() != null) realm.setResetPasswordAllowed(rep.isResetPasswordAllowed());
@@ -198,7 +197,6 @@ public class RealmManager {
         else newRealm.setAccessCodeLifespanUserAction(300);
 
         if (rep.isSslNotRequired() != null) newRealm.setSslNotRequired(rep.isSslNotRequired());
-        if (rep.isCookieLoginAllowed() != null) newRealm.setCookieLoginAllowed(rep.isCookieLoginAllowed());
         if (rep.isRegistrationAllowed() != null) newRealm.setRegistrationAllowed(rep.isRegistrationAllowed());
         if (rep.isVerifyEmail() != null) newRealm.setVerifyEmail(rep.isVerifyEmail());
         if (rep.isResetPasswordAllowed() != null) newRealm.setResetPasswordAllowed(rep.isResetPasswordAllowed());
@@ -479,7 +477,6 @@ public class RealmManager {
         rep.setSocial(realm.isSocial());
         rep.setAutomaticRegistrationAfterSocialLogin(realm.isAutomaticRegistrationAfterSocialLogin());
         rep.setSslNotRequired(realm.isSslNotRequired());
-        rep.setCookieLoginAllowed(realm.isCookieLoginAllowed());
         rep.setPublicKey(realm.getPublicKeyPem());
         rep.setPrivateKey(realm.getPrivateKeyPem());
         rep.setRegistrationAllowed(realm.isRegistrationAllowed());
