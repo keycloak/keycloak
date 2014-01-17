@@ -444,7 +444,19 @@ public class RealmAdapter implements RealmModel {
         entity.setRealm(realm);
         em.persist(entity);
         em.flush();
-        return new UserAdapter(entity);
+        UserModel userModel = new UserAdapter(entity);
+
+        for (String r : getDefaultRoles()) {
+            grantRole(userModel, getRole(r));
+        }
+
+        for (ApplicationModel application : getApplications()) {
+            for (String r : application.getDefaultRoles()) {
+                application.grantRole(userModel, application.getRole(r));
+            }
+        }
+
+        return userModel;
     }
 
     @Override

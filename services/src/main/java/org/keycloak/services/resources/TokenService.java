@@ -339,16 +339,6 @@ public class TokenService {
             realm.updateCredential(user, credentials);
         }
 
-        for (String r : realm.getDefaultRoles()) {
-            realm.grantRole(user, realm.getRole(r));
-        }
-
-        for (ApplicationModel application : realm.getApplications()) {
-            for (String r : application.getDefaultRoles()) {
-                application.grantRole(user, application.getRole(r));
-            }
-        }
-
         return processLogin(clientId, scopeParam, state, redirect, formData);
     }
 

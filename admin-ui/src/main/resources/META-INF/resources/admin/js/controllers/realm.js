@@ -427,9 +427,9 @@ module.controller('RealmRequiredCredentialsCtrl', function($scope, Realm, realm,
     };
 });
 
-module.controller('RealmRegistrationCtrl', function ($scope, Realm, realm, applications, roles, Notifications, ApplicationRole, Application) {
+module.controller('RealmDefaultRolesCtrl', function ($scope, Realm, realm, applications, roles, Notifications, ApplicationRole, Application) {
 
-    console.log('RealmRegistrationCtrl');
+    console.log('RealmDefaultRolesCtrl');
 
     $scope.realm = realm;
 
