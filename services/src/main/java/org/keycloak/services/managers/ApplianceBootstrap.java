@@ -76,7 +76,6 @@ public class ApplianceBootstrap {
 
         adminConsole.grantRole(adminUser, adminRole);
 
-        manager.enableAccountManagement(realm);
         ApplicationModel accountApp = realm.getApplicationNameMap().get(Constants.ACCOUNT_APPLICATION);
         for (String r : accountApp.getDefaultRoles()) {
             accountApp.grantRole(adminUser, accountApp.getRole(r));

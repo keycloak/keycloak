@@ -59,6 +59,18 @@ public class LoginUpdateProfilePage extends AbstractPage {
         return loginErrorMessage != null ? loginErrorMessage.getText() : null;
     }
 
+    public String getFirstName() {
+        return firstNameInput.getAttribute("value");
+    }
+
+    public String getLastName() {
+        return lastNameInput.getAttribute("value");
+    }
+
+    public String getEmail() {
+        return emailInput.getAttribute("value");
+    }
+
     public boolean isCurrent() {
         return driver.getTitle().equals("Update Account Information");
     }

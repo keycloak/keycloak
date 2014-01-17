@@ -66,7 +66,6 @@ public class FormFlows {
     private HttpRequest request;
     private UserModel userModel;
 
-    private boolean socialRegistration;
     private AccessCodeEntry accessCode;
     private UriInfo uriInfo;
 
@@ -119,7 +118,7 @@ public class FormFlows {
         }
 
         if (accessCode != null) {
-            uriBuilder.queryParam(CODE, accessCode.getCode());
+            uriBuilder.replaceQueryParam(CODE, accessCode.getCode());
         }
 
         if (queryParams != null) {
@@ -134,7 +133,6 @@ public class FormFlows {
         // TODO find a better way to obtain contextPath
         // Getting context path by removing "rest/" substring from the BaseUri path
         formDataBean.setContextPath(requestURI.substring(0, requestURI.length() - 6));
-        formDataBean.setSocialRegistration(socialRegistration);
 
         // Find the service and process relevant template
         Iterator<FormService> itr = ServiceLoader.load(FormService.class).iterator();
@@ -258,12 +256,6 @@ public class FormFlows {
 
     public FormFlows setUser(UserModel userModel) {
         this.userModel = userModel;
-        return this;
-    }
-
-    // Set flag whether user registration is triggered from social login
-    public FormFlows setSocialRegistration(boolean socialRegistration) {
-        this.socialRegistration = socialRegistration;
         return this;
     }
 

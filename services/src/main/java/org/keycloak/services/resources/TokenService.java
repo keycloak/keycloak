@@ -276,20 +276,7 @@ public class TokenService {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processRegister(@QueryParam("client_id") final String clientId,
             @QueryParam("scope") final String scopeParam, @QueryParam("state") final String state,
-            @QueryParam("redirect_uri") final String redirect, final MultivaluedMap<String, String> formData) {
-        Response registrationResponse = processRegisterImpl(clientId, scopeParam, state, redirect, formData, false);
-
-        // If request has been already forwarded (either due to security or validation error) then we won't continue with login
-        if (registrationResponse != null || request.wasForwarded()) {
-            logger.warn("Registration attempt wasn't successful. Request already forwarded or redirected.");
-            return registrationResponse;
-        } else {
-            return processLogin(clientId, scopeParam, state, redirect, formData);
-        }
-    }
-
-    public Response processRegisterImpl(String clientId, String scopeParam, String state, String redirect,
-                                        MultivaluedMap<String, String> formData, boolean isSocialRegistration) {
+            @QueryParam("redirect_uri") String redirect, final MultivaluedMap<String, String> formData) {
         OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
 
         if (!realm.isEnabled()) {
@@ -328,16 +315,14 @@ public class TokenService {
         }
 
         if (error != null) {
-            return Flows.forms(realm, request, uriInfo).setError(error).setFormData(formData)
-                    .setSocialRegistration(isSocialRegistration).forwardToRegistration();
+            return Flows.forms(realm, request, uriInfo).setError(error).setFormData(formData).forwardToRegistration();
         }
 
         String username = formData.getFirst("username");
 
         UserModel user = realm.getUser(username);
         if (user != null) {
-            return Flows.forms(realm, request, uriInfo).setError(Messages.USERNAME_EXISTS).setFormData(formData)
-                    .setSocialRegistration(isSocialRegistration).forwardToRegistration();
+            return Flows.forms(realm, request, uriInfo).setError(Messages.USERNAME_EXISTS).setFormData(formData).forwardToRegistration();
         }
 
         user = realm.addUser(username);
@@ -354,18 +339,7 @@ public class TokenService {
             realm.updateCredential(user, credentials);
         }
 
-        for (String r : realm.getDefaultRoles()) {
-            realm.grantRole(user, realm.getRole(r));
-        }
-
-        for (ApplicationModel application : realm.getApplications()) {
-            for (String r : application.getDefaultRoles()) {
-                application.grantRole(user, application.getRole(r));
-            }
-        }
-
-
-        return null;
+        return processLogin(clientId, scopeParam, state, redirect, formData);
     }
 
     @Path("access/codes")
@@ -647,7 +621,7 @@ public class TokenService {
         return location.build();
     }
 
-    protected String verifyRedirectUri(String redirectUri, UserModel client) {
+    public static String verifyRedirectUri(String redirectUri, UserModel client) {
         if (redirectUri == null) {
             return client.getRedirectUris().size() == 1 ? client.getRedirectUris().iterator().next() : null;
         } else if (client.getRedirectUris().isEmpty()) {

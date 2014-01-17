@@ -165,10 +165,6 @@ public class Urls {
                 .build(realmId);
     }
 
-    public static URI socialRegisterAction(URI baseUri, String realmId) {
-        return socialBase(baseUri).path(SocialResource.class, "socialRegistration").build(realmId);
-    }
-
     private static UriBuilder requiredActionsBase(URI baseUri) {
         return tokenBase(baseUri).path(TokenService.class, "getRequiredActionsService");
     }

@@ -68,7 +68,7 @@ public class ApplicationModelTest extends AbstractKeycloakServerTest {
     public void persist() {
         RealmModel persisted = manager.getRealm(realm.getId());
 
-        assertEquals(application, persisted.getApplications().get(0));
+        assertEquals(application, persisted.getApplicationNameMap().get("app-name"));
     }
 
     @Test

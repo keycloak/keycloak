@@ -17,13 +17,12 @@ public class RealmRepresentation {
     protected Integer accessCodeLifespan;
     protected Integer accessCodeLifespanUserAction;
     protected Boolean enabled;
-    protected Boolean accountManagement;
     protected Boolean sslNotRequired;
     protected Boolean registrationAllowed;
     protected Boolean verifyEmail;
     protected Boolean resetPasswordAllowed;
     protected Boolean social;
-    protected Boolean automaticRegistrationAfterSocialLogin;
+    protected Boolean updateProfileOnInitialSocialLogin;
     protected String privateKey;
     protected String publicKey;
     protected List<RoleRepresentation> roles;
@@ -105,14 +104,6 @@ public class RealmRepresentation {
 
     public void setEnabled(Boolean enabled) {
         this.enabled = enabled;
-    }
-
-    public Boolean getAccountManagement() {
-        return accountManagement;
-    }
-
-    public void setAccountManagement(Boolean accountManagement) {
-        this.accountManagement = accountManagement;
     }
 
     public Boolean isSslNotRequired() {
@@ -279,12 +270,12 @@ public class RealmRepresentation {
         this.social = social;
     }
 
-    public Boolean isAutomaticRegistrationAfterSocialLogin() {
-        return automaticRegistrationAfterSocialLogin;
+    public Boolean isUpdateProfileOnInitialSocialLogin() {
+        return updateProfileOnInitialSocialLogin;
     }
 
-    public void setAutomaticRegistrationAfterSocialLogin(Boolean automaticRegistrationAfterSocialLogin) {
-        this.automaticRegistrationAfterSocialLogin = automaticRegistrationAfterSocialLogin;
+    public void setUpdateProfileOnInitialSocialLogin(Boolean updateProfileOnInitialSocialLogin) {
+        this.updateProfileOnInitialSocialLogin = updateProfileOnInitialSocialLogin;
     }
 
     public Map<String, String> getSocialProviders() {

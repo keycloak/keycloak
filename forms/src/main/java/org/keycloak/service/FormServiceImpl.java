@@ -140,7 +140,6 @@ public class FormServiceImpl implements FormService {
             }
 
             url = new UrlBean(realm, dataBean.getBaseURI(), referrerUri);
-            url.setSocialRegistration(dataBean.getSocialRegistration());
             user = new UserBean(dataBean.getUserModel());
             login = new LoginBean(realm, dataBean.getFormData());
 
@@ -163,7 +162,7 @@ public class FormServiceImpl implements FormService {
         public void exec(Map<String, Object> attributes, FormServiceDataBean dataBean) {
             super.exec(attributes, dataBean);
 
-            RegisterBean register = new RegisterBean(dataBean.getFormData(), dataBean.getSocialRegistration());
+            RegisterBean register = new RegisterBean(dataBean.getFormData());
             SocialBean social = new SocialBean(realm, dataBean.getSocialProviders(), register, url);
             attributes.put("social", social);
         }
@@ -173,7 +172,7 @@ public class FormServiceImpl implements FormService {
         public void exec(Map<String, Object> attributes, FormServiceDataBean dataBean) {
             super.exec(attributes, dataBean);
 
-            RegisterBean register = new RegisterBean(dataBean.getFormData(), dataBean.getSocialRegistration());
+            RegisterBean register = new RegisterBean(dataBean.getFormData());
             SocialBean social = new SocialBean(realm, dataBean.getSocialProviders(), register, url);
             attributes.put("social", social);
         }
@@ -183,7 +182,7 @@ public class FormServiceImpl implements FormService {
         public void exec(Map<String, Object> attributes, FormServiceDataBean dataBean) {
             super.exec(attributes, dataBean);
 
-            RegisterBean register = new RegisterBean(dataBean.getFormData(), dataBean.getSocialRegistration());
+            RegisterBean register = new RegisterBean(dataBean.getFormData());
             attributes.put("register", register);
 
             SocialBean social = new SocialBean(realm, dataBean.getSocialProviders(), register, url);

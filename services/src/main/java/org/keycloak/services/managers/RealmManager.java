@@ -78,6 +78,9 @@ public class RealmManager {
         realm.setName(name);
         realm.addRole(Constants.APPLICATION_ROLE);
         realm.addRole(Constants.IDENTITY_REQUESTER_ROLE);
+
+        setupAccountManagement(realm);
+
         return realm;
     }
 
@@ -102,8 +105,8 @@ public class RealmManager {
         if (rep.isRegistrationAllowed() != null) realm.setRegistrationAllowed(rep.isRegistrationAllowed());
         if (rep.isVerifyEmail() != null) realm.setVerifyEmail(rep.isVerifyEmail());
         if (rep.isResetPasswordAllowed() != null) realm.setResetPasswordAllowed(rep.isResetPasswordAllowed());
-        if (rep.isAutomaticRegistrationAfterSocialLogin() != null)
-            realm.setAutomaticRegistrationAfterSocialLogin(rep.isAutomaticRegistrationAfterSocialLogin());
+        if (rep.isUpdateProfileOnInitialSocialLogin() != null)
+            realm.setUpdateProfileOnInitialSocialLogin(rep.isUpdateProfileOnInitialSocialLogin());
         if (rep.isSslNotRequired() != null) realm.setSslNotRequired((rep.isSslNotRequired()));
         if (rep.getAccessCodeLifespan() != null) realm.setAccessCodeLifespan(rep.getAccessCodeLifespan());
         if (rep.getAccessCodeLifespanUserAction() != null)
@@ -125,12 +128,6 @@ public class RealmManager {
             realm.updateDefaultRoles(rep.getDefaultRoles().toArray(new String[rep.getDefaultRoles().size()]));
         }
 
-        if (rep.getAccountManagement() != null && rep.getAccountManagement()) {
-            enableAccountManagement(realm);
-        } else {
-            disableAccountManagement(realm);
-        }
-
         if (rep.getSmtpServer() != null) {
             realm.setSmtpConfig(new HashMap(rep.getSmtpServer()));
         }
@@ -144,10 +141,12 @@ public class RealmManager {
         }
     }
 
-    public void enableAccountManagement(RealmModel realm) {
+    private void setupAccountManagement(RealmModel realm) {
         ApplicationModel application = realm.getApplicationNameMap().get(Constants.ACCOUNT_APPLICATION);
         if (application == null) {
             application = realm.addApplication(Constants.ACCOUNT_APPLICATION);
+            application.setEnabled(true);
+
             application.addDefaultRole(Constants.ACCOUNT_PROFILE_ROLE);
             application.addDefaultRole(Constants.ACCOUNT_MANAGE_ROLE);
 
@@ -160,14 +159,6 @@ public class RealmManager {
             RoleModel applicationRole = realm.getRole(Constants.APPLICATION_ROLE);
             realm.grantRole(application.getApplicationUser(), applicationRole);
         }
-        application.setEnabled(true);
-    }
-
-    public void disableAccountManagement(RealmModel realm) {
-        ApplicationModel application = realm.getApplicationNameMap().get(Constants.ACCOUNT_APPLICATION);
-        if (application != null) {
-            application.setEnabled(false); // TODO Should we delete the application instead?
-        }
     }
 
     public RealmModel importRealm(RealmRepresentation rep, UserModel realmCreator) {
@@ -179,7 +170,6 @@ public class RealmManager {
         importRealm(rep, realm);
         return realm;
     }
-
 
     public void importRealm(RealmRepresentation rep, RealmModel newRealm) {
         newRealm.setName(rep.getRealm());
@@ -200,8 +190,8 @@ public class RealmManager {
         if (rep.isRegistrationAllowed() != null) newRealm.setRegistrationAllowed(rep.isRegistrationAllowed());
         if (rep.isVerifyEmail() != null) newRealm.setVerifyEmail(rep.isVerifyEmail());
         if (rep.isResetPasswordAllowed() != null) newRealm.setResetPasswordAllowed(rep.isResetPasswordAllowed());
-        if (rep.isAutomaticRegistrationAfterSocialLogin() != null)
-            newRealm.setAutomaticRegistrationAfterSocialLogin(rep.isAutomaticRegistrationAfterSocialLogin());
+        if (rep.isUpdateProfileOnInitialSocialLogin() != null)
+            newRealm.setUpdateProfileOnInitialSocialLogin(rep.isUpdateProfileOnInitialSocialLogin());
         if (rep.getPrivateKey() == null || rep.getPublicKey() == null) {
             generateRealmKeys(newRealm);
         } else {
@@ -268,10 +258,6 @@ public class RealmManager {
                 userMap.put(app.getOAuthAgent().getLoginName(), app.getOAuthAgent());
             }
 
-        }
-
-        if (rep.getAccountManagement() != null && rep.getAccountManagement()) {
-            enableAccountManagement(newRealm);
         }
 
         // Now that all possible users and applications are created (users, apps, and oauth clients), do role mappings and scope mappings
@@ -475,7 +461,7 @@ public class RealmManager {
         rep.setRealm(realm.getName());
         rep.setEnabled(realm.isEnabled());
         rep.setSocial(realm.isSocial());
-        rep.setAutomaticRegistrationAfterSocialLogin(realm.isAutomaticRegistrationAfterSocialLogin());
+        rep.setUpdateProfileOnInitialSocialLogin(realm.isUpdateProfileOnInitialSocialLogin());
         rep.setSslNotRequired(realm.isSslNotRequired());
         rep.setPublicKey(realm.getPublicKeyPem());
         rep.setPrivateKey(realm.getPrivateKeyPem());
@@ -492,7 +478,6 @@ public class RealmManager {
         }
 
         ApplicationModel accountManagementApplication = realm.getApplicationNameMap().get(Constants.ACCOUNT_APPLICATION);
-        rep.setAccountManagement(accountManagementApplication != null && accountManagementApplication.isEnabled());
 
         List<String> defaultRoles = realm.getDefaultRoles();
         if (!defaultRoles.isEmpty()) {

@@ -71,8 +71,8 @@ public class ModelTest extends AbstractKeycloakServerTest {
     }
 
     public static void assertEquals(RealmModel expected, RealmModel actual) {
-        Assert.assertEquals(expected.isAutomaticRegistrationAfterSocialLogin(),
-                actual.isAutomaticRegistrationAfterSocialLogin());
+        Assert.assertEquals(expected.isUpdateProfileOnInitialSocialLogin(),
+                actual.isUpdateProfileOnInitialSocialLogin());
         Assert.assertEquals(expected.isRegistrationAllowed(), actual.isRegistrationAllowed());
         Assert.assertEquals(expected.isResetPasswordAllowed(), actual.isResetPasswordAllowed());
         Assert.assertEquals(expected.isSocial(), actual.isSocial());

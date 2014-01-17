@@ -17,7 +17,7 @@ public class RealmData extends AbstractPartition {
     private boolean verifyEmail;
     private boolean resetPasswordAllowed;
     private boolean social;
-    private boolean automaticRegistrationAfterSocialLogin;
+    private boolean updateProfileOnInitialSocialLogin;
     private int tokenLifespan;
     private int accessCodeLifespan;
     private int accessCodeLifespanUserAction;
@@ -63,12 +63,12 @@ public class RealmData extends AbstractPartition {
     }
 
     @AttributeProperty
-    public boolean isAutomaticRegistrationAfterSocialLogin() {
-        return automaticRegistrationAfterSocialLogin;
+    public boolean isUpdateProfileOnInitialSocialLogin() {
+        return updateProfileOnInitialSocialLogin;
     }
 
-    public void setAutomaticRegistrationAfterSocialLogin(boolean automaticRegistrationAfterSocialLogin) {
-        this.automaticRegistrationAfterSocialLogin = automaticRegistrationAfterSocialLogin;
+    public void setUpdateProfileOnInitialSocialLogin(boolean updateProfileOnInitialSocialLogin) {
+        this.updateProfileOnInitialSocialLogin = updateProfileOnInitialSocialLogin;
     }
 
     @AttributeProperty

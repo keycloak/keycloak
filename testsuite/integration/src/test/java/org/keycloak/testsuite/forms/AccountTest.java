@@ -52,13 +52,14 @@ public class AccountTest {
         @Override
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
             UserModel user = appRealm.getUser("test-user@localhost");
+
             ApplicationModel accountApp = appRealm.getApplicationNameMap().get(org.keycloak.models.Constants.ACCOUNT_APPLICATION);
-            for (String r : accountApp.getDefaultRoles()) {
-                accountApp.grantRole(user, accountApp.getRole(r));
-            }
 
             UserModel user2 = appRealm.addUser("test-user-no-access@localhost");
             user2.setEnabled(true);
+            for (String r : accountApp.getDefaultRoles()) {
+                accountApp.deleteRoleMapping(user2, accountApp.getRole(r));
+            }
             UserCredentialModel creds = new UserCredentialModel();
             creds.setType(CredentialRepresentation.PASSWORD);
             creds.setValue("password");
