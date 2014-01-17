@@ -516,7 +516,19 @@ public class RealmAdapter implements RealmModel {
         if (user != null) throw new IllegalStateException("User already exists");
         user = new User(username);
         getIdm().add(user);
-        return new UserAdapter(user, getIdm());
+        UserAdapter userModel = new UserAdapter(user, getIdm());
+
+        for (String r : getDefaultRoles()) {
+            grantRole(userModel, getRole(r));
+        }
+
+        for (ApplicationModel application : getApplications()) {
+            for (String r : application.getDefaultRoles()) {
+                application.grantRole(userModel, application.getRole(r));
+            }
+        }
+
+        return userModel;
     }
 
     @Override
@@ -885,7 +897,7 @@ public class RealmAdapter implements RealmModel {
     @Override
     public Set<SocialLinkModel> getSocialLinks(UserModel user) {
         RelationshipQuery<SocialLinkRelationship> query = getRelationshipManager().createRelationshipQuery(SocialLinkRelationship.class);
-        query.setParameter(SocialLinkRelationship.USER, ((UserAdapter)user).getUser());
+        query.setParameter(SocialLinkRelationship.USER, ((UserAdapter) user).getUser());
         List<SocialLinkRelationship> plSocialLinks = query.getResultList();
 
         Set<SocialLinkModel> results = new HashSet<SocialLinkModel>();

@@ -6,8 +6,8 @@
                 <ul class="rcue-tabs">
                     <li class="active"><a href="#/realms/{{realm.realm}}">General</a></li>
                     <li data-ng-show="social"><a href="#/realms/{{realm.realm}}/social-settings">Social</a></li>
-                    <li data-ng-show="registrationAllowed"><a href="#/realms/{{realm.realm}}/registration-settings">Registration</a></li>
                     <li><a href="#/realms/{{realm.realm}}/roles">Roles</a></li>
+                    <li><a href="#/realms/{{realm.realm}}/default-roles">Default Roles</a></li>
                     <li><a href="#/realms/{{realm.realm}}/required-credentials">Credentials</a></li>
                     <li><a href="#/realms/{{realm.realm}}/token-settings">Token</a></li>
                     <li><a href="#/realms/{{realm.realm}}/keys-settings">Keys</a></li>
@@ -60,10 +60,6 @@
                         <div class="form-group clearfix block">
                             <label for="verifyEmail" class="control-label">Verify email</label>
                             <input ng-model="realm.verifyEmail" name="verifyEmail" id="verifyEmail" onoffswitch />
-                        </div>
-                        <div class="form-group clearfix block">
-                            <label for="accountManagement" class="control-label two-lines">User account management</label>
-                            <input ng-model="realm.accountManagement" name="accountManagement" id="accountManagement" onoffswitch />
                         </div>
                         <div class="form-group clearfix block">
                             <label for="requireSsl" class="control-label">Require SSL</label>

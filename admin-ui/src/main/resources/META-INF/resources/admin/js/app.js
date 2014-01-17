@@ -82,8 +82,8 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmSocialCtrl'
         })
-        .when('/realms/:realm/registration-settings', {
-            templateUrl : 'partials/realm-registration.html',
+        .when('/realms/:realm/default-roles', {
+            templateUrl : 'partials/realm-default-roles.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
@@ -95,7 +95,7 @@ module.config([ '$routeProvider', function($routeProvider) {
                     return RoleListLoader();
                 }
             },
-            controller : 'RealmRegistrationCtrl'
+            controller : 'RealmDefaultRolesCtrl'
         })
         .when('/realms/:realm/required-credentials', {
             templateUrl : 'partials/realm-credentials.html',

@@ -438,8 +438,8 @@ public class AdapterTest extends AbstractKeycloakTest {
         RealmModel otherRealm = adapter.createRealm("other");
         otherRealm.addUser("bburke");
 
-        Assert.assertEquals(1, otherRealm.getUsers().size());
-        Assert.assertEquals(1, otherRealm.searchForUser("u").size());
+        Assert.assertEquals(2, otherRealm.getUsers().size());
+        Assert.assertEquals(1, otherRealm.searchForUser("bu").size());
     }
 
 
