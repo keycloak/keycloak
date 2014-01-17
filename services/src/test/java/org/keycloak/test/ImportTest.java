@@ -54,7 +54,7 @@ public class ImportTest extends AbstractKeycloakTest {
         Assert.assertEquals(0, realm.getSocialLinks(user).size());
 
         List<ApplicationModel> resources = realm.getApplications();
-        Assert.assertEquals(2, resources.size());
+        Assert.assertEquals(3, resources.size());
 
         // Test scope relationship
         ApplicationModel application = realm.getApplicationNameMap().get("Application");

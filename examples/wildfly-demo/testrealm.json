@@ -4,7 +4,6 @@
     "tokenLifespan": 3000,
     "accessCodeLifespan": 10,
     "accessCodeLifespanUserAction": 6000,
-    "accountManagement": true,
     "sslNotRequired": true,
     "registrationAllowed": false,
     "social": false,
