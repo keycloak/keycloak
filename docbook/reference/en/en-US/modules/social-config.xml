@@ -1,0 +1,17 @@
+<section id="social-config">
+    <title>Social Login Config</title>
+    <para>
+        Social login config description
+    </para>
+
+    <section id="social-callbackurl">
+        <title>Social Callback URL</title>
+        <para>
+            There is a single callback url used by all realms and social providers. This makes it possible to share
+            the configuration for a social network between multiple realms. An example callback url is
+            <literal>http://localhost:8080/auth/rest/social/callback</literal>. To get the callback url for your server
+            replace <literal>http://localhost:8080</literal> with the base address of your server. You can also
+            find the callback url in the Keycloak Admin Console under social settings.
+        </para>
+    </section>
+</section>

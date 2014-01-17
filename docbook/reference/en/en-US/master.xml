@@ -7,6 +7,11 @@
                 <!ENTITY AdapterConfig SYSTEM "modules/adapter-config.xml">
                 <!ENTITY WildflyAdapter SYSTEM "modules/wildfly-adapter.xml">
                 <!ENTITY EAP6Adapter SYSTEM "modules/eap6-adapter.xml">
+                <!ENTITY SocialConfig SYSTEM "modules/social-config.xml">
+                <!ENTITY SocialFacebook SYSTEM "modules/social-facebook.xml">
+                <!ENTITY SocialGoogle SYSTEM "modules/social-google.xml">
+                <!ENTITY SocialTwitter SYSTEM "modules/social-twitter.xml">
+                <!ENTITY SocialProviderSPI SYSTEM "modules/social-spi.xml">
                 ]>
 
 <book>
@@ -55,5 +60,18 @@
         &EAP6Adapter;
     </chapter>
 
+    <chapter>
+        <title>Social</title>
+        <para>
+            Social login description
+        </para>
+        &SocialConfig;
+        &SocialFacebook;
+        &SocialGoogle;
+        &SocialTwitter;
+        &SocialProviderSPI;
+    </chapter>
+
 </book>
+
 

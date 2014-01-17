@@ -21,6 +21,12 @@
                     <li class="active">Social</li>
                 </ol>
                 <h2><span>{{realm.realm}}</span> Social Providers Settings</h2>
+
+
+                <div class="feedback info inline">
+                    <p><strong>Social Callback URL:</strong> {{callbackUrl}}</p>
+                </div>
+
                 <form name="realmForm" novalidate>
                     <fieldset>
                         <div>
@@ -64,7 +70,6 @@
                                                ng-class="{'dirty': postSaveProviders.indexOf(pId) > -1}" required>
                                     </td>
                                     <td>
-                                        <div class="action-div"><i class="icon-question" ng-click="openHelp(pId)"></i></div>
                                         <div class="action-div"><i class="icon-remove" ng-click="removeProvider(pId)"></i></div>
                                     </td>
                                 </tr>
@@ -72,6 +77,7 @@
                             </table>
                         </div>
                     </fieldset>
+
                     <div class="form-actions">
                         <button type="submit" kc-save class="primary" data-ng-show="changed">Save
                             changes
@@ -83,22 +89,6 @@
             </div>
         </div>
         <div id="container-right-bg"></div>
-    </div>
-</div>
-
-<div modal="providerHelpModal" close="closeHelp()" options="opts">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Configure {{helpPId}}</h3>
-            </div>
-            <div class="modal-body">
-                <div ng-include src="'partials/provider/'+ helpPId +'-help.html'"></div>
-            </div>
-            <div class="modal-footer">
-                <button ng-click="closeHelp()">Close</button>
-            </div>
-        </div>
     </div>
 </div>
 

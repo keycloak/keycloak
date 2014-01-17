@@ -696,15 +696,6 @@ module.controller('RealmSocialCtrl', function($scope, realm, Realm, $location, N
         initSocial();
     };
 
-    $scope.openHelp = function(pId) {
-        $scope.helpPId = pId;
-        $scope.providerHelpModal = true;
-    };
-
-    $scope.closeHelp = function() {
-        $scope.providerHelpModal = false;
-    };
-
 });
 
 module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, $location, Dialog, Notifications, TimeUnit) {
