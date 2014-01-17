@@ -17,6 +17,44 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>1.7</version>
+                <inherited>false</inherited>
+                <executions>
+                    <execution>
+                        <id>build-example</id>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <phase>compile</phase>
+                        <configuration>
+                            <target>
+                                <ant antfile="build.xml" inheritRefs="true">
+                                    <target name="all"/>
+                                </ant>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>ant-contrib</groupId>
+                        <artifactId>ant-contrib</artifactId>
+                        <version>1.0b3</version>
+                        <exclusions>
+                            <exclusion>
+                                <groupId>ant</groupId>
+                                <artifactId>ant</artifactId>
+                            </exclusion>
+                        </exclusions>
+                    </dependency>
+                </dependencies>
+
+
+            </plugin>
+            <!--
+            <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>2.4</version>
                 <executions>
@@ -41,6 +79,7 @@
                     </execution>
                 </executions>
             </plugin>
+            -->
         </plugins>
     </build>
 

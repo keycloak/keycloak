@@ -15,7 +15,7 @@
             <outputDirectory></outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>../../examples</directory>
+            <directory>target/examples</directory>
             <outputDirectory>examples</outputDirectory>
             <excludes>
                 <exclude>**/.svn/**</exclude>
