@@ -117,6 +117,8 @@ module.controller('RealmCreateCtrl', function($scope, Current, Realm, $upload, $
 
     $scope.save = function() {
         var realmCopy = angular.copy($scope.realm);
+        var ssl = window.location.protocol == 'https:';
+        realmCopy.sslNotRequired = !ssl;
         console.log('creating new realm **');
         Realm.create(realmCopy, function(data, headers) {
             var data = Realm.query(function() {
@@ -438,6 +440,12 @@ module.controller('RealmDefaultRolesCtrl', function ($scope, Realm, realm, appli
     $scope.selectedRealmDefRoles = [];
 
     $scope.applications = angular.copy(applications);
+    for (var i = 0; i < applications.length; i++) {
+        if (applications[i].name == 'account') {
+            $scope.application = $scope.applications[i];
+            break;
+        }
+    }
 
     $scope.availableAppRoles = [];
     $scope.selectedAppRoles = [];

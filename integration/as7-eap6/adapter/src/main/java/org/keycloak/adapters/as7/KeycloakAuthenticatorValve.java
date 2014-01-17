@@ -45,9 +45,9 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class OAuthAuthenticatorValve extends FormAuthenticator implements LifecycleListener {
+public class KeycloakAuthenticatorValve extends FormAuthenticator implements LifecycleListener {
     protected RealmConfiguration realmConfiguration;
-    private static final Logger log = Logger.getLogger(OAuthAuthenticatorValve.class);
+    private static final Logger log = Logger.getLogger(KeycloakAuthenticatorValve.class);
     protected UserSessionManagement userSessionManagement = new UserSessionManagement();
     protected AdapterConfig adapterConfig;
     protected ResourceMetadata resourceMetadata;
@@ -116,7 +116,7 @@ public class OAuthAuthenticatorValve extends FormAuthenticator implements Lifecy
             }
 
             // initiate or continue oauth2 protocol
-            oauth(request, response);
+            if (!adapterConfig.isBearerOnly()) oauth(request, response);
         } catch (LoginException e) {
         }
         return false;

@@ -45,7 +45,20 @@
             the adapter's dependencies may conflict with your application's.
         </para>
         <para>
-            After creating the <literal>jboss-deployment-structure.xml</literal> configuration file, you must create
+            Next thing you have to do is turn on the Keycloak adapter for this deployment.  To do this you must
+            create a <literal>WEB-INF/jboss-web.xml</literal> file and specify a a Keycloak valve.  This will override
+            any <literal>login-config</literal> setting you have defined with <literal>web.xml</literal>
+        </para>
+        <para>
+<programlisting><![CDATA[<jboss-web>
+    <valve>
+        <class-name>org.keycloak.adapters.as7.KeycloakAuthenticatorValve</class-name>
+    </valve>
+</jboss-web>]]>
+</programlisting>
+        </para>
+        <para>
+            After creating the <literal>jboss-web.xml</literal> configuration file, you must create
             a <literal>keycloak.json</literal> adapter config file within the <literal>WEB-INF</literal> directory
             of your WAR.  The format of this config file is describe in the <link linkend='adapter-config'>general adapter configuration</link>
             section.
