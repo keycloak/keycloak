@@ -637,15 +637,7 @@ public class TokenService {
             return true;
         }
 
-        if (uriInfo.getBaseUri().getScheme().equals("https")) {
-            return true;
-        }
-
-        if ("https".equals(headers.getHeaderString("X-Forwarded-Proto"))) {
-            return true;
-        }
-
-        return false;
+        return uriInfo.getBaseUri().getScheme().equals("https");
     }
 
 }
