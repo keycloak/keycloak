@@ -1,8 +1,24 @@
 <section id="social-config">
     <title>Social Login Config</title>
     <para>
-        Social login config description
+        To enable log in with a social network you need to enable social login for your realm and configure one or more
+        social providers.
     </para>
+
+    <section>
+        <title>Enable social login</title>
+        <para>
+            To configure your SMTP server, open the <literal>Keycloak Admin Console</literal>, select your realm from the
+            drop-down box in the top left corner. In the <literal>Login Options</literal> section click on
+            <literal>Social login</literal> to set it to <literal>ON</literal>. Click save settings, then click on
+            <literal>Social</literal> in the menu at the top.
+        </para>
+        <para>
+            To enable a social provider select the provider you want from the drop-down and click on
+            <literal>Add Provider</literal>. Then continue to the section below that provides specific instructions for
+            the provider you are adding.
+        </para>
+    </section>
 
     <section id="social-callbackurl">
         <title>Social Callback URL</title>
