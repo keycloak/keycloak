@@ -6,8 +6,8 @@
     </para>
 
     <para>
-        To configure your SMTP server, open the <literal>Keycloak Admin Console</literal>, select your realm from the drop-down box in the
-        top-menu, then click on <literal>Email</literal> in the sub-menu.
+        To configure your SMTP server, open the <literal>Keycloak Admin Console</literal>, select your realm from the drop-down box in the top left corner.
+        Then click on <literal>Email</literal> in the menu at the top.
     </para>
 
     <para>

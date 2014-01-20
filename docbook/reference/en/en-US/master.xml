@@ -64,7 +64,9 @@
     <chapter>
         <title>Social</title>
         <para>
-            Social login description
+            Keycloak makes it easy to let users log in to your application using an existing account with a social network.
+            Currently Facebook, Google and Twitter is supported with more planned for the future. There's also a Social
+            Provider SPI that makes it relatively simple to add additional social networks.
         </para>
         &SocialConfig;
         &SocialFacebook;
