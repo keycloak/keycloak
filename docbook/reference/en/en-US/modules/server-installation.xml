@@ -303,10 +303,43 @@ $ keytool -import -alias yourdomain -keystore keycloak.jks -file your-certificat
                 </section>
             </section>
             <section>
-                <title>Installing the keystore</title>
+                <title>Installing the keystore to WildFly</title>
                 <para>
                     Now that you have a Java keystore with the appropriate certificates, you need to configure your
-                    JBoss or Wildfly installation to use it.  First step is to move the keystore file to a directory
+                    Wildfly installation to use it.  First step is to move the keystore file to a directory
+                    you can reference in configuration.  I like to put it in <literal>standalone/configuration</literal>.
+                    Then you need to edit <literal>standalone/configuration/standalone.xml</literal> to enable SSL/HTTPS.
+                </para>
+                <para>
+                    To the <literal>security-realms</literal> element add:
+                    <programlisting><![CDATA[]
+<security-realm name="UndertowRealm">
+    <server-identities>
+        <ssl>
+            <keystore path="keycloak.jks" relative-to="jboss.server.config.dir" keystore-password="secret" />
+        </ssl>
+    </server-identities>
+</security-realm>
+]]>
+                    </programlisting>
+                </para>
+                <para>
+                    Find the element <literal>&lt;server name="default-server"&gt;</literal> (it's a child element of <literal>&lt;subsystem xmlns="urn:jboss:domain:undertow:1.0"&gt;</literal>) and add:
+                    <programlisting><![CDATA[]<![CDATA[]
+<
+ <https-listener name="https" socket-binding="https" security-realm="UndertowRealm"/>
+]]>
+                    </programlisting>
+                </para>
+                <para>
+                    Check the <ulink url="https://docs.jboss.org/author/display/WFLY8/SSL+setup+guide">Wildfly</ulink> documentation for more information on fine tuning the socket connections.
+                </para>
+            </section>
+            <section>
+                <title>Installing the keystore to JBoss AS7</title>
+                <para>
+                    Now that you have a Java keystore with the appropriate certificates, you need to configure your
+                    JBoss AS7 installation to use it.  First step is to move the keystore file to a directory
                     you can reference in configuration.  I like to put it in <literal>standalone/configuration</literal>.
                     Then you need to edit <literal>standalone/configuration/standalone.xml</literal> to enable SSL/HTTPS.
                 </para>
@@ -317,7 +350,7 @@ $ keytool -import -alias yourdomain -keystore keycloak.jks -file your-certificat
    <connector name="https" scheme="https" protocol="HTTP/1.1" socket-binding="https"
               enable-lookups="false" secure="true">
        <ssl name="localhost-ssl" password="secret" protocol="TLSv1"
-            key-alias="localhost" certificate-key-file="${jboss.server.config.dir}/foo.keystore" />
+            key-alias="localhost" certificate-key-file="${jboss.server.config.dir}/keycloak.jks" />
    </connector>
         ...
 </subsystem>
@@ -325,8 +358,7 @@ $ keytool -import -alias yourdomain -keystore keycloak.jks -file your-certificat
 </programlisting>
                 </para>
                 <para>
-                    Check the <ulink url="https://docs.jboss.org/author/display/WFLY8/SSL+setup+guide">Wildfly</ulink>
-                    or <ulink url="https://docs.jboss.org/author/display/AS71/SSL+setup+guide">JBoss</ulink> documentation for more information on fine tuning the socket connections.
+                    Check the <ulink url="https://docs.jboss.org/author/display/AS71/SSL+setup+guide">JBoss</ulink> documentation for more information on fine tuning the socket connections.
                 </para>
             </section>
             <section>
