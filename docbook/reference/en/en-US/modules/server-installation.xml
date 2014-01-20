@@ -332,7 +332,7 @@ $ keytool -import -alias yourdomain -keystore keycloak.jks -file your-certificat
                     </programlisting>
                 </para>
                 <para>
-                    Check the <ulink url="https://docs.jboss.org/author/display/WFLY8/SSL+setup+guide">Wildfly</ulink> documentation for more information on fine tuning the socket connections.
+                    Check the <ulink url="https://docs.jboss.org/author/display/WFLY8/Undertow+(web)+subsystem+configuration">Wildfly Undertow</ulink> documentation for more information on fine tuning the socket connections.
                 </para>
             </section>
             <section>
