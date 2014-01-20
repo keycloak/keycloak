@@ -11,7 +11,7 @@
                     <li><a href="#/realms/{{realm.realm}}/required-credentials">Credentials</a></li>
                     <li><a href="#/realms/{{realm.realm}}/token-settings">Token</a></li>
                     <li><a href="#/realms/{{realm.realm}}/keys-settings">Keys</a></li>
-                    <li class="active"><a href="#/realms/{{realm.realm}}/smtp-settings">SMTP</a></li>
+                    <li class="active"><a href="#/realms/{{realm.realm}}/smtp-settings">Email</a></li>
                 </ul>
             </div>
             <div id="content">
@@ -20,7 +20,7 @@
                     <li><a href="#/realms/{{realm.realm}}">Settings</a></li>
                     <li class="active">SMTP Configuration</li>
                 </ol>
-                <h2 class="pull-left"><span>{{realm.realm}}</span> SMTP Settings</h2>
+                <h2 class="pull-left"><span>{{realm.realm}}</span> Email Server Settings</h2>
                 <p class="subtitle"><span class="required">*</span> Required fields</p>
                 <form name="realmForm" novalidate>
                     <fieldset>
@@ -40,7 +40,7 @@
                         <div class="form-group clearfix">
                             <label for="smtpFrom" class="control-label">From <span class="required">*</span></label>
                             <div class="controls">
-                                <input id="smtpFrom" type="email" ng-model="realm.smtpServer.from" placeholder="SMTP From" required>
+                                <input id="smtpFrom" type="email" ng-model="realm.smtpServer.from" placeholder="Sender Email Address" required>
                             </div>
                         </div>
                         <div class="form-group clearfix">
@@ -53,18 +53,18 @@
                         </div>
                     </fieldset>
                     <fieldset>
-                        <legend collapsed><span class="text">Authentication</span></legend>
+                        <legend uncollapsed><span class="text">Authentication</span></legend>
                         <div class="form-group clearfix">
-                            <label for="smtpAuth" class="control-label">Enabled</label>
+                            <label for="smtpAuth" class="control-label">Enable Authentication</label>
                             <input ng-model="realm.smtpServer.auth" name="smtpAuth" id="smtpAuth" onoffswitch />
                         </div>
-                        <div class="form-group clearfix">
+                        <div class="form-group clearfix" data-ng-show="realm.smtpServer.auth">
                             <label for="smtpUsername" class="control-label">Username <span class="required" ng-show="realm.smtpServer.auth">*</span></label>
                             <div class="controls">
                                 <input id="smtpUsername" type="text" ng-model="realm.smtpServer.user" placeholder="Login Username" ng-disabled="!realm.smtpServer.auth" ng-required="realm.smtpServer.auth">
                             </div>
                         </div>
-                        <div class="form-group clearfix">
+                        <div class="form-group clearfix" data-ng-show="realm.smtpServer.auth">
                             <label for="smtpPassword" class="control-label">Password <span class="required" ng-show="realm.smtpServer.auth">*</span></label>
                             <div class="controls">
                                 <input id="smtpPassword" type="password" ng-model="realm.smtpServer.password" placeholder="Login Password" ng-disabled="!realm.smtpServer.auth" ng-required="realm.smtpServer.auth">

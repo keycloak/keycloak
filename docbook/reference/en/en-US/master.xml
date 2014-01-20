@@ -12,6 +12,7 @@
                 <!ENTITY SocialGoogle SYSTEM "modules/social-google.xml">
                 <!ENTITY SocialTwitter SYSTEM "modules/social-twitter.xml">
                 <!ENTITY SocialProviderSPI SYSTEM "modules/social-spi.xml">
+                <!ENTITY Email SYSTEM "modules/email.xml">
                 ]>
 
 <book>
@@ -70,6 +71,15 @@
         &SocialGoogle;
         &SocialTwitter;
         &SocialProviderSPI;
+    </chapter>
+
+    <chapter>
+        <title>Email</title>
+        <para>
+            Keycloak sends emails to users to verify their email address. Emails are also used to allow users to
+            safely restore their username and passwords.
+        </para>
+        &Email;
     </chapter>
 
 </book>
