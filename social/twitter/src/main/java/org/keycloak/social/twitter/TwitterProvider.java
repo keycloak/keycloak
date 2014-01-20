@@ -42,12 +42,15 @@ public class TwitterProvider implements SocialProvider {
     }
 
     @Override
-    public AuthRequest getAuthUrl(SocialProviderConfig request) throws SocialProviderException {
+    public AuthRequest getAuthUrl(SocialProviderConfig config) throws SocialProviderException {
         try {
             Twitter twitter = new TwitterFactory().getInstance();
-            twitter.setOAuthConsumer(request.getKey(), request.getSecret());
+            twitter.setOAuthConsumer(config.getKey(), config.getSecret());
 
-            RequestToken requestToken = twitter.getOAuthRequestToken(request.getCallbackUrl());
+            String redirectUri = config.getCallbackUrl();
+            redirectUri = redirectUri.replace("//localhost", "//127.0.0.1");
+
+            RequestToken requestToken = twitter.getOAuthRequestToken(redirectUri);
 
             return AuthRequest.create(requestToken.getToken(), requestToken.getAuthenticationURL())
                     .setAttribute("token", requestToken.getToken()).setAttribute("tokenSecret", requestToken.getTokenSecret())

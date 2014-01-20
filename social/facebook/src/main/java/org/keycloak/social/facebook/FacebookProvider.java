@@ -44,9 +44,12 @@ public class FacebookProvider implements SocialProvider {
     public AuthRequest getAuthUrl(SocialProviderConfig config) throws SocialProviderException {
         String state = UUID.randomUUID().toString();
 
+        String redirectUri = config.getCallbackUrl();
+        redirectUri = redirectUri.replace("//localhost", "//127.0.0.1");
+
         return AuthRequest.create(state, AUTHENTICATION_ENDPOINT_URL).setQueryParam("client_id", config.getKey())
                 .setQueryParam("response_type", DEFAULT_RESPONSE_TYPE).setQueryParam("scope", DEFAULT_SCOPE)
-                .setQueryParam("redirect_uri", config.getCallbackUrl()).setQueryParam("state", state).setAttribute("state", state).build();
+                .setQueryParam("redirect_uri", redirectUri).setQueryParam("state", state).setAttribute("state", state).build();
     }
 
     @Override

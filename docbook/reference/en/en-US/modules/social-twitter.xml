@@ -1,0 +1,35 @@
+<section id="social-twitter">
+    <title>Twitter</title>
+    <para>
+        To enable login with Twtter you first have to create an application in the
+        <ulink url="https://dev.twitter.com/apps">Twitter Developer Console</ulink>. Then you need to copy
+        the consumer key and secret into the Keycloak Admin Console.
+    </para>
+    <orderedlist>
+        <listitem>
+            <para>
+                Log in to the <ulink url="https://dev.twitter.com/apps">Twitter Developer Console</ulink>. Click the
+                <literal>Create a new application</literal> button. Use any value for <literal>Name</literal>,
+                <literal>Description</literal> and <literal>Website</literal> you want. Insert the social callback url
+                in <literal>Callback URL</literal>. Twitter doesn't allow <literal>localhost</literal> in the redirect URI,
+                so if you are testing on a local server replace <literal>localhost</literal> with <literal>127.0.0.1</literal>.
+                Twitter also restricts connection to TLS/SSL connections only, this means that you have to use HTTPS to
+                access Keycloak in order to log in via Twitter. Then click <literal>Create your Twitter application</literal>.
+            </para>
+        </listitem>
+        <listitem>
+            <para>
+                Now click on <literal>Settings</literal> and tick the box <literal>Allow this application to be used to Sign in with Twitter</literal>,
+                then click on <literal>Update this Twitter application's settings</literal>.
+            </para>
+        </listitem>
+        <listitem>
+            <para>
+                Now click <literal>Details</literal>. Copy <literal>Consumer key</literal> and <literal>Consumer secret</literal> from the
+                <ulink url="https://dev.twitter.com/apps">Twitter Developer Console</ulink> into the settings
+                page in the Keycloak Admin Console as the <literal>Key</literal> and <literal>Secret</literal>. Then click
+                <literal>Save</literal> in the Keycloak Admin Console to enable login with Twitter.
+            </para>
+        </listitem>
+    </orderedlist>
+</section>
