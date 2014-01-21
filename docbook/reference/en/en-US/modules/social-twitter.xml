@@ -11,10 +11,7 @@
                 Log in to the <ulink url="https://dev.twitter.com/apps">Twitter Developer Console</ulink>. Click the
                 <literal>Create a new application</literal> button. Use any value for <literal>Name</literal>,
                 <literal>Description</literal> and <literal>Website</literal> you want. Insert the social callback url
-                in <literal>Callback URL</literal>. Twitter doesn't allow <literal>localhost</literal> in the redirect URI,
-                so if you are testing on a local server replace <literal>localhost</literal> with <literal>127.0.0.1</literal>.
-                Twitter also restricts connection to TLS/SSL connections only, this means that you have to use HTTPS to
-                access Keycloak in order to log in via Twitter. Then click <literal>Create your Twitter application</literal>.
+                in <literal>Callback URL</literal>. Then click <literal>Create your Twitter application</literal>.
             </para>
         </listitem>
         <listitem>
@@ -32,4 +29,12 @@
             </para>
         </listitem>
     </orderedlist>
+    <tip>
+        <para>
+            Twitter doesn't allow <literal>localhost</literal> in the redirect URI. To test on a local server
+            replace <literal>localhost</literal> with <literal>127.0.0.1</literal>.
+            Twitter also restricts connection to TLS/SSL connections only, so you are required to use HTTPS to access
+            Keycloak to enable log in with Twitter.
+        </para>
+    </tip>
 </section>
