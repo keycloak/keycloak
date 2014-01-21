@@ -24,6 +24,7 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.TokenService;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.OAuthFlows;
+import org.keycloak.util.KeycloakUriBuilder;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
@@ -219,6 +220,22 @@ public class AdminService {
         return oauth.redirect(uriInfo, redirectUri.toString(), path);
     }
 
+    @Path("login-error")
+    @GET
+    @NoCache
+    public Response errorOnLoginRedirect(@QueryParam ("error") String message) {
+        RealmManager realmManager = new RealmManager(session);
+        RealmModel realm = getAdminstrationRealm(realmManager);
+        return Flows.forms(realm, request, uriInfo).setError(message).forwardToErrorPage();
+    }
+
+    protected Response redirectOnLoginError(String message) {
+        URI uri = uriInfo.getBaseUriBuilder().path(AdminService.class).path(AdminService.class, "errorOnLoginRedirect").queryParam("error", message).build();
+        URI logout = TokenService.logoutUrl(uriInfo).queryParam("redirect_uri", uri.toString()).build(Constants.ADMIN_REALM);
+        return Response.status(302).location(logout).build();
+
+    }
+
     @Path("login-redirect")
     @GET
     @NoCache
@@ -232,28 +249,28 @@ public class AdminService {
             logger.info("loginRedirect ********************** <---");
             if (error != null) {
                 logger.debug("error from oauth");
-                throw new ForbiddenException("error");
+                return redirectOnLoginError(error);
             }
             RealmManager realmManager = new RealmManager(session);
             RealmModel realm = getAdminstrationRealm(realmManager);
             if (!realm.isEnabled()) {
                 logger.debug("realm not enabled");
-                throw new ForbiddenException();
+                return redirectOnLoginError("realm not enabled");
             }
             ApplicationModel adminConsole = realm.getApplicationNameMap().get(Constants.ADMIN_CONSOLE_APPLICATION);
             UserModel adminConsoleUser = adminConsole.getApplicationUser();
             if (!adminConsole.isEnabled() || !adminConsoleUser.isEnabled()) {
                 logger.debug("admin app not enabled");
-                throw new ForbiddenException();
+                return redirectOnLoginError("admin app not enabled");
             }
 
             if (code == null) {
                 logger.debug("code not specified");
-                throw new BadRequestException();
+                return redirectOnLoginError("invalid login data");
             }
             if (state == null) {
                 logger.debug("state not specified");
-                throw new BadRequestException();
+                return redirectOnLoginError("invalid login data");
             }
             String path = new JaxrsOAuthClient().checkStateCookie(uriInfo, headers);
 
@@ -266,34 +283,34 @@ public class AdminService {
             }
             if (!verifiedCode) {
                 logger.debug("unverified access code");
-                throw new BadRequestException();
+                return redirectOnLoginError("invalid login data");
             }
             String key = input.readContentAsString();
             AccessCodeEntry accessCode = tokenManager.pullAccessCode(key);
             if (accessCode == null) {
                 logger.debug("bad access code");
-                throw new BadRequestException();
+                return redirectOnLoginError("invalid login data");
             }
             if (accessCode.isExpired()) {
                 logger.debug("access code expired");
-                throw new BadRequestException();
+                return redirectOnLoginError("invalid login data");
             }
             if (!accessCode.getToken().isActive()) {
                 logger.debug("access token expired");
-                throw new BadRequestException();
+                return redirectOnLoginError("invalid login data");
             }
             if (!accessCode.getRealm().getId().equals(realm.getId())) {
                 logger.debug("bad realm");
-                throw new BadRequestException();
+                return redirectOnLoginError("invalid login data");
 
             }
             if (!adminConsoleUser.getLoginName().equals(accessCode.getClient().getLoginName())) {
                 logger.debug("bad client");
-                throw new BadRequestException();
+                return redirectOnLoginError("invalid login data");
             }
             if (!adminConsole.hasRole(accessCode.getUser(), Constants.ADMIN_CONSOLE_ADMIN_ROLE)) {
                 logger.debug("not allowed");
-                throw new ForbiddenException();
+                return redirectOnLoginError("No permission to access console");
             }
             logger.debug("loginRedirect SUCCESS");
             NewCookie cookie = authManager.createSaasIdentityCookie(realm, accessCode.getUser(), uriInfo);

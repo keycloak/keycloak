@@ -85,11 +85,13 @@ public interface FormService {
             this.message = message;
 
             socialProviders = new LinkedList<SocialProvider>();
-            Map<String, String> socialConfig = realm.getSocialConfig();
-            if (socialConfig != null) {
-                for (SocialProvider p : SocialLoader.load()) {
-                    if (socialConfig.containsKey(p.getId() + ".key") && socialConfig.containsKey(p.getId() + ".secret")) {
-                        socialProviders.add(p);
+            if (realm != null) {
+                Map<String, String> socialConfig = realm.getSocialConfig();
+                if (socialConfig != null) {
+                    for (SocialProvider p : SocialLoader.load()) {
+                        if (socialConfig.containsKey(p.getId() + ".key") && socialConfig.containsKey(p.getId() + ".secret")) {
+                            socialProviders.add(p);
+                        }
                     }
                 }
             }
