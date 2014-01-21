@@ -1,0 +1,71 @@
+<chapter id="openshift">
+    <title>Running Keycloak Server on OpenShift</title>
+
+    <para>
+        Keycloak provides a OpenShift cartridge to make it easy to get it running on OpenShift. If you don't already
+        have
+        an account or don't know how to create applications go to
+        <ulink url="https://www.openshift.com/"/>
+        first. You can
+        create the Keycloak instance either with the web tool or the command line tool, both approaches are described
+        below.
+    </para>
+
+    <warning>
+        <para>
+            It's important that immediately after creating a Keycloak instance you open the <literal>Administration Console</literal>
+            and login to reset the password. If this is not done anyone can easily gain admin rights to your Keycloak instance.
+        </para>
+    </warning>
+
+    <section>
+        <title>Create Keycloak instance with the web tool</title>
+        <para>
+            Open
+            <ulink url="https://openshift.redhat.com/app/console/applications"/>
+            and click on<literal>Add Application</literal>.
+            Scroll down to the bottom of the page to find the
+            <literal>Code Anything</literal>
+            section. Insert
+            <literal>https://raw.github.com/keycloak/openshift-keycloak-cartridge/master/metadata/manifest.yml</literal>
+            into the
+            <literal>URL to a cartridge definition</literal>
+            field and click on<literal>Next</literal>. Fill in the
+            following form and click on<literal>Create Application</literal>.
+        </para>
+        <para>
+            Click on <literal>Continue to the application overview page</literal>. Under the list of applications you should
+            find your Keycloak instance and the status should be <literal>Started</literal>. Click on it to open the Keycloak
+            servers homepage.
+        </para>
+    </section>
+
+    <section>
+        <title>Create Keycloak instance with the web tool</title>
+        <para>
+            Run the following command from a terminal:
+            <programlisting>rhc app create &lt;APPLICATION NAME&gt; https://raw.github.com/keycloak/openshift-keycloak-cartridge/master/metadata/manifest.yml</programlisting>
+            Replace <literal>&lt;APPLICATION NAME&gt;</literal> with the name you want (for example keycloak).
+        </para>
+        <para>
+            Once the instance is created the rhc tool outputs details about it. Open the returned <literal>URL</literal> in a
+            browser to open the Keycloak servers homepage.
+        </para>
+    </section>
+
+    <section>
+        <title>Next steps</title>
+        <para>
+            The Keycloak servers homepage should show the Keycloak logo and <literal>Welcome to Keycloak</literal>.
+            There should also be a link to the <literal>Administration Console</literal>. Open that and log in using username
+            <literal>admin</literal> and password <literal>admin</literal>. On the first login you should be asked
+            to reset the password.
+        </para>
+        <tip>
+            <para>
+                On OpenShift Keycloak has been configured to only accept requests over https. If you try to use http
+                you should be redirected to https.
+            </para>
+        </tip>
+    </section>
+</chapter>

@@ -4,6 +4,7 @@
                 <!ENTITY License SYSTEM "modules/License.xml">
                 <!ENTITY Overview SYSTEM "modules/Overview.xml">
                 <!ENTITY Installation SYSTEM "modules/server-installation.xml">
+                <!ENTITY OpenShift SYSTEM "modules/openshift.xml">
                 <!ENTITY AdapterConfig SYSTEM "modules/adapter-config.xml">
                 <!ENTITY WildflyAdapter SYSTEM "modules/wildfly-adapter.xml">
                 <!ENTITY EAP6Adapter SYSTEM "modules/eap6-adapter.xml">
@@ -49,6 +50,7 @@
     &License;
     &Overview;
     &Installation;
+    &OpenShift;
     <chapter>
         <title>Adapters</title>
         <para>

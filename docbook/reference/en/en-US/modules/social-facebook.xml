@@ -21,9 +21,7 @@
                 Once the app has been created click on <literal>Settings</literal> in sidebar on the left. Then click
                 on <literal>Advanced</literal>. Under <literal>Security</literal> make sure
                 <literal>Client OAuth Login</literal> is enabled. In <literal>Valid OAuth redirect URIs</literal> insert
-                the <link linkend="social-callbackurl">social callback url</link>. Facebook doesn't allow
-                <literal>localhost</literal> in the redirect URI, so if you are testing on a local server replace
-                <literal>localhost</literal> with <literal>127.0.0.1</literal>. Scroll down and click on the
+                the <link linkend="social-callbackurl">social callback url</link>. Scroll down and click on the
                 <literal>Save Changes</literal> button.
             </para>
         </listitem>
@@ -42,4 +40,10 @@
             </para>
         </listitem>
     </orderedlist>
+    <tip>
+        <para>
+            Facebook doesn't allow <literal>localhost</literal> in the redirect URI. To test on a local server
+            replace <literal>localhost</literal> with <literal>127.0.0.1</literal>.
+        </para>
+    </tip>
 </section>
