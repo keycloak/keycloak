@@ -40,7 +40,7 @@ public class TemplateBean {
     private String formsPath;
 
 
-    public TemplateBean(RealmBean realm, String contextPath) {
+    public TemplateBean(String contextPath) {
         formsPath = contextPath + "/forms";
 
         // TODO Get theme name from realm

@@ -117,6 +117,10 @@ public class TokenService {
         return tokenServiceBaseUrl(uriInfo).path(TokenService.class, "loginPage");
     }
 
+    public static UriBuilder logoutUrl(UriInfo uriInfo) {
+        return tokenServiceBaseUrl(uriInfo).path(TokenService.class, "logout");
+    }
+
     public static UriBuilder processLoginUrl(UriInfo uriInfo) {
         return tokenServiceBaseUrl(uriInfo).path(TokenService.class, "processLogin");
     }

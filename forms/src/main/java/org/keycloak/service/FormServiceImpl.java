@@ -90,8 +90,7 @@ public class FormServiceImpl implements FormService {
             attributes.put("message", new MessageBean(dataBean.getMessage(), dataBean.getMessageType(), rb));
         }
 
-        RealmBean realm = new RealmBean(dataBean.getRealm());
-        attributes.put("template", new TemplateBean(realm, dataBean.getContextPath()));
+        attributes.put("template", new TemplateBean(dataBean.getContextPath()));
 
         if (commandMap.containsKey(pageId)){
             commandMap.get(pageId).exec(attributes, dataBean);
