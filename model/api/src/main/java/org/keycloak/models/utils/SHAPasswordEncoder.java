@@ -23,14 +23,24 @@ public class SHAPasswordEncoder {
         this.strength = strength;
     }
 
-    public String encode(String rawPassword) {
+    public String encode(String rawPassword, String salt) {
         MessageDigest messageDigest = getMessageDigest();
 
-        String encodedPassword = null;
+        // TODO: externalize it, so that it can be configured by the application
+        int iterations = 5000;
+
+        // TODO: externalize it, perhaps generating it on first-deploy with SecureRandom
+        String pepper = "fNY07rZXP2epfJxrvgw6l2wAmZ6uadqX";
+
+        String encodedPassword = pepper + salt + rawPassword;
 
         try {
-            byte[] digest = messageDigest.digest(rawPassword.getBytes("UTF-8"));
-            encodedPassword = Base64.encodeBytes(digest);
+            for (int i = 0 ; i < iterations ; i++) {
+                encodedPassword += salt;
+                byte[] digest = messageDigest.digest(encodedPassword.getBytes("UTF-8"));
+                encodedPassword = Base64.encodeBytes(digest);
+            }
+
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException("Credential could not be encoded");
         }
@@ -38,8 +48,8 @@ public class SHAPasswordEncoder {
         return encodedPassword;
     }
 
-    public boolean verify(String rawPassword, String encodedPassword) {
-        return encode(rawPassword).equals(encodedPassword);
+    public boolean verify(String rawPassword, String encodedPassword, String salt) {
+        return encode(rawPassword, salt).equals(encodedPassword);
     }
 
     protected final MessageDigest getMessageDigest() throws IllegalArgumentException {

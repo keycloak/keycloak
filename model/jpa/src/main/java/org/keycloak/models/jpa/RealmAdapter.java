@@ -1021,7 +1021,7 @@ public class RealmAdapter implements RealmModel {
     public boolean validatePassword(UserModel user, String password) {
         for (CredentialEntity cred : ((UserAdapter)user).getUser().getCredentials()) {
             if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
-                return new SHAPasswordEncoder(512).verify(password, cred.getValue());
+                return new SHAPasswordEncoder(512).verify(password, cred.getValue(), cred.getSalt());
             }
         }
         return false;
@@ -1056,7 +1056,8 @@ public class RealmAdapter implements RealmModel {
             userEntity.getCredentials().add(credentialEntity);
         }
         if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
-            credentialEntity.setValue(new SHAPasswordEncoder(512).encode(cred.getValue()));
+            credentialEntity.setSalt(cred.getSalt());
+            credentialEntity.setValue(new SHAPasswordEncoder(512).encode(cred.getValue(), cred.getSalt()));
         } else {
             credentialEntity.setValue(cred.getValue());
         }

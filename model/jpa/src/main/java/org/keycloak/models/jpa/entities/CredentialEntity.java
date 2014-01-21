@@ -23,6 +23,7 @@ public class CredentialEntity {
 
     protected String type;
     protected String value;
+    protected String salt;
     protected String device;
 
     @ManyToOne
@@ -66,5 +67,13 @@ public class CredentialEntity {
 
     public void setUser(UserEntity user) {
         this.user = user;
+    }
+
+    public String getSalt() {
+        return salt;
+    }
+
+    public void setSalt(String salt) {
+        this.salt = salt;
     }
 }
