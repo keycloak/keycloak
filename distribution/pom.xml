@@ -3,7 +3,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.0-alpha-1-SNAPSHOT</version>
+        <version>1.0-alpha-1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <name>Distribution</name>
@@ -34,5 +34,6 @@
         <module>war-zip</module>
         <module>war-dist</module>
         <module>appliance-dist</module>
+        <module>src-dist</module>
     </modules>
 </project>
