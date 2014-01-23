@@ -12,6 +12,10 @@
             <outputDirectory>examples</outputDirectory>
         </fileSet>
         <fileSet>
+            <directory>${project.build.directory}/unpacked/docs</directory>
+            <outputDirectory>docs</outputDirectory>
+        </fileSet>
+        <fileSet>
             <directory>${project.build.directory}/unpacked/wildfly-${wildfly.version}</directory>
             <outputDirectory>keycloak</outputDirectory>
             <excludes>
