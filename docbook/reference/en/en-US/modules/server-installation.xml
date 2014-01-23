@@ -8,11 +8,11 @@
         <itemizedlist>
 
             <listitem>
-                keycloak-appliance-dist-all-1.0-alpha-1-SNAPSHOT.zip
+                keycloak-appliance-dist-all-1.0-alpha-1.zip
             </listitem>
 
             <listitem>
-                keycloak-war-dist-all-1.0-alpha-1-SNAPSHOT.zip
+                keycloak-war-dist-all-1.0-alpha-1.zip
             </listitem>
 
         </itemizedlist>
@@ -31,7 +31,7 @@
 
         <para>
 <programlisting>
-keycloak-appliance-dist-all-1.0-alpha-1-SNAPSHOT/
+keycloak-appliance-dist-all-1.0-alpha-1/
     keycloak/
         bin/
             standalone.sh
@@ -41,9 +41,9 @@ keycloak-appliance-dist-all-1.0-alpha-1-SNAPSHOT/
                                    keycloak-ds.xml
 
     adapters/
-        keycloak-as7-adapter-dist-1.0-alpha-1-SNAPSHOT.zip
-        keycloak-as7-adapter-dist-1.0-alpha-1-SNAPSHOT.zip
-        keycloak-as7-adapter-dist-1.0-alpha-1-SNAPSHOT.zip
+        keycloak-as7-adapter-dist-1.0-alpha-1.zip
+        keycloak-as7-adapter-dist-1.0-alpha-1.zip
+        keycloak-as7-adapter-dist-1.0-alpha-1.zip
     examples/
     docs/
 </programlisting>
@@ -79,14 +79,14 @@ keycloak-appliance-dist-all-1.0-alpha-1-SNAPSHOT/
         </para>
         <para>
 <programlisting>
-keycloak-war-dist-all-1.0-alpha-1-SNAPSHOT/
+keycloak-war-dist-all-1.0-alpha-1/
     deployments/
         auth-server.war/
         keycloak-ds.xml
     adapters/
-        keycloak-as7-adapter-dist-1.0-alpha-1-SNAPSHOT.zip
-        keycloak-as7-adapter-dist-1.0-alpha-1-SNAPSHOT.zip
-        keycloak-as7-adapter-dist-1.0-alpha-1-SNAPSHOT.zip
+        keycloak-as7-adapter-dist-1.0-alpha-1.zip
+        keycloak-as7-adapter-dist-1.0-alpha-1.zip
+        keycloak-as7-adapter-dist-1.0-alpha-1.zip
     examples/
     docs/
 </programlisting>
@@ -97,7 +97,7 @@ keycloak-war-dist-all-1.0-alpha-1-SNAPSHOT/
         </para>
         <para>
 <programlisting>
-    $ cd keycloak-war-dist-all-1.0-alpha-1-SNAPSHOT
+    $ cd keycloak-war-dist-all-1.0-alpha-1
     $ cp -r deployments $JBOSS_HOME/standalone
 </programlisting>
         </para>

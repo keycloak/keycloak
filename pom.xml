@@ -8,12 +8,12 @@
     </description>
     <groupId>org.keycloak</groupId>
     <artifactId>keycloak-parent</artifactId>
-    <version>1.0-alpha-1-SNAPSHOT</version>
+    <version>1.0-alpha-1</version>
     <packaging>pom</packaging>
 
     <properties>
         <keycloak.apache.httpcomponents.version>4.1.2</keycloak.apache.httpcomponents.version>
-        <resteasy.version>3.0.5.Final</resteasy.version>
+        <resteasy.version>3.0.6.Final</resteasy.version>
         <undertow.version>1.0.0.Beta30</undertow.version>
         <picketlink.version>2.5.0.Beta6</picketlink.version>
         <mongo.driver.version>2.11.2</mongo.driver.version>
@@ -498,4 +498,13 @@
         </plugins>
 
     </build>
+    <profiles>
+        <profile>
+            <id>distribution</id>
+            <modules>
+                <module>docbook</module>
+                <module>distribution</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>

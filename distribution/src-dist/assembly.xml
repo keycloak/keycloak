@@ -1,0 +1,21 @@
+<assembly>
+    <id>src</id>
+
+    <formats>
+        <format>zip</format>
+    </formats>
+    <includeBaseDirectory>true</includeBaseDirectory>
+
+    <fileSets>
+        <fileSet>
+            <directory>../../</directory>
+            <outputDirectory></outputDirectory>
+            <excludes>
+                <exclude>**/.idea/**</exclude>
+                <exclude>**/.svn/**</exclude>
+                <exclude>**/target/**</exclude>
+                <exclude>**/*.iml</exclude>
+            </excludes>
+        </fileSet>
+    </fileSets>
+</assembly>
