@@ -108,7 +108,7 @@ keycloak-war-dist-all-1.0-alpha-1/
             http://localhost:8080/auth/rest/admin/login</ulink>.
             Username:
             <emphasis>admin</emphasis>
-            Password:<emphasis>admin</emphasis>. Keycloak with then prompt you to
+            Password:<emphasis>admin</emphasis>. Keycloak will then prompt you to
             enter in a new password.
         </para>
     </section>
