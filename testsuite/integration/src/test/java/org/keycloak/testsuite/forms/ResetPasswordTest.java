@@ -25,6 +25,9 @@ import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.models.PasswordPolicy;
+import org.keycloak.models.RealmModel;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
@@ -125,4 +128,52 @@ public class ResetPasswordTest {
         Assert.assertEquals("Invalid email.", resetPasswordPage.getMessage());
     }
 
+    @Test
+    public void resetPasswordWithPasswordPolicy() throws IOException, MessagingException {
+        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                appRealm.setPasswordPolicy(new PasswordPolicy("length"));
+            }
+        });
+
+        loginPage.open();
+        loginPage.resetPassword();
+
+        resetPasswordPage.assertCurrent();
+
+        resetPasswordPage.changePassword("test-user@localhost");
+
+        resetPasswordPage.assertCurrent();
+
+        Assert.assertEquals("Success!", resetPasswordPage.getMessage());
+
+        Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+
+        MimeMessage message = greenMail.getReceivedMessages()[0];
+
+        String body = (String) message.getContent();
+        String changePasswordUrl = body.split("\n")[3];
+
+        driver.navigate().to(changePasswordUrl.trim());
+
+        updatePasswordPage.assertCurrent();
+
+        updatePasswordPage.changePassword("invalid", "invalid");
+
+        Assert.assertNotEquals("Success!", resetPasswordPage.getMessage());
+        Assert.assertEquals("Invalid password: minimum length 8", resetPasswordPage.getMessage());
+
+        updatePasswordPage.changePassword("new-password", "new-password");
+
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        oauth.openLogout();
+
+        loginPage.open();
+
+        loginPage.login("test-user@localhost", "new-password");
+
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+    }
 }

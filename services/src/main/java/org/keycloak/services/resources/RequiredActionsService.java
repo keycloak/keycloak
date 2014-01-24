@@ -168,6 +168,11 @@ public class RequiredActionsService {
             return forms.setError(Messages.NOTMATCH_PASSWORD).forwardToAction(RequiredAction.UPDATE_PASSWORD);
         }
 
+        String error = realm.getPasswordPolicy().validate(passwordNew);
+        if (error != null) {
+            return forms.setError(error).forwardToAction(RequiredAction.UPDATE_PASSWORD);
+        }
+
         UserCredentialModel credentials = new UserCredentialModel();
         credentials.setType(CredentialRepresentation.PASSWORD);
         credentials.setValue(passwordNew);
