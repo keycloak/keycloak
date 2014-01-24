@@ -386,3 +386,68 @@ module.factory('TimeUnit', function() {
 
     return t;
 });
+
+
+module.factory('PasswordPolicy', function() {
+    var p = {};
+
+    p.policyMessages = {
+        length:         "Minimal password length (integer type). Default value is 8.",
+        digits:         "Minimal number (integer type) of digits in password. Default value is 1.",
+        lowerCase:      "Minimal number (integer type) of lowercase characters in password. Default value is 1.",
+        upperCase:      "Minimal number (integer type) of uppercase characters in password. Default value is 1.",
+        specialChars:   "Minimal number (integer type) of special characters in password. Default value is 1."
+    }
+
+    p.allPolicies = [
+        { name: 'length', value: 8 },
+        { name: 'digits', value: 1 },
+        { name: 'lowerCase', value: 1 },
+        { name: 'upperCase', value: 1 },
+        { name: 'specialChars', value: 1 }
+    ];
+
+    p.parse = function(policyString) {
+        var policies = [];
+
+        if (!policyString || policyString.length == 0){
+            return policies;
+        }
+
+        var policyArray = policyString.split(" and ");
+
+        for (var i = 0; i < policyArray.length; i ++){
+            var policyToken = policyArray[i];
+            var re = /(\w+)\(*(\d*)\)*/;
+
+            var policyEntry = re.exec(policyToken);
+
+            policies.push({ name: policyEntry[1], value: parseInt(policyEntry[2]) });
+
+        }
+
+        return policies;
+    };
+
+    p.toString = function(policies) {
+        if (!policies || policies.length == 0) {
+            return null;
+        }
+
+        var policyString = "";
+
+        for (var i in policies){
+            policyString += policies[i].name;
+            if ( policies[i].value ){
+                policyString += '(' + policies[i].value + ')';
+            }
+            policyString += " and ";
+        }
+
+        policyString = policyString.substring(0, policyString.length - 5);
+
+        return policyString;
+    };
+
+    return p;
+});
