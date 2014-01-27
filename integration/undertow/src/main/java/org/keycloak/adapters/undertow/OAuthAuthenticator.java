@@ -6,6 +6,7 @@ import io.undertow.server.HttpServerExchange;
 import io.undertow.server.handlers.Cookie;
 import io.undertow.server.handlers.CookieImpl;
 import io.undertow.util.Headers;
+import io.undertow.util.StatusCodes;
 import org.jboss.logging.Logger;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.adapters.config.RealmConfiguration;
@@ -129,14 +130,14 @@ public class OAuthAuthenticator {
             @Override
             public AuthenticationMechanism.ChallengeResult sendChallenge(HttpServerExchange exchange, SecurityContext securityContext) {
                 if (redirect == null) {
-                    return new AuthenticationMechanism.ChallengeResult(true, 403);
+                    return new AuthenticationMechanism.ChallengeResult(true, StatusCodes.FORBIDDEN);
                 }
                 CookieImpl cookie = new CookieImpl(realmInfo.getStateCookieName(), state);
                 //cookie.setPath(getDefaultCookiePath()); todo I don't think we need to set state cookie path as it will be the same redirect
                 cookie.setSecure(realmInfo.isSslRequired());
                 exchange.setResponseCookie(cookie);
                 exchange.getResponseHeaders().put(Headers.LOCATION, redirect);
-                return new AuthenticationMechanism.ChallengeResult(true, 302);
+                return new AuthenticationMechanism.ChallengeResult(true, StatusCodes.FOUND);
             }
         };
     }
@@ -146,7 +147,7 @@ public class OAuthAuthenticator {
 
         if (stateCookie == null) {
             log.warn("No state cookie");
-            return challenge(400);
+            return challenge(StatusCodes.BAD_REQUEST);
         }
         // reset the cookie
         log.info("** reseting application state cookie");
@@ -160,13 +161,13 @@ public class OAuthAuthenticator {
         String state = getQueryParamValue("state");
         if (state == null) {
             log.warn("state parameter was null");
-            return challenge(400);
+            return challenge(StatusCodes.BAD_REQUEST);
         }
         if (!state.equals(stateCookieValue)) {
             log.warn("state parameter invalid");
             log.warn("cookie: " + stateCookieValue);
             log.warn("queryParam: " + state);
-            return challenge(400);
+            return challenge(StatusCodes.BAD_REQUEST);
         }
         return null;
 
@@ -180,7 +181,7 @@ public class OAuthAuthenticator {
             if (error != null) {
                 // todo how do we send a response?
                 log.warn("There was an error: " + error);
-                challenge = challenge(400);
+                challenge = challenge(StatusCodes.BAD_REQUEST);
                 return AuthenticationMechanism.AuthenticationMechanismOutcome.NOT_AUTHENTICATED;
             } else {
                 log.info("redirecting to auth server");
@@ -223,7 +224,7 @@ public class OAuthAuthenticator {
         // abort if not HTTPS
         if (realmInfo.isSslRequired() && !isRequestSecure()) {
             log.error("SSL is required");
-            return challenge(403);
+            return challenge(StatusCodes.FORBIDDEN);
         }
 
         log.info("checking state cookie for after code");
@@ -237,14 +238,14 @@ public class OAuthAuthenticator {
         } catch (TokenGrantRequest.HttpFailure failure) {
             log.error("failed to turn code into token");
             log.error("status from server: " + failure.getStatus());
-            if (failure.getStatus() == 400 && failure.getError() != null) {
+            if (failure.getStatus() == StatusCodes.BAD_REQUEST && failure.getError() != null) {
                 log.error("   " + failure.getError());
             }
-            return challenge(403);
+            return challenge(StatusCodes.FORBIDDEN);
 
         } catch (IOException e) {
             log.error("failed to turn code into token");
-            return challenge(403);
+            return challenge(StatusCodes.FORBIDDEN);
         }
 
         tokenString = tokenResponse.getToken();
@@ -253,7 +254,7 @@ public class OAuthAuthenticator {
             log.debug("Token Verification succeeded!");
         } catch (VerificationException e) {
             log.error("failed verification of token");
-            return challenge(403);
+            return challenge(StatusCodes.FORBIDDEN);
         }
         log.info("successful authenticated");
         return null;

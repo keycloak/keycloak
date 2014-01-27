@@ -90,14 +90,14 @@ public class CatalinaBearerTokenAuthenticator {
         String surrogate = null;
         if (verifyCaller) {
             if (token.getTrustedCertificates() == null || token.getTrustedCertificates().size() == 0) {
-                response.sendError(400);
+                response.sendError(HttpServletResponse.SC_BAD_REQUEST);
                 throw new LoginException("No trusted certificates in token");
             }
             // for now, we just make sure JBoss Web did two-way SSL
             // assume JBoss Web verifies the client cert
             X509Certificate[] chain = request.getCertificateChain();
             if (chain == null || chain.length == 0) {
-                response.sendError(400);
+                response.sendError(HttpServletResponse.SC_BAD_REQUEST);
                 throw new LoginException("No certificates provided by jboss web to verify the caller");
             }
             surrogate = chain[0].getSubjectX500Principal().getName();
@@ -124,7 +124,7 @@ public class CatalinaBearerTokenAuthenticator {
         }
         response.setHeader("WWW-Authenticate", header.toString());
         try {
-            response.sendError(401);
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

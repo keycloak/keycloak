@@ -42,7 +42,7 @@ public class JaxrsBearerTokenFilter implements ContainerRequestFilter {
         if (description != null) {
             header.append(", error_description=\"").append(description).append("\"");
         }
-        request.abortWith(Response.status(401).header("WWW-Authenticate", header.toString()).build());
+        request.abortWith(Response.status(Response.Status.UNAUTHORIZED).header(HttpHeaders.WWW_AUTHENTICATE, header.toString()).build());
         return;
     }
 
