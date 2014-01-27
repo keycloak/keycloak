@@ -24,6 +24,7 @@ public class CredentialEntity {
     protected String type;
     protected String value;
     protected String device;
+    protected byte[] salt;
 
     @ManyToOne
     protected UserEntity user;
@@ -67,4 +68,14 @@ public class CredentialEntity {
     public void setUser(UserEntity user) {
         this.user = user;
     }
+
+    public byte[] getSalt() {
+        return salt;
+    }
+
+    public void setSalt(byte[] salt) {
+        this.salt = salt;
+    }
+
+
 }

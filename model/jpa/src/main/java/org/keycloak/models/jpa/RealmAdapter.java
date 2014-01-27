@@ -1,6 +1,7 @@
 package org.keycloak.models.jpa;
 
 import org.bouncycastle.openssl.PEMWriter;
+import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
 import org.keycloak.util.PemUtils;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.OAuthClientModel;
@@ -12,7 +13,6 @@ import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.entities.*;
-import org.keycloak.models.utils.SHAPasswordEncoder;
 import org.keycloak.models.utils.TimeBasedOTP;
 
 import javax.persistence.EntityManager;
@@ -28,6 +28,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import static org.keycloak.models.utils.Pbkdf2PasswordEncoder.*;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -1021,7 +1022,7 @@ public class RealmAdapter implements RealmModel {
     public boolean validatePassword(UserModel user, String password) {
         for (CredentialEntity cred : ((UserAdapter)user).getUser().getCredentials()) {
             if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
-                return new SHAPasswordEncoder(512).verify(password, cred.getValue());
+                return new Pbkdf2PasswordEncoder(cred.getSalt()).verify(password, cred.getValue());
             }
         }
         return false;
@@ -1056,7 +1057,9 @@ public class RealmAdapter implements RealmModel {
             userEntity.getCredentials().add(credentialEntity);
         }
         if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
-            credentialEntity.setValue(new SHAPasswordEncoder(512).encode(cred.getValue()));
+            byte[] salt = getSalt();
+            credentialEntity.setValue(new Pbkdf2PasswordEncoder(salt).encode(cred.getValue()));
+            credentialEntity.setSalt(salt);
         } else {
             credentialEntity.setValue(cred.getValue());
         }
