@@ -1,5 +1,7 @@
 package org.keycloak.models.utils;
 
+import net.iharder.Base64;
+
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import java.security.NoSuchAlgorithmException;

@@ -102,6 +102,11 @@
                 <version>1.46</version>
             </dependency>
             <dependency>
+                <groupId>net.iharder</groupId>
+                <artifactId>base64</artifactId>
+                <version>2.3.8</version>
+            </dependency>
+            <dependency>
                 <groupId>org.jboss.resteasy</groupId>
                 <artifactId>jaxrs-api</artifactId>
                 <version>${resteasy.version}</version>
