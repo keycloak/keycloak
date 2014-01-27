@@ -66,7 +66,7 @@ public class AuthenticatedActionsHandler implements HttpHandler {
     protected boolean abortTokenResponse(HttpServerExchange exchange, SkeletonKeySession session) throws IOException {
         if (session == null) {
             log.debugv("session was null, sending back 401: {0}",exchange.getRequestURI());
-            exchange.setResponseCode(200);
+            exchange.setResponseCode(StatusCodes.UNAUTHORIZED);
             exchange.endExchange();
             return true;
         }
