@@ -14,6 +14,7 @@ import org.keycloak.representations.SkeletonKeyToken;
 
 import javax.management.ObjectName;
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Set;
 
@@ -67,7 +68,7 @@ public class AuthenticatedActionsValve extends ValveBase {
     protected void queryBearerToken(Request request, Response response, SkeletonKeySession session) throws IOException, ServletException {
         log.debugv("queryBearerToken {0}", request.getRequestURI());
         if (abortTokenResponse(request, response, session)) return;
-        response.setStatus(200);
+        response.setStatus(HttpServletResponse.SC_OK);
         response.setContentType("text/plain");
         response.getOutputStream().write(session.getTokenString().getBytes());
         response.getOutputStream().flush();
@@ -77,15 +78,15 @@ public class AuthenticatedActionsValve extends ValveBase {
     protected boolean abortTokenResponse(Request request, Response response, SkeletonKeySession session) throws IOException {
         if (session == null) {
             log.debugv("session was null, sending back 401: {0}", request.getRequestURI());
-            response.sendError(401);
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
             return true;
         }
         if (!config.isExposeToken()) {
-            response.setStatus(200);
+            response.setStatus(HttpServletResponse.SC_OK);
             return true;
         }
         if (!config.isCors() && request.getHeader("Origin") != null) {
-            response.setStatus(200);
+            response.setStatus(HttpServletResponse.SC_OK);
             return true;
         }
         return false;
@@ -110,7 +111,7 @@ public class AuthenticatedActionsValve extends ValveBase {
                     log.debugv("allowedOrigins did not contain origin");
 
                 }
-                response.sendError(403);
+                response.sendError(HttpServletResponse.SC_FORBIDDEN);
                 return true;
             }
             log.debugv("returning origin: {0}", origin);

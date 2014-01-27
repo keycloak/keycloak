@@ -170,7 +170,7 @@ public class ServletOAuthLogin {
         Cookie stateCookie = getCookie(realmInfo.getStateCookieName());
 
         if (stateCookie == null) {
-            sendError(400);
+            sendError(HttpServletResponse.SC_BAD_REQUEST);
             log.warn("No state cookie");
             return false;
         }
@@ -185,12 +185,12 @@ public class ServletOAuthLogin {
         // its ok to call request.getParameter() because this should be a redirect
         String state = request.getParameter("state");
         if (state == null) {
-            sendError(400);
+            sendError(HttpServletResponse.SC_BAD_REQUEST);
             log.warn("state parameter was null");
             return false;
         }
         if (!state.equals(stateCookieValue)) {
-            sendError(400);
+            sendError(HttpServletResponse.SC_BAD_REQUEST);
             log.warn("state parameter invalid");
             log.warn("cookie: " + stateCookieValue);
             log.warn("queryParam: " + state);
@@ -229,7 +229,7 @@ public class ServletOAuthLogin {
         } catch (TokenGrantRequest.HttpFailure failure) {
             log.error("failed to turn code into token");
             log.error("status from server: " + failure.getStatus());
-            if (failure.getStatus() == 400 && failure.getError() != null) {
+            if (failure.getStatus() == HttpServletResponse.SC_BAD_REQUEST && failure.getError() != null) {
                 log.error("   " + failure.getError());
             }
             sendError(HttpServletResponse.SC_FORBIDDEN);

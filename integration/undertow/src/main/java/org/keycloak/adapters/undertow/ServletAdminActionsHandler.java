@@ -5,6 +5,7 @@ import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.server.session.SessionManager;
 import io.undertow.servlet.handlers.ServletRequestContext;
+import io.undertow.util.StatusCodes;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.AdapterConstants;
 import org.keycloak.adapters.config.RealmConfiguration;
@@ -53,7 +54,7 @@ public class ServletAdminActionsHandler implements HttpHandler {
         String token = StreamUtil.readString(request.getInputStream());
         if (token == null) {
             log.warn("admin request failed, no token");
-            response.sendError(403, "no token");
+            response.sendError(StatusCodes.FORBIDDEN, "no token");
             return null;
         }
 
@@ -65,7 +66,7 @@ public class ServletAdminActionsHandler implements HttpHandler {
         }
         if (!verified) {
             log.warn("admin request failed, unable to verify token");
-            response.sendError(403, "verification failed");
+            response.sendError(StatusCodes.FORBIDDEN, "verification failed");
             return null;
         }
         return input;

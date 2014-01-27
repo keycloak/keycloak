@@ -3,6 +3,7 @@ package org.keycloak.adapters.undertow;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.Headers;
+import io.undertow.util.StatusCodes;
 import org.jboss.logging.Logger;
 import org.keycloak.SkeletonKeySession;
 import org.keycloak.adapters.AdapterConstants;
@@ -56,7 +57,7 @@ public class AuthenticatedActionsHandler implements HttpHandler {
     protected void queryBearerToken(HttpServerExchange exchange, SkeletonKeySession session) throws IOException, ServletException {
         log.debugv("queryBearerToken {0}",exchange.getRequestURI());
         if (abortTokenResponse(exchange, session)) return;
-        exchange.setResponseCode(200);
+        exchange.setResponseCode(StatusCodes.OK);
         exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "text/plain");
         exchange.getResponseSender().send(session.getTokenString());
         exchange.endExchange();
@@ -70,12 +71,12 @@ public class AuthenticatedActionsHandler implements HttpHandler {
             return true;
         }
         if (!adapterConfig.isExposeToken()) {
-            exchange.setResponseCode(200);
+            exchange.setResponseCode(StatusCodes.OK);
             exchange.endExchange();
             return true;
         }
         if (!adapterConfig.isCors() && exchange.getRequestHeaders().getFirst(Headers.ORIGIN) != null) {
-            exchange.setResponseCode(200);
+            exchange.setResponseCode(StatusCodes.OK);
             exchange.endExchange();
             return true;
         }
@@ -101,12 +102,12 @@ public class AuthenticatedActionsHandler implements HttpHandler {
                     log.debugv("allowedOrigins did not contain origin");
 
                 }
-                exchange.setResponseCode(403);
+                exchange.setResponseCode(StatusCodes.FORBIDDEN);
                 exchange.endExchange();
                 return true;
             }
             log.debugv("returning origin: {0}", origin);
-            exchange.setResponseCode(200);
+            exchange.setResponseCode(StatusCodes.OK);
             exchange.getResponseHeaders().put(PreflightCorsHandler.ACCESS_CONTROL_ALLOW_ORIGIN, origin);
             exchange.getResponseHeaders().put(PreflightCorsHandler.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
         } else {

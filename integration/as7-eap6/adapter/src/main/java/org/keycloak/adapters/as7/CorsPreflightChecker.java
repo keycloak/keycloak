@@ -5,6 +5,8 @@ import org.apache.catalina.connector.Response;
 import org.jboss.logging.Logger;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 
+import javax.servlet.http.HttpServletResponse;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -29,7 +31,7 @@ public class CorsPreflightChecker {
             return false;
         }
         log.debug("Preflight request returning");
-        response.setStatus(200);
+        response.setStatus(HttpServletResponse.SC_OK);
         String origin = request.getHeader("Origin");
         response.setHeader("Access-Control-Allow-Origin", origin);
         response.setHeader("Access-Control-Allow-Credentials", "true");

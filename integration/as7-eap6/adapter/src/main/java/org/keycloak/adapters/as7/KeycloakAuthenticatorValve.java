@@ -126,7 +126,7 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
         String token = StreamUtil.readString(request.getInputStream());
         if (token == null) {
             log.warn("admin request failed, no token");
-            response.sendError(403, "no token");
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "no token");
             return null;
         }
 
@@ -138,7 +138,7 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
         }
         if (!verified) {
             log.warn("admin request failed, unable to verify token");
-            response.sendError(403, "verification failed");
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "verification failed");
             return null;
         }
         return input;
@@ -150,12 +150,12 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
             LogoutAction action = JsonSerialization.readValue(token.getContent(), LogoutAction.class);
             if (action.isExpired()) {
                 log.warn("admin request failed, expired token");
-                response.sendError(400, "Expired token");
+                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Expired token");
                 return;
             }
             if (!resourceMetadata.getResourceName().equals(action.getResource())) {
                 log.warn("Resource name does not match");
-                response.sendError(400, "Resource name does not match");
+                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Resource name does not match");
                 return;
 
             }
@@ -169,9 +169,9 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
             }
         } catch (Exception e) {
             log.warn("failed to logout", e);
-            response.sendError(500, "Failed to logout");
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to logout");
         }
-        response.setStatus(204);
+        response.setStatus(HttpServletResponse.SC_NO_CONTENT);
     }
 
     protected boolean bearer(boolean challenge, Request request, HttpServletResponse response) throws LoginException, IOException {
@@ -208,7 +208,7 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
         if (code == null) {
             String error = oauth.getError();
             if (error != null) {
-                response.sendError(400, "OAuth " + error);
+                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "OAuth " + error);
                 return;
             } else {
                 saveRequest(request, request.getSessionInternal(true));

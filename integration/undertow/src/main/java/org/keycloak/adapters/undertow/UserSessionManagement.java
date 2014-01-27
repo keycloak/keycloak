@@ -6,24 +6,19 @@ import io.undertow.server.session.Session;
 import io.undertow.server.session.SessionListener;
 import io.undertow.server.session.SessionManager;
 import io.undertow.servlet.handlers.security.CachedAuthenticatedSessionHandler;
+import io.undertow.util.StatusCodes;
 import org.jboss.logging.Logger;
-import org.keycloak.SkeletonKeySession;
 import org.keycloak.adapters.config.RealmConfiguration;
 import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.representations.adapters.action.LogoutAction;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.util.StreamUtil;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -50,12 +45,12 @@ public class UserSessionManagement implements SessionListener {
             LogoutAction action = JsonSerialization.readValue(token.getContent(), LogoutAction.class);
             if (action.isExpired()) {
                 log.warn("admin request failed, expired token");
-                response.sendError(400, "Expired token");
+                response.sendError(StatusCodes.BAD_REQUEST, "Expired token");
                 return;
             }
             if (!realmInfo.getMetadata().getResourceName().equals(action.getResource())) {
                 log.warn("Resource name does not match");
-                response.sendError(400, "Resource name does not match");
+                response.sendError(StatusCodes.BAD_REQUEST, "Resource name does not match");
                 return;
 
             }
@@ -69,9 +64,9 @@ public class UserSessionManagement implements SessionListener {
             }
         } catch (Exception e) {
             log.warn("failed to logout", e);
-            response.sendError(500, "Failed to logout");
+            response.sendError(StatusCodes.INTERNAL_SERVER_ERROR, "Failed to logout");
         }
-        response.setStatus(204);
+        response.setStatus(StatusCodes.NO_CONTENT);
     }
 
     public void login(SessionManager manager, HttpSession session, String username) {

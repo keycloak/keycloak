@@ -4,6 +4,7 @@ import io.undertow.server.HandlerWrapper;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HttpString;
+import io.undertow.util.StatusCodes;
 import org.jboss.logging.Logger;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 
@@ -54,7 +55,7 @@ public class PreflightCorsHandler implements HttpHandler {
             return;
         }
         log.debug("Preflight request returning");
-        exchange.setResponseCode(200);
+        exchange.setResponseCode(StatusCodes.OK);
         String origin = exchange.getRequestHeaders().getFirst("Origin");
         exchange.getResponseHeaders().put(ACCESS_CONTROL_ALLOW_ORIGIN, origin);
         exchange.getResponseHeaders().put(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
