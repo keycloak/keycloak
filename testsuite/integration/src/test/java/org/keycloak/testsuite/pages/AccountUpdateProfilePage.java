@@ -75,7 +75,7 @@ public class AccountUpdateProfilePage extends AbstractAccountPage {
     }
 
     public boolean isCurrent() {
-        return driver.getPageSource().contains("Edit Account");
+        return driver.getTitle().contains("Account Management") && driver.getPageSource().contains("Edit Account");
     }
 
     public void open() {

@@ -50,7 +50,7 @@ public class RegisterPage extends AbstractPage {
     @FindBy(css = "input[type=\"submit\"]")
     private WebElement submitButton;
 
-    @FindBy(id = "loginError")
+    @FindBy(className = "error")
     private WebElement loginErrorMessage;
 
     public void register(String firstName, String lastName, String email, String username, String password, String passwordConfirm) {

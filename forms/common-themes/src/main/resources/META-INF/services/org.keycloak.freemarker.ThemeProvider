@@ -1,0 +1,2 @@
+org.keycloak.theme.DefaultLoginThemeProvider
+org.keycloak.theme.FolderThemeProvider

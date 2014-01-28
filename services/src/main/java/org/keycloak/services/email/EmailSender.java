@@ -103,9 +103,9 @@ public class EmailSender {
         }
     }
 
-    public void sendEmailVerification(UserModel user, RealmModel realm, AccessCodeEntry accessCode, UriInfo uriInfo) throws EmailException {
+    public void sendEmailVerification(UserModel user, RealmModel realm, String accessCodeId, UriInfo uriInfo) throws EmailException {
         UriBuilder builder = Urls.loginActionEmailVerificationBuilder(uriInfo.getBaseUri());
-        builder.queryParam("key", accessCode.getId());
+        builder.queryParam("key", accessCodeId);
 
         URI uri = builder.build(realm.getName());
 

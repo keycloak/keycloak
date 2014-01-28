@@ -22,7 +22,6 @@
 package org.keycloak.services.resources;
 
 import org.jboss.resteasy.logging.Logger;
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.keycloak.models.KeycloakSession;
@@ -38,7 +37,6 @@ import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.social.AuthCallback;
 import org.keycloak.social.AuthRequest;
 import org.keycloak.social.RequestDetails;
-import org.keycloak.social.SocialConstants;
 import org.keycloak.social.SocialLoader;
 import org.keycloak.social.SocialProvider;
 import org.keycloak.social.SocialProviderConfig;
@@ -46,19 +44,13 @@ import org.keycloak.social.SocialProviderException;
 import org.keycloak.services.managers.SocialRequestManager;
 import org.keycloak.social.SocialUser;
 
-import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
-import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
@@ -67,7 +59,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.UUID;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -204,7 +195,7 @@ public class SocialResource {
 
         SocialProvider provider = SocialLoader.load(providerId);
         if (provider == null) {
-            return Flows.forms(realm, request, uriInfo).setError("Social provider not found").forwardToErrorPage();
+            return Flows.forms(realm, request, uriInfo).setError("Social provider not found").createErrorPage();
         }
 
         String key = realm.getSocialConfig().get(providerId + ".key");
@@ -216,16 +207,16 @@ public class SocialResource {
         UserModel client = realm.getUser(clientId);
         if (client == null) {
             logger.warn("Unknown login requester: " + clientId);
-            return Flows.forms(realm, request, uriInfo).setError("Unknown login requester.").forwardToErrorPage();
+            return Flows.forms(realm, request, uriInfo).setError("Unknown login requester.").createErrorPage();
         }
 
         if (!client.isEnabled()) {
             logger.warn("Login requester not enabled.");
-            return Flows.forms(realm, request, uriInfo).setError("Login requester not enabled.").forwardToErrorPage();
+            return Flows.forms(realm, request, uriInfo).setError("Login requester not enabled.").createErrorPage();
         }
         redirectUri = TokenService.verifyRedirectUri(redirectUri, client);
         if (redirectUri == null) {
-            return Flows.forms(realm, request, uriInfo).setError("Invalid redirect_uri.").forwardToErrorPage();
+            return Flows.forms(realm, request, uriInfo).setError("Invalid redirect_uri.").createErrorPage();
         }
 
         try {
@@ -240,7 +231,7 @@ public class SocialResource {
 
             return Response.status(Status.FOUND).location(authRequest.getAuthUri()).build();
         } catch (Throwable t) {
-            return Flows.forms(realm, request, uriInfo).setError("Failed to redirect to social auth").forwardToErrorPage();
+            return Flows.forms(realm, request, uriInfo).setError("Failed to redirect to social auth").createErrorPage();
         }
     }
 

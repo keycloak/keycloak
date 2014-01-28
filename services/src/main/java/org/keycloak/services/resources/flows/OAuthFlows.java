@@ -103,14 +103,16 @@ public class OAuthFlows {
         if (!requiredActions.isEmpty()) {
             accessCode.setRequiredActions(new HashSet<UserModel.RequiredAction>(requiredActions));
             accessCode.setExpiration(System.currentTimeMillis() / 1000 + realm.getAccessCodeLifespanUserAction());
-            return Flows.forms(realm, request, uriInfo).setAccessCode(accessCode).setUser(user)
-                    .forwardToAction(user.getRequiredActions().iterator().next());
+            return Flows.forms(realm, request, uriInfo).setAccessCode(accessCode.getId(), accessCode.getCode()).setUser(user)
+                    .createResponse(user.getRequiredActions().iterator().next());
         }
 
         if (!isResource
                 && (accessCode.getRealmRolesRequested().size() > 0 || accessCode.getResourceRolesRequested().size() > 0)) {
             accessCode.setExpiration(System.currentTimeMillis() / 1000 + realm.getAccessCodeLifespanUserAction());
-            return oauthGrantPage(accessCode, client);
+            return Flows.forms(realm, request, uriInfo).setAccessCode(accessCode.getId(), accessCode.getCode()).
+                    setAccessRequest(accessCode.getRealmRolesRequested(), accessCode.getResourceRolesRequested()).
+                    setClient(client).createOAuthGrant();
         }
 
         if (redirect != null) {
@@ -120,18 +122,8 @@ public class OAuthFlows {
         }
     }
 
-    public Response oauthGrantPage(AccessCodeEntry accessCode, UserModel client) {
-        request.setAttribute("realmRolesRequested", accessCode.getRealmRolesRequested());
-        request.setAttribute("resourceRolesRequested", accessCode.getResourceRolesRequested());
-        request.setAttribute("client", client);
-        request.setAttribute("action", TokenService.processOAuthUrl(uriInfo).build(realm.getName()).toString());
-        request.setAttribute("code", accessCode.getCode());
-
-        return Flows.forms(realm, request, uriInfo).setAccessCode(accessCode).forwardToOAuthGrant();
-    }
-
     public Response forwardToSecurityFailure(String message) {
-        return Flows.forms(realm, request, uriInfo).setError(message).forwardToErrorPage();
+        return Flows.forms(realm, request, uriInfo).setError(message).createErrorPage();
     }
 
 }

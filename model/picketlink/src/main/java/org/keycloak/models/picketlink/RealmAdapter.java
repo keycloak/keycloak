@@ -1014,4 +1014,26 @@ public class RealmAdapter implements RealmModel {
         realm.setPasswordPolicy(policy.toString());
         updateRealm();
     }
+
+    @Override
+    public String getLoginTheme() {
+        return realm.getLoginTheme();
+    }
+
+    @Override
+    public void setLoginTheme(String name) {
+        realm.setLoginTheme(name);
+        updateRealm();
+    }
+
+    @Override
+    public String getAccountTheme() {
+        return realm.getAccountTheme();
+    }
+
+    @Override
+    public void setAccountTheme(String name) {
+        realm.setAccountTheme(name);
+        updateRealm();
+    }
 }

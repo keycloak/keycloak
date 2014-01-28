@@ -1,5 +1,7 @@
 package org.keycloak.social;
 
+import org.keycloak.util.ProviderLoader;
+
 import java.util.ServiceLoader;
 
 /**
@@ -25,7 +27,7 @@ public class SocialLoader {
     }
 
     public static Iterable<SocialProvider> load() {
-        return ServiceLoader.load(SocialProvider.class);
+        return ProviderLoader.load(SocialProvider.class);
     }
 
 }

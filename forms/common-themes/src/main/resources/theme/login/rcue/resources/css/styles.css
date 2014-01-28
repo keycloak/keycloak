@@ -1,0 +1,12 @@
+@IMPORT url("reset.css");
+@IMPORT url("base.css");
+@IMPORT url("forms.css");
+@IMPORT url("../lib/zocial/zocial.css");
+@IMPORT url("login-register.css");
+
+.zocial.google {
+  background-color: #dd4b39 !important;
+}
+.zocial.google:before {
+  content: "+" !important;
+}

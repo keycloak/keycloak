@@ -73,6 +73,8 @@ public class ModelToRepresentation {
         rep.setAccessCodeLifespanUserAction(realm.getAccessCodeLifespanUserAction());
         rep.setSmtpServer(realm.getSmtpConfig());
         rep.setSocialProviders(realm.getSocialConfig());
+        rep.setAccountTheme(realm.getAccountTheme());
+        rep.setLoginTheme(realm.getLoginTheme());
         if (realm.getPasswordPolicy() != null) {
             rep.setPasswordPolicy(realm.getPasswordPolicy().toString());
         }

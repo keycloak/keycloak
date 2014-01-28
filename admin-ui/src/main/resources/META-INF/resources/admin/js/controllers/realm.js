@@ -141,8 +141,9 @@ module.controller('RealmCreateCtrl', function($scope, Current, Realm, $upload, $
 });
 
 
-module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $http, $location, Dialog, Notifications) {
+module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, serverInfo, $http, $location, Dialog, Notifications) {
     $scope.createRealm = !realm.realm;
+    $scope.serverInfo = serverInfo;
 
     console.log('RealmDetailCtrl');
 
@@ -259,14 +260,7 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, $ht
 module.controller('RealmRequiredCredentialsCtrl', function($scope, Realm, realm, $http, $location, Dialog, Notifications, PasswordPolicy) {
     console.log('RealmRequiredCredentialsCtrl');
 
-    $scope.realm = {
-        id : realm.realm, realm : realm.realm, social : realm.social,
-        requiredCredentials : realm.requiredCredentials,
-        requiredApplicationCredentials : realm.requiredApplicationCredentials,
-        requiredOAuthClientCredentials : realm.requiredOAuthClientCredentials,
-        registrationAllowed : realm.registrationAllowed,
-        passwordPolicy: realm.passwordPolicy
-    };
+    $scope.realm = realm;
 
     var oldCopy = angular.copy($scope.realm);
 
@@ -274,8 +268,12 @@ module.controller('RealmRequiredCredentialsCtrl', function($scope, Realm, realm,
     $scope.policyMessages = PasswordPolicy.policyMessages;
 
     $scope.policy = PasswordPolicy.parse(realm.passwordPolicy);
+    var oldPolicy = angular.copy($scope.policy);
 
     $scope.addPolicy = function(policy){
+        if (!$scope.policy) {
+            $scope.policy = [];
+        }
         $scope.policy.push(policy);
     }
 
@@ -298,7 +296,7 @@ module.controller('RealmRequiredCredentialsCtrl', function($scope, Realm, realm,
     }, true);
 
     $scope.$watch('policy', function(oldVal, newVal) {
-        if (oldVal != newVal) {
+        if (!angular.equals($scope.policy, oldPolicy)) {
             $scope.realm.passwordPolicy = PasswordPolicy.toString($scope.policy);
             $scope.changed = true;
         }
@@ -311,14 +309,13 @@ module.controller('RealmRequiredCredentialsCtrl', function($scope, Realm, realm,
             $location.url("/realms/" + realm.realm + "/required-credentials");
             Notifications.success("Your changes have been saved to the realm.");
             oldCopy = angular.copy($scope.realm);
+            oldPolicy = angular.copy($scope.policy);
         });
     };
 
     $scope.reset = function() {
         $scope.realm = angular.copy(oldCopy);
-        $scope.policy = PasswordPolicy.parse(oldCopy.passwordPolicy);
-        console.debug(realm.passwordPolicy);
-
+        $scope.policy = angular.copy(oldPolicy);
         $scope.changed = false;
     };
 });
@@ -473,97 +470,41 @@ module.controller('RealmDefaultRolesCtrl', function ($scope, Realm, realm, appli
 
 });
 
-module.controller('RealmSocialCtrl', function($scope, realm, Realm, $location, Notifications) {
+module.controller('RealmSocialCtrl', function($scope, realm, Realm, serverInfo, $location, Notifications) {
     console.log('RealmSocialCtrl');
 
-    $scope.realm = { id : realm.id, realm : realm.realm, social : realm.social, registrationAllowed : realm.registrationAllowed,
-        tokenLifespan : realm.tokenLifespan,  accessCodeLifespan : realm.accessCodeLifespan };
+    $scope.realm = angular.copy(realm);
+    $scope.serverInfo = serverInfo;
 
-    if (!realm["socialProviders"]){
-        $scope.realm["socialProviders"] = {};
-    } else {
-        $scope.realm["socialProviders"] = realm.socialProviders;
-    }
+    $scope.allProviders = serverInfo.socialProviders;
+    $scope.configuredProviders = [];
 
-    // Hardcoded provider list in form of map providerId:providerName
-    $scope.allProviders = { google:"Google", facebook:"Facebook", twitter:"Twitter" };
-    $scope.availableProviders = [];
-
-    for (var provider in $scope.allProviders){
-        $scope.availableProviders.push(provider);
-    }
+    $scope.$watch('realm.socialProviders', function(socialProviders) {
+        $scope.configuredProviders = [];
+         for (var providerConfig in socialProviders) {
+             var i = providerConfig.split('.');
+             if (i.length == 2 && i[1] == 'key') {
+                 $scope.configuredProviders.push(i[0]);
+             }
+         }
+    }, true);
 
     var oldCopy = angular.copy($scope.realm);
     $scope.changed = false;
     $scope.callbackUrl = $location.absUrl().replace(/\/admin.*/, "/rest/social/callback");
 
-    // To get rid of the "undefined" option in the provider select list
-    // Setting the 1st option from the list (if the list is not empty)
-    var selectFirstProvider = function(){
-        if ($scope.unsetProviders.length > 0){
-            $scope.newProviderId = $scope.unsetProviders[0];
-        } else {
-            $scope.newProviderId = null;
-        }
-    }
-
-    // Fill in configured providers
-    var initSocial = function() {
-        // postSaveProviders is used for remembering providers which were already validated after pressing the save button
-        // thanks to this it's easy to distinguish between newly added fields and those already tried to be saved
-        $scope.postSaveProviders = [];
-        $scope.unsetProviders = [];
-        $scope.configuredProviders = [];
-
-        for (var providerConfig in $scope.realm.socialProviders){
-            // Get the provider ID which is before the '.' (i.e. google in google.key or google.secret)
-            if ($scope.realm.socialProviders.hasOwnProperty(providerConfig)){
-                var pId = providerConfig.split('.')[0];
-                if ($scope.configuredProviders.indexOf(pId) < 0){
-                    $scope.configuredProviders.push(pId);
-                }
-            }
+    $scope.addProvider = function(pId) {
+        if (!$scope.realm.socialProviders) {
+            $scope.realm.socialProviders = {};
         }
 
-        // If no providers are already configured, you can add any of them
-        if ($scope.configuredProviders.length == 0){
-            $scope.unsetProviders = $scope.availableProviders.slice(0);
-        } else {
-            for (var i = 0; i < $scope.availableProviders.length; i++){
-                var providerId = $scope.availableProviders[i];
-                if ($scope.configuredProviders.indexOf(providerId) < 0){
-                    $scope.unsetProviders.push(providerId);
-                }
-            }
-        }
-
-        selectFirstProvider();
-    };
-
-    initSocial();
-
-    $scope.addProvider = function() {
-        if ($scope.availableProviders.indexOf($scope.newProviderId) > -1){
-            $scope.realm.socialProviders[$scope.newProviderId+".key"]="";
-            $scope.realm.socialProviders[$scope.newProviderId+".secret"]="";
-            $scope.configuredProviders.push($scope.newProviderId);
-            $scope.unsetProviders.splice($scope.unsetProviders.indexOf($scope.newProviderId),1);
-            selectFirstProvider();
-        }
+        $scope.realm.socialProviders[pId + ".key"] = "";
+        $scope.realm.socialProviders[pId + ".secret"] = "";
     };
 
     $scope.removeProvider = function(pId) {
         delete $scope.realm.socialProviders[pId+".key"];
         delete $scope.realm.socialProviders[pId+".secret"];
-        $scope.configuredProviders.splice($scope.configuredProviders.indexOf(pId),1);
-
-        // Removing from postSaveProviders, so the empty fields are not red if the provider is added to the list again
-        var rId = $scope.postSaveProviders.indexOf(pId);
-        if (rId > -1){
-            $scope.postSaveProviders.splice(rId,1)
-        }
-
-        $scope.unsetProviders.push(pId);
     };
 
     $scope.$watch('realm', function() {
@@ -586,8 +527,6 @@ module.controller('RealmSocialCtrl', function($scope, realm, Realm, $location, N
     $scope.reset = function() {
         $scope.realm = angular.copy(oldCopy);
         $scope.changed = false;
-        // Initialize lists of configured and unset providers again
-        initSocial();
     };
 
 });

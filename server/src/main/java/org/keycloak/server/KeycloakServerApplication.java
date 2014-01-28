@@ -10,6 +10,7 @@ import org.keycloak.util.JsonSerialization;
 
 import javax.servlet.ServletContext;
 import javax.ws.rs.core.Context;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -31,6 +32,14 @@ public class KeycloakServerApplication extends KeycloakApplication {
             session.getTransaction().commit();
         }
 
+        String themeDir = System.getProperty("keycloak.theme.dir");
+        if (themeDir == null) {
+            String jbossConfigDir = System.getProperty("jboss.server.config.dir");
+            if (jbossConfigDir != null) {
+                themeDir = jbossConfigDir + File.separator + "themes";
+                System.setProperty("keycloak.theme.dir", themeDir);
+            }
+        }
     }
 
     public void importRealm(KeycloakSession session, RealmRepresentation rep) {

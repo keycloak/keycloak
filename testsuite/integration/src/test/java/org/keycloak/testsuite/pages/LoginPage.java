@@ -59,7 +59,7 @@ public class LoginPage extends AbstractPage {
     @FindBy(linkText = "Username")
     private WebElement recoverUsernameLink;
 
-    @FindBy(id = "loginError")
+    @FindBy(className = "error")
     private WebElement loginErrorMessage;
 
     public void login(String username, String password) {

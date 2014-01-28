@@ -120,6 +120,10 @@ module.factory('Realm', function($resource) {
     });
 });
 
+module.factory('ServerInfo', function($resource) {
+    return $resource('/auth/rest/admin/serverinfo');
+});
+
 module.factory('User', function($resource) {
 	return $resource('/auth/rest/admin/realms/:realm/users/:userId', {
 		realm : '@realm',

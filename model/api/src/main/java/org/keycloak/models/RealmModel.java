@@ -161,4 +161,13 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
     Set<RoleModel> getRealmRoleMappings(UserModel user);
 
     Set<RoleModel> getRealmScopeMappings(UserModel user);
+
+    String getLoginTheme();
+
+    void setLoginTheme(String name);
+
+    String getAccountTheme();
+
+    void setAccountTheme(String name);
+
 }

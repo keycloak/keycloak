@@ -121,6 +121,8 @@ public class RealmManager {
         if (rep.getRequiredApplicationCredentials() != null) {
             realm.updateRequiredApplicationCredentials(rep.getRequiredApplicationCredentials());
         }
+        realm.setLoginTheme(rep.getLoginTheme());
+        realm.setAccountTheme(rep.getAccountTheme());
 
         realm.setPasswordPolicy(new PasswordPolicy(rep.getPasswordPolicy()));
 
@@ -198,6 +200,8 @@ public class RealmManager {
             newRealm.setPrivateKeyPem(rep.getPrivateKey());
             newRealm.setPublicKeyPem(rep.getPublicKey());
         }
+        newRealm.setLoginTheme(rep.getLoginTheme());
+        newRealm.setAccountTheme(rep.getAccountTheme());
 
         Map<String, UserModel> userMap = new HashMap<String, UserModel>();
 
