@@ -9,7 +9,11 @@ import java.io.InputStreamReader;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class StreamUtil {
+public final class StreamUtil {
+
+    private StreamUtil() {
+    }
+
     public static String readString(InputStream in) throws IOException
     {
         char[] buffer = new char[1024];

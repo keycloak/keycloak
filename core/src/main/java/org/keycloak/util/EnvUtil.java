@@ -7,8 +7,12 @@ import java.util.regex.Pattern;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class EnvUtil {
+public final class EnvUtil {
     private static final Pattern p = Pattern.compile("[$][{]([^}]+)[}]");
+
+    private EnvUtil() {
+
+    }
 
     /**
      * Replaces any ${} strings with their corresponding environent variable.

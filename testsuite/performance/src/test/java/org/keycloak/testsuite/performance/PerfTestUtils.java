@@ -3,7 +3,10 @@ package org.keycloak.testsuite.performance;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class PerfTestUtils {
+public final class PerfTestUtils {
+
+    private PerfTestUtils() {
+    }
 
     public static <T> T readSystemProperty(String propertyName, Class<T> expectedClass) {
         String propAsString = System.getProperty(propertyName);
