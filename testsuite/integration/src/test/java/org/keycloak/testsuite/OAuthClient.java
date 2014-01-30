@@ -226,6 +226,10 @@ public class OAuthClient {
         this.realm = realm;
         return this;
     }
+    public OAuthClient realmPublicKey(PublicKey key) {
+        this.realmPublicKey = key;
+        return this;
+    }
 
     public OAuthClient clientId(String clientId) {
         this.clientId = clientId;

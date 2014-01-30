@@ -31,9 +31,8 @@ public class ApplicationEntity {
     @OneToOne(fetch = FetchType.EAGER)
     private UserEntity applicationUser;
 
-    @OneToMany(fetch = FetchType.EAGER, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
-    @JoinTable(name="APPLICATION_ROLES")
-    Collection<RoleEntity> roles = new ArrayList<RoleEntity>();
+    @OneToMany(fetch = FetchType.EAGER, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "application")
+    Collection<ApplicationRoleEntity> roles = new ArrayList<ApplicationRoleEntity>();
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
     @JoinTable(name="APPLICATION_DEFAULT_ROLES")
@@ -83,11 +82,11 @@ public class ApplicationEntity {
         this.applicationUser = applicationUser;
     }
 
-    public Collection<RoleEntity> getRoles() {
+    public Collection<ApplicationRoleEntity> getRoles() {
         return roles;
     }
 
-    public void setRoles(Collection<RoleEntity> roles) {
+    public void setRoles(Collection<ApplicationRoleEntity> roles) {
         this.roles = roles;
     }
 

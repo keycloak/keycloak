@@ -1,16 +1,22 @@
 package org.keycloak.models.jpa;
 
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.entities.*;
+import org.keycloak.representations.idm.ApplicationMappingsRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -21,8 +27,10 @@ public class ApplicationAdapter implements ApplicationModel {
 
     protected EntityManager em;
     protected ApplicationEntity application;
+    protected RealmModel realm;
 
-    public ApplicationAdapter(EntityManager em, ApplicationEntity application) {
+    public ApplicationAdapter(RealmModel realm, EntityManager em, ApplicationEntity application) {
+        this.realm = realm;
         this.em = em;
         this.application = application;
     }
@@ -94,31 +102,30 @@ public class ApplicationAdapter implements ApplicationModel {
 
     @Override
     public RoleModel getRole(String name) {
-        Collection<RoleEntity> roles = application.getRoles();
-        if (roles == null) return null;
-        for (RoleEntity role : roles) {
-            if (role.getName().equals(name)) {
-                return new RoleAdapter(role);
-            }
-        }
-        return null;
+        TypedQuery<ApplicationRoleEntity> query = em.createNamedQuery("getAppRoleByName", ApplicationRoleEntity.class);
+        query.setParameter("name", name);
+        query.setParameter("application", application);
+        List<ApplicationRoleEntity> roles = query.getResultList();
+        if (roles.size() == 0) return null;
+        return new RoleAdapter(realm, em, roles.get(0));
     }
 
     @Override
     public RoleModel addRole(String name) {
         RoleModel role = getRole(name);
         if (role != null) return role;
-        RoleEntity entity = new RoleEntity();
+        ApplicationRoleEntity entity = new ApplicationRoleEntity();
         entity.setName(name);
+        entity.setApplication(application);
         em.persist(entity);
         application.getRoles().add(entity);
         em.flush();
-        return new RoleAdapter(entity);
+        return new RoleAdapter(realm, em, entity);
     }
 
     @Override
     public boolean removeRoleById(String id) {
-        RoleEntity role = em.find(RoleEntity.class, id);
+        ApplicationRoleEntity role = em.find(ApplicationRoleEntity.class, id);
         if (role == null) {
             return false;
         }
@@ -126,11 +133,10 @@ public class ApplicationAdapter implements ApplicationModel {
         application.getRoles().remove(role);
         application.getDefaultRoles().remove(role);
 
-        em.createQuery("delete from " + ApplicationScopeMappingEntity.class.getSimpleName() + " where role = :role").setParameter("role", role).executeUpdate();
-        em.createQuery("delete from " + ApplicationUserRoleMappingEntity.class.getSimpleName() + " where role = :role").setParameter("role", role).executeUpdate();
-        em.createQuery("delete from " + RealmScopeMappingEntity.class.getSimpleName() + " where role = :role").setParameter("role", role).executeUpdate();
-        em.createQuery("delete from " + RealmUserRoleMappingEntity.class.getSimpleName() + " where role = :role").setParameter("role", role).executeUpdate();
-
+        em.createQuery("delete from " + UserScopeMappingEntity.class.getSimpleName() + " where role = :role").setParameter("role", role).executeUpdate();
+        em.createQuery("delete from " + UserRoleMappingEntity.class.getSimpleName() + " where role = :role").setParameter("role", role).executeUpdate();
+        role.setApplication(null);
+        em.flush();
         em.remove(role);
 
         return true;
@@ -139,156 +145,59 @@ public class ApplicationAdapter implements ApplicationModel {
     @Override
     public List<RoleModel> getRoles() {
         ArrayList<RoleModel> list = new ArrayList<RoleModel>();
-        Collection<RoleEntity> roles = application.getRoles();
+        Collection<ApplicationRoleEntity> roles = application.getRoles();
         if (roles == null) return list;
         for (RoleEntity entity : roles) {
-            list.add(new RoleAdapter(entity));
+            list.add(new RoleAdapter(realm, em, entity));
         }
         return list;
     }
 
     @Override
     public RoleModel getRoleById(String id) {
-        RoleEntity entity = em.find(RoleEntity.class, id);
-        if (entity == null) return null;
-        return new RoleAdapter(entity);
+        return realm.getRoleById(id);
     }
 
     @Override
-    public boolean hasRole(UserModel user, RoleModel role) {
-        TypedQuery<ApplicationUserRoleMappingEntity> query = getApplicationUserRoleMappingEntityTypedQuery((UserAdapter) user, (RoleAdapter) role);
-        return query.getResultList().size() > 0;
-    }
+    public Set<RoleModel> getApplicationRoleMappings(UserModel user) {
+        Set<RoleModel> roleMappings = realm.getRoleMappings(user);
 
-    protected TypedQuery<ApplicationUserRoleMappingEntity> getApplicationUserRoleMappingEntityTypedQuery(UserAdapter user, RoleAdapter role) {
-        TypedQuery<ApplicationUserRoleMappingEntity> query = em.createNamedQuery("userHasApplicationRole", ApplicationUserRoleMappingEntity.class);
-        query.setParameter("user", ((UserAdapter)user).getUser());
-        query.setParameter("role", ((RoleAdapter)role).getRole());
-        query.setParameter("application", application);
-        return query;
-    }
-
-    @Override
-    public void grantRole(UserModel user, RoleModel role) {
-        if (hasRole(user, role)) return;
-        ApplicationUserRoleMappingEntity entity = new ApplicationUserRoleMappingEntity();
-        entity.setApplication(application);
-        entity.setUser(((UserAdapter) user).getUser());
-        entity.setRole(((RoleAdapter)role).getRole());
-        em.persist(entity);
-        em.flush();
-    }
-
-    @Override
-    public List<RoleModel> getRoleMappings(UserModel user) {
-        TypedQuery<ApplicationUserRoleMappingEntity> query = em.createNamedQuery("userApplicationMappings", ApplicationUserRoleMappingEntity.class);
-        query.setParameter("user", ((UserAdapter)user).getUser());
-        query.setParameter("application", application);
-        List<ApplicationUserRoleMappingEntity> entities = query.getResultList();
-        List<RoleModel> roles = new ArrayList<RoleModel>();
-        for (ApplicationUserRoleMappingEntity entity : entities) {
-            roles.add(new RoleAdapter(entity.getRole()));
+        Set<RoleModel> appRoles = new HashSet<RoleModel>();
+        for (RoleModel role : roleMappings) {
+            RoleContainerModel container = role.getContainer();
+            if (container instanceof RealmModel) {
+            } else {
+                ApplicationModel app = (ApplicationModel)container;
+                if (app.getId().equals(getId())) {
+                   appRoles.add(role);
+                }
+            }
         }
-        return roles;
+
+        return appRoles;
     }
 
     @Override
-    public Set<String> getRoleMappingValues(UserModel user) {
-        TypedQuery<ApplicationUserRoleMappingEntity> query = em.createNamedQuery("userApplicationMappings", ApplicationUserRoleMappingEntity.class);
-        query.setParameter("user", ((UserAdapter)user).getUser());
-        query.setParameter("application", application);
-        List<ApplicationUserRoleMappingEntity> entities = query.getResultList();
-        Set<String> roles = new HashSet<String>();
-        for (ApplicationUserRoleMappingEntity entity : entities) {
-            roles.add(entity.getRole().getName());
+    public Set<RoleModel> getApplicationScopeMappings(UserModel user) {
+        Set<RoleModel> roleMappings = realm.getScopeMappings(user);
+
+        Set<RoleModel> appRoles = new HashSet<RoleModel>();
+        for (RoleModel role : roleMappings) {
+            RoleContainerModel container = role.getContainer();
+            if (container instanceof RealmModel) {
+            } else {
+                ApplicationModel app = (ApplicationModel)container;
+                if (app.getId().equals(getId())) {
+                    appRoles.add(role);
+                }
+            }
         }
-        return roles;
-    }
 
-    @Override
-    public void deleteRoleMapping(UserModel user, RoleModel role) {
-        TypedQuery<ApplicationUserRoleMappingEntity> query = getApplicationUserRoleMappingEntityTypedQuery((UserAdapter) user, (RoleAdapter) role);
-        List<ApplicationUserRoleMappingEntity> results = query.getResultList();
-        if (results.size() == 0) return;
-        for (ApplicationUserRoleMappingEntity entity : results) {
-            em.remove(entity);
-        }
-    }
-
-    @Override
-    public boolean hasRole(UserModel user, String roleName) {
-        RoleModel role = getRole(roleName);
-        if (role == null) return false;
-        return hasRole(user, role);
-    }
-
-    @Override
-    public void addScopeMapping(UserModel agent, String roleName) {
-        RoleModel role = getRole(roleName);
-        if (role == null) throw new RuntimeException("role does not exist");
-        addScopeMapping(agent, role);
-    }
-
-    @Override
-    public Set<String> getScopeMappingValues(UserModel agent) {
-        TypedQuery<ApplicationScopeMappingEntity> query = em.createNamedQuery("userApplicationScopeMappings", ApplicationScopeMappingEntity.class);
-        query.setParameter("user", ((UserAdapter)agent).getUser());
-        query.setParameter("application", application);
-        List<ApplicationScopeMappingEntity> entities = query.getResultList();
-        Set<String> roles = new HashSet<String>();
-        for (ApplicationScopeMappingEntity entity : entities) {
-            roles.add(entity.getRole().getName());
-        }
-        return roles;
-    }
-
-    @Override
-    public List<RoleModel> getScopeMappings(UserModel agent) {
-        TypedQuery<ApplicationScopeMappingEntity> query = em.createNamedQuery("userApplicationScopeMappings", ApplicationScopeMappingEntity.class);
-        query.setParameter("user", ((UserAdapter)agent).getUser());
-        query.setParameter("application", application);
-        List<ApplicationScopeMappingEntity> entities = query.getResultList();
-        List<RoleModel> roles = new ArrayList<RoleModel>();
-        for (ApplicationScopeMappingEntity entity : entities) {
-            roles.add(new RoleAdapter(entity.getRole()));
-        }
-        return roles;
-    }
-
-    @Override
-    public void addScopeMapping(UserModel agent, RoleModel role) {
-        if (hasScope(agent, role)) return;
-        ApplicationScopeMappingEntity entity = new ApplicationScopeMappingEntity();
-        entity.setApplication(application);
-        entity.setUser(((UserAdapter) agent).getUser());
-        entity.setRole(((RoleAdapter)role).getRole());
-        em.persist(entity);
-        em.flush();
-    }
-
-    @Override
-    public void deleteScopeMapping(UserModel user, RoleModel role) {
-        TypedQuery<ApplicationScopeMappingEntity> query = getApplicationScopeMappingQuery((UserAdapter) user, (RoleAdapter) role);
-        List<ApplicationScopeMappingEntity> results = query.getResultList();
-        if (results.size() == 0) return;
-        for (ApplicationScopeMappingEntity entity : results) {
-            em.remove(entity);
-        }
-    }
-
-    public boolean hasScope(UserModel user, RoleModel role) {
-        TypedQuery<ApplicationScopeMappingEntity> query = getApplicationScopeMappingQuery((UserAdapter) user, (RoleAdapter) role);
-        return query.getResultList().size() > 0;
+        return appRoles;
     }
 
 
-    protected TypedQuery<ApplicationScopeMappingEntity> getApplicationScopeMappingQuery(UserAdapter user, RoleAdapter role) {
-        TypedQuery<ApplicationScopeMappingEntity> query = em.createNamedQuery("userHasApplicationScope", ApplicationScopeMappingEntity.class);
-        query.setParameter("user", ((UserAdapter)user).getUser());
-        query.setParameter("role", ((RoleAdapter)role).getRole());
-        query.setParameter("application", application);
-        return query;
-    }
+
 
     @Override
     public List<String> getDefaultRoles() {
@@ -346,5 +255,10 @@ public class ApplicationAdapter implements ApplicationModel {
             }
         }
         em.flush();
+    }
+
+    @Override
+    public void addScope(RoleModel role) {
+        realm.addScopeMapping(getApplicationUser(), role);
     }
 }

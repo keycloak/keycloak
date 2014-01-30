@@ -9,14 +9,7 @@ import java.util.Set;
  */
 public interface RoleMapperModel {
     boolean hasRole(UserModel user, RoleModel role);
-
     void grantRole(UserModel user, RoleModel role);
-
-    Set<String> getRoleMappingValues(UserModel user);
-
-    List<RoleModel> getRoleMappings(UserModel user);
-
+    Set<RoleModel> getRoleMappings(UserModel user);
     void deleteRoleMapping(UserModel user, RoleModel role);
-
-    boolean hasRole(UserModel user, String role);
 }

@@ -8,6 +8,7 @@ public class RoleRepresentation {
     protected String id;
     protected String name;
     protected String description;
+    protected boolean composite;
 
     public RoleRepresentation() {
     }
@@ -39,5 +40,13 @@ public class RoleRepresentation {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public boolean isComposite() {
+        return composite;
+    }
+
+    public void setComposite(boolean composite) {
+        this.composite = composite;
     }
 }

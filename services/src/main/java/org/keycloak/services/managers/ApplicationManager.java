@@ -102,7 +102,7 @@ public class ApplicationManager {
                 if (role == null) {
                     role = applicationModel.addRole(roleString.trim());
                 }
-                applicationModel.grantRole(user, role);
+                realm.grantRole(user, role);
             }
         }
     }
@@ -115,7 +115,7 @@ public class ApplicationManager {
                 if (role == null) {
                     role = applicationModel.addRole(roleString.trim());
                 }
-                applicationModel.addScopeMapping(user, role.getName());
+                realm.addScopeMapping(user, role);
             }
         }
     }
@@ -123,6 +123,13 @@ public class ApplicationManager {
     public ApplicationModel createApplication(RealmModel realm, ApplicationRepresentation resourceRep) {
         RoleModel loginRole = realm.getRole(Constants.APPLICATION_ROLE);
         return createApplication(realm, loginRole, resourceRep);
+    }
+
+    public ApplicationModel createApplication(RealmModel realm, String name) {
+        RoleModel loginRole = realm.getRole(Constants.APPLICATION_ROLE);
+        ApplicationModel app = realm.addApplication(name);
+        realm.grantRole(app.getApplicationUser(), loginRole);
+        return app;
     }
 
     public void updateApplication(ApplicationRepresentation rep, ApplicationModel resource) {

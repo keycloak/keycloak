@@ -1,6 +1,18 @@
 package org.keycloak.models.jpa;
 
 import org.bouncycastle.openssl.PEMWriter;
+import org.keycloak.models.RoleContainerModel;
+import org.keycloak.models.jpa.entities.ApplicationEntity;
+import org.keycloak.models.jpa.entities.CredentialEntity;
+import org.keycloak.models.jpa.entities.OAuthClientEntity;
+import org.keycloak.models.jpa.entities.RealmEntity;
+import org.keycloak.models.jpa.entities.RealmRoleEntity;
+import org.keycloak.models.jpa.entities.RequiredCredentialEntity;
+import org.keycloak.models.jpa.entities.RoleEntity;
+import org.keycloak.models.jpa.entities.SocialLinkEntity;
+import org.keycloak.models.jpa.entities.UserEntity;
+import org.keycloak.models.jpa.entities.UserRoleMappingEntity;
+import org.keycloak.models.jpa.entities.UserScopeMappingEntity;
 import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
 import org.keycloak.util.PemUtils;
 import org.keycloak.models.ApplicationModel;
@@ -12,7 +24,6 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.jpa.entities.*;
 import org.keycloak.models.utils.TimeBasedOTP;
 
 import javax.persistence.EntityManager;
@@ -25,6 +36,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -453,7 +465,7 @@ public class RealmAdapter implements RealmModel {
 
         for (ApplicationModel application : getApplications()) {
             for (String r : application.getDefaultRoles()) {
-                application.grantRole(userModel, application.getRole(r));
+                grantRole(userModel, application.getRole(r));
             }
         }
 
@@ -472,10 +484,8 @@ public class RealmAdapter implements RealmModel {
     }
 
     private void removeUser(UserEntity user) {
-        em.createQuery("delete from " + ApplicationScopeMappingEntity.class.getSimpleName() + " where user = :user").setParameter("user", user).executeUpdate();
-        em.createQuery("delete from " + ApplicationUserRoleMappingEntity.class.getSimpleName() + " where user = :user").setParameter("user", user).executeUpdate();
-        em.createQuery("delete from " + RealmScopeMappingEntity.class.getSimpleName() + " where user = :user").setParameter("user", user).executeUpdate();
-        em.createQuery("delete from " + RealmUserRoleMappingEntity.class.getSimpleName() + " where user = :user").setParameter("user", user).executeUpdate();
+        em.createQuery("delete from " + UserScopeMappingEntity.class.getSimpleName() + " where user = :user").setParameter("user", user).executeUpdate();
+        em.createQuery("delete from " + UserRoleMappingEntity.class.getSimpleName() + " where user = :user").setParameter("user", user).executeUpdate();
         em.createQuery("delete from " + SocialLinkEntity.class.getSimpleName() + " where user = :user").setParameter("user", user).executeUpdate();
         em.remove(user);
     }
@@ -552,7 +562,7 @@ public class RealmAdapter implements RealmModel {
         List<ApplicationModel> list = new ArrayList<ApplicationModel>();
         if (realm.getApplications() == null) return list;
         for (ApplicationEntity entity : realm.getApplications()) {
-            list.add(new ApplicationAdapter(em, entity));
+            list.add(new ApplicationAdapter(this, em, entity));
         }
         return list;
     }
@@ -571,31 +581,41 @@ public class RealmAdapter implements RealmModel {
         realm.getApplications().add(applicationData);
         em.persist(applicationData);
         em.flush();
-        ApplicationModel resource = new ApplicationAdapter(em, applicationData);
+        ApplicationModel resource = new ApplicationAdapter(this, em, applicationData);
         em.flush();
         return resource;
     }
 
     @Override
     public boolean removeApplication(String id) {
-        ApplicationEntity application = null;
+        if (id == null) return false;
+        ApplicationModel application = getApplicationById(id);
+        if (application == null) return false;
+
+        for (RoleModel role : application.getRoles()) {
+            application.removeRoleById(role.getId());
+        }
+
+        ApplicationEntity applicationEntity = null;
+        Iterator<ApplicationEntity> it = realm.getApplications().iterator();
+        while (it.hasNext()) {
+            ApplicationEntity ae = it.next();
+            if (ae.getId().equals(id)) {
+                applicationEntity = ae;
+                it.remove();
+                break;
+            }
+        }
         for (ApplicationEntity a : realm.getApplications()) {
             if (a.getId().equals(id)) {
-                application = a;
+                applicationEntity = a;
             }
         }
         if (application == null) {
             return false;
         }
-        realm.getApplications().remove(application);
-        em.createQuery("delete from " + ApplicationScopeMappingEntity.class.getSimpleName() + " where application = :application").setParameter("application", application).executeUpdate();
-        em.createQuery("delete from " + ApplicationUserRoleMappingEntity.class.getSimpleName() + " where application = :application").setParameter("application", application).executeUpdate();
-        em.createQuery("delete from " + ApplicationScopeMappingEntity.class.getSimpleName() + " where user = :user").setParameter("user", application.getApplicationUser()).executeUpdate();
-        em.createQuery("delete from " + RealmScopeMappingEntity.class.getSimpleName() + " where user = :user").setParameter("user", application.getApplicationUser()).executeUpdate();
-        em.createQuery("delete from " + ApplicationUserRoleMappingEntity.class.getSimpleName() + " where user = :user").setParameter("user", application.getApplicationUser()).executeUpdate();
-        em.createQuery("delete from " + RealmUserRoleMappingEntity.class.getSimpleName() + " where user = :user").setParameter("user", application.getApplicationUser()).executeUpdate();
-        removeUser(application.getApplicationUser());
-        em.remove(application);
+        em.remove(applicationEntity);
+        removeUser(applicationEntity.getApplicationUser());
         return true;
     }
 
@@ -603,7 +623,7 @@ public class RealmAdapter implements RealmModel {
     public ApplicationModel getApplicationById(String id) {
         ApplicationEntity app = em.find(ApplicationEntity.class, id);
         if (app == null) return null;
-        return new ApplicationAdapter(em, app);
+        return new ApplicationAdapter(this, em, app);
     }
 
     @Override
@@ -758,10 +778,8 @@ public class RealmAdapter implements RealmModel {
     @Override
     public boolean removeOAuthClient(String id) {
         OAuthClientEntity client = em.find(OAuthClientEntity.class, id);
-        em.createQuery("delete from " + ApplicationScopeMappingEntity.class.getSimpleName() + " where user = :user").setParameter("user", client.getAgent()).executeUpdate();
-        em.createQuery("delete from " + RealmScopeMappingEntity.class.getSimpleName() + " where user = :user").setParameter("user", client.getAgent()).executeUpdate();
-        em.createQuery("delete from " + ApplicationUserRoleMappingEntity.class.getSimpleName() + " where user = :user").setParameter("user", client.getAgent()).executeUpdate();
-        em.createQuery("delete from " + RealmUserRoleMappingEntity.class.getSimpleName() + " where user = :user").setParameter("user", client.getAgent()).executeUpdate();
+        em.createQuery("delete from " + UserScopeMappingEntity.class.getSimpleName() + " where user = :user").setParameter("user", client.getAgent()).executeUpdate();
+        em.createQuery("delete from " + UserRoleMappingEntity.class.getSimpleName() + " where user = :user").setParameter("user", client.getAgent()).executeUpdate();
         removeUser(client.getAgent());
         em.remove(client);
         return true;
@@ -820,44 +838,43 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public RoleModel getRole(String name) {
-        Collection<RoleEntity> roles = realm.getRoles();
-        if (roles == null) return null;
-        for (RoleEntity role : roles) {
-            if (role.getName().equals(name)) {
-                return new RoleAdapter(role);
-            }
-        }
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        TypedQuery<RealmRoleEntity> query = em.createNamedQuery("getRealmRoleByName", RealmRoleEntity.class);
+        query.setParameter("name", name);
+        query.setParameter("realm", realm);
+        List<RealmRoleEntity> roles = query.getResultList();
+        if (roles.size() == 0) return null;
+        return new RoleAdapter(this, em, roles.get(0));
     }
 
     @Override
     public RoleModel addRole(String name) {
         RoleModel role = getRole(name);
         if (role != null) return role;
-        RoleEntity entity = new RoleEntity();
+        RealmRoleEntity entity = new RealmRoleEntity();
         entity.setName(name);
-        em.persist(entity);
+        entity.setRealm(realm);
         realm.getRoles().add(entity);
+        em.persist(entity);
         em.flush();
-        return new RoleAdapter(entity);
+        return new RoleAdapter(this, em, entity);
     }
 
     @Override
     public boolean removeRoleById(String id) {
-        RoleEntity role = em.find(RoleEntity.class, id);
+        RoleModel role = getRoleById(id);
+        if (role == null) return false;
+
         if (role == null) {
             return false;
         }
-
+        RoleEntity roleEntity = ((RoleAdapter)role).getRole();
         realm.getRoles().remove(role);
         realm.getDefaultRoles().remove(role);
 
-        em.createQuery("delete from " + ApplicationScopeMappingEntity.class.getSimpleName() + " where role = :role").setParameter("role", role).executeUpdate();
-        em.createQuery("delete from " + ApplicationUserRoleMappingEntity.class.getSimpleName() + " where role = :role").setParameter("role", role).executeUpdate();
-        em.createQuery("delete from " + RealmScopeMappingEntity.class.getSimpleName() + " where role = :role").setParameter("role", role).executeUpdate();
-        em.createQuery("delete from " + RealmUserRoleMappingEntity.class.getSimpleName() + " where role = :role").setParameter("role", role).executeUpdate();
+        em.createQuery("delete from " + UserRoleMappingEntity.class.getSimpleName() + " where role = :role").setParameter("role", roleEntity).executeUpdate();
+        em.createQuery("delete from " + UserScopeMappingEntity.class.getSimpleName() + " where role = :role").setParameter("role", roleEntity).executeUpdate();
 
-        em.remove(role);
+        em.remove(roleEntity);
 
         return true;
     }
@@ -865,10 +882,10 @@ public class RealmAdapter implements RealmModel {
     @Override
     public List<RoleModel> getRoles() {
         ArrayList<RoleModel> list = new ArrayList<RoleModel>();
-        Collection<RoleEntity> roles = realm.getRoles();
+        Collection<RealmRoleEntity> roles = realm.getRoles();
         if (roles == null) return list;
         for (RoleEntity entity : roles) {
-            list.add(new RoleAdapter(entity));
+            list.add(new RoleAdapter(this, em, entity));
         }
         return list;
     }
@@ -877,28 +894,46 @@ public class RealmAdapter implements RealmModel {
     public RoleModel getRoleById(String id) {
         RoleEntity entity = em.find(RoleEntity.class, id);
         if (entity == null) return null;
-        return new RoleAdapter(entity);
+        return new RoleAdapter(this, em, entity);
+    }
+
+    protected boolean searchCompositeFor(RoleModel role, RoleModel composite, Set<RoleModel> visited) {
+        if (visited.contains(composite)) return false;
+        visited.add(composite);
+        Set<RoleModel> composites = composite.getComposites();
+        if (composites.contains(role)) return true;
+        for (RoleModel contained : composites) {
+            if (!contained.isComposite()) continue;
+            if (searchCompositeFor(role, contained, visited)) return true;
+        }
+        return false;
     }
 
     @Override
     public boolean hasRole(UserModel user, RoleModel role) {
-        TypedQuery<RealmUserRoleMappingEntity> query = getRealmUserRoleMappingEntityTypedQuery((UserAdapter) user, (RoleAdapter) role);
-        return query.getResultList().size() > 0;
+        Set<RoleModel> roles = getRoleMappings(user);
+        if (roles.contains(role)) return true;
+
+        Set<RoleModel> visited = new HashSet<RoleModel>();
+        for (RoleModel mapping : roles) {
+            if (!mapping.isComposite()) continue;
+            if (searchCompositeFor(role, mapping, visited)) return true;
+
+        }
+        return false;
     }
 
-    protected TypedQuery<RealmUserRoleMappingEntity> getRealmUserRoleMappingEntityTypedQuery(UserAdapter user, RoleAdapter role) {
-        TypedQuery<RealmUserRoleMappingEntity> query = em.createNamedQuery("userHasRealmRole", RealmUserRoleMappingEntity.class);
+    protected TypedQuery<UserRoleMappingEntity> getUserRoleMappingEntityTypedQuery(UserAdapter user, RoleAdapter role) {
+        TypedQuery<UserRoleMappingEntity> query = em.createNamedQuery("userHasRole", UserRoleMappingEntity.class);
         query.setParameter("user", ((UserAdapter)user).getUser());
-        query.setParameter("role", ((RoleAdapter)role).getRole());
-        query.setParameter("realm", realm);
+        query.setParameter("role", ((RoleAdapter) role).getRole());
         return query;
     }
 
     @Override
     public void grantRole(UserModel user, RoleModel role) {
         if (hasRole(user, role)) return;
-        RealmUserRoleMappingEntity entity = new RealmUserRoleMappingEntity();
-        entity.setRealm(realm);
+        UserRoleMappingEntity entity = new UserRoleMappingEntity();
         entity.setUser(((UserAdapter) user).getUser());
         entity.setRole(((RoleAdapter)role).getRole());
         em.persist(entity);
@@ -906,79 +941,69 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public List<RoleModel> getRoleMappings(UserModel user) {
-        TypedQuery<RealmUserRoleMappingEntity> query = em.createNamedQuery("userRealmMappings", RealmUserRoleMappingEntity.class);
-        query.setParameter("user", ((UserAdapter)user).getUser());
-        query.setParameter("realm", realm);
-        List<RealmUserRoleMappingEntity> entities = query.getResultList();
-        List<RoleModel> roles = new ArrayList<RoleModel>();
-        for (RealmUserRoleMappingEntity entity : entities) {
-            roles.add(new RoleAdapter(entity.getRole()));
+    public Set<RoleModel> getRealmRoleMappings(UserModel user) {
+        Set<RoleModel> roleMappings = getRoleMappings(user);
+
+        Set<RoleModel> realmRoles = new HashSet<RoleModel>();
+        for (RoleModel role : roleMappings) {
+            RoleContainerModel container = role.getContainer();
+            if (container instanceof RealmModel) {
+               realmRoles.add(role);
+            }
         }
-        return roles;
+        return realmRoles;
     }
 
+
     @Override
-    public Set<String> getRoleMappingValues(UserModel user) {
-        TypedQuery<RealmUserRoleMappingEntity> query = em.createNamedQuery("userRealmMappings", RealmUserRoleMappingEntity.class);
+    public Set<RoleModel> getRoleMappings(UserModel user) {
+        TypedQuery<UserRoleMappingEntity> query = em.createNamedQuery("userRoleMappings", UserRoleMappingEntity.class);
         query.setParameter("user", ((UserAdapter)user).getUser());
-        query.setParameter("realm", realm);
-        List<RealmUserRoleMappingEntity> entities = query.getResultList();
-        Set<String> roles = new HashSet<String>();
-        for (RealmUserRoleMappingEntity entity : entities) {
-            roles.add(entity.getRole().getName());
+        List<UserRoleMappingEntity> entities = query.getResultList();
+        Set<RoleModel> roles = new HashSet<RoleModel>();
+        for (UserRoleMappingEntity entity : entities) {
+            roles.add(new RoleAdapter(this, em, entity.getRole()));
         }
         return roles;
     }
 
     @Override
     public void deleteRoleMapping(UserModel user, RoleModel role) {
-        TypedQuery<RealmUserRoleMappingEntity> query = getRealmUserRoleMappingEntityTypedQuery((UserAdapter) user, (RoleAdapter) role);
-        List<RealmUserRoleMappingEntity> results = query.getResultList();
+        TypedQuery<UserRoleMappingEntity> query = getUserRoleMappingEntityTypedQuery((UserAdapter) user, (RoleAdapter) role);
+        List<UserRoleMappingEntity> results = query.getResultList();
         if (results.size() == 0) return;
-        for (RealmUserRoleMappingEntity entity : results) {
+        for (UserRoleMappingEntity entity : results) {
             em.remove(entity);
         }
         em.flush();
     }
 
     @Override
-    public boolean hasRole(UserModel user, String roleName) {
-        RoleModel role = getRole(roleName);
-        if (role == null) return false;
-        return hasRole(user, role);
-    }
+    public Set<RoleModel> getRealmScopeMappings(UserModel user) {
+        Set<RoleModel> roleMappings = getScopeMappings(user);
 
-    @Override
-    public void addScopeMapping(UserModel agent, String roleName) {
-        RoleModel role = getRole(roleName);
-        if (role == null) throw new RuntimeException("role does not exist");
-        addScopeMapping(agent, role);
-        em.flush();
-    }
-
-    @Override
-    public Set<String> getScopeMappingValues(UserModel agent) {
-        TypedQuery<RealmScopeMappingEntity> query = em.createNamedQuery("userRealmScopeMappings", RealmScopeMappingEntity.class);
-        query.setParameter("user", ((UserAdapter)agent).getUser());
-        query.setParameter("realm", realm);
-        List<RealmScopeMappingEntity> entities = query.getResultList();
-        Set<String> roles = new HashSet<String>();
-        for (RealmScopeMappingEntity entity : entities) {
-            roles.add(entity.getRole().getName());
+        Set<RoleModel> appRoles = new HashSet<RoleModel>();
+        for (RoleModel role : roleMappings) {
+            RoleContainerModel container = role.getContainer();
+            if (container instanceof RealmModel) {
+                if (((RealmModel)container).getId().equals(getId())) {
+                    appRoles.add(role);
+                }
+            }
         }
-        return roles;
+
+        return appRoles;
     }
 
+
     @Override
-    public List<RoleModel> getScopeMappings(UserModel agent) {
-        TypedQuery<RealmScopeMappingEntity> query = em.createNamedQuery("userRealmScopeMappings", RealmScopeMappingEntity.class);
+    public Set<RoleModel> getScopeMappings(UserModel agent) {
+        TypedQuery<UserScopeMappingEntity> query = em.createNamedQuery("userScopeMappings", UserScopeMappingEntity.class);
         query.setParameter("user", ((UserAdapter)agent).getUser());
-        query.setParameter("realm", realm);
-        List<RealmScopeMappingEntity> entities = query.getResultList();
-        List<RoleModel> roles = new ArrayList<RoleModel>();
-        for (RealmScopeMappingEntity entity : entities) {
-            roles.add(new RoleAdapter(entity.getRole()));
+        List<UserScopeMappingEntity> entities = query.getResultList();
+        Set<RoleModel> roles = new HashSet<RoleModel>();
+        for (UserScopeMappingEntity entity : entities) {
+            roles.add(new RoleAdapter(this, em, entity.getRole()));
         }
         return roles;
     }
@@ -986,8 +1011,7 @@ public class RealmAdapter implements RealmModel {
     @Override
     public void addScopeMapping(UserModel agent, RoleModel role) {
         if (hasScope(agent, role)) return;
-        RealmScopeMappingEntity entity = new RealmScopeMappingEntity();
-        entity.setRealm(realm);
+        UserScopeMappingEntity entity = new UserScopeMappingEntity();
         entity.setUser(((UserAdapter) agent).getUser());
         entity.setRole(((RoleAdapter)role).getRole());
         em.persist(entity);
@@ -996,25 +1020,24 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public void deleteScopeMapping(UserModel user, RoleModel role) {
-        TypedQuery<RealmScopeMappingEntity> query = getRealmScopeMappingQuery((UserAdapter) user, (RoleAdapter) role);
-        List<RealmScopeMappingEntity> results = query.getResultList();
+        TypedQuery<UserScopeMappingEntity> query = getRealmScopeMappingQuery((UserAdapter) user, (RoleAdapter) role);
+        List<UserScopeMappingEntity> results = query.getResultList();
         if (results.size() == 0) return;
-        for (RealmScopeMappingEntity entity : results) {
+        for (UserScopeMappingEntity entity : results) {
             em.remove(entity);
         }
     }
 
     public boolean hasScope(UserModel user, RoleModel role) {
-        TypedQuery<RealmScopeMappingEntity> query = getRealmScopeMappingQuery((UserAdapter) user, (RoleAdapter) role);
+        TypedQuery<UserScopeMappingEntity> query = getRealmScopeMappingQuery((UserAdapter) user, (RoleAdapter) role);
         return query.getResultList().size() > 0;
     }
 
 
-    protected TypedQuery<RealmScopeMappingEntity> getRealmScopeMappingQuery(UserAdapter user, RoleAdapter role) {
-        TypedQuery<RealmScopeMappingEntity> query = em.createNamedQuery("userHasRealmScope", RealmScopeMappingEntity.class);
+    protected TypedQuery<UserScopeMappingEntity> getRealmScopeMappingQuery(UserAdapter user, RoleAdapter role) {
+        TypedQuery<UserScopeMappingEntity> query = em.createNamedQuery("userHasScope", UserScopeMappingEntity.class);
         query.setParameter("user", ((UserAdapter)user).getUser());
         query.setParameter("role", ((RoleAdapter)role).getRole());
-        query.setParameter("realm", realm);
         return query;
     }
 

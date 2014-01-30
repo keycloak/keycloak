@@ -58,7 +58,7 @@ public class ProfileTest {
             UserModel user2 = appRealm.addUser("test-user-no-access@localhost");
             user2.setEnabled(true);
             for (String r : accountApp.getDefaultRoles()) {
-                accountApp.deleteRoleMapping(user2, accountApp.getRole(r));
+                appRealm.deleteRoleMapping(user2, accountApp.getRole(r));
             }
             UserCredentialModel creds = new UserCredentialModel();
             creds.setType(CredentialRepresentation.PASSWORD);
@@ -66,12 +66,12 @@ public class ProfileTest {
             appRealm.updateCredential(user2, creds);
 
             ApplicationModel app = appRealm.getApplicationNameMap().get("test-app");
-            accountApp.addScopeMapping(app.getApplicationUser(), org.keycloak.models.Constants.ACCOUNT_PROFILE_ROLE);
+            appRealm.addScopeMapping(app.getApplicationUser(), accountApp.getRole(org.keycloak.models.Constants.ACCOUNT_PROFILE_ROLE));
 
             app.getApplicationUser().addWebOrigin("http://localtest.me:8081");
 
             UserModel thirdParty = appRealm.getUser("third-party");
-            accountApp.addScopeMapping(thirdParty, org.keycloak.models.Constants.ACCOUNT_PROFILE_ROLE);
+            appRealm.addScopeMapping(thirdParty, accountApp.getRole(org.keycloak.models.Constants.ACCOUNT_PROFILE_ROLE));
         }
     });
 

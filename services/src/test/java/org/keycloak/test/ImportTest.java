@@ -7,6 +7,7 @@ import org.junit.runners.MethodSorters;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -49,7 +50,7 @@ public class ImportTest extends AbstractKeycloakTest {
 
         UserModel user = realm.getUser("loginclient");
         Assert.assertNotNull(user);
-        Set<String> scopes = realm.getScopeMappingValues(user);
+        Set<RoleModel> scopes = realm.getRealmScopeMappings(user);
         Assert.assertEquals(0, scopes.size());
         Assert.assertEquals(0, realm.getSocialLinks(user).size());
 
@@ -61,8 +62,9 @@ public class ImportTest extends AbstractKeycloakTest {
         UserModel oauthClient = realm.getUser("oauthclient");
         Assert.assertNotNull(application);
         Assert.assertNotNull(oauthClient);
-        Set<String> appScopes = application.getScopeMappingValues(oauthClient);
-        Assert.assertTrue(appScopes.contains("user"));
+        Set<RoleModel> appScopes = application.getApplicationScopeMappings(oauthClient);
+        RoleModel appUserRole = application.getRole("user");
+        Assert.assertTrue(appScopes.contains(appUserRole));
 
         // Test social linking
         UserModel socialUser = realm.getUser("mySocialUser");

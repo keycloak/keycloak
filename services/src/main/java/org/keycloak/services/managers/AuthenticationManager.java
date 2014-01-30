@@ -9,6 +9,7 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.SkeletonKeyToken;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -250,16 +251,18 @@ public class AuthenticationManager {
         }
 
         if (!user.isEnabled()) {
-            logger.debug("Account is disabled, contact admin.");
+            logger.debug("Account is disabled, contact admin. " + user.getLoginName());
             return AuthenticationStatus.ACCOUNT_DISABLED;
         }
 
         Set<String> types = new HashSet<String>();
 
         List<RequiredCredentialModel> requiredCredentials = null;
-        if (realm.hasRole(user, Constants.APPLICATION_ROLE)) {
+        RoleModel applicationRole = realm.getRole(Constants.APPLICATION_ROLE);
+        RoleModel identityRequesterRole = realm.getRole(Constants.IDENTITY_REQUESTER_ROLE);
+        if (realm.hasRole(user, applicationRole)) {
             requiredCredentials = realm.getRequiredApplicationCredentials();
-        } else if (realm.hasRole(user, Constants.IDENTITY_REQUESTER_ROLE)) {
+        } else if (realm.hasRole(user, identityRequesterRole)) {
             requiredCredentials = realm.getRequiredOAuthClientCredentials();
         } else {
             requiredCredentials = realm.getRequiredCredentials();
@@ -289,6 +292,7 @@ public class AuthenticationManager {
             } else {
                 logger.debug("validating password for user: " + user.getLoginName());
                 if (!realm.validatePassword(user, password)) {
+                    logger.debug("invalid password for user: " + user.getLoginName());
                     return AuthenticationStatus.INVALID_CREDENTIALS;
                 }
             }

@@ -10,14 +10,12 @@ import javax.persistence.NamedQuery;
  * @version $Revision: 1 $
  */
 @NamedQueries({
-        @NamedQuery(name="userHasRealmRole", query="select m from RealmUserRoleMappingEntity m where m.user = :user and m.role = :role and m.realm = :realm"),
-        @NamedQuery(name="userRealmMappings", query="select m from RealmUserRoleMappingEntity m where m.user = :user and m.realm = :realm")
+        @NamedQuery(name="getRealmRoleByName", query="select role from RealmRoleEntity role where role.name = :name and role.realm = :realm")
 })
 @Entity
-public class RealmUserRoleMappingEntity extends UserRoleMappingEntity {
-
+public class RealmRoleEntity extends RoleEntity {
     @ManyToOne
-    protected RealmEntity realm;
+    private RealmEntity realm;
 
     public RealmEntity getRealm() {
         return realm;

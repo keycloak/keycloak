@@ -9,6 +9,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ApplicationMappingsRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.services.managers.ModelToRepresentation;
 import org.keycloak.services.managers.RealmManager;
 
 import javax.ws.rs.Consumes;
@@ -23,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -44,12 +46,12 @@ public class ScopeMappedResource {
     @NoCache
     public MappingsRepresentation getScopeMappings() {
         MappingsRepresentation all = new MappingsRepresentation();
-        List<RoleModel> realmMappings = realm.getScopeMappings(agent);
+        Set<RoleModel> realmMappings = realm.getRealmScopeMappings(agent);
         RealmManager manager = new RealmManager(session);
         if (realmMappings.size() > 0) {
             List<RoleRepresentation> realmRep = new ArrayList<RoleRepresentation>();
             for (RoleModel roleModel : realmMappings) {
-                realmRep.add(manager.toRepresentation(roleModel));
+                realmRep.add(ModelToRepresentation.toRepresentation(roleModel));
             }
             all.setRealmMappings(realmRep);
         }
@@ -58,7 +60,7 @@ public class ScopeMappedResource {
         if (applications.size() > 0) {
             Map<String, ApplicationMappingsRepresentation> appMappings = new HashMap<String, ApplicationMappingsRepresentation>();
             for (ApplicationModel app : applications) {
-                List<RoleModel> roleMappings = app.getScopeMappings(agent);
+                Set<RoleModel> roleMappings = app.getApplicationScopeMappings(agent);
                 if (roleMappings.size() > 0) {
                     ApplicationMappingsRepresentation mappings = new ApplicationMappingsRepresentation();
                     mappings.setApplicationId(app.getId());
@@ -66,7 +68,7 @@ public class ScopeMappedResource {
                     List<RoleRepresentation> roles = new ArrayList<RoleRepresentation>();
                     mappings.setMappings(roles);
                     for (RoleModel role : roleMappings) {
-                        roles.add(manager.toRepresentation(role));
+                        roles.add(ModelToRepresentation.toRepresentation(role));
                     }
                     appMappings.put(app.getName(), mappings);
                     all.setApplicationMappings(appMappings);
@@ -81,11 +83,11 @@ public class ScopeMappedResource {
     @Produces("application/json")
     @NoCache
     public List<RoleRepresentation> getRealmScopeMappings() {
-        List<RoleModel> realmMappings = realm.getScopeMappings(agent);
+        Set<RoleModel> realmMappings = realm.getRealmScopeMappings(agent);
         List<RoleRepresentation> realmMappingsRep = new ArrayList<RoleRepresentation>();
         RealmManager manager = new RealmManager(session);
         for (RoleModel roleModel : realmMappings) {
-            realmMappingsRep.add(manager.toRepresentation(roleModel));
+            realmMappingsRep.add(ModelToRepresentation.toRepresentation(roleModel));
         }
         return realmMappingsRep;
     }
@@ -110,7 +112,7 @@ public class ScopeMappedResource {
     @Consumes("application/json")
     public void deleteRealmScopeMappings(List<RoleRepresentation> roles) {
         if (roles == null) {
-            List<RoleModel> roleModels = realm.getScopeMappings(agent);
+            Set<RoleModel> roleModels = realm.getRealmScopeMappings(agent);
             for (RoleModel roleModel : roleModels) {
                 realm.deleteScopeMapping(agent, roleModel);
             }
@@ -137,10 +139,10 @@ public class ScopeMappedResource {
             throw new NotFoundException();
         }
 
-        List<RoleModel> mappings = app.getScopeMappings(agent);
+        Set<RoleModel> mappings = app.getApplicationScopeMappings(agent);
         List<RoleRepresentation> mapRep = new ArrayList<RoleRepresentation>();
         for (RoleModel roleModel : mappings) {
-            mapRep.add(RealmManager.toRepresentation(roleModel));
+            mapRep.add(ModelToRepresentation.toRepresentation(roleModel));
         }
         return mapRep;
     }
@@ -160,7 +162,7 @@ public class ScopeMappedResource {
             if (roleModel == null) {
                 throw new NotFoundException();
             }
-            app.addScopeMapping(agent, roleModel);
+            realm.addScopeMapping(agent, roleModel);
         }
 
     }
@@ -168,7 +170,7 @@ public class ScopeMappedResource {
     @Path("applications/{app}")
     @DELETE
     @Consumes("application/json")
-    public void deleteApplicationRoleMapping(@PathParam("app") String appName, List<RoleRepresentation> roles) {
+    public void deleteApplicationScopeMapping(@PathParam("app") String appName, List<RoleRepresentation> roles) {
         ApplicationModel app = realm.getApplicationByName(appName);
 
         if (app == null) {
@@ -176,9 +178,9 @@ public class ScopeMappedResource {
         }
 
         if (roles == null) {
-            List<RoleModel> roleModels = app.getScopeMappings(agent);
+            Set<RoleModel> roleModels = app.getApplicationScopeMappings(agent);
             for (RoleModel roleModel : roleModels) {
-                app.deleteScopeMapping(agent, roleModel);
+                realm.deleteScopeMapping(agent, roleModel);
             }
 
         } else {
@@ -187,7 +189,7 @@ public class ScopeMappedResource {
                 if (roleModel == null) {
                     throw new NotFoundException();
                 }
-                app.deleteScopeMapping(agent, roleModel);
+                realm.deleteScopeMapping(agent, roleModel);
             }
         }
     }

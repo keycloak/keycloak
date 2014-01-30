@@ -10,6 +10,7 @@ import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.managers.ModelToRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
 
@@ -101,7 +102,7 @@ public class ModelTest extends AbstractKeycloakServerTest {
     }
 
     private RealmModel importExport(RealmModel src, String copyName) {
-        RealmRepresentation representation = manager.toRepresentation(src);
+        RealmRepresentation representation = ModelToRepresentation.toRepresentation(src);
         RealmModel copy = manager.createRealm(copyName);
         manager.importRealm(representation, copy);
         return manager.getRealm(copy.getId());
