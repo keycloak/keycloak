@@ -161,21 +161,18 @@ public class KeycloakAdapterConfigService implements Service<KeycloakAdapterConf
         return null;
     }
 
-    public String getJSON(String deploymentName, String resourceName) {
+    public String getJSON(String deploymentName) {
         ModelNode deployment = this.deployments.get(deploymentName);
         String realmName = deployment.get(RealmDefinition.TAG_NAME).asString();
         ModelNode realm = this.realms.get(realmName);
 
         ModelNode json = new ModelNode();
         json.get(RealmDefinition.TAG_NAME).set(realmName);
-        json.get("resource").set(resourceName);
 
         // Realm values set first.  Some can be overridden by deployment values.
         setJSONValues(json, realm);
         setJSONValues(json, deployment);
-
-        // TODO: change this to true to compact the string
-        return json.toJSONString(false);
+        return json.toJSONString(true);
     }
 
     private void setJSONValues(ModelNode json, ModelNode values) {

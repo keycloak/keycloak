@@ -58,10 +58,7 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
         DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
         WarMetaData warMetaData = deploymentUnit.getAttachment(WarMetaData.ATTACHMENT_KEY);
 
-        //TODO: Find context root properly
-        String resourceName = deploymentName.substring(0, deploymentName.lastIndexOf('.'));
-
-        addJSONData(service.getJSON(deploymentName, resourceName), warMetaData);
+        addJSONData(service.getJSON(deploymentName), warMetaData);
         //addJSONData(getJSON(), warMetaData);
     }
 
