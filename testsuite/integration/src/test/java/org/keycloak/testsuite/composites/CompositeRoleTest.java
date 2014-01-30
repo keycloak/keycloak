@@ -58,6 +58,8 @@ public class CompositeRoleTest {
             manager.generateRealmKeys(realm);
             realmPublicKey = realm.getPublicKey();
             realm.setTokenLifespan(10000);
+            realm.setAccessCodeLifespanUserAction(1000);
+            realm.setAccessCodeLifespan(1000);
             realm.setSslNotRequired(true);
             realm.setEnabled(true);
             realm.addRequiredResourceCredential(UserCredentialModel.PASSWORD);
@@ -74,6 +76,11 @@ public class CompositeRoleTest {
             realmComposite1User.setEnabled(true);
             realm.updateCredential(realmComposite1User, UserCredentialModel.password("password"));
             realm.grantRole(realmComposite1User, realmComposite1);
+
+            final UserModel realmRole1User = realm.addUser("REALM_ROLE_1_USER");
+            realmRole1User.setEnabled(true);
+            realm.updateCredential(realmRole1User, UserCredentialModel.password("password"));
+            realm.grantRole(realmRole1User, realmRole1);
 
             final ApplicationModel realmComposite1Application = new ApplicationManager(manager).createApplication(realm, "REALM_COMPOSITE_1_APPLICATION");
             realmComposite1Application.setEnabled(true);
@@ -109,7 +116,7 @@ public class CompositeRoleTest {
     protected LoginPage loginPage;
 
     @Test
-    public void testRealmOnlyCompositeWithUserCompositeAppComposite() throws Exception {
+    public void testRealmOnlyWithUserCompositeAppComposite() throws Exception {
         oauth.realm("Test");
         oauth.realmPublicKey(realmPublicKey);
         oauth.clientId("REALM_COMPOSITE_1_APPLICATION");
@@ -132,7 +139,7 @@ public class CompositeRoleTest {
     }
 
     @Test
-    public void testRealmOnlyCompositeWithUserCompositeAppRole() throws Exception {
+    public void testRealmOnlyWithUserCompositeAppRole() throws Exception {
         oauth.realm("Test");
         oauth.realmPublicKey(realmPublicKey);
         oauth.clientId("REALM_ROLE_1_APPLICATION");
@@ -152,6 +159,30 @@ public class CompositeRoleTest {
         Assert.assertEquals(1, token.getRealmAccess().getRoles().size());
         Assert.assertTrue(token.getRealmAccess().isUserInRole("REALM_ROLE_1"));
     }
+
+    @Test
+    public void testRealmOnlyWithUserRoleAppComposite() throws Exception {
+        oauth.realm("Test");
+        oauth.realmPublicKey(realmPublicKey);
+        oauth.clientId("REALM_COMPOSITE_1_APPLICATION");
+        oauth.doLogin("REALM_ROLE_1_USER", "password");
+
+        String code = oauth.getCurrentQuery().get("code");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+
+        Assert.assertEquals(200, response.getStatusCode());
+
+        Assert.assertEquals("bearer", response.getTokenType());
+
+        SkeletonKeyToken token = oauth.verifyToken(response.getAccessToken());
+
+        Assert.assertEquals("REALM_ROLE_1_USER", token.getSubject());
+
+        Assert.assertEquals(1, token.getRealmAccess().getRoles().size());
+        Assert.assertTrue(token.getRealmAccess().isUserInRole("REALM_ROLE_1"));
+    }
+
+
 
 
 }

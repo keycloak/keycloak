@@ -261,4 +261,11 @@ public class ApplicationAdapter implements ApplicationModel {
     public void addScope(RoleModel role) {
         realm.addScopeMapping(getApplicationUser(), role);
     }
+
+    public boolean equals(Object o) {
+        if (o == null) return false;
+        if (!(o instanceof ApplicationAdapter)) return false;
+        ApplicationAdapter app = (ApplicationAdapter)o;
+        return app.getId().equals(getId());
+    }
 }

@@ -897,28 +897,13 @@ public class RealmAdapter implements RealmModel {
         return new RoleAdapter(this, em, entity);
     }
 
-    protected boolean searchCompositeFor(RoleModel role, RoleModel composite, Set<RoleModel> visited) {
-        if (visited.contains(composite)) return false;
-        visited.add(composite);
-        Set<RoleModel> composites = composite.getComposites();
-        if (composites.contains(role)) return true;
-        for (RoleModel contained : composites) {
-            if (!contained.isComposite()) continue;
-            if (searchCompositeFor(role, contained, visited)) return true;
-        }
-        return false;
-    }
-
     @Override
     public boolean hasRole(UserModel user, RoleModel role) {
         Set<RoleModel> roles = getRoleMappings(user);
         if (roles.contains(role)) return true;
 
-        Set<RoleModel> visited = new HashSet<RoleModel>();
         for (RoleModel mapping : roles) {
-            if (!mapping.isComposite()) continue;
-            if (searchCompositeFor(role, mapping, visited)) return true;
-
+            if (mapping.hasRole(role)) return true;
         }
         return false;
     }
@@ -1104,4 +1089,12 @@ public class RealmAdapter implements RealmModel {
         realm.setPasswordPolicy(policy.toString());
         em.flush();
     }
+
+    public boolean equals(Object o) {
+        if (o == null) return false;
+        if (!(o instanceof RealmAdapter)) return false;
+        RealmAdapter r = (RealmAdapter)o;
+        return r.getId().equals(getId());
+    }
+
 }

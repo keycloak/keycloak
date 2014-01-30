@@ -30,4 +30,5 @@ public interface RoleModel {
     RoleContainerModel getContainer();
 
 
+    boolean hasRole(RoleModel role);
 }

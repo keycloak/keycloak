@@ -3,6 +3,7 @@ package org.keycloak.models.jpa;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.entities.ApplicationRoleEntity;
 import org.keycloak.models.jpa.entities.RealmRoleEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
@@ -95,6 +96,27 @@ public class RoleAdapter implements RoleModel {
            set.add(new RoleAdapter(realm, em, composite));
         }
         return set;
+    }
+
+    public static boolean searchCompositeFor(RoleModel role, RoleModel composite, Set<RoleModel> visited) {
+        if (visited.contains(composite)) return false;
+        visited.add(composite);
+        Set<RoleModel> composites = composite.getComposites();
+        if (composites.contains(role)) return true;
+        for (RoleModel contained : composites) {
+            if (!contained.isComposite()) continue;
+            if (searchCompositeFor(role, contained, visited)) return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean hasRole(RoleModel role) {
+        if (this.equals(role)) return true;
+        if (!isComposite()) return false;
+
+        Set<RoleModel> visited = new HashSet<RoleModel>();
+        return searchCompositeFor(role, this, visited);
     }
 
     @Override

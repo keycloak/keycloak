@@ -16,6 +16,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -69,31 +70,34 @@ public class TokenManager {
         List<RoleModel> realmRolesRequested = code.getRealmRolesRequested();
         MultivaluedMap<String, RoleModel> resourceRolesRequested = code.getResourceRolesRequested();
 
-        Set<RoleModel> realmScopeMappings = realm.getRealmScopeMappings(client);
-        for (RoleModel desiredRole : realmScopeMappings) {
-            if (!realm.hasRole(user, desiredRole)) continue;
-            if (desiresScope(scopeMap, "realm", desiredRole.getName())) {
-                realmRolesRequested.add(desiredRole);
+
+        Set<RoleModel> roleMappings = realm.getRoleMappings(user);
+        Set<RoleModel> scopeMappings = realm.getScopeMappings(client);
+        Set<RoleModel> requestedRoles = new HashSet<RoleModel>();
+
+        for (RoleModel role : roleMappings) {
+            for (RoleModel desiredRole : scopeMappings) {
+                if (desiredRole.equals(role)) {
+                    requestedRoles.add(role);
+                } else if (desiredRole.hasRole(role)) {
+                    requestedRoles.add(role);
+                } else if (role.hasRole(desiredRole)) {
+                    requestedRoles.add(desiredRole);
+                } else if (role.getContainer() instanceof ApplicationModel) {
+                    if (((ApplicationModel)role.getContainer()).getApplicationUser().getLoginName().equals(client.getLoginName())) {
+                        requestedRoles.add(role);
+                    }
+                }
             }
         }
 
-        for (ApplicationModel application : realm.getApplications()) {
-            if (!desiresScopeGroup(scopeMap, application.getName())) continue;
-            Set<RoleModel> desiredRoles = application.getApplicationScopeMappings(client);
-            if (desiredRoles.isEmpty()) {
-                if (application.getApplicationUser().getLoginName().equals(client.getLoginName())) {
-                    Set<RoleModel> appRoleMappings = application.getApplicationRoleMappings(user);
-                    for (RoleModel desiredAppRole : appRoleMappings) {
-                        if (desiresScope(scopeMap, application.getName(), desiredAppRole.getName())) {
-                            resourceRolesRequested.add(application.getName(), desiredAppRole);
-                        }
-                    }
-                }
-            } else {
-                for (RoleModel desiredAppRole : desiredRoles) {
-                    if (realm.hasRole(user, desiredAppRole) && desiresScope(scopeMap, application.getName(), desiredAppRole.getName())) {
-                        resourceRolesRequested.add(application.getName(), desiredAppRole);
-                    }
+        for (RoleModel role : requestedRoles) {
+            if (role.getContainer() instanceof RealmModel && desiresScope(scopeMap, "realm", role.getName())) {
+                realmRolesRequested.add(role);
+            } else if (role.getContainer() instanceof ApplicationModel) {
+                ApplicationModel app = (ApplicationModel)role.getContainer();
+                if (desiresScope(scopeMap, app.getName(), role.getName())) {
+                    resourceRolesRequested.add(app.getName(), role);
                 }
             }
         }
@@ -166,7 +170,6 @@ public class TokenManager {
         SkeletonKeyToken token = initToken(realm, client, user);
 
         if (accessCodeEntry.getRealmRolesRequested().size() > 0) {
-            SkeletonKeyToken.Access access = new SkeletonKeyToken.Access();
             for (RoleModel role : accessCodeEntry.getRealmRolesRequested()) {
                 addComposites(token, role);
             }
