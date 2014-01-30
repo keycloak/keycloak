@@ -1,6 +1,8 @@
 package org.keycloak.util;
 
 
+import net.iharder.Base64;
+
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
