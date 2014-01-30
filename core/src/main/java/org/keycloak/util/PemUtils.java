@@ -15,9 +15,12 @@ import java.security.cert.X509Certificate;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class PemUtils {
+public final class PemUtils {
     static {
         BouncyIntegration.init();
+    }
+
+    private PemUtils() {
     }
 
     public static X509Certificate decodeCertificate(InputStream is) throws Exception {

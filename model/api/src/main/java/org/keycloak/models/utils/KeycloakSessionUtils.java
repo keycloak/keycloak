@@ -5,7 +5,10 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class KeycloakSessionUtils {
+public final class KeycloakSessionUtils {
+
+    private KeycloakSessionUtils() {
+    }
 
     private static AtomicLong counter = new AtomicLong(1);
 

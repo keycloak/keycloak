@@ -20,9 +20,12 @@ import java.security.spec.X509EncodedKeySpec;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class DerUtils {
+public final class DerUtils {
     static {
         BouncyIntegration.init();
+    }
+
+    private DerUtils() {
     }
 
     public static PrivateKey decodePrivateKey(InputStream is)
