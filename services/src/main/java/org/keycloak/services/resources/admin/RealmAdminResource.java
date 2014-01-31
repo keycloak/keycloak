@@ -6,6 +6,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.managers.ModelToRepresentation;
 import org.keycloak.services.managers.RealmManager;
 
 import javax.ws.rs.*;
@@ -51,7 +52,7 @@ public class RealmAdminResource extends RoleContainerResource {
     @NoCache
     @Produces("application/json")
     public RealmRepresentation getRealm() {
-        return RealmManager.toRepresentation(realm);
+        return ModelToRepresentation.toRepresentation(realm);
     }
 
 

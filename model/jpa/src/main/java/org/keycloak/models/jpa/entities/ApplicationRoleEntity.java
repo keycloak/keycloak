@@ -1,6 +1,7 @@
 package org.keycloak.models.jpa.entities;
 
 import javax.persistence.Entity;
+import javax.persistence.JoinTable;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
@@ -10,14 +11,13 @@ import javax.persistence.NamedQuery;
  * @version $Revision: 1 $
  */
 @NamedQueries({
-        @NamedQuery(name="userHasApplicationRole", query="select m from ApplicationUserRoleMappingEntity m where m.user = :user and m.role = :role and m.application = :application"),
-        @NamedQuery(name="userApplicationMappings", query="select m from ApplicationUserRoleMappingEntity m where m.user = :user and m.application = :application")
+        @NamedQuery(name="getAppRoleByName", query="select role from ApplicationRoleEntity role where role.name = :name and role.application = :application")
 })
 @Entity
-public class ApplicationUserRoleMappingEntity extends UserRoleMappingEntity {
-
+public class ApplicationRoleEntity extends RoleEntity {
     @ManyToOne
-    protected ApplicationEntity application;
+    @JoinTable(name = "APPLICATION_ROLE")
+    private ApplicationEntity application;
 
     public ApplicationEntity getApplication() {
         return application;

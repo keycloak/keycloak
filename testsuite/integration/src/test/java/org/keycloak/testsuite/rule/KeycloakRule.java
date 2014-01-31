@@ -41,9 +41,7 @@ import java.io.InputStream;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class KeycloakRule extends ExternalResource {
-
-    private KeycloakServer server;
+public class KeycloakRule extends AbstractKeycloakRule {
 
     private KeycloakSetup setup;
 
@@ -54,11 +52,9 @@ public class KeycloakRule extends ExternalResource {
         this.setup = setup;
     }
 
-    protected void before() throws Throwable {
-        server = new KeycloakServer();
-        server.start();
-
-        server.importRealm(getClass().getResourceAsStream("/testrealm.json"));
+    @Override
+    protected void setupKeycloak() {
+        importRealm();
 
         if (setup != null) {
             configure(setup);
@@ -67,33 +63,8 @@ public class KeycloakRule extends ExternalResource {
         deployServlet("app", "/app", ApplicationServlet.class);
     }
 
-    public void deployServlet(String name, String contextPath, Class<? extends Servlet> servletClass) {
-        DeploymentInfo deploymentInfo = new DeploymentInfo();
-        deploymentInfo.setClassLoader(getClass().getClassLoader());
-        deploymentInfo.setDeploymentName(name);
-        deploymentInfo.setContextPath(contextPath);
-
-        ServletInfo servlet = new ServletInfo(servletClass.getSimpleName(), servletClass);
-        servlet.addMapping("/*");
-
-        deploymentInfo.addServlet(servlet);
-        server.getServer().deploy(deploymentInfo);
-    }
-
-    @Override
-    protected void after() {
-        server.stop();
-    }
-
-    public RealmRepresentation loadJson(String path) throws IOException {
-        InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(path);
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
-        int c;
-        while ((c = is.read()) != -1) {
-            os.write(c);
-        }
-        byte[] bytes = os.toByteArray();
-        return JsonSerialization.readValue(bytes, RealmRepresentation.class);
+    protected void importRealm() {
+        server.importRealm(getClass().getResourceAsStream("/testrealm.json"));
     }
 
     public void configure(KeycloakSetup configurer) {
@@ -106,7 +77,7 @@ public class KeycloakRule extends ExternalResource {
             RealmModel adminstrationRealm = manager.getRealm(Constants.ADMIN_REALM);
             RealmModel appRealm = manager.getRealm("test");
 
-            configurer.config(manager, null, appRealm);
+            configurer.config(manager, adminstrationRealm, appRealm);
 
             session.getTransaction().commit();
         } finally {

@@ -170,7 +170,7 @@ public class AdapterTest extends AbstractKeycloakTest {
 
         OAuthClientModel oauth = new OAuthClientManager(realmModel).create("oauth-client");
         oauth = realmModel.getOAuthClient("oauth-client");
-        Assert.assertTrue(realmModel.hasRole(oauth.getOAuthAgent(), Constants.IDENTITY_REQUESTER_ROLE));
+        Assert.assertTrue(realmModel.hasRole(oauth.getOAuthAgent(), realmModel.getRole(Constants.IDENTITY_REQUESTER_ROLE)));
 
 
     }
@@ -188,7 +188,7 @@ public class AdapterTest extends AbstractKeycloakTest {
 
         ApplicationModel app = realmModel.addApplication("test-app");
         RoleModel appRole = app.addRole("test");
-        app.grantRole(user, appRole);
+        realmModel.grantRole(user, appRole);
 
         SocialLinkModel socialLink = new SocialLinkModel("google", user.getLoginName());
         realmModel.addSocialLink(user, socialLink);
@@ -214,8 +214,8 @@ public class AdapterTest extends AbstractKeycloakTest {
         ApplicationModel app = realmModel.addApplication("test-app");
 
         RoleModel appRole = app.addRole("test");
-        app.grantRole(user, appRole);
-        app.addScopeMapping(client.getOAuthAgent(), appRole);
+        realmModel.grantRole(user, appRole);
+        realmModel.addScopeMapping(client.getOAuthAgent(), appRole);
 
         RoleModel realmRole = realmModel.addRole("test");
         realmModel.addScopeMapping(app.getApplicationUser(), realmRole);
@@ -242,8 +242,8 @@ public class AdapterTest extends AbstractKeycloakTest {
         ApplicationModel app = realmModel.addApplication("test-app");
 
         RoleModel appRole = app.addRole("test");
-        app.grantRole(user, appRole);
-        app.addScopeMapping(client.getOAuthAgent(), appRole);
+        realmModel.grantRole(user, appRole);
+        realmModel.addScopeMapping(client.getOAuthAgent(), appRole);
 
         RoleModel realmRole = realmModel.addRole("test");
         realmModel.addScopeMapping(app.getApplicationUser(), realmRole);
@@ -265,8 +265,8 @@ public class AdapterTest extends AbstractKeycloakTest {
         ApplicationModel app = realmModel.addApplication("test-app");
 
         RoleModel appRole = app.addRole("test");
-        app.grantRole(user, appRole);
-        app.addScopeMapping(client.getOAuthAgent(), appRole);
+        realmModel.grantRole(user, appRole);
+        realmModel.addScopeMapping(client.getOAuthAgent(), appRole);
 
         RoleModel realmRole = realmModel.addRole("test");
         realmModel.addScopeMapping(app.getApplicationUser(), realmRole);
@@ -448,7 +448,7 @@ public class AdapterTest extends AbstractKeycloakTest {
         test1CreateRealm();
         realmModel.addRole("admin");
         realmModel.addRole("user");
-        List<RoleModel> roles = realmModel.getRoles();
+        Set<RoleModel> roles = realmModel.getRoles();
         Assert.assertEquals(5, roles.size());
         UserModel user = realmModel.addUser("bburke");
         RoleModel role = realmModel.getRole("user");

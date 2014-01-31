@@ -10,6 +10,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.*;
+import org.keycloak.services.managers.ModelToRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.flows.Flows;
 
@@ -32,6 +33,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -115,7 +117,7 @@ public class UsersResource {
         if (user == null || !isUser(user)) {
             throw new NotFoundException();
         }
-        return new RealmManager(session).toRepresentation(user);
+        return ModelToRepresentation.toRepresentation(user);
     }
 
     @Path("{username}")
@@ -154,7 +156,7 @@ public class UsersResource {
             }
             userModels = realm.searchForUserByAttributes(attributes);
             for (UserModel user : userModels) {
-                results.add(manager.toRepresentation(user));
+                results.add(ModelToRepresentation.toRepresentation(user));
             }
         } else {
             userModels = realm.getUsers();
@@ -162,7 +164,7 @@ public class UsersResource {
 
         for (UserModel user : userModels) {
             if (isUser(user)) {
-                results.add(manager.toRepresentation(user));
+                results.add(ModelToRepresentation.toRepresentation(user));
             }
         }
         return results;
@@ -183,12 +185,12 @@ public class UsersResource {
         }
 
         MappingsRepresentation all = new MappingsRepresentation();
-        List<RoleModel> realmMappings = realm.getRoleMappings(user);
+        Set<RoleModel> realmMappings = realm.getRoleMappings(user);
         RealmManager manager = new RealmManager(session);
         if (realmMappings.size() > 0) {
             List<RoleRepresentation> realmRep = new ArrayList<RoleRepresentation>();
             for (RoleModel roleModel : realmMappings) {
-                realmRep.add(manager.toRepresentation(roleModel));
+                realmRep.add(ModelToRepresentation.toRepresentation(roleModel));
             }
             all.setRealmMappings(realmRep);
         }
@@ -197,7 +199,7 @@ public class UsersResource {
         if (applications.size() > 0) {
             Map<String, ApplicationMappingsRepresentation> appMappings = new HashMap<String, ApplicationMappingsRepresentation>();
             for (ApplicationModel application : applications) {
-                List<RoleModel> roleMappings = application.getRoleMappings(user);
+                Set<RoleModel> roleMappings = application.getApplicationRoleMappings(user);
                 if (roleMappings.size() > 0) {
                     ApplicationMappingsRepresentation mappings = new ApplicationMappingsRepresentation();
                     mappings.setApplicationId(application.getId());
@@ -205,7 +207,7 @@ public class UsersResource {
                     List<RoleRepresentation> roles = new ArrayList<RoleRepresentation>();
                     mappings.setMappings(roles);
                     for (RoleModel role : roleMappings) {
-                        roles.add(manager.toRepresentation(role));
+                        roles.add(ModelToRepresentation.toRepresentation(role));
                     }
                     appMappings.put(application.getName(), mappings);
                     all.setApplicationMappings(appMappings);
@@ -225,11 +227,11 @@ public class UsersResource {
             throw new NotFoundException();
         }
 
-        List<RoleModel> realmMappings = realm.getRoleMappings(user);
+        Set<RoleModel> realmMappings = realm.getRealmRoleMappings(user);
         List<RoleRepresentation> realmMappingsRep = new ArrayList<RoleRepresentation>();
         RealmManager manager = new RealmManager(session);
         for (RoleModel roleModel : realmMappings) {
-            realmMappingsRep.add(manager.toRepresentation(roleModel));
+            realmMappingsRep.add(ModelToRepresentation.toRepresentation(roleModel));
         }
         return realmMappingsRep;
     }
@@ -266,7 +268,7 @@ public class UsersResource {
         }
 
         if (roles == null) {
-            List<RoleModel> roleModels = realm.getRoleMappings(user);
+            Set<RoleModel> roleModels = realm.getRealmRoleMappings(user);
             for (RoleModel roleModel : roleModels) {
                 realm.deleteRoleMapping(user, roleModel);
             }
@@ -300,10 +302,10 @@ public class UsersResource {
             throw new NotFoundException();
         }
 
-        List<RoleModel> mappings = application.getRoleMappings(user);
+        Set<RoleModel> mappings = application.getApplicationRoleMappings(user);
         List<RoleRepresentation> mapRep = new ArrayList<RoleRepresentation>();
         for (RoleModel roleModel : mappings) {
-            mapRep.add(RealmManager.toRepresentation(roleModel));
+            mapRep.add(ModelToRepresentation.toRepresentation(roleModel));
         }
         logger.debug("getApplicationRoleMappings.size() = {0}", mapRep.size());
         return mapRep;
@@ -330,7 +332,7 @@ public class UsersResource {
             if (roleModel == null) {
                 throw new NotFoundException();
             }
-            application.grantRole(user, roleModel);
+            realm.grantRole(user, roleModel);
         }
 
     }
@@ -351,9 +353,13 @@ public class UsersResource {
         }
 
         if (roles == null) {
-            List<RoleModel> roleModels = application.getRoleMappings(user);
+            Set<RoleModel> roleModels = application.getApplicationRoleMappings(user);
             for (RoleModel roleModel : roleModels) {
-                application.deleteRoleMapping(user, roleModel);
+                if (!(roleModel.getContainer() instanceof ApplicationModel)) {
+                   ApplicationModel app = (ApplicationModel)roleModel.getContainer();
+                    if (!app.getId().equals(application.getId())) continue;
+                }
+                realm.deleteRoleMapping(user, roleModel);
             }
 
         } else {
@@ -362,7 +368,7 @@ public class UsersResource {
                 if (roleModel == null) {
                     throw new NotFoundException();
                 }
-                application.deleteRoleMapping(user, roleModel);
+                realm.deleteRoleMapping(user, roleModel);
             }
         }
     }

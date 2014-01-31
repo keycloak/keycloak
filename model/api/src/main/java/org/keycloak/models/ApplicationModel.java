@@ -1,12 +1,13 @@
 package org.keycloak.models;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface ApplicationModel extends RoleContainerModel, RoleMapperModel, ScopeMapperModel {
+public interface ApplicationModel extends RoleContainerModel {
     void updateApplication();
 
     UserModel getApplicationUser();
@@ -38,4 +39,10 @@ public interface ApplicationModel extends RoleContainerModel, RoleMapperModel, S
     void addDefaultRole(String name);
 
     void updateDefaultRoles(String[] defaultRoles);
+
+    Set<RoleModel> getApplicationRoleMappings(UserModel user);
+
+    Set<RoleModel> getApplicationScopeMappings(UserModel user);
+
+    void addScope(RoleModel role);
 }

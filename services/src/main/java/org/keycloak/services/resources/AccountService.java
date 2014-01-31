@@ -33,7 +33,7 @@ import org.keycloak.representations.SkeletonKeyToken;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.managers.ModelToRepresentation;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Flows;
@@ -124,7 +124,7 @@ public class AccountService {
             if (!hasAccess(auth, Constants.ACCOUNT_PROFILE_ROLE)) {
                 return Response.status(Response.Status.FORBIDDEN).build();
             }
-            return Cors.add(request, Response.ok(RealmManager.toRepresentation(auth.getUser()))).auth().allowedOrigins(auth.getClient()).build();
+            return Cors.add(request, Response.ok(ModelToRepresentation.toRepresentation(auth.getUser()))).auth().allowedOrigins(auth.getClient()).build();
         } else {
             return Response.notAcceptable(Variant.VariantListBuilder.newInstance().mediaTypes(MediaType.TEXT_HTML_TYPE, MediaType.APPLICATION_JSON_TYPE).build()).build();
         }
@@ -382,7 +382,7 @@ public class AccountService {
 
     private boolean hasAccess(AuthenticationManager.Auth auth, String role) {
         UserModel client = auth.getClient();
-        if (realm.hasRole(client, Constants.APPLICATION_ROLE)) {
+        if (realm.hasRole(client, realm.getRole(Constants.APPLICATION_ROLE))) {
             // Tokens from cookies don't have roles
             UserModel user = auth.getUser();
             if (hasRole(user, Constants.ACCOUNT_MANAGE_ROLE) || (role != null && hasRole(user, role))) {
@@ -401,7 +401,7 @@ public class AccountService {
     }
 
     private boolean hasRole(UserModel user, String role) {
-        return application.hasRole(user, role);
+        return realm.hasRole(user, application.getRole(role));
     }
 
     private String getReferrer() {

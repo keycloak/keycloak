@@ -58,7 +58,7 @@ public class AccountTest {
             UserModel user2 = appRealm.addUser("test-user-no-access@localhost");
             user2.setEnabled(true);
             for (String r : accountApp.getDefaultRoles()) {
-                accountApp.deleteRoleMapping(user2, accountApp.getRole(r));
+                appRealm.deleteRoleMapping(user2, accountApp.getRole(r));
             }
             UserCredentialModel creds = new UserCredentialModel();
             creds.setType(CredentialRepresentation.PASSWORD);

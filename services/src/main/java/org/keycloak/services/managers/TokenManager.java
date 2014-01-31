@@ -2,7 +2,6 @@ package org.keycloak.services.managers;
 
 import org.jboss.resteasy.logging.Logger;
 import org.keycloak.jose.jws.JWSBuilder;
-import org.keycloak.util.JsonSerialization;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
@@ -11,10 +10,12 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.SkeletonKeyScope;
 import org.keycloak.representations.SkeletonKeyToken;
 import org.keycloak.util.Base64Url;
+import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.core.MultivaluedMap;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -44,47 +45,103 @@ public class TokenManager {
         return accessCodeMap.remove(key);
     }
 
+    protected boolean desiresScope(SkeletonKeyScope scope, String key, String roleName) {
+        if (scope == null || scope.isEmpty()) return true;
+        List<String> val = scope.get(key);
+        if (val == null) return false;
+        return val.contains(roleName);
+
+    }
+
+    protected boolean desiresScopeGroup(SkeletonKeyScope scope, String key) {
+        if (scope == null || scope.isEmpty()) return true;
+        return scope.containsKey(key);
+    }
+
+    protected boolean isEmpty(SkeletonKeyScope scope) {
+        return scope == null || scope.isEmpty();
+    }
+
+    public static void addScopes(RoleModel role, RoleModel scope, Set<RoleModel> visited, Set<RoleModel> requested) {
+        if (visited.contains(scope)) return;
+        visited.add(scope);
+        if (role.hasRole(scope)) {
+            requested.add(scope);
+            return;
+        }
+        if (!scope.isComposite()) return;
+
+        for (RoleModel contained : scope.getComposites()) {
+            addScopes(role, contained, visited, requested);
+        }
+    }
+
+
 
     public AccessCodeEntry createAccessCode(String scopeParam, String state, String redirect, RealmModel realm, UserModel client, UserModel user) {
-        boolean applicationResource = realm.hasRole(client, realm.getRole(Constants.APPLICATION_ROLE));
-
         AccessCodeEntry code = new AccessCodeEntry();
         SkeletonKeyScope scopeMap = null;
         if (scopeParam != null) scopeMap = decodeScope(scopeParam);
         List<RoleModel> realmRolesRequested = code.getRealmRolesRequested();
         MultivaluedMap<String, RoleModel> resourceRolesRequested = code.getResourceRolesRequested();
-        Set<String> realmMapping = realm.getRoleMappingValues(user);
 
-        if (realmMapping != null && realmMapping.size() > 0 && (scopeMap == null || scopeMap.containsKey("realm"))) {
-            Set<String> scope = realm.getScopeMappingValues(client);
-            if (scope.size() > 0) {
-                Set<String> scopeRequest = scopeMap != null ? new HashSet<String>(scopeMap.get("realm")) : null;
-                for (String role : realmMapping) {
-                    if ((scopeRequest == null || scopeRequest.contains(role)) && scope.contains(role))
-                        realmRolesRequested.add(realm.getRole(role));
-                }
+
+        Set<RoleModel> roleMappings = realm.getRoleMappings(user);
+        Set<RoleModel> scopeMappings = realm.getScopeMappings(client);
+        ApplicationModel clientApp = realm.getApplicationByName(client.getLoginName());
+        Set<RoleModel> clientAppRoles = clientApp == null ? null : clientApp.getRoles();
+        if (clientAppRoles != null) scopeMappings.addAll(clientAppRoles);
+
+        Set<RoleModel> requestedRoles = new HashSet<RoleModel>();
+
+        for (RoleModel role : roleMappings) {
+            if (clientApp != null && role.getContainer().equals(clientApp)) requestedRoles.add(role);
+            for (RoleModel desiredRole : scopeMappings) {
+                Set<RoleModel> visited = new HashSet<RoleModel>();
+                addScopes(role, desiredRole, visited, requestedRoles);
             }
         }
-        for (ApplicationModel resource : realm.getApplications()) {
-            if (applicationResource && resource.getApplicationUser().getLoginName().equals(client.getLoginName())) {
-                for (String role : resource.getRoleMappingValues(user)) {
-                    resourceRolesRequested.addAll(resource.getName(), resource.getRole(role));
-                }
-            } else {
-                Set<String> mapping = resource.getRoleMappingValues(user);
-                if (mapping != null && mapping.size() > 0 && (scopeMap == null || scopeMap.containsKey(resource.getName()))) {
-                    Set<String> scope = resource.getScopeMappingValues(client);
-                    if (scope.size() > 0) {
-                        Set<String> scopeRequest = scopeMap != null ? new HashSet<String>(scopeMap.get(resource.getName())) : null;
-                        for (String role : mapping) {
-                            if ((scopeRequest == null || scopeRequest.contains(role)) && scope.contains(role))
-                                resourceRolesRequested.add(resource.getName(), resource.getRole(role));
-                        }
-                    }
+
+        for (RoleModel role : requestedRoles) {
+            if (role.getContainer() instanceof RealmModel && desiresScope(scopeMap, "realm", role.getName())) {
+                realmRolesRequested.add(role);
+            } else if (role.getContainer() instanceof ApplicationModel) {
+                ApplicationModel app = (ApplicationModel)role.getContainer();
+                if (desiresScope(scopeMap, app.getName(), role.getName())) {
+                    resourceRolesRequested.add(app.getName(), role);
+
                 }
             }
         }
 
+
+
+
+        Set<RoleModel> realmRoleMappings = realm.getRealmRoleMappings(user);
+
+        for (RoleModel role : realmRoleMappings) {
+            if (!desiresScope(scopeMap, "realm", role.getName())) continue;
+            for (RoleModel desiredRole : scopeMappings) {
+                if (desiredRole.hasRole(role)) {
+                    realmRolesRequested.add(role);
+                } else if (role.hasRole(desiredRole)) {
+                    realmRolesRequested.add(desiredRole);
+                }
+            }
+        }
+
+        for (ApplicationModel application : realm.getApplications()) {
+            if (!desiresScopeGroup(scopeMap, application.getName())) continue;
+            Set<RoleModel> appRoleMappings = application.getApplicationRoleMappings(user);
+            for (RoleModel role : appRoleMappings) {
+                if (!desiresScope(scopeMap, application.getName(), role.getName())) continue;
+                for (RoleModel desiredRole : scopeMappings) {
+                    if (!application.getApplicationUser().getLoginName().equals(client.getLoginName())
+                          && !desiredRole.hasRole(role)) continue;
+                    resourceRolesRequested.add(application.getName(), role);
+                }
+            }
+        }
 
         createToken(code, realm, client, user);
         code.setRealm(realm);
@@ -121,25 +178,48 @@ public class TokenManager {
         return token;
     }
 
+    protected void addComposites(SkeletonKeyToken token, RoleModel role) {
+        SkeletonKeyToken.Access access = null;
+        if (role.getContainer() instanceof RealmModel) {
+            access = token.getRealmAccess();
+            if (token.getRealmAccess() == null) {
+                access = new SkeletonKeyToken.Access();
+                token.setRealmAccess(access);
+            } else if (token.getRealmAccess().getRoles() != null && token.getRealmAccess().isUserInRole(role.getName()))
+                return;
+
+        } else {
+            ApplicationModel app = (ApplicationModel) role.getContainer();
+            access = token.getResourceAccess(app.getName());
+            if (access == null) {
+                access = token.addAccess(app.getName());
+                if (app.isSurrogateAuthRequired()) access.verifyCaller(true);
+            } else if (access.isUserInRole(role.getName())) return;
+
+        }
+        access.addRole(role.getName());
+        if (!role.isComposite()) return;
+
+        for (RoleModel composite : role.getComposites()) {
+            addComposites(token, composite);
+        }
+
+    }
+
     protected void createToken(AccessCodeEntry accessCodeEntry, RealmModel realm, UserModel client, UserModel user) {
 
         SkeletonKeyToken token = initToken(realm, client, user);
 
         if (accessCodeEntry.getRealmRolesRequested().size() > 0) {
-            SkeletonKeyToken.Access access = new SkeletonKeyToken.Access();
             for (RoleModel role : accessCodeEntry.getRealmRolesRequested()) {
-                access.addRole(role.getName());
+                addComposites(token, role);
             }
-            token.setRealmAccess(access);
         }
 
         if (accessCodeEntry.getResourceRolesRequested().size() > 0) {
-            Map<String, ApplicationModel> resourceMap = realm.getApplicationNameMap();
-            for (String resourceName : accessCodeEntry.getResourceRolesRequested().keySet()) {
-                ApplicationModel resource = resourceMap.get(resourceName);
-                SkeletonKeyToken.Access access = token.addAccess(resourceName).verifyCaller(resource.isSurrogateAuthRequired());
-                for (RoleModel role : accessCodeEntry.getResourceRolesRequested().get(resourceName)) {
-                    access.addRole(role.getName());
+            for (List<RoleModel> roles : accessCodeEntry.getResourceRolesRequested().values()) {
+                for (RoleModel role : roles) {
+                    addComposites(token, role);
                 }
             }
         }
@@ -169,7 +249,6 @@ public class TokenManager {
 
 
     public SkeletonKeyToken createAccessToken(RealmModel realm, UserModel user) {
-        List<ApplicationModel> resources = realm.getApplications();
         SkeletonKeyToken token = new SkeletonKeyToken();
         token.id(RealmManager.generateId());
         token.issuedNow();
@@ -178,26 +257,8 @@ public class TokenManager {
         if (realm.getTokenLifespan() > 0) {
             token.expiration((System.currentTimeMillis() / 1000) + realm.getTokenLifespan());
         }
-
-        Set<String> realmMapping = realm.getRoleMappingValues(user);
-
-        if (realmMapping != null && realmMapping.size() > 0) {
-            SkeletonKeyToken.Access access = new SkeletonKeyToken.Access();
-            for (String role : realmMapping) {
-                access.addRole(role);
-            }
-            token.setRealmAccess(access);
-        }
-        if (resources != null) {
-            for (ApplicationModel resource : resources) {
-                Set<String> mapping = resource.getRoleMappingValues(user);
-                if (mapping == null) continue;
-                SkeletonKeyToken.Access access = token.addAccess(resource.getName())
-                        .verifyCaller(resource.isSurrogateAuthRequired());
-                for (String role : mapping) {
-                    access.addRole(role);
-                }
-            }
+        for (RoleModel role : realm.getRoleMappings(user)) {
+            addComposites(token, role);
         }
         return token;
     }

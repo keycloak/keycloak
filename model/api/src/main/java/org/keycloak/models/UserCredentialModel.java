@@ -13,6 +13,17 @@ public class UserCredentialModel {
     protected String value;
     protected String device;
 
+    public UserCredentialModel() {
+    }
+
+    public static UserCredentialModel password(String password) {
+        UserCredentialModel model = new UserCredentialModel();
+        model.setType(PASSWORD);
+        model.setValue(password);
+        return model;
+    }
+
+
     public String getType() {
         return type;
     }

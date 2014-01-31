@@ -191,7 +191,7 @@ public class AdminService {
             throw new NotFoundException();
         }
         RoleModel adminRole = adminConsole.getRole(Constants.ADMIN_CONSOLE_ADMIN_ROLE);
-        if (!adminConsole.hasRole(admin, adminRole)) {
+        if (!saasRealm.hasRole(admin, adminRole)) {
             logger.warn("not a Realm admin");
             throw new NotAuthorizedException("Bearer");
         }
@@ -308,7 +308,8 @@ public class AdminService {
                 logger.debug("bad client");
                 return redirectOnLoginError("invalid login data");
             }
-            if (!adminConsole.hasRole(accessCode.getUser(), Constants.ADMIN_CONSOLE_ADMIN_ROLE)) {
+            RoleModel adminConsoleAdminRole = adminConsole.getRole(Constants.ADMIN_CONSOLE_ADMIN_ROLE);
+            if (!realm.hasRole(accessCode.getUser(), adminConsoleAdminRole)) {
                 logger.debug("not allowed");
                 return redirectOnLoginError("No permission to access console");
             }

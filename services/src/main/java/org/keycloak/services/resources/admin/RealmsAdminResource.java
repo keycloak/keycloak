@@ -9,6 +9,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.managers.ModelToRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.flows.Flows;
 
@@ -59,7 +60,7 @@ public class RealmsAdminResource {
         List<RealmModel> realms = session.getRealms(admin);
         List<RealmRepresentation> reps = new ArrayList<RealmRepresentation>();
         for (RealmModel realm : realms) {
-            reps.add(realmManager.toRepresentation(realm));
+            reps.add(ModelToRepresentation.toRepresentation(realm));
         }
         return reps;
     }
