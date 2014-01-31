@@ -13,7 +13,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.test.common.AbstractKeycloakTest;
-import org.keycloak.test.common.SessionFactoryTestContext;
 
 import java.util.List;
 import java.util.Set;
@@ -25,13 +24,13 @@ import java.util.Set;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ImportTest extends AbstractKeycloakTest {
 
-    public ImportTest(SessionFactoryTestContext testContext) {
-        super(testContext);
+    public ImportTest(String providerId) {
+        super(providerId);
     }
 
     @Test
     public void install() throws Exception {
-        RealmManager manager = getRealmManager();
+        RealmManager manager = realmManager;
         RealmRepresentation rep = AbstractKeycloakServerTest.loadJson("testrealm.json");
         RealmModel realm = manager.createRealm("demo", rep.getRealm());
         manager.importRealm(rep, realm);
@@ -91,7 +90,7 @@ public class ImportTest extends AbstractKeycloakTest {
 
     @Test
     public void install2() throws Exception {
-        RealmManager manager = getRealmManager();
+        RealmManager manager = realmManager;
         RealmRepresentation rep = AbstractKeycloakServerTest.loadJson("testrealm-demo.json");
         RealmModel realm = manager.createRealm("demo", rep.getRealm());
         manager.importRealm(rep, realm);

@@ -1,6 +1,6 @@
 package org.keycloak.models.mongo.impl;
 
-import org.keycloak.models.mongo.api.NoSQLObject;
+import org.keycloak.models.mongo.api.MongoEntity;
 import org.picketlink.common.properties.Property;
 
 import java.util.Collection;
@@ -14,7 +14,7 @@ import java.util.Map;
  */
 public class ObjectInfo {
 
-    private final Class<? extends NoSQLObject> objectClass;
+    private final Class<? extends MongoEntity> objectClass;
 
     private final String dbCollectionName;
 
@@ -22,7 +22,7 @@ public class ObjectInfo {
 
     private final Map<String, Property<Object>> properties;
 
-    public ObjectInfo(Class<? extends NoSQLObject> objectClass, String dbCollectionName, Property<String> oidProperty, List<Property<Object>> properties) {
+    public ObjectInfo(Class<? extends MongoEntity> objectClass, String dbCollectionName, Property<String> oidProperty, List<Property<Object>> properties) {
         this.objectClass = objectClass;
         this.dbCollectionName = dbCollectionName;
         this.oidProperty = oidProperty;
@@ -34,7 +34,7 @@ public class ObjectInfo {
         this.properties = Collections.unmodifiableMap(props);
     }
 
-    public Class<? extends NoSQLObject> getObjectClass() {
+    public Class<? extends MongoEntity> getObjectClass() {
         return objectClass;
     }
 

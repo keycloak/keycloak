@@ -1,6 +1,7 @@
 package org.keycloak.models.mongo.impl.types;
 
 import org.keycloak.models.mongo.api.types.Converter;
+import org.keycloak.models.mongo.api.types.ConverterContext;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -8,15 +9,10 @@ import org.keycloak.models.mongo.api.types.Converter;
 public class StringToEnumConverter implements Converter<String, Enum> {
 
     @Override
-    public Enum convertObject(String objectToConvert) {
-        int index = objectToConvert.indexOf(ClassCache.SPLIT);
-        if (index == -1) {
-            throw new IllegalStateException("Can't convert enum type with value " + objectToConvert);
-        }
+    public Enum convertObject(ConverterContext<String> context) {
+        String enumValue = context.getObjectToConvert();
 
-        String className = objectToConvert.substring(0, index);
-        String enumValue = objectToConvert.substring(index + 3);
-        Class<? extends Enum> clazz = (Class<? extends Enum>)ClassCache.getInstance().getOrLoadClass(className);
+        Class<? extends Enum> clazz = (Class<? extends Enum>)context.getExpectedReturnType();
         return Enum.valueOf(clazz, enumValue);
     }
 

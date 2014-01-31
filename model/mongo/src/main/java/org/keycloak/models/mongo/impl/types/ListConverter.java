@@ -3,6 +3,7 @@ package org.keycloak.models.mongo.impl.types;
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import org.keycloak.models.mongo.api.types.Converter;
+import org.keycloak.models.mongo.api.types.ConverterContext;
 import org.keycloak.models.mongo.api.types.TypeConverter;
 
 import java.util.List;
@@ -11,9 +12,6 @@ import java.util.List;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class ListConverter<T extends List> implements Converter<T, BasicDBList> {
-
-    // Key for ObjectType field, which points to actual Java type of element objects inside list
-    static final String OBJECT_TYPE = "OBJECT_TYPE";
 
     private final TypeConverter typeConverter;
     private final Class<T> listType;
@@ -24,16 +22,12 @@ public class ListConverter<T extends List> implements Converter<T, BasicDBList> 
     }
 
     @Override
-    public BasicDBList convertObject(T appObjectsList) {
+    public BasicDBList convertObject(ConverterContext<T> context) {
+        T appObjectsList = context.getObjectToConvert();
+
         BasicDBList dbObjects = new BasicDBList();
         for (Object appObject : appObjectsList) {
             Object dbObject = typeConverter.convertApplicationObjectToDBObject(appObject, Object.class);
-
-            // We need to add OBJECT_TYPE key to object, so we can retrieve correct Java type of object during load of this list
-            if (dbObject instanceof BasicDBObject) {
-                BasicDBObject basicDBObject = (BasicDBObject)dbObject;
-                basicDBObject.put(OBJECT_TYPE, appObject.getClass().getName());
-            }
 
             dbObjects.add(dbObject);
         }

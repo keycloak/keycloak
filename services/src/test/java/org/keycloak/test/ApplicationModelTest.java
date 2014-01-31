@@ -1,19 +1,15 @@
 package org.keycloak.test;
 
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.services.managers.ApplicationManager;
-import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.resources.KeycloakApplication;
+import org.keycloak.test.common.AbstractKeycloakTest;
 
 import java.util.Iterator;
 import java.util.List;
@@ -21,24 +17,21 @@ import java.util.List;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class ApplicationModelTest extends AbstractKeycloakServerTest {
-    private KeycloakSessionFactory factory;
-    private KeycloakSession identitySession;
-    private RealmManager manager;
+public class ApplicationModelTest extends AbstractKeycloakTest {
     private ApplicationModel application;
     private RealmModel realm;
     private ApplicationManager appManager;
 
+    public ApplicationModelTest(String providerId) {
+        super(providerId);
+    }
+
     @Before
     public void before() throws Exception {
-        factory = KeycloakApplication.createSessionFactory();
-        identitySession = factory.createSession();
-        identitySession.getTransaction().begin();
-        manager = new RealmManager(identitySession);
+        super.before();
+        appManager = new ApplicationManager(realmManager);
 
-        appManager = new ApplicationManager(manager);
-
-        realm = manager.createRealm("original");
+        realm = realmManager.createRealm("original");
         application = realm.addApplication("application");
         application.setBaseUrl("http://base");
         application.setManagementUrl("http://management");
@@ -57,16 +50,9 @@ public class ApplicationModelTest extends AbstractKeycloakServerTest {
         application.updateApplication();
     }
 
-    @After
-    public void after() throws Exception {
-        identitySession.getTransaction().commit();
-        identitySession.close();
-        factory.close();
-    }
-
     @Test
     public void persist() {
-        RealmModel persisted = manager.getRealm(realm.getId());
+        RealmModel persisted = realmManager.getRealm(realm.getId());
 
         assertEquals(application, persisted.getApplicationNameMap().get("app-name"));
     }
@@ -75,7 +61,7 @@ public class ApplicationModelTest extends AbstractKeycloakServerTest {
     public void json() {
         ApplicationRepresentation representation = appManager.toRepresentation(application);
 
-        RealmModel realm = manager.createRealm("copy");
+        RealmModel realm = realmManager.createRealm("copy");
         ApplicationModel copy = appManager.createApplication(realm, representation);
 
         assertEquals(application, copy);

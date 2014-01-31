@@ -2,7 +2,7 @@ package org.keycloak.models.jpa;
 
 import org.keycloak.models.*;
 import org.keycloak.models.jpa.entities.*;
-import org.keycloak.models.utils.KeycloakSessionUtils;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
@@ -28,7 +28,7 @@ public class JpaKeycloakSession implements KeycloakSession {
 
     @Override
     public RealmModel createRealm(String name) {
-        return createRealm(KeycloakSessionUtils.generateId(), name);
+        return createRealm(KeycloakModelUtils.generateId(), name);
     }
 
     @Override

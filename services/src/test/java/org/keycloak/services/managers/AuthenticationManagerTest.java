@@ -11,7 +11,6 @@ import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.AuthenticationManager.AuthenticationStatus;
 import org.keycloak.test.common.AbstractKeycloakTest;
-import org.keycloak.test.common.SessionFactoryTestContext;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
@@ -25,10 +24,9 @@ public class AuthenticationManagerTest extends AbstractKeycloakTest {
     private RealmModel realm;
     private UserModel user;
 
-    public AuthenticationManagerTest(SessionFactoryTestContext testContext) {
-        super(testContext);
+    public AuthenticationManagerTest(String providerId) {
+        super(providerId);
     }
-
     @Test
     public void authForm() {
         AuthenticationStatus status = am.authenticateForm(realm, user, formData);
@@ -126,7 +124,7 @@ public class AuthenticationManagerTest extends AbstractKeycloakTest {
     @Before
     public void before() throws Exception {
         super.before();
-        realm = getRealmManager().createRealm("Test");
+        realm = realmManager.createRealm("Test");
         realm.setAccessCodeLifespan(100);
         realm.setEnabled(true);
         realm.setName("Test");

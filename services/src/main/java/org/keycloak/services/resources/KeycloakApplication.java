@@ -8,6 +8,7 @@ import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.SocialRequestManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.resources.admin.AdminService;
+import org.keycloak.services.utils.ModelProviderUtils;
 
 import javax.servlet.ServletContext;
 import javax.ws.rs.core.Application;
@@ -15,7 +16,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.HashSet;
-import java.util.ServiceLoader;
 import java.util.Set;
 
 /**
@@ -25,9 +25,6 @@ import java.util.Set;
 public class KeycloakApplication extends Application {
 
     private static final Logger log = Logger.getLogger(KeycloakApplication.class);
-
-    private static final String MODEL_PROVIDER = "keycloak.model";
-    private static final String DEFAULT_MODEL_PROVIDER = "jpa";
 
     protected Set<Object> singletons = new HashSet<Object>();
     protected Set<Class<?>> classes = new HashSet<Class<?>>();
@@ -73,28 +70,7 @@ public class KeycloakApplication extends Application {
 
 
     public static KeycloakSessionFactory createSessionFactory() {
-        ServiceLoader<ModelProvider> providers = ServiceLoader.load(ModelProvider.class);
-        String configuredProvider = System.getProperty(MODEL_PROVIDER);
-        ModelProvider provider = null;
-
-        if (configuredProvider != null) {
-            for (ModelProvider p : providers) {
-                if (p.getId().equals(configuredProvider)) {
-                    provider = p;
-                }
-            }
-        } else {
-            for (ModelProvider p : providers) {
-                if (provider == null) {
-                    provider = p;
-                }
-
-                if (p.getId().equals(DEFAULT_MODEL_PROVIDER)) {
-                    provider = p;
-                    break;
-                }
-            }
-        }
+        ModelProvider provider = ModelProviderUtils.getConfiguredModelProvider();
 
         if (provider != null) {
             log.debug("Model provider: " + provider.getId());

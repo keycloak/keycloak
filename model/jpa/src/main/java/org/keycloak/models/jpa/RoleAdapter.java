@@ -6,6 +6,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.jpa.entities.ApplicationRoleEntity;
 import org.keycloak.models.jpa.entities.RealmRoleEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
 import java.util.HashSet;
@@ -94,27 +95,13 @@ public class RoleAdapter implements RoleModel {
         return set;
     }
 
-    public static boolean searchFor(RoleModel role, RoleModel composite, Set<RoleModel> visited) {
-        if (visited.contains(composite)) return false;
-        visited.add(composite);
-        Set<RoleModel> composites = composite.getComposites();
-        if (composites.contains(role)) return true;
-        for (RoleModel contained : composites) {
-            if (!contained.isComposite()) continue;
-            if (searchFor(role, contained, visited)) return true;
-        }
-        return false;
-    }
-
-
-
     @Override
     public boolean hasRole(RoleModel role) {
         if (this.equals(role)) return true;
         if (!isComposite()) return false;
 
         Set<RoleModel> visited = new HashSet<RoleModel>();
-        return searchFor(role, this, visited);
+        return KeycloakModelUtils.searchFor(role, this, visited);
     }
 
     @Override

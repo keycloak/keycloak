@@ -1,10 +1,13 @@
 package org.keycloak.models.mongo.keycloak.adapters;
 
 import org.keycloak.models.UserModel;
-import org.keycloak.models.mongo.api.NoSQL;
-import org.keycloak.models.mongo.keycloak.data.UserData;
+import org.keycloak.models.mongo.api.MongoStore;
+import org.keycloak.models.mongo.keycloak.entities.CredentialEntity;
+import org.keycloak.models.mongo.keycloak.entities.UserEntity;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -17,12 +20,12 @@ import java.util.Set;
  */
 public class UserAdapter implements UserModel {
 
-    private final UserData user;
-    private final NoSQL noSQL;
+    private final UserEntity user;
+    private final MongoStore mongoStore;
 
-    public UserAdapter(UserData userData, NoSQL noSQL) {
-        this.user = userData;
-        this.noSQL = noSQL;
+    public UserAdapter(UserEntity userEntity, MongoStore mongoStore) {
+        this.user = userEntity;
+        this.mongoStore = mongoStore;
     }
 
     @Override
@@ -38,7 +41,7 @@ public class UserAdapter implements UserModel {
     @Override
     public void setEnabled(boolean enabled) {
         user.setEnabled(enabled);
-        noSQL.saveObject(user);
+        updateUser();
     }
 
     @Override
@@ -49,7 +52,7 @@ public class UserAdapter implements UserModel {
     @Override
     public void setFirstName(String firstName) {
         user.setFirstName(firstName);
-        noSQL.saveObject(user);
+        updateUser();
     }
 
     @Override
@@ -60,7 +63,7 @@ public class UserAdapter implements UserModel {
     @Override
     public void setLastName(String lastName) {
         user.setLastName(lastName);
-        noSQL.saveObject(user);
+        updateUser();
     }
 
     @Override
@@ -71,7 +74,7 @@ public class UserAdapter implements UserModel {
     @Override
     public void setEmail(String email) {
         user.setEmail(email);
-        noSQL.saveObject(user);
+        updateUser();
     }
 
     @Override
@@ -82,61 +85,112 @@ public class UserAdapter implements UserModel {
     @Override
     public void setEmailVerified(boolean verified) {
         user.setEmailVerified(verified);
-        noSQL.saveObject(user);
+        updateUser();
     }
 
     @Override
     public void setAttribute(String name, String value) {
-        user.setAttribute(name, value);
+        if (user.getAttributes() == null) {
+            user.setAttributes(new HashMap<String, String>());
+        }
+
+        user.getAttributes().put(name, value);
+        updateUser();
     }
 
     @Override
     public void removeAttribute(String name) {
-        user.removeAttribute(name);
-        noSQL.saveObject(user);
+        if (user.getAttributes() == null) return;
+
+        user.getAttributes().remove(name);
+        updateUser();
     }
 
     @Override
     public String getAttribute(String name) {
-        return user.getAttribute(name);
+        return user.getAttributes()==null ? null : user.getAttributes().get(name);
     }
 
     @Override
     public Map<String, String> getAttributes() {
-        return user.getAttributes();
+        return user.getAttributes()==null ? Collections.EMPTY_MAP : Collections.unmodifiableMap(user.getAttributes());
     }
 
-    public UserData getUser() {
+    public UserEntity getUser() {
         return user;
     }
 
     @Override
-    public Set<RequiredAction> getRequiredActions() {
-        List<RequiredAction> actions = user.getRequiredActions();
-
-        // Compatibility with picketlink impl
-        if (actions == null) {
-            return Collections.emptySet();
-        } else {
-            Set<RequiredAction> s = new HashSet<RequiredAction>();
-            for (RequiredAction a : actions) {
-                s.add(a);
-            }
-            return Collections.unmodifiableSet(s);
+    public Set<String> getWebOrigins() {
+        Set<String> result = new HashSet<String>();
+        if (user.getWebOrigins() != null) {
+            result.addAll(user.getWebOrigins());
         }
+        return result;
+    }
+
+    @Override
+    public void setWebOrigins(Set<String> webOrigins) {
+        List<String> result = new ArrayList<String>();
+        result.addAll(webOrigins);
+        user.setWebOrigins(result);
+        updateUser();
+    }
+
+    @Override
+    public void addWebOrigin(String webOrigin) {
+        mongoStore.pushItemToList(user, "webOrigins", webOrigin, true);
+    }
+
+    @Override
+    public void removeWebOrigin(String webOrigin) {
+        mongoStore.pullItemFromList(user, "webOrigins", webOrigin);
+    }
+
+    @Override
+    public Set<String> getRedirectUris() {
+        Set<String> result = new HashSet<String>();
+        if (user.getRedirectUris() != null) {
+            result.addAll(user.getRedirectUris());
+        }
+        return result;
+    }
+
+    @Override
+    public void setRedirectUris(Set<String> redirectUris) {
+        List<String> result = new ArrayList<String>();
+        result.addAll(redirectUris);
+        user.setRedirectUris(result);
+        updateUser();
+    }
+
+    @Override
+    public void addRedirectUri(String redirectUri) {
+        mongoStore.pushItemToList(user, "redirectUris", redirectUri, true);
+    }
+
+    @Override
+    public void removeRedirectUri(String redirectUri) {
+        mongoStore.pullItemFromList(user, "redirectUris", redirectUri);
+    }
+
+    @Override
+    public Set<RequiredAction> getRequiredActions() {
+        Set<RequiredAction> result = new HashSet<RequiredAction>();
+        if (user.getRequiredActions() != null) {
+            result.addAll(user.getRequiredActions());
+        }
+        return result;
     }
 
     @Override
     public void addRequiredAction(RequiredAction action) {
-        // Push action only if it's not already here
-        if (user.getRequiredActions() == null || !user.getRequiredActions().contains(action)) {
-            noSQL.pushItemToList(user, "requiredActions", action);
-        }
+        mongoStore.pushItemToList(user, "requiredActions", action, true);
     }
 
     @Override
     public void removeRequiredAction(RequiredAction action) {
-        noSQL.pullItemFromList(user, "requiredActions", action);
+        mongoStore.pullItemFromList(user, "requiredActions", action);
     }
 
     @Override
@@ -147,46 +201,10 @@ public class UserAdapter implements UserModel {
     @Override
     public void setTotp(boolean totp) {
         user.setTotp(totp);
-        noSQL.saveObject(user);
+        updateUser();
     }
 
-    @Override
-    public Set<String> getWebOrigins() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public void setWebOrigins(Set<String> webOrigins) {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public void addWebOrigin(String webOrigin) {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public void removeWebOrigin(String webOrigin) {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public Set<String> getRedirectUris() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public void setRedirectUris(Set<String> redirectUris) {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public void addRedirectUri(String redirectUri) {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public void removeRedirectUri(String redirectUri) {
-        //To change body of implemented methods use File | Settings | File Templates.
+    protected void updateUser() {
+        mongoStore.updateObject(user);
     }
 }

@@ -8,7 +8,13 @@ package org.keycloak.models.mongo.api.types;
  */
 public interface Converter<T, S> {
 
-    S convertObject(T objectToConvert);
+    /**
+     * Convert object from one type to expected type
+     *
+     * @param converterContext Encapsulates reference to converted object and other things, which might be helpful in conversion
+     * @return converted object
+     */
+    S convertObject(ConverterContext<T> converterContext);
 
     Class<? extends T> getConverterObjectType();
 

@@ -1,46 +1,27 @@
 package org.keycloak.test;
 
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.ModelToRepresentation;
-import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.resources.KeycloakApplication;
+import org.keycloak.test.common.AbstractKeycloakTest;
 
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
-public class ModelTest extends AbstractKeycloakServerTest {
-    private KeycloakSessionFactory factory;
-    private KeycloakSession identitySession;
-    private RealmManager manager;
+public class ModelTest extends AbstractKeycloakTest {
 
-    @Before
-    public void before() throws Exception {
-        factory = KeycloakApplication.createSessionFactory();
-        identitySession = factory.createSession();
-        identitySession.getTransaction().begin();
-        manager = new RealmManager(identitySession);
-    }
-
-    @After
-    public void after() throws Exception {
-        identitySession.getTransaction().commit();
-        identitySession.close();
-        factory.close();
+    public ModelTest(String providerId) {
+        super(providerId);
     }
 
     @Test
     public void importExportRealm() {
-        RealmModel realm = manager.createRealm("original");
+        RealmModel realm = realmManager.createRealm("original");
         realm.setRegistrationAllowed(true);
         realm.setResetPasswordAllowed(true);
         realm.setSocial(true);
@@ -62,10 +43,10 @@ public class ModelTest extends AbstractKeycloakServerTest {
         HashMap<String, String> social = new HashMap<String,String>();
         social.put("google.key", "1234");
         social.put("google.secret", "5678");
-        realm.setSmtpConfig(social);
+        realm.setSocialConfig(social);
 
-        RealmModel peristed = manager.getRealm(realm.getId());
-        assertEquals(realm, peristed);
+        RealmModel persisted = realmManager.getRealm(realm.getId());
+        assertEquals(realm, persisted);
 
         RealmModel copy = importExport(realm, "copy");
         assertEquals(realm, copy);
@@ -103,9 +84,9 @@ public class ModelTest extends AbstractKeycloakServerTest {
 
     private RealmModel importExport(RealmModel src, String copyName) {
         RealmRepresentation representation = ModelToRepresentation.toRepresentation(src);
-        RealmModel copy = manager.createRealm(copyName);
-        manager.importRealm(representation, copy);
-        return manager.getRealm(copy.getId());
+        RealmModel copy = realmManager.createRealm(copyName);
+        realmManager.importRealm(representation, copy);
+        return realmManager.getRealm(copy.getId());
     }
 
 }

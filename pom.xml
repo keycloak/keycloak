@@ -16,7 +16,7 @@
         <resteasy.version>3.0.6.Final</resteasy.version>
         <undertow.version>1.0.0.Beta30</undertow.version>
         <picketlink.version>2.5.0.Beta6</picketlink.version>
-        <mongo.driver.version>2.11.2</mongo.driver.version>
+        <mongo.driver.version>2.11.3</mongo.driver.version>
         <jboss.logging.version>3.1.1.GA</jboss.logging.version>
         <jboss-logging-tools.version>1.2.0.Beta1</jboss-logging-tools.version>
         <hibernate.javax.persistence.version>1.0.1.Final</hibernate.javax.persistence.version>
@@ -316,7 +316,7 @@
             <dependency>
                 <groupId>de.flapdoodle.embed</groupId>
                 <artifactId>de.flapdoodle.embed.mongo</artifactId>
-                <version>1.27</version>
+                <version>1.40</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.jmeter</groupId>

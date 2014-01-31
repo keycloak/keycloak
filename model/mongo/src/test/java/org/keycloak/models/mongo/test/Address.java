@@ -1,20 +1,20 @@
 package org.keycloak.models.mongo.test;
 
-import org.keycloak.models.mongo.api.AbstractNoSQLObject;
-import org.keycloak.models.mongo.api.NoSQLField;
+import org.keycloak.models.mongo.api.AbstractMongoEntity;
+import org.keycloak.models.mongo.api.MongoField;
 
 import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class Address extends AbstractNoSQLObject {
+public class Address extends AbstractMongoEntity {
 
     private String street;
     private int number;
     private List<String> flatNumbers;
 
-    @NoSQLField
+    @MongoField
     public String getStreet() {
         return street;
     }
@@ -23,7 +23,7 @@ public class Address extends AbstractNoSQLObject {
         this.street = street;
     }
 
-    @NoSQLField
+    @MongoField
     public int getNumber() {
         return number;
     }
@@ -32,7 +32,7 @@ public class Address extends AbstractNoSQLObject {
         this.number = number;
     }
 
-    @NoSQLField
+    @MongoField
     public List<String> getFlatNumbers() {
         return flatNumbers;
     }

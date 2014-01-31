@@ -1,16 +1,17 @@
 package org.keycloak.models.mongo.impl.types;
 
 import com.mongodb.BasicDBList;
-import com.mongodb.BasicDBObject;
 import org.keycloak.models.mongo.api.types.Converter;
+import org.keycloak.models.mongo.api.types.ConverterContext;
 import org.keycloak.models.mongo.api.types.TypeConverter;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class BasicDBListConverter implements Converter<BasicDBList, ArrayList> {
+public class BasicDBListConverter implements Converter<BasicDBList, List> {
 
     private final TypeConverter typeConverter;
 
@@ -19,16 +20,14 @@ public class BasicDBListConverter implements Converter<BasicDBList, ArrayList> {
     }
 
     @Override
-    public ArrayList convertObject(BasicDBList dbList) {
+    public List convertObject(ConverterContext<BasicDBList> context) {
+        BasicDBList dbList = context.getObjectToConvert();
         ArrayList<Object> appObjects = new ArrayList<Object>();
-        Class<?> expectedListElementType = null;
+        Class<?> expectedListElementType = context.getGenericTypes().get(0);
+
         for (Object dbObject : dbList) {
-
-            if (expectedListElementType == null) {
-                expectedListElementType = findExpectedListElementType(dbObject);
-            }
-
-            appObjects.add(typeConverter.convertDBObjectToApplicationObject(dbObject, expectedListElementType));
+            ConverterContext<Object> newContext = new ConverterContext<Object>(dbObject, expectedListElementType, null);
+            appObjects.add(typeConverter.convertDBObjectToApplicationObject(newContext));
         }
         return appObjects;
     }
@@ -39,35 +38,7 @@ public class BasicDBListConverter implements Converter<BasicDBList, ArrayList> {
     }
 
     @Override
-    public Class<ArrayList> getExpectedReturnType() {
-        return ArrayList.class;
-    }
-
-    private Class<?> findExpectedListElementType(Object dbObject) {
-        if (dbObject instanceof BasicDBObject) {
-            BasicDBObject basicDBObject = (BasicDBObject) dbObject;
-            String type = (String)basicDBObject.get(ListConverter.OBJECT_TYPE);
-            if (type == null) {
-                throw new IllegalStateException("Not found OBJECT_TYPE key inside object " + dbObject);
-            }
-            basicDBObject.remove(ListConverter.OBJECT_TYPE);
-
-            try {
-                return Class.forName(type);
-            } catch (ClassNotFoundException cnfe) {
-                throw new RuntimeException(cnfe);
-            }
-        } else {
-            // Special case (if we have String like "org.keycloak.Gender###MALE" we expect that substring before ### is className
-            if (String.class.equals(dbObject.getClass())) {
-                String dbObjString = (String)dbObject;
-                if (dbObjString.contains(ClassCache.SPLIT)) {
-                    String className = dbObjString.substring(0, dbObjString.indexOf(ClassCache.SPLIT));
-                    return ClassCache.getInstance().getOrLoadClass(className);
-                }
-            }
-
-            return dbObject.getClass();
-        }
+    public Class<List> getExpectedReturnType() {
+        return List.class;
     }
 }

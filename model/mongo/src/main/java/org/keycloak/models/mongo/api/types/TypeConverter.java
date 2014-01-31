@@ -46,19 +46,22 @@ public class TypeConverter {
     }
 
 
-    public <S> S convertDBObjectToApplicationObject(Object dbObject, Class<S> expectedApplicationObjectType) {
+    public Object convertDBObjectToApplicationObject(ConverterContext<Object> context) {
+        Object dbObject = context.getObjectToConvert();
+        Class<?> expectedApplicationObjectType = context.getExpectedReturnType();
+
         Class<?> dbObjectType = dbObject.getClass();
-        Converter<Object, S> converter;
+        Converter<Object, Object> converter;
 
         Map<Class<?>, Converter<?, ?>> appObjects = dbObjectConverters.get(dbObjectType);
         if (appObjects == null) {
             throw new IllegalArgumentException("Not found any converters for type " + dbObjectType);
         } else {
             if (appObjects.size() == 1) {
-                converter = (Converter<Object, S>)appObjects.values().iterator().next();
+                converter = (Converter<Object, Object>)appObjects.values().iterator().next();
             } else {
                 // Try to find converter for requested application type
-                converter = (Converter<Object, S>)getAppConverterForType(expectedApplicationObjectType, appObjects);
+                converter = (Converter<Object, Object>)getAppConverterForType(context.getExpectedReturnType(), appObjects);
             }
         }
 
@@ -70,7 +73,7 @@ public class TypeConverter {
                     " but we need type " + expectedApplicationObjectType);
         } */
 
-        return converter.convertObject(dbObject);
+        return converter.convertObject(context);
     }
 
 
@@ -84,7 +87,7 @@ public class TypeConverter {
             throw new IllegalArgumentException("Converter " + converter + " has return type " + converter.getExpectedReturnType() +
                     " but we need type " + expectedDBObjectType);
         }
-        return converter.convertObject(applicationObject);
+        return converter.convertObject(new ConverterContext(applicationObject, expectedDBObjectType, null));
     }
 
     // Try to find converter for given type or all it's supertypes

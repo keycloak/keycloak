@@ -72,11 +72,25 @@
         </dependency>
         -->
 
-        <!--<dependency>
+        <!-- TODO: remove -->
+        <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-model-mongo</artifactId>
             <version>${project.version}</version>
-        </dependency>-->
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>mongo-java-driver</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.picketlink</groupId>
+            <artifactId>picketlink-common</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-social-core</artifactId>

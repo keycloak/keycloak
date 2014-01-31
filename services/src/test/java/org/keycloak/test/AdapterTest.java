@@ -18,7 +18,6 @@ import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.OAuthClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.test.common.AbstractKeycloakTest;
-import org.keycloak.test.common.SessionFactoryTestContext;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,8 +34,8 @@ import java.util.StringTokenizer;
 public class AdapterTest extends AbstractKeycloakTest {
     private RealmModel realmModel;
 
-    public AdapterTest(SessionFactoryTestContext testContext) {
-        super(testContext);
+    public AdapterTest(String providerId) {
+        super(providerId);
     }
 
     @Test
@@ -57,7 +56,7 @@ public class AdapterTest extends AbstractKeycloakTest {
 
     @Test
     public void test1CreateRealm() throws Exception {
-        realmModel = getRealmManager().createRealm("JUGGLER");
+        realmModel = realmManager.createRealm("JUGGLER");
         realmModel.setAccessCodeLifespan(100);
         realmModel.setAccessCodeLifespanUserAction(600);
         realmModel.setEnabled(true);
@@ -69,7 +68,7 @@ public class AdapterTest extends AbstractKeycloakTest {
         realmModel.addDefaultRole("foo");
 
         System.out.println(realmModel.getId());
-        realmModel = getRealmManager().getRealm(realmModel.getId());
+        realmModel = realmManager.getRealm(realmModel.getId());
         Assert.assertNotNull(realmModel);
         Assert.assertEquals(realmModel.getAccessCodeLifespan(), 100);
         Assert.assertEquals(600, realmModel.getAccessCodeLifespanUserAction());
@@ -85,7 +84,7 @@ public class AdapterTest extends AbstractKeycloakTest {
 
     @Test
     public void testRealmListing() throws Exception {
-        realmModel = getRealmManager().createRealm("JUGGLER");
+        realmModel = realmManager.createRealm("JUGGLER");
         realmModel.setAccessCodeLifespan(100);
         realmModel.setAccessCodeLifespanUserAction(600);
         realmModel.setEnabled(true);
@@ -97,7 +96,7 @@ public class AdapterTest extends AbstractKeycloakTest {
         realmModel.addDefaultRole("foo");
 
         System.out.println(realmModel.getId());
-        realmModel = getRealmManager().getRealm(realmModel.getId());
+        realmModel = realmManager.getRealm(realmModel.getId());
         Assert.assertNotNull(realmModel);
         Assert.assertEquals(realmModel.getAccessCodeLifespan(), 100);
         Assert.assertEquals(600, realmModel.getAccessCodeLifespanUserAction());
@@ -300,7 +299,7 @@ public class AdapterTest extends AbstractKeycloakTest {
             user3.setEmail("knut@redhat.com");
         }
 
-        RealmManager adapter = getRealmManager();
+        RealmManager adapter = realmManager;
 
         {
             List<UserModel> userModels = adapter.searchUsers("total junk query", realmModel);
