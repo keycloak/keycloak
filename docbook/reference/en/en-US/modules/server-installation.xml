@@ -336,10 +336,10 @@ $ keytool -import -alias yourdomain -keystore keycloak.jks -file your-certificat
                 </para>
             </section>
             <section>
-                <title>Installing the keystore to JBoss AS7</title>
+                <title>Installing the keystore to JBoss EAP6/AS7</title>
                 <para>
                     Now that you have a Java keystore with the appropriate certificates, you need to configure your
-                    JBoss AS7 installation to use it.  First step is to move the keystore file to a directory
+                    JBoss EAP6/AS7 installation to use it.  First step is to move the keystore file to a directory
                     you can reference in configuration.  I like to put it in <literal>standalone/configuration</literal>.
                     Then you need to edit <literal>standalone/configuration/standalone.xml</literal> to enable SSL/HTTPS.
                 </para>
