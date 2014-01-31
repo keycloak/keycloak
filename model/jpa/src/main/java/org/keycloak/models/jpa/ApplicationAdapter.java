@@ -143,8 +143,8 @@ public class ApplicationAdapter implements ApplicationModel {
     }
 
     @Override
-    public List<RoleModel> getRoles() {
-        ArrayList<RoleModel> list = new ArrayList<RoleModel>();
+    public Set<RoleModel> getRoles() {
+        Set<RoleModel> list = new HashSet<RoleModel>();
         Collection<ApplicationRoleEntity> roles = application.getRoles();
         if (roles == null) return list;
         for (RoleEntity entity : roles) {
@@ -264,6 +264,7 @@ public class ApplicationAdapter implements ApplicationModel {
 
     public boolean equals(Object o) {
         if (o == null) return false;
+        if (o == this) return true;
         if (!(o instanceof ApplicationAdapter)) return false;
         ApplicationAdapter app = (ApplicationAdapter)o;
         return app.getId().equals(getId());

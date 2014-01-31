@@ -880,8 +880,8 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public List<RoleModel> getRoles() {
-        ArrayList<RoleModel> list = new ArrayList<RoleModel>();
+    public Set<RoleModel> getRoles() {
+        Set<RoleModel> list = new HashSet<RoleModel>();
         Collection<RealmRoleEntity> roles = realm.getRoles();
         if (roles == null) return list;
         for (RoleEntity entity : roles) {
@@ -1000,7 +1000,6 @@ public class RealmAdapter implements RealmModel {
         entity.setUser(((UserAdapter) agent).getUser());
         entity.setRole(((RoleAdapter)role).getRole());
         em.persist(entity);
-        em.flush();
     }
 
     @Override

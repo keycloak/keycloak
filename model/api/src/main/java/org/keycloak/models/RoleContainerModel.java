@@ -1,6 +1,7 @@
 package org.keycloak.models;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -13,7 +14,7 @@ public interface RoleContainerModel {
 
     boolean removeRoleById(String id);
 
-    List<RoleModel> getRoles();
+    Set<RoleModel> getRoles();
 
     RoleModel getRoleById(String id);
 }

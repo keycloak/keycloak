@@ -8,6 +8,7 @@ import javax.persistence.Id;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -17,16 +18,17 @@ import java.util.Collection;
  * @version $Revision: 1 $
  */
 @Entity
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 public abstract class RoleEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private String id;
 
     private String name;
     private String description;
     private boolean composite;
-    @OneToMany(fetch = FetchType.LAZY, cascade = {}, orphanRemoval = false)
-    @JoinTable(name = "COMPOSITE_ROLE")
+    @ManyToMany(fetch = FetchType.LAZY, cascade = {})
+    //@JoinTable(name = "COMPOSITE_ROLE")
     private Collection<RoleEntity> compositeRoles = new ArrayList<RoleEntity>();
 
 

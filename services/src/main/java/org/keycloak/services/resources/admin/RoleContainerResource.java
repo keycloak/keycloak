@@ -34,7 +34,7 @@ public class RoleContainerResource {
     @NoCache
     @Produces("application/json")
     public List<RoleRepresentation> getRoles() {
-        List<RoleModel> roleModels = roleContainer.getRoles();
+        Set<RoleModel> roleModels = roleContainer.getRoles();
         List<RoleRepresentation> roles = new ArrayList<RoleRepresentation>();
         for (RoleModel roleModel : roleModels) {
             if (!roleModel.getName().startsWith(Constants.INTERNAL_ROLE)) {

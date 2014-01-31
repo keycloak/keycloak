@@ -62,6 +62,21 @@ public class TokenManager {
         return scope == null || scope.isEmpty();
     }
 
+    public static void addScopes(RoleModel role, RoleModel scope, Set<RoleModel> visited, Set<RoleModel> requested) {
+        if (visited.contains(scope)) return;
+        visited.add(scope);
+        if (role.hasRole(scope)) {
+            requested.add(scope);
+            return;
+        }
+        if (!scope.isComposite()) return;
+
+        for (RoleModel contained : scope.getComposites()) {
+            addScopes(role, contained, visited, requested);
+        }
+    }
+
+
 
     public AccessCodeEntry createAccessCode(String scopeParam, String state, String redirect, RealmModel realm, UserModel client, UserModel user) {
         AccessCodeEntry code = new AccessCodeEntry();
@@ -73,21 +88,17 @@ public class TokenManager {
 
         Set<RoleModel> roleMappings = realm.getRoleMappings(user);
         Set<RoleModel> scopeMappings = realm.getScopeMappings(client);
+        ApplicationModel clientApp = realm.getApplicationByName(client.getLoginName());
+        Set<RoleModel> clientAppRoles = clientApp == null ? null : clientApp.getRoles();
+        if (clientAppRoles != null) scopeMappings.addAll(clientAppRoles);
+
         Set<RoleModel> requestedRoles = new HashSet<RoleModel>();
 
         for (RoleModel role : roleMappings) {
+            if (clientApp != null && role.getContainer().equals(clientApp)) requestedRoles.add(role);
             for (RoleModel desiredRole : scopeMappings) {
-                if (desiredRole.equals(role)) {
-                    requestedRoles.add(role);
-                } else if (desiredRole.hasRole(role)) {
-                    requestedRoles.add(role);
-                } else if (role.hasRole(desiredRole)) {
-                    requestedRoles.add(desiredRole);
-                } else if (role.getContainer() instanceof ApplicationModel) {
-                    if (((ApplicationModel)role.getContainer()).getApplicationUser().getLoginName().equals(client.getLoginName())) {
-                        requestedRoles.add(role);
-                    }
-                }
+                Set<RoleModel> visited = new HashSet<RoleModel>();
+                addScopes(role, desiredRole, visited, requestedRoles);
             }
         }
 
@@ -98,6 +109,36 @@ public class TokenManager {
                 ApplicationModel app = (ApplicationModel)role.getContainer();
                 if (desiresScope(scopeMap, app.getName(), role.getName())) {
                     resourceRolesRequested.add(app.getName(), role);
+
+                }
+            }
+        }
+
+
+
+
+        Set<RoleModel> realmRoleMappings = realm.getRealmRoleMappings(user);
+
+        for (RoleModel role : realmRoleMappings) {
+            if (!desiresScope(scopeMap, "realm", role.getName())) continue;
+            for (RoleModel desiredRole : scopeMappings) {
+                if (desiredRole.hasRole(role)) {
+                    realmRolesRequested.add(role);
+                } else if (role.hasRole(desiredRole)) {
+                    realmRolesRequested.add(desiredRole);
+                }
+            }
+        }
+
+        for (ApplicationModel application : realm.getApplications()) {
+            if (!desiresScopeGroup(scopeMap, application.getName())) continue;
+            Set<RoleModel> appRoleMappings = application.getApplicationRoleMappings(user);
+            for (RoleModel role : appRoleMappings) {
+                if (!desiresScope(scopeMap, application.getName(), role.getName())) continue;
+                for (RoleModel desiredRole : scopeMappings) {
+                    if (!application.getApplicationUser().getLoginName().equals(client.getLoginName())
+                          && !desiredRole.hasRole(role)) continue;
+                    resourceRolesRequested.add(application.getName(), role);
                 }
             }
         }
