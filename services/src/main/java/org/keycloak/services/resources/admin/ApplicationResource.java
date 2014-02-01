@@ -48,7 +48,7 @@ public class ApplicationResource extends RoleContainerResource {
     }
 
     public ApplicationResource(RealmModel realm, ApplicationModel applicationModel, KeycloakSession session) {
-        super(applicationModel);
+        super(realm, applicationModel);
         this.realm = realm;
         this.application = applicationModel;
         this.session = session;

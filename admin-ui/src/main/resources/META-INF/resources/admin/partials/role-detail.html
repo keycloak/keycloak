@@ -47,6 +47,10 @@
                                 <textarea rows="5" cols="50" id="description" name="description" data-ng-model="role.description"></textarea>
                             </div>
                         </div>
+                        <div class="form-group clearfix block">
+                            <label for="composite" class="control-label">Composite</label>
+                            <input ng-model="role.composite" name="composite" id="composite" onoffswitch />
+                        </div>
                     </fieldset>
                     <div class="form-actions" data-ng-show="create">
                         <button type="submit" kc-save class="primary" data-ng-show="changed">Save
@@ -65,6 +69,72 @@
                             Delete
                         </button>
                     </div>
+
+                    <fieldset data-ng-show="!create && role.composite">
+                        <legend collapsed><span class="text">Composite Realm Roles</span> </legend>
+                        <div class="form-group">
+                            <div class="controls changing-selectors">
+                                <div class="select-title">
+                                    <label for="available">Available Roles</label>
+                                    <select id="available" class="form-control" multiple size="5"
+                                            ng-multiple="true"
+                                            ng-model="selectedRealmRoles"
+                                            ng-options="r.name for r in realmRoles">
+                                    </select>
+                                </div>
+                                <div class="middle-buttons">
+                                    <button type="submit" ng-click="addRealmRole()" tooltip="Move right" tooltip-placement="right"><span class="icon-arrow-right">Move right</span></button>
+                                    <button type="submit" ng-click="deleteRealmRole()" tooltip="Move left" tooltip-placement="right"><span class="icon-arrow-left">Move left</span></button>
+                                </div>
+                                <div class="select-title">
+                                    <label for="assigned">Assigned Roles</label>
+                                    <select id="assigned" class="form-control" multiple size=5
+                                            ng-multiple="true"
+                                            ng-model="selectedRealmMappings"
+                                            ng-options="r.name for r in realmMappings">
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <fieldset ng-show="applications.length > 0 && !create && role.composite">
+                        <legend collapsed><span class="text">Composite Application Roles</span> </legend>
+                        <div class="form-group input-select">
+                            <label for="applications">Application</label>
+                            <div class="input-group">
+                                <div class="select-rcue">
+                                    <select id="applications" name="applications" ng-change="changeApplication()" ng-model="compositeApp" ng-options="a.name for a in applications">
+                                        <option value="" selected> Select an Application...</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group" ng-show="compositeApp">
+                            <div class="controls changing-selectors application">
+                                <div class="select-title">
+                                    <label for="available-app">Available Roles</label>
+                                    <select id="available-app" class="form-control" multiple size="5"
+                                            ng-multiple="true"
+                                            ng-model="selectedApplicationRoles"
+                                            ng-options="r.name for r in applicationRoles">
+                                    </select>
+                                </div>
+                                <div class="middle-buttons">
+                                    <button type="submit" ng-click="addApplicationRole()" tooltip="Move right" tooltip-placement="right"><span class="icon-arrow-right">Move right</span></button>
+                                    <button type="submit" ng-click="deleteApplicationRole()" tooltip="Move left" tooltip-placement="right"><span class="icon-arrow-left">Move left</span></button>
+                                </div>
+                                <div class="select-title">
+                                    <label for="assigned-app">Assigned Roles</label>
+                                    <select id="assigned-app" class="form-control" multiple size=5
+                                            ng-multiple="true"
+                                            ng-model="selectedApplicationMappings"
+                                            ng-options="r.name for r in applicationMappings">
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
 
                 </form>
             </div>

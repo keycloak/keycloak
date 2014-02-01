@@ -71,7 +71,7 @@ public class ApplicationsResource {
     public ApplicationResource getApplication(final @PathParam("app-name") String name) {
         ApplicationModel applicationModel = realm.getApplicationByName(name);
         if (applicationModel == null) {
-            throw new NotFoundException();
+            throw new NotFoundException("Could not find application: " + name);
         }
         ApplicationResource applicationResource = new ApplicationResource(realm, applicationModel, session);
         resourceContext.initResource(applicationResource);

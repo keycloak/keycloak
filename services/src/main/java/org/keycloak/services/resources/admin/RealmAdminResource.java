@@ -29,7 +29,7 @@ public class RealmAdminResource extends RoleContainerResource {
     protected KeycloakSession session;
 
     public RealmAdminResource(UserModel admin, RealmModel realm) {
-        super(realm);
+        super(realm, realm);
         this.admin = admin;
         this.realm = realm;
     }
@@ -75,6 +75,14 @@ public class RealmAdminResource extends RoleContainerResource {
         UsersResource users = new UsersResource(realm);
         resourceContext.initResource(users);
         return users;
+    }
+
+    @Path("roles-by-id")
+    public RoleByIdResource rolesById() {
+        RoleByIdResource resource = new RoleByIdResource(realm);
+        resourceContext.initResource(resource);
+        return resource;
+
     }
 
 

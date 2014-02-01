@@ -675,26 +675,18 @@ module.controller('RoleListCtrl', function($scope, $location, realm, roles) {
     });
 });
 
-module.controller('RoleDetailCtrl', function($scope, realm, role, Role, $location, Dialog, Notifications) {
+
+module.controller('RoleDetailCtrl', function($scope, realm, role, roles, applications,
+                                             Role, ApplicationRole, RoleById, RoleRealmComposites, RoleApplicationComposites,
+                                             $http, $location, Dialog, Notifications) {
     $scope.realm = realm;
     $scope.role = angular.copy(role);
     $scope.create = !role.name;
 
     $scope.changed = $scope.create;
 
-    $scope.$watch(function() {
-        return $location.path();
-    }, function() {
-        $scope.path = $location.path().substring(1).split("/");
-    });
-
-    $scope.$watch('role', function() {
-        if (!angular.equals($scope.role, role)) {
-            $scope.changed = true;
-        }
-    }, true);
-
     $scope.save = function() {
+        console.log('save');
         if ($scope.create) {
             Role.save({
                 realm: realm.realm
@@ -708,37 +700,31 @@ module.controller('RoleDetailCtrl', function($scope, realm, role, Role, $locatio
                 Notifications.success("The role has been created.");
             });
         } else {
-            Role.update({
-                realm : realm.realm,
-                role : role.name
-            }, $scope.role, function() {
-                $scope.changed = false;
-                role = angular.copy($scope.role);
-                Notifications.success("Your changes have been saved to the role.");
-            });
+            $scope.update();
         }
     };
 
-    $scope.reset = function() {
-        $scope.role = angular.copy(role);
-        $scope.changed = false;
-    };
-
-    $scope.cancel = function() {
-        $location.url("/realms/" + realm.realm + "/roles");
-    };
-
-    $scope.remove = function() {
-        Dialog.confirmDelete($scope.role.name, 'role', function() {
+    $scope.remove = function () {
+        Dialog.confirmDelete($scope.role.name, 'role', function () {
             $scope.role.$remove({
-                realm : realm.realm,
-                role : $scope.role.name
-            }, function() {
+                realm: realm.realm,
+                role: $scope.role.name
+            }, function () {
                 $location.url("/realms/" + realm.realm + "/roles");
                 Notifications.success("The role has been deleted.");
             });
         });
     };
+
+    $scope.cancel = function () {
+        $location.url("/realms/" + realm.realm + "/roles");
+    };
+
+
+
+    roleControl($scope, realm, role, roles, applications,
+        ApplicationRole, RoleById, RoleRealmComposites, RoleApplicationComposites,
+        $http, $location, Notifications, Dialog);
 });
 
 module.controller('RealmSMTPSettingsCtrl', function($scope, Current, Realm, realm, $http, $location, Dialog, Notifications) {

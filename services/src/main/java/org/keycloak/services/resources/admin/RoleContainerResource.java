@@ -1,7 +1,9 @@
 package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -22,10 +24,11 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class RoleContainerResource {
+public class RoleContainerResource extends RoleResource {
     protected RoleContainerModel roleContainer;
 
-    public RoleContainerResource(RoleContainerModel roleContainer) {
+    public RoleContainerResource(RealmModel realm, RoleContainerModel roleContainer) {
+        super(realm);
         this.roleContainer = roleContainer;
     }
 
@@ -44,100 +47,6 @@ public class RoleContainerResource {
         return roles;
     }
 
-    @Path("roles/{role-name}")
-    @GET
-    @NoCache
-    @Produces("application/json")
-    public RoleRepresentation getRole(final @PathParam("role-name") String roleName) {
-        RoleModel roleModel = roleContainer.getRole(roleName);
-        if (roleModel == null || roleModel.getName().startsWith(Constants.INTERNAL_ROLE)) {
-            throw new NotFoundException("Could not find role: " + roleName);
-        }
-        return ModelToRepresentation.toRepresentation(roleModel);
-    }
-
-    @Path("roles/{role-name}")
-    @DELETE
-    @NoCache
-    public void deleteRole(final @PathParam("role-name") String roleName) {
-        RoleModel role = roleContainer.getRole(roleName);
-        if (role == null) {
-            throw new NotFoundException("Could not find role: " + roleName);
-        }
-        if (!roleContainer.removeRoleById(role.getId())) {
-            throw new NotFoundException();
-        }
-    }
-
-    @Path("roles/{role-name}")
-    @PUT
-    @Consumes("application/json")
-    public void updateRole(final @PathParam("role-name") String roleName, final RoleRepresentation rep) {
-        RoleModel role = roleContainer.getRole(roleName);
-        if (role == null || role.getName().startsWith(Constants.INTERNAL_ROLE)) {
-            throw new NotFoundException("Could not find role: " + roleName);
-        }
-        role.setName(rep.getName());
-        role.setDescription(rep.getDescription());
-        role.setComposite(rep.isComposite());
-    }
-
-    @Path("roles/{role-name}/composites")
-    @POST
-    @Consumes("application/json")
-    public void addComposites(final @PathParam("role-name") String roleName, List<RoleRepresentation> roles) {
-        RoleModel role = roleContainer.getRole(roleName);
-        if (role == null || role.getName().startsWith(Constants.INTERNAL_ROLE)) {
-            throw new NotFoundException("Could not find role: " + roleName);
-        }
-        for (RoleRepresentation rep : roles) {
-            RoleModel composite = roleContainer.getRole(rep.getName());
-            if (role == null || role.getName().startsWith(Constants.INTERNAL_ROLE)) {
-                throw new NotFoundException("Could not find composite role: " + rep.getName());
-            }
-            if (!role.isComposite()) role.setComposite(true);
-            role.addCompositeRole(composite);
-        }
-    }
-
-    @Path("roles/{role-name}/composites")
-    @GET
-    @NoCache
-    @Produces("application/json")
-    public Set<RoleRepresentation> getRoleComposites(final @PathParam("role-name") String roleName) {
-        RoleModel role = roleContainer.getRole(roleName);
-        if (role == null || role.getName().startsWith(Constants.INTERNAL_ROLE)) {
-            throw new NotFoundException("Could not find role: " + roleName);
-        }
-        if (!role.isComposite() || role.getComposites().size() == 0) return Collections.emptySet();
-
-        Set<RoleRepresentation> composites = new HashSet<RoleRepresentation>(role.getComposites().size());
-        for (RoleModel composite : role.getComposites()) {
-            composites.add(ModelToRepresentation.toRepresentation(composite));
-        }
-        return composites;
-    }
-
-
-    @Path("roles/{role-name}/composites")
-    @DELETE
-    @Consumes("application/json")
-    public void deleteComposites(final @PathParam("role-name") String roleName, List<RoleRepresentation> roles) {
-        RoleModel role = roleContainer.getRole(roleName);
-        if (role == null || role.getName().startsWith(Constants.INTERNAL_ROLE)) {
-            throw new NotFoundException("Could not find role: " + roleName);
-        }
-        for (RoleRepresentation rep : roles) {
-            RoleModel composite = roleContainer.getRole(rep.getName());
-            if (role == null || role.getName().startsWith(Constants.INTERNAL_ROLE)) {
-                throw new NotFoundException("Could not find composite role: " + rep.getName());
-            }
-            role.removeCompositeRole(composite);
-        }
-        if (role.getComposites().size() > 0) role.setComposite(false);
-    }
-
-
     @Path("roles")
     @POST
     @Consumes("application/json")
@@ -153,4 +62,100 @@ public class RoleContainerResource {
         role.setComposite(rep.isComposite());
         return Response.created(uriInfo.getAbsolutePathBuilder().path(role.getName()).build()).build();
     }
+
+    @Path("roles/{role-name}")
+    @GET
+    @NoCache
+    @Produces("application/json")
+    public RoleRepresentation getRole(final @PathParam("role-name") String roleName) {
+        RoleModel roleModel = roleContainer.getRole(roleName);
+        if (roleModel == null || roleModel.getName().startsWith(Constants.INTERNAL_ROLE)) {
+            throw new NotFoundException("Could not find role: " + roleName);
+        }
+        return getRole(roleModel);
+    }
+
+    @Path("roles/{role-name}")
+    @DELETE
+    @NoCache
+    public void deleteRole(final @PathParam("role-name") String roleName) {
+        RoleModel role = roleContainer.getRole(roleName);
+        if (role == null) {
+            throw new NotFoundException("Could not find role: " + roleName);
+        }
+        deleteRole(role);
+    }
+
+    @Path("roles/{role-name}")
+    @PUT
+    @Consumes("application/json")
+    public void updateRole(final @PathParam("role-name") String roleName, final RoleRepresentation rep) {
+        RoleModel role = roleContainer.getRole(roleName);
+        if (role == null || role.getName().startsWith(Constants.INTERNAL_ROLE)) {
+            throw new NotFoundException("Could not find role: " + roleName);
+        }
+        updateRole(rep, role);
+    }
+
+    @Path("roles/{role-name}/composites")
+    @POST
+    @Consumes("application/json")
+    public void addComposites(final @PathParam("role-name") String roleName, List<RoleRepresentation> roles) {
+        RoleModel role = roleContainer.getRole(roleName);
+        if (role == null || role.getName().startsWith(Constants.INTERNAL_ROLE)) {
+            throw new NotFoundException("Could not find role: " + roleName);
+        }
+        addComposites(roles, role);
+    }
+
+    @Path("roles/{role-name}/composites")
+    @GET
+    @NoCache
+    @Produces("application/json")
+    public Set<RoleRepresentation> getRoleComposites(final @PathParam("role-name") String roleName) {
+        RoleModel role = roleContainer.getRole(roleName);
+        if (role == null || role.getName().startsWith(Constants.INTERNAL_ROLE)) {
+            throw new NotFoundException("Could not find role: " + roleName);
+        }
+        return getRoleComposites(role);
+    }
+
+    @Path("roles/{role-name}/composites/realm")
+    @GET
+    @NoCache
+    @Produces("application/json")
+    public Set<RoleRepresentation> getRealmRoleComposites(final @PathParam("role-name") String roleName) {
+        RoleModel role = roleContainer.getRole(roleName);
+        if (role == null || role.getName().startsWith(Constants.INTERNAL_ROLE)) {
+            throw new NotFoundException("Could not find role: " + roleName);
+        }
+        return getRealmRoleComposites(role);
+    }
+
+    @Path("roles/{role-name}/composites/application/{app}")
+    @GET
+    @NoCache
+    @Produces("application/json")
+    public Set<RoleRepresentation> getApplicationRoleComposites(final @PathParam("role-name") String roleName,
+                                                                final @PathParam("app") String appName) {
+        RoleModel role = roleContainer.getRole(roleName);
+        if (role == null || role.getName().startsWith(Constants.INTERNAL_ROLE)) {
+            throw new NotFoundException("Could not find role: " + roleName);
+        }
+        return getApplicationRoleComposites(appName, role);
+    }
+
+
+    @Path("roles/{role-name}/composites")
+    @DELETE
+    @Consumes("application/json")
+    public void deleteComposites(final @PathParam("role-name") String roleName, List<RoleRepresentation> roles) {
+        RoleModel role = roleContainer.getRole(roleName);
+        if (role == null || role.getName().startsWith(Constants.INTERNAL_ROLE)) {
+            throw new NotFoundException("Could not find role: " + roleName);
+        }
+        deleteComposites(roles, role);
+    }
+
+
 }

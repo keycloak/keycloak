@@ -181,10 +181,202 @@ module.factory('RealmRoles', function($resource) {
     });
 });
 
+module.factory('RoleRealmComposites', function($resource) {
+    return $resource('/auth/rest/admin/realms/:realm/roles-by-id/:role/composites/realm', {
+        realm : '@realm',
+        role : '@role'
+    });
+});
+
+module.factory('RoleApplicationComposites', function($resource) {
+    return $resource('/auth/rest/admin/realms/:realm/roles-by-id/:role/composites/applications/:application', {
+        realm : '@realm',
+        role : '@role',
+        application : "@application"
+    });
+});
+
+
+function roleControl($scope, realm, role, roles, applications,
+                     ApplicationRole, RoleById, RoleRealmComposites, RoleApplicationComposites,
+                     $http, $location, Notifications, Dialog) {
+
+    $scope.$watch(function () {
+        return $location.path();
+    }, function () {
+        $scope.path = $location.path().substring(1).split("/");
+    });
+
+    $scope.$watch('role', function () {
+        if (!angular.equals($scope.role, role)) {
+            $scope.changed = true;
+        }
+    }, true);
+
+    $scope.update = function () {
+        RoleById.update({
+            realm: realm.realm,
+            role: role.id
+        }, $scope.role, function () {
+            $scope.changed = false;
+            role = angular.copy($scope.role);
+            Notifications.success("Your changes have been saved to the role.");
+        });
+    };
+
+    $scope.reset = function () {
+        $scope.role = angular.copy(role);
+        $scope.changed = false;
+    };
+
+    if (!role.id) return;
+
+    $scope.realmRoles = angular.copy(roles);
+    $scope.selectedRealmRoles = [];
+    $scope.selectedRealmMappings = [];
+    $scope.realmMappings = [];
+    $scope.applications = applications;
+    $scope.applicationRoles = [];
+    $scope.selectedApplicationRoles = [];
+    $scope.selectedApplicationMappings = [];
+    $scope.applicationMappings = [];
+
+    console.log('remove self');
+    for (var j = 0; j < $scope.realmRoles.length; j++) {
+        if ($scope.realmRoles[j].id == role.id) {
+            var realmRole = $scope.realmRoles[j];
+            var idx = $scope.realmRoles.indexOf(realmRole);
+            $scope.realmRoles.splice(idx, 1);
+            break;
+        }
+    }
+
+
+    $scope.realmMappings = RoleRealmComposites.query({realm : realm.realm, role : role.id}, function(){
+        for (var i = 0; i < $scope.realmMappings.length; i++) {
+            var role = $scope.realmMappings[i];
+            for (var j = 0; j < $scope.realmRoles.length; j++) {
+                var realmRole = $scope.realmRoles[j];
+                if (realmRole.id == role.id) {
+                    var idx = $scope.realmRoles.indexOf(realmRole);
+                    if (idx != -1) {
+                        $scope.realmRoles.splice(idx, 1);
+                        break;
+                    }
+                }
+            }
+        }
+    });
+
+    $scope.addRealmRole = function() {
+        $http.post('/auth/rest/admin/realms/' + realm.realm + '/roles-by-id/' + role.id + '/composites',
+                $scope.selectedRealmRoles).success(function() {
+                for (var i = 0; i < $scope.selectedRealmRoles.length; i++) {
+                    var role = $scope.selectedRealmRoles[i];
+                    var idx = $scope.realmRoles.indexOf($scope.selectedRealmRoles[i]);
+                    if (idx != -1) {
+                        $scope.realmRoles.splice(idx, 1);
+                        $scope.realmMappings.push(role);
+                    }
+                }
+                $scope.selectRealmRoles = [];
+            });
+    };
+
+    $scope.deleteRealmRole = function() {
+        $http.delete('/auth/rest/admin/realms/' + realm.realm + '/roles-by-id/' + role.id + '/composites',
+            {data : $scope.selectedRealmMappings, headers : {"content-type" : "application/json"}}).success(function() {
+                for (var i = 0; i < $scope.selectedRealmMappings.length; i++) {
+                    var role = $scope.selectedRealmMappings[i];
+                    var idx = $scope.realmMappings.indexOf($scope.selectedRealmMappings[i]);
+                    if (idx != -1) {
+                        $scope.realmMappings.splice(idx, 1);
+                        $scope.realmRoles.push(role);
+                    }
+                }
+                $scope.selectedRealmMappings = [];
+            });
+    };
+
+    $scope.addApplicationRole = function() {
+        $http.post('/auth/rest/admin/realms/' + realm.realm + '/roles-by-id/' + role.id + '/composites',
+                $scope.selectedApplicationRoles).success(function() {
+                for (var i = 0; i < $scope.selectedApplicationRoles.length; i++) {
+                    var role = $scope.selectedApplicationRoles[i];
+                    var idx = $scope.applicationRoles.indexOf($scope.selectedApplicationRoles[i]);
+                    if (idx != -1) {
+                        $scope.applicationRoles.splice(idx, 1);
+                        $scope.applicationMappings.push(role);
+                    }
+                }
+                $scope.selectedApplicationRoles = [];
+            });
+    };
+
+    $scope.deleteApplicationRole = function() {
+        $http.delete('/auth/rest/admin/realms/' + realm.realm + '/roles-by-id/' + role.id + '/composites',
+            {data : $scope.selectedApplicationMappings, headers : {"content-type" : "application/json"}}).success(function() {
+                for (var i = 0; i < $scope.selectedApplicationMappings.length; i++) {
+                    var role = $scope.selectedApplicationMappings[i];
+                    var idx = $scope.applicationMappings.indexOf($scope.selectedApplicationMappings[i]);
+                    if (idx != -1) {
+                        $scope.applicationMappings.splice(idx, 1);
+                        $scope.applicationRoles.push(role);
+                    }
+                }
+                $scope.selectedApplicationMappings = [];
+            });
+    };
+
+
+    $scope.changeApplication = function() {
+        $scope.applicationRoles = ApplicationRole.query({realm : realm.realm, application : $scope.compositeApp.name}, function() {
+                $scope.applicationMappings = RoleApplicationComposites.query({realm : realm.realm, role : role.id, application : $scope.compositeApp.name}, function(){
+                    for (var i = 0; i < $scope.applicationMappings.length; i++) {
+                        var role = $scope.applicationMappings[i];
+                        for (var j = 0; j < $scope.applicationRoles.length; j++) {
+                            var realmRole = $scope.applicationRoles[j];
+                            if (realmRole.id == role.id) {
+                                var idx = $scope.applicationRoles.indexOf(realmRole);
+                                if (idx != -1) {
+                                    $scope.applicationRoles.splice(idx, 1);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                });
+                for (var j = 0; j < $scope.applicationRoles.length; j++) {
+                    if ($scope.applicationRoles[j] == role.id) {
+                        var appRole = $scope.applicationRoles[j];
+                        var idx = $scope.applicationRoles.indexof(appRole);
+                        $scope.applicationRoles.splice(idx, 1);
+                        break;
+                    }
+                }
+            }
+        );
+    };
+
+
+
+
+}
 
 
 module.factory('Role', function($resource) {
     return $resource('/auth/rest/admin/realms/:realm/roles/:role', {
+        realm : '@realm',
+        role : '@role'
+    },  {
+        update : {
+            method : 'PUT'
+        }
+    });
+});
+
+module.factory('RoleById', function($resource) {
+    return $resource('/auth/rest/admin/realms/:realm/roles-by-id/:role', {
         realm : '@realm',
         role : '@role'
     },  {

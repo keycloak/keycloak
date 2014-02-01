@@ -1,5 +1,8 @@
 package org.keycloak.representations.idm;
 
+import java.util.List;
+import java.util.Set;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -9,6 +12,7 @@ public class RoleRepresentation {
     protected String name;
     protected String description;
     protected boolean composite;
+    protected List<RoleRepresentation> composites;
 
     public RoleRepresentation() {
     }
@@ -48,5 +52,13 @@ public class RoleRepresentation {
 
     public void setComposite(boolean composite) {
         this.composite = composite;
+    }
+
+    public List<RoleRepresentation> getComposites() {
+        return composites;
+    }
+
+    public void setComposites(List<RoleRepresentation> composites) {
+        this.composites = composites;
     }
 }
