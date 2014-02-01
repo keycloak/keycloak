@@ -187,6 +187,12 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 role : function() {
                     return {};
+                },
+                roles : function(RoleListLoader) {
+                    return RoleListLoader();
+                },
+                applications : function(ApplicationListLoader) {
+                    return ApplicationListLoader();
                 }
             },
             controller : 'RoleDetailCtrl'
@@ -199,6 +205,12 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 role : function(RoleLoader) {
                     return RoleLoader();
+                },
+                roles : function(RoleListLoader) {
+                    return RoleListLoader();
+                },
+                applications : function(ApplicationListLoader) {
+                    return ApplicationListLoader();
                 }
             },
             controller : 'RoleDetailCtrl'
@@ -227,6 +239,12 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 role : function() {
                     return {};
+                },
+                roles : function(RoleListLoader) {
+                    return RoleListLoader();
+                },
+                applications : function(ApplicationListLoader) {
+                    return ApplicationListLoader();
                 }
             },
             controller : 'ApplicationRoleDetailCtrl'
@@ -242,6 +260,12 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 role : function(ApplicationRoleLoader) {
                     return ApplicationRoleLoader();
+                },
+                roles : function(RoleListLoader) {
+                    return RoleListLoader();
+                },
+                applications : function(ApplicationListLoader) {
+                    return ApplicationListLoader();
                 }
             },
             controller : 'ApplicationRoleDetailCtrl'

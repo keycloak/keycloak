@@ -99,25 +99,15 @@ module.controller('ApplicationSessionsCtrl', function($scope, $location, realm, 
     $scope.application = application;
 });
 
-module.controller('ApplicationRoleDetailCtrl', function($scope, realm, application, role, ApplicationRole, $location, Dialog, Notifications) {
+module.controller('ApplicationRoleDetailCtrl', function($scope, realm, application, role, roles, applications,
+                                                        Role, ApplicationRole, RoleById, RoleRealmComposites, RoleApplicationComposites,
+                                                        $http, $location, Dialog, Notifications) {
     $scope.realm = realm;
     $scope.application = application;
     $scope.role = angular.copy(role);
     $scope.create = !role.name;
 
     $scope.changed = $scope.create;
-
-    $scope.$watch(function() {
-        return $location.path();
-    }, function() {
-        $scope.path = $location.path().substring(1).split("/");
-    });
-
-    $scope.$watch('role', function() {
-        if (!angular.equals($scope.role, role)) {
-            $scope.changed = true;
-        }
-    }, true);
 
     $scope.save = function() {
         if ($scope.create) {
@@ -134,25 +124,8 @@ module.controller('ApplicationRoleDetailCtrl', function($scope, realm, applicati
                 Notifications.success("The role has been created.");
             });
         } else {
-            ApplicationRole.update({
-                realm : realm.realm,
-                application : application.name,
-                role : role.name
-            }, $scope.role, function() {
-                $scope.changed = false;
-                role = angular.copy($scope.role);
-                Notifications.success("Your changes have been saved to the role.");
-            });
+            $scope.update();
         }
-    };
-
-    $scope.reset = function() {
-        $scope.role = angular.copy(role);
-        $scope.changed = false;
-    };
-
-    $scope.cancel = function() {
-        $location.url("/realms/" + realm.realm + "/applications/" + application.name + "/roles");
     };
 
     $scope.remove = function() {
@@ -167,6 +140,16 @@ module.controller('ApplicationRoleDetailCtrl', function($scope, realm, applicati
             });
         });
     };
+
+    $scope.cancel = function () {
+        $location.url("/realms/" + realm.realm + "/applications/" + application.name + "/roles");
+    };
+
+
+    roleControl($scope, realm, role, roles, applications,
+        ApplicationRole, RoleById, RoleRealmComposites, RoleApplicationComposites,
+        $http, $location, Notifications, Dialog);
+
 });
 
 module.controller('ApplicationListCtrl', function($scope, realm, applications, Application, $location) {
