@@ -25,7 +25,7 @@ public class RealmRepresentation {
     protected Boolean updateProfileOnInitialSocialLogin;
     protected String privateKey;
     protected String publicKey;
-    protected List<RoleRepresentation> roles;
+    protected RolesRepresentation roles;
     protected List<String> defaultRoles;
     protected Set<String> requiredCredentials;
     protected Set<String> requiredApplicationCredentials;
@@ -206,14 +206,6 @@ public class RealmRepresentation {
         this.accessCodeLifespanUserAction = accessCodeLifespanUserAction;
     }
 
-    public List<RoleRepresentation> getRoles() {
-        return roles;
-    }
-
-    public void setRoles(List<RoleRepresentation> roles) {
-        this.roles = roles;
-    }
-
     public List<String> getDefaultRoles() {
         return defaultRoles;
     }
@@ -316,5 +308,13 @@ public class RealmRepresentation {
 
     public void setApplicationScopeMappings(Map<String, List<ScopeMappingRepresentation>> applicationScopeMappings) {
         this.applicationScopeMappings = applicationScopeMappings;
+    }
+
+    public RolesRepresentation getRoles() {
+        return roles;
+    }
+
+    public void setRoles(RolesRepresentation roles) {
+        this.roles = roles;
     }
 }

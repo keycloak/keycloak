@@ -34,16 +34,19 @@
             ]
         }
     ],
-    "roles": [
-        {
-            "name": "user",
-            "description": "Have User privileges"
-        },
-        {
-            "name": "admin",
-            "description": "Have Administrator privileges"
-        }
-    ],
+    "roles" : {
+        "realm" : [
+            {
+                "name": "user",
+                "description": "Have User privileges"
+            },
+            {
+                "name": "admin",
+                "description": "Have Administrator privileges"
+            }
+        ]
+    },
+
     "roleMappings": [
         {
             "username": "bburke@redhat.com",

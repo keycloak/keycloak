@@ -8,7 +8,6 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 public class ApplicationRepresentation {
-    protected String self; // link
     protected String id;
     protected String name;
     protected String adminUrl;
@@ -16,18 +15,9 @@ public class ApplicationRepresentation {
     protected boolean surrogateAuthRequired;
     protected boolean enabled;
     protected List<CredentialRepresentation> credentials;
-    protected List<RoleRepresentation> roles;
     protected String[] defaultRoles;
     protected List<String> redirectUris;
     protected List<String> webOrigins;
-
-    public String getSelf() {
-        return self;
-    }
-
-    public void setSelf(String self) {
-        this.self = self;
-    }
 
     public String getId() {
         return id;
@@ -59,27 +49,6 @@ public class ApplicationRepresentation {
 
     public void setSurrogateAuthRequired(boolean surrogateAuthRequired) {
         this.surrogateAuthRequired = surrogateAuthRequired;
-    }
-
-    public List<RoleRepresentation> getRoles() {
-        return roles;
-    }
-
-    public void setRoles(List<RoleRepresentation> roles) {
-        this.roles = roles;
-    }
-
-    public ApplicationRepresentation role(RoleRepresentation role) {
-        if (this.roles == null) this.roles = new ArrayList<RoleRepresentation>();
-        this.roles.add(role);
-        return this;
-    }
-
-
-    public ApplicationRepresentation role(String role, String description) {
-        if (this.roles == null) this.roles = new ArrayList<RoleRepresentation>();
-        this.roles.add(new RoleRepresentation(role, description));
-        return this;
     }
 
     public String getAdminUrl() {

@@ -40,16 +40,6 @@
             ]
         }
     ],
-    "roles": [
-        {
-            "name": "user",
-            "description": "Have User privileges"
-        },
-        {
-            "name": "admin",
-            "description": "Have Administrator privileges"
-        }
-    ],
     "roleMappings": [
         {
             "username": "test-user@localhost",
@@ -77,8 +67,22 @@
                     "type": "password",
                     "value": "password"
                 }
-            ],
-            "roles": [
+            ]
+         }
+    ],
+    "roles" : {
+        "realm" : [
+            {
+                "name": "user",
+                "description": "Have User privileges"
+            },
+            {
+                "name": "admin",
+                "description": "Have Administrator privileges"
+            }
+        ],
+        "application" : {
+            "test-app" : [
                 {
                     "name": "customer-user",
                     "description": "Have Customer User privileges"
@@ -88,8 +92,10 @@
                     "description": "Have Customer Admin privileges"
                 }
             ]
-         }
-    ],
+        }
+
+    },
+
     "applicationRoleMappings": {
         "test-app": [
             {

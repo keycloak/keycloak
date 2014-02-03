@@ -87,12 +87,7 @@ public class UrlBean {
     }
 
     public String getRegistrationUrl() {
-        if (realm.isSaas()) {
-            // TODO: saas social registration
-            return Urls.saasRegisterPage(baseURI).toString();
-        } else {
-            return Urls.realmRegisterPage(baseURI, getRealmIdentifier()).toString();
-        }
+        return Urls.realmRegisterPage(baseURI, getRealmIdentifier()).toString();
     }
 
     public String getLoginUpdatePasswordUrl() {
