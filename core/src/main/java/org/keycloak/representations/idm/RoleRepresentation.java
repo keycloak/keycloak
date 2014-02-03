@@ -1,6 +1,7 @@
 package org.keycloak.representations.idm;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -12,7 +13,29 @@ public class RoleRepresentation {
     protected String name;
     protected String description;
     protected boolean composite;
-    protected List<RoleRepresentation> composites;
+    protected Composites composites;
+
+    public static class Composites {
+        protected Set<String> realm;
+        protected Map<String, List<String>> application;
+
+
+        public Set<String> getRealm() {
+            return realm;
+        }
+
+        public void setRealm(Set<String> realm) {
+            this.realm = realm;
+        }
+
+        public Map<String, List<String>> getApplication() {
+            return application;
+        }
+
+        public void setApplication(Map<String, List<String>> application) {
+            this.application = application;
+        }
+    }
 
     public RoleRepresentation() {
     }
@@ -54,11 +77,11 @@ public class RoleRepresentation {
         this.composite = composite;
     }
 
-    public List<RoleRepresentation> getComposites() {
+    public Composites getComposites() {
         return composites;
     }
 
-    public void setComposites(List<RoleRepresentation> composites) {
+    public void setComposites(Composites composites) {
         this.composites = composites;
     }
 }

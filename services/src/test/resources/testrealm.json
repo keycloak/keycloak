@@ -58,12 +58,6 @@
             "enabled": true
         }
     ],
-    "roleMappings": [
-        {
-            "username": "admin",
-            "roles": ["admin"]
-        }
-    ],
     "socialMappings": [
         {
             "username": "mySocialUser",
@@ -86,20 +80,30 @@
     "applications": [
         {
             "name": "Application",
-            "enabled": true,
-            "roles": [
+            "enabled": true
+        },
+        {
+            "name": "OtherApp",
+            "enabled": true
+        }
+
+    ],
+    "roles" : {
+        "realm" : [
+            {
+                "name": "admin"
+            }
+        ],
+        "application" : {
+            "Application" : [
                 {
                     "name": "admin"
                 },
                 {
                     "name": "user"
                 }
-            ]
-        },
-        {
-            "name": "OtherApp",
-            "enabled": true,
-            "roles": [
+            ],
+            "OtherApp" : [
                 {
                     "name": "admin"
                 },
@@ -108,7 +112,12 @@
                 }
             ]
         }
-
+    },
+    "roleMappings": [
+        {
+            "username": "admin",
+            "roles": ["admin"]
+        }
     ],
     "applicationRoleMappings": {
         "Application": [

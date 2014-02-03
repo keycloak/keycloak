@@ -77,13 +77,6 @@ public class ApplicationManager {
         realm.grantRole(resourceUser, loginRole);
 
 
-        if (resourceRep.getRoles() != null) {
-            for (RoleRepresentation roleRep : resourceRep.getRoles()) {
-                RoleModel role = applicationModel.addRole(roleRep.getName());
-                if (roleRep.getDescription() != null) role.setDescription(roleRep.getDescription());
-            }
-        }
-
         if (resourceRep.getDefaultRoles() != null) {
             applicationModel.updateDefaultRoles(resourceRep.getDefaultRoles());
         }
