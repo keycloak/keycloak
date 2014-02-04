@@ -8,7 +8,7 @@ import javax.ws.rs.core.UriInfo;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public interface FormsProvider {
+public interface LoginFormsProvider {
 
     public LoginForms createForms(RealmModel realm, HttpRequest request, UriInfo uriInfo);
 

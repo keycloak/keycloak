@@ -23,7 +23,7 @@ package org.keycloak.services.resources.flows;
 
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.login.LoginForms;
-import org.keycloak.login.FormsLoader;
+import org.keycloak.login.LoginFormsLoader;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.TokenManager;
@@ -39,7 +39,7 @@ public class Flows {
     }
 
     public static LoginForms forms(RealmModel realm, HttpRequest request, UriInfo uriInfo) {
-        return FormsLoader.load().createForms(realm, request, uriInfo);
+        return LoginFormsLoader.load().createForms(realm, request, uriInfo);
     }
 
     public static OAuthFlows oauth(RealmModel realm, HttpRequest request, UriInfo uriInfo, AuthenticationManager authManager,

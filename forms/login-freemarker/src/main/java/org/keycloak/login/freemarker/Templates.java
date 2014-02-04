@@ -1,13 +1,13 @@
 package org.keycloak.login.freemarker;
 
-import org.keycloak.login.FormsPages;
+import org.keycloak.login.LoginFormsPages;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class Templates {
 
-    public static String getTemplate(FormsPages page) {
+    public static String getTemplate(LoginFormsPages page) {
         switch (page) {
             case LOGIN:
                 return "login.ftl";

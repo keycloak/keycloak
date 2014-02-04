@@ -7,7 +7,7 @@ import org.keycloak.freemarker.FreeMarkerUtil;
 import org.keycloak.freemarker.Theme;
 import org.keycloak.freemarker.ThemeLoader;
 import org.keycloak.login.LoginForms;
-import org.keycloak.login.FormsPages;
+import org.keycloak.login.LoginFormsPages;
 import org.keycloak.login.freemarker.model.LoginBean;
 import org.keycloak.login.freemarker.model.MessageBean;
 import org.keycloak.login.freemarker.model.OAuthGrantBean;
@@ -75,20 +75,20 @@ public class FreeMarkerLoginForms implements LoginForms {
 
     public Response createResponse(UserModel.RequiredAction action) {
         String actionMessage;
-        FormsPages page;
+        LoginFormsPages page;
 
         switch (action) {
             case CONFIGURE_TOTP:
                 actionMessage = Messages.ACTION_WARN_TOTP;
-                page = FormsPages.LOGIN_CONFIG_TOTP;
+                page = LoginFormsPages.LOGIN_CONFIG_TOTP;
                 break;
             case UPDATE_PROFILE:
                 actionMessage = Messages.ACTION_WARN_PROFILE;
-                page = FormsPages.LOGIN_UPDATE_PROFILE;
+                page = LoginFormsPages.LOGIN_UPDATE_PROFILE;
                 break;
             case UPDATE_PASSWORD:
                 actionMessage = Messages.ACTION_WARN_PASSWD;
-                page = FormsPages.LOGIN_UPDATE_PASSWORD;
+                page = LoginFormsPages.LOGIN_UPDATE_PASSWORD;
                 break;
             case VERIFY_EMAIL:
                 try {
@@ -98,7 +98,7 @@ public class FreeMarkerLoginForms implements LoginForms {
                 }
 
                 actionMessage = Messages.ACTION_WARN_EMAIL;
-                page = FormsPages.LOGIN_VERIFY_EMAIL;
+                page = LoginFormsPages.LOGIN_VERIFY_EMAIL;
                 break;
             default:
                 return Response.serverError().build();
@@ -111,7 +111,7 @@ public class FreeMarkerLoginForms implements LoginForms {
         return createResponse(page);
     }
 
-    private Response createResponse(FormsPages page) {
+    private Response createResponse(LoginFormsPages page) {
         MultivaluedMap<String, String> queryParameterMap = uriInfo.getQueryParameters();
 
         String requestURI = uriInfo.getBaseUri().getPath();
@@ -189,32 +189,32 @@ public class FreeMarkerLoginForms implements LoginForms {
     }
 
     public Response createLogin() {
-        return createResponse(FormsPages.LOGIN);
+        return createResponse(LoginFormsPages.LOGIN);
     }
 
     public Response createPasswordReset() {
-        return createResponse(FormsPages.LOGIN_RESET_PASSWORD);
+        return createResponse(LoginFormsPages.LOGIN_RESET_PASSWORD);
     }
 
     public Response createUsernameReminder() {
-        return createResponse(FormsPages.LOGIN_USERNAME_REMINDER);
+        return createResponse(LoginFormsPages.LOGIN_USERNAME_REMINDER);
     }
 
     public Response createLoginTotp() {
-        return createResponse(FormsPages.LOGIN_TOTP);
+        return createResponse(LoginFormsPages.LOGIN_TOTP);
     }
 
     public Response createRegistration() {
-        return createResponse(FormsPages.REGISTER);
+        return createResponse(LoginFormsPages.REGISTER);
     }
 
     public Response createErrorPage() {
         setStatus(Response.Status.INTERNAL_SERVER_ERROR);
-        return createResponse(FormsPages.ERROR);
+        return createResponse(LoginFormsPages.ERROR);
     }
 
     public Response createOAuthGrant() {
-        return createResponse(FormsPages.OAUTH_GRANT);
+        return createResponse(LoginFormsPages.OAUTH_GRANT);
     }
 
     public FreeMarkerLoginForms setError(String message) {
