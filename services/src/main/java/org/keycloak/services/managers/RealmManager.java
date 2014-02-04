@@ -245,12 +245,6 @@ public class RealmManager {
             }
         }
 
-        if (rep.getRoles() != null && rep.getRoles().getRealm() != null) {
-            for (RoleRepresentation roleRep : rep.getRoles().getRealm()) {
-                createRole(newRealm, roleRep);
-            }
-        }
-
         if (rep.getRoles() != null) {
             if (rep.getRoles().getRealm() != null) { // realm roles
                 for (RoleRepresentation roleRep : rep.getRoles().getRealm()) {
@@ -270,35 +264,7 @@ public class RealmManager {
                     }
                 }
             }
-            // now that all roles are created, re-interate and set up composites
-            if (rep.getRoles().getRealm() != null) { // realm roles
-                for (RoleRepresentation roleRep : rep.getRoles().getRealm()) {
-                    createRole(newRealm, roleRep);
-                }
-            }
-            if (rep.getRoles().getApplication() != null) {
-                for (Map.Entry<String, List<RoleRepresentation>> entry : rep.getRoles().getApplication().entrySet()) {
-                    ApplicationModel app = newRealm.getApplicationByName(entry.getKey());
-                    if (app == null) {
-                        throw new RuntimeException("App doesn't exist in role definitions: " + entry.getKey());
-                    }
-                    for (RoleRepresentation roleRep : entry.getValue()) {
-                        RoleModel role = app.addRole(roleRep.getName());
-                        role.setDescription(roleRep.getDescription());
-                        role.setComposite(roleRep.isComposite());
-                    }
-                }
-            }
-        }
-
-
-        if (rep.getDefaultRoles() != null) {
-            for (String roleString : rep.getDefaultRoles()) {
-                newRealm.addDefaultRole(roleString.trim());
-            }
-        }
-
-        if (rep.getRoles() != null) {
+            // now that all roles are created, re-iterate and set up composites
             if (rep.getRoles().getRealm() != null) { // realm roles
                 for (RoleRepresentation roleRep : rep.getRoles().getRealm()) {
                     RoleModel role = newRealm.getRole(roleRep.getName());
@@ -316,6 +282,13 @@ public class RealmManager {
                         addComposites(role, roleRep, newRealm);
                     }
                 }
+            }
+        }
+
+
+        if (rep.getDefaultRoles() != null) {
+            for (String roleString : rep.getDefaultRoles()) {
+                newRealm.addDefaultRole(roleString.trim());
             }
         }
 
@@ -431,6 +404,7 @@ public class RealmManager {
     public void createRole(RealmModel newRealm, RoleRepresentation roleRep) {
         RoleModel role = newRealm.addRole(roleRep.getName());
         if (roleRep.getDescription() != null) role.setDescription(roleRep.getDescription());
+        role.setComposite(roleRep.isComposite());
     }
 
     public void createRole(RealmModel newRealm, ApplicationModel app, RoleRepresentation roleRep) {

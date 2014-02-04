@@ -21,6 +21,7 @@
         <dependency>
             <groupId>net.iharder</groupId>
             <artifactId>base64</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.codehaus.jackson</groupId>
