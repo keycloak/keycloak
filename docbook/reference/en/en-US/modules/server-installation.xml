@@ -42,8 +42,8 @@ keycloak-appliance-dist-all-1.0-alpha-1/
 
     adapters/
         keycloak-as7-adapter-dist-1.0-alpha-1.zip
-        keycloak-as7-adapter-dist-1.0-alpha-1.zip
-        keycloak-as7-adapter-dist-1.0-alpha-1.zip
+        keycloak-eap6-adapter-dist-1.0-alpha-1.zip
+        keycloak-wildfly-adapter-dist-1.0-alpha-1.zip
     examples/
     docs/
 </programlisting>
@@ -85,8 +85,8 @@ keycloak-war-dist-all-1.0-alpha-1/
         keycloak-ds.xml
     adapters/
         keycloak-as7-adapter-dist-1.0-alpha-1.zip
-        keycloak-as7-adapter-dist-1.0-alpha-1.zip
-        keycloak-as7-adapter-dist-1.0-alpha-1.zip
+        keycloak-eap6-adapter-dist-1.0-alpha-1.zip
+        keycloak-wildfly-adapter-dist-1.0-alpha-1.zip
     examples/
     docs/
 </programlisting>

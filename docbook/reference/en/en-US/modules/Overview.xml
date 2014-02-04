@@ -67,7 +67,7 @@
     <section>
         <title>Key Concepts in Keycloak</title>
         <para>
-            The core concept in Keycloak is a <emphasis>Realm</emphasis>.  A realm secures and manages security metadata for
+            The core concept in Keycloak is a <emphasis>Realm</emphasis>.  A realm secures and manages security metadata
             for a set of users, applications, and registered oauth clients.  Users can be created within a specific realm
             within the Administration console.  Roles (permission types) can be defined at the realm level and you can also
             set up user role mappings to assign these permissions to specific users.
