@@ -164,14 +164,12 @@
             },
             {
                 "name": "REALM_COMPOSITE_1",
-                "composite": true,
                 "composites": {
                     "realm": ["REALM_ROLE_1"]
                 }
             },
             {
                 "name": "REALM_APP_COMPOSITE_ROLE",
-                "composite": true,
                 "composites": {
                     "application": {
                         "APP_ROLE_APPLICATION" :[
@@ -193,7 +191,6 @@
             "APP_COMPOSITE_APPLICATION" : [
                 {
                     "name": "APP_COMPOSITE_ROLE",
-                    "composite": true,
                     "composites": {
                         "realm" : [
                             "REALM_ROLE_1",

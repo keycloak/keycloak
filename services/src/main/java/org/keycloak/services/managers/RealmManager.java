@@ -260,7 +260,6 @@ public class RealmManager {
                     for (RoleRepresentation roleRep : entry.getValue()) {
                         RoleModel role = app.addRole(roleRep.getName());
                         role.setDescription(roleRep.getDescription());
-                        role.setComposite(roleRep.isComposite());
                     }
                 }
             }
@@ -375,7 +374,7 @@ public class RealmManager {
     }
 
     public void addComposites(RoleModel role, RoleRepresentation roleRep, RealmModel realm) {
-        if (!roleRep.isComposite() || roleRep.getComposites() == null) return;
+        if (roleRep.getComposites() == null) return;
         if (roleRep.getComposites().getRealm() != null) {
             for (String roleStr : roleRep.getComposites().getRealm()) {
                 RoleModel realmRole = realm.getRole(roleStr);
@@ -404,7 +403,6 @@ public class RealmManager {
     public void createRole(RealmModel newRealm, RoleRepresentation roleRep) {
         RoleModel role = newRealm.addRole(roleRep.getName());
         if (roleRep.getDescription() != null) role.setDescription(roleRep.getDescription());
-        role.setComposite(roleRep.isComposite());
     }
 
     public void createRole(RealmModel newRealm, ApplicationModel app, RoleRepresentation roleRep) {

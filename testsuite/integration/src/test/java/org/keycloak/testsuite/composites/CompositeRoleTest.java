@@ -69,7 +69,6 @@ public class CompositeRoleTest {
             final RoleModel realmRole2 = realm.addRole("REALM_ROLE_2");
             final RoleModel realmRole3 = realm.addRole("REALM_ROLE_3");
             final RoleModel realmComposite1 = realm.addRole("REALM_COMPOSITE_1");
-            realmComposite1.setComposite(true);
             realmComposite1.addCompositeRole(realmRole1);
 
             final UserModel realmComposite1User = realm.addUser("REALM_COMPOSITE_1_USER");
@@ -106,7 +105,6 @@ public class CompositeRoleTest {
             final RoleModel appRole2 = appRoleApplication.addRole("APP_ROLE_2");
 
             final RoleModel realmAppCompositeRole = realm.addRole("REALM_APP_COMPOSITE_ROLE");
-            realmAppCompositeRole.setComposite(true);
             realmAppCompositeRole.addCompositeRole(appRole1);
 
             final UserModel realmAppCompositeUser = realm.addUser("REALM_APP_COMPOSITE_USER");
@@ -125,7 +123,6 @@ public class CompositeRoleTest {
             appCompositeApplication.setManagementUrl("http://localhost:8081/app/logout");
             realm.updateCredential(appCompositeApplication.getApplicationUser(), UserCredentialModel.password("password"));
             final RoleModel appCompositeRole = appCompositeApplication.addRole("APP_COMPOSITE_ROLE");
-            appCompositeRole.setComposite(true);
             appCompositeApplication.addScope(appRole2);
             appCompositeRole.addCompositeRole(realmRole1);
             appCompositeRole.addCompositeRole(realmRole2);

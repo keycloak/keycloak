@@ -26,7 +26,6 @@ public abstract class RoleEntity {
 
     private String name;
     private String description;
-    private boolean composite;
     @ManyToMany(fetch = FetchType.LAZY, cascade = {})
     //@JoinTable(name = "COMPOSITE_ROLE")
     private Collection<RoleEntity> compositeRoles = new ArrayList<RoleEntity>();
@@ -54,14 +53,6 @@ public abstract class RoleEntity {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public boolean isComposite() {
-        return composite;
-    }
-
-    public void setComposite(boolean composite) {
-        this.composite = composite;
     }
 
     public Collection<RoleEntity> getCompositeRoles() {

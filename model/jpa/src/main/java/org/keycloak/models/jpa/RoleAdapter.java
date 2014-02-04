@@ -62,12 +62,7 @@ public class RoleAdapter implements RoleModel {
 
     @Override
     public boolean isComposite() {
-        return role.isComposite();
-    }
-
-    @Override
-    public void setComposite(boolean flag) {
-        role.setComposite(flag);
+        return getComposites().size() > 0;
     }
 
     @Override

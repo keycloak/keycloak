@@ -59,7 +59,6 @@ public class RoleContainerResource extends RoleResource {
             throw new NotFoundException();
         }
         role.setDescription(rep.getDescription());
-        role.setComposite(rep.isComposite());
         return Response.created(uriInfo.getAbsolutePathBuilder().path(role.getName()).build()).build();
     }
 
