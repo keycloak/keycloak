@@ -189,11 +189,11 @@ button.primary:enabled:active {
   box-shadow: inset 0 0 5px 3px #0074ae;
 }
 /* Code from Gabriel */
-.rcue-login-register.register .two-fields input[type="text"] {
+.kc-login-register.register .two-fields input[type="text"] {
   width: 121px;
   min-width: 0;
 }
-.rcue-login-register.register .two-fields input + input {
+.kc-login-register.register .two-fields input + input {
   margin-left: 10px;
 }
 .search-comp {
