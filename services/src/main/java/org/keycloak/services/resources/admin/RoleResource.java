@@ -36,7 +36,6 @@ public class RoleResource {
     protected void updateRole(RoleRepresentation rep, RoleModel role) {
         role.setName(rep.getName());
         role.setDescription(rep.getDescription());
-        role.setComposite(rep.isComposite());
     }
 
     protected void addComposites(List<RoleRepresentation> roles, RoleModel role) {
@@ -45,7 +44,6 @@ public class RoleResource {
             if (composite == null) {
                 throw new NotFoundException("Could not find composite role: " + rep.getName());
             }
-            if (!role.isComposite()) role.setComposite(true);
             role.addCompositeRole(composite);
         }
     }
@@ -96,6 +94,5 @@ public class RoleResource {
             }
             role.removeCompositeRole(composite);
         }
-        if (role.getComposites().size() == 0) role.setComposite(false);
     }
 }

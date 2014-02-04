@@ -19,8 +19,6 @@ public interface RoleModel {
 
     boolean isComposite();
 
-    void setComposite(boolean flag);
-
     void addCompositeRole(RoleModel role);
 
     void removeCompositeRole(RoleModel role);
