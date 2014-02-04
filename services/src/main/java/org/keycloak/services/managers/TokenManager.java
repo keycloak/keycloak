@@ -3,7 +3,6 @@ package org.keycloak.services.managers;
 import org.jboss.resteasy.logging.Logger;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
@@ -15,7 +14,6 @@ import org.keycloak.util.JsonSerialization;
 import javax.ws.rs.core.MultivaluedMap;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -62,7 +60,7 @@ public class TokenManager {
         return scope == null || scope.isEmpty();
     }
 
-    public static void addScopes(RoleModel role, RoleModel scope, Set<RoleModel> visited, Set<RoleModel> requested) {
+    public static void applyScope(RoleModel role, RoleModel scope, Set<RoleModel> visited, Set<RoleModel> requested) {
         if (visited.contains(scope)) return;
         visited.add(scope);
         if (role.hasRole(scope)) {
@@ -72,7 +70,7 @@ public class TokenManager {
         if (!scope.isComposite()) return;
 
         for (RoleModel contained : scope.getComposites()) {
-            addScopes(role, contained, visited, requested);
+            applyScope(role, contained, visited, requested);
         }
     }
 
@@ -98,7 +96,7 @@ public class TokenManager {
             if (clientApp != null && role.getContainer().equals(clientApp)) requestedRoles.add(role);
             for (RoleModel desiredRole : scopeMappings) {
                 Set<RoleModel> visited = new HashSet<RoleModel>();
-                addScopes(role, desiredRole, visited, requestedRoles);
+                applyScope(role, desiredRole, visited, requestedRoles);
             }
         }
 
@@ -110,35 +108,6 @@ public class TokenManager {
                 if (desiresScope(scopeMap, app.getName(), role.getName())) {
                     resourceRolesRequested.add(app.getName(), role);
 
-                }
-            }
-        }
-
-
-
-
-        Set<RoleModel> realmRoleMappings = realm.getRealmRoleMappings(user);
-
-        for (RoleModel role : realmRoleMappings) {
-            if (!desiresScope(scopeMap, "realm", role.getName())) continue;
-            for (RoleModel desiredRole : scopeMappings) {
-                if (desiredRole.hasRole(role)) {
-                    realmRolesRequested.add(role);
-                } else if (role.hasRole(desiredRole)) {
-                    realmRolesRequested.add(desiredRole);
-                }
-            }
-        }
-
-        for (ApplicationModel application : realm.getApplications()) {
-            if (!desiresScopeGroup(scopeMap, application.getName())) continue;
-            Set<RoleModel> appRoleMappings = application.getApplicationRoleMappings(user);
-            for (RoleModel role : appRoleMappings) {
-                if (!desiresScope(scopeMap, application.getName(), role.getName())) continue;
-                for (RoleModel desiredRole : scopeMappings) {
-                    if (!application.getApplicationUser().getLoginName().equals(client.getLoginName())
-                          && !desiredRole.hasRole(role)) continue;
-                    resourceRolesRequested.add(application.getName(), role);
                 }
             }
         }

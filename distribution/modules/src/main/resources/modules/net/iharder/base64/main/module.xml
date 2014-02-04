@@ -22,16 +22,11 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-core">
+<module xmlns="urn:jboss:module:1.1" name="net.iharder.base64">
     <resources>
         <!-- Insert resources here -->
     </resources>
     <dependencies>
-        <module name="org.codehaus.jackson.jackson-core-asl"/>
-        <module name="org.codehaus.jackson.jackson-mapper-asl"/>
-        <module name="org.codehaus.jackson.jackson-xc"/>
-        <module name="org.bouncycastle"/>
-        <module name="net.iharder.base64"/>
         <module name="javax.api"/>
     </dependencies>
 

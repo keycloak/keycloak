@@ -43,6 +43,10 @@
           ~ +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
           -->
 
+        <module-def name="net.iharder.base64">
+            <maven-resource group="net.iharder" artifact="base64"/>
+        </module-def>
+
         <module-def name="org.bouncycastle">
             <maven-resource group="org.bouncycastle" artifact="bcprov-jdk16"/>
         </module-def>
