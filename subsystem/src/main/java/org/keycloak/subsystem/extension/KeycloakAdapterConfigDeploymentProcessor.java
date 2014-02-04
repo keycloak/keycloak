@@ -59,26 +59,6 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
         WarMetaData warMetaData = deploymentUnit.getAttachment(WarMetaData.ATTACHMENT_KEY);
 
         addJSONData(service.getJSON(deploymentName), warMetaData);
-        //addJSONData(getJSON(), warMetaData);
-    }
-
-    // TODO: remove this.
-    private String getJSON() {
-        return "{\n" +
-"  \"realm\": \"demo\",\n" +
-"  \"realm-public-key\": \"MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB\",\n" +
-"  \"auth-server-url\": \"http://localhost:8080/auth\",\n" +
-"  \"ssl-not-required\": true,\n" +
-"  \"resource\": \"customer-portal-subsys\",\n" +
-"  \"credentials\": {\n" +
-"    \"password\": \"password\"\n" +
-"  },\n" +
-"  \"use-resource-role-mappings\": false,\n" +
-"  \"enable-cors\": false,\n" +
-"  \"cors-max-age\": -1,\n" +
-"  \"expose-token\": false,\n" +
-"  \"bearer-only\": false\n" +
-"}";
     }
 
     private void addJSONData(String json, WarMetaData warMetaData) {
