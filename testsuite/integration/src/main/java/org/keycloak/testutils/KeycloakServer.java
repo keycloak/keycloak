@@ -37,6 +37,7 @@ import io.undertow.servlet.api.ServletInfo;
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
 import org.jboss.resteasy.spi.ResteasyDeployment;
+import org.keycloak.theme.DefaultLoginThemeProvider;
 import org.keycloak.services.tmp.TmpAdminRedirectServlet;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.models.Constants;
@@ -134,6 +135,11 @@ public class KeycloakServer {
             File dir = new File(resources).getAbsoluteFile();
             if (!dir.isDirectory() || !new File(dir, "admin-ui").isDirectory()) {
                 throw new RuntimeException("Invalid resources directory");
+            }
+
+            if (!System.getProperties().containsKey("keycloak.theme.dir")) {
+                System.setProperty(DefaultLoginThemeProvider.class.getName() + ".disabled", "");
+                System.setProperty("keycloak.theme.dir", file(dir.getAbsolutePath(), "forms", "common-themes", "src", "main", "resources", "theme").getAbsolutePath());
             }
 
             config.setResourcesHome(dir.getAbsolutePath());

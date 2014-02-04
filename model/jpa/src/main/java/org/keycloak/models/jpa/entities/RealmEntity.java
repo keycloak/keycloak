@@ -50,6 +50,9 @@ public class RealmEntity {
     @Column(length = 2048)
     protected String privateKeyPem;
 
+    protected String loginTheme;
+    protected String accountTheme;
+
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true)
     @JoinTable(name="USER_REQUIRED_CREDENTIALS")
     Collection<RequiredCredentialEntity> requiredCredentials = new ArrayList<RequiredCredentialEntity>();
@@ -273,6 +276,22 @@ public class RealmEntity {
 
     public void setPasswordPolicy(String passwordPolicy) {
         this.passwordPolicy = passwordPolicy;
+    }
+
+    public String getLoginTheme() {
+        return loginTheme;
+    }
+
+    public void setLoginTheme(String theme) {
+        this.loginTheme = theme;
+    }
+
+    public String getAccountTheme() {
+        return accountTheme;
+    }
+
+    public void setAccountTheme(String theme) {
+        this.accountTheme = theme;
     }
 }
 

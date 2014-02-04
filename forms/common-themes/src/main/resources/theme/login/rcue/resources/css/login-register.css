@@ -1,0 +1,436 @@
+body {
+  font-size: 62.5%;
+  min-height: 60em;
+  min-width: 120em;
+}
+
+body.rcue-login-register {
+    background-image: url("../img/login-screen-background.jpg");
+}
+
+div.rcue-logo {
+    background-image: url("../img/keycloak-logo.png");
+    background-repeat: no-repeat;
+    height: 37px;
+    width: 150px;
+    position: absolute;
+    top: 5em;
+    right: 6.4em;
+}
+
+.rcue-login-register {
+  background-color: #1D2226;
+  background-position: top left;
+  background-size: auto;
+  background-repeat: no-repeat;
+  color: #fff;
+  /* Login area */
+
+  /* Social login area */
+
+  /* Info area */
+
+}
+
+.rcue-login-register h1 a {
+  position: absolute;
+  top: 5em;
+  right: 6.4em;
+}
+.rcue-login-register .content {
+  position: absolute;
+  bottom: 10%;
+  width: 100%;
+  min-width: 76em;
+}
+.rcue-login-register h2 {
+  padding-left: 4.34782608695652em;
+  font-family: "Overpass", sans-serif;
+  font-size: 2.3em;
+  font-weight: 100;
+  text-transform: uppercase;
+  letter-spacing: 0.005em;
+}
+.rcue-login-register h2 strong {
+  font-weight: bold;
+}
+.rcue-login-register .background-area {
+  border-top: 0.1em rgba(255, 255, 255, 0.05) solid;
+  border-bottom: 0.1em rgba(255, 255, 255, 0.05) solid;
+  background-color: rgba(0, 0, 0, 0.3);
+  padding: 3em 0 3em 10em;
+  margin-top: 2.7em;
+  width: 100%;
+  min-width: 120em;
+}
+.rcue-login-register .form-area.separator,
+.rcue-login-register .form-area.social,
+.rcue-login-register .form-area.social.separator {
+  background-repeat: no-repeat;
+  background-position: 42.7em center;
+}
+.rcue-login-register .form-area.separator {
+  background-image: url(../img/login-register-separator.png);
+  background-position: 43.2em center;
+}
+.rcue-login-register .form-area.social {
+  background-image: url(../img/login-register-social.png);
+}
+.rcue-login-register .form-area.social.separator {
+  background-image: url(../img/login-register-social-separator.png);
+}
+.rcue-login-register .background-area .section {
+  float: left;
+  padding: 0 4.5em 0 4.6em;
+  width: auto;
+  position: relative;
+}
+.rcue-login-register .background-area .section,
+.rcue-login-register .background-area .social .section {
+  padding-top: 1.5em;
+  padding-bottom: 1.5em;
+}
+.rcue-login-register .background-area .section h3 {
+  display: none;
+}
+.rcue-login-register .background-area .section:first-child {
+  padding-right: 4.5em;
+}
+.rcue-login-register .section > p {
+  font-size: 1.3em;
+  margin-bottom: 1.53846153846154em;
+  line-height: 1.3em;
+}
+.rcue-login-register .section.app-form {
+  padding-left: 0;
+  position: relative;
+}
+.rcue-login-register form > div {
+  margin-bottom: 1em;
+}
+.rcue-login-register label,
+.rcue-login-register .social-login > p {
+  display: inline-block;
+  font-size: 1.4em;
+  font-weight: 400;
+}
+.rcue-login-register label {
+  width: 8.21428571428571em;
+}
+.rcue-login-register label.two-lines {
+  float: left;
+  margin-top: -0.14285714285714em;
+  line-height: 1.1em;
+}
+.rcue-login-register input[type="text"],
+.rcue-login-register input[type="password"] {
+  width: 24.7272727272727em;
+  /* 272px */
+
+}
+.rcue-login-register form > div.aside-btn {
+  float: left;
+  font-size: 1.1em;
+  margin-left: 10.4545454545454em;
+  margin-top: 0.90909090909091em;
+  margin-bottom: 0;
+}
+.rcue-login-register form > div.aside-btn label {
+  font-size: 1em;
+  width: auto;
+}
+.rcue-login-register form > div.aside-btn input[type="checkbox"] {
+  margin-bottom: 0.54545454545455em;
+  /* 6px */
+}
+.rcue-login-register form > input[type="button"],
+.rcue-login-register form > input[type="submit"]{
+  float: right;
+  margin-top: 0.76923076923077em;
+  margin-left: 0.90909090909091em;
+  /* 10px */
+
+}
+.rcue-login-register p.subtitle {
+  font-size: 1.1em;
+  color: #999;
+  position: absolute;
+  right: 4.09090909090909em;
+  top: -0.636363636363636em;
+}
+.rcue-login-register .feedback.bottom-left {
+  left: 35.7em;
+  bottom: 17em;
+  min-width: 35em;
+}
+.rcue-login-register input.error[type="text"],
+.rcue-login-register input.error[type="password"],
+.rcue-login-register input.error[type="email"] {
+  background-color: #F8E7E7;
+}
+.rcue-login-register .section.social-login > span {
+  display: none;
+}
+.rcue-login-register .section.social-login > p {
+  float: left;
+  margin-top: 0.28571428571429em;
+  /* 14px */
+
+  width: 6.78571428571429em;
+  /* 95px */
+
+}
+.rcue-login-register .section.social-login > ul {
+  float: left;
+}
+.rcue-login-register .section.social-login li {
+  margin-bottom: 2em;
+}
+.rcue-login-register .section.social-login li:last-child {
+  margin-bottom: 0;
+}
+.rcue-login-register .section.info-area {
+  padding-right: 0;
+}
+.rcue-login-register .section.info-area p,
+.rcue-login-register .section.info-area li {
+  font-size: 1.4em;
+  margin-bottom: 1.64285714285714em;
+}
+.rcue-login-register .section.info-area li {
+  color: #999;
+  margin-bottom: 1em;
+}
+.rcue-login-register .section.info-area li:last-child {
+  margin-bottom: 0;
+}
+@media screen and (min-width: 1280px) {
+  .rcue-login-register {
+    background-size: 100% auto;
+  }
+}
+/* Social buttons */
+.zocial,
+a.zocial {
+  padding: 0;
+  line-height: 2.3em;
+  height: 2.3em;
+  width: 131px;
+  border-radius: 2px;
+  box-shadow: none;
+  background-image: none;
+  text-shadow: none;
+}
+.zocial .text,
+a.zocial .text {
+  font-size: 1.2em;
+  line-height: 1.25em;
+  text-align: center;
+  display: block;
+  font-family: "Open Sans", sans-serif;
+  font-weight: normal;
+  border-left: 1px solid rgba(0, 0, 0, 0.15);
+  margin-left: 3em;
+  /* 36 px */
+
+  margin-top: 0.25em;
+  /* 3px */
+
+}
+.zocial:hover,
+a.zocial:hover,
+.zocial:active,
+a.zocial:active,
+.zocial:focus,
+a.zocial:focus {
+  text-decoration: none;
+  background-image: none;
+}
+.zocial:hover,
+a.zocial:hover {
+  background-image: linear-gradient(rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.1) 100%);
+}
+.zocial:before,
+a.zocial:before {
+  margin: 0;
+  padding: 0;
+  box-shadow: none;
+  border: none;
+  width: 3em;
+  /* 36px */
+
+}
+.zocial.facebook:before {
+  width: 2.66666666666667em;
+  /* 32px */
+}
+/* Register page */
+.rcue-login-register.register label {
+  width: 7.5em;
+  /* 105px */
+
+}
+.rcue-login-register.register input[type="text"],
+.rcue-login-register.register input[type="email"],
+.rcue-login-register.register input[type="password"] {
+  width: 22.9090909090909em;
+  /* 252px */
+
+}
+.rcue-login-register.register form > div.aside-btn {
+  margin-left: 9.54545454545454em;
+  /* 105px */
+
+  width: 12.5454545454546em;
+  /* 138px */
+
+}
+.rcue-login-register.register form > div.aside-btn p {
+  line-height: 1.3em;
+}
+.rcue-login-register p.powered {
+  font-size: 1.1em;
+  margin-top: 1.27272727272727em;
+  text-align: right;
+  margin-right: 5.81818181818182em;
+}
+.rcue-login-register p.powered a {
+  color: #666;
+}
+.rcue-login-register p.powered a:hover {
+  color: #0099D3;
+}
+/* Forgot Password page */
+.rcue-login-register.reset .background-area .section.app-form {
+  width: 43.2em;
+}
+.rcue-login-register.oauth .form-actions {
+    margin-bottom: 0;
+    margin-top: 2em;
+}
+.rcue-login-register .background-area .content-area {
+    width: 50em;
+}
+.rcue-login-register .background-area .content-area ul {
+    border-bottom: 1px solid #34393C;
+    margin-bottom: 2em;
+}
+.rcue-login-register .background-area .content-area ul li {
+    border-top: 1px solid #34393C;
+    padding: 2em;
+    position: relative;
+}
+.rcue-login-register .background-area .content-area ul li span {
+    font-size: 1.3em;
+    line-height: 1.3em;
+}
+
+.rcue-login-register .background-area .content-area ul li span:first-child {
+    padding-right: 11.5384615384615em;
+}
+
+.rcue-login-register .background-area .content-area ul li span.parent {
+    position: absolute;
+    left: 26em;
+    top: 1.53846153846154em;
+    width: 12.3076923076923em;
+}
+
+.rcue-login-register .background-area .content-area ul li span.icon-info {
+    float: right;
+    margin-top: 0.5em;
+}
+.rcue-login-register .background-area .content-area p.terms {
+    color: #999999;
+    font-size: 1.1em;
+    line-height: 1.3em;
+}
+
+.rcue-login-register.reset p.subtitle {
+    margin-bottom: 10px;
+    position: inherit;
+    text-align: right;
+}
+
+.rcue-login-register .background-area p.instruction {
+    font-size: 1.3em;
+    line-height: 1.3em;
+    margin-bottom: 1.53846em;
+}
+
+.rcue-login-register .background-area p.instruction.instruction.second {
+    color: #999999;
+}
+.rcue-login-register .background-area p.instruction + .instruction.second {
+    margin-top: -1.23077em;
+}
+
+.rcue-login-register .background-area a.link-right {
+    float: right;
+    font-size: 1.3em;
+}
+
+.rcue-login-register.totp .form-area {
+  background-image: none;
+}
+.rcue-login-register.reset .form-area p.instruction {
+  font-size: 1.3em;
+  line-height: 1.3em;
+  margin-bottom: 1.81818181818182em;
+}
+.rcue-login-register.totp {
+  min-height: 0;
+}
+.rcue-login-register.totp ol li {
+  margin-bottom: 3em;
+  width: 100%;
+}
+.rcue-login-register.totp ol li p {
+  font-size: 1.3em;
+  margin-bottom: 1.92307692307692em;
+}
+.rcue-login-register.totp ol li p strong {
+  text-indent: -1em;
+  float: left;
+  font-size: 1.84615384615385em;
+  font-weight: normal;
+  margin-top: -0.20833333333333em;
+  color: #999;
+}
+.rcue-login-register.totp ol li img {
+  border: 7px solid #fff;
+  width: 150px;
+}
+.rcue-login-register.totp ol li .code {
+  font-size: 1.3em;
+  margin-left: 1.53846153846154em;
+}
+.rcue-login-register.totp ol li form {
+  width: 357px;
+}
+.rcue-login-register.totp ol li form input[type="text"] {
+    width: 22em;
+}
+.rcue-login-register.totp ol li form input[type="submit"] {
+    float: right;
+}
+
+.rcue-login-register.totp ol li:last-child {
+  margin-bottom: 0;
+}
+.rcue-login-register.totp .content {
+  position: inherit;
+  margin-top: 16em;
+}
+.rcue-login-register.email .background-area .section {
+  width: 41.2em;
+}
+.rcue-login-register.email .background-area .section.email {
+  width: 45.8em;
+}
+.rcue-login-register.email label {
+  width: 6.78571428571429em;
+}
+.rcue-login-register.email .feedback.bottom-left {
+  left: 38.3em;
+}

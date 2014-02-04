@@ -62,6 +62,8 @@ public class RealmEntity implements Serializable {
     @AttributeValue
     @Lob
     private HashMap<String, String> socialConfig;
+    @AttributeValue
+    private String theme;
 
 
     public PartitionTypeEntity getPartitionTypeEntity() {
@@ -190,5 +192,13 @@ public class RealmEntity implements Serializable {
 
     public void setSocialConfig(HashMap<String, String> socialConfig) {
         this.socialConfig = socialConfig;
+    }
+
+    public String getTheme() {
+        return theme;
+    }
+
+    public void setTheme(String theme) {
+        this.theme = theme;
     }
 }

@@ -54,7 +54,7 @@ public class AccountTotpPage extends AbstractAccountPage {
     }
 
     public boolean isCurrent() {
-        return driver.getTitle().contains("Edit Account - Google Authenticator");
+        return driver.getTitle().contains("Account Management") && driver.getCurrentUrl().endsWith("/account/totp");
     }
 
     public void open() {

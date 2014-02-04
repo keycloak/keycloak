@@ -36,6 +36,10 @@
             <outputDirectory>keycloak/standalone/deployments</outputDirectory>
         </fileSet>
         <fileSet>
+            <directory>${project.build.directory}/unpacked/examples/themes</directory>
+            <outputDirectory>keycloak/standalone/configuration/themes</outputDirectory>
+        </fileSet>
+        <fileSet>
             <directory>${project.build.directory}/unpacked/adapter</directory>
             <outputDirectory>keycloak</outputDirectory>
         </fileSet>

@@ -41,5 +41,8 @@
                 <exclude name="**/*.iml"/>
             </fileset>
         </copy>
+        <copy todir="target/examples/themes" overwrite="true">
+            <fileset dir="../../examples/themes"/>
+        </copy>
     </target>
 </project>

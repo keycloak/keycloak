@@ -1,0 +1,201 @@
+@import url('../../keycloak/lib/zocial/zocial.css');
+
+body {
+    background-color: #040507;
+    background-image: url('../img/bkgrnd.jpg');
+    background-size: cover;
+    background-repeat: no-repeat;
+
+    color: #ccc;
+    font-family: sans-serif;
+}
+
+a {
+    color: #fff;
+    text-decoration: none;
+}
+
+.content {
+    position: absolute;
+    top: 25%;
+    left: 50%;
+    width: 550px;
+    margin-left: -225px;
+}
+
+h2 {
+    position: fixed;
+    top: 50px;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    margin: 0 auto;
+    color: rgba(255, 255, 255, 0.08);
+    text-shadow: none;
+    font-size: 80px;
+}
+
+div.app-form {
+    float: left;
+    width: 350px;
+}
+
+div.app-form label {
+    display: block;
+    font-size: 16px;
+}
+
+div.social-login {
+    border-left: 1px solid rgba(255, 255, 255, 0.2);
+    float: right;
+    width: 150px;
+    padding: 20px 0 200px 40px;
+}
+
+div.info-area {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    margin-top: 40px;
+    background-color: rgba(0, 0, 0, 0.4);
+    padding: 20px;
+    width: 100%;
+}
+
+div.info-area p {
+    margin-right: 30px;
+    display: inline;
+    text-shadow: none;
+}
+
+input[type=text], input[type=password] {
+    color: #ddd;
+    font-size: 18px;
+    margin-bottom: 20px;
+    background-color: rgba(3,70,114,0.15);
+    border: 0px solid rgba(0,0,0,0.2);
+    box-shadow:inset 0 0 2px 2px rgba(0,0,0,0.15);
+    padding: 10px;
+    width: 296px;
+}
+
+input[type=text]:hover, input[type=password]:hover {
+    background-color: rgba(3,70,114,0.4);
+}
+
+input[type=submit] {
+    border: none;
+
+    background: -webkit-linear-gradient(top, rgba(255,255,255,0.8), rgba(255,255,255,0.1));
+    background: -moz-linear-gradient(top, rgba(255,255,255,0.8), rgba(255,255,255,0.1));
+    background: -ms-linear-gradient(top, rgba(255,255,255,0.8), rgba(255,255,255,0.1));
+    background: -o-linear-gradient(top, rgba(255,255,255,0.8), rgba(255,255,255,0.1));
+
+    box-shadow: 0px 0px 6px rgba(0,0,0,0.5);
+
+    color: rgba(0,0,0,0.6);
+
+    font-size: 14px;
+    font-weight: bold;
+
+    padding: 10px;
+    margin-top: 20px;
+    margin-right: 10px;
+    width: 150px;
+}
+
+input[type=submit]:hover {
+    background-color: rgba(255,255,255,0.8);
+}
+
+p.powered {
+    font-size: 12px;
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    margin: 0;
+    padding: 0;
+    text-shadow: none;
+}
+
+p.powered a {
+    color: #ccc;
+    text-decoration: none;
+}
+
+div.feedback {
+    box-shadow: 0px 0px 6px rgba(0,0,0,0.5);
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    text-align: center;
+}
+
+div.success {
+    background-color: rgba(155,155,255,0.1);
+}
+
+div.warning {
+    background-color: rgba(255,175,0,0.1);
+}
+
+div.error {
+    background-color: rgba(255,0,0,0.1);
+}
+
+div.feedback p {
+    margin: 0;
+    padding: 1em;
+}
+
+div.rcue-logo {
+    background-image: url('../img/logo.png');
+    background-repeat: no-repeat;
+    height: 500px;
+    position: absolute;
+    left: 30px;
+    top: 30px;
+    width: 500px;
+    z-index: -1;
+}
+
+div.social-login span {
+    display: none;
+}
+
+div.social-login p {
+    display: none;
+}
+
+div.social-login ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+div.social-login ul li {
+    margin-bottom: 20px;
+}
+
+div.social-login ul li span {
+    display: inline;
+    width: 100px;
+}
+
+a.zocial {
+    border: none;
+    background: -webkit-linear-gradient(top, rgba(255,255,255,0.8), rgba(255,255,255,0.1)) !important;
+    background: -moz-linear-gradient(top, rgba(255,255,255,0.8), rgba(255,255,255,0.1)) !important;
+    background: -ms-linear-gradient(top, rgba(255,255,255,0.8), rgba(255,255,255,0.1)) !important;
+    background: -o-linear-gradient(top, rgba(255,255,255,0.8), rgba(255,255,255,0.1)) !important;
+    box-shadow: 0px 0px 6px rgba(0,0,0,0.5);
+    color: rgba(0,0,0,0.6);
+    width: 130px;
+    text-shadow: none;
+    -webkit-border-radius: 0;
+    -moz-border-radius: 0;
+    border-radius: 0;
+    padding-top: 0.2em;
+    padding-bottom: 0.2em;
+}

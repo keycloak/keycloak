@@ -1,11 +1,12 @@
 <section id="social-spi">
     <title>Social Provider SPI</title>
     <para>
-        Keycloak provides an SPI to make it easy to add additional social providers. This is done by implementing the
-        <ulink url="https://raw.github.com/keycloak/keycloak/master/social/core/src/main/java/org/keycloak/social/SocialProvider.java">SocialProvider</ulink>
-        interface and providing a provider configuration file (<literal>META-INF/services/org.keycloak.social.SocialProvider</literal>).
+        Keycloak provides an SPI to make it easy to add additional social providers. This is done by implementing
+        <literal>org.keycloak.social.SocialProvider</literal> in <literal>social/core</literal>
+        and adding a provider configuration file (<literal>META-INF/services/org.keycloak.social.SocialProvider</literal>).
     </para>
     <para>
-        A good reference for implementing a Social Provider is the <ulink url="https://github.com/keycloak/keycloak/tree/master/social/google">Google provider</ulink>.
+        A good reference for implementing a Social Provider is the Google provider which you can find in <literal>social/google</literal>
+        on GitHub or in the source download.
     </para>
 </section>

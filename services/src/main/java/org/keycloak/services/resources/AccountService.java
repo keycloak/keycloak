@@ -24,6 +24,9 @@ package org.keycloak.services.resources;
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.AbstractOAuthClient;
+import org.keycloak.account.Account;
+import org.keycloak.account.AccountLoader;
+import org.keycloak.account.AccountPages;
 import org.keycloak.jaxrs.JaxrsOAuthClient;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
@@ -37,14 +40,11 @@ import org.keycloak.services.managers.ModelToRepresentation;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Flows;
-import org.keycloak.services.resources.flows.FormFlows;
-import org.keycloak.services.resources.flows.Pages;
 import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.services.validation.Validation;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
-import javax.ws.rs.ext.Providers;
 import java.net.URI;
 import java.util.List;
 
@@ -68,9 +68,6 @@ public class AccountService {
     @Context
     private UriInfo uriInfo;
 
-    @Context
-    private Providers providers;
-
     private AuthenticationManager authManager = new AuthenticationManager();
 
     private ApplicationModel application;
@@ -83,28 +80,28 @@ public class AccountService {
         this.tokenManager = tokenManager;
     }
 
-    private Response forwardToPage(String path, String template) {
+    private Response forwardToPage(String path, AccountPages page) {
         AuthenticationManager.Auth auth = getAuth(false);
         if (auth != null) {
             if (!hasAccess(auth)) {
                 return noAccess();
             }
 
-            FormFlows forms = Flows.forms(realm, request, uriInfo).setUser(auth.getUser());
+            Account account = AccountLoader.load().createAccount(uriInfo).setRealm(realm).setUser(auth.getUser());
 
             String referrer = getReferrer();
             if (referrer != null) {
-                forms.setQueryParam("referrer", referrer);
+                account.setReferrer(referrer);
             }
 
-            return forms.forwardToForm(template);
+            return account.createResponse(page);
         } else {
             return login(path);
         }
     }
 
     private Response noAccess() {
-        return Flows.forms(realm, request, uriInfo).setError("No access").forwardToErrorPage();
+        return Flows.forms(realm, request, uriInfo).setError("No access").createErrorPage();
     }
 
     @Path("/")
@@ -118,7 +115,7 @@ public class AccountService {
     public Response accountPage() {
         List<MediaType> types = headers.getAcceptableMediaTypes();
         if (types.contains(MediaType.WILDCARD_TYPE) || (types.contains(MediaType.TEXT_HTML_TYPE))) {
-            return forwardToPage(null, Pages.ACCOUNT);
+            return forwardToPage(null, AccountPages.ACCOUNT);
         } else if (types.contains(MediaType.APPLICATION_JSON_TYPE)) {
             AuthenticationManager.Auth auth = getAuth(true);
             if (!hasAccess(auth, Constants.ACCOUNT_PROFILE_ROLE)) {
@@ -130,28 +127,16 @@ public class AccountService {
         }
     }
 
-    @Path("social")
-    @GET
-    public Response socialPage() {
-        return forwardToPage("social", Pages.SOCIAL);
-    }
-
     @Path("totp")
     @GET
     public Response totpPage() {
-        return forwardToPage("totp", Pages.TOTP);
+        return forwardToPage("totp", AccountPages.TOTP);
     }
 
     @Path("password")
     @GET
     public Response passwordPage() {
-        return forwardToPage("password", Pages.PASSWORD);
-    }
-
-    @Path("access")
-    @GET
-    public Response accessPage() {
-        return forwardToPage("access", Pages.ACCESS);
+        return forwardToPage("password", AccountPages.PASSWORD);
     }
 
     @Path("/")
@@ -165,16 +150,18 @@ public class AccountService {
 
         UserModel user = auth.getUser();
 
+        Account account = AccountLoader.load().createAccount(uriInfo).setRealm(realm).setUser(auth.getUser());
+
         String error = Validation.validateUpdateProfileForm(formData);
         if (error != null) {
-            return Flows.forms(realm, request, uriInfo).setUser(user).setError(error).forwardToAccount();
+            return account.setError(error).createResponse(AccountPages.ACCOUNT);
         }
 
         user.setFirstName(formData.getFirst("firstName"));
         user.setLastName(formData.getFirst("lastName"));
         user.setEmail(formData.getFirst("email"));
 
-        return Flows.forms(realm, request, uriInfo).setUser(user).setSuccess("accountUpdated").forwardToAccount();
+        return account.setSuccess("accountUpdated").createResponse(AccountPages.ACCOUNT);
     }
 
     @Path("totp-remove")
@@ -186,9 +173,10 @@ public class AccountService {
         }
 
         UserModel user = auth.getUser();
-
         user.setTotp(false);
-        return Flows.forms(realm, request, uriInfo).setSuccess("successTotpRemoved").setUser(user).forwardToTotp();
+
+        Account account = AccountLoader.load().createAccount(uriInfo).setRealm(realm).setUser(auth.getUser());
+        return account.setSuccess("successTotpRemoved").createResponse(AccountPages.TOTP);
     }
 
     @Path("totp")
@@ -205,11 +193,12 @@ public class AccountService {
         String totp = formData.getFirst("totp");
         String totpSecret = formData.getFirst("totpSecret");
 
-        FormFlows forms = Flows.forms(realm, request, uriInfo).setUser(user);
+        Account account = AccountLoader.load().createAccount(uriInfo).setRealm(realm).setUser(auth.getUser());
+
         if (Validation.isEmpty(totp)) {
-            return forms.setError(Messages.MISSING_TOTP).forwardToTotp();
+            return account.setError(Messages.MISSING_TOTP).createResponse(AccountPages.TOTP);
         } else if (!new TimeBasedOTP().validate(totp, totpSecret.getBytes())) {
-            return forms.setError(Messages.INVALID_TOTP).forwardToTotp();
+            return account.setError(Messages.INVALID_TOTP).createResponse(AccountPages.TOTP);
         }
 
         UserCredentialModel credentials = new UserCredentialModel();
@@ -219,7 +208,7 @@ public class AccountService {
 
         user.setTotp(true);
 
-        return Flows.forms(realm, request, uriInfo).setSuccess("successTotp").setUser(user).forwardToTotp();
+        return account.setSuccess("successTotp").createResponse(AccountPages.TOTP);
     }
 
     @Path("password")
@@ -233,27 +222,27 @@ public class AccountService {
 
         UserModel user = auth.getUser();
 
-        FormFlows forms = Flows.forms(realm, request, uriInfo).setUser(user);
+        Account account = AccountLoader.load().createAccount(uriInfo).setRealm(realm).setUser(auth.getUser());
 
         String password = formData.getFirst("password");
         String passwordNew = formData.getFirst("password-new");
         String passwordConfirm = formData.getFirst("password-confirm");
 
         if (Validation.isEmpty(passwordNew)) {
-            return forms.setError(Messages.MISSING_PASSWORD).forwardToPassword();
+            return account.setError(Messages.MISSING_PASSWORD).createResponse(AccountPages.PASSWORD);
         } else if (!passwordNew.equals(passwordConfirm)) {
-            return forms.setError(Messages.INVALID_PASSWORD_CONFIRM).forwardToPassword();
+            return account.setError(Messages.INVALID_PASSWORD_CONFIRM).createResponse(AccountPages.PASSWORD);
         }
 
         if (Validation.isEmpty(password)) {
-            return forms.setError(Messages.MISSING_PASSWORD).forwardToPassword();
+            return account.setError(Messages.MISSING_PASSWORD).createResponse(AccountPages.PASSWORD);
         } else if (!realm.validatePassword(user, password)) {
-            return forms.setError(Messages.INVALID_PASSWORD_EXISTING).forwardToPassword();
+            return account.setError(Messages.INVALID_PASSWORD_EXISTING).createResponse(AccountPages.PASSWORD);
         }
 
         String error = Validation.validatePassword(formData, realm.getPasswordPolicy());
         if (error != null) {
-            return forms.setError(error).forwardToPassword();
+            return account.setError(error).createResponse(AccountPages.PASSWORD);
         }
 
         UserCredentialModel credentials = new UserCredentialModel();
@@ -262,7 +251,7 @@ public class AccountService {
 
         realm.updateCredential(user, credentials);
 
-        return Flows.forms(realm, request, uriInfo).setUser(user).setSuccess("accountPasswordUpdated").forwardToPassword();
+        return account.setSuccess("accountPasswordUpdated").createResponse(AccountPages.PASSWORD);
     }
 
     @Path("login-redirect")

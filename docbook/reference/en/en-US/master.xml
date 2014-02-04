@@ -13,6 +13,7 @@
                 <!ENTITY SocialGoogle SYSTEM "modules/social-google.xml">
                 <!ENTITY SocialTwitter SYSTEM "modules/social-twitter.xml">
                 <!ENTITY SocialProviderSPI SYSTEM "modules/social-spi.xml">
+                <!ENTITY Themes SYSTEM "modules/themes.xml">
                 <!ENTITY Email SYSTEM "modules/email.xml">
                 ]>
 
@@ -76,6 +77,8 @@
         &SocialTwitter;
         &SocialProviderSPI;
     </chapter>
+
+    &Themes;
 
     <chapter>
         <title>Email</title>

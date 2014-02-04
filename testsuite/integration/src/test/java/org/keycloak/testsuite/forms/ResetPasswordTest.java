@@ -87,7 +87,7 @@ public class ResetPasswordTest {
 
         resetPasswordPage.assertCurrent();
 
-        Assert.assertEquals("Success!", resetPasswordPage.getMessage());
+        Assert.assertEquals("You should receive an email shortly with further instructions.", resetPasswordPage.getMessage());
 
         Assert.assertEquals(1, greenMail.getReceivedMessages().length);
 
@@ -146,7 +146,7 @@ public class ResetPasswordTest {
 
         resetPasswordPage.assertCurrent();
 
-        Assert.assertEquals("Success!", resetPasswordPage.getMessage());
+        Assert.assertEquals("You should receive an email shortly with further instructions.", resetPasswordPage.getMessage());
 
         Assert.assertEquals(1, greenMail.getReceivedMessages().length);
 

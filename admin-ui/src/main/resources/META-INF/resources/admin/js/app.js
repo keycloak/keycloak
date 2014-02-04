@@ -47,6 +47,9 @@ module.config([ '$routeProvider', function($routeProvider) {
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
                 }
             },
             controller : 'RealmDetailCtrl'
@@ -78,6 +81,9 @@ module.config([ '$routeProvider', function($routeProvider) {
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
                 }
             },
             controller : 'RealmSocialCtrl'
@@ -780,4 +786,10 @@ module.filter('remove', function() {
 
         return out;
     };
+});
+
+module.filter('capitalize', function() {
+    return function(input) {
+        return input.substring(0, 1).toUpperCase() + input.substring(1);
+    }
 });

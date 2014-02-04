@@ -38,11 +38,10 @@
                                         <div class="actions">
                                             <div class="select-rcue">
                                                 <select ng-model="newProviderId"
-                                                        ng-options="p as allProviders[p] for p in unsetProviders"
-                                                        placeholder="Please select"></select>
-                                            </div>
-                                            <div>
-                                                <button ng-click="addProvider()" ng-disabled="">Add Provider</button>
+                                                        ng-options="(p|capitalize) for p in (allProviders|remove:configuredProviders)"
+                                                        data-ng-change="addProvider(newProviderId); newProviderId = null">
+                                                    <option value="" disabled selected>Add provider...</option>
+                                                </select>
                                             </div>
                                         </div>
                                     </th>
@@ -58,7 +57,7 @@
                                 <tr ng-repeat="pId in configuredProviders">
                                     <td>
                                         <div class="clearfix">
-                                            <input class="input-small disabled" type="text" value="{{allProviders[pId]}}" readonly>
+                                            <input class="input-small disabled" type="text" value="{{pId|capitalize}}" readonly>
                                         </div>
                                     </td>
                                     <td>

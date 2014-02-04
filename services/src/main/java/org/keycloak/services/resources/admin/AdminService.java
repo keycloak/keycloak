@@ -24,11 +24,8 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.TokenService;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.OAuthFlows;
-import org.keycloak.util.KeycloakUriBuilder;
 
-import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.NotFoundException;
@@ -200,6 +197,30 @@ public class AdminService {
         return adminResource;
     }
 
+    @Path("serverinfo")
+    public ServerInfoAdminResource getServerInfo(@Context final HttpHeaders headers) {
+        RealmManager realmManager = new RealmManager(session);
+        RealmModel saasRealm = getAdminstrationRealm(realmManager);
+        if (saasRealm == null)
+            throw new NotFoundException();
+        UserModel admin = authManager.authenticateSaasIdentity(saasRealm, uriInfo, headers);
+        if (admin == null) {
+            throw new NotAuthorizedException("Bearer");
+        }
+        ApplicationModel adminConsole = saasRealm.getApplicationNameMap().get(Constants.ADMIN_CONSOLE_APPLICATION);
+        if (adminConsole == null) {
+            throw new NotFoundException();
+        }
+        RoleModel adminRole = adminConsole.getRole(Constants.ADMIN_CONSOLE_ADMIN_ROLE);
+        if (!saasRealm.hasRole(admin, adminRole)) {
+            logger.warn("not a Realm admin");
+            throw new NotAuthorizedException("Bearer");
+        }
+        ServerInfoAdminResource adminResource = new ServerInfoAdminResource();
+        resourceContext.initResource(adminResource);
+        return adminResource;
+    }
+
     @Path("login")
     @GET
     @NoCache
@@ -226,7 +247,7 @@ public class AdminService {
     public Response errorOnLoginRedirect(@QueryParam ("error") String message) {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = getAdminstrationRealm(realmManager);
-        return Flows.forms(realm, request, uriInfo).setError(message).forwardToErrorPage();
+        return Flows.forms(realm, request, uriInfo).setError(message).createErrorPage();
     }
 
     protected Response redirectOnLoginError(String message) {
@@ -373,13 +394,11 @@ public class AdminService {
                 NewCookie cookie = authManager.createSaasIdentityCookie(realm, user, uriInfo);
                 return Response.status(302).cookie(cookie).location(contextRoot(uriInfo).path(adminPath).build()).build();
             case ACCOUNT_DISABLED:
-                return Flows.forms(realm, request, uriInfo).setError(Messages.ACCOUNT_DISABLED).setFormData(formData)
-                        .forwardToLogin();
+                return Flows.forms(realm, request, uriInfo).setError(Messages.ACCOUNT_DISABLED).setFormData(formData).createLogin();
             case ACTIONS_REQUIRED:
                 return oauth.processAccessCode(null, "n", contextRoot(uriInfo).path(adminPath).build().toString(), adminConsoleUser, user);
             default:
-                return Flows.forms(realm, request, uriInfo).setError(Messages.INVALID_USER).setFormData(formData)
-                        .forwardToLogin();
+                return Flows.forms(realm, request, uriInfo).setError(Messages.INVALID_USER).setFormData(formData).createLogin();
         }
     }
 

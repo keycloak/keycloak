@@ -41,6 +41,8 @@ public class RealmRepresentation {
     protected List<OAuthClientRepresentation> oauthClients;
     protected Map<String, String> socialProviders;
     protected Map<String, String> smtpServer;
+    protected String loginTheme;
+    protected String accountTheme;
 
     public String getSelf() {
         return self;
@@ -316,5 +318,21 @@ public class RealmRepresentation {
 
     public void setRoles(RolesRepresentation roles) {
         this.roles = roles;
+    }
+
+    public String getLoginTheme() {
+        return loginTheme;
+    }
+
+    public void setLoginTheme(String loginTheme) {
+        this.loginTheme = loginTheme;
+    }
+
+    public String getAccountTheme() {
+        return accountTheme;
+    }
+
+    public void setAccountTheme(String accountTheme) {
+        this.accountTheme = accountTheme;
     }
 }
