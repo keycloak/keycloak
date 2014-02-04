@@ -38,7 +38,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2013 Red Hat Inc.
  */
-public class KeycloakAdapterConfigService implements Service<KeycloakAdapterConfigService> {
+public final class KeycloakAdapterConfigService implements Service<KeycloakAdapterConfigService> {
     private static final String CREDENTIALS_JSON_NAME = "credentials";
 
     // Right now this is used as a service, but I'm not sure it really needs to be implemented that way.

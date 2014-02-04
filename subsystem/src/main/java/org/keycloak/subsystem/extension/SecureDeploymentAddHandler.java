@@ -34,7 +34,7 @@ import org.jboss.msc.service.ServiceController;
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2013 Red Hat Inc.
  */
-public class SecureDeploymentAddHandler extends AbstractAddStepHandler {
+public final class SecureDeploymentAddHandler extends AbstractAddStepHandler {
 
     public static SecureDeploymentAddHandler INSTANCE = new SecureDeploymentAddHandler();
 

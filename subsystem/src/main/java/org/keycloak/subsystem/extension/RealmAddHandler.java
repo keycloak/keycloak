@@ -34,7 +34,7 @@ import org.jboss.msc.service.ServiceController;
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2013 Red Hat Inc.
  */
-public class RealmAddHandler extends AbstractAddStepHandler {
+public final class RealmAddHandler extends AbstractAddStepHandler {
 
     public static RealmAddHandler INSTANCE = new RealmAddHandler();
 
