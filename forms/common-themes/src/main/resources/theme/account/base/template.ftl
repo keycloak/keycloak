@@ -3,7 +3,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Account Management</title>
+    <title>Keycloak Account Management</title>
     <link rel="icon" href="${url.resourcesPath}/img/favicon.ico">
     <#if properties.styles?has_content>
         <#list properties.styles?split(' ') as style>
@@ -32,7 +32,7 @@
 <div class="header rcue">
     <div class="navbar utility">
         <div class="navbar-inner clearfix container">
-            <h1><a href="#"><strong>Keycloak</strong> Central Login</a></h1>
+            <h1><a href="#"><strong>Keycloak</strong> Account Management</a></h1>
             <ul class="nav pull-right">
                 <li>
                     <a href="${url.logoutUrl}">Sign Out</a>
