@@ -84,4 +84,9 @@ public class RoleRepresentation {
     public void setComposites(Composites composites) {
         this.composites = composites;
     }
+
+    @Override
+    public String toString() {
+        return name;
+    }
 }

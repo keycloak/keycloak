@@ -269,4 +269,8 @@ public class ApplicationAdapter implements ApplicationModel {
         ApplicationAdapter app = (ApplicationAdapter)o;
         return app.getId().equals(getId());
     }
+
+    public String toString() {
+        return getName();
+    }
 }
