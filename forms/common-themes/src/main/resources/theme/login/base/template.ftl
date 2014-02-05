@@ -5,7 +5,7 @@
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <title><#nested "title"></title>
-    <link rel="icon" href="${url.resourcesPath}/img/favicon.ico">
+    <link rel="icon" href="${url.resourcesPath}/img/favicon.ico" />
     <#if properties.styles?has_content>
         <#list properties.styles?split(' ') as style>
             <link href="${url.resourcesPath}/${style}" rel="stylesheet" />
@@ -18,14 +18,10 @@
     </#if>
 </head>
 
-<body class="rcue-login-register ${bodyClass}">
-    <div class="rcue-logo"></div>
-
+<body class="kc-login-register ${bodyClass}">
+    <h1 class="kc-title">KeyCloak</h1>
     <div class="content">
-        <h2>
-            <#nested "header">
-        </h2>
-
+        <h2 id="kc-header"><#nested "header"></h2>
         <div class="background-area">
             <#if !forceSeparator && realm?has_content>
                 <#assign drawSeparator = realm.registrationAllowed>
@@ -41,7 +37,6 @@
                     </#if>
                     <#nested "form">
                 </div>
-
                 <#if social.displaySocialProviders>
                     <div class="section social-login"> <span>or</span>
                         <p>${rb.logInWith}</p>
@@ -52,20 +47,15 @@
                         </ul>
                     </div>
                 </#if>
-
                 <div class="section info-area">
                     <#nested "info">
                 </div>
             </div>
         </div>
-
         <p class="powered">
             <a href="http://www.keycloak.org">${rb.poweredByKeycloak}</a>
         </p>
     </div>
-
-    <#nested "content">
-
 </body>
 </html>
 </#macro>

@@ -1,4 +1,5 @@
-body.rcue-login-register {
-    background: #083556;
-    background-image: none;
+@IMPORT url("../../rcue/css/styles.css");
+
+body {
+    xbackground: #083556 !important;
 }

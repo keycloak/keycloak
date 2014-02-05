@@ -1,25 +1,20 @@
 <#import "template.ftl" as layout>
 <@layout.registrationLayout bodyClass=""; section>
     <#if section = "title">
-
     ${rb.emailUsernameForgotHeader}
 
     <#elseif section = "header">
-
     ${rb.emailUsernameForgotHeader}
 
     <#elseif section = "form">
-
-    <div id="form">
+    <form id="kc-username-reminder-form" action="${url.loginUsernameReminderUrl}" method="post">
         <p class="instruction">${rb.emailUsernameInstruction}</p>
-        <form action="${url.loginUsernameReminderUrl}" method="post">
-        	<div>
-      	    	<label for="email">${rb.email}</label><input type="text" id="email" name="email" />
-			</div>
-            <input class="btn-primary" type="submit" value="Submit" />
-        </form>
-    </div>
+        <div class="field-wrapper">
+            <label for="email">${rb.email}</label><input type="text" id="email" name="email" />
+        </div>
+        <input class="btn-primary" type="submit" value="${rb.submit}" />
+    </form>
     <#elseif section = "info" >
-        <p><a href="${url.loginUrl}">&laquo; Back to Login</a></p>
+    <p><a href="${url.loginUrl}">${rb.backToLogin}</a></p>
     </#if>
 </@layout.registrationLayout>
