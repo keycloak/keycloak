@@ -61,6 +61,11 @@
             <artifactId>keycloak-model-jpa</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-js-adapter</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <!--
         <dependency>
             <groupId>org.keycloak</groupId>
