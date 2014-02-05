@@ -27,7 +27,7 @@ import org.jboss.dmr.ModelNode;
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2014 Red Hat Inc.
  */
-public class CredentialRemoveHandler extends AbstractRemoveStepHandler {
+public final class CredentialRemoveHandler extends AbstractRemoveStepHandler {
 
     public static CredentialRemoveHandler INSTANCE = new CredentialRemoveHandler();
 

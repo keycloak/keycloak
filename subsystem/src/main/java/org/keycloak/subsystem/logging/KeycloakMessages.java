@@ -16,11 +16,6 @@
  */
 package org.keycloak.subsystem.logging;
 
-import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
-import org.jboss.jandex.AnnotationTarget;
-import org.jboss.jandex.DotName;
-import org.jboss.logging.annotations.Cause;
-import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageBundle;
 import org.jboss.logging.Messages;
 
@@ -36,26 +31,4 @@ public interface KeycloakMessages {
      * The messages
      */
     KeycloakMessages MESSAGES = Messages.getBundle(KeycloakMessages.class);
-/*
-    @Message(id = 12650, value = "Failed to load annotated class: %s")
-    String classLoadingFailed(DotName clazz);
-
-    @Message(id = 12651, value = "Annotation %s in class %s is only allowed on classes")
-    String invalidAnnotationLocation(Object annotation, AnnotationTarget classInfo);
-
-    @Message(id = 12652, value = "Instance creation failed")
-    RuntimeException instanceCreationFailed(@Cause Throwable t);
-
-    @Message(id = 12653, value = "Instance destruction failed")
-    RuntimeException instanceDestructionFailed(@Cause Throwable t);
-
-    @Message(id = 12654, value = "Thread local injection container not set")
-    IllegalStateException noThreadLocalInjectionContainer();
-
-    @Message(id = 12655, value = "@ManagedBean is only allowed at class level %s")
-    String invalidManagedBeanAnnotation(AnnotationTarget target);
-
-    @Message(id = 12656, value = "Default JSF implementation slot '%s' is invalid")
-    DeploymentUnitProcessingException invalidDefaultJSFImpl(String defaultJsfVersion);
-    */
 }

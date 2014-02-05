@@ -27,7 +27,7 @@ import org.jboss.dmr.ModelNode;
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2013 Red Hat Inc.
  */
-public class SecureDeploymentRemoveHandler extends AbstractRemoveStepHandler {
+public final class SecureDeploymentRemoveHandler extends AbstractRemoveStepHandler {
 
     public static SecureDeploymentRemoveHandler INSTANCE = new SecureDeploymentRemoveHandler();
 
