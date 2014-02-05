@@ -2,10 +2,10 @@
 <@layout.registrationLayout bodyClass=""; section>
 
     <#if section = "title">
-    Log in to ${realm.name}
+    ${rb.loginTitle} ${realm.name}
 
     <#elseif section = "header">
-    Log in to <strong>${realm.name}</strong>
+    ${rb.loginTitle} <strong>${realm.name}</strong>
 
     <#elseif section = "form">
     <form id="kc-totp-login-form" action="${url.loginAction}" method="post">
@@ -21,7 +21,7 @@
             <!-- <p>Forgot <a href="#">Username</a> or <a href="#">Password</a>?</p> -->
         </div>
 
-        <input class="btn-primary" type="submit" value="Log In" />
+        <input class="btn-primary" type="submit" value="${rb.logIn}" />
     </form>
 
     <#elseif section = "info">

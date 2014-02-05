@@ -2,14 +2,14 @@
 <#import "template.ftl" as layout>
 <@layout.registrationLayout bodyClass="oauth"; section>
     <#if section = "title">
-    OAuth Grant
+    ${rb.oauthGrantTitle}
 
     <#elseif section = "header">
-    <strong>Keycloak</strong> Central Login
+    ${rb.oauthGrantTitleHtml}
 
     <#elseif section = "form">
     <div id="kc-oauth" class="content-area">
-        <p class="instruction"><strong>${oauth.client}</strong> requests access to:</p>
+        <p class="instruction"><strong>${oauth.client}</strong> ${rb.oauthGrantRequest}</p>
         <ul id="kc-oauth-list">
             <#list oauth.realmRolesRequested as role>
                 <li>
@@ -27,11 +27,11 @@
             </#list>
         </ul>
 
-        <p class="terms">Keycloak Central Login and Google will use this information in accordance with their respective terms of service and privacy policies.</p>
+        <p class="terms">${rb.oauthGrantTerms}</p>
         <form class="form-actions" action="${url.oauthAction}" method="POST">
             <input type="hidden" name="code" value="${oauth.code}">
-            <input type="submit" class="btn-primary primary" name="accept" value="Accept">
-            <input type="submit" class="btn-secondary" name="cancel" value="Cancel">
+            <input type="submit" class="btn-primary primary" name="accept" value="${rb.accept}">
+            <input type="submit" class="btn-secondary" name="cancel" value="${rb.cancel}">
         </form>
     </div>
     </#if>

@@ -28,7 +28,7 @@
             <label for="password-confirm">${rb.passwordConfirm}</label><input type="password" id="password-confirm" name="password-confirm" />
         </div>
 
-        <input class="btn-primary" type="submit" value="Register"/>
+        <input class="btn-primary" type="submit" value="${rb.register}"/>
     </form>
 
     <#elseif section = "info">

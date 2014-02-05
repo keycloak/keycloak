@@ -18,6 +18,6 @@
     </div>
 
     <#elseif section = "info" >
-    <p><a href="${url.loginUrl}">&laquo; Back to Login</a></p>
+    <p><a href="${url.loginUrl}">${rb.backToLogin}</a></p>
     </#if>
 </@layout.registrationLayout>

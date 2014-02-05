@@ -12,9 +12,9 @@
         <div class="field-wrapper">
             <label for="email">${rb.email}</label><input type="text" id="email" name="email" />
         </div>
-        <input class="btn-primary" type="submit" value="Submit" />
+        <input class="btn-primary" type="submit" value="${rb.submit}" />
     </form>
     <#elseif section = "info" >
-    <p><a href="${url.loginUrl}">&laquo; Back to Login</a></p>
+    <p><a href="${url.loginUrl}">${rb.backToLogin}</a></p>
     </#if>
 </@layout.registrationLayout>
