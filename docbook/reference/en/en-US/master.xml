@@ -10,6 +10,7 @@
                 <!ENTITY EAP6Adapter SYSTEM "modules/eap6-adapter.xml">
                 <!ENTITY SocialConfig SYSTEM "modules/social-config.xml">
                 <!ENTITY SocialFacebook SYSTEM "modules/social-facebook.xml">
+                <!ENTITY SocialGitHub SYSTEM "modules/social-github.xml">
                 <!ENTITY SocialGoogle SYSTEM "modules/social-google.xml">
                 <!ENTITY SocialTwitter SYSTEM "modules/social-twitter.xml">
                 <!ENTITY SocialProviderSPI SYSTEM "modules/social-spi.xml">
@@ -73,6 +74,7 @@
         </para>
         &SocialConfig;
         &SocialFacebook;
+        &SocialGitHub;
         &SocialGoogle;
         &SocialTwitter;
         &SocialProviderSPI;

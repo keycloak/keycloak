@@ -15,6 +15,7 @@
 
     <modules>
         <module>core</module>
+        <module>github</module>
         <module>google</module>
         <module>twitter</module>
         <module>facebook</module>

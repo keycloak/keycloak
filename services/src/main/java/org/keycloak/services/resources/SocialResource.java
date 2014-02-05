@@ -106,10 +106,10 @@ public class SocialResource {
         RequestDetails requestData = getRequestDetails(queryParams);
         SocialProvider provider = SocialLoader.load(requestData.getProviderId());
 
-        String realmId = requestData.getClientAttribute("realmId");
+        String realmName = requestData.getClientAttribute("realm");
 
         RealmManager realmManager = new RealmManager(session);
-        RealmModel realm = realmManager.getRealm(realmId);
+        RealmModel realm = realmManager.getRealmByName(realmName);
 
         OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
 
@@ -186,12 +186,12 @@ public class SocialResource {
 
     @GET
     @Path("{realm}/login")
-    public Response redirectToProviderAuth(@PathParam("realm") final String realmId,
+    public Response redirectToProviderAuth(@PathParam("realm") final String realmName,
                                            @QueryParam("provider_id") final String providerId, @QueryParam("client_id") final String clientId,
                                            @QueryParam("scope") final String scope, @QueryParam("state") final String state,
                                            @QueryParam("redirect_uri") String redirectUri) {
         RealmManager realmManager = new RealmManager(session);
-        RealmModel realm = realmManager.getRealm(realmId);
+        RealmModel realm = realmManager.getRealmByName(realmName);
 
         SocialProvider provider = SocialLoader.load(providerId);
         if (provider == null) {
@@ -223,7 +223,7 @@ public class SocialResource {
             AuthRequest authRequest = provider.getAuthUrl(config);
 
             RequestDetails socialRequest = RequestDetails.create(providerId)
-                    .putSocialAttributes(authRequest.getAttributes()).putClientAttribute("realmId", realmId)
+                    .putSocialAttributes(authRequest.getAttributes()).putClientAttribute("realm", realmName)
                     .putClientAttribute("clientId", clientId).putClientAttribute("scope", scope)
                     .putClientAttribute("state", state).putClientAttribute("redirectUri", redirectUri).build();
 

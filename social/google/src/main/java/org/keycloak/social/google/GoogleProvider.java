@@ -22,67 +22,54 @@
 package org.keycloak.social.google;
 
 import org.json.JSONObject;
-import org.keycloak.social.AuthCallback;
-import org.keycloak.social.AuthRequest;
+import org.keycloak.social.AbstractOAuth2Provider;
 import org.keycloak.social.utils.SimpleHttp;
-import org.keycloak.social.SocialProvider;
-import org.keycloak.social.SocialProviderConfig;
 import org.keycloak.social.SocialProviderException;
 import org.keycloak.social.SocialUser;
-
-import java.util.UUID;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class GoogleProvider implements SocialProvider {
+public class GoogleProvider extends AbstractOAuth2Provider {
 
-    private static final String DEFAULT_RESPONSE_TYPE = "code";
+    private static final String ID = "google";
+    private static final String NAME = "Google";
 
-    private static final String AUTH_PATH = "https://accounts.google.com/o/oauth2/auth";
-
-    private static final String TOKEN_PATH = "https://accounts.google.com/o/oauth2/token";
-
-    private static final String PROFILE_PATH = "https://www.googleapis.com/plus/v1/people/me/openIdConnect";
+    private static final String AUTH_URL = "https://accounts.google.com/o/oauth2/auth";
+    private static final String TOKEN_URL = "https://accounts.google.com/o/oauth2/token";
+    private static final String PROFILE_URL = "https://www.googleapis.com/plus/v1/people/me/openIdConnect";
 
     private static final String DEFAULT_SCOPE = "openid profile email";
 
     @Override
     public String getId() {
-        return "google";
-    }
-
-    @Override
-    public AuthRequest getAuthUrl(SocialProviderConfig config) throws SocialProviderException {
-        String state = UUID.randomUUID().toString();
-
-        return AuthRequest.create(state, AUTH_PATH).setQueryParam("client_id", config.getKey())
-                .setQueryParam("response_type", DEFAULT_RESPONSE_TYPE).setQueryParam("scope", DEFAULT_SCOPE)
-                .setQueryParam("redirect_uri", config.getCallbackUrl()).setQueryParam("state", state).setAttribute("state", state).build();
+        return ID;
     }
 
     @Override
     public String getName() {
-        return "Google";
+        return NAME;
     }
 
     @Override
-    public SocialUser processCallback(SocialProviderConfig config, AuthCallback callback) throws SocialProviderException {
-        String code = callback.getQueryParam(DEFAULT_RESPONSE_TYPE);
+    protected String getScope() {
+        return DEFAULT_SCOPE;
+    }
 
+    @Override
+    protected String getAuthUrl() {
+        return AUTH_URL;
+    }
+
+    @Override
+    protected String getTokenUrl() {
+        return TOKEN_URL;
+    }
+
+    @Override
+    protected SocialUser getProfile(String accessToken) throws SocialProviderException {
         try {
-            if (!callback.getQueryParam("state").equals(callback.getAttribute("state"))) {
-                throw new SocialProviderException("Invalid state");
-            }
-
-            JSONObject token = SimpleHttp.doPost(TOKEN_PATH).param("code", code).param("client_id", config.getKey())
-                    .param("client_secret", config.getSecret())
-                    .param("redirect_uri", config.getCallbackUrl())
-                    .param("grant_type", "authorization_code").asJson();
-
-            String accessToken = token.getString("access_token");
-
-            JSONObject profile = SimpleHttp.doGet(PROFILE_PATH).header("Authorization", "Bearer " + accessToken).asJson();
+            JSONObject profile = SimpleHttp.doGet(PROFILE_URL).header("Authorization", "Bearer " + accessToken).asJson();
 
             SocialUser user = new SocialUser(profile.getString("sub"));
 
@@ -96,11 +83,6 @@ public class GoogleProvider implements SocialProvider {
         } catch (Exception e) {
             throw new SocialProviderException(e);
         }
-    }
-
-    @Override
-    public String getRequestIdParamName() {
-        return "state";
     }
 
 }
