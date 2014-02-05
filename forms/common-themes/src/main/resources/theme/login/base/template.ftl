@@ -1,4 +1,4 @@
-<#macro registrationLayout bodyClass isSeparator=false forceSeparator=false displaySocial=false>
+<#macro registrationLayout bodyClass="" displaySeparator=false displaySocial=false>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 
@@ -23,12 +23,7 @@
     <div class="content">
         <h2 id="kc-header"><#nested "header"></h2>
         <div class="background-area">
-            <#if !forceSeparator && realm?has_content>
-                <#assign drawSeparator = realm.registrationAllowed>
-            <#else>
-                <#assign drawSeparator = isSeparator>
-            </#if>
-            <div class="form-area ${displaySocial?string('social','')} ${(drawSeparator)?string('separator','')} clearfix">
+            <div class="form-area ${displaySocial?string('social','')} ${displaySeparator?string('separator','')} clearfix">
                 <div class="section app-form">
                     <#if message?has_content>
                         <div class="feedback ${message.type} bottom-left show">

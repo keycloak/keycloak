@@ -1,5 +1,5 @@
 <#import "template.ftl" as layout>
-<@layout.registrationLayout bodyClass="email"; section>
+<@layout.registrationLayout; section>
     <#if section = "title">
     ${rb.emailVerifyTitle}
 

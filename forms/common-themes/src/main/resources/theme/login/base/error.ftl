@@ -1,6 +1,6 @@
 <#-- TODO: Only a placeholder, implementation needed -->
 <#import "template.ftl" as layout>
-<@layout.registrationLayout bodyClass=""; section>
+<@layout.registrationLayout; section>
     <#if section = "title">
     ${rb.errorTitle}
 
