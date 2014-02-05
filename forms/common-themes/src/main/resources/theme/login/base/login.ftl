@@ -1,6 +1,6 @@
 <#ftl strip_whitespace=true strip_text=true>
 <#import "template.ftl" as layout>
-<@layout.registrationLayout bodyClass=""; section>
+<@layout.registrationLayout bodyClass="" displaySocial=social.displaySocialProviders; section>
     <#if section = "title">${rb.loginTitle} ${realm.name}
 
     <#elseif section = "header">

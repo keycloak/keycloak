@@ -1,4 +1,4 @@
-<#macro registrationLayout bodyClass isSeparator=false forceSeparator=false>
+<#macro registrationLayout bodyClass isSeparator=false forceSeparator=false displaySocial=false>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 
@@ -28,7 +28,7 @@
             <#else>
                 <#assign drawSeparator = isSeparator>
             </#if>
-            <div class="form-area ${(realm.social && bodyClass != "register")?string('social','')} ${(drawSeparator)?string('separator','')} clearfix">
+            <div class="form-area ${displaySocial?string('social','')} ${(drawSeparator)?string('separator','')} clearfix">
                 <div class="section app-form">
                     <#if message?has_content>
                         <div class="feedback ${message.type} bottom-left show">
@@ -37,7 +37,7 @@
                     </#if>
                     <#nested "form">
                 </div>
-                <#if social.displaySocialProviders>
+                <#if displaySocial>
                     <div class="section social-login"> <span>or</span>
                         <p>${rb.logInWith}</p>
                         <ul>
