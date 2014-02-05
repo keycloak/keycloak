@@ -192,7 +192,7 @@ public class AdminService {
             logger.warn("not a Realm admin");
             throw new NotAuthorizedException("Bearer");
         }
-        RealmsAdminResource adminResource = new RealmsAdminResource(admin);
+        RealmsAdminResource adminResource = new RealmsAdminResource(admin, tokenManager);
         resourceContext.initResource(adminResource);
         return adminResource;
     }

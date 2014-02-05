@@ -8,6 +8,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.ModelToRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.managers.TokenManager;
 
 import javax.ws.rs.*;
 import javax.ws.rs.container.ResourceContext;
@@ -21,6 +22,7 @@ public class RealmAdminResource extends RoleContainerResource {
     protected static final Logger logger = Logger.getLogger(RealmAdminResource.class);
     protected UserModel admin;
     protected RealmModel realm;
+    private TokenManager tokenManager;
 
     @Context
     protected ResourceContext resourceContext;
@@ -28,10 +30,11 @@ public class RealmAdminResource extends RoleContainerResource {
     @Context
     protected KeycloakSession session;
 
-    public RealmAdminResource(UserModel admin, RealmModel realm) {
+    public RealmAdminResource(UserModel admin, RealmModel realm, TokenManager tokenManager) {
         super(realm, realm);
         this.admin = admin;
         this.realm = realm;
+        this.tokenManager = tokenManager;
     }
 
     @Path("applications")
@@ -72,7 +75,7 @@ public class RealmAdminResource extends RoleContainerResource {
 
     @Path("users")
     public UsersResource users() {
-        UsersResource users = new UsersResource(realm);
+        UsersResource users = new UsersResource(realm, tokenManager);
         resourceContext.initResource(users);
         return users;
     }

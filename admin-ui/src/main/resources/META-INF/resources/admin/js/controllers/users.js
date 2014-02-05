@@ -227,7 +227,7 @@ module.controller('UserDetailCtrl', function($scope, realm, user, User, $locatio
     };
 });
 
-module.controller('UserCredentialsCtrl', function($scope, realm, user, User, UserCredentials, Notifications) {
+module.controller('UserCredentialsCtrl', function($scope, realm, user, User, UserCredentials, Notifications, Dialog) {
     console.log('UserCredentialsCtrl');
 
     $scope.realm = realm;
@@ -239,56 +239,45 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, User, Use
     }
 
     $scope.resetPassword = function() {
-
         if ($scope.pwdChange) {
             if ($scope.password != $scope.confirmPassword) {
                 Notifications.error("Password and confirmation does not match.");
-                $scope.password = "";
-                $scope.confirmPassword = "";
                 return;
-            }
-
-            if (!$scope.user.hasOwnProperty('requiredActions')){
-                $scope.user.requiredActions = [];
-            }
-            if ($scope.user.requiredActions.indexOf("UPDATE_PASSWORD") < 0){
-                $scope.user.requiredActions.push("UPDATE_PASSWORD");
             }
         }
 
-        var credentials = [ { type : "password", value : $scope.password } ];
+        Dialog.confirm('Reset password', 'Are you sure you want to reset the users password?', function() {
+            UserCredentials.resetPassword({ realm: realm.realm, userId: user.username }, { type : "password", value : $scope.password }, function() {
+                Notifications.success("The password has been reset");
+                $scope.password = null;
+                $scope.confirmPassword = null;
+            }, function() {
+                Notifications.error("Failed to reset user password");
+            });
+        }, function() {
+            $scope.password = null;
+            $scope.confirmPassword = null;
+        });
+    };
 
-        User.update({
-            realm: realm.realm,
-            userId: $scope.user.username
-        }, $scope.user, function () {
+    $scope.removeTotp = function() {
+        Dialog.confirm('Remove totp', 'Are you sure you want to remove the users totp configuration?', function() {
+            UserCredentials.removeTotp({ realm: realm.realm, userId: user.username }, { }, function() {
+                Notifications.success("The users totp configuration has been removed");
+                $scope.user.totp = false;
+            }, function() {
+                Notifications.error("Failed to remove the users totp configuration");
+            });
+        });
+    };
 
-            $scope.isTotp = $scope.user.totp;
-
-            if ($scope.pwdChange){
-                UserCredentials.update({
-                    realm: realm.realm,
-                    userId: $scope.user.username
-                }, credentials, function () {
-                    Notifications.success("The password has been reset. The user is required to change his password on" +
-                        " the next login.");
-                    $scope.password = "";
-                    $scope.confirmPassword = "";
-                    $scope.pwdChange = false;
-                    $scope.isTotp = user.totp;
-                    $scope.userChange = false;
-                }, function () {
-                    Notifications.error("Error while resetting user password. Be aware that the update password required action" +
-                        " was already set.");
-                });
-            } else {
-                Notifications.success("User settings was updated.");
-                $scope.isTotp = user.totp;
-                $scope.userChange = false;
-            }
-
-        }, function () {
-            Notifications.error("Error while updating user settings.");
+    $scope.resetPasswordEmail = function() {
+        Dialog.confirm('Reset password email', 'Are you sure you want to send password reset email to user?', function() {
+            UserCredentials.resetPasswordEmail({ realm: realm.realm, userId: user.username }, { }, function() {
+                Notifications.success("Password reset email sent to user");
+            }, function() {
+                Notifications.error("Failed to send password reset mail to user");
+            });
         });
     };
 

@@ -10,10 +10,16 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.*;
+import org.keycloak.services.email.EmailException;
+import org.keycloak.services.email.EmailSender;
+import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.managers.ModelToRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.resources.flows.Flows;
+import org.keycloak.services.resources.flows.Urls;
 
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -25,12 +31,15 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.ServerErrorException;
 import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -44,9 +53,15 @@ public class UsersResource {
 
     protected RealmModel realm;
 
-    public UsersResource(RealmModel realm) {
+    private TokenManager tokenManager;
+
+    public UsersResource(RealmModel realm, TokenManager tokenManager) {
         this.realm = realm;
+        this.tokenManager = tokenManager;
     }
+
+    @Context
+    protected UriInfo uriInfo;
 
     @Context
     protected ResourceContext resourceContext;
@@ -373,21 +388,72 @@ public class UsersResource {
         }
     }
 
-    @Path("{username}/credentials")
+    @Path("{username}/reset-password")
     @PUT
     @Consumes("application/json")
-    public void updateCredentials(@PathParam("username") String username, List<CredentialRepresentation> credentials) {
+    public void resetPassword(@PathParam("username") String username, CredentialRepresentation pass) {
         UserModel user = realm.getUser(username);
         if (user == null) {
             throw new NotFoundException();
         }
-        if (credentials == null) return;
-
-        for (CredentialRepresentation rep : credentials) {
-            UserCredentialModel cred = RealmManager.fromRepresentation(rep);
-            realm.updateCredential(user, cred);
+        if (pass == null || pass.getValue() == null || !CredentialRepresentation.PASSWORD.equals(pass.getType())) {
+            throw new BadRequestException();
         }
 
+        UserCredentialModel cred = RealmManager.fromRepresentation(pass);
+        realm.updateCredential(user, cred);
+        user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+    }
+
+    @Path("{username}/remove-totp")
+    @PUT
+    @Consumes("application/json")
+    public void removeTotp(@PathParam("username") String username) {
+        UserModel user = realm.getUser(username);
+        if (user == null) {
+            throw new NotFoundException();
+        }
+
+        user.setTotp(false);
+    }
+
+    @Path("{username}/reset-password-email")
+    @PUT
+    @Consumes("application/json")
+    public Response resetPasswordEmail(@PathParam("username") String username) {
+        UserModel user = realm.getUser(username);
+        if (user == null) {
+            throw new NotFoundException();
+        }
+
+        if (user.getEmail() == null) {
+            return Flows.errors().error("User email missing", Response.Status.BAD_REQUEST);
+        }
+
+        String redirect = Urls.accountBase(uriInfo.getBaseUri()).path("/").build(realm.getName()).toString();
+        String clientId = Constants.ACCOUNT_APPLICATION;
+        String state = null;
+        String scope = null;
+
+        UserModel client = realm.getUser(clientId);
+        if (client == null || !client.isEnabled()) {
+            return Flows.errors().error("Account management not enabled", Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
+        Set<UserModel.RequiredAction> requiredActions = new HashSet<UserModel.RequiredAction>(user.getRequiredActions());
+        requiredActions.add(UserModel.RequiredAction.UPDATE_PASSWORD);
+
+        AccessCodeEntry accessCode = tokenManager.createAccessCode(scope, state, redirect, realm, client, user);
+        accessCode.setRequiredActions(requiredActions);
+        accessCode.setExpiration(System.currentTimeMillis() / 1000 + realm.getAccessCodeLifespanUserAction());
+
+        try {
+            new EmailSender(realm.getSmtpConfig()).sendPasswordReset(user, realm, accessCode, uriInfo);
+            return Response.ok().build();
+        } catch (EmailException e) {
+            logger.error("Failed to send password reset email", e);
+            return Flows.errors().error("Failed to send email", Response.Status.INTERNAL_SERVER_ERROR);
+        }
     }
 
 }

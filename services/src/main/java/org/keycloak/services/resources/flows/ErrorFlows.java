@@ -16,4 +16,10 @@ public class ErrorFlows {
         return Response.status(Response.Status.CONFLICT).entity(error).type(MediaType.APPLICATION_JSON).build();
     }
 
+    public Response error(String message, Response.Status status) {
+        ErrorRepresentation error = new ErrorRepresentation();
+        error.setErrorMessage(message);
+        return Response.status(status).entity(error).type(MediaType.APPLICATION_JSON).build();
+    }
+
 }

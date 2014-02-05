@@ -11,6 +11,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.ModelToRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.resources.flows.Flows;
 
 import javax.ws.rs.*;
@@ -35,9 +36,11 @@ import java.util.Map;
 public class RealmsAdminResource {
     protected static final Logger logger = Logger.getLogger(RealmsAdminResource.class);
     protected UserModel admin;
+    protected TokenManager tokenManager;
 
-    public RealmsAdminResource(UserModel admin) {
+    public RealmsAdminResource(UserModel admin, TokenManager tokenManager) {
         this.admin = admin;
+        this.tokenManager = tokenManager;
     }
 
     public static final CacheControl noCache = new CacheControl();
@@ -110,7 +113,7 @@ public class RealmsAdminResource {
         RealmModel realm = realmManager.getRealmByName(name);
         if (realm == null) throw new NotFoundException("{realm} = " + name);
 
-        RealmAdminResource adminResource = new RealmAdminResource(admin, realm);
+        RealmAdminResource adminResource = new RealmAdminResource(admin, realm, tokenManager);
         resourceContext.initResource(adminResource);
         return adminResource;
     }

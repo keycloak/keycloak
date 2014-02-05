@@ -51,6 +51,28 @@ module.service('Dialog', function($dialog) {
         });
     }
 
+    dialog.confirm = function(title, message, success, cancel) {
+        var title = title;
+        var msg = '<span class="primary">' + message + '"</span>' +
+            '<span>This action can\'t be undone.</span>';
+        var btns = [ {
+            result : 'cancel',
+            label : 'Cancel'
+        }, {
+            result : 'ok',
+            label : title,
+            cssClass : 'destructive'
+        } ];
+
+        $dialog.messageBox(title, msg, btns).open().then(function(result) {
+            if (result == "ok") {
+                success();
+            } else {
+                cancel && cancel();
+            }
+        });
+    }
+
 	return dialog
 });
 
@@ -136,15 +158,36 @@ module.factory('User', function($resource) {
 });
 
 module.factory('UserCredentials', function($resource) {
-    return $resource('/auth/rest/admin/realms/:realm/users/:userId/credentials', {
+    var credentials = {};
+
+    credentials.resetPassword = $resource('/auth/rest/admin/realms/:realm/users/:userId/reset-password', {
         realm : '@realm',
         userId : '@userId'
     }, {
         update : {
-            method : 'PUT',
-            isArray : true
+            method : 'PUT'
         }
-    });
+    }).update;
+
+    credentials.removeTotp = $resource('/auth/rest/admin/realms/:realm/users/:userId/remove-totp', {
+        realm : '@realm',
+        userId : '@userId'
+    }, {
+        update : {
+            method : 'PUT'
+        }
+    }).update;
+
+    credentials.resetPasswordEmail = $resource('/auth/rest/admin/realms/:realm/users/:userId/reset-password-email', {
+        realm : '@realm',
+        userId : '@userId'
+    }, {
+        update : {
+            method : 'PUT'
+        }
+    }).update;
+
+    return credentials;
 });
 
 module.factory('RealmRoleMapping', function($resource) {
