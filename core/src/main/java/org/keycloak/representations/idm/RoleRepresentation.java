@@ -12,6 +12,7 @@ public class RoleRepresentation {
     protected String id;
     protected String name;
     protected String description;
+    protected boolean composite;
     protected Composites composites;
 
     public static class Composites {
@@ -79,5 +80,13 @@ public class RoleRepresentation {
     @Override
     public String toString() {
         return name;
+    }
+
+    public boolean isComposite() {
+        return composite;
+    }
+
+    public void setComposite(boolean composite) {
+        this.composite = composite;
     }
 }

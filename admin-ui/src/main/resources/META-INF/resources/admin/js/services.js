@@ -278,6 +278,8 @@ function roleControl($scope, realm, role, roles, applications,
 
     if (!role.id) return;
 
+    $scope.compositeSwitch = role.composite;
+    $scope.compositeSwitchDisabled = role.composite;
     $scope.realmRoles = angular.copy(roles);
     $scope.selectedRealmRoles = [];
     $scope.selectedRealmMappings = [];
@@ -316,6 +318,7 @@ function roleControl($scope, realm, role, roles, applications,
     });
 
     $scope.addRealmRole = function() {
+        $scope.compositeSwitchDisabled=true;
         $http.post('/auth/rest/admin/realms/' + realm.realm + '/roles-by-id/' + role.id + '/composites',
                 $scope.selectedRealmRoles).success(function() {
                 for (var i = 0; i < $scope.selectedRealmRoles.length; i++) {
@@ -331,6 +334,7 @@ function roleControl($scope, realm, role, roles, applications,
     };
 
     $scope.deleteRealmRole = function() {
+        $scope.compositeSwitchDisabled=true;
         $http.delete('/auth/rest/admin/realms/' + realm.realm + '/roles-by-id/' + role.id + '/composites',
             {data : $scope.selectedRealmMappings, headers : {"content-type" : "application/json"}}).success(function() {
                 for (var i = 0; i < $scope.selectedRealmMappings.length; i++) {
@@ -346,6 +350,7 @@ function roleControl($scope, realm, role, roles, applications,
     };
 
     $scope.addApplicationRole = function() {
+        $scope.compositeSwitchDisabled=true;
         $http.post('/auth/rest/admin/realms/' + realm.realm + '/roles-by-id/' + role.id + '/composites',
                 $scope.selectedApplicationRoles).success(function() {
                 for (var i = 0; i < $scope.selectedApplicationRoles.length; i++) {
@@ -361,6 +366,7 @@ function roleControl($scope, realm, role, roles, applications,
     };
 
     $scope.deleteApplicationRole = function() {
+        $scope.compositeSwitchDisabled=true;
         $http.delete('/auth/rest/admin/realms/' + realm.realm + '/roles-by-id/' + role.id + '/composites',
             {data : $scope.selectedApplicationMappings, headers : {"content-type" : "application/json"}}).success(function() {
                 for (var i = 0; i < $scope.selectedApplicationMappings.length; i++) {

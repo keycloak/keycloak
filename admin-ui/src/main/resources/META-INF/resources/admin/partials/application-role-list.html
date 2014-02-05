@@ -27,7 +27,7 @@
                     <caption data-ng-show="roles && roles.length > 0" class="hidden">Table of realm roles</caption>
                     <thead>
                         <tr>
-                            <th class="rcue-table-actions" colspan="2">
+                            <th class="rcue-table-actions" colspan="3">
                                 <div class="actions">
                                     <a class="button" href="#/create/role/{{realm.realm}}/applications/{{application.name}}">Add Role</a>
                                     <!-- <button class="remove disabled">Remove</button> -->
@@ -35,7 +35,7 @@
                             </th>
                         </tr>
                         <tr data-ng-show="roles && roles.length > 5">
-                            <th class="rcue-table-actions" colspan="2">
+                            <th class="rcue-table-actions" colspan="3">
                                 <div class="search-comp clearfix">
                                     <input type="text" placeholder="Search..." class="search">
                                     <button class="icon-search" tooltip-placement="right"
@@ -47,12 +47,13 @@
                         </tr>
                         <tr>
                             <th>Role Name</th>
+                            <th>Composite</th>
                             <th>Description</th>
                         </tr>
                     </thead>
                     <tfoot data-ng-show="roles && roles.length > 5"> <!-- todo -->
                     <tr>
-                        <td colspan="2">
+                        <td colspan="3">
                             <div class="table-nav">
                                 <a href="#" class="first disabled">First page</a><a href="#" class="prev disabled">Previous
                                 page</a><span><strong>1-8</strong> of <strong>10</strong></span><a href="#"
@@ -65,6 +66,7 @@
                     <tbody>
                     <tr ng-repeat="role in roles">
                         <td><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/roles/{{role.name}}">{{role.name}}</a></td>
+                        <td>{{role.composite}}</td>
                         <td>{{role.description}}</td>
                     </tr>
                     </tbody>
