@@ -24,10 +24,10 @@
     </parent>
 
     <groupId>org.keycloak</groupId>
-    <artifactId>keycloak-subsystem</artifactId>
+    <artifactId>keycloak-wildfly-subsystem</artifactId>
     <version>1.0-alpha-2-SNAPSHOT</version>
 
-    <name>Keycloak Subsystem</name>
+    <name>Keycloak Wildfly Subsystem</name>
 
     <packaging>jar</packaging>
 
