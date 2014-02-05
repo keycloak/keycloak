@@ -88,7 +88,6 @@
         <module>examples</module>
         <module>testsuite</module>
         <module>server</module>
-        <module>subsystem</module>
     </modules>
 
     <dependencyManagement>
