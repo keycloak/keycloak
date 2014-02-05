@@ -102,10 +102,9 @@ public class FreeMarkerAccount implements Account {
 
     private String getReferrerUri() {
         if (referrer != null) {
-            for (ApplicationModel a : realm.getApplications()) {
-                if (a.getName().equals(referrer)) {
-                    return a.getBaseUrl();
-                }
+            ApplicationModel app = realm.getApplicationByName(referrer);
+            if (app != null) {
+                return app.getBaseUrl();
             }
         }
         return null;

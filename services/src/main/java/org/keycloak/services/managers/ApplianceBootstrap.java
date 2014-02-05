@@ -59,6 +59,7 @@ public class ApplianceBootstrap {
         realm.setAccountTheme("keycloak");
 
         ApplicationModel adminConsole = realm.addApplication(Constants.ADMIN_CONSOLE_APPLICATION);
+        adminConsole.setBaseUrl("/auth/admin/index.html");
         adminConsole.setEnabled(true);
         UserCredentialModel adminConsolePassword = new UserCredentialModel();
         adminConsolePassword.setType(UserCredentialModel.PASSWORD);
