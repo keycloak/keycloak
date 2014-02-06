@@ -67,6 +67,9 @@
             <maven-resource group="org.keycloak" artifact="keycloak-undertow-adapter"/>
         </module-def>
 
+        <module-def name="org.keycloak.keycloak-wildfly-subsystem">
+            <maven-resource group="org.keycloak" artifact="keycloak-wildfly-subsystem"/>
+        </module-def>
     </target>
 
     <target name="clean-target">

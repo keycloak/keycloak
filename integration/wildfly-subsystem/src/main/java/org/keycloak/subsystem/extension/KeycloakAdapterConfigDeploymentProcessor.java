@@ -25,8 +25,10 @@ import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.as.server.deployment.Phase;
 import org.jboss.as.web.common.WarMetaData;
+import org.jboss.logging.Logger;
 import org.jboss.metadata.javaee.spec.ParamValueMetaData;
 import org.jboss.metadata.web.jboss.JBossWebMetaData;
+import org.jboss.metadata.web.spec.LoginConfigMetaData;
 
 /**
  * Pass authentication data (keycloak.json) as a servlet context param so it can be read by the KeycloakServletExtension.
@@ -34,6 +36,8 @@ import org.jboss.metadata.web.jboss.JBossWebMetaData;
  * @author Stan Silvert ssilvert@redhat.com (C) 2014 Red Hat Inc.
  */
 public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitProcessor {
+    protected Logger log = Logger.getLogger(KeycloakAdapterConfigDeploymentProcessor.class);
+
     // This param name is defined again in Keycloak Undertow Integration class
     // org.keycloak.adapters.undertow.KeycloakServletExtension.  We have this value in
     // two places to avoid dependency between Keycloak Subsystem and Keyclaok Undertow Integration.
@@ -49,7 +53,9 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
         String deploymentName = deploymentUnit.getName();
 
         KeycloakAdapterConfigService service = KeycloakAdapterConfigService.find(phaseContext.getServiceRegistry());
+        //log.info("********* CHECK KEYCLOAK DEPLOYMENT: " + deploymentName);
         if (service.isKeycloakDeployment(deploymentName)) {
+
             addKeycloakAuthData(phaseContext, deploymentName, service);
         }
     }
@@ -59,6 +65,18 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
         WarMetaData warMetaData = deploymentUnit.getAttachment(WarMetaData.ATTACHMENT_KEY);
 
         addJSONData(service.getJSON(deploymentName), warMetaData);
+        JBossWebMetaData webMetaData = warMetaData.getMergedJBossWebMetaData();
+        if (webMetaData == null) {
+            webMetaData = new JBossWebMetaData();
+            warMetaData.setMergedJBossWebMetaData(webMetaData);
+        }
+        LoginConfigMetaData loginConfig = webMetaData.getLoginConfig();
+        if (loginConfig == null) {
+            loginConfig = new LoginConfigMetaData();
+            webMetaData.setLoginConfig(loginConfig);
+        }
+        loginConfig.setAuthMethod("KEYCLOAK");
+        loginConfig.setRealmName(service.getRealmName(deploymentName));
     }
 
     private void addJSONData(String json, WarMetaData warMetaData) {
