@@ -8,18 +8,8 @@
     <link rel="icon" href="/auth/admin-ui/img/favicon.ico">
 
     <!-- Frameworks -->
-    <link rel="stylesheet" href="/auth/admin-ui/css/reset.css">
-    <link rel="stylesheet" href="/auth/admin-ui/bootstrap-3.0.0-wip/css/bootstrap.css">
-    <link rel="stylesheet" href="/auth/admin-ui/css/sprites.css">
-    <link rel="stylesheet" href='//fonts.googleapis.com/css?family=Open+Sans:400,300,300italic,400italic,600,600italic,700,700italic,800,800italic'>
-
-    <!-- RCUE styles -->
-    <link rel="stylesheet" href="/auth/admin-ui/css/base.css">
-    <link rel="stylesheet" href="/auth/admin-ui/css/forms.css">
-    <link rel="stylesheet" href="/auth/admin-ui/css/header.css">
-    <link rel="stylesheet" href="/auth/admin-ui/css/tabs.css">
-    <link rel="stylesheet" href="/auth/admin-ui/css/icons.css">
-    <link rel="stylesheet" href="/auth/admin-ui/css/tables.css">
+    <!--link rel="stylesheet" href="/auth/admin-ui/bootstrap/css/bootstrap.css"-->
+    <link rel="stylesheet" href="/auth/admin-ui/patternfly/css/patternfly.css">
 
     <!-- Page styles -->
     <link rel="stylesheet" href="/auth/admin-ui/css/admin-console.css">
@@ -40,6 +30,8 @@
     <script src="/auth/admin-ui/bootstrap-3.0.0-wip/js/tooltip.js"></script>
     <script src="/auth/admin-ui/js/bootstrap-tokenfield.js"></script>
     -->
+    <script src="/auth/admin-ui/bootstrap/js/bootstrap.js"></script>
+
     <script src="js/app.js"></script>
     <script src="js/controllers/realm.js"></script>
     <script src="js/controllers/applications.js"></script>
@@ -66,11 +58,14 @@
     <div class="alert alert-{{notification.type}}"><strong>{{notification.header}}</strong> {{notification.message}}</div>
 </div>
 
-<div id="wrap">
-    <div data-ng-include data-src="'partials/menu.html'"></div>
+<header class="navbar navbar-default navbar-pf navbar-main header">
+    <div class="container">
+        <div data-ng-include data-src="'partials/menu.html'"></div>
+    </div>
+</header>
 
+<div class="container">
     <div data-ng-view id="view"></div>
-
     <div id="loading" class="loading-backdrop">
         <div class="loading">
             <span>Loading...</span>

@@ -561,7 +561,7 @@ module.directive('collapsable', function() {
     return function(scope, element, attrs) {
         element.click(function() {
             $(this).toggleClass('collapsed');
-            $(this).find('.toggle-icons').toggleClass('icon-collapse').toggleClass('icon-expand');
+            $(this).find('.toggle-icons').toggleClass('kc-icon-collapse').toggleClass('kc-icon-expand');
             $(this).find('.toggle-icons').text($(this).text() == "Icon: expand" ? "Icon: collapse" : "Icon: expand");
             $(this).parent().find('.form-group').toggleClass('hidden');
         });
@@ -571,10 +571,10 @@ module.directive('collapsable', function() {
 // collapsable form fieldsets
 module.directive('uncollapsed', function() {
     return function(scope, element, attrs) {
-        element.prepend('<span class="icon-collapse toggle-icons">Icon: collapse</span>');
+        element.prepend('<span class="kc-icon-collapse toggle-icons">Icon: collapse</span>');
         element.click(function() {
             $(this).toggleClass('collapsed');
-            $(this).find('.toggle-icons').toggleClass('icon-collapse').toggleClass('icon-expand');
+            $(this).find('.toggle-icons').toggleClass('kc-icon-collapse').toggleClass('kc-icon-expand');
             $(this).find('.toggle-icons').text($(this).text() == "Icon: expand" ? "Icon: collapse" : "Icon: expand");
             $(this).parent().find('.form-group').toggleClass('hidden');
         });
@@ -584,11 +584,11 @@ module.directive('uncollapsed', function() {
 // collapsable form fieldsets
 module.directive('collapsed', function() {
     return function(scope, element, attrs) {
-        element.prepend('<span class="icon-expand toggle-icons">Icon: expand</span>');
+        element.prepend('<span class="kc-icon-expand toggle-icons">Icon: expand</span>');
         element.parent().find('.form-group').toggleClass('hidden');
         element.click(function() {
             $(this).toggleClass('collapsed');
-            $(this).find('.toggle-icons').toggleClass('icon-collapse').toggleClass('icon-expand');
+            $(this).find('.toggle-icons').toggleClass('kc-icon-collapse').toggleClass('kc-icon-expand');
             $(this).find('.toggle-icons').text($(this).text() == "Icon: expand" ? "Icon: collapse" : "Icon: expand");
             $(this).parent().find('.form-group').toggleClass('hidden');
         });
