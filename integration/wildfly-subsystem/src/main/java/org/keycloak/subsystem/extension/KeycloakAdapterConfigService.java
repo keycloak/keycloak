@@ -22,6 +22,7 @@ import java.util.Map;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
+import org.jboss.logging.Logger;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
@@ -39,6 +40,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD
  * @author Stan Silvert ssilvert@redhat.com (C) 2013 Red Hat Inc.
  */
 public final class KeycloakAdapterConfigService implements Service<KeycloakAdapterConfigService> {
+    protected Logger log = Logger.getLogger(KeycloakAdapterConfigService.class);
     private static final String CREDENTIALS_JSON_NAME = "credentials";
 
     // Right now this is used as a service, but I'm not sure it really needs to be implemented that way.
@@ -161,6 +163,12 @@ public final class KeycloakAdapterConfigService implements Service<KeycloakAdapt
         return null;
     }
 
+    public String getRealmName(String deploymentName) {
+        ModelNode deployment = this.deployments.get(deploymentName);
+        return deployment.get(RealmDefinition.TAG_NAME).asString();
+
+    }
+
     public String getJSON(String deploymentName) {
         ModelNode deployment = this.deployments.get(deploymentName);
         String realmName = deployment.get(RealmDefinition.TAG_NAME).asString();
@@ -186,6 +194,8 @@ public final class KeycloakAdapterConfigService implements Service<KeycloakAdapt
     }
 
     public boolean isKeycloakDeployment(String deploymentName) {
+        //log.info("********* CHECK KEYCLOAK DEPLOYMENT: deployments.size()" + deployments.size());
+
         return this.deployments.containsKey(deploymentName);
     }
 
