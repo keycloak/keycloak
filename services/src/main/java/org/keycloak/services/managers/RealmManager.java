@@ -13,6 +13,7 @@ import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
@@ -44,11 +45,6 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class RealmManager {
     protected static final Logger logger = Logger.getLogger(RealmManager.class);
-    private static AtomicLong counter = new AtomicLong(1);
-
-    public static String generateId() {
-        return counter.getAndIncrement() + "-" + System.currentTimeMillis();
-    }
 
     protected KeycloakSession identitySession;
 
@@ -73,7 +69,7 @@ public class RealmManager {
     }
 
     public RealmModel createRealm(String id, String name) {
-        if (id == null) id = generateId();
+        if (id == null) id = KeycloakModelUtils.generateId();
         RealmModel realm = identitySession.createRealm(id, name);
         realm.setName(name);
         realm.addRole(Constants.APPLICATION_ROLE);
@@ -166,7 +162,7 @@ public class RealmManager {
     public RealmModel importRealm(RealmRepresentation rep, UserModel realmCreator) {
         String id = rep.getId();
         if (id == null) {
-            id = generateId();
+            id = KeycloakModelUtils.generateId();
         }
         RealmModel realm = createRealm(id, rep.getRealm());
         importRealm(rep, realm);

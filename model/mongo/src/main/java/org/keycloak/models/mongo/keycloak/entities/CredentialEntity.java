@@ -1,12 +1,12 @@
 package org.keycloak.models.mongo.keycloak.entities;
 
-import org.keycloak.models.mongo.api.AbstractMongoEntity;
+import org.keycloak.models.mongo.api.MongoEntity;
 import org.keycloak.models.mongo.api.MongoField;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class CredentialEntity extends AbstractMongoEntity {
+public class CredentialEntity implements MongoEntity {
 
     private String type;
     private String value;

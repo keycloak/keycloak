@@ -5,6 +5,7 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
@@ -12,9 +13,9 @@ import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.test.common.AbstractKeycloakTest;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -56,14 +57,68 @@ public class ImportTest extends AbstractKeycloakTest {
         List<ApplicationModel> resources = realm.getApplications();
         Assert.assertEquals(3, resources.size());
 
-        // Test scope relationship
-        ApplicationModel application = realm.getApplicationNameMap().get("Application");
-        UserModel oauthClient = realm.getUser("oauthclient");
+        // Test applications imported
+        ApplicationModel application = realm.getApplicationByName("Application");
+        ApplicationModel otherApp = realm.getApplicationByName("OtherApp");
+        ApplicationModel accountApp = realm.getApplicationByName(Constants.ACCOUNT_APPLICATION);
+        ApplicationModel nonExisting = realm.getApplicationByName("NonExisting");
         Assert.assertNotNull(application);
+        Assert.assertNotNull(otherApp);
+        Assert.assertNull(nonExisting);
+        Map<String, ApplicationModel> apps = realm.getApplicationNameMap();
+        Assert.assertEquals(3, apps.size());
+        Assert.assertTrue(apps.values().contains(application));
+        Assert.assertTrue(apps.values().contains(otherApp));
+        Assert.assertTrue(apps.values().contains(accountApp));
+        realm.getApplications().containsAll(apps.values());
+
+        // Test finding applications by ID
+        Assert.assertNull(realm.getApplicationById("982734"));
+        Assert.assertEquals(application, realm.getApplicationById(application.getId()));
+
+
+        // Test role mappings
+        UserModel admin = realm.getUser("admin");
+        Set<RoleModel> allRoles = realm.getRoleMappings(admin);
+        Assert.assertEquals(5, allRoles.size());
+        Assert.assertTrue(allRoles.contains(realm.getRole("admin")));
+        Assert.assertTrue(allRoles.contains(application.getRole("app-admin")));
+        Assert.assertTrue(allRoles.contains(otherApp.getRole("otherapp-admin")));
+        Assert.assertTrue(allRoles.contains(accountApp.getRole(Constants.ACCOUNT_PROFILE_ROLE)));
+        Assert.assertTrue(allRoles.contains(accountApp.getRole(Constants.ACCOUNT_MANAGE_ROLE)));
+
+        UserModel wburke = realm.getUser("wburke");
+        allRoles = realm.getRoleMappings(wburke);
+        Assert.assertEquals(4, allRoles.size());
+        Assert.assertFalse(allRoles.contains(realm.getRole("admin")));
+        Assert.assertTrue(allRoles.contains(application.getRole("app-user")));
+        Assert.assertTrue(allRoles.contains(otherApp.getRole("otherapp-user")));
+
+        Assert.assertEquals(0, realm.getRealmRoleMappings(wburke).size());
+
+        Set<RoleModel> realmRoles = realm.getRealmRoleMappings(admin);
+        Assert.assertEquals(1, realmRoles.size());
+        Assert.assertEquals("admin", realmRoles.iterator().next().getName());
+
+        Set<RoleModel> appRoles = application.getApplicationRoleMappings(admin);
+        Assert.assertEquals(1, appRoles.size());
+        Assert.assertEquals("app-admin", appRoles.iterator().next().getName());
+
+
+        // Test scope relationship
+        UserModel oauthClient = realm.getUser("oauthclient");
         Assert.assertNotNull(oauthClient);
+        Set<RoleModel> allScopes = realm.getScopeMappings(oauthClient);
+        Assert.assertEquals(2, allScopes.size());
+        Assert.assertTrue(allScopes.contains(realm.getRole("admin")));
+        Assert.assertTrue(allScopes.contains(application.getRole("app-user")));
+
+        Set<RoleModel> realmScopes = realm.getRealmScopeMappings(oauthClient);
+        Assert.assertTrue(realmScopes.contains(realm.getRole("admin")));
+
         Set<RoleModel> appScopes = application.getApplicationScopeMappings(oauthClient);
-        RoleModel appUserRole = application.getRole("user");
-        Assert.assertTrue(appScopes.contains(appUserRole));
+        Assert.assertTrue(appScopes.contains(application.getRole("app-user")));
+
 
         // Test social linking
         UserModel socialUser = realm.getUser("mySocialUser");
@@ -85,6 +140,8 @@ public class ImportTest extends AbstractKeycloakTest {
         UserModel foundSocialUser = realm.getUserBySocialLink(new SocialLinkModel("facebook", "fbuser1"));
         Assert.assertEquals(foundSocialUser.getLoginName(), socialUser.getLoginName());
         Assert.assertNull(realm.getUserBySocialLink(new SocialLinkModel("facebook", "not-existing")));
+
+
 
     }
 

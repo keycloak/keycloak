@@ -1,0 +1,129 @@
+package org.keycloak.models.mongo.impl.context;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+import org.keycloak.models.mongo.api.MongoIdentifiableEntity;
+import org.keycloak.models.mongo.api.MongoStore;
+import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
+import org.keycloak.models.mongo.api.context.MongoTask;
+
+/**
+ * Invocation context, which has some very basic support for transactions, and is able to cache loaded objects.
+ * It always execute all pending update tasks before start searching for other objects
+ *
+ * It's per-request object (not thread safe)
+ *
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
+ */
+public class TransactionMongoStoreInvocationContext implements MongoStoreInvocationContext {
+
+    // Assumption is that all objects has unique ID (unique across all the types)
+    private Map<String, MongoIdentifiableEntity> loadedObjects = new HashMap<String, MongoIdentifiableEntity>();
+
+    private Map<MongoIdentifiableEntity, Set<MongoTask>> pendingUpdateTasks = new HashMap<MongoIdentifiableEntity, Set<MongoTask>>();
+
+    private final MongoStore mongoStore;
+
+    public TransactionMongoStoreInvocationContext(MongoStore mongoStore) {
+        this.mongoStore = mongoStore;
+    }
+
+    @Override
+    public void addLoadedObject(MongoIdentifiableEntity entity) {
+        loadedObjects.put(entity.getId(), entity);
+    }
+
+    @Override
+    public <T extends MongoIdentifiableEntity> T getLoadedObject(Class<T> type, String id) {
+        return (T)loadedObjects.get(id);
+    }
+
+    @Override
+    public void addUpdateTask(MongoIdentifiableEntity entityToUpdate, MongoTask task) {
+        if (!loadedObjects.containsValue(entityToUpdate)) {
+            throw new IllegalStateException("Entity " + entityToUpdate + " not found in loaded objects");
+        }
+
+        Set<MongoTask> currentObjectTasks = pendingUpdateTasks.get(entityToUpdate);
+        if (currentObjectTasks == null) {
+            currentObjectTasks = new HashSet<MongoTask>();
+            pendingUpdateTasks.put(entityToUpdate, currentObjectTasks);
+        } else {
+            // if task is full update, then remove all other tasks as we need to do full update of object anyway
+            if (task.isFullUpdate()) {
+                currentObjectTasks.clear();
+            } else {
+                // If it already contains task for fullUpdate, then we don't need to add ours as we need to do full update of object anyway
+                for (MongoTask current : currentObjectTasks) {
+                     if (current.isFullUpdate()) {
+                         return;
+                     }
+                }
+            }
+        }
+
+        currentObjectTasks.add(task);
+    }
+
+    @Override
+    public void addRemovedObject(MongoIdentifiableEntity entityToRemove) {
+        // Remove all pending tasks and object from cache
+        pendingUpdateTasks.remove(entityToRemove);
+        loadedObjects.remove(entityToRemove.getId());
+
+        entityToRemove.afterRemove(mongoStore, this);
+    }
+
+    @Override
+    public void beforeDBSearch(Class<? extends MongoIdentifiableEntity> entityType) {
+        // Now execute pending update tasks of type, which will be searched
+        Set<MongoIdentifiableEntity> toRemove = new HashSet<MongoIdentifiableEntity>();
+
+        for (MongoIdentifiableEntity currentEntity : pendingUpdateTasks.keySet()) {
+            if (currentEntity.getClass().equals(entityType)) {
+                Set<MongoTask> mongoTasks = pendingUpdateTasks.get(currentEntity);
+                for (MongoTask currentTask : mongoTasks) {
+                    currentTask.execute();
+                }
+
+                toRemove.add(currentEntity);
+            }
+        }
+
+        // Now remove all done tasks
+        for (MongoIdentifiableEntity entity : toRemove) {
+            pendingUpdateTasks.remove(entity);
+        }
+    }
+
+    @Override
+    public void begin() {
+        loadedObjects.clear();
+        pendingUpdateTasks.clear();
+    }
+
+    @Override
+    public void commit() {
+        loadedObjects.clear();
+
+        // Now execute all pending update tasks
+        for (Set<MongoTask> mongoTasks : pendingUpdateTasks.values()) {
+            for (MongoTask currentTask : mongoTasks) {
+                currentTask.execute();
+            }
+        }
+
+        // And clear it
+        pendingUpdateTasks.clear();
+    }
+
+    @Override
+    public void rollback() {
+        // Just clear the map without executions of tasks
+        loadedObjects.clear();
+        pendingUpdateTasks.clear();
+    }
+}

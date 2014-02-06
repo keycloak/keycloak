@@ -1,16 +1,12 @@
 package org.keycloak.models.mongo.keycloak.entities;
 
-import com.mongodb.DBObject;
-import com.mongodb.QueryBuilder;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.mongo.api.AbstractMongoIdentifiableEntity;
 import org.keycloak.models.mongo.api.MongoCollection;
 import org.keycloak.models.mongo.api.MongoEntity;
 import org.keycloak.models.mongo.api.MongoField;
-import org.keycloak.models.mongo.api.MongoId;
-import org.keycloak.models.mongo.api.MongoStore;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -18,9 +14,8 @@ import java.util.Map;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @MongoCollection(collectionName = "users")
-public class UserEntity implements MongoEntity {
+public class UserEntity extends AbstractMongoIdentifiableEntity implements MongoEntity {
 
-    private String id;
     private String loginName;
     private String firstName;
     private String lastName;
@@ -39,15 +34,7 @@ public class UserEntity implements MongoEntity {
     private List<String> redirectUris;
     private List<UserModel.RequiredAction> requiredActions;
     private List<CredentialEntity> credentials = new ArrayList<CredentialEntity>();
-
-    @MongoId
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
+    private List<SocialLinkEntity> socialLinks;
 
     @MongoField
     public String getLoginName() {
@@ -184,13 +171,12 @@ public class UserEntity implements MongoEntity {
         this.credentials = credentials;
     }
 
-    @Override
-    public void afterRemove(MongoStore mongoStore) {
-        DBObject query = new QueryBuilder()
-                .and("userId").is(id)
-                .get();
+    @MongoField
+    public List<SocialLinkEntity> getSocialLinks() {
+        return socialLinks;
+    }
 
-        // Remove social links of this user
-        mongoStore.removeObjects(SocialLinkEntity.class, query);
+    public void setSocialLinks(List<SocialLinkEntity> socialLinks) {
+        this.socialLinks = socialLinks;
     }
 }

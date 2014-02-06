@@ -7,7 +7,6 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.test.common.AbstractKeycloakTest;
 
 import java.util.Iterator;
 import java.util.List;

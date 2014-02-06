@@ -1,9 +1,8 @@
 package org.keycloak.models.mongo.test;
 
-import org.keycloak.models.mongo.api.AbstractMongoEntity;
+import org.keycloak.models.mongo.api.AbstractMongoIdentifiableEntity;
 import org.keycloak.models.mongo.api.MongoCollection;
 import org.keycloak.models.mongo.api.MongoField;
-import org.keycloak.models.mongo.api.MongoId;
 
 import java.util.HashMap;
 import java.util.List;
@@ -13,9 +12,8 @@ import java.util.Map;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @MongoCollection(collectionName = "persons")
-public class Person extends AbstractMongoEntity {
+public class Person extends AbstractMongoIdentifiableEntity {
 
-    private String id;
     private String firstName;
     private int age;
     private List<String> kids;
@@ -24,16 +22,6 @@ public class Person extends AbstractMongoEntity {
     private Gender gender;
     private List<Gender> genders;
     private Map<String, String> attributes = new HashMap<String, String>();
-
-
-    @MongoId
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
 
     @MongoField
     public String getFirstName() {

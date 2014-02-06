@@ -5,19 +5,19 @@ import java.util.List;
 
 import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
+import org.keycloak.models.mongo.api.AbstractMongoIdentifiableEntity;
 import org.keycloak.models.mongo.api.MongoCollection;
 import org.keycloak.models.mongo.api.MongoEntity;
 import org.keycloak.models.mongo.api.MongoField;
-import org.keycloak.models.mongo.api.MongoId;
 import org.keycloak.models.mongo.api.MongoStore;
+import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @MongoCollection(collectionName = "applications")
-public class ApplicationEntity implements MongoEntity {
+public class ApplicationEntity extends AbstractMongoIdentifiableEntity implements MongoEntity {
 
-    private String id;
     private String name;
     private boolean enabled;
     private boolean surrogateAuthRequired;
@@ -29,15 +29,6 @@ public class ApplicationEntity implements MongoEntity {
 
     // We are using names of defaultRoles (not ids)
     private List<String> defaultRoles = new ArrayList<String>();
-
-    @MongoId
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
 
     @MongoField
     public String getName() {
@@ -112,14 +103,14 @@ public class ApplicationEntity implements MongoEntity {
     }
 
     @Override
-    public void afterRemove(MongoStore mongoStore) {
+    public void afterRemove(MongoStore mongoStore, MongoStoreInvocationContext invContext) {
         // Remove resourceUser of this application
-        mongoStore.removeObject(UserEntity.class, resourceUserId);
+        mongoStore.removeObject(UserEntity.class, resourceUserId, invContext);
 
         // Remove all roles, which belongs to this application
         DBObject query = new QueryBuilder()
-                .and("applicationId").is(id)
+                .and("applicationId").is(getId())
                 .get();
-        mongoStore.removeObjects(RoleEntity.class, query);
+        mongoStore.removeObjects(RoleEntity.class, query, invContext);
     }
 }

@@ -12,7 +12,9 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.mongo.api.AbstractMongoIdentifiableEntity;
 import org.keycloak.models.mongo.api.MongoStore;
+import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.mongo.keycloak.entities.ApplicationEntity;
 import org.keycloak.models.mongo.keycloak.entities.CredentialEntity;
 import org.keycloak.models.mongo.keycloak.entities.OAuthClientEntity;
@@ -30,6 +32,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -40,21 +43,20 @@ import java.util.regex.Pattern;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class RealmAdapter implements RealmModel {
+public class RealmAdapter extends AbstractAdapter implements RealmModel {
 
     private static final Logger logger = Logger.getLogger(RealmAdapter.class);
 
     private final RealmEntity realm;
-    private final MongoStore mongoStore;
 
     protected volatile transient PublicKey publicKey;
     protected volatile transient PrivateKey privateKey;
 
     private volatile transient PasswordPolicy passwordPolicy;
 
-    public RealmAdapter(RealmEntity realmEntity, MongoStore mongoStore) {
+    public RealmAdapter(RealmEntity realmEntity, MongoStore mongoStore, MongoStoreInvocationContext invocationContext) {
+        super(mongoStore, invocationContext);
         this.realm = realmEntity;
-        this.mongoStore = mongoStore;
     }
 
     @Override
@@ -251,17 +253,39 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public String getLoginTheme() {
+        return realm.getLoginTheme();
+    }
+
+    @Override
+    public void setLoginTheme(String name) {
+        realm.setLoginTheme(name);
+        updateRealm();
+    }
+
+    @Override
+    public String getAccountTheme() {
+        return realm.getAccountTheme();
+    }
+
+    @Override
+    public void setAccountTheme(String name) {
+        realm.setAccountTheme(name);
+        updateRealm();
+    }
+
+    @Override
     public UserAdapter getUser(String name) {
         DBObject query = new QueryBuilder()
                 .and("loginName").is(name)
                 .and("realmId").is(getId())
                 .get();
-        UserEntity user = mongoStore.loadSingleObject(UserEntity.class, query);
+        UserEntity user = mongoStore.loadSingleObject(UserEntity.class, query, invocationContext);
 
         if (user == null) {
             return null;
         } else {
-            return new UserAdapter(user, mongoStore);
+            return new UserAdapter(user, mongoStore, invocationContext);
         }
     }
 
@@ -271,12 +295,12 @@ public class RealmAdapter implements RealmModel {
                 .and("email").is(email)
                 .and("realmId").is(getId())
                 .get();
-        UserEntity user = mongoStore.loadSingleObject(UserEntity.class, query);
+        UserEntity user = mongoStore.loadSingleObject(UserEntity.class, query, invocationContext);
 
         if (user == null) {
             return null;
         } else {
-            return new UserAdapter(user, mongoStore);
+            return new UserAdapter(user, mongoStore, invocationContext);
         }
     }
 
@@ -308,8 +332,8 @@ public class RealmAdapter implements RealmModel {
         userEntity.setEnabled(true);
         userEntity.setRealmId(getId());
 
-        mongoStore.insertObject(userEntity);
-        return new UserAdapter(userEntity, mongoStore);
+        mongoStore.insertObject(userEntity, invocationContext);
+        return new UserAdapter(userEntity, mongoStore, invocationContext);
     }
 
     @Override
@@ -318,7 +342,7 @@ public class RealmAdapter implements RealmModel {
                 .and("loginName").is(name)
                 .and("realmId").is(getId())
                 .get();
-        return mongoStore.removeObjects(UserEntity.class, query);
+        return mongoStore.removeObjects(UserEntity.class, query, invocationContext);
     }
 
     @Override
@@ -327,11 +351,11 @@ public class RealmAdapter implements RealmModel {
                 .and("name").is(name)
                 .and("realmId").is(getId())
                 .get();
-        RoleEntity role = mongoStore.loadSingleObject(RoleEntity.class, query);
+        RoleEntity role = mongoStore.loadSingleObject(RoleEntity.class, query, invocationContext);
         if (role == null) {
             return null;
         } else {
-            return new RoleAdapter(role, this, mongoStore);
+            return new RoleAdapter(role, this, mongoStore, invocationContext);
         }
     }
 
@@ -348,13 +372,13 @@ public class RealmAdapter implements RealmModel {
         roleEntity.setName(name);
         roleEntity.setRealmId(getId());
 
-        mongoStore.insertObject(roleEntity);
-        return new RoleAdapter(roleEntity, this, mongoStore);
+        mongoStore.insertObject(roleEntity, invocationContext);
+        return new RoleAdapter(roleEntity, this, mongoStore, invocationContext);
     }
 
     @Override
     public boolean removeRoleById(String id) {
-        return mongoStore.removeObject(RoleEntity.class ,id);
+        return mongoStore.removeObject(RoleEntity.class ,id, invocationContext);
     }
 
     @Override
@@ -362,13 +386,13 @@ public class RealmAdapter implements RealmModel {
         DBObject query = new QueryBuilder()
                 .and("realmId").is(getId())
                 .get();
-        List<RoleEntity> roles = mongoStore.loadObjects(RoleEntity.class, query);
+        List<RoleEntity> roles = mongoStore.loadObjects(RoleEntity.class, query, invocationContext);
 
         Set<RoleModel> result = new HashSet<RoleModel>();
 
         if (roles == null) return result;
         for (RoleEntity role : roles) {
-            result.add(new RoleAdapter(role, this, mongoStore));
+            result.add(new RoleAdapter(role, this, mongoStore, invocationContext));
         }
 
         return result;
@@ -376,11 +400,11 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public RoleModel getRoleById(String id) {
-        RoleEntity role = mongoStore.loadObject(RoleEntity.class, id);
+        RoleEntity role = mongoStore.loadObject(RoleEntity.class, id, invocationContext);
         if (role == null) {
             return null;
         } else {
-            return new RoleAdapter(role, this, mongoStore);
+            return new RoleAdapter(role, this, mongoStore, invocationContext);
         }
     }
 
@@ -396,7 +420,7 @@ public class RealmAdapter implements RealmModel {
             addRole(name);
         }
 
-        mongoStore.pushItemToList(realm, "defaultRoles", name, true);
+        mongoStore.pushItemToList(realm, "defaultRoles", name, true, invocationContext);
     }
 
     @Override
@@ -417,15 +441,14 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public ApplicationModel getApplicationById(String id) {
-        ApplicationEntity appData = mongoStore.loadObject(ApplicationEntity.class, id);
+        ApplicationEntity appData = mongoStore.loadObject(ApplicationEntity.class, id, invocationContext);
 
         // Check if application belongs to this realm
         if (appData == null || !getId().equals(appData.getRealmId())) {
             return null;
         }
 
-        ApplicationModel model = new ApplicationAdapter(appData, mongoStore);
-        return model;
+        return new ApplicationAdapter(appData, mongoStore, invocationContext);
     }
 
     @Override
@@ -434,8 +457,8 @@ public class RealmAdapter implements RealmModel {
                 .and("realmId").is(getId())
                 .and("name").is(name)
                 .get();
-        ApplicationEntity appEntity = mongoStore.loadSingleObject(ApplicationEntity.class, query);
-        return appEntity==null ? null : new ApplicationAdapter(appEntity, mongoStore);
+        ApplicationEntity appEntity = mongoStore.loadSingleObject(ApplicationEntity.class, query, invocationContext);
+        return appEntity==null ? null : new ApplicationAdapter(appEntity, mongoStore, invocationContext);
     }
 
     @Override
@@ -452,11 +475,11 @@ public class RealmAdapter implements RealmModel {
         DBObject query = new QueryBuilder()
                 .and("realmId").is(getId())
                 .get();
-        List<ApplicationEntity> appDatas = mongoStore.loadObjects(ApplicationEntity.class, query);
+        List<ApplicationEntity> appDatas = mongoStore.loadObjects(ApplicationEntity.class, query, invocationContext);
 
         List<ApplicationModel> result = new ArrayList<ApplicationModel>();
         for (ApplicationEntity appData : appDatas) {
-            result.add(new ApplicationAdapter(appData, mongoStore));
+            result.add(new ApplicationAdapter(appData, mongoStore, invocationContext));
         }
         return result;
     }
@@ -470,15 +493,14 @@ public class RealmAdapter implements RealmModel {
         appData.setRealmId(getId());
         appData.setEnabled(true);
         appData.setResourceUserId(resourceUser.getUser().getId());
-        mongoStore.insertObject(appData);
+        mongoStore.insertObject(appData, invocationContext);
 
-        ApplicationModel resource = new ApplicationAdapter(appData, resourceUser, mongoStore);
-        return resource;
+        return new ApplicationAdapter(appData, resourceUser, mongoStore, invocationContext);
     }
 
     @Override
     public boolean removeApplication(String id) {
-        return mongoStore.removeObject(ApplicationEntity.class, id);
+        return mongoStore.removeObject(ApplicationEntity.class, id, invocationContext);
     }
 
     @Override
@@ -495,20 +517,20 @@ public class RealmAdapter implements RealmModel {
     @Override
     public void grantRole(UserModel user, RoleModel role) {
         UserEntity userEntity = ((UserAdapter)user).getUser();
-        mongoStore.pushItemToList(userEntity, "roleIds", role.getId(), true);
+        mongoStore.pushItemToList(userEntity, "roleIds", role.getId(), true, invocationContext);
     }
 
     @Override
     public Set<RoleModel> getRoleMappings(UserModel user) {
         Set<RoleModel> result = new HashSet<RoleModel>();
-        List<RoleEntity> roles = MongoModelUtils.getAllRolesOfUser(user, mongoStore);
+        List<RoleEntity> roles = MongoModelUtils.getAllRolesOfUser(user, mongoStore, invocationContext);
 
         for (RoleEntity role : roles) {
             if (getId().equals(role.getRealmId())) {
-                result.add(new RoleAdapter(role, this, mongoStore));
+                result.add(new RoleAdapter(role, this, mongoStore, invocationContext));
             } else {
                 // Likely applicationRole, but we don't have this application yet
-                result.add(new RoleAdapter(role, mongoStore));
+                result.add(new RoleAdapter(role, mongoStore, invocationContext));
             }
         }
         return result;
@@ -533,20 +555,20 @@ public class RealmAdapter implements RealmModel {
     @Override
     public void deleteRoleMapping(UserModel user, RoleModel role) {
         UserEntity userEntity = ((UserAdapter)user).getUser();
-        mongoStore.pullItemFromList(userEntity, "roleIds", role.getId());
+        mongoStore.pullItemFromList(userEntity, "roleIds", role.getId(), invocationContext);
     }
 
     @Override
     public Set<RoleModel> getScopeMappings(UserModel user) {
         Set<RoleModel> result = new HashSet<RoleModel>();
-        List<RoleEntity> roles = MongoModelUtils.getAllScopesOfUser(user, mongoStore);
+        List<RoleEntity> roles = MongoModelUtils.getAllScopesOfUser(user, mongoStore, invocationContext);
 
         for (RoleEntity role : roles) {
             if (getId().equals(role.getRealmId())) {
-                result.add(new RoleAdapter(role, this, mongoStore));
+                result.add(new RoleAdapter(role, this, mongoStore, invocationContext));
             } else {
                 // Likely applicationRole, but we don't have this application yet
-                result.add(new RoleAdapter(role, mongoStore));
+                result.add(new RoleAdapter(role, mongoStore, invocationContext));
             }
         }
         return result;
@@ -571,13 +593,13 @@ public class RealmAdapter implements RealmModel {
     @Override
     public void addScopeMapping(UserModel agent, RoleModel role) {
         UserEntity userEntity = ((UserAdapter)agent).getUser();
-        mongoStore.pushItemToList(userEntity, "scopeIds", role.getId(), true);
+        mongoStore.pushItemToList(userEntity, "scopeIds", role.getId(), true, invocationContext);
     }
 
     @Override
     public void deleteScopeMapping(UserModel user, RoleModel role) {
         UserEntity userEntity = ((UserAdapter)user).getUser();
-        mongoStore.pullItemFromList(userEntity, "scopeIds", role.getId());
+        mongoStore.pullItemFromList(userEntity, "scopeIds", role.getId(), invocationContext);
     }
 
     @Override
@@ -588,14 +610,14 @@ public class RealmAdapter implements RealmModel {
         oauthClient.setOauthAgentId(oauthAgent.getUser().getId());
         oauthClient.setRealmId(getId());
         oauthClient.setName(name);
-        mongoStore.insertObject(oauthClient);
+        mongoStore.insertObject(oauthClient, invocationContext);
 
-        return new OAuthClientAdapter(oauthClient, oauthAgent, mongoStore);
+        return new OAuthClientAdapter(oauthClient, oauthAgent, mongoStore, invocationContext);
     }
 
     @Override
     public boolean removeOAuthClient(String id) {
-        return mongoStore.removeObject(OAuthClientEntity.class, id);
+        return mongoStore.removeObject(OAuthClientEntity.class, id, invocationContext);
     }
 
     @Override
@@ -606,15 +628,15 @@ public class RealmAdapter implements RealmModel {
                 .and("realmId").is(getId())
                 .and("oauthAgentId").is(user.getUser().getId())
                 .get();
-        OAuthClientEntity oauthClient = mongoStore.loadSingleObject(OAuthClientEntity.class, query);
-        return oauthClient == null ? null : new OAuthClientAdapter(oauthClient, user, mongoStore);
+        OAuthClientEntity oauthClient = mongoStore.loadSingleObject(OAuthClientEntity.class, query, invocationContext);
+        return oauthClient == null ? null : new OAuthClientAdapter(oauthClient, user, mongoStore, invocationContext);
     }
 
     @Override
     public OAuthClientModel getOAuthClientById(String id) {
-        OAuthClientEntity clientEntity = mongoStore.loadObject(OAuthClientEntity.class, id);
+        OAuthClientEntity clientEntity = mongoStore.loadObject(OAuthClientEntity.class, id, invocationContext);
         if (clientEntity == null) return null;
-        return new OAuthClientAdapter(clientEntity, mongoStore);
+        return new OAuthClientAdapter(clientEntity, mongoStore, invocationContext);
     }
 
     @Override
@@ -622,10 +644,10 @@ public class RealmAdapter implements RealmModel {
         DBObject query = new QueryBuilder()
                 .and("realmId").is(getId())
                 .get();
-        List<OAuthClientEntity> results = mongoStore.loadObjects(OAuthClientEntity.class, query);
+        List<OAuthClientEntity> results = mongoStore.loadObjects(OAuthClientEntity.class, query, invocationContext);
         List<OAuthClientModel> list = new ArrayList<OAuthClientModel>();
         for (OAuthClientEntity data : results) {
-            list.add(new OAuthClientAdapter(data, mongoStore));
+            list.add(new OAuthClientAdapter(data, mongoStore, invocationContext));
         }
         return list;
     }
@@ -686,7 +708,7 @@ public class RealmAdapter implements RealmModel {
             }
         }
         for (RequiredCredentialEntity entity : toRemove) {
-            creds.remove(entity);
+            credsEntities.remove(entity);
         }
         for (String cred : creds) {
             logger.info("updating cred: " + cred);
@@ -773,39 +795,31 @@ public class RealmAdapter implements RealmModel {
         }
         credentialEntity.setDevice(cred.getDevice());
 
-        mongoStore.updateObject(userEntity);
+        mongoStore.updateObject(userEntity, invocationContext);
     }
 
     @Override
     public UserModel getUserBySocialLink(SocialLinkModel socialLink) {
         DBObject query = new QueryBuilder()
-                .and("socialProvider").is(socialLink.getSocialProvider())
-                .and("socialUsername").is(socialLink.getSocialUsername())
+                .and("socialLinks.socialProvider").is(socialLink.getSocialProvider())
+                .and("socialLinks.socialUsername").is(socialLink.getSocialUsername())
                 .and("realmId").is(getId())
                 .get();
-        SocialLinkEntity socialLinkEntity = mongoStore.loadSingleObject(SocialLinkEntity.class, query);
-
-        if (socialLinkEntity == null) {
-            return null;
-        } else {
-            UserEntity userEntity = mongoStore.loadObject(UserEntity.class, socialLinkEntity.getUserId());
-            // TODO: Programmatically remove binding if userEntity doesn't exists? (There are more similar places where this should be handled)
-            return userEntity==null ? null : new UserAdapter(userEntity, mongoStore);
-        }
+        UserEntity userEntity = mongoStore.loadSingleObject(UserEntity.class, query, invocationContext);
+        return userEntity==null ? null : new UserAdapter(userEntity, mongoStore, invocationContext);
     }
 
     @Override
     public Set<SocialLinkModel> getSocialLinks(UserModel user) {
         UserEntity userEntity = ((UserAdapter)user).getUser();
-        String userId = userEntity.getId();
+        List<SocialLinkEntity> linkEntities = userEntity.getSocialLinks();
 
-        DBObject query = new QueryBuilder()
-                .and("userId").is(userId)
-                .get();
-        List<SocialLinkEntity> dbSocialLinks = mongoStore.loadObjects(SocialLinkEntity.class, query);
+        if (linkEntities == null) {
+            return Collections.EMPTY_SET;
+        }
 
         Set<SocialLinkModel> result = new HashSet<SocialLinkModel>();
-        for (SocialLinkEntity socialLinkEntity : dbSocialLinks) {
+        for (SocialLinkEntity socialLinkEntity : linkEntities) {
             SocialLinkModel model = new SocialLinkModel(socialLinkEntity.getSocialProvider(), socialLinkEntity.getSocialUsername());
             result.add(model);
         }
@@ -818,26 +832,22 @@ public class RealmAdapter implements RealmModel {
         SocialLinkEntity socialLinkEntity = new SocialLinkEntity();
         socialLinkEntity.setSocialProvider(socialLink.getSocialProvider());
         socialLinkEntity.setSocialUsername(socialLink.getSocialUsername());
-        socialLinkEntity.setUserId(userEntity.getId());
-        socialLinkEntity.setRealmId(getId());
 
-        mongoStore.insertObject(socialLinkEntity);
+        mongoStore.pushItemToList(userEntity, "socialLinks", socialLinkEntity, true, invocationContext);
     }
 
     @Override
     public void removeSocialLink(UserModel user, SocialLinkModel socialLink) {
+        SocialLinkEntity socialLinkEntity = new SocialLinkEntity();
+        socialLinkEntity.setSocialProvider(socialLink.getSocialProvider());
+        socialLinkEntity.setSocialUsername(socialLink.getSocialUsername());
+
         UserEntity userEntity = ((UserAdapter)user).getUser();
-        String userId = userEntity.getId();
-        DBObject query = new QueryBuilder()
-                .and("socialProvider").is(socialLink.getSocialProvider())
-                .and("socialUsername").is(socialLink.getSocialUsername())
-                .and("userId").is(userId)
-                .get();
-        mongoStore.removeObjects(SocialLinkEntity.class, query);
+        mongoStore.pullItemFromList(userEntity, "socialLinks", socialLinkEntity, invocationContext);
     }
 
     protected void updateRealm() {
-        mongoStore.updateObject(realm);
+        mongoStore.updateObject(realm, invocationContext);
     }
 
     protected RequiredCredentialModel initRequiredCredentialModel(String type) {
@@ -853,7 +863,7 @@ public class RealmAdapter implements RealmModel {
         DBObject query = new QueryBuilder()
                 .and("realmId").is(getId())
                 .get();
-        List<UserEntity> users = mongoStore.loadObjects(UserEntity.class, query);
+        List<UserEntity> users = mongoStore.loadObjects(UserEntity.class, query, invocationContext);
         return convertUserEntities(users);
     }
 
@@ -893,7 +903,7 @@ public class RealmAdapter implements RealmModel {
                 ).get()
         );
 
-        List<UserEntity> users = mongoStore.loadObjects(UserEntity.class, builder.get());
+        List<UserEntity> users = mongoStore.loadObjects(UserEntity.class, builder.get(), invocationContext);
         return convertUserEntities(users);
     }
 
@@ -915,14 +925,14 @@ public class RealmAdapter implements RealmModel {
                 queryBuilder.and(UserModel.EMAIL).regex(Pattern.compile("(?i:" + entry.getValue() + "$)"));
             }
         }
-        List<UserEntity> users = mongoStore.loadObjects(UserEntity.class, queryBuilder.get());
+        List<UserEntity> users = mongoStore.loadObjects(UserEntity.class, queryBuilder.get(), invocationContext);
         return convertUserEntities(users);
     }
 
     protected List<UserModel> convertUserEntities(List<UserEntity> userEntities) {
         List<UserModel> userModels = new ArrayList<UserModel>();
         for (UserEntity user : userEntities) {
-            userModels.add(new UserAdapter(user, mongoStore));
+            userModels.add(new UserAdapter(user, mongoStore, invocationContext));
         }
         return userModels;
     }
@@ -950,15 +960,7 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (o == null) return false;
-        if (!(o instanceof RealmAdapter)) return false;
-        RealmAdapter r = (RealmAdapter)o;
-        return r.getId().equals(getId());
-    }
-
-    @Override
-    public int hashCode() {
-        return getId().hashCode();
+    public AbstractMongoIdentifiableEntity getMongoEntity() {
+        return realm;
     }
 }

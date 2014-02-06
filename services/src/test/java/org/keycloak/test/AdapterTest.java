@@ -17,7 +17,6 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.OAuthClientManager;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.test.common.AbstractKeycloakTest;
 
 import java.util.ArrayList;
 import java.util.Arrays;

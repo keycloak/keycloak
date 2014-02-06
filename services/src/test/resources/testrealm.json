@@ -44,16 +44,6 @@
             ]
         },
         {
-            "username": "oauthclient",
-            "enabled": true,
-            "credentials": [
-                {
-                    "type": "password",
-                    "value": "clientpassword"
-                }
-            ]
-        },
-        {
             "username": "mySocialUser",
             "enabled": true
         }
@@ -88,6 +78,16 @@
         }
 
     ],
+    "oauthClients" : [
+        {
+            "name" : "oauthclient",
+            "enabled": true,
+            "credentials" : [
+                { "type" : "password",
+                  "value" : "clientpassword" }
+            ]
+        }
+    ],
     "roles" : {
         "realm" : [
             {
@@ -97,18 +97,18 @@
         "application" : {
             "Application" : [
                 {
-                    "name": "admin"
+                    "name": "app-admin"
                 },
                 {
-                    "name": "user"
+                    "name": "app-user"
                 }
             ],
             "OtherApp" : [
                 {
-                    "name": "admin"
+                    "name": "otherapp-admin"
                 },
                 {
-                    "name": "user"
+                    "name": "otherapp-user"
                 }
             ]
         }
@@ -119,25 +119,31 @@
             "roles": ["admin"]
         }
     ],
+    "scopeMappings": [
+        {
+            "username": "oauthclient",
+            "roles": ["admin"]
+        }
+    ],
     "applicationRoleMappings": {
         "Application": [
             {
                 "username": "wburke",
-                "roles": ["user"]
+                "roles": ["app-user"]
             },
             {
                 "username": "admin",
-                "roles": ["admin"]
+                "roles": ["app-admin"]
             }
         ],
         "OtherApp": [
             {
                 "username": "wburke",
-                "roles": ["user"]
+                "roles": ["otherapp-user"]
             },
             {
                 "username": "admin",
-                "roles": ["admin"]
+                "roles": ["otherapp-admin"]
             }
         ]
     },
@@ -145,7 +151,7 @@
         "Application": [
             {
                 "username": "oauthclient",
-                "roles": ["user"]
+                "roles": ["app-user"]
             }
         ]
 

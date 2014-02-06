@@ -1,31 +1,22 @@
 package org.keycloak.models.mongo.keycloak.entities;
 
+import org.keycloak.models.mongo.api.AbstractMongoIdentifiableEntity;
 import org.keycloak.models.mongo.api.MongoCollection;
 import org.keycloak.models.mongo.api.MongoEntity;
 import org.keycloak.models.mongo.api.MongoField;
-import org.keycloak.models.mongo.api.MongoId;
 import org.keycloak.models.mongo.api.MongoStore;
+import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @MongoCollection(collectionName = "oauthClients")
-public class OAuthClientEntity implements MongoEntity {
+public class OAuthClientEntity extends AbstractMongoIdentifiableEntity implements MongoEntity {
 
-    private String id;
     private String name;
 
     private String oauthAgentId;
     private String realmId;
-
-    @MongoId
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
 
     @MongoField
     public String getName() {
@@ -55,8 +46,8 @@ public class OAuthClientEntity implements MongoEntity {
     }
 
     @Override
-    public void afterRemove(MongoStore mongoStore) {
+    public void afterRemove(MongoStore mongoStore, MongoStoreInvocationContext invContext) {
         // Remove user of this oauthClient
-        mongoStore.removeObject(UserEntity.class, oauthAgentId);
+        mongoStore.removeObject(UserEntity.class, oauthAgentId, invContext);
     }
 }

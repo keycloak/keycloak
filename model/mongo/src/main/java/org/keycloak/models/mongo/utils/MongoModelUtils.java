@@ -10,6 +10,7 @@ import com.mongodb.QueryBuilder;
 import org.bson.types.ObjectId;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.mongo.api.MongoStore;
+import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.mongo.keycloak.adapters.UserAdapter;
 import org.keycloak.models.mongo.keycloak.entities.RoleEntity;
 import org.keycloak.models.mongo.keycloak.entities.UserEntity;
@@ -28,7 +29,7 @@ public class MongoModelUtils {
     }
 
     // Get everything including both application and realm roles
-    public static List<RoleEntity> getAllRolesOfUser(UserModel user, MongoStore mongoStore) {
+    public static List<RoleEntity> getAllRolesOfUser(UserModel user, MongoStore mongoStore, MongoStoreInvocationContext invContext) {
         UserEntity userEntity = ((UserAdapter)user).getUser();
         List<String> roleIds = userEntity.getRoleIds();
 
@@ -39,11 +40,11 @@ public class MongoModelUtils {
         DBObject query = new QueryBuilder()
                 .and("_id").in(convertStringsToObjectIds(roleIds))
                 .get();
-        return mongoStore.loadObjects(RoleEntity.class, query);
+        return mongoStore.loadObjects(RoleEntity.class, query, invContext);
     }
 
     // Get everything including both application and realm scopes
-    public static List<RoleEntity> getAllScopesOfUser(UserModel user, MongoStore mongoStore) {
+    public static List<RoleEntity> getAllScopesOfUser(UserModel user, MongoStore mongoStore, MongoStoreInvocationContext invContext) {
         UserEntity userEntity = ((UserAdapter)user).getUser();
         List<String> scopeIds = userEntity.getScopeIds();
 
@@ -54,6 +55,6 @@ public class MongoModelUtils {
         DBObject query = new QueryBuilder()
                 .and("_id").in(convertStringsToObjectIds(scopeIds))
                 .get();
-        return mongoStore.loadObjects(RoleEntity.class, query);
+        return mongoStore.loadObjects(RoleEntity.class, query, invContext);
     }
 }

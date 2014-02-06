@@ -7,7 +7,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.ModelToRepresentation;
-import org.keycloak.test.common.AbstractKeycloakTest;
 
 import java.util.HashMap;
 import java.util.Iterator;

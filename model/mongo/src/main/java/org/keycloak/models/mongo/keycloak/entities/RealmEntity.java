@@ -2,11 +2,12 @@ package org.keycloak.models.mongo.keycloak.entities;
 
 import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
+import org.keycloak.models.mongo.api.AbstractMongoIdentifiableEntity;
 import org.keycloak.models.mongo.api.MongoCollection;
 import org.keycloak.models.mongo.api.MongoEntity;
 import org.keycloak.models.mongo.api.MongoField;
-import org.keycloak.models.mongo.api.MongoId;
 import org.keycloak.models.mongo.api.MongoStore;
+import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,9 +18,7 @@ import java.util.Map;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @MongoCollection(collectionName = "realms")
-public class RealmEntity implements MongoEntity {
-
-    private String id;
+public class RealmEntity extends AbstractMongoIdentifiableEntity implements MongoEntity {
 
     private String name;
     private boolean enabled;
@@ -38,6 +37,9 @@ public class RealmEntity implements MongoEntity {
     private String publicKeyPem;
     private String privateKeyPem;
 
+    private String loginTheme;
+    private String accountTheme;
+
     // We are using names of defaultRoles (not ids)
     private List<String> defaultRoles = new ArrayList<String>();
 
@@ -47,15 +49,6 @@ public class RealmEntity implements MongoEntity {
 
     private Map<String, String> smtpConfig = new HashMap<String, String>();
     private Map<String, String> socialConfig = new HashMap<String, String>();
-
-    @MongoId
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
 
     @MongoField
     public String getName() {
@@ -184,6 +177,24 @@ public class RealmEntity implements MongoEntity {
     }
 
     @MongoField
+    public String getLoginTheme() {
+        return loginTheme;
+    }
+
+    public void setLoginTheme(String loginTheme) {
+        this.loginTheme = loginTheme;
+    }
+
+    @MongoField
+    public String getAccountTheme() {
+        return accountTheme;
+    }
+
+    public void setAccountTheme(String accountTheme) {
+        this.accountTheme = accountTheme;
+    }
+
+    @MongoField
     public List<String> getDefaultRoles() {
         return defaultRoles;
     }
@@ -238,18 +249,18 @@ public class RealmEntity implements MongoEntity {
     }
 
     @Override
-    public void afterRemove(MongoStore mongoStore) {
+    public void afterRemove(MongoStore mongoStore, MongoStoreInvocationContext invContext) {
         DBObject query = new QueryBuilder()
-                .and("realmId").is(id)
+                .and("realmId").is(getId())
                 .get();
 
         // Remove all users of this realm
-        mongoStore.removeObjects(UserEntity.class, query);
+        mongoStore.removeObjects(UserEntity.class, query, invContext);
 
         // Remove all roles of this realm
-        mongoStore.removeObjects(RoleEntity.class, query);
+        mongoStore.removeObjects(RoleEntity.class, query, invContext);
 
         // Remove all applications of this realm
-        mongoStore.removeObjects(ApplicationEntity.class, query);
+        mongoStore.removeObjects(ApplicationEntity.class, query, invContext);
     }
 }

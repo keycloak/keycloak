@@ -10,7 +10,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.models.mongo.api.MongoEntity;
 import org.keycloak.models.mongo.api.MongoStore;
+import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.mongo.impl.MongoStoreImpl;
+import org.keycloak.models.mongo.impl.context.SimpleMongoStoreInvocationContext;
+import org.keycloak.models.mongo.impl.context.TransactionMongoStoreInvocationContext;
 
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -28,7 +31,7 @@ public class MongoDBModelTest {
     };
 
     private MongoClient mongoClient;
-    private MongoStore mongoDB;
+    private MongoStore mongoStore;
 
     @Before
     public void before() throws Exception {
@@ -37,7 +40,7 @@ public class MongoDBModelTest {
             mongoClient = new MongoClient("localhost", 27017);
 
             DB db = mongoClient.getDB("keycloakTest");
-            mongoDB = new MongoStoreImpl(db, true, MANAGED_DATA_TYPES);
+            mongoStore = new MongoStoreImpl(db, true, MANAGED_DATA_TYPES);
 
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);
@@ -51,23 +54,25 @@ public class MongoDBModelTest {
 
     @Test
     public void mongoModelTest() throws Exception {
+        MongoStoreInvocationContext context = new TransactionMongoStoreInvocationContext(mongoStore);
+
         // Add some user
         Person john = new Person();
         john.setFirstName("john");
         john.setAge(25);
         john.setGender(Person.Gender.MALE);
 
-        mongoDB.insertObject(john);
+        mongoStore.insertObject(john, context);
 
         // Add another user
         Person mary = new Person();
         mary.setFirstName("mary");
-        mary.setKids(Arrays.asList("Peter", "Paul", "Wendy"));
+        mary.setKids(asList("Peter", "Paul", "Wendy"));
 
         Address addr1 = new Address();
         addr1.setStreet("Elm");
         addr1.setNumber(5);
-        addr1.setFlatNumbers(Arrays.asList("flat1", "flat2"));
+        addr1.setFlatNumbers(asList("flat1", "flat2"));
         Address addr2 = new Address();
         List<Address> addresses = new ArrayList<Address>();
         addresses.add(addr1);
@@ -76,14 +81,14 @@ public class MongoDBModelTest {
         mary.setAddresses(addresses);
         mary.setMainAddress(addr1);
         mary.setGender(Person.Gender.FEMALE);
-        mary.setGenders(Arrays.asList(Person.Gender.FEMALE));
+        mary.setGenders(asList(Person.Gender.FEMALE));
 
-        mongoDB.insertObject(mary);
+        mongoStore.insertObject(mary, context);
 
-        Assert.assertEquals(2, mongoDB.loadObjects(Person.class, new QueryBuilder().get()).size());
+        Assert.assertEquals(2, mongoStore.loadObjects(Person.class, new QueryBuilder().get(), context).size());
 
         DBObject query = new QueryBuilder().and("addresses.flatNumbers").is("flat1").get();
-        List<Person> persons = mongoDB.loadObjects(Person.class, query);
+        List<Person> persons = mongoStore.loadObjects(Person.class, query, context);
         Assert.assertEquals(1, persons.size());
         mary = persons.get(0);
         Assert.assertEquals(mary.getFirstName(), "mary");
@@ -92,15 +97,15 @@ public class MongoDBModelTest {
         Assert.assertEquals(Address.class, mary.getAddresses().get(0).getClass());
 
         // Test push/pull
-        mongoDB.pushItemToList(mary, "kids", "Pauline", true);
-        mongoDB.pullItemFromList(mary, "kids", "Paul");
+        mongoStore.pushItemToList(mary, "kids", "Pauline", true, context);
+        mongoStore.pullItemFromList(mary, "kids", "Paul", context);
 
         Address addr3 = new Address();
         addr3.setNumber(6);
         addr3.setStreet("Broadway");
-        mongoDB.pushItemToList(mary, "addresses", addr3, true);
+        mongoStore.pushItemToList(mary, "addresses", addr3, true, context);
 
-        mary = mongoDB.loadObject(Person.class, mary.getId());
+        mary = mongoStore.loadObject(Person.class, mary.getId(), context);
         Assert.assertEquals(3, mary.getKids().size());
         Assert.assertTrue(mary.getKids().contains("Pauline"));
         Assert.assertFalse(mary.getKids().contains("Paul"));
@@ -116,18 +121,26 @@ public class MongoDBModelTest {
         mary.addAttribute("attr1", "value1");
         mary.addAttribute("attr2", "value2");
         mary.addAttribute("attr.some3", "value3");
-        mongoDB.updateObject(mary);
+        mongoStore.updateObject(mary, context);
 
-        mary = mongoDB.loadObject(Person.class, mary.getId());
+        mary = mongoStore.loadObject(Person.class, mary.getId(), context);
         Assert.assertEquals(3, mary.getAttributes().size());
 
         mary.removeAttribute("attr2");
         mary.removeAttribute("nonExisting");
-        mongoDB.updateObject(mary);
+        mongoStore.updateObject(mary, context);
 
-        mary = mongoDB.loadObject(Person.class, mary.getId());
+        mary = mongoStore.loadObject(Person.class, mary.getId(), context);
         Assert.assertEquals(2, mary.getAttributes().size());
         Assert.assertEquals("value1", mary.getAttributes().get("attr1"));
         Assert.assertEquals("value3", mary.getAttributes().get("attr.some3"));
+
+        context.commit();
+    }
+
+    private <T> List<T> asList(T... objects) {
+        List<T> list = new ArrayList<T>();
+        list.addAll(Arrays.asList(objects));
+        return list;
     }
 }

@@ -8,6 +8,7 @@ import java.util.List;
 import com.mongodb.BasicDBObject;
 import org.jboss.logging.Logger;
 import org.keycloak.models.mongo.api.MongoEntity;
+import org.keycloak.models.mongo.api.MongoIdentifiableEntity;
 import org.keycloak.models.mongo.api.types.Converter;
 import org.keycloak.models.mongo.api.types.ConverterContext;
 import org.keycloak.models.mongo.api.types.TypeConverter;
@@ -55,9 +56,8 @@ public class BasicDBObjectConverter<S extends MongoEntity> implements Converter<
 
             if ("_id".equals(key)) {
                 // Current property is "id"
-                Property<String> idProperty = objectInfo.getOidProperty();
-                if (idProperty != null) {
-                    idProperty.setValue(object, value.toString());
+                if (object instanceof MongoIdentifiableEntity) {
+                    ((MongoIdentifiableEntity)object).setId(value.toString());
                 }
 
             } else if ((property = objectInfo.getPropertyByName(key)) != null) {

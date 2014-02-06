@@ -10,7 +10,7 @@ import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.AuthenticationManager.AuthenticationStatus;
-import org.keycloak.test.common.AbstractKeycloakTest;
+import org.keycloak.test.AbstractKeycloakTest;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;

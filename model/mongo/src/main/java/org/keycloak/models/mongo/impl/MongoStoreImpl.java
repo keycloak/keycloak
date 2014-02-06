@@ -11,8 +11,10 @@ import org.jboss.logging.Logger;
 import org.keycloak.models.mongo.api.MongoCollection;
 import org.keycloak.models.mongo.api.MongoEntity;
 import org.keycloak.models.mongo.api.MongoField;
-import org.keycloak.models.mongo.api.MongoId;
+import org.keycloak.models.mongo.api.MongoIdentifiableEntity;
 import org.keycloak.models.mongo.api.MongoStore;
+import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
+import org.keycloak.models.mongo.api.context.MongoTask;
 import org.keycloak.models.mongo.api.types.Converter;
 import org.keycloak.models.mongo.api.types.ConverterContext;
 import org.keycloak.models.mongo.api.types.TypeConverter;
@@ -105,7 +107,7 @@ public class MongoStoreImpl implements MongoStore {
     }
 
     @Override
-    public void insertObject(MongoEntity object) {
+    public void insertObject(MongoIdentifiableEntity object, MongoStoreInvocationContext context) {
         Class<? extends MongoEntity> clazz = object.getClass();
 
         // Find annotations for ID, for all the properties and for the name of the collection.
@@ -116,8 +118,7 @@ public class MongoStoreImpl implements MongoStore {
 
         DBCollection dbCollection = database.getCollection(objectInfo.getDbCollectionName());
 
-        Property<String> oidProperty = objectInfo.getOidProperty();
-        String currentId = oidProperty == null ? null : oidProperty.getValue(object);
+        String currentId = object.getId();
 
         // Inserting object, which already has oid property set. So we need to set "_id"
         if (currentId != null) {
@@ -126,48 +127,73 @@ public class MongoStoreImpl implements MongoStore {
 
         dbCollection.insert(dbObject);
 
-        // Add oid to value of given object
-        if (currentId == null && oidProperty != null) {
-            oidProperty.setValue(object, dbObject.getString("_id"));
-        }
-    }
-
-    @Override
-    public void updateObject(MongoEntity object) {
-        Class<? extends MongoEntity> clazz = object.getClass();
-        ObjectInfo objectInfo = getObjectInfo(clazz);
-        BasicDBObject dbObject = typeConverter.convertApplicationObjectToDBObject(object, BasicDBObject.class);
-        DBCollection dbCollection = database.getCollection(objectInfo.getDbCollectionName());
-
-        Property<String> oidProperty = objectInfo.getOidProperty();
-        String currentId = oidProperty == null ? null : oidProperty.getValue(object);
-
+        // Add id to value of given object
         if (currentId == null) {
-            throw new IllegalStateException("Can't update object without id: " + object);
-        } else {
-            BasicDBObject query = new BasicDBObject("_id", getObjectId(currentId));
-            dbCollection.update(query, dbObject);
+            object.setId(dbObject.getString("_id"));
         }
+
+        // Treat object as if it is read (It is already submited to transaction)
+        context.addLoadedObject(object);
+    }
+
+    @Override
+    public void updateObject(final MongoIdentifiableEntity object, MongoStoreInvocationContext context) {
+        MongoTask fullUpdateTask = new MongoTask() {
+
+            @Override
+            public void execute() {
+                Class<? extends MongoEntity> clazz = object.getClass();
+                ObjectInfo objectInfo = getObjectInfo(clazz);
+                BasicDBObject dbObject = typeConverter.convertApplicationObjectToDBObject(object, BasicDBObject.class);
+                DBCollection dbCollection = database.getCollection(objectInfo.getDbCollectionName());
+
+                String currentId = object.getId();
+
+                if (currentId == null) {
+                    throw new IllegalStateException("Can't update object without id: " + object);
+                } else {
+                    BasicDBObject query = new BasicDBObject("_id", getObjectId(currentId));
+                    dbCollection.update(query, dbObject);
+                }
+            }
+
+            @Override
+            public boolean isFullUpdate() {
+                return true;
+            }
+        };
+
+        // update is just added to context and postponed
+        context.addUpdateTask(object, fullUpdateTask);
     }
 
 
     @Override
-    public <T extends MongoEntity> T loadObject(Class<T> type, String oid) {
+    public <T extends MongoIdentifiableEntity> T loadObject(Class<T> type, String id, MongoStoreInvocationContext context) {
+        // First look if we already read the object with this oid and type during this transaction. If yes, use it instead of DB lookup
+        T cached = context.getLoadedObject(type, id);
+        if (cached != null) return cached;
+
         DBCollection dbCollection = getDBCollectionForType(type);
 
-        BasicDBObject idQuery = new BasicDBObject("_id", getObjectId(oid));
+        BasicDBObject idQuery = new BasicDBObject("_id", getObjectId(id));
         DBObject dbObject = dbCollection.findOne(idQuery);
 
         if (dbObject == null) return null;
 
         ConverterContext<Object> converterContext = new ConverterContext<Object>(dbObject, type, null);
-        return (T)typeConverter.convertDBObjectToApplicationObject(converterContext);
+        T converted = (T)typeConverter.convertDBObjectToApplicationObject(converterContext);
+
+        // Now add it to loaded objects
+        context.addLoadedObject(converted);
+
+        return converted;
     }
 
 
     @Override
-    public <T extends MongoEntity> T loadSingleObject(Class<T> type, DBObject query) {
-        List<T> result = loadObjects(type, query);
+    public <T extends MongoIdentifiableEntity> T loadSingleObject(Class<T> type, DBObject query, MongoStoreInvocationContext context) {
+        List<T> result = loadObjects(type, query, context);
         if (result.size() > 1) {
             throw new IllegalStateException("There are " + result.size() + " results for type=" + type + ", query=" + query + ". We expect just one");
         } else if (result.size() == 1) {
@@ -180,47 +206,43 @@ public class MongoStoreImpl implements MongoStore {
 
 
     @Override
-    public <T extends MongoEntity> List<T> loadObjects(Class<T> type, DBObject query) {
-        DBCollection dbCollection = getDBCollectionForType(type);
+    public <T extends MongoIdentifiableEntity> List<T> loadObjects(Class<T> type, DBObject query, MongoStoreInvocationContext context) {
+        // First we should execute all pending tasks before searching DB
+        context.beforeDBSearch(type);
 
+        DBCollection dbCollection = getDBCollectionForType(type);
         DBCursor cursor = dbCollection.find(query);
 
-        return convertCursor(type, cursor);
+        return convertCursor(type, cursor, context);
     }
 
 
     @Override
-    public boolean removeObject(MongoEntity object) {
-        Class<? extends MongoEntity> type = object.getClass();
-        ObjectInfo objectInfo = getObjectInfo(type);
-
-        Property<String> idProperty = objectInfo.getOidProperty();
-        String oid = idProperty.getValue(object);
-
-        return removeObject(type, oid);
+    public boolean removeObject(MongoIdentifiableEntity object, MongoStoreInvocationContext context) {
+        return removeObject(object.getClass(), object.getId(), context);
     }
 
 
     @Override
-    public boolean removeObject(Class<? extends MongoEntity> type, String oid) {
-        MongoEntity found = loadObject(type, oid);
+    public boolean removeObject(Class<? extends MongoIdentifiableEntity> type, String id, MongoStoreInvocationContext context) {
+        MongoIdentifiableEntity found = loadObject(type, id, context);
         if (found == null) {
             return false;
         } else {
             DBCollection dbCollection = getDBCollectionForType(type);
-            BasicDBObject dbQuery = new BasicDBObject("_id", getObjectId(oid));
+            BasicDBObject dbQuery = new BasicDBObject("_id", getObjectId(id));
             dbCollection.remove(dbQuery);
-            logger.info("Object of type: " + type + ", oid: " + oid + " removed from MongoDB.");
+            logger.info("Object of type: " + type + ", id: " + id + " removed from MongoDB.");
 
-            found.afterRemove(this);
+            context.addRemovedObject(found);
             return true;
         }
     }
 
 
     @Override
-    public boolean removeObjects(Class<? extends MongoEntity> type, DBObject query) {
-        List<? extends MongoEntity> foundObjects = loadObjects(type, query);
+    public boolean removeObjects(Class<? extends MongoIdentifiableEntity> type, DBObject query, MongoStoreInvocationContext context) {
+        List<? extends MongoIdentifiableEntity> foundObjects = loadObjects(type, query, context);
         if (foundObjects.size() == 0) {
             return false;
         } else {
@@ -228,22 +250,17 @@ public class MongoStoreImpl implements MongoStore {
             dbCollection.remove(query);
             logger.info("Removed " + foundObjects.size() + " objects of type: " + type + ", query: " + query);
 
-            for (MongoEntity found : foundObjects) {
-                found.afterRemove(this);
+            for (MongoIdentifiableEntity found : foundObjects) {
+                context.addRemovedObject(found);;
             }
             return true;
         }
     }
 
     @Override
-    public <S> boolean pushItemToList(MongoEntity object, String listPropertyName, S itemToPush, boolean skipIfAlreadyPresent) {
-        Class<? extends MongoEntity> type = object.getClass();
+    public <S> boolean pushItemToList(final MongoIdentifiableEntity object, final String listPropertyName, S itemToPush, boolean skipIfAlreadyPresent, MongoStoreInvocationContext context) {
+        final Class<? extends MongoEntity> type = object.getClass();
         ObjectInfo objectInfo = getObjectInfo(type);
-
-        Property<String> oidProperty = getObjectInfo(type).getOidProperty();
-        if (oidProperty == null) {
-            throw new IllegalArgumentException("List pushes not supported for properties without oid");
-        }
 
         // Add item to list directly in this object
         Property<Object> listProperty = objectInfo.getPropertyByName(listPropertyName);
@@ -257,33 +274,43 @@ public class MongoStoreImpl implements MongoStore {
             listProperty.setValue(object, list);
         }
 
-        // Return if item is already in list
+        // Skip if item is already in list
         if (skipIfAlreadyPresent && list.contains(itemToPush)) {
             return false;
         }
 
+        // Update java object
         list.add(itemToPush);
 
-        // Push item to DB. We always convert whole list, so it's not so optimal...TODO: use $push if possible
-        BasicDBList dbList = typeConverter.convertApplicationObjectToDBObject(list, BasicDBList.class);
+        // Add update of list to pending tasks
+        final List<S> listt = list;
+        context.addUpdateTask(object, new MongoTask() {
 
-        BasicDBObject query = new BasicDBObject("_id", getObjectId(oidProperty.getValue(object)));
-        BasicDBObject listObject = new BasicDBObject(listPropertyName, dbList);
-        BasicDBObject setCommand = new BasicDBObject("$set", listObject);
-        getDBCollectionForType(type).update(query, setCommand);
+            @Override
+            public void execute() {
+                // Now DB update of new list with usage of $set
+                BasicDBList dbList = typeConverter.convertApplicationObjectToDBObject(listt, BasicDBList.class);
+
+                BasicDBObject query = new BasicDBObject("_id", getObjectId(object.getId()));
+                BasicDBObject listObject = new BasicDBObject(listPropertyName, dbList);
+                BasicDBObject setCommand = new BasicDBObject("$set", listObject);
+                getDBCollectionForType(type).update(query, setCommand);
+            }
+
+            @Override
+            public boolean isFullUpdate() {
+                return false;
+            }
+        });
+
         return true;
     }
 
 
     @Override
-    public <S> void pullItemFromList(MongoEntity object, String listPropertyName, S itemToPull) {
-        Class<? extends MongoEntity> type = object.getClass();
+    public <S> boolean pullItemFromList(final MongoIdentifiableEntity object, final String listPropertyName, final S itemToPull, MongoStoreInvocationContext context) {
+        final Class<? extends MongoEntity> type = object.getClass();
         ObjectInfo objectInfo = getObjectInfo(type);
-
-        Property<String> oidProperty = getObjectInfo(type).getOidProperty();
-        if (oidProperty == null) {
-            throw new IllegalArgumentException("List pulls not supported for properties without oid");
-        }
 
         // Remove item from list directly in this object
         Property<Object> listProperty = objectInfo.getPropertyByName(listPropertyName);
@@ -293,15 +320,33 @@ public class MongoStoreImpl implements MongoStore {
         List<S> list = (List<S>)listProperty.getValue(object);
 
         // If list is null, we skip both object and DB update
-        if (list != null) {
+        if (list == null || !list.contains(itemToPull)) {
+            return false;
+        } else {
+
+            // Update java object
             list.remove(itemToPull);
 
-            // Pull item from DB
-            Object dbItemToPull = typeConverter.convertApplicationObjectToDBObject(itemToPull, Object.class);
-            BasicDBObject query = new BasicDBObject("_id", getObjectId(oidProperty.getValue(object)));
-            BasicDBObject pullObject = new BasicDBObject(listPropertyName, dbItemToPull);
-            BasicDBObject pullCommand = new BasicDBObject("$pull", pullObject);
-            getDBCollectionForType(type).update(query, pullCommand);
+            // Add update of list to pending tasks
+            context.addUpdateTask(object, new MongoTask() {
+
+                @Override
+                public void execute() {
+                    // Pull item from DB
+                    Object dbItemToPull = typeConverter.convertApplicationObjectToDBObject(itemToPull, Object.class);
+                    BasicDBObject query = new BasicDBObject("_id", getObjectId(object.getId()));
+                    BasicDBObject pullObject = new BasicDBObject(listPropertyName, dbItemToPull);
+                    BasicDBObject pullCommand = new BasicDBObject("$pull", pullObject);
+                    getDBCollectionForType(type).update(query, pullCommand);
+                }
+
+                @Override
+                public boolean isFullUpdate() {
+                    return false;
+                }
+            });
+
+            return true;
         }
     }
 
@@ -317,14 +362,12 @@ public class MongoStoreImpl implements MongoStore {
     public ObjectInfo getObjectInfo(Class<? extends MongoEntity> objectClass) {
         ObjectInfo objectInfo = objectInfoCache.get(objectClass);
         if (objectInfo == null) {
-            Property<String> idProperty = PropertyQueries.<String>createQuery(objectClass).addCriteria(new AnnotatedPropertyCriteria(MongoId.class)).getFirstResult();
-
             List<Property<Object>> properties = PropertyQueries.createQuery(objectClass).addCriteria(new AnnotatedPropertyCriteria(MongoField.class)).getResultList();
 
             MongoCollection classAnnotation = objectClass.getAnnotation(MongoCollection.class);
 
             String dbCollectionName = classAnnotation==null ? null : classAnnotation.collectionName();
-            objectInfo = new ObjectInfo(objectClass, dbCollectionName, idProperty, properties);
+            objectInfo = new ObjectInfo(objectClass, dbCollectionName, properties);
 
             ObjectInfo existing = objectInfoCache.putIfAbsent(objectClass, objectInfo);
             if (existing != null) {
@@ -335,14 +378,23 @@ public class MongoStoreImpl implements MongoStore {
         return objectInfo;
     }
 
-    private <T extends MongoEntity> List<T> convertCursor(Class<T> type, DBCursor cursor) {
+    protected <T extends MongoIdentifiableEntity> List<T> convertCursor(Class<T> type, DBCursor cursor, MongoStoreInvocationContext context) {
         List<T> result = new ArrayList<T>();
 
         try {
             for (DBObject dbObject : cursor) {
-                ConverterContext<Object> converterContext = new ConverterContext<Object>(dbObject, type, null);
-                T converted = (T)typeConverter.convertDBObjectToApplicationObject(converterContext);
-                result.add(converted);
+                // First look if we already have loaded object cached. If yes, we will use cached instance
+                String id = dbObject.get("_id").toString();
+                T object = context.getLoadedObject(type, id);
+
+                if (object == null) {
+                    // So convert and use fresh instance from DB
+                    ConverterContext<Object> converterContext = new ConverterContext<Object>(dbObject, type, null);
+                    object = (T)typeConverter.convertDBObjectToApplicationObject(converterContext);
+                    context.addLoadedObject(object);
+                }
+
+                result.add(object);
             }
         } finally {
             cursor.close();
@@ -351,14 +403,14 @@ public class MongoStoreImpl implements MongoStore {
         return result;
     }
 
-    private DBCollection getDBCollectionForType(Class<? extends MongoEntity> type) {
+    protected DBCollection getDBCollectionForType(Class<? extends MongoEntity> type) {
         ObjectInfo objectInfo = getObjectInfo(type);
         String dbCollectionName = objectInfo.getDbCollectionName();
         return dbCollectionName==null ? null : database.getCollection(objectInfo.getDbCollectionName());
     }
 
     // We allow ObjectId to be both "ObjectId" or "String".
-    private Object getObjectId(String idAsString) {
+    protected Object getObjectId(String idAsString) {
         if (ObjectId.isValid(idAsString)) {
             return new ObjectId(idAsString);
         } else {

@@ -1,6 +1,7 @@
 package org.keycloak.models.mongo.api;
 
 import com.mongodb.DBObject;
+import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
 
 import java.util.List;
 
@@ -14,30 +15,29 @@ public interface MongoStore {
      *
      * @param object to update
      */
-    void insertObject(MongoEntity object);
+    void insertObject(MongoIdentifiableEntity object, MongoStoreInvocationContext context);
 
     /**
      * Update existing object
      *
      * @param object to update
      */
-    void updateObject(MongoEntity object);
+    void updateObject(MongoIdentifiableEntity object, MongoStoreInvocationContext context);
 
 
-    <T extends MongoEntity> T loadObject(Class<T> type, String oid);
+    <T extends MongoIdentifiableEntity> T loadObject(Class<T> type, String oid, MongoStoreInvocationContext context);
 
-    <T extends MongoEntity> T loadSingleObject(Class<T> type, DBObject query);
+    <T extends MongoIdentifiableEntity> T loadSingleObject(Class<T> type, DBObject query, MongoStoreInvocationContext context);
 
-    <T extends MongoEntity> List<T> loadObjects(Class<T> type, DBObject query);
+    <T extends MongoIdentifiableEntity> List<T> loadObjects(Class<T> type, DBObject query, MongoStoreInvocationContext context);
 
-    // Object must have filled oid
-    boolean removeObject(MongoEntity object);
+    boolean removeObject(MongoIdentifiableEntity object, MongoStoreInvocationContext context);
 
-    boolean removeObject(Class<? extends MongoEntity> type, String oid);
+    boolean removeObject(Class<? extends MongoIdentifiableEntity> type, String id, MongoStoreInvocationContext context);
 
-    boolean removeObjects(Class<? extends MongoEntity> type, DBObject query);
+    boolean removeObjects(Class<? extends MongoIdentifiableEntity> type, DBObject query, MongoStoreInvocationContext context);
 
-    <S> boolean pushItemToList(MongoEntity object, String listPropertyName, S itemToPush, boolean skipIfAlreadyPresent);
+    <S> boolean pushItemToList(MongoIdentifiableEntity object, String listPropertyName, S itemToPush, boolean skipIfAlreadyPresent, MongoStoreInvocationContext context);
 
-    <S> void pullItemFromList(MongoEntity object, String listPropertyName, S itemToPull);
+    <S> boolean pullItemFromList(MongoIdentifiableEntity object, String listPropertyName, S itemToPull, MongoStoreInvocationContext context);
 }

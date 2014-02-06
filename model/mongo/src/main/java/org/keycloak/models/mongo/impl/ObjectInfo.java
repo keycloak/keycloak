@@ -18,14 +18,11 @@ public class ObjectInfo {
 
     private final String dbCollectionName;
 
-    private final Property<String> oidProperty;
-
     private final Map<String, Property<Object>> properties;
 
-    public ObjectInfo(Class<? extends MongoEntity> objectClass, String dbCollectionName, Property<String> oidProperty, List<Property<Object>> properties) {
+    public ObjectInfo(Class<? extends MongoEntity> objectClass, String dbCollectionName, List<Property<Object>> properties) {
         this.objectClass = objectClass;
         this.dbCollectionName = dbCollectionName;
-        this.oidProperty = oidProperty;
 
         Map<String, Property<Object>> props= new HashMap<String, Property<Object>>();
         for (Property<Object> property : properties) {
@@ -40,10 +37,6 @@ public class ObjectInfo {
 
     public String getDbCollectionName() {
         return dbCollectionName;
-    }
-
-    public Property<String> getOidProperty() {
-        return oidProperty;
     }
 
     public Collection<Property<Object>> getProperties() {

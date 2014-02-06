@@ -1,6 +1,6 @@
 package org.keycloak.models.mongo.test;
 
-import org.keycloak.models.mongo.api.AbstractMongoEntity;
+import org.keycloak.models.mongo.api.MongoEntity;
 import org.keycloak.models.mongo.api.MongoField;
 
 import java.util.List;
@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class Address extends AbstractMongoEntity {
+public class Address implements MongoEntity {
 
     private String street;
     private int number;

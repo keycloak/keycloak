@@ -251,10 +251,22 @@
             <groupId>org.seleniumhq.selenium</groupId>
             <artifactId>selenium-chrome-driver</artifactId>
         </dependency>
+
+        <!-- Mongo dependencies specified here and not in mongo profile, just to allow running tests from IDE -->
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-model-mongo</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>mongo-java-driver</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.picketlink</groupId>
+            <artifactId>picketlink-common</artifactId>
+        </dependency>
+
     </dependencies>
     <build>
         <plugins>
@@ -325,6 +337,24 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+
+        <profile>
+            <id>mongo</id>
+            <activation>
+                <property>
+                    <name>keycloak.model</name>
+                    <value>mongo</value>
+                </property>
+            </activation>
+
+            <properties>
+                <keycloak.mongo.host>localhost</keycloak.mongo.host>
+                <keycloak.mongo.port>27017</keycloak.mongo.port>
+                <keycloak.mongo.db>keycloak</keycloak.mongo.db>
+                <keycloak.mongo.clearCollectionsOnStartup>true</keycloak.mongo.clearCollectionsOnStartup>
+            </properties>
+
         </profile>
     </profiles>
 </project>

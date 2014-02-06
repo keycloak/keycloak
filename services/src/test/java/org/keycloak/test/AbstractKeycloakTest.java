@@ -1,10 +1,8 @@
-package org.keycloak.test.common;
+package org.keycloak.test;
 
 import org.jboss.resteasy.logging.Logger;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.keycloak.models.KeycloakSession;
@@ -17,7 +15,6 @@ import org.keycloak.services.utils.ModelProviderUtils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.ServiceLoader;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

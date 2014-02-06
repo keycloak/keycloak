@@ -3,11 +3,12 @@ package org.keycloak.models.mongo.keycloak.entities;
 import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
 import org.jboss.logging.Logger;
+import org.keycloak.models.mongo.api.AbstractMongoIdentifiableEntity;
 import org.keycloak.models.mongo.api.MongoCollection;
 import org.keycloak.models.mongo.api.MongoEntity;
 import org.keycloak.models.mongo.api.MongoField;
-import org.keycloak.models.mongo.api.MongoId;
 import org.keycloak.models.mongo.api.MongoStore;
+import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
 
 import java.util.List;
 
@@ -15,28 +16,17 @@ import java.util.List;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @MongoCollection(collectionName = "roles")
-public class RoleEntity implements MongoEntity {
+public class RoleEntity extends AbstractMongoIdentifiableEntity implements MongoEntity {
 
     private static final Logger logger = Logger.getLogger(RoleEntity.class);
 
-    private String id;
     private String name;
     private String description;
-    private boolean composite;
 
     private List<String> compositeRoleIds;
 
     private String realmId;
     private String applicationId;
-
-    @MongoId
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
 
     @MongoField
     public String getName() {
@@ -54,15 +44,6 @@ public class RoleEntity implements MongoEntity {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    @MongoField
-    public boolean isComposite() {
-        return composite;
-    }
-
-    public void setComposite(boolean composite) {
-        this.composite = composite;
     }
 
     @MongoField
@@ -93,46 +74,46 @@ public class RoleEntity implements MongoEntity {
     }
 
     @Override
-    public void afterRemove(MongoStore mongoStore) {
+    public void afterRemove(MongoStore mongoStore, MongoStoreInvocationContext invContext) {
         // Remove this role from all users, which has it
         DBObject query = new QueryBuilder()
-                .and("roleIds").is(id)
+                .and("roleIds").is(getId())
                 .get();
 
-        List<UserEntity> users = mongoStore.loadObjects(UserEntity.class, query);
+        List<UserEntity> users = mongoStore.loadObjects(UserEntity.class, query, invContext);
         for (UserEntity user : users) {
             logger.info("Removing role " + getName() + " from user " + user.getLoginName());
-            mongoStore.pullItemFromList(user, "roleIds", getId());
+            mongoStore.pullItemFromList(user, "roleIds", getId(), invContext);
         }
 
         // Remove this scope from all users, which has it
         query = new QueryBuilder()
-                .and("scopeIds").is(id)
+                .and("scopeIds").is(getId())
                 .get();
 
-        users = mongoStore.loadObjects(UserEntity.class, query);
+        users = mongoStore.loadObjects(UserEntity.class, query, invContext);
         for (UserEntity user : users) {
             logger.info("Removing scope " + getName() + " from user " + user.getLoginName());
-            mongoStore.pullItemFromList(user, "scopeIds", getId());
+            mongoStore.pullItemFromList(user, "scopeIds", getId(), invContext);
         }
 
         // Remove defaultRoles from realm
         if (realmId != null) {
-            RealmEntity realmEntity = mongoStore.loadObject(RealmEntity.class, realmId);
+            RealmEntity realmEntity = mongoStore.loadObject(RealmEntity.class, realmId, invContext);
 
             // Realm might be already removed at this point
             if (realmEntity != null) {
-                mongoStore.pullItemFromList(realmEntity, "defaultRoles", getId());
+                mongoStore.pullItemFromList(realmEntity, "defaultRoles", getId(), invContext);
             }
         }
 
         // Remove defaultRoles from application
         if (applicationId != null) {
-            ApplicationEntity appEntity = mongoStore.loadObject(ApplicationEntity.class, applicationId);
+            ApplicationEntity appEntity = mongoStore.loadObject(ApplicationEntity.class, applicationId, invContext);
 
             // Application might be already removed at this point
             if (appEntity != null) {
-                mongoStore.pullItemFromList(appEntity, "defaultRoles", getId());
+                mongoStore.pullItemFromList(appEntity, "defaultRoles", getId(), invContext);
             }
         }
 
@@ -140,9 +121,9 @@ public class RoleEntity implements MongoEntity {
         query = new QueryBuilder()
                 .and("compositeRoleIds").is(getId())
                 .get();
-        List<RoleEntity> parentRoles = mongoStore.loadObjects(RoleEntity.class, query);
+        List<RoleEntity> parentRoles = mongoStore.loadObjects(RoleEntity.class, query, invContext);
         for (RoleEntity role : parentRoles) {
-            mongoStore.pullItemFromList(role, "compositeRoleIds", getId());
+            mongoStore.pullItemFromList(role, "compositeRoleIds", getId(), invContext);
         }
     }
 }
