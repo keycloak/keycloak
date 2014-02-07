@@ -7,7 +7,7 @@
     ${rb.emailVerifyTitle}
 
     <#elseif section = "form">
-    <div id="kc-verify-email" class="app-form">
+    <div id="kc-verify-email">
         <p class="instruction">
             ${rb.emailVerifyInstr}
         </p>

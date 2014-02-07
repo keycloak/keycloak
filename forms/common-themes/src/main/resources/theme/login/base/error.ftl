@@ -1,6 +1,5 @@
-<#-- TODO: Only a placeholder, implementation needed -->
 <#import "template.ftl" as layout>
-<@layout.registrationLayout; section>
+<@layout.registrationLayout displayMessage=false; section>
     <#if section = "title">
     ${rb.errorTitle}
 
@@ -9,8 +8,7 @@
 
     <#elseif section = "form">
     <div id="kc-error-message">
-        <p class="instruction">${rb.errorGenericMsg}</p>
-        <p id="error-summary" class="instruction second">${message.summary}</p>
+        <p class="instruction">${message.summary}</p>
     </div>
     </#if>
 </@layout.registrationLayout>
