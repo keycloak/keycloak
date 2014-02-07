@@ -2,6 +2,37 @@ html, body, body > .container, #view, #content-area{
     height: 100%;
 }
 
+#content .glyphicon {
+    color: #555;
+}
+
+#content .glyphicon > span {
+    display: none;
+}
+
+.kc-button {
+    background-image: -moz-linear-gradient(center top , #FAFAFA 0%, #EDEDED 100%);
+    border: 1px solid #BBBBBB;
+    border-radius: 2px;
+    color: #555;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: bold;
+    line-height: 2.18182em;
+    border-radius: 2px;
+    box-shadow: 0 2px 2px rgba(0, 0, 0, 0.15);
+    font-weight: bold;
+    letter-spacing: 0.04em;
+    padding: 0.307692em 1.07692em;
+    margin: 0.5em;
+    display: inline-block;
+}
+
+p.subtitle {
+    position: absolute;
+    right: 2.5em;
+}
+
 #content-area {
     border-color: #CECECE;
     border-style: solid;
@@ -266,6 +297,8 @@ legend .kc-icon-collapse {
     vertical-align: middle;
 }
 
+
+
 /* Relam selector from the top menu */
 
 .header .navbar-primary li > .select-rcue {
@@ -364,4 +397,61 @@ legend .kc-icon-collapse {
 }
 .select-rcue option:hover {
     background-color: #D5ECF9;
+}
+
+/* Left-Rigth selector form */
+.changing-selectors.application {
+    padding-left: 12em;
+}
+.changing-selectors .select-title {
+    display: inline-block;
+}
+.changing-selectors .select-title label {
+    font-size: 1.1em;
+    margin-left: 0.2em;
+    margin-bottom: 0.3em;
+    margin-top: 0.5em;
+    display: block;
+    font-weight: normal;
+}
+.changing-selectors select {
+    min-height: 150px;
+    font-size: 1.1em;
+    padding: 0.545454545454545em;
+    min-width: 18.1818181818182em;
+    border: 1px #b6b6b6 solid;
+    border-radius: 2px;
+    box-shadow: inset 0px 2px 2px rgba(0, 0, 0, 0.1);
+    color: #333;
+    max-width: 200px;
+    width: auto;
+    min-width: 150px;
+    display: inline-block;
+}
+.changing-selectors select:hover {
+    border-color: #62afdb;
+}
+.changing-selectors select option {
+    padding: 0.36363636363636em 0.45454545454545em;
+    display: block;
+}
+.changing-selectors select option[disabled="disabled"] {
+    color: #aaa;
+}
+.changing-selectors .middle-buttons {
+    display: inline-block;
+    width: 4.5em;
+    margin-left: 0.8em;
+    margin-right: 0.8em;
+    vertical-align: middle;
+}
+.changing-selectors .middle-buttons button:first-child {
+    margin-bottom: 0.5em;
+}
+.changing-selectors .middle-buttons button.disabled span {
+    opacity: 0.4;
+    filter: alpha(opacity=40);
+}
+.changing-selectors .middle-buttons button span {
+    margin-right: 0;
 }

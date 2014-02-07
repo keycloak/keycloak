@@ -482,6 +482,18 @@ module.config([ '$routeProvider', function($routeProvider) {
             templateUrl : 'partials/home.html',
             controller : 'HomeCtrl'
         })
+        .when('/mocks/:realm', {
+            templateUrl : 'partials/realm-detail_mock.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                }
+            },
+            controller : 'RealmDetailCtrl'
+        })
         .otherwise({
             templateUrl : 'partials/notfound.html'
         });
@@ -684,6 +696,8 @@ module.directive('kcSave', function ($compile, Notifications) {
     return {
         restrict: 'A',
         link: function ($scope, elem, attr, ctrl) {
+            elem.addClass("btn btn-primary btn-lg");
+            elem.attr("type","submit");
             elem.bind('click', function() {
                 $scope.$apply(function() {
                     var form = elem.closest('form');
@@ -707,6 +721,8 @@ module.directive('kcReset', function ($compile, Notifications) {
     return {
         restrict: 'A',
         link: function ($scope, elem, attr, ctrl) {
+            elem.addClass("btn btn-default btn-lg");
+            elem.attr("type","submit");
             elem.bind('click', function() {
                 $scope.$apply(function() {
                     var form = elem.closest('form');
@@ -717,6 +733,45 @@ module.directive('kcReset', function ($compile, Notifications) {
                     }
                 })
             })
+        }
+    }
+});
+
+module.directive('kcCancel', function ($compile, Notifications) {
+    return {
+        restrict: 'A',
+        link: function ($scope, elem, attr, ctrl) {
+            elem.addClass("btn btn-default btn-lg");
+            elem.attr("type","submit");
+        }
+    }
+});
+
+module.directive('kcDelete', function ($compile, Notifications) {
+    return {
+        restrict: 'A',
+        link: function ($scope, elem, attr, ctrl) {
+            elem.addClass("btn btn-danger btn-lg");
+            elem.attr("type","submit");
+        }
+    }
+});
+
+
+module.directive('kcSelect', function ($compile, Notifications) {
+    return {
+        scope: {
+            kcOptions: '=',
+            kcModel: '=',
+            id: "="
+        },
+        restrict: 'E',
+        replace: true,
+        templateUrl: 'templates/kc-select.html',
+        link: function(scope, element, attr) {
+            scope.updateModel = function(item) {
+                scope.kcModel = item;
+            };
         }
     }
 });

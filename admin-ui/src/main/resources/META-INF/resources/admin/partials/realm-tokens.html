@@ -1,80 +1,85 @@
-<div id="wrapper" class="container">
-    <div class="row">
-        <div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="'partials/realm-menu.html'"></div>
-        <div id="content-area" class="col-md-9" role="main">
-            <div class="top-nav" data-ng-hide="createRealm">
-                <ul class="rcue-tabs">
-                    <li><a href="#/realms/{{realm.realm}}">General</a></li>
-                    <li data-ng-show="realm.social"><a href="#/realms/{{realm.realm}}/social-settings">Social</a></li>
-                    <li><a href="#/realms/{{realm.realm}}/roles">Roles</a></li>
-                    <li><a href="#/realms/{{realm.realm}}/default-roles">Default Roles</a></li>
-                    <li><a href="#/realms/{{realm.realm}}/required-credentials">Credentials</a></li>
-                    <li class="active"><a href="#/realms/{{realm.realm}}/token-settings">Token</a></li>
-                    <li><a href="#/realms/{{realm.realm}}/keys-settings">Keys</a></li>
-                    <li><a href="#/realms/{{realm.realm}}/smtp-settings">Email</a></li>
-                </ul>
-            </div>
-            <div id="content">
-                <ol class="breadcrumb">
-                    <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
-                    <li><a href="#/realms/{{realm.realm}}">Settings</a></li>
-                    <li class="active">Token</li>
-                </ol>
-                <h2><span>{{realm.realm}}</span> Token Settings</h2>
-                <form name="realmForm" novalidate>
-                    <fieldset class="border-top">
-                        <div class="form-group input-select">
-                            <label for="tokenLifespan">Token lifespan</label>
-                            <div class="input-group">
-                                <input type="number" required min="1" max="31536000" data-ng-model="realm.tokenLifespan" id="tokenLifespan" name="tokenLifespan" class="tiny">
-                                <div class="select-rcue">
-                                    <select name="tokenLifespanUnit" data-ng-model="realm.tokenLifespanUnit" >
-                                        <option data-ng-selected="!realm.tokenLifespanUnit">Seconds</option>
-                                        <option>Minutes</option>
-                                        <option>Hours</option>
-                                        <option>Days</option>
-                                    </select>
-                                </div>
+<div class="bs-sidebar col-sm-3 " data-ng-include data-src="'partials/realm-menu.html'"></div>
+<div id="content-area" class="col-sm-9" role="main">
+    <ul class="nav nav-tabs nav-tabs-pf">
+        <li><a href="#/realms/{{realm.realm}}">General</a></li>
+        <li data-ng-show="realm.social"><a href="#/realms/{{realm.realm}}/social-settings">Social</a></li>
+        <li><a href="#/realms/{{realm.realm}}/roles">Roles</a></li>
+        <li><a href="#/realms/{{realm.realm}}/default-roles">Default Roles</a></li>
+        <li><a href="#/realms/{{realm.realm}}/required-credentials">Credentials</a></li>
+        <li class="active"><a href="#/realms/{{realm.realm}}/token-settings">Token</a></li>
+        <li><a href="#/realms/{{realm.realm}}/keys-settings">Keys</a></li>
+        <li><a href="#/realms/{{realm.realm}}/smtp-settings">Email</a></li>
+    </ul>
+    <div id="content">
+        <ol class="breadcrumb">
+            <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
+            <li><a href="#/realms/{{realm.realm}}">Settings</a></li>
+            <li class="active">Token</li>
+        </ol>
+        <h2><span>{{realm.realm}}</span> Token Settings</h2>
+        <form class="form-horizontal" name="realmForm" novalidate>
+            <fieldset class="border-top">
+                <div class="form-group input-select">
+                    <label class="col-sm-2 control-label" for="tokenLifespan">Token lifespan</label>
+                    <div class="col-sm-10">
+                        <div class="row">
+                            <div class="col-sm-2">
+                                <input class="form-control" type="number" required min="1"
+                                       max="31536000" data-ng-model="realm.tokenLifespan"
+                                       id="tokenLifespan" name="tokenLifespan"/>
+                            </div>
+                            <div class="col-sm-2 select-rcue">
+                                <select name="tokenLifespanUnit" data-ng-model="realm.tokenLifespanUnit" >
+                                    <option data-ng-selected="!realm.tokenLifespanUnit">Seconds</option>
+                                    <option>Minutes</option>
+                                    <option>Hours</option>
+                                    <option>Days</option>
+                                </select>
                             </div>
                         </div>
-                        <div class="form-group input-select">
-                            <label for="accessCodeLifespan">Access code lifespan</label>
-                            <div class="input-group">
-                                <input type="number" required min="1" max="31536000" data-ng-model="realm.accessCodeLifespan" id="accessCodeLifespan" name="accessCodeLifespan" class="tiny">
-                                <div class="select-rcue">
-                                    <select name="accessCodeLifespanUnit" data-ng-model="realm.accessCodeLifespanUnit">
-                                        <option data-ng-selected="!realm.accessCodeLifespanUnit">Seconds</option>
-                                        <option>Minutes</option>
-                                        <option>Hours</option>
-                                        <option>Days</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-group input-select">
-                            <label for="accessCodeLifespanUserAction" class="two-lines">Access code user action lifespan</label>
-                            <div class="input-group">
-                                <input type="number" required min="1" max="31536000" data-ng-model="realm.accessCodeLifespanUserAction" id="accessCodeLifespanUserAction" name="accessCodeLifespanUserAction" class="tiny">
-                                <div class="select-rcue">
-                                    <select name="accessCodeLifespanUserActionUnit" data-ng-model="realm.accessCodeLifespanUserActionUnit">
-                                        <option data-ng-selected="!realm.accessCodeLifespanUserActionUnit">Seconds</option>
-                                        <option>Minutes</option>
-                                        <option>Hours</option>
-                                        <option>Days</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                     </fieldset>
-                    <div class="form-actions">
-                        <button type="submit" kc-save class="primary" data-ng-show="changed">Save
-                        </button>
-                        <button type="submit" kc-reset data-ng-show="changed">Clear changes
-                        </button>
                     </div>
-               </form>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label" for="accessCodeLifespan">Access code lifespan</label>
+                    <div class="col-sm-10">
+                        <div class="row">
+                            <div class="col-sm-2">
+                                <input class="form-control" type="number" required min="1" max="31536000" data-ng-model="realm.accessCodeLifespan" id="accessCodeLifespan" name="accessCodeLifespan">
+                            </div>
+                            <div class="col-sm-2 select-rcue">
+                                <select name="accessCodeLifespanUnit" data-ng-model="realm.accessCodeLifespanUnit">
+                                    <option data-ng-selected="!realm.accessCodeLifespanUnit">Seconds</option>
+                                    <option>Minutes</option>
+                                    <option>Hours</option>
+                                    <option>Days</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group input-select">
+                    <label class="col-sm-2 control-label" for="accessCodeLifespanUserAction" class="two-lines">Access code user action lifespan</label>
+                    <div class="col-sm-10">
+                        <div class="row">
+                            <div class="col-sm-2">
+                                <input class="form-control" type="number" required min="1" max="31536000" data-ng-model="realm.accessCodeLifespanUserAction" id="accessCodeLifespanUserAction" name="accessCodeLifespanUserAction">
+                            </div>
+                            <div class="col-sm-2 select-rcue">
+                                <select name="accessCodeLifespanUserActionUnit" data-ng-model="realm.accessCodeLifespanUserActionUnit">
+                                    <option data-ng-selected="!realm.accessCodeLifespanUserActionUnit">Seconds</option>
+                                    <option>Minutes</option>
+                                    <option>Hours</option>
+                                    <option>Days</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </fieldset>
+            <div class="pull-right form-actions">
+                <button kc-reset data-ng-show="changed">Clear changes</button>
+                <button kc-save data-ng-show="changed">Save</button>
             </div>
-        </div>
-        <div id="container-right-bg"></div>
+        </form>
     </div>
 </div>

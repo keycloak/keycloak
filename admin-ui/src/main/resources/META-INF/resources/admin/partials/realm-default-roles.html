@@ -1,96 +1,97 @@
-<div id="wrapper" class="container">
-    <div class="row">
-        <div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="'partials/realm-menu.html'"></div>
-        <div id="content-area" class="col-md-9" role="main">
-            <div class="top-nav" data-ng-hide="createRealm">
-                <ul class="rcue-tabs">
-                    <li><a href="#/realms/{{realm.realm}}">General</a></li>
-                    <li data-ng-show="realm.social"><a href="#/realms/{{realm.realm}}/social-settings">Social</a></li>
-                    <li><a href="#/realms/{{realm.realm}}/roles">Roles</a></li>
-                    <li class="active"><a href="#/realms/{{realm.realm}}/default-roles">Default Roles</a></li>
-                    <li><a href="#/realms/{{realm.realm}}/required-credentials">Credentials</a></li>
-                    <li><a href="#/realms/{{realm.realm}}/token-settings">Token</a></li>
-                    <li><a href="#/realms/{{realm.realm}}/keys-settings">Keys</a></li>
-                    <li><a href="#/realms/{{realm.realm}}/smtp-settings">Email</a></li>
-                </ul>
-            </div>
-            <div id="content">
-                <ol class="breadcrumb">
-                    <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
-                    <li><a href="#/realms/{{realm.realm}}">Settings</a></li>
-                    <li class="active">Registration</li>
-                </ol>
-                <h2><span>{{realm.realm}}</span> Registration Settings</h2>
-                <form name="realmForm" novalidate>
-                    <fieldset>
-                        <legend uncollapsed><span class="text">Realm Default Roles</span> </legend>
-                        <div class="form-group">
-                            <div class="controls changing-selectors">
-                                <div class="select-title">
-                                    <label for="available">Available Roles</label>
-                                    <select id="available" class="form-control" multiple size="5"
-                                            ng-multiple="true"
-                                            ng-model="selectedRealmRoles"
-                                            ng-options="r for r in availableRealmRoles">
-                                    </select>
-                                </div>
-                                <div class="middle-buttons">
-                                    <button type="submit" ng-click="addRealmDefaultRole()" tooltip="Move right" tooltip-placement="right"><span class="icon-arrow-right">Move right</span></button>
-                                    <button type="submit" ng-click="deleteRealmDefaultRole()" tooltip="Move left" tooltip-placement="right"><span class="icon-arrow-left">Move left</span></button>
-                                </div>
-                                <div class="select-title">
-                                    <label for="assigned">Realm Default Roles</label>
-                                    <select id="assigned" class="form-control" multiple size=5
-                                            ng-multiple="true"
-                                            ng-model="selectedRealmDefRoles"
-                                            ng-options="r for r in realm.defaultRoles">
-                                    </select>
-                                </div>
-                            </div>
+<div class="bs-sidebar col-sm-3 " data-ng-include data-src="'partials/realm-menu.html'"></div>
+<div id="content-area" class="col-sm-9" role="main">
+    <ul class="nav nav-tabs nav-tabs-pf">
+        <li><a href="#/realms/{{realm.realm}}">General</a></li>
+        <li data-ng-show="realm.social"><a href="#/realms/{{realm.realm}}/social-settings">Social</a></li>
+        <li><a href="#/realms/{{realm.realm}}/roles">Roles</a></li>
+        <li class="active"><a href="#/realms/{{realm.realm}}/default-roles">Default Roles</a></li>
+        <li><a href="#/realms/{{realm.realm}}/required-credentials">Credentials</a></li>
+        <li><a href="#/realms/{{realm.realm}}/token-settings">Token</a></li>
+        <li><a href="#/realms/{{realm.realm}}/keys-settings">Keys</a></li>
+        <li><a href="#/realms/{{realm.realm}}/smtp-settings">Email</a></li>
+    </ul>
+    <div id="content">
+        <ol class="breadcrumb">
+            <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
+            <li><a href="#/realms/{{realm.realm}}">Settings</a></li>
+            <li class="active">Registration</li>
+        </ol>
+        <h2><span>{{realm.realm}}</span> Registration Settings</h2>
+        <form name="realmForm" novalidate>
+            <fieldset>
+                <legend uncollapsed><span class="text">Realm Default Roles</span> </legend>
+                <div class="form-group">
+                    <div class="controls changing-selectors">
+                        <div class="select-title">
+                            <label for="available">Available Roles</label>
+                            <select id="available" class="form-control" multiple size="5"
+                                    ng-multiple="true"
+                                    ng-model="selectedRealmRoles"
+                                    ng-options="r for r in availableRealmRoles">
+                            </select>
                         </div>
-                    </fieldset>
+                        <div class="middle-buttons">
+                            <button class="kc-button" type="submit" ng-click="addRealmDefaultRole()" tooltip="Move right" tooltip-placement="right">
+                                <span class="glyphicon glyphicon-chevron-right"><span>Move right</span></span>
+                            </button>
+                            <button class="kc-button" type="submit" ng-click="deleteRealmDefaultRole()" tooltip="Move left" tooltip-placement="right">
+                                <span class="glyphicon glyphicon-chevron-left"><span>Move left</span></span>
+                            </button>
+                        </div>
+                        <div class="select-title">
+                            <label for="assigned">Realm Default Roles</label>
+                            <select id="assigned" class="form-control" multiple size=5
+                                    ng-multiple="true"
+                                    ng-model="selectedRealmDefRoles"
+                                    ng-options="r for r in realm.defaultRoles">
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </fieldset>
 
-                    <fieldset ng-show="applications.length > 0">
-                        <legend uncollapsed><span class="text">Application Default Roles</span> </legend>
-                        <div class="form-group input-select">
-                            <label for="applications">Application</label>
-                            <div class="input-group">
-                                <div class="select-rcue">
-                                    <select id="applications" name="applications" ng-change="changeApplication()" ng-model="application" ng-options="a.name for a in applications">
-                                        <option value="" selected> Select an Application...</option>
-                                    </select>
-                                </div>
-                            </div>
+            <fieldset ng-show="applications.length > 0">
+                <legend uncollapsed><span class="text">Application Default Roles</span> </legend>
+                <div class="form-group input-select">
+                    <label for="applications">Application</label>
+                    <div class="input-group">
+                        <div class="select-rcue">
+                            <select id="applications" name="applications" ng-change="changeApplication()" ng-model="application" ng-options="a.name for a in applications">
+                                <option value="" selected> Select an Application...</option>
+                            </select>
                         </div>
-                        <div class="form-group" ng-show="application">
-                            <div class="controls changing-selectors application">
-                                <div class="select-title">
-                                    <label for="available-app">Available Roles</label>
-                                    <select id="available-app" class="form-control" multiple size="5"
-                                            ng-multiple="true"
-                                            ng-model="selectedAppRoles"
-                                            ng-options="r for r in availableAppRoles">
-                                    </select>
-                                </div>
-                                <div class="middle-buttons">
-                                    <button type="submit" ng-click="addAppDefaultRole()" tooltip="Move right" tooltip-placement="right"><span class="icon-arrow-right">Move right</span></button>
-                                    <button type="submit" ng-click="rmAppDefaultRole()" tooltip="Move left" tooltip-placement="right"><span class="icon-arrow-left">Move left</span></button>
-                                </div>
-                                <div class="select-title">
-                                    <label for="assigned-app">Assigned Default Roles</label>
-                                    <select id="assigned-app" class="form-control" multiple size=5
-                                            ng-multiple="true"
-                                            ng-model="selectedAppDefRoles"
-                                            ng-options="r for r in application.defaultRoles">
-                                    </select>
-                                </div>
-                            </div>
+                    </div>
+                </div>
+                <div class="form-group" ng-show="application">
+                    <div class="controls changing-selectors application">
+                        <div class="select-title">
+                            <label for="available-app">Available Roles</label>
+                            <select id="available-app" class="form-control" multiple size="5"
+                                    ng-multiple="true"
+                                    ng-model="selectedAppRoles"
+                                    ng-options="r for r in availableAppRoles">
+                            </select>
                         </div>
-                    </fieldset>
+                        <div class="middle-buttons">
+                            <button class="kc-button" type="submit" ng-click="addAppDefaultRole()" tooltip="Move right" tooltip-placement="right">
+                                <span class="glyphicon glyphicon-chevron-right"><span>Move right</span></span>
+                            </button>
+                            <button class="kc-button" type="submit" ng-click="rmAppDefaultRole()" tooltip="Move left" tooltip-placement="right">
+                                <span class="glyphicon glyphicon-chevron-left"><span>Move left</span></span>
+                            </button>
+                        </div>
+                        <div class="select-title">
+                            <label for="assigned-app">Assigned Default Roles</label>
+                            <select id="assigned-app" class="form-control" multiple size=5
+                                    ng-multiple="true"
+                                    ng-model="selectedAppDefRoles"
+                                    ng-options="r for r in application.defaultRoles">
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </fieldset>
 
-                </form>
-            </div>
-        </div>
-        <div id="container-right-bg"></div>
+        </form>
     </div>
 </div>

@@ -1,0 +1,11 @@
+<div class="dropdown">
+    <button class="btn btn-default dropdown-toggle" type="button" id="{{id}}" data-toggle="dropdown">
+        {{kcModel}}
+        <span class="caret"></span>
+    </button>
+    <ul class="dropdown-menu" role="menu">
+        <li role="presentation" ng-repeat="option in kcOptions">
+            <a href="" role="menuitem" tabindex="-1" ng-click="updateModel(option)">{{option}}</a>
+        </li>
+    </ul>
+</div>
