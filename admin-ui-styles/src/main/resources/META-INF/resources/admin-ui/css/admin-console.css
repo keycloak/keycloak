@@ -401,7 +401,7 @@ legend .kc-icon-collapse {
 
 /* Left-Rigth selector form */
 .changing-selectors.application {
-    padding-left: 12em;
+    --padding-left: 12em;
 }
 .changing-selectors .select-title {
     display: inline-block;

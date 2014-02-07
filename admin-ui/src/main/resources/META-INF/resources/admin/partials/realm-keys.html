@@ -1,15 +1,6 @@
 <div class="bs-sidebar col-sm-3 " data-ng-include data-src="'partials/realm-menu.html'"></div>
 <div id="content-area" class="col-sm-9" role="main">
-    <ul class="nav nav-tabs nav-tabs-pf">
-        <li><a href="#/realms/{{realm.realm}}">General</a></li>
-        <li data-ng-show="realm.social"><a href="#/realms/{{realm.realm}}/social-settings">Social</a></li>
-        <li><a href="#/realms/{{realm.realm}}/roles">Roles</a></li>
-        <li><a href="#/realms/{{realm.realm}}/default-roles">Default Roles</a></li>
-        <li><a href="#/realms/{{realm.realm}}/required-credentials">Credentials</a></li>
-        <li><a href="#/realms/{{realm.realm}}/token-settings">Token</a></li>
-        <li class="active"><a href="#/realms/{{realm.realm}}/keys-settings">Keys</a></li>
-        <li><a href="#/realms/{{realm.realm}}/smtp-settings">Email</a></li>
-    </ul>
+    <data-kc-navigation data-kc-current="keys" data-kc-realm="realm.realm"></data-kc-navigation>
     <div id="content">
         <ol class="breadcrumb">
             <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
@@ -17,17 +8,18 @@
             <li class="active">Keys</li>
         </ol>
         <h2><span>{{realm.realm}}</span> Keys</h2>
-        <form name="realmForm" novalidate>
+        <form class="form-horizontal" name="realmForm" novalidate>
             <fieldset class="border-top">
                 <div class="form-group">
-                    <label for="publicKey">Public key</label>
+                    <label class="col-sm-2 control-label" for="publicKey">Public key</label>
 
-                    <div class="controls">
-                        <textarea type="text" id="publicKey" name="publicKey" class="xlarge" rows="5"
+                    <div class="form-group">
+                        <textarea type="text" id="publicKey" name="publicKey" class="col-sm-9" rows="5"
                                   kc-select-action="click" readonly>{{realm.publicKey}}</textarea>
                     </div>
                 </div>
             </fieldset>
+            <br/>
             <div class="pull-right form-actions">
                 <button class="btn btn-primary btn-lg" type="submit" data-ng-click="generate()">Generate new keys</button>
             </div>

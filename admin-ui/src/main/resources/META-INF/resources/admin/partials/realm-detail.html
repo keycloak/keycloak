@@ -1,15 +1,6 @@
 <div class="bs-sidebar col-sm-3 " data-ng-include data-src="'partials/realm-menu.html'"></div>
 <div id="content-area" class="col-sm-9" role="main">
-    <ul class="nav nav-tabs nav-tabs-pf">
-        <li class="active"><a href="#/realms/{{realm.realm}}">General</a></li>
-        <li data-ng-show="social"><a href="#/realms/{{realm.realm}}/social-settings">Social</a></li>
-        <li><a href="#/realms/{{realm.realm}}/roles">Roles</a></li>
-        <li><a href="#/realms/{{realm.realm}}/default-roles">Default Roles</a></li>
-        <li><a href="#/realms/{{realm.realm}}/required-credentials">Credentials</a></li>
-        <li><a href="#/realms/{{realm.realm}}/token-settings">Token</a></li>
-        <li><a href="#/realms/{{realm.realm}}/keys-settings">Keys</a></li>
-        <li><a href="#/realms/{{realm.realm}}/smtp-settings">Email</a></li>
-    </ul>
+    <kc-navigation data-kc-current="general" data-kc-realm="realm.realm" data-kc-social="social"></kc-navigation>
     <div id="content">
         <ol class="breadcrumb" data-ng-hide="createRealm">
             <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
@@ -38,37 +29,37 @@
             </fieldset>
             <fieldset>
                 <legend uncollapsed><span class="text">Login Options</span></legend>
-                <div class="form-group clearfix block">
+                <div class="form-group">
                     <label for="social" class="col-sm-2 control-label">Social login</label>
                     <div class="col-sm-4">
                         <input ng-model="realm.social" name="social" id="social" onoffswitch />
                     </div>
                 </div>
-                <div class="form-group clearfix block" data-ng-show="realm.social">
+                <div class="form-group" data-ng-show="realm.social">
                     <label for="updateProfileOnInitialSocialLogin" class="col-sm-2 control-label">Update profile on first social login</label>
                     <div class="col-sm-4">
                         <input ng-model="realm.updateProfileOnInitialSocialLogin" name="updateProfileOnInitialSocialLogin" id="updateProfileOnInitialSocialLogin" onoffswitch />
                     </div>
                 </div>
-                <div class="form-group clearfix block">
+                <div class="form-group">
                     <label for="registrationAllowed" class="col-sm-2 control-label">User registration</label>
                     <div class="col-sm-4">
                         <input ng-model="realm.registrationAllowed" name="registrationAllowed" id="registrationAllowed" onoffswitch />
                     </div>
                 </div>
-                <div class="form-group clearfix block">
+                <div class="form-group">
                     <label for="resetPasswordAllowed" class="col-sm-2 control-label">Reset password</label>
                     <div class="col-sm-4">
                         <input ng-model="realm.resetPasswordAllowed" name="resetPasswordAllowed" id="resetPasswordAllowed" onoffswitch />
                     </div>
                 </div>
-                <div class="form-group clearfix block">
+                <div class="form-group">
                     <label for="verifyEmail" class="col-sm-2 control-label">Verify email</label>
                     <div class="col-sm-4">
                         <input ng-model="realm.verifyEmail" name="verifyEmail" id="verifyEmail" onoffswitch />
                     </div>
                 </div>
-                <div class="form-group clearfix block">
+                <div class="form-group">
                     <label for="requireSsl" class="col-sm-2 control-label">Require SSL</label>
                     <div class="col-sm-4">
                         <input ng-model="realm.requireSsl" name="requireSsl" id="requireSsl" onoffswitch />
@@ -77,16 +68,22 @@
             </fieldset>
             <fieldset>
                 <legend uncollapsed><span class="text">Optional Settings</span></legend>
-                <div class="form-group row">
+                <div class="form-group">
                     <label class="col-sm-2 control-label" for="loginTheme">Login Theme</label>
                     <div class="col-sm-4">
-                        <kc-select id="loginTheme" data-kc-model="realm.accountTheme" ng-model="realm.loginTheme" data-kc-options="serverInfo.themes.login"/>
+                        <select kc-select id="loginTheme"
+                                data-kc-model="realm.loginTheme"
+                                data-kc-options="serverInfo.themes.login">
+                        </select>
                     </div>
                 </div>
                 <div class="form-group">
                     <label class="col-sm-2 control-label" for="accountTheme">Account Theme</label>
                     <div class="col-sm-4">
-                        <kc-select id="accountTheme" data-kc-model="realm.accountTheme" ng-model="realm.accountTheme" data-kc-options="serverInfo.themes.account"/>
+                        <select kc-select id="accountTheme"
+                                data-kc-model="realm.accountTheme"
+                                data-kc-options="serverInfo.themes.account">
+                        </select>
                     </div>
                 </div>
             </fieldset>

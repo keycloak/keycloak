@@ -14,6 +14,7 @@
     <!-- Page styles -->
     <link rel="stylesheet" href="/auth/admin-ui/css/admin-console.css">
     <link rel="stylesheet" href="/auth/admin-ui/css/tables.css">
+    <link rel="stylesheet" href="/auth/admin-ui/css/sprites.css">
     <link href="lib/select2-3.4.1/select2.css" rel="stylesheet">
 
     <script src="lib/jquery/jquery-1.10.2.js" type="text/javascript"></script>
@@ -26,15 +27,14 @@
     <script src="lib/jquery/jquery.idletimer.js" type="text/javascript"></script>
     <script src="lib/jquery/jquery.idletimeout.js" type="text/javascript"></script>
     <script src="lib/angular/select2.js" type="text/javascript"></script>
-    <script src="lib/fileupload/angular-file-upload.min.js"></script>     <!--
+    <script src="lib/fileupload/angular-file-upload.min.js"></script>
+    <!--
     <script src="/auth/admin-ui/bootstrap-3.0.0-wip/js/dropdown.js"></script>
     <script src="/auth/admin-ui/bootstrap-3.0.0-wip/js/tooltip.js"></script>
-    -->
-    <script src="/auth/admin-ui/js/bootstrap-tokenfield.js"></script>
-    <!--
-    <script src="/auth/admin-ui/bootstrap/js/bootstrap.js"></script>
-    -->
 
+    <script src="/auth/admin-ui/js/bootstrap-tokenfield.js"></script>
+   <script src="/auth/admin-ui/bootstrap/js/bootstrap.js"></script>
+   -->
     <script src="js/app.js"></script>
     <script src="js/controllers/realm.js"></script>
     <script src="js/controllers/applications.js"></script>
@@ -50,7 +50,7 @@
     </style>
 </head>
 
-<body class="admin-console" data-ng-controller="GlobalCtrl" ng-cloak>
+<body class="admin-console" data-ng-controller="GlobalCtrl" data-ng-cloak>
 <div id="idletimeout">
     You will be logged off in <strong><span></span> seconds</strong> due to inactivity.
     <a id="idletimeout-resume" href="#">Click here to continue using this web page</a>.

@@ -3,6 +3,8 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location
         Notifications.success("test");
     };
 
+    $scope.vilko = "tralala";
+
     $scope.auth = Auth;
     $http.get('/auth/rest/admin/whoami').success(function(data, status) {
         Auth.user = data;

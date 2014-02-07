@@ -765,7 +765,7 @@ module.directive('kcSelect', function ($compile, Notifications) {
             kcModel: '=',
             id: "="
         },
-        restrict: 'E',
+        restrict: 'EA',
         replace: true,
         templateUrl: 'templates/kc-select.html',
         link: function(scope, element, attr) {
@@ -775,6 +775,30 @@ module.directive('kcSelect', function ($compile, Notifications) {
         }
     }
 });
+
+module.directive('kcNavigation', function ($compile, Notifications) {
+    return {
+        scope: {
+            kcCurrent: '@',
+            kcRealm: '=',
+            kcSocial: '@'
+        },
+        restrict: 'E',
+        replace: true,
+        templateUrl: 'templates/kc-navigation.html',
+
+        compile: function(element, attrs){
+            if (!attrs.kcSocial) {
+                attrs.kcSocial = false;
+            }
+        }
+         /*
+        controller: function($scope){
+            $scope.kcSocial = $scope.kcSocial || false;
+        }  */
+    }
+});
+
 
 /*
 *  Used to select the element (invoke $(elem).select()) on specified action list.
