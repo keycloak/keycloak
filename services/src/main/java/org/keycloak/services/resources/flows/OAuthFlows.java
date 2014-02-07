@@ -25,9 +25,11 @@ import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.TokenManager;
@@ -87,6 +89,9 @@ public class OAuthFlows {
     }
 
     public Response processAccessCode(String scopeParam, String state, String redirect, UserModel client, UserModel user) {
+        isTotpConfigurationRequired(user);
+        isEmailVerificationRequired(user);
+
         RoleModel resourceRole = realm.getRole(Constants.APPLICATION_ROLE);
         RoleModel identityRequestRole = realm.getRole(Constants.IDENTITY_REQUESTER_ROLE);
         boolean isResource = realm.hasRole(client, resourceRole);
@@ -124,6 +129,22 @@ public class OAuthFlows {
 
     public Response forwardToSecurityFailure(String message) {
         return Flows.forms(realm, request, uriInfo).setError(message).createErrorPage();
+    }
+
+    private void isTotpConfigurationRequired(UserModel user) {
+        for (RequiredCredentialModel c : realm.getRequiredCredentials()) {
+            if (c.getType().equals(CredentialRepresentation.TOTP) && !user.isTotp()) {
+                user.addRequiredAction(RequiredAction.CONFIGURE_TOTP);
+                log.debug("User is required to configure totp");
+            }
+        }
+    }
+
+    private void isEmailVerificationRequired(UserModel user) {
+        if (realm.isVerifyEmail() && !user.isEmailVerified()) {
+            user.addRequiredAction(RequiredAction.VERIFY_EMAIL);
+            log.debug("User is required to verify email");
+        }
     }
 
 }

@@ -230,9 +230,6 @@ public class TokenService {
             return Flows.forms(realm, request, uriInfo).setError(Messages.INVALID_USER).setFormData(formData).createLogin();
         }
 
-        isTotpConfigurationRequired(user);
-        isEmailVerificationRequired(user);
-
         AuthenticationStatus status = authManager.authenticateForm(realm, user, formData);
 
         switch (status) {
@@ -253,22 +250,6 @@ public class TokenService {
         RequiredActionsService service = new RequiredActionsService(realm, tokenManager);
         resourceContext.initResource(service);
         return service;
-    }
-
-    private void isTotpConfigurationRequired(UserModel user) {
-        for (RequiredCredentialModel c : realm.getRequiredCredentials()) {
-            if (c.getType().equals(CredentialRepresentation.TOTP) && !user.isTotp()) {
-                user.addRequiredAction(RequiredAction.CONFIGURE_TOTP);
-                logger.debug("User is required to configure totp");
-            }
-        }
-    }
-
-    private void isEmailVerificationRequired(UserModel user) {
-        if (realm.isVerifyEmail() && !user.isEmailVerified()) {
-            user.addRequiredAction(RequiredAction.VERIFY_EMAIL);
-            logger.debug("User is required to verify email");
-        }
     }
 
     @Path("registrations")
