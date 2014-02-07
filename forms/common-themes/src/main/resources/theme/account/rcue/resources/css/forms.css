@@ -510,3 +510,7 @@ input[type="email"].tiny {
   font-size: 1.1em;
   margin-right: 0.90909090909091em;
 }
+
+ul.nav li {
+    z-index: 200;
+}
