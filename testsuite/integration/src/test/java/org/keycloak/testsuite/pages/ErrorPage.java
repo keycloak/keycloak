@@ -34,7 +34,7 @@ public class ErrorPage extends AbstractPage {
     @WebResource
     protected OAuthClient oauth;
 
-    @FindBy(id = "error-summary")
+    @FindBy(className = "instruction")
     private WebElement errorMessage;
 
     public String getError() {
