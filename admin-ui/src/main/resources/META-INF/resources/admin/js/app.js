@@ -781,7 +781,7 @@ module.directive('kcNavigation', function ($compile, Notifications) {
         scope: {
             kcCurrent: '@',
             kcRealm: '=',
-            kcSocial: '@'
+            kcSocial: '='
         },
         restrict: 'E',
         replace: true,

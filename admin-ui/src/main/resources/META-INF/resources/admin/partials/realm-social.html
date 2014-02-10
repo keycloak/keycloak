@@ -1,6 +1,6 @@
 <div class="bs-sidebar col-sm-3 " data-ng-include data-src="'partials/realm-menu.html'"></div>
 <div id="content-area" class="col-sm-9" role="main">
-    <data-kc-navigation data-kc-current="social" data-kc-realm="realm.realm" data-kc-social="social"></data-kc-navigation>
+    <data-kc-navigation data-kc-current="social" data-kc-realm="realm.realm" data-kc-social="realm.social"></data-kc-navigation>
     <div id="content">
         <ol class="breadcrumb">
             <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
@@ -16,13 +16,13 @@
         <form name="realmForm" novalidate>
             <fieldset>
                 <div>
-                    <table>
+                    <table class="table">
                         <caption class="hidden">Table of social providers</caption>
                         <thead>
                         <tr>
                             <th colspan="5" class="rcue-table-actions">
                                 <div class="actions">
-                                    <div class="select-rcue">
+                                    <div class="select-kc">
                                         <select ng-model="newProviderId"
                                                 ng-options="(p|capitalize) for p in (allProviders|remove:configuredProviders)"
                                                 data-ng-change="addProvider(newProviderId); newProviderId = null">
@@ -63,12 +63,9 @@
                 </div>
             </fieldset>
 
-            <div class="form-actions">
-                <button type="submit" kc-save class="primary" data-ng-show="changed">Save
-                    changes
-                </button>
-                <button type="submit" kc-reset data-ng-show="changed">Clear changes
-                </button>
+            <div class="pull-right form-actions">
+                <button type="submit" kc-reset data-ng-show="changed">Clear changes</button>
+                <button type="submit" kc-save class="primary" data-ng-show="changed">Save changes</button>
             </div>
         </form>
     </div>

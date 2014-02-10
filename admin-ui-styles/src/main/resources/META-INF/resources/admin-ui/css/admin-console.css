@@ -1,3 +1,11 @@
+body {
+    background-color: #F9F9F9;
+}
+
+#content {
+    background-color: #FFFFFF;
+}
+
 html, body, body > .container, #view, #content-area{
     height: 100%;
 }
@@ -299,9 +307,9 @@ legend .kc-icon-collapse {
 
 
 
-/* Relam selector from the top menu */
+/* Realm selector from the top menu */
 
-.header .navbar-primary li > .select-rcue {
+.header .navbar-primary li > .select-kc {
     background-color: #555A5E;
     background-image: url("../img/sprite-arrow-down.svg");
     background-position: right -26px;
@@ -315,17 +323,17 @@ legend .kc-icon-collapse {
     padding-left: 0;
     vertical-align: middle;
 }
-.header .navbar-primary li .select-rcue:hover {
+.header .navbar-primary li .select-kc:hover {
     border-color: #7E8385;
 }
-.header .navbar-primary li .select-rcue select {
+.header .navbar-primary li .select-kc select {
     color: #FFFFFF;
 }
-.header .navbar-primary li .select-rcue select:-moz-focusring {
+.header .navbar-primary li .select-kc select:-moz-focusring {
     color: rgba(0, 0, 0, 0);
     text-shadow: 0 0 0 #FFFFFF;
 }
-.header .navbar-primary li .select-rcue select option {
+.header .navbar-primary li .select-kc select option {
     background-color: #FFFFFF;
     color: #333333;
 }
@@ -351,7 +359,7 @@ legend .kc-icon-collapse {
 
 /* and from forms */
 
-.select-rcue {
+.select-kc {
     background: url("../img/select-arrow.png") no-repeat scroll right center #FFFFFF;
     border: 1px solid #B6B6B6;
     border-radius: 2px;
@@ -364,22 +372,22 @@ legend .kc-icon-collapse {
     overflow: hidden;
     padding: 0 0.9em 0 0;
 }
-.select-rcue:hover {
+.select-kc:hover {
     border-color: #62AFDB;
 }
-.select-rcue:focus {
+.select-kc:focus {
     border-color: #62AFDB;
     box-shadow: 0 0 5px #62AFDB;
 }
-.select-rcue.error {
+.select-kc.error {
     background-color: #F8E7E7;
     border-color: #BA1212;
     transition: all 0.33s ease-in-out 0s;
 }
-.select-rcue.error:focus {
+.select-kc.error:focus {
     box-shadow: 0 0 5px #BA1212;
 }
-.select-rcue select {
+.select-kc select {
     background-color: rgba(0, 0, 0, 0);
     border: medium none;
     font-family: "Open Sans",sans-serif;
@@ -391,11 +399,11 @@ legend .kc-icon-collapse {
     padding: 5px 0.545455em;
     width: 150%;
 }
-.select-rcue option {
+.select-kc option {
     line-height: 2em;
     padding: 0.363636em 0.909091em;
 }
-.select-rcue option:hover {
+.select-kc option:hover {
     background-color: #D5ECF9;
 }
 
@@ -454,4 +462,54 @@ legend .kc-icon-collapse {
 }
 .changing-selectors .middle-buttons button span {
     margin-right: 0;
+}
+
+/* Input file button */
+
+.kc-button-input-file {
+    float: left;
+    overflow: hidden;
+    position: relative;
+}
+.kc-button-input-file .transparent {
+    bottom: 0;
+    cursor: pointer;
+    height: 30em;
+    opacity: 0;
+    position: absolute;
+    right: 0;
+    width: 30em;
+}
+.kc-button-input-file:hover .button {
+    background-image: none;
+}
+.kc-uploaded-file {
+    float: left;
+    font-weight: bold;
+    margin-right: 0.909091em;
+    padding-top: 0.454545em;
+}
+.kc-link-input-file {
+    display: inline-block;
+    margin-top: 0.1em;
+    overflow: hidden;
+    position: relative;
+}
+.kc-link-input-file:hover .link {
+    text-decoration: underline;
+}
+.kc-link-input-file .link {
+    font-size: 1.1em;
+}
+.kc-link-input-file .transparent {
+    bottom: 0;
+    cursor: pointer;
+    height: 30em;
+    opacity: 0;
+    position: absolute;
+    right: 0;
+    width: 30em;
+}
+.kc-link-input-file .link:hover {
+    cursor: pointer;
 }
