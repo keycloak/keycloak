@@ -1,79 +1,72 @@
-<div id="wrapper" class="container">
-    <div class="row">
-        <div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="'partials/realm-menu.html'"></div>
-        <div id="content-area" class="col-md-9" role="main">
-            <div class="top-nav">
-                <ul class="rcue-tabs">
-                    <li></li>
-                </ul>
-            </div>
-            <div id="content">
-                <ol class="breadcrumb">
-                    <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
-                    <li class="active">Users</li>
-                </ol>
-                <h2><span>{{realm.realm}}</span> Users</h2>
-                <table>
-                    <caption data-ng-show="users" class="hidden">Table of realm users</caption>
-                    <thead>
-                        <tr>
-                            <th class="rcue-table-actions" colspan="4">
-                                <div class="search-comp clearfix">
-                                    <input type="text" placeholder="Search..." data-ng-model="search" class="search"
-                                           onkeyup="if(event.keyCode == 13){$(this).next('button').click();}">
-                                    <button data-ng-click="searchQuery()" type="submit"
-                                            class="icon-search" tooltip-placement="right"
-                                            tooltip="Search by full name, last name, email, or username.">
-                                        Icon: search
-                                    </button>
-                                </div>
-                                <span><span>or</span><button class="link" ng-click="search = null; searchQuery()">View all users</button></span>
-                                <div class="actions">
-                                    <a class="button" href="#/create/user/{{realm.realm}}">Add User</a>
-                                </div>
-                            </th>
-                        </tr>
-                        <tr>
-                            <tr data-ng-show="searchLoaded && users.length > 0">
-                                <th>Username</th>
-                                <th>Last Name</th>
-                                <th>First Name</th>
-                                <th>Email</th>
-                            </tr>
-                        </tr>
-                    </thead>
-                    <!-- todo -->
-                    <!--<tfoot data-ng-show="users && users.length > 10">
-                    <tr>
-                        <td colspan="4">
-                            <div class="table-nav">
-                                <a href="#" class="first disabled">First page</a><a href="#" class="prev disabled">Previous
-                                page</a><span><strong>1-8</strong> of <strong>10</strong></span><a href="#"
-                                                                                                   class="next">Next
-                                page</a><a href="#" class="last">Last page</a>
-                            </div>
-                        </td>
-                    </tr>
-                    </tfoot>-->
-                    <tbody>
-                    <tr ng-repeat="user in users">
-                        <td><a href="#/realms/{{realm.realm}}/users/{{user.username}}">{{user.username}}</a></td>
-                        <td>{{user.lastName}}</td>
-                        <td>{{user.firstName}}</td>
-                        <td>{{user.email}}</td>
-                    </tr>
-                    </tbody>
-                </table>
-                <div class="feedback warning inline" data-ng-show="searchLoaded && users.length == 0">
-                    <p data-ng-show="lastSearch != null"><strong>Your search returned no results.</strong><br>Try modifying the query and try again.</p>
-                    <p data-ng-show="lastSearch == null"><strong>No users present.</strong><br>Create some using the "Add User" button.</p>
-                </div>
-                <div class="feedback info inline" data-ng-show="!users">
-                    <br/>
-                    <p><strong>Search for users.</strong><br>Please enter a search to display users.</p>
-                </div>
-            </div>
+<div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="'partials/realm-menu.html'"></div>
+<div id="content-area" class="col-md-9" role="main">
+    <ul class="nav nav-tabs nav-tabs-pf">
+        <li class="active"><a href="">User List</a></li>
+    </ul>
+    <div id="content">
+        <ol class="breadcrumb">
+            <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
+            <li class="active">Users</li>
+        </ol>
+        <h2><span>{{realm.realm}}</span> Users</h2>
+        <table class="table">
+            <caption data-ng-show="users" class="hidden">Table of realm users</caption>
+            <thead>
+            <tr>
+                <th class="kc-table-actions" colspan="4">
+                    <div class="search-comp clearfix">
+                        <input type="text" placeholder="Search..." data-ng-model="search" class="form-control search"
+                               onkeyup="if(event.keyCode == 13){$(this).next('button').click();}">
+                        <button data-ng-click="searchQuery()" type="submit"
+                                class="kc-icon-search" tooltip-placement="right"
+                                tooltip="Search by full name, last name, email, or username.">
+                            Icon: search
+                        </button>
+                    </div>
+                    <span><span>or</span><button class="kc-link" ng-click="search = null; searchQuery()">View all users</button></span>
+                    <div class="pull-right">
+                        <a class="kc-button" href="#/create/user/{{realm.realm}}">Add User</a>
+                    </div>
+                </th>
+            </tr>
+            <tr>
+            <tr data-ng-show="searchLoaded && users.length > 0">
+                <th>Username</th>
+                <th>Last Name</th>
+                <th>First Name</th>
+                <th>Email</th>
+            </tr>
+            </tr>
+            </thead>
+            <!-- todo -->
+            <!--<tfoot data-ng-show="users && users.length > 10">
+            <tr>
+                <td colspan="4">
+                    <div class="table-nav">
+                        <a href="#" class="first disabled">First page</a><a href="#" class="prev disabled">Previous
+                        page</a><span><strong>1-8</strong> of <strong>10</strong></span><a href="#"
+                                                                                           class="next">Next
+                        page</a><a href="#" class="last">Last page</a>
+                    </div>
+                </td>
+            </tr>
+            </tfoot>-->
+            <tbody>
+            <tr ng-repeat="user in users">
+                <td><a href="#/realms/{{realm.realm}}/users/{{user.username}}">{{user.username}}</a></td>
+                <td>{{user.lastName}}</td>
+                <td>{{user.firstName}}</td>
+                <td>{{user.email}}</td>
+            </tr>
+            </tbody>
+        </table>
+        <div class="feedback warning inline" data-ng-show="searchLoaded && users.length == 0">
+            <p data-ng-show="lastSearch != null"><strong>Your search returned no results.</strong><br>Try modifying the query and try again.</p>
+            <p data-ng-show="lastSearch == null"><strong>No users present.</strong><br>Create some using the "Add User" button.</p>
         </div>
-        <div id="container-right-bg"></div>
+        <div class="feedback info inline" data-ng-show="!users">
+            <br/>
+            <p><strong>Search for users.</strong><br>Please enter a search to display users.</p>
+        </div>
     </div>
 </div>

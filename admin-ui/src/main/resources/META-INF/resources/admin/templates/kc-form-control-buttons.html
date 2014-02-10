@@ -1,0 +1,11 @@
+<div>
+    <div class="pull-right form-actions" data-ng-show="kcCreate">
+        <button kc-button-cancel data-ng-click="kcActionCancel()">Cancel</button>
+        <button kc-button-save data-ng-show="kcChanged">Save</button>
+    </div>
+    <div class="pull-right form-actions" data-ng-show="!kcCreate">
+        <button kc-button-reset data-ng-show="kcChanged">Clear changes</button>
+        <button kc-button-save  data-ng-show="kcChanged">Save</button>
+        <button kc-button-delete data-ng-hide="kcChanged" data-ng-click="kcActionRemove()">Delete</button>
+    </div>
+</div>

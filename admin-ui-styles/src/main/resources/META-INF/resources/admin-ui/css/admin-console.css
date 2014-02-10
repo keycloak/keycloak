@@ -24,16 +24,22 @@ html, body, body > .container, #view, #content-area{
     border-radius: 2px;
     color: #555;
     cursor: pointer;
-    font-size: 1em;
+    font-size: .9em;
     font-weight: bold;
     line-height: 2.18182em;
     border-radius: 2px;
     box-shadow: 0 2px 2px rgba(0, 0, 0, 0.15);
     font-weight: bold;
     letter-spacing: 0.04em;
-    padding: 0.307692em 1.07692em;
-    margin: 0.5em;
+    /*padding: 0.307692em 1.07692em;*/
+    padding: 0 1.07692em;
+    /*margin: 0.5em;*/
+    margin: 0;
     display: inline-block;
+}
+
+.kc-button.kc-vertical {
+    display: block;
 }
 
 p.subtitle {
@@ -96,6 +102,66 @@ header .navbar {
 #idletimeout a {
     color: #fff;
     font-weight: bold;
+}
+
+/* Forms */
+
+.kc-link {
+    border: none;
+    background-color: transparent;
+    background: none;
+    box-shadow: none;
+    font-weight: normal;
+    font-size: 1em;
+    color: #0099D3;
+    letter-spacing: 0;
+    padding: 0;
+}
+.kc-link:hover {
+    text-decoration: underline;
+}
+
+.search-comp {
+    position: relative;
+    display: inline-block;
+    font-size: 0.90909090909091em;
+}
+.search-comp input[type="text"] {
+    padding-right: 2.45454545454545em;
+}
+.search-comp .kc-icon-search {
+    position: absolute;
+    right: 0.2em;
+    top: 0.6em;
+    opacity: 0.5;
+    filter: alpha(opacity=50);
+}
+.search-comp .kc-icon-search:hover,
+.search-comp .kc-icon-search:active,
+.search-comp .kc-icon-search:focus {
+    background-image: url('img/sprites.png');
+    opacity: 1;
+    filter: alpha(opacity=100);
+    -webkit-transition: ease-in-out opacity 0.25s;
+    -moz-transition: ease-in-out opacity 0.25s;
+    -o-transition: ease-in-out opacity 0.25s;
+    transition: ease-in-out opacity 0.25s;
+}
+.search-comp .kc-icon-search + .tooltip {
+    width: 20em;
+    font-weight: normal;
+}
+.search-comp + span {
+    font-weight: normal;
+    color: #A1A1A1;
+}
+.search-comp + span span {
+    margin-left: 0.45454545454545em;
+    margin-right: 0.45454545454545em;
+    display: inline-block;
+}
+.search-comp + span .link {
+    font-size: 0.90909090909091em;
 }
 
 /* Top menu */
@@ -285,6 +351,17 @@ legend:hover .text {
     vertical-align: text-top;
 }
 
+button[class^="kc-icon-"] {
+    border: none;
+    box-shadow: none;
+    background-color: transparent;
+    padding: 0;
+    line-height: 1em;
+}
+button[class^="kc-icon-"]:hover {
+    background-image: url(img/sprites.png);
+}
+
 legend .kc-icon-collapse,
 legend .kc-icon-expand {
     background-image: url(../img/icon-collapse-expand.png);
@@ -407,6 +484,19 @@ legend .kc-icon-collapse {
     background-color: #D5ECF9;
 }
 
+/* If input has a button attached to it*/
+
+.kc-button-control {
+    xwidth: auto;
+    display: inline-block;
+}
+
+/* More inputs in one line */
+
+.kc-multiline input {
+    margin-bottom: .35em;
+}
+
 /* Left-Rigth selector form */
 .changing-selectors.application {
     --padding-left: 12em;
@@ -448,7 +538,6 @@ legend .kc-icon-collapse {
 }
 .changing-selectors .middle-buttons {
     display: inline-block;
-    width: 4.5em;
     margin-left: 0.8em;
     margin-right: 0.8em;
     vertical-align: middle;
@@ -462,6 +551,10 @@ legend .kc-icon-collapse {
 }
 .changing-selectors .middle-buttons button span {
     margin-right: 0;
+}
+
+.changing-selectors .middle-buttons.kc-vertical .kc-button{
+    display: block;
 }
 
 /* Input file button */
@@ -513,3 +606,9 @@ legend .kc-icon-collapse {
 .kc-link-input-file .link:hover {
     cursor: pointer;
 }
+
+/* Select2 fix for zero-width when nothing is selected */
+.select2-container-multi .select2-choices {
+    min-width: 22em;
+}
+

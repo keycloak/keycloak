@@ -1,118 +1,102 @@
-<div id="wrapper" class="container">
-    <div class="row">
-        <div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="'partials/realm-menu.html'"></div>
-        <div id="content-area" class="col-md-9" role="main">
-            <div class="top-nav" data-ng-show="!create">
-                <ul class="rcue-tabs">
-                    <li class="active"><a href="#/realms/{{realm.realm}}/applications/{{application.name}}">Settings</a></li>
-                    <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/credentials">Credentials</a></li>
-                    <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/installation">Installation</a></li>
-                    <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/roles">Roles</a></li>
-                    <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/scope-mappings">Scope</a></li>
-                    <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/sessions">Sessions</a></li>
-                </ul>
-            </div>
-            <div class="top-nav" data-ng-show="create">
-                <ul class="rcue-tabs">
-                    <li></li>
-                </ul>
-            </div>
-            <div id="content">
-                <ol class="breadcrumb" data-ng-show="create">
-                    <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
-                    <li><a href="#/realms/{{realm.realm}}/applications">Applications</a></li>
-                    <li class="active">Add Application</li>
-                </ol>
-                <h2 class="pull-left" data-ng-show="create"><span>{{realm.realm}}</span> Add Application</h2>
-                <p class="subtitle" data-ng-show="create"><span class="required">*</span> Required fields</p>
-                <ol class="breadcrumb" data-ng-hide="create">
-                    <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
-                    <li><a href="#/realms/{{realm.realm}}/applications">Applications</a></li>
-                    <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}">{{application.name}}</a></li>
-                    <li class="active">Settings</li>
-                </ol>
-                <h2 data-ng-hide="create"><span>{{application.name}}</span> Settings</h2>
-                <form name="applicationForm" novalidate>
-                    <fieldset class="border-top">
-                        <div class="form-group">
-                            <label for="name">Name <span class="required" data-ng-show="create">*</span></label>
-                            <div class="controls">
-                            <input type="text" id="name" name="name" data-ng-model="application.name" autofocus
-                                   required>
-                            </div>
-                        </div>
-
-                        <div class="form-group clearfix block">
-                            <label for="enabled" class="control-label">Enabled</label>
-                            <input ng-model="application.enabled" name="enabled" id="enabled" onoffswitch />
-                        </div>
-                        <div class="form-group">
-                            <label for="baseUrl" class="control-label">Base URL</label>
-
-                            <div class="controls">
-                                <input class="input-small" type="text" name="baseUrl" id="baseUrl"
-                                       data-ng-model="application.baseUrl">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="adminUrl" class="control-label">Admin URL</label>
-
-                            <div class="controls">
-                                <input class="input-small" type="text" name="adminUrl" id="adminUrl"
-                                       data-ng-model="application.adminUrl">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="newWebOrigin" class="control-label">Web Origin</label>
-                            <div class="controls">
-                                <div ng-repeat="webOrigin in application.webOrigins" class="item-deletable">
-                                    <input  class="input-small" type="text" data-ng-class="{'input-below':!$first}"
-                                            name="webOrigin" id="webOrigin" data-ng-model="webOrigin" readonly />
-                                    <button type="button" data-ng-click="deleteWebOrigin($index)" class="btn-delete">
-                                        Delete</button>
-                                </div>
-                                <input class="input-small" type="text" name="newWebOrigin" id="newWebOrigin"
-                                       placeholder="New Web Origin..." data-ng-model="newWebOrigin"
-                                       data-ng-class="{'input-below':application.webOrigins.length}" />
-                                <button data-ng-click="addWebOrigin()" ng-show="newWebOrigin.length > 0">Add</button>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="newRedirectUri" class="control-label">Redirect URI</label>
-                            <div class="controls">
-                                <div ng-repeat="redirectUri in application.redirectUris" class="item-deletable">
-                                    <input  class="input-small" type="text" data-ng-class="{'input-below':!$first}"
-                                            name="redirectUri" id="redirectUri" data-ng-model="redirectUri" readonly />
-                                    <button type="button" data-ng-click="deleteRedirectUri($index)" class="btn-delete">
-                                        Delete</button>
-                                </div>
-                                <input class="input-small" type="text" name="newRedirectUri" id="newRedirectUri"
-                                       placeholder="New Redirect URI..." data-ng-model="newRedirectUri"
-                                       data-ng-class="{'input-below':application.redirectUris.length}" />
-                                <button data-ng-click="addRedirectUri()" ng-show="newRedirectUri.length > 0">Add</button>
-                            </div>
-                        </div>
-                    </fieldset>
-                    <div class="form-actions" data-ng-show="create">
-                        <button type="submit" kc-save data-ng-show="changed" class="primary">Save
-                        </button>
-                        <button type="submit" data-ng-click="cancel()">Cancel
-                        </button>
+<div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="'partials/realm-menu.html'"></div>
+<div id="content-area" class="col-md-9" role="main">
+    <ul class="nav nav-tabs nav-tabs-pf"  data-ng-show="!create">
+        <li class="active"><a href="#/realms/{{realm.realm}}/applications/{{application.name}}">Settings</a></li>
+        <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/credentials">Credentials</a></li>
+        <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/installation">Installation</a></li>
+        <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/roles">Roles</a></li>
+        <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/scope-mappings">Scope</a></li>
+        <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/sessions">Sessions</a></li>
+    </ul>
+    <div id="content">
+        <ol class="breadcrumb" data-ng-show="create">
+            <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
+            <li><a href="#/realms/{{realm.realm}}/applications">Applications</a></li>
+            <li class="active">Add Application</li>
+        </ol>
+        <h2 data-ng-show="create"><span>{{realm.realm}}</span> Add Application</h2>
+        <p class="subtitle" data-ng-show="create"><span class="required">*</span> Required fields</p>
+        <ol class="breadcrumb" data-ng-hide="create">
+            <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
+            <li><a href="#/realms/{{realm.realm}}/applications">Applications</a></li>
+            <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}">{{application.name}}</a></li>
+            <li class="active">Settings</li>
+        </ol>
+        <h2 data-ng-hide="create"><span>{{application.name}}</span> Settings</h2>
+        <form class="form-horizontal" name="applicationForm" novalidate>
+            <fieldset class="border-top">
+                <div class="form-group">
+                    <label class="col-sm-2 control-label" for="name">Name <span class="required" data-ng-show="create">*</span></label>
+                    <div class="col-sm-4">
+                        <input class="form-control" type="text" id="name" name="name" data-ng-model="application.name" autofocus required>
                     </div>
+                </div>
 
-                    <div class="form-actions" data-ng-show="!create">
-                        <button type="submit" kc-save class="primary" data-ng-show="changed">Save
-                        </button>
-                        <button type="submit" kc-reset data-ng-show="changed">Clear changes
-                        </button>
-                        <button type="submit" data-ng-click="remove()" class="destructive" data-ng-hide="changed">
-                            Delete
-                        </button>
+                <div class="form-group clearfix block">
+                    <label class="col-sm-2 control-label" for="enabled">Enabled</label>
+                    <div class="col-sm-4">
+                        <input ng-model="application.enabled" name="enabled" id="enabled" onoffswitch />
                     </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label" for="baseUrl">Base URL</label>
+                    <div class="col-sm-4">
+                        <input class="form-control" type="text" name="baseUrl" id="baseUrl"
+                               data-ng-model="application.baseUrl">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label" for="adminUrl">Admin URL</label>
+                    <div class="col-sm-4">
+                        <input class="form-control" type="text" name="adminUrl" id="adminUrl"
+                               data-ng-model="application.adminUrl">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label" for="newWebOrigin">Web Origin</label>
+                    <div class="col-sm-4">
+                        <div ng-repeat="webOrigin in application.webOrigins" class="item-deletable">
+                            <input class="form-control kc-button-control"
+                                   type="text" data-ng-class="{'input-below':!$first}"
+                                   name="webOrigin" id="webOrigin"
+                                   data-ng-model="webOrigin" readonly/>
+                            <button class="btn btn-danger"
+                                    type="button" data-ng-click="deleteWebOrigin($index)">Delete</button>
+                        </div>
+                        <input class="form-control kc-button-control"
+                               type="text" name="newWebOrigin" id="newWebOrigin"
+                               placeholder="New Web Origin..." data-ng-model="newWebOrigin"
+                               data-ng-class="{'input-below':application.webOrigins.length}"/>
+                        <button class="btn btn-primary"
+                                data-ng-click="addWebOrigin()" ng-show="newWebOrigin.length > 0">Add</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label" for="newRedirectUri">Redirect URI</label>
+                    <div class="col-sm-4">
+                        <div ng-repeat="redirectUri in application.redirectUris" class="item-deletable">
+                            <input class="form-control" type="text" data-ng-class="{'input-below':!$first}"
+                                   name="redirectUri" id="redirectUri" data-ng-model="redirectUri" readonly />
+                            <button type="button" data-ng-click="deleteRedirectUri($index)" class="btn-delete">
+                                Delete</button>
+                        </div>
+                        <input class="form-control" type="text" name="newRedirectUri" id="newRedirectUri"
+                               placeholder="New Redirect URI..." data-ng-model="newRedirectUri"
+                               data-ng-class="{'input-below':application.redirectUris.length}" />
+                        <button class="btn btn-primary" data-ng-click="addRedirectUri()" ng-show="newRedirectUri.length > 0">Add</button>
+                    </div>
+                </div>
+            </fieldset>
 
-                </form>
+            <div class="pull-right form-actions" data-ng-show="createRealm">
+                <button kc-cancel data-ng-click="cancel()">Cancel</button>
+                <button kc-save data-ng-show="changed">Save</button>
             </div>
-        </div>
-        <div id="container-right-bg"></div>
+            <div class="pull-right form-actions" data-ng-show="!createRealm">
+                <button kc-reset data-ng-show="changed">Clear changes</button>
+                <button kc-save  data-ng-show="changed">Save</button>
+                <button kc-delete data-ng-click="remove()" data-ng-hide="changed">Delete</button>
+            </div>
+        </form>
     </div>
 </div>
