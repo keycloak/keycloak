@@ -46,17 +46,23 @@
             <artifactId>mongo-java-driver</artifactId>
             <scope>provided</scope>
         </dependency>
+
         <dependency>
-            <groupId>de.flapdoodle.embed</groupId>
-            <artifactId>de.flapdoodle.embed.mongo</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-model-tests</artifactId>
+            <version>${project.version}</version>
+            <classifier>tests</classifier>
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <properties>
+        <keycloak.mongo.host>localhost</keycloak.mongo.host>
+        <keycloak.mongo.port>27018</keycloak.mongo.port>
+        <keycloak.mongo.db>keycloak</keycloak.mongo.db>
+        <keycloak.mongo.clearOnStartup>true</keycloak.mongo.clearOnStartup>
+    </properties>
+
     <build>
         <plugins>
             <plugin>
@@ -67,6 +73,66 @@
                     <target>1.6</target>
                 </configuration>
             </plugin>
+
+            <!-- Postpone tests to "integration-test" phase, so that we can bootstrap embedded mongo on 27018 before running tests -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>test</id>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <keycloak.mongo.host>${keycloak.mongo.host}</keycloak.mongo.host>
+                                <keycloak.mongo.port>${keycloak.mongo.port}</keycloak.mongo.port>
+                                <keycloak.mongo.db>${keycloak.mongo.db}</keycloak.mongo.db>
+                                <keycloak.mongo.clearOnStartup>${keycloak.mongo.clearOnStartup}</keycloak.mongo.clearOnStartup>
+                            </systemPropertyVariables>
+                            <dependenciesToScan>
+                                <dependency>org.keycloak:keycloak-model-tests</dependency>
+                            </dependenciesToScan>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>default-test</id>
+                        <configuration>
+                            <skip>true</skip>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Embedded mongo -->
+            <plugin>
+                <groupId>com.github.joelittlejohn.embedmongo</groupId>
+                <artifactId>embedmongo-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>start-mongodb</id>
+                        <phase>pre-integration-test</phase>
+                        <goals>
+                            <goal>start</goal>
+                        </goals>
+                        <configuration>
+                            <port>${keycloak.mongo.port}</port>
+                            <logging>file</logging>
+                            <logFile>${project.build.directory}/mongodb.log</logFile>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>stop-mongodb</id>
+                        <phase>post-integration-test</phase>
+                        <goals>
+                            <goal>stop</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
         </plugins>
     </build>
 </project>

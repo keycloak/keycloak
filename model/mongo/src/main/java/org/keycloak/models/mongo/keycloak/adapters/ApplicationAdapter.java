@@ -6,7 +6,6 @@ import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.mongo.api.AbstractMongoIdentifiableEntity;
-import org.keycloak.models.mongo.api.MongoStore;
 import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.mongo.keycloak.entities.ApplicationEntity;
 import org.keycloak.models.mongo.keycloak.entities.RoleEntity;
@@ -26,30 +25,30 @@ public class ApplicationAdapter extends AbstractAdapter implements ApplicationMo
     private final ApplicationEntity application;
     private UserAdapter resourceUser;
 
-    public ApplicationAdapter(ApplicationEntity applicationEntity, MongoStore mongoStore, MongoStoreInvocationContext invContext) {
-        this(applicationEntity, null, mongoStore, invContext);
+    public ApplicationAdapter(ApplicationEntity applicationEntity, MongoStoreInvocationContext invContext) {
+        this(applicationEntity, null, invContext);
     }
 
-    public ApplicationAdapter(ApplicationEntity applicationEntity, UserAdapter resourceUser, MongoStore mongoStore, MongoStoreInvocationContext invContext) {
-        super(mongoStore, invContext);
+    public ApplicationAdapter(ApplicationEntity applicationEntity, UserAdapter resourceUser, MongoStoreInvocationContext invContext) {
+        super(invContext);
         this.application = applicationEntity;
         this.resourceUser = resourceUser;
     }
 
     @Override
     public void updateApplication() {
-        mongoStore.updateObject(application, invocationContext);
+        getMongoStore().updateEntity(application, invocationContext);
     }
 
     @Override
     public UserAdapter getApplicationUser() {
         // This is not thread-safe. Assumption is that ApplicationAdapter instance is per-client object
         if (resourceUser == null) {
-            UserEntity userEntity = mongoStore.loadObject(UserEntity.class, application.getResourceUserId(), invocationContext);
+            UserEntity userEntity = getMongoStore().loadEntity(UserEntity.class, application.getResourceUserId(), invocationContext);
             if (userEntity == null) {
                 throw new IllegalStateException("User " + application.getResourceUserId() + " not found");
             }
-            resourceUser = new UserAdapter(userEntity, mongoStore, invocationContext);
+            resourceUser = new UserAdapter(userEntity, invocationContext);
         }
 
         return resourceUser;
@@ -116,21 +115,21 @@ public class ApplicationAdapter extends AbstractAdapter implements ApplicationMo
                 .and("name").is(name)
                 .and("applicationId").is(getId())
                 .get();
-        RoleEntity role = mongoStore.loadSingleObject(RoleEntity.class, query, invocationContext);
+        RoleEntity role = getMongoStore().loadSingleEntity(RoleEntity.class, query, invocationContext);
         if (role == null) {
             return null;
         } else {
-            return new RoleAdapter(role, this, mongoStore, invocationContext);
+            return new RoleAdapter(role, invocationContext);
         }
     }
 
     @Override
     public RoleModel getRoleById(String id) {
-        RoleEntity role = mongoStore.loadObject(RoleEntity.class, id, invocationContext);
+        RoleEntity role = getMongoStore().loadEntity(RoleEntity.class, id, invocationContext);
         if (role == null) {
             return null;
         } else {
-            return new RoleAdapter(role, this, mongoStore, invocationContext);
+            return new RoleAdapter(role, this, invocationContext);
         }
     }
 
@@ -145,13 +144,13 @@ public class ApplicationAdapter extends AbstractAdapter implements ApplicationMo
         roleEntity.setName(name);
         roleEntity.setApplicationId(getId());
 
-        mongoStore.insertObject(roleEntity, invocationContext);
-        return new RoleAdapter(roleEntity, this, mongoStore, invocationContext);
+        getMongoStore().insertEntity(roleEntity, invocationContext);
+        return new RoleAdapter(roleEntity, this, invocationContext);
     }
 
     @Override
     public boolean removeRoleById(String id) {
-        return mongoStore.removeObject(RoleEntity.class ,id, invocationContext);
+        return getMongoStore().removeEntity(RoleEntity.class, id, invocationContext);
     }
 
     @Override
@@ -159,11 +158,11 @@ public class ApplicationAdapter extends AbstractAdapter implements ApplicationMo
         DBObject query = new QueryBuilder()
                 .and("applicationId").is(getId())
                 .get();
-        List<RoleEntity> roles = mongoStore.loadObjects(RoleEntity.class, query, invocationContext);
+        List<RoleEntity> roles = getMongoStore().loadEntities(RoleEntity.class, query, invocationContext);
 
         Set<RoleModel> result = new HashSet<RoleModel>();
         for (RoleEntity role : roles) {
-            result.add(new RoleAdapter(role, this, mongoStore, invocationContext));
+            result.add(new RoleAdapter(role, this, invocationContext));
         }
 
         return result;
@@ -172,11 +171,11 @@ public class ApplicationAdapter extends AbstractAdapter implements ApplicationMo
     @Override
     public Set<RoleModel> getApplicationRoleMappings(UserModel user) {
         Set<RoleModel> result = new HashSet<RoleModel>();
-        List<RoleEntity> roles = MongoModelUtils.getAllRolesOfUser(user, mongoStore, invocationContext);
+        List<RoleEntity> roles = MongoModelUtils.getAllRolesOfUser(user, invocationContext);
 
         for (RoleEntity role : roles) {
             if (getId().equals(role.getApplicationId())) {
-                result.add(new RoleAdapter(role, this, mongoStore, invocationContext));
+                result.add(new RoleAdapter(role, this, invocationContext));
             }
         }
         return result;
@@ -185,17 +184,17 @@ public class ApplicationAdapter extends AbstractAdapter implements ApplicationMo
     @Override
     public void addScope(RoleModel role) {
         UserAdapter appUser = getApplicationUser();
-        mongoStore.pushItemToList(appUser.getUser(), "scopeIds", role.getId(), true, invocationContext);
+        getMongoStore().pushItemToList(appUser.getUser(), "scopeIds", role.getId(), true, invocationContext);
     }
 
     @Override
     public Set<RoleModel> getApplicationScopeMappings(UserModel user) {
         Set<RoleModel> result = new HashSet<RoleModel>();
-        List<RoleEntity> roles = MongoModelUtils.getAllScopesOfUser(user, mongoStore, invocationContext);
+        List<RoleEntity> roles = MongoModelUtils.getAllScopesOfUser(user, invocationContext);
 
         for (RoleEntity role : roles) {
             if (getId().equals(role.getApplicationId())) {
-                result.add(new RoleAdapter(role, this, mongoStore, invocationContext));
+                result.add(new RoleAdapter(role, this, invocationContext));
             }
         }
         return result;
@@ -213,7 +212,7 @@ public class ApplicationAdapter extends AbstractAdapter implements ApplicationMo
             addRole(name);
         }
 
-        mongoStore.pushItemToList(application, "defaultRoles", name, true, invocationContext);
+        getMongoStore().pushItemToList(application, "defaultRoles", name, true, invocationContext);
     }
 
     @Override

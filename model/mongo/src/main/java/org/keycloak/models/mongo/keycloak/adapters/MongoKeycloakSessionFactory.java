@@ -16,7 +16,6 @@ import org.keycloak.models.mongo.keycloak.entities.RequiredCredentialEntity;
 import org.keycloak.models.mongo.keycloak.entities.RoleEntity;
 import org.keycloak.models.mongo.keycloak.entities.SocialLinkEntity;
 import org.keycloak.models.mongo.keycloak.entities.UserEntity;
-import org.keycloak.models.mongo.utils.EmbeddedMongo;
 import org.keycloak.models.mongo.utils.MongoConfiguration;
 
 import java.net.UnknownHostException;
@@ -40,19 +39,11 @@ public class MongoKeycloakSessionFactory implements KeycloakSessionFactory {
             OAuthClientEntity.class
     };
 
-    private final EmbeddedMongo embeddedMongo;
     private final MongoClient mongoClient;
     private final MongoStore mongoStore;
 
     public MongoKeycloakSessionFactory(MongoConfiguration config) {
         logger.info(String.format("Configuring MongoStore with: " + config));
-
-        if (config.isStartEmbedded()) {
-            embeddedMongo = new EmbeddedMongo();
-            embeddedMongo.startEmbeddedMongo(config.getPort());
-        } else {
-            embeddedMongo = null;
-        }
 
         try {
             // TODO: authentication support
@@ -75,9 +66,5 @@ public class MongoKeycloakSessionFactory implements KeycloakSessionFactory {
     public void close() {
         logger.info("Closing MongoDB client");
         mongoClient.close();
-
-        if (embeddedMongo != null) {
-            embeddedMongo.stopEmbeddedMongo();
-        }
     }
 }

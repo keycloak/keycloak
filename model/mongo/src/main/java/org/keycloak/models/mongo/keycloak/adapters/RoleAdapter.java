@@ -10,7 +10,6 @@ import com.mongodb.QueryBuilder;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.mongo.api.AbstractMongoIdentifiableEntity;
-import org.keycloak.models.mongo.api.MongoStore;
 import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.mongo.keycloak.entities.ApplicationEntity;
 import org.keycloak.models.mongo.keycloak.entities.RealmEntity;
@@ -28,15 +27,14 @@ public class RoleAdapter extends AbstractAdapter implements RoleModel {
     private final RoleEntity role;
     private RoleContainerModel roleContainer;
 
-    public RoleAdapter(RoleEntity roleEntity, MongoStore mongoStore, MongoStoreInvocationContext invContext) {
-        this(roleEntity, null, mongoStore, invContext);
+    public RoleAdapter(RoleEntity roleEntity, MongoStoreInvocationContext invContext) {
+        this(roleEntity, null, invContext);
     }
 
-    public RoleAdapter(RoleEntity roleEntity, RoleContainerModel roleContainer, MongoStore mongoStore, MongoStoreInvocationContext invContext) {
-        super(mongoStore, invContext);
+    public RoleAdapter(RoleEntity roleEntity, RoleContainerModel roleContainer, MongoStoreInvocationContext invContext) {
+        super(invContext);
         this.role = roleEntity;
         this.roleContainer = roleContainer;
-        this.mongoStore = mongoStore;
     }
 
     @Override
@@ -72,17 +70,17 @@ public class RoleAdapter extends AbstractAdapter implements RoleModel {
     }
 
     protected void updateRole() {
-        mongoStore.updateObject(role, invocationContext);
+        getMongoStore().updateEntity(role, invocationContext);
     }
 
     @Override
     public void addCompositeRole(RoleModel childRole) {
-        mongoStore.pushItemToList(role, "compositeRoleIds", childRole.getId(), true, invocationContext);
+        getMongoStore().pushItemToList(role, "compositeRoleIds", childRole.getId(), true, invocationContext);
     }
 
     @Override
     public void removeCompositeRole(RoleModel childRole) {
-        mongoStore.pullItemFromList(role, "compositeRoleIds", childRole.getId(), invocationContext);
+        getMongoStore().pullItemFromList(role, "compositeRoleIds", childRole.getId(), invocationContext);
     }
 
     @Override
@@ -94,11 +92,11 @@ public class RoleAdapter extends AbstractAdapter implements RoleModel {
         DBObject query = new QueryBuilder()
                 .and("_id").in(MongoModelUtils.convertStringsToObjectIds(role.getCompositeRoleIds()))
                 .get();
-        List<RoleEntity> childRoles = mongoStore.loadObjects(RoleEntity.class, query, invocationContext);
+        List<RoleEntity> childRoles = getMongoStore().loadEntities(RoleEntity.class, query, invocationContext);
 
         Set<RoleModel> set = new HashSet<RoleModel>();
         for (RoleEntity childRole : childRoles) {
-            set.add(new RoleAdapter(childRole, mongoStore, invocationContext));
+            set.add(new RoleAdapter(childRole, invocationContext));
         }
         return set;
     }
@@ -108,17 +106,17 @@ public class RoleAdapter extends AbstractAdapter implements RoleModel {
         if (roleContainer == null) {
             // Compute it
             if (role.getRealmId() != null) {
-                RealmEntity realm = mongoStore.loadObject(RealmEntity.class, role.getRealmId(), invocationContext);
+                RealmEntity realm = getMongoStore().loadEntity(RealmEntity.class, role.getRealmId(), invocationContext);
                 if (realm == null) {
                     throw new IllegalStateException("Realm with id: " + role.getRealmId() + " doesn't exists");
                 }
-                roleContainer = new RealmAdapter(realm, mongoStore, invocationContext);
+                roleContainer = new RealmAdapter(realm, invocationContext);
             } else if (role.getApplicationId() != null) {
-                ApplicationEntity appEntity = mongoStore.loadObject(ApplicationEntity.class, role.getApplicationId(), invocationContext);
+                ApplicationEntity appEntity = getMongoStore().loadEntity(ApplicationEntity.class, role.getApplicationId(), invocationContext);
                 if (appEntity == null) {
                     throw new IllegalStateException("Application with id: " + role.getApplicationId() + " doesn't exists");
                 }
-                roleContainer = new ApplicationAdapter(appEntity, mongoStore, invocationContext);
+                roleContainer = new ApplicationAdapter(appEntity, invocationContext);
             } else {
                 throw new IllegalStateException("Both realmId and applicationId are null for role: " + this);
             }

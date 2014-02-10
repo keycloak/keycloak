@@ -1,4 +1,4 @@
-package org.keycloak.test;
+package org.keycloak.model.test;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -12,11 +12,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
-public class ModelTest extends AbstractKeycloakTest {
-
-    public ModelTest(String providerId) {
-        super(providerId);
-    }
+public class ModelTest extends AbstractModelTest {
 
     @Test
     public void importExportRealm() {

@@ -1,4 +1,4 @@
-package org.keycloak.test;
+package org.keycloak.model.test;
 
 import org.junit.Assert;
 import org.junit.FixMethodOrder;
@@ -23,16 +23,12 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class ImportTest extends AbstractKeycloakTest {
-
-    public ImportTest(String providerId) {
-        super(providerId);
-    }
+public class ImportTest extends AbstractModelTest {
 
     @Test
     public void install() throws Exception {
         RealmManager manager = realmManager;
-        RealmRepresentation rep = AbstractKeycloakServerTest.loadJson("testrealm.json");
+        RealmRepresentation rep = AbstractModelTest.loadJson("testrealm.json");
         RealmModel realm = manager.createRealm("demo", rep.getRealm());
         manager.importRealm(rep, realm);
 
@@ -148,7 +144,7 @@ public class ImportTest extends AbstractKeycloakTest {
     @Test
     public void install2() throws Exception {
         RealmManager manager = realmManager;
-        RealmRepresentation rep = AbstractKeycloakServerTest.loadJson("testrealm-demo.json");
+        RealmRepresentation rep = AbstractModelTest.loadJson("testrealm-demo.json");
         RealmModel realm = manager.createRealm("demo", rep.getRealm());
         manager.importRealm(rep, realm);
 

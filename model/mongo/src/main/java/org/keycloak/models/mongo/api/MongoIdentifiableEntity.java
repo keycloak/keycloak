@@ -17,5 +17,5 @@ public interface MongoIdentifiableEntity extends MongoEntity {
      * Lifecycle callback, which is called after removal of this object from Mongo.
      * It may be useful for triggering removal of wired objects.
      */
-    void afterRemove(MongoStore mongoStore, MongoStoreInvocationContext invocationContext);
+    void afterRemove(MongoStoreInvocationContext invocationContext);
 }

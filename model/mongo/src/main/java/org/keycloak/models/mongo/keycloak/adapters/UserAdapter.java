@@ -2,7 +2,6 @@ package org.keycloak.models.mongo.keycloak.adapters;
 
 import org.keycloak.models.UserModel;
 import org.keycloak.models.mongo.api.AbstractMongoIdentifiableEntity;
-import org.keycloak.models.mongo.api.MongoStore;
 import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.mongo.keycloak.entities.UserEntity;
 
@@ -23,8 +22,8 @@ public class UserAdapter extends AbstractAdapter implements UserModel {
 
     private final UserEntity user;
 
-    public UserAdapter(UserEntity userEntity, MongoStore mongoStore, MongoStoreInvocationContext invContext) {
-        super(mongoStore, invContext);
+    public UserAdapter(UserEntity userEntity, MongoStoreInvocationContext invContext) {
+        super(invContext);
         this.user = userEntity;
     }
 
@@ -139,12 +138,12 @@ public class UserAdapter extends AbstractAdapter implements UserModel {
 
     @Override
     public void addWebOrigin(String webOrigin) {
-        mongoStore.pushItemToList(user, "webOrigins", webOrigin, true, invocationContext);
+        getMongoStore().pushItemToList(user, "webOrigins", webOrigin, true, invocationContext);
     }
 
     @Override
     public void removeWebOrigin(String webOrigin) {
-        mongoStore.pullItemFromList(user, "webOrigins", webOrigin, invocationContext);
+        getMongoStore().pullItemFromList(user, "webOrigins", webOrigin, invocationContext);
     }
 
     @Override
@@ -166,12 +165,12 @@ public class UserAdapter extends AbstractAdapter implements UserModel {
 
     @Override
     public void addRedirectUri(String redirectUri) {
-        mongoStore.pushItemToList(user, "redirectUris", redirectUri, true, invocationContext);
+        getMongoStore().pushItemToList(user, "redirectUris", redirectUri, true, invocationContext);
     }
 
     @Override
     public void removeRedirectUri(String redirectUri) {
-        mongoStore.pullItemFromList(user, "redirectUris", redirectUri, invocationContext);
+        getMongoStore().pullItemFromList(user, "redirectUris", redirectUri, invocationContext);
     }
 
     @Override
@@ -185,12 +184,12 @@ public class UserAdapter extends AbstractAdapter implements UserModel {
 
     @Override
     public void addRequiredAction(RequiredAction action) {
-        mongoStore.pushItemToList(user, "requiredActions", action, true, invocationContext);
+        getMongoStore().pushItemToList(user, "requiredActions", action, true, invocationContext);
     }
 
     @Override
     public void removeRequiredAction(RequiredAction action) {
-        mongoStore.pullItemFromList(user, "requiredActions", action, invocationContext);
+        getMongoStore().pullItemFromList(user, "requiredActions", action, invocationContext);
     }
 
     @Override
@@ -205,7 +204,7 @@ public class UserAdapter extends AbstractAdapter implements UserModel {
     }
 
     protected void updateUser() {
-        mongoStore.updateObject(user, invocationContext);
+        getMongoStore().updateEntity(user, invocationContext);
     }
 
     @Override

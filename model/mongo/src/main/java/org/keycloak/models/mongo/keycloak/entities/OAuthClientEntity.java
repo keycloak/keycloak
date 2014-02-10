@@ -4,7 +4,6 @@ import org.keycloak.models.mongo.api.AbstractMongoIdentifiableEntity;
 import org.keycloak.models.mongo.api.MongoCollection;
 import org.keycloak.models.mongo.api.MongoEntity;
 import org.keycloak.models.mongo.api.MongoField;
-import org.keycloak.models.mongo.api.MongoStore;
 import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
 
 /**
@@ -46,8 +45,8 @@ public class OAuthClientEntity extends AbstractMongoIdentifiableEntity implement
     }
 
     @Override
-    public void afterRemove(MongoStore mongoStore, MongoStoreInvocationContext invContext) {
+    public void afterRemove(MongoStoreInvocationContext context) {
         // Remove user of this oauthClient
-        mongoStore.removeObject(UserEntity.class, oauthAgentId, invContext);
+        context.getMongoStore().removeEntity(UserEntity.class, oauthAgentId, context);
     }
 }

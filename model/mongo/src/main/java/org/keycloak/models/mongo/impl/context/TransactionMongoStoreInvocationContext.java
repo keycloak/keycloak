@@ -2,6 +2,7 @@ package org.keycloak.models.mongo.impl.context;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -32,6 +33,12 @@ public class TransactionMongoStoreInvocationContext implements MongoStoreInvocat
     }
 
     @Override
+    public void addCreatedObject(MongoIdentifiableEntity entity) {
+        // For now just add it to list of loaded objects
+        addLoadedObject(entity);
+    }
+
+    @Override
     public void addLoadedObject(MongoIdentifiableEntity entity) {
         loadedObjects.put(entity.getId(), entity);
     }
@@ -49,7 +56,7 @@ public class TransactionMongoStoreInvocationContext implements MongoStoreInvocat
 
         Set<MongoTask> currentObjectTasks = pendingUpdateTasks.get(entityToUpdate);
         if (currentObjectTasks == null) {
-            currentObjectTasks = new HashSet<MongoTask>();
+            currentObjectTasks = new LinkedHashSet<MongoTask>();
             pendingUpdateTasks.put(entityToUpdate, currentObjectTasks);
         } else {
             // if task is full update, then remove all other tasks as we need to do full update of object anyway
@@ -74,7 +81,7 @@ public class TransactionMongoStoreInvocationContext implements MongoStoreInvocat
         pendingUpdateTasks.remove(entityToRemove);
         loadedObjects.remove(entityToRemove.getId());
 
-        entityToRemove.afterRemove(mongoStore, this);
+        entityToRemove.afterRemove(this);
     }
 
     @Override
@@ -107,8 +114,6 @@ public class TransactionMongoStoreInvocationContext implements MongoStoreInvocat
 
     @Override
     public void commit() {
-        loadedObjects.clear();
-
         // Now execute all pending update tasks
         for (Set<MongoTask> mongoTasks : pendingUpdateTasks.values()) {
             for (MongoTask currentTask : mongoTasks) {
@@ -117,13 +122,19 @@ public class TransactionMongoStoreInvocationContext implements MongoStoreInvocat
         }
 
         // And clear it
+        loadedObjects.clear();
         pendingUpdateTasks.clear();
     }
 
     @Override
     public void rollback() {
-        // Just clear the map without executions of tasks
+        // Just clear the map without executions of tasks TODO: Attempt to do complete rollback (removal of created objects, restoring of removed objects, rollback of updates)
         loadedObjects.clear();
         pendingUpdateTasks.clear();
+    }
+
+    @Override
+    public MongoStore getMongoStore() {
+        return mongoStore;
     }
 }

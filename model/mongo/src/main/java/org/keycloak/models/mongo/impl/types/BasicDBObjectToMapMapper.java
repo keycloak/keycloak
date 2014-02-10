@@ -4,18 +4,18 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.mongodb.BasicDBObject;
-import org.keycloak.models.mongo.api.types.Converter;
-import org.keycloak.models.mongo.api.types.ConverterContext;
+import org.keycloak.models.mongo.api.types.Mapper;
+import org.keycloak.models.mongo.api.types.MapperContext;
 
 /**
  * For now, we support just convert to Map<String, String>
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class BasicDBObjectToMapConverter implements Converter<BasicDBObject, Map> {
+public class BasicDBObjectToMapMapper implements Mapper<BasicDBObject, Map> {
 
     @Override
-    public Map convertObject(ConverterContext<BasicDBObject> context) {
+    public Map convertObject(MapperContext<BasicDBObject, Map> context) {
         BasicDBObject objectToConvert = context.getObjectToConvert();
 
         HashMap<String, String> result = new HashMap<String, String>();
@@ -23,8 +23,8 @@ public class BasicDBObjectToMapConverter implements Converter<BasicDBObject, Map
             String key = entry.getKey();
             String value = (String)entry.getValue();
 
-            if (key.contains(MapConverter.DOT_PLACEHOLDER)) {
-                key = key.replaceAll(MapConverter.DOT_PLACEHOLDER, ".");
+            if (key.contains(MapMapper.DOT_PLACEHOLDER)) {
+                key = key.replaceAll(MapMapper.DOT_PLACEHOLDER, ".");
             }
 
             result.put(key, value);
@@ -33,7 +33,7 @@ public class BasicDBObjectToMapConverter implements Converter<BasicDBObject, Map
     }
 
     @Override
-    public Class<? extends BasicDBObject> getConverterObjectType() {
+    public Class<? extends BasicDBObject> getTypeOfObjectToConvert() {
         return BasicDBObject.class;
     }
 

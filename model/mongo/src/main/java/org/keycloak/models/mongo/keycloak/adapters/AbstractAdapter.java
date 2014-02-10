@@ -9,11 +9,9 @@ import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
  */
 public abstract class AbstractAdapter {
 
-    protected MongoStore mongoStore;
     protected MongoStoreInvocationContext invocationContext;
 
-    public AbstractAdapter(MongoStore mongoStore, MongoStoreInvocationContext invocationContext) {
-        this.mongoStore = mongoStore;
+    public AbstractAdapter(MongoStoreInvocationContext invocationContext) {
         this.invocationContext = invocationContext;
     }
 
@@ -34,5 +32,9 @@ public abstract class AbstractAdapter {
     @Override
     public int hashCode() {
         return getMongoEntity()!=null ? getMongoEntity().hashCode() : super.hashCode();
+    }
+
+    protected MongoStore getMongoStore() {
+        return invocationContext.getMongoStore();
     }
 }

@@ -1,4 +1,4 @@
-package org.keycloak.test;
+package org.keycloak.model.test;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -16,14 +16,10 @@ import java.util.List;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class ApplicationModelTest extends AbstractKeycloakTest {
+public class ApplicationModelTest extends AbstractModelTest {
     private ApplicationModel application;
     private RealmModel realm;
     private ApplicationManager appManager;
-
-    public ApplicationModelTest(String providerId) {
-        super(providerId);
-    }
 
     @Before
     public void before() throws Exception {

@@ -6,7 +6,6 @@ import org.keycloak.models.mongo.api.AbstractMongoIdentifiableEntity;
 import org.keycloak.models.mongo.api.MongoCollection;
 import org.keycloak.models.mongo.api.MongoEntity;
 import org.keycloak.models.mongo.api.MongoField;
-import org.keycloak.models.mongo.api.MongoStore;
 import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
 
 import java.util.ArrayList;
@@ -249,18 +248,18 @@ public class RealmEntity extends AbstractMongoIdentifiableEntity implements Mong
     }
 
     @Override
-    public void afterRemove(MongoStore mongoStore, MongoStoreInvocationContext invContext) {
+    public void afterRemove(MongoStoreInvocationContext context) {
         DBObject query = new QueryBuilder()
                 .and("realmId").is(getId())
                 .get();
 
         // Remove all users of this realm
-        mongoStore.removeObjects(UserEntity.class, query, invContext);
+        context.getMongoStore().removeEntities(UserEntity.class, query, context);
 
         // Remove all roles of this realm
-        mongoStore.removeObjects(RoleEntity.class, query, invContext);
+        context.getMongoStore().removeEntities(RoleEntity.class, query, context);
 
         // Remove all applications of this realm
-        mongoStore.removeObjects(ApplicationEntity.class, query, invContext);
+        context.getMongoStore().removeEntities(ApplicationEntity.class, query, context);
     }
 }

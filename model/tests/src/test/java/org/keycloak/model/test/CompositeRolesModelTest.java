@@ -1,4 +1,4 @@
-package org.keycloak.test;
+package org.keycloak.model.test;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -16,17 +16,13 @@ import org.keycloak.services.managers.RealmManager;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class CompositeRolesModelTest extends AbstractKeycloakTest {
-
-    public CompositeRolesModelTest(String providerId) {
-        super(providerId);
-    }
+public class CompositeRolesModelTest extends AbstractModelTest {
 
     @Before
     public void before() throws Exception {
         super.before();
         RealmManager manager = realmManager;
-        RealmRepresentation rep = AbstractKeycloakServerTest.loadJson("testcomposites.json");
+        RealmRepresentation rep = AbstractModelTest.loadJson("testcomposites.json");
         RealmModel realm = manager.createRealm("Test", rep.getRealm());
         manager.importRealm(rep, realm);
     }
@@ -34,13 +30,42 @@ public class CompositeRolesModelTest extends AbstractKeycloakTest {
     @Test
     public void testAppComposites() {
         Set<RoleModel> requestedRoles = getRequestedRoles("APP_COMPOSITE_APPLICATION", "APP_COMPOSITE_USER");
+
         Assert.assertEquals(2, requestedRoles.size());
+        assertContains("APP_ROLE_APPLICATION", "APP_ROLE_1", requestedRoles);
+        assertContains("realm", "REALM_ROLE_1", requestedRoles);
+    }
 
-        RoleModel expectedRole1 = getRole("APP_ROLE_APPLICATION", "APP_ROLE_1");
-        RoleModel expectedRole2 = getRole("realm", "REALM_ROLE_1");
+    @Test
+    public void testRealmAppComposites() {
+        Set<RoleModel> requestedRoles = getRequestedRoles("APP_COMPOSITE_APPLICATION", "REALM_APP_COMPOSITE_USER");
 
-        assertContains(requestedRoles, expectedRole1);
-        assertContains(requestedRoles, expectedRole2);
+        Assert.assertEquals(1, requestedRoles.size());
+        assertContains("APP_ROLE_APPLICATION", "APP_ROLE_1", requestedRoles);
+    }
+
+    @Test
+    public void testRealmOnlyWithUserCompositeAppComposite() throws Exception {
+        Set<RoleModel> requestedRoles = getRequestedRoles("REALM_COMPOSITE_1_APPLICATION", "REALM_COMPOSITE_1_USER");
+
+        Assert.assertEquals(1, requestedRoles.size());
+        assertContains("realm", "REALM_COMPOSITE_1", requestedRoles);
+    }
+
+    @Test
+    public void testRealmOnlyWithUserCompositeAppRole() throws Exception {
+        Set<RoleModel> requestedRoles = getRequestedRoles("REALM_ROLE_1_APPLICATION", "REALM_COMPOSITE_1_USER");
+
+        Assert.assertEquals(1, requestedRoles.size());
+        assertContains("realm", "REALM_ROLE_1", requestedRoles);
+    }
+
+    @Test
+    public void testRealmOnlyWithUserRoleAppComposite() throws Exception {
+        Set<RoleModel> requestedRoles = getRequestedRoles("REALM_COMPOSITE_1_APPLICATION", "REALM_ROLE_1_USER");
+
+        Assert.assertEquals(1, requestedRoles.size());
+        assertContains("realm", "REALM_ROLE_1", requestedRoles);
     }
 
     // TODO: more tests...
@@ -92,7 +117,9 @@ public class CompositeRolesModelTest extends AbstractKeycloakTest {
         }
     }
 
-    private void assertContains(Set<RoleModel> requestedRoles, RoleModel expectedRole) {
+    private void assertContains(String appName, String roleName, Set<RoleModel> requestedRoles) {
+        RoleModel expectedRole = getRole(appName, roleName);
+
         Assert.assertTrue(requestedRoles.contains(expectedRole));
 
         // Check if requestedRole has correct role container

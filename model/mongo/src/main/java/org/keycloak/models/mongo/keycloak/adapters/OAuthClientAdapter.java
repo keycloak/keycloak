@@ -3,7 +3,6 @@ package org.keycloak.models.mongo.keycloak.adapters;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.mongo.api.AbstractMongoIdentifiableEntity;
-import org.keycloak.models.mongo.api.MongoStore;
 import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.mongo.keycloak.entities.OAuthClientEntity;
 import org.keycloak.models.mongo.keycloak.entities.UserEntity;
@@ -16,14 +15,14 @@ public class OAuthClientAdapter extends AbstractAdapter implements OAuthClientMo
     private final OAuthClientEntity delegate;
     private UserAdapter oauthAgent;
 
-    public OAuthClientAdapter(OAuthClientEntity oauthClientEntity, UserAdapter oauthAgent, MongoStore mongoStore, MongoStoreInvocationContext invContext) {
-        super(mongoStore, invContext);
+    public OAuthClientAdapter(OAuthClientEntity oauthClientEntity, UserAdapter oauthAgent, MongoStoreInvocationContext invContext) {
+        super(invContext);
         this.delegate = oauthClientEntity;
         this.oauthAgent = oauthAgent;
     }
 
-    public OAuthClientAdapter(OAuthClientEntity oauthClientEntity, MongoStore mongoStore, MongoStoreInvocationContext invContext) {
-        this(oauthClientEntity, null, mongoStore, invContext);
+    public OAuthClientAdapter(OAuthClientEntity oauthClientEntity, MongoStoreInvocationContext invContext) {
+        this(oauthClientEntity, null, invContext);
     }
 
     @Override
@@ -35,8 +34,8 @@ public class OAuthClientAdapter extends AbstractAdapter implements OAuthClientMo
     public UserModel getOAuthAgent() {
         // This is not thread-safe. Assumption is that OAuthClientAdapter instance is per-client object
         if (oauthAgent == null) {
-            UserEntity user = mongoStore.loadObject(UserEntity.class, delegate.getOauthAgentId(), invocationContext);
-            oauthAgent = user!=null ? new UserAdapter(user, mongoStore, invocationContext) : null;
+            UserEntity user = getMongoStore().loadEntity(UserEntity.class, delegate.getOauthAgentId(), invocationContext);
+            oauthAgent = user!=null ? new UserAdapter(user, invocationContext) : null;
         }
         return oauthAgent;
     }

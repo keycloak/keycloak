@@ -12,7 +12,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class ObjectInfo {
+public class EntityInfo {
 
     private final Class<? extends MongoEntity> objectClass;
 
@@ -20,7 +20,7 @@ public class ObjectInfo {
 
     private final Map<String, Property<Object>> properties;
 
-    public ObjectInfo(Class<? extends MongoEntity> objectClass, String dbCollectionName, List<Property<Object>> properties) {
+    public EntityInfo(Class<? extends MongoEntity> objectClass, String dbCollectionName, List<Property<Object>> properties) {
         this.objectClass = objectClass;
         this.dbCollectionName = dbCollectionName;
 

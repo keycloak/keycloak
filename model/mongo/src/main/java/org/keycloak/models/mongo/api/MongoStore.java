@@ -11,33 +11,33 @@ import java.util.List;
 public interface MongoStore {
 
     /**
-     * Insert new object
+     * Insert new entity
      *
-     * @param object to update
+     * @param entity to insert
      */
-    void insertObject(MongoIdentifiableEntity object, MongoStoreInvocationContext context);
+    void insertEntity(MongoIdentifiableEntity entity, MongoStoreInvocationContext context);
 
     /**
-     * Update existing object
+     * Update existing entity
      *
-     * @param object to update
+     * @param entity to update
      */
-    void updateObject(MongoIdentifiableEntity object, MongoStoreInvocationContext context);
+    void updateEntity(MongoIdentifiableEntity entity, MongoStoreInvocationContext context);
 
 
-    <T extends MongoIdentifiableEntity> T loadObject(Class<T> type, String oid, MongoStoreInvocationContext context);
+    <T extends MongoIdentifiableEntity> T loadEntity(Class<T> type, String id, MongoStoreInvocationContext context);
 
-    <T extends MongoIdentifiableEntity> T loadSingleObject(Class<T> type, DBObject query, MongoStoreInvocationContext context);
+    <T extends MongoIdentifiableEntity> T loadSingleEntity(Class<T> type, DBObject query, MongoStoreInvocationContext context);
 
-    <T extends MongoIdentifiableEntity> List<T> loadObjects(Class<T> type, DBObject query, MongoStoreInvocationContext context);
+    <T extends MongoIdentifiableEntity> List<T> loadEntities(Class<T> type, DBObject query, MongoStoreInvocationContext context);
 
-    boolean removeObject(MongoIdentifiableEntity object, MongoStoreInvocationContext context);
+    boolean removeEntity(MongoIdentifiableEntity entity, MongoStoreInvocationContext context);
 
-    boolean removeObject(Class<? extends MongoIdentifiableEntity> type, String id, MongoStoreInvocationContext context);
+    boolean removeEntity(Class<? extends MongoIdentifiableEntity> type, String id, MongoStoreInvocationContext context);
 
-    boolean removeObjects(Class<? extends MongoIdentifiableEntity> type, DBObject query, MongoStoreInvocationContext context);
+    boolean removeEntities(Class<? extends MongoIdentifiableEntity> type, DBObject query, MongoStoreInvocationContext context);
 
-    <S> boolean pushItemToList(MongoIdentifiableEntity object, String listPropertyName, S itemToPush, boolean skipIfAlreadyPresent, MongoStoreInvocationContext context);
+    <S> boolean pushItemToList(MongoIdentifiableEntity entity, String listPropertyName, S itemToPush, boolean skipIfAlreadyPresent, MongoStoreInvocationContext context);
 
-    <S> boolean pullItemFromList(MongoIdentifiableEntity object, String listPropertyName, S itemToPull, MongoStoreInvocationContext context);
+    <S> boolean pullItemFromList(MongoIdentifiableEntity entity, String listPropertyName, S itemToPull, MongoStoreInvocationContext context);
 }

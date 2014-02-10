@@ -5,18 +5,18 @@ import java.util.List;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class ConverterContext<T> {
+public class MapperContext<T, S> {
 
     // object to convert
     private final T objectToConvert;
 
     // expected return type, which could be useful information in some converters, so they are able to dynamically instantiate types
-    private final Class<?> expectedReturnType;
+    private final Class<? extends S> expectedReturnType;
 
     // in case that expected return type is generic type (like "List<String>"), then genericTypes could contain list of expected generic arguments
     private final List<Class<?>> genericTypes;
 
-    public ConverterContext(T objectToConvert, Class<?> expectedReturnType, List<Class<?>> genericTypes) {
+    public MapperContext(T objectToConvert, Class<? extends S> expectedReturnType, List<Class<?>> genericTypes) {
         this.objectToConvert = objectToConvert;
         this.expectedReturnType = expectedReturnType;
         this.genericTypes = genericTypes;
@@ -26,7 +26,7 @@ public class ConverterContext<T> {
         return objectToConvert;
     }
 
-    public Class<?> getExpectedReturnType() {
+    public Class<? extends S> getExpectedReturnType() {
         return expectedReturnType;
     }
 

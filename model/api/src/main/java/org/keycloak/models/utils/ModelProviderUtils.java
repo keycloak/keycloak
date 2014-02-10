@@ -1,4 +1,4 @@
-package org.keycloak.services.utils;
+package org.keycloak.models.utils;
 
 import java.util.ServiceLoader;
 

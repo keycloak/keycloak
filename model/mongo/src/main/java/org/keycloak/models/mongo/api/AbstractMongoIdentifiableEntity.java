@@ -18,7 +18,7 @@ public class AbstractMongoIdentifiableEntity implements MongoIdentifiableEntity 
     }
 
     @Override
-    public void afterRemove(MongoStore mongoStore, MongoStoreInvocationContext invocationContext) {
+    public void afterRemove(MongoStoreInvocationContext invocationContext) {
         // Empty by default
     }
 

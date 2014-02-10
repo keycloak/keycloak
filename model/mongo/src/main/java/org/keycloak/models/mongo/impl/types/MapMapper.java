@@ -4,25 +4,27 @@ import java.util.Map;
 import java.util.Set;
 
 import com.mongodb.BasicDBObject;
-import org.keycloak.models.mongo.api.types.Converter;
-import org.keycloak.models.mongo.api.types.ConverterContext;
+import org.keycloak.models.mongo.api.types.Mapper;
+import org.keycloak.models.mongo.api.types.MapperContext;
 
 /**
+ * For now, we support just convert from Map<String, String>
+ *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class MapConverter<T extends Map> implements Converter<T, BasicDBObject> {
+public class MapMapper<T extends Map> implements Mapper<T, BasicDBObject> {
 
     // Just some dummy way of encoding . character as it's not allowed by mongo in key fields
     static final String DOT_PLACEHOLDER = "###";
 
     private final Class<T> mapType;
 
-    public MapConverter(Class<T> mapType) {
+    public MapMapper(Class<T> mapType) {
         this.mapType = mapType;
     }
 
     @Override
-    public BasicDBObject convertObject(ConverterContext<T> context) {
+    public BasicDBObject convertObject(MapperContext<T, BasicDBObject> context) {
         T objectToConvert = context.getObjectToConvert();
 
         BasicDBObject dbObject = new BasicDBObject();
@@ -41,7 +43,7 @@ public class MapConverter<T extends Map> implements Converter<T, BasicDBObject> 
     }
 
     @Override
-    public Class<? extends T> getConverterObjectType() {
+    public Class<? extends T> getTypeOfObjectToConvert() {
         return mapType;
     }
 

@@ -13,10 +13,14 @@ import org.keycloak.models.mongo.api.context.MongoTask;
  */
 public class SimpleMongoStoreInvocationContext implements MongoStoreInvocationContext {
 
-    private final MongoStore store;
+    private final MongoStore mongoStore;
 
-    public SimpleMongoStoreInvocationContext(MongoStore store) {
-        this.store = store;
+    public SimpleMongoStoreInvocationContext(MongoStore mongoStore) {
+        this.mongoStore = mongoStore;
+    }
+
+    @Override
+    public void addCreatedObject(MongoIdentifiableEntity entity) {
     }
 
     @Override
@@ -35,7 +39,7 @@ public class SimpleMongoStoreInvocationContext implements MongoStoreInvocationCo
 
     @Override
     public void addRemovedObject(MongoIdentifiableEntity entityToRemove) {
-        entityToRemove.afterRemove(store, this);
+        entityToRemove.afterRemove(this);
     }
 
     @Override
@@ -52,5 +56,10 @@ public class SimpleMongoStoreInvocationContext implements MongoStoreInvocationCo
 
     @Override
     public void rollback() {
+    }
+
+    @Override
+    public MongoStore getMongoStore() {
+        return mongoStore;
     }
 }

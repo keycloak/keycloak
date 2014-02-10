@@ -9,7 +9,6 @@ import org.keycloak.models.mongo.api.AbstractMongoIdentifiableEntity;
 import org.keycloak.models.mongo.api.MongoCollection;
 import org.keycloak.models.mongo.api.MongoEntity;
 import org.keycloak.models.mongo.api.MongoField;
-import org.keycloak.models.mongo.api.MongoStore;
 import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
 
 /**
@@ -103,14 +102,14 @@ public class ApplicationEntity extends AbstractMongoIdentifiableEntity implement
     }
 
     @Override
-    public void afterRemove(MongoStore mongoStore, MongoStoreInvocationContext invContext) {
+    public void afterRemove(MongoStoreInvocationContext context) {
         // Remove resourceUser of this application
-        mongoStore.removeObject(UserEntity.class, resourceUserId, invContext);
+        context.getMongoStore().removeEntity(UserEntity.class, resourceUserId, context);
 
         // Remove all roles, which belongs to this application
         DBObject query = new QueryBuilder()
                 .and("applicationId").is(getId())
                 .get();
-        mongoStore.removeObjects(RoleEntity.class, query, invContext);
+        context.getMongoStore().removeEntities(RoleEntity.class, query, context);
     }
 }

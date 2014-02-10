@@ -1,4 +1,4 @@
-package org.keycloak.test;
+package org.keycloak.model.test;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -14,11 +14,7 @@ import java.util.List;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class UserModelTest extends AbstractKeycloakTest {
-
-    public UserModelTest(String providerId) {
-        super(providerId);
-    }
+public class UserModelTest extends AbstractModelTest {
 
     @Test
     public void persistUser() {

@@ -1,4 +1,4 @@
-package org.keycloak.test;
+package org.keycloak.model.test;
 
 import org.junit.Assert;
 import org.junit.FixMethodOrder;
@@ -23,35 +23,20 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.StringTokenizer;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class AdapterTest extends AbstractKeycloakTest {
+public class AdapterTest extends AbstractModelTest {
     private RealmModel realmModel;
-
-    public AdapterTest(String providerId) {
-        super(providerId);
-    }
 
     @Test
     public void installTest() throws Exception {
         new ApplianceBootstrap().bootstrap(identitySession);
 
     }
-
-    @Test
-    public void testMe() {
-        String hello = "Bill     Burke";
-        StringTokenizer tokenizer = new StringTokenizer(hello, " ");
-        while (tokenizer.hasMoreTokens()) {
-            System.out.println("token: " + tokenizer.nextToken());
-        }
-    }
-
 
     @Test
     public void test1CreateRealm() throws Exception {

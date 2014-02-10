@@ -1,4 +1,4 @@
-package org.keycloak.services.managers;
+package org.keycloak.model.test;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -9,14 +9,14 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthenticationStatus;
-import org.keycloak.test.AbstractKeycloakTest;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import java.util.UUID;
 
-public class AuthenticationManagerTest extends AbstractKeycloakTest {
+public class AuthenticationManagerTest extends AbstractModelTest {
 
     private AuthenticationManager am;
     private MultivaluedMap<String, String> formData;
@@ -24,9 +24,6 @@ public class AuthenticationManagerTest extends AbstractKeycloakTest {
     private RealmModel realm;
     private UserModel user;
 
-    public AuthenticationManagerTest(String providerId) {
-        super(providerId);
-    }
     @Test
     public void authForm() {
         AuthenticationStatus status = am.authenticateForm(realm, user, formData);

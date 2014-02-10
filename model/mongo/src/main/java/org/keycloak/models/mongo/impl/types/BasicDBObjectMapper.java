@@ -9,39 +9,39 @@ import com.mongodb.BasicDBObject;
 import org.jboss.logging.Logger;
 import org.keycloak.models.mongo.api.MongoEntity;
 import org.keycloak.models.mongo.api.MongoIdentifiableEntity;
-import org.keycloak.models.mongo.api.types.Converter;
-import org.keycloak.models.mongo.api.types.ConverterContext;
-import org.keycloak.models.mongo.api.types.TypeConverter;
+import org.keycloak.models.mongo.api.types.Mapper;
+import org.keycloak.models.mongo.api.types.MapperContext;
+import org.keycloak.models.mongo.api.types.MapperRegistry;
 import org.keycloak.models.mongo.impl.MongoStoreImpl;
-import org.keycloak.models.mongo.impl.ObjectInfo;
+import org.keycloak.models.mongo.impl.EntityInfo;
 import org.picketlink.common.properties.Property;
 import org.picketlink.common.reflection.Types;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class BasicDBObjectConverter<S extends MongoEntity> implements Converter<BasicDBObject, S> {
+public class BasicDBObjectMapper<S extends MongoEntity> implements Mapper<BasicDBObject, S> {
 
-    private static final Logger logger = Logger.getLogger(BasicDBObjectConverter.class);
+    private static final Logger logger = Logger.getLogger(BasicDBObjectMapper.class);
 
     private final MongoStoreImpl mongoStoreImpl;
-    private final TypeConverter typeConverter;
+    private final MapperRegistry mapperRegistry;
     private final Class<S> expectedObjectType;
 
-    public BasicDBObjectConverter(MongoStoreImpl mongoStoreImpl, TypeConverter typeConverter, Class<S> expectedObjectType) {
+    public BasicDBObjectMapper(MongoStoreImpl mongoStoreImpl, MapperRegistry mapperRegistry, Class<S> expectedObjectType) {
         this.mongoStoreImpl = mongoStoreImpl;
-        this.typeConverter = typeConverter;
+        this.mapperRegistry = mapperRegistry;
         this.expectedObjectType = expectedObjectType;
     }
 
     @Override
-    public S convertObject(ConverterContext<BasicDBObject> context) {
+    public S convertObject(MapperContext<BasicDBObject, S> context) {
         BasicDBObject dbObject = context.getObjectToConvert();
         if (dbObject == null) {
             return null;
         }
 
-        ObjectInfo objectInfo = mongoStoreImpl.getObjectInfo(expectedObjectType);
+        EntityInfo entityInfo = mongoStoreImpl.getEntityInfo(expectedObjectType);
 
         S object;
         try {
@@ -60,7 +60,7 @@ public class BasicDBObjectConverter<S extends MongoEntity> implements Converter<
                     ((MongoIdentifiableEntity)object).setId(value.toString());
                 }
 
-            } else if ((property = objectInfo.getPropertyByName(key)) != null) {
+            } else if ((property = entityInfo.getPropertyByName(key)) != null) {
                 // It's declared property with @DBField annotation
                 setPropertyValue(object, value, property);
 
@@ -79,7 +79,7 @@ public class BasicDBObjectConverter<S extends MongoEntity> implements Converter<
             return;
         }
 
-        ConverterContext<Object> context;
+        MapperContext<Object, ?> context;
 
         Type type = property.getBaseType();
 
@@ -94,15 +94,15 @@ public class BasicDBObjectConverter<S extends MongoEntity> implements Converter<
             }
 
             Class<?> expectedReturnType = (Class<?>)parameterized.getRawType();
-            context = new ConverterContext<Object>(valueFromDB, expectedReturnType, genericTypes);
+            context = new MapperContext<Object, Object>(valueFromDB, expectedReturnType, genericTypes);
         } else {
             Class<?> expectedReturnType = (Class<?>)type;
             // handle primitives
             expectedReturnType = Types.boxedClass(expectedReturnType);
-            context = new ConverterContext<Object>(valueFromDB, expectedReturnType, null);
+            context = new MapperContext<Object, Object>(valueFromDB, expectedReturnType, null);
         }
 
-        Object appObject = typeConverter.convertDBObjectToApplicationObject(context);
+        Object appObject = mapperRegistry.convertDBObjectToApplicationObject(context);
 
         if (Types.boxedClass(property.getJavaClass()).isAssignableFrom(appObject.getClass())) {
             property.setValue(object, appObject);
@@ -113,7 +113,7 @@ public class BasicDBObjectConverter<S extends MongoEntity> implements Converter<
     }
 
     @Override
-    public Class<? extends BasicDBObject> getConverterObjectType() {
+    public Class<? extends BasicDBObject> getTypeOfObjectToConvert() {
         return BasicDBObject.class;
     }
 

@@ -12,14 +12,12 @@ public class MongoConfiguration {
     private final String dbName;
 
     private final boolean clearCollectionsOnStartup;
-    private final boolean startEmbedded;
 
-    public MongoConfiguration(String host, int port, String dbName, boolean clearCollectionsOnStartup, boolean startEmbedded) {
+    public MongoConfiguration(String host, int port, String dbName, boolean clearCollectionsOnStartup) {
         this.host = host;
         this.port = port;
         this.dbName = dbName;
         this.clearCollectionsOnStartup = clearCollectionsOnStartup;
-        this.startEmbedded = startEmbedded;
     }
 
     public String getHost() {
@@ -38,13 +36,9 @@ public class MongoConfiguration {
         return clearCollectionsOnStartup;
     }
 
-    public boolean isStartEmbedded() {
-        return startEmbedded;
-    }
-
     @Override
     public String toString() {
-        return String.format("MongoConfiguration: host: %s, port: %d, dbName: %s, clearCollectionsOnStartup: %b, startEmbedded: %b",
-                host, port, dbName, clearCollectionsOnStartup, startEmbedded);
+        return String.format("MongoConfiguration: host: %s, port: %d, dbName: %s, clearCollectionsOnStartup: %b",
+                host, port, dbName, clearCollectionsOnStartup);
     }
 }

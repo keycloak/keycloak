@@ -74,13 +74,15 @@ public class RoleEntity extends AbstractMongoIdentifiableEntity implements Mongo
     }
 
     @Override
-    public void afterRemove(MongoStore mongoStore, MongoStoreInvocationContext invContext) {
+    public void afterRemove(MongoStoreInvocationContext invContext) {
+        MongoStore mongoStore = invContext.getMongoStore();
+
         // Remove this role from all users, which has it
         DBObject query = new QueryBuilder()
                 .and("roleIds").is(getId())
                 .get();
 
-        List<UserEntity> users = mongoStore.loadObjects(UserEntity.class, query, invContext);
+        List<UserEntity> users = mongoStore.loadEntities(UserEntity.class, query, invContext);
         for (UserEntity user : users) {
             logger.info("Removing role " + getName() + " from user " + user.getLoginName());
             mongoStore.pullItemFromList(user, "roleIds", getId(), invContext);
@@ -91,7 +93,7 @@ public class RoleEntity extends AbstractMongoIdentifiableEntity implements Mongo
                 .and("scopeIds").is(getId())
                 .get();
 
-        users = mongoStore.loadObjects(UserEntity.class, query, invContext);
+        users = mongoStore.loadEntities(UserEntity.class, query, invContext);
         for (UserEntity user : users) {
             logger.info("Removing scope " + getName() + " from user " + user.getLoginName());
             mongoStore.pullItemFromList(user, "scopeIds", getId(), invContext);
@@ -99,7 +101,7 @@ public class RoleEntity extends AbstractMongoIdentifiableEntity implements Mongo
 
         // Remove defaultRoles from realm
         if (realmId != null) {
-            RealmEntity realmEntity = mongoStore.loadObject(RealmEntity.class, realmId, invContext);
+            RealmEntity realmEntity = mongoStore.loadEntity(RealmEntity.class, realmId, invContext);
 
             // Realm might be already removed at this point
             if (realmEntity != null) {
@@ -109,7 +111,7 @@ public class RoleEntity extends AbstractMongoIdentifiableEntity implements Mongo
 
         // Remove defaultRoles from application
         if (applicationId != null) {
-            ApplicationEntity appEntity = mongoStore.loadObject(ApplicationEntity.class, applicationId, invContext);
+            ApplicationEntity appEntity = mongoStore.loadEntity(ApplicationEntity.class, applicationId, invContext);
 
             // Application might be already removed at this point
             if (appEntity != null) {
@@ -121,7 +123,7 @@ public class RoleEntity extends AbstractMongoIdentifiableEntity implements Mongo
         query = new QueryBuilder()
                 .and("compositeRoleIds").is(getId())
                 .get();
-        List<RoleEntity> parentRoles = mongoStore.loadObjects(RoleEntity.class, query, invContext);
+        List<RoleEntity> parentRoles = mongoStore.loadEntities(RoleEntity.class, query, invContext);
         for (RoleEntity role : parentRoles) {
             mongoStore.pullItemFromList(role, "compositeRoleIds", getId(), invContext);
         }
