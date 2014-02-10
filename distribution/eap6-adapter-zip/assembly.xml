@@ -11,6 +11,7 @@
             <directory>${project.build.directory}/unpacked</directory>
             <excludes>
                 <exclude>org/keycloak/keycloak-undertow-adapter/**</exclude>
+                <exclude>org/keycloak/keycloak-wildfly-subsystem/**</exclude>
             </excludes>
             <outputDirectory>modules/system/layers/base</outputDirectory>
         </fileSet>

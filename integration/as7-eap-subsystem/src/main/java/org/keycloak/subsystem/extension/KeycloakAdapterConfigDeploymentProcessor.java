@@ -24,11 +24,13 @@ import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.as.server.deployment.Phase;
-import org.jboss.as.web.common.WarMetaData;
+import org.jboss.as.web.deployment.WarMetaData;
 import org.jboss.logging.Logger;
 import org.jboss.metadata.javaee.spec.ParamValueMetaData;
 import org.jboss.metadata.web.jboss.JBossWebMetaData;
+import org.jboss.metadata.web.jboss.ValveMetaData;
 import org.jboss.metadata.web.spec.LoginConfigMetaData;
+import org.keycloak.adapters.as7.KeycloakAuthenticatorValve;
 
 /**
  * Pass authentication data (keycloak.json) as a servlet context param so it can be read by the KeycloakServletExtension.
@@ -44,7 +46,7 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
     public static final String AUTH_DATA_PARAM_NAME = "org.keycloak.json.adapterConfig";
 
     public static final Phase PHASE = Phase.INSTALL;
-    // Seems wise to have this run after INSTALL_WAR_DEPLOYMENT
+    // needs to run before INSTALL_WAR_DEPLOYMENT so that valves are added.
     public static final int PRIORITY = Phase.INSTALL_WAR_DEPLOYMENT - 1;
 
     @Override
@@ -70,6 +72,18 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
             webMetaData = new JBossWebMetaData();
             warMetaData.setMergedJBossWebMetaData(webMetaData);
         }
+        List<ValveMetaData> valves = webMetaData.getValves();
+        if (valves == null) {
+            valves = new ArrayList<ValveMetaData>(1);
+            webMetaData.setValves(valves);
+        }
+        ValveMetaData valve = new ValveMetaData();
+        valve.setValveClass(KeycloakAuthenticatorValve.class.getName());
+        valve.setModule("org.keycloak.keycloak-as7-adapter");
+        log.info("******* adding Keycloak valve to: " + deploymentName);
+        valves.add(valve);
+
+        /*
         LoginConfigMetaData loginConfig = webMetaData.getLoginConfig();
         if (loginConfig == null) {
             loginConfig = new LoginConfigMetaData();
@@ -77,6 +91,8 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
         }
         loginConfig.setAuthMethod("KEYCLOAK");
         loginConfig.setRealmName(service.getRealmName(deploymentName));
+        */
+
     }
 
     private void addJSONData(String json, WarMetaData warMetaData) {
