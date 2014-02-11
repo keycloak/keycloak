@@ -16,7 +16,19 @@
         </ul>
     </div>
     <div id="content">
-        <a class="button primary" href="{{download}}" download="keycloak.json" type="submit">Download</a></br>
-        <textarea style="width: 100%;" rows="20" onclick="this.select()">{{installation | json}}</textarea>
+        <h2>Application Installation</h2>
+        <form class="form-horizontal" name="realmForm" novalidate>
+            <fieldset>
+                <div class="form-group">
+                    <div class="col-sm-12">
+                        <textarea class="form-control" rows="20" kc-select-action="click">{{installation | json}}</textarea>
+                    </div>
+                </div>
+            </fieldset>
+        </form>
+
+        <div class="pull-right form-actions">
+            <a class="btn btn-primary btn-lg" href="{{download}}" download="keycloak.json" type="submit">Download</a>
+        </div>
     </div>
 </div>

@@ -22,10 +22,10 @@
         <form class="form-horizontal" name="realmForm" novalidate>
             <fieldset>
                 <legend uncollapsed><span class="text">Realm Roles</span></legend>
-                <div class="form-group">
+                <div class="form-group col-sm-10">
                     <div class="controls changing-selectors">
                         <div class="select-title">
-                            <label for="available">Available Roles</label>
+                            <label class="control-label" for="available">Available Roles</label>
                             <select id="available" class="form-control" multiple size="5"
                                     ng-multiple="true"
                                     ng-model="selectedRealmRoles"
@@ -41,7 +41,7 @@
                             </button>
                         </div>
                         <div class="select-title">
-                            <label for="assigned">Assigned Roles</label>
+                            <label class="control-label" for="assigned">Assigned Roles</label>
                             <select id="assigned" class="form-control" multiple size=5
                                     ng-multiple="true"
                                     ng-model="selectedRealmMappings"
@@ -54,9 +54,9 @@
 
             <fieldset ng-show="applications.length > 0">
                 <legend collapsed><span class="text">Application Roles</span> </legend>
-                <div class="form-group input-select">
-                    <label for="applications">Application</label>
-                    <div class="input-group">
+                <div class="form-group input-select ">
+                    <label class="col-sm-2 control-label" for="applications">Application</label>
+                    <div class="input-group col-sm-4">
                         <div class="select-kc">
                             <select id="applications" name="applications" ng-change="changeApplication()" ng-model="targetApp" ng-options="a.name for a in (applications|remove:application:'id')">
                                 <option value="" selected> Select an Application </option>
@@ -64,10 +64,10 @@
                         </div>
                     </div>
                 </div>
-                <div class="form-group" ng-show="targetApp">
+                <div class="form-group col-sm-10" ng-show="targetApp">
                     <div class="controls changing-selectors application">
                         <div class="select-title">
-                            <label for="app-available">Available Roles</label>
+                            <label class="control-label" for="app-available">Available Roles</label>
                             <select id="app-available" class="form-control" multiple size="5"
                                     ng-multiple="true"
                                     ng-model="selectedApplicationRoles"
@@ -83,7 +83,7 @@
                             </button>
                         </div>
                         <div class="select-title">
-                            <label for="app-assigned">Assigned Roles</label>
+                            <label class="control-label" for="app-assigned">Assigned Roles</label>
                             <select id="app-assigned" class="form-control" multiple size=5
                                     ng-multiple="true"
                                     ng-model="selectedApplicationMappings"

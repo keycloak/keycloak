@@ -56,9 +56,20 @@
     <a id="idletimeout-resume" href="#">Click here to continue using this web page</a>.
 </div>
 
-
 <div class="feedback-aligner" data-ng-show="notification" data-ng-click="notification = null">
-    <div class="alert alert-{{notification.type}}"><strong>{{notification.header}}</strong> {{notification.message}}</div>
+    <div class="alert alert-{{notification.type}}">
+        <span class="pficon pficon-ok" ng-show="notification.type == 'success'"></span>
+        <span class="pficon pficon-info" ng-show="notification.type == 'info'"></span>
+        <span class="pficon-layered" ng-show="notification.type == 'danger'">
+            <span class="pficon pficon-error-octagon"></span>
+            <span class="pficon pficon-error-exclamation"></span>
+        </span>
+        <span class="pficon-layered" ng-show="notification.type == 'warning'">
+            <span class="pficon pficon-warning-triangle"></span>
+            <span class="pficon pficon-warning-exclamation"></span>
+        </span>
+        <strong>{{notification.header}}</strong> {{notification.message}}
+    </div>
 </div>
 
 <header class="navbar navbar-default navbar-pf navbar-main header">

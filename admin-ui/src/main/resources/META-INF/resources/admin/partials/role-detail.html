@@ -75,9 +75,13 @@
                                     ng-options="r.name for r in realmRoles">
                             </select>
                         </div>
-                        <div class="middle-buttons">
-                            <button type="submit" ng-click="addRealmRole()" tooltip="Move right" tooltip-placement="right"><span class="icon-arrow-right">Move right</span></button>
-                            <button type="submit" ng-click="deleteRealmRole()" tooltip="Move left" tooltip-placement="right"><span class="icon-arrow-left">Move left</span></button>
+                        <div class="middle-buttons kc-vertical">
+                            <button class="kc-button" type="submit" ng-click="addRealmRole()" tooltip="Move right" tooltip-placement="right">
+                                <span class="kc-icon-arrow-right">Move right</span>
+                            </button>
+                            <button class="kc-button" type="submit" ng-click="deleteRealmRole()" tooltip="Move left" tooltip-placement="right">
+                                <span class="kc-icon-arrow-left">Move left</span>
+                            </button>
                         </div>
                         <div class="select-title">
                             <label for="assigned">Assigned Roles</label>
@@ -113,9 +117,13 @@
                                     ng-options="r.name for r in applicationRoles">
                             </select>
                         </div>
-                        <div class="middle-buttons">
-                            <button type="submit" ng-click="addApplicationRole()" tooltip="Move right" tooltip-placement="right"><span class="icon-arrow-right">Move right</span></button>
-                            <button type="submit" ng-click="deleteApplicationRole()" tooltip="Move left" tooltip-placement="right"><span class="icon-arrow-left">Move left</span></button>
+                        <div class="middle-buttons kc-vertical">
+                            <button class="kc-button" type="submit" ng-click="addApplicationRole()" tooltip="Move right" tooltip-placement="right">
+                                <span class="kc-icon-arrow-right">Move right</span>
+                            </button>
+                            <button class="kc-button" type="submit" ng-click="deleteApplicationRole()" tooltip="Move left" tooltip-placement="right">
+                                <span class="kc-icon-arrow-left">Move left</span>
+                            </button>
                         </div>
                         <div class="select-title">
                             <label class="control-label" for="assigned-app">Assigned Roles</label>

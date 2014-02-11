@@ -13,13 +13,12 @@
                 <div class="form-group">
                     <label class="col-sm-2 control-label" for="publicKey">Public key</label>
 
-                    <div class="form-group">
-                        <textarea type="text" id="publicKey" name="publicKey" class="col-sm-9" rows="5"
+                    <div class="col-sm-10">
+                        <textarea type="text" id="publicKey" name="publicKey" class="form-control" rows="5"
                                   kc-select-action="click" readonly>{{realm.publicKey}}</textarea>
                     </div>
                 </div>
             </fieldset>
-            <br/>
             <div class="pull-right form-actions">
                 <button class="btn btn-primary btn-lg" type="submit" data-ng-click="generate()">Generate new keys</button>
             </div>

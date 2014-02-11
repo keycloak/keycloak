@@ -17,11 +17,12 @@ module.service('Dialog', function($dialog) {
             '<span>This action can\'t be undone.</span>';
 		var btns = [ {
 			result : 'cancel',
-			label : 'Cancel'
+			label : 'Cancel',
+            cssClass : 'btn btn-default'
 		}, {
 			result : 'ok',
 			label : 'Delete',
-			cssClass : 'destructive'
+			cssClass : 'btn btn-danger'
 		} ];
 
 		$dialog.messageBox(title, msg, btns).open().then(function(result) {
@@ -37,11 +38,12 @@ module.service('Dialog', function($dialog) {
             '<span>This action can\'t be undone.</span>';
         var btns = [ {
             result : 'cancel',
-            label : 'Cancel'
+            label : 'Cancel',
+            cssClass : 'btn btn-default'
         }, {
             result : 'ok',
             label : 'Generate new keys',
-            cssClass : 'destructive'
+            cssClass : 'btn btn-danger'
         } ];
 
         $dialog.messageBox(title, msg, btns).open().then(function(result) {
@@ -57,11 +59,12 @@ module.service('Dialog', function($dialog) {
             '<span>This action can\'t be undone.</span>';
         var btns = [ {
             result : 'cancel',
-            label : 'Cancel'
+            label : 'Cancel',
+            cssClass : 'btn btn-default'
         }, {
             result : 'ok',
             label : title,
-            cssClass : 'destructive'
+            cssClass : 'btn btn-danger'
         } ];
 
         $dialog.messageBox(title, msg, btns).open().then(function(result) {
@@ -117,11 +120,11 @@ module.factory('Notifications', function($rootScope, $timeout) {
 	};
 
 	notifications.error = function(message) {
-		notifications.message("error", "Error!", message);
+		notifications.message("danger", "Error!", message);
 	};
 
 	notifications.warn = function(message) {
-		notifications.message("warn", "Warning!", message);
+		notifications.message("warning", "Warning!", message);
 	};
 
 	return notifications;

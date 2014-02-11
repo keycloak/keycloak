@@ -187,3 +187,11 @@ table tfoot tr .table-nav span {
   display: inline-block;
   padding: 0 1.36363636363636em;
 }
+
+.kc-table-actions > * {
+    vertical-align: middle;
+}
+
+td .form-group {
+    margin-bottom: 0;
+}

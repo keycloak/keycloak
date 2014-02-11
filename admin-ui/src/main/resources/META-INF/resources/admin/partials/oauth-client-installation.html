@@ -7,7 +7,20 @@
         <li class="active"><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.id}}/installation">Installation</a></li>
     </ul>
     <div id="content">
-        <textarea style="width: 100%;" rows="20" onclick="this.select()">{{installation | json}}</textarea>
-        <a class="kc-button primary" href="{{download}}" download="keycloak.json" type="submit">Download</a>
+        <h2>OAuth Client Installation</h2>
+        <form class="form-horizontal" name="realmForm" novalidate>
+            <fieldset>
+                <div class="form-group">
+                    <div class="col-sm-12">
+                        <textarea class="form-control" rows="20" kc-select-action="click">{{installation | json}}</textarea>
+                    </div>
+                </div>
+            </fieldset>
+        </form>
+
+        <div class="pull-right form-actions">
+            <a class="btn btn-primary btn-lg" href="{{download}}" download="keycloak.json" type="submit">Download</a>
+        </div>
+
     </div>
 </div>

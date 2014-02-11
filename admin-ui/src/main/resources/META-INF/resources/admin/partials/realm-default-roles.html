@@ -8,13 +8,13 @@
             <li class="active">Registration</li>
         </ol>
         <h2><span>{{realm.realm}}</span> Registration Settings</h2>
-        <form name="realmForm" novalidate>
+        <form class="form-horizontal" name="realmForm" novalidate>
             <fieldset>
                 <legend uncollapsed><span class="text">Realm Default Roles</span> </legend>
                 <div class="form-group">
-                    <div class="controls changing-selectors">
+                    <div class="controls changing-selectors col-sm-10">
                         <div class="select-title">
-                            <label for="available">Available Roles</label>
+                            <label class="control-label" for="available">Available Roles</label>
                             <select id="available" class="form-control" multiple size="5"
                                     ng-multiple="true"
                                     ng-model="selectedRealmRoles"
@@ -30,7 +30,7 @@
                             </button>
                         </div>
                         <div class="select-title">
-                            <label for="assigned">Realm Default Roles</label>
+                            <label class="control-label" for="assigned">Realm Default Roles</label>
                             <select id="assigned" class="form-control" multiple size=5
                                     ng-multiple="true"
                                     ng-model="selectedRealmDefRoles"
@@ -44,8 +44,8 @@
             <fieldset ng-show="applications.length > 0">
                 <legend uncollapsed><span class="text">Application Default Roles</span> </legend>
                 <div class="form-group input-select">
-                    <label for="applications">Application</label>
-                    <div class="input-group">
+                    <label class="col-sm-2 control-label" for="applications">Application</label>
+                    <div class="col-sm-4">
                         <div class="select-kc">
                             <select id="applications" name="applications" ng-change="changeApplication()" ng-model="application" ng-options="a.name for a in applications">
                                 <option value="" selected> Select an Application...</option>
@@ -54,9 +54,9 @@
                     </div>
                 </div>
                 <div class="form-group" ng-show="application">
-                    <div class="controls changing-selectors application">
+                    <div class="controls changing-selectors application col-sm-10">
                         <div class="select-title">
-                            <label for="available-app">Available Roles</label>
+                            <label class="control-label" for="available-app">Available Roles</label>
                             <select id="available-app" class="form-control" multiple size="5"
                                     ng-multiple="true"
                                     ng-model="selectedAppRoles"
@@ -72,7 +72,7 @@
                             </button>
                         </div>
                         <div class="select-title">
-                            <label for="assigned-app">Assigned Default Roles</label>
+                            <label class="control-label" for="assigned-app">Assigned Default Roles</label>
                             <select id="assigned-app" class="form-control" multiple size=5
                                     ng-multiple="true"
                                     ng-model="selectedAppDefRoles"

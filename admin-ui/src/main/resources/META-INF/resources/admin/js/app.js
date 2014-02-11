@@ -702,13 +702,19 @@ module.directive('kcSave', function ($compile, Notifications) {
                 $scope.$apply(function() {
                     var form = elem.closest('form');
                     if (form && form.attr('name')) {
+                        var ngValid = form.find('.ng-valid');
                         if ($scope[form.attr('name')].$valid) {
-                            form.find('.ng-valid').removeClass('error');
+                            //ngValid.removeClass('error');
+                            ngValid.parent().removeClass('has-error');
                             $scope['save']();
                         } else {
                             Notifications.error("Missing or invalid field(s). Please verify the fields in red.")
-                            form.find('.ng-invalid').addClass('error');
-                            form.find('.ng-valid').removeClass('error');
+                            //ngValid.removeClass('error');
+                            ngValid.parent().removeClass('has-error');
+
+                            var ngInvalid = form.find('.ng-invalid');
+                            //ngInvalid.addClass('error');
+                            ngInvalid.parent().addClass('has-error');
                         }
                     }
                 });
@@ -763,7 +769,8 @@ module.directive('kcSelect', function ($compile, Notifications) {
         scope: {
             kcOptions: '=',
             kcModel: '=',
-            id: "="
+            id: "=",
+            kcPlaceholder: '@'
         },
         restrict: 'EA',
         replace: true,
@@ -865,93 +872,5 @@ module.filter('remove', function() {
 module.filter('capitalize', function() {
     return function(input) {
         return input.substring(0, 1).toUpperCase() + input.substring(1);
-    }
-});
-
-
-/*
- *   TODO - create directive for form controlls
- *  Would be used like this:
- *  <kc-form-control kc-changed="changed" kc-create="createRealm" kc-action-cancel="cancel" kc-action-delete="remove"></kc-form-control>
- */
-
-module.directive('kcFormControl', function () {
-    return {
-        scope: {
-            kcCreate: "=",
-            kcChanged: "=",
-            kcActionCancel: "&",
-            kcActionRemove: "&"
-        },
-        restrict: 'E',
-        replace: true,
-        templateUrl: "templates/kc-form-control-buttons.html"
-    }
-});
-
-module.directive('kcButtonSave', function ($compile, Notifications) {
-    return {
-        restrict: 'A',
-        replace: true,
-        link: function ($scope, elem, attr, ctrl) {
-            elem.addClass("btn btn-primary btn-lg");
-            elem.attr("type","submit");
-            elem.bind('click', function() {
-                $scope.$apply(function() {
-                    var form = elem.closest('form');
-                    if (form && form.attr('name')) {
-                        if ($scope[form.attr('name')].$valid) {
-                            form.find('.ng-valid').removeClass('error');
-                            $scope['save']();
-                        } else {
-                            Notifications.error("Missing or invalid field(s). Please verify the fields in red.")
-                            form.find('.ng-invalid').addClass('error');
-                            form.find('.ng-valid').removeClass('error');
-                        }
-                    }
-                });
-            })
-        }
-    }
-});
-
-module.directive('kcButtonDelete', function() {
-    return {
-        restrict: 'A',
-        compile: function(element, attrs){
-            element.addClass("btn btn-danger btn-lg");
-            element.attr("type","submit");
-        }
-    }
-});
-
-module.directive('kcButtonReset', function ($compile, Notifications) {
-    return {
-        restrict: 'A',
-        link: function ($scope, elem, attr, ctrl) {
-            elem.addClass("btn btn-default btn-lg");
-            elem.attr("type","submit");
-            elem.bind('click', function() {
-                $scope.$apply(function() {
-                    var form = elem.closest('form');
-                    if (form && form.attr('name')) {
-                        form.find('.ng-valid').removeClass('error');
-                        form.find('.ng-invalid').removeClass('error');
-                        $scope['reset']();
-                    }
-                })
-            })
-        }
-    }
-});
-
-module.directive('kcButtonCancel', function ($compile, Notifications) {
-    return {
-        restrict: 'A',
-        replace: true,
-        compile: function(element, attrs){
-            element.addClass("btn btn-default btn-lg");
-            element.attr("type","submit");
-        }
     }
 });

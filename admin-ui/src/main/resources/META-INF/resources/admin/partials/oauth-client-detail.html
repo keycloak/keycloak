@@ -35,37 +35,57 @@
                 <div class="form-group clearfix block">
                     <label class="col-sm-2 control-label" for="enabled">Enabled</label>
                     <div class="col-sm-4">
-                    <input ng-model="oauth.enabled" name="enabled" id="enabled" onoffswitch />
-                        </div>
+                        <input ng-model="oauth.enabled" name="enabled" id="enabled" onoffswitch />
+                    </div>
                 </div>
                 <div class="form-group">
                     <label class="col-sm-2 control-label" for="newWebOrigin">Web Origin</label>
                     <div class="col-sm-4">
-                        <div ng-repeat="webOrigin in oauth.webOrigins" class="item-deletable">
-                            <input  class="form-control" type="text" data-ng-class="{'input-below':!$first}"
-                                    name="webOrigin" id="webOrigin" data-ng-model="webOrigin" readonly />
-                            <button class="btn btn-danger" type="button" data-ng-click="deleteWebOrigin($index)">
-                                Delete</button>
+                        <div ng-repeat="webOrigin in oauth.webOrigins" class="kc-item-deletable row">
+                            <div class="col-sm-9">
+                                <input  class="form-control" type="text" data-ng-class="{'input-below':!$first}"
+                                        name="webOrigin" id="webOrigin" data-ng-model="webOrigin" readonly />
+                            </div>
+                            <div class="col-sm-2">
+                                <button class="btn btn-danger" type="button" data-ng-click="deleteWebOrigin($index)">
+                                    Delete</button>
+                            </div>
                         </div>
-                        <input  class="form-control" type="text" name="newWebOrigin" id="newWebOrigin"
-                               placeholder="New Web Origin..." data-ng-model="newWebOrigin"
-                               data-ng-class="{'input-below':oauth.webOrigins.length}" />
-                        <button  class="btn btn-primary" data-ng-click="addWebOrigin()" ng-show="newWebOrigin.length > 0">Add</button>
+                        <div class="row">
+                            <div class="col-sm-9">
+                                <input  class="form-control" type="text" name="newWebOrigin" id="newWebOrigin"
+                                        placeholder="New Web Origin..." data-ng-model="newWebOrigin"
+                                        data-ng-class="{'input-below':oauth.webOrigins.length}" />
+                            </div>
+                            <div class="col-sm-2">
+                                <button  class="btn btn-primary" data-ng-click="addWebOrigin()" ng-show="newWebOrigin.length > 0">Add</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="form-group">
                     <label class="col-sm-2 control-label" for="newRedirectUri">Redirect URI</label>
                     <div class="col-sm-4">
-                        <div ng-repeat="redirectUri in oauth.redirectUris" class="item-deletable">
-                            <input  class="form-control" type="text" data-ng-class="{'input-below':!$first}"
-                                    name="redirectUri" id="redirectUri" data-ng-model="redirectUri" readonly />
-                            <button class="btn btn-danger" type="button" data-ng-click="deleteRedirectUri($index)">
-                                Delete</button>
+                        <div ng-repeat="redirectUri in oauth.redirectUris" class="kc-item-deletable row">
+                            <div class="col-sm-9">
+                                <input  class="form-control" type="text" data-ng-class="{'input-below':!$first}"
+                                        name="redirectUri" id="redirectUri" data-ng-model="redirectUri" readonly />
+                            </div>
+                            <div class="col-sm-2">
+                                <button class="btn btn-danger" type="button" data-ng-click="deleteRedirectUri($index)">
+                                    Delete</button>
+                            </div>
                         </div>
-                        <input  class="form-control" type="text" name="newRedirectUri" id="newRedirectUri"
-                               placeholder="New Redirect URI..." data-ng-model="newRedirectUri"
-                               data-ng-class="{'input-below':oauth.redirectUris.length}" />
-                        <button class="btn btn-primary" data-ng-click="addRedirectUri()" ng-show="newRedirectUri.length > 0">Add</button>
+                        <div class="row">
+                            <div class="col-sm-9">
+                                <input  class="form-control" type="text" name="newRedirectUri" id="newRedirectUri"
+                                        placeholder="New Redirect URI..." data-ng-model="newRedirectUri"
+                                        data-ng-class="{'input-below':oauth.redirectUris.length}" />
+                            </div>
+                            <div class="col-sm-2">
+                                <button class="btn btn-primary" data-ng-click="addRedirectUri()" ng-show="newRedirectUri.length > 0">Add</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </fieldset>

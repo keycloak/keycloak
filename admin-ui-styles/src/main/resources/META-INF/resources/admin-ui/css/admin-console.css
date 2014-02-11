@@ -2,7 +2,7 @@ body {
     background-color: #F9F9F9;
 }
 
-#content {
+#content, #content-area {
     background-color: #FFFFFF;
 }
 
@@ -444,7 +444,7 @@ legend .kc-icon-collapse {
     color: #333333;
     display: inline-block;
     font-family: "Open Sans",sans-serif;
-    height: 2.6em;
+    height: 2.4em;
     min-width: 75px;
     overflow: hidden;
     padding: 0 0.9em 0 0;
@@ -495,6 +495,10 @@ legend .kc-icon-collapse {
 
 .kc-multiline input {
     margin-bottom: .35em;
+}
+
+.kc-item-deletable {
+    margin-bottom: 0.5em;
 }
 
 /* Left-Rigth selector form */
@@ -610,5 +614,51 @@ legend .kc-icon-collapse {
 /* Select2 fix for zero-width when nothing is selected */
 .select2-container-multi .select2-choices {
     min-width: 22em;
+}
+
+/* Alerts */
+
+.feedback-aligner {
+    position: fixed;
+    top: 1.5em;
+    text-align: center;
+    width: 100%;
+    height: 0;
+    z-index: 100;
+}
+
+.alert {
+    background-position: 1.27273em center;
+    background-repeat: no-repeat;
+    border-radius: 2px;
+    border-width: 1px;
+    color: #4D5258;
+    display: inline-block;
+    font-size: 1.1em;
+    line-height: 1.4em;
+    margin: 0;
+    padding: 0.909091em 3.63636em;
+    position: relative;
+    text-align: left;
+}
+.alert.alert-success {
+    background-color: #E4F1E1;
+    --background-image: url("img/feedback-success-sign.png");
+    border-color: #4B9E39;
+}
+.alert.alert-danger {
+    background-color: #F8E7E7;
+    --background-image: url("img/feedback-error-sign.png");
+    border-color: #B91415;
+}
+.alert.alert-warning {
+    background-color: #FEF1E9;
+    --background-image: url("img/feedback-warning-sign.png");
+    border-color: #F17528;
+}
+.alert.alert-info {
+    background-color: #E4F3FA;
+    --background-image: url("img/feedback-info-sign.png");
+    border-color: #5994B2;
 }
 

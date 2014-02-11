@@ -11,8 +11,6 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, ro
     $scope.selectedApplicationMappings = [];
     $scope.applicationMappings = [];
 
-
-
     $scope.realmMappings = RealmRoleMapping.query({realm : realm.realm, userId : user.username}, function(){
         for (var i = 0; i < $scope.realmMappings.length; i++) {
             var role = $scope.realmMappings[i];

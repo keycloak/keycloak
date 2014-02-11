@@ -10,7 +10,6 @@
         <h2 class="pull-left" data-ng-show="createRealm">Add Realm</h2>
         <h2 data-ng-hide="createRealm"><span>{{realm.realm}}</span> General Settings</h2>
         <p class="subtitle" data-ng-show="createRealm"><span class="required">*</span> Required fields</p>
-        <kc-test></kc-test>
         <form class="form-horizontal" name="realmForm" novalidate>
             <fieldset>
                 <legend uncollapsed class="aj-collapse open"><span class="text">Required Settings</span></legend>
@@ -37,7 +36,7 @@
                     </div>
                 </div>
                 <div class="form-group" data-ng-show="realm.social">
-                    <label for="updateProfileOnInitialSocialLogin" class="col-sm-2 control-label">Update profile on first social login</label>
+                    <label class="col-sm-2 control-label" for="updateProfileOnInitialSocialLogin">Update profile on first social login</label>
                     <div class="col-sm-4">
                         <input ng-model="realm.updateProfileOnInitialSocialLogin" name="updateProfileOnInitialSocialLogin" id="updateProfileOnInitialSocialLogin" onoffswitch />
                     </div>
@@ -73,6 +72,7 @@
                     <label class="col-sm-2 control-label" for="loginTheme">Login Theme</label>
                     <div class="col-sm-4">
                         <select kc-select id="loginTheme"
+                                data-kc-placeholder="Select one..."
                                 data-kc-model="realm.loginTheme"
                                 data-kc-options="serverInfo.themes.login">
                         </select>
@@ -82,6 +82,7 @@
                     <label class="col-sm-2 control-label" for="accountTheme">Account Theme</label>
                     <div class="col-sm-4">
                         <select kc-select id="accountTheme"
+                                data-kc-placeholder="Select one..."
                                 data-kc-model="realm.accountTheme"
                                 data-kc-options="serverInfo.themes.account">
                         </select>

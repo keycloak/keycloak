@@ -20,7 +20,7 @@
         <form class="form-horizontal" name="realmForm" novalidate>
             <fieldset>
                 <legend uncollapsed><span class="text">Realm Roles</span></legend>
-                <div class="form-group">
+                <div class="form-group col-sm-10">
                     <div class="controls changing-selectors">
                         <div class="select-title">
                             <label class="control-label" for="available">Available Roles</label>
@@ -30,9 +30,13 @@
                                     ng-options="r.name for r in realmRoles">
                             </select>
                         </div>
-                        <div class="middle-buttons">
-                            <button type="submit" ng-click="addRealmRole()" tooltip="Move right" tooltip-placement="right"><span class="kc-icon-arrow-right">Move right</span></button>
-                            <button type="submit" ng-click="deleteRealmRole()" tooltip="Move left" tooltip-placement="right"><span class="kc-icon-arrow-left">Move left</span></button>
+                        <div class="middle-buttons kc-vertical">
+                            <button class="kc-button" type="submit" ng-click="addRealmRole()" tooltip="Move right" tooltip-placement="right">
+                                <span class="kc-icon-arrow-right">Move right</span>
+                            </button>
+                            <button class="kc-button" type="submit" ng-click="deleteRealmRole()" tooltip="Move left" tooltip-placement="right">
+                                <span class="kc-icon-arrow-left">Move left</span>
+                            </button>
                         </div>
                         <div class="select-title">
                             <label class="control-label" for="assigned">Assigned Roles</label>
@@ -49,8 +53,8 @@
             <fieldset ng-show="applications.length > 0">
                 <legend collapsed><span class="text">Application Roles</span> </legend>
                 <div class="form-group input-select">
-                    <label class="control-label" for="applications">Application</label>
-                    <div class="input-group">
+                    <label class="control-label col-sm-2" for="applications">Application</label>
+                    <div class="form-group col-sm-4">
                         <div class="select-kc">
                             <select id="applications" name="applications" ng-change="changeApplication()" ng-model="targetApp" ng-options="a.name for a in (applications)">
                                 <option value="" selected> Select an Application </option>
@@ -58,7 +62,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="form-group" ng-show="targetApp">
+                <div class="form-group col-sm-10" ng-show="targetApp">
                     <div class="controls changing-selectors application">
                         <div class="select-title">
                             <label class="control-label" for="app-available">Available Roles</label>
@@ -68,9 +72,13 @@
                                     ng-options="r.name for r in applicationRoles">
                             </select>
                         </div>
-                        <div class="middle-buttons">
-                            <button type="submit" ng-click="addApplicationRole()" tooltip="Move right" tooltip-placement="right"><span class="icon-arrow-right">Move right</span></button>
-                            <button type="submit" ng-click="deleteApplicationRole()" tooltip="Move left" tooltip-placement="right"><span class="icon-arrow-left">Move left</span></button>
+                        <div class="middle-buttons kc-vertical">
+                            <button class="kc-button" type="submit" ng-click="addApplicationRole()" tooltip="Move right" tooltip-placement="right">
+                                <span class="kc-icon-arrow-right">Move right</span>
+                            </button>
+                            <button class="kc-button" type="submit" ng-click="deleteApplicationRole()" tooltip="Move left" tooltip-placement="right">
+                                <span class="kc-icon-arrow-left">Move left</span>
+                            </button>
                         </div>
                         <div class="select-title">
                             <label class="control-label" for="app-assigned">Assigned Roles</label>

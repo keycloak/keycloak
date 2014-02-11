@@ -1,6 +1,7 @@
 <div class="dropdown">
     <button class="btn btn-default dropdown-toggle" type="button" id="{{id}}" data-toggle="dropdown">
-        {{kcModel}}
+        <span ng-show="kcModel">{{kcModel}}</span>
+        <span ng-hide="kcModel" class="control-label">{{kcPlaceholder}}</span>
         <span class="caret"></span>
     </button>
     <ul class="dropdown-menu" role="menu">
