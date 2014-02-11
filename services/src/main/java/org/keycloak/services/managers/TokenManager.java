@@ -3,9 +3,11 @@ package org.keycloak.services.managers;
 import org.jboss.resteasy.logging.Logger;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.SkeletonKeyScope;
 import org.keycloak.representations.SkeletonKeyToken;
 import org.keycloak.util.Base64Url;
@@ -14,6 +16,7 @@ import org.keycloak.util.JsonSerialization;
 import javax.ws.rs.core.MultivaluedMap;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -132,7 +135,7 @@ public class TokenManager {
 
     protected SkeletonKeyToken initToken(RealmModel realm, UserModel client, UserModel user) {
         SkeletonKeyToken token = new SkeletonKeyToken();
-        token.id(RealmManager.generateId());
+        token.id(KeycloakModelUtils.generateId());
         token.principal(user.getLoginName());
         token.audience(realm.getName());
         token.issuedNow();
@@ -219,7 +222,7 @@ public class TokenManager {
 
     public SkeletonKeyToken createAccessToken(RealmModel realm, UserModel user) {
         SkeletonKeyToken token = new SkeletonKeyToken();
-        token.id(RealmManager.generateId());
+        token.id(KeycloakModelUtils.generateId());
         token.issuedNow();
         token.principal(user.getLoginName());
         token.audience(realm.getName());

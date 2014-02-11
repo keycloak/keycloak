@@ -2,28 +2,27 @@ package org.keycloak.models.mongo.keycloak.adapters;
 
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.mongo.api.NoSQL;
-import org.keycloak.models.mongo.keycloak.data.OAuthClientData;
-import org.keycloak.models.mongo.keycloak.data.UserData;
+import org.keycloak.models.mongo.api.AbstractMongoIdentifiableEntity;
+import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
+import org.keycloak.models.mongo.keycloak.entities.OAuthClientEntity;
+import org.keycloak.models.mongo.keycloak.entities.UserEntity;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class OAuthClientAdapter implements OAuthClientModel {
+public class OAuthClientAdapter extends AbstractAdapter implements OAuthClientModel {
 
-    private final OAuthClientData delegate;
+    private final OAuthClientEntity delegate;
     private UserAdapter oauthAgent;
-    private final NoSQL noSQL;
 
-    public OAuthClientAdapter(OAuthClientData oauthClientData, UserAdapter oauthAgent, NoSQL noSQL) {
-        this.delegate = oauthClientData;
+    public OAuthClientAdapter(OAuthClientEntity oauthClientEntity, UserAdapter oauthAgent, MongoStoreInvocationContext invContext) {
+        super(invContext);
+        this.delegate = oauthClientEntity;
         this.oauthAgent = oauthAgent;
-        this.noSQL = noSQL;
     }
 
-    public OAuthClientAdapter(OAuthClientData oauthClientData, NoSQL noSQL) {
-        this.delegate = oauthClientData;
-        this.noSQL = noSQL;
+    public OAuthClientAdapter(OAuthClientEntity oauthClientEntity, MongoStoreInvocationContext invContext) {
+        this(oauthClientEntity, null, invContext);
     }
 
     @Override
@@ -35,10 +34,14 @@ public class OAuthClientAdapter implements OAuthClientModel {
     public UserModel getOAuthAgent() {
         // This is not thread-safe. Assumption is that OAuthClientAdapter instance is per-client object
         if (oauthAgent == null) {
-            UserData user = noSQL.loadObject(UserData.class, delegate.getOauthAgentId());
-            oauthAgent = user!=null ? new UserAdapter(user, noSQL) : null;
+            UserEntity user = getMongoStore().loadEntity(UserEntity.class, delegate.getOauthAgentId(), invocationContext);
+            oauthAgent = user!=null ? new UserAdapter(user, invocationContext) : null;
         }
         return oauthAgent;
     }
 
+    @Override
+    public AbstractMongoIdentifiableEntity getMongoEntity() {
+        return delegate;
+    }
 }

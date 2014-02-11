@@ -1,63 +1,61 @@
 package org.keycloak.models.mongo.keycloak.adapters;
 
-import org.bouncycastle.openssl.PEMWriter;
-import org.keycloak.PemUtils;
+import com.mongodb.DBObject;
+import com.mongodb.QueryBuilder;
+import org.jboss.logging.Logger;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.OAuthClientModel;
+import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.mongo.api.NoSQL;
-import org.keycloak.models.mongo.api.query.NoSQLQuery;
-import org.keycloak.models.mongo.api.query.NoSQLQueryBuilder;
-import org.keycloak.models.mongo.keycloak.credentials.PasswordCredentialHandler;
-import org.keycloak.models.mongo.keycloak.credentials.TOTPCredentialHandler;
-import org.keycloak.models.mongo.keycloak.data.ApplicationData;
-import org.keycloak.models.mongo.keycloak.data.OAuthClientData;
-import org.keycloak.models.mongo.keycloak.data.RealmData;
-import org.keycloak.models.mongo.keycloak.data.RequiredCredentialData;
-import org.keycloak.models.mongo.keycloak.data.RoleData;
-import org.keycloak.models.mongo.keycloak.data.SocialLinkData;
-import org.keycloak.models.mongo.keycloak.data.UserData;
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.picketlink.idm.credential.Credentials;
+import org.keycloak.models.mongo.api.AbstractMongoIdentifiableEntity;
+import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
+import org.keycloak.models.mongo.keycloak.entities.ApplicationEntity;
+import org.keycloak.models.mongo.keycloak.entities.CredentialEntity;
+import org.keycloak.models.mongo.keycloak.entities.OAuthClientEntity;
+import org.keycloak.models.mongo.keycloak.entities.RealmEntity;
+import org.keycloak.models.mongo.keycloak.entities.RequiredCredentialEntity;
+import org.keycloak.models.mongo.keycloak.entities.RoleEntity;
+import org.keycloak.models.mongo.keycloak.entities.SocialLinkEntity;
+import org.keycloak.models.mongo.keycloak.entities.UserEntity;
+import org.keycloak.models.mongo.utils.MongoModelUtils;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
+import org.keycloak.models.utils.TimeBasedOTP;
 
-import java.io.IOException;
-import java.io.StringWriter;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class RealmAdapter implements RealmModel {
+public class RealmAdapter extends AbstractAdapter implements RealmModel {
 
-    private final RealmData realm;
-    private final NoSQL noSQL;
+    private static final Logger logger = Logger.getLogger(RealmAdapter.class);
+
+    private final RealmEntity realm;
 
     protected volatile transient PublicKey publicKey;
     protected volatile transient PrivateKey privateKey;
 
-    // TODO: likely shouldn't be static. And ATM, just empty map is passed -> It's not possible to configure stuff like PasswordEncoder etc.
-    private static PasswordCredentialHandler passwordCredentialHandler = new PasswordCredentialHandler(new HashMap<String, Object>());
-    private static TOTPCredentialHandler totpCredentialHandler = new TOTPCredentialHandler(new HashMap<String, Object>());
+    private volatile transient PasswordPolicy passwordPolicy;
 
-    public RealmAdapter(RealmData realmData, NoSQL noSQL) {
-        this.realm = realmData;
-        this.noSQL = noSQL;
-    }
-
-    protected String getOid() {
-        return realm.getOid();
+    public RealmAdapter(RealmEntity realmEntity, MongoStoreInvocationContext invocationContext) {
+        super(invocationContext);
+        this.realm = realmEntity;
     }
 
     @Override
@@ -88,28 +86,6 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public boolean isSocial() {
-        return realm.isSocial();
-    }
-
-    @Override
-    public void setSocial(boolean social) {
-        realm.setSocial(social);
-        updateRealm();
-    }
-
-    @Override
-    public boolean isAutomaticRegistrationAfterSocialLogin() {
-        return realm.isAutomaticRegistrationAfterSocialLogin();
-    }
-
-    @Override
-    public void setAutomaticRegistrationAfterSocialLogin(boolean automaticRegistrationAfterSocialLogin) {
-        realm.setAutomaticRegistrationAfterSocialLogin(automaticRegistrationAfterSocialLogin);
-        updateRealm();
-    }
-
-    @Override
     public boolean isSslNotRequired() {
         return realm.isSslNotRequired();
     }
@@ -117,17 +93,6 @@ public class RealmAdapter implements RealmModel {
     @Override
     public void setSslNotRequired(boolean sslNotRequired) {
         realm.setSslNotRequired(sslNotRequired);
-        updateRealm();
-    }
-
-    @Override
-    public boolean isCookieLoginAllowed() {
-        return realm.isCookieLoginAllowed();
-    }
-
-    @Override
-    public void setCookieLoginAllowed(boolean cookieLoginAllowed) {
-        realm.setCookieLoginAllowed(cookieLoginAllowed);
         updateRealm();
     }
 
@@ -161,6 +126,43 @@ public class RealmAdapter implements RealmModel {
     @Override
     public void setResetPasswordAllowed(boolean resetPassword) {
         realm.setResetPasswordAllowed(resetPassword);
+        updateRealm();
+    }
+
+    @Override
+    public boolean isSocial() {
+        return realm.isSocial();
+    }
+
+    @Override
+    public void setSocial(boolean social) {
+        realm.setSocial(social);
+        updateRealm();
+    }
+
+    @Override
+    public boolean isUpdateProfileOnInitialSocialLogin() {
+        return realm.isUpdateProfileOnInitialSocialLogin();
+    }
+
+    @Override
+    public void setUpdateProfileOnInitialSocialLogin(boolean updateProfileOnInitialSocialLogin) {
+        realm.setUpdateProfileOnInitialSocialLogin(updateProfileOnInitialSocialLogin);
+        updateRealm();
+    }
+
+    @Override
+    public PasswordPolicy getPasswordPolicy() {
+        if (passwordPolicy == null) {
+            passwordPolicy = new PasswordPolicy(realm.getPasswordPolicy());
+        }
+        return passwordPolicy;
+    }
+
+    @Override
+    public void setPasswordPolicy(PasswordPolicy policy) {
+        this.passwordPolicy = policy;
+        realm.setPasswordPolicy(policy.toString());
         updateRealm();
     }
 
@@ -224,197 +226,238 @@ public class RealmAdapter implements RealmModel {
     @Override
     public PublicKey getPublicKey() {
         if (publicKey != null) return publicKey;
-        String pem = getPublicKeyPem();
-        if (pem != null) {
-            try {
-                publicKey = PemUtils.decodePublicKey(pem);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
+        publicKey = KeycloakModelUtils.getPublicKey(getPublicKeyPem());
         return publicKey;
     }
 
     @Override
     public void setPublicKey(PublicKey publicKey) {
         this.publicKey = publicKey;
-        StringWriter writer = new StringWriter();
-        PEMWriter pemWriter = new PEMWriter(writer);
-        try {
-            pemWriter.writeObject(publicKey);
-            pemWriter.flush();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        String s = writer.toString();
-        setPublicKeyPem(PemUtils.removeBeginEnd(s));
+        String publicKeyPem = KeycloakModelUtils.getPemFromKey(publicKey);
+        setPublicKeyPem(publicKeyPem);
     }
 
     @Override
     public PrivateKey getPrivateKey() {
         if (privateKey != null) return privateKey;
-        String pem = getPrivateKeyPem();
-        if (pem != null) {
-            try {
-                privateKey = PemUtils.decodePrivateKey(pem);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
+        privateKey = KeycloakModelUtils.getPrivateKey(getPrivateKeyPem());
         return privateKey;
     }
 
     @Override
     public void setPrivateKey(PrivateKey privateKey) {
         this.privateKey = privateKey;
-        StringWriter writer = new StringWriter();
-        PEMWriter pemWriter = new PEMWriter(writer);
-        try {
-            pemWriter.writeObject(privateKey);
-            pemWriter.flush();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        String s = writer.toString();
-        setPrivateKeyPem(PemUtils.removeBeginEnd(s));
+        String privateKeyPem = KeycloakModelUtils.getPemFromKey(privateKey);
+        setPrivateKeyPem(privateKeyPem);
+    }
+
+    @Override
+    public String getLoginTheme() {
+        return realm.getLoginTheme();
+    }
+
+    @Override
+    public void setLoginTheme(String name) {
+        realm.setLoginTheme(name);
+        updateRealm();
+    }
+
+    @Override
+    public String getAccountTheme() {
+        return realm.getAccountTheme();
+    }
+
+    @Override
+    public void setAccountTheme(String name) {
+        realm.setAccountTheme(name);
+        updateRealm();
     }
 
     @Override
     public UserAdapter getUser(String name) {
-        NoSQLQuery query = noSQL.createQueryBuilder()
-                .andCondition("loginName", name)
-                .andCondition("realmId", getOid())
-                .build();
-        UserData user = noSQL.loadSingleObject(UserData.class, query);
+        DBObject query = new QueryBuilder()
+                .and("loginName").is(name)
+                .and("realmId").is(getId())
+                .get();
+        UserEntity user = getMongoStore().loadSingleEntity(UserEntity.class, query, invocationContext);
 
         if (user == null) {
             return null;
         } else {
-            return new UserAdapter(user, noSQL);
+            return new UserAdapter(user, invocationContext);
+        }
+    }
+
+    @Override
+    public UserModel getUserByEmail(String email) {
+        DBObject query = new QueryBuilder()
+                .and("email").is(email)
+                .and("realmId").is(getId())
+                .get();
+        UserEntity user = getMongoStore().loadSingleEntity(UserEntity.class, query, invocationContext);
+
+        if (user == null) {
+            return null;
+        } else {
+            return new UserAdapter(user, invocationContext);
         }
     }
 
     @Override
     public UserAdapter addUser(String username) {
+        UserAdapter userModel = addUserEntity(username);
+
+        for (String r : getDefaultRoles()) {
+            grantRole(userModel, getRole(r));
+        }
+
+        for (ApplicationModel application : getApplications()) {
+            for (String r : application.getDefaultRoles()) {
+                grantRole(userModel, application.getRole(r));
+            }
+        }
+
+        return userModel;
+    }
+
+    // Add just user entity without defaultRoles
+    protected UserAdapter addUserEntity(String username) {
         if (getUser(username) != null) {
             throw new IllegalArgumentException("User " + username + " already exists");
         }
 
-        UserData userData = new UserData();
-        userData.setLoginName(username);
-        userData.setEnabled(true);
-        userData.setRealmId(getOid());
+        UserEntity userEntity = new UserEntity();
+        userEntity.setLoginName(username);
+        userEntity.setEnabled(true);
+        userEntity.setRealmId(getId());
 
-        noSQL.saveObject(userData);
-        return new UserAdapter(userData, noSQL);
+        getMongoStore().insertEntity(userEntity, invocationContext);
+        return new UserAdapter(userEntity, invocationContext);
     }
 
-    // This method doesn't exists on interface actually
-    public void removeUser(String name) {
-        NoSQLQuery query = noSQL.createQueryBuilder()
-                .andCondition("loginName", name)
-                .andCondition("realmId", getOid())
-                .build();
-        noSQL.removeObjects(UserData.class, query);
+    @Override
+    public boolean removeUser(String name) {
+        DBObject query = new QueryBuilder()
+                .and("loginName").is(name)
+                .and("realmId").is(getId())
+                .get();
+        return getMongoStore().removeEntities(UserEntity.class, query, invocationContext);
     }
 
     @Override
     public RoleAdapter getRole(String name) {
-        NoSQLQuery query = noSQL.createQueryBuilder()
-                .andCondition("name", name)
-                .andCondition("realmId", getOid())
-                .build();
-        RoleData role = noSQL.loadSingleObject(RoleData.class, query);
+        DBObject query = new QueryBuilder()
+                .and("name").is(name)
+                .and("realmId").is(getId())
+                .get();
+        RoleEntity role = getMongoStore().loadSingleEntity(RoleEntity.class, query, invocationContext);
         if (role == null) {
             return null;
         } else {
-            return new RoleAdapter(role, noSQL);
+            return new RoleAdapter(role, this, invocationContext);
         }
     }
 
     @Override
     public RoleModel addRole(String name) {
-        if (getRole(name) != null) {
-            throw new IllegalArgumentException("Role " + name + " already exists");
+        RoleAdapter role = getRole(name);
+        if (role != null) {
+            // Compatibility with JPA model
+            return role;
+            // throw new IllegalArgumentException("Role " + name + " already exists");
         }
 
-        RoleData roleData = new RoleData();
-        roleData.setName(name);
-        roleData.setRealmId(getOid());
+        RoleEntity roleEntity = new RoleEntity();
+        roleEntity.setName(name);
+        roleEntity.setRealmId(getId());
 
-        noSQL.saveObject(roleData);
-        return new RoleAdapter(roleData, noSQL);
+        getMongoStore().insertEntity(roleEntity, invocationContext);
+        return new RoleAdapter(roleEntity, this, invocationContext);
     }
 
     @Override
-    public List<RoleModel> getRoles() {
-        NoSQLQuery query = noSQL.createQueryBuilder()
-                .andCondition("realmId", getOid())
-                .build();
-        List<RoleData> roles = noSQL.loadObjects(RoleData.class, query);
+    public boolean removeRoleById(String id) {
+        return getMongoStore().removeEntity(RoleEntity.class, id, invocationContext);
+    }
 
-        List<RoleModel> result = new ArrayList<RoleModel>();
-        for (RoleData role : roles) {
-            result.add(new RoleAdapter(role, noSQL));
+    @Override
+    public Set<RoleModel> getRoles() {
+        DBObject query = new QueryBuilder()
+                .and("realmId").is(getId())
+                .get();
+        List<RoleEntity> roles = getMongoStore().loadEntities(RoleEntity.class, query, invocationContext);
+
+        Set<RoleModel> result = new HashSet<RoleModel>();
+
+        if (roles == null) return result;
+        for (RoleEntity role : roles) {
+            result.add(new RoleAdapter(role, this, invocationContext));
         }
 
         return result;
     }
 
     @Override
-    public List<RoleModel> getDefaultRoles() {
-        List<String> defaultRoles = realm.getDefaultRoles();
-
-        NoSQLQuery query = noSQL.createQueryBuilder()
-                .inCondition("_id", defaultRoles)
-                .build();
-        List<RoleData> defaultRolesData = noSQL.loadObjects(RoleData.class, query);
-
-        List<RoleModel> defaultRoleModels = new ArrayList<RoleModel>();
-        for (RoleData roleData : defaultRolesData) {
-            defaultRoleModels.add(new RoleAdapter(roleData, noSQL));
+    public RoleModel getRoleById(String id) {
+        RoleEntity role = getMongoStore().loadEntity(RoleEntity.class, id, invocationContext);
+        if (role == null) {
+            return null;
+        } else {
+            return new RoleAdapter(role, this, invocationContext);
         }
-        return defaultRoleModels;
+    }
+
+    @Override
+    public List<String> getDefaultRoles() {
+        return realm.getDefaultRoles();
     }
 
     @Override
     public void addDefaultRole(String name) {
         RoleModel role = getRole(name);
         if (role == null) {
-            role = addRole(name);
+            addRole(name);
         }
 
-        noSQL.pushItemToList(realm, "defaultRoles", role.getId());
+        getMongoStore().pushItemToList(realm, "defaultRoles", name, true, invocationContext);
     }
 
     @Override
     public void updateDefaultRoles(String[] defaultRoles) {
-        // defaultRoles is array with names of roles. So we need to convert to array of ids
-        List<String> roleIds = new ArrayList<String>();
+        List<String> roleNames = new ArrayList<String>();
         for (String roleName : defaultRoles) {
             RoleModel role = getRole(roleName);
             if (role == null) {
-                role = addRole(roleName);
+                addRole(roleName);
             }
 
-            roleIds.add(role.getId());
+            roleNames.add(roleName);
         }
 
-        realm.setDefaultRoles(roleIds);
+        realm.setDefaultRoles(roleNames);
         updateRealm();
     }
 
     @Override
     public ApplicationModel getApplicationById(String id) {
-        ApplicationData appData = noSQL.loadObject(ApplicationData.class, id);
+        ApplicationEntity appData = getMongoStore().loadEntity(ApplicationEntity.class, id, invocationContext);
 
         // Check if application belongs to this realm
-        if (appData == null || !getOid().equals(appData.getRealmId())) {
+        if (appData == null || !getId().equals(appData.getRealmId())) {
             return null;
         }
 
-        ApplicationModel model = new ApplicationAdapter(appData, noSQL);
-        return model;
+        return new ApplicationAdapter(appData, invocationContext);
+    }
+
+    @Override
+    public ApplicationModel getApplicationByName(String name) {
+        DBObject query = new QueryBuilder()
+                .and("realmId").is(getId())
+                .and("name").is(name)
+                .get();
+        ApplicationEntity appEntity = getMongoStore().loadSingleEntity(ApplicationEntity.class, query, invocationContext);
+        return appEntity==null ? null : new ApplicationAdapter(appEntity, invocationContext);
     }
 
     @Override
@@ -428,356 +471,355 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public List<ApplicationModel> getApplications() {
-        NoSQLQuery query = noSQL.createQueryBuilder()
-                .andCondition("realmId", getOid())
-                .build();
-        List<ApplicationData> appDatas = noSQL.loadObjects(ApplicationData.class, query);
+        DBObject query = new QueryBuilder()
+                .and("realmId").is(getId())
+                .get();
+        List<ApplicationEntity> appDatas = getMongoStore().loadEntities(ApplicationEntity.class, query, invocationContext);
 
         List<ApplicationModel> result = new ArrayList<ApplicationModel>();
-        for (ApplicationData appData : appDatas) {
-            result.add(new ApplicationAdapter(appData, noSQL));
+        for (ApplicationEntity appData : appDatas) {
+            result.add(new ApplicationAdapter(appData, invocationContext));
         }
         return result;
     }
 
     @Override
     public ApplicationModel addApplication(String name) {
-        UserAdapter resourceUser = addUser(name);
+        UserAdapter resourceUser = addUserEntity(name);
 
-        ApplicationData appData = new ApplicationData();
+        ApplicationEntity appData = new ApplicationEntity();
         appData.setName(name);
-        appData.setRealmId(getOid());
+        appData.setRealmId(getId());
+        appData.setEnabled(true);
         appData.setResourceUserId(resourceUser.getUser().getId());
-        noSQL.saveObject(appData);
+        getMongoStore().insertEntity(appData, invocationContext);
 
-        ApplicationModel resource = new ApplicationAdapter(appData, noSQL);
-        return resource;
+        return new ApplicationAdapter(appData, resourceUser, invocationContext);
+    }
+
+    @Override
+    public boolean removeApplication(String id) {
+        return getMongoStore().removeEntity(ApplicationEntity.class, id, invocationContext);
     }
 
     @Override
     public boolean hasRole(UserModel user, RoleModel role) {
-        UserData userData = ((UserAdapter)user).getUser();
+        Set<RoleModel> roles = getRoleMappings(user);
+        if (roles.contains(role)) return true;
 
-        List<String> roleIds = userData.getRoleIds();
-        String roleId = role.getId();
-        if (roleIds != null) {
-            for (String currentId : roleIds) {
-                if (roleId.equals(currentId)) {
-                    return true;
-                }
-            }
+        for (RoleModel mapping : roles) {
+            if (mapping.hasRole(role)) return true;
         }
         return false;
     }
 
     @Override
     public void grantRole(UserModel user, RoleModel role) {
-        UserData userData = ((UserAdapter)user).getUser();
-        noSQL.pushItemToList(userData, "roleIds", role.getId());
+        UserEntity userEntity = ((UserAdapter)user).getUser();
+        getMongoStore().pushItemToList(userEntity, "roleIds", role.getId(), true, invocationContext);
     }
 
     @Override
-    public List<RoleModel> getRoleMappings(UserModel user) {
-        List<RoleModel> result = new ArrayList<RoleModel>();
-        List<RoleData> roles = ApplicationAdapter.getAllRolesOfUser(user, noSQL);
-        // TODO: Maybe improve as currently we need to obtain all roles and then filter programmatically...
-        for (RoleData role : roles) {
-            if (getOid().equals(role.getRealmId())) {
-                result.add(new RoleAdapter(role, noSQL));
+    public Set<RoleModel> getRoleMappings(UserModel user) {
+        Set<RoleModel> result = new HashSet<RoleModel>();
+        List<RoleEntity> roles = MongoModelUtils.getAllRolesOfUser(user, invocationContext);
+
+        for (RoleEntity role : roles) {
+            if (getId().equals(role.getRealmId())) {
+                result.add(new RoleAdapter(role, this, invocationContext));
+            } else {
+                // Likely applicationRole, but we don't have this application yet
+                result.add(new RoleAdapter(role, invocationContext));
             }
         }
         return result;
     }
 
     @Override
-    public Set<String> getRoleMappingValues(UserModel user) {
-        Set<String> result = new HashSet<String>();
-        List<RoleData> roles = ApplicationAdapter.getAllRolesOfUser(user, noSQL);
-        // TODO: Maybe improve as currently we need to obtain all roles and then filter programmatically...
-        for (RoleData role : roles) {
-            if (getOid().equals(role.getRealmId())) {
-                result.add(role.getName());
+    public Set<RoleModel> getRealmRoleMappings(UserModel user) {
+        Set<RoleModel> allRoles = getRoleMappings(user);
+
+        // Filter to retrieve just realm roles TODO: Maybe improve to avoid filter programmatically... Maybe have separate fields for realmRoles and appRoles on user?
+        Set<RoleModel> realmRoles = new HashSet<RoleModel>();
+        for (RoleModel role : allRoles) {
+            RoleEntity roleEntity = ((RoleAdapter)role).getRole();
+
+            if (getId().equals(roleEntity.getRealmId())) {
+                realmRoles.add(role);
             }
         }
-        return result;
+        return realmRoles;
     }
 
     @Override
     public void deleteRoleMapping(UserModel user, RoleModel role) {
-        UserData userData = ((UserAdapter)user).getUser();
-        noSQL.pullItemFromList(userData, "roleIds", role.getId());
+        UserEntity userEntity = ((UserAdapter)user).getUser();
+        getMongoStore().pullItemFromList(userEntity, "roleIds", role.getId(), invocationContext);
     }
 
     @Override
-    public void addScopeMapping(UserModel agent, String roleName) {
-        RoleAdapter role = getRole(roleName);
-        if (role == null) {
-            throw new RuntimeException("Role not found");
-        }
+    public Set<RoleModel> getScopeMappings(UserModel user) {
+        Set<RoleModel> result = new HashSet<RoleModel>();
+        List<RoleEntity> roles = MongoModelUtils.getAllScopesOfUser(user, invocationContext);
 
-        addScopeMapping(agent, role);
+        for (RoleEntity role : roles) {
+            if (getId().equals(role.getRealmId())) {
+                result.add(new RoleAdapter(role, this, invocationContext));
+            } else {
+                // Likely applicationRole, but we don't have this application yet
+                result.add(new RoleAdapter(role, invocationContext));
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public Set<RoleModel> getRealmScopeMappings(UserModel user) {
+        Set<RoleModel> allScopes = getScopeMappings(user);
+
+        // Filter to retrieve just realm roles TODO: Maybe improve to avoid filter programmatically... Maybe have separate fields for realmRoles and appRoles on user?
+        Set<RoleModel> realmRoles = new HashSet<RoleModel>();
+        for (RoleModel role : allScopes) {
+            RoleEntity roleEntity = ((RoleAdapter)role).getRole();
+
+            if (getId().equals(roleEntity.getRealmId())) {
+                realmRoles.add(role);
+            }
+        }
+        return realmRoles;
     }
 
     @Override
     public void addScopeMapping(UserModel agent, RoleModel role) {
-        UserData userData = ((UserAdapter)agent).getUser();
-        noSQL.pushItemToList(userData, "scopeIds", role.getId());
+        UserEntity userEntity = ((UserAdapter)agent).getUser();
+        getMongoStore().pushItemToList(userEntity, "scopeIds", role.getId(), true, invocationContext);
     }
 
     @Override
     public void deleteScopeMapping(UserModel user, RoleModel role) {
-        UserData userData = ((UserAdapter)user).getUser();
-        noSQL.pullItemFromList(userData, "scopeIds", role.getId());
+        UserEntity userEntity = ((UserAdapter)user).getUser();
+        getMongoStore().pullItemFromList(userEntity, "scopeIds", role.getId(), invocationContext);
     }
 
     @Override
     public OAuthClientModel addOAuthClient(String name) {
-        UserAdapter oauthAgent = addUser(name);
+        UserAdapter oauthAgent = addUserEntity(name);
 
-        OAuthClientData oauthClient = new OAuthClientData();
+        OAuthClientEntity oauthClient = new OAuthClientEntity();
         oauthClient.setOauthAgentId(oauthAgent.getUser().getId());
-        oauthClient.setRealmId(getOid());
-        noSQL.saveObject(oauthClient);
+        oauthClient.setRealmId(getId());
+        oauthClient.setName(name);
+        getMongoStore().insertEntity(oauthClient, invocationContext);
 
-        return new OAuthClientAdapter(oauthClient, oauthAgent, noSQL);
+        return new OAuthClientAdapter(oauthClient, oauthAgent, invocationContext);
+    }
+
+    @Override
+    public boolean removeOAuthClient(String id) {
+        return getMongoStore().removeEntity(OAuthClientEntity.class, id, invocationContext);
     }
 
     @Override
     public OAuthClientModel getOAuthClient(String name) {
         UserAdapter user = getUser(name);
         if (user == null) return null;
-        NoSQLQuery query = noSQL.createQueryBuilder()
-                .andCondition("realmId", getOid())
-                .andCondition("oauthAgentId", user.getUser().getId())
-                .build();
-        OAuthClientData oauthClient = noSQL.loadSingleObject(OAuthClientData.class, query);
-        return oauthClient == null ? null : new OAuthClientAdapter(oauthClient, user, noSQL);
+        DBObject query = new QueryBuilder()
+                .and("realmId").is(getId())
+                .and("oauthAgentId").is(user.getUser().getId())
+                .get();
+        OAuthClientEntity oauthClient = getMongoStore().loadSingleEntity(OAuthClientEntity.class, query, invocationContext);
+        return oauthClient == null ? null : new OAuthClientAdapter(oauthClient, user, invocationContext);
+    }
+
+    @Override
+    public OAuthClientModel getOAuthClientById(String id) {
+        OAuthClientEntity clientEntity = getMongoStore().loadEntity(OAuthClientEntity.class, id, invocationContext);
+        if (clientEntity == null) return null;
+        return new OAuthClientAdapter(clientEntity, invocationContext);
     }
 
     @Override
     public List<OAuthClientModel> getOAuthClients() {
-        NoSQLQuery query = noSQL.createQueryBuilder()
-                .andCondition("realmId", getOid())
-                .build();
-        List<OAuthClientData> results = noSQL.loadObjects(OAuthClientData.class, query);
+        DBObject query = new QueryBuilder()
+                .and("realmId").is(getId())
+                .get();
+        List<OAuthClientEntity> results = getMongoStore().loadEntities(OAuthClientEntity.class, query, invocationContext);
         List<OAuthClientModel> list = new ArrayList<OAuthClientModel>();
-        for (OAuthClientData data : results) {
-            list.add(new OAuthClientAdapter(data, noSQL));
+        for (OAuthClientEntity data : results) {
+            list.add(new OAuthClientAdapter(data, invocationContext));
         }
         return list;
     }
 
     @Override
-    public List<RoleModel> getScopeMappings(UserModel agent) {
-        List<RoleModel> result = new ArrayList<RoleModel>();
-        List<RoleData> roles = ApplicationAdapter.getAllScopesOfUser(agent, noSQL);
-        // TODO: Maybe improve as currently we need to obtain all roles and then filter programmatically...
-        for (RoleData role : roles) {
-            if (getOid().equals(role.getRealmId())) {
-                result.add(new RoleAdapter(role, noSQL));
-            }
-        }
-        return result;
-    }
-
-    @Override
-    public Set<String> getScopeMappingValues(UserModel agent) {
-        Set<String> result = new HashSet<String>();
-        List<RoleData> roles = ApplicationAdapter.getAllScopesOfUser(agent, noSQL);
-        // TODO: Maybe improve as currently we need to obtain all roles and then filter programmatically...
-        for (RoleData role : roles) {
-            if (getOid().equals(role.getRealmId())) {
-                result.add(role.getName());
-            }
-        }
-        return result;
-    }
-
-    @Override
-    public RoleModel getRoleById(String id) {
-        RoleData role = noSQL.loadObject(RoleData.class, id);
-        if (role == null) {
-            return null;
-        } else {
-            return new RoleAdapter(role, noSQL);
-        }
-    }
-
-    @Override
-    public boolean hasRole(UserModel user, String role) {
-        RoleModel roleModel = getRole(role);
-        return hasRole(user, roleModel);
-    }
-
-    @Override
-    public void addRequiredCredential(String cred) {
-        RequiredCredentialModel credentialModel = initRequiredCredentialModel(cred);
-        addRequiredCredential(credentialModel, RequiredCredentialData.CLIENT_TYPE_USER);
+    public void addRequiredCredential(String type) {
+        RequiredCredentialModel credentialModel = initRequiredCredentialModel(type);
+        addRequiredCredential(credentialModel, realm.getRequiredCredentials());
     }
 
     @Override
     public void addRequiredResourceCredential(String type) {
         RequiredCredentialModel credentialModel = initRequiredCredentialModel(type);
-        addRequiredCredential(credentialModel, RequiredCredentialData.CLIENT_TYPE_RESOURCE);
+        addRequiredCredential(credentialModel, realm.getRequiredApplicationCredentials());
     }
 
     @Override
     public void addRequiredOAuthClientCredential(String type) {
         RequiredCredentialModel credentialModel = initRequiredCredentialModel(type);
-        addRequiredCredential(credentialModel, RequiredCredentialData.CLIENT_TYPE_OAUTH_RESOURCE);
+        addRequiredCredential(credentialModel, realm.getRequiredOAuthClientCredentials());
     }
 
-    protected void addRequiredCredential(RequiredCredentialModel credentialModel, int clientType) {
-        RequiredCredentialData credData = new RequiredCredentialData();
-        credData.setType(credentialModel.getType());
-        credData.setFormLabel(credentialModel.getFormLabel());
-        credData.setInput(credentialModel.isInput());
-        credData.setSecret(credentialModel.isSecret());
+    protected void addRequiredCredential(RequiredCredentialModel credentialModel, List<RequiredCredentialEntity> persistentCollection) {
+        RequiredCredentialEntity credEntity = new RequiredCredentialEntity();
+        credEntity.setType(credentialModel.getType());
+        credEntity.setFormLabel(credentialModel.getFormLabel());
+        credEntity.setInput(credentialModel.isInput());
+        credEntity.setSecret(credentialModel.isSecret());
 
-        credData.setRealmId(getOid());
-        credData.setClientType(clientType);
+        persistentCollection.add(credEntity);
 
-        noSQL.saveObject(credData);
+        updateRealm();
     }
 
     @Override
     public void updateRequiredCredentials(Set<String> creds) {
-        List<RequiredCredentialData> credsData = getRequiredCredentialsData(RequiredCredentialData.CLIENT_TYPE_USER);
-        updateRequiredCredentials(creds, credsData);
+        updateRequiredCredentials(creds, realm.getRequiredCredentials());
     }
 
     @Override
     public void updateRequiredApplicationCredentials(Set<String> creds) {
-        List<RequiredCredentialData> credsData = getRequiredCredentialsData(RequiredCredentialData.CLIENT_TYPE_RESOURCE);
-        updateRequiredCredentials(creds, credsData);
+        updateRequiredCredentials(creds, realm.getRequiredApplicationCredentials());
     }
 
     @Override
     public void updateRequiredOAuthClientCredentials(Set<String> creds) {
-        List<RequiredCredentialData> credsData = getRequiredCredentialsData(RequiredCredentialData.CLIENT_TYPE_OAUTH_RESOURCE);
-        updateRequiredCredentials(creds, credsData);
+        updateRequiredCredentials(creds, realm.getRequiredOAuthClientCredentials());
     }
 
-    protected void updateRequiredCredentials(Set<String> creds, List<RequiredCredentialData> credsData) {
+    protected void updateRequiredCredentials(Set<String> creds, List<RequiredCredentialEntity> credsEntities) {
         Set<String> already = new HashSet<String>();
-        for (RequiredCredentialData data : credsData) {
-            if (!creds.contains(data.getType())) {
-                noSQL.removeObject(data);
+        Set<RequiredCredentialEntity> toRemove = new HashSet<RequiredCredentialEntity>();
+        for (RequiredCredentialEntity entity : credsEntities) {
+            if (!creds.contains(entity.getType())) {
+                toRemove.add(entity);
             } else {
-                already.add(data.getType());
+                already.add(entity.getType());
             }
         }
+        for (RequiredCredentialEntity entity : toRemove) {
+            credsEntities.remove(entity);
+        }
         for (String cred : creds) {
-            // TODO
-            System.out.println("updating cred: " + cred);
-            // logger.info("updating cred: " + cred);
+            logger.info("updating cred: " + cred);
             if (!already.contains(cred)) {
-                addRequiredCredential(cred);
+                RequiredCredentialModel credentialModel = initRequiredCredentialModel(cred);
+                addRequiredCredential(credentialModel, credsEntities);
             }
         }
     }
 
     @Override
     public List<RequiredCredentialModel> getRequiredCredentials() {
-        return getRequiredCredentials(RequiredCredentialData.CLIENT_TYPE_USER);
+        return convertRequiredCredentialEntities(realm.getRequiredCredentials());
     }
 
     @Override
     public List<RequiredCredentialModel> getRequiredApplicationCredentials() {
-        return getRequiredCredentials(RequiredCredentialData.CLIENT_TYPE_RESOURCE);
+        return convertRequiredCredentialEntities(realm.getRequiredApplicationCredentials());
     }
 
     @Override
     public List<RequiredCredentialModel> getRequiredOAuthClientCredentials() {
-        return getRequiredCredentials(RequiredCredentialData.CLIENT_TYPE_OAUTH_RESOURCE);
+        return convertRequiredCredentialEntities(realm.getRequiredOAuthClientCredentials());
     }
 
-    protected List<RequiredCredentialModel> getRequiredCredentials(int credentialType) {
-        List<RequiredCredentialData> credsData = getRequiredCredentialsData(credentialType);
+    protected List<RequiredCredentialModel> convertRequiredCredentialEntities(Collection<RequiredCredentialEntity> credEntities) {
 
         List<RequiredCredentialModel> result = new ArrayList<RequiredCredentialModel>();
-        for (RequiredCredentialData data : credsData) {
+        for (RequiredCredentialEntity entity : credEntities) {
             RequiredCredentialModel model = new RequiredCredentialModel();
-            model.setFormLabel(data.getFormLabel());
-            model.setInput(data.isInput());
-            model.setSecret(data.isSecret());
-            model.setType(data.getType());
+            model.setFormLabel(entity.getFormLabel());
+            model.setInput(entity.isInput());
+            model.setSecret(entity.isSecret());
+            model.setType(entity.getType());
 
             result.add(model);
         }
         return result;
     }
 
-    protected List<RequiredCredentialData> getRequiredCredentialsData(int credentialType) {
-        NoSQLQuery query = noSQL.createQueryBuilder()
-                .andCondition("realmId", getOid())
-                .andCondition("clientType", credentialType)
-                .build();
-        return noSQL.loadObjects(RequiredCredentialData.class, query);
-    }
-
     @Override
     public boolean validatePassword(UserModel user, String password) {
-        Credentials.Status status = passwordCredentialHandler.validate(noSQL, ((UserAdapter)user).getUser(), password);
-        return status == Credentials.Status.VALID;
+        for (CredentialEntity cred : ((UserAdapter)user).getUser().getCredentials()) {
+            if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
+                return new Pbkdf2PasswordEncoder(cred.getSalt()).verify(password, cred.getValue());
+            }
+        }
+        return false;
     }
 
     @Override
     public boolean validateTOTP(UserModel user, String password, String token) {
-        Credentials.Status status = totpCredentialHandler.validate(noSQL, ((UserAdapter)user).getUser(), password, token, null);
-        return status == Credentials.Status.VALID;
+        if (!validatePassword(user, password)) return false;
+        for (CredentialEntity cred : ((UserAdapter)user).getUser().getCredentials()) {
+            if (cred.getType().equals(UserCredentialModel.TOTP)) {
+                return new TimeBasedOTP().validate(token, cred.getValue().getBytes());
+            }
+        }
+        return false;
     }
 
     @Override
     public void updateCredential(UserModel user, UserCredentialModel cred) {
-        if (cred.getType().equals(CredentialRepresentation.PASSWORD)) {
-            passwordCredentialHandler.update(noSQL, ((UserAdapter)user).getUser(), cred.getValue(), null, null);
-        } else if (cred.getType().equals(CredentialRepresentation.TOTP)) {
-            totpCredentialHandler.update(noSQL, ((UserAdapter)user).getUser(), cred.getValue(), cred.getDevice(), null, null);
-        } else if (cred.getType().equals(CredentialRepresentation.CLIENT_CERT)) {
-            // TODO
-//            X509Certificate cert = null;
-//            try {
-//                cert = org.keycloak.PemUtils.decodeCertificate(cred.getValue());
-//            } catch (Exception e) {
-//                throw new RuntimeException(e);
-//            }
-//            X509CertificateCredentials creds = new X509CertificateCredentials(cert);
-//            idm.updateCredential(((UserAdapter)user).getUser(), creds);
+        CredentialEntity credentialEntity = null;
+        UserEntity userEntity = ((UserAdapter) user).getUser();
+        for (CredentialEntity entity : userEntity.getCredentials()) {
+            if (entity.getType().equals(cred.getType())) {
+                credentialEntity = entity;
+            }
         }
+
+        if (credentialEntity == null) {
+            credentialEntity = new CredentialEntity();
+            credentialEntity.setType(cred.getType());
+            credentialEntity.setDevice(cred.getDevice());
+            userEntity.getCredentials().add(credentialEntity);
+        }
+        if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
+            byte[] salt = Pbkdf2PasswordEncoder.getSalt();
+            credentialEntity.setValue(new Pbkdf2PasswordEncoder(salt).encode(cred.getValue()));
+            credentialEntity.setSalt(salt);
+        } else {
+            credentialEntity.setValue(cred.getValue());
+        }
+        credentialEntity.setDevice(cred.getDevice());
+
+        getMongoStore().updateEntity(userEntity, invocationContext);
     }
 
     @Override
     public UserModel getUserBySocialLink(SocialLinkModel socialLink) {
-        NoSQLQuery query = noSQL.createQueryBuilder()
-                .andCondition("socialProvider", socialLink.getSocialProvider())
-                .andCondition("socialUsername", socialLink.getSocialUsername())
-                .andCondition("realmId", getOid())
-                .build();
-        SocialLinkData socialLinkData = noSQL.loadSingleObject(SocialLinkData.class, query);
-
-        if (socialLinkData == null) {
-            return null;
-        } else {
-            UserData userData = noSQL.loadObject(UserData.class, socialLinkData.getUserId());
-            // TODO: Add some checking if userData exists and programmatically remove binding if it doesn't? (There are more similar places where this should be handled)
-            return new UserAdapter(userData, noSQL);
-        }
+        DBObject query = new QueryBuilder()
+                .and("socialLinks.socialProvider").is(socialLink.getSocialProvider())
+                .and("socialLinks.socialUsername").is(socialLink.getSocialUsername())
+                .and("realmId").is(getId())
+                .get();
+        UserEntity userEntity = getMongoStore().loadSingleEntity(UserEntity.class, query, invocationContext);
+        return userEntity==null ? null : new UserAdapter(userEntity, invocationContext);
     }
 
     @Override
     public Set<SocialLinkModel> getSocialLinks(UserModel user) {
-        UserData userData = ((UserAdapter)user).getUser();
-        String userId = userData.getId();
+        UserEntity userEntity = ((UserAdapter)user).getUser();
+        List<SocialLinkEntity> linkEntities = userEntity.getSocialLinks();
 
-        NoSQLQuery query = noSQL.createQueryBuilder()
-                .andCondition("userId", userId)
-                .build();
-        List<SocialLinkData> dbSocialLinks = noSQL.loadObjects(SocialLinkData.class, query);
+        if (linkEntities == null) {
+            return Collections.EMPTY_SET;
+        }
 
         Set<SocialLinkModel> result = new HashSet<SocialLinkModel>();
-        for (SocialLinkData socialLinkData : dbSocialLinks) {
-            SocialLinkModel model = new SocialLinkModel(socialLinkData.getSocialProvider(), socialLinkData.getSocialUsername());
+        for (SocialLinkEntity socialLinkEntity : linkEntities) {
+            SocialLinkModel model = new SocialLinkModel(socialLinkEntity.getSocialProvider(), socialLinkEntity.getSocialUsername());
             result.add(model);
         }
         return result;
@@ -785,30 +827,26 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public void addSocialLink(UserModel user, SocialLinkModel socialLink) {
-        UserData userData = ((UserAdapter)user).getUser();
-        SocialLinkData socialLinkData = new SocialLinkData();
-        socialLinkData.setSocialProvider(socialLink.getSocialProvider());
-        socialLinkData.setSocialUsername(socialLink.getSocialUsername());
-        socialLinkData.setUserId(userData.getId());
-        socialLinkData.setRealmId(getOid());
+        UserEntity userEntity = ((UserAdapter)user).getUser();
+        SocialLinkEntity socialLinkEntity = new SocialLinkEntity();
+        socialLinkEntity.setSocialProvider(socialLink.getSocialProvider());
+        socialLinkEntity.setSocialUsername(socialLink.getSocialUsername());
 
-        noSQL.saveObject(socialLinkData);
+        getMongoStore().pushItemToList(userEntity, "socialLinks", socialLinkEntity, true, invocationContext);
     }
 
     @Override
     public void removeSocialLink(UserModel user, SocialLinkModel socialLink) {
-        UserData userData = ((UserAdapter)user).getUser();
-        String userId = userData.getId();
-        NoSQLQuery query = noSQL.createQueryBuilder()
-                .andCondition("socialProvider", socialLink.getSocialProvider())
-                .andCondition("socialUsername", socialLink.getSocialUsername())
-                .andCondition("userId", userId)
-                .build();
-        noSQL.removeObjects(SocialLinkData.class, query);
+        SocialLinkEntity socialLinkEntity = new SocialLinkEntity();
+        socialLinkEntity.setSocialProvider(socialLink.getSocialProvider());
+        socialLinkEntity.setSocialUsername(socialLink.getSocialUsername());
+
+        UserEntity userEntity = ((UserAdapter)user).getUser();
+        getMongoStore().pullItemFromList(userEntity, "socialLinks", socialLinkEntity, invocationContext);
     }
 
     protected void updateRealm() {
-        noSQL.saveObject(realm);
+        getMongoStore().updateEntity(realm, invocationContext);
     }
 
     protected RequiredCredentialModel initRequiredCredentialModel(String type) {
@@ -820,46 +858,108 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public List<UserModel> getUsers() {
+        DBObject query = new QueryBuilder()
+                .and("realmId").is(getId())
+                .get();
+        List<UserEntity> users = getMongoStore().loadEntities(UserEntity.class, query, invocationContext);
+        return convertUserEntities(users);
+    }
+
+    @Override
+    public List<UserModel> searchForUser(String search) {
+        search = search.trim();
+        Pattern caseInsensitivePattern = Pattern.compile("(?i:" + search + ")");
+
+        QueryBuilder nameBuilder;
+        int spaceInd = search.lastIndexOf(" ");
+
+        // Case when we have search string like "ohn Bow". Then firstName must end with "ohn" AND lastName must start with "bow" (everything case-insensitive)
+        if (spaceInd != -1) {
+            String firstName = search.substring(0, spaceInd);
+            String lastName = search.substring(spaceInd + 1);
+            Pattern firstNamePattern =  Pattern.compile("(?i:" + firstName + "$)");
+            Pattern lastNamePattern =  Pattern.compile("(?i:^" + lastName + ")");
+            nameBuilder = new QueryBuilder().and(
+                    new QueryBuilder().put("firstName").regex(firstNamePattern).get(),
+                    new QueryBuilder().put("lastName").regex(lastNamePattern).get()
+            );
+        } else {
+            // Case when we have search without spaces like "foo". The firstName OR lastName could be "foo" (everything case-insensitive)
+            nameBuilder = new QueryBuilder().or(
+                    new QueryBuilder().put("firstName").regex(caseInsensitivePattern).get(),
+                    new QueryBuilder().put("lastName").regex(caseInsensitivePattern).get()
+            );
+        }
+
+        QueryBuilder builder = new QueryBuilder().and(
+                new QueryBuilder().and("realmId").is(getId()).get(),
+                new QueryBuilder().or(
+                        new QueryBuilder().put("loginName").regex(caseInsensitivePattern).get(),
+                        new QueryBuilder().put("email").regex(caseInsensitivePattern).get(),
+                        nameBuilder.get()
+
+                ).get()
+        );
+
+        List<UserEntity> users = getMongoStore().loadEntities(UserEntity.class, builder.get(), invocationContext);
+        return convertUserEntities(users);
+    }
+
+    @Override
     public List<UserModel> searchForUserByAttributes(Map<String, String> attributes) {
-        NoSQLQueryBuilder queryBuilder = noSQL.createQueryBuilder();
+        QueryBuilder queryBuilder = new QueryBuilder()
+                .and("realmId").is(getId());
+
         for (Map.Entry<String, String> entry : attributes.entrySet()) {
             if (entry.getKey().equals(UserModel.LOGIN_NAME)) {
-                queryBuilder.andCondition("loginName", entry.getValue());
+                queryBuilder.and("loginName").regex(Pattern.compile("(?i:" + entry.getValue() + "$)"));
             } else if (entry.getKey().equalsIgnoreCase(UserModel.FIRST_NAME)) {
-                queryBuilder.andCondition(UserModel.FIRST_NAME, entry.getValue());
+                queryBuilder.and(UserModel.FIRST_NAME).regex(Pattern.compile("(?i:" + entry.getValue() + "$)"));
 
             } else if (entry.getKey().equalsIgnoreCase(UserModel.LAST_NAME)) {
-                queryBuilder.andCondition(UserModel.LAST_NAME, entry.getValue());
+                queryBuilder.and(UserModel.LAST_NAME).regex(Pattern.compile("(?i:" + entry.getValue() + "$)"));
 
             } else if (entry.getKey().equalsIgnoreCase(UserModel.EMAIL)) {
-                queryBuilder.andCondition(UserModel.EMAIL, entry.getValue());
+                queryBuilder.and(UserModel.EMAIL).regex(Pattern.compile("(?i:" + entry.getValue() + "$)"));
             }
         }
-        List<UserData> users = noSQL.loadObjects(UserData.class, queryBuilder.build());
+        List<UserEntity> users = getMongoStore().loadEntities(UserEntity.class, queryBuilder.get(), invocationContext);
+        return convertUserEntities(users);
+    }
+
+    protected List<UserModel> convertUserEntities(List<UserEntity> userEntities) {
         List<UserModel> userModels = new ArrayList<UserModel>();
-        for (UserData user : users) {
-            userModels.add(new UserAdapter(user, noSQL));
+        for (UserEntity user : userEntities) {
+            userModels.add(new UserAdapter(user, invocationContext));
         }
         return userModels;
     }
 
     @Override
     public Map<String, String> getSmtpConfig() {
-        throw new RuntimeException("Not implemented");
+        return realm.getSmtpConfig();
     }
 
     @Override
     public void setSmtpConfig(Map<String, String> smtpConfig) {
-        throw new RuntimeException("Not implemented");
+        realm.setSmtpConfig(smtpConfig);
+        updateRealm();
     }
 
     @Override
     public Map<String, String> getSocialConfig() {
-        throw new RuntimeException("Not implemented");
+        return realm.getSocialConfig();
     }
 
     @Override
     public void setSocialConfig(Map<String, String> socialConfig) {
-        throw new RuntimeException("Not implemented");
+        realm.setSocialConfig(socialConfig);
+        updateRealm();
+    }
+
+    @Override
+    public AbstractMongoIdentifiableEntity getMongoEntity() {
+        return realm;
     }
 }
