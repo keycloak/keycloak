@@ -1,5 +1,5 @@
 <#import "template.ftl" as layout>
-<@layout.registrationLayout bodyClass="register" displaySeparator=true; section>
+<@layout.registrationLayout displaySeparator=true; section>
     <#if section = "title">
     ${rb.registerWith} ${realm.name}
 

@@ -9,7 +9,7 @@
     <#elseif section = "form">
     <form id="kc-form-login" action="${url.loginAction}" method="post">
         <div class="field-wrapper">
-            <label for="username">${rb.username}</label><input id="username" name="username" value="${login.username!''}" type="text" />
+            <label for="username">${rb.username}</label><input id="username" name="username" value="${login.username!''}" type="text" autofocus />
         </div>
         <div class="field-wrapper">
             <label for="password">${rb.password}</label><input id="password" name="password" type="password" />

@@ -78,9 +78,6 @@ public class SocialResource {
     private HttpRequest request;
 
     @Context
-    private HttpResponse response;
-
-    @Context
     ResourceContext resourceContext;
 
     @Context

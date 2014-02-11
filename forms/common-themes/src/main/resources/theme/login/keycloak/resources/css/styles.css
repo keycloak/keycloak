@@ -26,3 +26,7 @@ a.button.btn-primary {
     background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0, #1f97d8), color-stop(1, 0, #1280bc));
     border-color: #005e91;
 }
+
+.kc-login-register p.powered a {
+    color: #ccc;
+}

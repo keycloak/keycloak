@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<project>
+	<parent>
+		<artifactId>keycloak-parent</artifactId>
+		<groupId>org.keycloak</groupId>
+		<version>1.0-alpha-2-SNAPSHOT</version>
+		<relativePath>../pom.xml</relativePath>
+	</parent>
+	<modelVersion>4.0.0</modelVersion>
+
+	<artifactId>keycloak-js-adapter</artifactId>
+	<name>Keycloak JS Integration</name>
+	<description />
+
+	<dependencies>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>1.6</source>
+					<target>1.6</target>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>

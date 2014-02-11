@@ -1,4 +1,4 @@
-<#macro registrationLayout bodyClass="" displaySeparator=false displaySocial=false>
+<#macro registrationLayout bodyClass="" displaySeparator=false displaySocial=false displayMessage=true>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 
@@ -25,8 +25,8 @@
         <div class="background-area">
             <div class="form-area ${displaySocial?string('social','')} ${displaySeparator?string('separator','')} clearfix">
                 <div class="section app-form">
-                    <#if message?has_content>
-                        <div class="feedback ${message.type} bottom-left show">
+                    <#if displayMessage && message?has_content>
+                        <div class="feedback ${message.type}">
                             <p><strong>${message.summary}</strong></p>
                         </div>
                     </#if>

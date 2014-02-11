@@ -22,6 +22,7 @@
         <module>undertow</module>
         <module>wildfly-subsystem</module>
         <module>as7-eap-subsystem</module>
+        <module>js</module>
         <!-- <module>as7-eap6/jboss-modules</module> -->
     </modules>
 </project>

@@ -17,13 +17,13 @@ a {
 
 .content {
     position: absolute;
-    top: 25%;
+    top: 30%;
     left: 50%;
     width: 550px;
     margin-left: -225px;
 }
 
-h2 {
+h2#kc-header {
     position: fixed;
     top: 50px;
     left: 0;
@@ -149,7 +149,7 @@ div.feedback p {
     padding: 1em;
 }
 
-div.rcue-logo {
+h1.kc-title {
     background-image: url('../img/logo.png');
     background-repeat: no-repeat;
     height: 500px;
@@ -158,6 +158,7 @@ div.rcue-logo {
     top: 30px;
     width: 500px;
     z-index: -1;
+    text-indent: -9999px;
 }
 
 div.social-login span {

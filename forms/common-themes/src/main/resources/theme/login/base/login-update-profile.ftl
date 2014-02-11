@@ -6,15 +6,8 @@
     <#elseif section = "header">
     ${rb.loginProfileTitle}
 
-    <#elseif section = "feedback">
-    <div id="kc-feedback" class="feedback warning show">
-        <p><strong>${rb.loginProfileWarning}</strong><br>${rb.loginProfileWarningFollow}</p>
-    </div>
     <#elseif section = "form">
     <form id="kc-update-profile-form" action="${url.loginUpdateProfileUrl}" method="post">
-        <div class="feedback error bottom-left">
-            <p><strong>${rb.loginProfileError}</strong><br>${rb.loginProfileErrorSteps}</p>
-        </div>
         <p class="subtitle">All fields required</p>
         <div class="field-wrapper">
             <label for="email">${rb.email}</label><input type="text" id="email" name="email" value="${user.email!''}" />

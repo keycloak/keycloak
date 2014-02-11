@@ -17,8 +17,8 @@ import java.util.Properties;
 public class ThemeLoader {
 
     private static final Logger logger = Logger.getLogger(ThemeLoader.class);
+    private static String DEFAULT = "keycloak";
     public static final String BASE = "base";
-    public static String DEFAULT = BASE;
 
     public static Theme createTheme(String name, Theme.Type type) throws FreeMarkerException {
         if (name == null) {

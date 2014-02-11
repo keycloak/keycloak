@@ -316,12 +316,12 @@ public class KeycloakServer {
                 return new URLResource(url, url.openConnection(), path);
             } else {
                 File file;
-                if (path.startsWith("/forms/")) {
-                    file = file(resourcesHome, "forms", "src", "main", "resources", "META-INF", "resources", path.replace('/', File.separatorChar));
-                } else if (path.startsWith("/admin/")) {
+                if (path.startsWith("/admin/")) {
                     file = file(resourcesHome, "admin-ui", "src", "main", "resources", "META-INF", "resources", path.replace('/', File.separatorChar));
                 } else if (path.startsWith("/admin-ui/")) {
                     file = file(resourcesHome, "admin-ui-styles", "src", "main", "resources", "META-INF", "resources", path.replace('/', File.separatorChar));
+                } else if (path.startsWith("/js/")) {
+                    file = file(resourcesHome, "integration", "js", "src", "main", "resources", "META-INF", "resources", path.replace('/', File.separatorChar));
                 } else {
                     throw new IOException("Unknown resource " + path);
                 }
