@@ -13,6 +13,7 @@ import io.undertow.servlet.api.LoginConfig;
 import io.undertow.servlet.api.ServletSessionConfig;
 import java.io.ByteArrayInputStream;
 import org.jboss.logging.Logger;
+import org.keycloak.adapters.AdapterConstants;
 import org.keycloak.adapters.config.RealmConfiguration;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.adapters.config.RealmConfigurationLoader;
@@ -26,10 +27,6 @@ import java.util.Map;
  * @version $Revision: 1 $
  */
 public class KeycloakServletExtension implements ServletExtension {
-    // This param name is defined again in Keycloak Subsystem class
-    // org.keycloak.subsystem.extensionKeycloakAdapterConfigDeploymentProcessor.  We have this value in
-    // two places to avoid dependency between Keycloak Subsystem and Keyclaok Undertow Integration.
-    public static final String AUTH_DATA_PARAM_NAME = "org.keycloak.json.adapterConfig";
 
     protected Logger log = Logger.getLogger(KeycloakServletExtension.class);
 
@@ -47,7 +44,7 @@ public class KeycloakServletExtension implements ServletExtension {
     }
 
     private InputStream getJSONFromServletContext(ServletContext servletContext) {
-        String json = servletContext.getInitParameter(AUTH_DATA_PARAM_NAME);
+        String json = servletContext.getInitParameter(AdapterConstants.AUTH_DATA_PARAM_NAME);
         if (json == null) {
             return null;
         }
@@ -61,9 +58,9 @@ public class KeycloakServletExtension implements ServletExtension {
             return;
         }
         log.info("KeycloakServletException initialization");
-        InputStream is = servletContext.getResourceAsStream("/WEB-INF/keycloak.json");
+        InputStream is = getJSONFromServletContext(servletContext);
         if (is == null) {
-            is = getJSONFromServletContext(servletContext);
+            is = servletContext.getResourceAsStream("/WEB-INF/keycloak.json");
         }
         if (is == null) throw new RuntimeException("Unable to find realm config in /WEB-INF/keycloak.json or in keycloak subsystem.");
         RealmConfigurationLoader loader = new RealmConfigurationLoader(is);

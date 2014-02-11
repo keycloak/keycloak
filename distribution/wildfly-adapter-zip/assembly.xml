@@ -11,6 +11,7 @@
             <directory>${project.build.directory}/unpacked</directory>
             <excludes>
                 <exclude>org/keycloak/keycloak-as7-adapter/**</exclude>
+                <exclude>org/keycloak/keycloak-as7-subsystem/**</exclude>
                 <exclude>org/bouncycastle/**</exclude>
             </excludes>
             <outputDirectory>modules/system/layers/base</outputDirectory>
