@@ -39,7 +39,7 @@
         <module name="org.jboss.as.web"/>
         <module name="org.picketbox"/>
         <module name="org.keycloak.keycloak-adapter-core"/>
-        <module name="org.keycloak.keycloak-core" export="true"/>
+        <module name="org.keycloak.keycloak-core"/>
     </dependencies>
 
 </module>

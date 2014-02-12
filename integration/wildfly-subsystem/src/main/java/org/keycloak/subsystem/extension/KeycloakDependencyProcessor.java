@@ -24,9 +24,11 @@ import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.as.server.deployment.module.ModuleDependency;
 import org.jboss.as.server.deployment.module.ModuleSpecification;
+import org.jboss.logging.Logger;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
+import org.keycloak.subsystem.logging.KeycloakLogger;
 
 /**
  *
@@ -36,16 +38,13 @@ public class KeycloakDependencyProcessor implements DeploymentUnitProcessor {
 
     private static final ModuleIdentifier KEYCLOAK_UNDERTOW_ADAPTER = ModuleIdentifier.create("org.keycloak.keycloak-undertow-adapter");
     private static final ModuleIdentifier KEYCLOAK_CORE_ADAPTER = ModuleIdentifier.create("org.keycloak.keycloak-adapter-core");
-    private static final ModuleIdentifier APACHE_HTTPCOMPONENTS = ModuleIdentifier.create("org.apache.httpcomponents");
+    private static final ModuleIdentifier KEYCLOAK_CORE = ModuleIdentifier.create("org.keycloak.keycloak-core");
+    //private static final ModuleIdentifier APACHE_HTTPCOMPONENTS = ModuleIdentifier.create("org.apache.httpcomponents");
 
     @Override
     public void deploy(DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
         final DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
-
-        KeycloakAdapterConfigService service = KeycloakAdapterConfigService.find(phaseContext.getServiceRegistry());
-        if (service.isKeycloakDeployment(deploymentUnit.getName())) {
-            addModules(deploymentUnit);
-        }
+        addModules(deploymentUnit);
     }
 
     private void addModules(DeploymentUnit deploymentUnit) {
@@ -54,7 +53,8 @@ public class KeycloakDependencyProcessor implements DeploymentUnitProcessor {
 
         moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, KEYCLOAK_UNDERTOW_ADAPTER, false, false, true, false));
         moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, KEYCLOAK_CORE_ADAPTER, false, false, false, false));
-        moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, APACHE_HTTPCOMPONENTS, false, false, true, false));
+        moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, KEYCLOAK_CORE, false, false, false, false));
+        //moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, APACHE_HTTPCOMPONENTS, false, false, true, false));
     }
 
     @Override

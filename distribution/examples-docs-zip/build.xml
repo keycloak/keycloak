@@ -2,35 +2,13 @@
 
     <target name="all">
         <delete dir="target/examples"/>
-        <copy todir="target/examples/as7-eap-demo" overwrite="true">
+        <copy todir="target/examples/preconfigured-demo" overwrite="true">
             <fileset dir="../../examples/demo-template">
-                <exclude name="**/*.wildfly"/>
                 <exclude name="**/target/**"/>
                 <exclude name="**/*.iml"/>
+                <exclude name="**/*.unconfigured"/>
             </fileset>
         </copy>
-        <move file="target/examples/as7-eap-demo/README.md.as7" tofile="target/examples/as7-eap-demo/README.md"/>
-        <move file="target/examples/as7-eap-demo/customer-app/src/main/webapp/WEB-INF/jboss-deployment-structure.xml.as7" tofile="target/examples/as7-eap-demo/customer-app/src/main/webapp/WEB-INF/jboss-deployment-structure.xml"/>
-        <move file="target/examples/as7-eap-demo/product-app/src/main/webapp/WEB-INF/jboss-deployment-structure.xml.as7" tofile="target/examples/as7-eap-demo/product-app/src/main/webapp/WEB-INF/jboss-deployment-structure.xml"/>
-        <move file="target/examples/as7-eap-demo/database-service/src/main/webapp/WEB-INF/jboss-deployment-structure.xml.as7" tofile="target/examples/as7-eap-demo/database-service/src/main/webapp/WEB-INF/jboss-deployment-structure.xml"/>
-        <copy todir="target/examples/wildfly-demo" overwrite="true">
-            <fileset dir="../../examples/demo-template">
-                <exclude name="**/*.as7"/>
-                <exclude name="**/WEB-INF/jboss-web.xml"/>
-                <exclude name="**/WEB-INF/web.xml"/>
-                <exclude name="**/target/**"/>
-                <exclude name="**/*.iml"/>
-            </fileset>
-        </copy>
-        <move file="target/examples/wildfly-demo/README.md.wildfly" tofile="target/examples/wildfly-demo/README.md"/>
-        <move file="target/examples/wildfly-demo/customer-app/src/main/webapp/WEB-INF/web.xml.wildfly" tofile="target/examples/wildfly-demo/customer-app/src/main/webapp/WEB-INF/web.xml"/>
-        <move file="target/examples/wildfly-demo/customer-app/src/main/webapp/WEB-INF/jboss-deployment-structure.xml.wildfly" tofile="target/examples/wildfly-demo/customer-app/src/main/webapp/WEB-INF/jboss-deployment-structure.xml"/>
-        <move file="target/examples/wildfly-demo/product-app/src/main/webapp/WEB-INF/web.xml.wildfly" tofile="target/examples/wildfly-demo/product-app/src/main/webapp/WEB-INF/web.xml"/>
-        <move file="target/examples/wildfly-demo/product-app/src/main/webapp/WEB-INF/jboss-deployment-structure.xml.wildfly" tofile="target/examples/wildfly-demo/product-app/src/main/webapp/WEB-INF/jboss-deployment-structure.xml"/>
-        <move file="target/examples/wildfly-demo/database-service/src/main/webapp/WEB-INF/web.xml.wildfly" tofile="target/examples/wildfly-demo/database-service/src/main/webapp/WEB-INF/web.xml"/>
-        <move file="target/examples/wildfly-demo/database-service/src/main/webapp/WEB-INF/jboss-deployment-structure.xml.wildfly" tofile="target/examples/wildfly-demo/database-service/src/main/webapp/WEB-INF/jboss-deployment-structure.xml"/>
-        <move file="target/examples/wildfly-demo/third-party/src/main/webapp/WEB-INF/web.xml.wildfly" tofile="target/examples/wildfly-demo/third-party/src/main/webapp/WEB-INF/web.xml"/>
-        <move file="target/examples/wildfly-demo/third-party-cdi/src/main/webapp/WEB-INF/web.xml.wildfly" tofile="target/examples/wildfly-demo/third-party-cdi/src/main/webapp/WEB-INF/web.xml"/>
         <copy todir="target/examples/unconfigured-demo" overwrite="true">
             <fileset dir="../../examples/demo-template">
                 <exclude name="**/*.wildfly"/>
@@ -41,6 +19,9 @@
                 <exclude name="**/*.iml"/>
             </fileset>
         </copy>
+        <move file="target/examples/unconfigured-demo/customer-app/src/main/webapp/WEB-INF/web.xml.unconfigured" tofile="target/examples/unconfigured-demo/customer-app/src/main/webapp/WEB-INF/web.xml"/>
+        <move file="target/examples/unconfigured-demo/product-app/src/main/webapp/WEB-INF/web.xml.unconfigured" tofile="target/examples/unconfigured-demo/product-app/src/main/webapp/WEB-INF/web.xml"/>
+        <move file="target/examples/unconfigured-demo/database-service/src/main/webapp/WEB-INF/web.xml.unconfigured" tofile="target/examples/unconfigured-demo/database-service/src/main/webapp/WEB-INF/web.xml"/>
         <copy todir="target/examples/themes" overwrite="true">
             <fileset dir="../../examples/themes"/>
         </copy>

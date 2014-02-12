@@ -14,6 +14,7 @@ import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.KeycloakUriBuilder;
 import org.keycloak.util.StreamUtil;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -77,7 +78,18 @@ public class TokenGrantRequest {
         }
         InputStream is = entity.getContent();
         try {
-            return JsonSerialization.readValue(is, AccessTokenResponse.class);
+            ByteArrayOutputStream os = new ByteArrayOutputStream();
+            int c;
+            while ((c = is.read()) != -1) {
+                os.write(c);
+            }
+            byte[] bytes = os.toByteArray();
+            String json = new String(bytes);
+            try {
+                return JsonSerialization.readValue(json, AccessTokenResponse.class);
+            } catch (IOException e) {
+                throw new IOException(json, e);
+            }
         } finally {
             try {
                 is.close();

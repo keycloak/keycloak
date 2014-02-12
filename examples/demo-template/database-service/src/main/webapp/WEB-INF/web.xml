@@ -19,7 +19,7 @@
     </security-constraint>
 
     <login-config>
-        <auth-method>BASIC</auth-method>
+        <auth-method>KEYCLOAK</auth-method>
         <realm-name>demo</realm-name>
     </login-config>
 

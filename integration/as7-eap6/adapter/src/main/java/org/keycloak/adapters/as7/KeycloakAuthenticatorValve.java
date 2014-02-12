@@ -175,7 +175,8 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
     }
 
     protected boolean bearer(boolean challenge, Request request, HttpServletResponse response) throws LoginException, IOException {
-        CatalinaBearerTokenAuthenticator bearer = new CatalinaBearerTokenAuthenticator(realmConfiguration.getMetadata(), challenge, adapterConfig.isUseResourceRoleMappings());
+        boolean useResourceRoleMappings = adapterConfig.isUseResourceRoleMappings();
+        CatalinaBearerTokenAuthenticator bearer = new CatalinaBearerTokenAuthenticator(resourceMetadata, challenge, useResourceRoleMappings);
         if (bearer.login(request, response)) {
             return true;
         }

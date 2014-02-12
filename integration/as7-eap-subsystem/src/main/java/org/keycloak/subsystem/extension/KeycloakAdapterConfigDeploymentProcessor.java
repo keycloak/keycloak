@@ -59,6 +59,18 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
         if (service.isKeycloakDeployment(deploymentName)) {
 
             addKeycloakAuthData(phaseContext, deploymentName, service);
+            return;
+        }
+
+        // else check to see if KEYCLOAK is specified as login config
+        WarMetaData warMetaData = deploymentUnit.getAttachment(WarMetaData.ATTACHMENT_KEY);
+        if (warMetaData == null) return;
+        JBossWebMetaData webMetaData = warMetaData.getMergedJBossWebMetaData();
+        if (webMetaData == null) return;
+
+        LoginConfigMetaData loginConfig = webMetaData.getLoginConfig();
+        if (loginConfig != null && loginConfig.getAuthMethod().equalsIgnoreCase("KEYCLOAK")) {
+            addValve(webMetaData);
         }
     }
 
@@ -72,6 +84,18 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
             webMetaData = new JBossWebMetaData();
             warMetaData.setMergedJBossWebMetaData(webMetaData);
         }
+        addValve(webMetaData);
+
+        LoginConfigMetaData loginConfig = webMetaData.getLoginConfig();
+        if (loginConfig == null) {
+            loginConfig = new LoginConfigMetaData();
+            webMetaData.setLoginConfig(loginConfig);
+        }
+        loginConfig.setAuthMethod("KEYCLOAK");
+        loginConfig.setRealmName(service.getRealmName(deploymentName));
+    }
+
+    private void addValve(JBossWebMetaData webMetaData) {
         List<ValveMetaData> valves = webMetaData.getValves();
         if (valves == null) {
             valves = new ArrayList<ValveMetaData>(1);
@@ -80,19 +104,8 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
         ValveMetaData valve = new ValveMetaData();
         valve.setValveClass(KeycloakAuthenticatorValve.class.getName());
         valve.setModule("org.keycloak.keycloak-as7-adapter");
-        log.info("******* adding Keycloak valve to: " + deploymentName);
+        //log.info("******* adding Keycloak valve to: " + deploymentName);
         valves.add(valve);
-
-        /*
-        LoginConfigMetaData loginConfig = webMetaData.getLoginConfig();
-        if (loginConfig == null) {
-            loginConfig = new LoginConfigMetaData();
-            webMetaData.setLoginConfig(loginConfig);
-        }
-        loginConfig.setAuthMethod("KEYCLOAK");
-        loginConfig.setRealmName(service.getRealmName(deploymentName));
-        */
-
     }
 
     private void addJSONData(String json, WarMetaData warMetaData) {

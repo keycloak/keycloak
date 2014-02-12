@@ -1,0 +1,20 @@
+<!-- works with keycloak.json that comes with example -->
+<subsystem xmlns="urn:jboss:domain:keycloak:1.0">
+    <realm name="demo">
+        <realm-public-key>MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB</realm-public-key>
+        <auth-server-url>http://localhost:8080/auth</auth-server-url>
+        <ssl-not-required>true</ssl-not-required>
+        <secure-deployment name="customer-portal.war">
+            <resource>customer-portal</resource>
+            <credential name="password">password</credential>
+        </secure-deployment>
+        <secure-deployment name="product-portal.war">
+            <resource>product-portal</resource>
+            <credential name="password">password</credential>
+        </secure-deployment>
+        <secure-deployment name="database.war">
+            <resource>database</resource>
+            <credential name="password">password</credential>
+        </secure-deployment>
+    </realm>
+</subsystem>

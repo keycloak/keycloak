@@ -38,7 +38,7 @@
         <module name="io.undertow.core"/>
         <module name="io.undertow.servlet"/>
         <module name="org.keycloak.keycloak-adapter-core"/>
-        <module name="org.keycloak.keycloak-core" export="true"/>
+        <module name="org.keycloak.keycloak-core"/>
     </dependencies>
 
 </module>
