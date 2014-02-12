@@ -244,7 +244,7 @@ public class OAuthAuthenticator {
             return challenge(StatusCodes.FORBIDDEN);
 
         } catch (IOException e) {
-            log.error("failed to turn code into token");
+            log.error("failed to turn code into token", e);
             return challenge(StatusCodes.FORBIDDEN);
         }
 

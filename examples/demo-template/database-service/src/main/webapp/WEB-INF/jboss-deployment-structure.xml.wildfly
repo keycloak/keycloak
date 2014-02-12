@@ -1,8 +1,0 @@
-<jboss-deployment-structure>
-    <deployment>
-        <dependencies>
-            <!-- The keycloak-undertow-adapter is required -->
-            <module name="org.keycloak.keycloak-undertow-adapter" services="import"/>
-        </dependencies>
-    </deployment>
-</jboss-deployment-structure>

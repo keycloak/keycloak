@@ -36,16 +36,14 @@ public class KeycloakDependencyProcessor implements DeploymentUnitProcessor {
 
     private static final ModuleIdentifier KEYCLOAK_AS7_ADAPTER = ModuleIdentifier.create("org.keycloak.keycloak-as7-adapter");
     private static final ModuleIdentifier KEYCLOAK_CORE_ADAPTER = ModuleIdentifier.create("org.keycloak.keycloak-adapter-core");
-    private static final ModuleIdentifier APACHE_HTTPCOMPONENTS = ModuleIdentifier.create("org.apache.httpcomponents");
+    private static final ModuleIdentifier KEYCLOAK_CORE = ModuleIdentifier.create("org.keycloak.keycloak-core");
+    //private static final ModuleIdentifier APACHE_HTTPCOMPONENTS = ModuleIdentifier.create("org.apache.httpcomponents");
 
     @Override
     public void deploy(DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
         final DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
 
-        KeycloakAdapterConfigService service = KeycloakAdapterConfigService.find(phaseContext.getServiceRegistry());
-        if (service.isKeycloakDeployment(deploymentUnit.getName())) {
-            addModules(deploymentUnit);
-        }
+        addModules(deploymentUnit);
     }
 
     private void addModules(DeploymentUnit deploymentUnit) {
@@ -54,7 +52,8 @@ public class KeycloakDependencyProcessor implements DeploymentUnitProcessor {
 
         moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, KEYCLOAK_AS7_ADAPTER, false, false, true, false));
         moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, KEYCLOAK_CORE_ADAPTER, false, false, false, false));
-        moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, APACHE_HTTPCOMPONENTS, false, false, true, false));
+        moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, KEYCLOAK_CORE, false, false, false, false));
+        //moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, APACHE_HTTPCOMPONENTS, false, false, true, false));
     }
 
     @Override
