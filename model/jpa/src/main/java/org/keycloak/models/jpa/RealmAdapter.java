@@ -13,6 +13,7 @@ import org.keycloak.models.jpa.entities.SocialLinkEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.jpa.entities.UserRoleMappingEntity;
 import org.keycloak.models.jpa.entities.UserScopeMappingEntity;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
 import org.keycloak.util.PemUtils;
 import org.keycloak.models.ApplicationModel;
@@ -187,59 +188,29 @@ public class RealmAdapter implements RealmModel {
     @Override
     public PublicKey getPublicKey() {
         if (publicKey != null) return publicKey;
-        String pem = getPublicKeyPem();
-        if (pem != null) {
-            try {
-                publicKey = PemUtils.decodePublicKey(pem);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
+        publicKey = KeycloakModelUtils.getPublicKey(getPublicKeyPem());
         return publicKey;
     }
 
     @Override
     public void setPublicKey(PublicKey publicKey) {
         this.publicKey = publicKey;
-        StringWriter writer = new StringWriter();
-        PEMWriter pemWriter = new PEMWriter(writer);
-        try {
-            pemWriter.writeObject(publicKey);
-            pemWriter.flush();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        String s = writer.toString();
-        setPublicKeyPem(PemUtils.removeBeginEnd(s));
+        String publicKeyPem = KeycloakModelUtils.getPemFromKey(publicKey);
+        setPublicKeyPem(publicKeyPem);
     }
 
     @Override
     public PrivateKey getPrivateKey() {
         if (privateKey != null) return privateKey;
-        String pem = getPrivateKeyPem();
-        if (pem != null) {
-            try {
-                privateKey = PemUtils.decodePrivateKey(pem);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
+        privateKey = KeycloakModelUtils.getPrivateKey(getPrivateKeyPem());
         return privateKey;
     }
 
     @Override
     public void setPrivateKey(PrivateKey privateKey) {
         this.privateKey = privateKey;
-        StringWriter writer = new StringWriter();
-        PEMWriter pemWriter = new PEMWriter(writer);
-        try {
-            pemWriter.writeObject(privateKey);
-            pemWriter.flush();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        String s = writer.toString();
-        setPrivateKeyPem(PemUtils.removeBeginEnd(s));
+        String privateKeyPem = KeycloakModelUtils.getPemFromKey(privateKey);
+        setPrivateKeyPem(privateKeyPem);
     }
 
     protected RequiredCredentialModel initRequiredCredentialModel(String type) {

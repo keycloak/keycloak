@@ -56,27 +56,6 @@
             <artifactId>keycloak-jaxrs-oauth-client</artifactId>
             <version>${project.version}</version>
         </dependency>
-
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-jpa</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <!--
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-picketlink</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        -->
-
-        <!--<dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-mongo</artifactId>
-            <version>${project.version}</version>
-        </dependency>-->
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-social-core</artifactId>
@@ -128,21 +107,6 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.jboss.resteasy</groupId>
-            <artifactId>resteasy-undertow</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.undertow</groupId>
-            <artifactId>undertow-servlet</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.undertow</groupId>
-            <artifactId>undertow-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.codehaus.jackson</groupId>
             <artifactId>jackson-core-asl</artifactId>
             <scope>provided</scope>
@@ -169,21 +133,6 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hibernate.javax.persistence</groupId>
-            <artifactId>hibernate-jpa-2.0-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hibernate</groupId>
-            <artifactId>hibernate-entitymanager</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

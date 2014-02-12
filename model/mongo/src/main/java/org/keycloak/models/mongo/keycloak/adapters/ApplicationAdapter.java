@@ -1,13 +1,16 @@
 package org.keycloak.models.mongo.keycloak.adapters;
 
+import com.mongodb.DBObject;
+import com.mongodb.QueryBuilder;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.mongo.api.NoSQL;
-import org.keycloak.models.mongo.api.query.NoSQLQuery;
-import org.keycloak.models.mongo.keycloak.data.ApplicationData;
-import org.keycloak.models.mongo.keycloak.data.RoleData;
-import org.keycloak.models.mongo.keycloak.data.UserData;
+import org.keycloak.models.mongo.api.AbstractMongoIdentifiableEntity;
+import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
+import org.keycloak.models.mongo.keycloak.entities.ApplicationEntity;
+import org.keycloak.models.mongo.keycloak.entities.RoleEntity;
+import org.keycloak.models.mongo.keycloak.entities.UserEntity;
+import org.keycloak.models.mongo.utils.MongoModelUtils;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -17,31 +20,38 @@ import java.util.Set;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class ApplicationAdapter implements ApplicationModel {
+public class ApplicationAdapter extends AbstractAdapter implements ApplicationModel {
 
-    private final ApplicationData application;
-    private final NoSQL noSQL;
+    private final ApplicationEntity application;
+    private UserAdapter resourceUser;
 
-    private UserData resourceUser;
+    public ApplicationAdapter(ApplicationEntity applicationEntity, MongoStoreInvocationContext invContext) {
+        this(applicationEntity, null, invContext);
+    }
 
-    public ApplicationAdapter(ApplicationData applicationData, NoSQL noSQL) {
-        this.application = applicationData;
-        this.noSQL = noSQL;
+    public ApplicationAdapter(ApplicationEntity applicationEntity, UserAdapter resourceUser, MongoStoreInvocationContext invContext) {
+        super(invContext);
+        this.application = applicationEntity;
+        this.resourceUser = resourceUser;
     }
 
     @Override
     public void updateApplication() {
-        noSQL.saveObject(application);
+        getMongoStore().updateEntity(application, invocationContext);
     }
 
     @Override
-    public UserModel getApplicationUser() {
+    public UserAdapter getApplicationUser() {
         // This is not thread-safe. Assumption is that ApplicationAdapter instance is per-client object
         if (resourceUser == null) {
-            resourceUser = noSQL.loadObject(UserData.class, application.getResourceUserId());
+            UserEntity userEntity = getMongoStore().loadEntity(UserEntity.class, application.getResourceUserId(), invocationContext);
+            if (userEntity == null) {
+                throw new IllegalStateException("User " + application.getResourceUserId() + " not found");
+            }
+            resourceUser = new UserAdapter(userEntity, invocationContext);
         }
 
-        return resourceUser != null ? new UserAdapter(resourceUser, noSQL) : null;
+        return resourceUser;
     }
 
     @Override
@@ -101,182 +111,90 @@ public class ApplicationAdapter implements ApplicationModel {
 
     @Override
     public RoleAdapter getRole(String name) {
-        NoSQLQuery query = noSQL.createQueryBuilder()
-                .andCondition("name", name)
-                .andCondition("applicationId", getId())
-                .build();
-        RoleData role = noSQL.loadSingleObject(RoleData.class, query);
+        DBObject query = new QueryBuilder()
+                .and("name").is(name)
+                .and("applicationId").is(getId())
+                .get();
+        RoleEntity role = getMongoStore().loadSingleEntity(RoleEntity.class, query, invocationContext);
         if (role == null) {
             return null;
         } else {
-            return new RoleAdapter(role, noSQL);
+            return new RoleAdapter(role, invocationContext);
         }
     }
 
     @Override
     public RoleModel getRoleById(String id) {
-        RoleData role = noSQL.loadObject(RoleData.class, id);
+        RoleEntity role = getMongoStore().loadEntity(RoleEntity.class, id, invocationContext);
         if (role == null) {
             return null;
         } else {
-            return new RoleAdapter(role, noSQL);
+            return new RoleAdapter(role, this, invocationContext);
         }
-    }
-
-    @Override
-    public void grantRole(UserModel user, RoleModel role) {
-        UserData userData = ((UserAdapter)user).getUser();
-        noSQL.pushItemToList(userData, "roleIds", role.getId());
-    }
-
-    @Override
-    public boolean hasRole(UserModel user, String role) {
-        RoleModel roleModel = getRole(role);
-        return hasRole(user, roleModel);
-    }
-
-    @Override
-    public boolean hasRole(UserModel user, RoleModel role) {
-        UserData userData = ((UserAdapter)user).getUser();
-
-        List<String> roleIds = userData.getRoleIds();
-        String roleId = role.getId();
-        if (roleIds != null) {
-            for (String currentId : roleIds) {
-                if (roleId.equals(currentId)) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 
     @Override
     public RoleAdapter addRole(String name) {
-        if (getRole(name) != null) {
-            throw new IllegalArgumentException("Role " + name + " already exists");
+        RoleAdapter existing = getRole(name);
+        if (existing != null) {
+            return existing;
         }
 
-        RoleData roleData = new RoleData();
-        roleData.setName(name);
-        roleData.setApplicationId(getId());
+        RoleEntity roleEntity = new RoleEntity();
+        roleEntity.setName(name);
+        roleEntity.setApplicationId(getId());
 
-        noSQL.saveObject(roleData);
-        return new RoleAdapter(roleData, noSQL);
+        getMongoStore().insertEntity(roleEntity, invocationContext);
+        return new RoleAdapter(roleEntity, this, invocationContext);
     }
 
     @Override
-    public List<RoleModel> getRoles() {
-        NoSQLQuery query = noSQL.createQueryBuilder()
-                .andCondition("applicationId", getId())
-                .build();
-        List<RoleData> roles = noSQL.loadObjects(RoleData.class, query);
+    public boolean removeRoleById(String id) {
+        return getMongoStore().removeEntity(RoleEntity.class, id, invocationContext);
+    }
 
-        List<RoleModel> result = new ArrayList<RoleModel>();
-        for (RoleData role : roles) {
-            result.add(new RoleAdapter(role, noSQL));
+    @Override
+    public Set<RoleModel> getRoles() {
+        DBObject query = new QueryBuilder()
+                .and("applicationId").is(getId())
+                .get();
+        List<RoleEntity> roles = getMongoStore().loadEntities(RoleEntity.class, query, invocationContext);
+
+        Set<RoleModel> result = new HashSet<RoleModel>();
+        for (RoleEntity role : roles) {
+            result.add(new RoleAdapter(role, this, invocationContext));
         }
 
         return result;
     }
 
-    // Static so that it can be used from RealmAdapter as well
-    static List<RoleData> getAllRolesOfUser(UserModel user, NoSQL noSQL) {
-        UserData userData = ((UserAdapter)user).getUser();
-        List<String> roleIds = userData.getRoleIds();
-
-        NoSQLQuery query = noSQL.createQueryBuilder()
-                .inCondition("_id", roleIds)
-                .build();
-        return noSQL.loadObjects(RoleData.class, query);
-    }
-
     @Override
-    public Set<String> getRoleMappingValues(UserModel user) {
-        Set<String> result = new HashSet<String>();
-        List<RoleData> roles = getAllRolesOfUser(user, noSQL);
-        // TODO: Maybe improve as currently we need to obtain all roles and then filter programmatically...
-        for (RoleData role : roles) {
+    public Set<RoleModel> getApplicationRoleMappings(UserModel user) {
+        Set<RoleModel> result = new HashSet<RoleModel>();
+        List<RoleEntity> roles = MongoModelUtils.getAllRolesOfUser(user, invocationContext);
+
+        for (RoleEntity role : roles) {
             if (getId().equals(role.getApplicationId())) {
-                result.add(role.getName());
+                result.add(new RoleAdapter(role, this, invocationContext));
             }
         }
         return result;
     }
 
     @Override
-    public List<RoleModel> getRoleMappings(UserModel user) {
-        List<RoleModel> result = new ArrayList<RoleModel>();
-        List<RoleData> roles = getAllRolesOfUser(user, noSQL);
-        // TODO: Maybe improve as currently we need to obtain all roles and then filter programmatically...
-        for (RoleData role : roles) {
+    public void addScope(RoleModel role) {
+        UserAdapter appUser = getApplicationUser();
+        getMongoStore().pushItemToList(appUser.getUser(), "scopeIds", role.getId(), true, invocationContext);
+    }
+
+    @Override
+    public Set<RoleModel> getApplicationScopeMappings(UserModel user) {
+        Set<RoleModel> result = new HashSet<RoleModel>();
+        List<RoleEntity> roles = MongoModelUtils.getAllScopesOfUser(user, invocationContext);
+
+        for (RoleEntity role : roles) {
             if (getId().equals(role.getApplicationId())) {
-                result.add(new RoleAdapter(role, noSQL));
-            }
-        }
-        return result;
-    }
-
-    @Override
-    public void deleteRoleMapping(UserModel user, RoleModel role) {
-        UserData userData = ((UserAdapter)user).getUser();
-        noSQL.pullItemFromList(userData, "roleIds", role.getId());
-    }
-
-    @Override
-    public void addScopeMapping(UserModel agent, String roleName) {
-        RoleAdapter role = getRole(roleName);
-        if (role == null) {
-            throw new RuntimeException("Role not found");
-        }
-
-        addScopeMapping(agent, role);
-    }
-
-    @Override
-    public void addScopeMapping(UserModel agent, RoleModel role) {
-        UserData userData = ((UserAdapter)agent).getUser();
-        noSQL.pushItemToList(userData, "scopeIds", role.getId());
-    }
-
-    @Override
-    public void deleteScopeMapping(UserModel user, RoleModel role) {
-        UserData userData = ((UserAdapter)user).getUser();
-        noSQL.pullItemFromList(userData, "scopeIds", role.getId());
-    }
-
-    // Static so that it can be used from RealmAdapter as well
-    static List<RoleData> getAllScopesOfUser(UserModel user, NoSQL noSQL) {
-        UserData userData = ((UserAdapter)user).getUser();
-        List<String> roleIds = userData.getScopeIds();
-
-        NoSQLQuery query = noSQL.createQueryBuilder()
-                .inCondition("_id", roleIds)
-                .build();
-        return noSQL.loadObjects(RoleData.class, query);
-    }
-
-    @Override
-    public Set<String> getScopeMappingValues(UserModel agent) {
-        Set<String> result = new HashSet<String>();
-        List<RoleData> roles = getAllScopesOfUser(agent,  noSQL);
-        // TODO: Maybe improve as currently we need to obtain all roles and then filter programmatically...
-        for (RoleData role : roles) {
-            if (getId().equals(role.getApplicationId())) {
-                result.add(role.getName());
-            }
-        }
-        return result;
-    }
-
-    @Override
-    public List<RoleModel> getScopeMappings(UserModel agent) {
-        List<RoleModel> result = new ArrayList<RoleModel>();
-        List<RoleData> roles = getAllScopesOfUser(agent,  noSQL);
-        // TODO: Maybe improve as currently we need to obtain all roles and then filter programmatically...
-        for (RoleData role : roles) {
-            if (getId().equals(role.getApplicationId())) {
-                result.add(new RoleAdapter(role, noSQL));
+                result.add(new RoleAdapter(role, this, invocationContext));
             }
         }
         return result;
@@ -284,16 +202,36 @@ public class ApplicationAdapter implements ApplicationModel {
 
     @Override
     public List<String> getDefaultRoles() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return application.getDefaultRoles();
     }
 
     @Override
     public void addDefaultRole(String name) {
-        //To change body of implemented methods use File | Settings | File Templates.
+        RoleModel role = getRole(name);
+        if (role == null) {
+            addRole(name);
+        }
+
+        getMongoStore().pushItemToList(application, "defaultRoles", name, true, invocationContext);
     }
 
     @Override
     public void updateDefaultRoles(String[] defaultRoles) {
-        //To change body of implemented methods use File | Settings | File Templates.
+        List<String> roleNames = new ArrayList<String>();
+        for (String roleName : defaultRoles) {
+            RoleModel role = getRole(roleName);
+            if (role == null) {
+                addRole(roleName);
+            }
+
+            roleNames.add(roleName);
+        }
+
+        application.setDefaultRoles(roleNames);
+    }
+
+    @Override
+    public AbstractMongoIdentifiableEntity getMongoEntity() {
+        return application;
     }
 }

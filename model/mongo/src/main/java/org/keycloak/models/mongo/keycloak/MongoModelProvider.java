@@ -2,6 +2,9 @@ package org.keycloak.models.mongo.keycloak;
 
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ModelProvider;
+import org.keycloak.models.mongo.keycloak.adapters.MongoKeycloakSessionFactory;
+import org.keycloak.models.mongo.utils.MongoConfiguration;
+import org.keycloak.models.mongo.utils.SystemPropertiesConfigurationProvider;
 
 import java.lang.Override;
 
@@ -18,16 +21,7 @@ public class MongoModelProvider implements ModelProvider {
 
     @Override
     public KeycloakSessionFactory createFactory() {
-            String host = PropertiesManager.getMongoHost();
-            int port = PropertiesManager.getMongoPort();
-            String dbName = PropertiesManager.getMongoDbName();
-            boolean dropDatabaseOnStartup = PropertiesManager.dropDatabaseOnStartup();
-
-            // Create MongoDBSessionFactory via reflection now
-            try {
-                return new MongoDBSessionFactory(host, port, dbName, dropDatabaseOnStartup);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
+        MongoConfiguration config = SystemPropertiesConfigurationProvider.createConfiguration();
+        return new MongoKeycloakSessionFactory(config);
     }
 }

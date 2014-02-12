@@ -8,6 +8,13 @@ The testsuite uses Sellenium. By default it uses the HtmlUnit WebDriver, but can
 
 To run the tests with Firefox add `-Dbrowser=firefox` or for Chrome add `-Dbrowser=chrome`
 
+Mongo
+-----
+
+The testsuite is executed with JPA model implementation with data saved in H2 database by default. To run testsuite with Mongo model, just add property `-Dkeycloak.model=mongo` when executing it.
+
+Note that this will automatically run embedded Mongo database on localhost/27018 and it will stop it after whole testsuite is finished.
+So you don't need to have Mongo installed on your laptop to run mongo execution tests.
 
 Test utils
 ==========
@@ -40,6 +47,16 @@ For example to use the example themes run the server with:
     mvn exec:java -Pkeycloak-server -Dkeycloak.theme.dir=examples/themes
     
 **NOTE:** If `keycloak.theme.dir` is specified the default themes (base, rcue and keycloak) are loaded from the classpath
+
+### Run server with Mongo model
+
+To start a Keycloak server with identity model data persisted in Mongo database instead of default JPA/H2 you can run:
+
+    mvn exec:java -Pkeycloak-server -Dkeycloak.model=mongo
+
+By default it's using database `keycloak` on localhost/27017 and it uses already existing data from this DB (no cleanup of existing data during bootstrap). Assumption is that you already have DB running on localhost/27017 . Use system properties to configure things differently:
+
+    mvn exec:java -Pkeycloak-server -Dkeycloak.model=mongo -Dkeycloak.mongo.host=localhost -Dkeycloak.mongo.port=27017 -Dkeycloak.mongo.db=keycloak -Dkeycloak.mongo.clearCollectionsOnStartup=false
 
 TOTP codes
 ----------

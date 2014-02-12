@@ -1,19 +1,19 @@
 package org.keycloak.models.mongo.test;
 
-import org.keycloak.models.mongo.api.AbstractNoSQLObject;
-import org.keycloak.models.mongo.api.NoSQLCollection;
-import org.keycloak.models.mongo.api.NoSQLField;
-import org.keycloak.models.mongo.api.NoSQLId;
+import org.keycloak.models.mongo.api.AbstractMongoIdentifiableEntity;
+import org.keycloak.models.mongo.api.MongoCollection;
+import org.keycloak.models.mongo.api.MongoField;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@NoSQLCollection(collectionName = "persons")
-public class Person extends AbstractNoSQLObject {
+@MongoCollection(collectionName = "persons")
+public class Person extends AbstractMongoIdentifiableEntity {
 
-    private String id;
     private String firstName;
     private int age;
     private List<String> kids;
@@ -21,18 +21,9 @@ public class Person extends AbstractNoSQLObject {
     private Address mainAddress;
     private Gender gender;
     private List<Gender> genders;
+    private Map<String, String> attributes = new HashMap<String, String>();
 
-
-    @NoSQLId
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    @NoSQLField
+    @MongoField
     public String getFirstName() {
         return firstName;
     }
@@ -41,7 +32,7 @@ public class Person extends AbstractNoSQLObject {
         this.firstName = firstName;
     }
 
-    @NoSQLField
+    @MongoField
     public int getAge() {
         return age;
     }
@@ -50,7 +41,7 @@ public class Person extends AbstractNoSQLObject {
         this.age = age;
     }
 
-    @NoSQLField
+    @MongoField
     public Gender getGender() {
         return gender;
     }
@@ -59,7 +50,7 @@ public class Person extends AbstractNoSQLObject {
         this.gender = gender;
     }
 
-    @NoSQLField
+    @MongoField
     public List<Gender> getGenders() {
         return genders;
     }
@@ -68,7 +59,7 @@ public class Person extends AbstractNoSQLObject {
         this.genders = genders;
     }
 
-    @NoSQLField
+    @MongoField
     public List<String> getKids() {
         return kids;
     }
@@ -77,7 +68,7 @@ public class Person extends AbstractNoSQLObject {
         this.kids = kids;
     }
 
-    @NoSQLField
+    @MongoField
     public List<Address> getAddresses() {
         return addresses;
     }
@@ -86,13 +77,30 @@ public class Person extends AbstractNoSQLObject {
         this.addresses = addresses;
     }
 
-    @NoSQLField
+    @MongoField
     public Address getMainAddress() {
         return mainAddress;
     }
 
     public void setMainAddress(Address mainAddress) {
         this.mainAddress = mainAddress;
+    }
+
+    @MongoField
+    public Map<String, String> getAttributes() {
+        return attributes;
+    }
+
+    public void setAttributes(Map<String, String> attributes) {
+        this.attributes = attributes;
+    }
+
+    public void addAttribute(String key, String value) {
+        attributes.put(key, value);
+    }
+
+    public void removeAttribute(String key) {
+        attributes.remove(key);
     }
 
     public static enum Gender {

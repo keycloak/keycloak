@@ -11,6 +11,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.SkeletonKeyToken;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.resources.AccountService;
@@ -41,7 +42,7 @@ public class AuthenticationManager {
 
     public SkeletonKeyToken createIdentityToken(RealmModel realm, String username) {
         SkeletonKeyToken token = new SkeletonKeyToken();
-        token.id(RealmManager.generateId());
+        token.id(KeycloakModelUtils.generateId());
         token.issuedNow();
         token.principal(username);
         token.audience(realm.getName());
