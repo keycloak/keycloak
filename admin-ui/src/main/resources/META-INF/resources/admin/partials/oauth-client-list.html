@@ -1,67 +1,60 @@
-<div id="wrapper" class="container">
-    <div class="row">
-        <div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="'partials/realm-menu.html'"></div>
-        <div id="content-area" class="col-md-9" role="main">
-            <div class="top-nav">
-                <ul class="rcue-tabs">
-                    <li></li>
-                </ul>
-            </div>
-            <div id="content">
-                <ol class="breadcrumb">
-                    <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
-                    <li class="active">OAuth Clients</li>
-                </ol>
-                <h2><span>{{realm.realm}}</span> OAuth Clients</h2>
-                <div class="feedback info inline" data-ng-show="!oauthClients || oauthClients.length == 0">
-                    <p><strong>You have not configured oauth clients.</strong> <a class="button" href="#/create/oauth-client/{{realm.realm}}">Add OAuth Client</a></p>
-                </div>
-                <table data-ng-hide="oauthClients.length == 0">
-                    <thead>
-                    <tr>
-                        <th class="rcue-table-actions" colspan="3">
-                            <div class="search-comp clearfix">
-                                <input type="text" placeholder="Search..." class="search"
-                                       onkeyup="if(event.keyCode == 13){$(this).next('button').click();}">
-                                <button class="icon-search" tooltip-placement="right"
-                                        tooltip="Search by oauth client name">
-                                    Icon: search
-                                </button>
-                            </div>
-                            <div class="actions">
-                                <a class="button" href="#/create/oauth-client/{{realm.realm}}">Add OAuth Client</a>
-                            </div>
-                        </th>
-                    </tr>
-                    <tr data-ng-show="oauthClients.length > 0">
-                        <th>OAuth Client Name</th>
-                        <th>Enabled</th>
-                    </tr>
-                    </thead>
-                    <tfoot data-ng-show="oauthClients && oauthClients.length > 5"> <!-- todo -->
-                    <tr>
-                        <td colspan="2">
-                            <div class="table-nav">
-                                <a href="#" class="first disabled">First page</a><a href="#" class="prev disabled">Previous
-                                page</a><span><strong>1-8</strong> of <strong>10</strong></span><a href="#"
-                                                                                                   class="next">Next
-                                page</a><a href="#" class="last">Last page</a>
-                            </div>
-                        </td>
-                    </tr>
-                    </tfoot>
-                    <tbody>
-                    <tr ng-repeat="client in oauthClients">
-                        <td><a href="#/realms/{{realm.realm}}/oauth-clients/{{client.id}}">{{client.name}}</a></td>
-                        <td>{{client.enabled}}</td>
-                    </tr>
-                    </tbody>
-                </table>
-                <div class="feedback warning inline" data-ng-show="search && oauthClients.length == 0">
-                    <p><strong>Your search returned no results.</strong><br>Try modifying the query and try again.</p>
-                </div>
-            </div>
+<div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="'partials/realm-menu.html'"></div>
+<div id="content-area" class="col-md-9" role="main">
+    <ul class="nav nav-tabs nav-tabs-pf">
+        <li class="active"><a href="">OAuth List</a></li>
+    </ul>
+    <div id="content">
+        <ol class="breadcrumb">
+            <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
+            <li class="active">OAuth Clients</li>
+        </ol>
+        <h2><span>{{realm.realm}}</span> OAuth Clients</h2>
+        <table class="table">
+            <thead>
+            <tr>
+                <th class="kc-table-actions" colspan="3">
+                    <div class="search-comp clearfix">
+                        <input type="text" placeholder="Search..." class="form-control search"
+                               onkeyup="if(event.keyCode == 13){$(this).next('button').click();}">
+                        <button class="kc-icon-search" tooltip-placement="right"
+                                tooltip="Search by oauth client name">
+                            Icon: search
+                        </button>
+                    </div>
+                    <div class="pull-right">
+                        <a class="btn btn-primary" href="#/create/oauth-client/{{realm.realm}}">Add OAuth Client</a>
+                    </div>
+                </th>
+            </tr>
+            <tr data-ng-hide="oauthClients.length == 0">
+                <th>OAuth Client Name</th>
+                <th>Enabled</th>
+            </tr>
+            </thead>
+            <tfoot data-ng-show="oauthClients && oauthClients.length > 5"> <!-- todo -->
+            <tr>
+                <td colspan="2">
+                    <div class="table-nav">
+                        <a href="#" class="first disabled">First page</a><a href="#" class="prev disabled">Previous
+                        page</a><span><strong>1-8</strong> of <strong>10</strong></span><a href="#"
+                                                                                           class="next">Next
+                        page</a><a href="#" class="last">Last page</a>
+                    </div>
+                </td>
+            </tr>
+            </tfoot>
+            <tbody>
+            <tr ng-repeat="client in oauthClients">
+                <td><a href="#/realms/{{realm.realm}}/oauth-clients/{{client.id}}">{{client.name}}</a></td>
+                <td>{{client.enabled}}</td>
+            </tr>
+            <tr data-ng-show="oauthClients.length == 0">
+                <td>No clients available</td>
+            </tr>
+            </tbody>
+        </table>
+        <div class="feedback warning inline" data-ng-show="search && oauthClients.length == 0">
+            <p><strong>Your search returned no results.</strong><br>Try modifying the query and try again.</p>
         </div>
-        <div id="container-right-bg"></div>
     </div>
 </div>

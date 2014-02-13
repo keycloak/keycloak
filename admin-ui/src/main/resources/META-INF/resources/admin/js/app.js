@@ -482,6 +482,18 @@ module.config([ '$routeProvider', function($routeProvider) {
             templateUrl : 'partials/home.html',
             controller : 'HomeCtrl'
         })
+        .when('/mocks/:realm', {
+            templateUrl : 'partials/realm-detail_mock.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                }
+            },
+            controller : 'RealmDetailCtrl'
+        })
         .otherwise({
             templateUrl : 'partials/notfound.html'
         });
@@ -561,7 +573,7 @@ module.directive('collapsable', function() {
     return function(scope, element, attrs) {
         element.click(function() {
             $(this).toggleClass('collapsed');
-            $(this).find('.toggle-icons').toggleClass('icon-collapse').toggleClass('icon-expand');
+            $(this).find('.toggle-icons').toggleClass('kc-icon-collapse').toggleClass('kc-icon-expand');
             $(this).find('.toggle-icons').text($(this).text() == "Icon: expand" ? "Icon: collapse" : "Icon: expand");
             $(this).parent().find('.form-group').toggleClass('hidden');
         });
@@ -571,10 +583,10 @@ module.directive('collapsable', function() {
 // collapsable form fieldsets
 module.directive('uncollapsed', function() {
     return function(scope, element, attrs) {
-        element.prepend('<span class="icon-collapse toggle-icons">Icon: collapse</span>');
+        element.prepend('<span class="kc-icon-collapse toggle-icons">Icon: collapse</span>');
         element.click(function() {
             $(this).toggleClass('collapsed');
-            $(this).find('.toggle-icons').toggleClass('icon-collapse').toggleClass('icon-expand');
+            $(this).find('.toggle-icons').toggleClass('kc-icon-collapse').toggleClass('kc-icon-expand');
             $(this).find('.toggle-icons').text($(this).text() == "Icon: expand" ? "Icon: collapse" : "Icon: expand");
             $(this).parent().find('.form-group').toggleClass('hidden');
         });
@@ -584,11 +596,11 @@ module.directive('uncollapsed', function() {
 // collapsable form fieldsets
 module.directive('collapsed', function() {
     return function(scope, element, attrs) {
-        element.prepend('<span class="icon-expand toggle-icons">Icon: expand</span>');
+        element.prepend('<span class="kc-icon-expand toggle-icons">Icon: expand</span>');
         element.parent().find('.form-group').toggleClass('hidden');
         element.click(function() {
             $(this).toggleClass('collapsed');
-            $(this).find('.toggle-icons').toggleClass('icon-collapse').toggleClass('icon-expand');
+            $(this).find('.toggle-icons').toggleClass('kc-icon-collapse').toggleClass('kc-icon-expand');
             $(this).find('.toggle-icons').text($(this).text() == "Icon: expand" ? "Icon: collapse" : "Icon: expand");
             $(this).parent().find('.form-group').toggleClass('hidden');
         });
@@ -684,17 +696,25 @@ module.directive('kcSave', function ($compile, Notifications) {
     return {
         restrict: 'A',
         link: function ($scope, elem, attr, ctrl) {
+            elem.addClass("btn btn-primary btn-lg");
+            elem.attr("type","submit");
             elem.bind('click', function() {
                 $scope.$apply(function() {
                     var form = elem.closest('form');
                     if (form && form.attr('name')) {
+                        var ngValid = form.find('.ng-valid');
                         if ($scope[form.attr('name')].$valid) {
-                            form.find('.ng-valid').removeClass('error');
+                            //ngValid.removeClass('error');
+                            ngValid.parent().removeClass('has-error');
                             $scope['save']();
                         } else {
                             Notifications.error("Missing or invalid field(s). Please verify the fields in red.")
-                            form.find('.ng-invalid').addClass('error');
-                            form.find('.ng-valid').removeClass('error');
+                            //ngValid.removeClass('error');
+                            ngValid.parent().removeClass('has-error');
+
+                            var ngInvalid = form.find('.ng-invalid');
+                            //ngInvalid.addClass('error');
+                            ngInvalid.parent().addClass('has-error');
                         }
                     }
                 });
@@ -707,6 +727,8 @@ module.directive('kcReset', function ($compile, Notifications) {
     return {
         restrict: 'A',
         link: function ($scope, elem, attr, ctrl) {
+            elem.addClass("btn btn-default btn-lg");
+            elem.attr("type","submit");
             elem.bind('click', function() {
                 $scope.$apply(function() {
                     var form = elem.closest('form');
@@ -717,6 +739,65 @@ module.directive('kcReset', function ($compile, Notifications) {
                     }
                 })
             })
+        }
+    }
+});
+
+module.directive('kcCancel', function ($compile, Notifications) {
+    return {
+        restrict: 'A',
+        link: function ($scope, elem, attr, ctrl) {
+            elem.addClass("btn btn-default btn-lg");
+            elem.attr("type","submit");
+        }
+    }
+});
+
+module.directive('kcDelete', function ($compile, Notifications) {
+    return {
+        restrict: 'A',
+        link: function ($scope, elem, attr, ctrl) {
+            elem.addClass("btn btn-danger btn-lg");
+            elem.attr("type","submit");
+        }
+    }
+});
+
+
+module.directive('kcSelect', function ($compile, Notifications) {
+    return {
+        scope: {
+            kcOptions: '=',
+            kcModel: '=',
+            id: "=",
+            kcPlaceholder: '@'
+        },
+        restrict: 'EA',
+        replace: true,
+        templateUrl: 'templates/kc-select.html',
+        link: function(scope, element, attr) {
+            scope.updateModel = function(item) {
+                scope.kcModel = item;
+            };
+        }
+    }
+});
+
+module.directive('kcNavigation', function ($compile, Notifications) {
+    return {
+        scope: {
+            kcCurrent: '@',
+            kcRealm: '=',
+            kcSocial: '='
+        },
+        restrict: 'E',
+        replace: true,
+        templateUrl: 'templates/kc-navigation.html',
+
+        compile: function(element, attrs){
+            if (!attrs.kcSocial) {
+                attrs.kcSocial = false;
+            }
         }
     }
 });

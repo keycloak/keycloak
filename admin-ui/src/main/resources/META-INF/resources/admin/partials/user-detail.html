@@ -1,109 +1,95 @@
-<div id="wrapper" class="container">
-    <div class="row">
-        <div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="'partials/realm-menu.html'"></div>
-        <div id="content-area" class="col-md-9" role="main">
-            <div class="top-nav" data-ng-show="create">
-                <ul class="rcue-tabs">
-                    <li></li>
-                </ul>
-            </div>
-            <div class="top-nav" data-ng-show="!create">
-                <ul class="rcue-tabs" >
-                    <li class="active"><a href="#/realms/{{realm.realm}}/users/{{user.username}}">Attributes</a></li>
-                    <li><a href="#/realms/{{realm.realm}}/users/{{user.username}}/user-credentials">Credentials</a></li>
-                    <li><a href="#/realms/{{realm.realm}}/users/{{user.username}}/role-mappings">Role Mappings</a></li>
-                </ul>
-            </div>
-            <div id="content">
-                <ol class="breadcrumb" data-ng-show="create">
-                    <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
-                    <li><a href="#/realms/{{realm.realm}}/users">Users</a></li>
-                    <li class="active">Add</li>
-                </ol>
-                <h2 class="pull-left" data-ng-show="create">Add User</h2>
-                <p class="subtitle" data-ng-show="create"><span class="required">*</span> Required fields</p>
+<div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="'partials/realm-menu.html'"></div>
+<div id="content-area" class="col-md-9" role="main">
 
-                <ol class="breadcrumb" data-ng-hide="create">
-                    <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
-                    <li><a href="#/realms/{{realm.realm}}/users">Users</a></li>
-                    <li><a href="#/realms/{{realm.realm}}/users/{{user.username}}">{{user.username}}</a></li>
-                    <li class="active">Attributes</li>
-                </ol>
-                <h2 class="pull-left" data-ng-hide="create"><span>{{user.username}}'s</span> Attributes</h2>
-                
-                <form name="userForm" novalidate>
-                    <fieldset class="border-top">
-                        <div class="form-group">
-                            <label for="username">Username <span class="required" data-ng-show="create">*</span></label>
-                            <div class="controls">
-                                <!-- Characters >,<,/,\ are forbidden in username -->
-                                <input type="text" id="username" name="username" data-ng-model="user.username" autofocus
-                                       required ng-pattern="/^[^\<\>\\\/]*$/" data-ng-readonly="!create">
-                            </div>
-                        </div>
+    <ul class="nav nav-tabs nav-tabs-pf" data-ng-show="!create">
+        <li class="active"><a href="#/realms/{{realm.realm}}/users/{{user.username}}">Attributes</a></li>
+        <li><a href="#/realms/{{realm.realm}}/users/{{user.username}}/user-credentials">Credentials</a></li>
+        <li><a href="#/realms/{{realm.realm}}/users/{{user.username}}/role-mappings">Role Mappings</a></li>
+    </ul>
 
-                        <div class="form-group">
-                            <label for="email" class="control-label">Email</label>
+    <div id="content">
+        <ol class="breadcrumb" data-ng-show="create">
+            <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
+            <li><a href="#/realms/{{realm.realm}}/users">Users</a></li>
+            <li class="active">Add</li>
+        </ol>
+        <h2 data-ng-show="create">Add User</h2>
+        <ol class="breadcrumb" data-ng-hide="create">
+            <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
+            <li><a href="#/realms/{{realm.realm}}/users">Users</a></li>
+            <li><a href="#/realms/{{realm.realm}}/users/{{user.username}}">{{user.username}}</a></li>
+            <li class="active">Attributes</li>
+        </ol>
+        <h2 data-ng-hide="create"><span>{{user.username}}'s</span> Attributes</h2>
 
-                            <div class="controls">
-                                <input class="input-small" type="email" name="email" id="email"
-                                       data-ng-model="user.email">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="firstName" class="control-label">First Name</label>
-
-                            <div class="controls">
-                                <input class="input-small" type="text" name="firstName" id="firstName"
-                                       data-ng-model="user.firstName">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="lastName" class="control-label">Last Name</label>
-
-                            <div class="controls">
-                                <input class="input-small" type="text" name="lastName" id="lastName"
-                                       data-ng-model="user.lastName">
-                            </div>
-                        </div>
-
-                        <div class="form-group clearfix block">
-                            <label for="userEnabled" class="control-label">User Enabled</label>
-                            <input ng-model="user.enabled" name="userEnabled" id="userEnabled" onoffswitch />
-                        </div>
-                        <div class="form-group clearfix block">
-                            <label for="emailVerified" class="control-label">Email verified</label>
-                            <input ng-model="user.emailVerified" name="emailVerified" id="emailVerified" onoffswitch />
-                        </div>
-                        <div class="form-group clearfix">
-                            <label for="reqActions" class="control-label two-lines">Required User Actions</label>
-
-                            <div class="controls">
-                                <input type="text" ui-select2="userReqActionsOptions" ng-model="userActions" id="reqActions"/>
-                            </div>
-                        </div>
-                    </fieldset>
-                    <div class="form-actions" data-ng-show="create">
-                        <button type="submit" kc-save class="primary" data-ng-show="changed">Save
-                        </button>
-                        <button type="submit" data-ng-click="cancel()">Cancel
-                        </button>
+        <form class="form-horizontal" name="userForm" novalidate>
+            <span class="fieldset-notice"><span class="required">*</span> Required fields</span>
+            <fieldset class="border-top">
+                <div class="form-group">
+                    <label class="col-sm-2 control-label"for="username">Username <span class="required" data-ng-show="create">*</span></label>
+                    <div class="col-sm-4">
+                        <!-- Characters >,<,/,\ are forbidden in username -->
+                        <input class="form-control" type="text" id="username" name="username" data-ng-model="user.username" autofocus
+                               required ng-pattern="/^[^\<\>\\\/]*$/" data-ng-readonly="!create">
                     </div>
+                </div>
 
-                    <div class="form-actions" data-ng-show="!create">
-                        <button type="submit" kc-save class="primary" data-ng-show="changed">Save
-                        </button>
-                        <button type="submit" kc-reset data-ng-show="changed">Clear changes
-                        </button>
-                        <button type="submit" data-ng-click="remove()" class="destructive" data-ng-hide="changed">
-                            Delete
-                        </button>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label" for="email">Email</label>
+
+                    <div class="col-sm-4">
+                        <input class="form-control" type="email" name="email" id="email"
+                               data-ng-model="user.email">
                     </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label" for="firstName">First Name</label>
 
-                </form>
+                    <div class="col-sm-4">
+                        <input class="form-control" type="text" name="firstName" id="firstName"
+                               data-ng-model="user.firstName">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label" for="lastName">Last Name</label>
+
+                    <div class="col-sm-4">
+                        <input class="form-control" type="text" name="lastName" id="lastName"
+                               data-ng-model="user.lastName">
+                    </div>
+                </div>
+
+                <div class="form-group clearfix block">
+                    <label class="col-sm-2 control-label" for="userEnabled">User Enabled</label>
+                    <div class="col-sm-4">
+                        <input ng-model="user.enabled" name="userEnabled" id="userEnabled" onoffswitch />
+                    </div>
+                </div>
+                <div class="form-group clearfix block">
+                    <label class="col-sm-2 control-label" for="emailVerified">Email verified</label>
+                    <div class="col-sm-4">
+                        <input ng-model="user.emailVerified" name="emailVerified" id="emailVerified" onoffswitch />
+                    </div>
+                </div>
+                <div class="form-group clearfix">
+                    <label class="col-sm-2 control-label" for="reqActions">Required User Actions</label>
+
+                    <div class="col-sm-4">
+                        <input type="text" ui-select2="userReqActionsOptions" ng-model="userActions" id="reqActions"/>
+                    </div>
+                </div>
+            </fieldset>
+            <div class="pull-right form-actions" data-ng-show="create">
+                <button kc-cancel data-ng-click="cancel()">Cancel</button>
+                <button kc-save data-ng-show="changed">Save</button>
             </div>
-        </div>
-        <div id="container-right-bg"></div>
+
+            <div class="pull-right form-actions" data-ng-show="!create">
+                <button kc-reset data-ng-show="changed">Clear changes</button>
+                <button kc-save  data-ng-show="changed">Save</button>
+                <button kc-delete data-ng-click="remove()" data-ng-hide="changed">Delete</button>
+            </div>
+
+        </form>
     </div>
-</div>
 </div>
