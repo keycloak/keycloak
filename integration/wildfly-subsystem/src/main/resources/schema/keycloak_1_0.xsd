@@ -17,6 +17,7 @@
             </xs:documentation>
         </xs:annotation>
         <xs:element name="realm" maxOccurs="unbounded" minOccurs="0" type="realm-type"/>
+        <xs:element name="realm" maxOccurs="unbounded" minOccurs="0" type="secure-deployment-type"/>
 
     </xs:complexType>
 
@@ -28,18 +29,6 @@
         </xs:attribute>
         <xs:complexContent>
             <xs:extension base="override-element-type">
-                <xs:element name="realm-public-key" type="xs:string" minOccurs="1" maxOccurs="1" use="required"/>
-                <xs:element name="auth-url" type="xs:string" minOccurs="1" maxOccurs="1" use="required"/>
-                <xs:element name="code-url" type="xs:string" minOccurs="1" maxOccurs="1" use="required"/>
-                <xs:element name="ssl-not-required" type="xs:boolean" minOccurs="0" maxOccurs="1" />
-                <xs:element name="allow-any-hostname" type="xs:boolean" minOccurs="0" maxOccurs="1" />
-                <xs:element name="disable-trust-manager" type="xs:boolean" minOccurs="0" maxOccurs="1" />
-                <xs:element name="truststore" type="xs:string" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="truststore-password" type="xs:string" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="connection-pool-size" type="xs:integer" minOccurs="0" maxOccurs="1"/>
-                <xs:choice maxOccurs="unbounded" minOccurs="0">
-                    <xs:element name="secure-deployment" maxOccurs="unbounded" minOccurs="0" type="secure-deployment-type"/>
-                </xs:choice>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
@@ -52,6 +41,7 @@
         </xs:attribute>
         <xs:complexContent>
             <xs:extension base="override-element-type">
+                <xs:element name="realm" type="xs:string" minOccurs="0" maxOccurs="1" use="required"/>
                 <xs:element name="resource" type="xs:string" minOccurs="0" maxOccurs="1" use="required"/>
                 <xs:element name="use-resource-role-mappings" type="xs:boolean" minOccurs="0" maxOccurs="1" />
                 <xs:element name="bearer-only" type="xs:boolean" minOccurs="0" maxOccurs="1" />
@@ -76,6 +66,15 @@
                 ]]>
             </xs:documentation>
         </xs:annotation>
+        <xs:element name="realm-public-key" type="xs:string" minOccurs="1" maxOccurs="1" use="required"/>
+        <xs:element name="auth-url" type="xs:string" minOccurs="1" maxOccurs="1" use="required"/>
+        <xs:element name="code-url" type="xs:string" minOccurs="1" maxOccurs="1" use="required"/>
+        <xs:element name="ssl-not-required" type="xs:boolean" minOccurs="0" maxOccurs="1" />
+        <xs:element name="allow-any-hostname" type="xs:boolean" minOccurs="0" maxOccurs="1" />
+        <xs:element name="disable-trust-manager" type="xs:boolean" minOccurs="0" maxOccurs="1" />
+        <xs:element name="truststore" type="xs:string" minOccurs="0" maxOccurs="1"/>
+        <xs:element name="truststore-password" type="xs:string" minOccurs="0" maxOccurs="1"/>
+        <xs:element name="connection-pool-size" type="xs:integer" minOccurs="0" maxOccurs="1"/>
         <xs:element name="enable-cors" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
         <xs:element name="client-keystore" type="xs:string" minOccurs="0" maxOccurs="1"/>
         <xs:element name="client-keystore-password" type="xs:string" minOccurs="0" maxOccurs="1"/>

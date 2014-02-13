@@ -43,12 +43,18 @@ public class SecureDeploymentDefinition extends SimpleResourceDefinition {
 
     public static final String TAG_NAME = "secure-deployment";
 
+    protected static final SimpleAttributeDefinition REALM =
+            new SimpleAttributeDefinitionBuilder("realm", ModelType.STRING, true)
+                    .setXmlName("realm")
+                    .setAllowExpression(true)
+                    .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
+                    .build();
     protected static final SimpleAttributeDefinition RESOURCE =
             new SimpleAttributeDefinitionBuilder("resource", ModelType.STRING, true)
-            .setXmlName("resource")
-            .setAllowExpression(true)
-            .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
-            .build();
+                    .setXmlName("resource")
+                    .setAllowExpression(true)
+                    .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
+                    .build();
     protected static final SimpleAttributeDefinition USE_RESOURCE_ROLE_MAPPINGS =
             new SimpleAttributeDefinitionBuilder("use-resource-role-mappings", ModelType.BOOLEAN, true)
             .setXmlName("use-resource-role-mappings")
@@ -64,6 +70,7 @@ public class SecureDeploymentDefinition extends SimpleResourceDefinition {
 
     protected static final List<SimpleAttributeDefinition> DEPLOYMENT_ONLY_ATTRIBUTES = new ArrayList<SimpleAttributeDefinition>();
     static {
+        DEPLOYMENT_ONLY_ATTRIBUTES.add(REALM);
         DEPLOYMENT_ONLY_ATTRIBUTES.add(RESOURCE);
         DEPLOYMENT_ONLY_ATTRIBUTES.add(USE_RESOURCE_ROLE_MAPPINGS);
         DEPLOYMENT_ONLY_ATTRIBUTES.add(BEARER_ONLY);

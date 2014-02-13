@@ -17,17 +17,18 @@
 
 package org.keycloak.subsystem.extension;
 
-import java.util.List;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.dmr.ModelNode;
+import org.jboss.msc.service.ServiceController;
+
+import java.util.List;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
-import org.jboss.msc.service.ServiceController;
 
 /**
  * Add a new realm.
@@ -51,7 +52,7 @@ public final class RealmAddHandler extends AbstractAddStepHandler {
             attrib.validateAndSet(operation, model);
         }
 
-        if (!RealmDefinition.validateTruststoreSetIfRequired(model.clone())) {
+        if (!SharedAttributeDefinitons.validateTruststoreSetIfRequired(model.clone())) {
             //TODO: externalize message
             throw new OperationFailedException("truststore and truststore-password must be set if both ssl-not-required and disable-trust-maanger are false.");
         }

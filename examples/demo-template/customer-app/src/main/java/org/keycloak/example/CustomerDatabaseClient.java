@@ -20,10 +20,11 @@ import java.util.List;
  */
 public class CustomerDatabaseClient {
 
-    static class TypedList extends ArrayList<String> {}
+    static class TypedList extends ArrayList<String> {
+    }
 
     public static List<String> getCustomers(HttpServletRequest req) {
-        SkeletonKeySession session = (SkeletonKeySession)req.getAttribute(SkeletonKeySession.class.getName());
+        SkeletonKeySession session = (SkeletonKeySession) req.getAttribute(SkeletonKeySession.class.getName());
 
         HttpClient client = new HttpClientBuilder()
                 .trustStore(session.getMetadata().getTruststore())

@@ -23,6 +23,26 @@
         </xsl:copy>
     </xsl:template>
 
+    <!-- for some reason, Wildfly 8 final decided to turn off management-native which means jboss-as-maven-plugin no
+         longer works -->
+    <xsl:template match="node()[name(.)='management-interfaces']">
+        <xsl:copy>
+            <xsl:apply-templates select="node()|@*"/>
+            <native-interface security-realm="ManagementRealm">
+                <socket-binding native="management-native"/>
+            </native-interface>
+        </xsl:copy>
+    </xsl:template>
+
+    <!-- for some reason, Wildfly 8 final decided to turn off management-native which means jboss-as-maven-plugin no
+         longer works -->
+    <xsl:template match="node()[name(.)='socket-binding-group']">
+        <xsl:copy>
+            <xsl:apply-templates select="node()|@*"/>
+            <socket-binding name="management-native" interface="management" port="9999"/>
+        </xsl:copy>
+    </xsl:template>
+
     <xsl:template match="@*|node()">
         <xsl:copy>
             <xsl:apply-templates select="@*|node()" />

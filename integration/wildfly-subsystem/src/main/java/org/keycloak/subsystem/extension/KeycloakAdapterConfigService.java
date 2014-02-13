@@ -86,7 +86,6 @@ public final class KeycloakAdapterConfigService implements Service<KeycloakAdapt
 
     public void addSecureDeployment(ModelNode operation, ModelNode model) {
         ModelNode deployment = model.clone();
-        deployment.get(RealmDefinition.TAG_NAME).set(realmNameFromOp(operation));
         this.deployments.put(deploymentNameFromOp(operation), deployment);
     }
 
@@ -178,7 +177,7 @@ public final class KeycloakAdapterConfigService implements Service<KeycloakAdapt
         json.get(RealmDefinition.TAG_NAME).set(realmName);
 
         // Realm values set first.  Some can be overridden by deployment values.
-        setJSONValues(json, realm);
+        if (realm != null) setJSONValues(json, realm);
         setJSONValues(json, deployment);
         return json.toJSONString(true);
     }

@@ -14,7 +14,7 @@
     <properties>
         <keycloak.apache.httpcomponents.version>4.1.2</keycloak.apache.httpcomponents.version>
         <resteasy.version>3.0.6.Final</resteasy.version>
-        <undertow.version>1.0.0.Beta30</undertow.version>
+        <undertow.version>1.0.0.Final</undertow.version>
         <picketlink.version>2.5.0.Beta6</picketlink.version>
         <mongo.driver.version>2.11.3</mongo.driver.version>
         <jboss.logging.version>3.1.1.GA</jboss.logging.version>
@@ -26,7 +26,7 @@
         <mysql.version>5.1.25</mysql.version>
         <slf4j.version>1.6.1</slf4j.version>
         <jboss.version>7.1.1.Final</jboss.version>
-        <wildfly.version>8.0.0.CR1</wildfly.version>
+        <wildfly.version>8.0.0.Final</wildfly.version>
         <json.version>20131018</json.version>
     </properties>
 

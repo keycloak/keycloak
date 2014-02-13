@@ -11,16 +11,14 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 @Path("products")
-public class ProductService
-{
-   @GET
-   @Produces("application/json")
-   public List<String> getProducts()
-   {
-      ArrayList<String> rtn = new ArrayList<String>();
-      rtn.add("iphone");
-      rtn.add("ipad");
-      rtn.add("ipod");
-      return rtn;
-   }
+public class ProductService {
+    @GET
+    @Produces("application/json")
+    public List<String> getProducts() {
+        ArrayList<String> rtn = new ArrayList<String>();
+        rtn.add("iphone");
+        rtn.add("ipad");
+        rtn.add("ipod");
+        return rtn;
+    }
 }
