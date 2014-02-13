@@ -9,8 +9,6 @@
     "registrationAllowed": true,
     "resetPasswordAllowed": true,
     "requiredCredentials": [ "password" ],
-    "requiredApplicationCredentials": [ "password" ],
-    "requiredOAuthClientCredentials": [ "password" ],
     "smtpServer": {
         "from": "auto@keycloak.org",
         "host": "localhost",
@@ -68,7 +66,7 @@
             "name" : "third-party",
             "enabled": true,
             "credentials" : [
-                { "type" : "password",
+                { "type" : "secret",
                     "value" : "password" }
             ]
         }
@@ -109,7 +107,7 @@
             "adminUrl": "http://localhost:8081/app/logout",
             "credentials": [
                 {
-                    "type": "password",
+                    "type": "secret",
                     "value": "password"
                 }
             ]
@@ -121,7 +119,7 @@
             "adminUrl": "http://localhost:8081/app/logout",
             "credentials": [
                 {
-                    "type": "password",
+                    "type": "secret",
                     "value": "password"
                 }
             ]
@@ -133,7 +131,7 @@
             "adminUrl": "http://localhost:8081/app/logout",
             "credentials": [
                 {
-                    "type": "password",
+                    "type": "secret",
                     "value": "password"
                 }
             ]
@@ -145,7 +143,7 @@
             "adminUrl": "http://localhost:8081/app/logout",
             "credentials": [
                 {
-                    "type": "password",
+                    "type": "secret",
                     "value": "password"
                 }
             ]

@@ -10,6 +10,7 @@ import org.keycloak.representations.adapters.config.BaseAdapterConfig;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
 import org.keycloak.services.managers.ApplicationManager;
+import org.keycloak.services.managers.ModelToRepresentation;
 import org.keycloak.services.managers.OAuthClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
@@ -18,6 +19,8 @@ import org.keycloak.util.JsonSerialization;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -74,7 +77,7 @@ public class OAuthClientResource  {
     @Produces(MediaType.APPLICATION_JSON)
     public String getInstallation() throws IOException {
         OAuthClientManager manager = new OAuthClientManager(realm);
-        BaseAdapterConfig rep = manager.toInstallationRepresentation(realm, oauthClient, getApplication().getBaseUri(uriInfo));
+        Object rep = manager.toInstallationRepresentation(realm, oauthClient, getApplication().getBaseUri(uriInfo));
 
         // TODO Temporary solution to pretty-print
         return JsonSerialization.mapper.writerWithDefaultPrettyPrinter().writeValueAsString(rep);
@@ -86,17 +89,26 @@ public class OAuthClientResource  {
         realm.removeOAuthClient(oauthClient.getId());
     }
 
-    @Path("credentials")
-    @PUT
+    @Path("client-secret")
+    @POST
+    @Produces("application/json")
     @Consumes("application/json")
-    public void updateCredentials(List<CredentialRepresentation> credentials) {
-        logger.debug("updateCredentials");
-        if (credentials == null) return;
+    public CredentialRepresentation regenerateSecret() {
+        logger.debug("regenerateSecret");
+        UserCredentialModel cred = UserCredentialModel.generateSecret();
+        realm.updateCredential(oauthClient.getOAuthAgent(), cred);
+        CredentialRepresentation rep = ModelToRepresentation.toRepresentation(cred);
+        return rep;
+    }
 
-        for (CredentialRepresentation rep : credentials) {
-            UserCredentialModel cred = RealmManager.fromRepresentation(rep);
-            realm.updateCredential(oauthClient.getOAuthAgent(), cred);
-        }
+    @Path("client-secret")
+    @GET
+    @Produces("application/json")
+    public CredentialRepresentation getClientSecret() {
+        logger.debug("getClientSecret");
+        UserCredentialModel model = realm.getSecret(oauthClient.getOAuthAgent());
+        if (model == null) throw new NotFoundException("Application does not have a secret");
+        return ModelToRepresentation.toRepresentation(model);
     }
 
     @Path("scope-mappings")

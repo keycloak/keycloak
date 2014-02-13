@@ -6,6 +6,6 @@
     "ssl-not-required": true,
     "expose-token": true,
     "credentials": {
-        "password": "password"
+        "secret": "password"
     }
 }

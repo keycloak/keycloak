@@ -125,7 +125,7 @@ public class OAuthClient {
             parameters.add(new BasicNameValuePair("client_id", clientId));
         }
         if (password != null) {
-            parameters.add(new BasicNameValuePair("password", password));
+            parameters.add(new BasicNameValuePair("secret", password));
         }
 
         UrlEncodedFormEntity formEntity = null;

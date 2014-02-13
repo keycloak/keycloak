@@ -5,6 +5,7 @@ import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.util.BasicAuthHelper;
 import org.keycloak.AbstractOAuthClient;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.idm.CredentialRepresentation;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.InternalServerErrorException;
@@ -19,6 +20,7 @@ import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.net.URL;
+import java.util.Map;
 
 /**
  * Helper code to obtain oauth access tokens via browser redirects
@@ -58,14 +60,15 @@ public class JaxrsOAuthClient extends AbstractOAuthClient {
 
     public String resolveBearerToken(String redirectUri, String code) {
         redirectUri = stripOauthParametersFromRedirect(redirectUri);
-        String authHeader = BasicAuthHelper.createHeader(clientId, password);
         Form codeForm = new Form()
                 .param("grant_type", "authorization_code")
                 .param("code", code)
                 .param("client_id", clientId)
-                .param("password", password)
                 .param("redirect_uri", redirectUri);
-        Response res = client.target(codeUrl).request().header(HttpHeaders.AUTHORIZATION, authHeader).post(Entity.form(codeForm));
+        for (Map.Entry<String, String> entry : credentials.entrySet()) {
+            codeForm.param(entry.getKey(), entry.getValue());
+        }
+        Response res = client.target(codeUrl).request().post(Entity.form(codeForm));
         try {
             if (res.getStatus() == 400) {
                 throw new BadRequestException();

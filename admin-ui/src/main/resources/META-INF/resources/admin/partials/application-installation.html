@@ -19,15 +19,27 @@
         <h2>Application Installation</h2>
         <form class="form-horizontal" name="realmForm" novalidate>
             <fieldset>
-                <div class="form-group">
+                <div class="form-group input-select">
+                    <label class="col-sm-2 control-label" for="configFormats">Format Option</label>
+                    <div class="col-sm-4">
+                        <div class="input-group">
+                            <div class="select-kc">
+                                <select id="configFormats" name="configFormats" ng-change="changeFormat()" ng-model="configFormat" ng-options="a for a in configFormats">
+                                    <option value="" selected> Select a Format </option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group" ng-show="installation">
                     <div class="col-sm-12">
-                        <textarea class="form-control" rows="20" kc-select-action="click">{{installation | json}}</textarea>
+                        <textarea class="form-control" rows="20" kc-select-action="click">{{installation}}</textarea>
                     </div>
                 </div>
             </fieldset>
         </form>
 
-        <div class="pull-right form-actions">
+        <div class="pull-right form-actions" ng-show="installation">
             <a class="btn btn-primary btn-lg" href="{{download}}" download="keycloak.json" type="submit">Download</a>
         </div>
     </div>

@@ -57,11 +57,12 @@ public class TokenGrantRequest {
     public static AccessTokenResponse invoke(HttpClient client, String code, String codeUrl, String redirectUri, String client_id, Map<String, String> credentials) throws IOException, HttpFailure {
         List<NameValuePair> formparams = new ArrayList<NameValuePair>();
         redirectUri = stripOauthParametersFromRedirect(redirectUri);
-        String password = credentials.get("password");
+        for (Map.Entry<String, String> entry : credentials.entrySet()) {
+            formparams.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
+        }
         formparams.add(new BasicNameValuePair("grant_type", "authorization_code"));
         formparams.add(new BasicNameValuePair("code", code));
         formparams.add(new BasicNameValuePair("client_id", client_id));
-        formparams.add(new BasicNameValuePair(CredentialRepresentation.PASSWORD, password));
         formparams.add(new BasicNameValuePair("redirect_uri", redirectUri));
         HttpResponse response = null;
         UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");

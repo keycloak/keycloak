@@ -997,6 +997,17 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public UserCredentialModel getSecret(UserModel user) {
+        for (CredentialEntity cred : ((UserAdapter)user).getUser().getCredentials()) {
+            if (cred.getType().equals(UserCredentialModel.SECRET)) {
+                return UserCredentialModel.secret(cred.getValue());
+            }
+        }
+        return null;
+
+    }
+
+    @Override
     public boolean validatePassword(UserModel user, String password) {
         for (CredentialEntity cred : ((UserAdapter)user).getUser().getCredentials()) {
             if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
@@ -1005,6 +1016,18 @@ public class RealmAdapter implements RealmModel {
         }
         return false;
     }
+
+    @Override
+    public boolean validateSecret(UserModel user, String secret) {
+        for (CredentialEntity cred : ((UserAdapter)user).getUser().getCredentials()) {
+            if (cred.getType().equals(UserCredentialModel.SECRET)) {
+                return secret.equals(cred.getValue());
+            }
+        }
+        return false;
+    }
+
+
 
     @Override
     public boolean validateTOTP(UserModel user, String password, String token) {

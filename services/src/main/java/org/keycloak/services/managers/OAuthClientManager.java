@@ -1,5 +1,7 @@
 package org.keycloak.services.managers;
 
+import org.codehaus.jackson.annotate.JsonProperty;
+import org.codehaus.jackson.annotate.JsonPropertyOrder;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.OAuthClientModel;
@@ -8,6 +10,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.adapters.config.BaseAdapterConfig;
+import org.keycloak.representations.adapters.config.BaseRealmConfig;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
 import org.keycloak.services.resources.flows.Urls;
@@ -83,21 +86,43 @@ public class OAuthClientManager {
         return rep;
     }
 
-    public BaseAdapterConfig toInstallationRepresentation(RealmModel realmModel, OAuthClientModel model, URI baseUri) {
-        BaseAdapterConfig rep = new BaseAdapterConfig();
+    @JsonPropertyOrder({"realm", "realm-public-key", "auth-server-url", "ssl-not-required",
+            "resource", "credentials"})
+    public static class InstallationAdapterConfig extends BaseRealmConfig {
+        @JsonProperty("resource")
+        protected String resource;
+        @JsonProperty("credentials")
+        protected Map<String, String> credentials = new HashMap<String, String>();
+
+        public String getResource() {
+            return resource;
+        }
+
+        public void setResource(String resource) {
+            this.resource = resource;
+        }
+        public Map<String, String> getCredentials() {
+            return credentials;
+        }
+
+        public void setCredentials(Map<String, String> credentials) {
+            this.credentials = credentials;
+        }
+
+    }
+
+
+    public InstallationAdapterConfig toInstallationRepresentation(RealmModel realmModel, OAuthClientModel model, URI baseUri) {
+        InstallationAdapterConfig rep = new InstallationAdapterConfig();
         rep.setRealm(realmModel.getName());
         rep.setRealmKey(realmModel.getPublicKeyPem());
         rep.setSslNotRequired(realmModel.isSslNotRequired());
         rep.setAuthServerUrl(baseUri.toString());
-        rep.setUseResourceRoleMappings(false);
 
         rep.setResource(model.getOAuthAgent().getLoginName());
 
         Map<String, String> creds = new HashMap<String, String>();
-        creds.put(CredentialRepresentation.PASSWORD, "INSERT CLIENT PASSWORD");
-        if (model.getOAuthAgent().isTotp()) {
-            creds.put(CredentialRepresentation.TOTP, "INSERT CLIENT TOTP");
-        }
+        creds.put(CredentialRepresentation.SECRET, realmModel.getSecret(model.getOAuthAgent()).getValue());
         rep.setCredentials(creds);
 
         return rep;

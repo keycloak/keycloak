@@ -58,16 +58,10 @@ public class ApplianceBootstrap {
         realm.setLoginTheme("keycloak");
         realm.setAccountTheme("keycloak");
 
-        ApplicationModel adminConsole = realm.addApplication(Constants.ADMIN_CONSOLE_APPLICATION);
+        ApplicationModel adminConsole = new ApplicationManager(manager).createApplication(realm, Constants.ADMIN_CONSOLE_APPLICATION);
         adminConsole.setBaseUrl("/auth/admin/index.html");
         adminConsole.setEnabled(true);
-        UserCredentialModel adminConsolePassword = new UserCredentialModel();
-        adminConsolePassword.setType(UserCredentialModel.PASSWORD);
-        adminConsolePassword.setValue(UUID.randomUUID().toString()); // just a random password as we'll never access it
-        realm.updateCredential(adminConsole.getApplicationUser(), adminConsolePassword);
 
-        RoleModel applicationRole = realm.getRole(Constants.APPLICATION_ROLE);
-        realm.grantRole(adminConsole.getApplicationUser(), applicationRole);
         RoleModel adminRole = adminConsole.addRole(Constants.ADMIN_CONSOLE_ADMIN_ROLE);
 
         UserModel adminUser = realm.addUser("admin");

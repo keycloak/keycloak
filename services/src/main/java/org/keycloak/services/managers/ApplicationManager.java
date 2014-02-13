@@ -1,5 +1,7 @@
 package org.keycloak.services.managers;
 
+import org.codehaus.jackson.annotate.JsonProperty;
+import org.codehaus.jackson.annotate.JsonPropertyOrder;
 import org.jboss.resteasy.logging.Logger;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
@@ -7,7 +9,9 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.SkeletonKeyScope;
 import org.keycloak.representations.adapters.config.BaseAdapterConfig;
+import org.keycloak.representations.adapters.config.BaseRealmConfig;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -22,6 +26,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.UUID;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -35,6 +40,10 @@ public class ApplicationManager {
     public ApplicationManager(RealmManager realmManager) {
         this.realmManager = realmManager;
     }
+
+    public ApplicationManager() {
+    }
+
 
     /**
      * Does not create scope or role mappings!
@@ -54,14 +63,18 @@ public class ApplicationManager {
         applicationModel.updateApplication();
 
         UserModel resourceUser = applicationModel.getApplicationUser();
-        if (resourceRep.getCredentials() != null) {
+        if (resourceRep.getCredentials() != null && resourceRep.getCredentials().size() > 0) {
             for (CredentialRepresentation cred : resourceRep.getCredentials()) {
                 UserCredentialModel credential = new UserCredentialModel();
                 credential.setType(cred.getType());
                 credential.setValue(cred.getValue());
                 realm.updateCredential(resourceUser, credential);
             }
+        } else {
+            generateSecret(realm, applicationModel);
         }
+
+
         if (resourceRep.getRedirectUris() != null) {
             for (String redirectUri : resourceRep.getRedirectUris()) {
                 resourceUser.addRedirectUri(redirectUri);
@@ -122,7 +135,15 @@ public class ApplicationManager {
         RoleModel loginRole = realm.getRole(Constants.APPLICATION_ROLE);
         ApplicationModel app = realm.addApplication(name);
         realm.grantRole(app.getApplicationUser(), loginRole);
+        generateSecret(realm, app);
+
         return app;
+    }
+
+    public UserCredentialModel generateSecret(RealmModel realm, ApplicationModel app) {
+        UserCredentialModel secret = UserCredentialModel.generateSecret();
+        realm.updateCredential(app.getApplicationUser(), secret);
+        return secret;
     }
 
     public void updateApplication(ApplicationRepresentation rep, ApplicationModel resource) {
@@ -175,8 +196,45 @@ public class ApplicationManager {
 
     }
 
-    public BaseAdapterConfig toInstallationRepresentation(RealmModel realmModel, ApplicationModel applicationModel, URI baseUri) {
-        BaseAdapterConfig rep = new BaseAdapterConfig();
+    @JsonPropertyOrder({"realm", "realm-public-key", "auth-server-url", "ssl-not-required",
+            "resource", "credentials",
+            "use-resource-role-mappings"})
+    public static class InstallationAdapterConfig extends BaseRealmConfig {
+        @JsonProperty("resource")
+        protected String resource;
+        @JsonProperty("use-resource-role-mappings")
+        protected boolean useResourceRoleMappings;
+        @JsonProperty("credentials")
+        protected Map<String, String> credentials = new HashMap<String, String>();
+
+        public boolean isUseResourceRoleMappings() {
+            return useResourceRoleMappings;
+        }
+
+        public void setUseResourceRoleMappings(boolean useResourceRoleMappings) {
+            this.useResourceRoleMappings = useResourceRoleMappings;
+        }
+
+        public String getResource() {
+            return resource;
+        }
+
+        public void setResource(String resource) {
+            this.resource = resource;
+        }
+        public Map<String, String> getCredentials() {
+            return credentials;
+        }
+
+        public void setCredentials(Map<String, String> credentials) {
+            this.credentials = credentials;
+        }
+
+    }
+
+
+    public InstallationAdapterConfig toInstallationRepresentation(RealmModel realmModel, ApplicationModel applicationModel, URI baseUri) {
+        InstallationAdapterConfig rep = new InstallationAdapterConfig();
         rep.setRealm(realmModel.getName());
         rep.setRealmKey(realmModel.getPublicKeyPem());
         rep.setSslNotRequired(realmModel.isSslNotRequired());
@@ -187,12 +245,25 @@ public class ApplicationManager {
         rep.setResource(applicationModel.getName());
 
         Map<String, String> creds = new HashMap<String, String>();
-        creds.put(CredentialRepresentation.PASSWORD, "INSERT APPLICATION PASSWORD");
-        if (applicationModel.getApplicationUser().isTotp()) {
-            creds.put(CredentialRepresentation.TOTP, "INSERT APPLICATION TOTP");
-        }
+        String cred = realmModel.getSecret(applicationModel.getApplicationUser()).getValue();
+        creds.put(CredentialRepresentation.SECRET, cred);
         rep.setCredentials(creds);
 
         return rep;
     }
+
+    public String toJBossSubsystemConfig(RealmModel realmModel, ApplicationModel applicationModel, URI baseUri) {
+        StringBuffer buffer = new StringBuffer();
+        buffer.append("<secure-deployment name=\"WAR MODULE NAME.war\">\n");
+        buffer.append("    <realm>").append(realmModel.getName()).append("</realm>\n");
+        buffer.append("    <realm-public-key>").append(realmModel.getPublicKeyPem()).append("</realm-public-key>\n");
+        buffer.append("    <auth-server-url>").append(baseUri.toString()).append("</auth-server-url>\n");
+        buffer.append("    <ssl-not-required>").append(realmModel.isSslNotRequired()).append("</ssl-not-required>\n");
+        buffer.append("    <resource>").append(applicationModel.getName()).append("</resource>\n");
+        String cred = realmModel.getSecret(applicationModel.getApplicationUser()).getValue();
+        buffer.append("    <credential name=\"secret\">").append(cred).append("</credential>\n");
+        buffer.append("</secure-deployment>\n");
+        return buffer.toString();
+    }
+
 }

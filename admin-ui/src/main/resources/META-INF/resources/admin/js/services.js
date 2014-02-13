@@ -464,29 +464,31 @@ module.factory('Application', function($resource) {
 });
 
 module.factory('ApplicationInstallation', function($resource) {
-    var url = '/auth/rest/admin/realms/:realm/applications/:application/installation';
-    var resource = $resource('/auth/rest/admin/realms/:realm/applications/:application/installation', {
-        realm : '@realm',
-        application : '@application'
-    },  {
-        update : {
-            method : 'PUT'
+    var url = '/auth/rest/admin/realms/:realm/applications/:application/installation/json';
+    return {
+        url : function(parameters)
+        {
+            return url.replace(':realm', parameters.realm).replace(':application', parameters.application);
         }
-    });
-    resource.url = function(parameters) {
+    }
+});
+module.factory('ApplicationInstallationJBoss', function($resource) {
+    var url = '/auth/rest/admin/realms/:realm/applications/:application/installation/jboss';
+    return {
+        url : function(parameters)
+     {
         return url.replace(':realm', parameters.realm).replace(':application', parameters.application);
     }
-    return resource;
+    }
 });
 
 module.factory('ApplicationCredentials', function($resource) {
-    return $resource('/auth/rest/admin/realms/:realm/applications/:application/credentials', {
+    return $resource('/auth/rest/admin/realms/:realm/applications/:application/client-secret', {
         realm : '@realm',
         application : '@application'
     },  {
         update : {
-            method : 'PUT',
-            isArray : true
+            method : 'POST'
         }
     });
 });
@@ -515,15 +517,15 @@ module.factory('OAuthClient', function($resource) {
 });
 
 module.factory('OAuthClientCredentials', function($resource) {
-    return $resource('/auth/rest/admin/realms/:realm/oauth-clients/:oauth/credentials', {
+    return $resource('/auth/rest/admin/realms/:realm/oauth-clients/:oauth/client-secret', {
         realm : '@realm',
         oauth : '@oauth'
     },  {
         update : {
-            method : 'PUT',
-            isArray : true
+            method : 'POST'
         }
     });
+
 });
 
 module.factory('OAuthClientRealmScopeMapping', function($resource) {

@@ -170,4 +170,13 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
 
     void setAccountTheme(String name);
 
+    boolean validateSecret(UserModel user, String secret);
+
+    /**
+     * Secrets can be viewed.  They are used by confidential Applications and OAuth clients
+     *
+     * @param user
+     * @return
+     */
+    UserCredentialModel getSecret(UserModel user);
 }

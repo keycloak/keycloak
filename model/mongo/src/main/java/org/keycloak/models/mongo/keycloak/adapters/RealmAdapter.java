@@ -770,6 +770,29 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
     }
 
     @Override
+    public boolean validateSecret(UserModel user, String secret) {
+        for (CredentialEntity cred : ((UserAdapter)user).getUser().getCredentials()) {
+            if (cred.getType().equals(UserCredentialModel.SECRET)) {
+                return secret.equals(cred.getValue());
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public UserCredentialModel getSecret(UserModel user) {
+        for (CredentialEntity cred : ((UserAdapter)user).getUser().getCredentials()) {
+            if (cred.getType().equals(UserCredentialModel.SECRET)) {
+                return UserCredentialModel.secret(cred.getValue());
+            }
+        }
+        return null;
+
+    }
+
+
+
+    @Override
     public void updateCredential(UserModel user, UserCredentialModel cred) {
         CredentialEntity credentialEntity = null;
         UserEntity userEntity = ((UserAdapter) user).getUser();

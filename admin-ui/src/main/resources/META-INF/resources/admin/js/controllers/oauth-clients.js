@@ -2,84 +2,31 @@ module.controller('OAuthClientCredentialsCtrl', function($scope, $location, real
     $scope.realm = realm;
     $scope.oauth = oauth;
 
-    var required = realm.requiredOAuthClientCredentials;
-
-    for (var i = 0; i < required.length; i++) {
-        if (required[i] == 'password') {
-            $scope.passwordRequired = true;
-        } else if (required[i] == 'totp') {
-            $scope.totpRequired = true;
-        } else if (required[i] == 'cert') {
-            $scope.certRequired = true;
+    var secret = OAuthClientCredentials.get({ realm : realm.realm, oauth : oauth.id },
+        function() {
+            $scope.secret = secret.value;
         }
-    }
-
-    function randomString(len) {
-        var charSet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        var randomString = '';
-        for (var i = 0; i < len; i++) {
-            var randomPoz = Math.floor(Math.random() * charSet.length);
-            randomString += charSet.substring(randomPoz,randomPoz+1);
-        }
-        return randomString;
-    }
-
-    $scope.generateTotp = function() {
-        $scope.totp = randomString(5) + '-' + randomString(5) + '-' + randomString(5);
-    }
+    );
 
     $scope.changePassword = function() {
-        if ($scope.password != $scope.confirmPassword) {
-            Notifications.error("Password and confirmation does not match.");
-            $scope.password = "";
-            $scope.confirmPassword = "";
-            return;
-        }
-        var creds = [
-            {
-                type : "password",
-                value : $scope.password
-            }
-        ];
-
-        OAuthClientCredentials.update({ realm : realm.realm, oauth : oauth.id }, creds,
+        var secret = OAuthClientCredentials.update({ realm : realm.realm,  oauth : oauth.id  },
             function() {
-                Notifications.success('The password has been changed.');
-                $scope.password = null;
-                $scope.confirmPassword = null;
+                Notifications.success('The secret has been changed.');
+                $scope.secret = secret.value;
             },
             function() {
-                Notifications.error("The password was not changed due to a problem.");
-                $scope.password = null;
-                $scope.confirmPassword = null;
+                Notifications.error("The secret was not changed due to a problem.");
+                $scope.secret = "error";
             }
         );
     };
 
-    $scope.changeTotp = function() {
-        var creds = [
-            {
-                type : "totp",
-                value : $scope.totp
-            }
-        ];
-
-        OAuthClientCredentials.update({ realm : realm.realm, oauth : oauth.id }, creds,
-            function() {
-                Notifications.success('The totp was changed.');
-                $scope.totp = null;
-            },
-            function() {
-                Notifications.error("The totp was not changed due to a problem.");
-                $scope.totp = null;
-            }
-        );
-    };
     $scope.$watch(function() {
         return $location.path();
     }, function() {
         $scope.path = $location.path().substring(1).split("/");
     });
+
 });
 
 module.controller('OAuthClientListCtrl', function($scope, realm, oauthClients, OAuthClient, $location) {

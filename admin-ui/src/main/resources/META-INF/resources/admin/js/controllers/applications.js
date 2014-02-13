@@ -13,80 +13,25 @@ module.controller('ApplicationRoleListCtrl', function($scope, $location, realm, 
 module.controller('ApplicationCredentialsCtrl', function($scope, $location, realm, application, ApplicationCredentials, Notifications) {
     $scope.realm = realm;
     $scope.application = application;
-
-    var required = realm.requiredApplicationCredentials;
-
-    for (var i = 0; i < required.length; i++) {
-        if (required[i] == 'password') {
-            $scope.passwordRequired = true;
-        } else if (required[i] == 'totp') {
-            $scope.totpRequired = true;
-        } else if (required[i] == 'cert') {
-            $scope.certRequired = true;
+    var secret = ApplicationCredentials.get({ realm : realm.realm, application : application.name },
+        function() {
+            $scope.secret = secret.value;
         }
-    }
-
-    function randomString(len) {
-        var charSet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        var randomString = '';
-        for (var i = 0; i < len; i++) {
-            var randomPoz = Math.floor(Math.random() * charSet.length);
-            randomString += charSet.substring(randomPoz,randomPoz+1);
-        }
-        return randomString;
-    }
-
-    $scope.generateTotp = function() {
-        $scope.totp = randomString(5) + '-' + randomString(5) + '-' + randomString(5);
-    }
+    );
 
     $scope.changePassword = function() {
-        if ($scope.password != $scope.confirmPassword) {
-            Notifications.error("Password and confirmation does not match.");
-            $scope.password = "";
-            $scope.confirmPassword = "";
-            return;
-        }
-        var creds = [
-            {
-                type : "password",
-                value : $scope.password
-            }
-        ];
-
-        ApplicationCredentials.update({ realm : realm.realm, application : application.name }, creds,
+        var secret = ApplicationCredentials.update({ realm : realm.realm, application : application.name },
             function() {
-                Notifications.success('The password has been changed.');
-                $scope.password = null;
-                $scope.confirmPassword = null;
+                Notifications.success('The secret has been changed.');
+                $scope.secret = secret.value;
             },
             function() {
-                Notifications.error("The password was not changed due to a problem.");
-                $scope.password = null;
-                $scope.confirmPassword = null;
+                Notifications.error("The secret was not changed due to a problem.");
+                $scope.secret = "error";
             }
         );
     };
 
-    $scope.changeTotp = function() {
-        var creds = [
-            {
-                type : "totp",
-                value : $scope.totp
-            }
-        ];
-
-        ApplicationCredentials.update({ realm : realm.realm, application : application.name }, creds,
-            function() {
-                Notifications.success('The totp was changed.');
-                $scope.totp = null;
-            },
-            function() {
-                Notifications.error("The totp was not changed due to a problem.");
-                $scope.totp = null;
-            }
-        );
-    };
     $scope.$watch(function() {
         return $location.path();
     }, function() {
@@ -163,12 +108,37 @@ module.controller('ApplicationListCtrl', function($scope, realm, applications, A
     });
 });
 
-module.controller('ApplicationInstallationCtrl', function($scope, realm, installation, application, ApplicationInstallation, $routeParams) {
+module.controller('ApplicationInstallationCtrl', function($scope, realm, application, ApplicationInstallation,ApplicationInstallationJBoss, $http, $routeParams) {
     console.log('ApplicationInstallationCtrl');
     $scope.realm = realm;
     $scope.application = application;
-    $scope.installation = installation;
-    $scope.download = ApplicationInstallation.url({ realm: $routeParams.realm, application: $routeParams.application });
+    $scope.installation = null;
+    $scope.download = null;
+    $scope.configFormat = null;
+
+    $scope.configFormats = [
+        "keycloak.json",
+        "Wildfly/JBoss Subsystem XML"
+    ];
+
+    $scope.changeFormat = function() {
+        if ($scope.configFormat == "keycloak.json") {
+            var url = ApplicationInstallation.url({ realm: $routeParams.realm, application: $routeParams.application });
+            var installation = $http.get(url).success(function(data) {
+                var tmp = angular.fromJson(data);
+                $scope.installation = angular.toJson(tmp, true);
+            })
+            $scope.download = url;
+        } else if ($scope.configFormat == "Wildfly/JBoss Subsystem XML") {
+            var url = ApplicationInstallationJBoss.url({ realm: $routeParams.realm, application: $routeParams.application });
+            var installation = $http.get(url).success(function(data) {
+                $scope.installation = data;
+            })
+            $scope.download = url;
+        }
+
+    };
+
 });
 
 module.controller('ApplicationDetailCtrl', function($scope, realm, application, Application, $location, Dialog, Notifications) {

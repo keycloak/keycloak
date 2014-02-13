@@ -53,6 +53,7 @@ public class RequiredCredentialModel {
     public static final RequiredCredentialModel PASSWORD;
     public static final RequiredCredentialModel TOTP;
     public static final RequiredCredentialModel CLIENT_CERT;
+    public static final RequiredCredentialModel SECRET;
 
     static {
         Map<String, RequiredCredentialModel> map = new HashMap<String, RequiredCredentialModel>();
@@ -62,6 +63,12 @@ public class RequiredCredentialModel {
         PASSWORD.setSecret(true);
         PASSWORD.setFormLabel("password");
         map.put(PASSWORD.getType(), PASSWORD);
+        SECRET = new RequiredCredentialModel();
+        SECRET.setType(UserCredentialModel.SECRET);
+        SECRET.setInput(false);
+        SECRET.setSecret(true);
+        SECRET.setFormLabel("secret");
+        map.put(SECRET.getType(), SECRET);
         TOTP = new RequiredCredentialModel();
         TOTP.setType(UserCredentialModel.TOTP);
         TOTP.setInput(true);

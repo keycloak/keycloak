@@ -62,8 +62,6 @@ public class CompositeRoleTest {
             realm.setAccessCodeLifespan(1000);
             realm.setSslNotRequired(true);
             realm.setEnabled(true);
-            realm.addRequiredResourceCredential(UserCredentialModel.PASSWORD);
-            realm.addRequiredOAuthClientCredential(UserCredentialModel.PASSWORD);
             realm.addRequiredCredential(UserCredentialModel.PASSWORD);
             final RoleModel realmRole1 = realm.addRole("REALM_ROLE_1");
             final RoleModel realmRole2 = realm.addRole("REALM_ROLE_2");
@@ -86,21 +84,21 @@ public class CompositeRoleTest {
             realmComposite1Application.addScope(realmComposite1);
             realmComposite1Application.setBaseUrl("http://localhost:8081/app");
             realmComposite1Application.setManagementUrl("http://localhost:8081/app/logout");
-            realm.updateCredential(realmComposite1Application.getApplicationUser(), UserCredentialModel.password("password"));
+            realm.updateCredential(realmComposite1Application.getApplicationUser(), UserCredentialModel.secret("password"));
 
             final ApplicationModel realmRole1Application = new ApplicationManager(manager).createApplication(realm, "REALM_ROLE_1_APPLICATION");
             realmRole1Application.setEnabled(true);
             realmRole1Application.addScope(realmRole1);
             realmRole1Application.setBaseUrl("http://localhost:8081/app");
             realmRole1Application.setManagementUrl("http://localhost:8081/app/logout");
-            realm.updateCredential(realmRole1Application.getApplicationUser(), UserCredentialModel.password("password"));
+            realm.updateCredential(realmRole1Application.getApplicationUser(), UserCredentialModel.secret("password"));
 
 
             final ApplicationModel appRoleApplication = new ApplicationManager(manager).createApplication(realm, "APP_ROLE_APPLICATION");
             appRoleApplication.setEnabled(true);
             appRoleApplication.setBaseUrl("http://localhost:8081/app");
             appRoleApplication.setManagementUrl("http://localhost:8081/app/logout");
-            realm.updateCredential(appRoleApplication.getApplicationUser(), UserCredentialModel.password("password"));
+            realm.updateCredential(appRoleApplication.getApplicationUser(), UserCredentialModel.secret("password"));
             final RoleModel appRole1 = appRoleApplication.addRole("APP_ROLE_1");
             final RoleModel appRole2 = appRoleApplication.addRole("APP_ROLE_2");
 
@@ -121,7 +119,7 @@ public class CompositeRoleTest {
             appCompositeApplication.setEnabled(true);
             appCompositeApplication.setBaseUrl("http://localhost:8081/app");
             appCompositeApplication.setManagementUrl("http://localhost:8081/app/logout");
-            realm.updateCredential(appCompositeApplication.getApplicationUser(), UserCredentialModel.password("password"));
+            realm.updateCredential(appCompositeApplication.getApplicationUser(), UserCredentialModel.secret("password"));
             final RoleModel appCompositeRole = appCompositeApplication.addRole("APP_COMPOSITE_ROLE");
             appCompositeApplication.addScope(appRole2);
             appCompositeRole.addCompositeRole(realmRole1);

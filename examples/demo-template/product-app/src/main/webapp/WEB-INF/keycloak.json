@@ -5,6 +5,6 @@
   "auth-server-url" : "http://localhost:8080/auth",
   "ssl-not-required" : true,
   "credentials" : {
-      "password" : "password"
+      "secret": "password"
    }
 }
