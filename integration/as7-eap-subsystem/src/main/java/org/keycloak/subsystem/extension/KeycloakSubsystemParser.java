@@ -16,11 +16,6 @@
  */
 package org.keycloak.subsystem.extension;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import javax.xml.stream.XMLStreamConstants;
-import javax.xml.stream.XMLStreamException;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
@@ -34,6 +29,12 @@ import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLElementWriter;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
+
+import javax.xml.stream.XMLStreamConstants;
+import javax.xml.stream.XMLStreamException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * The subsystem parser, which uses stax to read and write to and from xml
@@ -51,10 +52,12 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
         list.add(addKeycloakSub);
 
         while (reader.hasNext() && nextTag(reader) != END_ELEMENT) {
-            if (!reader.getLocalName().equals("realm")) {
-                throw ParseUtils.unexpectedElement(reader);
+            if (reader.getLocalName().equals(RealmDefinition.TAG_NAME)) {
+                readRealm(reader, list);
             }
-            readRealm(reader, list);
+            else if (reader.getLocalName().equals(SecureDeploymentDefinition.TAG_NAME)) {
+                readDeployment(reader, list);
+            }
         }
     }
 
@@ -65,48 +68,33 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
 
     private void readRealm(XMLExtendedStreamReader reader, List<ModelNode> list) throws XMLStreamException {
         String realmName = readNameAttribute(reader);
-        ModelNode composite = new ModelNode();
-        composite.get(ModelDescriptionConstants.OP_ADDR).setEmptyList();
-        composite.get(ModelDescriptionConstants.OP).set(ModelDescriptionConstants.COMPOSITE);
         ModelNode addRealm = new ModelNode();
         addRealm.get(ModelDescriptionConstants.OP).set(ModelDescriptionConstants.ADD);
         PathAddress addr = PathAddress.pathAddress(PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, KeycloakExtension.SUBSYSTEM_NAME),
                                                    PathElement.pathElement(RealmDefinition.TAG_NAME, realmName));
         addRealm.get(ModelDescriptionConstants.OP_ADDR).set(addr.toModelNode());
 
-        List<ModelNode> resourcesToAdd = new ArrayList<ModelNode>();
         while (reader.hasNext() && nextTag(reader) != END_ELEMENT) {
             String tagName = reader.getLocalName();
-            if (tagName.equals(SecureDeploymentDefinition.TAG_NAME)) {
-                readDeployment(reader, addr, resourcesToAdd);
-                continue;
-            }
-
             SimpleAttributeDefinition def = RealmDefinition.lookup(tagName);
             if (def == null) throw new XMLStreamException("Unknown realm tag " + tagName);
             def.parseAndSetParameter(reader.getElementText(), addRealm, reader);
         }
 
-        if (!RealmDefinition.validateTruststoreSetIfRequired(addRealm)) {
+        if (!SharedAttributeDefinitons.validateTruststoreSetIfRequired(addRealm)) {
             //TODO: externalize the message
             throw new XMLStreamException("truststore and truststore-password must be set if both ssl-not-required and disable-trust-maanger are false.");
         }
 
-        ModelNode steps = new ModelNode();
-        steps.add(addRealm);
-        for (ModelNode resource : resourcesToAdd) {
-            steps.add(resource);
-        }
-        composite.get(ModelDescriptionConstants.STEPS).set(steps);
-
-        list.add(composite);
+        list.add(addRealm);
     }
 
-    private void readDeployment(XMLExtendedStreamReader reader, PathAddress parent, List<ModelNode> resourcesToAdd) throws XMLStreamException {
+    private void readDeployment(XMLExtendedStreamReader reader, List<ModelNode> resourcesToAdd) throws XMLStreamException {
         String name = readNameAttribute(reader);
         ModelNode addSecureDeployment = new ModelNode();
         addSecureDeployment.get(ModelDescriptionConstants.OP).set(ModelDescriptionConstants.ADD);
-        PathAddress addr = PathAddress.pathAddress(parent, PathElement.pathElement(SecureDeploymentDefinition.TAG_NAME, name));
+        PathAddress addr = PathAddress.pathAddress(PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, KeycloakExtension.SUBSYSTEM_NAME),
+                PathElement.pathElement(SecureDeploymentDefinition.TAG_NAME, name));
         addSecureDeployment.get(ModelDescriptionConstants.OP_ADDR).set(addr.toModelNode());
         List<ModelNode> credentialsToAdd = new ArrayList<ModelNode>();
         while (reader.hasNext() && nextTag(reader) != END_ELEMENT) {
@@ -120,6 +108,16 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
             if (def == null) throw new XMLStreamException("Unknown secure-deployment tag " + tagName);
             def.parseAndSetParameter(reader.getElementText(), addSecureDeployment, reader);
         }
+
+
+        /**
+         * TODO need to check realm-ref first.
+        if (!SharedAttributeDefinitons.validateTruststoreSetIfRequired(addSecureDeployment)) {
+            //TODO: externalize the message
+            throw new XMLStreamException("truststore and truststore-password must be set if both ssl-not-required and disable-trust-maanger are false.");
+        }
+         */
+
         // Must add credentials after the deployment is added.
         resourcesToAdd.add(addSecureDeployment);
         resourcesToAdd.addAll(credentialsToAdd);
@@ -159,6 +157,7 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
     public void writeContent(final XMLExtendedStreamWriter writer, final SubsystemMarshallingContext context) throws XMLStreamException {
         context.startSubsystemElement(KeycloakExtension.NAMESPACE, false);
         writeRealms(writer, context);
+        writeSecureDeployments(writer, context);
         writer.writeEndElement();
     }
 
@@ -174,17 +173,15 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
                 element.marshallAsElement(realmElements, writer);
             }
 
-            ModelNode deployments = realmElements.get(SecureDeploymentDefinition.TAG_NAME);
-            if (deployments.isDefined()) {
-                writeSecureDeployments(writer, deployments);
-            }
-
             writer.writeEndElement();
         }
     }
 
-    private void writeSecureDeployments(XMLExtendedStreamWriter writer, ModelNode deployments) throws XMLStreamException {
-        for (Property deployment : deployments.asPropertyList()) {
+    private void writeSecureDeployments(XMLExtendedStreamWriter writer, SubsystemMarshallingContext context) throws XMLStreamException {
+        if (!context.getModelNode().get(SecureDeploymentDefinition.TAG_NAME).isDefined()) {
+            return;
+        }
+        for (Property deployment : context.getModelNode().get(SecureDeploymentDefinition.TAG_NAME).asPropertyList()) {
             writer.writeStartElement(SecureDeploymentDefinition.TAG_NAME);
             writer.writeAttribute("name", deployment.getName());
             ModelNode deploymentElements = deployment.getValue();

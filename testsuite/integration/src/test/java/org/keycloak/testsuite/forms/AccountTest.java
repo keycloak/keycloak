@@ -112,7 +112,7 @@ public class AccountTest {
         });
     }
 
-    @Test
+    //@Test
     public void returnToAppFromHeader() {
         appPage.open();
         appPage.openAccount();
@@ -124,7 +124,7 @@ public class AccountTest {
         Assert.assertTrue(appPage.isCurrent());
     }
 
-    @Test
+    //@Test
     public void returnToAppFromQueryParam() {
         driver.navigate().to(AccountUpdateProfilePage.PATH + "?referrer=test-app");
         loginPage.login("test-user@localhost", "password");

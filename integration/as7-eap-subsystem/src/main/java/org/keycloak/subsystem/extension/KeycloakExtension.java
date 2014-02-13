@@ -19,11 +19,11 @@ package org.keycloak.subsystem.extension;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SubsystemRegistration;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.as.controller.parsing.ExtensionParsingContext;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.as.controller.ResourceDefinition;
 import org.keycloak.subsystem.logging.KeycloakLogger;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
@@ -77,7 +77,7 @@ public class KeycloakExtension implements Extension {
 
         ManagementResourceRegistration registration = subsystem.registerSubsystemModel(KEYCLOAK_SUBSYSTEM_RESOURCE);
         ManagementResourceRegistration realmRegistration = registration.registerSubModel(REALM_DEFINITION);
-        ManagementResourceRegistration secureDeploymentRegistration = realmRegistration.registerSubModel(SECURE_DEPLOYMENT_DEFINITION);
+        ManagementResourceRegistration secureDeploymentRegistration = registration.registerSubModel(SECURE_DEPLOYMENT_DEFINITION);
         secureDeploymentRegistration.registerSubModel(CREDENTIAL_DEFINITION);
 
         subsystem.registerXMLElementWriter(PARSER);

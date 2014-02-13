@@ -44,65 +44,9 @@ public class RealmDefinition extends SimpleResourceDefinition {
 
     public static final String TAG_NAME = "realm";
 
-    protected static final SimpleAttributeDefinition REALM_PUBLIC_KEY =
-            new SimpleAttributeDefinitionBuilder("realm-public-key", ModelType.STRING, false)
-            .setXmlName("realm-public-key")
-            .setAllowExpression(true)
-            .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
-            .build();
-    protected static final SimpleAttributeDefinition AUTH_SERVER_URL =
-            new SimpleAttributeDefinitionBuilder("auth-server-url", ModelType.STRING, false)
-            .setXmlName("auth-server-url")
-            .setAllowExpression(true)
-            .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
-            .build();
-    protected static final SimpleAttributeDefinition SSL_NOT_REQUIRED =
-            new SimpleAttributeDefinitionBuilder("ssl-not-required", ModelType.BOOLEAN, true)
-            .setXmlName("ssl-not-required")
-            .setAllowExpression(true)
-            .setDefaultValue(new ModelNode(false))
-            .build();
-    protected static final SimpleAttributeDefinition ALLOW_ANY_HOSTNAME =
-            new SimpleAttributeDefinitionBuilder("allow-any-hostname", ModelType.BOOLEAN, true)
-            .setXmlName("allow-any-hostname")
-            .setAllowExpression(true)
-            .setDefaultValue(new ModelNode(false))
-            .build();
-    protected static final SimpleAttributeDefinition DISABLE_TRUST_MANAGER =
-            new SimpleAttributeDefinitionBuilder("disable-trust-manager", ModelType.BOOLEAN, true)
-            .setXmlName("disable-trust-manager")
-            .setAllowExpression(true)
-            .setDefaultValue(new ModelNode(false))
-            .build();
-    protected static final SimpleAttributeDefinition TRUSTSTORE =
-            new SimpleAttributeDefinitionBuilder("truststore", ModelType.STRING, true)
-            .setXmlName("truststore")
-            .setAllowExpression(true)
-            .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
-            .build();
-    protected static final SimpleAttributeDefinition TRUSTSTORE_PASSWORD =
-            new SimpleAttributeDefinitionBuilder("truststore-password", ModelType.STRING, true)
-            .setXmlName("truststore-password")
-            .setAllowExpression(true)
-            .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
-            .build();
-    protected static final SimpleAttributeDefinition CONNECTION_POOL_SIZE =
-            new SimpleAttributeDefinitionBuilder("connection-pool-size", ModelType.INT, true)
-            .setXmlName("connection-pool-size")
-            .setAllowExpression(true)
-            .setValidator(new IntRangeValidator(0, true))
-            .build();
 
     protected static final List<SimpleAttributeDefinition> REALM_ONLY_ATTRIBUTES = new ArrayList<SimpleAttributeDefinition>();
     static {
-        REALM_ONLY_ATTRIBUTES.add(REALM_PUBLIC_KEY);
-        REALM_ONLY_ATTRIBUTES.add(AUTH_SERVER_URL);
-        REALM_ONLY_ATTRIBUTES.add(TRUSTSTORE);
-        REALM_ONLY_ATTRIBUTES.add(TRUSTSTORE_PASSWORD);
-        REALM_ONLY_ATTRIBUTES.add(SSL_NOT_REQUIRED);
-        REALM_ONLY_ATTRIBUTES.add(ALLOW_ANY_HOSTNAME);
-        REALM_ONLY_ATTRIBUTES.add(DISABLE_TRUST_MANAGER);
-        REALM_ONLY_ATTRIBUTES.add(CONNECTION_POOL_SIZE);
     }
 
     protected static final List<SimpleAttributeDefinition> ALL_ATTRIBUTES = new ArrayList<SimpleAttributeDefinition>();
@@ -144,32 +88,6 @@ public class RealmDefinition extends SimpleResourceDefinition {
         }
     }
 
-    /**
-     * truststore and truststore-password must be set if ssl-not-required and disable-trust-manager are both false.
-     *
-     * @param attributes The full set of attributes.
-     *
-     * @return <code>true</code> if the attributes are valid, <code>false</code> otherwise.
-     */
-    public static boolean validateTruststoreSetIfRequired(ModelNode attributes) {
-        if (!isSet(attributes, SSL_NOT_REQUIRED) && !isSet(attributes, DISABLE_TRUST_MANAGER)) {
-            if (!(isSet(attributes, TRUSTSTORE) && isSet(attributes, TRUSTSTORE_PASSWORD))) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private static boolean isSet(ModelNode attributes, SimpleAttributeDefinition def) {
-        ModelNode attribute = attributes.get(def.getName());
-
-        if (def.getType() == ModelType.BOOLEAN) {
-            return attribute.isDefined() && attribute.asBoolean();
-        }
-
-        return attribute.isDefined() && !attribute.asString().isEmpty();
-    }
 
     public static SimpleAttributeDefinition lookup(String name) {
         return DEFINITION_LOOKUP.get(name);

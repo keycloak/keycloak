@@ -4,17 +4,20 @@
         <realm-public-key>MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB</realm-public-key>
         <auth-server-url>http://localhost:8080/auth</auth-server-url>
         <ssl-not-required>true</ssl-not-required>
-        <secure-deployment name="customer-portal.war">
-            <resource>customer-portal</resource>
-            <credential name="password">password</credential>
-        </secure-deployment>
-        <secure-deployment name="product-portal.war">
-            <resource>product-portal</resource>
-            <credential name="password">password</credential>
-        </secure-deployment>
-        <secure-deployment name="database.war">
-            <resource>database</resource>
-            <credential name="password">password</credential>
-        </secure-deployment>
     </realm>
+    <secure-deployment name="customer-portal.war">
+        <realm>demo</realm>
+        <resource>customer-portal</resource>
+        <credential name="password">password</credential>
+    </secure-deployment>
+    <secure-deployment name="product-portal.war">
+        <realm>demo</realm>
+        <resource>product-portal</resource>
+        <credential name="password">password</credential>
+    </secure-deployment>
+    <secure-deployment name="database.war">
+        <realm>demo</realm>
+        <resource>database-service</resource>
+        <bearer-only>true</bearer-only>
+    </secure-deployment>
 </subsystem>

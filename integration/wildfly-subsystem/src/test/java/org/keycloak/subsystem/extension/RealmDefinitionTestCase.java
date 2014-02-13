@@ -50,30 +50,30 @@ public class RealmDefinitionTestCase {
     public void testIsTruststoreSetIfRequired() throws Exception {
         model.get("ssl-not-required").set(true);
         model.get("disable-trust-manager").set(true);
-        Assert.assertTrue(RealmDefinition.validateTruststoreSetIfRequired(model));
+        Assert.assertTrue(SharedAttributeDefinitons.validateTruststoreSetIfRequired(model));
 
         model.get("ssl-not-required").set(true);
         model.get("disable-trust-manager").set(false);
-        Assert.assertTrue(RealmDefinition.validateTruststoreSetIfRequired(model));
+        Assert.assertTrue(SharedAttributeDefinitons.validateTruststoreSetIfRequired(model));
 
         model.get("ssl-not-required").set(false);
         model.get("disable-trust-manager").set(true);
-        Assert.assertTrue(RealmDefinition.validateTruststoreSetIfRequired(model));
+        Assert.assertTrue(SharedAttributeDefinitons.validateTruststoreSetIfRequired(model));
 
         model.get("ssl-not-required").set(false);
         model.get("disable-trust-manager").set(false);
-        Assert.assertFalse(RealmDefinition.validateTruststoreSetIfRequired(model));
+        Assert.assertFalse(SharedAttributeDefinitons.validateTruststoreSetIfRequired(model));
 
         model.get("ssl-not-required").set(false);
         model.get("disable-trust-manager").set(false);
         model.get("truststore").set("foo");
-        Assert.assertFalse(RealmDefinition.validateTruststoreSetIfRequired(model));
+        Assert.assertFalse(SharedAttributeDefinitons.validateTruststoreSetIfRequired(model));
 
         model.get("ssl-not-required").set(false);
         model.get("disable-trust-manager").set(false);
         model.get("truststore").set("foo");
         model.get("truststore-password").set("password");
-        Assert.assertTrue(RealmDefinition.validateTruststoreSetIfRequired(model));
+        Assert.assertTrue(SharedAttributeDefinitons.validateTruststoreSetIfRequired(model));
     }
 
 }

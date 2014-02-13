@@ -11,16 +11,18 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 @Path("customers")
-public class CustomerService
-{
-   @GET
-   @Produces("application/json")
-   public List<String> getCustomers()
-   {
-      ArrayList<String> rtn = new ArrayList<String>();
-      rtn.add("Bill Burke");
-      rtn.add("Ron Sigal");
-      rtn.add("Weinan Li");
-      return rtn;
-   }
+public class CustomerService {
+    @GET
+    @Produces("application/json")
+    public List<String> getCustomers() {
+        ArrayList<String> rtn = new ArrayList<String>();
+        rtn.add("Bill Burke");
+        rtn.add("Stian Thorgersen");
+        rtn.add("Stan Silvert");
+        rtn.add("Gabriel Cordoso");
+        rtn.add("Viliam Rockai");
+        rtn.add("Marek Posolda");
+        rtn.add("Boleslaw Dawidowicz");
+        return rtn;
+    }
 }

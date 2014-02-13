@@ -17,8 +17,6 @@
 
 package org.keycloak.subsystem.extension;
 
-import java.util.HashMap;
-import java.util.Map;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
@@ -30,6 +28,9 @@ import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
 
@@ -86,7 +87,6 @@ public final class KeycloakAdapterConfigService implements Service<KeycloakAdapt
 
     public void addSecureDeployment(ModelNode operation, ModelNode model) {
         ModelNode deployment = model.clone();
-        deployment.get(RealmDefinition.TAG_NAME).set(realmNameFromOp(operation));
         this.deployments.put(deploymentNameFromOp(operation), deployment);
     }
 
@@ -178,7 +178,7 @@ public final class KeycloakAdapterConfigService implements Service<KeycloakAdapt
         json.get(RealmDefinition.TAG_NAME).set(realmName);
 
         // Realm values set first.  Some can be overridden by deployment values.
-        setJSONValues(json, realm);
+        if (realm != null) setJSONValues(json, realm);
         setJSONValues(json, deployment);
         return json.toJSONString(true);
     }

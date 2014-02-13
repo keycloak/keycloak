@@ -77,7 +77,7 @@ public class KeycloakExtension implements Extension {
 
         ManagementResourceRegistration registration = subsystem.registerSubsystemModel(KEYCLOAK_SUBSYSTEM_RESOURCE);
         ManagementResourceRegistration realmRegistration = registration.registerSubModel(REALM_DEFINITION);
-        ManagementResourceRegistration secureDeploymentRegistration = realmRegistration.registerSubModel(SECURE_DEPLOYMENT_DEFINITION);
+        ManagementResourceRegistration secureDeploymentRegistration = registration.registerSubModel(SECURE_DEPLOYMENT_DEFINITION);
         secureDeploymentRegistration.registerSubModel(CREDENTIAL_DEFINITION);
 
         subsystem.registerXMLElementWriter(PARSER);
