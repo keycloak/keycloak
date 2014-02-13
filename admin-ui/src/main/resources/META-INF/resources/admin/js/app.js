@@ -329,9 +329,6 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 application : function(ApplicationLoader) {
                     return ApplicationLoader();
-                },
-                installation : function(ApplicationInstallationLoader) {
-                    return ApplicationInstallationLoader();
                 }
             },
             controller : 'ApplicationInstallationCtrl'
@@ -398,9 +395,6 @@ module.config([ '$routeProvider', function($routeProvider) {
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
-                },
-                application : function(OAuthClientLoader) {
-                    return OAuthClientLoader();
                 },
                 oauth : function(OAuthClientLoader) {
                     return OAuthClientLoader();

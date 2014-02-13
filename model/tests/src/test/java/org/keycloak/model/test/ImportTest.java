@@ -151,8 +151,8 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertFalse(realm.isUpdateProfileOnInitialSocialLogin());
         Assert.assertEquals(600, realm.getAccessCodeLifespanUserAction());
         verifyRequiredCredentials(realm.getRequiredCredentials(), "password");
-        verifyRequiredCredentials(realm.getRequiredApplicationCredentials(), "totp");
-        verifyRequiredCredentials(realm.getRequiredOAuthClientCredentials(), "cert");
+        verifyRequiredCredentials(realm.getRequiredApplicationCredentials(), "secret");
+        verifyRequiredCredentials(realm.getRequiredOAuthClientCredentials(), "secret");
     }
 
     private void verifyRequiredCredentials(List<RequiredCredentialModel> requiredCreds, String expectedType) {

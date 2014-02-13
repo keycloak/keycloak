@@ -10,6 +10,7 @@ import org.keycloak.representations.adapters.config.BaseAdapterConfig;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.ApplicationManager;
+import org.keycloak.services.managers.ModelToRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.util.JsonSerialization;
@@ -17,6 +18,8 @@ import org.keycloak.util.JsonSerialization;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -25,7 +28,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -73,14 +75,23 @@ public class ApplicationResource extends RoleContainerResource {
 
     @GET
     @NoCache
-    @Path("installation")
+    @Path("installation/json")
     @Produces(MediaType.APPLICATION_JSON)
     public String getInstallation() throws IOException {
         ApplicationManager applicationManager = new ApplicationManager(new RealmManager(session));
-        BaseAdapterConfig rep = applicationManager.toInstallationRepresentation(realm, application, getKeycloakApplication().getBaseUri(uriInfo));
+        Object rep = applicationManager.toInstallationRepresentation(realm, application, getKeycloakApplication().getBaseUri(uriInfo));
 
         // TODO Temporary solution to pretty-print
         return JsonSerialization.mapper.writerWithDefaultPrettyPrinter().writeValueAsString(rep);
+    }
+
+    @GET
+    @NoCache
+    @Path("installation/jboss")
+    @Produces(MediaType.TEXT_PLAIN)
+    public String getJBossInstallation() throws IOException {
+        ApplicationManager applicationManager = new ApplicationManager(new RealmManager(session));
+        return applicationManager.toJBossSubsystemConfig(realm, application, getKeycloakApplication().getBaseUri(uriInfo));
     }
 
     @DELETE
@@ -89,18 +100,27 @@ public class ApplicationResource extends RoleContainerResource {
         realm.removeApplication(application.getId());
     }
 
-    @Path("credentials")
-    @PUT
+    @Path("client-secret")
+    @POST
+    @Produces("application/json")
     @Consumes("application/json")
-    public void updateCredentials(List<CredentialRepresentation> credentials) {
-        logger.debug("updateCredentials");
-        if (credentials == null) return;
-
-        for (CredentialRepresentation rep : credentials) {
-            UserCredentialModel cred = RealmManager.fromRepresentation(rep);
-            realm.updateCredential(application.getApplicationUser(), cred);
-        }
+    public CredentialRepresentation regenerateSecret() {
+        logger.debug("regenerateSecret");
+        UserCredentialModel cred = new ApplicationManager().generateSecret(realm, application);
+        CredentialRepresentation rep = ModelToRepresentation.toRepresentation(cred);
+        return rep;
     }
+
+    @Path("client-secret")
+    @GET
+    @Produces("application/json")
+    public CredentialRepresentation getClientSecret() {
+        logger.debug("getClientSecret");
+        UserCredentialModel model = realm.getSecret(application.getApplicationUser());
+        if (model == null) throw new NotFoundException("Application does not have a secret");
+        return ModelToRepresentation.toRepresentation(model);
+    }
+
 
     @Path("scope-mappings")
     public ScopeMappedResource getScopeMappedResource() {

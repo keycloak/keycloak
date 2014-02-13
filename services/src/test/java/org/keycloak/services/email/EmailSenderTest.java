@@ -6,6 +6,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.util.JsonSerialization;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.AddressException;
@@ -14,11 +15,26 @@ import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.SocketException;
 import java.util.HashMap;
+import java.util.UUID;
 
 public class EmailSenderTest {
 
     private GreenMail greenMail;
     private EmailSender emailSender;
+
+    @Test
+    public void testUUID() throws Exception{
+        System.out.println(UUID.randomUUID());
+
+        HashMap<String,String> config = new HashMap<String, String>();
+        config.put("from", "auto@keycloak.org");
+        config.put("host", "localhost");
+        config.put("port", "3025");
+
+        System.out.println(JsonSerialization.mapper.writerWithDefaultPrettyPrinter().writeValueAsString(config));
+
+
+    }
 
     @Before
     public void before() {

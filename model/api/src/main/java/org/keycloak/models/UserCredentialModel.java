@@ -1,11 +1,16 @@
 package org.keycloak.models;
 
+import java.util.UUID;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class UserCredentialModel {
     public static final String PASSWORD = "password";
+
+    // Secret is same as password but it is not hashed
+    public static final String SECRET = "secret";
     public static final String TOTP = "totp";
     public static final String CLIENT_CERT = "cert";
 
@@ -20,6 +25,20 @@ public class UserCredentialModel {
         UserCredentialModel model = new UserCredentialModel();
         model.setType(PASSWORD);
         model.setValue(password);
+        return model;
+    }
+
+    public static UserCredentialModel secret(String password) {
+        UserCredentialModel model = new UserCredentialModel();
+        model.setType(SECRET);
+        model.setValue(password);
+        return model;
+    }
+
+    public static UserCredentialModel generateSecret() {
+        UserCredentialModel model = new UserCredentialModel();
+        model.setType(SECRET);
+        model.setValue(UUID.randomUUID().toString());
         return model;
     }
 

@@ -8,12 +8,12 @@
     <secure-deployment name="customer-portal.war">
         <realm>demo</realm>
         <resource>customer-portal</resource>
-        <credential name="password">password</credential>
+        <credential name="secret">password</credential>
     </secure-deployment>
     <secure-deployment name="product-portal.war">
         <realm>demo</realm>
         <resource>product-portal</resource>
-        <credential name="password">password</credential>
+        <credential name="secret">password</credential>
     </secure-deployment>
     <secure-deployment name="database.war">
         <realm>demo</realm>

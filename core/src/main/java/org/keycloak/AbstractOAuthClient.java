@@ -3,6 +3,7 @@ package org.keycloak;
 import org.keycloak.util.KeycloakUriBuilder;
 
 import java.security.KeyStore;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -13,7 +14,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class AbstractOAuthClient {
     public static final String OAUTH_TOKEN_REQUEST_STATE = "OAuth_Token_Request_State";
     protected String clientId;
-    protected String password;
+    protected Map<String, String> credentials;
     protected KeyStore truststore;
     protected String authUrl;
     protected String codeUrl;
@@ -35,12 +36,12 @@ public class AbstractOAuthClient {
         this.clientId = clientId;
     }
 
-    public String getPassword() {
-        return password;
+    public Map<String, String> getCredentials() {
+        return credentials;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
+    public void setCredentials(Map<String, String> credentials) {
+        this.credentials = credentials;
     }
 
     public KeyStore getTruststore() {

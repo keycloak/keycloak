@@ -5,7 +5,9 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -95,20 +97,13 @@ public class ModelToRepresentation {
                 rep.getRequiredCredentials().add(cred.getType());
             }
         }
-        List<RequiredCredentialModel> requiredResourceCredentialModels = realm.getRequiredApplicationCredentials();
-        if (requiredResourceCredentialModels.size() > 0) {
-            rep.setRequiredApplicationCredentials(new HashSet<String>());
-            for (RequiredCredentialModel cred : requiredResourceCredentialModels) {
-                rep.getRequiredApplicationCredentials().add(cred.getType());
-            }
-        }
-        List<RequiredCredentialModel> requiredOAuthCredentialModels = realm.getRequiredOAuthClientCredentials();
-        if (requiredOAuthCredentialModels.size() > 0) {
-            rep.setRequiredOAuthClientCredentials(new HashSet<String>());
-            for (RequiredCredentialModel cred : requiredOAuthCredentialModels) {
-                rep.getRequiredOAuthClientCredentials().add(cred.getType());
-            }
-        }
+        return rep;
+    }
+
+    public static CredentialRepresentation toRepresentation(UserCredentialModel cred) {
+        CredentialRepresentation rep = new CredentialRepresentation();
+        rep.setType(CredentialRepresentation.SECRET);
+        rep.setValue(cred.getValue());
         return rep;
     }
 }

@@ -5,8 +5,6 @@
     "accessCodeLifespan": 30,
     "accessCodeLifespanUserAction": 600,
     "requiredCredentials": [ "password" ],
-    "requiredApplicationCredentials": [ "password" ],
-    "requiredOAuthClientCredentials": [ "password" ],
     "defaultRoles": [ "foo", "bar" ],
     "verifyEmail" : "true",
     "users": [
@@ -83,7 +81,7 @@
             "name" : "oauthclient",
             "enabled": true,
             "credentials" : [
-                { "type" : "password",
+                { "type" : "secret",
                   "value" : "clientpassword" }
             ]
         }

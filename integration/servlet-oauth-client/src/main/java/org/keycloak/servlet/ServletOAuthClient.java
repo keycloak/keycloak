@@ -48,8 +48,6 @@ public class ServletOAuthClient extends AbstractOAuthClient {
     }
 
     public String resolveBearerToken(String redirectUri, String code) throws IOException, TokenGrantRequest.HttpFailure {
-        Map<String, String> credentials = new HashMap<String, String>();
-        credentials.put("password", password);
         return TokenGrantRequest.invoke(client, code, codeUrl, redirectUri, clientId, credentials).getToken();
     }
 

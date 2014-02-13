@@ -303,6 +303,21 @@ public class AuthenticationManager {
             } else {
                 return AuthenticationStatus.SUCCESS;
             }
+        } else if (types.contains(CredentialRepresentation.SECRET)) {
+            String secret = formData.getFirst(CredentialRepresentation.SECRET);
+            if (secret == null) {
+                logger.warn("Secret not provided");
+                return AuthenticationStatus.MISSING_PASSWORD;
+            }
+            if (!realm.validateSecret(user, secret)) {
+                logger.debug("invalid secret for user: " + user.getLoginName());
+                return AuthenticationStatus.INVALID_CREDENTIALS;
+            }
+            if (!user.getRequiredActions().isEmpty()) {
+                return AuthenticationStatus.ACTIONS_REQUIRED;
+            } else {
+                return AuthenticationStatus.SUCCESS;
+            }
         } else {
             logger.warn("Do not know how to authenticate user");
             return AuthenticationStatus.FAILED;

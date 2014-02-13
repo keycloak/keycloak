@@ -28,8 +28,6 @@ public class RealmRepresentation {
     protected RolesRepresentation roles;
     protected List<String> defaultRoles;
     protected Set<String> requiredCredentials;
-    protected Set<String> requiredApplicationCredentials;
-    protected Set<String> requiredOAuthClientCredentials;
     protected String passwordPolicy;
     protected List<UserRepresentation> users;
     protected List<UserRoleMappingRepresentation> roleMappings;
@@ -166,22 +164,6 @@ public class RealmRepresentation {
 
     public void setRequiredCredentials(Set<String> requiredCredentials) {
         this.requiredCredentials = requiredCredentials;
-    }
-
-    public Set<String> getRequiredApplicationCredentials() {
-        return requiredApplicationCredentials;
-    }
-
-    public void setRequiredApplicationCredentials(Set<String> requiredApplicationCredentials) {
-        this.requiredApplicationCredentials = requiredApplicationCredentials;
-    }
-
-    public Set<String> getRequiredOAuthClientCredentials() {
-        return requiredOAuthClientCredentials;
-    }
-
-    public void setRequiredOAuthClientCredentials(Set<String> requiredOAuthClientCredentials) {
-        this.requiredOAuthClientCredentials = requiredOAuthClientCredentials;
     }
 
     public String getPasswordPolicy() {

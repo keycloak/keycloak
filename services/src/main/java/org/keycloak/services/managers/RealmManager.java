@@ -64,6 +64,7 @@ public class RealmManager {
         return identitySession.getRealmByName(name);
     }
 
+
     public RealmModel createRealm(String name) {
         return createRealm(name, name);
     }
@@ -76,6 +77,8 @@ public class RealmManager {
         realm.addRole(Constants.IDENTITY_REQUESTER_ROLE);
 
         setupAccountManagement(realm);
+        realm.addRequiredOAuthClientCredential(UserCredentialModel.SECRET);
+        realm.addRequiredResourceCredential(UserCredentialModel.SECRET);
 
         return realm;
     }
@@ -108,14 +111,8 @@ public class RealmManager {
         if (rep.getAccessCodeLifespanUserAction() != null)
             realm.setAccessCodeLifespanUserAction(rep.getAccessCodeLifespanUserAction());
         if (rep.getTokenLifespan() != null) realm.setTokenLifespan(rep.getTokenLifespan());
-        if (rep.getRequiredOAuthClientCredentials() != null) {
-            realm.updateRequiredOAuthClientCredentials(rep.getRequiredOAuthClientCredentials());
-        }
         if (rep.getRequiredCredentials() != null) {
             realm.updateRequiredCredentials(rep.getRequiredCredentials());
-        }
-        if (rep.getRequiredApplicationCredentials() != null) {
-            realm.updateRequiredApplicationCredentials(rep.getRequiredApplicationCredentials());
         }
         realm.setLoginTheme(rep.getLoginTheme());
         realm.setAccountTheme(rep.getAccountTheme());
@@ -142,20 +139,12 @@ public class RealmManager {
     private void setupAccountManagement(RealmModel realm) {
         ApplicationModel application = realm.getApplicationNameMap().get(Constants.ACCOUNT_APPLICATION);
         if (application == null) {
-            application = realm.addApplication(Constants.ACCOUNT_APPLICATION);
+            application = new ApplicationManager(this).createApplication(realm, Constants.ACCOUNT_APPLICATION);
             application.setEnabled(true);
 
             application.addDefaultRole(Constants.ACCOUNT_PROFILE_ROLE);
             application.addDefaultRole(Constants.ACCOUNT_MANAGE_ROLE);
 
-            UserCredentialModel password = new UserCredentialModel();
-            password.setType(UserCredentialModel.PASSWORD);
-            password.setValue(UUID.randomUUID().toString()); // just a random password as we'll never access it
-
-            realm.updateCredential(application.getApplicationUser(), password);
-
-            RoleModel applicationRole = realm.getRole(Constants.APPLICATION_ROLE);
-            realm.grantRole(application.getApplicationUser(), applicationRole);
         }
     }
 
@@ -207,22 +196,6 @@ public class RealmManager {
             }
         } else {
             addRequiredCredential(newRealm, CredentialRepresentation.PASSWORD);
-        }
-
-        if (rep.getRequiredApplicationCredentials() != null) {
-            for (String requiredCred : rep.getRequiredApplicationCredentials()) {
-                addResourceRequiredCredential(newRealm, requiredCred);
-            }
-        } else {
-            addResourceRequiredCredential(newRealm, CredentialRepresentation.PASSWORD);
-        }
-
-        if (rep.getRequiredOAuthClientCredentials() != null) {
-            for (String requiredCred : rep.getRequiredOAuthClientCredentials()) {
-                addOAuthClientRequiredCredential(newRealm, requiredCred);
-            }
-        } else {
-            addOAuthClientRequiredCredential(newRealm, CredentialRepresentation.PASSWORD);
         }
 
         newRealm.setPasswordPolicy(new PasswordPolicy(rep.getPasswordPolicy()));
