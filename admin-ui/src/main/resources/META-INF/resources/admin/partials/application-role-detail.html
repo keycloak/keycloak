@@ -59,7 +59,7 @@
             </fieldset>
 
             <fieldset data-ng-show="!create && (compositeSwitch || role.composite)">
-                <legend collapsed><span class="text">Composite Realm Roles</span> </legend>
+                <legend uncollapsed><span class="text">Composite Realm Roles</span> </legend>
                 <div class="form-group col-sm-10">
                     <div class="controls changing-selectors">
                         <div class="select-title">
@@ -91,7 +91,7 @@
             </fieldset>
 
             <fieldset ng-show="applications.length > 0 && !create && (compositeSwitch || role.composite)">
-                <legend collapsed><span class="text">Composite Application Roles</span> </legend>
+                <legend uncollapsed><span class="text">Composite Application Roles</span> </legend>
                 <div class="form-group input-select">
                     <label class="col-sm-2 control-label" for="applications">Application</label>
                     <div class="col-sm-4">
