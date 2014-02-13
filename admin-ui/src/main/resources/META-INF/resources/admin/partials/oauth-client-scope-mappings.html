@@ -52,16 +52,20 @@
 
             <fieldset ng-show="applications.length > 0">
                 <legend><span class="text">Application Roles</span> </legend>
-                <div class="form-group input-select col-sm-10">
-                    <label class="control-label" for="applications">Application</label>
-                    <div class="input-group">
-                        <div class="select-kc">
-                            <select id="applications" name="applications" ng-change="changeApplication()" ng-model="targetApp" ng-options="a.name for a in (applications)">
-                                <option value="" selected> Select an Application </option>
-                            </select>
+                <div class="form-group input-select">
+                    <label class="col-sm-2 control-label" for="applications">Application</label>
+                    <div class="col-sm-4">
+                        <div class="input-group">
+                            <div class="select-kc">
+                                <select id="applications" name="applications" ng-change="changeApplication()" ng-model="targetApp" ng-options="a.name for a in (applications)">
+                                    <option value="" selected> Select an Application </option>
+                                </select>
+                            </div>
                         </div>
                     </div>
-                    <div class="controls changing-selectors" data-ng-show="targetApp">
+                </div>
+                <div class="form-group" data-ng-show="targetApp">
+                    <div class="controls changing-selectors col-sm-10">
                         <div class="select-title">
                             <label class="control-label" for="app-available">Available Roles</label>
                             <select id="app-available" class="form-control" multiple size="5"

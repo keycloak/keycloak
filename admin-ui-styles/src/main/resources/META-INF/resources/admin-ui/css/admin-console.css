@@ -555,7 +555,7 @@ legend .kc-icon-collapse {
     line-height: 30px;
     margin-left: -2px;
     margin-top: -2px;
-    padding: 5px 0.545455em;
+    padding: 5px .496em;
     width: 150%;
 }
 .select-kc option {
