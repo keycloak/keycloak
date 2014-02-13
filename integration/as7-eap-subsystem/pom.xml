@@ -21,6 +21,7 @@
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-parent</artifactId>
         <version>1.0-alpha-2-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
     </parent>
 
     <groupId>org.keycloak</groupId>
