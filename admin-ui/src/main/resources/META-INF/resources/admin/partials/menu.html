@@ -1,41 +1,45 @@
-<div class="header rcue">
-    <div class="navbar utility">
-        <div class="navbar-inner clearfix container">
-            <h1><a href="#/"><strong>Keycloak</strong> Admin Console</a></h1>
-            <ul class="nav pull-right" data-ng-hide="auth.loggedIn">
-                <li><a href="/auth/rest/admin/login?path={{fragment}}">Login</a></li>
-                <li><a href="/auth/rest/admin/registrations">Register</a></li>
-            </ul>
-            <ul class="nav pull-right" data-ng-show="auth.loggedIn">
-                <li class="dropdown">
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                        <span class="icon-user">Icon: user</span>{{auth.user.displayName}}<i class="caret"></i></a>
-                    <ul class="dropdown-menu">
-                        <li><a href="/auth/rest/realms/keycloak-admin/account?referrer=admin-console">Manage Account</a></li>
-                        <li class="separator"><a href="/auth/rest/admin/logout">Sign Out</a></li>
-                    </ul>
-                </li>
-            </ul>
-        </div>
+<nav id="kc-navigation" class="navbar" role="navigation">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse-1">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+        </button>
+        <h1 class="navbar-title"></h1>
     </div>
-    <div class="navbar primary">
-        <div class="navbar-inner clearfix container" data-ng-controller="RealmDropdownCtrl">
-            <ul class="nav pull-left">
-                <li>
-                    <span class="dropdown-label" data-ng-show="showNav()">Realm:</span>
-                    <div class="select-rcue" data-ng-show="showNav()">
-                        <select ng-change="changeRealm()" ng-model="current.realm" ng-options="r.realm for r in current.realms"></select>
-                    </div><a data-ng-click="refresh()" id="refresh" data-ng-show="showNav()" tooltip-placement="bottom" tooltip="Refresh"><span class="icon-spinner6">Icon: spinner</span></a>
-                </li>
-            </ul>
-            <div class="pull-right" data-ng-show="auth.loggedIn">
+    <div class="collapse navbar-collapse navbar-collapse-1">
+        <ul class="nav navbar-nav navbar-utility" data-ng-show="auth.loggedIn">
+            <li class="dropdown">
+                <a data-toggle="dropdown" class="dropdown-toggle" href="#">
+                    <span class="pficon pficon-user"></span>
+                    {{auth.user.displayName}}<b class="caret"></b>
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a href="/auth/rest/realms/keycloak-admin/account?referrer=admin-console">Manage Account</a></li>
+                    <li class="separator"><a href="/auth/rest/admin/logout">Sign Out</a></li>
+                </ul>
+            </li>
+        </ul>
+        <ul class="nav navbar-nav navbar-primary persistent-secondary" data-ng-controller="RealmDropdownCtrl">
+            <li class="dropdown context" data-ng-show="showNav()">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                    {{current.realm.realm}}
+                    <b class="caret"></b>
+                </a>
+                <ul class="dropdown-menu">
+                    <li data-ng-repeat="realm in current.realms">
+                        <a href="" ng-click="changeRealm(realm.realm)">{{realm.realm}}</a>
+                    </li>
+                </ul>
+            </li>
+            <li class="active pull-right" data-ng-show="auth.loggedIn">
                 <a class="button primary" href="#/create/realm" data-ng-class="path[0] == 'create' && path[1] == 'realm' && 'active'"
-                    data-ng-show="auth.loggedIn">Add Realm</a>
-            </div>
-        </div>
+                   data-ng-show="auth.loggedIn">Add Realm</a>
+            </li>
+        </ul>
     </div>
-</div>
-
+</nav>
 <!-- TODO remove once this page is properly styled -->
 <style type="text/css">
     .icon-spinner6 {

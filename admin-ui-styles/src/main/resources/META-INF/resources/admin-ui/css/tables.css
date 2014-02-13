@@ -20,27 +20,27 @@ table thead tr th {
   border-right: 1px #dcdcdc solid;
   text-align: left;
 }
-.rcue-table-actions {
+.kc-table-actions {
   padding: 1px;
   border-top: none;
 }
 /*
-.rcue-table-actions span:last-child {
+.kc-table-actions span:last-child {
   float: right;
 }
 */
-.rcue-table-actions {
+.kc-table-actions {
   padding: 1px;
 }
 /*
-.rcue-table-actions button {
+.kc-table-actions button {
   padding: 3px 8px;
   font-size: 11px;
   box-shadow: 1px 2px 2px #e3e3e3;
   margin: 4px;
 }
 */
-.rcue-table-number {
+.kc-table-number {
   text-align: right;
   width: 100px;
 }
@@ -62,7 +62,7 @@ table tbody tr td:first-child {
 }
 */
 table thead tr th:last-child {
-  border-right: none;
+  /*border-right: none;*/
 }
 table thead tr th button,
 table thead tr th .button {
@@ -74,7 +74,7 @@ table tbody tr:first-child td {
 
 }
 table tbody tr td:last-child {
-  border-right: none;
+ /* border-right: none;*/
 }
 /*
 table tbody tr:hover {
@@ -83,11 +83,11 @@ table tbody tr:hover {
 }
 */
 /* Styles from Gabriel */
-.rcue-table-actions button + button,
-.rcue-table-actions .button + button {
+.kc-table-actions button + button,
+.kc-table-actions .button + button {
   margin-left: 5px;
 }
-.rcue-table-actions div.actions {
+.kc-table-actions div.actions {
   float: right;
   font-size: 0.90909090909091em;
 }
@@ -186,4 +186,12 @@ table tfoot tr .table-nav span {
   line-height: 2.18181818181818em;
   display: inline-block;
   padding: 0 1.36363636363636em;
+}
+
+.kc-table-actions > * {
+    vertical-align: middle;
+}
+
+td .form-group {
+    margin-bottom: 0;
 }

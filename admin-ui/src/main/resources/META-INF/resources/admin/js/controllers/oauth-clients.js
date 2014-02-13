@@ -270,25 +270,29 @@ module.controller('OAuthClientScopeMappingCtrl', function($scope, $http, realm, 
 
 
     $scope.changeApplication = function() {
-        $scope.applicationRoles = ApplicationRole.query({realm : realm.realm, application : $scope.targetApp.name}, function() {
-                $scope.applicationMappings = OAuthClientApplicationScopeMapping.query({realm : realm.realm, oauth : oauth.id, targetApp : $scope.targetApp.name}, function(){
-                    for (var i = 0; i < $scope.applicationMappings.length; i++) {
-                        var role = $scope.applicationMappings[i];
-                        for (var j = 0; j < $scope.applicationRoles.length; j++) {
-                            var realmRole = $scope.applicationRoles[j];
-                            if (realmRole.id == role.id) {
-                                var idx = $scope.applicationRoles.indexOf(realmRole);
-                                if (idx != -1) {
-                                    $scope.applicationRoles.splice(idx, 1);
-                                    break;
+        if ($scope.targetApp) {
+            $scope.applicationRoles = ApplicationRole.query({realm : realm.realm, application : $scope.targetApp.name}, function() {
+                    $scope.applicationMappings = OAuthClientApplicationScopeMapping.query({realm : realm.realm, oauth : oauth.id, targetApp : $scope.targetApp.name}, function(){
+                        for (var i = 0; i < $scope.applicationMappings.length; i++) {
+                            var role = $scope.applicationMappings[i];
+                            for (var j = 0; j < $scope.applicationRoles.length; j++) {
+                                var realmRole = $scope.applicationRoles[j];
+                                if (realmRole.id == role.id) {
+                                    var idx = $scope.applicationRoles.indexOf(realmRole);
+                                    if (idx != -1) {
+                                        $scope.applicationRoles.splice(idx, 1);
+                                        break;
+                                    }
                                 }
                             }
                         }
-                    }
-                });
+                    });
 
-            }
-        );
+                }
+            );
+        } else {
+            $scope.targetApp = null;
+        }
     };
 
 

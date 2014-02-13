@@ -47,7 +47,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.filters.KeycloakSessionServletFilter;
-import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
 
@@ -222,21 +221,16 @@ public class KeycloakServer {
         }
     }
 
-    protected void setupDefaultRealm() {
+    protected void setupDevConfig() {
         KeycloakSession session = factory.createSession();
         session.getTransaction().begin();
 
         try {
             RealmManager manager = new RealmManager(session);
 
-            if (manager.getRealm(Constants.ADMIN_REALM) != null) {
-                return;
-            }
-
-            new ApplianceBootstrap().bootstrap(session);
-
-            // No need to require admin to change password as this server is for dev/test
-            manager.getRealm(Constants.ADMIN_REALM).getUser("admin").removeRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+            RealmModel adminRealm = manager.getRealm(Constants.ADMIN_REALM);
+            UserModel admin = adminRealm.getUser("admin");
+            admin.removeRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
 
             session.getTransaction().commit();
         } finally {
@@ -275,7 +269,7 @@ public class KeycloakServer {
 
         factory = ((KeycloakApplication)deployment.getApplication()).getFactory();
 
-        setupDefaultRealm();
+        setupDevConfig();
 
         if (config.getResourcesHome() != null) {
             info("Loading resources from " + config.getResourcesHome());

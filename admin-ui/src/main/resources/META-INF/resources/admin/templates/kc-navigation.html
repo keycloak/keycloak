@@ -1,0 +1,10 @@
+<ul class="nav nav-tabs nav-tabs-pf">
+    <li ng-class="{active: kcCurrent == 'general'}"><a href="#/realms/{{kcRealm}}">General</a></li>
+    <li ng-class="{active: kcCurrent == 'social'}" data-ng-show="kcSocial"><a href="#/realms/{{kcRealm}}/social-settings">Social</a></li>
+    <li ng-class="{active: kcCurrent == 'roles'}"><a href="#/realms/{{kcRealm}}/roles">Roles</a></li>
+    <li ng-class="{active: kcCurrent == 'defRoles'}"><a href="#/realms/{{kcRealm}}/default-roles">Default Roles</a></li>
+    <li ng-class="{active: kcCurrent == 'credentials'}"><a href="#/realms/{{kcRealm}}/required-credentials">Credentials</a></li>
+    <li ng-class="{active: kcCurrent == 'token'}"><a href="#/realms/{{kcRealm}}/token-settings">Token</a></li>
+    <li ng-class="{active: kcCurrent == 'keys'}"><a href="#/realms/{{kcRealm}}/keys-settings">Keys</a></li>
+    <li ng-class="{active: kcCurrent == 'email'}"><a href="#/realms/{{kcRealm}}/smtp-settings">Email</a></li>
+</ul>
