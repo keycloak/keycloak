@@ -23,7 +23,7 @@
             <li class="active">Settings</li>
         </ol>
         <h2 data-ng-hide="create"><span>{{application.name}}</span> Settings</h2>
-        <form class="form-horizontal" name="applicationForm" novalidate ng-class="{ has-error: applicationForm.$invalid }>
+        <form class="form-horizontal" name="applicationForm" novalidate>
             <fieldset class="border-top">
                 <div class="form-group">
                     <label class="col-sm-2 control-label" for="name">Name <span class="required" data-ng-show="create">*</span></label>

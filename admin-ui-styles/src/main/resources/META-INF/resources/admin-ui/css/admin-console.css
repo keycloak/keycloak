@@ -105,9 +105,23 @@ html, body, body > .container, #view, #content-area{
     display: block;
 }
 
-p.subtitle {
-    position: absolute;
-    right: 2.5em;
+.fieldset-notice {
+    color: #B7B7B7;
+    font-size: 1.1em;
+    float: right;
+    margin-top: -2em;
+}
+
+th.kc-table-actions {
+    line-height: 1em !important;
+}
+
+.action-div {
+    padding-top: 3px;
+}
+
+.required {
+    color: #CB2915;
 }
 
 #content-area {
@@ -244,6 +258,7 @@ header .navbar {
 }
 .bs-sidebar ul {
     list-style: none;
+    padding-left: 10px;
 }
 
 .bs-sidebar ul li {
@@ -380,6 +395,10 @@ header .navbar {
     color: #a1a1a1;
 }
 
+fieldset {
+    padding-bottom: 1em;
+}
+
 /* Legend stuff */
 legend {
     border-color: #E9E8E8;
@@ -389,7 +408,7 @@ legend {
     display: block;
     font-size: 1em;
     margin-bottom: 0;
-    padding-bottom: 2em;
+    padding-bottom: 1em;
     padding-top: 2em;
 }
 
@@ -647,7 +666,7 @@ legend .kc-icon-collapse {
     float: left;
     font-weight: bold;
     margin-right: 0.909091em;
-    padding-top: 0.454545em;
+    padding-top: 3px;
 }
 .kc-link-input-file {
     display: inline-block;
@@ -690,7 +709,7 @@ legend .kc-icon-collapse {
     z-index: 100;
 }
 
-.alert {
+.feedback-aligner .alert {
     background-position: 1.27273em center;
     background-repeat: no-repeat;
     border-radius: 2px;
@@ -704,24 +723,27 @@ legend .kc-icon-collapse {
     position: relative;
     text-align: left;
 }
-.alert.alert-success {
+.feedback-aligner .alert.alert-success {
     background-color: #E4F1E1;
-    --background-image: url("img/feedback-success-sign.png");
     border-color: #4B9E39;
 }
-.alert.alert-danger {
+.feedback-aligner .alert.alert-danger {
     background-color: #F8E7E7;
-    --background-image: url("img/feedback-error-sign.png");
     border-color: #B91415;
 }
-.alert.alert-warning {
+.feedback-aligner .alert.alert-warning {
     background-color: #FEF1E9;
-    --background-image: url("img/feedback-warning-sign.png");
     border-color: #F17528;
 }
-.alert.alert-info {
+.feedback-aligner .alert.alert-info {
     background-color: #E4F3FA;
-    --background-image: url("img/feedback-info-sign.png");
     border-color: #5994B2;
 }
 
+.modal-header h3 {
+    margin-top: 9.5px;
+}
+
+.modal-footer {
+    margin-top: 0;
+}

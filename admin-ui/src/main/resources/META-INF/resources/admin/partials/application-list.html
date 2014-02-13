@@ -9,10 +9,7 @@
             <li class="active">Applications</li>
         </ol>
         <h2><span>{{realm.realm}}</span> Applications</h2>
-        <div class="feedback info inline" data-ng-show="!applications || applications.length == 0">
-            <p><strong>You have not configured applications.</strong> <a class="button" href="#/create/application/{{realm.realm}}">Add Application</a></p>
-        </div>
-        <table class="table" data-ng-hide="applications.length == 0">
+        <table class="table">
             <thead>
             <tr>
                 <th class="kc-table-actions" colspan="3">
@@ -29,7 +26,7 @@
                     </div>
                 </th>
             </tr>
-            <tr data-ng-show="applications.length > 0">
+            <tr data-ng-hide="applications.length == 0">
                 <th>Application Name</th>
                 <th>Enabled</th>
                 <th>Base URL</th>
@@ -54,6 +51,9 @@
                 <td ng-class="{'text-muted': !app.baseUrl}">
                     <a href="{{app.baseUrl}}" data-ng-show="app.baseUrl">{{app.baseUrl}}</a>
                     <span data-ng-hide="app.baseUrl">Not defined</span>
+            </tr>
+            <tr data-ng-show="applications.length == 0">
+                <td>No applications available</td>
             </tr>
             </tbody>
         </table>

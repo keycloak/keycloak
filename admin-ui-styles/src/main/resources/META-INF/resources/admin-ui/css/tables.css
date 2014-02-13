@@ -62,7 +62,7 @@ table tbody tr td:first-child {
 }
 */
 table thead tr th:last-child {
-  border-right: none;
+  /*border-right: none;*/
 }
 table thead tr th button,
 table thead tr th .button {
@@ -74,7 +74,7 @@ table tbody tr:first-child td {
 
 }
 table tbody tr td:last-child {
-  border-right: none;
+ /* border-right: none;*/
 }
 /*
 table tbody tr:hover {

@@ -58,15 +58,12 @@
                 <td>{{user.firstName}}</td>
                 <td>{{user.email}}</td>
             </tr>
+            <tr data-ng-show="!users || users.length == 0">
+                <td data-ng-show="!users">Please enter a search, or click on view all users</td>
+                <td data-ng-show="searchLoaded && users.length == 0 && lastSearch != null">Your search returned no results</td>
+                <td data-ng-show="searchLoaded && users.length == 0 && lastSearch == null">No users available</td>
+            </tr>
             </tbody>
         </table>
-        <div class="feedback warning inline" data-ng-show="searchLoaded && users.length == 0">
-            <p data-ng-show="lastSearch != null"><strong>Your search returned no results.</strong><br>Try modifying the query and try again.</p>
-            <p data-ng-show="lastSearch == null"><strong>No users present.</strong><br>Create some using the "Add User" button.</p>
-        </div>
-        <div class="feedback info inline" data-ng-show="!users">
-            <br/>
-            <p><strong>Search for users.</strong><br>Please enter a search to display users.</p>
-        </div>
     </div>
 </div>

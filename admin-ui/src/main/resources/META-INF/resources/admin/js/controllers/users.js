@@ -89,25 +89,29 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, ro
 
 
     $scope.changeApplication = function() {
-        $scope.applicationRoles = ApplicationRole.query({realm : realm.realm, userId : user.username, application : $scope.application.name}, function() {
-                $scope.applicationMappings = ApplicationRoleMapping.query({realm : realm.realm, userId : user.username, application : $scope.application.name}, function(){
-                    for (var i = 0; i < $scope.applicationMappings.length; i++) {
-                        var role = $scope.applicationMappings[i];
-                        for (var j = 0; j < $scope.applicationRoles.length; j++) {
-                            var realmRole = $scope.applicationRoles[j];
-                            if (realmRole.id == role.id) {
-                                var idx = $scope.applicationRoles.indexOf(realmRole);
-                                if (idx != -1) {
-                                    $scope.applicationRoles.splice(idx, 1);
-                                    break;
+        if ($scope.application) {
+            $scope.applicationRoles = ApplicationRole.query({realm : realm.realm, userId : user.username, application : $scope.application.name}, function() {
+                    $scope.applicationMappings = ApplicationRoleMapping.query({realm : realm.realm, userId : user.username, application : $scope.application.name}, function(){
+                        for (var i = 0; i < $scope.applicationMappings.length; i++) {
+                            var role = $scope.applicationMappings[i];
+                            for (var j = 0; j < $scope.applicationRoles.length; j++) {
+                                var realmRole = $scope.applicationRoles[j];
+                                if (realmRole.id == role.id) {
+                                    var idx = $scope.applicationRoles.indexOf(realmRole);
+                                    if (idx != -1) {
+                                        $scope.applicationRoles.splice(idx, 1);
+                                        break;
+                                    }
                                 }
                             }
                         }
-                    }
-                });
+                    });
 
-            }
-        );
+                }
+            );
+        } else {
+            $scope.applicationRoles = null;
+        }
     };
 
 

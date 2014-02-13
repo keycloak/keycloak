@@ -65,6 +65,8 @@ module.controller('RealmDropdownCtrl', function($scope, Realm, Current, Auth, $l
 module.controller('RealmCreateCtrl', function($scope, Current, Realm, $upload, $http, $location, Dialog, Notifications) {
     console.log('RealmCreateCtrl');
 
+    Current.realm = null;
+
     $scope.realm = {
         enabled: true
     };
@@ -78,9 +80,8 @@ module.controller('RealmCreateCtrl', function($scope, Current, Realm, $upload, $
         $scope.files = $files;
     };
 
-    $scope.changeFileSelect = function() {
+    $scope.clearFileSelect = function() {
         $scope.files = null;
-        document.getElementById('import-file').click();
     }
 
     $scope.uploadFile = function() {
@@ -402,21 +403,25 @@ module.controller('RealmDefaultRolesCtrl', function ($scope, Realm, realm, appli
         $scope.selectedAppDefRoles = [];
 
         // Populate available roles for selected application
-        var appDefaultRoles = ApplicationRole.query({realm: $scope.realm.realm, application: $scope.application.name}, function () {
+        if ($scope.application) {
+            var appDefaultRoles = ApplicationRole.query({realm: $scope.realm.realm, application: $scope.application.name}, function () {
 
-            if (!$scope.application.hasOwnProperty('defaultRoles') || $scope.application.defaultRoles === null) {
-                $scope.application.defaultRoles = [];
-            }
-
-            $scope.availableAppRoles = [];
-
-            for (var i = 0; i < appDefaultRoles.length; i++) {
-                var roleName = appDefaultRoles[i].name;
-                if ($scope.application.defaultRoles.indexOf(roleName) < 0) {
-                    $scope.availableAppRoles.push(roleName);
+                if (!$scope.application.hasOwnProperty('defaultRoles') || $scope.application.defaultRoles === null) {
+                    $scope.application.defaultRoles = [];
                 }
-            }
-        });
+
+                $scope.availableAppRoles = [];
+
+                for (var i = 0; i < appDefaultRoles.length; i++) {
+                    var roleName = appDefaultRoles[i].name;
+                    if ($scope.application.defaultRoles.indexOf(roleName) < 0) {
+                        $scope.availableAppRoles.push(roleName);
+                    }
+                }
+            });
+        } else {
+            $scope.availableAppRoles = null;
+        }
     };
 
     $scope.addAppDefaultRole = function () {
@@ -536,7 +541,7 @@ module.controller('RealmSocialCtrl', function($scope, realm, Realm, serverInfo, 
 module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, $location, Dialog, Notifications, TimeUnit) {
     console.log('RealmTokenDetailCtrl');
 
-    $scope.realm = { id : realm.id, realm : realm.realm, social : realm.social, registrationAllowed : realm.registrationAllowed };
+    $scope.realm = realm;
 
     $scope.realm.tokenLifespanUnit = TimeUnit.autoUnit(realm.tokenLifespan);
     $scope.realm.tokenLifespan = TimeUnit.toUnit(realm.tokenLifespan, $scope.realm.tokenLifespanUnit);
@@ -673,9 +678,10 @@ module.controller('RealmSMTPSettingsCtrl', function($scope, Current, Realm, real
 
     var booleanSmtpAtts = ["auth","ssl","starttls"];
 
-    $scope.realm = {
-        id : realm.id, realm : realm.realm, social : realm.social, registrationAllowed : realm.registrationAllowed,
-        smtpServer: typeObject(realm.smtpServer)
+    $scope.realm = realm;
+
+    if ($scope.realm.smtpServer) {
+        $scope.realm.smtpServer = typeObject($scope.realm.smtpServer);
     };
 
     var oldCopy = angular.copy($scope.realm);

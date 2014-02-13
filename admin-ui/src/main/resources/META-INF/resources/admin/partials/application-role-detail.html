@@ -17,8 +17,6 @@
             <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/roles">Roles</a></li>
             <li class="active">Add role</li>
         </ol>
-        <h2 class="pull-left" data-ng-show="create"><span>{{application.name}}</span> Add Role</h2>
-        <p class="subtitle" data-ng-show="create"><span class="required">*</span> Required fields</p>
 
         <ol class="breadcrumb" data-ng-hide="create">
             <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
@@ -29,7 +27,11 @@
         </ol>
 
         <h2 data-ng-hide="create"><span>{{application.name}}</span> {{role.name}}</h2>
+        <h2 data-ng-show="create"><span>{{application.name}}</span> Add Role</h2>
+
         <form class="form-horizontal" name="realmForm" novalidate>
+            <span class="fieldset-notice"><span class="required">*</span> Required fields</span>
+
             <fieldset class="border-top">
                 <div class="form-group">
                     <label class="col-sm-2 control-label" for="name">Role name <span class="required" data-ng-show="create">*</span></label>
@@ -55,16 +57,6 @@
                     </div>
                 </div>
             </fieldset>
-
-            <div class="pull-right form-actions" data-ng-show="create">
-                <button kc-cancel data-ng-click="cancel()">Cancel</button>
-                <button kc-save data-ng-show="changed">Save</button>
-            </div>
-            <div class="pull-right form-actions" data-ng-show="!create">
-                <button kc-reset data-ng-show="changed">Clear changes</button>
-                <button kc-save  data-ng-show="changed">Save</button>
-                <button kc-delete data-ng-click="remove()" data-ng-hide="changed">Delete</button>
-            </div>
 
             <fieldset data-ng-show="!create && (compositeSwitch || role.composite)">
                 <legend collapsed><span class="text">Composite Realm Roles</span> </legend>
@@ -141,6 +133,17 @@
                     </div>
                 </div>
             </fieldset>
+
+            <div class="pull-right form-actions" data-ng-show="create">
+                <button kc-cancel data-ng-click="cancel()">Cancel</button>
+                <button kc-save data-ng-show="changed">Save</button>
+            </div>
+            <div class="pull-right form-actions" data-ng-show="!create">
+                <button kc-reset data-ng-show="changed">Clear changes</button>
+                <button kc-save  data-ng-show="changed">Save</button>
+                <button kc-delete data-ng-click="remove()" data-ng-hide="changed">Delete</button>
+            </div>
+
         </form>
     </div>
 </div>

@@ -9,8 +9,12 @@
         </ol>
         <h2><span>{{realm.realm}}</span> Social Providers Settings</h2>
 
-        <div class="feedback info inline">
-            <p><strong>Social Callback URL:</strong> {{callbackUrl}}</p>
+        <div class="alert alert-info alert-dismissable">
+            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">
+                <span class="pficon pficon-close"></span>
+            </button>
+            <span class="pficon pficon-info"></span>
+            <strong>Social Callback URL:</strong> {{callbackUrl}}</p>
         </div>
 
         <form name="realmForm" novalidate>
@@ -43,19 +47,19 @@
                         <tr ng-repeat="pId in configuredProviders">
                             <td>
                                 <div class="clearfix">
-                                    <input class="input-small disabled" type="text" value="{{pId|capitalize}}" readonly>
+                                    <input class="form-control input-small disabled" type="text" value="{{pId|capitalize}}" readonly>
                                 </div>
                             </td>
                             <td>
-                                <input class="input-small" type="text" placeholder="Key" ng-model="realm.socialProviders[pId+'.key']"
+                                <input class="form-control" type="text" placeholder="Key" ng-model="realm.socialProviders[pId+'.key']"
                                        ng-class="{'dirty': postSaveProviders.indexOf(pId) > -1}" required>
                             </td>
                             <td>
-                                <input class="input-small" type="text" placeholder="Secret" ng-model="realm.socialProviders[pId+'.secret']"
+                                <input class="form-control" type="text" placeholder="Secret" ng-model="realm.socialProviders[pId+'.secret']"
                                        ng-class="{'dirty': postSaveProviders.indexOf(pId) > -1}" required>
                             </td>
                             <td>
-                                <div class="action-div"><i class="icon-remove" ng-click="removeProvider(pId)"></i></div>
+                                <div class="action-div"><i class="pficon pficon-delete" ng-click="removeProvider(pId)"></i></div>
                             </td>
                         </tr>
                         </tbody>

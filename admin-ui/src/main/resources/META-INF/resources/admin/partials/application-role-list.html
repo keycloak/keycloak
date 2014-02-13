@@ -18,16 +18,12 @@
             <li class="active">Roles</li>
         </ol>
         <h2><span>{{application.name}}</span> Roles</h2>
-        <div class="feedback info inline" data-ng-show="!roles || roles.length == 0">
-            <p><strong>You have not configured application roles.</strong> <a class="button" href="#/create/role/{{realm.realm}}/applications/{{application.name}}">Add Role</a></p>
-        </div>
-        <table class="table" data-ng-hide="!roles || roles.length == 0">
-            <caption data-ng-show="roles && roles.length > 0" class="hidden">Table of realm roles</caption>
+        <table class="table">
             <thead>
             <tr>
                 <th class="kc-table-actions" colspan="3">
                     <div class="pull-right">
-                        <a class="kc-button" href="#/create/role/{{realm.realm}}/applications/{{application.name}}">Add Role</a>
+                        <a class="btn btn-primary" href="#/create/role/{{realm.realm}}/applications/{{application.name}}">Add Role</a>
                         <!-- <button class="remove disabled">Remove</button> -->
                     </div>
                 </th>
@@ -43,7 +39,7 @@
                     </div>
                 </th>
             </tr>
-            <tr>
+            <tr data-ng-hide="!roles || roles.length == 0">
                 <th>Role Name</th>
                 <th>Composite</th>
                 <th>Description</th>
@@ -66,6 +62,9 @@
                 <td><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/roles/{{role.name}}">{{role.name}}</a></td>
                 <td>{{role.composite}}</td>
                 <td>{{role.description}}</td>
+            </tr>
+            <tr data-ng-show="!roles || roles.length == 0">
+                <td>No application roles available</td>
             </tr>
             </tbody>
         </table>

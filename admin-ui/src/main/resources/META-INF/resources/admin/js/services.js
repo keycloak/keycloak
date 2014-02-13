@@ -13,8 +13,7 @@ module.service('Dialog', function($dialog) {
 
 	dialog.confirmDelete = function(name, type, success) {
 		var title = 'Delete ' + escapeHtml(type.charAt(0).toUpperCase() + type.slice(1));
-		var msg = '<span class="primary">Are you sure you want to permanently delete the ' + escapeHtml(type) + ' "' + escapeHtml(name) + '"?</span>' +
-            '<span>This action can\'t be undone.</span>';
+		var msg = '<span class="primary">Are you sure you want to permanently delete the ' + escapeHtml(type) + ' <strong>' + escapeHtml(name) + '</strong>?</span>';
 		var btns = [ {
 			result : 'cancel',
 			label : 'Cancel',
@@ -34,8 +33,7 @@ module.service('Dialog', function($dialog) {
 
     dialog.confirmGenerateKeys = function(name, type, success) {
         var title = 'Generate new keys for realm';
-        var msg = '<span class="primary">Are you sure you want to permanently generate new keys for ' + name + '"?</span>' +
-            '<span>This action can\'t be undone.</span>';
+        var msg = '<span class="primary">Are you sure you want to permanently generate new keys for <strong>' + name + '</strong>?</span>';
         var btns = [ {
             result : 'cancel',
             label : 'Cancel',
@@ -55,8 +53,7 @@ module.service('Dialog', function($dialog) {
 
     dialog.confirm = function(title, message, success, cancel) {
         var title = title;
-        var msg = '<span class="primary">' + message + '"</span>' +
-            '<span>This action can\'t be undone.</span>';
+        var msg = '<span class="primary">' + message + '"</span>';
         var btns = [ {
             result : 'cancel',
             label : 'Cancel',
@@ -458,7 +455,7 @@ module.factory('ApplicationRole', function($resource) {
 module.factory('Application', function($resource) {
     return $resource('/auth/rest/admin/realms/:realm/applications/:application', {
         realm : '@realm',
-        application : '@name'
+        application : '@application'
     },  {
         update : {
             method : 'PUT'
@@ -611,7 +608,7 @@ module.factory('TimeUnit', function() {
         switch (unit) {
             case 'Seconds': return time;
             case 'Minutes': return time * 60;
-            case 'Hours': return time * 360;
+            case 'Hours': return time * 3600;
             case 'Days': return time * 86400;
             default: throw 'invalid unit ' + unit;
         }
@@ -621,7 +618,7 @@ module.factory('TimeUnit', function() {
         switch (unit) {
             case 'Seconds': return time;
             case 'Minutes': return Math.ceil(time / 60);
-            case 'Hours': return Math.ceil(time / 360);
+            case 'Hours': return Math.ceil(time / 3600);
             case 'Days': return Math.ceil(time / 86400);
             default: throw 'invalid unit ' + unit;
         }

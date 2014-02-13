@@ -14,7 +14,6 @@
             <li class="active">Add</li>
         </ol>
         <h2 data-ng-show="create">Add User</h2>
-        <p class="subtitle" data-ng-show="create"><span class="required">*</span> Required fields</p>
         <ol class="breadcrumb" data-ng-hide="create">
             <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
             <li><a href="#/realms/{{realm.realm}}/users">Users</a></li>
@@ -24,6 +23,7 @@
         <h2 data-ng-hide="create"><span>{{user.username}}'s</span> Attributes</h2>
 
         <form class="form-horizontal" name="userForm" novalidate>
+            <span class="fieldset-notice"><span class="required">*</span> Required fields</span>
             <fieldset class="border-top">
                 <div class="form-group">
                     <label class="col-sm-2 control-label"for="username">Username <span class="required" data-ng-show="create">*</span></label>
