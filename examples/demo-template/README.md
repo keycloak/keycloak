@@ -1,6 +1,6 @@
-Login, Distributed SSO, Distributed Logout, and OAuth Token Grant Wildfly Examples
+Login, Distributed SSO, Distributed Logout, and OAuth Token Grant Examples
 ===================================
-The following examples requires Wildfly 8.0.0.  Here's the highlights of the examples
+The following examples requires Wildfly 8.0.0, JBoss EAP 6.x, or JBoss AS 7.1.1.  Here's the highlights of the examples
 * Delegating authentication of a web app to the remote authentication server via OAuth 2 protocols
 * Distributed Single-Sign-On and Single-Logout
 * Transferring identity and role mappings via a special bearer token (Skeleton Key Token).
@@ -13,6 +13,7 @@ machine on the network or Internet.
 * **product-app** A WAR application that does remote login using OAuth2 browser redirects with the auth server
 * **database-service** JAX-RS services authenticated by bearer tokens only. The customer and product app invoke on it to get data
 * **third-party** Simple WAR that obtain a bearer token using OAuth2 using browser redirects to the auth-server.
+* **third-party-cdi** Simple CDI/JSF WAR that obtain a bearer token using OAuth2 using browser redirects to the auth-server.
 
 The UI of each of these applications is very crude and exists just to show our OAuth2 implementation in action.
 
@@ -21,20 +22,64 @@ _This demo is meant to run on the same server instance as the Keycloak Server!_
 
 Step 1: Make sure you've set up the Keycloak Server
 --------------------------------------
-If you've downloaded the Keycloak Appliance Distribution, there is already a Wildfly distro all set up for you.  This
-Wildfly distro has the adapter jboss modules all installed as well as the Keycloak Server all set up.
+The Keycloak Appliance Distribution comes with a preconfigured Keycloak server (based on Wildfly).  You can use it out of
+the box to run these demos.  So, if you're using this, you can head to Step 2.
 
-If you want to install Keycloak Server and run the demo on an existing Wildfly instance:
+Alternatively, you can install the Keycloak Server onto any JBoss AS 7.1.1, EAP 6.x, or Wildfly 8.x server, but there is
+a few steps you must follow.
 
-Obtain latest keycloak-war-dist-all.zip.  This distro is used to install keycloak onto an existing JBoss installation
+Obtain latest keycloak-war-dist-all.zip.  This distro is used to install Keycloak onto an existing JBoss installation.
+This installs the server.
 
-    $ cd ${wildfly.home}/standalone
+    $ cd ${wildfly.jboss.home}/standalone
     $ cp -r ${keycloak-war-dist-all}/deployments .
 
-To install the adapter:
+To be able to run the demos you also need to install the Keycloak client adapter. For Wildfly:
 
-    $ cd ${jboss.home}
-    $ unzip ${keycloak-war-dist-al}/adapters/keycloak-wildfly-adapter-dist.zip
+    $ cd ${wildfly.home}
+    $ unzip ${keycloak-war-dist-all}/adapters/keycloak-wildfly-adapter-dist.zip
+
+For JBoss EAP 6.x
+
+    $ cd ${eap.home}
+    $ unzip ${keycloak-war-dist-all}/adapters/keycloak-eap6-adapter-dist.zip
+
+For JBoss AS 7.1.1:
+
+    $ cd ${as7.home}
+    $ unzip ${keycloak-war-dist-all}/adapters/keycloak-as7-adapter-dist.zip
+
+Unzipping the adapter ZIP only installs the JAR files.  You must also add the Keycloak Subsystem to the server's
+configuration (standalone/configuration/standalone.xml).
+
+For Wildfly:
+
+    <server xmlns="urn:jboss:domain:1.4">
+
+        <extensions>
+            <extension module="org.keycloak.keycloak-wildfly-subsystem"/>
+            ...
+        </extensions>
+
+        <profile>
+            <subsystem xmlns="urn:jboss:domain:keycloak:1.0"/>
+            ...
+        </profile>
+
+For JBoss 7.1.1 and EAP 6.x:
+
+    <server xmlns="urn:jboss:domain:1.4">
+
+        <extensions>
+            <extension module="org.keycloak.keycloak-as7-subsystem"/>
+            ...
+        </extensions>
+
+        <profile>
+            <subsystem xmlns="urn:jboss:domain:keycloak:1.0"/>
+            ...
+        </profile>
+
 
 Step 2: Boot Keycloak Server
 ---------------------------------------
@@ -44,8 +89,8 @@ From appliance:
 $ cd keycloak/bin
 $ ./standalone.sh
 
-From existing Wildfly distro
-$ cd ${wildfly.home}
+From existing Wildfly/EAP6/AS7 distro
+$ cd ${wildfly.jboss.home}/bin
 $ ./standalone.sh
 
 Step 3: Import the Test Realm
@@ -56,16 +101,37 @@ create a new admin password before you can go to the create realm page.
 
 [http://localhost:8080/auth/admin/index.html#/create/realm](http://localhost:8080/auth/admin/index.html#/create/realm)
 
-Import the testrealm.json file that is in the wildfly-demo/ example directory.
+Import the testrealm.json file that is in the preconfigured-demo/ example directory.
 
 
 Step 4: Build and deploy
 ---------------------------------------
 next you must build and deploy
 
-1. cd wildfly-demo
+1. cd preconfigured-demo
 2. mvn clean install
 3. mvn jboss-as:deploy
+
+Please note that jboss-as:deploy may fail on Wildfly distributions.  This is because Wildfly 8.0.0.Final has turned
+off a management interface.  You will hae to add this back in order to run the build.  Edit standalone/configuration/standalone.xml
+
+Add the native-itnerface to <management> element's <management-interfaces>:
+
+    <management>
+        <management-interfaces>
+            <native-interface security-realm="ManagementRealm">
+                <socket-binding native="management-native"/>
+            </native-interface>
+            ...
+        </management-interfaces>
+    </management>
+
+Then add a socket port mapping for the management interface :
+
+    <socket-binding-group name="standard-sockets" default-interface="public" port-offset="${jboss.socket.binding.port-offset:0}">
+        <socket-binding name="management-native" interface="management" port="${jboss.management.native.port:9999}"/>
+
+
 
 Step 5: Login and Observe Apps
 ---------------------------------------

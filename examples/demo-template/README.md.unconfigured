@@ -1,0 +1,10 @@
+Unconfigured Examples
+===================================
+This set of projects contains a stripped down version of the demo described in preconfigured-demo.  All keycloak specific
+configuration has been removed.  Use this project in conjunction with the online screencast tutorials at
+[http://keycloak.org/docs](http://keycloak.org/docs).
+
+
+
+
+
