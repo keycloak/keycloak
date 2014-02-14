@@ -34,10 +34,18 @@ public class OAuthClientManager {
         this.realm = realm;
     }
 
+    public UserCredentialModel generateSecret(RealmModel realm, OAuthClientModel app) {
+        UserCredentialModel secret = UserCredentialModel.generateSecret();
+        realm.updateCredential(app.getOAuthAgent(), secret);
+        return secret;
+    }
+
+
     public OAuthClientModel create(String name) {
         OAuthClientModel model = realm.addOAuthClient(name);
         RoleModel role = realm.getRole(Constants.IDENTITY_REQUESTER_ROLE);
         realm.grantRole(model.getOAuthAgent(), role);
+        generateSecret(realm, model);
         return model;
     }
 
