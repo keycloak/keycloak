@@ -14,7 +14,7 @@ import java.util.Set;
  */
 public class DefaultLoginThemeProvider implements ThemeProvider {
 
-    public static final String RCUE = "patternfly";
+    public static final String RCUE = "rcue";
     public static final String PATTERNFLY = "patternfly";
     public static final String KEYCLOAK = "keycloak";
 
