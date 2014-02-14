@@ -90,7 +90,7 @@ public class RoleAdapter extends AbstractAdapter implements RoleModel {
         }
 
         DBObject query = new QueryBuilder()
-                .and("_id").in(MongoModelUtils.convertStringsToObjectIds(role.getCompositeRoleIds()))
+                .and("_id").in(role.getCompositeRoleIds())
                 .get();
         List<RoleEntity> childRoles = getMongoStore().loadEntities(RoleEntity.class, query, invocationContext);
 

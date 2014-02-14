@@ -6,7 +6,6 @@ import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
-import org.bson.types.ObjectId;
 import org.jboss.logging.Logger;
 import org.keycloak.models.mongo.api.MongoCollection;
 import org.keycloak.models.mongo.api.MongoEntity;
@@ -27,6 +26,7 @@ import org.keycloak.models.mongo.impl.types.MapMapper;
 import org.keycloak.models.mongo.impl.types.MongoEntityMapper;
 import org.keycloak.models.mongo.impl.types.SimpleMapper;
 import org.keycloak.models.mongo.impl.types.StringToEnumMapper;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.picketlink.common.properties.Property;
 import org.picketlink.common.properties.query.AnnotatedPropertyCriteria;
 import org.picketlink.common.properties.query.PropertyQueries;
@@ -120,17 +120,16 @@ public class MongoStoreImpl implements MongoStore {
 
         String currentId = entity.getId();
 
-        // Inserting object, which already has oid property set. So we need to set "_id"
-        if (currentId != null) {
-            dbObject.put("_id", getObjectId(currentId));
+        // Generate random ID if not set already
+        if (currentId == null) {
+            currentId = KeycloakModelUtils.generateId();
+            entity.setId(currentId);
         }
+
+        // Adding "_id"
+        dbObject.put("_id", currentId);
 
         dbCollection.insert(dbObject);
-
-        // Add id to value of given object
-        if (currentId == null) {
-            entity.setId(dbObject.getString("_id"));
-        }
 
         // Treat object as created in this transaction (It is already submited to transaction)
         context.addCreatedEntity(entity);
@@ -152,7 +151,7 @@ public class MongoStoreImpl implements MongoStore {
                 if (currentId == null) {
                     throw new IllegalStateException("Can't update entity without id: " + entity);
                 } else {
-                    BasicDBObject query = new BasicDBObject("_id", getObjectId(currentId));
+                    BasicDBObject query = new BasicDBObject("_id", currentId);
                     dbCollection.update(query, dbObject);
                 }
             }
@@ -176,7 +175,7 @@ public class MongoStoreImpl implements MongoStore {
 
         DBCollection dbCollection = getDBCollectionForType(type);
 
-        BasicDBObject idQuery = new BasicDBObject("_id", getObjectId(id));
+        BasicDBObject idQuery = new BasicDBObject("_id", id);
         DBObject dbObject = dbCollection.findOne(idQuery);
 
         if (dbObject == null) return null;
@@ -193,14 +192,16 @@ public class MongoStoreImpl implements MongoStore {
 
     @Override
     public <T extends MongoIdentifiableEntity> T loadSingleEntity(Class<T> type, DBObject query, MongoStoreInvocationContext context) {
-        List<T> result = loadEntities(type, query, context);
-        if (result.size() > 1) {
-            throw new IllegalStateException("There are " + result.size() + " results for type=" + type + ", query=" + query + ". We expect just one");
-        } else if (result.size() == 1) {
-            return result.get(0);
-        } else {
-            // 0 results
+        // First we should execute all pending tasks before searching DB
+        context.beforeDBSearch(type);
+
+        DBCollection dbCollection = getDBCollectionForType(type);
+        DBObject dbObject = dbCollection.findOne(query);
+
+        if (dbObject == null) {
             return null;
+        } else {
+            return convertDBObjectToEntity(type, dbObject, context);
         }
     }
 
@@ -230,7 +231,7 @@ public class MongoStoreImpl implements MongoStore {
             return false;
         } else {
             DBCollection dbCollection = getDBCollectionForType(type);
-            BasicDBObject dbQuery = new BasicDBObject("_id", getObjectId(id));
+            BasicDBObject dbQuery = new BasicDBObject("_id", id);
             dbCollection.remove(dbQuery);
             logger.info("Entity of type: " + type + ", id: " + id + " removed from MongoDB.");
 
@@ -291,7 +292,7 @@ public class MongoStoreImpl implements MongoStore {
                 // Now DB update of new list with usage of $set
                 BasicDBList dbList = mapperRegistry.convertApplicationObjectToDBObject(listt, BasicDBList.class);
 
-                BasicDBObject query = new BasicDBObject("_id", getObjectId(entity.getId()));
+                BasicDBObject query = new BasicDBObject("_id", entity.getId());
                 BasicDBObject listObject = new BasicDBObject(listPropertyName, dbList);
                 BasicDBObject setCommand = new BasicDBObject("$set", listObject);
                 getDBCollectionForType(type).update(query, setCommand);
@@ -334,7 +335,7 @@ public class MongoStoreImpl implements MongoStore {
                 public void execute() {
                     // Pull item from DB
                     Object dbItemToPull = mapperRegistry.convertApplicationObjectToDBObject(itemToPull, Object.class);
-                    BasicDBObject query = new BasicDBObject("_id", getObjectId(entity.getId()));
+                    BasicDBObject query = new BasicDBObject("_id", entity.getId());
                     BasicDBObject pullObject = new BasicDBObject(listPropertyName, dbItemToPull);
                     BasicDBObject pullCommand = new BasicDBObject("$pull", pullObject);
                     getDBCollectionForType(type).update(query, pullCommand);
@@ -350,7 +351,7 @@ public class MongoStoreImpl implements MongoStore {
         }
     }
 
-    // Possibility to add user-defined converters
+    // Possibility to add user-defined mappers
     public void addAppObjectConverter(Mapper<?, ?> mapper) {
         mapperRegistry.addAppObjectMapper(mapper);
     }
@@ -383,17 +384,7 @@ public class MongoStoreImpl implements MongoStore {
 
         try {
             for (DBObject dbObject : cursor) {
-                // First look if we already have loaded object cached. If yes, we will use cached instance
-                String id = dbObject.get("_id").toString();
-                T entity = context.getLoadedEntity(type, id);
-
-                if (entity == null) {
-                    // So convert and use fresh instance from DB
-                    MapperContext<Object, T> mapperContext = new MapperContext<Object, T>(dbObject, type, null);
-                    entity = mapperRegistry.convertDBObjectToApplicationObject(mapperContext);
-                    context.addLoadedEntity(entity);
-                }
-
+                T entity = convertDBObjectToEntity(type, dbObject, context);
                 result.add(entity);
             }
         } finally {
@@ -403,18 +394,23 @@ public class MongoStoreImpl implements MongoStore {
         return result;
     }
 
+    protected <T extends MongoIdentifiableEntity> T convertDBObjectToEntity(Class<T> type, DBObject dbObject, MongoStoreInvocationContext context) {
+        // First look if we already have loaded object cached. If yes, we will use cached instance
+        String id = dbObject.get("_id").toString();
+        T object = context.getLoadedEntity(type, id);
+
+        if (object == null) {
+            // So convert and use fresh instance from DB
+            MapperContext<Object, T> mapperContext = new MapperContext<Object, T>(dbObject, type, null);
+            object = mapperRegistry.convertDBObjectToApplicationObject(mapperContext);
+            context.addLoadedEntity(object);
+        }
+        return object;
+    }
+
     protected DBCollection getDBCollectionForType(Class<? extends MongoEntity> type) {
         EntityInfo entityInfo = getEntityInfo(type);
         String dbCollectionName = entityInfo.getDbCollectionName();
-        return dbCollectionName==null ? null : database.getCollection(entityInfo.getDbCollectionName());
-    }
-
-    // We allow ObjectId to be both "ObjectId" or "String".
-    protected Object getObjectId(String idAsString) {
-        if (ObjectId.isValid(idAsString)) {
-            return new ObjectId(idAsString);
-        } else {
-            return idAsString;
-        }
+        return dbCollectionName==null ? null : database.getCollection(dbCollectionName);
     }
 }
