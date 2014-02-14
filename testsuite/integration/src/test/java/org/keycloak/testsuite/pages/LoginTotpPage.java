@@ -36,7 +36,7 @@ public class LoginTotpPage extends AbstractPage {
     @FindBy(css = "input[type=\"submit\"]")
     private WebElement submitButton;
 
-    @FindBy(className = "error")
+    @FindBy(className = "feedback-error")
     private WebElement loginErrorMessage;
 
     public void login(String totp) {

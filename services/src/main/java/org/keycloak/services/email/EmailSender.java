@@ -99,6 +99,7 @@ public class EmailSender {
             }
             transport.sendMessage(msg, new InternetAddress[]{new InternetAddress(address)});
         } catch (Exception e) {
+            log.warn("Failed to send email", e);
             throw new EmailException(e);
         }
     }

@@ -35,7 +35,10 @@ public class LoginPasswordResetPage extends AbstractPage {
     @FindBy(css = "input[type=\"submit\"]")
     private WebElement submitButton;
 
-    @FindBy(css = ".feedback > p > strong")
+    @FindBy(className = "feedback-success")
+    private WebElement emailSuccessMessage;
+
+    @FindBy(className = "feedback-error")
     private WebElement emailErrorMessage;
 
     public void changePassword(String email) {
@@ -52,7 +55,11 @@ public class LoginPasswordResetPage extends AbstractPage {
         throw new UnsupportedOperationException();
     }
 
-    public String getMessage() {
+    public String getSuccessMessage() {
+        return emailSuccessMessage != null ? emailSuccessMessage.getText() : null;
+    }
+
+    public String getErrorMessage() {
         return emailErrorMessage != null ? emailErrorMessage.getText() : null;
     }
 
