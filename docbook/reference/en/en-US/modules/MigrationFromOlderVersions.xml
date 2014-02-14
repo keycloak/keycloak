@@ -1,0 +1,26 @@
+<chapter id="Migration_from_older_versions">
+    <title>Migration from older versions</title>
+    <sect1>
+        <title>Migrating from 1.0 Alpha 1 to 1.0 Alpha 2</title>
+        <itemizedlist>
+            <listitem>
+                JBoss and Wildfly adapters are now installed via a JBoss/Wildfly subsystem.  Please review the adapter
+                installation documentation.  Edits to standalone.xml are now required.
+            </listitem>
+            <listitem>
+                There is a new credential type "secret".  Unlike other credential types, it is stored in plain text in
+                the database and can be viewed in the admin console.
+
+            </listitem>
+            <listitem>
+                There is no longer required Application or OAuth Client credentials.  These client types are now
+                hard coded to use the "secret" credential type.
+            </listitem>
+            <listitem>
+                Because of the "secret" credential change to Application and OAuth Client, you'll have to update
+                your keycloak.json configuration files and regenarate a secret within the Application or OAuth Client
+                credentials tab in the administration console.
+            </listitem>
+        </itemizedlist>
+    </sect1>
+</chapter>

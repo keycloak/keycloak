@@ -6,8 +6,7 @@
                 <!ENTITY Installation SYSTEM "modules/server-installation.xml">
                 <!ENTITY OpenShift SYSTEM "modules/openshift.xml">
                 <!ENTITY AdapterConfig SYSTEM "modules/adapter-config.xml">
-                <!ENTITY WildflyAdapter SYSTEM "modules/wildfly-adapter.xml">
-                <!ENTITY EAP6Adapter SYSTEM "modules/eap6-adapter.xml">
+                <!ENTITY JBossAdapter SYSTEM "modules/jboss-adapter.xml">
                 <!ENTITY SocialConfig SYSTEM "modules/social-config.xml">
                 <!ENTITY SocialFacebook SYSTEM "modules/social-facebook.xml">
                 <!ENTITY SocialGitHub SYSTEM "modules/social-github.xml">
@@ -15,6 +14,7 @@
                 <!ENTITY SocialTwitter SYSTEM "modules/social-twitter.xml">
                 <!ENTITY SocialProviderSPI SYSTEM "modules/social-spi.xml">
                 <!ENTITY Themes SYSTEM "modules/themes.xml">
+                <!ENTITY Migration SYSTEM "modules/MigrationFromOlderVersions.xml">
                 <!ENTITY Email SYSTEM "modules/email.xml">
                 ]>
 
@@ -61,8 +61,7 @@
             your applications.
         </para>
         &AdapterConfig;
-        &WildflyAdapter;
-        &EAP6Adapter;
+        &JBossAdapter;
     </chapter>
 
     <chapter>
@@ -90,6 +89,8 @@
         </para>
         &Email;
     </chapter>
+
+    &Migration;
 
 </book>
 
