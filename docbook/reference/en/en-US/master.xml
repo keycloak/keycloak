@@ -16,6 +16,7 @@
                 <!ENTITY Themes SYSTEM "modules/themes.xml">
                 <!ENTITY Migration SYSTEM "modules/MigrationFromOlderVersions.xml">
                 <!ENTITY Email SYSTEM "modules/email.xml">
+                <!ENTITY Roles SYSTEM "modules/roles.xml">
                 ]>
 
 <book>
@@ -89,7 +90,7 @@
         </para>
         &Email;
     </chapter>
-
+    &Roles;
     &Migration;
 
 </book>

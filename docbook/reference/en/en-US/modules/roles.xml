@@ -1,0 +1,31 @@
+<chapter id="roles">
+    <title>Roles</title>
+    <para>
+        In Keycloak, roles (or permissions) can be defined globally at the realm level, or individually per application.
+        Each role has a name which must be unique at the level it is defined in, i.e. you can have only one "admin" role at
+        the realm level.  You may have that a role named "admin" within an Application too, but "admin" must be unique
+        for that application.
+    </para>
+    <para>
+        The description of a role is displayed in the OAuth Grant page when Keycloak is processing a browser OAuth
+        Grant request.  Look for more features being added here in the future like internationalization and other fine
+        grain options.
+    </para>
+
+    <section>
+        <title>Composite Roles</title>
+        <para>
+            Any realm or application level role can be turned into a Composite Role.  A Composite Role is a role that has
+            one or more additional roles associated with it.  I guess another term for it could be Role Group.
+            When a composite role is mapped to the user, the user gains the permission of that role, plus any other role the
+            composite is associated with.  This association is dynamic.  So, if you add  or remove an associated role from
+            the composite, then all users that are mapped to the composite role will automatically have those permissions
+            added or removed.  Composites can also be used to define Application or OAuth Client scopes.
+        </para>
+        <para>
+            Composite roles can be associated with any type of role Realm or Application.  In the admin console simple
+            flip the composite switch in the Role detail, and you will get a screen that will allow you to associate roles
+            with the composite.
+        </para>
+    </section>
+</chapter>
