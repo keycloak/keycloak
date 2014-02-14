@@ -83,7 +83,7 @@ public class MapperRegistry {
             throw new IllegalArgumentException("Converter " + mapper + " has return type " + mapper.getExpectedReturnType() +
                     " but we need type " + expectedDBObjectType);
         }
-        return mapper.convertObject(new MapperContext(applicationObject, expectedDBObjectType, null));
+        return mapper.convertObject(new MapperContext<Object, S>(applicationObject, expectedDBObjectType, null));
     }
 
     // Try to find converter for given type or all it's supertypes

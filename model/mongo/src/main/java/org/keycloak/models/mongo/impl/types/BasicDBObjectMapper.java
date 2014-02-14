@@ -26,12 +26,12 @@ public class BasicDBObjectMapper<S extends MongoEntity> implements Mapper<BasicD
 
     private final MongoStoreImpl mongoStoreImpl;
     private final MapperRegistry mapperRegistry;
-    private final Class<S> expectedObjectType;
+    private final Class<S> expectedEntityType;
 
-    public BasicDBObjectMapper(MongoStoreImpl mongoStoreImpl, MapperRegistry mapperRegistry, Class<S> expectedObjectType) {
+    public BasicDBObjectMapper(MongoStoreImpl mongoStoreImpl, MapperRegistry mapperRegistry, Class<S> expectedEntityType) {
         this.mongoStoreImpl = mongoStoreImpl;
         this.mapperRegistry = mapperRegistry;
-        this.expectedObjectType = expectedObjectType;
+        this.expectedEntityType = expectedEntityType;
     }
 
     @Override
@@ -41,11 +41,11 @@ public class BasicDBObjectMapper<S extends MongoEntity> implements Mapper<BasicD
             return null;
         }
 
-        EntityInfo entityInfo = mongoStoreImpl.getEntityInfo(expectedObjectType);
+        EntityInfo entityInfo = mongoStoreImpl.getEntityInfo(expectedEntityType);
 
-        S object;
+        S entity;
         try {
-            object = expectedObjectType.newInstance();
+            entity = expectedEntityType.newInstance();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -56,30 +56,30 @@ public class BasicDBObjectMapper<S extends MongoEntity> implements Mapper<BasicD
 
             if ("_id".equals(key)) {
                 // Current property is "id"
-                if (object instanceof MongoIdentifiableEntity) {
-                    ((MongoIdentifiableEntity)object).setId(value.toString());
+                if (entity instanceof MongoIdentifiableEntity) {
+                    ((MongoIdentifiableEntity)entity).setId(value.toString());
                 }
 
             } else if ((property = entityInfo.getPropertyByName(key)) != null) {
                 // It's declared property with @DBField annotation
-                setPropertyValue(object, value, property);
+                setPropertyValue(entity, value, property);
 
             } else {
                 // Show warning if it's unknown
-                logger.warn("Property with key " + key + " not known for type " + expectedObjectType);
+                logger.warn("Property with key " + key + " not known for type " + expectedEntityType);
             }
         }
 
-        return object;
+        return entity;
     }
 
-    private void setPropertyValue(MongoEntity object, Object valueFromDB, Property property) {
+    private void setPropertyValue(MongoEntity entity, Object valueFromDB, Property property) {
         if (valueFromDB == null) {
-            property.setValue(object, null);
+            property.setValue(entity, null);
             return;
         }
 
-        MapperContext<Object, ?> context;
+        MapperContext<Object, Object> context;
 
         Type type = property.getBaseType();
 
@@ -105,10 +105,10 @@ public class BasicDBObjectMapper<S extends MongoEntity> implements Mapper<BasicD
         Object appObject = mapperRegistry.convertDBObjectToApplicationObject(context);
 
         if (Types.boxedClass(property.getJavaClass()).isAssignableFrom(appObject.getClass())) {
-            property.setValue(object, appObject);
+            property.setValue(entity, appObject);
         } else {
             throw new IllegalStateException("Converted object " + appObject + " is not of type " +  context.getExpectedReturnType() +
-                    ". So can't be assigned as property " + property.getName() + " of " + object.getClass());
+                    ". So can't be assigned as property " + property.getName() + " of " + entity.getClass());
         }
     }
 
@@ -119,6 +119,6 @@ public class BasicDBObjectMapper<S extends MongoEntity> implements Mapper<BasicD
 
     @Override
     public Class<S> getExpectedReturnType() {
-        return expectedObjectType;
+        return expectedEntityType;
     }
 }

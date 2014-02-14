@@ -10,7 +10,7 @@ public class MapperContext<T, S> {
     // object to convert
     private final T objectToConvert;
 
-    // expected return type, which could be useful information in some converters, so they are able to dynamically instantiate types
+    // expected return type, which could be useful information in some mappers, so they are able to dynamically instantiate types
     private final Class<? extends S> expectedReturnType;
 
     // in case that expected return type is generic type (like "List<String>"), then genericTypes could contain list of expected generic arguments

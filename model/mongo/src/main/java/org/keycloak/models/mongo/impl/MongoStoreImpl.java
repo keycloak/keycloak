@@ -132,8 +132,8 @@ public class MongoStoreImpl implements MongoStore {
             entity.setId(dbObject.getString("_id"));
         }
 
-        // Treat object as if it is read (It is already submited to transaction)
-        context.addLoadedObject(entity);
+        // Treat object as created in this transaction (It is already submited to transaction)
+        context.addCreatedEntity(entity);
     }
 
     @Override
@@ -171,7 +171,7 @@ public class MongoStoreImpl implements MongoStore {
     @Override
     public <T extends MongoIdentifiableEntity> T loadEntity(Class<T> type, String id, MongoStoreInvocationContext context) {
         // First look if we already read the object with this oid and type during this transaction. If yes, use it instead of DB lookup
-        T cached = context.getLoadedObject(type, id);
+        T cached = context.getLoadedEntity(type, id);
         if (cached != null) return cached;
 
         DBCollection dbCollection = getDBCollectionForType(type);
@@ -185,7 +185,7 @@ public class MongoStoreImpl implements MongoStore {
         T converted = mapperRegistry.convertDBObjectToApplicationObject(mapperContext);
 
         // Now add it to loaded objects
-        context.addLoadedObject(converted);
+        context.addLoadedEntity(converted);
 
         return converted;
     }
@@ -234,7 +234,7 @@ public class MongoStoreImpl implements MongoStore {
             dbCollection.remove(dbQuery);
             logger.info("Entity of type: " + type + ", id: " + id + " removed from MongoDB.");
 
-            context.addRemovedObject(found);
+            context.addRemovedEntity(found);
             return true;
         }
     }
@@ -251,7 +251,7 @@ public class MongoStoreImpl implements MongoStore {
             logger.info("Removed " + foundObjects.size() + " entities of type: " + type + ", query: " + query);
 
             for (MongoIdentifiableEntity found : foundObjects) {
-                context.addRemovedObject(found);;
+                context.addRemovedEntity(found);;
             }
             return true;
         }
@@ -359,17 +359,17 @@ public class MongoStoreImpl implements MongoStore {
         mapperRegistry.addDBObjectMapper(mapper);
     }
 
-    public EntityInfo getEntityInfo(Class<? extends MongoEntity> objectClass) {
-        EntityInfo entityInfo = entityInfoCache.get(objectClass);
+    public EntityInfo getEntityInfo(Class<? extends MongoEntity> entityClass) {
+        EntityInfo entityInfo = entityInfoCache.get(entityClass);
         if (entityInfo == null) {
-            List<Property<Object>> properties = PropertyQueries.createQuery(objectClass).addCriteria(new AnnotatedPropertyCriteria(MongoField.class)).getResultList();
+            List<Property<Object>> properties = PropertyQueries.createQuery(entityClass).addCriteria(new AnnotatedPropertyCriteria(MongoField.class)).getResultList();
 
-            MongoCollection classAnnotation = objectClass.getAnnotation(MongoCollection.class);
+            MongoCollection classAnnotation = entityClass.getAnnotation(MongoCollection.class);
 
             String dbCollectionName = classAnnotation==null ? null : classAnnotation.collectionName();
-            entityInfo = new EntityInfo(objectClass, dbCollectionName, properties);
+            entityInfo = new EntityInfo(entityClass, dbCollectionName, properties);
 
-            EntityInfo existing = entityInfoCache.putIfAbsent(objectClass, entityInfo);
+            EntityInfo existing = entityInfoCache.putIfAbsent(entityClass, entityInfo);
             if (existing != null) {
                 entityInfo = existing;
             }
@@ -385,16 +385,16 @@ public class MongoStoreImpl implements MongoStore {
             for (DBObject dbObject : cursor) {
                 // First look if we already have loaded object cached. If yes, we will use cached instance
                 String id = dbObject.get("_id").toString();
-                T object = context.getLoadedObject(type, id);
+                T entity = context.getLoadedEntity(type, id);
 
-                if (object == null) {
+                if (entity == null) {
                     // So convert and use fresh instance from DB
                     MapperContext<Object, T> mapperContext = new MapperContext<Object, T>(dbObject, type, null);
-                    object = mapperRegistry.convertDBObjectToApplicationObject(mapperContext);
-                    context.addLoadedObject(object);
+                    entity = mapperRegistry.convertDBObjectToApplicationObject(mapperContext);
+                    context.addLoadedEntity(entity);
                 }
 
-                result.add(object);
+                result.add(entity);
             }
         } finally {
             cursor.close();
