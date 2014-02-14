@@ -10,14 +10,14 @@
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    width="1440"
-   height="960"
+   height="1200"
    id="svg3601"
    version="1.1"
    inkscape:version="0.48.4 r9939"
    inkscape:export-filename="/home/st/dev/keycloak/forms/common-themes/src/main/resources/theme/login/keycloak/resources/img/login-bg.png"
    inkscape:export-xdpi="90"
    inkscape:export-ydpi="90"
-   sodipodi:docname="New document 4">
+   sodipodi:docname="login-bkgrnd.svg">
   <defs
      id="defs3603" />
   <sodipodi:namedview
@@ -28,13 +28,13 @@
      inkscape:pageopacity="1"
      inkscape:pageshadow="2"
      inkscape:zoom="0.94583333"
-     inkscape:cx="635.4185"
-     inkscape:cy="500.62295"
+     inkscape:cx="636.47577"
+     inkscape:cy="416.04145"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
-     inkscape:window-width="1920"
-     inkscape:window-height="1056"
+     inkscape:window-width="2048"
+     inkscape:window-height="1128"
      inkscape:window-x="0"
      inkscape:window-y="24"
      inkscape:window-maximized="1" />
@@ -54,19 +54,18 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(0,-92.362183)">
+     transform="translate(0,147.63782)">
     <path
-       style="fill:#ffffff;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;fill-opacity:0.03921569"
-       d="M -128.98679,354.18502 C 1049.8678,403.87665 1286.696,-338.326 1286.696,-338.326 L 1509.7797,69.77974 C 1021.674,1139.3833 459.55946,577.62114 -97.268722,607.92951 z"
+       style="fill:#ffffff;fill-opacity:0.03921569;stroke:none"
+       d="M -128.98679,245.66615 C 1049.8678,295.35778 1286.696,-446.84487 1286.696,-446.84487 l 223.0837,408.105735 C 1021.674,1030.8644 459.55946,469.10227 -97.268722,499.41064 z"
        id="path4395"
        inkscape:connector-curvature="0"
-       transform="translate(0,92.362183)"
        sodipodi:nodetypes="ccccc" />
     <path
        sodipodi:nodetypes="cccccc"
        inkscape:connector-curvature="0"
        id="path4905"
-       d="M 1483.348,472.8438 C 304.49339,423.15217 67.665192,1165.3548 67.665192,1165.3548 L -143.25992,1150.183 -155.41851,733.24908 C 332.68719,-336.3545 929.6916,248.35041 1486.5198,218.04204 z"
+       d="M 1483.348,271.96274 C 304.49339,222.27111 -5.2863501,1055.3989 -5.2863501,1055.3989 L -143.25992,949.30194 -155.41851,532.36802 C 332.68719,-537.23556 929.6916,47.469352 1486.5198,17.160982 z"
        style="fill:#ffffff;fill-opacity:0.03921569;stroke:none"
        inkscape:export-xdpi="90"
        inkscape:export-ydpi="90" />

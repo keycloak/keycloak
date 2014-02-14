@@ -1,6 +1,6 @@
-<#macro registrationLayout bodyClass="" displaySeparator=false displaySocial=false displayMessage=true>
+<#macro registrationLayout bodyClass="" displayInfo=false displayMessage=true>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html xmlns="http://www.w3.org/1999/xhtml" class="${properties.kcHtmlClass!}">
 
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
@@ -18,39 +18,46 @@
     </#if>
 </head>
 
-<body class="kc-login-register ${bodyClass}">
-    <h1 class="kc-title">KeyCloak</h1>
-    <div class="content">
-        <h2 id="kc-header"><#nested "header"></h2>
-        <div class="background-area">
-            <div class="form-area ${displaySocial?string('social','')} ${displaySeparator?string('separator','')} clearfix">
-                <div class="section app-form">
-                    <#if displayMessage && message?has_content>
-                        <div class="feedback ${message.type}">
-                            <p><strong>${message.summary}</strong></p>
-                        </div>
-                    </#if>
+<body class="${properties.kcBodyClass!}">
+    <dv id="kc-logo"></dv>
+
+    <div id="kc-container" class="${properties.kcContainerClass!}">
+        <div id="kc-container-wrapper" class="${properties.kcContainerWrapperClass!}">
+
+            <div id="kc-header" class="${properties.kcHeaderClass!}">
+                <div id="kc-header-wrapper" class="${properties.kcHeaderWrapperClass!}"><#nested "header"></div>
+            </div>
+
+            <#if displayMessage && message?has_content>
+                <div id="kc-feedback" class="feedback-${message.type} ${properties.kcFeedBackClass!}">
+                    <div id="kc-feedback-wrapper">
+                        <span>${message.summary}</span>
+                    </div>
+                </div>
+            </#if>
+
+            <div id="kc-form" class="${properties.kcFormAreaClass!}">
+                <div id="kc-form-wrapper" class="${properties.kcFormAreaWrapperClass!}">
                     <#nested "form">
                 </div>
-                <#if displaySocial>
-                    <div class="section social-login"> <span>or</span>
-                        <p>${rb.logInWith}</p>
-                        <ul>
-                            <#list social.providers as p>
-                                <li><a href="${p.loginUrl}" class="zocial ${p.id}"> <span class="text">${p.name}</span></a></li>
-                            </#list>
-                        </ul>
-                    </div>
-                </#if>
-                <div class="section info-area">
-                    <#nested "info">
-                </div>
             </div>
+
+            <#if displayInfo>
+                <div id="kc-info" class="${properties.kcInfoAreaClass!}">
+                    <div id="kc-info-wrapper" class="${properties.kcInfoAreaWrapperClass!}">
+                        <#nested "info">
+                    </div>
+                </div>
+            </#if>
         </div>
+    </div>
+
+    <!--
         <p class="powered">
             <a href="http://www.keycloak.org">${rb.poweredByKeycloak}</a>
         </p>
     </div>
+    -->
 </body>
 </html>
 </#macro>

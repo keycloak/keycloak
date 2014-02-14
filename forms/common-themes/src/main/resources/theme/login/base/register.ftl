@@ -1,38 +1,76 @@
 <#import "template.ftl" as layout>
-<@layout.registrationLayout displaySeparator=true; section>
+<@layout.registrationLayout; section>
     <#if section = "title">
-    ${rb.registerWith} ${realm.name}
-
+        ${rb.registerWith} ${realm.name}
     <#elseif section = "header">
-    ${rb.registerWith} <strong>${realm.name}</strong>
-
+        ${rb.registerWith} <strong>${realm.name}</strong>
     <#elseif section = "form">
-    <form id="kc-register-form" action="${url.registrationAction}" method="post">
-        <p class="subtitle">${rb.allRequired}</p>
-        <div class="field-wrapper">
-            <label for="firstName">${rb.firstName}</label><input type="text" id="firstName" name="firstName" value="${register.formData.firstName!''}" />
-        </div>
-        <div class="field-wrapper">
-            <label for="lastName">${rb.lastName}</label><input type="text" id="lastName" name="lastName" value="${register.formData.lastName!''}" />
-        </div>
-        <div class="field-wrapper">
-            <label for="email">${rb.email}</label><input type="text" id="email" name="email" value="${register.formData.email!''}" />
-        </div>
-        <div class="field-wrapper">
-            <label for="username">${rb.username}</label><input type="text" id="username" name="username" value="${register.formData.username!''}" />
-        </div>
-        <div class="field-wrapper">
-            <label for="password">${rb.password}</label><input type="password" id="password" name="password" />
-        </div>
-        <div class="field-wrapper">
-            <label for="password-confirm">${rb.passwordConfirm}</label><input type="password" id="password-confirm" name="password-confirm" />
-        </div>
+        <form id="kc-register-form" class="${properties.kcFormClass!}" action="${url.registrationAction}" method="post">
+            <div class="${properties.kcFormGroupClass!}">
+                <div class="${properties.kcLabelWrapperClass!}">
+                    <label for="username" class="${properties.kcLabelClass!}">${rb.username}</label>
+                </div>
+                <div class="${properties.kcInputWrapperClass!}">
+                    <input type="text" id="username" class="${properties.kcInputClass!}" name="username" value="${register.formData.username!''}" />
+                </div>
+            </div>
 
-        <input class="btn-primary" type="submit" value="${rb.register}"/>
-    </form>
+            <div class="${properties.kcFormGroupClass!}">
+                <div class="${properties.kcLabelWrapperClass!}">
+                    <label for="firstName" class="${properties.kcLabelClass!}">${rb.firstName}</label>
+                </div>
+                <div class="${properties.kcInputWrapperClass!}">
+                    <input type="text" id="firstName" class="${properties.kcInputClass!}" name="firstName" value="${register.formData.firstName!''}" />
+                </div>
+            </div>
 
-    <#elseif section = "info">
-    <p>${rb.alreadyHaveAccount} <a href="${url.loginUrl}">${rb.logIn}</a>.</p>
+            <div class="${properties.kcFormGroupClass!}">
+                <div class="${properties.kcLabelWrapperClass!}">
+                    <label for="lastName" class="${properties.kcLabelClass!}">${rb.lastName}</label>
+                </div>
+                <div class="${properties.kcInputWrapperClass!}">
+                    <input type="text" id="lastName" class="${properties.kcInputClass!}" name="lastName" value="${register.formData.lastName!''}" />
+                </div>
+            </div>
 
+            <div class="${properties.kcFormGroupClass!}">
+                <div class="${properties.kcLabelWrapperClass!}">
+                    <label for="email" class="${properties.kcLabelClass!}">${rb.email}</label>
+                </div>
+                <div class="${properties.kcInputWrapperClass!}">
+                    <input type="text" id="email" class="${properties.kcInputClass!}" name="email" value="${register.formData.email!''}" />
+                </div>
+            </div>
+
+            <div class="${properties.kcFormGroupClass!}">
+                <div class="${properties.kcLabelWrapperClass!}">
+                    <label for="password" class="${properties.kcLabelClass!}">${rb.password}</label>
+                </div>
+                <div class="${properties.kcInputWrapperClass!}">
+                    <input type="password" id="password" class="${properties.kcInputClass!}" name="password" />
+                </div>
+            </div>
+
+            <div class="${properties.kcFormGroupClass!}">
+                <div class="${properties.kcLabelWrapperClass!}">
+                    <label for="password-confirm" class="${properties.kcLabelClass!}">${rb.passwordConfirm}</label>
+                </div>
+                <div class="${properties.kcInputWrapperClass!}">
+                    <input type="password" id="password-confirm" class="${properties.kcInputClass!}" name="password-confirm" />
+                </div>
+            </div>
+
+            <div class="${properties.kcFormGroupClass!}">
+                <div id="kc-form-options" class="${properties.kcFormOptionsClass!}">
+                    <div class="${properties.kcFormOptionsWrapperClass!}">
+                        <span><a href="${url.loginUrl}">${rb.backToLogin}</a></span>
+                    </div>
+                </div>
+
+                <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
+                    <input class="btn btn-primary btn-lg" type="submit" value="${rb.register}"/>
+                </div>
+            </div>
+        </form>
     </#if>
 </@layout.registrationLayout>

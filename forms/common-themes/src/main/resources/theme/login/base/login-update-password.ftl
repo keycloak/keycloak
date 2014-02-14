@@ -1,21 +1,39 @@
 <#import "template.ftl" as layout>
-<@layout.registrationLayout; section>
+<@layout.registrationLayout displayInfo=true; section>
     <#if section = "title">
-    ${rb.emailUpdateHeader}
-
+        ${rb.emailUpdateHeader}
     <#elseif section = "header">
-    ${rb.emailUpdateHeader}
-
+        ${rb.emailUpdateHeader}
     <#elseif section = "form">
-    <form id="kc-passwd-update-form" action="${url.loginUpdatePasswordUrl}" method="post">
-        <div class="field-wrapper">
-            <label for="password-new">${rb.passwordNew}</label><input type="password" id="password-new" name="password-new" />
-        </div>
-        <div class="field-wrapper">
-            <label for="password-confirm" class="two-lines">${rb.passwordConfirm}</label><input type="password" id="password-confirm" name="password-confirm" />
-        </div>
+        <form id="kc-passwd-update-form" class="${properties.kcFormClass!}" action="${url.loginUpdatePasswordUrl}" method="post">
+            <div class="${properties.kcFormGroupClass!}">
+                <div class="${properties.kcLabelWrapperClass!}">
+                    <label for="password-new" class="${properties.kcLabelClass!}">${rb.passwordNew}</label>
+                </div>
+                <div class="${properties.kcInputWrapperClass!}">
+                    <input type="password" id="password-new" name="password-new" class="${properties.kcInputClass!}" />
+                </div>
+            </div>
 
-        <input class="btn-primary" type="submit" value="${rb.submit}" />
-    </form>
+            <div class="${properties.kcFormGroupClass!}">
+                <div class="${properties.kcLabelWrapperClass!}">
+                    <label for="password-confirm" class="${properties.kcLabelClass!}">${rb.passwordConfirm}</label>
+                </div>
+                <div class="${properties.kcInputWrapperClass!}">
+                    <input type="password" id="password-confirm" name="password-confirm" class="${properties.kcInputClass!}" />
+                </div>
+            </div>
+
+            <div class="${properties.kcFormGroupClass!}">
+                <div id="kc-form-options" class="${properties.kcFormOptionsClass!}">
+                    <div class="${properties.kcFormOptionsWrapperClass!}">
+                    </div>
+                </div>
+
+                <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
+                    <input class="btn btn-primary btn-lg" type="submit" value="${rb.submit}"/>
+                </div>
+            </div>
+        </form>
     </#if>
 </@layout.registrationLayout>

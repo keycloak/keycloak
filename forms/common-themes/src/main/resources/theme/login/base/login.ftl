@@ -1,31 +1,58 @@
-<#ftl strip_whitespace=true strip_text=true>
 <#import "template.ftl" as layout>
-<@layout.registrationLayout displaySocial=social.displaySocialProviders displaySeparator=realm.registrationAllowed; section>
-    <#if section = "title">${rb.loginTitle} ${realm.name}
-
+<@layout.registrationLayout displayInfo=social.displaySocialProviders; section>
+    <#if section = "title">
+        ${rb.loginTitle} ${realm.name}
     <#elseif section = "header">
-    ${rb.loginTitle} <strong>${(realm.name)!''}</strong>
-
+        ${rb.loginTitle} <strong>${(realm.name)!''}</strong>
     <#elseif section = "form">
-    <form id="kc-form-login" action="${url.loginAction}" method="post">
-        <div class="field-wrapper">
-            <label for="username">${rb.username}</label><input id="username" name="username" value="${login.username!''}" type="text" autofocus />
-        </div>
-        <div class="field-wrapper">
-            <label for="password">${rb.password}</label><input id="password" name="password" type="password" />
-        </div>
-        <input class="btn-primary" name="login" type="submit" value="${rb.logIn}"/>
-        <input class="btn-secondary" name="cancel" type="submit" value="${rb.cancel}"/>
-    </form>
+        <form id="kc-form-login" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
+            <div class="${properties.kcFormGroupClass!}">
+                <div class="${properties.kcLabelWrapperClass!}">
+                    <label for="username" class="${properties.kcLabelClass!}">${rb.username}</label>
+                </div>
 
+                <div class="${properties.kcInputWrapperClass!}">
+                    <input id="username" class="${properties.kcInputClass!}" name="username" value="${login.username!''}" type="text" autofocus />
+                </div>
+            </div>
+
+            <div class="${properties.kcFormGroupClass!}">
+                <div class="${properties.kcLabelWrapperClass!}">
+                    <label for="password" class="${properties.kcLabelClass!}">${rb.password}</label>
+                </div>
+
+                <div class="${properties.kcInputWrapperClass!}">
+                    <input id="password" class="${properties.kcInputClass!}" name="password" type="password" />
+                </div>
+            </div>
+
+            <div class="${properties.kcFormGroupClass!}">
+                <div id="kc-form-options" class="${properties.kcFormOptionsClass!}">
+                    <div class="${properties.kcFormOptionsWrapperClass!}">
+                        <#if realm.registrationAllowed>
+                            <span>${rb.noAccount} <a href="${url.registrationUrl}">${rb.register}</a></span>
+                        </#if>
+                        <#if realm.resetPasswordAllowed>
+                            <span>${rb.loginForgot} <a href="${url.loginUsernameReminderUrl}">${rb.username}</a> or <a href="${url.loginPasswordResetUrl}">${rb.password}</a>?</span>
+                        </#if>
+                    </div>
+                </div>
+
+                <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
+                    <div class="${properties.kcFormButtonsWrapperClass!}">
+                        <input class="btn btn-primary btn-lg" name="login" id="kc-login" type="submit" value="${rb.logIn}"/>
+                        <input class="btn btn-default btn-lg" name="cancel" id="kc-cancel" type="submit" value="${rb.cancel}"/>
+                    </div>
+                </div>
+            </div>
+        </form>
     <#elseif section = "info" >
-    <div id="kc-login-actions">
-        <#if realm.registrationAllowed>
-            <p>${rb.noAccount} <a href="${url.registrationUrl}">${rb.register}</a>.</p>
-        </#if>
-        <#if realm.resetPasswordAllowed>
-            <p>${rb.loginForgot} <a href="${url.loginUsernameReminderUrl}">${rb.username}</a> / <a href="${url.loginPasswordResetUrl}">${rb.password}</a>?</p>
-        </#if>
-    </div>
+        <div id="kc-social-providers">
+            <ul>
+                <#list social.providers as p>
+                    <li><a href="${p.loginUrl}" class="zocial ${p.id}"> <span class="text">${p.name}</span></a></li>
+                </#list>
+            </ul>
+        </div>
     </#if>
 </@layout.registrationLayout>

@@ -1,23 +1,33 @@
 <#import "template.ftl" as layout>
-<@layout.registrationLayout; section>
+<@layout.registrationLayout displayInfo=true; section>
     <#if section = "title">
-    ${rb.emailForgotHeader}
-
+        ${rb.emailForgotHeader}
     <#elseif section = "header">
-    ${rb.emailForgotHeader}
-
+        ${rb.emailForgotHeader}
     <#elseif section = "form">
-    <div id="kc-reset-password">
-        <p class="instruction">${rb.emailInstruction}</p>
-        <form action="${url.loginPasswordResetUrl}" method="post">
-            <div class="field-wrapper">
-                <label for="email">${rb.email}</label><input type="text" id="email" name="email" />
+        <form id="kc-reset-password-form" class="${properties.kcFormClass!}" action="${url.loginPasswordResetUrl}" method="post">
+            <div class="${properties.kcFormGroupClass!}">
+                <div class="${properties.kcLabelWrapperClass!}">
+                    <label for="email" class="${properties.kcLabelClass!}">${rb.email}</label>
+                </div>
+                <div class="${properties.kcInputWrapperClass!}">
+                    <input type="text" id="email" name="email" class="${properties.kcInputClass!}" />
+                </div>
             </div>
-            <input class="btn-primary" type="submit" value="Submit" />
-        </form>
-    </div>
 
+            <div class="${properties.kcFormGroupClass!}">
+                <div id="kc-form-options" class="${properties.kcFormOptionsClass!}">
+                    <div class="${properties.kcFormOptionsWrapperClass!}">
+                        <span><a href="${url.loginUrl}">${rb.backToLogin}</a></span>
+                    </div>
+                </div>
+
+                <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
+                    <input class="btn btn-primary btn-lg" type="submit" value="${rb.submit}"/>
+                </div>
+            </div>
+        </form>
     <#elseif section = "info" >
-    <p><a href="${url.loginUrl}">${rb.backToLogin}</a></p>
+        ${rb.emailInstruction}
     </#if>
 </@layout.registrationLayout>

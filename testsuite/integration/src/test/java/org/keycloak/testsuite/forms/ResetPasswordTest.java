@@ -87,7 +87,7 @@ public class ResetPasswordTest {
 
         resetPasswordPage.assertCurrent();
 
-        Assert.assertEquals("You should receive an email shortly with further instructions.", resetPasswordPage.getMessage());
+        Assert.assertEquals("You should receive an email shortly with further instructions.", resetPasswordPage.getSuccessMessage());
 
         Assert.assertEquals(1, greenMail.getReceivedMessages().length);
 
@@ -124,8 +124,7 @@ public class ResetPasswordTest {
 
         resetPasswordPage.assertCurrent();
 
-        Assert.assertNotEquals("Success!", resetPasswordPage.getMessage());
-        Assert.assertEquals("Invalid email.", resetPasswordPage.getMessage());
+        Assert.assertEquals("Invalid email.", resetPasswordPage.getErrorMessage());
     }
 
     @Test
@@ -146,7 +145,7 @@ public class ResetPasswordTest {
 
         resetPasswordPage.assertCurrent();
 
-        Assert.assertEquals("You should receive an email shortly with further instructions.", resetPasswordPage.getMessage());
+        Assert.assertEquals("You should receive an email shortly with further instructions.", resetPasswordPage.getSuccessMessage());
 
         Assert.assertEquals(1, greenMail.getReceivedMessages().length);
 
@@ -161,8 +160,7 @@ public class ResetPasswordTest {
 
         updatePasswordPage.changePassword("invalid", "invalid");
 
-        Assert.assertNotEquals("Success!", resetPasswordPage.getMessage());
-        Assert.assertEquals("Invalid password: minimum length 8", resetPasswordPage.getMessage());
+        Assert.assertEquals("Invalid password: minimum length 8", resetPasswordPage.getErrorMessage());
 
         updatePasswordPage.changePassword("new-password", "new-password");
 
