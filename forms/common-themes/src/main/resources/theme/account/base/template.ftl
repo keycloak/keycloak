@@ -29,7 +29,7 @@
 
                     <div class="navbar-collapse">
                         <ul class="nav navbar-nav navbar-utility">
-                            <#if url.referrerURI??><li><a href="${url.referrerURI}">Back to application</a></li></#if>
+                            <#if referrer?has_content><li><a href="${referrer.baseUrl}">Back to ${referrer.name}</a></li></#if>
                             <li><a href="${url.logoutUrl}">Sign Out</a></li>
                         </ul>
                     </div>

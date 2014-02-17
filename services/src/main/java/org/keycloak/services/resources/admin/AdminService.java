@@ -235,10 +235,15 @@ public class AdminService {
         logger.debug("authUrl: {0}", authUrl);
         oauth.setAuthUrl(authUrl);
         oauth.setClientId(Constants.ADMIN_CONSOLE_APPLICATION);
-        URI redirectUri = uriInfo.getBaseUriBuilder().path(AdminService.class).path(AdminService.class, "loginRedirect").build();
+
+        UriBuilder redirectBuilder = uriInfo.getBaseUriBuilder().path(AdminService.class).path(AdminService.class, "loginRedirect");
+        if (path != null) {
+            redirectBuilder.queryParam("path", path);
+        }
+        URI redirectUri = redirectBuilder.build();
         logger.debug("redirectUri: {0}", redirectUri.toString());
         oauth.setStateCookiePath(redirectUri.getRawPath());
-        return oauth.redirect(uriInfo, redirectUri.toString(), path);
+        return oauth.redirect(uriInfo, redirectUri.toString());
     }
 
     @Path("login-error")
@@ -263,6 +268,7 @@ public class AdminService {
     public Response loginRedirect(@QueryParam("code") String code,
                                   @QueryParam("state") String state,
                                   @QueryParam("error") String error,
+                                  @QueryParam("path") String path,
                                   @Context HttpHeaders headers
 
                                   ) {
@@ -293,7 +299,7 @@ public class AdminService {
                 logger.debug("state not specified");
                 return redirectOnLoginError("invalid login data");
             }
-            String path = new JaxrsOAuthClient().checkStateCookie(uriInfo, headers);
+            new JaxrsOAuthClient().checkStateCookie(uriInfo, headers);
 
             JWSInput input = new JWSInput(code);
             boolean verifiedCode = false;

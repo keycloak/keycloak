@@ -14,13 +14,11 @@ public class UrlBean {
     private String realm;
     private Theme theme;
     private URI baseURI;
-    private String referrerURI;
 
-    public UrlBean(RealmModel realm, Theme theme, URI baseURI, String referrerURI) {
+    public UrlBean(RealmModel realm, Theme theme, URI baseURI) {
         this.realm = realm.getName();
         this.theme = theme;
         this.baseURI = baseURI;
-        this.referrerURI = referrerURI;
     }
 
     public String getAccessUrl() {
@@ -49,10 +47,6 @@ public class UrlBean {
 
     public String getLogoutUrl() {
         return Urls.accountLogout(baseURI, realm).toString();
-    }
-
-    public String getReferrerURI() {
-        return referrerURI;
     }
 
     public String getResourcesPath() {

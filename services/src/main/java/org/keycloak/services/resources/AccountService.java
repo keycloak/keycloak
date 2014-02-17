@@ -259,6 +259,8 @@ public class AccountService {
     public Response loginRedirect(@QueryParam("code") String code,
                                   @QueryParam("state") String state,
                                   @QueryParam("error") String error,
+                                  @QueryParam("path") String path,
+                                  @QueryParam("referrer") String referrer,
                                   @Context HttpHeaders headers) {
         try {
             if (error != null) {
@@ -282,7 +284,6 @@ public class AccountService {
                 logger.debug("state not specified");
                 throw new BadRequestException();
             }
-            String path = new JaxrsOAuthClient().checkStateCookie(uriInfo, headers);
 
             JWSInput input = new JWSInput(code);
             boolean verifiedCode = false;
@@ -321,6 +322,9 @@ public class AccountService {
 
             URI accountUri = Urls.accountBase(uriInfo.getBaseUri()).path("/").build(realm.getName());
             URI redirectUri = path != null ? accountUri.resolve(path) : accountUri;
+            if (referrer != null) {
+                redirectUri = redirectUri.resolve("?referrer=" + referrer);
+            }
 
             NewCookie cookie = authManager.createAccountIdentityCookie(realm, accessCode.getUser(), client, Urls.accountBase(uriInfo.getBaseUri()).build(realm.getName()));
             return Response.status(302).cookie(cookie).location(redirectUri).build();
@@ -346,15 +350,22 @@ public class AccountService {
 
         oauth.setClientId(Constants.ACCOUNT_APPLICATION);
 
-        URI accountUri = Urls.accountPageBuilder(uriInfo.getBaseUri()).path(AccountService.class, "loginRedirect").build(realm.getName());
+        UriBuilder uriBuilder = Urls.accountPageBuilder(uriInfo.getBaseUri()).path(AccountService.class, "loginRedirect");
+
+        if (path != null) {
+            uriBuilder.queryParam("path", path);
+        }
 
         String referrer = getReferrer();
         if (referrer != null) {
-            path = (path != null ? path : "") + "?referrer=" + referrer;
+            uriBuilder.queryParam("referrer", referrer);
         }
 
+        URI accountUri = uriBuilder.build(realm.getName());
+
+
         oauth.setStateCookiePath(accountUri.getRawPath());
-        return oauth.redirect(uriInfo, accountUri.toString(), path);
+        return oauth.redirect(uriInfo, accountUri.toString());
     }
 
     private AuthenticationManager.Auth getAuth(boolean error) {
