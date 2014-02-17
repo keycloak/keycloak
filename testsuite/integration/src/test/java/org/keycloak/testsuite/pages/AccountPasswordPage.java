@@ -41,7 +41,7 @@ public class AccountPasswordPage extends AbstractAccountPage {
     @FindBy(id = "password-confirm")
     private WebElement passwordConfirmInput;
 
-    @FindBy(css = "button[type=\"submit\"].primary")
+    @FindBy(className = "btn-primary")
     private WebElement submitButton;
 
     public void changePassword(String password, String newPassword, String passwordConfirm) {

@@ -41,7 +41,7 @@ public class AccountTotpPage extends AbstractAccountPage {
     @FindBy(css = "button[type=\"submit\"]")
     private WebElement submitButton;
 
-    @FindBy(linkText = "Remove Google")
+    @FindBy(id = "remove-google")
     private WebElement removeLink;
 
     public void configure(String totp) {

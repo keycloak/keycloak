@@ -48,8 +48,11 @@ public class AccountUpdateProfilePage extends AbstractAccountPage {
     @FindBy(css = "button[type=\"submit\"]")
     private WebElement submitButton;
 
-    @FindBy(css = ".feedback > p > strong")
-    private WebElement feedbackMessage;
+    @FindBy(className = "alert-success")
+    private WebElement successMessage;
+
+    @FindBy(className = "alert-error")
+    private WebElement errorMessage;
 
     public void updateProfile(String firstName, String lastName, String email) {
         firstNameInput.clear();
@@ -86,11 +89,11 @@ public class AccountUpdateProfilePage extends AbstractAccountPage {
         backToApplicationLink.click();
     }
 
-    public boolean isSuccess(){
-        return feedbackMessage != null && "Success!".equals(feedbackMessage.getText());
+    public String getSuccess(){
+        return successMessage.getText();
     }
 
-    public boolean isError(){
-        return feedbackMessage != null && "Error!".equals(feedbackMessage.getText());
+    public String getError() {
+        return errorMessage.getText();
     }
 }

@@ -1,0 +1,125 @@
+html {
+    height: 100%;
+}
+
+body {
+    background-color: #F9F9F9;
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
+
+header .navbar {
+    margin-bottom: 0;
+}
+
+.navbar-title {
+    background-image: url('../img/keycloak-logo.png');
+    height: 40px;
+    background-repeat: no-repeat;
+    margin: 18px 0;
+}
+
+.container {
+    height: 100%;
+}
+
+.content-area {
+    background-color: #fff;
+    border-color: #CECECE;
+    border-style: solid;
+    border-width: 0 1px;
+    height: 100%;
+    padding: 0 30px;
+}
+
+.bs-sidebar {
+    padding-top: 4.3em;
+    padding-right: 0;
+    padding-left: 0;
+}
+
+.bs-sidebar ul {
+    list-style: none;
+    padding-left: 10px;
+}
+
+.bs-sidebar ul li {
+    margin-bottom: 0.5em;
+    margin-left: -1em;
+}
+
+.bs-sidebar ul li.active a {
+    background-color: #c7e5f0;
+    border-color: #56bae0;
+    font-weight: bold;
+    background-repeat: no-repeat;
+    background-position: right center;
+}
+
+.bs-sidebar ul li a {
+    font-size: 1.3em;
+    font-family: "Open Sans", sans-serif;
+    padding-left: 1.92307692307692em;
+    color: #4d5258;
+    line-height: 2.07692307692308em;
+    display: block;
+    border-width: 1px 0 1px 1px;
+    border-style: solid;
+    border-color: #f9f9f9;
+}
+
+.content-area h2 {
+    font-family: "Open Sans", sans-serif;
+    font-weight: 100;
+    font-size: 2.4em;
+    margin-bottom: 1.04166666666667em;
+    margin-top: 1em;
+}
+
+.subtitle {
+    text-align: right;
+    margin-top: 30px;
+    color: #666;
+}
+
+.required {
+    color: #CB2915;
+}
+
+
+.alert {
+    margin-top: 30px;
+    margin-bottom: 0;
+}
+
+.feedback-aligner .alert {
+    background-position: 1.27273em center;
+    background-repeat: no-repeat;
+    border-radius: 2px;
+    border-width: 1px;
+    color: #4D5258;
+    display: inline-block;
+    font-size: 1.1em;
+    line-height: 1.4em;
+    margin: 0;
+    padding: 0.909091em 3.63636em;
+    position: relative;
+    text-align: left;
+}
+.alert.alert-success {
+    background-color: #E4F1E1;
+    border-color: #4B9E39;
+}
+.alert.alert-error {
+    background-color: #F8E7E7;
+    border-color: #B91415;
+}
+.alert.alert-warning {
+    background-color: #FEF1E9;
+    border-color: #F17528;
+}
+.alert.alert-info {
+    background-color: #E4F3FA;
+    border-color: #5994B2;
+}
