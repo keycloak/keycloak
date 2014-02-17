@@ -20,15 +20,15 @@ public class SimpleMongoStoreInvocationContext implements MongoStoreInvocationCo
     }
 
     @Override
-    public void addCreatedObject(MongoIdentifiableEntity entity) {
+    public void addCreatedEntity(MongoIdentifiableEntity entity) {
     }
 
     @Override
-    public void addLoadedObject(MongoIdentifiableEntity entity) {
+    public void addLoadedEntity(MongoIdentifiableEntity entity) {
     }
 
     @Override
-    public <T extends MongoIdentifiableEntity> T getLoadedObject(Class<T> type, String id) {
+    public <T extends MongoIdentifiableEntity> T getLoadedEntity(Class<T> type, String id) {
         return null;
     }
 
@@ -38,8 +38,8 @@ public class SimpleMongoStoreInvocationContext implements MongoStoreInvocationCo
     }
 
     @Override
-    public void addRemovedObject(MongoIdentifiableEntity entityToRemove) {
-        entityToRemove.afterRemove(this);
+    public void addRemovedEntity(MongoIdentifiableEntity entity) {
+        entity.afterRemove(this);
     }
 
     @Override

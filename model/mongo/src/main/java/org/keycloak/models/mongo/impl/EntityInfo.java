@@ -14,14 +14,14 @@ import java.util.Map;
  */
 public class EntityInfo {
 
-    private final Class<? extends MongoEntity> objectClass;
+    private final Class<? extends MongoEntity> entityClass;
 
     private final String dbCollectionName;
 
     private final Map<String, Property<Object>> properties;
 
-    public EntityInfo(Class<? extends MongoEntity> objectClass, String dbCollectionName, List<Property<Object>> properties) {
-        this.objectClass = objectClass;
+    public EntityInfo(Class<? extends MongoEntity> entityClass, String dbCollectionName, List<Property<Object>> properties) {
+        this.entityClass = entityClass;
         this.dbCollectionName = dbCollectionName;
 
         Map<String, Property<Object>> props= new HashMap<String, Property<Object>>();
@@ -31,8 +31,8 @@ public class EntityInfo {
         this.properties = Collections.unmodifiableMap(props);
     }
 
-    public Class<? extends MongoEntity> getObjectClass() {
-        return objectClass;
+    public Class<? extends MongoEntity> getEntityClass() {
+        return entityClass;
     }
 
     public String getDbCollectionName() {

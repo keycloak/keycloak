@@ -8,7 +8,7 @@ import org.keycloak.models.mongo.api.types.Mapper;
 import org.keycloak.models.mongo.api.types.MapperContext;
 
 /**
- * For now, we support just convert to Map<String, String>
+ * For now, there is support just for convert to Map<String, String>
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -16,10 +16,10 @@ public class BasicDBObjectToMapMapper implements Mapper<BasicDBObject, Map> {
 
     @Override
     public Map convertObject(MapperContext<BasicDBObject, Map> context) {
-        BasicDBObject objectToConvert = context.getObjectToConvert();
+        BasicDBObject dbObjectToConvert = context.getObjectToConvert();
 
         HashMap<String, String> result = new HashMap<String, String>();
-        for (Map.Entry<String, Object> entry : objectToConvert.entrySet()) {
+        for (Map.Entry<String, Object> entry : dbObjectToConvert.entrySet()) {
             String key = entry.getKey();
             String value = (String)entry.getValue();
 

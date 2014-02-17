@@ -33,18 +33,18 @@ public class TransactionMongoStoreInvocationContext implements MongoStoreInvocat
     }
 
     @Override
-    public void addCreatedObject(MongoIdentifiableEntity entity) {
+    public void addCreatedEntity(MongoIdentifiableEntity entity) {
         // For now just add it to list of loaded objects
-        addLoadedObject(entity);
+        addLoadedEntity(entity);
     }
 
     @Override
-    public void addLoadedObject(MongoIdentifiableEntity entity) {
+    public void addLoadedEntity(MongoIdentifiableEntity entity) {
         loadedObjects.put(entity.getId(), entity);
     }
 
     @Override
-    public <T extends MongoIdentifiableEntity> T getLoadedObject(Class<T> type, String id) {
+    public <T extends MongoIdentifiableEntity> T getLoadedEntity(Class<T> type, String id) {
         return (T)loadedObjects.get(id);
     }
 
@@ -76,12 +76,12 @@ public class TransactionMongoStoreInvocationContext implements MongoStoreInvocat
     }
 
     @Override
-    public void addRemovedObject(MongoIdentifiableEntity entityToRemove) {
+    public void addRemovedEntity(MongoIdentifiableEntity entity) {
         // Remove all pending tasks and object from cache
-        pendingUpdateTasks.remove(entityToRemove);
-        loadedObjects.remove(entityToRemove.getId());
+        pendingUpdateTasks.remove(entity);
+        loadedObjects.remove(entity.getId());
 
-        entityToRemove.afterRemove(this);
+        entity.afterRemove(this);
     }
 
     @Override

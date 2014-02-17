@@ -32,7 +32,7 @@ public class MongoEntityMapper<T extends MongoEntity> implements Mapper<T, Basic
 
         EntityInfo entityInfo = mongoStoreImpl.getEntityInfo(applicationObject.getClass());
 
-        // Create instance of BasicDBObject and add all declared properties to it (properties with null value probably should be skipped)
+        // Create instance of BasicDBObject and add all declared properties to it
         BasicDBObject dbObject = new BasicDBObject();
         Collection<Property<Object>> props = entityInfo.getProperties();
         for (Property<Object> property : props) {

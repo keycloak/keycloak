@@ -10,15 +10,15 @@ import org.keycloak.models.mongo.api.MongoStore;
  */
 public interface MongoStoreInvocationContext {
 
-    void addCreatedObject(MongoIdentifiableEntity entity);
+    void addCreatedEntity(MongoIdentifiableEntity entity);
 
-    void addLoadedObject(MongoIdentifiableEntity entity);
+    void addLoadedEntity(MongoIdentifiableEntity entity);
 
-    <T extends MongoIdentifiableEntity> T getLoadedObject(Class<T> type, String id);
+    <T extends MongoIdentifiableEntity> T getLoadedEntity(Class<T> type, String id);
 
     void addUpdateTask(MongoIdentifiableEntity entityToUpdate, MongoTask task);
 
-    void addRemovedObject(MongoIdentifiableEntity entityToRemove);
+    void addRemovedEntity(MongoIdentifiableEntity entity);
 
     void beforeDBSearch(Class<? extends MongoIdentifiableEntity> entityType);
 
