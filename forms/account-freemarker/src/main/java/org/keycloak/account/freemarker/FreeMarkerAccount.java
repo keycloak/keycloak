@@ -5,6 +5,7 @@ import org.keycloak.account.Account;
 import org.keycloak.account.AccountPages;
 import org.keycloak.account.freemarker.model.AccountBean;
 import org.keycloak.account.freemarker.model.MessageBean;
+import org.keycloak.account.freemarker.model.ReferrerBean;
 import org.keycloak.account.freemarker.model.TotpBean;
 import org.keycloak.account.freemarker.model.UrlBean;
 import org.keycloak.freemarker.FreeMarkerException;
@@ -80,7 +81,12 @@ public class FreeMarkerAccount implements Account {
             attributes.put("message", new MessageBean(messages.containsKey(message) ? messages.getProperty(message) : message, messageType));
         }
 
-        attributes.put("url", new UrlBean(realm, theme, baseUri, getReferrerUri()));
+        ApplicationModel referrerApp = getReferrer();
+        if (referrerApp != null) {
+            attributes.put("referrer", new ReferrerBean(referrerApp));
+        }
+
+        attributes.put("url", new UrlBean(realm, theme, baseUri));
 
         switch (page) {
             case ACCOUNT:
@@ -100,11 +106,11 @@ public class FreeMarkerAccount implements Account {
         }
     }
 
-    private String getReferrerUri() {
+    private ApplicationModel getReferrer() {
         if (referrer != null) {
             ApplicationModel app = realm.getApplicationByName(referrer);
             if (app != null) {
-                return app.getBaseUrl();
+                return app;
             }
         }
         return null;
