@@ -2,11 +2,12 @@ package org.keycloak.models.jpa.entities;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+
+import org.hibernate.annotations.GenericGenerator;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -18,7 +19,8 @@ import javax.persistence.NamedQuery;
 @Entity
 public class CredentialEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GenericGenerator(name="keycloak_generator", strategy="org.keycloak.models.jpa.utils.JpaIdGenerator")
+    @GeneratedValue(generator = "keycloak_generator")
     protected String id;
 
     protected String type;

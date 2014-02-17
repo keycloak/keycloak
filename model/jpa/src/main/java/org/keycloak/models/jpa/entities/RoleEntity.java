@@ -3,7 +3,6 @@ package org.keycloak.models.jpa.entities;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
@@ -13,6 +12,8 @@ import javax.persistence.OneToMany;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import org.hibernate.annotations.GenericGenerator;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -21,7 +22,8 @@ import java.util.Collection;
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 public abstract class RoleEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GenericGenerator(name="keycloak_generator", strategy="org.keycloak.models.jpa.utils.JpaIdGenerator")
+    @GeneratedValue(generator = "keycloak_generator")
     private String id;
 
     private String name;

@@ -28,47 +28,28 @@ public class CompositeRolesModelTest extends AbstractModelTest {
     }
 
     @Test
-    public void testAppComposites() {
+    public void testComposites() {
         Set<RoleModel> requestedRoles = getRequestedRoles("APP_COMPOSITE_APPLICATION", "APP_COMPOSITE_USER");
-
         Assert.assertEquals(2, requestedRoles.size());
         assertContains("APP_ROLE_APPLICATION", "APP_ROLE_1", requestedRoles);
         assertContains("realm", "REALM_ROLE_1", requestedRoles);
-    }
 
-    @Test
-    public void testRealmAppComposites() {
-        Set<RoleModel> requestedRoles = getRequestedRoles("APP_COMPOSITE_APPLICATION", "REALM_APP_COMPOSITE_USER");
-
+        requestedRoles = getRequestedRoles("APP_COMPOSITE_APPLICATION", "REALM_APP_COMPOSITE_USER");
         Assert.assertEquals(1, requestedRoles.size());
         assertContains("APP_ROLE_APPLICATION", "APP_ROLE_1", requestedRoles);
-    }
 
-    @Test
-    public void testRealmOnlyWithUserCompositeAppComposite() throws Exception {
-        Set<RoleModel> requestedRoles = getRequestedRoles("REALM_COMPOSITE_1_APPLICATION", "REALM_COMPOSITE_1_USER");
-
+        requestedRoles = getRequestedRoles("REALM_COMPOSITE_1_APPLICATION", "REALM_COMPOSITE_1_USER");
         Assert.assertEquals(1, requestedRoles.size());
         assertContains("realm", "REALM_COMPOSITE_1", requestedRoles);
-    }
 
-    @Test
-    public void testRealmOnlyWithUserCompositeAppRole() throws Exception {
-        Set<RoleModel> requestedRoles = getRequestedRoles("REALM_ROLE_1_APPLICATION", "REALM_COMPOSITE_1_USER");
+        requestedRoles = getRequestedRoles("REALM_ROLE_1_APPLICATION", "REALM_COMPOSITE_1_USER");
+        Assert.assertEquals(1, requestedRoles.size());
+        assertContains("realm", "REALM_ROLE_1", requestedRoles);
 
+        requestedRoles = getRequestedRoles("REALM_COMPOSITE_1_APPLICATION", "REALM_ROLE_1_USER");
         Assert.assertEquals(1, requestedRoles.size());
         assertContains("realm", "REALM_ROLE_1", requestedRoles);
     }
-
-    @Test
-    public void testRealmOnlyWithUserRoleAppComposite() throws Exception {
-        Set<RoleModel> requestedRoles = getRequestedRoles("REALM_COMPOSITE_1_APPLICATION", "REALM_ROLE_1_USER");
-
-        Assert.assertEquals(1, requestedRoles.size());
-        assertContains("realm", "REALM_ROLE_1", requestedRoles);
-    }
-
-    // TODO: more tests...
 
     // Same algorithm as in TokenManager.createAccessCode
     private Set<RoleModel> getRequestedRoles(String applicationName, String username) {

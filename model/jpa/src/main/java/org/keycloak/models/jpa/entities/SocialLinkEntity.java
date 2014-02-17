@@ -8,6 +8,9 @@ import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 
+import org.hibernate.annotations.GenericGenerator;
+import org.keycloak.models.jpa.utils.JpaIdGenerator;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -20,8 +23,11 @@ import javax.persistence.NamedQuery;
 @Entity
 public class SocialLinkEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    @GenericGenerator(name="keycloak_generator", strategy="org.keycloak.models.jpa.utils.JpaIdGenerator")
+    @GeneratedValue(generator = "keycloak_generator")
+    private String id;
+
+    private String str = JpaIdGenerator.class.getName();
 
     @ManyToOne
     private UserEntity user;
@@ -32,11 +38,11 @@ public class SocialLinkEntity {
     protected String socialProvider;
     protected String socialUsername;
 
-    public long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(String id) {
         this.id = id;
     }
 

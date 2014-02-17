@@ -1,10 +1,11 @@
 package org.keycloak.models.jpa.entities;
 
 import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.MappedSuperclass;
+
+import org.hibernate.annotations.GenericGenerator;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -13,18 +14,19 @@ import javax.persistence.MappedSuperclass;
 @MappedSuperclass
 public class AbstractRoleMappingEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    protected long id;
+    @GenericGenerator(name="keycloak_generator", strategy="org.keycloak.models.jpa.utils.JpaIdGenerator")
+    @GeneratedValue(generator = "keycloak_generator")
+    protected String id;
     @ManyToOne
     protected UserEntity user;
     @ManyToOne
     protected RoleEntity role;
 
-    public long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(String id) {
         this.id = id;
     }
 
