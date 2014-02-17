@@ -78,7 +78,7 @@
             Once a user is logged in, they can visit any other application managed by the realm and not have to re-enter
             credentials.  This also hold true for logging out.  Roles can also be defined at the application level and
             assigned to specific users.  Depending on the application type, you may also be able to view and manage
-            user sessions from the adminstration console.
+            user sessions from the administration console.
         </para>
         <para>
             An <emphasis>oauth client</emphasis> is similar to an application in that it can request something like a login

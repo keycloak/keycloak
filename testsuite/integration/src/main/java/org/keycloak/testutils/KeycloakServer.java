@@ -96,7 +96,7 @@ public class KeycloakServer {
         }
     }
 
-    private static <T> T loadJson(InputStream is, Class<T> type) {
+    public static <T> T loadJson(InputStream is, Class<T> type) {
         try {
             return JsonSerialization.readValue(is, type);
         } catch (IOException e) {

@@ -99,14 +99,6 @@ public class UserModelTest extends AbstractModelTest {
         Assert.assertTrue(user.getRequiredActions().isEmpty());
     }
 
-    protected void commit() {
-        identitySession.getTransaction().commit();
-        identitySession.close();
-        identitySession = factory.createSession();
-        identitySession.getTransaction().begin();
-        realmManager = new RealmManager(identitySession);
-    }
-
     public static void assertEquals(UserModel expected, UserModel actual) {
         Assert.assertEquals(expected.getLoginName(), actual.getLoginName());
         Assert.assertEquals(expected.getFirstName(), actual.getFirstName());
