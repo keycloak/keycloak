@@ -18,50 +18,48 @@
 </head>
 <body class="admin-console user ${bodyClass}">
 
-    <#if message?has_content>
-    <div class="feedback-aligner">
-        <#if message.success>
-        <div class="feedback success show"><p><strong>${rb.successHeader}</strong> ${message.summary}</p></div>
-        </#if>
-        <#if message.error>
-        <div class="feedback error show"><p><strong>${rb.errorHeader}</strong> ${message.summary}</p></div>
-        </#if>
-    </div>
-    </#if>
+    <header class="navbar navbar-default navbar-pf navbar-main header">
+        <div class="container">
+            <div>
+                <nav class="navbar" role="navigation">
+                    <div class="navbar-header">
+                        <div class="navbar-title">
+                        </div>
+                    </div>
 
-<div class="header rcue">
-    <div class="navbar utility">
-        <div class="navbar-inner clearfix container">
-            <h1><a href="#"><strong>Keycloak</strong> Account Management</a></h1>
-            <ul class="nav pull-right">
-                <li>
-                    <a href="${url.logoutUrl}">Sign Out</a>
-                </li>
-            </ul>
+                    <div class="navbar-collapse">
+                        <ul class="nav navbar-nav navbar-utility">
+                            <#if url.referrerURI??><li><a href="${url.referrerURI}">Back to application</a></li></#if>
+                            <li><a href="${url.logoutUrl}">Sign Out</a></li>
+                        </ul>
+                    </div>
+                </nav>
+            </div>
         </div>
-    </div>
-</div><!-- End .header -->
+    </header>
 
-<div class="container">
-    <div class="row">
-        <div class="bs-sidebar col-md-3 clearfix">
+    <div class="container">
+        <div class="bs-sidebar col-sm-3  ng-scope">
             <ul>
                 <li class="<#if active=='account'>active</#if>"><a href="${url.accountUrl}">Account</a></li>
                 <li class="<#if active=='password'>active</#if>"><a href="${url.passwordUrl}">Password</a></li>
                 <li class="<#if active=='totp'>active</#if>"><a href="${url.totpUrl}">Authenticator</a></li>
-                <#--<li class="<#if active=='social'>active</#if>"><a href="${url.socialUrl}">Social Accounts</a></li>-->
-                <#--<li class="<#if active=='access'>active</#if>"><a href="${url.accessUrl}">Authorized Access</a></li>-->
             </ul>
         </div>
 
-        <div id="content-area" class="col-md-9" role="main">
-            <div id="content">
-                <#nested "content">
-            </div>
+        <div class="col-md-9 content-area">
+            <#if message?has_content>
+                <div class="alert alert-${message.type}">
+                    <#if message.type=='success' ><span class="pficon pficon-ok"></span></#if>
+                    <#if message.type=='error' ><span class="pficon pficon-error-octagon"></span><span class="pficon pficon-error-exclamation"></span></#if>
+                    ${message.summary}
+                </div>
+            </#if>
+
+            <#nested "content">
         </div>
-        <div id="container-right-bg"></div>
     </div>
-</div>
+
 </body>
 </html>
 </#macro>

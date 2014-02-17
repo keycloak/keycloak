@@ -141,15 +141,15 @@ public class AccountTest {
 
         changePasswordPage.changePassword("", "new-password", "new-password");
 
-        Assert.assertTrue(profilePage.isError());
+        Assert.assertEquals("Please specify password.", profilePage.getError());
 
         changePasswordPage.changePassword("password", "new-password", "new-password2");
 
-        Assert.assertTrue(profilePage.isError());
+        Assert.assertEquals("Password confirmation doesn't match", profilePage.getError());
 
         changePasswordPage.changePassword("password", "new-password", "new-password");
 
-        Assert.assertTrue(profilePage.isSuccess());
+        Assert.assertEquals("Your password has been updated", profilePage.getSuccess());
 
         changePasswordPage.logout();
 
@@ -179,11 +179,11 @@ public class AccountTest {
 
             changePasswordPage.changePassword("", "new", "new");
 
-            Assert.assertTrue(profilePage.isError());
+            Assert.assertEquals("Please specify password.", profilePage.getError());
 
             changePasswordPage.changePassword("password", "new-password", "new-password");
 
-            Assert.assertTrue(profilePage.isSuccess());
+            Assert.assertEquals("Your password has been updated", profilePage.getSuccess());
         } finally {
             keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
                 @Override
@@ -206,28 +206,28 @@ public class AccountTest {
         // All fields are required, so there should be an error when something is missing.
         profilePage.updateProfile("", "New last", "new@email.com");
 
-        Assert.assertTrue(profilePage.isError());
+        Assert.assertEquals("Please specify first name", profilePage.getError());
         Assert.assertEquals("", profilePage.getFirstName());
         Assert.assertEquals("", profilePage.getLastName());
         Assert.assertEquals("test-user@localhost", profilePage.getEmail());
 
         profilePage.updateProfile("New first", "", "new@email.com");
 
-        Assert.assertTrue(profilePage.isError());
+        Assert.assertEquals("Please specify last name", profilePage.getError());
         Assert.assertEquals("", profilePage.getFirstName());
         Assert.assertEquals("", profilePage.getLastName());
         Assert.assertEquals("test-user@localhost", profilePage.getEmail());
 
         profilePage.updateProfile("New first", "New last", "");
 
-        Assert.assertTrue(profilePage.isError());
+        Assert.assertEquals("Please specify email", profilePage.getError());
         Assert.assertEquals("", profilePage.getFirstName());
         Assert.assertEquals("", profilePage.getLastName());
         Assert.assertEquals("test-user@localhost", profilePage.getEmail());
 
         profilePage.updateProfile("New first", "New last", "new@email.com");
 
-        Assert.assertTrue(profilePage.isSuccess());
+        Assert.assertEquals("Your account has been updated", profilePage.getSuccess());
         Assert.assertEquals("New first", profilePage.getFirstName());
         Assert.assertEquals("New last", profilePage.getLastName());
         Assert.assertEquals("new@email.com", profilePage.getEmail());
@@ -245,13 +245,13 @@ public class AccountTest {
         // Error with false code
         totpPage.configure(totp.generate(totpPage.getTotpSecret() + "123"));
 
-        Assert.assertTrue(profilePage.isError());
+        Assert.assertEquals("Invalid authenticator code", profilePage.getError());
 
         totpPage.configure(totp.generate(totpPage.getTotpSecret()));
 
-        Assert.assertTrue(profilePage.isSuccess());
+        Assert.assertEquals("Google authenticator configured.", profilePage.getSuccess());
 
-        Assert.assertTrue(driver.getPageSource().contains("Remove Google"));
+        Assert.assertTrue(driver.getPageSource().contains("pficon-delete"));
     }
 
     @Test

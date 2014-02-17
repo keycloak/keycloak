@@ -14,24 +14,20 @@ import java.util.Set;
  */
 public class DefaultLoginThemeProvider implements ThemeProvider {
 
-    public static final String RCUE = "rcue";
     public static final String PATTERNFLY = "patternfly";
     public static final String KEYCLOAK = "keycloak";
 
-    private static Set<String> defaultLoginThemes = new HashSet<String>();
+    private static Set<String> defaultThemes = new HashSet<String>();
 
     static {
-        defaultLoginThemes.add(ThemeLoader.BASE);
-        defaultLoginThemes.add(PATTERNFLY);
-        defaultLoginThemes.add(KEYCLOAK);
+        defaultThemes.add(ThemeLoader.BASE);
+        defaultThemes.add(PATTERNFLY);
+        defaultThemes.add(KEYCLOAK);
     }
 
-    private static Set<String> defaultAccountThemes = new HashSet<String>();
-
-    static {
-        defaultAccountThemes.add(ThemeLoader.BASE);
-        defaultAccountThemes.add(RCUE);
-        defaultAccountThemes.add(KEYCLOAK);
+    @Override
+    public int getProviderPriority() {
+        return 0;
     }
 
     @Override
@@ -45,10 +41,8 @@ public class DefaultLoginThemeProvider implements ThemeProvider {
 
     @Override
     public Set<String> nameSet(Theme.Type type) {
-        if (type == Theme.Type.LOGIN) {
-            return defaultLoginThemes;
-        } else if (type == Theme.Type.ACCOUNT) {
-            return defaultAccountThemes;
+        if (type == Theme.Type.LOGIN || type == Theme.Type.ACCOUNT) {
+            return defaultThemes;
         } else {
             return Collections.emptySet();
         }

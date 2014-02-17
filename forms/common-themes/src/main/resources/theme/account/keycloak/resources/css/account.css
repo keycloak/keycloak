@@ -1,0 +1,56 @@
+.navbar-pf {
+    background-image: url('../img/header-bkgrnd.png');
+    border-top: 3px solid rgba(255, 255, 255, 0.15);
+}
+
+.navbar-pf .navbar-primary {
+    font-size: 13px;
+    background-image: -webkit-linear-gradient(top, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, .4) 100%);
+    background-image: linear-gradient(to bottom, rgba(0, 0, 0, .1) 0%, rgba(0, 0, 0, .4) 100%);
+}
+
+.navbar-pf .navbar-header {
+    border-bottom: 1px solid rgba(255, 255, 255, .15);
+}
+
+.navbar-pf .navbar-primary li.dropdown.context > a,
+.navbar-pf .navbar-primary li.dropdown.context > a:hover,
+.navbar-pf .navbar-primary li.dropdown.context.open > a,
+.navbar-pf .navbar-primary > .active > a,
+.navbar-pf .navbar-primary > .active > a:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+    border-bottom-color: rgba(0, 0, 0, 0.3);
+    border-right: rgba(0, 0, 0, 0.3);
+    border-top-color: rgba(0, 0, 0, 0.1);
+    font-weight: 600;
+    background-image: -webkit-linear-gradient(top, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.1) 100%);
+    background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.1) 100%);
+    background-repeat: repeat-x;
+}
+
+.navbar-pf .navbar-primary li.dropdown.context > a:hover,
+.navbar-pf .navbar-primary li.dropdown.context.open > a,
+.navbar-pf .navbar-primary > .active > a:hover {
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
+.navbar-pf .navbar-primary > .active > a {
+    background-color: rgba(0, 0, 0, 0.1);
+    border-bottom-color: rgba(0, 0, 0, 0.3);
+    border-right: rgba(0, 0, 0, 0.3);
+    border-top-color: rgba(0, 0, 0, 0.1);
+    font-weight: 600;
+    background-image: -webkit-linear-gradient(top, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.1) 100%);
+    background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.1) 100%);
+    background-repeat: repeat-x;
+}
+
+.navbar-pf .navbar-utility > li > a {
+    border-left: none;
+}
+
+.navbar-pf .navbar-utility > li > a:hover,
+.navbar-pf .navbar-utility > .open > a,
+.navbar-pf .navbar-utility > .open > a:hover {
+    background-color: rgba(0, 0, 0, 0.2);
+}
