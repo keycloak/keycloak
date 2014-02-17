@@ -6,6 +6,8 @@ import org.keycloak.util.ProviderLoader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -25,7 +27,17 @@ public class ThemeLoader {
             name = DEFAULT;
         }
 
-        Iterable<ThemeProvider> providers = ProviderLoader.load(ThemeProvider.class);
+        List<ThemeProvider> providers = new LinkedList();
+        for (ThemeProvider p : ProviderLoader.load(ThemeProvider.class)) {
+            providers.add(p);
+        }
+
+        Collections.sort(providers, new Comparator<ThemeProvider>() {
+            @Override
+            public int compare(ThemeProvider o1, ThemeProvider o2) {
+                return o2.getProviderPriority() - o1.getProviderPriority();
+            }
+        });
 
         Theme theme = findTheme(providers, name, type);
         if (theme.getParentName() != null) {

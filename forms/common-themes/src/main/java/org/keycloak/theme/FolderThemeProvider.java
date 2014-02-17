@@ -25,6 +25,11 @@ public class FolderThemeProvider implements ThemeProvider {
     }
 
     @Override
+    public int getProviderPriority() {
+        return 100;
+    }
+
+    @Override
     public Theme createTheme(String name, Theme.Type type) throws IOException {
         if (hasTheme(name, type)) {
             return new FolderTheme(new File(getTypeDir(type), name), type);

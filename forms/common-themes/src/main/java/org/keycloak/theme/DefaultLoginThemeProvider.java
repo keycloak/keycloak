@@ -35,6 +35,11 @@ public class DefaultLoginThemeProvider implements ThemeProvider {
     }
 
     @Override
+    public int getProviderPriority() {
+        return 0;
+    }
+
+    @Override
     public Theme createTheme(String name, Theme.Type type) throws IOException {
         if (hasTheme(name, type)) {
             return new ClassLoaderTheme(name, type);

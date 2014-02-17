@@ -8,6 +8,8 @@ import java.util.Set;
  */
 public interface ThemeProvider {
 
+    public int getProviderPriority();
+
     public Theme createTheme(String name, Theme.Type type) throws IOException;
 
     public Set<String> nameSet(Theme.Type type);
