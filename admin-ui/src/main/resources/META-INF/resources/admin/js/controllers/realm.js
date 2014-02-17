@@ -599,7 +599,7 @@ module.controller('RealmKeysDetailCtrl', function($scope, Realm, realm, $http, $
 
     $scope.generate = function() {
         Dialog.confirmGenerateKeys($scope.realm.realm, 'realm', function() {
-                Realm.update({ id: realm.realm, publicKey : 'GENERATE' }, function () {
+                Realm.update({ realm: realm.realm, publicKey : 'GENERATE' }, function () {
                 Notifications.success('New keys generated for realm.');
                 Realm.get({ id : realm.realm }, function(updated) {
                     $scope.realm = updated;
