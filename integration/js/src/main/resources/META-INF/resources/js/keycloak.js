@@ -111,7 +111,7 @@ var Keycloak = function (options) {
         var prompt = window.oauth.prompt;
 
         if (code) {
-            var params = 'code=' + code + '&client_id=' + encodeURIComponent(options.clientId) + '&password=' + encodeURIComponent(options.clientSecret);
+            var params = 'code=' + code + '&client_id=' + encodeURIComponent(options.clientId) + '&secret=' + encodeURIComponent(options.clientSecret);
             var url = getRealmUrl() + '/tokens/access/codes';
 
             var req = new XMLHttpRequest();
