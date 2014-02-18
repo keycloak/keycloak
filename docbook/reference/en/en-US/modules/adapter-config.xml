@@ -93,7 +93,7 @@
                 <listitem>
                     <para>
                         Ensures that all communication to and from the Keycloak server from the adapter is over HTTPS.
-                        This is<emphasis>OPTIONAL</emphasis>. The default value is
+                        This is <emphasis>OPTIONAL</emphasis>. The default value is
                         <emphasis>false</emphasis>
                         meaning
                         that HTTPS is required by default.
@@ -107,7 +107,7 @@
                         If set to true, the adapter will look inside the token for application level role mappings for
                         the
                         user. If false, it will look at the realm level for user role mappings.
-                        This is<emphasis>OPTIONAL</emphasis>. The default value is<emphasis>false</emphasis>.
+                        This is <emphasis>OPTIONAL</emphasis>. The default value is <emphasis>false</emphasis>.
                     </para>
                 </listitem>
             </varlistentry>
@@ -117,7 +117,7 @@
                     <para>
                         This enables CORS support. It will handle CORS preflight requests. It will also look into
                         the access token to determine valid origins.
-                        This is<emphasis>OPTIONAL</emphasis>. The default value is<emphasis>false</emphasis>.
+                        This is <emphasis>OPTIONAL</emphasis>. The default value is <emphasis>false</emphasis>.
                     </para>
                 </listitem>
             </varlistentry>
@@ -128,7 +128,7 @@
                         If CORS is enabled, this sets the value of the
                         <literal>Access-Control-Max-Age</literal>
                         header.
-                        This is<emphasis>OPTIONAL</emphasis>. If not set, this header is not returned in CORS
+                        This is <emphasis>OPTIONAL</emphasis>. If not set, this header is not returned in CORS
                         responses.
                     </para>
                 </listitem>
@@ -140,7 +140,7 @@
                         If CORS is enabled, this sets the value of the
                         <literal>Access-Control-Allow-Methods</literal>
                         header. This should be a JSON list of strings.
-                        This is<emphasis>OPTIONAL</emphasis>. If not set, this header is not returned in CORS
+                        This is <emphasis>OPTIONAL</emphasis>. If not set, this header is not returned in CORS
                         responses.
                     </para>
                 </listitem>
@@ -149,11 +149,11 @@
                 <term>bearer-only</term>
                 <listitem>
                     <para>
-                        This tells the adapter to only to bearer token authentication. That is, it will not do
+                        This tells the adapter to only do bearer token authentication. That is, it will not do
                         OAuth 2.0 redirects, but only accept bearer tokens through the
                         <literal>Authorization</literal>
                         header.
-                        This is<emphasis>OPTIONAL</emphasis>. The default value is<emphasis>false</emphasis>.
+                        This is <emphasis>OPTIONAL</emphasis>. The default value is <emphasis>false</emphasis>.
                     </para>
                 </listitem>
             </varlistentry>
@@ -161,9 +161,9 @@
                 <term>expose-token</term>
                 <listitem>
                     <para>
-                        If<literal>true</literal>, an authenticated browser client (via a Javascript HTTP invocation)
-                        can obtain the signed access token via the URL<literal>root/k_query_bearer_token</literal>.
-                        This is<emphasis>OPTIONAL</emphasis>. The default value is<emphasis>false</emphasis>.
+                        If <literal>true</literal>, an authenticated browser client (via a Javascript HTTP invocation)
+                        can obtain the signed access token via the URL <literal>root/k_query_bearer_token</literal>.
+                        This is <emphasis>OPTIONAL</emphasis>. The default value is <emphasis>false</emphasis>.
                     </para>
                 </listitem>
             </varlistentry>
@@ -175,7 +175,7 @@
                         is the credential type and the value if the value of the credential type. Currently only
                         <literal>password</literal>
                         is supported.
-                        This is<emphasis>REQUIRED</emphasis>.
+                        This is <emphasis>REQUIRED</emphasis>.
                     </para>
                 </listitem>
             </varlistentry>
@@ -187,7 +187,7 @@
                         Adapters will make separate HTTP invocations to the Keycloak Server to turn an access code
                         into an access token.  This config option defines how many connections to the Keycloak Server
                         should be pooled.
-                        This is<emphasis>OPTIONAL</emphasis>.  The default value is <literal>20</literal>.
+                        This is <emphasis>OPTIONAL</emphasis>.  The default value is <literal>20</literal>.
                     </para>
                 </listitem>
             </varlistentry>
@@ -198,7 +198,7 @@
                         If the Keycloak Server requires HTTPS and this config option is set to <literal>true</literal>
                         you do not have to specify a truststore.  While convenient,  this setting is not recommended
                         as you will not be verifying the host name of the Keycloak Server.
-                        This is<emphasis>OPTIONAL</emphasis>.  The default value is <literal>false</literal>.
+                        This is <emphasis>OPTIONAL</emphasis>.  The default value is <literal>false</literal>.
                     </para>
                 </listitem>
             </varlistentry>
@@ -209,7 +209,7 @@
                         If the Keycloak Server requires HTTPS and this config option is set to <literal>true</literal>
                         the Keycloak Server's certificate is validated via the truststore, but host name validation is
                         not done.  This is not a recommended.  This seting may be useful in test environments
-                        This is<emphasis>OPTIONAL</emphasis>.  The default value is <literal>false</literal>.
+                        This is <emphasis>OPTIONAL</emphasis>.  The default value is <literal>false</literal>.
                     </para>
                 </listitem>
             </varlistentry>
@@ -220,7 +220,7 @@
                     <para>
                         This setting is for Java adapters. This is the file path to a Java keystore file.
                         Used for outgoing HTTPS communications to the Keycloak server. Client making HTTPS
-                        requests need a way to verify the host of the server they are talking to. THis is
+                        requests need a way to verify the host of the server they are talking to. This is
                         what the trustore does. The keystore contains one or more trusted
                         host certificates or certificate authorities. You can
                         create this truststore by extracting the public certificate of the Keycloak server's SSL
@@ -233,7 +233,7 @@
                         <literal>false</literal>
                         or
                         <literal>disable-trust-manager</literal>
-                        is<literal>true</literal>. The default value is<emphasis>false</emphasis>.
+                        is <literal>true</literal>. The default value is<emphasis>false</emphasis>.
                     </para>
                 </listitem>
             </varlistentry>
@@ -259,7 +259,7 @@
                         This setting is for Java adapters. This is the file path to a Java keystore file.
                         This keystore contains client certificate for two-way SSL when the adapter makes
                         HTTPS requests to the Keycloak server.
-                        This is<emphasis>OPTIONAL</emphasis>.
+                        This is <emphasis>OPTIONAL</emphasis>.
                     </para>
                 </listitem>
             </varlistentry>

@@ -2,7 +2,7 @@
     <title>Overview</title>
 
     <para>
-        Keycloak is an SSO solution for web apps and RESTful web services.  It is an authentication server where users
+        Keycloak is an SSO solution for web apps, mobile and RESTful web services.  It is an authentication server where users
         can centrally login, logout, register, and manage their user accounts.  The Keycloak admin UI can manage roles
         and role mappings for any application secured by Keycloak.  The Keycloak Server can also be used to perform
         social logins via the user's favorite social media site i.e. Google, Facebook, Twitter etc.
@@ -20,7 +20,7 @@
             </listitem>
 
             <listitem>
-                Social Broker.  Enable Google, Facebook, Yahoo, Twitter social login with no code required.
+                Social Broker.  Enable Google, GitHub, Facebook, Twitter social login with no code required.
             </listitem>
 
             <listitem>
@@ -90,7 +90,7 @@
     <section>
         <title>How Does Security Work in Keycloak?</title>
         <para>
-            Keycloak uses <emphasis>access tokens</emphasis>.  Access tokens are contains security metadata specifying the
+            Keycloak uses <emphasis>access tokens</emphasis>.  Access tokens contains security metadata specifying the
             identity of the user as well as the role mappings for that user.  The format of these tokens is a Keycloak
             extension to the <ulink url="http://tools.ietf.org/html/draft-ietf-oauth-json-web-token-14">JSON Web Token</ulink> specification.  Each realm  has a private and public key pair
             which it uses to digitally sign the access token using the <ulink url="http://tools.ietf.org/html/draft-ietf-jose-json-web-signature-19">JSON Web Signature</ulink> specification.
