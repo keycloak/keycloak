@@ -1,0 +1,51 @@
+<html>
+<head>
+    <title>Customer View Page</title>
+    <script src="/auth/js/keycloak.js"></script>
+</head>
+<body bgcolor="#E3F6CE">
+
+<p>Goto: <a href="#" onclick="keycloak.logout()">logout</a></p>
+User <b id="username"></b> made this request.
+<h2>Customer Listing</h2>
+<div id="customers"></div>
+
+<script>
+    var keycloak = Keycloak({
+        clientId: '<INSERT CLIENT ID>',
+        clientSecret: '<INSERT SECRET>',
+        realm: '<INSERT REALM NAME>',
+        onload: 'login-required'
+    });
+
+    keycloak.init(function() {
+        document.getElementById('username').innerText = keycloak.username;
+
+        var url = 'http://localhost:8080/database/customers';
+
+        var req = new XMLHttpRequest();
+        req.open('GET', url, true);
+        req.setRequestHeader('Accept', 'application/json');
+        req.setRequestHeader('Authorization', 'Bearer ' + keycloak.token);
+
+        req.onreadystatechange = function () {
+            if (req.readyState == 4) {
+                if (req.status == 200) {
+                    var users = JSON.parse(req.responseText);
+                    var html = '';
+                    for (var i = 0; i < users.length; i++) {
+                        html += '<p>' + users[i] + '</p>';
+                    }
+                    document.getElementById('customers').innerHTML = html;
+                }
+            }
+        }
+
+        req.send();
+    });
+
+</script>
+
+<br><br>
+</body>
+</html>
