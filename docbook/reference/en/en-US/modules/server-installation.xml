@@ -175,7 +175,7 @@ keycloak-war-dist-all-1.0-alpha-1/
             </para>
             <para>
                 Besides moving the database config into the central <literal>standalone.xml</literal> configuration file
-                you might want to use a better relational database for Keycloak like Oracle or something.  You might also
+                you might want to use a better relational database for Keycloak like PostgreSQL or MySQL.  You might also
                 want to tweak the configuration settings of the datasource.  Please see the <ulink url="https://docs.jboss.org/author/display/WFLY8/DataSource+configuration">Wildfly</ulink>,
                 <ulink url="https://docs.jboss.org/author/display/AS71/DataSource+configuration">JBoss AS7</ulink>,
                 or <ulink url="https://docs.jboss.org/author/display/AS71/DataSource+configuration">JBoss EAP 6.x</ulink> documentation on how to do this.
@@ -261,29 +261,29 @@ $ keytool -genkey -alias localhost -keyalg RSA -keystore keycloak.jks -validity 
                     </para>
                     <para>
                         The first thing to do is generate a Certificate Request:
-                        <programlisting>
-                            $ keytool -certreq -alias yourdomain -keystore keycloak.jks > keycloak.careq
-                        </programlisting>
+<programlisting>
+$ keytool -certreq -alias yourdomain -keystore keycloak.jks > keycloak.careq
+</programlisting>
                     </para>
                     <para>
                          Where <literal>yourdomain</literal> is a DNS name for which this certificate is generated for.
                          Keytool generates the request:
 <programlisting>
-     -----BEGIN NEW CERTIFICATE REQUEST-----
-     MIIC2jCCAcICAQAwZTELMAkGA1UEBhMCVVMxCzAJBgNVBAgTAk1BMREwDwYDVQQHEwhXZXN0Zm9y
-     ZDEQMA4GA1UEChMHUmVkIEhhdDEQMA4GA1UECxMHUmVkIEhhdDESMBAGA1UEAxMJbG9jYWxob3N0
-     MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAr7kck2TaavlEOGbcpi9c0rncY4HhdzmY
-     Ax2nZfq1eZEaIPqI5aTxwQZzzLDK9qbeAd8Ji79HzSqnRDxNYaZu7mAYhFKHgixsolE3o5Yfzbw1
-     29Rvy+eUVe+WZxv5oo9wolVVpdSINIMEL2LaFhtX/c1dqiqYVpfnvFshZQaIg2nL8juzZcBjj4as
-     H98gIS7khql/dkZKsw9NLvyxgJvp7PaXurX29fNf3ihG+oFrL22oFyV54BWWxXCKU/GPn61EGZGw
-     Ft2qSIGLdctpMD1aJR2bcnlhEjZKDksjQZoQ5YMXaAGkcYkG6QkgrocDE2YXDbi7GIdf9MegVJ35
-     2DQMpwIDAQABoDAwLgYJKoZIhvcNAQkOMSEwHzAdBgNVHQ4EFgQUQwlZJBA+fjiDdiVzaO9vrE/i
-     n2swDQYJKoZIhvcNAQELBQADggEBAC5FRvMkhal3q86tHPBYWBuTtmcSjs4qUm6V6f63frhveWHf
-     PzRrI1xH272XUIeBk0gtzWo0nNZnf0mMCtUBbHhhDcG82xolikfqibZijoQZCiGiedVjHJFtniDQ
-     9bMDUOXEMQ7gHZg5q6mJfNG9MbMpQaUVEEFvfGEQQxbiFK7hRWU8S23/d80e8nExgQxdJWJ6vd0X
-     MzzFK6j4Dj55bJVuM7GFmfdNC52pNOD5vYe47Aqh8oajHX9XTycVtPXl45rrWAH33ftbrS8SrZ2S
-     vqIFQeuLL3BaHwpl3t7j2lMWcK1p80laAxEASib/fAwrRHpLHBXRcq6uALUOZl4Alt8=
-     -----END NEW CERTIFICATE REQUEST-----
+-----BEGIN NEW CERTIFICATE REQUEST-----
+MIIC2jCCAcICAQAwZTELMAkGA1UEBhMCVVMxCzAJBgNVBAgTAk1BMREwDwYDVQQHEwhXZXN0Zm9y
+ZDEQMA4GA1UEChMHUmVkIEhhdDEQMA4GA1UECxMHUmVkIEhhdDESMBAGA1UEAxMJbG9jYWxob3N0
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAr7kck2TaavlEOGbcpi9c0rncY4HhdzmY
+Ax2nZfq1eZEaIPqI5aTxwQZzzLDK9qbeAd8Ji79HzSqnRDxNYaZu7mAYhFKHgixsolE3o5Yfzbw1
+29Rvy+eUVe+WZxv5oo9wolVVpdSINIMEL2LaFhtX/c1dqiqYVpfnvFshZQaIg2nL8juzZcBjj4as
+H98gIS7khql/dkZKsw9NLvyxgJvp7PaXurX29fNf3ihG+oFrL22oFyV54BWWxXCKU/GPn61EGZGw
+Ft2qSIGLdctpMD1aJR2bcnlhEjZKDksjQZoQ5YMXaAGkcYkG6QkgrocDE2YXDbi7GIdf9MegVJ35
+2DQMpwIDAQABoDAwLgYJKoZIhvcNAQkOMSEwHzAdBgNVHQ4EFgQUQwlZJBA+fjiDdiVzaO9vrE/i
+n2swDQYJKoZIhvcNAQELBQADggEBAC5FRvMkhal3q86tHPBYWBuTtmcSjs4qUm6V6f63frhveWHf
+PzRrI1xH272XUIeBk0gtzWo0nNZnf0mMCtUBbHhhDcG82xolikfqibZijoQZCiGiedVjHJFtniDQ
+9bMDUOXEMQ7gHZg5q6mJfNG9MbMpQaUVEEFvfGEQQxbiFK7hRWU8S23/d80e8nExgQxdJWJ6vd0X
+MzzFK6j4Dj55bJVuM7GFmfdNC52pNOD5vYe47Aqh8oajHX9XTycVtPXl45rrWAH33ftbrS8SrZ2S
+vqIFQeuLL3BaHwpl3t7j2lMWcK1p80laAxEASib/fAwrRHpLHBXRcq6uALUOZl4Alt8=
+-----END NEW CERTIFICATE REQUEST-----
  </programlisting>
                     </para>
                     <para>
@@ -312,24 +312,18 @@ $ keytool -import -alias yourdomain -keystore keycloak.jks -file your-certificat
                 </para>
                 <para>
                     To the <literal>security-realms</literal> element add:
-                    <programlisting><![CDATA[]
-<security-realm name="UndertowRealm">
+                    <programlisting><![CDATA[<security-realm name="UndertowRealm">
     <server-identities>
         <ssl>
             <keystore path="keycloak.jks" relative-to="jboss.server.config.dir" keystore-password="secret" />
         </ssl>
     </server-identities>
-</security-realm>
-]]>
-                    </programlisting>
+</security-realm>]]></programlisting>
                 </para>
                 <para>
                     Find the element <literal>&lt;server name="default-server"&gt;</literal> (it's a child element of <literal>&lt;subsystem xmlns="urn:jboss:domain:undertow:1.0"&gt;</literal>) and add:
-                    <programlisting><![CDATA[]<![CDATA[]
-<
- <https-listener name="https" socket-binding="https" security-realm="UndertowRealm"/>
-]]>
-                    </programlisting>
+                    <programlisting><![CDATA[<https-listener name="https" socket-binding="https" security-realm="UndertowRealm"/>
+]]></programlisting>
                 </para>
                 <para>
                     Check the <ulink url="https://docs.jboss.org/author/display/WFLY8/Undertow+(web)+subsystem+configuration">Wildfly Undertow</ulink> documentation for more information on fine tuning the socket connections.
@@ -344,8 +338,7 @@ $ keytool -import -alias yourdomain -keystore keycloak.jks -file your-certificat
                     Then you need to edit <literal>standalone/configuration/standalone.xml</literal> to enable SSL/HTTPS.
                 </para>
                 <para>
-<programlisting><![CDATA[]
-<subsystem xmlns="urn:jboss:domain:web:1.1" default-virtual-server="default-host" native="false">
+<programlisting><![CDATA[<subsystem xmlns="urn:jboss:domain:web:1.1" default-virtual-server="default-host" native="false">
    <connector name="http" protocol="HTTP/1.1" scheme="http" socket-binding="http"  redirect-port="443" />
    <connector name="https" scheme="https" protocol="HTTP/1.1" socket-binding="https"
               enable-lookups="false" secure="true">
@@ -353,9 +346,7 @@ $ keytool -import -alias yourdomain -keystore keycloak.jks -file your-certificat
             key-alias="localhost" certificate-key-file="${jboss.server.config.dir}/keycloak.jks" />
    </connector>
         ...
-</subsystem>
-]]>
-</programlisting>
+</subsystem>]]></programlisting>
                 </para>
                 <para>
                     Check the <ulink url="https://docs.jboss.org/author/display/AS71/SSL+setup+guide">JBoss</ulink> documentation for more information on fine tuning the socket connections.
@@ -369,8 +360,7 @@ $ keytool -import -alias yourdomain -keystore keycloak.jks -file your-certificat
                     uncomment out the security constraint.
                 </para>
                 <para>
- <programlisting><![CDATA[]
- <web-app>
+ <programlisting><![CDATA[<web-app>
  ...
        <security-constraint>
            <web-resource-collection>
@@ -380,9 +370,7 @@ $ keytool -import -alias yourdomain -keystore keycloak.jks -file your-certificat
                <transport-guarantee>CONFIDENTIAL</transport-guarantee>
            </user-data-constraint>
        </security-constraint>
-</web-app>
-]]>
-   </programlisting>
+</web-app>]]></programlisting>
                 </para>
             </section>
             <section>

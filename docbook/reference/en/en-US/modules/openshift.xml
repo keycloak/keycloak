@@ -23,15 +23,15 @@
         <para>
             Open
             <ulink url="https://openshift.redhat.com/app/console/applications"/>
-            and click on<literal>Add Application</literal>.
+            and click on <literal>Add Application</literal>.
             Scroll down to the bottom of the page to find the
             <literal>Code Anything</literal>
             section. Insert
             <literal>https://raw.github.com/keycloak/openshift-keycloak-cartridge/master/metadata/manifest.yml</literal>
             into the
             <literal>URL to a cartridge definition</literal>
-            field and click on<literal>Next</literal>. Fill in the
-            following form and click on<literal>Create Application</literal>.
+            field and click on <literal>Next</literal>. Fill in the
+            following form and click on <literal>Create Application</literal>.
         </para>
         <para>
             Click on <literal>Continue to the application overview page</literal>. Under the list of applications you should
@@ -56,15 +56,14 @@
     <section>
         <title>Next steps</title>
         <para>
-            The Keycloak servers homepage should show the Keycloak logo and <literal>Welcome to Keycloak</literal>.
-            There should also be a link to the <literal>Administration Console</literal>. Open that and log in using username
-            <literal>admin</literal> and password <literal>admin</literal>. On the first login you should be asked
-            to reset the password.
+            The Keycloak servers homepage shows the Keycloak logo and <literal>Welcome to Keycloak</literal>.
+            There is also a link to the <literal>Administration Console</literal>. Open that and log in using username
+            <literal>admin</literal> and password <literal>admin</literal>. On the first login you are required to change the password.
         </para>
         <tip>
             <para>
                 On OpenShift Keycloak has been configured to only accept requests over https. If you try to use http
-                you should be redirected to https.
+                you will be redirected to https.
             </para>
         </tip>
     </section>
