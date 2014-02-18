@@ -1,6 +1,5 @@
 package org.keycloak.models.jpa;
 
-import org.bouncycastle.openssl.PEMWriter;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.jpa.entities.ApplicationEntity;
 import org.keycloak.models.jpa.entities.CredentialEntity;
@@ -15,7 +14,6 @@ import org.keycloak.models.jpa.entities.UserRoleMappingEntity;
 import org.keycloak.models.jpa.entities.UserScopeMappingEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
-import org.keycloak.util.PemUtils;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
@@ -29,8 +27,7 @@ import org.keycloak.models.utils.TimeBasedOTP;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
-import java.io.IOException;
-import java.io.StringWriter;
+
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.ArrayList;
@@ -285,7 +282,7 @@ public class RealmAdapter implements RealmModel {
     @Override
     public List<RequiredCredentialModel> getRequiredApplicationCredentials() {
         List<RequiredCredentialModel> requiredCredentialModels = new ArrayList<RequiredCredentialModel>();
-        Collection<RequiredCredentialEntity> entities = realm.getRequiredApplicationCredentials();
+        Collection<RequiredCredentialEntity> entities = realm.getRequiredAppCredentials();
         if (entities == null) return requiredCredentialModels;
         for (RequiredCredentialEntity entity : entities) {
             RequiredCredentialModel model = new RequiredCredentialModel();
@@ -301,7 +298,7 @@ public class RealmAdapter implements RealmModel {
     @Override
     public List<RequiredCredentialModel> getRequiredOAuthClientCredentials() {
         List<RequiredCredentialModel> requiredCredentialModels = new ArrayList<RequiredCredentialModel>();
-        Collection<RequiredCredentialEntity> entities = realm.getRequiredOAuthClientCredentials();
+        Collection<RequiredCredentialEntity> entities = realm.getRequiredOAuthClCredentials();
         if (entities == null) return requiredCredentialModels;
         for (RequiredCredentialEntity entity : entities) {
             RequiredCredentialModel model = new RequiredCredentialModel();
@@ -321,7 +318,7 @@ public class RealmAdapter implements RealmModel {
         entity.setType(model.getType());
         entity.setFormLabel(model.getFormLabel());
         em.persist(entity);
-        realm.getRequiredOAuthClientCredentials().add(entity);
+        realm.getRequiredOAuthClCredentials().add(entity);
         em.flush();
     }
 
@@ -339,7 +336,7 @@ public class RealmAdapter implements RealmModel {
         entity.setType(model.getType());
         entity.setFormLabel(model.getFormLabel());
         em.persist(entity);
-        realm.getRequiredApplicationCredentials().add(entity);
+        realm.getRequiredAppCredentials().add(entity);
         em.flush();
     }
 
@@ -352,7 +349,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public void updateRequiredOAuthClientCredentials(Set<String> creds) {
-        Collection<RequiredCredentialEntity> relationships = realm.getRequiredOAuthClientCredentials();
+        Collection<RequiredCredentialEntity> relationships = realm.getRequiredOAuthClCredentials();
         if (relationships == null) relationships = new ArrayList<RequiredCredentialEntity>();
 
         Set<String> already = new HashSet<String>();
@@ -378,7 +375,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public void updateRequiredApplicationCredentials(Set<String> creds) {
-        Collection<RequiredCredentialEntity> relationships = realm.getRequiredApplicationCredentials();
+        Collection<RequiredCredentialEntity> relationships = realm.getRequiredAppCredentials();
         if (relationships == null) relationships = new ArrayList<RequiredCredentialEntity>();
 
         Set<String> already = new HashSet<String>();

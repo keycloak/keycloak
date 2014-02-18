@@ -16,7 +16,7 @@ import javax.persistence.NamedQuery;
 @Entity
 public class ApplicationRoleEntity extends RoleEntity {
     @ManyToOne
-    @JoinTable(name = "APPLICATION_ROLE")
+    @JoinTable(name = "ApplicationRole")
     private ApplicationEntity application;
 
     public ApplicationEntity getApplication() {

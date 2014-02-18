@@ -38,6 +38,8 @@ public class RealmEntity {
     protected boolean verifyEmail;
     protected boolean resetPasswordAllowed;
     protected boolean social;
+
+    @Column(name="updateProfileOnInitSocLogin")
     protected boolean updateProfileOnInitialSocialLogin;
     protected String passwordPolicy;
 
@@ -54,16 +56,16 @@ public class RealmEntity {
     protected String accountTheme;
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true)
-    @JoinTable(name="USER_REQUIRED_CREDENTIALS")
+    @JoinTable(name="User_RequiredCreds")
     Collection<RequiredCredentialEntity> requiredCredentials = new ArrayList<RequiredCredentialEntity>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true)
-    @JoinTable(name="APPLICATION_REQUIRED_CREDENTIALS")
-    Collection<RequiredCredentialEntity> requiredApplicationCredentials = new ArrayList<RequiredCredentialEntity>();
+    @JoinTable(name="App_RequiredCreds")
+    Collection<RequiredCredentialEntity> requiredAppCredentials = new ArrayList<RequiredCredentialEntity>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true)
-    @JoinTable(name="OAUTH_CLIENT_REQUIRED_CREDENTIALS")
-    Collection<RequiredCredentialEntity> requiredOAuthClientCredentials = new ArrayList<RequiredCredentialEntity>();
+    @JoinTable(name="OAuthClient_RequiredCreds")
+    Collection<RequiredCredentialEntity> requiredOAuthClCredentials = new ArrayList<RequiredCredentialEntity>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true)
     Collection<ApplicationEntity> applications = new ArrayList<ApplicationEntity>();
@@ -84,7 +86,7 @@ public class RealmEntity {
     protected Map<String, String> socialConfig = new HashMap<String, String>();
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
-    @JoinTable(name="REALM_DEFAULT_ROLES")
+    @JoinTable(name="RealmDefaultRoles")
     Collection<RoleEntity> defaultRoles = new ArrayList<RoleEntity>();
 
     public String getId() {
@@ -207,20 +209,20 @@ public class RealmEntity {
         this.requiredCredentials = requiredCredentials;
     }
 
-    public Collection<RequiredCredentialEntity> getRequiredApplicationCredentials() {
-        return requiredApplicationCredentials;
+    public Collection<RequiredCredentialEntity> getRequiredAppCredentials() {
+        return requiredAppCredentials;
     }
 
-    public void setRequiredApplicationCredentials(Collection<RequiredCredentialEntity> requiredApplicationCredentials) {
-        this.requiredApplicationCredentials = requiredApplicationCredentials;
+    public void setRequiredAppCredentials(Collection<RequiredCredentialEntity> requiredAppCredentials) {
+        this.requiredAppCredentials = requiredAppCredentials;
     }
 
-    public Collection<RequiredCredentialEntity> getRequiredOAuthClientCredentials() {
-        return requiredOAuthClientCredentials;
+    public Collection<RequiredCredentialEntity> getRequiredOAuthClCredentials() {
+        return requiredOAuthClCredentials;
     }
 
-    public void setRequiredOAuthClientCredentials(Collection<RequiredCredentialEntity> requiredOAuthClientCredentials) {
-        this.requiredOAuthClientCredentials = requiredOAuthClientCredentials;
+    public void setRequiredOAuthClCredentials(Collection<RequiredCredentialEntity> requiredOAuthClCredentials) {
+        this.requiredOAuthClCredentials = requiredOAuthClCredentials;
     }
 
     public Collection<ApplicationEntity> getApplications() {
