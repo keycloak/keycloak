@@ -18,7 +18,15 @@ User <b><%=request.getUserPrincipal().getName()%>
 </b> made this request.
 <h2>Customer Listing</h2>
 <%
-    java.util.List<String> list = CustomerDatabaseClient.getCustomers(request);
+    java.util.List<String> list = null;
+    try {
+        list = CustomerDatabaseClient.getCustomers(request);
+    } catch (CustomerDatabaseClient.Failure failure) {
+        out.println("There was a failure processing request.  You either didn't configure Keycloak properly, or maybe" +
+                "you just forgot to secure the database service?");
+        out.println("Status from database service invocation was: " + failure.getStatus());
+        return;
+    }
     for (String cust : list) {
         out.print("<p>");
         out.print(cust);

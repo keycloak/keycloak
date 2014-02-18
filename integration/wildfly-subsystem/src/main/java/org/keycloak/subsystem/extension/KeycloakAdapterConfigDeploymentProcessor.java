@@ -29,6 +29,7 @@ import org.jboss.logging.Logger;
 import org.jboss.metadata.javaee.spec.ParamValueMetaData;
 import org.jboss.metadata.web.jboss.JBossWebMetaData;
 import org.jboss.metadata.web.spec.LoginConfigMetaData;
+import org.keycloak.subsystem.logging.KeycloakLogger;
 
 /**
  * Pass authentication data (keycloak.json) as a servlet context param so it can be read by the KeycloakServletExtension.
@@ -58,6 +59,8 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
 
             addKeycloakAuthData(phaseContext, deploymentName, service);
         }
+
+        // FYI, Undertow Extension will find deployments that have auth-method set to KEYCLOAK
     }
 
     private void addKeycloakAuthData(DeploymentPhaseContext phaseContext, String deploymentName, KeycloakAdapterConfigService service) {
@@ -77,6 +80,7 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
         }
         loginConfig.setAuthMethod("KEYCLOAK");
         loginConfig.setRealmName(service.getRealmName(deploymentName));
+        KeycloakLogger.ROOT_LOGGER.deploymentSecured(deploymentName);
     }
 
     private void addJSONData(String json, WarMetaData warMetaData) {

@@ -94,7 +94,7 @@ public class OAuthAuthenticator {
 
     protected String getRedirectUri(String state) {
         String url = getRequestUrl();
-        log.info("sending redirect uri: " + url);
+        log.infof("sending redirect uri: %s", url);
         if (!isRequestSecure() && realmInfo.isSslRequired()) {
             int port = sslRedirectPort();
             if (port < 0) {

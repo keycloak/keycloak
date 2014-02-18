@@ -31,6 +31,7 @@ import org.jboss.metadata.web.jboss.JBossWebMetaData;
 import org.jboss.metadata.web.jboss.ValveMetaData;
 import org.jboss.metadata.web.spec.LoginConfigMetaData;
 import org.keycloak.adapters.as7.KeycloakAuthenticatorValve;
+import org.keycloak.subsystem.logging.KeycloakLogger;
 
 /**
  * Pass authentication data (keycloak.json) as a servlet context param so it can be read by the KeycloakServletExtension.
@@ -93,6 +94,7 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
         }
         loginConfig.setAuthMethod("KEYCLOAK");
         loginConfig.setRealmName(service.getRealmName(deploymentName));
+        KeycloakLogger.ROOT_LOGGER.deploymentSecured(deploymentName);
     }
 
     private void addValve(JBossWebMetaData webMetaData) {
