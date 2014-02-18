@@ -41,6 +41,7 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
+import org.keycloak.testutils.KeycloakServer;
 import org.openqa.selenium.WebDriver;
 
 import java.security.PublicKey;
@@ -55,11 +56,11 @@ public class CompositeImportRoleTest {
     public static AbstractKeycloakRule keycloakRule = new AbstractKeycloakRule(){
         @Override
         protected void configure(RealmManager manager, RealmModel adminRealm) {
-            server.importRealm(getClass().getResourceAsStream("/testcomposite.json"));
-            RealmModel realm = manager.getRealmByName("Test");
+            RealmModel realm = manager.createRealm("Test");
+            RealmRepresentation representation = KeycloakServer.loadJson(getClass().getResourceAsStream("/testcomposite.json"), RealmRepresentation.class);
+            manager.importRealm(representation, realm);
+
             realmPublicKey = realm.getPublicKey();
-
-
 
             deployServlet("app", "/app", ApplicationServlet.class);
 

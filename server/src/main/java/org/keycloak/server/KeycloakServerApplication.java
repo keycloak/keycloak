@@ -29,7 +29,6 @@ public class KeycloakServerApplication extends KeycloakApplication {
             session.getTransaction().begin();
             RealmRepresentation rep = loadJson(new FileInputStream(importRealm), RealmRepresentation.class);
             importRealm(session, rep);
-            session.getTransaction().commit();
         }
 
         String themeDir = System.getProperty("keycloak.theme.dir");

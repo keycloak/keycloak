@@ -96,11 +96,7 @@ public class AdapterTest extends AbstractModelTest {
         String id = realmModel.getId();
         System.out.println("id: " + id);
 
-        identitySession.getTransaction().commit();
-        identitySession.close();
-        identitySession = factory.createSession();
-        identitySession.getTransaction().begin();
-        realmManager = new RealmManager(identitySession);
+        commit();
         List<RealmModel> realms = identitySession.getRealms(null);
         System.out.println("num realms: " + realms.size());
         Assert.assertEquals(realms.size(), 1);

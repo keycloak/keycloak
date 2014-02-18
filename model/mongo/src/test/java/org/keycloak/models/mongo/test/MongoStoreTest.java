@@ -23,7 +23,7 @@ import java.util.List;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class MongoDBModelTest {
+public class MongoStoreTest {
 
     private static final Class<? extends MongoEntity>[] MANAGED_DATA_TYPES = (Class<? extends MongoEntity>[])new Class<?>[] {
             Person.class,

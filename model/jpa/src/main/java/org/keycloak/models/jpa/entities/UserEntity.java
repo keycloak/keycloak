@@ -1,5 +1,6 @@
 package org.keycloak.models.jpa.entities;
 
+import org.hibernate.annotations.GenericGenerator;
 import org.keycloak.models.UserModel;
 
 import javax.persistence.CascadeType;
@@ -35,7 +36,8 @@ import java.util.Set;
 @Entity
 public class UserEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GenericGenerator(name="uuid_generator", strategy="org.keycloak.models.jpa.utils.JpaIdGenerator")
+    @GeneratedValue(generator = "uuid_generator")
     protected String id;
 
     protected String loginName;

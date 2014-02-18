@@ -6,6 +6,7 @@ import java.security.Key;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.bouncycastle.openssl.PEMWriter;
@@ -25,7 +26,7 @@ public final class KeycloakModelUtils {
     private static AtomicLong counter = new AtomicLong(1);
 
     public static String generateId() {
-        return counter.getAndIncrement() + "-" + System.currentTimeMillis();
+        return UUID.randomUUID().toString();
     }
 
     public static PublicKey getPublicKey(String publicKeyPem) {

@@ -1,5 +1,9 @@
 package org.keycloak.models.jpa;
 
+import java.util.Map;
+import java.util.Properties;
+
+import org.jboss.resteasy.logging.Logger;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ModelProvider;
 
@@ -19,8 +23,21 @@ public class JpaModelProvider implements ModelProvider {
 
     @Override
     public KeycloakSessionFactory createFactory() {
-        EntityManagerFactory emf = Persistence.createEntityManagerFactory("jpa-keycloak-identity-store");
+        EntityManagerFactory emf = Persistence.createEntityManagerFactory("jpa-keycloak-identity-store", getHibernateProperties());
         return new JpaKeycloakSessionFactory(emf);
 
+    }
+
+    // Allows to override some properties in persistence.xml by system properties
+    protected Properties getHibernateProperties() {
+        Properties result = new Properties();
+
+        for (Object property : System.getProperties().keySet()) {
+            if (property.toString().startsWith("hibernate.")) {
+                String propValue = System.getProperty(property.toString());
+                result.put(property, propValue);
+            }
+        }
+        return result;
     }
 }

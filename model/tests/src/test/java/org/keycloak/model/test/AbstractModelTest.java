@@ -40,6 +40,14 @@ public class AbstractModelTest {
         factory.close();
     }
 
+    protected void commit() {
+        identitySession.getTransaction().commit();
+        identitySession.close();
+        identitySession = factory.createSession();
+        identitySession.getTransaction().begin();
+        realmManager = new RealmManager(identitySession);
+    }
+
     public static RealmRepresentation loadJson(String path) throws IOException {
         InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(path);
         ByteArrayOutputStream os = new ByteArrayOutputStream();

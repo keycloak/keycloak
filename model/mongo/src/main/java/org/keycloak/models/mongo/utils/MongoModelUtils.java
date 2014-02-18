@@ -19,14 +19,6 @@ import org.keycloak.models.mongo.keycloak.entities.UserEntity;
  */
 public class MongoModelUtils {
 
-    public static List<ObjectId> convertStringsToObjectIds(Collection<String> strings) {
-        List<ObjectId> result = new ArrayList<ObjectId>();
-        for (String id : strings) {
-            result.add(new ObjectId(id));
-        }
-        return result;
-    }
-
     // Get everything including both application and realm roles
     public static List<RoleEntity> getAllRolesOfUser(UserModel user, MongoStoreInvocationContext invContext) {
         UserEntity userEntity = ((UserAdapter)user).getUser();
@@ -37,7 +29,7 @@ public class MongoModelUtils {
         }
 
         DBObject query = new QueryBuilder()
-                .and("_id").in(convertStringsToObjectIds(roleIds))
+                .and("_id").in(roleIds)
                 .get();
         return invContext.getMongoStore().loadEntities(RoleEntity.class, query, invContext);
     }
@@ -52,7 +44,7 @@ public class MongoModelUtils {
         }
 
         DBObject query = new QueryBuilder()
-                .and("_id").in(convertStringsToObjectIds(scopeIds))
+                .and("_id").in(scopeIds)
                 .get();
         return invContext.getMongoStore().loadEntities(RoleEntity.class, query, invContext);
     }
