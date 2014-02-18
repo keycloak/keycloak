@@ -20,6 +20,20 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 public class ProductDatabaseClient {
+
+    public static class Failure extends Exception {
+        private int status;
+
+        public Failure(int status) {
+            this.status = status;
+        }
+
+        public int getStatus() {
+            return status;
+        }
+    }
+
+
     public static void redirect(HttpServletRequest request, HttpServletResponse response) {
         // The ServletOAuthClient is obtained by getting a context attribute
         // that is set in the Bootstrap context listener in this project.
@@ -36,7 +50,7 @@ public class ProductDatabaseClient {
 
     static class TypedList extends ArrayList<String> {}
 
-    public static List<String> getProducts(HttpServletRequest request) {
+    public static List<String> getProducts(HttpServletRequest request) throws Failure {
         // The ServletOAuthClient is obtained by getting a context attribute
         // that is set in the Bootstrap context listener in this project.
         // You really should come up with a better way to initialize
@@ -58,6 +72,9 @@ public class ProductDatabaseClient {
         get.addHeader("Authorization", "Bearer " + token);
         try {
             HttpResponse response = client.execute(get);
+            if (response.getStatusLine().getStatusCode() != 200) {
+                throw new Failure(response.getStatusLine().getStatusCode());
+            }
             HttpEntity entity = response.getEntity();
             InputStream is = entity.getContent();
             try {

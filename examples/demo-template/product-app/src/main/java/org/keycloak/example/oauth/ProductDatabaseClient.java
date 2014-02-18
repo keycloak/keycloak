@@ -22,7 +22,19 @@ public class ProductDatabaseClient
 {
     static class TypedList extends ArrayList<String> {}
 
-    public static List<String> getProducts(HttpServletRequest req) {
+    public static class Failure extends Exception {
+        private int status;
+
+        public Failure(int status) {
+            this.status = status;
+        }
+
+        public int getStatus() {
+            return status;
+        }
+    }
+
+    public static List<String> getProducts(HttpServletRequest req) throws Failure {
         SkeletonKeySession session = (SkeletonKeySession)req.getAttribute(SkeletonKeySession.class.getName());
         HttpClient client = new HttpClientBuilder()
                 .trustStore(session.getMetadata().getTruststore())
@@ -32,6 +44,9 @@ public class ProductDatabaseClient
             get.addHeader("Authorization", "Bearer " + session.getTokenString());
             try {
                 HttpResponse response = client.execute(get);
+                if (response.getStatusLine().getStatusCode() != 200) {
+                    throw new Failure(response.getStatusLine().getStatusCode());
+                }
                 HttpEntity entity = response.getEntity();
                 InputStream is = entity.getContent();
                 try {

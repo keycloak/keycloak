@@ -24,7 +24,7 @@ import org.jboss.logging.Messages;
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2012 Red Hat Inc.
  */
-@MessageBundle(projectCode = "TLIP")
+@MessageBundle(projectCode = "KEYCLOAK")
 public interface KeycloakMessages {
 
     /**

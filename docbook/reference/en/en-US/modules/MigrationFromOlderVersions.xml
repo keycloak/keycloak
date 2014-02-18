@@ -4,6 +4,9 @@
         <title>Migrating from 1.0 Alpha 1 to 1.0 Alpha 2</title>
         <itemizedlist>
             <listitem>
+                DB Schema has changed.  We don't have any data migration utilities yet as of Alpha 2.
+            </listitem>
+            <listitem>
                 JBoss and Wildfly adapters are now installed via a JBoss/Wildfly subsystem.  Please review the adapter
                 installation documentation.  Edits to standalone.xml are now required.
             </listitem>
