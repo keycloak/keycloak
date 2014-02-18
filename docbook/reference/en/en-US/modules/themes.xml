@@ -19,10 +19,10 @@
     <section>
         <title>Creating a theme</title>
         <para>
-            There are two types of themes in Keycloak, login and account. Login themes are used to customize the
+            There are two types of themes in Keycloak, <literal>login</literal> and <literal>account</literal>. Login themes are used to customize the
             login forms, while account themes are used to customize account management. A theme consists of:
             <itemizedlist>
-                <listitem><para>FreeMarker templates</para></listitem>
+                <listitem><para><ulink url="http://freemarker.org">FreeMarker</ulink> templates</para></listitem>
                 <listitem><para>Stylesheets</para></listitem>
                 <listitem><para>Scripts</para></listitem>
                 <listitem><para>Images</para></listitem>
@@ -97,23 +97,35 @@
             <programlisting>username=Your Username</programlisting>
         </section>
         <section>
-            <title>Templates</title>
+            <title>Modifying HTML</title>
             <para>
-                For advanced use-cases where you need to modify the html structure it is also possible to override
-                one or more of the templates. For example to override the login page create <literal>login.ftl</literal>
-                inside your theme folder. The base templates all use <literal>template.ftl</literal> to create the
-                basic structure of the page.
+                Keycloak uses <ulink url="http://freemarker.org">Freemarker Templates</ulink> in order to generate HTML.
+                These templates are defined in <literal>.ftl</literal> files and can be overriden from the base theme.
+                Check out the Freemarker website on how to form a template file.
+            </para>
+        </section>
+        <section>
+            <title>Full Example Templates</title>
+            <para>
+                Keycloak comes bundled with some default themes which you cannot view or modify.  The distribution
+                also contains full example templates which you can edit directly if you're running the Keycloak appliance
+                distro, or which you can install, if you're using the WAR distro.  The name of these full example themes
+                is <literal>template</literal> and they contain a complex example for generating all pages related
+                to login, error displaying, oauth grant pages, and user account management.
             </para>
             <para>
-                The base templates are a good reference if you need to create your own templates, they can be
-                found inside <literal>forms/common-themes/src/main/resources/theme</literal> on GitHub or in the source
-                download.
+                For the Keycloak Appliance Distro, these theme files are in the directories
+                <literal>${appliance-distro}/keycloak/standalone/configuration/themes/login/template</literal>
+                and <literal>${appliance-distro}/keycloak/standalone/configuration/themes/account/template</literal>.
+                For the WAR distro, there is a zip file in the examples directory called <literal>keycloak-example-themes-dist.zip</literal>
+                which you will need to unzip in the <literal>standalone/configuration</literal> or <literal>domain/configuration</literal>
+                directory if the JBoss or Wildfly instance you have deployed Keycloak server to.
             </para>
         </section>
     </section>
 
     <section>
-        <title>SPI</title>
+        <title>SPIs</title>
         <para>
             For full control of login forms and account management Keycloak provides a number of SPIs.
         </para>
