@@ -16,6 +16,21 @@
         </xsl:copy>
     </xsl:template>
 
+    <xsl:template match="node()[name(.)='datasources']">
+        <xsl:copy>
+            <xsl:apply-templates select="node()[name(.)='datasource']"/>
+            <datasource jndi-name="java:jboss/datasources/KeycloakDS" pool-name="KeycloakDS" enabled="true" use-java-context="true">
+                <connection-url>jdbc:h2:${jboss.server.data.dir}/keycloak;AUTO_SERVER=TRUE</connection-url>
+                <driver>h2</driver>
+                <security>
+                    <user-name>sa</user-name>
+                    <password>sa</password>
+                </security>
+            </datasource>
+            <xsl:apply-templates select="node()[name(.)='drivers']"/>
+        </xsl:copy>
+    </xsl:template>
+
     <xsl:template match="node()[name(.)='profile']">
         <xsl:copy>
             <xsl:apply-templates select="node()|@*"/>

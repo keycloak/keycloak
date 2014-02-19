@@ -18,7 +18,7 @@
         </itemizedlist>
 
     </para>
-    <section>
+    <section id="Appliance_install">
         <title>Appliance Install</title>
         <para>
             The
@@ -38,7 +38,6 @@ keycloak-appliance-dist-all-1.0-alpha-1/
             standalone.bat
             standalone/deployments/
                                    auth-server.war/
-                                   keycloak-ds.xml
 
     adapters/
         keycloak-as7-adapter-dist-1.0-alpha-1.zip
@@ -63,7 +62,7 @@ keycloak-appliance-dist-all-1.0-alpha-1/
             enter in a new password.
         </para>
     </section>
-    <section>
+    <section id="WAR_distribution_installation">
         <title>WAR Distribution Installation</title>
         <para>
             The
@@ -136,9 +135,12 @@ keycloak-war-dist-all-1.0-alpha-1/
             <title>Database Configuration</title>
             <para>
                 The datasource used to store Keycloak data is configured in the <literal>.../standalone/deployments/keycloak-ds.xml</literal>
-                file of your Keycloak Server installation.  A good thing to delete this file and move its configuration text into the
-                centrally managed <literal>.../standalone/configuration/standalone.xml</literal> file.  This will allow
-                you to manage the database connection pool from the Wildfly/JBoss adminstration console.  Here's what
+                file of your Keycloak Server installation if you used <xref linkend="WAR_distribution_installation" /> or in <literal>.../standalone/configuration/standalone.xml</literal>
+                if you used <xref linkend="Appliance_install" />. File <literal>keycloak-ds.xml</literal> is used in WAR
+                distribution, so that you have datasource available out of the box and you don't need to edit <literal>standalone.xml</literal> file.
+                However a good thing is to always delete the file  <literal>keycloak-ds.xml</literal> and move its configuration text
+                into the centrally managed <literal>standalone.xml</literal> file.
+                This will allow you to manage the database connection pool from the Wildfly/JBoss administration console.  Here's what
                 <literal>.../standalone/configuration/standalone.xml</literal> should look like after you've done this:
             </para>
             <para>
@@ -184,6 +186,90 @@ keycloak-war-dist-all-1.0-alpha-1/
                 Keycloak also runs on a Hibernate/JPA backend which is configured in the
                 <literal>.../standalone/deployments/auth-server.war/WEB-INF/classes/META-INF/persistence.xml</literal>.
                 Please see the <ulink url="http://hibernate.org/orm/documentation/">Hibernate and JPA documentation</ulink> for more information on tweaking the backend datamodel.
+            </para>
+            <section>
+                <title>Tested databases</title>
+                <para>
+                    Here is list of RDBMS databases and corresponding JDBC drivers, which were tested with Keycloak. Note that Hibernate dialect
+                    is usually set automatically according to your database, but in some cases, you must manually set the proper dialect,
+                    as the default dialect may not work correctly. You can setup dialect either by adding property <literal>hibernate.dialect</literal>
+                    to the <literal>persistence.xml</literal> file mentioned above or simply by adding system property <literal>hibernate.dialect</literal>
+                    with corresponding value. For example, if you are using MS-SQL you can start keycloak with command:
+<programlisting><![CDATA[
+./standalone.sh -Dhibernate.dialect=org.hibernate.dialect.SQLServer2008Dialect
+]]></programlisting>
+                    This command will set system property <literal>hibernate.dialect</literal> to value <literal>org.hibernate.dialect.SQLServer2008Dialect</literal>
+                    and this one will take precedence over the value from <literal>persistence.xml</literal> file.
+                    <table frame='all'><title>Tested databases</title>
+                        <tgroup cols='3' align='left' colsep='1' rowsep='1'>
+                            <thead>
+                                <row>
+                                    <entry>Database</entry>
+                                    <entry>JDBC driver</entry>
+                                    <entry>Hibernate Dialect</entry>
+                                </row>
+                            </thead>
+                            <tbody>
+                                <row>
+                                    <entry>H2 1.3.161</entry>
+                                    <entry>H2 1.3.161</entry>
+                                    <entry>auto</entry>
+                                </row>
+                                <row>
+                                    <entry>MySQL 5.5</entry>
+                                    <entry>MySQL Connector/J 5.1.25</entry>
+                                    <entry>auto</entry>
+                                </row>
+                                <row>
+                                    <entry>PostgreSQL 9.2</entry>
+                                    <entry>JDBC4 Postgresql Driver, Version 9.3-1100</entry>
+                                    <entry>auto</entry>
+                                </row>
+                                <row>
+                                    <entry>Oracle 11g R1</entry>
+                                    <entry>Oracle JDBC Driver v11.1.0.7</entry>
+                                    <entry>auto</entry>
+                                </row>
+                                <row>
+                                    <entry>Microsoft SQL Server 2012</entry>
+                                    <entry>Microsoft SQL Server JDBC Driver 4.0.2206.100</entry>
+                                    <entry>org.hibernate.dialect.SQLServer2008Dialect</entry>
+                                </row>
+                                <row>
+                                    <entry>Sybase ASE 15.7</entry>
+                                    <entry>JDBC(TM)/7.07 ESD #5 (Build 26792)/P/EBF20686</entry>
+                                    <entry>auto</entry>
+                                </row>
+                            </tbody>
+                        </tgroup>
+                    </table>
+                </para>
+            </section>
+        </section>
+        <section>
+            <title>MongoDB based model</title>
+            <para>
+                Keycloak provides <ulink url="http://www.mongodb.com">MongoDB</ulink> based model implementation, which means that your identity data will be saved
+                in MongoDB instead of traditional RDBMS. To setup it, you need to add few system properties when running Keycloak.
+                First you need to specify that you want to use <literal>mongo</literal> instead of default <literal>jpa</literal> model, and you may also specify
+                host, port and name of mongo database. So you can start keycloak with the command like this:
+<programlisting><![CDATA[
+./standalone.sh -Dkeycloak.model=mongo -Dkeycloak.mongo.host=localhost
+-Dkeycloak.mongo.port=27017 -Dkeycloak.mongo.db=keycloak
+]]></programlisting>
+                Note that when you install MongoDB on your laptop, it's usually on localhost/270717 by default. That's why properties
+                <literal>keycloak.mongo.host</literal> and <literal>keycloak.mongo.port</literal> are not mandatory, but they already have
+                default values <literal>localhost</literal> and <literal>27017</literal> . Similarly property <literal>keycloak.mongo.db</literal>
+                has default value <literal>keycloak</literal> for name of underlying database. So the example above could be simplified like:
+<programlisting><![CDATA[
+./standalone.sh -Dkeycloak.model=mongo
+]]></programlisting>
+                If you switch to Mongo model, it could be a good idea to remove RDBMS related stuff from your distribution to reduce startup time and memory footprint.
+                To do it, you need to:
+                <itemizedlist>
+                    <listitem>Comment/remove datasource <literal>KeycloakDS</literal> from <literal>standalone/configuration/standalone.xml</literal> or <literal>standalone/deployments/keycloak-ds.xml</literal></listitem>
+                    <listitem>Remove file <literal>standalone/deployments/auth-server.war/WEB-INF/classes/META-INF/persistence.xml</literal></listitem>
+                </itemizedlist>
             </para>
         </section>
         <section>
