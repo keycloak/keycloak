@@ -198,7 +198,7 @@ public class AuthenticationManager {
             return auth;
         } catch (VerificationException e) {
             logger.debug("Failed to verify identity cookie", e);
-            expireIdentityCookie(realm, uriInfo);
+            expireCookie(cookie.getName(), cookie.getPath());
         }
         return null;
     }
