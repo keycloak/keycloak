@@ -37,7 +37,7 @@ public class ApplicationEntity {
     Collection<ApplicationRoleEntity> roles = new ArrayList<ApplicationRoleEntity>();
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
-    @JoinTable(name="APPLICATION_DEFAULT_ROLES")
+    @JoinTable(name="ApplicationDefaultRoles")
     Collection<RoleEntity> defaultRoles = new ArrayList<RoleEntity>();
 
     public String getId() {
