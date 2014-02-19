@@ -25,8 +25,5 @@
         <move file="target/examples/unconfigured-demo/customer-app/src/main/webapp/WEB-INF/web.xml.unconfigured" tofile="target/examples/unconfigured-demo/customer-app/src/main/webapp/WEB-INF/web.xml"/>
         <move file="target/examples/unconfigured-demo/product-app/src/main/webapp/WEB-INF/web.xml.unconfigured" tofile="target/examples/unconfigured-demo/product-app/src/main/webapp/WEB-INF/web.xml"/>
         <move file="target/examples/unconfigured-demo/database-service/src/main/webapp/WEB-INF/web.xml.unconfigured" tofile="target/examples/unconfigured-demo/database-service/src/main/webapp/WEB-INF/web.xml"/>
-        <copy todir="target/examples/themes" overwrite="true">
-            <fileset dir="../../examples/themes"/>
-        </copy>
     </target>
 </project>

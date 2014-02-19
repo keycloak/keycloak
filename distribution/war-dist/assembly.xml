@@ -23,6 +23,14 @@
             </includes>
             <outputDirectory>adapters</outputDirectory>
         </dependencySet>
+        <dependencySet>
+            <unpack>false</unpack>
+            <useTransitiveDependencies>false</useTransitiveDependencies>
+            <includes>
+                <include>org.keycloak:keycloak-example-themes-dist:zip</include>
+            </includes>
+            <outputDirectory>examples</outputDirectory>
+        </dependencySet>
     </dependencySets>
     <!--
     <moduleSets>

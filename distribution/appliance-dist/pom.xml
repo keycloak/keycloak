@@ -70,6 +70,13 @@
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-example-themes-dist</artifactId>
+                                    <version>${project.version}</version>
+                                    <type>zip</type>
+                                    <outputDirectory>${project.build.directory}/unpacked</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
                                     <artifactId>keycloak-wildfly-adapter-dist</artifactId>
                                     <version>${project.version}</version>
                                     <type>zip</type>

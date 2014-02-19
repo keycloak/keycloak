@@ -1,0 +1,39 @@
+<project name="example-dist" basedir="." default="all">
+
+    <target name="all">
+        <delete dir="target/themes"/>
+        <copy todir="target/themes/login/template" overwrite="true">
+            <fileset dir="../../forms/common-themes/src/main/resources/theme/login/base">
+            </fileset>
+        </copy>
+        <copy todir="target/themes/login/template" overwrite="true">
+            <fileset dir="../../forms/common-themes/src/main/resources/theme/login/patternfly">
+            </fileset>
+        </copy>
+        <copy tofile="target/themes/login/template/theme.properties" file="../../forms/common-themes/src/main/resources/theme/login/patternfly/theme.properties" overwrite="true">
+           <filterchain>
+               <linecontains negate="true">
+                   <contains value="parent"/>
+               </linecontains>
+           </filterchain>
+        </copy>
+        <copy todir="target/themes/account/template" overwrite="true">
+            <fileset dir="../../forms/common-themes/src/main/resources/theme/account/base">
+            </fileset>
+        </copy>
+        <copy todir="target/themes/account/template" overwrite="true">
+            <fileset dir="../../forms/common-themes/src/main/resources/theme/account/patternfly">
+            </fileset>
+        </copy>
+        <copy tofile="target/themes/account/template/theme.properties" file="../../forms/common-themes/src/main/resources/theme/account/patternfly/theme.properties" overwrite="true">
+            <filterchain>
+                <linecontains negate="true">
+                    <contains value="parent"/>
+                </linecontains>
+            </filterchain>
+        </copy>
+        <copy todir="target/themes" overwrite="true">
+            <fileset dir="../../examples/themes"/>
+        </copy>
+    </target>
+</project>

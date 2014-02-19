@@ -31,6 +31,7 @@
         <module>eap6-adapter-zip</module>
         <module>wildfly-adapter-zip</module>
         <module>examples-docs-zip</module>
+        <module>theme-template-zip</module>
         <module>war-zip</module>
         <module>war-dist</module>
         <module>appliance-dist</module>

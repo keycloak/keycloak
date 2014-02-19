@@ -1,0 +1,20 @@
+<assembly>
+    <id>war-dist</id>
+
+    <formats>
+        <format>zip</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+
+    <fileSets>
+        <fileSet>
+            <directory>target/themes</directory>
+            <outputDirectory>themes</outputDirectory>
+            <excludes>
+                <exclude>**/.svn/**</exclude>
+                <exclude>**/target/**</exclude>
+                <exclude>**/*.iml</exclude>
+            </excludes>
+        </fileSet>
+    </fileSets>
+</assembly>
