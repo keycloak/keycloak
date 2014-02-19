@@ -34,6 +34,9 @@
         <fileSet>
             <directory>${project.build.directory}/unpacked/deployments</directory>
             <outputDirectory>keycloak/standalone/deployments</outputDirectory>
+            <excludes>
+                <exclude>keycloak-ds.xml</exclude>
+            </excludes>
         </fileSet>
         <fileSet>
             <directory>${project.build.directory}/unpacked/themes</directory>

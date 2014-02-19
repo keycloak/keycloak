@@ -18,7 +18,7 @@
         </itemizedlist>
 
     </para>
-    <section>
+    <section id="Appliance_install">
         <title>Appliance Install</title>
         <para>
             The
@@ -38,7 +38,6 @@ keycloak-appliance-dist-all-1.0-alpha-1/
             standalone.bat
             standalone/deployments/
                                    auth-server.war/
-                                   keycloak-ds.xml
 
     adapters/
         keycloak-as7-adapter-dist-1.0-alpha-1.zip
@@ -63,7 +62,7 @@ keycloak-appliance-dist-all-1.0-alpha-1/
             enter in a new password.
         </para>
     </section>
-    <section>
+    <section id="WAR_distribution_installation">
         <title>WAR Distribution Installation</title>
         <para>
             The
@@ -136,9 +135,12 @@ keycloak-war-dist-all-1.0-alpha-1/
             <title>Database Configuration</title>
             <para>
                 The datasource used to store Keycloak data is configured in the <literal>.../standalone/deployments/keycloak-ds.xml</literal>
-                file of your Keycloak Server installation.  A good thing to delete this file and move its configuration text into the
-                centrally managed <literal>.../standalone/configuration/standalone.xml</literal> file.  This will allow
-                you to manage the database connection pool from the Wildfly/JBoss adminstration console.  Here's what
+                file of your Keycloak Server installation if you used <xref linkend="WAR_distribution_installation" /> or in <literal>.../standalone/configuration/standalone.xml</literal>
+                if you used <xref linkend="Appliance_install" />. File <literal>keycloak-ds.xml</literal> is used in WAR
+                distribution, so that you have datasource available out of the box and you don't need to edit <literal>standalone.xml</literal> file.
+                However a good thing is to always delete the file  <literal>keycloak-ds.xml</literal> and move its configuration text
+                into the centrally managed <literal>standalone.xml</literal> file.
+                This will allow you to manage the database connection pool from the Wildfly/JBoss administration console.  Here's what
                 <literal>.../standalone/configuration/standalone.xml</literal> should look like after you've done this:
             </para>
             <para>
