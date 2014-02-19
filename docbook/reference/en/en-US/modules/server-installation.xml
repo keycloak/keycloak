@@ -197,8 +197,7 @@ keycloak-war-dist-all-1.0-alpha-1/
                     with corresponding value. For example, if you are using MS-SQL you can start keycloak with command:
 <programlisting><![CDATA[
 ./standalone.sh -Dhibernate.dialect=org.hibernate.dialect.SQLServer2008Dialect
-]]>
-</programlisting>
+]]></programlisting>
                     This command will set system property <literal>hibernate.dialect</literal> to value <literal>org.hibernate.dialect.SQLServer2008Dialect</literal>
                     and this one will take precedence over the value from <literal>persistence.xml</literal> file.
                     <table frame='all'><title>Tested databases</title>
@@ -246,6 +245,32 @@ keycloak-war-dist-all-1.0-alpha-1/
                     </table>
                 </para>
             </section>
+        </section>
+        <section>
+            <title>MongoDB based model</title>
+            <para>
+                Keycloak provides <ulink url="http://www.mongodb.com">MongoDB</ulink> based model implementation, which means that your identity data will be saved
+                in MongoDB instead of traditional RDBMS. To setup it, you need to add few system properties when running Keycloak.
+                First you need to specify that you want to use <literal>mongo</literal> instead of default <literal>jpa</literal> model, and you may also specify
+                host, port and name of mongo database. So you can start keycloak with the command like this:
+<programlisting><![CDATA[
+./standalone.sh -Dkeycloak.model=mongo -Dkeycloak.mongo.host=localhost
+-Dkeycloak.mongo.port=27017 -Dkeycloak.mongo.db=keycloak
+]]></programlisting>
+                Note that when you install MongoDB on your laptop, it's usually on localhost/270717 by default. That's why properties
+                <literal>keycloak.mongo.host</literal> and <literal>keycloak.mongo.port</literal> are not mandatory, but they already have
+                default values <literal>localhost</literal> and <literal>27017</literal> . Similarly property <literal>keycloak.mongo.db</literal>
+                has default value <literal>keycloak</literal> for name of underlying database. So the example above could be simplified like:
+<programlisting><![CDATA[
+./standalone.sh -Dkeycloak.model=mongo
+]]></programlisting>
+                If you switch to Mongo model, it could be a good idea to remove RDBMS related stuff from your distribution to reduce startup time and memory footprint.
+                To do it, you need to:
+                <itemizedlist>
+                    <listitem>Comment/remove datasource <literal>KeycloakDS</literal> from <literal>standalone/configuration/standalone.xml</literal> or <literal>standalone/deployments/keycloak-ds.xml</literal></listitem>
+                    <listitem>Remove file <literal>standalone/deployments/auth-server.war/WEB-INF/classes/META-INF/persistence.xml</literal></listitem>
+                </itemizedlist>
+            </para>
         </section>
         <section>
             <title>SSL/HTTPS Setup</title>

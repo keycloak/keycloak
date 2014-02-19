@@ -160,6 +160,22 @@
             <artifactId>resteasy-jackson-provider</artifactId>
             <version>${resteasy.version}</version>
         </dependency>
+
+        <!-- Mongo dependencies -->
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-model-mongo</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>mongo-java-driver</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.picketlink</groupId>
+            <artifactId>picketlink-common</artifactId>
+        </dependency>
+
     </dependencies>
 
     <build>
