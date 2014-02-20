@@ -111,11 +111,11 @@ var Keycloak = function (options) {
         var prompt = window.oauth.prompt;
 
         if (code) {
-            var params = 'code=' + code + '&client_id=' + encodeURIComponent(options.clientId) + '&secret=' + encodeURIComponent(options.clientSecret);
+            var params = 'code=' + code;
             var url = getRealmUrl() + '/tokens/access/codes';
 
             var req = new XMLHttpRequest();
-            req.open('POST', url, true);
+            req.open('POST', url, true, options.clientId, options.clientSecret);
             req.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
 
             req.onreadystatechange = function () {

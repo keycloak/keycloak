@@ -28,9 +28,11 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.OAuthFlows;
 import org.keycloak.services.validation.Validation;
+import org.keycloak.util.BasicAuthHelper;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.NotAcceptableException;
 import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.POST;
@@ -326,7 +328,7 @@ public class TokenService {
     @Path("access/codes")
     @POST
     @Produces("application/json")
-    public Response accessCodeToToken(final MultivaluedMap<String, String> formData) {
+    public Response accessCodeToToken(@HeaderParam(HttpHeaders.AUTHORIZATION) String authorizationHeader, final MultivaluedMap<String, String> formData) {
         logger.debug("accessRequest <---");
 
         if (!checkSsl()) {
@@ -337,23 +339,17 @@ public class TokenService {
             throw new NotAuthorizedException("Realm not enabled");
         }
 
-        String code = formData.getFirst("code");
-        if (code == null) {
-            logger.debug("code not specified");
-            Map<String, String> error = new HashMap<String, String>();
-            error.put("error", "invalid_request");
-            error.put("error_description", "code not specified");
-            return Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build();
+        if (authorizationHeader == null) {
+            throw new NotAuthorizedException("No Authorization header to authenticate client", "Basic realm=\"" + realm.getName() + "\"");
+        }
 
+        String[] usernameSecret = BasicAuthHelper.parseHeader(authorizationHeader);
+        if (usernameSecret == null) {
+            throw new NotAuthorizedException("No Authorization header to authenticate client", "Basic realm=\"" + realm.getName() + "\"");
         }
-        String client_id = formData.getFirst("client_id");
-        if (client_id == null) {
-            logger.debug("client_id not specified");
-            Map<String, String> error = new HashMap<String, String>();
-            error.put("error", "invalid_request");
-            error.put("error_description", "client_id not specified");
-            return Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build();
-        }
+
+        String client_id = usernameSecret[0];
+        String clientSecret = usernameSecret[1];
         UserModel client = realm.getUser(client_id);
         if (client == null) {
             logger.debug("Could not find user");
@@ -371,11 +367,20 @@ public class TokenService {
             return Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build();
         }
 
-        AuthenticationStatus status = authManager.authenticateForm(realm, client, formData);
-        if (status != AuthenticationStatus.SUCCESS) {
+        if (!realm.validateSecret(client, clientSecret)) {
             Map<String, String> error = new HashMap<String, String>();
             error.put("error", "unauthorized_client");
             return Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build();
+        }
+
+        String code = formData.getFirst("code");
+        if (code == null) {
+            logger.debug("code not specified");
+            Map<String, String> error = new HashMap<String, String>();
+            error.put("error", "invalid_request");
+            error.put("error_description", "code not specified");
+            return Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build();
+
         }
 
         JWSInput input = new JWSInput(code);
