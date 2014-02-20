@@ -7,6 +7,7 @@
                 <exclude name="**/target/**"/>
                 <exclude name="**/*.iml"/>
                 <exclude name="**/*.unconfigured"/>
+                <exclude name="**/subsystem-config.xml"/>
             </fileset>
         </copy>
         <copy todir="target/examples/unconfigured-demo" overwrite="true">
@@ -18,7 +19,6 @@
                 <exclude name="**/target/**"/>
                 <exclude name="**/*.iml"/>
                 <exclude name="**/README.md"/>
-                <exclude name="**/subsystem-config.xml"/>
             </fileset>
         </copy>
         <move file="target/examples/unconfigured-demo/README.md.unconfigured" tofile="target/examples/unconfigured-demo/README.md"/>
