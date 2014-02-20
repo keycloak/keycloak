@@ -35,6 +35,7 @@ import org.json.JSONObject;
 import org.junit.Assert;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
+import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.representations.SkeletonKeyScope;
 import org.keycloak.representations.SkeletonKeyToken;
@@ -121,11 +122,12 @@ public class OAuthClient {
         if (redirectUri != null) {
             parameters.add(new BasicNameValuePair("redirect_uri", redirectUri));
         }
-        if (clientId != null) {
-            parameters.add(new BasicNameValuePair("client_id", clientId));
+        if (clientId != null && password != null) {
+            String authorization = BasicAuthHelper.createHeader(clientId, password);
+            post.setHeader("Authorization", authorization);
         }
-        if (password != null) {
-            parameters.add(new BasicNameValuePair("secret", password));
+        else if (clientId != null) {
+            parameters.add(new BasicNameValuePair("client_id", clientId));
         }
 
         UrlEncodedFormEntity formEntity = null;

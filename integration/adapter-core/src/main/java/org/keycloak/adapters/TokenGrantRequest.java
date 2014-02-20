@@ -10,6 +10,7 @@ import org.apache.http.message.BasicNameValuePair;
 import org.keycloak.adapters.config.RealmConfiguration;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.KeycloakUriBuilder;
 import org.keycloak.util.StreamUtil;
@@ -62,11 +63,16 @@ public class TokenGrantRequest {
         }
         formparams.add(new BasicNameValuePair("grant_type", "authorization_code"));
         formparams.add(new BasicNameValuePair("code", code));
-        formparams.add(new BasicNameValuePair("client_id", client_id));
         formparams.add(new BasicNameValuePair("redirect_uri", redirectUri));
         HttpResponse response = null;
         UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");
         HttpPost post = new HttpPost(codeUrl);
+        String clientSecret = credentials.get(CredentialRepresentation.SECRET);
+        if (clientSecret != null) {
+            String authorization = BasicAuthHelper.createHeader(client_id, clientSecret);
+            post.setHeader("Authorization", authorization);
+        }
+
         post.setEntity(form);
         response = client.execute(post);
         int status = response.getStatusLine().getStatusCode();

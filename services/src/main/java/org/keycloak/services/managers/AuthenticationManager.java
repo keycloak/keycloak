@@ -245,6 +245,7 @@ public class AuthenticationManager {
         }
     }
 
+
     public AuthenticationStatus authenticateForm(RealmModel realm, UserModel user, MultivaluedMap<String, String> formData) {
         if (user == null) {
             logger.debug("Not Authenticated! Incorrect user name");
