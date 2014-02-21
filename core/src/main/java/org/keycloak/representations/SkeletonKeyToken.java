@@ -50,9 +50,6 @@ public class SkeletonKeyToken extends JsonWebToken {
         }
     }
 
-    @JsonProperty("issuedFor")
-    public String issuedFor;
-
     @JsonProperty("trusted-certs")
     protected Set<String> trustedCertificates;
 
@@ -169,17 +166,10 @@ public class SkeletonKeyToken extends JsonWebToken {
         this.trustedCertificates = trustedCertificates;
     }
 
-    /**
-     * OAuth client the token was issued for.
-     *
-     * @return
-     */
-    public String getIssuedFor() {
-        return issuedFor;
+    @Override
+    public SkeletonKeyToken issuedFor(String issuedFor) {
+        return (SkeletonKeyToken)super.issuedFor(issuedFor);
     }
 
-    public SkeletonKeyToken issuedFor(String issuedFor) {
-        this.issuedFor = issuedFor;
-        return this;
-    }
+
 }
