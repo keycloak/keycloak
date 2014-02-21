@@ -8,11 +8,11 @@
         <itemizedlist>
 
             <listitem>
-                keycloak-appliance-dist-all-1.0-alpha-1.zip
+                keycloak-appliance-dist-all-1.0-alpha-3.zip
             </listitem>
 
             <listitem>
-                keycloak-war-dist-all-1.0-alpha-1.zip
+                keycloak-war-dist-all-1.0-alpha-3.zip
             </listitem>
 
         </itemizedlist>
@@ -31,7 +31,7 @@
 
         <para>
 <programlisting>
-keycloak-appliance-dist-all-1.0-alpha-1/
+keycloak-appliance-dist-all-1.0-alpha-3/
     keycloak/
         bin/
             standalone.sh
@@ -40,9 +40,9 @@ keycloak-appliance-dist-all-1.0-alpha-1/
                                    auth-server.war/
 
     adapters/
-        keycloak-as7-adapter-dist-1.0-alpha-1.zip
-        keycloak-eap6-adapter-dist-1.0-alpha-1.zip
-        keycloak-wildfly-adapter-dist-1.0-alpha-1.zip
+        keycloak-as7-adapter-dist-1.0-alpha-3.zip
+        keycloak-eap6-adapter-dist-1.0-alpha-3.zip
+        keycloak-wildfly-adapter-dist-1.0-alpha-3.zip
     examples/
     docs/
 </programlisting>
@@ -78,14 +78,14 @@ keycloak-appliance-dist-all-1.0-alpha-1/
         </para>
         <para>
 <programlisting>
-keycloak-war-dist-all-1.0-alpha-1/
+keycloak-war-dist-all-1.0-alpha-3/
     deployments/
         auth-server.war/
         keycloak-ds.xml
     adapters/
-        keycloak-as7-adapter-dist-1.0-alpha-1.zip
-        keycloak-eap6-adapter-dist-1.0-alpha-1.zip
-        keycloak-wildfly-adapter-dist-1.0-alpha-1.zip
+        keycloak-as7-adapter-dist-1.0-alpha-3.zip
+        keycloak-eap6-adapter-dist-1.0-alpha-3.zip
+        keycloak-wildfly-adapter-dist-1.0-alpha-3.zip
     examples/
     docs/
 </programlisting>
@@ -96,7 +96,7 @@ keycloak-war-dist-all-1.0-alpha-1/
         </para>
         <para>
 <programlisting>
-    $ cd keycloak-war-dist-all-1.0-alpha-1
+    $ cd keycloak-war-dist-all-1.0-alpha-3
     $ cp -r deployments $JBOSS_HOME/standalone
 </programlisting>
         </para>
