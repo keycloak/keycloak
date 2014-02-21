@@ -18,8 +18,6 @@ public interface LoginForms {
 
     public Response createPasswordReset();
 
-    public Response createUsernameReminder();
-
     public Response createLoginTotp();
 
     public Response createRegistration();

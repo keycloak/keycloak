@@ -8,10 +8,10 @@
         <form id="kc-reset-password-form" class="${properties.kcFormClass!}" action="${url.loginPasswordResetUrl}" method="post">
             <div class="${properties.kcFormGroupClass!}">
                 <div class="${properties.kcLabelWrapperClass!}">
-                    <label for="email" class="${properties.kcLabelClass!}">${rb.email}</label>
+                    <label for="username" class="${properties.kcLabelClass!}">${rb.usernameOrEmail}</label>
                 </div>
                 <div class="${properties.kcInputWrapperClass!}">
-                    <input type="text" id="email" name="email" class="${properties.kcInputClass!}" />
+                    <input type="text" id="username" name="username" class="${properties.kcInputClass!}" />
                 </div>
             </div>
 
