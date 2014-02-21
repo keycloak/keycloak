@@ -2,7 +2,7 @@
     "id": "Test",
     "realm": "Test",
     "enabled": true,
-    "tokenLifespan": 600,
+    "accessTokenLifespan": 600,
     "accessCodeLifespan": 600,
     "accessCodeLifespanUserAction": 600,
     "sslNotRequired": true,

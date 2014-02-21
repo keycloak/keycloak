@@ -53,13 +53,11 @@ public class PublicRealmResource {
         String authUri = TokenService.loginPageUrl(uriInfo).build(realm.getName()).toString();
         String codeUri = TokenService.accessCodeToTokenUrl(uriInfo).build(realm.getName()).toString();
         String grantUrl = TokenService.grantAccessTokenUrl(uriInfo).build(realm.getName()).toString();
-        String idGrantUrl = TokenService.grantIdentityTokenUrl(uriInfo).build(realm.getName()).toString();
 
         html.append("<html><body><h1>Realm: ").append(realm.getName()).append("</h1>");
         html.append("<p>auth: ").append(authUri).append("</p>");
         html.append("<p>code: ").append(codeUri).append("</p>");
         html.append("<p>grant: ").append(grantUrl).append("</p>");
-        html.append("<p>identity grant: ").append(idGrantUrl).append("</p>");
         html.append("<p>public key: ").append(realm.getPublicKeyPem()).append("</p>");
         html.append("</body></html>");
 
@@ -77,8 +75,6 @@ public class PublicRealmResource {
         rep.setAuthorizationUrl(TokenService.loginPageUrl(uriInfo).build(realm.getName()).toString());
         rep.setCodeUrl(TokenService.accessCodeToTokenUrl(uriInfo).build(realm.getName()).toString());
         rep.setGrantUrl(TokenService.grantAccessTokenUrl(uriInfo).build(realm.getName()).toString());
-        String idGrantUrl = TokenService.grantIdentityTokenUrl(uriInfo).build(realm.getName()).toString();
-        rep.setIdentityGrantUrl(idGrantUrl);
         return rep;
     }
 

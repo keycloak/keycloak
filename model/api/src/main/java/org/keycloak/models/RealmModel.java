@@ -38,9 +38,13 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
 
     void setResetPasswordAllowed(boolean resetPasswordAllowed);
 
-    int getTokenLifespan();
+    int getAccessTokenLifespan();
 
-    void setTokenLifespan(int tokenLifespan);
+    void setAccessTokenLifespan(int tokenLifespan);
+
+    int getRefreshTokenLifespan();
+
+    void setRefreshTokenLifespan(int tokenLifespan);
 
     int getAccessCodeLifespan();
 

@@ -19,6 +19,19 @@ public class AccessToken extends JsonWebToken {
         @JsonProperty("verify_caller")
         protected Boolean verifyCaller;
 
+        public Access() {
+        }
+
+        public Access clone() {
+            Access access = new Access();
+            access.verifyCaller = verifyCaller;
+            if (roles != null) {
+                access.roles = new HashSet<String>();
+                access.roles.addAll(roles);
+            }
+            return access;
+        }
+
         public Set<String> getRoles() {
             return roles;
         }

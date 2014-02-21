@@ -11,13 +11,13 @@
         <form class="form-horizontal" name="realmForm" novalidate>
             <fieldset class="border-top">
                 <div class="form-group input-select">
-                    <label class="col-sm-2 control-label" for="tokenLifespan">Token lifespan</label>
+                    <label class="col-sm-2 control-label" for="accessTokenLifespan">Access Token lifespan</label>
                     <div class="col-sm-10">
                         <div class="row">
                             <div class="col-sm-2">
                                 <input class="form-control" type="number" required min="1"
-                                       max="31536000" data-ng-model="realm.tokenLifespan"
-                                       id="tokenLifespan" name="tokenLifespan"/>
+                                       max="31536000" data-ng-model="realm.accessTokenLifespan"
+                                       id="accessTokenLifespan" name="accessTokenLifespan"/>
                             </div>
                             <div class="col-sm-2 select-kc">
                                 <select name="tokenLifespanUnit" data-ng-model="realm.tokenLifespanUnit" >

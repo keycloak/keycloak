@@ -22,7 +22,7 @@ public class ModelTest extends AbstractModelTest {
         realm.setSocial(true);
         realm.setSslNotRequired(true);
         realm.setVerifyEmail(true);
-        realm.setTokenLifespan(1000);
+        realm.setAccessTokenLifespan(1000);
         realm.setPasswordPolicy(new PasswordPolicy("length"));
         realm.setAccessCodeLifespan(1001);
         realm.setAccessCodeLifespanUserAction(1002);
@@ -55,7 +55,7 @@ public class ModelTest extends AbstractModelTest {
         Assert.assertEquals(expected.isSocial(), actual.isSocial());
         Assert.assertEquals(expected.isSslNotRequired(), actual.isSslNotRequired());
         Assert.assertEquals(expected.isVerifyEmail(), actual.isVerifyEmail());
-        Assert.assertEquals(expected.getTokenLifespan(), actual.getTokenLifespan());
+        Assert.assertEquals(expected.getAccessTokenLifespan(), actual.getAccessTokenLifespan());
 
         Assert.assertEquals(expected.getAccessCodeLifespan(), actual.getAccessCodeLifespan());
         Assert.assertEquals(expected.getAccessCodeLifespanUserAction(), actual.getAccessCodeLifespanUserAction());

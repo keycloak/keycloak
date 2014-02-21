@@ -43,9 +43,10 @@ public class RealmEntity {
     protected boolean updateProfileOnInitialSocialLogin;
     protected String passwordPolicy;
 
-    protected int tokenLifespan;
+    protected int accessTokenLifespan;
     protected int accessCodeLifespan;
     protected int accessCodeLifespanUserAction;
+    protected int refreshTokenLifespan;
 
     @Column(length = 2048)
     protected String publicKeyPem;
@@ -161,12 +162,20 @@ public class RealmEntity {
         this.updateProfileOnInitialSocialLogin = updateProfileOnInitialSocialLogin;
     }
 
-    public int getTokenLifespan() {
-        return tokenLifespan;
+    public int getRefreshTokenLifespan() {
+        return refreshTokenLifespan;
     }
 
-    public void setTokenLifespan(int tokenLifespan) {
-        this.tokenLifespan = tokenLifespan;
+    public void setRefreshTokenLifespan(int refreshTokenLifespan) {
+        this.refreshTokenLifespan = refreshTokenLifespan;
+    }
+
+    public int getAccessTokenLifespan() {
+        return accessTokenLifespan;
+    }
+
+    public void setAccessTokenLifespan(int accessTokenLifespan) {
+        this.accessTokenLifespan = accessTokenLifespan;
     }
 
     public int getAccessCodeLifespan() {

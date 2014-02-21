@@ -11,8 +11,6 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 
-import java.util.UUID;
-
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -48,7 +46,7 @@ public class ApplianceBootstrap {
         realm.addRequiredCredential(CredentialRepresentation.PASSWORD);
         realm.addRequiredOAuthClientCredential(CredentialRepresentation.PASSWORD);
         realm.addRequiredResourceCredential(CredentialRepresentation.PASSWORD);
-        realm.setTokenLifespan(300);
+        realm.setAccessTokenLifespan(300);
         realm.setAccessCodeLifespan(60);
         realm.setAccessCodeLifespanUserAction(300);
         realm.setSslNotRequired(true);

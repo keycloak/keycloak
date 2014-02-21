@@ -29,6 +29,7 @@ import org.keycloak.services.resources.flows.OAuthFlows;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.util.BasicAuthHelper;
 
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
@@ -108,11 +109,6 @@ public class TokenService {
 
     }
 
-    public static UriBuilder grantIdentityTokenUrl(UriInfo uriInfo) {
-        return tokenServiceBaseUrl(uriInfo).path(TokenService.class, "grantIdentityToken");
-
-    }
-
     public static UriBuilder loginPageUrl(UriInfo uriInfo) {
         return tokenServiceBaseUrl(uriInfo).path(TokenService.class, "loginPage");
     }
@@ -129,44 +125,18 @@ public class TokenService {
         return tokenServiceBaseUrl(uriInfo).path(TokenService.class, "processOAuth");
     }
 
-    @Path("grants/identity-token")
-    @POST
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response grantIdentityToken(final MultivaluedMap<String, String> form) {
-        if (!checkSsl()) {
-            throw new NotAcceptableException("HTTPS required");
-        }
-
-        String username = form.getFirst(AuthenticationManager.FORM_USERNAME);
-        if (username == null) {
-            throw new NotAuthorizedException("No user");
-        }
-        if (!realm.isEnabled()) {
-            throw new NotAuthorizedException("Disabled realm");
-        }
-        UserModel user = realm.getUser(username);
-
-        AuthenticationStatus status = authManager.authenticateForm(realm, user, form);
-        if (status != AuthenticationStatus.SUCCESS) {
-            throw new NotAuthorizedException(status);
-        }
-
-        tokenManager = new TokenManager();
-        AccessToken token = authManager.createIdentityToken(realm, user);
-        String encoded = tokenManager.encodeToken(realm, token);
-        AccessTokenResponse res = accessTokenResponse(token, encoded);
-        return Response.ok(res, MediaType.APPLICATION_JSON_TYPE).build();
-    }
-
     @Path("grants/access")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response grantAccessToken(final MultivaluedMap<String, String> form) {
+    public Response grantAccessToken(final @HeaderParam(HttpHeaders.AUTHORIZATION) String authorizationHeader,
+                                     final MultivaluedMap<String, String> form) {
         if (!checkSsl()) {
             throw new NotAcceptableException("HTTPS required");
         }
+
+        UserModel client = authorizeClient(authorizationHeader);
+
 
         String username = form.getFirst(AuthenticationManager.FORM_USERNAME);
         if (username == null) {
@@ -185,7 +155,8 @@ public class TokenService {
         if (authManager.authenticateForm(realm, user, form) != AuthenticationStatus.SUCCESS) {
             throw new NotAuthorizedException("Auth failed");
         }
-        AccessToken token = tokenManager.createAccessToken(realm, user);
+        String scope = form.getFirst("scope");
+        AccessToken token = tokenManager.createClientAccessToken(scope, realm, client, user);
         String encoded = tokenManager.encodeToken(realm, token);
         AccessTokenResponse res = accessTokenResponse(token, encoded);
         return Response.ok(res, MediaType.APPLICATION_JSON_TYPE).build();
@@ -341,47 +312,14 @@ public class TokenService {
             throw new NotAuthorizedException("Realm not enabled");
         }
 
-        if (authorizationHeader == null) {
-            throw new NotAuthorizedException("No Authorization header to authenticate client", "Basic realm=\"" + realm.getName() + "\"");
-        }
-
-        String[] usernameSecret = BasicAuthHelper.parseHeader(authorizationHeader);
-        if (usernameSecret == null) {
-            throw new NotAuthorizedException("No Authorization header to authenticate client", "Basic realm=\"" + realm.getName() + "\"");
-        }
-
-        String client_id = usernameSecret[0];
-        String clientSecret = usernameSecret[1];
-        UserModel client = realm.getUser(client_id);
-        if (client == null) {
-            logger.debug("Could not find user");
-            Map<String, String> error = new HashMap<String, String>();
-            error.put("error", "invalid_client");
-            error.put("error_description", "Could not find user");
-            return Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build();
-        }
-
-        if (!client.isEnabled()) {
-            logger.debug("user is not enabled");
-            Map<String, String> error = new HashMap<String, String>();
-            error.put("error", "invalid_client");
-            error.put("error_description", "User is not enabled");
-            return Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build();
-        }
-
-        if (!realm.validateSecret(client, clientSecret)) {
-            Map<String, String> error = new HashMap<String, String>();
-            error.put("error", "unauthorized_client");
-            return Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build();
-        }
+        UserModel client = authorizeClient(authorizationHeader);
 
         String code = formData.getFirst("code");
         if (code == null) {
-            logger.debug("code not specified");
             Map<String, String> error = new HashMap<String, String>();
             error.put("error", "invalid_request");
             error.put("error_description", "code not specified");
-            return Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build();
+            throw new BadRequestException("Code not specified", Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build());
 
         }
 
@@ -433,6 +371,41 @@ public class TokenService {
         AccessTokenResponse res = accessTokenResponse(realm.getPrivateKey(), accessCode.getToken());
 
         return Cors.add(request, Response.ok(res)).allowedOrigins(client).allowedMethods("POST").build();
+    }
+
+    protected UserModel authorizeClient(String authorizationHeader) {
+        if (authorizationHeader == null) {
+            throw new NotAuthorizedException("No Authorization header to authenticate client", "Basic realm=\"" + realm.getName() + "\"");
+        }
+
+        String[] usernameSecret = BasicAuthHelper.parseHeader(authorizationHeader);
+        if (usernameSecret == null) {
+            throw new NotAuthorizedException("No Authorization header to authenticate client", "Basic realm=\"" + realm.getName() + "\"");
+        }
+
+        String client_id = usernameSecret[0];
+        String clientSecret = usernameSecret[1];
+        UserModel client = realm.getUser(client_id);
+        if (client == null) {
+            Map<String, String> error = new HashMap<String, String>();
+            error.put("error", "invalid_client");
+            error.put("error_description", "Could not find client");
+            throw new BadRequestException("Could not find client", Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build());
+        }
+
+        if (!client.isEnabled()) {
+            Map<String, String> error = new HashMap<String, String>();
+            error.put("error", "invalid_client");
+            error.put("error_description", "Client is not enabled");
+            throw new BadRequestException("Client is not enabled", Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build());
+        }
+
+        if (!realm.validateSecret(client, clientSecret)) {
+            Map<String, String> error = new HashMap<String, String>();
+            error.put("error", "unauthorized_client");
+            throw new BadRequestException("Unauthorized Client", Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build());
+        }
+        return client;
     }
 
     protected AccessTokenResponse accessTokenResponse(PrivateKey privateKey, AccessToken token) {

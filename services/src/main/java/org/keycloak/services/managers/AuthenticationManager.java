@@ -46,8 +46,8 @@ public class AuthenticationManager {
         token.issuedNow();
         token.subject(user.getId());
         token.audience(realm.getName());
-        if (realm.getTokenLifespan() > 0) {
-            token.expiration((System.currentTimeMillis() / 1000) + realm.getTokenLifespan());
+        if (realm.getAccessTokenLifespan() > 0) {
+            token.expiration((System.currentTimeMillis() / 1000) + realm.getAccessTokenLifespan());
         }
         return token;
     }

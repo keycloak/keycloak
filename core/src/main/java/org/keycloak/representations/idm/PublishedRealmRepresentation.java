@@ -29,9 +29,6 @@ public class PublishedRealmRepresentation {
     @JsonProperty("grants")
     protected String grantUrl;
 
-    @JsonProperty("identity-grants")
-    protected String identityGrantUrl;
-
     @JsonProperty("admin-role")
     protected String adminRole;
 
@@ -123,13 +120,5 @@ public class PublishedRealmRepresentation {
 
     public void setGrantUrl(String grantUrl) {
         this.grantUrl = grantUrl;
-    }
-
-    public String getIdentityGrantUrl() {
-        return identityGrantUrl;
-    }
-
-    public void setIdentityGrantUrl(String identityGrantUrl) {
-        this.identityGrantUrl = identityGrantUrl;
     }
 }
