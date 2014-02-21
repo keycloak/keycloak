@@ -419,6 +419,11 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public UserModel getUserById(String id) {
+        return new UserAdapter(em.find(UserEntity.class, id));
+    }
+
+    @Override
     public UserModel addUser(String username) {
         UserEntity entity = new UserEntity();
         entity.setLoginName(username);

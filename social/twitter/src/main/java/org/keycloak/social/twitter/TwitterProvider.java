@@ -78,18 +78,7 @@ public class TwitterProvider implements SocialProvider {
             twitter4j.User twitterUser = twitter.verifyCredentials();
 
             SocialUser user = new SocialUser(Long.toString(twitterUser.getId()));
-
-            // Use screenName as username for Twitter
-            user.setUsername(twitterUser.getScreenName());
-
-            String twitterName = twitterUser.getName();
-            int spaceIndex = twitterName.lastIndexOf(' ');
-            if (spaceIndex != -1) {
-                user.setFirstName(twitterName.substring(0, spaceIndex));
-                user.setLastName(twitterName.substring(spaceIndex + 1));
-            } else {
-                user.setFirstName(twitterName);
-            }
+            user.setName(twitterUser.getName());
 
             return user;
         } catch (Exception e) {

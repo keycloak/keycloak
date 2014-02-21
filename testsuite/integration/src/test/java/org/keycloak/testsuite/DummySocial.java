@@ -44,8 +44,8 @@ public class DummySocial implements SocialProvider {
 
         String username = callback.getQueryParam("username");
         SocialUser user = new SocialUser(username);
-        user.setEmail(username + "@dummy-social");
-        user.setUsername(username);
+        user.setName(callback.getQueryParam("firstname"), callback.getQueryParam("lastname"));
+        user.setEmail(callback.getQueryParam("email"));
         return user;
     }
 

@@ -154,7 +154,7 @@ public class TokenService {
         }
 
         tokenManager = new TokenManager();
-        SkeletonKeyToken token = authManager.createIdentityToken(realm, username);
+        SkeletonKeyToken token = authManager.createIdentityToken(realm, user);
         String encoded = tokenManager.encodeToken(realm, token);
         AccessTokenResponse res = accessTokenResponse(token, encoded);
         return Response.ok(res, MediaType.APPLICATION_JSON_TYPE).build();

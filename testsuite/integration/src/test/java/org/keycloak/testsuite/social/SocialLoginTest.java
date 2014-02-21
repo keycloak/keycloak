@@ -28,6 +28,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.SkeletonKeyToken;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.DummySocialServlet;
 import org.keycloak.testsuite.OAuthClient;
@@ -94,7 +95,10 @@ public class SocialLoginTest {
 
         loginPage.clickSocial("dummy");
 
-        driver.findElement(By.id("username")).sendKeys("dummy-user");
+        driver.findElement(By.id("username")).sendKeys("dummy-user1");
+        driver.findElement(By.id("firstname")).sendKeys("Bob");
+        driver.findElement(By.id("lastname")).sendKeys("Builder");
+        driver.findElement(By.id("email")).sendKeys("bob@builder.com");
         driver.findElement(By.id("submit")).click();
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
@@ -102,8 +106,14 @@ public class SocialLoginTest {
         AccessTokenResponse response = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get("code"), "password");
 
         SkeletonKeyToken token = oauth.verifyToken(response.getAccessToken());
+        Assert.assertEquals(36, token.getSubject().length());
 
-        Assert.assertEquals("dummy-user", token.getSubject());
+        UserRepresentation profile = oauth.getProfile(response.getAccessToken());
+        Assert.assertEquals(36, profile.getUsername().length());
+
+        Assert.assertEquals("Bob", profile.getFirstName());
+        Assert.assertEquals("Builder", profile.getLastName());
+        Assert.assertEquals("bob@builder.com", profile.getEmail());
     }
 
     @Test
@@ -120,18 +130,28 @@ public class SocialLoginTest {
 
             loginPage.clickSocial("dummy");
 
-            driver.findElement(By.id("username")).sendKeys("dummy-user-reg");
+            driver.findElement(By.id("username")).sendKeys("dummy-user2");
+            driver.findElement(By.id("firstname")).sendKeys("Bob");
+            driver.findElement(By.id("lastname")).sendKeys("Builder");
+            driver.findElement(By.id("email")).sendKeys("bob@builder.com");
             driver.findElement(By.id("submit")).click();
 
             profilePage.isCurrent();
 
-            Assert.assertEquals("", profilePage.getFirstName());
-            Assert.assertEquals("", profilePage.getLastName());
-            Assert.assertEquals("dummy-user-reg@dummy-social", profilePage.getEmail());
+            Assert.assertEquals("Bob", profilePage.getFirstName());
+            Assert.assertEquals("Builder", profilePage.getLastName());
+            Assert.assertEquals("bob@builder.com", profilePage.getEmail());
 
             profilePage.update("Dummy", "User", "dummy-user-reg@dummy-social");
 
             Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+            AccessTokenResponse response = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get("code"), "password");
+            UserRepresentation profile = oauth.getProfile(response.getAccessToken());
+
+            Assert.assertEquals("Dummy", profile.getFirstName());
+            Assert.assertEquals("User", profile.getLastName());
+            Assert.assertEquals("dummy-user-reg@dummy-social", profile.getEmail());
         } finally {
             keycloakRule.configure(new KeycloakSetup() {
                 @Override

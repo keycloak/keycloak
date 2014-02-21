@@ -28,6 +28,11 @@ public class UserAdapter extends AbstractAdapter implements UserModel {
     }
 
     @Override
+    public String getId() {
+        return user.getId();
+    }
+
+    @Override
     public String getLoginName() {
         return user.getLoginName();
     }
