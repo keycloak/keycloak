@@ -1,7 +1,7 @@
 {
     "realm": "test-realm",
     "enabled": true,
-    "tokenLifespan": 6000,
+    "accessTokenLifespan": 6000,
     "accessCodeLifespan": 30,
     "accessCodeLifespanUserAction": 600,
     "requiredCredentials": [ "password" ],

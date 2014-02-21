@@ -1,7 +1,7 @@
 {
     "realm": "demo",
     "enabled": true,
-    "tokenLifespan": 300,
+    "accessTokenLifespan": 300,
     "accessCodeLifespan": 10,
     "accessCodeLifespanUserAction": 600,
     "sslNotRequired": true,

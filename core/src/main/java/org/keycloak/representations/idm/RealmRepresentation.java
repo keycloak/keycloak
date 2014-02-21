@@ -13,7 +13,7 @@ public class RealmRepresentation {
     protected String self; // link
     protected String id;
     protected String realm;
-    protected Integer tokenLifespan;
+    protected Integer accessTokenLifespan;
     protected Integer accessCodeLifespan;
     protected Integer accessCodeLifespanUserAction;
     protected Boolean enabled;
@@ -114,12 +114,12 @@ public class RealmRepresentation {
         this.sslNotRequired = sslNotRequired;
     }
 
-    public Integer getTokenLifespan() {
-        return tokenLifespan;
+    public Integer getAccessTokenLifespan() {
+        return accessTokenLifespan;
     }
 
-    public void setTokenLifespan(Integer tokenLifespan) {
-        this.tokenLifespan = tokenLifespan;
+    public void setAccessTokenLifespan(Integer accessTokenLifespan) {
+        this.accessTokenLifespan = accessTokenLifespan;
     }
 
     public List<UserRoleMappingRepresentation> getRoleMappings() {
