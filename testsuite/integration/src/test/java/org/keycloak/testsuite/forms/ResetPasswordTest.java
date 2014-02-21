@@ -27,6 +27,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AppPage;
@@ -50,7 +53,20 @@ import java.io.IOException;
 public class ResetPasswordTest {
 
     @ClassRule
-    public static KeycloakRule keycloakRule = new KeycloakRule();
+    public static KeycloakRule keycloakRule = new KeycloakRule((new KeycloakRule.KeycloakSetup() {
+        @Override
+        public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+            UserModel user = appRealm.addUser("login-test");
+            user.setEmail("login@test.com");
+            user.setEnabled(true);
+
+            UserCredentialModel creds = new UserCredentialModel();
+            creds.setType(CredentialRepresentation.PASSWORD);
+            creds.setValue("password");
+
+            appRealm.updateCredential(user, creds);
+        }
+    }));
 
     @Rule
     public WebRule webRule = new WebRule(this);
@@ -83,7 +99,7 @@ public class ResetPasswordTest {
 
         resetPasswordPage.assertCurrent();
 
-        resetPasswordPage.changePassword("test-user@localhost");
+        resetPasswordPage.changePassword("login-test");
 
         resetPasswordPage.assertCurrent();
 
@@ -100,7 +116,7 @@ public class ResetPasswordTest {
 
         updatePasswordPage.assertCurrent();
 
-        updatePasswordPage.changePassword("new-password", "new-password");
+        updatePasswordPage.changePassword("resetPassword", "resetPassword");
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
@@ -108,13 +124,50 @@ public class ResetPasswordTest {
 
         loginPage.open();
 
-        loginPage.login("test-user@localhost", "new-password");
+        loginPage.login("login-test", "resetPassword");
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
     }
 
     @Test
-    public void resetPasswordWrongEmail() throws IOException, MessagingException {
+    public void resetPasswordByEmail() throws IOException, MessagingException {
+        loginPage.open();
+        loginPage.resetPassword();
+
+        resetPasswordPage.assertCurrent();
+
+        resetPasswordPage.changePassword("login@test.com");
+
+        resetPasswordPage.assertCurrent();
+
+        Assert.assertEquals("You should receive an email shortly with further instructions.", resetPasswordPage.getSuccessMessage());
+
+        Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+
+        MimeMessage message = greenMail.getReceivedMessages()[0];
+
+        String body = (String) message.getContent();
+        String changePasswordUrl = body.split("\n")[3];
+
+        driver.navigate().to(changePasswordUrl.trim());
+
+        updatePasswordPage.assertCurrent();
+
+        updatePasswordPage.changePassword("resetPassword", "resetPassword");
+
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        oauth.openLogout();
+
+        loginPage.open();
+
+        loginPage.login("login@test.com", "resetPassword");
+
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+    }
+
+    @Test
+    public void resetPasswordWrongEmail() throws IOException, MessagingException, InterruptedException {
         loginPage.open();
         loginPage.resetPassword();
 
@@ -124,7 +177,11 @@ public class ResetPasswordTest {
 
         resetPasswordPage.assertCurrent();
 
-        Assert.assertEquals("Invalid email.", resetPasswordPage.getErrorMessage());
+        Assert.assertEquals("You should receive an email shortly with further instructions.", resetPasswordPage.getSuccessMessage());
+
+        Thread.sleep(1000);
+
+        Assert.assertEquals(0, greenMail.getReceivedMessages().length);
     }
 
     @Test
@@ -141,7 +198,7 @@ public class ResetPasswordTest {
 
         resetPasswordPage.assertCurrent();
 
-        resetPasswordPage.changePassword("test-user@localhost");
+        resetPasswordPage.changePassword("login-test");
 
         resetPasswordPage.assertCurrent();
 
@@ -162,7 +219,7 @@ public class ResetPasswordTest {
 
         Assert.assertEquals("Invalid password: minimum length 8", resetPasswordPage.getErrorMessage());
 
-        updatePasswordPage.changePassword("new-password", "new-password");
+        updatePasswordPage.changePassword("resetPasswordWithPasswordPolicy", "resetPasswordWithPasswordPolicy");
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
@@ -170,7 +227,7 @@ public class ResetPasswordTest {
 
         loginPage.open();
 
-        loginPage.login("test-user@localhost", "new-password");
+        loginPage.login("login-test", "resetPasswordWithPasswordPolicy");
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
     }

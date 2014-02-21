@@ -8,7 +8,7 @@
         <form id="kc-form-login" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
             <div class="${properties.kcFormGroupClass!}">
                 <div class="${properties.kcLabelWrapperClass!}">
-                    <label for="username" class="${properties.kcLabelClass!}">${rb.username}</label>
+                    <label for="username" class="${properties.kcLabelClass!}">${rb.usernameOrEmail}</label>
                 </div>
 
                 <div class="${properties.kcInputWrapperClass!}">
@@ -33,7 +33,7 @@
                             <span>${rb.noAccount} <a href="${url.registrationUrl}">${rb.register}</a></span>
                         </#if>
                         <#if realm.resetPasswordAllowed>
-                            <span>${rb.loginForgot} <a href="${url.loginUsernameReminderUrl}">${rb.username}</a> or <a href="${url.loginPasswordResetUrl}">${rb.password}</a>?</span>
+                            <span>${rb.loginForgot} <a href="${url.loginPasswordResetUrl}">${rb.password}</a>?</span>
                         </#if>
                     </div>
                 </div>

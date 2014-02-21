@@ -25,6 +25,11 @@ import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
@@ -40,14 +45,26 @@ import org.openqa.selenium.WebDriver;
 public class LoginTest {
 
     @ClassRule
-    public static KeycloakRule keycloakRule = new KeycloakRule();
+    public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakRule.KeycloakSetup() {
+        @Override
+        public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+            UserModel user = appRealm.addUser("login-test");
+            user.setEmail("login@test.com");
+            user.setEnabled(true);
+
+            UserCredentialModel creds = new UserCredentialModel();
+            creds.setType(CredentialRepresentation.PASSWORD);
+            creds.setValue("password");
+
+            appRealm.updateCredential(user, creds);
+        }
+    });
 
     @Rule
     public WebRule webRule = new WebRule(this);
 
     @WebResource
     protected OAuthClient oauth;
-
 
     @WebResource
     protected WebDriver driver;
@@ -61,7 +78,7 @@ public class LoginTest {
     @Test
     public void loginInvalidPassword() {
         loginPage.open();
-        loginPage.login("test-user@localhost", "invalid");
+        loginPage.login("login-test", "invalid");
 
         loginPage.assertCurrent();
 
@@ -81,8 +98,17 @@ public class LoginTest {
     @Test
     public void loginSuccess() {
         loginPage.open();
-        loginPage.login("test-user@localhost", "password");
+        loginPage.login("login-test", "password");
         
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assert.assertNotNull(oauth.getCurrentQuery().get("code"));
+    }
+
+    @Test
+    public void loginWithEmailSuccess() {
+        loginPage.open();
+        loginPage.login("login@test.com", "password");
+
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get("code"));
     }
