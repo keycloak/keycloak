@@ -120,8 +120,8 @@ public class JsonWebToken implements Serializable {
         return subject;
     }
 
-    public JsonWebToken principal(String principal) {
-        this.subject = principal;
+    public JsonWebToken subject(String subject) {
+        this.subject = subject;
         return this;
     }
 

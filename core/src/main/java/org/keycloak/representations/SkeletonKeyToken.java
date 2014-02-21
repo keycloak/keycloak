@@ -136,8 +136,8 @@ public class SkeletonKeyToken extends JsonWebToken {
     }
 
     @Override
-    public SkeletonKeyToken principal(String principal) {
-        return (SkeletonKeyToken) super.principal(principal);
+    public SkeletonKeyToken subject(String subject) {
+        return (SkeletonKeyToken) super.subject(subject);
     }
 
     @Override

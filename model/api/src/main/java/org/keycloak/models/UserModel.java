@@ -13,6 +13,8 @@ public interface UserModel {
     public static final String FIRST_NAME = "firstName";
     public static final String EMAIL = "email";
 
+    String getId();
+
     String getLoginName();
 
     boolean isEnabled();

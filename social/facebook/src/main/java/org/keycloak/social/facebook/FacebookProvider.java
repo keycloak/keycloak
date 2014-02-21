@@ -53,14 +53,7 @@ public class FacebookProvider extends AbstractOAuth2Provider {
             JSONObject profile = SimpleHttp.doGet(PROFILE_URL).header("Authorization", "Bearer " + accessToken).asJson();
 
             SocialUser user = new SocialUser(profile.getString("id"));
-
-            user.setUsername(profile.getString("username"));
-            if (user.getUsername() == null || user.getUsername().length() == 0) {
-                user.setUsername(profile.getString("id"));
-            }
-
-            user.setFirstName(profile.optString("first_name"));
-            user.setLastName(profile.optString("last_name"));
+            user.setName(profile.optString("first_name"), profile.optString("last_name"));
             user.setEmail(profile.optString("email"));
 
             return user;

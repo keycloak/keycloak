@@ -95,7 +95,7 @@ public class CompositeImportRoleTest {
 
         SkeletonKeyToken token = oauth.verifyToken(response.getAccessToken());
 
-        Assert.assertEquals("APP_COMPOSITE_USER", token.getSubject());
+        Assert.assertEquals("APP_COMPOSITE_USER", oauth.getProfile(response.getAccessToken()).getUsername());
 
         Assert.assertEquals(1, token.getResourceAccess("APP_ROLE_APPLICATION").getRoles().size());
         Assert.assertEquals(1, token.getRealmAccess().getRoles().size());
@@ -120,7 +120,7 @@ public class CompositeImportRoleTest {
 
         SkeletonKeyToken token = oauth.verifyToken(response.getAccessToken());
 
-        Assert.assertEquals("REALM_APP_COMPOSITE_USER", token.getSubject());
+        Assert.assertEquals("REALM_APP_COMPOSITE_USER", oauth.getProfile(response.getAccessToken()).getUsername());
 
         Assert.assertEquals(1, token.getResourceAccess("APP_ROLE_APPLICATION").getRoles().size());
         Assert.assertTrue(token.getResourceAccess("APP_ROLE_APPLICATION").isUserInRole("APP_ROLE_1"));
@@ -144,7 +144,7 @@ public class CompositeImportRoleTest {
 
         SkeletonKeyToken token = oauth.verifyToken(response.getAccessToken());
 
-        Assert.assertEquals("REALM_COMPOSITE_1_USER", token.getSubject());
+        Assert.assertEquals("REALM_COMPOSITE_1_USER", oauth.getProfile(response.getAccessToken()).getUsername());
 
         Assert.assertEquals(2, token.getRealmAccess().getRoles().size());
         Assert.assertTrue(token.getRealmAccess().isUserInRole("REALM_COMPOSITE_1"));
@@ -167,7 +167,7 @@ public class CompositeImportRoleTest {
 
         SkeletonKeyToken token = oauth.verifyToken(response.getAccessToken());
 
-        Assert.assertEquals("REALM_COMPOSITE_1_USER", token.getSubject());
+        Assert.assertEquals("REALM_COMPOSITE_1_USER", oauth.getProfile(response.getAccessToken()).getUsername());
 
         Assert.assertEquals(1, token.getRealmAccess().getRoles().size());
         Assert.assertTrue(token.getRealmAccess().isUserInRole("REALM_ROLE_1"));
@@ -189,7 +189,7 @@ public class CompositeImportRoleTest {
 
         SkeletonKeyToken token = oauth.verifyToken(response.getAccessToken());
 
-        Assert.assertEquals("REALM_ROLE_1_USER", token.getSubject());
+        Assert.assertEquals("REALM_ROLE_1_USER", oauth.getProfile(response.getAccessToken()).getUsername());
 
         Assert.assertEquals(1, token.getRealmAccess().getRoles().size());
         Assert.assertTrue(token.getRealmAccess().isUserInRole("REALM_ROLE_1"));

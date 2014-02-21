@@ -21,22 +21,14 @@
  */
 package org.keycloak.testsuite.rule;
 
-import io.undertow.servlet.api.DeploymentInfo;
-import io.undertow.servlet.api.ServletInfo;
-import org.junit.rules.ExternalResource;
-import org.keycloak.util.JsonSerialization;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.managers.ModelToRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.ApplicationServlet;
-import org.keycloak.testutils.KeycloakServer;
-
-import javax.servlet.Servlet;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

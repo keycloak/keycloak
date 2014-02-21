@@ -70,7 +70,7 @@ public class RSAVerifierTest {
     public void initTest() {
 
         token = new SkeletonKeyToken();
-        token.principal("CN=Client")
+        token.subject("CN=Client")
                 .audience("domain")
                 .addAccess("service").addRole("admin");
     }
@@ -212,7 +212,7 @@ public class RSAVerifierTest {
     @Test
     public void testTokenAuth() throws Exception {
         token = new SkeletonKeyToken();
-        token.principal("CN=Client")
+        token.subject("CN=Client")
                 .audience("domain")
                 .addAccess("service").addRole("admin").verifyCaller(true);
 

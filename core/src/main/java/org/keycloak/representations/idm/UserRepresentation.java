@@ -12,6 +12,7 @@ import java.util.Map;
 public class UserRepresentation {
 
     protected String self; // link
+    protected String id;
     protected String username;
     protected boolean enabled;
     protected boolean totp;
@@ -29,6 +30,14 @@ public class UserRepresentation {
 
     public void setSelf(String self) {
         this.self = self;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getFirstName() {

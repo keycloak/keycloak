@@ -22,12 +22,15 @@
 package org.keycloak.testsuite;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.jboss.resteasy.security.PemUtils;
@@ -35,6 +38,7 @@ import org.json.JSONObject;
 import org.junit.Assert;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.representations.SkeletonKeyScope;
@@ -142,6 +146,20 @@ public class OAuthClient {
             return new AccessTokenResponse(client.execute(post));
         } catch (Exception e) {
             throw new RuntimeException("Failed to retrieve access token", e);
+        }
+    }
+
+    public UserRepresentation getProfile(String token) {
+        HttpClient client = new DefaultHttpClient();
+        HttpGet get = new HttpGet(baseUrl + "/realms/" + realm + "/account");
+        get.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
+        get.setHeader(HttpHeaders.ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
+
+        try {
+            HttpResponse response = client.execute(get);
+            return JsonSerialization.readValue(response.getEntity().getContent(), UserRepresentation.class);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to retrieve profile", e);
         }
     }
 
