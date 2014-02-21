@@ -145,16 +145,6 @@ public class EmailSender {
         send(user.getEmail(), "Reset password link", sb.toString());
     }
 
-    public void sendUsernameReminder(UserModel user) throws EmailException {
-        StringBuilder sb = getHeader(user);
-
-        sb.append("The username for your Keycloak account is ").append(user.getLoginName()).append(".\n");
-
-        addFooter(sb);
-
-        send(user.getEmail(), "Username reminder", sb.toString());
-    }
-
     private StringBuilder getHeader(UserModel user) {
         StringBuilder sb = new StringBuilder();
 

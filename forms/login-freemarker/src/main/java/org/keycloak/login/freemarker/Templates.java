@@ -23,8 +23,6 @@ public class Templates {
                 return "login-reset-password.ftl";
             case LOGIN_UPDATE_PASSWORD:
                 return "login-update-password.ftl";
-            case LOGIN_USERNAME_REMINDER:
-                return "login-username-reminder.ftl";
             case REGISTER:
                 return "register.ftl";
             case ERROR:

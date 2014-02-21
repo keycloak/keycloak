@@ -237,7 +237,7 @@ public class RequiredActionsService {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response sendPasswordReset(final MultivaluedMap<String, String> formData) {
-        String email = formData.getFirst("email");
+        String username = formData.getFirst("username");
 
         String scopeParam = uriInfo.getQueryParameters().getFirst("scope");
         String state = uriInfo.getQueryParameters().getFirst("state");
@@ -254,65 +254,30 @@ public class RequiredActionsService {
                     "Login requester not enabled.");
         }
 
-        UserModel user = realm.getUserByEmail(email);
-        if (user == null) {
-            return Flows.forms(realm, request, uriInfo).setError("emailError").createPasswordReset();
+        UserModel user = realm.getUser(username);
+        if (user == null && username.contains("@")) {
+            user = realm.getUserByEmail(username);
         }
 
-        Set<RequiredAction> requiredActions = new HashSet<RequiredAction>(user.getRequiredActions());
-        requiredActions.add(RequiredAction.UPDATE_PASSWORD);
+        if (user == null) {
+            logger.warn("Failed to send password reset email: user not found");
+        } else {
+            Set<RequiredAction> requiredActions = new HashSet<RequiredAction>(user.getRequiredActions());
+            requiredActions.add(RequiredAction.UPDATE_PASSWORD);
 
-        AccessCodeEntry accessCode = tokenManager.createAccessCode(scopeParam, state, redirect, realm, client, user);
-        accessCode.setRequiredActions(requiredActions);
-        accessCode.setExpiration(System.currentTimeMillis() / 1000 + realm.getAccessCodeLifespanUserAction());
+            AccessCodeEntry accessCode = tokenManager.createAccessCode(scopeParam, state, redirect, realm, client, user);
+            accessCode.setRequiredActions(requiredActions);
+            accessCode.setExpiration(System.currentTimeMillis() / 1000 + realm.getAccessCodeLifespanUserAction());
 
-        try {
-            new EmailSender(realm.getSmtpConfig()).sendPasswordReset(user, realm, accessCode, uriInfo);
-        } catch (EmailException e) {
-            logger.error("Failed to send password reset email", e);
-            return Flows.forms(realm, request, uriInfo).setError("emailSendError").createErrorPage();
+            try {
+                new EmailSender(realm.getSmtpConfig()).sendPasswordReset(user, realm, accessCode, uriInfo);
+            } catch (EmailException e) {
+                logger.error("Failed to send password reset email", e);
+                return Flows.forms(realm, request, uriInfo).setError("emailSendError").createErrorPage();
+            }
         }
 
         return Flows.forms(realm, request, uriInfo).setSuccess("emailSent").createPasswordReset();
-    }
-
-
-    @Path("username-reminder")
-    @GET
-    public Response usernameReminder() {
-        return Flows.forms(realm, request, uriInfo).createUsernameReminder();
-    }
-
-    @Path("username-reminder")
-    @POST
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response sendUsernameReminder(final MultivaluedMap<String, String> formData) {
-        String email = formData.getFirst("email");
-        String clientId = uriInfo.getQueryParameters().getFirst("client_id");
-
-        UserModel client = realm.getUser(clientId);
-        if (client == null) {
-            return Flows.oauth(realm, request, uriInfo, authManager, tokenManager).forwardToSecurityFailure(
-                    "Unknown login requester.");
-        }
-        if (!client.isEnabled()) {
-            return Flows.oauth(realm, request, uriInfo, authManager, tokenManager).forwardToSecurityFailure(
-                    "Login requester not enabled.");
-        }
-
-        UserModel user = realm.getUserByEmail(email);
-        if (user == null) {
-            return Flows.forms(realm, request, uriInfo).setError("emailError").createUsernameReminder();
-        }
-
-        try {
-            new EmailSender(realm.getSmtpConfig()).sendUsernameReminder(user);
-        } catch (EmailException e) {
-            logger.error("Failed to send username reminder email", e);
-            return Flows.forms(realm, request, uriInfo).setError("emailSendError").createErrorPage();
-        }
-
-        return Flows.forms(realm, request, uriInfo).setSuccess("emailUsernameSent").createLogin();
     }
 
     private AccessCodeEntry getAccessCodeEntry(RequiredAction requiredAction) {
