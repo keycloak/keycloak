@@ -85,7 +85,7 @@ public class ModelToRepresentation {
             rep.setPasswordPolicy(realm.getPasswordPolicy().toString());
         }
 
-        ApplicationModel accountManagementApplication = realm.getApplicationNameMap().get(Constants.ACCOUNT_APPLICATION);
+        ApplicationModel accountManagementApplication = realm.getApplicationNameMap().get(Constants.ACCOUNT_MANAGEMENT_APP);
 
         List<String> defaultRoles = realm.getDefaultRoles();
         if (!defaultRoles.isEmpty()) {

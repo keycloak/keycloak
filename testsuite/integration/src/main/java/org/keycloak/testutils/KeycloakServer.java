@@ -228,7 +228,7 @@ public class KeycloakServer {
         try {
             RealmManager manager = new RealmManager(session);
 
-            RealmModel adminRealm = manager.getRealm(Constants.ADMIN_REALM);
+            RealmModel adminRealm = manager.getKeycloakAdminstrationRealm();
             UserModel admin = adminRealm.getUser("admin");
             admin.removeRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
 

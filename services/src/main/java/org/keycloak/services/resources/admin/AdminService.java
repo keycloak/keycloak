@@ -1,49 +1,44 @@
 package org.keycloak.services.resources.admin;
 
+import org.codehaus.jackson.annotate.JsonProperty;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
-import org.jboss.resteasy.spi.NotImplementedYetException;
-import org.keycloak.AbstractOAuthClient;
 import org.keycloak.jaxrs.JaxrsOAuthClient;
-import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.jose.jws.crypto.RSAProvider;
+import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.services.managers.AccessCodeEntry;
-import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.AuthenticationManager.AuthenticationStatus;
+import org.keycloak.services.managers.AppAuthManager;
+import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.TokenManager;
-import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.TokenService;
 import org.keycloak.services.resources.flows.Flows;
-import org.keycloak.services.resources.flows.OAuthFlows;
 
-import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.NotFoundException;
-import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Providers;
 import java.net.URI;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -52,8 +47,6 @@ import java.net.URI;
 @Path("/admin")
 public class AdminService {
     protected static final Logger logger = Logger.getLogger(AdminService.class);
-    public static final String REALM_CREATOR_ROLE = "realm-creator";
-    public static final String SAAS_IDENTITY_COOKIE = "KEYCLOAK_SAAS_IDENTITY";
 
     @Context
     protected UriInfo uriInfo;
@@ -73,25 +66,32 @@ public class AdminService {
     @Context
     protected Providers providers;
 
-
     protected String adminPath = "/admin/index.html";
-    protected AuthenticationManager authManager = new AuthenticationManager();
+    protected AppAuthManager authManager;
     protected TokenManager tokenManager;
 
     public AdminService(TokenManager tokenManager) {
         this.tokenManager = tokenManager;
+        this.authManager = new AppAuthManager("KEYCLOAK_ADMIN_CONSOLE_IDENTITY", tokenManager);
     }
 
     public static class WhoAmI {
         protected String userId;
         protected String displayName;
 
+        @JsonProperty("admin")
+        protected boolean admin;
+        @JsonProperty("realm_access")
+        protected Map<String, Set<String>> realmAccess = new HashMap<String, Set<String>>();
+
         public WhoAmI() {
         }
 
-        public WhoAmI(String userId, String displayName) {
+        public WhoAmI(String userId, String displayName, boolean admin, Map<String, Set<String>> realmAccess) {
             this.userId = userId;
             this.displayName = displayName;
+            this.admin = admin;
+            this.realmAccess = realmAccess;
         }
 
         public String getUserId() {
@@ -109,6 +109,22 @@ public class AdminService {
         public void setDisplayName(String displayName) {
             this.displayName = displayName;
         }
+
+        public boolean isAdmin() {
+            return admin;
+        }
+
+        public void setAdmin(boolean admin) {
+            this.admin = admin;
+        }
+
+        public Map<String, Set<String>> getRealmAccess() {
+            return realmAccess;
+        }
+
+        public void setRealmAccess(Map<String, Set<String>> realmAccess) {
+            this.realmAccess = realmAccess;
+        }
     }
 
     @Path("keepalive")
@@ -120,11 +136,11 @@ public class AdminService {
         RealmModel realm = getAdminstrationRealm(realmManager);
         if (realm == null)
             throw new NotFoundException();
-        UserModel user = authManager.authenticateSaasIdentityCookie(realm, uriInfo, headers);
-        if (user == null) {
+        Auth auth = authManager.authenticateCookie(realm, headers);
+        if (auth == null) {
             return Response.status(401).build();
         }
-        NewCookie refreshCookie = authManager.createSaasIdentityCookie(realm, user, uriInfo);
+        NewCookie refreshCookie = authManager.createRefreshCookie(realm, auth.getUser(), auth.getClient(), AdminService.saasCookiePath(uriInfo).build());
         return Response.noContent().cookie(refreshCookie).build();
     }
 
@@ -137,15 +153,50 @@ public class AdminService {
         RealmModel realm = getAdminstrationRealm(realmManager);
         if (realm == null)
             throw new NotFoundException();
-        UserModel user = authManager.authenticateSaasIdentityCookie(realm, uriInfo, headers);
+        Auth auth = authManager.authenticateCookie(realm, headers);
+        UserModel user = auth.getUser();
         if (user == null) {
             return Response.status(401).build();
         }
-        // keycloak is bootstrapped with an admin user with no first/last name, so use login name as display name
-        return Response.ok(new WhoAmI(user.getLoginName(), user.getLoginName())).build();
+
+        String displayName;
+        if (user.getFirstName() != null || user.getLastName() != null) {
+            displayName = user.getFirstName();
+            if (user.getLastName() != null) {
+                displayName = displayName != null ? displayName + " " + user.getLastName() : user.getLastName();
+            }
+        } else {
+            displayName = user.getLoginName();
+        }
+
+        boolean admin = realm.hasRole(user, realm.getRole("admin"));
+
+        Map<String, Set<String>> realmAccess = new HashMap<String, Set<String>>();
+        addRealmAdminAccess(realmAccess, auth.getRealm().getRoleMappings(auth.getUser()));
+
+        return Response.ok(new WhoAmI(user.getId(), displayName, admin, realmAccess)).build();
     }
 
-    @Path("isLoggedIn.js")
+    private void addRealmAdminAccess(Map<String, Set<String>> realmAdminAccess, Set<RoleModel> roles) {
+        for (RoleModel r : roles) {
+            if (r.getContainer() instanceof ApplicationModel) {
+                ApplicationModel app = (ApplicationModel) r.getContainer();
+                if (app.getName().endsWith(AdminRoles.APP_SUFFIX)) {
+                    String realm = app.getName().substring(0, app.getName().length() - AdminRoles.APP_SUFFIX.length());
+                    if (!realmAdminAccess.containsKey(realm)) {
+                        realmAdminAccess.put(realm, new HashSet<String>());
+                    }
+                    realmAdminAccess.get(realm).add(r.getName());
+                }
+            }
+
+            if (r.isComposite()) {
+                addRealmAdminAccess(realmAdminAccess, r.getComposites());
+            }
+        }
+    }
+
+        @Path("isLoggedIn.js")
     @GET
     @Produces("application/javascript")
     @NoCache
@@ -157,7 +208,7 @@ public class AdminService {
             return "var keycloakCookieLoggedIn = false;";
 
         }
-        UserModel user = authManager.authenticateSaasIdentityCookie(realm, uriInfo, headers);
+        UserModel user = authManager.authenticateCookie(realm, headers).getUser();
         if (user == null) {
             return "var keycloakCookieLoggedIn = false;";
         }
@@ -176,23 +227,14 @@ public class AdminService {
     @Path("realms")
     public RealmsAdminResource getRealmsAdmin(@Context final HttpHeaders headers) {
         RealmManager realmManager = new RealmManager(session);
-        RealmModel saasRealm = getAdminstrationRealm(realmManager);
-        if (saasRealm == null)
+        RealmModel adminRealm = getAdminstrationRealm(realmManager);
+        if (adminRealm == null)
             throw new NotFoundException();
-        UserModel admin = authManager.authenticateSaasIdentity(saasRealm, uriInfo, headers);
-        if (admin == null) {
+        Auth auth = authManager.authenticate(adminRealm, headers);
+        if (auth == null) {
             throw new NotAuthorizedException("Bearer");
         }
-        ApplicationModel adminConsole = saasRealm.getApplicationNameMap().get(Constants.ADMIN_CONSOLE_APPLICATION);
-        if (adminConsole == null) {
-            throw new NotFoundException();
-        }
-        RoleModel adminRole = adminConsole.getRole(Constants.ADMIN_CONSOLE_ADMIN_ROLE);
-        if (!saasRealm.hasRole(admin, adminRole)) {
-            logger.warn("not a Realm admin");
-            throw new NotAuthorizedException("Bearer");
-        }
-        RealmsAdminResource adminResource = new RealmsAdminResource(admin, tokenManager);
+        RealmsAdminResource adminResource = new RealmsAdminResource(auth, tokenManager);
         resourceContext.initResource(adminResource);
         return adminResource;
     }
@@ -200,25 +242,25 @@ public class AdminService {
     @Path("serverinfo")
     public ServerInfoAdminResource getServerInfo(@Context final HttpHeaders headers) {
         RealmManager realmManager = new RealmManager(session);
-        RealmModel saasRealm = getAdminstrationRealm(realmManager);
-        if (saasRealm == null)
+        RealmModel adminRealm = getAdminstrationRealm(realmManager);
+        if (adminRealm == null)
             throw new NotFoundException();
-        UserModel admin = authManager.authenticateSaasIdentity(saasRealm, uriInfo, headers);
+        Auth auth = authManager.authenticate(adminRealm, headers);
+        UserModel admin = auth.getUser();
         if (admin == null) {
             throw new NotAuthorizedException("Bearer");
         }
-        ApplicationModel adminConsole = saasRealm.getApplicationNameMap().get(Constants.ADMIN_CONSOLE_APPLICATION);
+        ApplicationModel adminConsole = adminRealm.getApplicationNameMap().get(Constants.ADMIN_CONSOLE_APPLICATION);
         if (adminConsole == null) {
             throw new NotFoundException();
-        }
-        RoleModel adminRole = adminConsole.getRole(Constants.ADMIN_CONSOLE_ADMIN_ROLE);
-        if (!saasRealm.hasRole(admin, adminRole)) {
-            logger.warn("not a Realm admin");
-            throw new NotAuthorizedException("Bearer");
         }
         ServerInfoAdminResource adminResource = new ServerInfoAdminResource();
         resourceContext.initResource(adminResource);
         return adminResource;
+    }
+
+    private void expireCookie() {
+        authManager.expireCookie(AdminService.saasCookiePath(uriInfo).build());
     }
 
     @Path("login")
@@ -226,9 +268,7 @@ public class AdminService {
     @NoCache
     public Response loginPage(@QueryParam("path") String path) {
         logger.debug("loginPage ********************** <---");
-        RealmManager realmManager = new RealmManager(session);
-        RealmModel realm = getAdminstrationRealm(realmManager);
-        authManager.expireSaasIdentityCookie(uriInfo);
+        expireCookie();
 
         JaxrsOAuthClient oauth = new JaxrsOAuthClient();
         String authUrl = TokenService.loginPageUrl(uriInfo).build(Constants.ADMIN_REALM).toString();
@@ -259,7 +299,6 @@ public class AdminService {
         URI uri = uriInfo.getBaseUriBuilder().path(AdminService.class).path(AdminService.class, "errorOnLoginRedirect").queryParam("error", message).build();
         URI logout = TokenService.logoutUrl(uriInfo).queryParam("redirect_uri", uri.toString()).build(Constants.ADMIN_REALM);
         return Response.status(302).location(logout).build();
-
     }
 
     @Path("login-redirect")
@@ -279,12 +318,12 @@ public class AdminService {
                 return redirectOnLoginError(error);
             }
             RealmManager realmManager = new RealmManager(session);
-            RealmModel realm = getAdminstrationRealm(realmManager);
-            if (!realm.isEnabled()) {
+            RealmModel adminRealm = getAdminstrationRealm(realmManager);
+            if (!adminRealm.isEnabled()) {
                 logger.debug("realm not enabled");
                 return redirectOnLoginError("realm not enabled");
             }
-            ApplicationModel adminConsole = realm.getApplicationNameMap().get(Constants.ADMIN_CONSOLE_APPLICATION);
+            ApplicationModel adminConsole = adminRealm.getApplicationNameMap().get(Constants.ADMIN_CONSOLE_APPLICATION);
             UserModel adminConsoleUser = adminConsole.getApplicationUser();
             if (!adminConsole.isEnabled() || !adminConsoleUser.isEnabled()) {
                 logger.debug("admin app not enabled");
@@ -301,47 +340,8 @@ public class AdminService {
             }
             new JaxrsOAuthClient().checkStateCookie(uriInfo, headers);
 
-            JWSInput input = new JWSInput(code);
-            boolean verifiedCode = false;
-            try {
-                verifiedCode = RSAProvider.verify(input, realm.getPublicKey());
-            } catch (Exception ignored) {
-                logger.debug("Failed to verify signature", ignored);
-            }
-            if (!verifiedCode) {
-                logger.debug("unverified access code");
-                return redirectOnLoginError("invalid login data");
-            }
-            String key = input.readContentAsString();
-            AccessCodeEntry accessCode = tokenManager.pullAccessCode(key);
-            if (accessCode == null) {
-                logger.debug("bad access code");
-                return redirectOnLoginError("invalid login data");
-            }
-            if (accessCode.isExpired()) {
-                logger.debug("access code expired");
-                return redirectOnLoginError("invalid login data");
-            }
-            if (!accessCode.getToken().isActive()) {
-                logger.debug("access token expired");
-                return redirectOnLoginError("invalid login data");
-            }
-            if (!accessCode.getRealm().getId().equals(realm.getId())) {
-                logger.debug("bad realm");
-                return redirectOnLoginError("invalid login data");
-
-            }
-            if (!adminConsoleUser.getLoginName().equals(accessCode.getClient().getLoginName())) {
-                logger.debug("bad client");
-                return redirectOnLoginError("invalid login data");
-            }
-            RoleModel adminConsoleAdminRole = adminConsole.getRole(Constants.ADMIN_CONSOLE_ADMIN_ROLE);
-            if (!realm.hasRole(accessCode.getUser(), adminConsoleAdminRole)) {
-                logger.debug("not allowed");
-                return redirectOnLoginError("No permission to access console");
-            }
             logger.debug("loginRedirect SUCCESS");
-            NewCookie cookie = authManager.createSaasIdentityCookie(realm, accessCode.getUser(), uriInfo);
+            NewCookie cookie = authManager.createCookie(adminRealm, adminConsoleUser, code, AdminService.saasCookiePath(uriInfo).build());
 
             URI redirectUri = contextRoot(uriInfo).path(adminPath).build();
             if (path != null) {
@@ -349,7 +349,7 @@ public class AdminService {
             }
             return Response.status(302).cookie(cookie).location(redirectUri).build();
         } finally {
-            authManager.expireCookie(AbstractOAuthClient.OAUTH_TOKEN_REQUEST_STATE, uriInfo.getAbsolutePath().getPath());
+            expireCookie();
         }
     }
 
@@ -359,7 +359,7 @@ public class AdminService {
     public Response logout() {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = getAdminstrationRealm(realmManager);
-        authManager.expireSaasIdentityCookie(uriInfo);
+        expireCookie();
         authManager.expireIdentityCookie(realm, uriInfo);
 
         return Response.status(302).location(uriInfo.getBaseUriBuilder().path(AdminService.class).path(AdminService.class, "loginPage").build()).build();
@@ -370,42 +370,7 @@ public class AdminService {
     @NoCache
     public void logoutCookie() {
         logger.debug("*** logoutCookie");
-        authManager.expireSaasIdentityCookie(uriInfo);
-    }
-
-    @Path("login")
-    @POST
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response processLogin(final MultivaluedMap<String, String> formData) {
-        logger.debug("processLogin start");
-        RealmManager realmManager = new RealmManager(session);
-        RealmModel realm = getAdminstrationRealm(realmManager);
-        if (realm == null)
-            throw new NotFoundException();
-        ApplicationModel adminConsole = realm.getApplicationNameMap().get(Constants.ADMIN_CONSOLE_APPLICATION);
-        UserModel adminConsoleUser = adminConsole.getApplicationUser();
-
-        if (!realm.isEnabled()) {
-            throw new NotImplementedYetException();
-        }
-        String username = formData.getFirst("username");
-        UserModel user = realm.getUser(username);
-
-        AuthenticationStatus status = authManager.authenticateForm(realm, user, formData);
-
-        OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
-
-        switch (status) {
-            case SUCCESS:
-                NewCookie cookie = authManager.createSaasIdentityCookie(realm, user, uriInfo);
-                return Response.status(302).cookie(cookie).location(contextRoot(uriInfo).path(adminPath).build()).build();
-            case ACCOUNT_DISABLED:
-                return Flows.forms(realm, request, uriInfo).setError(Messages.ACCOUNT_DISABLED).setFormData(formData).createLogin();
-            case ACTIONS_REQUIRED:
-                return oauth.processAccessCode(null, "n", contextRoot(uriInfo).path(adminPath).build().toString(), adminConsoleUser, user);
-            default:
-                return Flows.forms(realm, request, uriInfo).setError(Messages.INVALID_USER).setFormData(formData).createLogin();
-        }
+        expireCookie();
     }
 
     protected RealmModel getAdminstrationRealm(RealmManager realmManager) {

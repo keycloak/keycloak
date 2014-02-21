@@ -7,6 +7,17 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location
     $http.get('/auth/rest/admin/whoami').success(function(data, status) {
         Auth.user = data;
         Auth.loggedIn = true;
+
+        Auth.hasAccess = function(realm, role) {
+            var realmAccess = Auth.user['realm_access'];
+            if (realmAccess) {
+                realmAccess = realmAccess[realm];
+                if (realmAccess) {
+                    return realmAccess.indexOf(role) >= 0;
+                }
+            }
+            return false;
+        }
     })
         .error(function(data, status) {
             Auth.loggedIn = false;
@@ -62,7 +73,7 @@ module.controller('RealmDropdownCtrl', function($scope, Realm, Current, Auth, $l
     }
 });
 
-module.controller('RealmCreateCtrl', function($scope, Current, Realm, $upload, $http, $location, Dialog, Notifications) {
+module.controller('RealmCreateCtrl', function($scope, Current, Realm, $upload, $http, $location, Dialog, Notifications, Auth) {
     console.log('RealmCreateCtrl');
 
     Current.realm = null;
@@ -131,8 +142,14 @@ module.controller('RealmCreateCtrl', function($scope, Current, Realm, $upload, $
                         Current.realm = Current.realms[i];
                     }
                 }
-                $location.url("/realms/" + realmCopy.realm);
-                Notifications.success("The realm has been created.");
+
+                $http.get('/auth/rest/admin/whoami').success(function(data, status) {
+                    Auth.user = data;
+                    console.log("reloaded auth");
+
+                    $location.url("/realms/" + realmCopy.realm);
+                    Notifications.success("The realm has been created.");
+                });
             });
         });
     };

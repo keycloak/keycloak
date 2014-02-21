@@ -23,7 +23,6 @@ package org.keycloak.services.resources;
 
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
-import org.keycloak.AbstractOAuthClient;
 import org.keycloak.account.Account;
 import org.keycloak.account.AccountLoader;
 import org.keycloak.account.AccountPages;
@@ -32,10 +31,10 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.*;
 import org.keycloak.models.utils.TimeBasedOTP;
-import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.AccessCodeEntry;
-import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.AppAuthManager;
+import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.ModelToRepresentation;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.messages.Messages;
@@ -68,23 +67,23 @@ public class AccountService {
     @Context
     private UriInfo uriInfo;
 
-    private AuthenticationManager authManager = new AuthenticationManager();
+    private AppAuthManager authManager;
 
     private ApplicationModel application;
-
-    private TokenManager tokenManager;
 
     public AccountService(RealmModel realm, ApplicationModel application, TokenManager tokenManager) {
         this.realm = realm;
         this.application = application;
-        this.tokenManager = tokenManager;
+        this.authManager =  new AppAuthManager("KEYCLOAK_ACCOUNT_IDENTITY", tokenManager);
     }
 
     private Response forwardToPage(String path, AccountPages page) {
-        AuthenticationManager.Auth auth = getAuth(false);
+        Auth auth = getAuth(false);
         if (auth != null) {
-            if (!hasAccess(auth)) {
-                return noAccess();
+            try {
+                auth.require(application, AccountRoles.MANAGE_ACCOUNT);
+            } catch (ForbiddenException e) {
+                return Flows.forms(realm, request, uriInfo).setError("No access").createErrorPage();
             }
 
             Account account = AccountLoader.load().createAccount(uriInfo).setRealm(realm).setUser(auth.getUser());
@@ -100,10 +99,6 @@ public class AccountService {
         }
     }
 
-    private Response noAccess() {
-        return Flows.forms(realm, request, uriInfo).setError("No access").createErrorPage();
-    }
-
     @Path("/")
     @OPTIONS
     public Response accountPreflight() {
@@ -117,10 +112,9 @@ public class AccountService {
         if (types.contains(MediaType.WILDCARD_TYPE) || (types.contains(MediaType.TEXT_HTML_TYPE))) {
             return forwardToPage(null, AccountPages.ACCOUNT);
         } else if (types.contains(MediaType.APPLICATION_JSON_TYPE)) {
-            AuthenticationManager.Auth auth = getAuth(true);
-            if (!hasAccess(auth, Constants.ACCOUNT_PROFILE_ROLE)) {
-                return Response.status(Response.Status.FORBIDDEN).build();
-            }
+            Auth auth = getAuth(true);
+            auth.requireOneOf(application, AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
+
             return Cors.add(request, Response.ok(ModelToRepresentation.toRepresentation(auth.getUser()))).auth().allowedOrigins(auth.getClient()).build();
         } else {
             return Response.notAcceptable(Variant.VariantListBuilder.newInstance().mediaTypes(MediaType.TEXT_HTML_TYPE, MediaType.APPLICATION_JSON_TYPE).build()).build();
@@ -143,10 +137,8 @@ public class AccountService {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processAccountUpdate(final MultivaluedMap<String, String> formData) {
-        AuthenticationManager.Auth auth = getAuth(true);
-        if (!hasAccess(auth)) {
-            return noAccess();
-        }
+        Auth auth = getAuth(true);
+        auth.require(application, AccountRoles.MANAGE_ACCOUNT);
 
         UserModel user = auth.getUser();
 
@@ -167,10 +159,8 @@ public class AccountService {
     @Path("totp-remove")
     @GET
     public Response processTotpRemove() {
-        AuthenticationManager.Auth auth = getAuth(true);
-        if (!hasAccess(auth)) {
-            return noAccess();
-        }
+        Auth auth = getAuth(true);
+        auth.require(application, AccountRoles.MANAGE_ACCOUNT);
 
         UserModel user = auth.getUser();
         user.setTotp(false);
@@ -183,10 +173,8 @@ public class AccountService {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processTotpUpdate(final MultivaluedMap<String, String> formData) {
-        AuthenticationManager.Auth auth = getAuth(true);
-        if (!hasAccess(auth)) {
-            return noAccess();
-        }
+        Auth auth = getAuth(true);
+        auth.require(application, AccountRoles.MANAGE_ACCOUNT);
 
         UserModel user = auth.getUser();
 
@@ -215,10 +203,8 @@ public class AccountService {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processPasswordUpdate(final MultivaluedMap<String, String> formData) {
-        AuthenticationManager.Auth auth = getAuth(true);
-        if (!hasAccess(auth)) {
-            return noAccess();
-        }
+        Auth auth = getAuth(true);
+        auth.require(application, AccountRoles.MANAGE_ACCOUNT);
 
         UserModel user = auth.getUser();
 
@@ -285,61 +271,25 @@ public class AccountService {
                 throw new BadRequestException();
             }
 
-            JWSInput input = new JWSInput(code);
-            boolean verifiedCode = false;
-            try {
-                verifiedCode = RSAProvider.verify(input, realm.getPublicKey());
-            } catch (Exception ignored) {
-                logger.debug("Failed to verify signature", ignored);
-            }
-            if (!verifiedCode) {
-                logger.debug("unverified access code");
-                throw new BadRequestException();
-            }
-            String key = input.readContentAsString();
-            AccessCodeEntry accessCode = tokenManager.pullAccessCode(key);
-            if (accessCode == null) {
-                logger.debug("bad access code");
-                throw new BadRequestException();
-            }
-            if (accessCode.isExpired()) {
-                logger.debug("access code expired");
-                throw new BadRequestException();
-            }
-            if (!accessCode.getToken().isActive()) {
-                logger.debug("access token expired");
-                throw new BadRequestException();
-            }
-            if (!accessCode.getRealm().getId().equals(realm.getId())) {
-                logger.debug("bad realm");
-                throw new BadRequestException();
-
-            }
-            if (!client.getLoginName().equals(accessCode.getClient().getLoginName())) {
-                logger.debug("bad client");
-                throw new BadRequestException();
-            }
-
             URI accountUri = Urls.accountBase(uriInfo.getBaseUri()).path("/").build(realm.getName());
             URI redirectUri = path != null ? accountUri.resolve(path) : accountUri;
             if (referrer != null) {
                 redirectUri = redirectUri.resolve("?referrer=" + referrer);
             }
 
-            NewCookie cookie = authManager.createAccountIdentityCookie(realm, accessCode.getUser(), client, Urls.accountBase(uriInfo.getBaseUri()).build(realm.getName()));
+            NewCookie cookie = authManager.createCookie(realm, client, code, Urls.accountBase(uriInfo.getBaseUri()).build(realm.getName()));
             return Response.status(302).cookie(cookie).location(redirectUri).build();
         } finally {
-            authManager.expireCookie(AbstractOAuthClient.OAUTH_TOKEN_REQUEST_STATE, uriInfo.getAbsolutePath().getRawPath());
+            authManager.expireCookie(Urls.accountBase(uriInfo.getBaseUri()).build(realm.getName()));
         }
     }
 
     @Path("logout")
     @GET
     public Response logout() {
-        // TODO Should use single-sign out via TokenService
         URI baseUri = Urls.accountBase(uriInfo.getBaseUri()).build(realm.getName());
         authManager.expireIdentityCookie(realm, uriInfo);
-        authManager.expireAccountIdentityCookie(baseUri);
+        authManager.expireCookie(baseUri);
         return Response.status(302).location(baseUri).build();
     }
 
@@ -348,7 +298,7 @@ public class AccountService {
         String authUrl = Urls.realmLoginPage(uriInfo.getBaseUri(), realm.getName()).toString();
         oauth.setAuthUrl(authUrl);
 
-        oauth.setClientId(Constants.ACCOUNT_APPLICATION);
+        oauth.setClientId(Constants.ACCOUNT_MANAGEMENT_APP);
 
         UriBuilder uriBuilder = Urls.accountPageBuilder(uriInfo.getBaseUri()).path(AccountService.class, "loginRedirect");
 
@@ -368,40 +318,12 @@ public class AccountService {
         return oauth.redirect(uriInfo, accountUri.toString());
     }
 
-    private AuthenticationManager.Auth getAuth(boolean error) {
-        AuthenticationManager.Auth auth = authManager.authenticateAccountIdentity(realm, uriInfo, headers);
+    private Auth getAuth(boolean error) {
+        Auth auth = authManager.authenticate(realm, headers);
         if (auth == null && error) {
             throw new ForbiddenException();
         }
         return auth;
-    }
-
-    private boolean hasAccess(AuthenticationManager.Auth auth) {
-        return hasAccess(auth, null);
-    }
-
-    private boolean hasAccess(AuthenticationManager.Auth auth, String role) {
-        UserModel client = auth.getClient();
-        if (realm.hasRole(client, realm.getRole(Constants.APPLICATION_ROLE))) {
-            // Tokens from cookies don't have roles
-            UserModel user = auth.getUser();
-            if (hasRole(user, Constants.ACCOUNT_MANAGE_ROLE) || (role != null && hasRole(user, role))) {
-                return true;
-            }
-        }
-
-        AccessToken.Access access = auth.getToken().getResourceAccess(application.getName());
-        if (access != null) {
-            if (access.isUserInRole(Constants.ACCOUNT_MANAGE_ROLE) || (role != null && access.isUserInRole(role))) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private boolean hasRole(UserModel user, String role) {
-        return realm.hasRole(user, application.getRole(role));
     }
 
     private String getReferrer() {

@@ -7,6 +7,8 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.managers.ModelToRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testutils.KeycloakServer;
 import org.keycloak.util.JsonSerialization;
@@ -29,6 +31,24 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
 
 
         setupKeycloak();
+    }
+
+    public UserRepresentation getUser(String realm, String name) {
+        KeycloakSession session = server.getKeycloakSessionFactory().createSession();
+        try {
+            return ModelToRepresentation.toRepresentation(session.getRealmByName(realm).getUser(name));
+        } finally {
+            session.close();
+        }
+    }
+
+    public UserRepresentation getUserById(String realm, String id) {
+        KeycloakSession session = server.getKeycloakSessionFactory().createSession();
+        try {
+            return ModelToRepresentation.toRepresentation(session.getRealmByName(realm).getUserById(id));
+        } finally {
+            session.close();
+        }
     }
 
     protected void setupKeycloak() {

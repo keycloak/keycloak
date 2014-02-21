@@ -1,6 +1,7 @@
 package org.keycloak.model.test;
 
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
@@ -31,12 +32,6 @@ import java.util.Set;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class AdapterTest extends AbstractModelTest {
     private RealmModel realmModel;
-
-    @Test
-    public void installTest() throws Exception {
-        new ApplianceBootstrap().bootstrap(identitySession);
-
-    }
 
     @Test
     public void test1CreateRealm() throws Exception {
@@ -79,7 +74,6 @@ public class AdapterTest extends AbstractModelTest {
         realmModel.setUpdateProfileOnInitialSocialLogin(true);
         realmModel.addDefaultRole("foo");
 
-        System.out.println(realmModel.getId());
         realmModel = realmManager.getRealm(realmModel.getId());
         Assert.assertNotNull(realmModel);
         Assert.assertEquals(realmModel.getAccessCodeLifespan(), 100);
@@ -93,13 +87,11 @@ public class AdapterTest extends AbstractModelTest {
         Assert.assertEquals(1, realmModel.getDefaultRoles().size());
         Assert.assertEquals("foo", realmModel.getDefaultRoles().get(0));
 
-        String id = realmModel.getId();
-        System.out.println("id: " + id);
+        realmModel.getId();
 
         commit();
-        List<RealmModel> realms = identitySession.getRealms(null);
-        System.out.println("num realms: " + realms.size());
-        Assert.assertEquals(realms.size(), 1);
+        List<RealmModel> realms = identitySession.getRealms();
+        Assert.assertEquals(realms.size(), 2);
     }
 
 

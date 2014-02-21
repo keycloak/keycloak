@@ -13,6 +13,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RoleModel;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.util.JsonSerialization;
@@ -34,6 +35,8 @@ public class AbstractModelTest {
         identitySession = factory.createSession();
         identitySession.getTransaction().begin();
         realmManager = new RealmManager(identitySession);
+
+        new ApplianceBootstrap().bootstrap(identitySession);
     }
 
     @After

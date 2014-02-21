@@ -1,6 +1,7 @@
 package org.keycloak.services.managers;
 
 import org.jboss.resteasy.logging.Logger;
+import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -62,7 +63,9 @@ public class ApplianceBootstrap {
         adminConsole.setBaseUrl("/auth/admin/index.html");
         adminConsole.setEnabled(true);
 
-        RoleModel adminRole = adminConsole.addRole(Constants.ADMIN_CONSOLE_ADMIN_ROLE);
+        RoleModel adminRole = realm.getRole(AdminRoles.ADMIN);
+
+        adminConsole.addScope(adminRole);
 
         UserModel adminUser = realm.addUser("admin");
         adminUser.setEnabled(true);
@@ -74,7 +77,7 @@ public class ApplianceBootstrap {
 
         realm.grantRole(adminUser, adminRole);
 
-        ApplicationModel accountApp = realm.getApplicationNameMap().get(Constants.ACCOUNT_APPLICATION);
+        ApplicationModel accountApp = realm.getApplicationNameMap().get(Constants.ACCOUNT_MANAGEMENT_APP);
         for (String r : accountApp.getDefaultRoles()) {
             realm.grantRole(adminUser, accountApp.getRole(r));
         }

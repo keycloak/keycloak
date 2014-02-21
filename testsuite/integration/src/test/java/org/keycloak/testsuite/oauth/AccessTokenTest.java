@@ -25,8 +25,10 @@ import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.models.RealmModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.OAuthClient.AccessTokenResponse;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -70,11 +72,8 @@ public class AccessTokenTest {
 
         AccessToken token = oauth.verifyToken(response.getAccessToken());
 
-        UserRepresentation user = oauth.getProfile(response.getAccessToken());
-
-        Assert.assertEquals(user.getId(), token.getSubject());
+        Assert.assertEquals(keycloakRule.getUser("test", "test-user@localhost").getId(), token.getSubject());
         Assert.assertNotEquals("test-user@localhost", token.getSubject());
-        Assert.assertEquals("test-user@localhost", user.getUsername());
 
         Assert.assertEquals(1, token.getRealmAccess().getRoles().size());
         Assert.assertTrue(token.getRealmAccess().isUserInRole("user"));

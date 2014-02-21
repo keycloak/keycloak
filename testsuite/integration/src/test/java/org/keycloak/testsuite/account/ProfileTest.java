@@ -10,6 +10,7 @@ import org.json.JSONObject;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
@@ -31,8 +32,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.net.URI;
-import java.util.Collections;
-import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -53,7 +52,7 @@ public class ProfileTest {
             user.setAttribute("key1", "value1");
             user.setAttribute("key2", "value2");
 
-            ApplicationModel accountApp = appRealm.getApplicationNameMap().get(org.keycloak.models.Constants.ACCOUNT_APPLICATION);
+            ApplicationModel accountApp = appRealm.getApplicationNameMap().get(org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_APP);
 
             UserModel user2 = appRealm.addUser("test-user-no-access@localhost");
             user2.setEnabled(true);
@@ -66,12 +65,12 @@ public class ProfileTest {
             appRealm.updateCredential(user2, creds);
 
             ApplicationModel app = appRealm.getApplicationNameMap().get("test-app");
-            appRealm.addScopeMapping(app.getApplicationUser(), accountApp.getRole(org.keycloak.models.Constants.ACCOUNT_PROFILE_ROLE));
+            appRealm.addScopeMapping(app.getApplicationUser(), accountApp.getRole(AccountRoles.VIEW_PROFILE));
 
             app.getApplicationUser().addWebOrigin("http://localtest.me:8081");
 
             UserModel thirdParty = appRealm.getUser("third-party");
-            appRealm.addScopeMapping(thirdParty, accountApp.getRole(org.keycloak.models.Constants.ACCOUNT_PROFILE_ROLE));
+            appRealm.addScopeMapping(thirdParty, accountApp.getRole(AccountRoles.VIEW_PROFILE));
         }
     });
 
@@ -175,7 +174,7 @@ public class ProfileTest {
 
     @Test
     public void getProfileOAuthClient() throws Exception {
-        oauth.addScope(org.keycloak.models.Constants.ACCOUNT_APPLICATION, org.keycloak.models.Constants.ACCOUNT_PROFILE_ROLE);
+        oauth.addScope(org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_APP, AccountRoles.VIEW_PROFILE);
         oauth.clientId("third-party");
         oauth.doLoginGrant("test-user@localhost", "password");
 
@@ -192,7 +191,7 @@ public class ProfileTest {
 
     @Test
     public void getProfileOAuthClientNoScope() throws Exception {
-        oauth.addScope(org.keycloak.models.Constants.ACCOUNT_APPLICATION);
+        oauth.addScope(org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_APP);
         oauth.clientId("third-party");
         oauth.doLoginGrant("test-user@localhost", "password");
 

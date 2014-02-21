@@ -21,7 +21,6 @@
  */
 package org.keycloak.testsuite.forms;
 
-import org.apache.http.HttpResponse;
 import org.junit.*;
 import org.keycloak.models.*;
 import org.keycloak.models.utils.TimeBasedOTP;
@@ -35,10 +34,6 @@ import org.keycloak.testsuite.rule.KeycloakRule.KeycloakSetup;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.FindBy;
-
-import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
@@ -53,7 +48,7 @@ public class AccountTest {
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
             UserModel user = appRealm.getUser("test-user@localhost");
 
-            ApplicationModel accountApp = appRealm.getApplicationNameMap().get(org.keycloak.models.Constants.ACCOUNT_APPLICATION);
+            ApplicationModel accountApp = appRealm.getApplicationNameMap().get(org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_APP);
 
             UserModel user2 = appRealm.addUser("test-user-no-access@localhost");
             user2.setEnabled(true);
