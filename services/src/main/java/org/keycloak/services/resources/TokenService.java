@@ -15,9 +15,8 @@ import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserModel.RequiredAction;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
-import org.keycloak.representations.SkeletonKeyToken;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -154,7 +153,7 @@ public class TokenService {
         }
 
         tokenManager = new TokenManager();
-        SkeletonKeyToken token = authManager.createIdentityToken(realm, user);
+        AccessToken token = authManager.createIdentityToken(realm, user);
         String encoded = tokenManager.encodeToken(realm, token);
         AccessTokenResponse res = accessTokenResponse(token, encoded);
         return Response.ok(res, MediaType.APPLICATION_JSON_TYPE).build();
@@ -186,7 +185,7 @@ public class TokenService {
         if (authManager.authenticateForm(realm, user, form) != AuthenticationStatus.SUCCESS) {
             throw new NotAuthorizedException("Auth failed");
         }
-        SkeletonKeyToken token = tokenManager.createAccessToken(realm, user);
+        AccessToken token = tokenManager.createAccessToken(realm, user);
         String encoded = tokenManager.encodeToken(realm, token);
         AccessTokenResponse res = accessTokenResponse(token, encoded);
         return Response.ok(res, MediaType.APPLICATION_JSON_TYPE).build();
@@ -433,13 +432,13 @@ public class TokenService {
         return Cors.add(request, Response.ok(res)).allowedOrigins(client).allowedMethods("POST").build();
     }
 
-    protected AccessTokenResponse accessTokenResponse(PrivateKey privateKey, SkeletonKeyToken token) {
+    protected AccessTokenResponse accessTokenResponse(PrivateKey privateKey, AccessToken token) {
         String encodedToken = new JWSBuilder().jsonContent(token).rsa256(privateKey);
 
         return accessTokenResponse(token, encodedToken);
     }
 
-    protected AccessTokenResponse accessTokenResponse(SkeletonKeyToken token, String encodedToken) {
+    protected AccessTokenResponse accessTokenResponse(AccessToken token, String encodedToken) {
         AccessTokenResponse res = new AccessTokenResponse();
         res.setToken(encodedToken);
         res.setTokenType("bearer");

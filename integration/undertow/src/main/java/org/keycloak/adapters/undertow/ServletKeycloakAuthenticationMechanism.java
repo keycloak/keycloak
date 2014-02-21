@@ -3,10 +3,10 @@ package org.keycloak.adapters.undertow;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.servlet.api.ConfidentialPortManager;
 import io.undertow.servlet.handlers.ServletRequestContext;
-import org.keycloak.SkeletonKeyPrincipal;
+import org.keycloak.KeycloakAuthenticatedSession;
+import org.keycloak.KeycloakPrincipal;
 import org.keycloak.adapters.config.RealmConfiguration;
 import org.keycloak.adapters.ResourceMetadata;
-import org.keycloak.SkeletonKeySession;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 
 import javax.servlet.http.HttpServletRequest;
@@ -39,21 +39,21 @@ public class ServletKeycloakAuthenticationMechanism extends KeycloakAuthenticati
     }
 
     @Override
-    protected void propagateBearer(HttpServerExchange exchange, SkeletonKeySession skSession, SkeletonKeyPrincipal principal) {
+    protected void propagateBearer(HttpServerExchange exchange, KeycloakAuthenticatedSession skSession, KeycloakPrincipal principal) {
         super.propagateBearer(exchange, skSession, principal);
         final ServletRequestContext servletRequestContext = exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
         HttpServletRequest req = (HttpServletRequest) servletRequestContext.getServletRequest();
-        req.setAttribute(SkeletonKeySession.class.getName(), skSession);
+        req.setAttribute(KeycloakAuthenticatedSession.class.getName(), skSession);
     }
 
     @Override
-    protected void propagateOauth(HttpServerExchange exchange, SkeletonKeySession skSession, SkeletonKeyPrincipal principal) {
+    protected void propagateOauth(HttpServerExchange exchange, KeycloakAuthenticatedSession skSession, KeycloakPrincipal principal) {
         super.propagateBearer(exchange, skSession, principal);
         final ServletRequestContext servletRequestContext = exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
         HttpServletRequest req = (HttpServletRequest) servletRequestContext.getServletRequest();
-        req.setAttribute(SkeletonKeySession.class.getName(), skSession);
+        req.setAttribute(KeycloakAuthenticatedSession.class.getName(), skSession);
         HttpSession session = req.getSession(true);
-        session.setAttribute(SkeletonKeySession.class.getName(), skSession);
+        session.setAttribute(KeycloakAuthenticatedSession.class.getName(), skSession);
         userSessionManagement.login(servletRequestContext.getDeployment().getSessionManager(), session, principal.getName());
     }
 }

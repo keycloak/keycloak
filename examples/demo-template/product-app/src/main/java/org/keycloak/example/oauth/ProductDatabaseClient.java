@@ -4,7 +4,7 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.keycloak.SkeletonKeySession;
+import org.keycloak.KeycloakAuthenticatedSession;
 import org.keycloak.adapters.HttpClientBuilder;
 import org.keycloak.util.JsonSerialization;
 
@@ -35,7 +35,7 @@ public class ProductDatabaseClient
     }
 
     public static List<String> getProducts(HttpServletRequest req) throws Failure {
-        SkeletonKeySession session = (SkeletonKeySession)req.getAttribute(SkeletonKeySession.class.getName());
+        KeycloakAuthenticatedSession session = (KeycloakAuthenticatedSession)req.getAttribute(KeycloakAuthenticatedSession.class.getName());
         HttpClient client = new HttpClientBuilder()
                 .trustStore(session.getMetadata().getTruststore())
                 .hostnameVerification(HttpClientBuilder.HostnameVerificationPolicy.ANY).build();

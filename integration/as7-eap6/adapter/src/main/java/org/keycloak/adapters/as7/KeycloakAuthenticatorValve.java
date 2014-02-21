@@ -13,17 +13,17 @@ import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.deploy.LoginConfig;
 import org.apache.catalina.realm.GenericPrincipal;
 import org.jboss.logging.Logger;
+import org.keycloak.KeycloakAuthenticatedSession;
+import org.keycloak.KeycloakPrincipal;
 import org.keycloak.adapters.AdapterConstants;
 import org.keycloak.adapters.ResourceMetadata;
-import org.keycloak.SkeletonKeyPrincipal;
-import org.keycloak.SkeletonKeySession;
 import org.keycloak.adapters.as7.config.CatalinaAdapterConfigLoader;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.adapters.config.RealmConfiguration;
 import org.keycloak.adapters.config.RealmConfigurationLoader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
-import org.keycloak.representations.SkeletonKeyToken;
 import org.keycloak.representations.adapters.action.LogoutAction;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.StreamUtil;
@@ -192,9 +192,9 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
         request.setAuthType("OAUTH");
         Session session = request.getSessionInternal();
         if (session != null) {
-            SkeletonKeySession skSession = (SkeletonKeySession) session.getNote(SkeletonKeySession.class.getName());
+            KeycloakAuthenticatedSession skSession = (KeycloakAuthenticatedSession) session.getNote(KeycloakAuthenticatedSession.class.getName());
             if (skSession != null) {
-                request.setAttribute(SkeletonKeySession.class.getName(), skSession);
+                request.setAttribute(KeycloakAuthenticatedSession.class.getName(), skSession);
             }
         }
         return true;
@@ -219,22 +219,22 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
         } else {
             if (!oauth.resolveCode(code)) return;
 
-            SkeletonKeyToken token = oauth.getToken();
+            AccessToken token = oauth.getToken();
             Set<String> roles = new HashSet<String>();
             if (adapterConfig.isUseResourceRoleMappings()) {
-                SkeletonKeyToken.Access access = token.getResourceAccess(resourceMetadata.getResourceName());
+                AccessToken.Access access = token.getResourceAccess(resourceMetadata.getResourceName());
                 if (access != null) roles.addAll(access.getRoles());
             } else {
-                SkeletonKeyToken.Access access = token.getRealmAccess();
+                AccessToken.Access access = token.getRealmAccess();
                 if (access != null) roles.addAll(access.getRoles());
             }
-            SkeletonKeyPrincipal skp = new SkeletonKeyPrincipal(token.getSubject(), null);
+            KeycloakPrincipal skp = new KeycloakPrincipal(token.getSubject(), null);
             GenericPrincipal principal = new CatalinaSecurityContextHelper().createPrincipal(context.getRealm(), skp, roles);
             Session session = request.getSessionInternal(true);
             session.setPrincipal(principal);
             session.setAuthType("OAUTH");
-            SkeletonKeySession skSession = new SkeletonKeySession(oauth.getTokenString(), token, realmConfiguration.getMetadata());
-            session.setNote(SkeletonKeySession.class.getName(), skSession);
+            KeycloakAuthenticatedSession skSession = new KeycloakAuthenticatedSession(oauth.getTokenString(), token, realmConfiguration.getMetadata());
+            session.setNote(KeycloakAuthenticatedSession.class.getName(), skSession);
 
             String username = token.getSubject();
             log.debug("userSessionManage.login: " + username);

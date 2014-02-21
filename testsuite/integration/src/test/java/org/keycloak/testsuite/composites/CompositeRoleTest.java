@@ -30,7 +30,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.representations.SkeletonKeyToken;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.services.managers.ApplicationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.ApplicationServlet;
@@ -164,7 +164,7 @@ public class CompositeRoleTest {
 
         Assert.assertEquals("bearer", response.getTokenType());
 
-        SkeletonKeyToken token = oauth.verifyToken(response.getAccessToken());
+        AccessToken token = oauth.verifyToken(response.getAccessToken());
 
         Assert.assertEquals("APP_COMPOSITE_USER", oauth.getProfile(response.getAccessToken()).getUsername());
 
@@ -189,7 +189,7 @@ public class CompositeRoleTest {
 
         Assert.assertEquals("bearer", response.getTokenType());
 
-        SkeletonKeyToken token = oauth.verifyToken(response.getAccessToken());
+        AccessToken token = oauth.verifyToken(response.getAccessToken());
 
         Assert.assertEquals("REALM_APP_COMPOSITE_USER", oauth.getProfile(response.getAccessToken()).getUsername());
 
@@ -213,7 +213,7 @@ public class CompositeRoleTest {
 
         Assert.assertEquals("bearer", response.getTokenType());
 
-        SkeletonKeyToken token = oauth.verifyToken(response.getAccessToken());
+        AccessToken token = oauth.verifyToken(response.getAccessToken());
 
         Assert.assertEquals("REALM_COMPOSITE_1_USER", oauth.getProfile(response.getAccessToken()).getUsername());
 
@@ -236,7 +236,7 @@ public class CompositeRoleTest {
 
         Assert.assertEquals("bearer", response.getTokenType());
 
-        SkeletonKeyToken token = oauth.verifyToken(response.getAccessToken());
+        AccessToken token = oauth.verifyToken(response.getAccessToken());
 
         Assert.assertEquals("REALM_COMPOSITE_1_USER", oauth.getProfile(response.getAccessToken()).getUsername());
 
@@ -258,7 +258,7 @@ public class CompositeRoleTest {
 
         Assert.assertEquals("bearer", response.getTokenType());
 
-        SkeletonKeyToken token = oauth.verifyToken(response.getAccessToken());
+        AccessToken token = oauth.verifyToken(response.getAccessToken());
 
         Assert.assertEquals("REALM_ROLE_1_USER", oauth.getProfile(response.getAccessToken()).getUsername());
 

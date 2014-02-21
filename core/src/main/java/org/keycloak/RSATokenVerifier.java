@@ -2,7 +2,7 @@ package org.keycloak;
 
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
-import org.keycloak.representations.SkeletonKeyToken;
+import org.keycloak.representations.AccessToken;
 
 import java.io.IOException;
 import java.security.PublicKey;
@@ -13,7 +13,7 @@ import java.security.PublicKey;
  */
 public class RSATokenVerifier {
 
-    public static SkeletonKeyToken verifyToken(String tokenString, PublicKey realmKey, String realm) throws VerificationException {
+    public static AccessToken verifyToken(String tokenString, PublicKey realmKey, String realm) throws VerificationException {
         JWSInput input = new JWSInput(tokenString);
         boolean verified = false;
         try {
@@ -23,9 +23,9 @@ public class RSATokenVerifier {
         }
         if (!verified) throw new VerificationException("Token signature not validated");
 
-        SkeletonKeyToken token = null;
+        AccessToken token = null;
         try {
-            token = input.readJsonContent(SkeletonKeyToken.class);
+            token = input.readJsonContent(AccessToken.class);
         } catch (IOException e) {
             throw new VerificationException(e);
         }

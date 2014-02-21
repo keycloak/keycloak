@@ -2,12 +2,12 @@ package org.keycloak.jaxrs;
 
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.KeycloakAuthenticatedSession;
+import org.keycloak.KeycloakPrincipal;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.adapters.ResourceMetadata;
-import org.keycloak.SkeletonKeyPrincipal;
-import org.keycloak.SkeletonKeySession;
 import org.keycloak.VerificationException;
-import org.keycloak.representations.SkeletonKeyToken;
+import org.keycloak.representations.AccessToken;
 
 import javax.annotation.Priority;
 import javax.ws.rs.Priorities;
@@ -66,14 +66,14 @@ public class JaxrsBearerTokenFilter implements ContainerRequestFilter {
 
 
         try {
-            SkeletonKeyToken token = RSATokenVerifier.verifyToken(tokenString, resourceMetadata.getRealmKey(), resourceMetadata.getRealm());
-            SkeletonKeySession skSession = new SkeletonKeySession(tokenString, token, resourceMetadata);
-            ResteasyProviderFactory.pushContext(SkeletonKeySession.class, skSession);
+            AccessToken token = RSATokenVerifier.verifyToken(tokenString, resourceMetadata.getRealmKey(), resourceMetadata.getRealm());
+            KeycloakAuthenticatedSession skSession = new KeycloakAuthenticatedSession(tokenString, token, resourceMetadata);
+            ResteasyProviderFactory.pushContext(KeycloakAuthenticatedSession.class, skSession);
             String callerPrincipal = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
 
-            final SkeletonKeyPrincipal principal = new SkeletonKeyPrincipal(token.getSubject(), callerPrincipal);
+            final KeycloakPrincipal principal = new KeycloakPrincipal(token.getSubject(), callerPrincipal);
             final boolean isSecure = securityContext.isSecure();
-            final SkeletonKeyToken.Access access;
+            final AccessToken.Access access;
             if (resourceMetadata.getResourceName() != null) {
                 access = token.getResourceAccess(resourceMetadata.getResourceName());
             } else {

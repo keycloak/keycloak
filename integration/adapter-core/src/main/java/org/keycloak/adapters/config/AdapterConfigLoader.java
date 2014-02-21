@@ -2,7 +2,7 @@ package org.keycloak.adapters.config;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
-import org.keycloak.representations.SkeletonKeyScope;
+import org.keycloak.representations.AccessScope;
 import org.keycloak.util.Base64Url;
 import org.keycloak.util.EnvUtil;
 import org.keycloak.util.JsonSerialization;
@@ -128,7 +128,7 @@ public class AdapterConfigLoader {
         }
     }
 
-    protected String encodeScope(SkeletonKeyScope scope) {
+    protected String encodeScope(AccessScope scope) {
         try {
             byte[] scopeBytes = JsonSerialization.writeValueAsBytes(scope);
             return Base64Url.encode(scopeBytes);

@@ -7,10 +7,10 @@ import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
 import org.apache.catalina.valves.ValveBase;
 import org.jboss.logging.Logger;
-import org.keycloak.SkeletonKeySession;
+import org.keycloak.KeycloakAuthenticatedSession;
 import org.keycloak.adapters.AdapterConstants;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.adapters.config.AdapterConfig;
-import org.keycloak.representations.SkeletonKeyToken;
 
 import javax.management.ObjectName;
 import javax.servlet.ServletException;
@@ -45,7 +45,7 @@ public class AuthenticatedActionsValve extends ValveBase {
     @Override
     public void invoke(Request request, Response response) throws IOException, ServletException {
         log.debugv("AuthenticatedActionsValve.invoke {0}", request.getRequestURI());
-        SkeletonKeySession session = getSkeletonKeySession(request);
+        KeycloakAuthenticatedSession session = getSkeletonKeySession(request);
         if (corsRequest(request, response, session)) return;
         String requestUri = request.getRequestURI();
         if (requestUri.endsWith(AdapterConstants.K_QUERY_BEARER_TOKEN)) {
@@ -55,17 +55,17 @@ public class AuthenticatedActionsValve extends ValveBase {
         getNext().invoke(request, response);
     }
 
-    public SkeletonKeySession getSkeletonKeySession(Request request) {
-        SkeletonKeySession skSession = (SkeletonKeySession) request.getAttribute(SkeletonKeySession.class.getName());
+    public KeycloakAuthenticatedSession getSkeletonKeySession(Request request) {
+        KeycloakAuthenticatedSession skSession = (KeycloakAuthenticatedSession) request.getAttribute(KeycloakAuthenticatedSession.class.getName());
         if (skSession != null) return skSession;
         Session session = request.getSessionInternal();
         if (session != null) {
-            return (SkeletonKeySession) session.getNote(SkeletonKeySession.class.getName());
+            return (KeycloakAuthenticatedSession) session.getNote(KeycloakAuthenticatedSession.class.getName());
         }
         return null;
     }
 
-    protected void queryBearerToken(Request request, Response response, SkeletonKeySession session) throws IOException, ServletException {
+    protected void queryBearerToken(Request request, Response response, KeycloakAuthenticatedSession session) throws IOException, ServletException {
         log.debugv("queryBearerToken {0}", request.getRequestURI());
         if (abortTokenResponse(request, response, session)) return;
         response.setStatus(HttpServletResponse.SC_OK);
@@ -75,7 +75,7 @@ public class AuthenticatedActionsValve extends ValveBase {
 
     }
 
-    protected boolean abortTokenResponse(Request request, Response response, SkeletonKeySession session) throws IOException {
+    protected boolean abortTokenResponse(Request request, Response response, KeycloakAuthenticatedSession session) throws IOException {
         if (session == null) {
             log.debugv("session was null, sending back 401: {0}", request.getRequestURI());
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
@@ -92,13 +92,13 @@ public class AuthenticatedActionsValve extends ValveBase {
         return false;
     }
 
-    protected boolean corsRequest(Request request, Response response, SkeletonKeySession session) throws IOException {
+    protected boolean corsRequest(Request request, Response response, KeycloakAuthenticatedSession session) throws IOException {
         if (!config.isCors()) return false;
         log.debugv("CORS enabled + request.getRequestURI()");
         String origin = request.getHeader("Origin");
         log.debugv("Origin: {0} uri: {1}", origin, request.getRequestURI());
         if (session != null && origin != null) {
-            SkeletonKeyToken token = session.getToken();
+            AccessToken token = session.getToken();
             Set<String> allowedOrigins = token.getAllowedOrigins();
             if (log.isDebugEnabled()) {
                 for (String a : allowedOrigins) log.debug("   " + a);

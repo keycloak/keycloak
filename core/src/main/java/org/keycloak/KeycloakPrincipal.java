@@ -6,11 +6,11 @@ import java.security.Principal;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class SkeletonKeyPrincipal implements Principal {
+public class KeycloakPrincipal implements Principal {
     protected String name;
     protected String surrogate;
 
-    public SkeletonKeyPrincipal(String name, String surrogate) {
+    public KeycloakPrincipal(String name, String surrogate) {
         this.name = name;
         this.surrogate = surrogate;
     }
@@ -29,7 +29,7 @@ public class SkeletonKeyPrincipal implements Principal {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        SkeletonKeyPrincipal that = (SkeletonKeyPrincipal) o;
+        KeycloakPrincipal that = (KeycloakPrincipal) o;
 
         if (!name.equals(that.name)) return false;
         if (surrogate != null ? !surrogate.equals(that.surrogate) : that.surrogate != null) return false;

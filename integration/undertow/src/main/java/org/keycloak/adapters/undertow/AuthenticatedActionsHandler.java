@@ -5,10 +5,10 @@ import io.undertow.server.HttpServerExchange;
 import io.undertow.util.Headers;
 import io.undertow.util.StatusCodes;
 import org.jboss.logging.Logger;
-import org.keycloak.SkeletonKeySession;
+import org.keycloak.KeycloakAuthenticatedSession;
 import org.keycloak.adapters.AdapterConstants;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.adapters.config.AdapterConfig;
-import org.keycloak.representations.SkeletonKeyToken;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -38,7 +38,7 @@ public class AuthenticatedActionsHandler implements HttpHandler {
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
         log.debugv("AuthenticatedActionsValve.invoke {0}", exchange.getRequestURI());
-        SkeletonKeySession session = getSkeletonKeySession(exchange);
+        KeycloakAuthenticatedSession session = getSkeletonKeySession(exchange);
         if (corsRequest(exchange, session)) return;
         String requestUri = exchange.getRequestURI();
         if (requestUri.endsWith(AdapterConstants.K_QUERY_BEARER_TOKEN)) {
@@ -48,13 +48,13 @@ public class AuthenticatedActionsHandler implements HttpHandler {
         next.handleRequest(exchange);
     }
 
-    public SkeletonKeySession getSkeletonKeySession(HttpServerExchange exchange) {
-        SkeletonKeySession skSession = exchange.getAttachment(KeycloakAuthenticationMechanism.SKELETON_KEY_SESSION_ATTACHMENT_KEY);
+    public KeycloakAuthenticatedSession getSkeletonKeySession(HttpServerExchange exchange) {
+        KeycloakAuthenticatedSession skSession = exchange.getAttachment(KeycloakAuthenticationMechanism.SKELETON_KEY_SESSION_ATTACHMENT_KEY);
         if (skSession != null) return skSession;
         return null;
     }
 
-    protected void queryBearerToken(HttpServerExchange exchange, SkeletonKeySession session) throws IOException, ServletException {
+    protected void queryBearerToken(HttpServerExchange exchange, KeycloakAuthenticatedSession session) throws IOException, ServletException {
         log.debugv("queryBearerToken {0}",exchange.getRequestURI());
         if (abortTokenResponse(exchange, session)) return;
         exchange.setResponseCode(StatusCodes.OK);
@@ -63,7 +63,7 @@ public class AuthenticatedActionsHandler implements HttpHandler {
         exchange.endExchange();
     }
 
-    protected boolean abortTokenResponse(HttpServerExchange exchange, SkeletonKeySession session) throws IOException {
+    protected boolean abortTokenResponse(HttpServerExchange exchange, KeycloakAuthenticatedSession session) throws IOException {
         if (session == null) {
             log.debugv("session was null, sending back 401: {0}",exchange.getRequestURI());
             exchange.setResponseCode(StatusCodes.UNAUTHORIZED);
@@ -83,13 +83,13 @@ public class AuthenticatedActionsHandler implements HttpHandler {
         return false;
     }
 
-    protected boolean corsRequest(HttpServerExchange exchange, SkeletonKeySession session) throws IOException {
+    protected boolean corsRequest(HttpServerExchange exchange, KeycloakAuthenticatedSession session) throws IOException {
         if (!adapterConfig.isCors()) return false;
         log.debugv("CORS enabled + request.getRequestURI()");
         String origin = exchange.getRequestHeaders().getFirst("Origin");
         log.debugv("Origin: {0} uri: {1}", origin, exchange.getRequestURI());
         if (session != null && origin != null) {
-            SkeletonKeyToken token = session.getToken();
+            AccessToken token = session.getToken();
             Set<String> allowedOrigins = token.getAllowedOrigins();
             if (log.isDebugEnabled()) {
                 for (String a : allowedOrigins) log.debug("   " + a);

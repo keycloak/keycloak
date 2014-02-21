@@ -8,7 +8,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.jose.jws.JWSBuilder;
-import org.keycloak.representations.SkeletonKeyToken;
+import org.keycloak.representations.AccessToken;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
@@ -35,7 +35,7 @@ public class RSAVerifierTest {
     private static KeyPair badPair;
     private static KeyPair clientPair;
     private static X509Certificate[] clientCertificateChain;
-    private SkeletonKeyToken token;
+    private AccessToken token;
 
     static {
         if (Security.getProvider("BC") == null) Security.addProvider(new BouncyCastleProvider());
@@ -69,7 +69,7 @@ public class RSAVerifierTest {
     @Before
     public void initTest() {
 
-        token = new SkeletonKeyToken();
+        token = new AccessToken();
         token.subject("CN=Client")
                 .audience("domain")
                 .addAccess("service").addRole("admin");
@@ -95,12 +95,12 @@ public class RSAVerifierTest {
         String encoded = new JWSBuilder()
                 .jsonContent(token)
                 .rsa256(idpPair.getPrivate());
-        SkeletonKeyToken token = verifySkeletonKeyToken(encoded);
+        AccessToken token = verifySkeletonKeyToken(encoded);
         Assert.assertTrue(token.getResourceAccess("service").getRoles().contains("admin"));
         Assert.assertEquals("CN=Client", token.getSubject());
     }
 
-    private SkeletonKeyToken verifySkeletonKeyToken(String encoded) throws VerificationException {
+    private AccessToken verifySkeletonKeyToken(String encoded) throws VerificationException {
         return RSATokenVerifier.verifyToken(encoded, idpPair.getPublic(), "domain");
     }
 
@@ -135,7 +135,7 @@ public class RSAVerifierTest {
                 .jsonContent(token)
                 .rsa256(badPair.getPrivate());
 
-        SkeletonKeyToken v = null;
+        AccessToken v = null;
         try {
             v = verifySkeletonKeyToken(encoded);
             Assert.fail();
@@ -151,7 +151,7 @@ public class RSAVerifierTest {
                 .jsonContent(token)
                 .rsa256(idpPair.getPrivate());
 
-        SkeletonKeyToken v = null;
+        AccessToken v = null;
         try {
             v = verifySkeletonKeyToken(encoded);
         } catch (VerificationException ignored) {
@@ -167,7 +167,7 @@ public class RSAVerifierTest {
                 .jsonContent(token)
                 .rsa256(idpPair.getPrivate());
 
-        SkeletonKeyToken v = null;
+        AccessToken v = null;
         try {
             v = verifySkeletonKeyToken(encoded);
             Assert.fail();
@@ -184,7 +184,7 @@ public class RSAVerifierTest {
                 .jsonContent(token)
                 .rsa256(idpPair.getPrivate());
 
-        SkeletonKeyToken v = null;
+        AccessToken v = null;
         try {
             v = verifySkeletonKeyToken(encoded);
         } catch (VerificationException ignored) {
@@ -200,7 +200,7 @@ public class RSAVerifierTest {
                 .jsonContent(token)
                 .rsa256(idpPair.getPrivate());
 
-        SkeletonKeyToken v = null;
+        AccessToken v = null;
         try {
             v = verifySkeletonKeyToken(encoded);
             Assert.fail();
@@ -211,7 +211,7 @@ public class RSAVerifierTest {
 
     @Test
     public void testTokenAuth() throws Exception {
-        token = new SkeletonKeyToken();
+        token = new AccessToken();
         token.subject("CN=Client")
                 .audience("domain")
                 .addAccess("service").addRole("admin").verifyCaller(true);
@@ -220,7 +220,7 @@ public class RSAVerifierTest {
                 .jsonContent(token)
                 .rsa256(idpPair.getPrivate());
 
-        SkeletonKeyToken v = null;
+        AccessToken v = null;
         try {
             v = verifySkeletonKeyToken(encoded);
         } catch (VerificationException ignored) {

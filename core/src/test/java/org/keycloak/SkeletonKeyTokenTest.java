@@ -5,8 +5,8 @@ import org.junit.Test;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
-import org.keycloak.representations.SkeletonKeyScope;
-import org.keycloak.representations.SkeletonKeyToken;
+import org.keycloak.representations.AccessScope;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
@@ -29,7 +29,7 @@ public class SkeletonKeyTokenTest {
         public void run() {
             for (int i = 0; i < 10000; i++) {
                 try {
-                    SkeletonKeyScope scope = JsonSerialization.readValue(json.getBytes(), SkeletonKeyScope.class);
+                    AccessScope scope = JsonSerialization.readValue(json.getBytes(), AccessScope.class);
                 } catch (IOException e) {
 
                 }
@@ -39,7 +39,7 @@ public class SkeletonKeyTokenTest {
 
     @Test
     public void testScope() throws Exception {
-        SkeletonKeyScope scope2 = new SkeletonKeyScope();
+        AccessScope scope2 = new AccessScope();
 
         scope2.add("one", "admin");
         scope2.add("one", "buyer");
@@ -69,7 +69,7 @@ public class SkeletonKeyTokenTest {
 
     @Test
     public void testToken() throws Exception {
-        SkeletonKeyToken token = new SkeletonKeyToken();
+        AccessToken token = new AccessToken();
         token.id("111");
         token.addAccess("foo").addRole("admin");
         token.addAccess("bar").addRole("user");
@@ -77,9 +77,9 @@ public class SkeletonKeyTokenTest {
         String json = JsonSerialization.writeValueAsString(token);
         System.out.println(json);
 
-        token = JsonSerialization.readValue(json, SkeletonKeyToken.class);
+        token = JsonSerialization.readValue(json, AccessToken.class);
         Assert.assertEquals("111", token.getId());
-        SkeletonKeyToken.Access foo = token.getResourceAccess("foo");
+        AccessToken.Access foo = token.getResourceAccess("foo");
         Assert.assertNotNull(foo);
         Assert.assertTrue(foo.isUserInRole("admin"));
 
@@ -87,7 +87,7 @@ public class SkeletonKeyTokenTest {
 
     @Test
     public void testRSA() throws Exception {
-        SkeletonKeyToken token = new SkeletonKeyToken();
+        AccessToken token = new AccessToken();
         token.id("111");
         token.addAccess("foo").addRole("admin");
         token.addAccess("bar").addRole("user");
@@ -102,7 +102,7 @@ public class SkeletonKeyTokenTest {
 
         JWSInput input = new JWSInput(encoded);
 
-        token = input.readJsonContent(SkeletonKeyToken.class);
+        token = input.readJsonContent(AccessToken.class);
         Assert.assertEquals("111", token.getId());
         Assert.assertTrue(RSAProvider.verify(input, keyPair.getPublic()));
     }

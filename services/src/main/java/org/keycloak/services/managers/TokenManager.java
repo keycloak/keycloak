@@ -7,8 +7,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.representations.SkeletonKeyScope;
-import org.keycloak.representations.SkeletonKeyToken;
+import org.keycloak.representations.AccessScope;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.util.Base64Url;
 import org.keycloak.util.JsonSerialization;
 
@@ -44,7 +44,7 @@ public class TokenManager {
         return accessCodeMap.remove(key);
     }
 
-    protected boolean desiresScope(SkeletonKeyScope scope, String key, String roleName) {
+    protected boolean desiresScope(AccessScope scope, String key, String roleName) {
         if (scope == null || scope.isEmpty()) return true;
         List<String> val = scope.get(key);
         if (val == null) return false;
@@ -52,12 +52,12 @@ public class TokenManager {
 
     }
 
-    protected boolean desiresScopeGroup(SkeletonKeyScope scope, String key) {
+    protected boolean desiresScopeGroup(AccessScope scope, String key) {
         if (scope == null || scope.isEmpty()) return true;
         return scope.containsKey(key);
     }
 
-    protected boolean isEmpty(SkeletonKeyScope scope) {
+    protected boolean isEmpty(AccessScope scope) {
         return scope == null || scope.isEmpty();
     }
 
@@ -79,7 +79,7 @@ public class TokenManager {
 
     public AccessCodeEntry createAccessCode(String scopeParam, String state, String redirect, RealmModel realm, UserModel client, UserModel user) {
         AccessCodeEntry code = new AccessCodeEntry();
-        SkeletonKeyScope scopeMap = null;
+        AccessScope scopeMap = null;
         if (scopeParam != null) scopeMap = decodeScope(scopeParam);
         List<RoleModel> realmRolesRequested = code.getRealmRolesRequested();
         MultivaluedMap<String, RoleModel> resourceRolesRequested = code.getResourceRolesRequested();
@@ -131,8 +131,8 @@ public class TokenManager {
         return code;
     }
 
-    protected SkeletonKeyToken initToken(RealmModel realm, UserModel client, UserModel user) {
-        SkeletonKeyToken token = new SkeletonKeyToken();
+    protected AccessToken initToken(RealmModel realm, UserModel client, UserModel user) {
+        AccessToken token = new AccessToken();
         token.id(KeycloakModelUtils.generateId());
         token.subject(user.getId());
         token.audience(realm.getName());
@@ -148,12 +148,12 @@ public class TokenManager {
         return token;
     }
 
-    protected void addComposites(SkeletonKeyToken token, RoleModel role) {
-        SkeletonKeyToken.Access access = null;
+    protected void addComposites(AccessToken token, RoleModel role) {
+        AccessToken.Access access = null;
         if (role.getContainer() instanceof RealmModel) {
             access = token.getRealmAccess();
             if (token.getRealmAccess() == null) {
-                access = new SkeletonKeyToken.Access();
+                access = new AccessToken.Access();
                 token.setRealmAccess(access);
             } else if (token.getRealmAccess().getRoles() != null && token.getRealmAccess().isUserInRole(role.getName()))
                 return;
@@ -178,7 +178,7 @@ public class TokenManager {
 
     protected void createToken(AccessCodeEntry accessCodeEntry, RealmModel realm, UserModel client, UserModel user) {
 
-        SkeletonKeyToken token = initToken(realm, client, user);
+        AccessToken token = initToken(realm, client, user);
 
         if (accessCodeEntry.getRealmRolesRequested().size() > 0) {
             for (RoleModel role : accessCodeEntry.getRealmRolesRequested()) {
@@ -196,7 +196,7 @@ public class TokenManager {
         accessCodeEntry.setToken(token);
     }
 
-    public String encodeScope(SkeletonKeyScope scope) {
+    public String encodeScope(AccessScope scope) {
         String token = null;
         try {
             token = JsonSerialization.writeValueAsString(scope);
@@ -206,11 +206,11 @@ public class TokenManager {
         return Base64Url.encode(token.getBytes());
     }
 
-    public SkeletonKeyScope decodeScope(String scopeParam) {
-        SkeletonKeyScope scope = null;
+    public AccessScope decodeScope(String scopeParam) {
+        AccessScope scope = null;
         byte[] bytes = Base64Url.decode(scopeParam);
         try {
-            scope = JsonSerialization.readValue(bytes, SkeletonKeyScope.class);
+            scope = JsonSerialization.readValue(bytes, AccessScope.class);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -218,8 +218,8 @@ public class TokenManager {
     }
 
 
-    public SkeletonKeyToken createAccessToken(RealmModel realm, UserModel user) {
-        SkeletonKeyToken token = new SkeletonKeyToken();
+    public AccessToken createAccessToken(RealmModel realm, UserModel user) {
+        AccessToken token = new AccessToken();
         token.id(KeycloakModelUtils.generateId());
         token.issuedNow();
         token.subject(user.getId());
