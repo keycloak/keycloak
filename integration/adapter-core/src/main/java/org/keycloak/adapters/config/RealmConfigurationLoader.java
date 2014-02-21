@@ -37,6 +37,7 @@ public class RealmConfigurationLoader extends AdapterConfigLoader {
         KeycloakUriBuilder serverBuilder = KeycloakUriBuilder.fromUri(adapterConfig.getAuthServerUrl());
         String authUrl = serverBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_LOGIN_PATH).build(adapterConfig.getRealm()).toString();
         String tokenUrl = serverBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_ACCESS_CODE_PATH).build(adapterConfig.getRealm()).toString();
+        String refreshUrl = serverBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_REFRESH_PATH).build(adapterConfig.getRealm()).toString();
 
         realmConfiguration.setMetadata(resourceMetadata);
         realmConfiguration.setSslRequired(!adapterConfig.isSslNotRequired());
@@ -47,6 +48,7 @@ public class RealmConfigurationLoader extends AdapterConfigLoader {
         realmConfiguration.setClient(client);
         realmConfiguration.setAuthUrl(KeycloakUriBuilder.fromUri(authUrl).queryParam("client_id", resourceMetadata.getResourceName()));
         realmConfiguration.setCodeUrl(tokenUrl);
+        realmConfiguration.setRefreshUrl(refreshUrl);
     }
 
     protected void initClient() {

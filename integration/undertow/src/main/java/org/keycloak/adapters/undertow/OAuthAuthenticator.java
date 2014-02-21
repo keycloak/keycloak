@@ -234,7 +234,7 @@ public class OAuthAuthenticator {
         AccessTokenResponse tokenResponse = null;
         String redirectUri = stripOauthParametersFromRedirect();
         try {
-            tokenResponse = TokenGrantRequest.invoke(realmInfo, code, redirectUri);
+            tokenResponse = TokenGrantRequest.invokeAccessCodeToToken(realmInfo, code, redirectUri);
         } catch (TokenGrantRequest.HttpFailure failure) {
             log.error("failed to turn code into token");
             log.error("status from server: " + failure.getStatus());

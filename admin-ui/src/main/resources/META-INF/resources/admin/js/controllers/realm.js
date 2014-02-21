@@ -543,10 +543,16 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
 
     $scope.realm = realm;
 
-    $scope.realm.tokenLifespanUnit = TimeUnit.autoUnit(realm.tokenLifespan);
-    $scope.realm.tokenLifespan = TimeUnit.toUnit(realm.tokenLifespan, $scope.realm.tokenLifespanUnit);
-    $scope.$watch('realm.tokenLifespanUnit', function(to, from) {
-        $scope.realm.tokenLifespan = TimeUnit.convert($scope.realm.tokenLifespan, from, to);
+    $scope.realm.accessTokenLifespanUnit = TimeUnit.autoUnit(realm.accessTokenLifespan);
+    $scope.realm.accessTokenLifespan = TimeUnit.toUnit(realm.accessTokenLifespan, $scope.realm.accessTokenLifespanUnit);
+    $scope.$watch('realm.accessTokenLifespanUnit', function(to, from) {
+        $scope.realm.accessTokenLifespan = TimeUnit.convert($scope.realm.accessTokenLifespan, from, to);
+    });
+
+    $scope.realm.refreshTokenLifespanUnit = TimeUnit.autoUnit(realm.refreshTokenLifespan);
+    $scope.realm.refreshTokenLifespan = TimeUnit.toUnit(realm.refreshTokenLifespan, $scope.realm.refreshTokenLifespanUnit);
+    $scope.$watch('realm.refreshTokenLifespanUnit', function(to, from) {
+        $scope.realm.refreshTokenLifespan = TimeUnit.convert($scope.realm.tokenLifespan, from, to);
     });
 
     $scope.realm.accessCodeLifespanUnit = TimeUnit.autoUnit(realm.accessCodeLifespan);
@@ -573,11 +579,13 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
 
     $scope.save = function() {
         var realmCopy = angular.copy($scope.realm);
-        delete realmCopy["tokenLifespanUnit"];
+        delete realmCopy["accessTokenLifespanUnit"];
+        delete realmCopy["refreshTokenLifespanUnit"];
         delete realmCopy["accessCodeLifespanUnit"];
         delete realmCopy["accessCodeLifespanUserActionUnit"];
 
-        realmCopy.tokenLifespan = TimeUnit.toSeconds($scope.realm.tokenLifespan, $scope.realm.tokenLifespanUnit)
+        realmCopy.accessTokenLifespan = TimeUnit.toSeconds($scope.realm.accessTokenLifespan, $scope.realm.accessTokenLifespanUnit)
+        realmCopy.refreshTokenLifespan = TimeUnit.toSeconds($scope.realm.refreshTokenLifespan, $scope.realm.refreshTokenLifespanUnit)
         realmCopy.accessCodeLifespan = TimeUnit.toSeconds($scope.realm.accessCodeLifespan, $scope.realm.accessCodeLifespanUnit)
         realmCopy.accessCodeLifespanUserAction = TimeUnit.toSeconds($scope.realm.accessCodeLifespanUserAction, $scope.realm.accessCodeLifespanUserActionUnit)
 

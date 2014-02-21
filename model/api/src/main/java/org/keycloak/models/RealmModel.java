@@ -185,4 +185,6 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
      * @return
      */
     UserCredentialModel getSecret(UserModel user);
+
+    boolean hasScope(UserModel user, RoleModel role);
 }

@@ -16,6 +16,7 @@ public class RealmConfiguration {
     protected HttpClient client;
     protected KeycloakUriBuilder authUrl;
     protected String codeUrl;
+    protected String refreshUrl;
     protected Map<String, String> resourceCredentials = new HashMap<String, String>();
     protected boolean sslRequired = true;
     protected String stateCookieName = "OAuth_Token_Request_State";
@@ -70,6 +71,14 @@ public class RealmConfiguration {
 
     public void setCodeUrl(String codeUrl) {
         this.codeUrl = codeUrl;
+    }
+
+    public String getRefreshUrl() {
+        return refreshUrl;
+    }
+
+    public void setRefreshUrl(String refreshUrl) {
+        this.refreshUrl = refreshUrl;
     }
 
     public Map<String, String> getResourceCredentials() {
