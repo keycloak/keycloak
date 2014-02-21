@@ -27,19 +27,16 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.representations.SkeletonKeyToken;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
 
 import java.io.IOException;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:vrockai@redhat.com">Viliam Rockai</a>

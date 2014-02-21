@@ -4,7 +4,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
-import org.keycloak.representations.SkeletonKeyToken;
+import org.keycloak.representations.AccessToken;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
@@ -25,7 +25,7 @@ public class AccessCodeEntry {
 
     protected long expiration;
     protected RealmModel realm;
-    protected SkeletonKeyToken token;
+    protected AccessToken token;
     protected UserModel user;
     protected Set<RequiredAction> requiredActions;
     protected UserModel client;
@@ -64,11 +64,11 @@ public class AccessCodeEntry {
         this.expiration = expiration;
     }
 
-    public SkeletonKeyToken getToken() {
+    public AccessToken getToken() {
         return token;
     }
 
-    public void setToken(SkeletonKeyToken token) {
+    public void setToken(AccessToken token) {
         this.token = token;
     }
 

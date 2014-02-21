@@ -5,7 +5,7 @@ import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.servlet.handlers.ServletRequestContext;
 import org.jboss.logging.Logger;
-import org.keycloak.SkeletonKeySession;
+import org.keycloak.KeycloakAuthenticatedSession;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -36,7 +36,7 @@ public class ServletPropagateSessionHandler implements HttpHandler {
         log.info("handleRequest");
         final ServletRequestContext servletRequestContext = exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
         HttpServletRequest req = (HttpServletRequest) servletRequestContext.getServletRequest();
-        SkeletonKeySession skSession = (SkeletonKeySession)req.getAttribute(SkeletonKeySession.class.getName());
+        KeycloakAuthenticatedSession skSession = (KeycloakAuthenticatedSession)req.getAttribute(KeycloakAuthenticatedSession.class.getName());
         if (skSession != null) {
             log.info("skSession is in request");
             next.handleRequest(exchange);
@@ -49,14 +49,14 @@ public class ServletPropagateSessionHandler implements HttpHandler {
             next.handleRequest(exchange);
             return;
         }
-        skSession = (SkeletonKeySession)session.getAttribute(SkeletonKeySession.class.getName());
+        skSession = (KeycloakAuthenticatedSession)session.getAttribute(KeycloakAuthenticatedSession.class.getName());
         if (skSession == null) {
             log.info("skSession not in http session, nothing to propagate");
             next.handleRequest(exchange);
             return;
         }
         log.info("propagating");
-        req.setAttribute(SkeletonKeySession.class.getName(), skSession);
+        req.setAttribute(KeycloakAuthenticatedSession.class.getName(), skSession);
         exchange.putAttachment(KeycloakAuthenticationMechanism.SKELETON_KEY_SESSION_ATTACHMENT_KEY, skSession);
         next.handleRequest(exchange);
     }

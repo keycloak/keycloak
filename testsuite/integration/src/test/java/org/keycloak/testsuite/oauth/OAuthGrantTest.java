@@ -25,11 +25,10 @@ import java.io.IOException;
 import java.util.Map;
 
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.representations.SkeletonKeyToken;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
@@ -78,13 +77,13 @@ public class OAuthGrantTest {
         Assert.assertTrue(oauth.getCurrentQuery().containsKey("code"));
         OAuthClient.AccessTokenResponse accessToken = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get("code"), "password");
 
-        SkeletonKeyToken token = oauth.verifyToken(accessToken.getAccessToken());
+        AccessToken token = oauth.verifyToken(accessToken.getAccessToken());
 
-        SkeletonKeyToken.Access realmAccess = token.getRealmAccess();
+        AccessToken.Access realmAccess = token.getRealmAccess();
         Assert.assertEquals(1, realmAccess.getRoles().size());
         Assert.assertTrue(realmAccess.isUserInRole("user"));
 
-        Map<String,SkeletonKeyToken.Access> resourceAccess = token.getResourceAccess();
+        Map<String,AccessToken.Access> resourceAccess = token.getResourceAccess();
         Assert.assertEquals(1, resourceAccess.size());
         Assert.assertEquals(1, resourceAccess.get("test-app").getRoles().size());
         Assert.assertTrue(resourceAccess.get("test-app").isUserInRole("customer-user"));
@@ -104,12 +103,12 @@ public class OAuthGrantTest {
         Assert.assertTrue(oauth.getCurrentQuery().containsKey("code"));
         OAuthClient.AccessTokenResponse accessToken = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get("code"), "password");
 
-        SkeletonKeyToken token = oauth.verifyToken(accessToken.getAccessToken());
+        AccessToken token = oauth.verifyToken(accessToken.getAccessToken());
 
-        SkeletonKeyToken.Access realmAccess = token.getRealmAccess();
+        AccessToken.Access realmAccess = token.getRealmAccess();
         Assert.assertNull(realmAccess);
 
-        Map<String,SkeletonKeyToken.Access> resourceAccess = token.getResourceAccess();
+        Map<String,AccessToken.Access> resourceAccess = token.getResourceAccess();
         Assert.assertEquals(1, resourceAccess.size());
         Assert.assertEquals(1, resourceAccess.get("test-app").getRoles().size());
         Assert.assertTrue(resourceAccess.get("test-app").isUserInRole("customer-user"));

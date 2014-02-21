@@ -12,8 +12,8 @@ import org.keycloak.RSATokenVerifier;
 import org.keycloak.adapters.config.RealmConfiguration;
 import org.keycloak.VerificationException;
 import org.keycloak.adapters.TokenGrantRequest;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
-import org.keycloak.representations.SkeletonKeyToken;
 import org.keycloak.util.KeycloakUriBuilder;
 
 import java.io.IOException;
@@ -31,7 +31,7 @@ public class OAuthAuthenticator {
     protected RealmConfiguration realmInfo;
     protected int sslRedirectPort;
     protected String tokenString;
-    protected SkeletonKeyToken token;
+    protected AccessToken token;
     protected HttpServerExchange exchange;
     protected KeycloakChallenge challenge;
 
@@ -49,7 +49,7 @@ public class OAuthAuthenticator {
         return tokenString;
     }
 
-    public SkeletonKeyToken getToken() {
+    public AccessToken getToken() {
         return token;
     }
 

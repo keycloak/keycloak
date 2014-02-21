@@ -25,7 +25,7 @@ import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.representations.SkeletonKeyToken;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.OAuthClient.AccessTokenResponse;
@@ -68,7 +68,7 @@ public class AccessTokenTest {
 
         Assert.assertEquals("bearer", response.getTokenType());
 
-        SkeletonKeyToken token = oauth.verifyToken(response.getAccessToken());
+        AccessToken token = oauth.verifyToken(response.getAccessToken());
 
         UserRepresentation user = oauth.getProfile(response.getAccessToken());
 

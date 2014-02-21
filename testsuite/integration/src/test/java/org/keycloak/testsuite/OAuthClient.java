@@ -38,11 +38,11 @@ import org.json.JSONObject;
 import org.junit.Assert;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
+import org.keycloak.representations.AccessScope;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.representations.SkeletonKeyScope;
-import org.keycloak.representations.SkeletonKeyToken;
 import org.keycloak.util.Base64Url;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
@@ -51,7 +51,6 @@ import javax.ws.rs.core.UriBuilder;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.charset.Charset;
 import java.security.PublicKey;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -77,7 +76,7 @@ public class OAuthClient {
 
     private String redirectUri = "http://localhost:8081/app/auth";
 
-    private SkeletonKeyScope scope;
+    private AccessScope scope;
 
     private String state;
 
@@ -163,7 +162,7 @@ public class OAuthClient {
         }
     }
 
-    public SkeletonKeyToken verifyToken(String token) {
+    public AccessToken verifyToken(String token) {
         try {
             return RSATokenVerifier.verifyToken(token, realmPublicKey, realm);
         } catch (VerificationException e) {
@@ -268,7 +267,7 @@ public class OAuthClient {
 
     public OAuthClient addScope(String resource, String... roles) {
         if (scope == null) {
-            scope = new SkeletonKeyScope();
+            scope = new AccessScope();
         }
         scope.addAll(resource, roles);
         return this;

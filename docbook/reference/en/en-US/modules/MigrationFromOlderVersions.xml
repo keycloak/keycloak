@@ -1,7 +1,16 @@
 <chapter id="Migration_from_older_versions">
     <title>Migration from older versions</title>
     <sect1>
-        <title>Migrating from 1.0 Alpha 1 to 1.0 Alpha 2</title>
+        <title>Migrating from 1.0 Alpha 2 to Alpha 3</title>
+        <itemizedlist>
+            <listitem>
+                SkeletonKeyToken, SkeletonKeyScope, SkeletonKeyPrincipal, and SkeletonKeySession have been renamed to:
+                AccessToken, AccessScope, KeycloakPrincipal, and KeycloakAuthenticatedSession respectively.
+            </listitem>
+        </itemizedlist>
+    </sect1>
+    <sect1>
+        <title>Migrating from 1.0 Alpha 1 to Alpha 2</title>
         <itemizedlist>
             <listitem>
                 DB Schema has changed.  We don't have any data migration utilities yet as of Alpha 2.

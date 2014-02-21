@@ -4,7 +4,7 @@ import io.undertow.server.HandlerWrapper;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.servlet.handlers.ServletRequestContext;
-import org.keycloak.SkeletonKeySession;
+import org.keycloak.KeycloakAuthenticatedSession;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 
 import javax.servlet.http.HttpServletRequest;
@@ -34,15 +34,15 @@ public class ServletAuthenticatedActionsHandler extends AuthenticatedActionsHand
     }
 
     @Override
-    public SkeletonKeySession getSkeletonKeySession(HttpServerExchange exchange) {
-        SkeletonKeySession skSession = super.getSkeletonKeySession(exchange);
+    public KeycloakAuthenticatedSession getSkeletonKeySession(HttpServerExchange exchange) {
+        KeycloakAuthenticatedSession skSession = super.getSkeletonKeySession(exchange);
         if (skSession != null) return skSession;
 
         final ServletRequestContext servletRequestContext = exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
         HttpServletRequest req = (HttpServletRequest) servletRequestContext.getServletRequest();
         HttpSession session = req.getSession(false);
         if (session == null) return null;
-        return (SkeletonKeySession)session.getAttribute(SkeletonKeySession.class.getName());
+        return (KeycloakAuthenticatedSession)session.getAttribute(KeycloakAuthenticatedSession.class.getName());
 
     }
 }

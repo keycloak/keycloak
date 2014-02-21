@@ -6,12 +6,12 @@ import io.undertow.security.idm.Account;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.AttachmentKey;
 import org.jboss.logging.Logger;
+import org.keycloak.KeycloakAuthenticatedSession;
+import org.keycloak.KeycloakPrincipal;
 import org.keycloak.adapters.config.RealmConfiguration;
 import org.keycloak.adapters.ResourceMetadata;
-import org.keycloak.SkeletonKeyPrincipal;
-import org.keycloak.SkeletonKeySession;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.adapters.config.AdapterConfig;
-import org.keycloak.representations.SkeletonKeyToken;
 
 import java.security.Principal;
 import java.util.Collections;
@@ -25,7 +25,7 @@ public class KeycloakAuthenticationMechanism implements AuthenticationMechanism 
     protected Logger log = Logger.getLogger(KeycloakAuthenticationMechanism.class);
 
     public static final AttachmentKey<KeycloakChallenge> KEYCLOAK_CHALLENGE_ATTACHMENT_KEY = AttachmentKey.create(KeycloakChallenge.class);
-    public static final AttachmentKey<SkeletonKeySession> SKELETON_KEY_SESSION_ATTACHMENT_KEY = AttachmentKey.create(SkeletonKeySession.class);
+    public static final AttachmentKey<KeycloakAuthenticatedSession> SKELETON_KEY_SESSION_ATTACHMENT_KEY = AttachmentKey.create(KeycloakAuthenticatedSession.class);
 
     protected ResourceMetadata resourceMetadata;
     protected AdapterConfig adapterConfig;
@@ -59,10 +59,10 @@ public class KeycloakAuthenticationMechanism implements AuthenticationMechanism 
             return AuthenticationMechanismOutcome.NOT_AUTHENTICATED;
         }
         else if (outcome == AuthenticationMechanismOutcome.AUTHENTICATED) {
-            final SkeletonKeyToken token = bearer.getToken();
+            final AccessToken token = bearer.getToken();
             String surrogate = bearer.getSurrogate();
-            SkeletonKeySession session = new SkeletonKeySession(bearer.getTokenString(), token, resourceMetadata);
-            SkeletonKeyPrincipal principal = completeAuthentication(securityContext, token, surrogate);
+            KeycloakAuthenticatedSession session = new KeycloakAuthenticatedSession(bearer.getTokenString(), token, resourceMetadata);
+            KeycloakPrincipal principal = completeAuthentication(securityContext, token, surrogate);
             propagateBearer(exchange, session, principal);
             return AuthenticationMechanismOutcome.AUTHENTICATED;
         }
@@ -82,8 +82,8 @@ public class KeycloakAuthenticationMechanism implements AuthenticationMechanism 
             return AuthenticationMechanismOutcome.NOT_ATTEMPTED;
 
         }
-        SkeletonKeySession session = new SkeletonKeySession(oauth.getTokenString(), oauth.getToken(), resourceMetadata);
-        SkeletonKeyPrincipal principal = completeAuthentication(securityContext, oauth.getToken(), null);
+        KeycloakAuthenticatedSession session = new KeycloakAuthenticatedSession(oauth.getTokenString(), oauth.getToken(), resourceMetadata);
+        KeycloakPrincipal principal = completeAuthentication(securityContext, oauth.getToken(), null);
         propagateOauth(exchange, session, principal);
         log.info("AUTHENTICATED");
         return AuthenticationMechanismOutcome.AUTHENTICATED;
@@ -97,14 +97,14 @@ public class KeycloakAuthenticationMechanism implements AuthenticationMechanism 
         return new BearerTokenAuthenticator(resourceMetadata, adapterConfig.isUseResourceRoleMappings());
     }
 
-    protected SkeletonKeyPrincipal completeAuthentication(SecurityContext securityContext, SkeletonKeyToken token, String surrogate) {
-        final SkeletonKeyPrincipal skeletonKeyPrincipal = new SkeletonKeyPrincipal(token.getSubject(), surrogate);
+    protected KeycloakPrincipal completeAuthentication(SecurityContext securityContext, AccessToken token, String surrogate) {
+        final KeycloakPrincipal skeletonKeyPrincipal = new KeycloakPrincipal(token.getSubject(), surrogate);
         Set<String> roles = null;
         if (adapterConfig.isUseResourceRoleMappings()) {
-            SkeletonKeyToken.Access access = token.getResourceAccess(resourceMetadata.getResourceName());
+            AccessToken.Access access = token.getResourceAccess(resourceMetadata.getResourceName());
             if (access != null) roles = access.getRoles();
         } else {
-            SkeletonKeyToken.Access access = token.getRealmAccess();
+            AccessToken.Access access = token.getRealmAccess();
             if (access != null) roles = access.getRoles();
         }
         if (roles == null) roles = Collections.emptySet();
@@ -124,12 +124,12 @@ public class KeycloakAuthenticationMechanism implements AuthenticationMechanism 
         return skeletonKeyPrincipal;
     }
 
-    protected void propagateBearer(HttpServerExchange exchange, SkeletonKeySession session, SkeletonKeyPrincipal principal) {
+    protected void propagateBearer(HttpServerExchange exchange, KeycloakAuthenticatedSession session, KeycloakPrincipal principal) {
         exchange.putAttachment(SKELETON_KEY_SESSION_ATTACHMENT_KEY, session);
 
     }
 
-    protected void propagateOauth(HttpServerExchange exchange, SkeletonKeySession session, SkeletonKeyPrincipal principal) {
+    protected void propagateOauth(HttpServerExchange exchange, KeycloakAuthenticatedSession session, KeycloakPrincipal principal) {
         exchange.putAttachment(SKELETON_KEY_SESSION_ATTACHMENT_KEY, session);
     }
 

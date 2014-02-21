@@ -2,7 +2,7 @@ package org.keycloak.representations.adapters.config;
 
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.annotate.JsonPropertyOrder;
-import org.keycloak.representations.SkeletonKeyScope;
+import org.keycloak.representations.AccessScope;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -38,7 +38,7 @@ public class BaseAdapterConfig extends BaseRealmConfig {
     @JsonProperty("credentials")
     protected Map<String, String> credentials = new HashMap<String, String>();
     @JsonProperty("scope")
-    protected SkeletonKeyScope scope;
+    protected AccessScope scope;
 
 
     public boolean isUseResourceRoleMappings() {
@@ -113,11 +113,11 @@ public class BaseAdapterConfig extends BaseRealmConfig {
         this.credentials = credentials;
     }
 
-    public SkeletonKeyScope getScope() {
+    public AccessScope getScope() {
         return scope;
     }
 
-    public void setScope(SkeletonKeyScope scope) {
+    public void setScope(AccessScope scope) {
         this.scope = scope;
     }
 }

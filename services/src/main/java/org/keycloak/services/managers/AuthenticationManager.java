@@ -12,7 +12,7 @@ import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.representations.SkeletonKeyToken;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.resources.AccountService;
 import org.keycloak.services.resources.admin.AdminService;
@@ -40,8 +40,8 @@ public class AuthenticationManager {
     public static final String FORM_USERNAME = "username";
     public static final String KEYCLOAK_IDENTITY_COOKIE = "KEYCLOAK_IDENTITY";
 
-    public SkeletonKeyToken createIdentityToken(RealmModel realm, UserModel user) {
-        SkeletonKeyToken token = new SkeletonKeyToken();
+    public AccessToken createIdentityToken(RealmModel realm, UserModel user) {
+        AccessToken token = new AccessToken();
         token.id(KeycloakModelUtils.generateId());
         token.issuedNow();
         token.subject(user.getId());
@@ -73,7 +73,7 @@ public class AuthenticationManager {
     }
 
     protected NewCookie createLoginCookie(RealmModel realm, UserModel user, UserModel client, String cookieName, String cookiePath) {
-        SkeletonKeyToken identityToken = createIdentityToken(realm, user);
+        AccessToken identityToken = createIdentityToken(realm, user);
         if (client != null) {
             identityToken.issuedFor(client.getLoginName());
         }
@@ -168,7 +168,7 @@ public class AuthenticationManager {
 
         String tokenString = cookie.getValue();
         try {
-            SkeletonKeyToken token = RSATokenVerifier.verifyToken(tokenString, realm.getPublicKey(), realm.getName());
+            AccessToken token = RSATokenVerifier.verifyToken(tokenString, realm.getPublicKey(), realm.getName());
             if (!token.isActive()) {
                 logger.debug("identity cookie expired");
                 expireIdentityCookie(realm, uriInfo);
@@ -217,7 +217,7 @@ public class AuthenticationManager {
 
 
         try {
-            SkeletonKeyToken token = RSATokenVerifier.verifyToken(tokenString, realm.getPublicKey(), realm.getName());
+            AccessToken token = RSATokenVerifier.verifyToken(tokenString, realm.getPublicKey(), realm.getName());
             if (!token.isActive()) {
                 throw new NotAuthorizedException("token_expired");
             }
@@ -330,15 +330,15 @@ public class AuthenticationManager {
     }
 
     public static class Auth {
-        private SkeletonKeyToken token;
+        private AccessToken token;
         private UserModel user;
         private UserModel client;
 
-        public Auth(SkeletonKeyToken token) {
+        public Auth(AccessToken token) {
             this.token = token;
         }
 
-        public SkeletonKeyToken getToken() {
+        public AccessToken getToken() {
             return token;
         }
 

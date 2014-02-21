@@ -32,7 +32,7 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.*;
 import org.keycloak.models.utils.TimeBasedOTP;
-import org.keycloak.representations.SkeletonKeyToken;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -390,7 +390,7 @@ public class AccountService {
             }
         }
 
-        SkeletonKeyToken.Access access = auth.getToken().getResourceAccess(application.getName());
+        AccessToken.Access access = auth.getToken().getResourceAccess(application.getName());
         if (access != null) {
             if (access.isUserInRole(Constants.ACCOUNT_MANAGE_ROLE) || (role != null && access.isUserInRole(role))) {
                 return true;

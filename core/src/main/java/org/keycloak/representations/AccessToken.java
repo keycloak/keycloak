@@ -12,7 +12,7 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class SkeletonKeyToken extends JsonWebToken {
+public class AccessToken extends JsonWebToken {
     public static class Access {
         @JsonProperty("roles")
         protected Set<String> roles;
@@ -49,9 +49,6 @@ public class SkeletonKeyToken extends JsonWebToken {
             return this;
         }
     }
-
-    @JsonProperty("issuedFor")
-    public String issuedFor;
 
     @JsonProperty("trusted-certs")
     protected Set<String> trustedCertificates;
@@ -106,43 +103,43 @@ public class SkeletonKeyToken extends JsonWebToken {
     }
 
     @Override
-    public SkeletonKeyToken id(String id) {
-        return (SkeletonKeyToken) super.id(id);
+    public AccessToken id(String id) {
+        return (AccessToken) super.id(id);
     }
 
     @Override
-    public SkeletonKeyToken expiration(long expiration) {
-        return (SkeletonKeyToken) super.expiration(expiration);
+    public AccessToken expiration(long expiration) {
+        return (AccessToken) super.expiration(expiration);
     }
 
     @Override
-    public SkeletonKeyToken notBefore(long notBefore) {
-        return (SkeletonKeyToken) super.notBefore(notBefore);
+    public AccessToken notBefore(long notBefore) {
+        return (AccessToken) super.notBefore(notBefore);
     }
 
     @Override
-    public SkeletonKeyToken issuedAt(long issuedAt) {
-        return (SkeletonKeyToken) super.issuedAt(issuedAt);
+    public AccessToken issuedAt(long issuedAt) {
+        return (AccessToken) super.issuedAt(issuedAt);
     }
 
     @Override
-    public SkeletonKeyToken issuer(String issuer) {
-        return (SkeletonKeyToken) super.issuer(issuer);
+    public AccessToken issuer(String issuer) {
+        return (AccessToken) super.issuer(issuer);
     }
 
     @Override
-    public SkeletonKeyToken audience(String audience) {
-        return (SkeletonKeyToken) super.audience(audience);
+    public AccessToken audience(String audience) {
+        return (AccessToken) super.audience(audience);
     }
 
     @Override
-    public SkeletonKeyToken subject(String subject) {
-        return (SkeletonKeyToken) super.subject(subject);
+    public AccessToken subject(String subject) {
+        return (AccessToken) super.subject(subject);
     }
 
     @Override
-    public SkeletonKeyToken type(String type) {
-        return (SkeletonKeyToken) super.type(type);
+    public AccessToken type(String type) {
+        return (AccessToken) super.type(type);
     }
 
     public Set<String> getAllowedOrigins() {
@@ -169,17 +166,10 @@ public class SkeletonKeyToken extends JsonWebToken {
         this.trustedCertificates = trustedCertificates;
     }
 
-    /**
-     * OAuth client the token was issued for.
-     *
-     * @return
-     */
-    public String getIssuedFor() {
-        return issuedFor;
+    @Override
+    public AccessToken issuedFor(String issuedFor) {
+        return (AccessToken)super.issuedFor(issuedFor);
     }
 
-    public SkeletonKeyToken issuedFor(String issuedFor) {
-        this.issuedFor = issuedFor;
-        return this;
-    }
+
 }

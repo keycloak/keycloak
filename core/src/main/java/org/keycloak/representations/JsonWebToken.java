@@ -26,6 +26,8 @@ public class JsonWebToken implements Serializable {
     protected String subject;
     @JsonProperty("typ")
     protected String type;
+    @JsonProperty("azp")
+    public String issuedFor;
 
     public String getId() {
         return id;
@@ -131,6 +133,20 @@ public class JsonWebToken implements Serializable {
 
     public JsonWebToken type(String type) {
         this.type = type;
+        return this;
+    }
+
+    /**
+     * OAuth client the token was issued for.
+     *
+     * @return
+     */
+    public String getIssuedFor() {
+        return issuedFor;
+    }
+
+    public JsonWebToken issuedFor(String issuedFor) {
+        this.issuedFor = issuedFor;
         return this;
     }
 }

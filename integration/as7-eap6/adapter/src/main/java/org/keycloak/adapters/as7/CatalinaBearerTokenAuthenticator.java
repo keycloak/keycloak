@@ -2,12 +2,12 @@ package org.keycloak.adapters.as7;
 
 import org.apache.catalina.connector.Request;
 import org.jboss.logging.Logger;
+import org.keycloak.KeycloakAuthenticatedSession;
+import org.keycloak.KeycloakPrincipal;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.adapters.ResourceMetadata;
-import org.keycloak.SkeletonKeyPrincipal;
-import org.keycloak.SkeletonKeySession;
 import org.keycloak.VerificationException;
-import org.keycloak.representations.SkeletonKeyToken;
+import org.keycloak.representations.AccessToken;
 
 import javax.security.auth.login.LoginException;
 import javax.servlet.http.HttpServletResponse;
@@ -26,7 +26,7 @@ public class CatalinaBearerTokenAuthenticator {
     protected boolean challenge;
     protected Logger log = Logger.getLogger(CatalinaBearerTokenAuthenticator.class);
     protected String tokenString;
-    protected SkeletonKeyToken token;
+    protected AccessToken token;
     private Principal principal;
     protected boolean useResourceRoleMappings;
 
@@ -44,7 +44,7 @@ public class CatalinaBearerTokenAuthenticator {
         return tokenString;
     }
 
-    public SkeletonKeyToken getToken() {
+    public AccessToken getToken() {
         return token;
     }
 
@@ -79,12 +79,12 @@ public class CatalinaBearerTokenAuthenticator {
         boolean verifyCaller = false;
         Set<String> roles = new HashSet<String>();
         if (useResourceRoleMappings) {
-            SkeletonKeyToken.Access access = token.getResourceAccess(resourceMetadata.getResourceName());
+            AccessToken.Access access = token.getResourceAccess(resourceMetadata.getResourceName());
             if (access != null) roles = access.getRoles();
             verifyCaller = token.isVerifyCaller(resourceMetadata.getResourceName());
         } else {
             verifyCaller = token.isVerifyCaller();
-            SkeletonKeyToken.Access access = token.getRealmAccess();
+            AccessToken.Access access = token.getRealmAccess();
             if (access != null) roles = access.getRoles();
         }
         String surrogate = null;
@@ -102,12 +102,12 @@ public class CatalinaBearerTokenAuthenticator {
             }
             surrogate = chain[0].getSubjectX500Principal().getName();
         }
-        SkeletonKeyPrincipal skeletonKeyPrincipal = new SkeletonKeyPrincipal(token.getSubject(), surrogate);
+        KeycloakPrincipal skeletonKeyPrincipal = new KeycloakPrincipal(token.getSubject(), surrogate);
         principal = new CatalinaSecurityContextHelper().createPrincipal(request.getContext().getRealm(), skeletonKeyPrincipal, roles);
         request.setUserPrincipal(principal);
         request.setAuthType("OAUTH_BEARER");
-        SkeletonKeySession skSession = new SkeletonKeySession(tokenString, token, resourceMetadata);
-        request.setAttribute(SkeletonKeySession.class.getName(), skSession);
+        KeycloakAuthenticatedSession skSession = new KeycloakAuthenticatedSession(tokenString, token, resourceMetadata);
+        request.setAttribute(KeycloakAuthenticatedSession.class.getName(), skSession);
 
         return true;
     }

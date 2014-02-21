@@ -7,7 +7,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.adapters.ResourceMetadata;
 import org.keycloak.VerificationException;
-import org.keycloak.representations.SkeletonKeyToken;
+import org.keycloak.representations.AccessToken;
 
 import javax.security.cert.X509Certificate;
 import java.util.HashSet;
@@ -26,7 +26,7 @@ public class BearerTokenAuthenticator {
     protected ResourceMetadata resourceMetadata;
     protected Logger log = Logger.getLogger(BearerTokenAuthenticator.class);
     protected String tokenString;
-    protected SkeletonKeyToken token;
+    protected AccessToken token;
     protected boolean useResourceRoleMappings;
     protected String surrogate;
     protected KeycloakChallenge challenge;
@@ -48,7 +48,7 @@ public class BearerTokenAuthenticator {
         return tokenString;
     }
 
-    public SkeletonKeyToken getToken() {
+    public AccessToken getToken() {
         return token;
     }
 

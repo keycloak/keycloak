@@ -5,8 +5,8 @@ import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
 import org.keycloak.adapters.TokenGrantRequest;
 import org.keycloak.adapters.config.RealmConfiguration;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
-import org.keycloak.representations.SkeletonKeyToken;
 import org.keycloak.util.KeycloakUriBuilder;
 
 import javax.servlet.http.Cookie;
@@ -28,7 +28,7 @@ public class ServletOAuthLogin {
     protected RealmConfiguration realmInfo;
     protected int redirectPort;
     protected String tokenString;
-    protected SkeletonKeyToken token;
+    protected AccessToken token;
 
     public ServletOAuthLogin(RealmConfiguration realmInfo, HttpServletRequest request, HttpServletResponse response, int redirectPort) {
         this.request = request;
@@ -41,7 +41,7 @@ public class ServletOAuthLogin {
         return tokenString;
     }
 
-    public SkeletonKeyToken getToken() {
+    public AccessToken getToken() {
         return token;
     }
 
