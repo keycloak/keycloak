@@ -3,13 +3,8 @@ package org.keycloak.model.test;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
-import org.keycloak.services.managers.RealmManager;
-
-import java.util.Iterator;
-import java.util.List;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -36,6 +31,9 @@ public class UserModelTest extends AbstractModelTest {
         UserModel persisted = realmManager.getRealm(realm.getId()).getUser("user");
 
         assertEquals(user, persisted);
+
+        UserModel persisted2 = realmManager.getRealm(realm.getId()).getUserById(user.getId());
+        assertEquals(user, persisted2);
     }
     
     @Test
@@ -106,15 +104,6 @@ public class UserModelTest extends AbstractModelTest {
         Assert.assertArrayEquals(expected.getRedirectUris().toArray(), actual.getRedirectUris().toArray());
         Assert.assertArrayEquals(expected.getRequiredActions().toArray(), actual.getRequiredActions().toArray());
         Assert.assertArrayEquals(expected.getWebOrigins().toArray(), actual.getWebOrigins().toArray());
-    }
-
-    public static void assertEquals(List<RoleModel> expected, List<RoleModel> actual) {
-        Assert.assertEquals(expected.size(), actual.size());
-        Iterator<RoleModel> exp = expected.iterator();
-        Iterator<RoleModel> act = actual.iterator();
-        while (exp.hasNext()) {
-            Assert.assertEquals(exp.next().getName(), act.next().getName());
-        }
     }
 
 }

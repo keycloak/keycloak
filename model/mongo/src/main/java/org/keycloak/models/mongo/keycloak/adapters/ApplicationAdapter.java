@@ -126,7 +126,9 @@ public class ApplicationAdapter extends AbstractAdapter implements ApplicationMo
     @Override
     public RoleModel getRoleById(String id) {
         RoleEntity role = getMongoStore().loadEntity(RoleEntity.class, id, invocationContext);
-        if (role == null) {
+
+        // Check that role belongs to this application
+        if (role == null || !getId().equals(role.getApplicationId())) {
             return null;
         } else {
             return new RoleAdapter(role, this, invocationContext);

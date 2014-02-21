@@ -316,13 +316,10 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
 
     @Override
     public UserModel getUserById(String id) {
-        DBObject query = new QueryBuilder()
-                .and("id").is(id)
-                .and("realmId").is(getId())
-                .get();
-        UserEntity user = getMongoStore().loadSingleEntity(UserEntity.class, query, invocationContext);
+        UserEntity user = getMongoStore().loadEntity(UserEntity.class, id, invocationContext);
 
-        if (user == null) {
+        // Check that it's user from this realm
+        if (user == null || !getId().equals(user.getRealmId())) {
             return null;
         } else {
             return new UserAdapter(user, invocationContext);
@@ -426,7 +423,7 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
     @Override
     public RoleModel getRoleById(String id) {
         RoleEntity role = getMongoStore().loadEntity(RoleEntity.class, id, invocationContext);
-        if (role == null) {
+        if (role == null || !getId().equals(role.getRealmId())) {
             return null;
         } else {
             return new RoleAdapter(role, this, invocationContext);
@@ -660,7 +657,10 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
     @Override
     public OAuthClientModel getOAuthClientById(String id) {
         OAuthClientEntity clientEntity = getMongoStore().loadEntity(OAuthClientEntity.class, id, invocationContext);
-        if (clientEntity == null) return null;
+
+        // Check if client belongs to this realm
+        if (clientEntity == null || !getId().equals(clientEntity.getRealmId())) return null;
+
         return new OAuthClientAdapter(clientEntity, invocationContext);
     }
 
