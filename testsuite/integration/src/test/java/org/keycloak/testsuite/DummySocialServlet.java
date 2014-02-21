@@ -23,6 +23,9 @@ public class DummySocialServlet extends HttpServlet {
         pw.print("<body>");
         pw.print("<form method=\"post\">");
         pw.print("<label for=\"username\">Username</label><input type=\"text\" id=\"username\" name=\"username\" />");
+        pw.print("<label for=\"firstname\">First Name</label><input type=\"text\" id=\"firstname\" name=\"firstname\" />");
+        pw.print("<label for=\"lastname\">Last Name</label><input type=\"text\" id=\"lastname\" name=\"lastname\" />");
+        pw.print("<label for=\"email\">Email</label><input type=\"text\" id=\"email\" name=\"email\" />");
         pw.print("<input type=\"submit\" id=\"submit\" value=\"login\" />");
         pw.print("</form>");
         pw.print("</body>");
@@ -51,6 +54,16 @@ public class DummySocialServlet extends HttpServlet {
         }
 
         String redirect = redirectUri + "?username=" + req.getParameter("username") + "&state=" + state + "&code=" + UUID.randomUUID().toString();
+        if (req.getParameter("firstname") != null) {
+            redirect += "&firstname=" + req.getParameter("firstname");
+        }
+        if (req.getParameter("lastname") != null) {
+            redirect += "&lastname=" + req.getParameter("lastname");
+        }
+        if (req.getParameter("email") != null) {
+            redirect += "&email=" + req.getParameter("email");
+        }
+
         resp.sendRedirect(redirect);
     }
 

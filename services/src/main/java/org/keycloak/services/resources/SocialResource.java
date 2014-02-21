@@ -28,6 +28,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.TokenManager;
@@ -139,7 +140,7 @@ public class SocialResource {
             return oauth.forwardToSecurityFailure("Failed to process social callback");
         }
 
-        SocialLinkModel socialLink = new SocialLinkModel(provider.getId(), socialUser.getUsername());
+        SocialLinkModel socialLink = new SocialLinkModel(provider.getId(), socialUser.getId());
         UserModel user = realm.getUserBySocialLink(socialLink);
 
         if (user == null) {
@@ -147,24 +148,14 @@ public class SocialResource {
                 return oauth.forwardToSecurityFailure("Registration not allowed");
             }
 
-            // Automatically register user into realm with his social username (don't redirect to registration screen)
-            if (realm.getUser(socialUser.getUsername()) != null) {
-                // TODO: Username is already in realm. Show message and let user to bind accounts after he re-authenticate
-                throw new IllegalStateException("Username " + socialUser.getUsername() +
-                        " already registered in the realm. TODO: bind accounts...");
+            user = realm.addUser(KeycloakModelUtils.generateId());
+            user.setEnabled(true);
+            user.setFirstName(socialUser.getFirstName());
+            user.setLastName(socialUser.getLastName());
+            user.setEmail(socialUser.getEmail());
 
-                // TODO: Maybe we should search also by email and bind accounts if user with this email is
-                // already registered. But actually Keycloak allows duplicate emails
-            } else {
-                user = realm.addUser(socialUser.getUsername());
-                user.setEnabled(true);
-                user.setFirstName(socialUser.getFirstName());
-                user.setLastName(socialUser.getLastName());
-                user.setEmail(socialUser.getEmail());
-
-                if (realm.isUpdateProfileOnInitialSocialLogin()) {
-                    user.addRequiredAction(UserModel.RequiredAction.UPDATE_PROFILE);
-                }
+            if (realm.isUpdateProfileOnInitialSocialLogin()) {
+                user.addRequiredAction(UserModel.RequiredAction.UPDATE_PROFILE);
             }
 
             realm.addSocialLink(user, socialLink);

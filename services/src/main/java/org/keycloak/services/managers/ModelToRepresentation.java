@@ -25,6 +25,7 @@ import java.util.Map;
 public class ModelToRepresentation {
     public static UserRepresentation toRepresentation(UserModel user) {
         UserRepresentation rep = new UserRepresentation();
+        rep.setId(user.getId());
         rep.setUsername(user.getLoginName());
         rep.setLastName(user.getLastName());
         rep.setFirstName(user.getFirstName());

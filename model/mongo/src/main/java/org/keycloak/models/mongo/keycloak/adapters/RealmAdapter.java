@@ -304,6 +304,21 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
     }
 
     @Override
+    public UserModel getUserById(String id) {
+        DBObject query = new QueryBuilder()
+                .and("id").is(id)
+                .and("realmId").is(getId())
+                .get();
+        UserEntity user = getMongoStore().loadSingleEntity(UserEntity.class, query, invocationContext);
+
+        if (user == null) {
+            return null;
+        } else {
+            return new UserAdapter(user, invocationContext);
+        }
+    }
+
+    @Override
     public UserAdapter addUser(String username) {
         UserAdapter userModel = addUserEntity(username);
 

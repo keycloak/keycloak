@@ -40,11 +40,11 @@ public class AuthenticationManager {
     public static final String FORM_USERNAME = "username";
     public static final String KEYCLOAK_IDENTITY_COOKIE = "KEYCLOAK_IDENTITY";
 
-    public SkeletonKeyToken createIdentityToken(RealmModel realm, String username) {
+    public SkeletonKeyToken createIdentityToken(RealmModel realm, UserModel user) {
         SkeletonKeyToken token = new SkeletonKeyToken();
         token.id(KeycloakModelUtils.generateId());
         token.issuedNow();
-        token.principal(username);
+        token.subject(user.getId());
         token.audience(realm.getName());
         if (realm.getTokenLifespan() > 0) {
             token.expiration((System.currentTimeMillis() / 1000) + realm.getTokenLifespan());
@@ -73,7 +73,7 @@ public class AuthenticationManager {
     }
 
     protected NewCookie createLoginCookie(RealmModel realm, UserModel user, UserModel client, String cookieName, String cookiePath) {
-        SkeletonKeyToken identityToken = createIdentityToken(realm, user.getLoginName());
+        SkeletonKeyToken identityToken = createIdentityToken(realm, user);
         if (client != null) {
             identityToken.issuedFor(client.getLoginName());
         }
@@ -177,7 +177,7 @@ public class AuthenticationManager {
 
             Auth auth = new Auth(token);
 
-            UserModel user = realm.getUser(token.getSubject());
+            UserModel user = realm.getUserById(token.getSubject());
             if (user == null || !user.isEnabled()) {
                 logger.debug("Unknown user in identity cookie");
                 expireIdentityCookie(realm, uriInfo);
@@ -224,7 +224,7 @@ public class AuthenticationManager {
 
             Auth auth = new Auth(token);
 
-            UserModel user = realm.getUser(token.getSubject());
+            UserModel user = realm.getUserById(token.getSubject());
             if (user == null || !user.isEnabled()) {
                 throw new NotAuthorizedException("invalid_user");
             }
