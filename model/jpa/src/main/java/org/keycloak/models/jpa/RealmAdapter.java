@@ -431,7 +431,11 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public UserModel getUserById(String id) {
-        return new UserAdapter(em.find(UserEntity.class, id));
+        UserEntity entity = em.find(UserEntity.class, id);
+
+        // Check if user belongs to this realm
+        if (entity == null || !this.realm.equals(entity.getRealm())) return null;
+        return new UserAdapter(entity);
     }
 
     @Override
@@ -562,6 +566,7 @@ public class RealmAdapter implements RealmModel {
         applicationData.setApplicationUser(user);
         applicationData.setName(name);
         applicationData.setEnabled(true);
+        applicationData.setRealm(realm);
         realm.getApplications().add(applicationData);
         em.persist(applicationData);
         em.flush();
@@ -606,7 +611,9 @@ public class RealmAdapter implements RealmModel {
     @Override
     public ApplicationModel getApplicationById(String id) {
         ApplicationEntity app = em.find(ApplicationEntity.class, id);
-        if (app == null) return null;
+
+        // Check if application belongs to this realm
+        if (app == null || !this.realm.equals(app.getRealm())) return null;
         return new ApplicationAdapter(this, em, app);
     }
 
@@ -783,7 +790,9 @@ public class RealmAdapter implements RealmModel {
     @Override
     public OAuthClientModel getOAuthClientById(String id) {
         OAuthClientEntity client = em.find(OAuthClientEntity.class, id);
-        if (client == null) return null;
+
+        // Check if client belongs to this realm
+        if (client == null || !this.realm.equals(client.getRealm())) return null;
         return new OAuthClientAdapter(client);
     }
 
@@ -846,7 +855,6 @@ public class RealmAdapter implements RealmModel {
     @Override
     public boolean removeRoleById(String id) {
         RoleModel role = getRoleById(id);
-        if (role == null) return false;
 
         if (role == null) {
             return false;
@@ -877,8 +885,11 @@ public class RealmAdapter implements RealmModel {
     @Override
     public RoleModel getRoleById(String id) {
         RoleEntity entity = em.find(RoleEntity.class, id);
-        if (entity == null) return null;
-        return new RoleAdapter(this, em, entity);
+
+        // Check if it's realm role and belongs to this realm
+        if (entity == null || !(entity instanceof RealmRoleEntity)) return null;
+        RealmRoleEntity realmRoleEntity = (RealmRoleEntity)entity;
+        return (realmRoleEntity.getRealm().equals(this.realm)) ? new RoleAdapter(this, em, realmRoleEntity) : null;
     }
 
     @Override
@@ -894,8 +905,8 @@ public class RealmAdapter implements RealmModel {
 
     protected TypedQuery<UserRoleMappingEntity> getUserRoleMappingEntityTypedQuery(UserAdapter user, RoleAdapter role) {
         TypedQuery<UserRoleMappingEntity> query = em.createNamedQuery("userHasRole", UserRoleMappingEntity.class);
-        query.setParameter("user", ((UserAdapter)user).getUser());
-        query.setParameter("role", ((RoleAdapter) role).getRole());
+        query.setParameter("user", user.getUser());
+        query.setParameter("role", role.getRole());
         return query;
     }
 
@@ -938,6 +949,8 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public void deleteRoleMapping(UserModel user, RoleModel role) {
+        if (user == null || role == null) return;
+
         TypedQuery<UserRoleMappingEntity> query = getUserRoleMappingEntityTypedQuery((UserAdapter) user, (RoleAdapter) role);
         List<UserRoleMappingEntity> results = query.getResultList();
         if (results.size() == 0) return;

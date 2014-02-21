@@ -68,15 +68,6 @@ public class ModelTest extends AbstractModelTest {
         Assert.assertEquals(expected.getSocialConfig(), actual.getSocialConfig());
     }
 
-    public static void assertEquals(List<RoleModel> expected, List<RoleModel> actual) {
-        Assert.assertEquals(expected.size(), actual.size());
-        Iterator<RoleModel> exp = expected.iterator();
-        Iterator<RoleModel> act = actual.iterator();
-        while (exp.hasNext()) {
-            Assert.assertEquals(exp.next().getName(), act.next().getName());
-        }
-    }
-
     private RealmModel importExport(RealmModel src, String copyName) {
         RealmRepresentation representation = ModelToRepresentation.toRepresentation(src);
         RealmModel copy = realmManager.createRealm(copyName);

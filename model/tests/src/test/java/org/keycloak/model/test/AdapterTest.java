@@ -430,13 +430,60 @@ public class AdapterTest extends AbstractModelTest {
         Set<RoleModel> roles = realmModel.getRoles();
         Assert.assertEquals(5, roles.size());
         UserModel user = realmModel.addUser("bburke");
-        RoleModel role = realmModel.getRole("user");
-        realmModel.grantRole(user, role);
-        Assert.assertTrue(realmModel.hasRole(user, role));
-        System.out.println("Role id: " + role.getId());
-        role = realmModel.getRoleById(role.getId());
-        Assert.assertNotNull(role);
-        Assert.assertEquals("user", role.getName());
+        RoleModel realmUserRole = realmModel.getRole("user");
+        realmModel.grantRole(user, realmUserRole);
+        Assert.assertTrue(realmModel.hasRole(user, realmUserRole));
+        RoleModel found = realmModel.getRoleById(realmUserRole.getId());
+        Assert.assertNotNull(found);
+        assertRolesEquals(found, realmUserRole);
+
+        // Test app roles
+        ApplicationModel application = realmModel.addApplication("app1");
+        application.addRole("user");
+        application.addRole("bar");
+        Set<RoleModel> appRoles = application.getRoles();
+        Assert.assertEquals(2, appRoles.size());
+        RoleModel appBarRole = application.getRole("bar");
+
+        // This should return null because it's realmRole
+        Assert.assertNull(application.getRoleById(realmUserRole.getId()));
+
+        // This should return null because appBarRole is application role
+        Assert.assertNull(realmModel.getRoleById(appBarRole.getId()));
+        found = application.getRoleById(appBarRole.getId());
+        Assert.assertNotNull(found);
+        assertRolesEquals(found, appBarRole);
+
+        realmModel.grantRole(user, appBarRole);
+        realmModel.grantRole(user, application.getRole("user"));
+
+        roles = realmModel.getRealmRoleMappings(user);
+        Assert.assertEquals(roles.size(), 2);
+        assertRolesContains(realmUserRole, roles);
+        Assert.assertTrue(realmModel.hasRole(user, realmUserRole));
+        // Role "foo" is default realm role
+        Assert.assertTrue(realmModel.hasRole(user, realmModel.getRole("foo")));
+
+        roles = application.getApplicationRoleMappings(user);
+        Assert.assertEquals(roles.size(), 2);
+        assertRolesContains(application.getRole("user"), roles);
+        assertRolesContains(appBarRole, roles);
+        Assert.assertTrue(realmModel.hasRole(user, appBarRole));
+
+        // Test that application role 'user' don't clash with realm role 'user'
+        Assert.assertNotEquals(realmModel.getRole("user").getId(), application.getRole("user").getId());
+
+        Assert.assertEquals(6, realmModel.getRoleMappings(user).size());
+
+        // Revoke some roles
+        realmModel.deleteRoleMapping(user, realmModel.getRole("foo"));
+        realmModel.deleteRoleMapping(user, appBarRole);
+        roles = realmModel.getRoleMappings(user);
+        Assert.assertEquals(4, roles.size());
+        assertRolesContains(realmUserRole, roles);
+        assertRolesContains(application.getRole("user"), roles);
+        Assert.assertFalse(realmModel.hasRole(user, appBarRole));
     }
 
+    // TODO: test scopes
 }
