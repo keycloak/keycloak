@@ -33,6 +33,7 @@ public class ApplicationModelTest extends AbstractModelTest {
         application.setName("app-name");
         application.addRole("role-1");
         application.addRole("role-2");
+        application.addRole("role-3");
         application.addDefaultRole("role-1");
         application.addDefaultRole("role-2");
 

@@ -6,6 +6,7 @@ import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinTable;
+import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import java.util.ArrayList;
@@ -39,6 +40,9 @@ public class ApplicationEntity {
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
     @JoinTable(name="ApplicationDefaultRoles")
     Collection<RoleEntity> defaultRoles = new ArrayList<RoleEntity>();
+
+    @ManyToOne()
+    private RealmEntity realm;
 
     public String getId() {
         return id;
@@ -106,5 +110,13 @@ public class ApplicationEntity {
 
     public void setDefaultRoles(Collection<RoleEntity> defaultRoles) {
         this.defaultRoles = defaultRoles;
+    }
+
+    public RealmEntity getRealm() {
+        return realm;
+    }
+
+    public void setRealm(RealmEntity realm) {
+        this.realm = realm;
     }
 }
