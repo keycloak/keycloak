@@ -7,7 +7,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
@@ -28,14 +27,10 @@ import org.keycloak.representations.idm.UserRoleMappingRepresentation;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Per request object
@@ -110,7 +105,7 @@ public class RealmManager {
         if (rep.getAccessCodeLifespan() != null) realm.setAccessCodeLifespan(rep.getAccessCodeLifespan());
         if (rep.getAccessCodeLifespanUserAction() != null)
             realm.setAccessCodeLifespanUserAction(rep.getAccessCodeLifespanUserAction());
-        if (rep.getTokenLifespan() != null) realm.setTokenLifespan(rep.getTokenLifespan());
+        if (rep.getTokenLifespan() != null) realm.setAccessTokenLifespan(rep.getTokenLifespan());
         if (rep.getRequiredCredentials() != null) {
             realm.updateRequiredCredentials(rep.getRequiredCredentials());
         }
@@ -163,8 +158,8 @@ public class RealmManager {
         if (rep.isEnabled() != null) newRealm.setEnabled(rep.isEnabled());
         if (rep.isSocial() != null) newRealm.setSocial(rep.isSocial());
 
-        if (rep.getTokenLifespan() != null) newRealm.setTokenLifespan(rep.getTokenLifespan());
-        else newRealm.setTokenLifespan(300);
+        if (rep.getTokenLifespan() != null) newRealm.setAccessTokenLifespan(rep.getTokenLifespan());
+        else newRealm.setAccessTokenLifespan(300);
 
         if (rep.getAccessCodeLifespan() != null) newRealm.setAccessCodeLifespan(rep.getAccessCodeLifespan());
         else newRealm.setAccessCodeLifespan(60);

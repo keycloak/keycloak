@@ -167,13 +167,24 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
     }
 
     @Override
-    public int getTokenLifespan() {
-        return realm.getTokenLifespan();
+    public int getAccessTokenLifespan() {
+        return realm.getAccessTokenLifespan();
     }
 
     @Override
-    public void setTokenLifespan(int tokenLifespan) {
-        realm.setTokenLifespan(tokenLifespan);
+    public void setAccessTokenLifespan(int tokenLifespan) {
+        realm.setAccessTokenLifespan(tokenLifespan);
+        updateRealm();
+    }
+
+    @Override
+    public int getRefreshTokenLifespan() {
+        return realm.getRefreshTokenLifespan();
+    }
+
+    @Override
+    public void setRefreshTokenLifespan(int tokenLifespan) {
+        realm.setRefreshTokenLifespan(tokenLifespan);
         updateRealm();
     }
 

@@ -47,7 +47,7 @@ public class AdapterTest extends AbstractModelTest {
         realmModel.setName("JUGGLER");
         realmModel.setPrivateKeyPem("0234234");
         realmModel.setPublicKeyPem("0234234");
-        realmModel.setTokenLifespan(1000);
+        realmModel.setAccessTokenLifespan(1000);
         realmModel.setUpdateProfileOnInitialSocialLogin(true);
         realmModel.addDefaultRole("foo");
 
@@ -56,7 +56,7 @@ public class AdapterTest extends AbstractModelTest {
         Assert.assertNotNull(realmModel);
         Assert.assertEquals(realmModel.getAccessCodeLifespan(), 100);
         Assert.assertEquals(600, realmModel.getAccessCodeLifespanUserAction());
-        Assert.assertEquals(realmModel.getTokenLifespan(), 1000);
+        Assert.assertEquals(realmModel.getAccessTokenLifespan(), 1000);
         Assert.assertEquals(realmModel.isEnabled(), true);
         Assert.assertEquals(realmModel.getName(), "JUGGLER");
         Assert.assertEquals(realmModel.getPrivateKeyPem(), "0234234");
@@ -75,7 +75,7 @@ public class AdapterTest extends AbstractModelTest {
         realmModel.setName("JUGGLER");
         realmModel.setPrivateKeyPem("0234234");
         realmModel.setPublicKeyPem("0234234");
-        realmModel.setTokenLifespan(1000);
+        realmModel.setAccessTokenLifespan(1000);
         realmModel.setUpdateProfileOnInitialSocialLogin(true);
         realmModel.addDefaultRole("foo");
 
@@ -84,7 +84,7 @@ public class AdapterTest extends AbstractModelTest {
         Assert.assertNotNull(realmModel);
         Assert.assertEquals(realmModel.getAccessCodeLifespan(), 100);
         Assert.assertEquals(600, realmModel.getAccessCodeLifespanUserAction());
-        Assert.assertEquals(realmModel.getTokenLifespan(), 1000);
+        Assert.assertEquals(realmModel.getAccessTokenLifespan(), 1000);
         Assert.assertEquals(realmModel.isEnabled(), true);
         Assert.assertEquals(realmModel.getName(), "JUGGLER");
         Assert.assertEquals(realmModel.getPrivateKeyPem(), "0234234");

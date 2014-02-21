@@ -71,7 +71,7 @@ public class ModelToRepresentation {
         rep.setRegistrationAllowed(realm.isRegistrationAllowed());
         rep.setVerifyEmail(realm.isVerifyEmail());
         rep.setResetPasswordAllowed(realm.isResetPasswordAllowed());
-        rep.setTokenLifespan(realm.getTokenLifespan());
+        rep.setTokenLifespan(realm.getAccessTokenLifespan());
         rep.setAccessCodeLifespan(realm.getAccessCodeLifespan());
         rep.setAccessCodeLifespanUserAction(realm.getAccessCodeLifespanUserAction());
         rep.setSmtpServer(realm.getSmtpConfig());

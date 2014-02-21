@@ -127,7 +127,7 @@ public class AuthenticationManagerTest extends AbstractModelTest {
         realm.setName("Test");
         realm.setPrivateKeyPem("0234234");
         realm.setPublicKeyPem("0234234");
-        realm.setTokenLifespan(1000);
+        realm.setAccessTokenLifespan(1000);
         realm.addRequiredCredential(CredentialRepresentation.PASSWORD);
 
         am = new AuthenticationManager();

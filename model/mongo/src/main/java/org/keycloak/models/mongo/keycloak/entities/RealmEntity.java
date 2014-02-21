@@ -29,9 +29,10 @@ public class RealmEntity extends AbstractMongoIdentifiableEntity implements Mong
     private boolean updateProfileOnInitialSocialLogin;
     private String passwordPolicy;
 
-    private int tokenLifespan;
+    private int accessTokenLifespan;
     private int accessCodeLifespan;
     private int accessCodeLifespanUserAction;
+    private int refreshTokenLifespan;
 
     private String publicKeyPem;
     private String privateKeyPem;
@@ -131,12 +132,21 @@ public class RealmEntity extends AbstractMongoIdentifiableEntity implements Mong
     }
 
     @MongoField
-    public int getTokenLifespan() {
-        return tokenLifespan;
+    public int getAccessTokenLifespan() {
+        return accessTokenLifespan;
     }
 
-    public void setTokenLifespan(int tokenLifespan) {
-        this.tokenLifespan = tokenLifespan;
+    public void setAccessTokenLifespan(int accessTokenLifespan) {
+        this.accessTokenLifespan = accessTokenLifespan;
+    }
+
+    @MongoField
+    public int getRefreshTokenLifespan() {
+        return refreshTokenLifespan;
+    }
+
+    public void setRefreshTokenLifespan(int refreshTokenLifespan) {
+        this.refreshTokenLifespan = refreshTokenLifespan;
     }
 
     @MongoField

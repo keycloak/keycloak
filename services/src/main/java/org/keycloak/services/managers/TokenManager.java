@@ -12,10 +12,12 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.util.Base64Url;
 import org.keycloak.util.JsonSerialization;
 
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -78,11 +80,43 @@ public class TokenManager {
 
 
     public AccessCodeEntry createAccessCode(String scopeParam, String state, String redirect, RealmModel realm, UserModel client, UserModel user) {
+        AccessCodeEntry code = createAccessCodeEntry(scopeParam, state, redirect, realm, client, user);
+        accessCodeMap.put(code.getId(), code);
+        return code;
+    }
+
+    private AccessCodeEntry createAccessCodeEntry(String scopeParam, String state, String redirect, RealmModel realm, UserModel client, UserModel user) {
         AccessCodeEntry code = new AccessCodeEntry();
-        AccessScope scopeMap = null;
-        if (scopeParam != null) scopeMap = decodeScope(scopeParam);
         List<RoleModel> realmRolesRequested = code.getRealmRolesRequested();
         MultivaluedMap<String, RoleModel> resourceRolesRequested = code.getResourceRolesRequested();
+
+        AccessToken token = createClientAccessToken(scopeParam, realm, client, user, realmRolesRequested, resourceRolesRequested);
+
+        code.setToken(token);
+        code.setRealm(realm);
+        code.setExpiration((System.currentTimeMillis() / 1000) + realm.getAccessCodeLifespan());
+        code.setClient(client);
+        code.setUser(user);
+        code.setState(state);
+        code.setRedirectUri(redirect);
+        String accessCode = null;
+        try {
+            accessCode = new JWSBuilder().content(code.getId().getBytes("UTF-8")).rsa256(realm.getPrivateKey());
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+        code.setCode(accessCode);
+        return code;
+    }
+
+    public AccessToken createClientAccessToken(String scopeParam, RealmModel realm, UserModel client, UserModel user) {
+        return createClientAccessToken(scopeParam, realm, client, user, new LinkedList<RoleModel>(), new MultivaluedHashMap<String, RoleModel>());
+    }
+
+
+    public AccessToken createClientAccessToken(String scopeParam, RealmModel realm, UserModel client, UserModel user, List<RoleModel> realmRolesRequested, MultivaluedMap<String, RoleModel> resourceRolesRequested) {
+        AccessScope scopeMap = null;
+        if (scopeParam != null) scopeMap = decodeScope(scopeParam);
 
 
         Set<RoleModel> roleMappings = realm.getRoleMappings(user);
@@ -113,22 +147,22 @@ public class TokenManager {
             }
         }
 
-        createToken(code, realm, client, user);
-        code.setRealm(realm);
-        code.setExpiration((System.currentTimeMillis() / 1000) + realm.getAccessCodeLifespan());
-        code.setClient(client);
-        code.setUser(user);
-        code.setState(state);
-        code.setRedirectUri(redirect);
-        accessCodeMap.put(code.getId(), code);
-        String accessCode = null;
-        try {
-            accessCode = new JWSBuilder().content(code.getId().getBytes("UTF-8")).rsa256(realm.getPrivateKey());
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
+        AccessToken token = initToken(realm, client, user);
+
+        if (realmRolesRequested.size() > 0) {
+            for (RoleModel role : realmRolesRequested) {
+                addComposites(token, role);
+            }
         }
-        code.setCode(accessCode);
-        return code;
+
+        if (resourceRolesRequested.size() > 0) {
+            for (List<RoleModel> roles : resourceRolesRequested.values()) {
+                for (RoleModel role : roles) {
+                    addComposites(token, role);
+                }
+            }
+        }
+        return token;
     }
 
     protected AccessToken initToken(RealmModel realm, UserModel client, UserModel user) {
@@ -138,8 +172,8 @@ public class TokenManager {
         token.audience(realm.getName());
         token.issuedNow();
         token.issuedFor(client.getLoginName());
-        if (realm.getTokenLifespan() > 0) {
-            token.expiration((System.currentTimeMillis() / 1000) + realm.getTokenLifespan());
+        if (realm.getAccessTokenLifespan() > 0) {
+            token.expiration((System.currentTimeMillis() / 1000) + realm.getAccessTokenLifespan());
         }
         Set<String> allowedOrigins = client.getWebOrigins();
         if (allowedOrigins != null) {
@@ -176,26 +210,6 @@ public class TokenManager {
 
     }
 
-    protected void createToken(AccessCodeEntry accessCodeEntry, RealmModel realm, UserModel client, UserModel user) {
-
-        AccessToken token = initToken(realm, client, user);
-
-        if (accessCodeEntry.getRealmRolesRequested().size() > 0) {
-            for (RoleModel role : accessCodeEntry.getRealmRolesRequested()) {
-                addComposites(token, role);
-            }
-        }
-
-        if (accessCodeEntry.getResourceRolesRequested().size() > 0) {
-            for (List<RoleModel> roles : accessCodeEntry.getResourceRolesRequested().values()) {
-                for (RoleModel role : roles) {
-                    addComposites(token, role);
-                }
-            }
-        }
-        accessCodeEntry.setToken(token);
-    }
-
     public String encodeScope(AccessScope scope) {
         String token = null;
         try {
@@ -224,8 +238,8 @@ public class TokenManager {
         token.issuedNow();
         token.subject(user.getId());
         token.audience(realm.getName());
-        if (realm.getTokenLifespan() > 0) {
-            token.expiration((System.currentTimeMillis() / 1000) + realm.getTokenLifespan());
+        if (realm.getAccessTokenLifespan() > 0) {
+            token.expiration((System.currentTimeMillis() / 1000) + realm.getAccessTokenLifespan());
         }
         for (RoleModel role : realm.getRoleMappings(user)) {
             addComposites(token, role);
