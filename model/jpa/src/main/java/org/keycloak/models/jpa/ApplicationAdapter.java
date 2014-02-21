@@ -125,10 +125,12 @@ public class ApplicationAdapter implements ApplicationModel {
 
     @Override
     public boolean removeRoleById(String id) {
-        ApplicationRoleEntity role = em.find(ApplicationRoleEntity.class, id);
-        if (role == null) {
+        RoleAdapter roleAdapter = getRoleById(id);
+        if (roleAdapter == null) {
             return false;
         }
+
+        ApplicationRoleEntity role = (ApplicationRoleEntity)roleAdapter.getRole();
 
         application.getRoles().remove(role);
         application.getDefaultRoles().remove(role);
@@ -154,8 +156,13 @@ public class ApplicationAdapter implements ApplicationModel {
     }
 
     @Override
-    public RoleModel getRoleById(String id) {
-        return realm.getRoleById(id);
+    public RoleAdapter getRoleById(String id) {
+        RoleEntity entity = em.find(RoleEntity.class, id);
+
+        // Check if it's application role and belongs to this application
+        if (entity == null || !(entity instanceof ApplicationRoleEntity)) return null;
+        ApplicationRoleEntity appRoleEntity = (ApplicationRoleEntity)entity;
+        return (appRoleEntity.getApplication().equals(this.application)) ? new RoleAdapter(this.realm, em, appRoleEntity) : null;
     }
 
     @Override

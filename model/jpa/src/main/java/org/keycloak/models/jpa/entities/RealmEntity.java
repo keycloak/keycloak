@@ -68,7 +68,7 @@ public class RealmEntity {
     @JoinTable(name="OAuthClient_RequiredCreds")
     Collection<RequiredCredentialEntity> requiredOAuthClCredentials = new ArrayList<RequiredCredentialEntity>();
 
-    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true)
+    @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<ApplicationEntity> applications = new ArrayList<ApplicationEntity>();
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")

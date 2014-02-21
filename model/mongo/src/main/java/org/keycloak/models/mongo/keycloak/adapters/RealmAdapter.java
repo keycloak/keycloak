@@ -576,6 +576,8 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
 
     @Override
     public void deleteRoleMapping(UserModel user, RoleModel role) {
+        if (user == null || role == null) return;
+
         UserEntity userEntity = ((UserAdapter)user).getUser();
         getMongoStore().pullItemFromList(userEntity, "roleIds", role.getId(), invocationContext);
     }
