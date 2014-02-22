@@ -29,7 +29,6 @@ public class ServletKeycloakAuthenticationMechanism extends KeycloakAuthenticati
     public ServletKeycloakAuthenticationMechanism(AdapterConfig config, ResourceMetadata metadata, ConfidentialPortManager portManager) {
         super(config, metadata);
         this.portManager = portManager;
-        this.userSessionManagement = userSessionManagement;
     }
 
 
@@ -38,6 +37,7 @@ public class ServletKeycloakAuthenticationMechanism extends KeycloakAuthenticati
         return new ServletOAuthAuthenticator(exchange, realmConfig, portManager);
     }
 
+    /*
     @Override
     protected void propagateBearer(HttpServerExchange exchange, KeycloakAuthenticatedSession skSession, KeycloakPrincipal principal) {
         super.propagateBearer(exchange, skSession, principal);
@@ -56,4 +56,5 @@ public class ServletKeycloakAuthenticationMechanism extends KeycloakAuthenticati
         session.setAttribute(KeycloakAuthenticatedSession.class.getName(), skSession);
         userSessionManagement.login(servletRequestContext.getDeployment().getSessionManager(), session, principal.getName());
     }
+    */
 }

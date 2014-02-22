@@ -28,7 +28,7 @@ import java.util.Map;
  */
 public class KeycloakServletExtension implements ServletExtension {
 
-    protected Logger log = Logger.getLogger(KeycloakServletExtension.class);
+    protected static Logger log = Logger.getLogger(KeycloakServletExtension.class);
 
     // todo when this DeploymentInfo method of the same name is fixed.
     public boolean isAuthenticationMechanismPresent(DeploymentInfo deploymentInfo, final String mechanismName) {
@@ -79,7 +79,7 @@ public class KeycloakServletExtension implements ServletExtension {
                 realmConfiguration,
                 deploymentInfo.getConfidentialPortManager());
         }
-        ServletAuthenticatedActionsHandler.Wrapper actions = new ServletAuthenticatedActionsHandler.Wrapper(keycloakConfig);
+        AuthenticatedActionsHandler.Wrapper actions = new AuthenticatedActionsHandler.Wrapper(keycloakConfig);
 
         // setup handlers
 
@@ -95,25 +95,7 @@ public class KeycloakServletExtension implements ServletExtension {
         deploymentInfo.addInnerHandlerChainWrapper(ServletPropagateSessionHandler.WRAPPER); // propagates SkeletonKeySession
         deploymentInfo.addInnerHandlerChainWrapper(actions); // handles authenticated actions and cors.
 
-        deploymentInfo.setIdentityManager(new IdentityManager() {
-            @Override
-            public Account verify(Account account) {
-                log.info("Verifying account in IdentityManager");
-                return account;
-            }
-
-            @Override
-            public Account verify(String id, Credential credential) {
-                log.warn("Shouldn't call verify!!!");
-                throw new IllegalStateException("Not allowed");
-            }
-
-            @Override
-            public Account verify(Credential credential) {
-                log.warn("Shouldn't call verify!!!");
-                throw new IllegalStateException("Not allowed");
-            }
-        });
+        deploymentInfo.setIdentityManager(new KeycloakIdentityManager());
 
         log.info("Setting jsession cookie path to: " + deploymentInfo.getContextPath());
         ServletSessionConfig cookieConfig = new ServletSessionConfig();
