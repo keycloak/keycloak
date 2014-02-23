@@ -108,6 +108,18 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
     }
 
     @Override
+    public boolean isRememberMe() {
+        return realm.isRememberMe();
+    }
+
+    @Override
+    public void setRememberMe(boolean rememberMe) {
+        realm.setRememberMe(rememberMe);
+        updateRealm();
+    }
+
+
+    @Override
     public boolean isVerifyEmail() {
         return realm.isVerifyEmail();
     }
@@ -176,6 +188,18 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
         realm.setAccessTokenLifespan(tokenLifespan);
         updateRealm();
     }
+
+    @Override
+    public int getCentralLoginLifespan() {
+        return realm.getCentralLoginLifespan();
+    }
+
+    @Override
+    public void setCentralLoginLifespan(int lifespan) {
+        realm.setCentralLoginLifespan(lifespan);
+        updateRealm();
+    }
+
 
     @Override
     public int getRefreshTokenLifespan() {

@@ -29,6 +29,9 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
     boolean isRegistrationAllowed();
 
     void setRegistrationAllowed(boolean registrationAllowed);
+    boolean isRememberMe();
+
+    void setRememberMe(boolean rememberMe);
 
     boolean isVerifyEmail();
 
@@ -37,6 +40,10 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
     boolean isResetPasswordAllowed();
 
     void setResetPasswordAllowed(boolean resetPasswordAllowed);
+
+    int getCentralLoginLifespan();
+
+    void setCentralLoginLifespan(int lifespan);
 
     int getAccessTokenLifespan();
 

@@ -15,11 +15,13 @@ public class RealmRepresentation {
     protected String realm;
     protected Integer accessTokenLifespan;
     protected Integer refreshTokenLifespan;
+    protected Integer centralLoginLifespan;
     protected Integer accessCodeLifespan;
     protected Integer accessCodeLifespanUserAction;
     protected Boolean enabled;
     protected Boolean sslNotRequired;
     protected Boolean registrationAllowed;
+    protected Boolean rememberMe;
     protected Boolean verifyEmail;
     protected Boolean resetPasswordAllowed;
     protected Boolean social;
@@ -127,6 +129,14 @@ public class RealmRepresentation {
         return refreshTokenLifespan;
     }
 
+    public Integer getCentralLoginLifespan() {
+        return centralLoginLifespan;
+    }
+
+    public void setCentralLoginLifespan(Integer centralLoginLifespan) {
+        this.centralLoginLifespan = centralLoginLifespan;
+    }
+
     public void setRefreshTokenLifespan(Integer refreshTokenLifespan) {
         this.refreshTokenLifespan = refreshTokenLifespan;
     }
@@ -229,6 +239,14 @@ public class RealmRepresentation {
 
     public void setRegistrationAllowed(Boolean registrationAllowed) {
         this.registrationAllowed = registrationAllowed;
+    }
+
+    public Boolean isRememberMe() {
+        return rememberMe;
+    }
+
+    public void setRememberMe(Boolean rememberMe) {
+        this.rememberMe = rememberMe;
     }
 
     public Boolean isVerifyEmail() {

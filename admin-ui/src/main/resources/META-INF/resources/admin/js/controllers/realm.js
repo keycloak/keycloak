@@ -549,6 +549,12 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
         $scope.realm.accessTokenLifespan = TimeUnit.convert($scope.realm.accessTokenLifespan, from, to);
     });
 
+    $scope.realm.centralLoginLifespanUnit = TimeUnit.autoUnit(realm.accessTokenLifespan);
+    $scope.realm.centralLoginLifespan = TimeUnit.toUnit(realm.centralLoginLifespan, $scope.realm.centralLoginLifespanUnit);
+    $scope.$watch('realm.centralLoginLifespanUnit', function(to, from) {
+        $scope.realm.centralLoginLifespan = TimeUnit.convert($scope.realm.centralLoginLifespan, from, to);
+    });
+
     $scope.realm.refreshTokenLifespanUnit = TimeUnit.autoUnit(realm.refreshTokenLifespan);
     $scope.realm.refreshTokenLifespan = TimeUnit.toUnit(realm.refreshTokenLifespan, $scope.realm.refreshTokenLifespanUnit);
     $scope.$watch('realm.refreshTokenLifespanUnit', function(to, from) {
@@ -582,6 +588,7 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
         delete realmCopy["accessTokenLifespanUnit"];
         delete realmCopy["refreshTokenLifespanUnit"];
         delete realmCopy["accessCodeLifespanUnit"];
+        delete realmCopy["centralLoginLifespanUnit"];
         delete realmCopy["accessCodeLifespanUserActionUnit"];
 
         realmCopy.accessTokenLifespan = TimeUnit.toSeconds($scope.realm.accessTokenLifespan, $scope.realm.accessTokenLifespanUnit)

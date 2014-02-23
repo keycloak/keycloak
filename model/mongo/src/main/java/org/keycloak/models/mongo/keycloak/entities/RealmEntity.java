@@ -23,12 +23,14 @@ public class RealmEntity extends AbstractMongoIdentifiableEntity implements Mong
     private boolean enabled;
     private boolean sslNotRequired;
     private boolean registrationAllowed;
+    private boolean rememberMe;
     private boolean verifyEmail;
     private boolean resetPasswordAllowed;
     private boolean social;
     private boolean updateProfileOnInitialSocialLogin;
     private String passwordPolicy;
 
+    private int centralLoginLifespan;
     private int accessTokenLifespan;
     private int accessCodeLifespan;
     private int accessCodeLifespanUserAction;
@@ -87,6 +89,15 @@ public class RealmEntity extends AbstractMongoIdentifiableEntity implements Mong
     }
 
     @MongoField
+    public boolean isRememberMe() {
+        return rememberMe;
+    }
+
+    public void setRememberMe(boolean rememberMe) {
+        this.rememberMe = rememberMe;
+    }
+
+    @MongoField
     public boolean isVerifyEmail() {
         return verifyEmail;
     }
@@ -129,6 +140,15 @@ public class RealmEntity extends AbstractMongoIdentifiableEntity implements Mong
 
     public void setPasswordPolicy(String passwordPolicy) {
         this.passwordPolicy = passwordPolicy;
+    }
+
+    @MongoField
+    public int getCentralLoginLifespan() {
+        return centralLoginLifespan;
+    }
+
+    public void setCentralLoginLifespan(int centralLoginLifespan) {
+        this.centralLoginLifespan = centralLoginLifespan;
     }
 
     @MongoField
