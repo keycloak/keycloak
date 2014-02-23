@@ -38,11 +38,13 @@ public class RealmEntity {
     protected boolean verifyEmail;
     protected boolean resetPasswordAllowed;
     protected boolean social;
+    protected boolean rememberMe;
 
     @Column(name="updateProfileOnInitSocLogin")
     protected boolean updateProfileOnInitialSocialLogin;
     protected String passwordPolicy;
 
+    protected int centralLoginLifespan;
     protected int accessTokenLifespan;
     protected int accessCodeLifespan;
     protected int accessCodeLifespanUserAction;
@@ -130,6 +132,14 @@ public class RealmEntity {
         this.registrationAllowed = registrationAllowed;
     }
 
+    public boolean isRememberMe() {
+        return rememberMe;
+    }
+
+    public void setRememberMe(boolean rememberMe) {
+        this.rememberMe = rememberMe;
+    }
+
     public boolean isVerifyEmail() {
         return verifyEmail;
     }
@@ -160,6 +170,14 @@ public class RealmEntity {
 
     public void setUpdateProfileOnInitialSocialLogin(boolean updateProfileOnInitialSocialLogin) {
         this.updateProfileOnInitialSocialLogin = updateProfileOnInitialSocialLogin;
+    }
+
+    public int getCentralLoginLifespan() {
+        return centralLoginLifespan;
+    }
+
+    public void setCentralLoginLifespan(int centralLoginLifespan) {
+        this.centralLoginLifespan = centralLoginLifespan;
     }
 
     public int getRefreshTokenLifespan() {

@@ -46,12 +46,11 @@ public class AuthenticationManager {
         token.issuedNow();
         token.subject(user.getId());
         token.audience(realm.getName());
-        if (realm.getAccessTokenLifespan() > 0) {
-            token.expiration((System.currentTimeMillis() / 1000) + realm.getAccessTokenLifespan());
+        if (realm.getCentralLoginLifespan() > 0) {
+            token.expiration((System.currentTimeMillis() / 1000) + realm.getCentralLoginLifespan());
         }
         return token;
     }
-
 
     public NewCookie createLoginCookie(RealmModel realm, UserModel user, UriInfo uriInfo) {
         String cookieName = KEYCLOAK_IDENTITY_COOKIE;
@@ -80,7 +79,13 @@ public class AuthenticationManager {
         String encoded = encodeToken(realm, identityToken);
         boolean secureOnly = !realm.isSslNotRequired();
         logger.debug("creatingLoginCookie - name: {0} path: {1}", cookieName, cookiePath);
-        NewCookie cookie = new NewCookie(cookieName, encoded, cookiePath, null, null, NewCookie.DEFAULT_MAX_AGE, secureOnly, true);
+        int maxAge = NewCookie.DEFAULT_MAX_AGE;
+        /*
+        if (realm.isRememberMe()) {
+            maxAge = realm.getCentralLoginLifespan();
+        }
+        */
+        NewCookie cookie = new NewCookie(cookieName, encoded, cookiePath, null, null, maxAge, secureOnly, true);
         return cookie;
     }
 

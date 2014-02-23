@@ -97,6 +97,7 @@ public class RealmManager {
         if (rep.isEnabled() != null) realm.setEnabled(rep.isEnabled());
         if (rep.isSocial() != null) realm.setSocial(rep.isSocial());
         if (rep.isRegistrationAllowed() != null) realm.setRegistrationAllowed(rep.isRegistrationAllowed());
+        if (rep.isRememberMe() != null) realm.setRememberMe(rep.isRememberMe());
         if (rep.isVerifyEmail() != null) realm.setVerifyEmail(rep.isVerifyEmail());
         if (rep.isResetPasswordAllowed() != null) realm.setResetPasswordAllowed(rep.isResetPasswordAllowed());
         if (rep.isUpdateProfileOnInitialSocialLogin() != null)
@@ -107,6 +108,7 @@ public class RealmManager {
             realm.setAccessCodeLifespanUserAction(rep.getAccessCodeLifespanUserAction());
         if (rep.getAccessTokenLifespan() != null) realm.setAccessTokenLifespan(rep.getAccessTokenLifespan());
         if (rep.getRefreshTokenLifespan() != null) realm.setRefreshTokenLifespan(rep.getRefreshTokenLifespan());
+        if (rep.getCentralLoginLifespan() != null) realm.setCentralLoginLifespan(rep.getCentralLoginLifespan());
         if (rep.getRequiredCredentials() != null) {
             realm.updateRequiredCredentials(rep.getRequiredCredentials());
         }
@@ -163,7 +165,9 @@ public class RealmManager {
         else newRealm.setAccessTokenLifespan(300);
 
         if (rep.getRefreshTokenLifespan() != null) newRealm.setRefreshTokenLifespan(rep.getRefreshTokenLifespan());
-        else newRealm.setRefreshTokenLifespan(3600);
+        else newRealm.setRefreshTokenLifespan(36000);
+        if (rep.getCentralLoginLifespan() != null) newRealm.setCentralLoginLifespan(rep.getCentralLoginLifespan());
+        else newRealm.setCentralLoginLifespan(300);
 
         if (rep.getAccessCodeLifespan() != null) newRealm.setAccessCodeLifespan(rep.getAccessCodeLifespan());
         else newRealm.setAccessCodeLifespan(60);
@@ -174,6 +178,7 @@ public class RealmManager {
 
         if (rep.isSslNotRequired() != null) newRealm.setSslNotRequired(rep.isSslNotRequired());
         if (rep.isRegistrationAllowed() != null) newRealm.setRegistrationAllowed(rep.isRegistrationAllowed());
+        if (rep.isRememberMe() != null) newRealm.setRememberMe(rep.isRememberMe());
         if (rep.isVerifyEmail() != null) newRealm.setVerifyEmail(rep.isVerifyEmail());
         if (rep.isResetPasswordAllowed() != null) newRealm.setResetPasswordAllowed(rep.isResetPasswordAllowed());
         if (rep.isUpdateProfileOnInitialSocialLogin() != null)
