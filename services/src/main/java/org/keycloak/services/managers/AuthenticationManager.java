@@ -36,7 +36,7 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class AuthenticationManager {
-    protected Logger logger = Logger.getLogger(AuthenticationManager.class);
+    protected static Logger logger = Logger.getLogger(AuthenticationManager.class);
     public static final String FORM_USERNAME = "username";
     public static final String KEYCLOAK_IDENTITY_COOKIE = "KEYCLOAK_IDENTITY";
 
@@ -127,20 +127,26 @@ public class AuthenticationManager {
     }
 
     public UserModel authenticateIdentityCookie(RealmModel realm, UriInfo uriInfo, HttpHeaders headers) {
+        return authenticateIdentityCookie(realm, uriInfo, headers, true);
+    }
+
+
+    public UserModel authenticateIdentityCookie(RealmModel realm, UriInfo uriInfo, HttpHeaders headers, boolean checkActive) {
+        logger.info("authenticateIdentityCookie");
         String cookieName = KEYCLOAK_IDENTITY_COOKIE;
-        Auth auth = authenticateIdentityCookie(realm, uriInfo, headers, cookieName);
+        Auth auth = authenticateIdentityCookie(realm, uriInfo, headers, cookieName, checkActive);
         return auth != null ? auth.getUser() : null;
     }
 
     public UserModel authenticateSaasIdentityCookie(RealmModel realm, UriInfo uriInfo, HttpHeaders headers) {
         String cookieName = AdminService.SAAS_IDENTITY_COOKIE;
-        Auth auth = authenticateIdentityCookie(realm, uriInfo, headers, cookieName);
+        Auth auth = authenticateIdentityCookie(realm, uriInfo, headers, cookieName, true);
         return auth != null ? auth.getUser() : null;
     }
 
     public Auth authenticateAccountIdentityCookie(RealmModel realm, UriInfo uriInfo, HttpHeaders headers) {
         String cookieName = AccountService.ACCOUNT_IDENTITY_COOKIE;
-        return authenticateIdentityCookie(realm, uriInfo, headers, cookieName);
+        return authenticateIdentityCookie(realm, uriInfo, headers, cookieName, true);
     }
 
     public UserModel authenticateSaasIdentity(RealmModel realm, UriInfo uriInfo, HttpHeaders headers) {
@@ -159,18 +165,20 @@ public class AuthenticationManager {
     }
 
 
-    protected Auth authenticateIdentityCookie(RealmModel realm, UriInfo uriInfo, HttpHeaders headers, String cookieName) {
+    protected Auth authenticateIdentityCookie(RealmModel realm, UriInfo uriInfo, HttpHeaders headers, String cookieName, boolean checkActive) {
+        logger.info("authenticateIdentityCookie");
         Cookie cookie = headers.getCookies().get(cookieName);
         if (cookie == null) {
-            logger.debug("authenticateCookie could not find cookie: {0}", cookieName);
+            logger.info("authenticateCookie could not find cookie: {0}", cookieName);
             return null;
         }
 
         String tokenString = cookie.getValue();
         try {
-            AccessToken token = RSATokenVerifier.verifyToken(tokenString, realm.getPublicKey(), realm.getName());
-            if (!token.isActive()) {
-                logger.debug("identity cookie expired");
+            AccessToken token = RSATokenVerifier.verifyToken(tokenString, realm.getPublicKey(), realm.getName(), checkActive);
+            logger.info("identity token verified");
+            if (checkActive && !token.isActive()) {
+                logger.info("identity cookie expired");
                 expireIdentityCookie(realm, uriInfo);
                 return null;
             }
@@ -179,7 +187,7 @@ public class AuthenticationManager {
 
             UserModel user = realm.getUserById(token.getSubject());
             if (user == null || !user.isEnabled()) {
-                logger.debug("Unknown user in identity cookie");
+                logger.info("Unknown user in identity cookie");
                 expireIdentityCookie(realm, uriInfo);
                 return null;
             }
@@ -188,7 +196,7 @@ public class AuthenticationManager {
             if (token.getIssuedFor() != null) {
                 UserModel client = realm.getUser(token.getIssuedFor());
                 if (client == null || !client.isEnabled()) {
-                    logger.debug("Unknown client in identity cookie");
+                    logger.info("Unknown client in identity cookie");
                     expireIdentityCookie(realm, uriInfo);
                     return null;
                 }
@@ -197,7 +205,7 @@ public class AuthenticationManager {
 
             return auth;
         } catch (VerificationException e) {
-            logger.debug("Failed to verify identity cookie", e);
+            logger.info("Failed to verify identity cookie", e);
             expireCookie(cookie.getName(), cookie.getPath());
         }
         return null;

@@ -34,6 +34,7 @@ public class OAuthAuthenticator {
     protected AccessToken token;
     protected HttpServerExchange exchange;
     protected KeycloakChallenge challenge;
+    protected String refreshToken;
 
     public OAuthAuthenticator(HttpServerExchange exchange, RealmConfiguration realmInfo,  int sslRedirectPort) {
         this.exchange = exchange;
@@ -51,6 +52,10 @@ public class OAuthAuthenticator {
 
     public AccessToken getToken() {
         return token;
+    }
+
+    public String getRefreshToken() {
+        return refreshToken;
     }
 
     protected String getRequestUrl() {
@@ -234,7 +239,7 @@ public class OAuthAuthenticator {
         AccessTokenResponse tokenResponse = null;
         String redirectUri = stripOauthParametersFromRedirect();
         try {
-            tokenResponse = TokenGrantRequest.invoke(realmInfo, code, redirectUri);
+            tokenResponse = TokenGrantRequest.invokeAccessCodeToToken(realmInfo, code, redirectUri);
         } catch (TokenGrantRequest.HttpFailure failure) {
             log.error("failed to turn code into token");
             log.error("status from server: " + failure.getStatus());
@@ -249,6 +254,7 @@ public class OAuthAuthenticator {
         }
 
         tokenString = tokenResponse.getToken();
+        refreshToken = tokenResponse.getRefreshToken();
         try {
             token = RSATokenVerifier.verifyToken(tokenString, realmInfo.getMetadata().getRealmKey(), realmInfo.getMetadata().getRealm());
             log.debug("Token Verification succeeded!");

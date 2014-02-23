@@ -1,7 +1,10 @@
 package org.keycloak.services.managers;
 
 import org.jboss.resteasy.logging.Logger;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -9,6 +12,8 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessScope;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.RefreshToken;
 import org.keycloak.util.Base64Url;
 import org.keycloak.util.JsonSerialization;
 
@@ -16,6 +21,7 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.security.PrivateKey;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -109,6 +115,75 @@ public class TokenManager {
         return code;
     }
 
+    public AccessToken refreshAccessToken(RealmModel realm, UserModel client, String encodedRefreshToken) throws OAuthErrorException {
+        JWSInput jws = new JWSInput(encodedRefreshToken);
+        RefreshToken refreshToken = null;
+        try {
+            if (!RSAProvider.verify(jws, realm.getPublicKey())) {
+                throw new RuntimeException("Invalid refresh token");
+            }
+            refreshToken = jws.readJsonContent(RefreshToken.class);
+        } catch (IOException e) {
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token", e);
+        }
+        if (refreshToken.isExpired()) {
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Refresh token expired");
+        }
+
+        UserModel user = realm.getUserById(refreshToken.getSubject());
+        if (user == null) {
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token", "Unknown user");
+        }
+
+        if (!user.isEnabled()) {
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "User disabled", "User disabled");
+
+        }
+
+        ApplicationModel clientApp = realm.getApplicationByName(client.getLoginName());
+
+
+        if (refreshToken.getRealmAccess() != null) {
+            for (String roleName : refreshToken.getRealmAccess().getRoles()) {
+                RoleModel role = realm.getRole(roleName);
+                if (role == null) {
+                    throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid realm role " + roleName);
+                }
+                if (!realm.hasRole(user, role)) {
+                    throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "User no long has permission for realm role: " + roleName);
+                }
+                if (!realm.hasScope(client, role)) {
+                    throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "Client no longer has realm scope: " + roleName);
+                }
+            }
+        }
+        if (refreshToken.getResourceAccess() != null) {
+            for (Map.Entry<String, AccessToken.Access> entry : refreshToken.getResourceAccess().entrySet()) {
+                ApplicationModel app = realm.getApplicationByName(entry.getKey());
+                if (app == null) {
+                    throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "Application no longer exists", "Application no longer exists: " + app.getName());
+                }
+                for (String roleName : refreshToken.getRealmAccess().getRoles()) {
+                    RoleModel role = app.getRole(roleName);
+                    if (role == null) {
+                        throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token", "Unknown application role: " + roleName);
+                    }
+                    if (!realm.hasRole(user, role)) {
+                        throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "User no long has permission for application role " + roleName);
+                    }
+                    if (clientApp != null && !clientApp.equals(app) && !realm.hasScope(client, role)) {
+                        throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "Client no longer has application scope" + roleName);
+                    }
+                }
+
+            }
+        }
+        AccessToken accessToken = initToken(realm, client, user);
+        accessToken.setRealmAccess(refreshToken.getRealmAccess());
+        accessToken.setResourceAccess(refreshToken.getResourceAccess());
+        return accessToken;
+    }
+
     public AccessToken createClientAccessToken(String scopeParam, RealmModel realm, UserModel client, UserModel user) {
         return createClientAccessToken(scopeParam, realm, client, user, new LinkedList<RoleModel>(), new MultivaluedHashMap<String, RoleModel>());
     }
@@ -172,8 +247,10 @@ public class TokenManager {
         token.audience(realm.getName());
         token.issuedNow();
         token.issuedFor(client.getLoginName());
+        token.issuer(realm.getName());
         if (realm.getAccessTokenLifespan() > 0) {
             token.expiration((System.currentTimeMillis() / 1000) + realm.getAccessTokenLifespan());
+            logger.info("Access Token expiration: " + token.getExpiration());
         }
         Set<String> allowedOrigins = client.getWebOrigins();
         if (allowedOrigins != null) {
@@ -232,26 +309,68 @@ public class TokenManager {
     }
 
 
-    public AccessToken createAccessToken(RealmModel realm, UserModel user) {
-        AccessToken token = new AccessToken();
-        token.id(KeycloakModelUtils.generateId());
-        token.issuedNow();
-        token.subject(user.getId());
-        token.audience(realm.getName());
-        if (realm.getAccessTokenLifespan() > 0) {
-            token.expiration((System.currentTimeMillis() / 1000) + realm.getAccessTokenLifespan());
-        }
-        for (RoleModel role : realm.getRoleMappings(user)) {
-            addComposites(token, role);
-        }
-        return token;
-    }
-
-
     public String encodeToken(RealmModel realm, Object token) {
         String encodedToken = new JWSBuilder()
                 .jsonContent(token)
                 .rsa256(realm.getPrivateKey());
         return encodedToken;
     }
+
+    public AccessTokenResponseBuilder responseBuilder(RealmModel realm) {
+        return new AccessTokenResponseBuilder(realm);
+    }
+
+    public class AccessTokenResponseBuilder {
+        RealmModel realm;
+        AccessToken accessToken;
+        RefreshToken refreshToken;
+
+        public AccessTokenResponseBuilder(RealmModel realm) {
+            this.realm = realm;
+        }
+
+        public AccessTokenResponseBuilder accessToken(AccessToken accessToken) {
+            this.accessToken = accessToken;
+            return this;
+        }
+        public AccessTokenResponseBuilder refreshToken(RefreshToken refreshToken) {
+            this.refreshToken = refreshToken;
+            return this;
+        }
+
+        public AccessTokenResponseBuilder generateAccessToken(String scopeParam, UserModel client, UserModel user) {
+            accessToken = createClientAccessToken(scopeParam, realm, client, user);
+            return this;
+        }
+
+        public AccessTokenResponseBuilder generateRefreshToken() {
+            if (accessToken == null) {
+                throw new IllegalStateException("accessToken not set");
+            }
+            refreshToken = new RefreshToken(accessToken);
+            refreshToken.id(KeycloakModelUtils.generateId());
+            refreshToken.issuedNow();
+            refreshToken.expiration((System.currentTimeMillis() / 1000) + realm.getRefreshTokenLifespan());
+            return this;
+        }
+
+        public AccessTokenResponse build() {
+            AccessTokenResponse res = new AccessTokenResponse();
+            if (accessToken != null) {
+                String encodedToken = new JWSBuilder().jsonContent(accessToken).rsa256(realm.getPrivateKey());
+                res.setToken(encodedToken);
+                res.setTokenType("bearer");
+                if (accessToken.getExpiration() != 0) {
+                    long time = accessToken.getExpiration() - (System.currentTimeMillis() / 1000);
+                    res.setExpiresIn(time);
+                }
+            }
+            if (refreshToken != null) {
+                String encodedToken = new JWSBuilder().jsonContent(refreshToken).rsa256(realm.getPrivateKey());
+                res.setRefreshToken(encodedToken);
+            }
+            return res;
+        }
+    }
+
 }

@@ -59,11 +59,7 @@ public class KeycloakAuthenticationMechanism implements AuthenticationMechanism 
             return AuthenticationMechanismOutcome.NOT_AUTHENTICATED;
         }
         else if (outcome == AuthenticationMechanismOutcome.AUTHENTICATED) {
-            final AccessToken token = bearer.getToken();
-            String surrogate = bearer.getSurrogate();
-            KeycloakAuthenticatedSession session = new KeycloakAuthenticatedSession(bearer.getTokenString(), token, resourceMetadata);
-            KeycloakPrincipal principal = completeAuthentication(securityContext, token, surrogate);
-            propagateBearer(exchange, session, principal);
+            completeAuthentication(securityContext, bearer);
             return AuthenticationMechanismOutcome.AUTHENTICATED;
         }
         else if (adapterConfig.isBearerOnly()) {
@@ -82,9 +78,7 @@ public class KeycloakAuthenticationMechanism implements AuthenticationMechanism 
             return AuthenticationMechanismOutcome.NOT_ATTEMPTED;
 
         }
-        KeycloakAuthenticatedSession session = new KeycloakAuthenticatedSession(oauth.getTokenString(), oauth.getToken(), resourceMetadata);
-        KeycloakPrincipal principal = completeAuthentication(securityContext, oauth.getToken(), null);
-        propagateOauth(exchange, session, principal);
+        completeAuthentication(exchange, securityContext, oauth);
         log.info("AUTHENTICATED");
         return AuthenticationMechanismOutcome.AUTHENTICATED;
     }
@@ -97,42 +91,23 @@ public class KeycloakAuthenticationMechanism implements AuthenticationMechanism 
         return new BearerTokenAuthenticator(resourceMetadata, adapterConfig.isUseResourceRoleMappings());
     }
 
-    protected KeycloakPrincipal completeAuthentication(SecurityContext securityContext, AccessToken token, String surrogate) {
-        final KeycloakPrincipal skeletonKeyPrincipal = new KeycloakPrincipal(token.getSubject(), surrogate);
-        Set<String> roles = null;
-        if (adapterConfig.isUseResourceRoleMappings()) {
-            AccessToken.Access access = token.getResourceAccess(resourceMetadata.getResourceName());
-            if (access != null) roles = access.getRoles();
-        } else {
-            AccessToken.Access access = token.getRealmAccess();
-            if (access != null) roles = access.getRoles();
-        }
-        if (roles == null) roles = Collections.emptySet();
-        final Set<String> accountRoles = roles;
-        Account account = new Account() {
-            @Override
-            public Principal getPrincipal() {
-                return skeletonKeyPrincipal;
-            }
-
-            @Override
-            public Set<String> getRoles() {
-                return accountRoles;
-            }
-        };
+    protected void completeAuthentication(HttpServerExchange exchange, SecurityContext securityContext, OAuthAuthenticator oauth) {
+        final KeycloakPrincipal principal = new KeycloakPrincipal(oauth.getToken().getSubject(), null);
+        KeycloakUndertowAccount account = new KeycloakUndertowAccount(principal, oauth.getToken(), oauth.getTokenString(), oauth.getRefreshToken(), realmConfig, resourceMetadata, adapterConfig);
         securityContext.authenticationComplete(account, "KEYCLOAK", true);
-        return skeletonKeyPrincipal;
+        login(exchange, account);
     }
 
-    protected void propagateBearer(HttpServerExchange exchange, KeycloakAuthenticatedSession session, KeycloakPrincipal principal) {
-        exchange.putAttachment(SKELETON_KEY_SESSION_ATTACHMENT_KEY, session);
-
+    protected void login(HttpServerExchange exchange, KeycloakUndertowAccount account) {
+        // complete
     }
 
-    protected void propagateOauth(HttpServerExchange exchange, KeycloakAuthenticatedSession session, KeycloakPrincipal principal) {
-        exchange.putAttachment(SKELETON_KEY_SESSION_ATTACHMENT_KEY, session);
-    }
 
+    protected void completeAuthentication(SecurityContext securityContext, BearerTokenAuthenticator bearer) {
+        final KeycloakPrincipal principal = new KeycloakPrincipal(bearer.getToken().getSubject(), bearer.getSurrogate());
+        KeycloakUndertowAccount account = new KeycloakUndertowAccount(principal, bearer.getToken(), bearer.getTokenString(), null, realmConfig, resourceMetadata, adapterConfig);
+        securityContext.authenticationComplete(account, "KEYCLOAK", false);
+    }
 
     @Override
     public ChallengeResult sendChallenge(HttpServerExchange exchange, SecurityContext securityContext) {

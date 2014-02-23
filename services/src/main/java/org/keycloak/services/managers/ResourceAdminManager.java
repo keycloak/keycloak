@@ -18,7 +18,7 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 public class ResourceAdminManager {
-    protected Logger logger = Logger.getLogger(ResourceAdminManager.class);
+    protected static Logger logger = Logger.getLogger(ResourceAdminManager.class);
 
     public void logoutAll(RealmModel realm) {
         singleLogOut(realm, null);
@@ -41,12 +41,14 @@ public class ResourceAdminManager {
         if (managementUrl != null) {
             LogoutAction adminAction = new LogoutAction(TokenIdGenerator.generateId(), System.currentTimeMillis() / 1000 + 30, resource.getName(), user);
             String token = new TokenManager().encodeToken(realm, adminAction);
-            logger.debug("logout user: {0} resource: {1} url: {2}", user, resource.getName(), managementUrl);
+            logger.info("logout user: {0} resource: {1} url: {2}", user, resource.getName(), managementUrl);
             Response response = client.target(managementUrl).path(AdapterConstants.K_LOGOUT).request().post(Entity.text(token));
             boolean success = response.getStatus() == 204;
             response.close();
+            logger.info("logout success.");
             return success;
         } else {
+            logger.info("logout failure.");
             return false;
         }
     }

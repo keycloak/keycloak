@@ -46,7 +46,8 @@ public class ApplianceBootstrap {
         realm.addRequiredCredential(CredentialRepresentation.PASSWORD);
         realm.addRequiredOAuthClientCredential(CredentialRepresentation.PASSWORD);
         realm.addRequiredResourceCredential(CredentialRepresentation.PASSWORD);
-        realm.setAccessTokenLifespan(300);
+        realm.setAccessTokenLifespan(60);
+        realm.setRefreshTokenLifespan(3600);
         realm.setAccessCodeLifespan(60);
         realm.setAccessCodeLifespanUserAction(300);
         realm.setSslNotRequired(true);

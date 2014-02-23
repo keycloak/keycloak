@@ -11,8 +11,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URI;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -48,7 +46,7 @@ public class ServletOAuthClient extends AbstractOAuthClient {
     }
 
     public String resolveBearerToken(String redirectUri, String code) throws IOException, TokenGrantRequest.HttpFailure {
-        return TokenGrantRequest.invoke(client, code, codeUrl, redirectUri, clientId, credentials).getToken();
+        return TokenGrantRequest.invokeAccessCodeToToken(client, code, codeUrl, redirectUri, clientId, credentials).getToken();
     }
 
     /**

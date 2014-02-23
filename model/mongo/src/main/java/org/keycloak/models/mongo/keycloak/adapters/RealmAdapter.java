@@ -615,6 +615,18 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
     }
 
     @Override
+    public boolean hasScope(UserModel user, RoleModel role) {
+        Set<RoleModel> roles = getScopeMappings(user);
+        if (roles.contains(role)) return true;
+
+        for (RoleModel mapping : roles) {
+            if (mapping.hasRole(role)) return true;
+        }
+        return false;
+    }
+
+
+    @Override
     public void addScopeMapping(UserModel agent, RoleModel role) {
         UserEntity userEntity = ((UserAdapter)agent).getUser();
         getMongoStore().pushItemToList(userEntity, "scopeIds", role.getId(), true, invocationContext);

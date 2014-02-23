@@ -14,6 +14,7 @@ public class RealmRepresentation {
     protected String id;
     protected String realm;
     protected Integer accessTokenLifespan;
+    protected Integer refreshTokenLifespan;
     protected Integer accessCodeLifespan;
     protected Integer accessCodeLifespanUserAction;
     protected Boolean enabled;
@@ -120,6 +121,14 @@ public class RealmRepresentation {
 
     public void setAccessTokenLifespan(Integer accessTokenLifespan) {
         this.accessTokenLifespan = accessTokenLifespan;
+    }
+
+    public Integer getRefreshTokenLifespan() {
+        return refreshTokenLifespan;
+    }
+
+    public void setRefreshTokenLifespan(Integer refreshTokenLifespan) {
+        this.refreshTokenLifespan = refreshTokenLifespan;
     }
 
     public List<UserRoleMappingRepresentation> getRoleMappings() {

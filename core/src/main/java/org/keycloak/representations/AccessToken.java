@@ -79,6 +79,13 @@ public class AccessToken extends JsonWebToken {
         return resourceAccess;
     }
 
+    public void setResourceAccess(Map<String, Access> resourceAccess) {
+        this.resourceAccess = resourceAccess;
+    }
+
+
+
+
     /**
      * Does the realm require verifying the caller?
      *
@@ -129,6 +136,7 @@ public class AccessToken extends JsonWebToken {
     public AccessToken notBefore(long notBefore) {
         return (AccessToken) super.notBefore(notBefore);
     }
+
 
     @Override
     public AccessToken issuedAt(long issuedAt) {

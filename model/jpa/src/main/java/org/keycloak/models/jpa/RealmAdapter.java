@@ -903,6 +903,19 @@ public class RealmAdapter implements RealmModel {
         return false;
     }
 
+    @Override
+    public boolean hasScope(UserModel user, RoleModel role) {
+        Set<RoleModel> roles = getScopeMappings(user);
+        if (roles.contains(role)) return true;
+
+        for (RoleModel mapping : roles) {
+            if (mapping.hasRole(role)) return true;
+        }
+        return false;
+    }
+
+
+
     protected TypedQuery<UserRoleMappingEntity> getUserRoleMappingEntityTypedQuery(UserAdapter user, RoleAdapter role) {
         TypedQuery<UserRoleMappingEntity> query = em.createNamedQuery("userHasRole", UserRoleMappingEntity.class);
         query.setParameter("user", user.getUser());
@@ -1008,12 +1021,6 @@ public class RealmAdapter implements RealmModel {
             em.remove(entity);
         }
     }
-
-    public boolean hasScope(UserModel user, RoleModel role) {
-        TypedQuery<UserScopeMappingEntity> query = getRealmScopeMappingQuery((UserAdapter) user, (RoleAdapter) role);
-        return query.getResultList().size() > 0;
-    }
-
 
     protected TypedQuery<UserScopeMappingEntity> getRealmScopeMappingQuery(UserAdapter user, RoleAdapter role) {
         TypedQuery<UserScopeMappingEntity> query = em.createNamedQuery("userHasScope", UserScopeMappingEntity.class);

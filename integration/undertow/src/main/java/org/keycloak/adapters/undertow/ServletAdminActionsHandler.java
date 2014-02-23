@@ -84,6 +84,7 @@ public class ServletAdminActionsHandler implements HttpHandler {
         SessionManager manager = servletRequestContext.getDeployment().getSessionManager();
         String requestUri = exchange.getRequestURI();
         if (requestUri.endsWith(AdapterConstants.K_LOGOUT)) {
+            log.info("K_LOGOUT sent");
             JWSInput token = verifyAdminRequest(request, response);
             if (token == null) return;
             userSessionManagement.remoteLogout(token, manager, response);

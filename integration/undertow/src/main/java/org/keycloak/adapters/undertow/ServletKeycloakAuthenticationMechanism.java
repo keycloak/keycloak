@@ -29,7 +29,6 @@ public class ServletKeycloakAuthenticationMechanism extends KeycloakAuthenticati
     public ServletKeycloakAuthenticationMechanism(AdapterConfig config, ResourceMetadata metadata, ConfidentialPortManager portManager) {
         super(config, metadata);
         this.portManager = portManager;
-        this.userSessionManagement = userSessionManagement;
     }
 
 
@@ -39,21 +38,12 @@ public class ServletKeycloakAuthenticationMechanism extends KeycloakAuthenticati
     }
 
     @Override
-    protected void propagateBearer(HttpServerExchange exchange, KeycloakAuthenticatedSession skSession, KeycloakPrincipal principal) {
-        super.propagateBearer(exchange, skSession, principal);
+    protected void login(HttpServerExchange exchange, KeycloakUndertowAccount account) {
         final ServletRequestContext servletRequestContext = exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
         HttpServletRequest req = (HttpServletRequest) servletRequestContext.getServletRequest();
-        req.setAttribute(KeycloakAuthenticatedSession.class.getName(), skSession);
+        HttpSession session = req.getSession(true);
+        userSessionManagement.login(servletRequestContext.getDeployment().getSessionManager(), session, account.getPrincipal().getName());
+
     }
 
-    @Override
-    protected void propagateOauth(HttpServerExchange exchange, KeycloakAuthenticatedSession skSession, KeycloakPrincipal principal) {
-        super.propagateBearer(exchange, skSession, principal);
-        final ServletRequestContext servletRequestContext = exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
-        HttpServletRequest req = (HttpServletRequest) servletRequestContext.getServletRequest();
-        req.setAttribute(KeycloakAuthenticatedSession.class.getName(), skSession);
-        HttpSession session = req.getSession(true);
-        session.setAttribute(KeycloakAuthenticatedSession.class.getName(), skSession);
-        userSessionManagement.login(servletRequestContext.getDeployment().getSessionManager(), session, principal.getName());
-    }
 }

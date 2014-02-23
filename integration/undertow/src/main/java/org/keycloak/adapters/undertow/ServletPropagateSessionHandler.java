@@ -33,31 +33,27 @@ public class ServletPropagateSessionHandler implements HttpHandler {
 
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
-        log.info("handleRequest");
-        final ServletRequestContext servletRequestContext = exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
-        HttpServletRequest req = (HttpServletRequest) servletRequestContext.getServletRequest();
-        KeycloakAuthenticatedSession skSession = (KeycloakAuthenticatedSession)req.getAttribute(KeycloakAuthenticatedSession.class.getName());
-        if (skSession != null) {
-            log.info("skSession is in request");
+        log.debug("handleRequest");
+        KeycloakUndertowAccount account = (KeycloakUndertowAccount)exchange.getSecurityContext().getAuthenticatedAccount();
+        if (account == null) {
+            log.debug("Not logged in, nothing to propagate");
             next.handleRequest(exchange);
             return;
         }
+        UndertowKeycloakSession skSession = new UndertowKeycloakSession(account);
+
+
+        final ServletRequestContext servletRequestContext = exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
+        HttpServletRequest req = (HttpServletRequest) servletRequestContext.getServletRequest();
+        req.setAttribute(KeycloakAuthenticatedSession.class.getName(), skSession);
 
         HttpSession session = req.getSession(false);
         if (session == null) {
-            log.info("http session was null, nothing to propagate");
             next.handleRequest(exchange);
             return;
         }
-        skSession = (KeycloakAuthenticatedSession)session.getAttribute(KeycloakAuthenticatedSession.class.getName());
-        if (skSession == null) {
-            log.info("skSession not in http session, nothing to propagate");
-            next.handleRequest(exchange);
-            return;
-        }
-        log.info("propagating");
-        req.setAttribute(KeycloakAuthenticatedSession.class.getName(), skSession);
-        exchange.putAttachment(KeycloakAuthenticationMechanism.SKELETON_KEY_SESSION_ATTACHMENT_KEY, skSession);
+        log.debug("propagating to HTTP Session");
+        session.setAttribute(KeycloakAuthenticatedSession.class.getName(), skSession);
         next.handleRequest(exchange);
     }
 }

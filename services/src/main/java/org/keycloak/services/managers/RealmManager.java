@@ -106,6 +106,7 @@ public class RealmManager {
         if (rep.getAccessCodeLifespanUserAction() != null)
             realm.setAccessCodeLifespanUserAction(rep.getAccessCodeLifespanUserAction());
         if (rep.getAccessTokenLifespan() != null) realm.setAccessTokenLifespan(rep.getAccessTokenLifespan());
+        if (rep.getRefreshTokenLifespan() != null) realm.setRefreshTokenLifespan(rep.getRefreshTokenLifespan());
         if (rep.getRequiredCredentials() != null) {
             realm.updateRequiredCredentials(rep.getRequiredCredentials());
         }
@@ -160,6 +161,9 @@ public class RealmManager {
 
         if (rep.getAccessTokenLifespan() != null) newRealm.setAccessTokenLifespan(rep.getAccessTokenLifespan());
         else newRealm.setAccessTokenLifespan(300);
+
+        if (rep.getRefreshTokenLifespan() != null) newRealm.setRefreshTokenLifespan(rep.getRefreshTokenLifespan());
+        else newRealm.setRefreshTokenLifespan(3600);
 
         if (rep.getAccessCodeLifespan() != null) newRealm.setAccessCodeLifespan(rep.getAccessCodeLifespan());
         else newRealm.setAccessCodeLifespan(60);

@@ -4,6 +4,7 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
@@ -156,9 +157,36 @@ public class TokenService {
             throw new NotAuthorizedException("Auth failed");
         }
         String scope = form.getFirst("scope");
-        AccessToken token = tokenManager.createClientAccessToken(scope, realm, client, user);
-        String encoded = tokenManager.encodeToken(realm, token);
-        AccessTokenResponse res = accessTokenResponse(token, encoded);
+        AccessTokenResponse res = tokenManager.responseBuilder(realm)
+                .generateAccessToken(scope, client, user).build();
+        return Response.ok(res, MediaType.APPLICATION_JSON_TYPE).build();
+    }
+
+    @Path("refresh")
+    @POST
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response refreshAccessToken(final @HeaderParam(HttpHeaders.AUTHORIZATION) String authorizationHeader,
+                                     final MultivaluedMap<String, String> form) {
+        if (!checkSsl()) {
+            throw new NotAcceptableException("HTTPS required");
+        }
+
+        UserModel client = authorizeClient(authorizationHeader);
+        String refreshToken = form.getFirst("refresh_token");
+        AccessToken accessToken = null;
+        try {
+            accessToken = tokenManager.refreshAccessToken(realm, client, refreshToken);
+        } catch (OAuthErrorException e) {
+            Map<String, String> error = new HashMap<String, String>();
+            error.put("error", e.getError());
+            if (e.getDescription() != null) error.put("error_description", e.getDescription());
+            throw new BadRequestException(Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build(), e);
+        }
+
+        AccessTokenResponse res = tokenManager.responseBuilder(realm)
+                                              .accessToken(accessToken)
+                                              .generateRefreshToken().build();
         return Response.ok(res, MediaType.APPLICATION_JSON_TYPE).build();
     }
 
@@ -368,7 +396,9 @@ public class TokenService {
                     .build();
         }
         logger.debug("accessRequest SUCCESS");
-        AccessTokenResponse res = accessTokenResponse(realm.getPrivateKey(), accessCode.getToken());
+        AccessTokenResponse res = tokenManager.responseBuilder(realm)
+                                              .accessToken(accessCode.getToken())
+                                              .generateRefreshToken().build();
 
         return Cors.add(request, Response.ok(res)).allowedOrigins(client).allowedMethods("POST").build();
     }
@@ -406,23 +436,6 @@ public class TokenService {
             throw new BadRequestException("Unauthorized Client", Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build());
         }
         return client;
-    }
-
-    protected AccessTokenResponse accessTokenResponse(PrivateKey privateKey, AccessToken token) {
-        String encodedToken = new JWSBuilder().jsonContent(token).rsa256(privateKey);
-
-        return accessTokenResponse(token, encodedToken);
-    }
-
-    protected AccessTokenResponse accessTokenResponse(AccessToken token, String encodedToken) {
-        AccessTokenResponse res = new AccessTokenResponse();
-        res.setToken(encodedToken);
-        res.setTokenType("bearer");
-        if (token.getExpiration() != 0) {
-            long time = token.getExpiration() - (System.currentTimeMillis() / 1000);
-            res.setExpiresIn(time);
-        }
-        return res;
     }
 
     @Path("login")
@@ -526,11 +539,14 @@ public class TokenService {
     public Response logout(final @QueryParam("redirect_uri") String redirectUri) {
         // todo do we care if anybody can trigger this?
 
-        UserModel user = authManager.authenticateIdentityCookie(realm, uriInfo, headers);
+        // authenticate identity cookie, but ignore an access token timeout as we're logging out anyways.
+        UserModel user = authManager.authenticateIdentityCookie(realm, uriInfo, headers, false);
         if (user != null) {
-            logger.debug("Logging out: {0}", user.getLoginName());
+            logger.info("Logging out: {0}", user.getLoginName());
             authManager.expireIdentityCookie(realm, uriInfo);
-            resourceAdminManager.singleLogOut(realm, user.getLoginName());
+            resourceAdminManager.singleLogOut(realm, user.getId());
+        } else {
+            logger.info("No user logged in for logout");
         }
         // todo manage legal redirects
         return Response.status(302).location(UriBuilder.fromUri(redirectUri).build()).build();
