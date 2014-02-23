@@ -549,7 +549,7 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
         $scope.realm.accessTokenLifespan = TimeUnit.convert($scope.realm.accessTokenLifespan, from, to);
     });
 
-    $scope.realm.centralLoginLifespanUnit = TimeUnit.autoUnit(realm.accessTokenLifespan);
+    $scope.realm.centralLoginLifespanUnit = TimeUnit.autoUnit(realm.centralLoginLifespan);
     $scope.realm.centralLoginLifespan = TimeUnit.toUnit(realm.centralLoginLifespan, $scope.realm.centralLoginLifespanUnit);
     $scope.$watch('realm.centralLoginLifespanUnit', function(to, from) {
         $scope.realm.centralLoginLifespan = TimeUnit.convert($scope.realm.centralLoginLifespan, from, to);

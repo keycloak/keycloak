@@ -45,6 +45,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriBuilder;
@@ -235,10 +236,20 @@ public class TokenService {
 
         AuthenticationStatus status = authManager.authenticateForm(realm, user, formData);
 
+        String rememberMe = formData.getFirst("rememberMe");
+        boolean remember = rememberMe != null && rememberMe.equalsIgnoreCase("on");
+        logger.debug("*** Remember me: " + remember);
+        if (remember) {
+            NewCookie cookie = authManager.createRememberMeCookie(realm, uriInfo);
+            response.addNewCookie(cookie);
+        } else {
+            authManager.expireRememberMeCookie(realm, uriInfo);
+        }
+
         switch (status) {
             case SUCCESS:
             case ACTIONS_REQUIRED:
-                return oauth.processAccessCode(scopeParam, state, redirect, client, user);
+                return oauth.processAccessCode(scopeParam, state, redirect, client, user, remember);
             case ACCOUNT_DISABLED:
                 return Flows.forms(realm, request, uriInfo).setError(Messages.ACCOUNT_DISABLED).setFormData(formData).createLogin();
             case MISSING_TOTP:
@@ -544,6 +555,7 @@ public class TokenService {
         if (user != null) {
             logger.info("Logging out: {0}", user.getLoginName());
             authManager.expireIdentityCookie(realm, uriInfo);
+            authManager.expireRememberMeCookie(realm, uriInfo);
             resourceAdminManager.singleLogOut(realm, user.getId());
         } else {
             logger.info("No user logged in for logout");

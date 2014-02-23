@@ -39,6 +39,7 @@ public class AuthenticationManager {
     protected static Logger logger = Logger.getLogger(AuthenticationManager.class);
     public static final String FORM_USERNAME = "username";
     public static final String KEYCLOAK_IDENTITY_COOKIE = "KEYCLOAK_IDENTITY";
+    public static final String KEYCLOAK_REMEMBER_ME = "KEYCLOAK_REMEMBER_ME";
 
     public AccessToken createIdentityToken(RealmModel realm, UserModel user) {
         AccessToken token = new AccessToken();
@@ -52,26 +53,26 @@ public class AuthenticationManager {
         return token;
     }
 
-    public NewCookie createLoginCookie(RealmModel realm, UserModel user, UriInfo uriInfo) {
+    public NewCookie createLoginCookie(RealmModel realm, UserModel user, UriInfo uriInfo, boolean rememberMe) {
         String cookieName = KEYCLOAK_IDENTITY_COOKIE;
         String cookiePath = getIdentityCookiePath(realm, uriInfo);
-        return createLoginCookie(realm, user, null, cookieName, cookiePath);
+        return createLoginCookie(realm, user, null, cookieName, cookiePath, rememberMe);
     }
 
     public NewCookie createSaasIdentityCookie(RealmModel realm, UserModel user, UriInfo uriInfo) {
         String cookieName = AdminService.SAAS_IDENTITY_COOKIE;
         URI uri = AdminService.saasCookiePath(uriInfo).build();
         String cookiePath = uri.getRawPath();
-        return createLoginCookie(realm, user, null, cookieName, cookiePath);
+        return createLoginCookie(realm, user, null, cookieName, cookiePath, false);
     }
 
     public NewCookie createAccountIdentityCookie(RealmModel realm, UserModel user, UserModel client, URI uri) {
         String cookieName = AccountService.ACCOUNT_IDENTITY_COOKIE;
         String cookiePath = uri.getRawPath();
-        return createLoginCookie(realm, user, client, cookieName, cookiePath);
+        return createLoginCookie(realm, user, client, cookieName, cookiePath, false);
     }
 
-    protected NewCookie createLoginCookie(RealmModel realm, UserModel user, UserModel client, String cookieName, String cookiePath) {
+    protected NewCookie createLoginCookie(RealmModel realm, UserModel user, UserModel client, String cookieName, String cookiePath, boolean rememberMe) {
         AccessToken identityToken = createIdentityToken(realm, user);
         if (client != null) {
             identityToken.issuedFor(client.getLoginName());
@@ -80,12 +81,19 @@ public class AuthenticationManager {
         boolean secureOnly = !realm.isSslNotRequired();
         logger.debug("creatingLoginCookie - name: {0} path: {1}", cookieName, cookiePath);
         int maxAge = NewCookie.DEFAULT_MAX_AGE;
-        /*
-        if (realm.isRememberMe()) {
+        if (rememberMe) {
             maxAge = realm.getCentralLoginLifespan();
+            logger.info("createLoginCookie maxAge: " + maxAge);
         }
-        */
         NewCookie cookie = new NewCookie(cookieName, encoded, cookiePath, null, null, maxAge, secureOnly, true);
+        return cookie;
+    }
+
+    public NewCookie createRememberMeCookie(RealmModel realm, UriInfo uriInfo) {
+        String path = getIdentityCookiePath(realm, uriInfo);
+        boolean secureOnly = !realm.isSslNotRequired();
+        // remember me cookie should be persistent
+        NewCookie cookie = new NewCookie(KEYCLOAK_REMEMBER_ME, "true", path, null, null, realm.getCentralLoginLifespan(), secureOnly, true);
         return cookie;
     }
 
@@ -101,6 +109,12 @@ public class AuthenticationManager {
         logger.debug("Expiring identity cookie");
         String path = getIdentityCookiePath(realm, uriInfo);
         String cookieName = KEYCLOAK_IDENTITY_COOKIE;
+        expireCookie(cookieName, path);
+    }
+    public void expireRememberMeCookie(RealmModel realm, UriInfo uriInfo) {
+        logger.debug("Expiring remember me cookie");
+        String path = getIdentityCookiePath(realm, uriInfo);
+        String cookieName = KEYCLOAK_REMEMBER_ME;
         expireCookie(cookieName, path);
     }
 
