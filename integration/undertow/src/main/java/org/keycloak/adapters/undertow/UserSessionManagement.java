@@ -41,7 +41,7 @@ public class UserSessionManagement implements SessionListener {
 
     public void remoteLogout(JWSInput token, SessionManager manager, HttpServletResponse response) throws IOException {
         try {
-            log.debug("->> remoteLogout: ");
+            log.info("->> remoteLogout: ");
             LogoutAction action = JsonSerialization.readValue(token.getContent(), LogoutAction.class);
             if (action.isExpired()) {
                 log.warn("admin request failed, expired token");
@@ -56,10 +56,10 @@ public class UserSessionManagement implements SessionListener {
             }
             String user = action.getUser();
             if (user != null) {
-                log.debug("logout of session for: " + user);
+                log.info("logout of session for: " + user);
                 logout(manager, user);
             } else {
-                log.debug("logout of all sessions");
+                log.info("logout of all sessions");
                 logoutAll(manager);
             }
         } catch (Exception e) {
@@ -118,13 +118,13 @@ public class UserSessionManagement implements SessionListener {
     }
 
     public void logout(SessionManager manager, String user) {
-        log.debug("logoutUser: " + user);
+        log.info("logoutUser: " + user);
         Set<String> map = userSessionMap.remove(user);
         if (map == null) {
-            log.debug("no session for user: " + user);
+            log.info("no session for user: " + user);
             return;
         }
-        log.debug("found session for user");
+        log.info("found session for user");
         synchronized (map) {
             for (String id : map) {
                 log.debug("invalidating session for user: " + user);

@@ -58,6 +58,7 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
         super.start();
         StandardContext standardContext = (StandardContext) context;
         standardContext.addLifecycleListener(this);
+        cache = false;
     }
 
     @Override

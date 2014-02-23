@@ -86,7 +86,7 @@ public class KeycloakUndertowAccount implements Account {
     public void refreshExpiredToken() {
         if (accessToken.isActive()) return;
 
-        log.debug("Doing refresh");
+        log.info("Doing refresh");
         AccessTokenResponse response = null;
         try {
             response = TokenGrantRequest.invokeRefresh(realmConfiguration, getRefreshToken());
@@ -97,11 +97,12 @@ public class KeycloakUndertowAccount implements Account {
             log.error("Refresh token failure status: " + httpFailure.getStatus() + " " + httpFailure.getError());
             return;
         }
+        log.info("received refresh response");
         String tokenString = response.getToken();
         AccessToken token = null;
         try {
             token = RSATokenVerifier.verifyToken(tokenString, realmConfiguration.getMetadata().getRealmKey(), realmConfiguration.getMetadata().getRealm());
-            log.debug("Token Verification succeeded!");
+            log.info("Token Verification succeeded!");
         } catch (VerificationException e) {
             log.error("failed verification of token");
         }

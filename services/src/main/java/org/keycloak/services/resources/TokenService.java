@@ -539,11 +539,14 @@ public class TokenService {
     public Response logout(final @QueryParam("redirect_uri") String redirectUri) {
         // todo do we care if anybody can trigger this?
 
-        UserModel user = authManager.authenticateIdentityCookie(realm, uriInfo, headers);
+        // authenticate identity cookie, but ignore an access token timeout as we're logging out anyways.
+        UserModel user = authManager.authenticateIdentityCookie(realm, uriInfo, headers, false);
         if (user != null) {
-            logger.debug("Logging out: {0}", user.getLoginName());
+            logger.info("Logging out: {0}", user.getLoginName());
             authManager.expireIdentityCookie(realm, uriInfo);
-            resourceAdminManager.singleLogOut(realm, user.getLoginName());
+            resourceAdminManager.singleLogOut(realm, user.getId());
+        } else {
+            logger.info("No user logged in for logout");
         }
         // todo manage legal redirects
         return Response.status(302).location(UriBuilder.fromUri(redirectUri).build()).build();

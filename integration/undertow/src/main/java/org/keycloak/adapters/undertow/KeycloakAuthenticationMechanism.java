@@ -78,7 +78,7 @@ public class KeycloakAuthenticationMechanism implements AuthenticationMechanism 
             return AuthenticationMechanismOutcome.NOT_ATTEMPTED;
 
         }
-        completeAuthentication(securityContext, oauth);
+        completeAuthentication(exchange, securityContext, oauth);
         log.info("AUTHENTICATED");
         return AuthenticationMechanismOutcome.AUTHENTICATED;
     }
@@ -91,10 +91,15 @@ public class KeycloakAuthenticationMechanism implements AuthenticationMechanism 
         return new BearerTokenAuthenticator(resourceMetadata, adapterConfig.isUseResourceRoleMappings());
     }
 
-    protected void completeAuthentication(SecurityContext securityContext, OAuthAuthenticator oauth) {
+    protected void completeAuthentication(HttpServerExchange exchange, SecurityContext securityContext, OAuthAuthenticator oauth) {
         final KeycloakPrincipal principal = new KeycloakPrincipal(oauth.getToken().getSubject(), null);
         KeycloakUndertowAccount account = new KeycloakUndertowAccount(principal, oauth.getToken(), oauth.getTokenString(), oauth.getRefreshToken(), realmConfig, resourceMetadata, adapterConfig);
         securityContext.authenticationComplete(account, "KEYCLOAK", true);
+        login(exchange, account);
+    }
+
+    protected void login(HttpServerExchange exchange, KeycloakUndertowAccount account) {
+        // complete
     }
 
 

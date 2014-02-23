@@ -250,6 +250,7 @@ public class TokenManager {
         token.issuer(realm.getName());
         if (realm.getAccessTokenLifespan() > 0) {
             token.expiration((System.currentTimeMillis() / 1000) + realm.getAccessTokenLifespan());
+            logger.info("Access Token expiration: " + token.getExpiration());
         }
         Set<String> allowedOrigins = client.getWebOrigins();
         if (allowedOrigins != null) {

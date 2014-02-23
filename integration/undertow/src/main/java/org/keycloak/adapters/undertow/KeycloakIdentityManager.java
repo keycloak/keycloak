@@ -28,7 +28,10 @@ class KeycloakIdentityManager implements IdentityManager {
     public Account verify(Account account) {
         log.info("Verifying account in IdentityManager");
         KeycloakUndertowAccount keycloakAccount = (KeycloakUndertowAccount)account;
-        if (keycloakAccount.getAccessToken().isActive()) return account;
+        if (keycloakAccount.getAccessToken().isActive()) {
+            log.info("account is still active.  Time left: " + (keycloakAccount.getAccessToken().getExpiration() - (System.currentTimeMillis()/1000)) );
+            return account;
+        }
         keycloakAccount.refreshExpiredToken();
         if (!keycloakAccount.getAccessToken().isActive()) return null;
         return account;
