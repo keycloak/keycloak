@@ -28,6 +28,13 @@
 
             <div class="${properties.kcFormGroupClass!}">
                 <div id="kc-form-options" class="${properties.kcFormOptionsClass!}">
+                    <#if realm.rememberMe>
+                        <div class="checkbox">
+                            <label>
+                                <input id="rememberMe" name="rememberMe" type="checkbox" tabindex="3"> Remember Me
+                            </label>
+                        </div>
+                    </#if>
                     <div class="${properties.kcFormOptionsWrapperClass!}">
                         <#if realm.registrationAllowed>
                             <span>${rb.noAccount} <a href="${url.registrationUrl}">${rb.register}</a></span>
@@ -43,7 +50,7 @@
                         <input class="btn btn-primary btn-lg" name="login" id="kc-login" type="submit" value="${rb.logIn}"/>
                         <input class="btn btn-default btn-lg" name="cancel" id="kc-cancel" type="submit" value="${rb.cancel}"/>
                     </div>
-                </div>
+                 </div>
             </div>
         </form>
     <#elseif section = "info" >

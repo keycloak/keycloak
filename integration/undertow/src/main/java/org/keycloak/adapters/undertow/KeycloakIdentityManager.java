@@ -23,29 +23,29 @@ import java.io.IOException;
 */
 class KeycloakIdentityManager implements IdentityManager {
     protected static Logger log = Logger.getLogger(KeycloakIdentityManager.class);
+    protected AdapterConfig adapterConfig;
+    protected RealmConfiguration realmConfiguration;
+
+    KeycloakIdentityManager(AdapterConfig adapterConfig, RealmConfiguration realmConfiguration) {
+        this.adapterConfig = adapterConfig;
+        this.realmConfiguration = realmConfiguration;
+    }
 
     @Override
     public Account verify(Account account) {
         log.info("Verifying account in IdentityManager");
         KeycloakUndertowAccount keycloakAccount = (KeycloakUndertowAccount)account;
-        if (keycloakAccount.getAccessToken().isActive()) {
-            log.info("account is still active.  Time left: " + (keycloakAccount.getAccessToken().getExpiration() - (System.currentTimeMillis()/1000)) );
-            return account;
-        }
-        keycloakAccount.refreshExpiredToken();
-        if (!keycloakAccount.getAccessToken().isActive()) return null;
+        if (!keycloakAccount.isActive(realmConfiguration, adapterConfig)) return null;
         return account;
     }
 
     @Override
     public Account verify(String id, Credential credential) {
-        KeycloakServletExtension.log.warn("Shouldn't call verify!!!");
-        throw new IllegalStateException("Not allowed");
+        throw new IllegalStateException("Unsupported verify method");
     }
 
     @Override
     public Account verify(Credential credential) {
-        KeycloakServletExtension.log.warn("Shouldn't call verify!!!");
-        throw new IllegalStateException("Not allowed");
+        throw new IllegalStateException("Unsupported verify method");
     }
 }

@@ -95,7 +95,7 @@ public class KeycloakServletExtension implements ServletExtension {
         deploymentInfo.addInnerHandlerChainWrapper(ServletPropagateSessionHandler.WRAPPER); // propagates SkeletonKeySession
         deploymentInfo.addInnerHandlerChainWrapper(actions); // handles authenticated actions and cors.
 
-        deploymentInfo.setIdentityManager(new KeycloakIdentityManager());
+        deploymentInfo.setIdentityManager(new KeycloakIdentityManager(keycloakConfig, realmConfiguration));
 
         log.info("Setting jsession cookie path to: " + deploymentInfo.getContextPath());
         ServletSessionConfig cookieConfig = new ServletSessionConfig();

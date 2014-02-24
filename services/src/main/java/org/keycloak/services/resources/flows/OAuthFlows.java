@@ -35,6 +35,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.resources.TokenService;
 
+import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
@@ -69,13 +70,20 @@ public class OAuthFlows {
     }
 
     public Response redirectAccessCode(AccessCodeEntry accessCode, String state, String redirect) {
+        return redirectAccessCode(accessCode, state, redirect, false);
+    }
+
+
+    public Response redirectAccessCode(AccessCodeEntry accessCode, String state, String redirect, boolean rememberMe) {
         String code = accessCode.getCode();
         UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam("code", code);
         log.debug("redirectAccessCode: state: {0}", state);
         if (state != null)
             redirectUri.queryParam("state", state);
         Response.ResponseBuilder location = Response.status(302).location(redirectUri.build());
-        location.cookie(authManager.createLoginCookie(realm, accessCode.getUser(), uriInfo));
+        Cookie remember = request.getHttpHeaders().getCookies().get(AuthenticationManager.KEYCLOAK_REMEMBER_ME);
+        rememberMe = rememberMe || remember != null;
+        location.cookie(authManager.createLoginCookie(realm, accessCode.getUser(), uriInfo, rememberMe));
         return location.build();
     }
 
@@ -89,6 +97,11 @@ public class OAuthFlows {
     }
 
     public Response processAccessCode(String scopeParam, String state, String redirect, UserModel client, UserModel user) {
+        return processAccessCode(scopeParam, state, redirect, client, user, false);
+    }
+
+
+    public Response processAccessCode(String scopeParam, String state, String redirect, UserModel client, UserModel user, boolean rememberMe) {
         isTotpConfigurationRequired(user);
         isEmailVerificationRequired(user);
 
@@ -121,7 +134,7 @@ public class OAuthFlows {
         }
 
         if (redirect != null) {
-            return redirectAccessCode(accessCode, state, redirect);
+            return redirectAccessCode(accessCode, state, redirect, rememberMe);
         } else {
             return null;
         }

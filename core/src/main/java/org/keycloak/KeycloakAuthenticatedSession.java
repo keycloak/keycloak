@@ -35,4 +35,7 @@ public class KeycloakAuthenticatedSession implements Serializable {
         return metadata;
     }
 
+    public void setMetadata(ResourceMetadata metadata) {
+        this.metadata = metadata;
+    }
 }

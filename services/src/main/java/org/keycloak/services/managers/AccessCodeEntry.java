@@ -22,6 +22,7 @@ public class AccessCodeEntry {
     protected String code;
     protected String state;
     protected String redirectUri;
+    protected boolean rememberMe;
 
     protected long expiration;
     protected RealmModel realm;
@@ -118,5 +119,13 @@ public class AccessCodeEntry {
 
     public void setRedirectUri(String redirectUri) {
         this.redirectUri = redirectUri;
+    }
+
+    public boolean isRememberMe() {
+        return rememberMe;
+    }
+
+    public void setRememberMe(boolean rememberMe) {
+        this.rememberMe = rememberMe;
     }
 }

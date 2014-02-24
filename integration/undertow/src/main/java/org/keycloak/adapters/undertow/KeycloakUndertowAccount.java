@@ -3,16 +3,13 @@ package org.keycloak.adapters.undertow;
 import io.undertow.security.idm.Account;
 import org.jboss.logging.Logger;
 import org.keycloak.KeycloakPrincipal;
-import org.keycloak.RSATokenVerifier;
-import org.keycloak.VerificationException;
+import org.keycloak.adapters.RefreshableKeycloakSession;
 import org.keycloak.adapters.ResourceMetadata;
-import org.keycloak.adapters.TokenGrantRequest;
 import org.keycloak.adapters.config.RealmConfiguration;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 
-import java.io.IOException;
+import java.io.Serializable;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.Set;
@@ -21,30 +18,19 @@ import java.util.Set;
 * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
 * @version $Revision: 1 $
 */
-public class KeycloakUndertowAccount implements Account {
+public class KeycloakUndertowAccount implements Account, Serializable {
     protected static Logger log = Logger.getLogger(KeycloakUndertowAccount.class);
-    protected AccessToken accessToken;
-    protected String encodedAccessToken;
-    protected String refreshToken;
+    protected RefreshableKeycloakSession session;
     protected KeycloakPrincipal principal;
     protected Set<String> accountRoles;
-    protected RealmConfiguration realmConfiguration;
-    protected ResourceMetadata resourceMetadata;
-    protected AdapterConfig adapterConfig;
 
-    public KeycloakUndertowAccount(KeycloakPrincipal principal, AccessToken accessToken, String encodedAccessToken, String refreshToken,
-                                   RealmConfiguration realmConfiguration, ResourceMetadata resourceMetadata, AdapterConfig adapterConfig) {
+    public KeycloakUndertowAccount(KeycloakPrincipal principal, RefreshableKeycloakSession session, AdapterConfig config, ResourceMetadata metadata) {
         this.principal = principal;
-        this.accessToken = accessToken;
-        this.encodedAccessToken = encodedAccessToken;
-        this.refreshToken = refreshToken;
-        this.realmConfiguration = realmConfiguration;
-        this.resourceMetadata = resourceMetadata;
-        this.adapterConfig = adapterConfig;
-        setRoles(accessToken);
+        this.session = session;
+        setRoles(session.getToken(), config, metadata);
     }
 
-    protected void setRoles(AccessToken accessToken) {
+    protected void setRoles(AccessToken accessToken, AdapterConfig adapterConfig, ResourceMetadata resourceMetadata) {
         Set<String> roles = null;
         if (adapterConfig.isUseResourceRoleMappings()) {
             AccessToken.Access access = accessToken.getResourceAccess(resourceMetadata.getResourceName());
@@ -68,48 +54,30 @@ public class KeycloakUndertowAccount implements Account {
     }
 
     public AccessToken getAccessToken() {
-        return accessToken;
+        return session.getToken();
     }
 
     public String getEncodedAccessToken() {
-        return encodedAccessToken;
+        return session.getTokenString();
     }
 
-    public String getRefreshToken() {
-        return refreshToken;
+    public RefreshableKeycloakSession getSession() {
+        return session;
     }
 
-    public ResourceMetadata getResourceMetadata() {
-        return resourceMetadata;
+    public boolean isActive(RealmConfiguration realmConfiguration, AdapterConfig config) {
+        // this object may have been serialized, so we need to reset realm config/metadata
+        session.setRealmConfiguration(realmConfiguration);
+        session.setMetadata(realmConfiguration.getMetadata());
+        if (session.isActive()) return true;
+
+        session.refreshExpiredToken();
+        if (!session.isActive()) return false;
+
+        setRoles(session.getToken(), config, realmConfiguration.getMetadata());
+        return true;
     }
 
-    public void refreshExpiredToken() {
-        if (accessToken.isActive()) return;
 
-        log.info("Doing refresh");
-        AccessTokenResponse response = null;
-        try {
-            response = TokenGrantRequest.invokeRefresh(realmConfiguration, getRefreshToken());
-        } catch (IOException e) {
-            log.error("Refresh token failure", e);
-            return;
-        } catch (TokenGrantRequest.HttpFailure httpFailure) {
-            log.error("Refresh token failure status: " + httpFailure.getStatus() + " " + httpFailure.getError());
-            return;
-        }
-        log.info("received refresh response");
-        String tokenString = response.getToken();
-        AccessToken token = null;
-        try {
-            token = RSATokenVerifier.verifyToken(tokenString, realmConfiguration.getMetadata().getRealmKey(), realmConfiguration.getMetadata().getRealm());
-            log.info("Token Verification succeeded!");
-        } catch (VerificationException e) {
-            log.error("failed verification of token");
-        }
-        this.accessToken = token;
-        this.refreshToken = response.getRefreshToken();
-        this.encodedAccessToken = tokenString;
-        setRoles(this.accessToken);
 
-    }
 }

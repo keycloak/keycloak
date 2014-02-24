@@ -40,12 +40,10 @@ public class ServletPropagateSessionHandler implements HttpHandler {
             next.handleRequest(exchange);
             return;
         }
-        UndertowKeycloakSession skSession = new UndertowKeycloakSession(account);
-
 
         final ServletRequestContext servletRequestContext = exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
         HttpServletRequest req = (HttpServletRequest) servletRequestContext.getServletRequest();
-        req.setAttribute(KeycloakAuthenticatedSession.class.getName(), skSession);
+        req.setAttribute(KeycloakAuthenticatedSession.class.getName(), account.getSession());
 
         HttpSession session = req.getSession(false);
         if (session == null) {
@@ -53,7 +51,7 @@ public class ServletPropagateSessionHandler implements HttpHandler {
             return;
         }
         log.debug("propagating to HTTP Session");
-        session.setAttribute(KeycloakAuthenticatedSession.class.getName(), skSession);
+        session.setAttribute(KeycloakAuthenticatedSession.class.getName(), account.getSession());
         next.handleRequest(exchange);
     }
 }

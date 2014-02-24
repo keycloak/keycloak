@@ -49,5 +49,9 @@ public class RealmBean {
     public boolean isResetPasswordAllowed() {
         return realm.isResetPasswordAllowed();
     }
+
+    public boolean isRememberMe() {
+        return realm.isRememberMe();
+    }
     
 }
