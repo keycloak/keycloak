@@ -592,6 +592,7 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
         delete realmCopy["accessCodeLifespanUserActionUnit"];
 
         realmCopy.accessTokenLifespan = TimeUnit.toSeconds($scope.realm.accessTokenLifespan, $scope.realm.accessTokenLifespanUnit)
+        realmCopy.centralLoginLifespan = TimeUnit.toSeconds($scope.realm.centralLoginLifespan, $scope.realm.centralLoginLifespanUnit)
         realmCopy.refreshTokenLifespan = TimeUnit.toSeconds($scope.realm.refreshTokenLifespan, $scope.realm.refreshTokenLifespanUnit)
         realmCopy.accessCodeLifespan = TimeUnit.toSeconds($scope.realm.accessCodeLifespan, $scope.realm.accessCodeLifespanUnit)
         realmCopy.accessCodeLifespanUserAction = TimeUnit.toSeconds($scope.realm.accessCodeLifespanUserAction, $scope.realm.accessCodeLifespanUserActionUnit)

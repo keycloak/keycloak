@@ -16,6 +16,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.KeycloakAuthenticatedSession;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.adapters.AdapterConstants;
+import org.keycloak.adapters.RefreshableKeycloakSession;
 import org.keycloak.adapters.ResourceMetadata;
 import org.keycloak.adapters.as7.config.CatalinaAdapterConfigLoader;
 import org.keycloak.representations.AccessToken;
@@ -92,6 +93,7 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
                 remoteLogout(input, response);
                 return;
             }
+            checkKeycloakSession(request);
             super.invoke(request, response);
         } finally {
         }
@@ -184,13 +186,39 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
         return false;
     }
 
+    /**
+     * Checks that access token is still valid.  Will attempt refresh of token if it is not.
+     *
+     * @param request
+     */
+    protected void checkKeycloakSession(Request request) {
+        if (request.getSessionInternal(false) == null || request.getSessionInternal().getPrincipal() == null) return;
+        RefreshableKeycloakSession session = (RefreshableKeycloakSession)request.getSessionInternal().getNote(KeycloakAuthenticatedSession.class.getName());
+        if (session == null) return;
+        // just in case session got serialized
+        session.setRealmConfiguration(realmConfiguration);
+        session.setMetadata(resourceMetadata);
+        if (session.isActive()) return;
+
+        // FYI: A refresh requires same scope, so same roles will be set.  Otherwise, refresh will fail and token will
+        // not be updated
+        session.refreshExpiredToken();
+        if (session.isActive()) return;
+
+        request.getSessionInternal().removeNote(KeycloakAuthenticatedSession.class.getName());
+        request.setUserPrincipal(null);
+        request.setAuthType(null);
+        request.getSessionInternal().setPrincipal(null);
+        request.getSessionInternal().setAuthType(null);
+    }
+
     protected boolean checkLoggedIn(Request request, HttpServletResponse response) {
-        if (request.getSessionInternal() == null || request.getSessionInternal().getPrincipal() == null)
+        if (request.getSessionInternal(false) == null || request.getSessionInternal().getPrincipal() == null)
             return false;
         log.debug("remote logged in already");
         GenericPrincipal principal = (GenericPrincipal) request.getSessionInternal().getPrincipal();
         request.setUserPrincipal(principal);
-        request.setAuthType("OAUTH");
+        request.setAuthType("KEYCLOAK");
         Session session = request.getSessionInternal();
         if (session != null) {
             KeycloakAuthenticatedSession skSession = (KeycloakAuthenticatedSession) session.getNote(KeycloakAuthenticatedSession.class.getName());
@@ -234,7 +262,7 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
             Session session = request.getSessionInternal(true);
             session.setPrincipal(principal);
             session.setAuthType("OAUTH");
-            KeycloakAuthenticatedSession skSession = new KeycloakAuthenticatedSession(oauth.getTokenString(), token, realmConfiguration.getMetadata());
+            KeycloakAuthenticatedSession skSession = new RefreshableKeycloakSession(oauth.getTokenString(), oauth.getToken(), resourceMetadata, realmConfiguration, oauth.getRefreshToken());
             session.setNote(KeycloakAuthenticatedSession.class.getName(), skSession);
 
             String username = token.getSubject();

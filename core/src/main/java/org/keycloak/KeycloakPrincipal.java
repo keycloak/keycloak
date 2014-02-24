@@ -1,12 +1,13 @@
 package org.keycloak;
 
+import java.io.Serializable;
 import java.security.Principal;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class KeycloakPrincipal implements Principal {
+public class KeycloakPrincipal implements Principal, Serializable {
     protected String name;
     protected String surrogate;
 

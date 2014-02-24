@@ -29,6 +29,7 @@ public class ServletOAuthLogin {
     protected int redirectPort;
     protected String tokenString;
     protected AccessToken token;
+    protected String refreshToken;
 
     public ServletOAuthLogin(RealmConfiguration realmInfo, HttpServletRequest request, HttpServletResponse response, int redirectPort) {
         this.request = request;
@@ -43,6 +44,10 @@ public class ServletOAuthLogin {
 
     public AccessToken getToken() {
         return token;
+    }
+
+    public String getRefreshToken() {
+        return refreshToken;
     }
 
     public RealmConfiguration getRealmInfo() {
@@ -249,6 +254,7 @@ public class ServletOAuthLogin {
             sendError(HttpServletResponse.SC_FORBIDDEN);
             return false;
         }
+        refreshToken = tokenResponse.getRefreshToken();
         // redirect to URL without oauth query parameters
         sendRedirect(redirectUri);
         return true;
