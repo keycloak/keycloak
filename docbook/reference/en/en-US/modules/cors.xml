@@ -1,0 +1,25 @@
+<chapter id="cors">
+    <title>CORS</title>
+    <para>
+        CORS stands for Cross-Origin Resource Sharing.  If executing browser Javascript tries to make an AJAX HTTP request
+        to a server's whose domain is different than the one the Javascript code came from, then the request uses the
+        <ulink url="http://www.w3.org/TR/cors/">CORS protocol</ulink>.  The server must handle CORS requests in a special
+        way, otherwise the browser will not display or allow the request to be processed.  This protocol exists to protect
+        against XSS and other Javascript-based attacks.  Keycloak has support for validated CORS requests.
+    </para>
+    <para>
+        Keycloak's CORS support is configured per application and oauth client.  You specify the allowed origins
+        in the application's or oauth client's configuration page in the admin console.  You can add as many you want.  The value
+        must be what the browser would send as a value in the <literal>Origin</literal> header.  For example <literal>http://example.com</literal>
+        is what you must specify to allow CORS requests from <literal>example.com</literal>.  When an access token is
+        created for the application or OAuth client, these allowed origins are embedded within the token.  On authenticated
+        CORS requests, your application's Keycloak adapter will handle the CORS protocol and validate the <literal>Origin</literal>
+        header against the allowed origins embedded in the token.  If there is no match, then the request is denied.
+    </para>
+    <para>
+        To enable CORS processing in your application's server, you must set the <literal>enable-cors</literal> setting
+        to <literal>true</literal> in your <link linkend='adapter-config'>adapter's configuration file</link>.  When this
+        setting is enabled, the Keycloak adapter will handle all CORS preflight requests.  It will validate authenticated
+        requests (protected resource requests), but will let unauthenticated requests (unprotected resource requests) pass through.
+    </para>
+</chapter>

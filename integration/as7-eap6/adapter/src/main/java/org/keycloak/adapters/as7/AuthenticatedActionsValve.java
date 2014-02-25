@@ -118,7 +118,7 @@ public class AuthenticatedActionsValve extends ValveBase {
             response.setHeader("Access-Control-Allow-Origin", origin);
             response.setHeader("Access-Control-Allow-Credentials", "true");
         } else {
-            log.debugv("session or origin was null: {0}", request.getRequestURI());
+            log.debugv("letting through.  This is an unathenticated session or origin header was null: {0}", request.getRequestURI());
         }
         return false;
     }

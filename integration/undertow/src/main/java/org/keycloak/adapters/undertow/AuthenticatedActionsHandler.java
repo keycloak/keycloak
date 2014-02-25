@@ -124,7 +124,7 @@ public class AuthenticatedActionsHandler implements HttpHandler {
             exchange.getResponseHeaders().put(PreflightCorsHandler.ACCESS_CONTROL_ALLOW_ORIGIN, origin);
             exchange.getResponseHeaders().put(PreflightCorsHandler.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
         } else {
-            log.debugv("not secured or origin was null: {0}", exchange.getRequestURI());
+            log.debugv("cors validation not needed as we're not a secure session or origin header was null: {0}", exchange.getRequestURI());
         }
         return false;
     }
