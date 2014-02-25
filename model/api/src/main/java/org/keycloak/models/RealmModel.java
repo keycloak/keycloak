@@ -128,9 +128,11 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
 
     Set<SocialLinkModel> getSocialLinks(UserModel user);
 
+    SocialLinkModel getSocialLink(UserModel user, String socialProvider);
+
     void addSocialLink(UserModel user, SocialLinkModel socialLink);
 
-    void removeSocialLink(UserModel user, SocialLinkModel socialLink);
+    boolean removeSocialLink(UserModel user, String socialProvider);
 
     boolean isSocial();
 

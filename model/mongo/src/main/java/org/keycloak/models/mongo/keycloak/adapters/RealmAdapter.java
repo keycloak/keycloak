@@ -878,6 +878,12 @@ public class RealmAdapter extends AbstractMongoAdapter<RealmEntity> implements R
     }
 
     @Override
+    public SocialLinkModel getSocialLink(UserModel user, String socialProvider) {
+        SocialLinkEntity socialLinkEntity = findSocialLink(user, socialProvider);
+        return socialLinkEntity!=null ? new SocialLinkModel(socialLinkEntity.getSocialProvider(), socialLinkEntity.getSocialUsername()) : null;
+    }
+
+    @Override
     public void addSocialLink(UserModel user, SocialLinkModel socialLink) {
         UserEntity userEntity = ((UserAdapter)user).getUser();
         SocialLinkEntity socialLinkEntity = new SocialLinkEntity();
@@ -888,13 +894,29 @@ public class RealmAdapter extends AbstractMongoAdapter<RealmEntity> implements R
     }
 
     @Override
-    public void removeSocialLink(UserModel user, SocialLinkModel socialLink) {
-        SocialLinkEntity socialLinkEntity = new SocialLinkEntity();
-        socialLinkEntity.setSocialProvider(socialLink.getSocialProvider());
-        socialLinkEntity.setSocialUsername(socialLink.getSocialUsername());
-
+    public boolean removeSocialLink(UserModel user,String socialProvider) {
+        SocialLinkEntity socialLinkEntity = findSocialLink(user, socialProvider);
+        if (socialLinkEntity == null) {
+            return false;
+        }
         UserEntity userEntity = ((UserAdapter)user).getUser();
-        getMongoStore().pullItemFromList(userEntity, "socialLinks", socialLinkEntity, invocationContext);
+
+        return getMongoStore().pullItemFromList(userEntity, "socialLinks", socialLinkEntity, invocationContext);
+    }
+
+    private SocialLinkEntity findSocialLink(UserModel user, String socialProvider) {
+        UserEntity userEntity = ((UserAdapter)user).getUser();
+        List<SocialLinkEntity> linkEntities = userEntity.getSocialLinks();
+        if (linkEntities == null) {
+            return null;
+        }
+
+        for (SocialLinkEntity socialLinkEntity : linkEntities) {
+            if (socialLinkEntity.getSocialProvider().equals(socialProvider)) {
+                return socialLinkEntity;
+            }
+        }
+        return null;
     }
 
     protected void updateRealm() {

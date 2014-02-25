@@ -55,8 +55,8 @@
                     "socialUsername": "fbuser1"
                 },
                 {
-                    "socialProvider": "facebook",
-                    "socialUsername": "fbuser2"
+                    "socialProvider": "twitter",
+                    "socialUsername": "twuser1"
                 },
                 {
                     "socialProvider": "google",
