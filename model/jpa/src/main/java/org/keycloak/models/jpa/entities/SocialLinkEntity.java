@@ -15,8 +15,8 @@ import org.hibernate.annotations.GenericGenerator;
  */
 @NamedQueries({
         @NamedQuery(name="findSocialLinkByUser", query="select link from SocialLinkEntity link where link.user = :user"),
-        @NamedQuery(name="findUserByLinkAndRealm", query="select link.user from SocialLinkEntity link where link.realm = :realm and link.socialProvider = :socialProvider and link.socialUsername = :socialUsername"),
-        @NamedQuery(name="findSocialLinkByAll", query="select link.user from SocialLinkEntity link where link.realm = :realm and link.socialProvider = :socialProvider and link.socialUsername = :socialUsername and link.user = :user")
+        @NamedQuery(name="findSocialLinkByUserAndProvider", query="select link from SocialLinkEntity link where link.user = :user and link.socialProvider = :socialProvider"),
+        @NamedQuery(name="findUserByLinkAndRealm", query="select link.user from SocialLinkEntity link where link.realm = :realm and link.socialProvider = :socialProvider and link.socialUsername = :socialUsername")
 })
 @Entity
 public class SocialLinkEntity {

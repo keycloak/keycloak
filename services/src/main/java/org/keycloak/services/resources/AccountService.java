@@ -33,16 +33,22 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.ModelToRepresentation;
+import org.keycloak.services.managers.SocialRequestManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.services.validation.Validation;
+import org.keycloak.social.SocialLoader;
+import org.keycloak.social.SocialProvider;
+import org.keycloak.social.SocialProviderConfig;
+import org.keycloak.social.SocialProviderException;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 import java.net.URI;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -50,6 +56,8 @@ import java.util.List;
 public class AccountService {
 
     private static final Logger logger = Logger.getLogger(AccountService.class);
+
+    public static final String KEYCLOAK_ACCOUNT_IDENTITY_COOKIE = "KEYCLOAK_ACCOUNT_IDENTITY";
 
     private RealmModel realm;
 
@@ -62,14 +70,15 @@ public class AccountService {
     @Context
     private UriInfo uriInfo;
 
-    private AppAuthManager authManager;
+    private final AppAuthManager authManager;
+    private final ApplicationModel application;
+    private final SocialRequestManager socialRequestManager;
 
-    private ApplicationModel application;
-
-    public AccountService(RealmModel realm, ApplicationModel application, TokenManager tokenManager) {
+    public AccountService(RealmModel realm, ApplicationModel application, TokenManager tokenManager, SocialRequestManager socialRequestManager) {
         this.realm = realm;
         this.application = application;
-        this.authManager =  new AppAuthManager("KEYCLOAK_ACCOUNT_IDENTITY", tokenManager);
+        this.authManager =  new AppAuthManager(KEYCLOAK_ACCOUNT_IDENTITY_COOKIE, tokenManager);
+        this.socialRequestManager = socialRequestManager;
     }
 
     public static UriBuilder accountServiceBaseUrl(UriInfo uriInfo) {
@@ -132,6 +141,12 @@ public class AccountService {
     @GET
     public Response passwordPage() {
         return forwardToPage("password", AccountPages.PASSWORD);
+    }
+
+    @Path("social")
+    @GET
+    public Response socialPage() {
+        return forwardToPage("social", AccountPages.SOCIAL);
     }
 
     @Path("/")
@@ -239,6 +254,61 @@ public class AccountService {
         realm.updateCredential(user, credentials);
 
         return account.setSuccess("accountPasswordUpdated").createResponse(AccountPages.PASSWORD);
+    }
+
+    @Path("social-update")
+    @GET
+    public Response processSocialUpdate(@QueryParam("action") String action,
+                                        @QueryParam("provider_id") String providerId) {
+        Auth auth = getAuth(true);
+        require(auth, AccountRoles.MANAGE_ACCOUNT);
+        UserModel user = auth.getUser();
+
+        Account account = AccountLoader.load().createAccount(uriInfo).setRealm(realm).setUser(auth.getUser());
+
+        if (Validation.isEmpty(providerId)) {
+            return account.setError(Messages.MISSING_SOCIAL_PROVIDER).createResponse(AccountPages.SOCIAL);
+        }
+        AccountSocialAction accountSocialAction = AccountSocialAction.getAction(action);
+        if (accountSocialAction == null) {
+            return account.setError(Messages.INVALID_SOCIAL_ACTION).createResponse(AccountPages.SOCIAL);
+        }
+
+        SocialProvider provider = SocialLoader.load(providerId);
+        if (provider == null) {
+            return account.setError(Messages.SOCIAL_PROVIDER_NOT_FOUND).createResponse(AccountPages.SOCIAL);
+        }
+
+        if (!user.isEnabled()) {
+            return account.setError(Messages.ACCOUNT_DISABLED).createResponse(AccountPages.SOCIAL);
+        }
+
+        switch (accountSocialAction) {
+            case ADD:
+                String redirectUri = UriBuilder.fromUri(Urls.accountSocialPage(uriInfo.getBaseUri(), realm.getName())).build().toString();
+
+                try {
+                    return Flows.social(socialRequestManager, realm, uriInfo, provider)
+                            .putClientAttribute("realm", realm.getName())
+                            .putClientAttribute("clientId", Constants.ACCOUNT_MANAGEMENT_APP)
+                            .putClientAttribute("state", UUID.randomUUID().toString()).putClientAttribute("redirectUri", redirectUri)
+                            .putClientAttribute("userId", user.getId())
+                            .redirectToSocialProvider();
+                } catch (SocialProviderException spe) {
+                    return account.setError(Messages.SOCIAL_REDIRECT_ERROR).createResponse(AccountPages.SOCIAL);
+                }
+            case REMOVE:
+                if (realm.removeSocialLink(user, providerId)) {
+                    logger.debug("Social provider " + providerId + " removed successfully from user " + user.getLoginName());
+                    return account.setSuccess(Messages.SOCIAL_PROVIDER_REMOVED).createResponse(AccountPages.SOCIAL);
+                } else {
+                    return account.setError(Messages.SOCIAL_LINK_NOT_ACTIVE).createResponse(AccountPages.SOCIAL);
+                }
+            default:
+                // Shouldn't happen
+                logger.warn("Action is null!");
+                return null;
+        }
     }
 
     @Path("login-redirect")
@@ -354,6 +424,21 @@ public class AccountService {
     public void requireOneOf(Auth auth, String... roles) {
         if (!auth.hasOneOfAppRole(application.getName(), roles)) {
             throw new ForbiddenException();
+        }
+    }
+
+    public enum AccountSocialAction {
+        ADD,
+        REMOVE;
+
+        public static AccountSocialAction getAction(String action) {
+            if ("add".equalsIgnoreCase(action)) {
+                return ADD;
+            } else if ("remove".equalsIgnoreCase(action)) {
+                return REMOVE;
+            } else {
+                return null;
+            }
         }
     }
 

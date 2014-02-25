@@ -28,7 +28,7 @@
 
                 <div class="navbar-collapse">
                     <ul class="nav navbar-nav navbar-utility">
-                        <#if referrer?has_content><li><a href="${referrer.baseUrl}">Back to ${referrer.name}</a></li></#if>
+                        <#if referrer?has_content && referrer.baseUrl?has_content><li><a href="${referrer.baseUrl}">Back to ${referrer.name}</a></li></#if>
                         <li><a href="${url.logoutUrl}">Sign Out</a></li>
                     </ul>
                 </div>
@@ -42,6 +42,7 @@
                 <li class="<#if active=='account'>active</#if>"><a href="${url.accountUrl}">Account</a></li>
                 <li class="<#if active=='password'>active</#if>"><a href="${url.passwordUrl}">Password</a></li>
                 <li class="<#if active=='totp'>active</#if>"><a href="${url.totpUrl}">Authenticator</a></li>
+                <#if isSocialRealm?has_content><li class="<#if active=='social'>active</#if>"><a href="${url.socialUrl}">Social</a></li></#if>
             </ul>
         </div>
 
