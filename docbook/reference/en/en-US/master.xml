@@ -18,6 +18,7 @@
                 <!ENTITY Migration SYSTEM "modules/MigrationFromOlderVersions.xml">
                 <!ENTITY Email SYSTEM "modules/email.xml">
                 <!ENTITY Roles SYSTEM "modules/roles.xml">
+                <!ENTITY CORS SYSTEM "modules/cors.xml">
                 <!ENTITY Timeouts SYSTEM "modules/timeouts.xml">
                 ]>
 
@@ -94,6 +95,7 @@
         &Email;
     </chapter>
     &Roles;
+    &CORS;
     &Timeouts;
     &Migration;
 

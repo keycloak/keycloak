@@ -10,7 +10,7 @@
         disadvantage of using this approach is that you end up having a non-confidential, public client.  This can be mitigated
         by registering valid redirect URLs.  You are still vulnerable if somebody hijacks the IP/DNS name of your pure
         HTML/Javascript application though.
-    </para>
+    </para>                                                                  startAsync
     <para>
         To use this adapter, you first must load and initialize the keycloak javascript library into your application.
 <programlisting><![CDATA[

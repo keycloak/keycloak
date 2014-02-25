@@ -18,7 +18,7 @@
   "bearer-only" : false,
   "expose-token" : true,
    "credentials" : {
-      "password" : "password"
+      "secret" : "234234-234234-234234"
    }
 
    "connection-pool-size" : 20,
