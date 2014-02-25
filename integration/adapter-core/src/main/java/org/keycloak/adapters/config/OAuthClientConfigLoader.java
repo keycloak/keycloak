@@ -35,8 +35,10 @@ public abstract class OAuthClientConfigLoader extends RealmConfigurationLoader {
         KeycloakUriBuilder serverBuilder = KeycloakUriBuilder.fromUri(adapterConfig.getAuthServerUrl());
         String authUrl = serverBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_LOGIN_PATH).build(adapterConfig.getRealm()).toString();
         String tokenUrl = serverBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_ACCESS_CODE_PATH).build(adapterConfig.getRealm()).toString();
+        String refreshUrl = serverBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_REFRESH_PATH).build(adapterConfig.getRealm()).toString();
         oauthClient.setAuthUrl(authUrl);
         oauthClient.setCodeUrl(tokenUrl);
+        oauthClient.setRefreshUrl(refreshUrl);
         oauthClient.setTruststore(truststore);
         if (adapterConfig.getScope() != null) {
             String scope = encodeScope(adapterConfig.getScope());

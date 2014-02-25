@@ -169,6 +169,7 @@ public class TokenService {
     @Produces(MediaType.APPLICATION_JSON)
     public Response refreshAccessToken(final @HeaderParam(HttpHeaders.AUTHORIZATION) String authorizationHeader,
                                      final MultivaluedMap<String, String> form) {
+        logger.info("--> refreshAccessToken");
         if (!checkSsl()) {
             throw new NotAcceptableException("HTTPS required");
         }

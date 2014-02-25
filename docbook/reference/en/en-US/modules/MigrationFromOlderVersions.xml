@@ -7,6 +7,14 @@
                 SkeletonKeyToken, SkeletonKeyScope, SkeletonKeyPrincipal, and SkeletonKeySession have been renamed to:
                 AccessToken, AccessScope, KeycloakPrincipal, and KeycloakAuthenticatedSession respectively.
             </listitem>
+            <listitem>
+                ServleOAuthClient.getBearerToken() method signature has changed.  It now returns an AccessTokenResponse
+                so that you can obtain a refresh token too.
+            </listitem>
+            <listitem>
+                Adapters now check the access token expiration with every request.  If the token is expired, they will
+                attempt to invoke a refresh on the auth server using a saved refresh token.
+            </listitem>
         </itemizedlist>
     </sect1>
     <sect1>

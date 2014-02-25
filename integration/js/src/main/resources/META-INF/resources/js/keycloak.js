@@ -101,6 +101,55 @@ var Keycloak = function (options) {
         req.send();
     }
 
+    /**
+     * checks to make sure token is valid.  If it is, it calls successCallback with no parameters.
+     * If it isn't valid, it tries to refresh the access token.  On successful refresh, it calls successCallback.
+     *
+     * @param successCallback
+     * @param errorCallback
+     */
+    this.onValidAccessToken = function(successCallback, errorCallback) {
+        if (!this.tokenParsed) {
+            console.log('no token');
+            errorCallback();
+            return;
+        }
+        var currTime = new Date().getTime() / 1000;
+        if (currTime > this.tokenParsed['exp']) {
+            if (!this.refreshToken) {
+                console.log('no refresh token');
+                errorCallback();
+                return;
+            }
+            console.log('calling refresh');
+            var params = 'grant_type=refresh_token&' + 'refresh_token=' + this.refreshToken;
+            var url = getRealmUrl() + '/tokens/refresh';
+
+            var req = new XMLHttpRequest();
+            req.open('POST', url, true, options.clientId, options.clientSecret);
+            req.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+
+            req.onreadystatechange = function () {
+                if (req.readyState == 4) {
+                    if (req.status == 200) {
+                        console.log('Refresh Success');
+                        var tokenResponse = JSON.parse(req.responseText);
+                        this.refreshToken = tokenResponse['refresh_token'];
+                        setToken(tokenResponse['access_token'], successCallback);
+                    } else {
+                        console.log('error on refresh HTTP invoke: ' + req.status);
+                        errorCallback && errorCallback({ authenticated: false, status: req.status, statusText: req.statusText });
+                    }
+                }
+            };
+            req.send(params);
+        } else {
+            console.log('Token is still valid');
+            successCallback();
+        }
+
+    }
+
     function getRealmUrl() {
         return options.url + '/auth/rest/realms/' + encodeURIComponent(options.realm);
     }
@@ -121,7 +170,9 @@ var Keycloak = function (options) {
             req.onreadystatechange = function () {
                 if (req.readyState == 4) {
                     if (req.status == 200) {
-                        setToken(JSON.parse(req.responseText)['access_token'], successCallback);
+                        var tokenResponse = JSON.parse(req.responseText);
+                        instance.refreshToken = tokenResponse['refresh_token'];
+                        setToken(tokenResponse['access_token'], successCallback);
                     } else {
                         errorCallback && errorCallback({ authenticated: false, status: req.status, statusText: req.statusText });
                     }

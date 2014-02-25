@@ -36,6 +36,7 @@
     <modules>
         <!-- <module>server</module> -->
         <module>customer-app</module>
+        <module>customer-app-js</module>
         <module>product-app</module>
         <module>database-service</module>
         <module>third-party</module>
