@@ -7,7 +7,7 @@
             <li><a href="#/realms/{{realm.realm}}">Settings</a></li>
             <li class="active">General</li>
         </ol>
-        <div data-ng-show="auth.hasAccess(realm.realm, 'manage-realm')">
+        <div data-ng-show="access.manageRealm">
             <h2 class="pull-left" data-ng-show="createRealm">Add Realm</h2>
             <h2 data-ng-hide="createRealm"><span>{{realm.realm}}</span> General Settings</h2>
             <p class="subtitle" data-ng-show="createRealm"><span class="required">*</span> Required fields</p>
@@ -102,7 +102,7 @@
                 </div>
             </form>
         </div>
-        <div data-ng-hide="auth.hasAccess(realm.realm, 'manage-realm')">
+        <div data-ng-hide="access.manageRealm">
             <h2 ><span>{{realm.realm}}</span></h2>
         </div>
 
