@@ -12,13 +12,13 @@ User <b id="username"></b> made this request.
 
 <script>
     var keycloak = Keycloak({
-        clientId: '<INSERT CLIENT ID>',
-        clientSecret: '<INSERT SECRET>',
-        realm: '<INSERT REALM NAME>',
+        clientId: 'customer-portal',
+        clientSecret: 'password',
+        realm: 'demo',
         onload: 'login-required'
     });
 
-    keycloak.init(function() {
+    var loadData = function () {
         document.getElementById('username').innerText = keycloak.username;
 
         var url = 'http://localhost:8080/database/customers';
@@ -37,15 +37,29 @@ User <b id="username"></b> made this request.
                         html += '<p>' + users[i] + '</p>';
                     }
                     document.getElementById('customers').innerHTML = html;
+                    console.log('finished loading data');
                 }
             }
         }
 
         req.send();
-    });
+    };
+
+    var loadFailure = function () {
+        document.getElementById('customers').innerHTML = '<b>Failed to load data.  Check console log</b>';
+
+    };
+
+
+
+    var reloadData = function () {
+        keycloak.onValidAccessToken(loadData, loadFailure);
+    }
+    keycloak.init(loadData);
 
 </script>
 
 <br><br>
+<button onclick="reloadData()">Reload data</button>
 </body>
 </html>

@@ -4,6 +4,7 @@ import org.apache.http.client.HttpClient;
 import org.keycloak.AbstractOAuthClient;
 import org.keycloak.adapters.HttpClientBuilder;
 import org.keycloak.adapters.TokenGrantRequest;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.util.KeycloakUriBuilder;
 
 import javax.servlet.http.Cookie;
@@ -45,8 +46,8 @@ public class ServletOAuthClient extends AbstractOAuthClient {
         this.client = client;
     }
 
-    public String resolveBearerToken(String redirectUri, String code) throws IOException, TokenGrantRequest.HttpFailure {
-        return TokenGrantRequest.invokeAccessCodeToToken(client, code, codeUrl, redirectUri, clientId, credentials).getToken();
+    public AccessTokenResponse resolveBearerToken(String redirectUri, String code) throws IOException, TokenGrantRequest.HttpFailure {
+        return TokenGrantRequest.invokeAccessCodeToToken(client, code, codeUrl, redirectUri, clientId, credentials);
     }
 
     /**
@@ -133,7 +134,7 @@ public class ServletOAuthClient extends AbstractOAuthClient {
      * @throws IOException
      * @throws org.keycloak.adapters.TokenGrantRequest.HttpFailure
      */
-    public String getBearerToken(HttpServletRequest request) throws IOException, TokenGrantRequest.HttpFailure {
+    public AccessTokenResponse getBearerToken(HttpServletRequest request) throws IOException, TokenGrantRequest.HttpFailure {
         String error = request.getParameter("error");
         if (error != null) throw new IOException("OAuth error: " + error);
         String redirectUri = request.getRequestURL().append("?").append(request.getQueryString()).toString();
@@ -149,6 +150,10 @@ public class ServletOAuthClient extends AbstractOAuthClient {
         }
         if (code == null) throw new IOException("code parameter was null");
         return resolveBearerToken(redirectUri, code);
+    }
+
+    public AccessTokenResponse refreshToken(String refreshToken) throws IOException, TokenGrantRequest.HttpFailure {
+        return TokenGrantRequest.invokeRefresh(client, refreshToken, refreshUrl, clientId, credentials);
     }
 
 

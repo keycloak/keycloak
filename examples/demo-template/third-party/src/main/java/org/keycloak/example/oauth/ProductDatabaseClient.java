@@ -59,7 +59,7 @@ public class ProductDatabaseClient {
         ServletOAuthClient oAuthClient = (ServletOAuthClient) request.getServletContext().getAttribute(ServletOAuthClient.class.getName());
         String token = null;
         try {
-            token = oAuthClient.getBearerToken(request);
+            token = oAuthClient.getBearerToken(request).getToken();
         } catch (IOException e) {
             throw new RuntimeException(e);
         } catch (TokenGrantRequest.HttpFailure failure) {

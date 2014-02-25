@@ -7,6 +7,7 @@
                 <!ENTITY OpenShift SYSTEM "modules/openshift.xml">
                 <!ENTITY AdapterConfig SYSTEM "modules/adapter-config.xml">
                 <!ENTITY JBossAdapter SYSTEM "modules/jboss-adapter.xml">
+                <!ENTITY JavascriptAdapter SYSTEM "modules/javascript-adapter.xml">
                 <!ENTITY SocialConfig SYSTEM "modules/social-config.xml">
                 <!ENTITY SocialFacebook SYSTEM "modules/social-facebook.xml">
                 <!ENTITY SocialGitHub SYSTEM "modules/social-github.xml">
@@ -63,6 +64,7 @@
         </para>
         &AdapterConfig;
         &JBossAdapter;
+        &JavascriptAdapter;
     </chapter>
 
     <chapter>

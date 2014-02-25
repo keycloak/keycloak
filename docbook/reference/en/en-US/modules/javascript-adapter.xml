@@ -1,0 +1,94 @@
+<section>
+    <title>Pure Client Javascript Adapter</title>
+    <para>
+        The Keycloak Server comes with a Javascript library you can use to secure pure HTML/Javascript applications.  It
+        works in the same way as other application adapters accept that your browser is driving the OAuth redirect protocol
+        rather than the server.
+    </para>
+    <para>
+        The
+        disadvantage of using this approach is that you end up having a non-confidential, public client.  This can be mitigated
+        by registering valid redirect URLs.  You are still vulnerable if somebody hijacks the IP/DNS name of your pure
+        HTML/Javascript application though.
+    </para>
+    <para>
+        To use this adapter, you first must load and initialize the keycloak javascript library into your application.
+<programlisting><![CDATA[
+<head>
+    <title>Customer View Page</title>
+    <script src="/auth/js/keycloak.js"></script>
+    <script>
+        var keycloak = Keycloak({
+            clientId: 'application-name',
+            clientSecret: '1234234-234234-234234-234234',
+            realm: 'demo',
+            onload: 'login-required'
+        });
+        keycloak.init();
+    </script>
+</head>
+]]></programlisting>
+    </para>
+    <para>
+        The above code will initialize the adapter and redirect you to your realm's login screen.  You must fill in the
+        appropriate <literal>clientId</literal>, <literal>clientSecret</literal>, and <literal>realm</literal> options
+        based on how you created your application in your realm through the admin console. The <literal>init()</literal>
+        method can also take a success and error callback function as parameters.
+    </para>
+    <para>
+        After you login, your application will be able to make REST calls using bearer token authentication.  Here's
+        an example pulled from the <literal>customer-portal-js</literal> example that comes with the distribution.
+<programlisting><![CDATA[
+<script>
+    var loadData = function () {
+        document.getElementById('username').innerText = keycloak.username;
+
+        var url = 'http://localhost:8080/database/customers';
+
+        var req = new XMLHttpRequest();
+        req.open('GET', url, true);
+        req.setRequestHeader('Accept', 'application/json');
+        req.setRequestHeader('Authorization', 'Bearer ' + keycloak.token);
+
+        req.onreadystatechange = function () {
+            if (req.readyState == 4) {
+                if (req.status == 200) {
+                    var users = JSON.parse(req.responseText);
+                    var html = '';
+                    for (var i = 0; i < users.length; i++) {
+                        html += '<p>' + users[i] + '</p>';
+                    }
+                    document.getElementById('customers').innerHTML = html;
+                    console.log('finished loading data');
+                }
+            }
+        }
+
+        req.send();
+    };
+
+    var loadFailure = function () {
+        document.getElementById('customers').innerHTML = '<b>Failed to load data.  Check console log</b>';
+
+    };
+
+    var reloadData = function () {
+        keycloak.onValidAccessToken(loadData, loadFailure);
+    }
+</script>
+
+<button onclick="reloadData()">Submit</button>
+]]></programlisting>
+
+    </para>
+    <para>
+        The <literal>loadData()</literal> method builds an HTTP request setting the <literal>Authorization</literal>
+        header to a bearer token.  The <literal>keycloak.token</literal> points to the access token the browser obtained
+        when it logged you in.  The <literal>loadFailure()</literal> method is invoked on a failure.  The <literal>reloadData()</literal>
+        function calls <literal>keycloak.onValidAccessToken()</literal> passing in the <literal>loadData()</literal> and
+        <literal>loadFailure()</literal> callbacks.  The <literal>keycloak.onValidAcessToken()</literal> method checks to
+        see if the access token hasn't expired.  If it hasn't, and your oauth login returned a refresh token, this method
+        will refresh the access token.  Finally, if successful, it will invoke the success callback, which in this case
+        is the <literal>loadData()</literal> method.
+    </para>
+</section>

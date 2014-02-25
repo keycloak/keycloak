@@ -10,6 +10,7 @@ The following examples requires Wildfly 8.0.0, JBoss EAP 6.x, or JBoss AS 7.1.1.
 There are multiple WAR projects.  These will all run on the same WildFly instance, but pretend each one is running on a different
 machine on the network or Internet.
 * **customer-app** A WAR application that does remote login using OAuth2 browser redirects with the auth server
+* **customer-app-js** A pure HTML/Javascript application that does remote login using OAuth2 browser redirects with the auth server
 * **product-app** A WAR application that does remote login using OAuth2 browser redirects with the auth server
 * **database-service** JAX-RS services authenticated by bearer tokens only. The customer and product app invoke on it to get data
 * **third-party** Simple WAR that obtain a bearer token using OAuth2 using browser redirects to the auth-server.
@@ -145,6 +146,9 @@ If you click on the products link, you'll be taken to the products app and show 
 are still happening, but the auth-server knows you are already logged in so the login is bypassed.
 
 If you click on the logout link of either of the product or customer app, you'll be logged out of all the applications.
+
+Ff you click on [http://localhost:8080/customer-portal-js](http://localhost:8080/customer-portal-js) you can invoke
+on the pure HTML/Javascript application.
 
 Step 6: Traditional OAuth2 Example
 ----------------------------------

@@ -43,7 +43,7 @@ public class RefreshTokenFilter implements Filter {
 
         if (reqParams.containsKey("code")) {
             try {
-                String accessToken = oauthClient.getBearerToken(request);
+                String accessToken = oauthClient.getBearerToken(request).getToken();
                 userData.setAccessToken(accessToken);
             } catch (TokenGrantRequest.HttpFailure e) {
                 throw new ServletException(e);
