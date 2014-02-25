@@ -49,7 +49,7 @@ public class JpaKeycloakSession implements KeycloakSession {
     }
 
     @Override
-    public List<RealmModel> getRealms(UserModel admin) {
+    public List<RealmModel> getRealms() {
         TypedQuery<RealmEntity> query = em.createNamedQuery("getAllRealms", RealmEntity.class);
         List<RealmEntity> entities = query.getResultList();
         List<RealmModel> realms = new ArrayList<RealmModel>();

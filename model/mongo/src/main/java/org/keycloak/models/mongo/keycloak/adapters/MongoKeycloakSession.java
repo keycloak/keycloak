@@ -67,7 +67,7 @@ public class MongoKeycloakSession implements KeycloakSession {
     }
 
     @Override
-    public List<RealmModel> getRealms(UserModel admin) {
+    public List<RealmModel> getRealms() {
         DBObject query = new BasicDBObject();
         List<RealmEntity> realms = getMongoStore().loadEntities(RealmEntity.class, query, invocationContext);
 

@@ -14,11 +14,8 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.services.resources.AccountService;
-import org.keycloak.services.resources.admin.AdminService;
 import org.keycloak.services.resources.RealmsResource;
 
-import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
@@ -59,19 +56,6 @@ public class AuthenticationManager {
         return createLoginCookie(realm, user, null, cookieName, cookiePath, rememberMe);
     }
 
-    public NewCookie createSaasIdentityCookie(RealmModel realm, UserModel user, UriInfo uriInfo) {
-        String cookieName = AdminService.SAAS_IDENTITY_COOKIE;
-        URI uri = AdminService.saasCookiePath(uriInfo).build();
-        String cookiePath = uri.getRawPath();
-        return createLoginCookie(realm, user, null, cookieName, cookiePath, false);
-    }
-
-    public NewCookie createAccountIdentityCookie(RealmModel realm, UserModel user, UserModel client, URI uri) {
-        String cookieName = AccountService.ACCOUNT_IDENTITY_COOKIE;
-        String cookiePath = uri.getRawPath();
-        return createLoginCookie(realm, user, client, cookieName, cookiePath, false);
-    }
-
     protected NewCookie createLoginCookie(RealmModel realm, UserModel user, UserModel client, String cookieName, String cookiePath, boolean rememberMe) {
         AccessToken identityToken = createIdentityToken(realm, user);
         if (client != null) {
@@ -104,7 +88,6 @@ public class AuthenticationManager {
         return encodedToken;
     }
 
-
     public void expireIdentityCookie(RealmModel realm, UriInfo uriInfo) {
         logger.debug("Expiring identity cookie");
         String path = getIdentityCookiePath(realm, uriInfo);
@@ -123,17 +106,6 @@ public class AuthenticationManager {
         return uri.getRawPath();
     }
 
-    public void expireSaasIdentityCookie(UriInfo uriInfo) {
-        URI uri = AdminService.saasCookiePath(uriInfo).build();
-        String cookiePath = uri.getRawPath();
-        expireCookie(AdminService.SAAS_IDENTITY_COOKIE, cookiePath);
-    }
-
-    public void expireAccountIdentityCookie(URI uri) {
-        String cookiePath = uri.getRawPath();
-        expireCookie(AccountService.ACCOUNT_IDENTITY_COOKIE, cookiePath);
-    }
-
     public void expireCookie(String cookieName, String path) {
         HttpResponse response = ResteasyProviderFactory.getContextData(HttpResponse.class);
         if (response == null) {
@@ -149,42 +121,13 @@ public class AuthenticationManager {
         return authenticateIdentityCookie(realm, uriInfo, headers, true);
     }
 
-
     public UserModel authenticateIdentityCookie(RealmModel realm, UriInfo uriInfo, HttpHeaders headers, boolean checkActive) {
         logger.info("authenticateIdentityCookie");
         String cookieName = KEYCLOAK_IDENTITY_COOKIE;
-        Auth auth = authenticateIdentityCookie(realm, uriInfo, headers, cookieName, checkActive);
-        return auth != null ? auth.getUser() : null;
+        return authenticateIdentityCookie(realm, uriInfo, headers, cookieName, checkActive);
     }
 
-    public UserModel authenticateSaasIdentityCookie(RealmModel realm, UriInfo uriInfo, HttpHeaders headers) {
-        String cookieName = AdminService.SAAS_IDENTITY_COOKIE;
-        Auth auth = authenticateIdentityCookie(realm, uriInfo, headers, cookieName, true);
-        return auth != null ? auth.getUser() : null;
-    }
-
-    public Auth authenticateAccountIdentityCookie(RealmModel realm, UriInfo uriInfo, HttpHeaders headers) {
-        String cookieName = AccountService.ACCOUNT_IDENTITY_COOKIE;
-        return authenticateIdentityCookie(realm, uriInfo, headers, cookieName, true);
-    }
-
-    public UserModel authenticateSaasIdentity(RealmModel realm, UriInfo uriInfo, HttpHeaders headers) {
-        UserModel user = authenticateSaasIdentityCookie(realm, uriInfo, headers);
-        if (user != null) return user;
-
-        Auth auth = authenticateBearerToken(realm, headers);
-        return auth != null ? auth.getUser() : null;
-    }
-
-    public Auth authenticateAccountIdentity(RealmModel realm, UriInfo uriInfo, HttpHeaders headers) {
-        Auth auth = authenticateAccountIdentityCookie(realm, uriInfo, headers);
-        if (auth != null) return auth;
-
-        return authenticateBearerToken(realm, headers);
-    }
-
-
-    protected Auth authenticateIdentityCookie(RealmModel realm, UriInfo uriInfo, HttpHeaders headers, String cookieName, boolean checkActive) {
+    protected UserModel authenticateIdentityCookie(RealmModel realm, UriInfo uriInfo, HttpHeaders headers, String cookieName, boolean checkActive) {
         logger.info("authenticateIdentityCookie");
         Cookie cookie = headers.getCookies().get(cookieName);
         if (cookie == null) {
@@ -202,76 +145,20 @@ public class AuthenticationManager {
                 return null;
             }
 
-            Auth auth = new Auth(token);
-
             UserModel user = realm.getUserById(token.getSubject());
             if (user == null || !user.isEnabled()) {
                 logger.info("Unknown user in identity cookie");
                 expireIdentityCookie(realm, uriInfo);
                 return null;
             }
-            auth.setUser(user);
 
-            if (token.getIssuedFor() != null) {
-                UserModel client = realm.getUser(token.getIssuedFor());
-                if (client == null || !client.isEnabled()) {
-                    logger.info("Unknown client in identity cookie");
-                    expireIdentityCookie(realm, uriInfo);
-                    return null;
-                }
-                auth.setClient(client);
-            }
-
-            return auth;
+            return user;
         } catch (VerificationException e) {
             logger.info("Failed to verify identity cookie", e);
             expireCookie(cookie.getName(), cookie.getPath());
         }
         return null;
     }
-
-    public Auth authenticateBearerToken(RealmModel realm, HttpHeaders headers) {
-        String tokenString = null;
-        String authHeader = headers.getHeaderString(HttpHeaders.AUTHORIZATION);
-        if (authHeader == null) {
-            return null;
-        } else {
-            String[] split = authHeader.trim().split("\\s+");
-            if (split == null || split.length != 2) throw new NotAuthorizedException("Bearer");
-            if (!split[0].equalsIgnoreCase("Bearer")) throw new NotAuthorizedException("Bearer");
-            tokenString = split[1];
-        }
-
-
-        try {
-            AccessToken token = RSATokenVerifier.verifyToken(tokenString, realm.getPublicKey(), realm.getName());
-            if (!token.isActive()) {
-                throw new NotAuthorizedException("token_expired");
-            }
-
-            Auth auth = new Auth(token);
-
-            UserModel user = realm.getUserById(token.getSubject());
-            if (user == null || !user.isEnabled()) {
-                throw new NotAuthorizedException("invalid_user");
-            }
-            auth.setUser(user);
-
-            if (token.getIssuedFor() != null) {
-                UserModel client = realm.getUser(token.getIssuedFor());
-                if (client == null || !client.isEnabled()) {
-                    throw new NotAuthorizedException("invalid_user");
-                }
-                auth.setClient(client);
-            }
-
-            return auth;
-        } catch (VerificationException e) {
-            logger.error("Failed to verify token", e);
-            throw new NotAuthorizedException("invalid_token");
-        }
-    }
-
 
     public AuthenticationStatus authenticateForm(RealmModel realm, UserModel user, MultivaluedMap<String, String> formData) {
         if (user == null) {
@@ -354,36 +241,6 @@ public class AuthenticationManager {
 
     public enum AuthenticationStatus {
         SUCCESS, ACCOUNT_DISABLED, ACTIONS_REQUIRED, INVALID_USER, INVALID_CREDENTIALS, MISSING_PASSWORD, MISSING_TOTP, FAILED
-    }
-
-    public static class Auth {
-        private AccessToken token;
-        private UserModel user;
-        private UserModel client;
-
-        public Auth(AccessToken token) {
-            this.token = token;
-        }
-
-        public AccessToken getToken() {
-            return token;
-        }
-
-        public UserModel getUser() {
-            return user;
-        }
-
-        public UserModel getClient() {
-            return client;
-        }
-
-        void setUser(UserModel user) {
-            this.user = user;
-        }
-
-        void setClient(UserModel client) {
-            this.client = client;
-        }
     }
 
 }

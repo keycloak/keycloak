@@ -1,6 +1,8 @@
 package org.keycloak.services.managers;
 
 import org.jboss.resteasy.logging.Logger;
+import org.keycloak.models.AccountRoles;
+import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -59,7 +61,6 @@ public class RealmManager {
         return identitySession.getRealmByName(name);
     }
 
-
     public RealmModel createRealm(String name) {
         return createRealm(name, name);
     }
@@ -71,11 +72,29 @@ public class RealmManager {
         realm.addRole(Constants.APPLICATION_ROLE);
         realm.addRole(Constants.IDENTITY_REQUESTER_ROLE);
 
+        setupAdminManagement(realm);
         setupAccountManagement(realm);
+
         realm.addRequiredOAuthClientCredential(UserCredentialModel.SECRET);
         realm.addRequiredResourceCredential(UserCredentialModel.SECRET);
 
         return realm;
+    }
+
+    public boolean removeRealm(RealmModel realm) {
+        boolean removed = identitySession.removeRealm(realm.getId());
+
+        RealmModel adminRealm = getKeycloakAdminstrationRealm();
+        RoleModel adminRole = adminRealm.getRole(AdminRoles.ADMIN);
+
+        ApplicationModel realmAdminApp = adminRealm.getApplicationByName(AdminRoles.getAdminApp(realm));
+        for (RoleModel r : realmAdminApp.getRoles()) {
+            adminRole.removeCompositeRole(r);
+        }
+
+        adminRealm.removeApplication(realmAdminApp.getId());
+
+        return removed;
     }
 
     public void generateRealmKeys(RealmModel realm) {
@@ -134,19 +153,41 @@ public class RealmManager {
         }
     }
 
-    private void setupAccountManagement(RealmModel realm) {
-        ApplicationModel application = realm.getApplicationNameMap().get(Constants.ACCOUNT_APPLICATION);
-        if (application == null) {
-            application = new ApplicationManager(this).createApplication(realm, Constants.ACCOUNT_APPLICATION);
-            application.setEnabled(true);
+    private void setupAdminManagement(RealmModel realm) {
+        RealmModel adminRealm;
+        RoleModel adminRole;
 
-            application.addDefaultRole(Constants.ACCOUNT_PROFILE_ROLE);
-            application.addDefaultRole(Constants.ACCOUNT_MANAGE_ROLE);
+        if (realm.getName().equals(Constants.ADMIN_REALM)) {
+            adminRealm = realm;
 
+            adminRole = realm.addRole(AdminRoles.ADMIN);
+        } else {
+            adminRealm = identitySession.getRealmByName(Constants.ADMIN_REALM);
+            adminRole = adminRealm.getRole(AdminRoles.ADMIN);
+        }
+
+        ApplicationManager applicationManager = new ApplicationManager(new RealmManager(identitySession));
+        ApplicationModel realmAdminApp = applicationManager.createApplication(adminRealm, AdminRoles.getAdminApp(realm));
+
+        for (String r : AdminRoles.ALL_REALM_ROLES) {
+            RoleModel role = realmAdminApp.addRole(r);
+            adminRole.addCompositeRole(role);
         }
     }
 
-    public RealmModel importRealm(RealmRepresentation rep, UserModel realmCreator) {
+    private void setupAccountManagement(RealmModel realm) {
+        ApplicationModel application = realm.getApplicationNameMap().get(Constants.ACCOUNT_MANAGEMENT_APP);
+        if (application == null) {
+            application = new ApplicationManager(this).createApplication(realm, Constants.ACCOUNT_MANAGEMENT_APP);
+            application.setEnabled(true);
+
+            for (String role : AccountRoles.ALL) {
+                application.addDefaultRole(role);
+            }
+        }
+    }
+
+    public RealmModel importRealm(RealmRepresentation rep) {
         String id = rep.getId();
         if (id == null) {
             id = KeycloakModelUtils.generateId();
@@ -297,7 +338,6 @@ public class RealmManager {
                 manager.createScopeMappings(newRealm, app, entry.getValue());
             }
         }
-
 
 
         if (rep.getRoleMappings() != null) {

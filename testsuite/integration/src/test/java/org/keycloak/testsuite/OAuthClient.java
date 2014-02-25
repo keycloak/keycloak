@@ -148,20 +148,6 @@ public class OAuthClient {
         }
     }
 
-    public UserRepresentation getProfile(String token) {
-        HttpClient client = new DefaultHttpClient();
-        HttpGet get = new HttpGet(baseUrl + "/realms/" + realm + "/account");
-        get.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
-        get.setHeader(HttpHeaders.ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
-
-        try {
-            HttpResponse response = client.execute(get);
-            return JsonSerialization.readValue(response.getEntity().getContent(), UserRepresentation.class);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to retrieve profile", e);
-        }
-    }
-
     public AccessToken verifyToken(String token) {
         try {
             return RSATokenVerifier.verifyToken(token, realmPublicKey, realm);

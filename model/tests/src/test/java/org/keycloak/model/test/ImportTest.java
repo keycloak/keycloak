@@ -4,6 +4,7 @@ import org.junit.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
@@ -56,7 +57,7 @@ public class ImportTest extends AbstractModelTest {
         // Test applications imported
         ApplicationModel application = realm.getApplicationByName("Application");
         ApplicationModel otherApp = realm.getApplicationByName("OtherApp");
-        ApplicationModel accountApp = realm.getApplicationByName(Constants.ACCOUNT_APPLICATION);
+        ApplicationModel accountApp = realm.getApplicationByName(Constants.ACCOUNT_MANAGEMENT_APP);
         ApplicationModel nonExisting = realm.getApplicationByName("NonExisting");
         Assert.assertNotNull(application);
         Assert.assertNotNull(otherApp);
@@ -80,8 +81,8 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertTrue(allRoles.contains(realm.getRole("admin")));
         Assert.assertTrue(allRoles.contains(application.getRole("app-admin")));
         Assert.assertTrue(allRoles.contains(otherApp.getRole("otherapp-admin")));
-        Assert.assertTrue(allRoles.contains(accountApp.getRole(Constants.ACCOUNT_PROFILE_ROLE)));
-        Assert.assertTrue(allRoles.contains(accountApp.getRole(Constants.ACCOUNT_MANAGE_ROLE)));
+        Assert.assertTrue(allRoles.contains(accountApp.getRole(AccountRoles.VIEW_PROFILE)));
+        Assert.assertTrue(allRoles.contains(accountApp.getRole(AccountRoles.MANAGE_ACCOUNT)));
 
         UserModel wburke = realm.getUser("wburke");
         allRoles = realm.getRoleMappings(wburke);
