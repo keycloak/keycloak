@@ -8,7 +8,7 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location
         Auth.user = data;
         Auth.loggedIn = true;
 
-        Auth.hasAccess = function(realm, role) {
+        function getAccess(realm, role) {
             var realmAccess = Auth.user['realm_access'];
             if (realmAccess) {
                 realmAccess = realmAccess[realm];
@@ -17,6 +17,26 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location
                 }
             }
             return false;
+        }
+
+        $scope.access = {
+            admin: data.admin,
+
+            get manageRealm() {
+                return getAccess(Current.realm.realm, 'manage-realm');
+            },
+
+            get manageApplications() {
+                return getAccess(Current.realm.realm, 'manage-applications');
+            },
+
+            get manageClients() {
+                return getAccess(Current.realm.realm, 'manage-clients');
+            },
+
+            get manageUsers() {
+                return getAccess(Current.realm.realm, 'manage-users');
+            }
         }
     })
         .error(function(data, status) {

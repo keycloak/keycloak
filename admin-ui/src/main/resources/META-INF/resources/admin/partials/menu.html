@@ -33,7 +33,7 @@
                     </li>
                 </ul>
             </li>
-            <li class="active pull-right" data-ng-show="auth.loggedIn && auth.user.admin">
+            <li class="active pull-right" data-ng-show="auth.loggedIn && access.admin">
                 <a class="button primary" href="#/create/realm" data-ng-class="path[0] == 'create' && path[1] == 'realm' && 'active'"
                    data-ng-show="auth.loggedIn">Add Realm</a>
             </li>

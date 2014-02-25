@@ -672,6 +672,20 @@ module.directive('kcInput', function() {
     return d;
 });
 
+module.directive('kcDisableForm', function() {
+    var d = {
+        scope : true,
+        replace : false,
+        link : function(scope, element, attrs) {
+            var form = element.children('form');
+            console.debug(form);
+            var input = element.children('input');
+            input.attr('disabled', 'true');
+        }
+    };
+    return d;
+});
+
 module.directive('kcEnter', function() {
     return function(scope, element, attrs) {
         element.bind("keydown keypress", function(event) {
@@ -779,11 +793,7 @@ module.directive('kcSelect', function ($compile, Notifications) {
 
 module.directive('kcNavigation', function ($compile, Notifications) {
     return {
-        scope: {
-            kcCurrent: '@',
-            kcRealm: '=',
-            kcSocial: '='
-        },
+        scope: true,
         restrict: 'E',
         replace: true,
         templateUrl: 'templates/kc-navigation.html',
