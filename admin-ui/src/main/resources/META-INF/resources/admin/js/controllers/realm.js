@@ -22,6 +22,22 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location
         $scope.access = {
             admin: data.admin,
 
+            get viewRealm() {
+                return getAccess(Current.realm.realm, 'view-realm') || this.viewRealm;
+            },
+
+            get viewApplications() {
+                return getAccess(Current.realm.realm, 'view-applications') || this.manageApplications;
+            },
+
+            get viewClients() {
+                return getAccess(Current.realm.realm, 'view-clients') || this.manageClients;
+            },
+
+            get viewUsers() {
+                return getAccess(Current.realm.realm, 'view-users') || this.manageClients;
+            },
+
             get manageRealm() {
                 return getAccess(Current.realm.realm, 'manage-realm');
             },

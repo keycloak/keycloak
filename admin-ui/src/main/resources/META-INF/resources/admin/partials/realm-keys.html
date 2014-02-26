@@ -8,7 +8,7 @@
             <li class="active">Keys</li>
         </ol>
         <h2><span>{{realm.realm}}</span> Keys</h2>
-        <form class="form-horizontal" name="realmForm" novalidate>
+        <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
             <fieldset class="border-top">
                 <div class="form-group">
                     <label class="col-sm-2 control-label" for="publicKey">Public key</label>
@@ -19,7 +19,7 @@
                     </div>
                 </div>
             </fieldset>
-            <div class="pull-right form-actions">
+            <div class="pull-right form-actions" data-ng-show="access.manageRealm">
                 <button class="btn btn-primary btn-lg" type="submit" data-ng-click="generate()">Generate new keys</button>
             </div>
         </form>

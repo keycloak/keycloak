@@ -81,7 +81,7 @@ public class AccountService {
         Auth auth = getAuth(false);
         if (auth != null) {
             try {
-                auth.require(application, AccountRoles.MANAGE_ACCOUNT);
+                require(auth, AccountRoles.MANAGE_ACCOUNT);
             } catch (ForbiddenException e) {
                 return Flows.forms(realm, request, uriInfo).setError("No access").createErrorPage();
             }
@@ -113,7 +113,7 @@ public class AccountService {
             return forwardToPage(null, AccountPages.ACCOUNT);
         } else if (types.contains(MediaType.APPLICATION_JSON_TYPE)) {
             Auth auth = getAuth(true);
-            auth.requireOneOf(application, AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
+            requireOneOf(auth, AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
 
             return Cors.add(request, Response.ok(ModelToRepresentation.toRepresentation(auth.getUser()))).auth().allowedOrigins(auth.getClient()).build();
         } else {
@@ -138,7 +138,7 @@ public class AccountService {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processAccountUpdate(final MultivaluedMap<String, String> formData) {
         Auth auth = getAuth(true);
-        auth.require(application, AccountRoles.MANAGE_ACCOUNT);
+        require(auth, AccountRoles.MANAGE_ACCOUNT);
 
         UserModel user = auth.getUser();
 
@@ -160,7 +160,7 @@ public class AccountService {
     @GET
     public Response processTotpRemove() {
         Auth auth = getAuth(true);
-        auth.require(application, AccountRoles.MANAGE_ACCOUNT);
+        require(auth, AccountRoles.MANAGE_ACCOUNT);
 
         UserModel user = auth.getUser();
         user.setTotp(false);
@@ -174,7 +174,7 @@ public class AccountService {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processTotpUpdate(final MultivaluedMap<String, String> formData) {
         Auth auth = getAuth(true);
-        auth.require(application, AccountRoles.MANAGE_ACCOUNT);
+        require(auth, AccountRoles.MANAGE_ACCOUNT);
 
         UserModel user = auth.getUser();
 
@@ -204,7 +204,7 @@ public class AccountService {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processPasswordUpdate(final MultivaluedMap<String, String> formData) {
         Auth auth = getAuth(true);
-        auth.require(application, AccountRoles.MANAGE_ACCOUNT);
+        require(auth, AccountRoles.MANAGE_ACCOUNT);
 
         UserModel user = auth.getUser();
 
@@ -343,6 +343,18 @@ public class AccountService {
         }
 
         return null;
+    }
+
+    public void require(Auth auth, String role) {
+        if (!auth.hasAppRole(application.getName(), role)) {
+            throw new ForbiddenException();
+        }
+    }
+
+    public void requireOneOf(Auth auth, String... roles) {
+        if (!auth.hasOneOfAppRole(application.getName(), roles)) {
+            throw new ForbiddenException();
+        }
     }
 
 }

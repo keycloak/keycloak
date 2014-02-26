@@ -521,6 +521,8 @@ module.factory('errorInterceptor', function($q, $window, $rootScope, $location, 
                 console.log('session timeout?');
                 Auth.loggedIn = false;
                 window.location = '/auth/rest/admin/login?path=' + $location.path();
+            } else if (response.status == 403) {
+                Notifications.error("Forbidden");
             } else if (response.status == 404) {
                 Notifications.error("Not found");
             } else if (response.status) {
@@ -785,6 +787,7 @@ module.directive('kcReadOnly', function() {
                 element.find('input').attr('disabled', 'disabled');
                 element.find('button').attr('disabled', 'disabled');
                 element.find('select').attr('disabled', 'disabled');
+                element.find('textarea').attr('disabled', 'disabled');
             }
         }
     };

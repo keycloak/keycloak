@@ -19,9 +19,9 @@ import javax.ws.rs.core.Context;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class RealmAdminResource extends RoleContainerResource {
+public class RealmAdminResource {
     protected static final Logger logger = Logger.getLogger(RealmAdminResource.class);
-    protected Auth auth;
+    protected RealmAuth auth;
     protected RealmModel realm;
     private TokenManager tokenManager;
 
@@ -31,43 +31,43 @@ public class RealmAdminResource extends RoleContainerResource {
     @Context
     protected KeycloakSession session;
 
-    public RealmAdminResource(Auth auth, RealmModel realm, TokenManager tokenManager) {
-        super(realm, realm);
+    public RealmAdminResource(RealmAuth auth, RealmModel realm, TokenManager tokenManager) {
         this.auth = auth;
         this.realm = realm;
         this.tokenManager = tokenManager;
+
+        auth.init(RealmAuth.Resource.REALM);
     }
 
     @Path("applications")
     public ApplicationsResource getApplications() {
-        auth.require(AdminRoles.getAdminApp(realm), AdminRoles.MANAGE_APPLICATIONS);
-
-        ApplicationsResource applicationsResource = new ApplicationsResource(realm);
+        ApplicationsResource applicationsResource = new ApplicationsResource(realm, auth);
         resourceContext.initResource(applicationsResource);
         return applicationsResource;
     }
 
     @Path("oauth-clients")
     public OAuthClientsResource getOAuthClients() {
-        auth.require(AdminRoles.getAdminApp(realm), AdminRoles.MANAGE_CLIENTS);
-
-        OAuthClientsResource oauth = new OAuthClientsResource(realm, session);
+        OAuthClientsResource oauth = new OAuthClientsResource(realm, auth, session);
         resourceContext.initResource(oauth);
         return oauth;
+    }
+
+    @Path("roles")
+    public RoleContainerResource getRoleContainerResource() {
+        return new RoleContainerResource(realm, auth, realm);
     }
 
     @GET
     @NoCache
     @Produces("application/json")
     public RealmRepresentation getRealm() {
-        String realmAdminApp = AdminRoles.getAdminApp(realm);
-        if (auth.has(realmAdminApp, AdminRoles.MANAGE_REALM)) {
+        if (auth.hasView()) {
             return ModelToRepresentation.toRepresentation(realm);
         } else {
-            auth.requireOneOf(AdminRoles.getAdminApp(realm), AdminRoles.ALL_REALM_ROLES);
+            auth.requireAny();
 
             RealmRepresentation rep = new RealmRepresentation();
-            rep.setId(realm.getId());
             rep.setRealm(realm.getName());
 
             return rep;
@@ -77,15 +77,15 @@ public class RealmAdminResource extends RoleContainerResource {
     @PUT
     @Consumes("application/json")
     public void updateRealm(final RealmRepresentation rep) {
-        auth.require(AdminRoles.getAdminApp(realm), AdminRoles.MANAGE_REALM);
+        auth.requireManage();
 
         logger.debug("updating realm: " + realm.getName());
         new RealmManager(session).updateRealm(rep, realm);
     }
 
     @DELETE
-    public void deleteRealms() {
-        auth.require(AdminRoles.getAdminApp(realm), AdminRoles.MANAGE_REALM);
+    public void deleteRealm() {
+        auth.requireManage();
 
         if (!new RealmManager(session).removeRealm(realm)) {
             throw new NotFoundException();
@@ -94,18 +94,14 @@ public class RealmAdminResource extends RoleContainerResource {
 
     @Path("users")
     public UsersResource users() {
-        auth.require(AdminRoles.getAdminApp(realm), AdminRoles.MANAGE_USERS);
-
-        UsersResource users = new UsersResource(realm, tokenManager);
+        UsersResource users = new UsersResource(realm, auth, tokenManager);
         resourceContext.initResource(users);
         return users;
     }
 
     @Path("roles-by-id")
     public RoleByIdResource rolesById() {
-        auth.require(AdminRoles.getAdminApp(realm), AdminRoles.MANAGE_REALM);
-
-        RoleByIdResource resource = new RoleByIdResource(realm);
+        RoleByIdResource resource = new RoleByIdResource(realm, auth);
         resourceContext.initResource(resource);
         return resource;
     }
