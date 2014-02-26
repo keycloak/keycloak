@@ -71,6 +71,16 @@ public class ApplicationAdapter implements ApplicationModel {
     }
 
     @Override
+    public long getAllowedClaimsMask() {
+        return application.getAllowedClaimsMask();
+    }
+
+    @Override
+    public void setAllowedClaimsMask(long mask) {
+        application.setAllowedClaimsMask(mask);
+    }
+
+    @Override
     public boolean isSurrogateAuthRequired() {
         return application.isSurrogateAuthRequired();
     }

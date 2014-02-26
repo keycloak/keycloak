@@ -3,6 +3,7 @@ package org.keycloak.services.managers;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.annotate.JsonPropertyOrder;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClaimMask;
 import org.keycloak.models.Constants;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
@@ -61,6 +62,12 @@ public class OAuthClientManager {
                 realm.updateCredential(resourceUser, credential);
             }
         }
+        if (rep.getClaims() != null) {
+            ClaimManager.setClaims(model, rep.getClaims());
+        } else {
+            model.setAllowedClaimsMask(ClaimMask.USERNAME);
+        }
+
         return model;
     }
 
@@ -74,6 +81,10 @@ public class OAuthClientManager {
         List<String> webOrigins = rep.getWebOrigins();
         if (webOrigins != null) {
             model.getOAuthAgent().setWebOrigins(new HashSet<String>(webOrigins));
+        }
+
+        if (rep.getClaims() != null) {
+            ClaimManager.setClaims(model, rep.getClaims());
         }
     }
 

@@ -4,6 +4,7 @@ import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.annotate.JsonPropertyOrder;
 import org.jboss.resteasy.logging.Logger;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClaimMask;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -89,6 +90,12 @@ public class ApplicationManager {
             applicationModel.updateDefaultRoles(resourceRep.getDefaultRoles());
         }
 
+        if (resourceRep.getClaims() != null) {
+            ClaimManager.setClaims(applicationModel, resourceRep.getClaims());
+        } else {
+            applicationModel.setAllowedClaimsMask(ClaimMask.USERNAME);
+        }
+
         return applicationModel;
     }
 
@@ -161,6 +168,10 @@ public class ApplicationManager {
         List<String> webOrigins = rep.getWebOrigins();
         if (webOrigins != null) {
             resource.getApplicationUser().setWebOrigins(new HashSet<String>(webOrigins));
+        }
+
+        if (rep.getClaims() != null) {
+            ClaimManager.setClaims(resource, rep.getClaims());
         }
     }
 

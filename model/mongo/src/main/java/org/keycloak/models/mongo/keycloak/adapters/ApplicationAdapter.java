@@ -110,6 +110,17 @@ public class ApplicationAdapter extends AbstractAdapter implements ApplicationMo
     }
 
     @Override
+    public long getAllowedClaimsMask() {
+        return application.getAllowedClaimsMask();
+    }
+
+    @Override
+    public void setAllowedClaimsMask(long mask) {
+        application.setAllowedClaimsMask(mask);
+    }
+
+
+    @Override
     public RoleAdapter getRole(String name) {
         DBObject query = new QueryBuilder()
                 .and("name").is(name)

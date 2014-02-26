@@ -56,6 +56,11 @@ public class ApplicationResource extends RoleContainerResource {
         this.session = session;
     }
 
+    @Path("claims")
+    public ClaimResource getClaimResource() {
+        return new ClaimResource(application);
+    }
+
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     public void update(final ApplicationRepresentation rep) {

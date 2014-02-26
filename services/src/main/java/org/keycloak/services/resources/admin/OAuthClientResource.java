@@ -56,6 +56,12 @@ public class OAuthClientResource  {
         this.session = session;
     }
 
+    @Path("claims")
+    public ClaimResource getClaimResource() {
+        return new ClaimResource(oauthClient);
+    }
+
+
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     public void update(final OAuthClientRepresentation rep) {
