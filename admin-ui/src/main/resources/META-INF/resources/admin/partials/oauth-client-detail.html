@@ -21,7 +21,7 @@
             <li class="active">Settings</li>
         </ol>
         <h2 data-ng-hide="create"><span>{{oauth.name}}</span> Settings</h2>
-        <form class="form-horizontal" name="oauthForm" novalidate>
+        <form class="form-horizontal" name="oauthForm" novalidate kc-read-only="!access.manageClients">
             <fieldset class="border-top">
 
                 <div class="form-group">
@@ -90,11 +90,11 @@
                 </div>
             </fieldset>
 
-            <div class="pull-right form-actions" data-ng-show="create">
+            <div class="pull-right form-actions" data-ng-show="create && access.manageClients">
                 <button kc-cancel data-ng-click="cancel()">Cancel</button>
                 <button kc-save data-ng-show="changed">Save</button>
             </div>
-            <div class="pull-right form-actions" data-ng-show="!create">
+            <div class="pull-right form-actions" data-ng-show="!create && access.manageClients">
                 <button kc-reset data-ng-show="changed">Clear changes</button>
                 <button kc-save  data-ng-show="changed">Save</button>
                 <button kc-delete data-ng-click="remove()" data-ng-hide="changed">Delete</button>

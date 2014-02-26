@@ -35,10 +35,14 @@ public class OAuthClientsResource {
 
     @Context
     protected ResourceContext resourceContext;
+    private RealmAuth auth;
 
-    public OAuthClientsResource(RealmModel realm, KeycloakSession session) {
+    public OAuthClientsResource(RealmModel realm, RealmAuth auth, KeycloakSession session) {
+        this.auth = auth;
         this.realm = realm;
         this.session = session;
+
+        auth.init(RealmAuth.Resource.CLIENT);
     }
 
     @GET
@@ -47,8 +51,16 @@ public class OAuthClientsResource {
     public List<OAuthClientRepresentation> getOAuthClients() {
         List<OAuthClientRepresentation> rep = new ArrayList<OAuthClientRepresentation>();
         List<OAuthClientModel> oauthModels = realm.getOAuthClients();
+
+        boolean view = auth.hasView();
         for (OAuthClientModel oauth : oauthModels) {
-            rep.add(OAuthClientManager.toRepresentation(oauth));
+            if (view) {
+                rep.add(OAuthClientManager.toRepresentation(oauth));
+            } else {
+                OAuthClientRepresentation client = new OAuthClientRepresentation();
+                client.setName(oauth.getOAuthAgent().getLoginName());
+                rep.add(client);
+            }
         }
         return rep;
     }
@@ -56,6 +68,8 @@ public class OAuthClientsResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createOAuthClient(final @Context UriInfo uriInfo, final OAuthClientRepresentation rep) {
+        auth.requireManage();
+
         OAuthClientManager resourceManager = new OAuthClientManager(realm);
         OAuthClientModel oauth = resourceManager.create(rep);
         return Response.created(uriInfo.getAbsolutePathBuilder().path(oauth.getId()).build()).build();
@@ -63,11 +77,13 @@ public class OAuthClientsResource {
 
     @Path("{id}")
     public OAuthClientResource getOAuthClient(final @PathParam("id") String id) {
+        auth.requireView();
+
         OAuthClientModel oauth = realm.getOAuthClientById(id);
         if (oauth == null) {
             throw new NotFoundException();
         }
-        OAuthClientResource oAuthClientResource = new OAuthClientResource(realm, oauth, session);
+        OAuthClientResource oAuthClientResource = new OAuthClientResource(realm, auth, oauth, session);
         resourceContext.initResource(oAuthClientResource);
         return oAuthClientResource;
     }

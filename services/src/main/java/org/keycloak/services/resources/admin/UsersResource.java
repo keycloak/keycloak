@@ -13,6 +13,7 @@ import org.keycloak.representations.idm.*;
 import org.keycloak.services.email.EmailException;
 import org.keycloak.services.email.EmailSender;
 import org.keycloak.services.managers.AccessCodeEntry;
+import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.ModelToRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.TokenManager;
@@ -50,11 +51,15 @@ public class UsersResource {
 
     protected RealmModel realm;
 
+    private RealmAuth auth;
     private TokenManager tokenManager;
 
-    public UsersResource(RealmModel realm, TokenManager tokenManager) {
+    public UsersResource(RealmModel realm, RealmAuth auth, TokenManager tokenManager) {
+        this.auth = auth;
         this.realm = realm;
         this.tokenManager = tokenManager;
+
+        auth.init(RealmAuth.Resource.USER);
     }
 
     @Context
@@ -71,6 +76,8 @@ public class UsersResource {
     @PUT
     @Consumes("application/json")
     public void updateUser(final @PathParam("username") String username, final UserRepresentation rep) {
+        auth.requireManage();
+
         UserModel user = realm.getUser(username);
         if (user == null) {
             throw new NotFoundException();
@@ -81,6 +88,8 @@ public class UsersResource {
     @POST
     @Consumes("application/json")
     public Response createUser(final @Context UriInfo uriInfo, final UserRepresentation rep) {
+        auth.requireManage();
+
         if (realm.getUser(rep.getUsername()) != null) {
             return Flows.errors().exists("User with username " + rep.getUsername() + " already exists");
         }
@@ -125,6 +134,8 @@ public class UsersResource {
     @NoCache
     @Produces("application/json")
     public UserRepresentation getUser(final @PathParam("username") String username) {
+        auth.requireView();
+
         UserModel user = realm.getUser(username);
         if (user == null || !isUser(user)) {
             throw new NotFoundException();
@@ -136,6 +147,8 @@ public class UsersResource {
     @DELETE
     @NoCache
     public void deleteUser(final @PathParam("username") String username) {
+        auth.requireManage();
+
         realm.removeUser(username);
     }
 
@@ -147,6 +160,8 @@ public class UsersResource {
                                              @QueryParam("firstName") String first,
                                              @QueryParam("email") String email,
                                              @QueryParam("username") String username) {
+        auth.requireView();
+
         RealmManager manager = new RealmManager(session);
         List<UserRepresentation> results = new ArrayList<UserRepresentation>();
         List<UserModel> userModels;
@@ -191,6 +206,8 @@ public class UsersResource {
     @Produces("application/json")
     @NoCache
     public MappingsRepresentation getRoleMappings(@PathParam("username") String username) {
+        auth.requireView();
+
         UserModel user = realm.getUser(username);
         if (user == null) {
             throw new NotFoundException();
@@ -234,6 +251,8 @@ public class UsersResource {
     @Produces("application/json")
     @NoCache
     public List<RoleRepresentation> getRealmRoleMappings(@PathParam("username") String username) {
+        auth.requireView();
+
         UserModel user = realm.getUser(username);
         if (user == null) {
             throw new NotFoundException();
@@ -252,6 +271,8 @@ public class UsersResource {
     @POST
     @Consumes("application/json")
     public void addRealmRoleMappings(@PathParam("username") String username, List<RoleRepresentation> roles) {
+        auth.requireManage();
+
         logger.debug("** addRealmRoleMappings: {0}", roles);
         UserModel user = realm.getUser(username);
         if (user == null) {
@@ -273,6 +294,8 @@ public class UsersResource {
     @DELETE
     @Consumes("application/json")
     public void deleteRealmRoleMappings(@PathParam("username") String username, List<RoleRepresentation> roles) {
+        auth.requireManage();
+
         logger.debug("deleteRealmRoleMappings");
         UserModel user = realm.getUser(username);
         if (user == null) {
@@ -301,6 +324,8 @@ public class UsersResource {
     @Produces("application/json")
     @NoCache
     public List<RoleRepresentation> getApplicationRoleMappings(@PathParam("username") String username, @PathParam("app") String appName) {
+        auth.requireView();
+
         logger.debug("getApplicationRoleMappings");
 
         UserModel user = realm.getUser(username);
@@ -327,6 +352,8 @@ public class UsersResource {
     @POST
     @Consumes("application/json")
     public void addApplicationRoleMapping(@PathParam("username") String username, @PathParam("app") String appName, List<RoleRepresentation> roles) {
+        auth.requireManage();
+
         logger.debug("addApplicationRoleMapping");
         UserModel user = realm.getUser(username);
         if (user == null) {
@@ -353,6 +380,8 @@ public class UsersResource {
     @DELETE
     @Consumes("application/json")
     public void deleteApplicationRoleMapping(@PathParam("username") String username, @PathParam("app") String appName, List<RoleRepresentation> roles) {
+        auth.requireManage();
+
         UserModel user = realm.getUser(username);
         if (user == null) {
             throw new NotFoundException();
@@ -389,6 +418,8 @@ public class UsersResource {
     @PUT
     @Consumes("application/json")
     public void resetPassword(@PathParam("username") String username, CredentialRepresentation pass) {
+        auth.requireManage();
+
         UserModel user = realm.getUser(username);
         if (user == null) {
             throw new NotFoundException();
@@ -406,6 +437,8 @@ public class UsersResource {
     @PUT
     @Consumes("application/json")
     public void removeTotp(@PathParam("username") String username) {
+        auth.requireManage();
+
         UserModel user = realm.getUser(username);
         if (user == null) {
             throw new NotFoundException();
@@ -418,6 +451,8 @@ public class UsersResource {
     @PUT
     @Consumes("application/json")
     public Response resetPasswordEmail(@PathParam("username") String username) {
+        auth.requireManage();
+
         UserModel user = realm.getUser(username);
         if (user == null) {
             throw new NotFoundException();

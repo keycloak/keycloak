@@ -38,6 +38,7 @@ import java.util.List;
 public class OAuthClientResource  {
     protected static final Logger logger = Logger.getLogger(RealmAdminResource.class);
     protected RealmModel realm;
+    private RealmAuth auth;
     protected OAuthClientModel oauthClient;
     protected KeycloakSession session;
     @Context
@@ -50,15 +51,20 @@ public class OAuthClientResource  {
         return (KeycloakApplication)application;
     }
 
-    public OAuthClientResource(RealmModel realm, OAuthClientModel oauthClient, KeycloakSession session) {
+    public OAuthClientResource(RealmModel realm, RealmAuth auth, OAuthClientModel oauthClient, KeycloakSession session) {
         this.realm = realm;
+        this.auth = auth;
         this.oauthClient = oauthClient;
         this.session = session;
+
+        auth.init(RealmAuth.Resource.CLIENT);
     }
 
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     public void update(final OAuthClientRepresentation rep) {
+        auth.requireManage();
+
         OAuthClientManager manager = new OAuthClientManager(realm);
         manager.update(rep, oauthClient);
     }
@@ -68,6 +74,8 @@ public class OAuthClientResource  {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public OAuthClientRepresentation getOAuthClient() {
+        auth.requireView();
+
         return OAuthClientManager.toRepresentation(oauthClient);
     }
 
@@ -76,6 +84,8 @@ public class OAuthClientResource  {
     @Path("installation")
     @Produces(MediaType.APPLICATION_JSON)
     public String getInstallation() throws IOException {
+        auth.requireView();
+
         OAuthClientManager manager = new OAuthClientManager(realm);
         Object rep = manager.toInstallationRepresentation(realm, oauthClient, getApplication().getBaseUri(uriInfo));
 
@@ -86,6 +96,8 @@ public class OAuthClientResource  {
     @DELETE
     @NoCache
     public void deleteOAuthClient() {
+        auth.requireManage();
+
         realm.removeOAuthClient(oauthClient.getId());
     }
 
@@ -94,6 +106,8 @@ public class OAuthClientResource  {
     @Produces("application/json")
     @Consumes("application/json")
     public CredentialRepresentation regenerateSecret() {
+        auth.requireManage();
+
         logger.debug("regenerateSecret");
         UserCredentialModel cred = UserCredentialModel.generateSecret();
         realm.updateCredential(oauthClient.getOAuthAgent(), cred);
@@ -105,6 +119,8 @@ public class OAuthClientResource  {
     @GET
     @Produces("application/json")
     public CredentialRepresentation getClientSecret() {
+        auth.requireView();
+
         logger.debug("getClientSecret");
         UserCredentialModel model = realm.getSecret(oauthClient.getOAuthAgent());
         if (model == null) throw new NotFoundException("Application does not have a secret");
@@ -113,7 +129,7 @@ public class OAuthClientResource  {
 
     @Path("scope-mappings")
     public ScopeMappedResource getScopeMappedResource() {
-        return new ScopeMappedResource(realm, oauthClient.getOAuthAgent(), session);
+        return new ScopeMappedResource(realm, auth, oauthClient.getOAuthAgent(), session);
     }
 
 

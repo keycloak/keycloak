@@ -23,7 +23,7 @@
             <li class="active">Settings</li>
         </ol>
         <h2 data-ng-hide="create"><span>{{application.name}}</span> Settings</h2>
-        <form class="form-horizontal" name="applicationForm" novalidate>
+        <form class="form-horizontal" name="applicationForm" novalidate kc-read-only="!access.manageApplications">
             <fieldset class="border-top">
                 <div class="form-group">
                     <label class="col-sm-2 control-label" for="name">Name <span class="required" data-ng-show="create">*</span></label>
@@ -108,11 +108,11 @@
                 </div>
             </fieldset>
 
-            <div class="pull-right form-actions" data-ng-show="create">
+            <div class="pull-right form-actions" data-ng-show="create && access.manageApplications">
                 <button kc-cancel data-ng-click="cancel()">Cancel</button>
                 <button kc-save data-ng-show="changed">Save</button>
             </div>
-            <div class="pull-right form-actions" data-ng-show="!create">
+            <div class="pull-right form-actions" data-ng-show="!create && access.manageApplications">
                 <button kc-reset data-ng-show="changed">Clear changes</button>
                 <button kc-save  data-ng-show="changed">Save</button>
                 <button kc-delete data-ng-click="remove()" data-ng-hide="changed">Delete</button>

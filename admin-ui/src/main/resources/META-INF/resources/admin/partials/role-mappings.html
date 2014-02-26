@@ -2,7 +2,7 @@
 <div id="content-area" class="col-md-9" role="main">
     <ul class="nav nav-tabs nav-tabs-pf"  data-ng-show="!create">
         <li><a href="#/realms/{{realm.realm}}/users/{{user.username}}">Attributes</a></li>
-        <li><a href="#/realms/{{realm.realm}}/users/{{user.username}}/user-credentials">Credentials</a></li>
+        <li data-ng-show="access.manageUsers"><a href="#/realms/{{realm.realm}}/users/{{user.username}}/user-credentials">Credentials</a></li>
         <li class="active"><a href="#/realms/{{realm.realm}}/users/{{user.username}}/role-mappings">Role Mappings</a></li>
     </ul>
     <div id="content">
@@ -13,7 +13,7 @@
             <li class="active">Role Mappings</li>
         </ol>
         <h2><span>{{user.username}}'s</span> Role Mappings</h2>
-        <form class="form-horizontal" name="realmForm" novalidate>
+        <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageUsers">
 
             <fieldset>
                 <legend><span class="text">Realm Roles</span> </legend>
@@ -54,7 +54,7 @@
                     <div class="col-sm-4">
                         <div class="input-group">
                             <div class="select-kc">
-                                <select id="applications" name="applications" ng-change="changeApplication()" ng-model="application" ng-options="a.name for a in applications">
+                                <select id="applications" name="applications" ng-change="changeApplication()" ng-model="application" ng-options="a.name for a in applications" ng-disabled="false">
                                     <option value="" selected> Select an Application...</option>
                                 </select>
                             </div>

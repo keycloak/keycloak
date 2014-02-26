@@ -8,7 +8,7 @@
             <li class="active">Token</li>
         </ol>
         <h2><span>{{realm.realm}}</span> Token Settings</h2>
-        <form class="form-horizontal" name="realmForm" novalidate>
+        <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
             <fieldset class="border-top">
                 <div class="form-group">
                     <label class="col-sm-2 control-label" for="rememberMe">Remember Me</label>
@@ -113,7 +113,7 @@
                     </div>
                 </div>
             </fieldset>
-            <div class="pull-right form-actions">
+            <div class="pull-right form-actions" data-ng-show="access.manageRealm">
                 <button kc-reset data-ng-show="changed">Clear changes</button>
                 <button kc-save data-ng-show="changed">Save</button>
             </div>

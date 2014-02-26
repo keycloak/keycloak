@@ -234,6 +234,7 @@ public class AdminService {
         if (auth == null) {
             throw new NotAuthorizedException("Bearer");
         }
+
         RealmsAdminResource adminResource = new RealmsAdminResource(auth, tokenManager);
         resourceContext.initResource(adminResource);
         return adminResource;

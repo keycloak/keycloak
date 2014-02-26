@@ -34,9 +34,10 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ApplicationResource extends RoleContainerResource {
+public class ApplicationResource {
     protected static final Logger logger = Logger.getLogger(RealmAdminResource.class);
     protected RealmModel realm;
+    private RealmAuth auth;
     protected ApplicationModel application;
     protected KeycloakSession session;
     @Context
@@ -49,16 +50,20 @@ public class ApplicationResource extends RoleContainerResource {
         return (KeycloakApplication)keycloak;
     }
 
-    public ApplicationResource(RealmModel realm, ApplicationModel applicationModel, KeycloakSession session) {
-        super(realm, applicationModel);
+    public ApplicationResource(RealmModel realm, RealmAuth auth, ApplicationModel applicationModel, KeycloakSession session) {
         this.realm = realm;
+        this.auth = auth;
         this.application = applicationModel;
         this.session = session;
+
+        auth.init(RealmAuth.Resource.APPLICATION);
     }
 
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     public void update(final ApplicationRepresentation rep) {
+        auth.requireManage();
+
         ApplicationManager applicationManager = new ApplicationManager(new RealmManager(session));
         applicationManager.updateApplication(rep, application);
     }
@@ -68,6 +73,8 @@ public class ApplicationResource extends RoleContainerResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public ApplicationRepresentation getApplication() {
+        auth.requireView();
+
         ApplicationManager applicationManager = new ApplicationManager(new RealmManager(session));
         return applicationManager.toRepresentation(application);
     }
@@ -78,6 +85,8 @@ public class ApplicationResource extends RoleContainerResource {
     @Path("installation/json")
     @Produces(MediaType.APPLICATION_JSON)
     public String getInstallation() throws IOException {
+        auth.requireView();
+
         ApplicationManager applicationManager = new ApplicationManager(new RealmManager(session));
         Object rep = applicationManager.toInstallationRepresentation(realm, application, getKeycloakApplication().getBaseUri(uriInfo));
 
@@ -90,6 +99,8 @@ public class ApplicationResource extends RoleContainerResource {
     @Path("installation/jboss")
     @Produces(MediaType.TEXT_PLAIN)
     public String getJBossInstallation() throws IOException {
+        auth.requireView();
+
         ApplicationManager applicationManager = new ApplicationManager(new RealmManager(session));
         return applicationManager.toJBossSubsystemConfig(realm, application, getKeycloakApplication().getBaseUri(uriInfo));
     }
@@ -97,6 +108,8 @@ public class ApplicationResource extends RoleContainerResource {
     @DELETE
     @NoCache
     public void deleteApplication() {
+        auth.requireManage();
+
         realm.removeApplication(application.getId());
     }
 
@@ -105,6 +118,8 @@ public class ApplicationResource extends RoleContainerResource {
     @Produces("application/json")
     @Consumes("application/json")
     public CredentialRepresentation regenerateSecret() {
+        auth.requireManage();
+
         logger.debug("regenerateSecret");
         UserCredentialModel cred = new ApplicationManager().generateSecret(realm, application);
         CredentialRepresentation rep = ModelToRepresentation.toRepresentation(cred);
@@ -115,6 +130,8 @@ public class ApplicationResource extends RoleContainerResource {
     @GET
     @Produces("application/json")
     public CredentialRepresentation getClientSecret() {
+        auth.requireView();
+
         logger.debug("getClientSecret");
         UserCredentialModel model = realm.getSecret(application.getApplicationUser());
         if (model == null) throw new NotFoundException("Application does not have a secret");
@@ -124,7 +141,12 @@ public class ApplicationResource extends RoleContainerResource {
 
     @Path("scope-mappings")
     public ScopeMappedResource getScopeMappedResource() {
-        return new ScopeMappedResource(realm, application.getApplicationUser(), session);
+        return new ScopeMappedResource(realm, auth, application.getApplicationUser(), session);
+    }
+
+    @Path("roles")
+    public RoleContainerResource getRoleContainerResource() {
+        return new RoleContainerResource(realm, auth, application);
     }
 
     @Path("allowed-origins")
@@ -132,6 +154,8 @@ public class ApplicationResource extends RoleContainerResource {
     @Produces("application/json")
     public Set<String> getAllowedOrigins()
     {
+        auth.requireView();
+
         return application.getApplicationUser().getWebOrigins();
     }
 
@@ -140,6 +164,8 @@ public class ApplicationResource extends RoleContainerResource {
     @Consumes("application/json")
     public void updateAllowedOrigins(Set<String> allowedOrigins)
     {
+        auth.requireManage();
+
         application.getApplicationUser().setWebOrigins(allowedOrigins);
     }
 
@@ -148,6 +174,8 @@ public class ApplicationResource extends RoleContainerResource {
     @Consumes("application/json")
     public void deleteAllowedOrigins(Set<String> allowedOrigins)
     {
+        auth.requireManage();
+
         for (String origin : allowedOrigins) {
             application.getApplicationUser().removeWebOrigin(origin);
         }

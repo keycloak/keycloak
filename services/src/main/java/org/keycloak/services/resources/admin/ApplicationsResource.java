@@ -32,6 +32,7 @@ import java.util.List;
 public class ApplicationsResource {
     protected static final Logger logger = Logger.getLogger(RealmAdminResource.class);
     protected RealmModel realm;
+    private RealmAuth auth;
 
     @Context
     protected ResourceContext resourceContext;
@@ -39,19 +40,32 @@ public class ApplicationsResource {
     @Context
     protected KeycloakSession session;
 
-    public ApplicationsResource(RealmModel realm) {
+    public ApplicationsResource(RealmModel realm, RealmAuth auth) {
         this.realm = realm;
+        this.auth = auth;
+
+        auth.init(RealmAuth.Resource.APPLICATION);
     }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public List<ApplicationRepresentation> getApplications() {
+        auth.requireAny();
+
         List<ApplicationRepresentation> rep = new ArrayList<ApplicationRepresentation>();
         List<ApplicationModel> applicationModels = realm.getApplications();
         ApplicationManager resourceManager = new ApplicationManager(new RealmManager(session));
+
+        boolean view = auth.hasView();
         for (ApplicationModel applicationModel : applicationModels) {
-            rep.add(resourceManager.toRepresentation(applicationModel));
+            if (view) {
+                rep.add(resourceManager.toRepresentation(applicationModel));
+            } else {
+                ApplicationRepresentation app = new ApplicationRepresentation();
+                app.setName(applicationModel.getName());
+                rep.add(app);
+            }
         }
         return rep;
     }
@@ -59,6 +73,8 @@ public class ApplicationsResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createApplication(final @Context UriInfo uriInfo, final ApplicationRepresentation rep) {
+        auth.requireManage();
+
         if (realm.getApplicationNameMap().containsKey(rep.getName())) {
             return Flows.errors().exists("Application " + rep.getName() + " already exists");
         }
@@ -73,7 +89,7 @@ public class ApplicationsResource {
         if (applicationModel == null) {
             throw new NotFoundException("Could not find application: " + name);
         }
-        ApplicationResource applicationResource = new ApplicationResource(realm, applicationModel, session);
+        ApplicationResource applicationResource = new ApplicationResource(realm, auth, applicationModel, session);
         resourceContext.initResource(applicationResource);
         return applicationResource;
     }
