@@ -1,0 +1,20 @@
+<div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="'partials/realm-menu.html'"></div>
+<div id="content-area" class="col-md-9" role="main">
+    <ul class="nav nav-tabs nav-tabs-pf">
+        <li><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.id}}">Settings</a></li>
+        <li><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.id}}/credentials">Credentials</a></li>
+        <li class="active"><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.id}}/claims">Claims</a></li>
+        <li><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.id}}/scope-mappings">Scope</a></li>
+        <li><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.id}}/installation">Installation</a></li>
+    </ul>
+    <div id="content">
+        <h2 data-ng-hide="create"><span>{{oauth.name}}</span> Allowed Claims</h2>
+        <form class="form-horizontal" name="claimForm">
+            <div data-ng-include data-src="'partials/claims.html'"></div>
+            <div class="pull-right form-actions" data-ng-show="access.manageClients">
+                <button kc-reset data-ng-show="changed">Clear changes</button>
+                <button kc-save  data-ng-show="changed">Save</button>
+            </div>
+        </form>
+    </div>
+</div>

@@ -276,6 +276,21 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'ApplicationRoleDetailCtrl'
         })
+        .when('/realms/:realm/applications/:application/claims', {
+            templateUrl : 'partials/application-claims.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                application : function(ApplicationLoader) {
+                    return ApplicationLoader();
+                },
+                claims : function(ApplicationClaimsLoader) {
+                    return ApplicationClaimsLoader();
+                }
+            },
+            controller : 'ApplicationClaimsCtrl'
+        })
         .when('/realms/:realm/applications/:application/credentials', {
             templateUrl : 'partials/application-credentials.html',
             resolve : {
@@ -390,6 +405,21 @@ module.config([ '$routeProvider', function($routeProvider) {
 
         // OAUTH Client
 
+        .when('/realms/:realm/oauth-clients/:oauth/claims', {
+            templateUrl : 'partials/oauth-client-claims.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                oauth : function(OAuthClientLoader) {
+                    return OAuthClientLoader();
+                },
+                claims : function(OAuthClientClaimsLoader) {
+                    return OAuthClientClaimsLoader();
+                }
+            },
+            controller : 'OAuthClientClaimsCtrl'
+        })
         .when('/realms/:realm/oauth-clients/:oauth/credentials', {
             templateUrl : 'partials/oauth-client-credentials.html',
             resolve : {

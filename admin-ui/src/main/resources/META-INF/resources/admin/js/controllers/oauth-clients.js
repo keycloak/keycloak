@@ -1,3 +1,37 @@
+module.controller('OAuthClientClaimsCtrl', function($scope, realm, oauth, claims,
+                                                    OAuthClientClaims,
+                                                    $location, Dialog, Notifications) {
+    $scope.realm = realm;
+    $scope.oauth = oauth;
+    $scope.claims = angular.copy(claims);
+
+    $scope.changed = false;
+
+    $scope.$watch('claims', function () {
+        if (!angular.equals($scope.claims, claims)) {
+            $scope.changed = true;
+        }
+    }, true);
+
+
+    $scope.save = function () {
+        OAuthClientClaims.update({
+            realm: realm.realm,
+            oauth: oauth.id
+        }, $scope.claims, function () {
+            $scope.changed = false;
+            claims = angular.copy($scope.claims);
+
+            Notifications.success("Your claim changes have been saved.");
+        });
+    };
+
+    $scope.reset = function () {
+        $location.url("/realms/" + realm.realm + "/oauth-clients/" + oauth.id + "/claims");
+    };
+
+});
+
 module.controller('OAuthClientCredentialsCtrl', function($scope, $location, realm, oauth, OAuthClientCredentials, Notifications) {
     $scope.realm = realm;
     $scope.oauth = oauth;

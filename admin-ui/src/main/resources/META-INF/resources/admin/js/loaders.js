@@ -91,6 +91,15 @@ module.factory('ApplicationRoleLoader', function(Loader, ApplicationRole, $route
     });
 });
 
+module.factory('ApplicationClaimsLoader', function(Loader, ApplicationClaims, $route, $q) {
+    return Loader.get(ApplicationClaims, function() {
+        return {
+            realm : $route.current.params.realm,
+            application : $route.current.params.application
+        }
+    });
+});
+
 module.factory('ApplicationInstallationLoader', function(Loader, ApplicationInstallation, $route, $q) {
     return Loader.get(ApplicationInstallation, function() {
         return {
@@ -148,6 +157,16 @@ module.factory('OAuthClientLoader', function(Loader, OAuthClient, $route, $q) {
         }
     });
 });
+
+module.factory('OAuthClientClaimsLoader', function(Loader, OAuthClientClaims, $route, $q) {
+    return Loader.get(OAuthClientClaims, function() {
+        return {
+            realm : $route.current.params.realm,
+            oauth : $route.current.params.oauth
+        }
+    });
+});
+
 
 module.factory('OAuthClientListLoader', function(Loader, OAuthClient, $route, $q) {
     return Loader.query(OAuthClient, function() {
