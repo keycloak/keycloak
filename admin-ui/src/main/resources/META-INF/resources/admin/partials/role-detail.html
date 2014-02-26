@@ -28,7 +28,7 @@
         </ol>
         <h2 data-ng-show="create"><span>{{realm.realm}}</span> Add Role</h2>
         <p class="subtitle" data-ng-show="create"><span class="required">*</span> Required fields</p>
-        <form class="form-horizontal" name="realmForm" novalidate>
+        <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
             <fieldset>
                 <div class="form-group">
                     <label class="col-sm-2 control-label" for="name">Role name <span class="required" data-ng-show="create">*</span></label>
@@ -96,7 +96,7 @@
                     <div class="col-sm-4">
                         <div class="input-group">
                             <div class="select-kc">
-                                <select id="applications" name="applications" ng-change="changeApplication()" ng-model="compositeApp" ng-options="a.name for a in applications">
+                                <select id="applications" name="applications" ng-change="changeApplication()" ng-model="compositeApp" ng-options="a.name for a in applications" ng-disabled="false">
                                     <option value="" selected> Select an Application...</option>
                                 </select>
                             </div>
@@ -133,7 +133,7 @@
                 </div>
             </fieldset>
 
-            <div class="pull-right  form-actions" data-ng-show="!create">
+            <div class="pull-right  form-actions" data-ng-show="!create && access.manageRealm">
                 <button kc-reset data-ng-show="changed">Clear changes</button>
                 <button kc-save data-ng-show="changed">Save</button>
                 <button kc-delete data-ng-click="remove()" data-ng-hide="changed">Delete</button>

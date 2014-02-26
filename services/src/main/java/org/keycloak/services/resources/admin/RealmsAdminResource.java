@@ -6,8 +6,6 @@ import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.jboss.resteasy.util.GenericType;
 import org.keycloak.models.AdminRoles;
-import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -67,11 +65,10 @@ public class RealmsAdminResource {
         for (RealmModel realm : realms) {
             String realmAdminApp = AdminRoles.getAdminApp(realm);
 
-            if (auth.has(realmAdminApp, AdminRoles.MANAGE_REALM)) {
+            if (auth.hasAppRole(realmAdminApp, AdminRoles.MANAGE_REALM)) {
                 reps.add(ModelToRepresentation.toRepresentation(realm));
-            } else if (auth.hasOneOf(realmAdminApp, AdminRoles.ALL_REALM_ROLES)) {
+            } else if (auth.hasOneOfAppRole(realmAdminApp, AdminRoles.ALL_REALM_ROLES)) {
                 RealmRepresentation rep = new RealmRepresentation();
-                rep.setId(realm.getId());
                 rep.setRealm(realm.getName());
                 reps.add(rep);
             }
@@ -90,7 +87,9 @@ public class RealmsAdminResource {
     @POST
     @Consumes("application/json")
     public Response importRealm(@Context final UriInfo uriInfo, final RealmRepresentation rep) {
-        auth.require(AdminRoles.ADMIN);
+        if (!auth.hasRealmRole(AdminRoles.ADMIN)) {
+            throw new ForbiddenException();
+        }
 
         logger.debug("importRealm: {0}", rep.getRealm());
         RealmManager realmManager = new RealmManager(session);
@@ -107,7 +106,9 @@ public class RealmsAdminResource {
     @POST
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public Response uploadRealm(MultipartFormDataInput input) throws IOException  {
-        auth.require(AdminRoles.ADMIN);
+        if (!auth.hasRealmRole(AdminRoles.ADMIN)) {
+            throw new ForbiddenException();
+        }
 
         Map<String, List<InputPart>> uploadForm = input.getFormDataMap();
         List<InputPart> inputParts = uploadForm.get("file");
@@ -128,9 +129,9 @@ public class RealmsAdminResource {
         RealmModel realm = realmManager.getRealmByName(name);
         if (realm == null) throw new NotFoundException("{realm} = " + name);
 
-        auth.requireOneOf(AdminRoles.getAdminApp(realm), AdminRoles.ALL_REALM_ROLES);
+        RealmAuth realmAuth = new RealmAuth(auth, AdminRoles.getAdminApp(realm));
 
-        RealmAdminResource adminResource = new RealmAdminResource(auth, realm, tokenManager);
+        RealmAdminResource adminResource = new RealmAdminResource(realmAuth, realm, tokenManager);
         resourceContext.initResource(adminResource);
         return adminResource;
     }

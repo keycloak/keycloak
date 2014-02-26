@@ -32,11 +32,13 @@ import java.util.Set;
  */
 public class ScopeMappedResource {
     protected RealmModel realm;
+    private RealmAuth auth;
     protected UserModel agent;
     protected KeycloakSession session;
 
-    public ScopeMappedResource(RealmModel realm, UserModel account, KeycloakSession session) {
+    public ScopeMappedResource(RealmModel realm, RealmAuth auth, UserModel account, KeycloakSession session) {
         this.realm = realm;
+        this.auth = auth;
         this.agent = account;
         this.session = session;
     }
@@ -45,6 +47,8 @@ public class ScopeMappedResource {
     @Produces("application/json")
     @NoCache
     public MappingsRepresentation getScopeMappings() {
+        auth.requireView();
+
         MappingsRepresentation all = new MappingsRepresentation();
         Set<RoleModel> realmMappings = realm.getRealmScopeMappings(agent);
         RealmManager manager = new RealmManager(session);
@@ -83,6 +87,8 @@ public class ScopeMappedResource {
     @Produces("application/json")
     @NoCache
     public List<RoleRepresentation> getRealmScopeMappings() {
+        auth.requireView();
+
         Set<RoleModel> realmMappings = realm.getRealmScopeMappings(agent);
         List<RoleRepresentation> realmMappingsRep = new ArrayList<RoleRepresentation>();
         RealmManager manager = new RealmManager(session);
@@ -96,6 +102,8 @@ public class ScopeMappedResource {
     @POST
     @Consumes("application/json")
     public void addRealmScopeMappings(List<RoleRepresentation> roles) {
+        auth.requireManage();
+
         for (RoleRepresentation role : roles) {
             RoleModel roleModel = realm.getRoleById(role.getId());
             if (roleModel == null) {
@@ -111,6 +119,8 @@ public class ScopeMappedResource {
     @DELETE
     @Consumes("application/json")
     public void deleteRealmScopeMappings(List<RoleRepresentation> roles) {
+        auth.requireManage();
+
         if (roles == null) {
             Set<RoleModel> roleModels = realm.getRealmScopeMappings(agent);
             for (RoleModel roleModel : roleModels) {
@@ -133,6 +143,8 @@ public class ScopeMappedResource {
     @Produces("application/json")
     @NoCache
     public List<RoleRepresentation> getApplicationScopeMappings(@PathParam("app") String appName) {
+        auth.requireView();
+
         ApplicationModel app = realm.getApplicationByName(appName);
 
         if (app == null) {
@@ -151,6 +163,8 @@ public class ScopeMappedResource {
     @POST
     @Consumes("application/json")
     public void addApplicationScopeMapping(@PathParam("app") String appName, List<RoleRepresentation> roles) {
+        auth.requireManage();
+
         ApplicationModel app = realm.getApplicationByName(appName);
 
         if (app == null) {
@@ -171,6 +185,8 @@ public class ScopeMappedResource {
     @DELETE
     @Consumes("application/json")
     public void deleteApplicationScopeMapping(@PathParam("app") String appName, List<RoleRepresentation> roles) {
+        auth.requireManage();
+
         ApplicationModel app = realm.getApplicationByName(appName);
 
         if (app == null) {

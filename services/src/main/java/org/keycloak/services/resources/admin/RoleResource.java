@@ -16,7 +16,7 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class RoleResource {
+public abstract class RoleResource {
     protected RealmModel realm;
 
     public RoleResource(RealmModel realm) {

@@ -521,6 +521,8 @@ module.factory('errorInterceptor', function($q, $window, $rootScope, $location, 
                 console.log('session timeout?');
                 Auth.loggedIn = false;
                 window.location = '/auth/rest/admin/login?path=' + $location.path();
+            } else if (response.status == 403) {
+                Notifications.error("Forbidden");
             } else if (response.status == 404) {
                 Notifications.error("Not found");
             } else if (response.status) {
@@ -672,20 +674,6 @@ module.directive('kcInput', function() {
     return d;
 });
 
-module.directive('kcDisableForm', function() {
-    var d = {
-        scope : true,
-        replace : false,
-        link : function(scope, element, attrs) {
-            var form = element.children('form');
-            console.debug(form);
-            var input = element.children('input');
-            input.attr('disabled', 'true');
-        }
-    };
-    return d;
-});
-
 module.directive('kcEnter', function() {
     return function(scope, element, attrs) {
         element.bind("keydown keypress", function(event) {
@@ -789,6 +777,21 @@ module.directive('kcSelect', function ($compile, Notifications) {
             };
         }
     }
+});
+
+module.directive('kcReadOnly', function() {
+    var d = {
+        replace : false,
+        link : function(scope, element, attrs) {
+            if (scope.$eval(attrs.kcReadOnly)) {
+                element.find('input').attr('disabled', 'disabled');
+                element.find('button').attr('disabled', 'disabled');
+                element.find('select').attr('disabled', 'disabled');
+                element.find('textarea').attr('disabled', 'disabled');
+            }
+        }
+    };
+    return d;
 });
 
 module.directive('kcNavigation', function ($compile, Notifications) {

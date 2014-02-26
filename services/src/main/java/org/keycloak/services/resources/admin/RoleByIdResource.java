@@ -1,14 +1,13 @@
 package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.services.managers.ModelToRepresentation;
-import org.keycloak.services.resources.admin.RoleResource;
-import org.keycloak.services.resources.flows.Flows;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -19,10 +18,6 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -33,8 +28,14 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class RoleByIdResource extends RoleResource {
-    public RoleByIdResource(RealmModel realm) {
+    private final RealmModel realm;
+    private final RealmAuth auth;
+
+    public RoleByIdResource(RealmModel realm, RealmAuth auth) {
         super(realm);
+
+        this.realm = realm;
+        this.auth = auth;
     }
 
     @Path("{role-id}")
@@ -43,6 +44,7 @@ public class RoleByIdResource extends RoleResource {
     @Produces("application/json")
     public RoleRepresentation getRole(final @PathParam("role-id") String id) {
         RoleModel roleModel = getRoleModel(id);
+        auth.requireView();
         return getRole(roleModel);
     }
 
@@ -51,6 +53,19 @@ public class RoleByIdResource extends RoleResource {
         if (roleModel == null || roleModel.getName().startsWith(Constants.INTERNAL_ROLE)) {
             throw new NotFoundException("Could not find role with id: " + id);
         }
+
+        RealmAuth.Resource r = null;
+        if (roleModel.getContainer() instanceof RealmModel) {
+            r = RealmAuth.Resource.REALM;
+        } else if (roleModel.getContainer() instanceof ApplicationModel) {
+            r = RealmAuth.Resource.APPLICATION;
+        } else if (roleModel.getContainer() instanceof OAuthClientModel) {
+            r = RealmAuth.Resource.CLIENT;
+        } else if (roleModel.getContainer() instanceof UserModel) {
+            r = RealmAuth.Resource.USER;
+        }
+        auth.init(r);
+
         return roleModel;
     }
 
@@ -59,6 +74,7 @@ public class RoleByIdResource extends RoleResource {
     @NoCache
     public void deleteRole(final @PathParam("role-id") String id) {
         RoleModel role = getRoleModel(id);
+        auth.requireManage();
         deleteRole(role);
     }
 
@@ -67,6 +83,7 @@ public class RoleByIdResource extends RoleResource {
     @Consumes("application/json")
     public void updateRole(final @PathParam("role-id") String id, final RoleRepresentation rep) {
         RoleModel role = getRoleModel(id);
+        auth.requireManage();
         updateRole(rep, role);
     }
 
@@ -75,6 +92,7 @@ public class RoleByIdResource extends RoleResource {
     @Consumes("application/json")
     public void addComposites(final @PathParam("role-id") String id, List<RoleRepresentation> roles) {
         RoleModel role = getRoleModel(id);
+        auth.requireManage();
         addComposites(roles, role);
     }
 
@@ -84,6 +102,7 @@ public class RoleByIdResource extends RoleResource {
     @Produces("application/json")
     public Set<RoleRepresentation> getRoleComposites(final @PathParam("role-id") String id) {
         RoleModel role = getRoleModel(id);
+        auth.requireView();
         return getRoleComposites(role);
     }
 
@@ -93,6 +112,7 @@ public class RoleByIdResource extends RoleResource {
     @Produces("application/json")
     public Set<RoleRepresentation> getRealmRoleComposites(final @PathParam("role-id") String id) {
         RoleModel role = getRoleModel(id);
+        auth.requireView();
         return getRealmRoleComposites(role);
     }
 
@@ -103,6 +123,7 @@ public class RoleByIdResource extends RoleResource {
     public Set<RoleRepresentation> getApplicationRoleComposites(final @PathParam("role-id") String id,
                                                                 final @PathParam("app") String appName) {
         RoleModel role = getRoleModel(id);
+        auth.requireView();
         return getApplicationRoleComposites(appName, role);
     }
 
@@ -112,8 +133,8 @@ public class RoleByIdResource extends RoleResource {
     @Consumes("application/json")
     public void deleteComposites(final @PathParam("role-id") String id, List<RoleRepresentation> roles) {
         RoleModel role = getRoleModel(id);
+        auth.requireManage();
         deleteComposites(roles, role);
     }
-
 
 }
