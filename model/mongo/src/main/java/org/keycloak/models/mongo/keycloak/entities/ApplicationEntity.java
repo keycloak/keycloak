@@ -26,6 +26,9 @@ public class ApplicationEntity extends AbstractMongoIdentifiableEntity implement
     private String resourceUserId;
     private String realmId;
     private long allowedClaimsMask;
+    private List<String> webOrigins;
+    private List<String> redirectUris;
+
 
     // We are using names of defaultRoles (not ids)
     private List<String> defaultRoles = new ArrayList<String>();
@@ -83,6 +86,26 @@ public class ApplicationEntity extends AbstractMongoIdentifiableEntity implement
     public void setResourceUserId(String resourceUserId) {
         this.resourceUserId = resourceUserId;
     }
+
+    @MongoField
+    public List<String> getWebOrigins() {
+        return webOrigins;
+    }
+
+    public void setWebOrigins(List<String> webOrigins) {
+        this.webOrigins = webOrigins;
+    }
+
+    @MongoField
+    public List<String> getRedirectUris() {
+        return redirectUris;
+    }
+
+    public void setRedirectUris(List<String> redirectUris) {
+        this.redirectUris = redirectUris;
+    }
+
+
 
     @MongoField
     public long getAllowedClaimsMask() {

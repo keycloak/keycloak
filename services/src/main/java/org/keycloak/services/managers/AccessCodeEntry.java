@@ -1,5 +1,6 @@
 package org.keycloak.services.managers;
 
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
@@ -29,7 +30,7 @@ public class AccessCodeEntry {
     protected AccessToken token;
     protected UserModel user;
     protected Set<RequiredAction> requiredActions;
-    protected UserModel client;
+    protected ClientModel client;
     protected List<RoleModel> realmRolesRequested = new ArrayList<RoleModel>();
     MultivaluedMap<String, RoleModel> resourceRolesRequested = new MultivaluedHashMap<String, RoleModel>();
 
@@ -73,11 +74,11 @@ public class AccessCodeEntry {
         this.token = token;
     }
 
-    public UserModel getClient() {
+    public ClientModel getClient() {
         return client;
     }
 
-    public void setClient(UserModel client) {
+    public void setClient(ClientModel client) {
         this.client = client;
     }
 

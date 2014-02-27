@@ -131,7 +131,7 @@ public class OAuthClientResource  {
 
     @Path("scope-mappings")
     public ScopeMappedResource getScopeMappedResource() {
-        return new ScopeMappedResource(realm, auth, oauthClient.getAgent(), session);
+        return new ScopeMappedResource(realm, auth, oauthClient, session);
     }
 
 

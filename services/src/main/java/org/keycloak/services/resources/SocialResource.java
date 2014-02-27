@@ -24,6 +24,7 @@ package org.keycloak.services.resources;
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SocialLinkModel;
@@ -117,7 +118,7 @@ public class SocialResource {
 
         String clientId = requestData.getClientAttributes().get("clientId");
 
-        UserModel client = realm.getUser(clientId);
+        ClientModel client = realm.findClient(clientId);
         if (client == null) {
             return oauth.forwardToSecurityFailure("Unknown login requester.");
         }
@@ -192,7 +193,7 @@ public class SocialResource {
 
         SocialProviderConfig config = new SocialProviderConfig(key, secret, callbackUri);
 
-        UserModel client = realm.getUser(clientId);
+        ClientModel client = realm.findClient(clientId);
         if (client == null) {
             logger.warn("Unknown login requester: " + clientId);
             return Flows.forms(realm, request, uriInfo).setError("Unknown login requester.").createErrorPage();

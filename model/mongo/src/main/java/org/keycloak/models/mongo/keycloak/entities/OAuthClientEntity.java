@@ -6,6 +6,8 @@ import org.keycloak.models.mongo.api.MongoEntity;
 import org.keycloak.models.mongo.api.MongoField;
 import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
 
+import java.util.List;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -17,6 +19,8 @@ public class OAuthClientEntity extends AbstractMongoIdentifiableEntity implement
     private String oauthAgentId;
     private String realmId;
     private long allowedClaimsMask;
+    private List<String> webOrigins;
+    private List<String> redirectUris;
 
     @MongoField
     public String getName() {
@@ -53,6 +57,26 @@ public class OAuthClientEntity extends AbstractMongoIdentifiableEntity implement
     public void setAllowedClaimsMask(long allowedClaimsMask) {
         this.allowedClaimsMask = allowedClaimsMask;
     }
+
+    @MongoField
+    public List<String> getWebOrigins() {
+        return webOrigins;
+    }
+
+    public void setWebOrigins(List<String> webOrigins) {
+        this.webOrigins = webOrigins;
+    }
+
+    @MongoField
+    public List<String> getRedirectUris() {
+        return redirectUris;
+    }
+
+    public void setRedirectUris(List<String> redirectUris) {
+        this.redirectUris = redirectUris;
+    }
+
+
 
     @Override
     public void afterRemove(MongoStoreInvocationContext context) {

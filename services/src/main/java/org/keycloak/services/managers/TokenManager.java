@@ -87,13 +87,13 @@ public class TokenManager {
 
 
 
-    public AccessCodeEntry createAccessCode(String scopeParam, String state, String redirect, RealmModel realm, UserModel client, UserModel user) {
+    public AccessCodeEntry createAccessCode(String scopeParam, String state, String redirect, RealmModel realm, ClientModel client, UserModel user) {
         AccessCodeEntry code = createAccessCodeEntry(scopeParam, state, redirect, realm, client, user);
         accessCodeMap.put(code.getId(), code);
         return code;
     }
 
-    private AccessCodeEntry createAccessCodeEntry(String scopeParam, String state, String redirect, RealmModel realm, UserModel client, UserModel user) {
+    private AccessCodeEntry createAccessCodeEntry(String scopeParam, String state, String redirect, RealmModel realm, ClientModel client, UserModel user) {
         AccessCodeEntry code = new AccessCodeEntry();
         List<RoleModel> realmRolesRequested = code.getRealmRolesRequested();
         MultivaluedMap<String, RoleModel> resourceRolesRequested = code.getResourceRolesRequested();
@@ -117,7 +117,7 @@ public class TokenManager {
         return code;
     }
 
-    public AccessToken refreshAccessToken(RealmModel realm, UserModel client, String encodedRefreshToken) throws OAuthErrorException {
+    public AccessToken refreshAccessToken(RealmModel realm, ClientModel client, String encodedRefreshToken) throws OAuthErrorException {
         JWSInput jws = new JWSInput(encodedRefreshToken);
         RefreshToken refreshToken = null;
         try {
@@ -142,7 +142,7 @@ public class TokenManager {
 
         }
 
-        ApplicationModel clientApp = realm.getApplicationByName(client.getLoginName());
+        ApplicationModel clientApp = (client instanceof ApplicationModel) ? (ApplicationModel)client : null;
 
 
         if (refreshToken.getRealmAccess() != null) {
@@ -180,15 +180,14 @@ public class TokenManager {
 
             }
         }
-        ClientModel claimRequesterModel = getClaimRequester(realm, client);
 
-        AccessToken accessToken = initToken(realm, claimRequesterModel, client, user);
+        AccessToken accessToken = initToken(realm, client, user);
         accessToken.setRealmAccess(refreshToken.getRealmAccess());
         accessToken.setResourceAccess(refreshToken.getResourceAccess());
         return accessToken;
     }
 
-    public AccessToken createClientAccessToken(String scopeParam, RealmModel realm, UserModel client, UserModel user) {
+    public AccessToken createClientAccessToken(String scopeParam, RealmModel realm, ClientModel client, UserModel user) {
         return createClientAccessToken(scopeParam, realm, client, user, new LinkedList<RoleModel>(), new MultivaluedHashMap<String, RoleModel>());
     }
 
@@ -199,15 +198,14 @@ public class TokenManager {
     }
 
 
-    public AccessToken createClientAccessToken(String scopeParam, RealmModel realm, UserModel client, UserModel user, List<RoleModel> realmRolesRequested, MultivaluedMap<String, RoleModel> resourceRolesRequested) {
+    public AccessToken createClientAccessToken(String scopeParam, RealmModel realm, ClientModel client, UserModel user, List<RoleModel> realmRolesRequested, MultivaluedMap<String, RoleModel> resourceRolesRequested) {
         AccessScope scopeMap = null;
         if (scopeParam != null) scopeMap = decodeScope(scopeParam);
 
 
         Set<RoleModel> roleMappings = realm.getRoleMappings(user);
         Set<RoleModel> scopeMappings = realm.getScopeMappings(client);
-        ClientModel claimRequesterModel = getClaimRequester(realm, client);
-        ApplicationModel clientApp = realm.getApplicationByName(client.getLoginName());
+        ApplicationModel clientApp = (client instanceof ApplicationModel) ? (ApplicationModel)client : null;
         Set<RoleModel> clientAppRoles = clientApp == null ? null : clientApp.getRoles();
         if (clientAppRoles != null) scopeMappings.addAll(clientAppRoles);
 
@@ -233,7 +231,7 @@ public class TokenManager {
             }
         }
 
-        AccessToken token = initToken(realm, claimRequesterModel, client, user);
+        AccessToken token = initToken(realm, client, user);
 
         if (realmRolesRequested.size() > 0) {
             for (RoleModel role : realmRolesRequested) {
@@ -286,13 +284,13 @@ public class TokenManager {
 
 
 
-    protected AccessToken initToken(RealmModel realm, ClientModel claimer, UserModel client, UserModel user) {
+    protected AccessToken initToken(RealmModel realm, ClientModel client, UserModel user) {
         AccessToken token = new AccessToken();
         token.id(KeycloakModelUtils.generateId());
         token.subject(user.getId());
         token.audience(realm.getName());
         token.issuedNow();
-        token.issuedFor(client.getLoginName());
+        token.issuedFor(client.getAgent().getLoginName());
         token.issuer(realm.getName());
         if (realm.getAccessTokenLifespan() > 0) {
             token.expiration((System.currentTimeMillis() / 1000) + realm.getAccessTokenLifespan());
@@ -301,7 +299,7 @@ public class TokenManager {
         if (allowedOrigins != null) {
             token.setAllowedOrigins(allowedOrigins);
         }
-        initClaims(token, claimer, user);
+        initClaims(token, client, user);
         return token;
     }
 
@@ -385,7 +383,7 @@ public class TokenManager {
             return this;
         }
 
-        public AccessTokenResponseBuilder generateAccessToken(String scopeParam, UserModel client, UserModel user) {
+        public AccessTokenResponseBuilder generateAccessToken(String scopeParam, ClientModel client, UserModel user) {
             accessToken = createClientAccessToken(scopeParam, realm, client, user);
             return this;
         }

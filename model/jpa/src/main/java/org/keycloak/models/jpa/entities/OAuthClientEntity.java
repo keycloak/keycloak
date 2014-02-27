@@ -1,5 +1,7 @@
 package org.keycloak.models.jpa.entities;
 
+import javax.persistence.CollectionTable;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -10,6 +12,9 @@ import javax.persistence.NamedQuery;
 import javax.persistence.OneToOne;
 
 import org.hibernate.annotations.GenericGenerator;
+
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -29,6 +34,15 @@ public class OAuthClientEntity {
 
     private String name;
     private long allowedClaimsMask;
+
+    @ElementCollection
+    @CollectionTable
+    protected Set<String> webOrigins = new HashSet<String>();
+
+    @ElementCollection
+    @CollectionTable
+    protected Set<String> redirectUris = new HashSet<String>();
+
 
     @OneToOne(fetch = FetchType.EAGER)
     private UserEntity agent;
@@ -71,5 +85,23 @@ public class OAuthClientEntity {
     public void setAllowedClaimsMask(long allowedClaimsMask) {
         this.allowedClaimsMask = allowedClaimsMask;
     }
+
+    public Set<String> getWebOrigins() {
+        return webOrigins;
+    }
+
+    public void setWebOrigins(Set<String> webOrigins) {
+        this.webOrigins = webOrigins;
+    }
+
+    public Set<String> getRedirectUris() {
+        return redirectUris;
+    }
+
+    public void setRedirectUris(Set<String> redirectUris) {
+        this.redirectUris = redirectUris;
+    }
+
+
 
 }

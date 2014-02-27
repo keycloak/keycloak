@@ -1,5 +1,6 @@
 package org.keycloak.models.jpa;
 
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.jpa.entities.ApplicationEntity;
 import org.keycloak.models.jpa.entities.CredentialEntity;
@@ -559,6 +560,13 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public ClientModel findClient(String clientId) {
+        ClientModel model = getApplicationByName(clientId);
+        if (model != null) return model;
+        return getOAuthClient(clientId);
+    }
+
+    @Override
     public Map<String, ApplicationModel> getApplicationNameMap() {
         Map<String, ApplicationModel> map = new HashMap<String, ApplicationModel>();
         for (ApplicationModel app : getApplications()) {
@@ -926,8 +934,8 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public boolean hasScope(UserModel user, RoleModel role) {
-        Set<RoleModel> roles = getScopeMappings(user);
+    public boolean hasScope(ClientModel client, RoleModel role) {
+        Set<RoleModel> roles = getScopeMappings(client);
         if (roles.contains(role)) return true;
 
         for (RoleModel mapping : roles) {
@@ -996,8 +1004,8 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public Set<RoleModel> getRealmScopeMappings(UserModel user) {
-        Set<RoleModel> roleMappings = getScopeMappings(user);
+    public Set<RoleModel> getRealmScopeMappings(ClientModel client) {
+        Set<RoleModel> roleMappings = getScopeMappings(client);
 
         Set<RoleModel> appRoles = new HashSet<RoleModel>();
         for (RoleModel role : roleMappings) {
@@ -1014,9 +1022,9 @@ public class RealmAdapter implements RealmModel {
 
 
     @Override
-    public Set<RoleModel> getScopeMappings(UserModel agent) {
+    public Set<RoleModel> getScopeMappings(ClientModel client) {
         TypedQuery<UserScopeMappingEntity> query = em.createNamedQuery("userScopeMappings", UserScopeMappingEntity.class);
-        query.setParameter("user", ((UserAdapter)agent).getUser());
+        query.setParameter("user", ((UserAdapter)client.getAgent()).getUser());
         List<UserScopeMappingEntity> entities = query.getResultList();
         Set<RoleModel> roles = new HashSet<RoleModel>();
         for (UserScopeMappingEntity entity : entities) {
@@ -1026,8 +1034,9 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public void addScopeMapping(UserModel agent, RoleModel role) {
-        if (hasScope(agent, role)) return;
+    public void addScopeMapping(ClientModel client, RoleModel role) {
+        UserModel agent = client.getAgent();
+        if (hasScope(client, role)) return;
         UserScopeMappingEntity entity = new UserScopeMappingEntity();
         entity.setUser(((UserAdapter) agent).getUser());
         entity.setRole(((RoleAdapter)role).getRole());
@@ -1035,8 +1044,9 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public void deleteScopeMapping(UserModel user, RoleModel role) {
-        TypedQuery<UserScopeMappingEntity> query = getRealmScopeMappingQuery((UserAdapter) user, (RoleAdapter) role);
+    public void deleteScopeMapping(ClientModel client, RoleModel role) {
+        UserModel agent = client.getAgent();
+        TypedQuery<UserScopeMappingEntity> query = getRealmScopeMappingQuery((UserAdapter) agent, (RoleAdapter) role);
         List<UserScopeMappingEntity> results = query.getResultList();
         if (results.size() == 0) return;
         for (UserScopeMappingEntity entity : results) {

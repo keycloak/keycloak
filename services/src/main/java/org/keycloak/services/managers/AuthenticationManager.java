@@ -6,6 +6,7 @@ import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
 import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
@@ -56,10 +57,10 @@ public class AuthenticationManager {
         return createLoginCookie(realm, user, null, cookieName, cookiePath, rememberMe);
     }
 
-    protected NewCookie createLoginCookie(RealmModel realm, UserModel user, UserModel client, String cookieName, String cookiePath, boolean rememberMe) {
+    protected NewCookie createLoginCookie(RealmModel realm, UserModel user, ClientModel client, String cookieName, String cookiePath, boolean rememberMe) {
         AccessToken identityToken = createIdentityToken(realm, user);
         if (client != null) {
-            identityToken.issuedFor(client.getLoginName());
+            identityToken.issuedFor(client.getAgent().getLoginName());
         }
         String encoded = encodeToken(realm, identityToken);
         boolean secureOnly = !realm.isSslNotRequired();

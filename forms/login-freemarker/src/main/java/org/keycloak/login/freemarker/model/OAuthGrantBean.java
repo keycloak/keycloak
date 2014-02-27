@@ -21,6 +21,7 @@
  */
 package org.keycloak.login.freemarker.model;
 
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 
@@ -36,11 +37,11 @@ public class OAuthGrantBean {
     private List<RoleModel> realmRolesRequested;
     private MultivaluedMap<String, RoleModel> resourceRolesRequested;
     private String code;
-    private UserModel client;
+    private ClientModel client;
     private String oAuthCode;
     private String action;
 
-    public OAuthGrantBean(String code, UserModel client, List<RoleModel> realmRolesRequested, MultivaluedMap<String, RoleModel> resourceRolesRequested) {
+    public OAuthGrantBean(String code, ClientModel client, List<RoleModel> realmRolesRequested, MultivaluedMap<String, RoleModel> resourceRolesRequested) {
         this.code = code;
         this.client = client;
         this.realmRolesRequested = realmRolesRequested;
@@ -60,7 +61,7 @@ public class OAuthGrantBean {
     }
 
     public String getClient() {
-        return client.getLoginName();
+        return client.getAgent().getLoginName();
     }
 
 }

@@ -3,6 +3,7 @@ package org.keycloak.models.mongo.keycloak.adapters;
 import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.mongo.api.AbstractMongoIdentifiableEntity;
@@ -201,9 +202,9 @@ public class ApplicationAdapter extends AbstractAdapter implements ApplicationMo
     }
 
     @Override
-    public Set<RoleModel> getApplicationScopeMappings(UserModel user) {
+    public Set<RoleModel> getApplicationScopeMappings(ClientModel client) {
         Set<RoleModel> result = new HashSet<RoleModel>();
-        List<RoleEntity> roles = MongoModelUtils.getAllScopesOfUser(user, invocationContext);
+        List<RoleEntity> roles = MongoModelUtils.getAllScopesOfUser(client.getAgent(), invocationContext);
 
         for (RoleEntity role : roles) {
             if (getId().equals(role.getApplicationId())) {
@@ -247,4 +248,57 @@ public class ApplicationAdapter extends AbstractAdapter implements ApplicationMo
     public AbstractMongoIdentifiableEntity getMongoEntity() {
         return application;
     }
+
+    @Override
+    public Set<String> getWebOrigins() {
+        Set<String> result = new HashSet<String>();
+        if (application.getWebOrigins() != null) {
+            result.addAll(application.getWebOrigins());
+        }
+        return result;
+    }
+
+    @Override
+    public void setWebOrigins(Set<String> webOrigins) {
+        List<String> result = new ArrayList<String>();
+        result.addAll(webOrigins);
+        application.setWebOrigins(result);
+    }
+
+    @Override
+    public void addWebOrigin(String webOrigin) {
+        getMongoStore().pushItemToList(application, "webOrigins", webOrigin, true, invocationContext);
+    }
+
+    @Override
+    public void removeWebOrigin(String webOrigin) {
+        getMongoStore().pullItemFromList(application, "webOrigins", webOrigin, invocationContext);
+    }
+
+    @Override
+    public Set<String> getRedirectUris() {
+        Set<String> result = new HashSet<String>();
+        if (application.getRedirectUris() != null) {
+            result.addAll(application.getRedirectUris());
+        }
+        return result;
+    }
+
+    @Override
+    public void setRedirectUris(Set<String> redirectUris) {
+        List<String> result = new ArrayList<String>();
+        result.addAll(redirectUris);
+        application.setRedirectUris(result);
+    }
+
+    @Override
+    public void addRedirectUri(String redirectUri) {
+        getMongoStore().pushItemToList(application, "redirectUris", redirectUri, true, invocationContext);
+    }
+
+    @Override
+    public void removeRedirectUri(String redirectUri) {
+        getMongoStore().pullItemFromList(application, "redirectUris", redirectUri, invocationContext);
+    }
+
 }

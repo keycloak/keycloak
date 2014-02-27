@@ -4,6 +4,7 @@ import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
 import org.jboss.logging.Logger;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
@@ -486,6 +487,14 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
     }
 
     @Override
+    public ClientModel findClient(String clientId) {
+        ClientModel model = getApplicationByName(clientId);
+        if (model != null) return model;
+        return getOAuthClient(clientId);
+    }
+
+
+    @Override
     public ApplicationModel getApplicationById(String id) {
         ApplicationEntity appData = getMongoStore().loadEntity(ApplicationEntity.class, id, invocationContext);
 
@@ -607,9 +616,9 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
     }
 
     @Override
-    public Set<RoleModel> getScopeMappings(UserModel user) {
+    public Set<RoleModel> getScopeMappings(ClientModel client) {
         Set<RoleModel> result = new HashSet<RoleModel>();
-        List<RoleEntity> roles = MongoModelUtils.getAllScopesOfUser(user, invocationContext);
+        List<RoleEntity> roles = MongoModelUtils.getAllScopesOfUser(client.getAgent(), invocationContext);
 
         for (RoleEntity role : roles) {
             if (getId().equals(role.getRealmId())) {
@@ -623,8 +632,8 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
     }
 
     @Override
-    public Set<RoleModel> getRealmScopeMappings(UserModel user) {
-        Set<RoleModel> allScopes = getScopeMappings(user);
+    public Set<RoleModel> getRealmScopeMappings(ClientModel client) {
+        Set<RoleModel> allScopes = getScopeMappings(client);
 
         // Filter to retrieve just realm roles TODO: Maybe improve to avoid filter programmatically... Maybe have separate fields for realmRoles and appRoles on user?
         Set<RoleModel> realmRoles = new HashSet<RoleModel>();
@@ -639,8 +648,8 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
     }
 
     @Override
-    public boolean hasScope(UserModel user, RoleModel role) {
-        Set<RoleModel> roles = getScopeMappings(user);
+    public boolean hasScope(ClientModel client, RoleModel role) {
+        Set<RoleModel> roles = getScopeMappings(client);
         if (roles.contains(role)) return true;
 
         for (RoleModel mapping : roles) {
@@ -651,14 +660,14 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
 
 
     @Override
-    public void addScopeMapping(UserModel agent, RoleModel role) {
-        UserEntity userEntity = ((UserAdapter)agent).getUser();
+    public void addScopeMapping(ClientModel client, RoleModel role) {
+        UserEntity userEntity = ((UserAdapter)client.getAgent()).getUser();
         getMongoStore().pushItemToList(userEntity, "scopeIds", role.getId(), true, invocationContext);
     }
 
     @Override
-    public void deleteScopeMapping(UserModel user, RoleModel role) {
-        UserEntity userEntity = ((UserAdapter)user).getUser();
+    public void deleteScopeMapping(ClientModel client, RoleModel role) {
+        UserEntity userEntity = ((UserAdapter)client.getAgent()).getUser();
         getMongoStore().pullItemFromList(userEntity, "scopeIds", role.getId(), invocationContext);
     }
 

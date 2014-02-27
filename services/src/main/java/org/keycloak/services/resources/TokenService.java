@@ -8,6 +8,7 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
@@ -137,7 +138,7 @@ public class TokenService {
             throw new NotAcceptableException("HTTPS required");
         }
 
-        UserModel client = authorizeClient(authorizationHeader);
+        ClientModel client = authorizeClient(authorizationHeader);
 
 
         String username = form.getFirst(AuthenticationManager.FORM_USERNAME);
@@ -176,7 +177,7 @@ public class TokenService {
             throw new NotAcceptableException("HTTPS required");
         }
 
-        UserModel client = authorizeClient(authorizationHeader);
+        ClientModel client = authorizeClient(authorizationHeader);
         String refreshToken = form.getFirst("refresh_token");
         AccessToken accessToken = null;
         try {
@@ -211,7 +212,7 @@ public class TokenService {
         if (!realm.isEnabled()) {
             return oauth.forwardToSecurityFailure("Realm not enabled.");
         }
-        UserModel client = realm.getUser(clientId);
+        ClientModel client = realm.findClient(clientId);
         if (client == null) {
             return oauth.forwardToSecurityFailure("Unknown login requester.");
         }
@@ -282,7 +283,7 @@ public class TokenService {
             logger.warn("Realm not enabled");
             return oauth.forwardToSecurityFailure("Realm not enabled");
         }
-        UserModel client = realm.getUser(clientId);
+        ClientModel client = realm.findClient(clientId);
         if (client == null) {
             logger.warn("Unknown login requester.");
             return oauth.forwardToSecurityFailure("Unknown login requester.");
@@ -355,7 +356,7 @@ public class TokenService {
             throw new NotAuthorizedException("Realm not enabled");
         }
 
-        UserModel client = authorizeClient(authorizationHeader);
+        ClientModel client = authorizeClient(authorizationHeader);
 
         String code = formData.getFirst("code");
         if (code == null) {
@@ -403,7 +404,7 @@ public class TokenService {
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res)
                     .build();
         }
-        if (!client.getLoginName().equals(accessCode.getClient().getLoginName())) {
+        if (!client.getAgent().getLoginName().equals(accessCode.getClient().getAgent().getLoginName())) {
             Map<String, String> res = new HashMap<String, String>();
             res.put("error", "invalid_grant");
             res.put("error_description", "Auth error");
@@ -419,7 +420,7 @@ public class TokenService {
         return Cors.add(request, Response.ok(res)).allowedOrigins(client).allowedMethods("POST").build();
     }
 
-    protected UserModel authorizeClient(String authorizationHeader) {
+    protected ClientModel authorizeClient(String authorizationHeader) {
         if (authorizationHeader == null) {
             throw new NotAuthorizedException("No Authorization header to authenticate client", "Basic realm=\"" + realm.getName() + "\"");
         }
@@ -431,7 +432,7 @@ public class TokenService {
 
         String client_id = usernameSecret[0];
         String clientSecret = usernameSecret[1];
-        UserModel client = realm.getUser(client_id);
+        ClientModel client = realm.findClient(client_id);
         if (client == null) {
             Map<String, String> error = new HashMap<String, String>();
             error.put("error", "invalid_client");
@@ -446,7 +447,7 @@ public class TokenService {
             throw new BadRequestException("Client is not enabled", Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build());
         }
 
-        if (!realm.validateSecret(client, clientSecret)) {
+        if (!realm.validateSecret(client.getAgent(), clientSecret)) {
             Map<String, String> error = new HashMap<String, String>();
             error.put("error", "unauthorized_client");
             throw new BadRequestException("Unauthorized Client", Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build());
@@ -470,7 +471,7 @@ public class TokenService {
             logger.warn("Realm not enabled");
             return oauth.forwardToSecurityFailure("Realm not enabled");
         }
-        UserModel client = realm.getUser(clientId);
+        ClientModel client = realm.findClient(clientId);
         if (client == null) {
             logger.warn("Unknown login requester: " + clientId);
             return oauth.forwardToSecurityFailure("Unknown login requester.");
@@ -488,8 +489,8 @@ public class TokenService {
         logger.info("Checking roles...");
         RoleModel resourceRole = realm.getRole(Constants.APPLICATION_ROLE);
         RoleModel identityRequestRole = realm.getRole(Constants.IDENTITY_REQUESTER_ROLE);
-        boolean isResource = realm.hasRole(client, resourceRole);
-        if (!isResource && !realm.hasRole(client, identityRequestRole)) {
+        boolean isResource = realm.hasRole(client.getAgent(), resourceRole);
+        if (!isResource && !realm.hasRole(client.getAgent(), identityRequestRole)) {
             logger.warn("Login requester not allowed to request login.");
             return oauth.forwardToSecurityFailure("Login requester not allowed to request login.");
         }
@@ -523,7 +524,7 @@ public class TokenService {
             logger.warn("Realm not enabled");
             return oauth.forwardToSecurityFailure("Realm not enabled");
         }
-        UserModel client = realm.getUser(clientId);
+        ClientModel client = realm.findClient(clientId);
         if (client == null) {
             logger.warn("Unknown login requester.");
             return oauth.forwardToSecurityFailure("Unknown login requester.");
@@ -615,7 +616,7 @@ public class TokenService {
         return location.build();
     }
 
-    public static String verifyRedirectUri(String redirectUri, UserModel client) {
+    public static String verifyRedirectUri(String redirectUri, ClientModel client) {
         if (redirectUri == null) {
             return client.getRedirectUris().size() == 1 ? client.getRedirectUris().iterator().next() : null;
         } else if (client.getRedirectUris().isEmpty()) {

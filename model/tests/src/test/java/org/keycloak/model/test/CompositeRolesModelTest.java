@@ -60,7 +60,7 @@ public class CompositeRolesModelTest extends AbstractModelTest {
         ApplicationModel application = realm.getApplicationByName(applicationName);
 
         Set<RoleModel> roleMappings = realm.getRoleMappings(user);
-        Set<RoleModel> scopeMappings = realm.getScopeMappings(application.getAgent());
+        Set<RoleModel> scopeMappings = realm.getScopeMappings(application);
         Set<RoleModel> appRoles = application.getRoles();
         if (appRoles != null) scopeMappings.addAll(appRoles);
 

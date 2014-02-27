@@ -72,12 +72,12 @@ public class OAuthClientManager {
         model.getAgent().setEnabled(rep.isEnabled());
         List<String> redirectUris = rep.getRedirectUris();
         if (redirectUris != null) {
-            model.getAgent().setRedirectUris(new HashSet<String>(redirectUris));
+            model.setRedirectUris(new HashSet<String>(redirectUris));
         }
 
         List<String> webOrigins = rep.getWebOrigins();
         if (webOrigins != null) {
-            model.getAgent().setWebOrigins(new HashSet<String>(webOrigins));
+            model.setWebOrigins(new HashSet<String>(webOrigins));
         }
 
         if (rep.getClaims() != null) {
@@ -90,12 +90,12 @@ public class OAuthClientManager {
         rep.setId(model.getId());
         rep.setName(model.getAgent().getLoginName());
         rep.setEnabled(model.getAgent().isEnabled());
-        Set<String> redirectUris = model.getAgent().getRedirectUris();
+        Set<String> redirectUris = model.getRedirectUris();
         if (redirectUris != null) {
             rep.setRedirectUris(new LinkedList<String>(redirectUris));
         }
 
-        Set<String> webOrigins = model.getAgent().getWebOrigins();
+        Set<String> webOrigins = model.getWebOrigins();
         if (webOrigins != null) {
             rep.setWebOrigins(new LinkedList<String>(webOrigins));
         }

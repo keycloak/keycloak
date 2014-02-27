@@ -82,8 +82,7 @@ public class AuthorizationCodeTest {
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
                 for (ApplicationModel app : appRealm.getApplications()) {
                     if (app.getName().equals("test-app")) {
-                        UserModel client = app.getAgent();
-                        client.addRedirectUri(oauth.getRedirectUri());
+                        app.addRedirectUri(oauth.getRedirectUri());
                     }
                 }
             }

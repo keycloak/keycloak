@@ -124,59 +124,6 @@ public class UserAdapter extends AbstractAdapter implements UserModel {
         return user;
     }
 
-    @Override
-    public Set<String> getWebOrigins() {
-        Set<String> result = new HashSet<String>();
-        if (user.getWebOrigins() != null) {
-            result.addAll(user.getWebOrigins());
-        }
-        return result;
-    }
-
-    @Override
-    public void setWebOrigins(Set<String> webOrigins) {
-        List<String> result = new ArrayList<String>();
-        result.addAll(webOrigins);
-        user.setWebOrigins(result);
-        updateUser();
-    }
-
-    @Override
-    public void addWebOrigin(String webOrigin) {
-        getMongoStore().pushItemToList(user, "webOrigins", webOrigin, true, invocationContext);
-    }
-
-    @Override
-    public void removeWebOrigin(String webOrigin) {
-        getMongoStore().pullItemFromList(user, "webOrigins", webOrigin, invocationContext);
-    }
-
-    @Override
-    public Set<String> getRedirectUris() {
-        Set<String> result = new HashSet<String>();
-        if (user.getRedirectUris() != null) {
-            result.addAll(user.getRedirectUris());
-        }
-        return result;
-    }
-
-    @Override
-    public void setRedirectUris(Set<String> redirectUris) {
-        List<String> result = new ArrayList<String>();
-        result.addAll(redirectUris);
-        user.setRedirectUris(result);
-        updateUser();
-    }
-
-    @Override
-    public void addRedirectUri(String redirectUri) {
-        getMongoStore().pushItemToList(user, "redirectUris", redirectUri, true, invocationContext);
-    }
-
-    @Override
-    public void removeRedirectUri(String redirectUri) {
-        getMongoStore().pullItemFromList(user, "redirectUris", redirectUri, invocationContext);
-    }
 
     @Override
     public Set<RequiredAction> getRequiredActions() {

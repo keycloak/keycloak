@@ -48,7 +48,7 @@ public class OAuthRedirectUriTest {
         @Override
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
             ApplicationModel app = appRealm.getApplicationNameMap().get("test-app");
-            app.getAgent().addRedirectUri("http://localhost:8081/app");
+            app.addRedirectUri("http://localhost:8081/app");
         }
     });
 
@@ -81,7 +81,7 @@ public class OAuthRedirectUriTest {
         keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                appRealm.getApplicationNameMap().get("test-app").getAgent().addRedirectUri("http://localhost:8081/app2");
+                appRealm.getApplicationNameMap().get("test-app").addRedirectUri("http://localhost:8081/app2");
             }
         });
 
@@ -95,7 +95,7 @@ public class OAuthRedirectUriTest {
             keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
                 @Override
                 public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                    appRealm.getApplicationNameMap().get("test-app").getAgent().removeRedirectUri("http://localhost:8081/app2");
+                    appRealm.getApplicationNameMap().get("test-app").removeRedirectUri("http://localhost:8081/app2");
                 }
             });
         }
@@ -106,7 +106,7 @@ public class OAuthRedirectUriTest {
         keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                appRealm.getApplicationNameMap().get("test-app").getAgent().removeRedirectUri("http://localhost:8081/app");
+                appRealm.getApplicationNameMap().get("test-app").removeRedirectUri("http://localhost:8081/app");
             }
         });
 
@@ -120,7 +120,7 @@ public class OAuthRedirectUriTest {
             keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
                 @Override
                 public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                    appRealm.getApplicationNameMap().get("test-app").getAgent().addRedirectUri("http://localhost:8081/app");
+                    appRealm.getApplicationNameMap().get("test-app").addRedirectUri("http://localhost:8081/app");
                 }
             });
         }
@@ -131,7 +131,7 @@ public class OAuthRedirectUriTest {
         keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                appRealm.getApplicationNameMap().get("test-app").getAgent().removeRedirectUri("http://localhost:8081/app");
+                appRealm.getApplicationNameMap().get("test-app").removeRedirectUri("http://localhost:8081/app");
             }
         });
 
@@ -144,7 +144,7 @@ public class OAuthRedirectUriTest {
             keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
                 @Override
                 public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                    appRealm.getApplicationNameMap().get("test-app").getAgent().addRedirectUri("http://localhost:8081/app");
+                    appRealm.getApplicationNameMap().get("test-app").addRedirectUri("http://localhost:8081/app");
                 }
             });
         }

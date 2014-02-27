@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
@@ -47,8 +48,6 @@ public class ImportTest extends AbstractModelTest {
 
         UserModel user = realm.getUser("loginclient");
         Assert.assertNotNull(user);
-        Set<RoleModel> scopes = realm.getRealmScopeMappings(user);
-        Assert.assertEquals(0, scopes.size());
         Assert.assertEquals(0, realm.getSocialLinks(user).size());
 
         List<ApplicationModel> resources = realm.getApplications();
@@ -103,7 +102,7 @@ public class ImportTest extends AbstractModelTest {
 
 
         // Test scope relationship
-        UserModel oauthClient = realm.getUser("oauthclient");
+        ClientModel oauthClient = realm.findClient("oauthclient");
         Assert.assertNotNull(oauthClient);
         Set<RoleModel> allScopes = realm.getScopeMappings(oauthClient);
         Assert.assertEquals(2, allScopes.size());

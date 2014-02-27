@@ -184,10 +184,10 @@ public class AdapterTest extends AbstractModelTest {
 
         RoleModel appRole = app.addRole("test");
         realmModel.grantRole(user, appRole);
-        realmModel.addScopeMapping(client.getAgent(), appRole);
+        realmModel.addScopeMapping(client, appRole);
 
         RoleModel realmRole = realmModel.addRole("test");
-        realmModel.addScopeMapping(app.getAgent(), realmRole);
+        realmModel.addScopeMapping(app, realmRole);
 
         Assert.assertTrue(realmModel.removeApplication(app.getId()));
         Assert.assertFalse(realmModel.removeApplication(app.getId()));
@@ -212,10 +212,10 @@ public class AdapterTest extends AbstractModelTest {
 
         RoleModel appRole = app.addRole("test");
         realmModel.grantRole(user, appRole);
-        realmModel.addScopeMapping(client.getAgent(), appRole);
+        realmModel.addScopeMapping(client, appRole);
 
         RoleModel realmRole = realmModel.addRole("test");
-        realmModel.addScopeMapping(app.getAgent(), realmRole);
+        realmModel.addScopeMapping(app, realmRole);
 
         Assert.assertTrue(identitySession.removeRealm(realmModel.getId()));
         Assert.assertFalse(identitySession.removeRealm(realmModel.getId()));
@@ -235,10 +235,10 @@ public class AdapterTest extends AbstractModelTest {
 
         RoleModel appRole = app.addRole("test");
         realmModel.grantRole(user, appRole);
-        realmModel.addScopeMapping(client.getAgent(), appRole);
+        realmModel.addScopeMapping(client, appRole);
 
         RoleModel realmRole = realmModel.addRole("test");
-        realmModel.addScopeMapping(app.getAgent(), realmRole);
+        realmModel.addScopeMapping(app, realmRole);
 
         Assert.assertTrue(realmModel.removeRoleById(realmRole.getId()));
         Assert.assertFalse(realmModel.removeRoleById(realmRole.getId()));

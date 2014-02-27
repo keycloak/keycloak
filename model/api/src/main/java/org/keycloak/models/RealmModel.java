@@ -107,6 +107,8 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
     
     void updateDefaultRoles(String[] defaultRoles);
 
+    ClientModel findClient(String clientId);
+
     Map<String, ApplicationModel> getApplicationNameMap();
 
     List<ApplicationModel> getApplications();
@@ -173,7 +175,7 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
 
     Set<RoleModel> getRealmRoleMappings(UserModel user);
 
-    Set<RoleModel> getRealmScopeMappings(UserModel user);
+    Set<RoleModel> getRealmScopeMappings(ClientModel client);
 
     String getLoginTheme();
 
@@ -193,5 +195,5 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
      */
     UserCredentialModel getSecret(UserModel user);
 
-    boolean hasScope(UserModel user, RoleModel role);
+    boolean hasScope(ClientModel client, RoleModel role);
 }

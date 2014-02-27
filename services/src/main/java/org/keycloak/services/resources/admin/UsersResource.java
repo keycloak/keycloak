@@ -3,6 +3,7 @@ package org.keycloak.services.resources.admin;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.logging.Logger;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -467,7 +468,7 @@ public class UsersResource {
         String state = null;
         String scope = null;
 
-        UserModel client = realm.getUser(clientId);
+        ClientModel client = realm.findClient(clientId);
         if (client == null || !client.isEnabled()) {
             return Flows.errors().error("Account management not enabled", Response.Status.INTERNAL_SERVER_ERROR);
         }

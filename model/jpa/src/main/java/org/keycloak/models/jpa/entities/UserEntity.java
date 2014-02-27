@@ -60,14 +60,6 @@ public class UserEntity {
     @CollectionTable
     protected Set<UserModel.RequiredAction> requiredActions = new HashSet<UserModel.RequiredAction>();
 
-    @ElementCollection
-    @CollectionTable
-    protected Set<String> webOrigins = new HashSet<String>();
-
-    @ElementCollection
-    @CollectionTable
-    protected Set<String> redirectUris = new HashSet<String>();
-
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true)
     protected Collection<CredentialEntity> credentials = new ArrayList<CredentialEntity>();
 
@@ -149,22 +141,6 @@ public class UserEntity {
 
     public void setRequiredActions(Set<UserModel.RequiredAction> requiredActions) {
         this.requiredActions = requiredActions;
-    }
-
-    public Set<String> getWebOrigins() {
-        return webOrigins;
-    }
-
-    public void setWebOrigins(Set<String> webOrigins) {
-        this.webOrigins = webOrigins;
-    }
-
-    public Set<String> getRedirectUris() {
-        return redirectUris;
-    }
-
-    public void setRedirectUris(Set<String> redirectUris) {
-        this.redirectUris = redirectUris;
     }
 
     public RealmEntity getRealm() {

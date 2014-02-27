@@ -30,8 +30,6 @@ public class UserEntity extends AbstractMongoIdentifiableEntity implements Mongo
     private List<String> scopeIds;
 
     private Map<String, String> attributes;
-    private List<String> webOrigins;
-    private List<String> redirectUris;
     private List<UserModel.RequiredAction> requiredActions;
     private List<CredentialEntity> credentials = new ArrayList<CredentialEntity>();
     private List<SocialLinkEntity> socialLinks;
@@ -133,24 +131,6 @@ public class UserEntity extends AbstractMongoIdentifiableEntity implements Mongo
 
     public void setAttributes(Map<String, String> attributes) {
         this.attributes = attributes;
-    }
-
-    @MongoField
-    public List<String> getWebOrigins() {
-        return webOrigins;
-    }
-
-    public void setWebOrigins(List<String> webOrigins) {
-        this.webOrigins = webOrigins;
-    }
-
-    @MongoField
-    public List<String> getRedirectUris() {
-        return redirectUris;
-    }
-
-    public void setRedirectUris(List<String> redirectUris) {
-        this.redirectUris = redirectUris;
     }
 
     @MongoField

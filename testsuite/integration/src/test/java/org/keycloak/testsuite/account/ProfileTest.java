@@ -12,6 +12,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
@@ -65,11 +66,11 @@ public class ProfileTest {
             appRealm.updateCredential(user2, creds);
 
             ApplicationModel app = appRealm.getApplicationNameMap().get("test-app");
-            appRealm.addScopeMapping(app.getAgent(), accountApp.getRole(AccountRoles.VIEW_PROFILE));
+            appRealm.addScopeMapping(app, accountApp.getRole(AccountRoles.VIEW_PROFILE));
 
-            app.getAgent().addWebOrigin("http://localtest.me:8081");
+            app.addWebOrigin("http://localtest.me:8081");
 
-            UserModel thirdParty = appRealm.getUser("third-party");
+            ClientModel thirdParty = appRealm.findClient("third-party");
             appRealm.addScopeMapping(thirdParty, accountApp.getRole(AccountRoles.VIEW_PROFILE));
         }
     });

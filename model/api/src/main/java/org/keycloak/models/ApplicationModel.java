@@ -14,10 +14,6 @@ public interface ApplicationModel extends RoleContainerModel, ClientModel {
 
     void setName(String name);
 
-    boolean isEnabled();
-
-    void setEnabled(boolean enabled);
-
     boolean isSurrogateAuthRequired();
 
     void setSurrogateAuthRequired(boolean surrogateAuthRequired);
@@ -38,7 +34,7 @@ public interface ApplicationModel extends RoleContainerModel, ClientModel {
 
     Set<RoleModel> getApplicationRoleMappings(UserModel user);
 
-    Set<RoleModel> getApplicationScopeMappings(UserModel user);
+    Set<RoleModel> getApplicationScopeMappings(ClientModel client);
 
     void addScope(RoleModel role);
 

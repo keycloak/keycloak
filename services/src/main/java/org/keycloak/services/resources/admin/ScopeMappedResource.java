@@ -2,6 +2,7 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -33,13 +34,13 @@ import java.util.Set;
 public class ScopeMappedResource {
     protected RealmModel realm;
     private RealmAuth auth;
-    protected UserModel agent;
+    protected ClientModel client;
     protected KeycloakSession session;
 
-    public ScopeMappedResource(RealmModel realm, RealmAuth auth, UserModel account, KeycloakSession session) {
+    public ScopeMappedResource(RealmModel realm, RealmAuth auth, ClientModel client, KeycloakSession session) {
         this.realm = realm;
         this.auth = auth;
-        this.agent = account;
+        this.client = client;
         this.session = session;
     }
 
@@ -50,7 +51,7 @@ public class ScopeMappedResource {
         auth.requireView();
 
         MappingsRepresentation all = new MappingsRepresentation();
-        Set<RoleModel> realmMappings = realm.getRealmScopeMappings(agent);
+        Set<RoleModel> realmMappings = realm.getRealmScopeMappings(client);
         RealmManager manager = new RealmManager(session);
         if (realmMappings.size() > 0) {
             List<RoleRepresentation> realmRep = new ArrayList<RoleRepresentation>();
@@ -64,7 +65,7 @@ public class ScopeMappedResource {
         if (applications.size() > 0) {
             Map<String, ApplicationMappingsRepresentation> appMappings = new HashMap<String, ApplicationMappingsRepresentation>();
             for (ApplicationModel app : applications) {
-                Set<RoleModel> roleMappings = app.getApplicationScopeMappings(agent);
+                Set<RoleModel> roleMappings = app.getApplicationScopeMappings(client);
                 if (roleMappings.size() > 0) {
                     ApplicationMappingsRepresentation mappings = new ApplicationMappingsRepresentation();
                     mappings.setApplicationId(app.getId());
@@ -89,7 +90,7 @@ public class ScopeMappedResource {
     public List<RoleRepresentation> getRealmScopeMappings() {
         auth.requireView();
 
-        Set<RoleModel> realmMappings = realm.getRealmScopeMappings(agent);
+        Set<RoleModel> realmMappings = realm.getRealmScopeMappings(client);
         List<RoleRepresentation> realmMappingsRep = new ArrayList<RoleRepresentation>();
         RealmManager manager = new RealmManager(session);
         for (RoleModel roleModel : realmMappings) {
@@ -109,7 +110,7 @@ public class ScopeMappedResource {
             if (roleModel == null) {
                 throw new NotFoundException();
             }
-            realm.addScopeMapping(agent, roleModel);
+            realm.addScopeMapping(client, roleModel);
         }
 
 
@@ -122,9 +123,9 @@ public class ScopeMappedResource {
         auth.requireManage();
 
         if (roles == null) {
-            Set<RoleModel> roleModels = realm.getRealmScopeMappings(agent);
+            Set<RoleModel> roleModels = realm.getRealmScopeMappings(client);
             for (RoleModel roleModel : roleModels) {
-                realm.deleteScopeMapping(agent, roleModel);
+                realm.deleteScopeMapping(client, roleModel);
             }
 
         } else {
@@ -133,7 +134,7 @@ public class ScopeMappedResource {
                 if (roleModel == null) {
                     throw new NotFoundException();
                 }
-                realm.deleteScopeMapping(agent, roleModel);
+                realm.deleteScopeMapping(client, roleModel);
             }
         }
     }
@@ -151,7 +152,7 @@ public class ScopeMappedResource {
             throw new NotFoundException();
         }
 
-        Set<RoleModel> mappings = app.getApplicationScopeMappings(agent);
+        Set<RoleModel> mappings = app.getApplicationScopeMappings(client);
         List<RoleRepresentation> mapRep = new ArrayList<RoleRepresentation>();
         for (RoleModel roleModel : mappings) {
             mapRep.add(ModelToRepresentation.toRepresentation(roleModel));
@@ -176,7 +177,7 @@ public class ScopeMappedResource {
             if (roleModel == null) {
                 throw new NotFoundException();
             }
-            realm.addScopeMapping(agent, roleModel);
+            realm.addScopeMapping(client, roleModel);
         }
 
     }
@@ -194,9 +195,9 @@ public class ScopeMappedResource {
         }
 
         if (roles == null) {
-            Set<RoleModel> roleModels = app.getApplicationScopeMappings(agent);
+            Set<RoleModel> roleModels = app.getApplicationScopeMappings(client);
             for (RoleModel roleModel : roleModels) {
-                realm.deleteScopeMapping(agent, roleModel);
+                realm.deleteScopeMapping(client, roleModel);
             }
 
         } else {
@@ -205,7 +206,7 @@ public class ScopeMappedResource {
                 if (roleModel == null) {
                     throw new NotFoundException();
                 }
-                realm.deleteScopeMapping(agent, roleModel);
+                realm.deleteScopeMapping(client, roleModel);
             }
         }
     }
