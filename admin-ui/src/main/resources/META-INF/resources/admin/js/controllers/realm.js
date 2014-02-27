@@ -8,10 +8,14 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location
         Auth.user = data;
         Auth.loggedIn = true;
 
-        function getAccess(realm, role) {
+        function getAccess(role) {
+            if (!Current.realm) {
+                return false;
+            }
+
             var realmAccess = Auth.user['realm_access'];
             if (realmAccess) {
-                realmAccess = realmAccess[realm];
+                realmAccess = realmAccess[Current.realm.realm];
                 if (realmAccess) {
                     return realmAccess.indexOf(role) >= 0;
                 }
@@ -23,35 +27,35 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location
             admin: data.admin,
 
             get viewRealm() {
-                return getAccess(Current.realm.realm, 'view-realm') || this.viewRealm;
+                return getAccess('view-realm') || this.manageRealm;
             },
 
             get viewApplications() {
-                return getAccess(Current.realm.realm, 'view-applications') || this.manageApplications;
+                return getAccess('view-applications') || this.manageApplications;
             },
 
             get viewClients() {
-                return getAccess(Current.realm.realm, 'view-clients') || this.manageClients;
+                return getAccess('view-clients') || this.manageClients;
             },
 
             get viewUsers() {
-                return getAccess(Current.realm.realm, 'view-users') || this.manageClients;
+                return getAccess('view-users') || this.manageClients;
             },
 
             get manageRealm() {
-                return getAccess(Current.realm.realm, 'manage-realm');
+                return getAccess('manage-realm');
             },
 
             get manageApplications() {
-                return getAccess(Current.realm.realm, 'manage-applications');
+                return getAccess('manage-applications');
             },
 
             get manageClients() {
-                return getAccess(Current.realm.realm, 'manage-clients');
+                return getAccess('manage-clients');
             },
 
             get manageUsers() {
-                return getAccess(Current.realm.realm, 'manage-users');
+                return getAccess('manage-users');
             }
         }
     })
@@ -147,9 +151,23 @@ module.controller('RealmCreateCtrl', function($scope, Current, Realm, $upload, $
                 //formDataAppender: function(formData, key, val){}
             }).progress(function(evt) {
                     console.log('percent: ' + parseInt(100.0 * evt.loaded / evt.total));
-                }).success(function(data, status, headers, config) {
-                    Notifications.success("The realm has been uploaded.");
-                    $location.url("/realms");
+                }).success(function(data, status, headers) {
+                    Realm.query(function(data) {
+                        Current.realms = data;
+
+                        $http.get('/auth/rest/admin/whoami').success(function(user) {
+                            Auth.user = user;
+
+                            Notifications.success("The realm has been uploaded.");
+
+                            var location = headers('Location');
+                            if (location) {
+                                $location.url("/realms/" + location.substring(location.lastIndexOf('/') + 1));
+                            } else {
+                                $location.url("/realms");
+                            }
+                        });
+                    });
                 })
             .error(function() {
                     Notifications.error("The realm can not be uploaded. Please verify the file.");
@@ -170,18 +188,12 @@ module.controller('RealmCreateCtrl', function($scope, Current, Realm, $upload, $
         var ssl = window.location.protocol == 'https:';
         realmCopy.sslNotRequired = !ssl;
         console.log('creating new realm **');
-        Realm.create(realmCopy, function(data, headers) {
-            var data = Realm.query(function() {
+        Realm.create(realmCopy, function() {
+            Realm.query(function(data) {
                 Current.realms = data;
-                for (var i = 0; i < Current.realms.length; i++) {
-                    if (Current.realms[i].realm == realmCopy.realm) {
-                        Current.realm = Current.realms[i];
-                    }
-                }
 
-                $http.get('/auth/rest/admin/whoami').success(function(data, status) {
-                    Auth.user = data;
-                    console.log("reloaded auth");
+                $http.get('/auth/rest/admin/whoami').success(function(user) {
+                    Auth.user = user;
 
                     $location.url("/realms/" + realmCopy.realm);
                     Notifications.success("The realm has been created.");
