@@ -254,8 +254,7 @@ public class AccountService {
                 logger.debug("realm not enabled");
                 throw new ForbiddenException();
             }
-            UserModel client = application.getAgent();
-            if (!client.isEnabled() || !application.isEnabled()) {
+            if (!application.isEnabled()) {
                 logger.debug("account management app not enabled");
                 throw new ForbiddenException();
             }
@@ -274,7 +273,7 @@ public class AccountService {
                 redirectUri = redirectUri.resolve("?referrer=" + referrer);
             }
 
-            NewCookie cookie = authManager.createCookie(realm, client, code, Urls.accountBase(uriInfo.getBaseUri()).build(realm.getName()));
+            NewCookie cookie = authManager.createCookie(realm, application, code, Urls.accountBase(uriInfo.getBaseUri()).build(realm.getName()));
             return Response.status(302).cookie(cookie).location(redirectUri).build();
         } finally {
             authManager.expireCookie(Urls.accountBase(uriInfo.getBaseUri()).build(realm.getName()));

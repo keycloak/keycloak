@@ -46,8 +46,6 @@ public class RealmEntity extends AbstractMongoIdentifiableEntity implements Mong
     private List<String> defaultRoles = new ArrayList<String>();
 
     private List<RequiredCredentialEntity> requiredCredentials = new ArrayList<RequiredCredentialEntity>();
-    private List<RequiredCredentialEntity> requiredApplicationCredentials = new ArrayList<RequiredCredentialEntity>();
-    private List<RequiredCredentialEntity> requiredOAuthClientCredentials = new ArrayList<RequiredCredentialEntity>();
 
     private Map<String, String> smtpConfig = new HashMap<String, String>();
     private Map<String, String> socialConfig = new HashMap<String, String>();
@@ -239,24 +237,6 @@ public class RealmEntity extends AbstractMongoIdentifiableEntity implements Mong
 
     public void setRequiredCredentials(List<RequiredCredentialEntity> requiredCredentials) {
         this.requiredCredentials = requiredCredentials;
-    }
-
-    @MongoField
-    public List<RequiredCredentialEntity> getRequiredApplicationCredentials() {
-        return requiredApplicationCredentials;
-    }
-
-    public void setRequiredApplicationCredentials(List<RequiredCredentialEntity> requiredApplicationCredentials) {
-        this.requiredApplicationCredentials = requiredApplicationCredentials;
-    }
-
-    @MongoField
-    public List<RequiredCredentialEntity> getRequiredOAuthClientCredentials() {
-        return requiredOAuthClientCredentials;
-    }
-
-    public void setRequiredOAuthClientCredentials(List<RequiredCredentialEntity> requiredOAuthClientCredentials) {
-        this.requiredOAuthClientCredentials = requiredOAuthClientCredentials;
     }
 
     @MongoField

@@ -36,7 +36,7 @@ public class AppAuthManager extends AuthenticationManager {
         this.tokenManager = tokenManager;
     }
 
-    public NewCookie createCookie(RealmModel realm, UserModel client, String code, URI uri) {
+    public NewCookie createCookie(RealmModel realm, ClientModel client, String code, URI uri) {
         JWSInput input = new JWSInput(code);
         boolean verifiedCode = false;
         try {
@@ -67,7 +67,7 @@ public class AppAuthManager extends AuthenticationManager {
             throw new BadRequestException();
 
         }
-        if (!client.getLoginName().equals(accessCode.getClient().getAgent().getLoginName())) {
+        if (!client.getClientId().equals(accessCode.getClient().getClientId())) {
             logger.debug("bad client");
             throw new BadRequestException();
         }

@@ -139,9 +139,6 @@ public class AdapterTest extends AbstractModelTest {
 
         OAuthClientModel oauth = new OAuthClientManager(realmModel).create("oauth-client");
         oauth = realmModel.getOAuthClient("oauth-client");
-        Assert.assertTrue(realmModel.hasRole(oauth.getAgent(), realmModel.getRole(Constants.IDENTITY_REQUESTER_ROLE)));
-
-
     }
 
     @Test
@@ -418,7 +415,7 @@ public class AdapterTest extends AbstractModelTest {
         realmModel.addRole("admin");
         realmModel.addRole("user");
         Set<RoleModel> roles = realmModel.getRoles();
-        Assert.assertEquals(5, roles.size());
+        Assert.assertEquals(3, roles.size());
         UserModel user = realmModel.addUser("bburke");
         RoleModel realmUserRole = realmModel.getRole("user");
         realmModel.grantRole(user, realmUserRole);

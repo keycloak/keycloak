@@ -61,6 +61,11 @@ public class ApplicationAdapter extends AbstractAdapter implements ApplicationMo
     }
 
     @Override
+    public String getClientId() {
+        return getName();
+    }
+
+    @Override
     public String getName() {
         return application.getName();
     }

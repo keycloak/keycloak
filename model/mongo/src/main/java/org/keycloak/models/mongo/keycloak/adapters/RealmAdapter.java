@@ -730,18 +730,6 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
         addRequiredCredential(credentialModel, realm.getRequiredCredentials());
     }
 
-    @Override
-    public void addRequiredResourceCredential(String type) {
-        RequiredCredentialModel credentialModel = initRequiredCredentialModel(type);
-        addRequiredCredential(credentialModel, realm.getRequiredApplicationCredentials());
-    }
-
-    @Override
-    public void addRequiredOAuthClientCredential(String type) {
-        RequiredCredentialModel credentialModel = initRequiredCredentialModel(type);
-        addRequiredCredential(credentialModel, realm.getRequiredOAuthClientCredentials());
-    }
-
     protected void addRequiredCredential(RequiredCredentialModel credentialModel, List<RequiredCredentialEntity> persistentCollection) {
         RequiredCredentialEntity credEntity = new RequiredCredentialEntity();
         credEntity.setType(credentialModel.getType());
@@ -757,16 +745,6 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
     @Override
     public void updateRequiredCredentials(Set<String> creds) {
         updateRequiredCredentials(creds, realm.getRequiredCredentials());
-    }
-
-    @Override
-    public void updateRequiredApplicationCredentials(Set<String> creds) {
-        updateRequiredCredentials(creds, realm.getRequiredApplicationCredentials());
-    }
-
-    @Override
-    public void updateRequiredOAuthClientCredentials(Set<String> creds) {
-        updateRequiredCredentials(creds, realm.getRequiredOAuthClientCredentials());
     }
 
     protected void updateRequiredCredentials(Set<String> creds, List<RequiredCredentialEntity> credsEntities) {
@@ -794,16 +772,6 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
     @Override
     public List<RequiredCredentialModel> getRequiredCredentials() {
         return convertRequiredCredentialEntities(realm.getRequiredCredentials());
-    }
-
-    @Override
-    public List<RequiredCredentialModel> getRequiredApplicationCredentials() {
-        return convertRequiredCredentialEntities(realm.getRequiredApplicationCredentials());
-    }
-
-    @Override
-    public List<RequiredCredentialModel> getRequiredOAuthClientCredentials() {
-        return convertRequiredCredentialEntities(realm.getRequiredOAuthClientCredentials());
     }
 
     protected List<RequiredCredentialModel> convertRequiredCredentialEntities(Collection<RequiredCredentialEntity> credEntities) {

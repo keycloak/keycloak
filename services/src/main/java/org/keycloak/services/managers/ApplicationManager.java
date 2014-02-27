@@ -46,11 +46,10 @@ public class ApplicationManager {
      * Does not create scope or role mappings!
      *
      * @param realm
-     * @param loginRole
      * @param resourceRep
      * @return
      */
-    public ApplicationModel createApplication(RealmModel realm, RoleModel loginRole, ApplicationRepresentation resourceRep) {
+    public ApplicationModel createApplication(RealmModel realm, ApplicationRepresentation resourceRep) {
         logger.debug("************ CREATE APPLICATION: {0}" + resourceRep.getName());
         ApplicationModel applicationModel = realm.addApplication(resourceRep.getName());
         applicationModel.setEnabled(resourceRep.isEnabled());
@@ -59,7 +58,6 @@ public class ApplicationManager {
         applicationModel.setBaseUrl(resourceRep.getBaseUrl());
         applicationModel.updateApplication();
 
-        UserModel resourceUser = applicationModel.getAgent();
         applicationModel.setSecret(resourceRep.getSecret());
         if (applicationModel.getSecret() == null) {
             generateSecret(applicationModel);
@@ -73,13 +71,10 @@ public class ApplicationManager {
         }
         if (resourceRep.getWebOrigins() != null) {
             for (String webOrigin : resourceRep.getWebOrigins()) {
-                logger.debug("Application: {0} webOrigin: {1}", resourceUser.getLoginName(), webOrigin);
+                logger.debug("Application: {0} webOrigin: {1}", resourceRep.getName(), webOrigin);
                 applicationModel.addWebOrigin(webOrigin);
             }
         }
-
-        realm.grantRole(resourceUser, loginRole);
-
 
         if (resourceRep.getDefaultRoles() != null) {
             applicationModel.updateDefaultRoles(resourceRep.getDefaultRoles());
@@ -123,15 +118,8 @@ public class ApplicationManager {
         }
     }
 
-    public ApplicationModel createApplication(RealmModel realm, ApplicationRepresentation resourceRep) {
-        RoleModel loginRole = realm.getRole(Constants.APPLICATION_ROLE);
-        return createApplication(realm, loginRole, resourceRep);
-    }
-
     public ApplicationModel createApplication(RealmModel realm, String name) {
-        RoleModel loginRole = realm.getRole(Constants.APPLICATION_ROLE);
         ApplicationModel app = realm.addApplication(name);
-        realm.grantRole(app.getAgent(), loginRole);
         generateSecret(app);
 
         return app;

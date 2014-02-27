@@ -199,7 +199,7 @@ public class UsersResource {
     }
 
     private boolean isUser(UserModel user) {
-        return !realm.hasRole(user, realm.getRole(Constants.IDENTITY_REQUESTER_ROLE)) && !realm.hasRole(user, realm.getRole(Constants.APPLICATION_ROLE));
+        return true;
     }
 
     @Path("{username}/role-mappings")

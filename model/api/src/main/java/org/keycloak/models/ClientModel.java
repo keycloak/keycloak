@@ -7,7 +7,19 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public interface ClientModel {
+    /**
+     * Internal database key
+     *
+     * @return
+     */
     String getId();
+
+    /**
+     * String exposed to outside world
+     *
+     * @return
+     */
+    String getClientId();
 
     UserModel getAgent();
 

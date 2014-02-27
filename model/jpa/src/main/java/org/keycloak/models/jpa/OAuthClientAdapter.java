@@ -28,6 +28,11 @@ public class OAuthClientAdapter implements OAuthClientModel {
     }
 
     @Override
+    public String getClientId() {
+        return getAgent().getLoginName();
+    }
+
+    @Override
     public boolean isEnabled() {
         return getAgent().isEnabled();
     }

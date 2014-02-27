@@ -36,6 +36,11 @@ public class OAuthClientAdapter extends AbstractAdapter implements OAuthClientMo
     }
 
     @Override
+    public String getClientId() {
+        return getAgent().getLoginName();
+    }
+
+    @Override
     public long getAllowedClaimsMask() {
         return delegate.getAllowedClaimsMask();
     }

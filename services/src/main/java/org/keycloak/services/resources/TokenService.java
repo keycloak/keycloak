@@ -8,6 +8,7 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
+import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -404,7 +405,7 @@ public class TokenService {
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res)
                     .build();
         }
-        if (!client.getAgent().getLoginName().equals(accessCode.getClient().getAgent().getLoginName())) {
+        if (!client.getClientId().equals(accessCode.getClient().getClientId())) {
             Map<String, String> res = new HashMap<String, String>();
             res.put("error", "invalid_grant");
             res.put("error_description", "Auth error");
@@ -486,14 +487,6 @@ public class TokenService {
             return oauth.forwardToSecurityFailure("Invalid redirect_uri.");
         }
 
-        logger.info("Checking roles...");
-        RoleModel resourceRole = realm.getRole(Constants.APPLICATION_ROLE);
-        RoleModel identityRequestRole = realm.getRole(Constants.IDENTITY_REQUESTER_ROLE);
-        boolean isResource = realm.hasRole(client.getAgent(), resourceRole);
-        if (!isResource && !realm.hasRole(client.getAgent(), identityRequestRole)) {
-            logger.warn("Login requester not allowed to request login.");
-            return oauth.forwardToSecurityFailure("Login requester not allowed to request login.");
-        }
         logger.info("Checking cookie...");
         UserModel user = authManager.authenticateIdentityCookie(realm, uriInfo, headers);
         if (user != null) {

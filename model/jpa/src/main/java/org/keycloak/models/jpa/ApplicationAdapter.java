@@ -49,6 +49,11 @@ public class ApplicationAdapter implements ApplicationModel {
     }
 
     @Override
+    public String getClientId() {
+        return getName();
+    }
+
+    @Override
     public String getName() {
         return entity.getName();
     }

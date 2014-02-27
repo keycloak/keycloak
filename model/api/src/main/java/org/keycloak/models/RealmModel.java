@@ -117,23 +117,10 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
 
     boolean removeApplication(String id);
 
-    List<RequiredCredentialModel> getRequiredApplicationCredentials();
-
-
-    List<RequiredCredentialModel> getRequiredOAuthClientCredentials();
-
     ApplicationModel getApplicationById(String id);
     ApplicationModel getApplicationByName(String name);
 
-    void addRequiredOAuthClientCredential(String type);
-
-    void addRequiredResourceCredential(String type);
-
     void updateRequiredCredentials(Set<String> creds);
-
-    void updateRequiredOAuthClientCredentials(Set<String> creds);
-
-    void updateRequiredApplicationCredentials(Set<String> creds);
 
     UserModel getUserBySocialLink(SocialLinkModel socialLink);
 

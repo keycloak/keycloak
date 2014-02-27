@@ -60,7 +60,7 @@ public class AuthenticationManager {
     protected NewCookie createLoginCookie(RealmModel realm, UserModel user, ClientModel client, String cookieName, String cookiePath, boolean rememberMe) {
         AccessToken identityToken = createIdentityToken(realm, user);
         if (client != null) {
-            identityToken.issuedFor(client.getAgent().getLoginName());
+            identityToken.issuedFor(client.getClientId());
         }
         String encoded = encodeToken(realm, identityToken);
         boolean secureOnly = !realm.isSslNotRequired();
@@ -174,18 +174,7 @@ public class AuthenticationManager {
 
         Set<String> types = new HashSet<String>();
 
-        List<RequiredCredentialModel> requiredCredentials = null;
-        RoleModel applicationRole = realm.getRole(Constants.APPLICATION_ROLE);
-        RoleModel identityRequesterRole = realm.getRole(Constants.IDENTITY_REQUESTER_ROLE);
-        if (realm.hasRole(user, applicationRole)) {
-            requiredCredentials = realm.getRequiredApplicationCredentials();
-        } else if (realm.hasRole(user, identityRequesterRole)) {
-            requiredCredentials = realm.getRequiredOAuthClientCredentials();
-        } else {
-            requiredCredentials = realm.getRequiredCredentials();
-        }
-
-        for (RequiredCredentialModel credential : requiredCredentials) {
+        for (RequiredCredentialModel credential : realm.getRequiredCredentials()) {
             types.add(credential.getType());
         }
 

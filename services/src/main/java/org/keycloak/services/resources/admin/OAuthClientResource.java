@@ -112,7 +112,7 @@ public class OAuthClientResource  {
 
         logger.debug("regenerateSecret");
         UserCredentialModel cred = UserCredentialModel.generateSecret();
-        realm.updateCredential(oauthClient.getAgent(), cred);
+        oauthClient.setSecret(cred.getValue());
         CredentialRepresentation rep = ModelToRepresentation.toRepresentation(cred);
         return rep;
     }

@@ -325,8 +325,7 @@ public class AdminService {
                 return redirectOnLoginError("realm not enabled");
             }
             ApplicationModel adminConsole = adminRealm.getApplicationNameMap().get(Constants.ADMIN_CONSOLE_APPLICATION);
-            UserModel adminConsoleUser = adminConsole.getAgent();
-            if (!adminConsole.isEnabled() || !adminConsoleUser.isEnabled()) {
+            if (!adminConsole.isEnabled()) {
                 logger.debug("admin app not enabled");
                 return redirectOnLoginError("admin app not enabled");
             }
@@ -342,7 +341,7 @@ public class AdminService {
             new JaxrsOAuthClient().checkStateCookie(uriInfo, headers);
 
             logger.debug("loginRedirect SUCCESS");
-            NewCookie cookie = authManager.createCookie(adminRealm, adminConsoleUser, code, AdminService.saasCookiePath(uriInfo).build());
+            NewCookie cookie = authManager.createCookie(adminRealm, adminConsole, code, AdminService.saasCookiePath(uriInfo).build());
 
             URI redirectUri = contextRoot(uriInfo).path(adminPath).build();
             if (path != null) {

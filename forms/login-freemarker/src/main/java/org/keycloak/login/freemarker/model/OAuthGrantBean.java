@@ -61,7 +61,7 @@ public class OAuthGrantBean {
     }
 
     public String getClient() {
-        return client.getAgent().getLoginName();
+        return client.getClientId();
     }
 
 }
