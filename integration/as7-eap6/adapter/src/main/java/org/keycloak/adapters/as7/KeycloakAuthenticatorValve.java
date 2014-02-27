@@ -262,7 +262,7 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
             Session session = request.getSessionInternal(true);
             session.setPrincipal(principal);
             session.setAuthType("OAUTH");
-            KeycloakAuthenticatedSession skSession = new RefreshableKeycloakSession(oauth.getTokenString(), oauth.getToken(), resourceMetadata, realmConfiguration, oauth.getRefreshToken());
+            KeycloakAuthenticatedSession skSession = new RefreshableKeycloakSession(oauth.getTokenString(), oauth.getToken(), oauth.getIdTokenString(), oauth.getIdToken(), resourceMetadata, realmConfiguration, oauth.getRefreshToken());
             session.setNote(KeycloakAuthenticatedSession.class.getName(), skSession);
 
             String username = token.getSubject();

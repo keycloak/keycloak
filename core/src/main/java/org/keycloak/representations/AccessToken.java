@@ -12,7 +12,7 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class AccessToken extends JsonWebToken {
+public class AccessToken extends IDToken {
     public static class Access {
         @JsonProperty("roles")
         protected Set<String> roles;

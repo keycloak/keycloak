@@ -25,8 +25,19 @@ public class OAuthClientAdapter implements OAuthClientModel {
     }
 
     @Override
-    public UserModel getOAuthAgent() {
+    public UserModel getAgent() {
         return new UserAdapter(entity.getAgent());
     }
+    @Override
+    public long getAllowedClaimsMask() {
+        return entity.getAllowedClaimsMask();
+    }
+
+    @Override
+    public void setAllowedClaimsMask(long mask) {
+        entity.setAllowedClaimsMask(mask);
+    }
+
+
 
 }

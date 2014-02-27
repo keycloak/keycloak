@@ -30,6 +30,7 @@ public class ApplicationEntity {
     private boolean surrogateAuthRequired;
     private String baseUrl;
     private String managementUrl;
+    private long allowedClaimsMask;
 
     @OneToOne(fetch = FetchType.EAGER)
     private UserEntity applicationUser;
@@ -118,5 +119,13 @@ public class ApplicationEntity {
 
     public void setRealm(RealmEntity realm) {
         this.realm = realm;
+    }
+
+    public long getAllowedClaimsMask() {
+        return allowedClaimsMask;
+    }
+
+    public void setAllowedClaimsMask(long allowedClaimsMask) {
+        this.allowedClaimsMask = allowedClaimsMask;
     }
 }

@@ -28,6 +28,7 @@ public class OAuthClientEntity {
     private String id;
 
     private String name;
+    private long allowedClaimsMask;
 
     @OneToOne(fetch = FetchType.EAGER)
     private UserEntity agent;
@@ -62,4 +63,13 @@ public class OAuthClientEntity {
     public void setRealm(RealmEntity realm) {
         this.realm = realm;
     }
+
+    public long getAllowedClaimsMask() {
+        return allowedClaimsMask;
+    }
+
+    public void setAllowedClaimsMask(long allowedClaimsMask) {
+        this.allowedClaimsMask = allowedClaimsMask;
+    }
+
 }

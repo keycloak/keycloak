@@ -450,6 +450,16 @@ module.factory('ApplicationRole', function($resource) {
         }
     });
 });
+module.factory('ApplicationClaims', function($resource) {
+    return $resource('/auth/rest/admin/realms/:realm/applications/:application/claims', {
+        realm : '@realm',
+        application : "@application"
+    },  {
+        update : {
+            method : 'PUT'
+        }
+    });
+});
 
 
 module.factory('Application', function($resource) {
@@ -515,6 +525,18 @@ module.factory('OAuthClient', function($resource) {
         }
     });
 });
+
+module.factory('OAuthClientClaims', function($resource) {
+    return $resource('/auth/rest/admin/realms/:realm/oauth-clients/:oauth/claims', {
+        realm : '@realm',
+        oauth : "@oauth"
+    },  {
+        update : {
+            method : 'PUT'
+        }
+    });
+});
+
 
 module.factory('OAuthClientCredentials', function($resource) {
     return $resource('/auth/rest/admin/realms/:realm/oauth-clients/:oauth/client-secret', {

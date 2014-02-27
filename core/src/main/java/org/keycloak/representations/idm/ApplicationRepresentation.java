@@ -18,6 +18,7 @@ public class ApplicationRepresentation {
     protected String[] defaultRoles;
     protected List<String> redirectUris;
     protected List<String> webOrigins;
+    protected ClaimRepresentation claims;
 
     public String getId() {
         return id;
@@ -106,5 +107,13 @@ public class ApplicationRepresentation {
 
     public void setDefaultRoles(String[] defaultRoles) {
         this.defaultRoles = defaultRoles;
+    }
+
+    public ClaimRepresentation getClaims() {
+        return claims;
+    }
+
+    public void setClaims(ClaimRepresentation claims) {
+        this.claims = claims;
     }
 }

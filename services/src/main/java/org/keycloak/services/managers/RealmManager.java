@@ -255,7 +255,7 @@ public class RealmManager {
         if (rep.getApplications() != null) {
             Map<String, ApplicationModel> appMap = createApplications(rep, newRealm);
             for (ApplicationModel app : appMap.values()) {
-                userMap.put(app.getApplicationUser().getLoginName(), app.getApplicationUser());
+                userMap.put(app.getAgent().getLoginName(), app.getAgent());
             }
         }
 
@@ -308,7 +308,7 @@ public class RealmManager {
         if (rep.getOauthClients() != null) {
             Map<String, OAuthClientModel> oauthMap = createOAuthClients(rep, newRealm);
             for (OAuthClientModel app : oauthMap.values()) {
-                userMap.put(app.getOAuthAgent().getLoginName(), app.getOAuthAgent());
+                userMap.put(app.getAgent().getLoginName(), app.getAgent());
             }
 
         }
@@ -501,7 +501,7 @@ public class RealmManager {
         OAuthClientManager manager = new OAuthClientManager(realm);
         for (OAuthClientRepresentation rep : realmRep.getOauthClients()) {
             OAuthClientModel app = manager.create(rep);
-            appMap.put(app.getOAuthAgent().getLoginName(), app);
+            appMap.put(app.getAgent().getLoginName(), app);
         }
         return appMap;
     }

@@ -12,8 +12,10 @@ import org.keycloak.RSATokenVerifier;
 import org.keycloak.adapters.config.RealmConfiguration;
 import org.keycloak.VerificationException;
 import org.keycloak.adapters.TokenGrantRequest;
+import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.IDToken;
 import org.keycloak.util.KeycloakUriBuilder;
 
 import java.io.IOException;
@@ -31,6 +33,8 @@ public class OAuthAuthenticator {
     protected RealmConfiguration realmInfo;
     protected int sslRedirectPort;
     protected String tokenString;
+    protected String idTokenString;
+    protected IDToken idToken;
     protected AccessToken token;
     protected HttpServerExchange exchange;
     protected KeycloakChallenge challenge;
@@ -56,6 +60,22 @@ public class OAuthAuthenticator {
 
     public String getRefreshToken() {
         return refreshToken;
+    }
+
+    public String getIdTokenString() {
+        return idTokenString;
+    }
+
+    public void setIdTokenString(String idTokenString) {
+        this.idTokenString = idTokenString;
+    }
+
+    public IDToken getIdToken() {
+        return idToken;
+    }
+
+    public void setIdToken(IDToken idToken) {
+        this.idToken = idToken;
     }
 
     protected String getRequestUrl() {
@@ -255,8 +275,17 @@ public class OAuthAuthenticator {
 
         tokenString = tokenResponse.getToken();
         refreshToken = tokenResponse.getRefreshToken();
+        idTokenString = tokenResponse.getIdToken();
         try {
             token = RSATokenVerifier.verifyToken(tokenString, realmInfo.getMetadata().getRealmKey(), realmInfo.getMetadata().getRealm());
+            if (idTokenString != null) {
+                JWSInput input = new JWSInput(idTokenString);
+                try {
+                    idToken = input.readJsonContent(IDToken.class);
+                } catch (IOException e) {
+                    throw new VerificationException();
+                }
+            }
             log.debug("Token Verification succeeded!");
         } catch (VerificationException e) {
             log.error("failed verification of token");

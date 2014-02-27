@@ -14,6 +14,7 @@ public class OAuthClientRepresentation {
     protected List<String> webOrigins;
     protected boolean enabled;
     protected List<CredentialRepresentation> credentials;
+    protected ClaimRepresentation claims;
 
     public String getId() {
         return id;
@@ -69,5 +70,13 @@ public class OAuthClientRepresentation {
 
     public void setCredentials(List<CredentialRepresentation> credentials) {
         this.credentials = credentials;
+    }
+
+    public ClaimRepresentation getClaims() {
+        return claims;
+    }
+
+    public void setClaims(ClaimRepresentation claims) {
+        this.claims = claims;
     }
 }

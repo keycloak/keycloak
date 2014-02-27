@@ -44,6 +44,41 @@ module.controller('ApplicationSessionsCtrl', function($scope, $location, realm, 
     $scope.application = application;
 });
 
+module.controller('ApplicationClaimsCtrl', function($scope, realm, application, claims,
+                                                        ApplicationClaims,
+                                                        $http, $location, Dialog, Notifications) {
+    $scope.realm = realm;
+    $scope.application = application;
+    $scope.claims = angular.copy(claims);
+
+    $scope.changed = false;
+
+    $scope.$watch('claims', function () {
+        if (!angular.equals($scope.claims, claims)) {
+            $scope.changed = true;
+        }
+    }, true);
+
+
+    $scope.save = function () {
+        ApplicationClaims.update({
+            realm: realm.realm,
+            application: application.name
+        }, $scope.claims, function () {
+            $scope.changed = false;
+            claims = angular.copy($scope.claims);
+
+            Notifications.success("Your claim changes have been saved.");
+        });
+    };
+
+    $scope.reset = function () {
+        $location.url("/realms/" + realm.realm + "/applications/" + application.name + "/claims");
+    };
+
+});
+
+
 module.controller('ApplicationRoleDetailCtrl', function($scope, realm, application, role, roles, applications,
                                                         Role, ApplicationRole, RoleById, RoleRealmComposites, RoleApplicationComposites,
                                                         $http, $location, Dialog, Notifications) {

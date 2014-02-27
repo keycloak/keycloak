@@ -25,6 +25,7 @@ public class ApplicationEntity extends AbstractMongoIdentifiableEntity implement
 
     private String resourceUserId;
     private String realmId;
+    private long allowedClaimsMask;
 
     // We are using names of defaultRoles (not ids)
     private List<String> defaultRoles = new ArrayList<String>();
@@ -81,6 +82,15 @@ public class ApplicationEntity extends AbstractMongoIdentifiableEntity implement
 
     public void setResourceUserId(String resourceUserId) {
         this.resourceUserId = resourceUserId;
+    }
+
+    @MongoField
+    public long getAllowedClaimsMask() {
+        return allowedClaimsMask;
+    }
+
+    public void setAllowedClaimsMask(long allowedClaimsMask) {
+        this.allowedClaimsMask = allowedClaimsMask;
     }
 
     @MongoField

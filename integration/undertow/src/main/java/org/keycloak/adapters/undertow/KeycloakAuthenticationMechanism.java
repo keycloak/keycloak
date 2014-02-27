@@ -94,7 +94,7 @@ public class KeycloakAuthenticationMechanism implements AuthenticationMechanism 
 
     protected void completeAuthentication(HttpServerExchange exchange, SecurityContext securityContext, OAuthAuthenticator oauth) {
         final KeycloakPrincipal principal = new KeycloakPrincipal(oauth.getToken().getSubject(), null);
-        RefreshableKeycloakSession session = new RefreshableKeycloakSession(oauth.getTokenString(), oauth.getToken(), resourceMetadata, realmConfig, oauth.getRefreshToken());
+        RefreshableKeycloakSession session = new RefreshableKeycloakSession(oauth.getTokenString(), oauth.getToken(), oauth.getIdTokenString(), oauth.getIdToken(), resourceMetadata, realmConfig, oauth.getRefreshToken());
         KeycloakUndertowAccount account = new KeycloakUndertowAccount(principal, session, adapterConfig, resourceMetadata);
         securityContext.authenticationComplete(account, "KEYCLOAK", true);
         login(exchange, account);
@@ -107,7 +107,7 @@ public class KeycloakAuthenticationMechanism implements AuthenticationMechanism 
 
     protected void completeAuthentication(SecurityContext securityContext, BearerTokenAuthenticator bearer) {
         final KeycloakPrincipal principal = new KeycloakPrincipal(bearer.getToken().getSubject(), bearer.getSurrogate());
-        RefreshableKeycloakSession session = new RefreshableKeycloakSession(bearer.getTokenString(), bearer.getToken(), resourceMetadata, realmConfig, null);
+        RefreshableKeycloakSession session = new RefreshableKeycloakSession(bearer.getTokenString(), bearer.getToken(), null, null, resourceMetadata, realmConfig, null);
         KeycloakUndertowAccount account = new KeycloakUndertowAccount(principal, session, adapterConfig, resourceMetadata);
         securityContext.authenticationComplete(account, "KEYCLOAK", false);
     }

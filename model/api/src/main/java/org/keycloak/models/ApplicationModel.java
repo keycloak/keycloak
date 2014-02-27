@@ -7,12 +7,8 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface ApplicationModel extends RoleContainerModel {
+public interface ApplicationModel extends RoleContainerModel, ClientModel {
     void updateApplication();
-
-    UserModel getApplicationUser();
-
-    String getId();
 
     String getName();
 
@@ -45,4 +41,5 @@ public interface ApplicationModel extends RoleContainerModel {
     Set<RoleModel> getApplicationScopeMappings(UserModel user);
 
     void addScope(RoleModel role);
+
 }

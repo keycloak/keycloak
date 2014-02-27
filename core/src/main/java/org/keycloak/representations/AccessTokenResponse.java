@@ -21,6 +21,9 @@ public class AccessTokenResponse {
     @JsonProperty("token_type")
     protected String tokenType;
 
+    @JsonProperty("id_token")
+    protected String idToken;
+
     public String getToken() {
         return token;
     }
@@ -51,5 +54,13 @@ public class AccessTokenResponse {
 
     public void setTokenType(String tokenType) {
         this.tokenType = tokenType;
+    }
+
+    public String getIdToken() {
+        return idToken;
+    }
+
+    public void setIdToken(String idToken) {
+        this.idToken = idToken;
     }
 }

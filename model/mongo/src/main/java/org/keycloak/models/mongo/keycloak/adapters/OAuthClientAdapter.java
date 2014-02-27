@@ -31,7 +31,17 @@ public class OAuthClientAdapter extends AbstractAdapter implements OAuthClientMo
     }
 
     @Override
-    public UserModel getOAuthAgent() {
+    public long getAllowedClaimsMask() {
+        return delegate.getAllowedClaimsMask();
+    }
+
+    @Override
+    public void setAllowedClaimsMask(long mask) {
+        delegate.setAllowedClaimsMask(mask);
+    }
+
+    @Override
+    public UserModel getAgent() {
         // This is not thread-safe. Assumption is that OAuthClientAdapter instance is per-client object
         if (oauthAgent == null) {
             UserEntity user = getMongoStore().loadEntity(UserEntity.class, delegate.getOauthAgentId(), invocationContext);

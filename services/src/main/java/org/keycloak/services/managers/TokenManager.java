@@ -6,6 +6,8 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClaimMask;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
@@ -13,6 +15,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessScope;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.util.Base64Url;
 import org.keycloak.util.JsonSerialization;
@@ -21,7 +24,6 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.security.PrivateKey;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -178,7 +180,9 @@ public class TokenManager {
 
             }
         }
-        AccessToken accessToken = initToken(realm, client, user);
+        ClientModel claimRequesterModel = getClaimRequester(realm, client);
+
+        AccessToken accessToken = initToken(realm, claimRequesterModel, client, user);
         accessToken.setRealmAccess(refreshToken.getRealmAccess());
         accessToken.setResourceAccess(refreshToken.getResourceAccess());
         return accessToken;
@@ -186,6 +190,12 @@ public class TokenManager {
 
     public AccessToken createClientAccessToken(String scopeParam, RealmModel realm, UserModel client, UserModel user) {
         return createClientAccessToken(scopeParam, realm, client, user, new LinkedList<RoleModel>(), new MultivaluedHashMap<String, RoleModel>());
+    }
+
+    protected ClientModel getClaimRequester(RealmModel realm, UserModel client) {
+        ClientModel model = realm.getApplicationByName(client.getLoginName());
+        if (model != null) return model;
+        return realm.getOAuthClient(client.getLoginName());
     }
 
 
@@ -196,6 +206,7 @@ public class TokenManager {
 
         Set<RoleModel> roleMappings = realm.getRoleMappings(user);
         Set<RoleModel> scopeMappings = realm.getScopeMappings(client);
+        ClientModel claimRequesterModel = getClaimRequester(realm, client);
         ApplicationModel clientApp = realm.getApplicationByName(client.getLoginName());
         Set<RoleModel> clientAppRoles = clientApp == null ? null : clientApp.getRoles();
         if (clientAppRoles != null) scopeMappings.addAll(clientAppRoles);
@@ -222,7 +233,7 @@ public class TokenManager {
             }
         }
 
-        AccessToken token = initToken(realm, client, user);
+        AccessToken token = initToken(realm, claimRequesterModel, client, user);
 
         if (realmRolesRequested.size() > 0) {
             for (RoleModel role : realmRolesRequested) {
@@ -240,7 +251,42 @@ public class TokenManager {
         return token;
     }
 
-    protected AccessToken initToken(RealmModel realm, UserModel client, UserModel user) {
+    public void initClaims(IDToken token, ClientModel model, UserModel user) {
+        if (ClaimMask.hasUsername(model.getAllowedClaimsMask())) {
+            token.setPreferredUsername(user.getLoginName());
+        }
+        if (ClaimMask.hasEmail(model.getAllowedClaimsMask())) {
+            token.setEmail(user.getEmail());
+            token.setEmailVerified(user.isEmailVerified());
+        }
+        if (ClaimMask.hasName(model.getAllowedClaimsMask())) {
+            token.setFamilyName(user.getLastName());
+            token.setGivenName(user.getFirstName());
+            StringBuilder fullName = new StringBuilder();
+            if (user.getFirstName() != null) fullName.append(user.getFirstName()).append(" ");
+            if (user.getLastName() != null) fullName.append(user.getLastName());
+            token.setName(fullName.toString());
+        }
+    }
+
+    protected IDToken initIDToken(RealmModel realm, ClientModel claimer, UserModel client, UserModel user) {
+        IDToken token = new IDToken();
+        token.id(KeycloakModelUtils.generateId());
+        token.subject(user.getId());
+        token.audience(realm.getName());
+        token.issuedNow();
+        token.issuedFor(client.getLoginName());
+        token.issuer(realm.getName());
+        if (realm.getAccessTokenLifespan() > 0) {
+            token.expiration((System.currentTimeMillis() / 1000) + realm.getAccessTokenLifespan());
+        }
+        initClaims(token, claimer, user);
+        return token;
+    }
+
+
+
+    protected AccessToken initToken(RealmModel realm, ClientModel claimer, UserModel client, UserModel user) {
         AccessToken token = new AccessToken();
         token.id(KeycloakModelUtils.generateId());
         token.subject(user.getId());
@@ -250,12 +296,12 @@ public class TokenManager {
         token.issuer(realm.getName());
         if (realm.getAccessTokenLifespan() > 0) {
             token.expiration((System.currentTimeMillis() / 1000) + realm.getAccessTokenLifespan());
-            logger.info("Access Token expiration: " + token.getExpiration());
         }
         Set<String> allowedOrigins = client.getWebOrigins();
         if (allowedOrigins != null) {
             token.setAllowedOrigins(allowedOrigins);
         }
+        initClaims(token, claimer, user);
         return token;
     }
 
@@ -324,6 +370,7 @@ public class TokenManager {
         RealmModel realm;
         AccessToken accessToken;
         RefreshToken refreshToken;
+        IDToken idToken;
 
         public AccessTokenResponseBuilder(RealmModel realm) {
             this.realm = realm;
@@ -354,8 +401,53 @@ public class TokenManager {
             return this;
         }
 
+        public AccessTokenResponseBuilder generateIDToken() {
+            if (accessToken == null) {
+                throw new IllegalStateException("accessToken not set");
+            }
+            idToken = new IDToken();
+            idToken.id(KeycloakModelUtils.generateId());
+            idToken.subject(accessToken.getSubject());
+            idToken.audience(realm.getName());
+            idToken.issuedNow();
+            idToken.issuedFor(accessToken.getIssuedFor());
+            idToken.issuer(accessToken.getIssuer());
+            if (realm.getAccessTokenLifespan() > 0) {
+                idToken.expiration((System.currentTimeMillis() / 1000) + realm.getAccessTokenLifespan());
+            }
+            idToken.setPreferredUsername(accessToken.getPreferredUsername());
+            idToken.setGivenName(accessToken.getGivenName());
+            idToken.setMiddleName(accessToken.getMiddleName());
+            idToken.setFamilyName(accessToken.getFamilyName());
+            idToken.setName(accessToken.getName());
+            idToken.setNickName(accessToken.getNickName());
+            idToken.setGender(accessToken.getGender());
+            idToken.setPicture(accessToken.getPicture());
+            idToken.setProfile(accessToken.getProfile());
+            idToken.setWebsite(accessToken.getWebsite());
+            idToken.setBirthdate(accessToken.getBirthdate());
+            idToken.setEmail(accessToken.getEmail());
+            idToken.setEmailVerified(accessToken.getEmailVerified());
+            idToken.setLocale(accessToken.getLocale());
+            idToken.setFormattedAddress(accessToken.getFormattedAddress());
+            idToken.setAddress(accessToken.getAddress());
+            idToken.setStreetAddress(accessToken.getStreetAddress());
+            idToken.setLocality(accessToken.getLocality());
+            idToken.setRegion(accessToken.getRegion());
+            idToken.setPostalCode(accessToken.getPostalCode());
+            idToken.setCountry(accessToken.getCountry());
+            idToken.setPhoneNumber(accessToken.getPhoneNumber());
+            idToken.setPhoneNumberVerified(accessToken.getPhoneNumberVerified());
+            idToken.setZoneinfo(accessToken.getZoneinfo());
+            return this;
+        }
+
         public AccessTokenResponse build() {
             AccessTokenResponse res = new AccessTokenResponse();
+            if (idToken != null) {
+                String encodedToken = new JWSBuilder().jsonContent(idToken).rsa256(realm.getPrivateKey());
+                res.setIdToken(encodedToken);
+            }
             if (accessToken != null) {
                 String encodedToken = new JWSBuilder().jsonContent(accessToken).rsa256(realm.getPrivateKey());
                 res.setToken(encodedToken);

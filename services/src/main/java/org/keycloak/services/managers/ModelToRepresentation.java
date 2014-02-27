@@ -1,12 +1,15 @@
 package org.keycloak.services.managers;
 
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClaimMask;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.ClaimRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -108,6 +111,21 @@ public class ModelToRepresentation {
         CredentialRepresentation rep = new CredentialRepresentation();
         rep.setType(CredentialRepresentation.SECRET);
         rep.setValue(cred.getValue());
+        return rep;
+    }
+
+    public static ClaimRepresentation toRepresentation(ClientModel model) {
+        ClaimRepresentation rep = new ClaimRepresentation();
+        rep.setAddress(ClaimMask.hasAddress(model.getAllowedClaimsMask()));
+        rep.setEmail(ClaimMask.hasEmail(model.getAllowedClaimsMask()));
+        rep.setGender(ClaimMask.hasGender(model.getAllowedClaimsMask()));
+        rep.setLocale(ClaimMask.hasLocale(model.getAllowedClaimsMask()));
+        rep.setName(ClaimMask.hasName(model.getAllowedClaimsMask()));
+        rep.setPhone(ClaimMask.hasPhone(model.getAllowedClaimsMask()));
+        rep.setPicture(ClaimMask.hasPicture(model.getAllowedClaimsMask()));
+        rep.setProfile(ClaimMask.hasProfile(model.getAllowedClaimsMask()));
+        rep.setWebsite(ClaimMask.hasWebsite(model.getAllowedClaimsMask()));
+        rep.setUsername(ClaimMask.hasUsername(model.getAllowedClaimsMask()));
         return rep;
     }
 }

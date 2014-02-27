@@ -106,7 +106,7 @@ public class CatalinaBearerTokenAuthenticator {
         principal = new CatalinaSecurityContextHelper().createPrincipal(request.getContext().getRealm(), skeletonKeyPrincipal, roles);
         request.setUserPrincipal(principal);
         request.setAuthType("OAUTH_BEARER");
-        KeycloakAuthenticatedSession skSession = new KeycloakAuthenticatedSession(tokenString, token, resourceMetadata);
+        KeycloakAuthenticatedSession skSession = new KeycloakAuthenticatedSession(tokenString, token, null, null, resourceMetadata);
         request.setAttribute(KeycloakAuthenticatedSession.class.getName(), skSession);
 
         return true;
