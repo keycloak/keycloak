@@ -1,34 +1,25 @@
-<div id="wrapper" class="container">
-    <div class="row">
-        <div class="bs-sidebar col-md-3 clearfix">
-            <ul data-ng-hide="createRealm">
-                <li class="active"><a href="#/realms">Realms</a></li>
-            </ul>
-        </div>
-        <div id="content-area" class="col-md-9" role="main">
-            <div class="top-nav" data-ng-hide="createRealm">
-                <ul class="rcue-tabs">
-
-                </ul>
-            </div>
-            <div id="content">
-
-                <h1>
-                    <span class="gray">Realms</span>
-                </h1>
-
-                <table class="table table-striped table-bordered">
-                    <thead>
-                    <tr>
-                        <th>Realm</th>
-                    </tr>
-                    </thead>
-                    <tr data-ng-repeat="r in realms">
-                        <td><a href="#/realms/{{r.realm}}">{{r.realm}}</a></td>
-                    </tr>
-                </table>
-            </div>
-        </div>
-        <div id="container-right-bg"></div>
+<div class="bs-sidebar col-sm-3 ">
+    <ul data-ng-hide="createRealm">
+        <li class="active"><a href="#/realms">Realms</a></li>
+    </ul>
+</div>
+<div id="content-area" class="col-md-9" role="main">
+    <ul class="nav nav-tabs nav-tabs-pf">
+        <li class="active"><a href="">Realm List</a></li>
+    </ul>
+    <div id="content">
+        <h2><span>Realms</span></h2>
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Realm</th>
+            </tr>
+            </thead>
+            <tbody>
+                <tr data-ng-repeat="r in realms">
+                    <td><a href="#/realms/{{r.realm}}">{{r.realm}}</a></td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 </div>

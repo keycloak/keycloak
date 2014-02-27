@@ -162,6 +162,9 @@ public class RealmManager {
             adminRealm = realm;
 
             adminRole = realm.addRole(AdminRoles.ADMIN);
+
+            RoleModel createRealmRole = realm.addRole(AdminRoles.CREATE_REALM);
+            adminRole.addCompositeRole(createRealmRole);
         } else {
             adminRealm = identitySession.getRealmByName(Constants.ADMIN_REALM);
             adminRole = adminRealm.getRole(AdminRoles.ADMIN);

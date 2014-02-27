@@ -24,7 +24,7 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location
         }
 
         $scope.access = {
-            admin: data.admin,
+            createRealm: data.createRealm,
 
             get viewRealm() {
                 return getAccess('view-realm') || this.manageRealm;

@@ -6,8 +6,10 @@ import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.jboss.resteasy.util.GenericType;
 import org.keycloak.models.AdminRoles;
+import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.ModelToRepresentation;
@@ -87,7 +89,7 @@ public class RealmsAdminResource {
     @POST
     @Consumes("application/json")
     public Response importRealm(@Context final UriInfo uriInfo, final RealmRepresentation rep) {
-        if (!auth.hasRealmRole(AdminRoles.ADMIN)) {
+        if (!auth.hasRealmRole(AdminRoles.CREATE_REALM)) {
             throw new ForbiddenException();
         }
 
@@ -98,6 +100,8 @@ public class RealmsAdminResource {
         }
 
         RealmModel realm = realmManager.importRealm(rep);
+        grantPermissionsToRealmCreator(realm);
+
         URI location = realmUrl(uriInfo).build(realm.getName());
         logger.debug("imported realm success, sending back: {0}", location.toString());
         return Response.created(location).build();
@@ -106,7 +110,7 @@ public class RealmsAdminResource {
     @POST
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public Response uploadRealm(@Context final UriInfo uriInfo, MultipartFormDataInput input) throws IOException  {
-        if (!auth.hasRealmRole(AdminRoles.ADMIN)) {
+        if (!auth.hasRealmRole(AdminRoles.CREATE_REALM)) {
             throw new ForbiddenException();
         }
 
@@ -117,7 +121,9 @@ public class RealmsAdminResource {
         for (InputPart inputPart : inputParts) {
             inputPart.setMediaType(MediaType.APPLICATION_JSON_TYPE);
             RealmRepresentation rep = inputPart.getBody(new GenericType<RealmRepresentation>(){});
+
             RealmModel realm = realmManager.importRealm(rep);
+            grantPermissionsToRealmCreator(realm);
 
             if (inputParts.size() == 1) {
                 URI location = realmUrl(uriInfo).build(realm.getName());
@@ -127,6 +133,20 @@ public class RealmsAdminResource {
 
         return Response.noContent().build();
     }
+
+    private void grantPermissionsToRealmCreator(RealmModel realm) {
+        if (auth.hasRealmRole(AdminRoles.ADMIN)) {
+            return;
+        }
+
+        RealmModel adminRealm = new RealmManager(session).getKeycloakAdminstrationRealm();
+        ApplicationModel realmAdminApp = adminRealm.getApplicationByName(AdminRoles.getAdminApp(realm));
+        for (String r : AdminRoles.ALL_REALM_ROLES) {
+            RoleModel role = realmAdminApp.getRole(r);
+            adminRealm.grantRole(auth.getUser(), role);
+        }
+    }
+
 
     @Path("{realm}")
     public RealmAdminResource getRealmAdmin(@Context final HttpHeaders headers,
