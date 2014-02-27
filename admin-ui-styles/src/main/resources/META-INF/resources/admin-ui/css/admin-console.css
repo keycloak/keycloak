@@ -355,8 +355,8 @@ header .navbar {
     color: #FFFFFF;
     padding-left: 10px;
 }
-.onoffswitch.disabled .onoffswitch-inner .onoffswitch-active,
-.onoffswitch.disabled .onoffswitch-inner .onoffswitch-inactive {
+.onoffswitch-checkbox:disabled + .onoffswitch-label .onoffswitch-inner .onoffswitch-active,
+.onoffswitch-checkbox:disabled + .onoffswitch-label .onoffswitch-inner .onoffswitch-inactive {
     background-image: none;
     background-color: #e5e5e5;
     color: #9d9fa1;

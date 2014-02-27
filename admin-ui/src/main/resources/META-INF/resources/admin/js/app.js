@@ -640,35 +640,36 @@ module.directive('collapsed', function() {
 module.directive('onoffswitch', function() {
     return {
         restrict: "EA",
-        require: 'ngModel',
         replace: true,
         scope: {
+            name: '@',
+            id: '@',
             ngModel: '=',
-            ngDisabled: '=',
-            ngBind: '=',
-            name: '=',
-            id: '=',
-            onText: '@onText',
-            offText: '@offText'
+            kcOnText: '@onText',
+            kcOffText: '@offText'
         },
+        // TODO - The same code acts differently when put into the templateURL. Find why and move the code there.
+        //templateUrl: "templates/kc-switch.html",
+        template: "<span><div class='onoffswitch' tabindex='0'><input type='checkbox' ng-model='ngModel' class='onoffswitch-checkbox' name='{{name}}' id='{{id}}'><label for='{{id}}' class='onoffswitch-label'><span class='onoffswitch-inner'><span class='onoffswitch-active'>{{kcOnText}}</span><span class='onoffswitch-inactive'>{{kcOffText}}</span></span><span class='onoffswitch-switch'></span></label></div></span>",
         compile: function(element, attrs) {
+            /*
+            We don't want to propagate basic attributes to the root element of directive. Id should be passed to the
+            input element only to achieve proper label binding (and validity).
+            */
+            element.removeAttr('name');
+            element.removeAttr('id');
+
             if (!attrs.onText) { attrs.onText = "ON"; }
             if (!attrs.offText) { attrs.offText = "OFF"; }
-            if (!attrs.ngDisabled) { attrs.ngDisabled = false; }
 
-            var html = "<span><div class=\"onoffswitch\" data-ng-class=\"{disabled: ngDisabled}\" tabindex=\"0\" onkeydown=\"var code = event.keyCode || event.which; if (code === 32 || code === 13) { event.stopImmediatePropagation(); event.preventDefault(); $(event.target).find('input').click();}\">" +
-                "<input type=\"checkbox\" data-ng-model=\"ngModel\" ng-disabled=\"ngDisabled\"" +
-                " class=\"onoffswitch-checkbox\" name=\"" + attrs.name + "\" id=\"" + attrs.id + "\">" +
-                "<label for=\"" + attrs.id + "\" class=\"onoffswitch-label\">" +
-                "<span class=\"onoffswitch-inner\">" +
-                "<span class=\"onoffswitch-active\">{{onText}}</span>" +
-                "<span class=\"onoffswitch-inactive\">{{offText}}</span>" +
-                "</span>" +
-                "<span class=\"onoffswitch-switch\"></span>" +
-                "</label>" +
-                "</div></span>";
-
-            element.replaceWith($(html));
+            element.bind('keydown', function(e){
+                var code = e.keyCode || e.which;
+                if (code === 32 || code === 13) {
+                    e.stopImmediatePropagation();
+                    e.preventDefault();
+                    $(e.target).find('input').click();
+                }
+            });
         }
     }
 });
@@ -790,7 +791,7 @@ module.directive('kcDelete', function ($compile, Notifications) {
 });
 
 
-module.directive('kcSelect', function ($compile, Notifications) {
+module.directive('kcDropdown', function ($compile, Notifications) {
     return {
         scope: {
             kcOptions: '=',
