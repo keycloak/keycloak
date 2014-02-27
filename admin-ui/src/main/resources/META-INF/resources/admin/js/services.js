@@ -1,6 +1,6 @@
 'use strict';
 
-var module = angular.module('keycloak.services', [ 'ngResource' ]);
+var module = angular.module('keycloak.services', [ 'ngResource', 'ngRoute' ]);
 
 module.service('Dialog', function($dialog) {
 	var dialog = {};
