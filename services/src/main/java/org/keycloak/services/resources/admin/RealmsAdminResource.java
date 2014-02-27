@@ -105,7 +105,7 @@ public class RealmsAdminResource {
 
     @POST
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public Response uploadRealm(MultipartFormDataInput input) throws IOException  {
+    public Response uploadRealm(@Context final UriInfo uriInfo, MultipartFormDataInput input) throws IOException  {
         if (!auth.hasRealmRole(AdminRoles.ADMIN)) {
             throw new ForbiddenException();
         }
@@ -117,8 +117,14 @@ public class RealmsAdminResource {
         for (InputPart inputPart : inputParts) {
             inputPart.setMediaType(MediaType.APPLICATION_JSON_TYPE);
             RealmRepresentation rep = inputPart.getBody(new GenericType<RealmRepresentation>(){});
-            realmManager.importRealm(rep);
+            RealmModel realm = realmManager.importRealm(rep);
+
+            if (inputParts.size() == 1) {
+                URI location = realmUrl(uriInfo).build(realm.getName());
+                return Response.created(location).build();
+            }
         }
+
         return Response.noContent().build();
     }
 
