@@ -23,6 +23,7 @@ package org.keycloak.services.resources.flows;
 
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
@@ -88,7 +89,7 @@ public class OAuthFlows {
         return location.build();
     }
 
-    public Response redirectError(UserModel client, String error, String state, String redirect) {
+    public Response redirectError(ClientModel client, String error, String state, String redirect) {
         UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam("error", error);
         if (state != null) {
             redirectUri.queryParam("state", state);
@@ -97,19 +98,19 @@ public class OAuthFlows {
         return Response.status(302).location(redirectUri.build()).build();
     }
 
-    public Response processAccessCode(String scopeParam, String state, String redirect, UserModel client, UserModel user) {
+    public Response processAccessCode(String scopeParam, String state, String redirect, ClientModel client, UserModel user) {
         return processAccessCode(scopeParam, state, redirect, client, user, false);
     }
 
 
-    public Response processAccessCode(String scopeParam, String state, String redirect, UserModel client, UserModel user, boolean rememberMe) {
+    public Response processAccessCode(String scopeParam, String state, String redirect, ClientModel client, UserModel user, boolean rememberMe) {
         isTotpConfigurationRequired(user);
         isEmailVerificationRequired(user);
 
         RoleModel resourceRole = realm.getRole(Constants.APPLICATION_ROLE);
         RoleModel identityRequestRole = realm.getRole(Constants.IDENTITY_REQUESTER_ROLE);
-        boolean isResource = realm.hasRole(client, resourceRole);
-        if (!isResource && !realm.hasRole(client, identityRequestRole)) {
+        boolean isResource = realm.hasRole(client.getAgent(), resourceRole);
+        if (!isResource && !realm.hasRole(client.getAgent(), identityRequestRole)) {
             return forwardToSecurityFailure("Login requester not allowed to request login.");
         }
         AccessCodeEntry accessCode = tokenManager.createAccessCode(scopeParam, state, redirect, realm, client, user);
@@ -128,7 +129,7 @@ public class OAuthFlows {
 
         if (!isResource
                 && (accessCode.getRealmRolesRequested().size() > 0 || accessCode.getResourceRolesRequested().size() > 0)) {
-            OAuthClientModel oauthClient = realm.getOAuthClient(client.getLoginName());
+            OAuthClientModel oauthClient = realm.getOAuthClient(client.getAgent().getLoginName());
             accessCode.setExpiration(System.currentTimeMillis() / 1000 + realm.getAccessCodeLifespanUserAction());
             return Flows.forms(realm, request, uriInfo).setAccessCode(accessCode.getId(), accessCode.getCode()).
                     setAccessRequest(accessCode.getRealmRolesRequested(), accessCode.getResourceRolesRequested()).

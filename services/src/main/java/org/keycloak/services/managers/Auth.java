@@ -1,5 +1,6 @@
 package org.keycloak.services.managers;
 
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.AccessToken;
@@ -13,9 +14,9 @@ public class Auth {
     private final RealmModel realm;
     private final AccessToken token;
     private final UserModel user;
-    private final UserModel client;
+    private final ClientModel client;
 
-    public Auth(RealmModel realm, UserModel user, UserModel client) {
+    public Auth(RealmModel realm, UserModel user, ClientModel client) {
         this.cookie = true;
         this.realm = realm;
         this.token = null;
@@ -24,7 +25,7 @@ public class Auth {
         this.client = client;
     }
 
-    public Auth(AccessToken token, UserModel user, UserModel client) {
+    public Auth(AccessToken token, UserModel user, ClientModel client) {
         this.cookie = false;
         this.token = token;
         this.realm = null;
@@ -45,7 +46,7 @@ public class Auth {
         return user;
     }
 
-    public UserModel getClient() {
+    public ClientModel getClient() {
         return client;
     }
 

@@ -1,5 +1,6 @@
 package org.keycloak.login;
 
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 
@@ -38,7 +39,7 @@ public interface LoginForms {
 
     public LoginForms setUser(UserModel user);
 
-    public LoginForms setClient(UserModel client);
+    public LoginForms setClient(ClientModel client);
 
     public LoginForms setFormData(MultivaluedMap<String, String> formData);
 

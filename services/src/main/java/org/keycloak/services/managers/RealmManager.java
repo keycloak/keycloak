@@ -4,6 +4,7 @@ import org.jboss.resteasy.logging.Logger;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuthClientModel;
@@ -361,7 +362,8 @@ public class RealmManager {
                         role = newRealm.addRole(roleString.trim());
                     }
                     UserModel user = userMap.get(scope.getUsername());
-                    newRealm.addScopeMapping(user, role);
+                    ClientModel client = newRealm.findClient(user.getLoginName());
+                    newRealm.addScopeMapping(client, role);
                 }
 
             }

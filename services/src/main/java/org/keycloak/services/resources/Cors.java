@@ -7,6 +7,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 
 import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.UserModel;
 
 /**
@@ -52,7 +53,7 @@ public class Cors {
         return this;
     }
 
-    public Cors allowedOrigins(UserModel client) {
+    public Cors allowedOrigins(ClientModel client) {
         if (client != null) {
             allowedOrigins = client.getWebOrigins();
         }

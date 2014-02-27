@@ -5,6 +5,7 @@ import org.codehaus.jackson.annotate.JsonPropertyOrder;
 import org.jboss.resteasy.logging.Logger;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClaimMask;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -73,13 +74,13 @@ public class ApplicationManager {
 
         if (resourceRep.getRedirectUris() != null) {
             for (String redirectUri : resourceRep.getRedirectUris()) {
-                resourceUser.addRedirectUri(redirectUri);
+                applicationModel.addRedirectUri(redirectUri);
             }
         }
         if (resourceRep.getWebOrigins() != null) {
             for (String webOrigin : resourceRep.getWebOrigins()) {
                 logger.debug("Application: {0} webOrigin: {1}", resourceUser.getLoginName(), webOrigin);
-                resourceUser.addWebOrigin(webOrigin);
+                applicationModel.addWebOrigin(webOrigin);
             }
         }
 
@@ -117,13 +118,13 @@ public class ApplicationManager {
 
     public void createScopeMappings(RealmModel realm, ApplicationModel applicationModel, List<ScopeMappingRepresentation> mappings) {
         for (ScopeMappingRepresentation mapping : mappings) {
-            UserModel user = realm.getUser(mapping.getUsername());
             for (String roleString : mapping.getRoles()) {
                 RoleModel role = applicationModel.getRole(roleString.trim());
                 if (role == null) {
                     role = applicationModel.addRole(roleString.trim());
                 }
-                realm.addScopeMapping(user, role);
+                ClientModel client = realm.findClient(mapping.getUsername());
+                realm.addScopeMapping(client, role);
             }
         }
     }
@@ -162,12 +163,12 @@ public class ApplicationManager {
 
         List<String> redirectUris = rep.getRedirectUris();
         if (redirectUris != null) {
-            resource.getAgent().setRedirectUris(new HashSet<String>(redirectUris));
+            resource.setRedirectUris(new HashSet<String>(redirectUris));
         }
 
         List<String> webOrigins = rep.getWebOrigins();
         if (webOrigins != null) {
-            resource.getAgent().setWebOrigins(new HashSet<String>(webOrigins));
+            resource.setWebOrigins(new HashSet<String>(webOrigins));
         }
 
         if (rep.getClaims() != null) {
@@ -184,12 +185,12 @@ public class ApplicationManager {
         rep.setSurrogateAuthRequired(applicationModel.isSurrogateAuthRequired());
         rep.setBaseUrl(applicationModel.getBaseUrl());
 
-        Set<String> redirectUris = applicationModel.getAgent().getRedirectUris();
+        Set<String> redirectUris = applicationModel.getRedirectUris();
         if (redirectUris != null) {
             rep.setRedirectUris(new LinkedList<String>(redirectUris));
         }
 
-        Set<String> webOrigins = applicationModel.getAgent().getWebOrigins();
+        Set<String> webOrigins = applicationModel.getWebOrigins();
         if (webOrigins != null) {
             rep.setWebOrigins(new LinkedList<String>(webOrigins));
         }

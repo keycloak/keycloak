@@ -145,7 +145,7 @@ public class ApplicationResource {
 
     @Path("scope-mappings")
     public ScopeMappedResource getScopeMappedResource() {
-        return new ScopeMappedResource(realm, auth, application.getAgent(), session);
+        return new ScopeMappedResource(realm, auth, application, session);
     }
 
     @Path("roles")
@@ -160,7 +160,7 @@ public class ApplicationResource {
     {
         auth.requireView();
 
-        return application.getAgent().getWebOrigins();
+        return application.getWebOrigins();
     }
 
     @Path("allowed-origins")
@@ -170,7 +170,7 @@ public class ApplicationResource {
     {
         auth.requireManage();
 
-        application.getAgent().setWebOrigins(allowedOrigins);
+        application.setWebOrigins(allowedOrigins);
     }
 
     @Path("allowed-origins")
@@ -181,7 +181,7 @@ public class ApplicationResource {
         auth.requireManage();
 
         for (String origin : allowedOrigins) {
-            application.getAgent().removeWebOrigin(origin);
+            application.removeWebOrigin(origin);
         }
     }
 

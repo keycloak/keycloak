@@ -17,6 +17,7 @@ import org.keycloak.login.freemarker.model.RegisterBean;
 import org.keycloak.login.freemarker.model.SocialBean;
 import org.keycloak.login.freemarker.model.TotpBean;
 import org.keycloak.login.freemarker.model.UrlBean;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
@@ -63,7 +64,7 @@ public class FreeMarkerLoginForms implements LoginForms {
 
     private UserModel user;
 
-    private UserModel client;
+    private ClientModel client;
 
     private UriInfo uriInfo;
 
@@ -240,7 +241,7 @@ public class FreeMarkerLoginForms implements LoginForms {
         return this;
     }
 
-    public FreeMarkerLoginForms setClient(UserModel client) {
+    public FreeMarkerLoginForms setClient(ClientModel client) {
         this.client = client;
         return this;
     }

@@ -1,6 +1,8 @@
 package org.keycloak.models.jpa.entities;
 
 import javax.persistence.CascadeType;
+import javax.persistence.CollectionTable;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -11,6 +13,8 @@ import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.hibernate.annotations.GenericGenerator;
 
@@ -34,6 +38,14 @@ public class ApplicationEntity {
 
     @OneToOne(fetch = FetchType.EAGER)
     private UserEntity applicationUser;
+
+    @ElementCollection
+    @CollectionTable
+    protected Set<String> webOrigins = new HashSet<String>();
+
+    @ElementCollection
+    @CollectionTable
+    protected Set<String> redirectUris = new HashSet<String>();
 
     @OneToMany(fetch = FetchType.EAGER, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "application")
     Collection<ApplicationRoleEntity> roles = new ArrayList<ApplicationRoleEntity>();
@@ -128,4 +140,22 @@ public class ApplicationEntity {
     public void setAllowedClaimsMask(long allowedClaimsMask) {
         this.allowedClaimsMask = allowedClaimsMask;
     }
+
+    public Set<String> getWebOrigins() {
+        return webOrigins;
+    }
+
+    public void setWebOrigins(Set<String> webOrigins) {
+        this.webOrigins = webOrigins;
+    }
+
+    public Set<String> getRedirectUris() {
+        return redirectUris;
+    }
+
+    public void setRedirectUris(Set<String> redirectUris) {
+        this.redirectUris = redirectUris;
+    }
+
+
 }

@@ -26,6 +26,7 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.login.LoginForms;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
@@ -244,7 +245,7 @@ public class RequiredActionsService {
         String redirect = uriInfo.getQueryParameters().getFirst("redirect_uri");
         String clientId = uriInfo.getQueryParameters().getFirst("client_id");
 
-        UserModel client = realm.getUser(clientId);
+        ClientModel client = realm.findClient(clientId);
         if (client == null) {
             return Flows.oauth(realm, request, uriInfo, authManager, tokenManager).forwardToSecurityFailure(
                     "Unknown login requester.");

@@ -9,6 +9,7 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.AccessToken;
@@ -66,7 +67,7 @@ public class AppAuthManager extends AuthenticationManager {
             throw new BadRequestException();
 
         }
-        if (!client.getLoginName().equals(accessCode.getClient().getLoginName())) {
+        if (!client.getLoginName().equals(accessCode.getClient().getAgent().getLoginName())) {
             logger.debug("bad client");
             throw new BadRequestException();
         }
@@ -74,7 +75,7 @@ public class AppAuthManager extends AuthenticationManager {
         return createLoginCookie(realm, accessCode.getUser(), accessCode.getClient(), cookieName, uri.getRawPath(), false);
     }
 
-    public NewCookie createRefreshCookie(RealmModel realm, UserModel user, UserModel client, URI uri) {
+    public NewCookie createRefreshCookie(RealmModel realm, UserModel user, ClientModel client, URI uri) {
         return createLoginCookie(realm, user, client, cookieName, uri.getRawPath(), false);
     }
 
@@ -117,9 +118,9 @@ public class AppAuthManager extends AuthenticationManager {
                 return null;
             }
 
-            UserModel client = null;
+            ClientModel client = null;
             if (token.getIssuedFor() != null) {
-                client = realm.getUser(token.getIssuedFor());
+                client = realm.findClient(token.getIssuedFor());
                 if (client == null || !client.isEnabled()) {
                     logger.info("Unknown client in cookie");
                     expireCookie(cookie.getName(), cookie.getPath());
@@ -158,9 +159,9 @@ public class AppAuthManager extends AuthenticationManager {
                 throw new NotAuthorizedException("invalid_user");
             }
 
-            UserModel client = null;
+            ClientModel client = null;
             if (token.getIssuedFor() != null) {
-                client = realm.getUser(token.getIssuedFor());
+                client = realm.findClient(token.getIssuedFor());
                 if (client == null || !client.isEnabled()) {
                     throw new NotAuthorizedException("invalid_user");
                 }

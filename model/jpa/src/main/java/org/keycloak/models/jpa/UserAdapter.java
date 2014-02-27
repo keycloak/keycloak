@@ -99,49 +99,6 @@ public class UserAdapter implements UserModel {
         user.getRequiredActions().remove(action);
     }
 
-    @Override
-    public Set<String> getWebOrigins() {
-        Set<String> result = new HashSet<String>();
-        result.addAll(user.getWebOrigins());
-        return result;
-    }
-
-    @Override
-    public void setWebOrigins(Set<String> webOrigins) {
-        user.setWebOrigins(webOrigins);
-    }
-
-    @Override
-    public void addWebOrigin(String webOrigin) {
-        user.getWebOrigins().add(webOrigin);
-    }
-
-    @Override
-    public void removeWebOrigin(String webOrigin) {
-        user.getWebOrigins().remove(webOrigin);
-    }
-
-    @Override
-    public Set<String> getRedirectUris() {
-        Set<String> result = new HashSet<String>();
-        result.addAll(user.getRedirectUris());
-        return result;
-    }
-
-    @Override
-    public void setRedirectUris(Set<String> redirectUris) {
-        user.setRedirectUris(redirectUris);
-    }
-
-    @Override
-    public void addRedirectUri(String redirectUri) {
-        user.getRedirectUris().add(redirectUri);
-    }
-
-    @Override
-    public void removeRedirectUri(String redirectUri) {
-        user.getRedirectUris().remove(redirectUri);
-    }
 
     @Override
     public String getFirstName() {
