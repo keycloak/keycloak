@@ -79,18 +79,18 @@ public class AdminService {
         protected String userId;
         protected String displayName;
 
-        @JsonProperty("admin")
-        protected boolean admin;
+        @JsonProperty("createRealm")
+        protected boolean createRealm;
         @JsonProperty("realm_access")
         protected Map<String, Set<String>> realmAccess = new HashMap<String, Set<String>>();
 
         public WhoAmI() {
         }
 
-        public WhoAmI(String userId, String displayName, boolean admin, Map<String, Set<String>> realmAccess) {
+        public WhoAmI(String userId, String displayName, boolean createRealm, Map<String, Set<String>> realmAccess) {
             this.userId = userId;
             this.displayName = displayName;
-            this.admin = admin;
+            this.createRealm = createRealm;
             this.realmAccess = realmAccess;
         }
 
@@ -110,12 +110,12 @@ public class AdminService {
             this.displayName = displayName;
         }
 
-        public boolean isAdmin() {
-            return admin;
+        public boolean isCreateRealm() {
+            return createRealm;
         }
 
-        public void setAdmin(boolean admin) {
-            this.admin = admin;
+        public void setCreateRealm(boolean createRealm) {
+            this.createRealm = createRealm;
         }
 
         public Map<String, Set<String>> getRealmAccess() {
@@ -169,12 +169,12 @@ public class AdminService {
             displayName = user.getLoginName();
         }
 
-        boolean admin = realm.hasRole(user, realm.getRole("admin"));
+        boolean createRealm = realm.hasRole(user, realm.getRole(AdminRoles.CREATE_REALM));
 
         Map<String, Set<String>> realmAccess = new HashMap<String, Set<String>>();
         addRealmAdminAccess(realmAccess, auth.getRealm().getRoleMappings(auth.getUser()));
 
-        return Response.ok(new WhoAmI(user.getId(), displayName, admin, realmAccess)).build();
+        return Response.ok(new WhoAmI(user.getId(), displayName, createRealm, realmAccess)).build();
     }
 
     private void addRealmAdminAccess(Map<String, Set<String>> realmAdminAccess, Set<RoleModel> roles) {

@@ -9,6 +9,8 @@ public class AdminRoles {
 
     public static String ADMIN = "admin";
 
+    public static String CREATE_REALM = "create-realm";
+
     public static String VIEW_REALM = "view-realm";
     public static String VIEW_USERS = "view-users";
     public static String VIEW_APPLICATIONS = "view-applications";
