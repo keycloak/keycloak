@@ -15,7 +15,7 @@ import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @MongoCollection(collectionName = "applications")
-public class ApplicationEntity extends AbstractMongoIdentifiableEntity implements MongoEntity {
+public class ApplicationEntity extends AbstractMongoIdentifiableEntity implements MongoEntity, ScopedEntity {
 
     private String name;
     private boolean enabled;
@@ -24,9 +24,9 @@ public class ApplicationEntity extends AbstractMongoIdentifiableEntity implement
     private String baseUrl;
     private String secret;
 
-    private String resourceUserId;
     private String realmId;
     private long allowedClaimsMask;
+    private List<String> scopeIds;
     private List<String> webOrigins;
     private List<String> redirectUris;
 
@@ -79,13 +79,15 @@ public class ApplicationEntity extends AbstractMongoIdentifiableEntity implement
         this.baseUrl = baseUrl;
     }
 
+    @Override
     @MongoField
-    public String getResourceUserId() {
-        return resourceUserId;
+    public List<String> getScopeIds() {
+        return scopeIds;
     }
 
-    public void setResourceUserId(String resourceUserId) {
-        this.resourceUserId = resourceUserId;
+    @Override
+    public void setScopeIds(List<String> scopeIds) {
+        this.scopeIds = scopeIds;
     }
 
     @MongoField
@@ -146,9 +148,6 @@ public class ApplicationEntity extends AbstractMongoIdentifiableEntity implement
 
     @Override
     public void afterRemove(MongoStoreInvocationContext context) {
-        // Remove resourceUser of this application
-        context.getMongoStore().removeEntity(UserEntity.class, resourceUserId, context);
-
         // Remove all roles, which belongs to this application
         DBObject query = new QueryBuilder()
                 .and("applicationId").is(getId())

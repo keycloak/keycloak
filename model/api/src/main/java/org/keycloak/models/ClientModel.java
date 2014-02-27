@@ -21,8 +21,6 @@ public interface ClientModel {
      */
     String getClientId();
 
-    UserModel getAgent();
-
     long getAllowedClaimsMask();
 
     void setAllowedClaimsMask(long mask);

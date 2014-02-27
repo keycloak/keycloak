@@ -18,16 +18,10 @@ import java.util.Set;
 public class OAuthClientAdapter extends AbstractAdapter implements OAuthClientModel {
 
     private final OAuthClientEntity delegate;
-    private UserAdapter oauthAgent;
-
-    public OAuthClientAdapter(OAuthClientEntity oauthClientEntity, UserAdapter oauthAgent, MongoStoreInvocationContext invContext) {
-        super(invContext);
-        this.delegate = oauthClientEntity;
-        this.oauthAgent = oauthAgent;
-    }
 
     public OAuthClientAdapter(OAuthClientEntity oauthClientEntity, MongoStoreInvocationContext invContext) {
-        this(oauthClientEntity, null, invContext);
+        super(invContext);
+        this.delegate = oauthClientEntity;
     }
 
     @Override
@@ -37,7 +31,7 @@ public class OAuthClientAdapter extends AbstractAdapter implements OAuthClientMo
 
     @Override
     public String getClientId() {
-        return getAgent().getLoginName();
+        return delegate.getName();
     }
 
     @Override
@@ -52,22 +46,12 @@ public class OAuthClientAdapter extends AbstractAdapter implements OAuthClientMo
 
     @Override
     public boolean isEnabled() {
-        return getAgent().isEnabled();
+        return delegate.isEnabled();
     }
 
     @Override
     public void setEnabled(boolean enabled) {
-        getAgent().setEnabled(enabled);
-    }
-
-    @Override
-    public UserModel getAgent() {
-        // This is not thread-safe. Assumption is that OAuthClientAdapter instance is per-client object
-        if (oauthAgent == null) {
-            UserEntity user = getMongoStore().loadEntity(UserEntity.class, delegate.getOauthAgentId(), invocationContext);
-            oauthAgent = user!=null ? new UserAdapter(user, invocationContext) : null;
-        }
-        return oauthAgent;
+        delegate.setEnabled(enabled);
     }
 
     @Override

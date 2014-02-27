@@ -24,35 +24,15 @@ import java.util.Set;
 public class ApplicationAdapter extends AbstractAdapter implements ApplicationModel {
 
     private final ApplicationEntity application;
-    private UserAdapter resourceUser;
 
     public ApplicationAdapter(ApplicationEntity applicationEntity, MongoStoreInvocationContext invContext) {
-        this(applicationEntity, null, invContext);
-    }
-
-    public ApplicationAdapter(ApplicationEntity applicationEntity, UserAdapter resourceUser, MongoStoreInvocationContext invContext) {
         super(invContext);
         this.application = applicationEntity;
-        this.resourceUser = resourceUser;
     }
 
     @Override
     public void updateApplication() {
         getMongoStore().updateEntity(application, invocationContext);
-    }
-
-    @Override
-    public UserAdapter getAgent() {
-        // This is not thread-safe. Assumption is that ApplicationAdapter instance is per-client object
-        if (resourceUser == null) {
-            UserEntity userEntity = getMongoStore().loadEntity(UserEntity.class, application.getResourceUserId(), invocationContext);
-            if (userEntity == null) {
-                throw new IllegalStateException("User " + application.getResourceUserId() + " not found");
-            }
-            resourceUser = new UserAdapter(userEntity, invocationContext);
-        }
-
-        return resourceUser;
     }
 
     @Override
@@ -202,14 +182,13 @@ public class ApplicationAdapter extends AbstractAdapter implements ApplicationMo
 
     @Override
     public void addScope(RoleModel role) {
-        UserAdapter appUser = getAgent();
-        getMongoStore().pushItemToList(appUser.getUser(), "scopeIds", role.getId(), true, invocationContext);
+        getMongoStore().pushItemToList(application, "scopeIds", role.getId(), true, invocationContext);
     }
 
     @Override
     public Set<RoleModel> getApplicationScopeMappings(ClientModel client) {
         Set<RoleModel> result = new HashSet<RoleModel>();
-        List<RoleEntity> roles = MongoModelUtils.getAllScopesOfUser(client.getAgent(), invocationContext);
+        List<RoleEntity> roles = MongoModelUtils.getAllScopesOfClient(client, invocationContext);
 
         for (RoleEntity role : roles) {
             if (getId().equals(role.getApplicationId())) {

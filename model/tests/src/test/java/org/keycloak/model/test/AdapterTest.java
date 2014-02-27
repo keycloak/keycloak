@@ -404,7 +404,7 @@ public class AdapterTest extends AbstractModelTest {
         RealmModel otherRealm = adapter.createRealm("other");
         otherRealm.addUser("bburke");
 
-        Assert.assertEquals(2, otherRealm.getUsers().size());
+        Assert.assertEquals(1, otherRealm.getUsers().size());
         Assert.assertEquals(1, otherRealm.searchForUser("bu").size());
     }
 
