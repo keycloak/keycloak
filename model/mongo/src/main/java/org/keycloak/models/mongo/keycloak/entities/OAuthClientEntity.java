@@ -18,6 +18,7 @@ public class OAuthClientEntity extends AbstractMongoIdentifiableEntity implement
 
     private String oauthAgentId;
     private String realmId;
+    private String secret;
     private long allowedClaimsMask;
     private List<String> webOrigins;
     private List<String> redirectUris;
@@ -48,6 +49,16 @@ public class OAuthClientEntity extends AbstractMongoIdentifiableEntity implement
     public void setRealmId(String realmId) {
         this.realmId = realmId;
     }
+
+    @MongoField
+    public String getSecret() {
+        return secret;
+    }
+
+    public void setSecret(String secret) {
+        this.secret = secret;
+    }
+
 
     @MongoField
     public long getAllowedClaimsMask() {

@@ -26,10 +26,7 @@
         {
             "name" : "third-party",
             "enabled": true,
-            "credentials" : [
-                { "type" : "secret",
-                    "value" : "password" }
-            ]
+            "secret": "password"
         }
     ],
     "roles" : {
@@ -62,23 +59,13 @@
             "name": "customer-portal",
             "enabled": true,
             "adminUrl": "http://localhost:8080/customer-portal/j_admin_request",
-            "credentials": [
-                {
-                    "type": "secret",
-                    "value": "12345"
-                }
-            ]
+            "secret": "password"
         },
         {
             "name": "product-portal",
             "enabled": true,
             "adminUrl": "http://localhost:8080/product-portal/j_admin_request",
-            "credentials": [
-                {
-                    "type": "secret",
-                    "value": "12345"
-                }
-            ]
+            "secret": "password"
         }
     ]
 }

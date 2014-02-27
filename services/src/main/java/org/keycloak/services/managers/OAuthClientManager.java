@@ -50,15 +50,7 @@ public class OAuthClientManager {
     public OAuthClientModel create(OAuthClientRepresentation rep) {
         OAuthClientModel model = create(rep.getName());
         update(rep, model);
-        UserModel resourceUser = model.getAgent();
-        if (rep.getCredentials() != null) {
-            for (CredentialRepresentation cred : rep.getCredentials()) {
-                UserCredentialModel credential = new UserCredentialModel();
-                credential.setType(cred.getType());
-                credential.setValue(cred.getValue());
-                realm.updateCredential(resourceUser, credential);
-            }
-        }
+        model.setSecret(rep.getSecret());
         if (rep.getClaims() != null) {
             ClaimManager.setClaims(model, rep.getClaims());
         } else {
@@ -138,7 +130,7 @@ public class OAuthClientManager {
         rep.setResource(model.getAgent().getLoginName());
 
         Map<String, String> creds = new HashMap<String, String>();
-        creds.put(CredentialRepresentation.SECRET, realmModel.getSecret(model.getAgent()).getValue());
+        creds.put(CredentialRepresentation.SECRET, model.getSecret());
         rep.setCredentials(creds);
 
         return rep;

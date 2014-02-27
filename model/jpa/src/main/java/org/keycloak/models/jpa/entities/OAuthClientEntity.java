@@ -33,6 +33,7 @@ public class OAuthClientEntity {
     private String id;
 
     private String name;
+    private String secret;
     private long allowedClaimsMask;
 
     @ElementCollection
@@ -102,6 +103,11 @@ public class OAuthClientEntity {
         this.redirectUris = redirectUris;
     }
 
+    public String getSecret() {
+        return secret;
+    }
 
-
+    public void setSecret(String secret) {
+        this.secret = secret;
+    }
 }

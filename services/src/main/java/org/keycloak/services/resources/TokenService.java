@@ -447,7 +447,7 @@ public class TokenService {
             throw new BadRequestException("Client is not enabled", Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build());
         }
 
-        if (!realm.validateSecret(client.getAgent(), clientSecret)) {
+        if (!client.validateSecret(clientSecret)) {
             Map<String, String> error = new HashMap<String, String>();
             error.put("error", "unauthorized_client");
             throw new BadRequestException("Unauthorized Client", Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build());

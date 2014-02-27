@@ -13,7 +13,7 @@ public class OAuthClientRepresentation {
     protected List<String> redirectUris;
     protected List<String> webOrigins;
     protected boolean enabled;
-    protected List<CredentialRepresentation> credentials;
+    protected String secret;
     protected ClaimRepresentation claims;
 
     public String getId() {
@@ -64,12 +64,12 @@ public class OAuthClientRepresentation {
         this.webOrigins = webOrigins;
     }
 
-    public List<CredentialRepresentation> getCredentials() {
-        return credentials;
+    public String getSecret() {
+        return secret;
     }
 
-    public void setCredentials(List<CredentialRepresentation> credentials) {
-        this.credentials = credentials;
+    public void setSecret(String secret) {
+        this.secret = secret;
     }
 
     public ClaimRepresentation getClaims() {

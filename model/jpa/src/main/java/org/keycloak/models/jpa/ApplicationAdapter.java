@@ -5,6 +5,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.entities.*;
 
@@ -331,5 +332,21 @@ public class ApplicationAdapter implements ApplicationModel {
     public void removeRedirectUri(String redirectUri) {
         entity.getRedirectUris().remove(redirectUri);
     }
+
+    @Override
+    public String getSecret() {
+        return entity.getSecret();
+    }
+
+    @Override
+    public void setSecret(String secret) {
+        entity.setSecret(secret);
+    }
+
+    @Override
+    public boolean validateSecret(String secret) {
+        return secret.equals(entity.getSecret());
+    }
+
 
 }

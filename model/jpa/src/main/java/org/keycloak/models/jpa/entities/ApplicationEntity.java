@@ -34,6 +34,7 @@ public class ApplicationEntity {
     private boolean surrogateAuthRequired;
     private String baseUrl;
     private String managementUrl;
+    private String secret;
     private long allowedClaimsMask;
 
     @OneToOne(fetch = FetchType.EAGER)
@@ -157,5 +158,11 @@ public class ApplicationEntity {
         this.redirectUris = redirectUris;
     }
 
+    public String getSecret() {
+        return secret;
+    }
 
+    public void setSecret(String secret) {
+        this.secret = secret;
+    }
 }

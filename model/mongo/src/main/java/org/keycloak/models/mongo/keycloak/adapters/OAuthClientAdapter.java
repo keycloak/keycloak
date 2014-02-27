@@ -122,4 +122,21 @@ public class OAuthClientAdapter extends AbstractAdapter implements OAuthClientMo
         getMongoStore().pullItemFromList(delegate, "redirectUris", redirectUri, invocationContext);
     }
 
+    @Override
+    public String getSecret() {
+        return delegate.getSecret();
+    }
+
+    @Override
+    public void setSecret(String secret) {
+        delegate.setSecret(secret);
+    }
+
+
+    @Override
+    public boolean validateSecret(String secret) {
+        return secret.equals(delegate.getSecret());
+    }
+
+
 }

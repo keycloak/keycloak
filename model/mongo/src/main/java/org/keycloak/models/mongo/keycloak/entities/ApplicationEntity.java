@@ -22,6 +22,7 @@ public class ApplicationEntity extends AbstractMongoIdentifiableEntity implement
     private boolean surrogateAuthRequired;
     private String managementUrl;
     private String baseUrl;
+    private String secret;
 
     private String resourceUserId;
     private String realmId;
@@ -123,6 +124,15 @@ public class ApplicationEntity extends AbstractMongoIdentifiableEntity implement
 
     public void setRealmId(String realmId) {
         this.realmId = realmId;
+    }
+
+    @MongoField
+    public String getSecret() {
+        return secret;
+    }
+
+    public void setSecret(String secret) {
+        this.secret = secret;
     }
 
     @MongoField

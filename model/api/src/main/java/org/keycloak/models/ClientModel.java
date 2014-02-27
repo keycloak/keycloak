@@ -35,4 +35,8 @@ public interface ClientModel {
     boolean isEnabled();
 
     void setEnabled(boolean enabled);
+
+    boolean validateSecret(String secret);
+    String getSecret();
+    public void setSecret(String secret);
 }

@@ -80,10 +80,7 @@
         {
             "name" : "oauthclient",
             "enabled": true,
-            "credentials" : [
-                { "type" : "secret",
-                  "value" : "clientpassword" }
-            ]
+            "secret": "clientpassword"
         }
     ],
     "roles" : {

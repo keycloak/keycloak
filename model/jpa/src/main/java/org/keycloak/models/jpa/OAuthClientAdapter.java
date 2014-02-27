@@ -95,6 +95,24 @@ public class OAuthClientAdapter implements OAuthClientModel {
         entity.getRedirectUris().remove(redirectUri);
     }
 
+    @Override
+    public String getSecret() {
+        return entity.getSecret();
+    }
+    @Override
+    public void setSecret(String secret) {
+        entity.setSecret(secret);
+    }
+
+
+
+    @Override
+    public boolean validateSecret(String secret) {
+        return secret.equals(entity.getSecret());
+    }
+
+
+
 
 
 

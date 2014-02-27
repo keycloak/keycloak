@@ -301,4 +301,21 @@ public class ApplicationAdapter extends AbstractAdapter implements ApplicationMo
         getMongoStore().pullItemFromList(application, "redirectUris", redirectUri, invocationContext);
     }
 
+    @Override
+    public String getSecret() {
+        return application.getSecret();
+    }
+
+    @Override
+    public void setSecret(String secret) {
+        application.setSecret(secret);
+    }
+
+
+    @Override
+    public boolean validateSecret(String secret) {
+        return secret.equals(application.getSecret());
+    }
+
+
 }
