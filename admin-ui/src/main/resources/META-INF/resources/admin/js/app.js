@@ -791,7 +791,7 @@ module.directive('kcDelete', function ($compile, Notifications) {
 });
 
 
-module.directive('kcSelect', function ($compile, Notifications) {
+module.directive('kcDropdown', function ($compile, Notifications) {
     return {
         scope: {
             kcOptions: '=',

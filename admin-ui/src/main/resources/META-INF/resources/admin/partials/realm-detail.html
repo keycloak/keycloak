@@ -72,21 +72,25 @@
                     <div class="form-group">
                         <label class="col-sm-2 control-label" for="loginTheme">Login Theme</label>
                         <div class="col-sm-4">
-                            <select kc-select id="loginTheme"
-                                    data-kc-placeholder="Select one..."
-                                    data-kc-model="realm.loginTheme"
-                                    data-kc-options="serverInfo.themes.login">
-                            </select>
+                            <div class="select-kc">
+                                <select id="loginTheme"
+                                        ng-model="realm.loginTheme"
+                                        ng-options="o as o for o in serverInfo.themes.login">
+                                    <option value="" disabled selected>Select one...</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                     <div class="form-group">
                         <label class="col-sm-2 control-label" for="accountTheme">Account Theme</label>
                         <div class="col-sm-4">
-                            <select kc-select id="accountTheme"
-                                    data-kc-placeholder="Select one..."
-                                    data-kc-model="realm.accountTheme"
-                                    data-kc-options="serverInfo.themes.account">
-                            </select>
+                            <div class="select-kc">
+                                <select id="accountTheme"
+                                        ng-model="realm.accountTheme"
+                                        ng-options="o as o for o in serverInfo.themes.account">
+                                    <option value="" disabled selected>Select one...</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                 </fieldset>
