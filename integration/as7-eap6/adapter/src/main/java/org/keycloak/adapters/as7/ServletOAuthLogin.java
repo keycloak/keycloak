@@ -5,8 +5,10 @@ import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
 import org.keycloak.adapters.TokenGrantRequest;
 import org.keycloak.adapters.config.RealmConfiguration;
+import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.IDToken;
 import org.keycloak.util.KeycloakUriBuilder;
 
 import javax.servlet.http.Cookie;
@@ -28,6 +30,8 @@ public class ServletOAuthLogin {
     protected RealmConfiguration realmInfo;
     protected int redirectPort;
     protected String tokenString;
+    protected String idTokenString;
+    protected IDToken idToken;
     protected AccessToken token;
     protected String refreshToken;
 
@@ -48,6 +52,14 @@ public class ServletOAuthLogin {
 
     public String getRefreshToken() {
         return refreshToken;
+    }
+
+    public String getIdTokenString() {
+        return idTokenString;
+    }
+
+    public IDToken getIdToken() {
+        return idToken;
     }
 
     public RealmConfiguration getRealmInfo() {
@@ -246,8 +258,17 @@ public class ServletOAuthLogin {
         }
 
         tokenString = tokenResponse.getToken();
+        idTokenString = tokenResponse.getIdToken();
         try {
             token = RSATokenVerifier.verifyToken(tokenString, realmInfo.getMetadata().getRealmKey(), realmInfo.getMetadata().getRealm());
+            if (idTokenString != null) {
+                JWSInput input = new JWSInput(idTokenString);
+                try {
+                    idToken = input.readJsonContent(IDToken.class);
+                } catch (IOException e) {
+                    throw new VerificationException();
+                }
+            }
             log.debug("Token Verification succeeded!");
         } catch (VerificationException e) {
             log.error("failed verification of token");

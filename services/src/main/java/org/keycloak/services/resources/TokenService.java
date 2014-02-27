@@ -159,7 +159,9 @@ public class TokenService {
         }
         String scope = form.getFirst("scope");
         AccessTokenResponse res = tokenManager.responseBuilder(realm)
-                .generateAccessToken(scope, client, user).build();
+                .generateAccessToken(scope, client, user)
+                .generateIDToken()
+                .build();
         return Response.ok(res, MediaType.APPLICATION_JSON_TYPE).build();
     }
 
@@ -188,6 +190,7 @@ public class TokenService {
 
         AccessTokenResponse res = tokenManager.responseBuilder(realm)
                                               .accessToken(accessToken)
+                                              .generateIDToken()
                                               .generateRefreshToken().build();
         return Response.ok(res, MediaType.APPLICATION_JSON_TYPE).build();
     }
@@ -410,6 +413,7 @@ public class TokenService {
         logger.debug("accessRequest SUCCESS");
         AccessTokenResponse res = tokenManager.responseBuilder(realm)
                                               .accessToken(accessCode.getToken())
+                                              .generateIDToken()
                                               .generateRefreshToken().build();
 
         return Cors.add(request, Response.ok(res)).allowedOrigins(client).allowedMethods("POST").build();

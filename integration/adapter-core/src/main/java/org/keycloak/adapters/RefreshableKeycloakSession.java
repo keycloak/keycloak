@@ -7,6 +7,7 @@ import org.keycloak.adapters.config.RealmConfiguration;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.jboss.logging.Logger;
+import org.keycloak.representations.IDToken;
 
 import java.io.IOException;
 
@@ -24,8 +25,8 @@ public class RefreshableKeycloakSession extends KeycloakAuthenticatedSession {
     public RefreshableKeycloakSession() {
     }
 
-    public RefreshableKeycloakSession(String tokenString, AccessToken token, ResourceMetadata metadata, RealmConfiguration realmConfiguration, String refreshToken) {
-        super(tokenString, token, metadata);
+    public RefreshableKeycloakSession(String tokenString, AccessToken token, String idTokenString, IDToken idToken, ResourceMetadata metadata, RealmConfiguration realmConfiguration, String refreshToken) {
+        super(tokenString, token, idTokenString, idToken, metadata);
         this.realmConfiguration = realmConfiguration;
         this.refreshToken = refreshToken;
     }

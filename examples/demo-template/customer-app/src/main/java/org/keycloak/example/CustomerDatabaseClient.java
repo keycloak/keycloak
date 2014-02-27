@@ -6,6 +6,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.keycloak.KeycloakAuthenticatedSession;
 import org.keycloak.adapters.HttpClientBuilder;
+import org.keycloak.representations.IDToken;
 import org.keycloak.util.JsonSerialization;
 
 import javax.servlet.http.HttpServletRequest;
@@ -33,6 +34,12 @@ public class CustomerDatabaseClient {
         public int getStatus() {
             return status;
         }
+    }
+
+    public static IDToken getIDToken(HttpServletRequest req) {
+        KeycloakAuthenticatedSession session = (KeycloakAuthenticatedSession) req.getAttribute(KeycloakAuthenticatedSession.class.getName());
+        return session.getIdToken();
+
     }
 
     public static List<String> getCustomers(HttpServletRequest req) throws Failure {
