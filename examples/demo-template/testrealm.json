@@ -44,15 +44,15 @@
     ],
     "scopeMappings": [
         {
-            "username": "third-party",
+            "client": "third-party",
             "roles": ["user"]
         },
         {
-            "username": "customer-portal",
+            "client": "customer-portal",
             "roles": ["user"]
         },
         {
-            "username": "product-portal",
+            "client": "product-portal",
             "roles": ["user"]
         }
 

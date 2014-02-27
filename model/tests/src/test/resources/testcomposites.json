@@ -91,11 +91,11 @@
     ],
     "scopeMappings": [
         {
-            "username": "REALM_COMPOSITE_1_APPLICATION",
+            "client": "REALM_COMPOSITE_1_APPLICATION",
             "roles": ["REALM_COMPOSITE_1"]
         },
         {
-            "username": "REALM_ROLE_1_APPLICATION",
+            "client": "REALM_ROLE_1_APPLICATION",
             "roles": ["REALM_ROLE_1"]
         }
     ],
@@ -221,7 +221,7 @@
     "applicationScopeMappings": {
         "APP_ROLE_APPLICATION": [
             {
-                "username": "APP_COMPOSITE_APPLICATION",
+                "client": "APP_COMPOSITE_APPLICATION",
                 "roles": ["APP_ROLE_2"]
             }
         ]

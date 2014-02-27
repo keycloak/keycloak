@@ -123,7 +123,7 @@ public class ApplicationManager {
                 if (role == null) {
                     role = applicationModel.addRole(roleString.trim());
                 }
-                ClientModel client = realm.findClient(mapping.getUsername());
+                ClientModel client = realm.findClient(mapping.getClient());
                 realm.addScopeMapping(client, role);
             }
         }
