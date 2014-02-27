@@ -9,7 +9,7 @@ import java.util.Set;
  */
 public class ScopeMappingRepresentation {
     protected String self; // link
-    protected String username;
+    protected String client;
     protected Set<String> roles;
 
     public String getSelf() {
@@ -20,12 +20,12 @@ public class ScopeMappingRepresentation {
         this.self = self;
     }
 
-    public String getUsername() {
-        return username;
+    public String getClient() {
+        return client;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
+    public void setClient(String client) {
+        this.client = client;
     }
 
     public Set<String> getRoles() {

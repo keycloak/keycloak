@@ -361,7 +361,7 @@ public class RealmManager {
                     if (role == null) {
                         role = newRealm.addRole(roleString.trim());
                     }
-                    UserModel user = userMap.get(scope.getUsername());
+                    UserModel user = userMap.get(scope.getClient());
                     ClientModel client = newRealm.findClient(user.getLoginName());
                     newRealm.addScopeMapping(client, role);
                 }

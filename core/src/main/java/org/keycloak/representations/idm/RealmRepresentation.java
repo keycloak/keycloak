@@ -159,7 +159,7 @@ public class RealmRepresentation {
 
     public ScopeMappingRepresentation scopeMapping(String username) {
         ScopeMappingRepresentation mapping = new ScopeMappingRepresentation();
-        mapping.setUsername(username);
+        mapping.setClient(username);
         if (scopeMappings == null) scopeMappings = new ArrayList<ScopeMappingRepresentation>();
         scopeMappings.add(mapping);
         return mapping;

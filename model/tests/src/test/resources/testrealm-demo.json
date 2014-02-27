@@ -53,7 +53,7 @@
     ],
     "scopeMappings": [
         {
-            "username": "third-party",
+            "client": "third-party",
             "roles": ["user"]
         }
     ],

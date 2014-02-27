@@ -119,7 +119,7 @@
     ],
     "scopeMappings": [
         {
-            "username": "oauthclient",
+            "client": "oauthclient",
             "roles": ["admin"]
         }
     ],
@@ -148,7 +148,7 @@
     "applicationScopeMappings": {
         "Application": [
             {
-                "username": "oauthclient",
+                "client": "oauthclient",
                 "roles": ["app-user"]
             }
         ]

@@ -46,11 +46,11 @@
     ],
     "scopeMappings": [
         {
-            "username": "third-party",
+            "client": "third-party",
             "roles": ["user"]
         },
         {
-            "username": "test-app",
+            "client": "test-app",
             "roles": ["user"]
         }
     ],
@@ -105,7 +105,7 @@
     "applicationScopeMappings": {
         "test-app": [
             {
-                "username": "third-party",
+                "client": "third-party",
                 "roles": ["customer-user"]
             }
         ]
