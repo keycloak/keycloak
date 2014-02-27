@@ -117,23 +117,10 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
 
     boolean removeApplication(String id);
 
-    List<RequiredCredentialModel> getRequiredApplicationCredentials();
-
-
-    List<RequiredCredentialModel> getRequiredOAuthClientCredentials();
-
     ApplicationModel getApplicationById(String id);
     ApplicationModel getApplicationByName(String name);
 
-    void addRequiredOAuthClientCredential(String type);
-
-    void addRequiredResourceCredential(String type);
-
     void updateRequiredCredentials(Set<String> creds);
-
-    void updateRequiredOAuthClientCredentials(Set<String> creds);
-
-    void updateRequiredApplicationCredentials(Set<String> creds);
 
     UserModel getUserBySocialLink(SocialLinkModel socialLink);
 
@@ -184,16 +171,6 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
     String getAccountTheme();
 
     void setAccountTheme(String name);
-
-    boolean validateSecret(UserModel user, String secret);
-
-    /**
-     * Secrets can be viewed.  They are used by confidential Applications and OAuth clients
-     *
-     * @param user
-     * @return
-     */
-    UserCredentialModel getSecret(UserModel user);
 
     boolean hasScope(ClientModel client, RoleModel role);
 }

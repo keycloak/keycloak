@@ -78,14 +78,8 @@ public class CreateRealmsWorker implements Worker {
         // Add required credentials
         if (createRequiredCredentials) {
             realmManager.addRequiredCredential(realm, CredentialRepresentation.PASSWORD);
-            realmManager.addResourceRequiredCredential(realm, CredentialRepresentation.PASSWORD);
-            realmManager.addOAuthClientRequiredCredential(realm, CredentialRepresentation.PASSWORD);
             realmManager.addRequiredCredential(realm, CredentialRepresentation.TOTP);
-            realmManager.addResourceRequiredCredential(realm, CredentialRepresentation.TOTP);
-            realmManager.addOAuthClientRequiredCredential(realm, CredentialRepresentation.TOTP);
             realmManager.addRequiredCredential(realm, CredentialRepresentation.CLIENT_CERT);
-            realmManager.addResourceRequiredCredential(realm, CredentialRepresentation.CLIENT_CERT);
-            realmManager.addOAuthClientRequiredCredential(realm, CredentialRepresentation.CLIENT_CERT);
         }
 
         log.info("Finished creation of realm " + realmName);

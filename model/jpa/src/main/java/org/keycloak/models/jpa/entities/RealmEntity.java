@@ -62,14 +62,6 @@ public class RealmEntity {
     @JoinTable(name="User_RequiredCreds")
     Collection<RequiredCredentialEntity> requiredCredentials = new ArrayList<RequiredCredentialEntity>();
 
-    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true)
-    @JoinTable(name="App_RequiredCreds")
-    Collection<RequiredCredentialEntity> requiredAppCredentials = new ArrayList<RequiredCredentialEntity>();
-
-    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true)
-    @JoinTable(name="OAuthClient_RequiredCreds")
-    Collection<RequiredCredentialEntity> requiredOAuthClCredentials = new ArrayList<RequiredCredentialEntity>();
-
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<ApplicationEntity> applications = new ArrayList<ApplicationEntity>();
 
@@ -234,22 +226,6 @@ public class RealmEntity {
 
     public void setRequiredCredentials(Collection<RequiredCredentialEntity> requiredCredentials) {
         this.requiredCredentials = requiredCredentials;
-    }
-
-    public Collection<RequiredCredentialEntity> getRequiredAppCredentials() {
-        return requiredAppCredentials;
-    }
-
-    public void setRequiredAppCredentials(Collection<RequiredCredentialEntity> requiredAppCredentials) {
-        this.requiredAppCredentials = requiredAppCredentials;
-    }
-
-    public Collection<RequiredCredentialEntity> getRequiredOAuthClCredentials() {
-        return requiredOAuthClCredentials;
-    }
-
-    public void setRequiredOAuthClCredentials(Collection<RequiredCredentialEntity> requiredOAuthClCredentials) {
-        this.requiredOAuthClCredentials = requiredOAuthClCredentials;
     }
 
     public Collection<ApplicationEntity> getApplications() {

@@ -32,33 +32,23 @@ public class OAuthClientManager {
         this.realm = realm;
     }
 
-    public UserCredentialModel generateSecret(RealmModel realm, OAuthClientModel app) {
+    public UserCredentialModel generateSecret(OAuthClientModel app) {
         UserCredentialModel secret = UserCredentialModel.generateSecret();
-        realm.updateCredential(app.getAgent(), secret);
+        app.setSecret(secret.getValue());
         return secret;
     }
 
 
     public OAuthClientModel create(String name) {
         OAuthClientModel model = realm.addOAuthClient(name);
-        RoleModel role = realm.getRole(Constants.IDENTITY_REQUESTER_ROLE);
-        realm.grantRole(model.getAgent(), role);
-        generateSecret(realm, model);
+        generateSecret(model);
         return model;
     }
 
     public OAuthClientModel create(OAuthClientRepresentation rep) {
         OAuthClientModel model = create(rep.getName());
         update(rep, model);
-        UserModel resourceUser = model.getAgent();
-        if (rep.getCredentials() != null) {
-            for (CredentialRepresentation cred : rep.getCredentials()) {
-                UserCredentialModel credential = new UserCredentialModel();
-                credential.setType(cred.getType());
-                credential.setValue(cred.getValue());
-                realm.updateCredential(resourceUser, credential);
-            }
-        }
+        model.setSecret(rep.getSecret());
         if (rep.getClaims() != null) {
             ClaimManager.setClaims(model, rep.getClaims());
         } else {
@@ -69,7 +59,7 @@ public class OAuthClientManager {
     }
 
     public void update(OAuthClientRepresentation rep, OAuthClientModel model) {
-        model.getAgent().setEnabled(rep.isEnabled());
+        model.setEnabled(rep.isEnabled());
         List<String> redirectUris = rep.getRedirectUris();
         if (redirectUris != null) {
             model.setRedirectUris(new HashSet<String>(redirectUris));
@@ -88,8 +78,8 @@ public class OAuthClientManager {
     public static OAuthClientRepresentation toRepresentation(OAuthClientModel model) {
         OAuthClientRepresentation rep = new OAuthClientRepresentation();
         rep.setId(model.getId());
-        rep.setName(model.getAgent().getLoginName());
-        rep.setEnabled(model.getAgent().isEnabled());
+        rep.setName(model.getClientId());
+        rep.setEnabled(model.isEnabled());
         Set<String> redirectUris = model.getRedirectUris();
         if (redirectUris != null) {
             rep.setRedirectUris(new LinkedList<String>(redirectUris));
@@ -135,10 +125,10 @@ public class OAuthClientManager {
         rep.setSslNotRequired(realmModel.isSslNotRequired());
         rep.setAuthServerUrl(baseUri.toString());
 
-        rep.setResource(model.getAgent().getLoginName());
+        rep.setResource(model.getClientId());
 
         Map<String, String> creds = new HashMap<String, String>();
-        creds.put(CredentialRepresentation.SECRET, realmModel.getSecret(model.getAgent()).getValue());
+        creds.put(CredentialRepresentation.SECRET, model.getSecret());
         rep.setCredentials(creds);
 
         return rep;

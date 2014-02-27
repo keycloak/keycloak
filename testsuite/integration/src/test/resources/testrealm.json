@@ -32,10 +32,7 @@
         {
             "name" : "third-party",
             "enabled": true,
-            "credentials" : [
-                { "type" : "secret",
-                    "value" : "password" }
-            ]
+            "secret": "password"
         }
     ],
     "roleMappings": [
@@ -60,12 +57,7 @@
             "enabled": true,
             "baseUrl": "http://localhost:8081/app",
             "adminUrl": "http://localhost:8081/app/logout",
-            "credentials": [
-                {
-                    "type": "secret",
-                    "value": "password"
-                }
-            ]
+            "secret": "password"
          }
     ],
     "roles" : {

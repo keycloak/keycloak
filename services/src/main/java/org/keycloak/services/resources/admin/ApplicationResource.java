@@ -125,7 +125,7 @@ public class ApplicationResource {
         auth.requireManage();
 
         logger.debug("regenerateSecret");
-        UserCredentialModel cred = new ApplicationManager().generateSecret(realm, application);
+        UserCredentialModel cred = new ApplicationManager().generateSecret(application);
         CredentialRepresentation rep = ModelToRepresentation.toRepresentation(cred);
         return rep;
     }
@@ -137,7 +137,7 @@ public class ApplicationResource {
         auth.requireView();
 
         logger.debug("getClientSecret");
-        UserCredentialModel model = realm.getSecret(application.getAgent());
+        UserCredentialModel model = UserCredentialModel.secret(application.getSecret());
         if (model == null) throw new NotFoundException("Application does not have a secret");
         return ModelToRepresentation.toRepresentation(model);
     }

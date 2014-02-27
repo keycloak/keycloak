@@ -12,13 +12,14 @@ import java.util.List;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @MongoCollection(collectionName = "oauthClients")
-public class OAuthClientEntity extends AbstractMongoIdentifiableEntity implements MongoEntity {
+public class OAuthClientEntity extends AbstractMongoIdentifiableEntity implements MongoEntity, ScopedEntity {
 
     private String name;
-
-    private String oauthAgentId;
+    private boolean enabled;
     private String realmId;
+    private String secret;
     private long allowedClaimsMask;
+    private List<String> scopeIds;
     private List<String> webOrigins;
     private List<String> redirectUris;
 
@@ -32,12 +33,12 @@ public class OAuthClientEntity extends AbstractMongoIdentifiableEntity implement
     }
 
     @MongoField
-    public String getOauthAgentId() {
-        return oauthAgentId;
+    public boolean isEnabled() {
+        return enabled;
     }
 
-    public void setOauthAgentId(String oauthUserId) {
-        this.oauthAgentId = oauthUserId;
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 
     @MongoField
@@ -48,6 +49,16 @@ public class OAuthClientEntity extends AbstractMongoIdentifiableEntity implement
     public void setRealmId(String realmId) {
         this.realmId = realmId;
     }
+
+    @MongoField
+    public String getSecret() {
+        return secret;
+    }
+
+    public void setSecret(String secret) {
+        this.secret = secret;
+    }
+
 
     @MongoField
     public long getAllowedClaimsMask() {
@@ -76,11 +87,19 @@ public class OAuthClientEntity extends AbstractMongoIdentifiableEntity implement
         this.redirectUris = redirectUris;
     }
 
+    @MongoField
+    public List<String> getScopeIds() {
+        return scopeIds;
+    }
+
+    public void setScopeIds(List<String> scopeIds) {
+        this.scopeIds = scopeIds;
+    }
+
+
 
 
     @Override
     public void afterRemove(MongoStoreInvocationContext context) {
-        // Remove user of this oauthClient
-        context.getMongoStore().removeEntity(UserEntity.class, oauthAgentId, context);
     }
 }

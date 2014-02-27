@@ -14,7 +14,7 @@
         <class>org.keycloak.models.jpa.entities.SocialLinkEntity</class>
         <class>org.keycloak.models.jpa.entities.UserEntity</class>
         <class>org.keycloak.models.jpa.entities.UserRoleMappingEntity</class>
-        <class>org.keycloak.models.jpa.entities.UserScopeMappingEntity</class>
+        <class>org.keycloak.models.jpa.entities.ScopeMappingEntity</class>
 
         <exclude-unlisted-classes>true</exclude-unlisted-classes>
 

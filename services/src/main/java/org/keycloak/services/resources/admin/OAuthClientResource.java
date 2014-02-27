@@ -112,7 +112,7 @@ public class OAuthClientResource  {
 
         logger.debug("regenerateSecret");
         UserCredentialModel cred = UserCredentialModel.generateSecret();
-        realm.updateCredential(oauthClient.getAgent(), cred);
+        oauthClient.setSecret(cred.getValue());
         CredentialRepresentation rep = ModelToRepresentation.toRepresentation(cred);
         return rep;
     }
@@ -124,7 +124,7 @@ public class OAuthClientResource  {
         auth.requireView();
 
         logger.debug("getClientSecret");
-        UserCredentialModel model = realm.getSecret(oauthClient.getAgent());
+        UserCredentialModel model = UserCredentialModel.secret(oauthClient.getSecret());
         if (model == null) throw new NotFoundException("Application does not have a secret");
         return ModelToRepresentation.toRepresentation(model);
     }

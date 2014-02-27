@@ -23,29 +23,14 @@ import org.hibernate.annotations.GenericGenerator;
  * @version $Revision: 1 $
  */
 @Entity
-public class ApplicationEntity {
-    @Id
-    @GenericGenerator(name="keycloak_generator", strategy="org.keycloak.models.jpa.utils.JpaIdGenerator")
-    @GeneratedValue(generator = "keycloak_generator")
-    private String id;
+public class ApplicationEntity extends ClientEntity {
 
-    private String name;
-    private boolean enabled;
     private boolean surrogateAuthRequired;
     private String baseUrl;
     private String managementUrl;
-    private long allowedClaimsMask;
 
-    @OneToOne(fetch = FetchType.EAGER)
-    private UserEntity applicationUser;
-
-    @ElementCollection
-    @CollectionTable
-    protected Set<String> webOrigins = new HashSet<String>();
-
-    @ElementCollection
-    @CollectionTable
-    protected Set<String> redirectUris = new HashSet<String>();
+    @ManyToOne()
+    private RealmEntity realm;
 
     @OneToMany(fetch = FetchType.EAGER, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "application")
     Collection<ApplicationRoleEntity> roles = new ArrayList<ApplicationRoleEntity>();
@@ -53,21 +38,6 @@ public class ApplicationEntity {
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
     @JoinTable(name="ApplicationDefaultRoles")
     Collection<RoleEntity> defaultRoles = new ArrayList<RoleEntity>();
-
-    @ManyToOne()
-    private RealmEntity realm;
-
-    public String getId() {
-        return id;
-    }
-
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
-    }
 
     public boolean isSurrogateAuthRequired() {
         return surrogateAuthRequired;
@@ -93,28 +63,12 @@ public class ApplicationEntity {
         this.managementUrl = managementUrl;
     }
 
-    public UserEntity getApplicationUser() {
-        return applicationUser;
-    }
-
-    public void setApplicationUser(UserEntity applicationUser) {
-        this.applicationUser = applicationUser;
-    }
-
     public Collection<ApplicationRoleEntity> getRoles() {
         return roles;
     }
 
     public void setRoles(Collection<ApplicationRoleEntity> roles) {
         this.roles = roles;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public Collection<RoleEntity> getDefaultRoles() {
@@ -133,29 +87,6 @@ public class ApplicationEntity {
         this.realm = realm;
     }
 
-    public long getAllowedClaimsMask() {
-        return allowedClaimsMask;
-    }
-
-    public void setAllowedClaimsMask(long allowedClaimsMask) {
-        this.allowedClaimsMask = allowedClaimsMask;
-    }
-
-    public Set<String> getWebOrigins() {
-        return webOrigins;
-    }
-
-    public void setWebOrigins(Set<String> webOrigins) {
-        this.webOrigins = webOrigins;
-    }
-
-    public Set<String> getRedirectUris() {
-        return redirectUris;
-    }
-
-    public void setRedirectUris(Set<String> redirectUris) {
-        this.redirectUris = redirectUris;
-    }
 
 
 }

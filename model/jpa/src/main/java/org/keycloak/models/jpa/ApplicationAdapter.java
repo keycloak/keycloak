@@ -20,31 +20,22 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ApplicationAdapter implements ApplicationModel {
+public class ApplicationAdapter extends ClientAdapter implements ApplicationModel {
 
     protected EntityManager em;
-    protected ApplicationEntity entity;
+    protected ApplicationEntity applicationEntity;
     protected RealmModel realm;
 
-    public ApplicationAdapter(RealmModel realm, EntityManager em, ApplicationEntity entity) {
+    public ApplicationAdapter(RealmModel realm, EntityManager em, ApplicationEntity applicationEntity) {
+        super(applicationEntity);
         this.realm = realm;
         this.em = em;
-        this.entity = entity;
+        this.applicationEntity = applicationEntity;
     }
 
     @Override
     public void updateApplication() {
         em.flush();
-    }
-
-    @Override
-    public UserModel getAgent() {
-        return new UserAdapter(entity.getApplicationUser());
-    }
-
-    @Override
-    public String getId() {
-        return entity.getId();
     }
 
     @Override
@@ -57,54 +48,35 @@ public class ApplicationAdapter implements ApplicationModel {
         entity.setName(name);
     }
 
-    @Override
-    public boolean isEnabled() {
-        return entity.isEnabled();
-    }
-
-    @Override
-    public void setEnabled(boolean enabled) {
-        entity.setEnabled(enabled);
-    }
-
-    @Override
-    public long getAllowedClaimsMask() {
-        return entity.getAllowedClaimsMask();
-    }
-
-    @Override
-    public void setAllowedClaimsMask(long mask) {
-        entity.setAllowedClaimsMask(mask);
-    }
 
     @Override
     public boolean isSurrogateAuthRequired() {
-        return entity.isSurrogateAuthRequired();
+        return applicationEntity.isSurrogateAuthRequired();
     }
 
     @Override
     public void setSurrogateAuthRequired(boolean surrogateAuthRequired) {
-        entity.setSurrogateAuthRequired(surrogateAuthRequired);
+        applicationEntity.setSurrogateAuthRequired(surrogateAuthRequired);
     }
 
     @Override
     public String getManagementUrl() {
-        return entity.getManagementUrl();
+        return applicationEntity.getManagementUrl();
     }
 
     @Override
     public void setManagementUrl(String url) {
-        entity.setManagementUrl(url);
+        applicationEntity.setManagementUrl(url);
     }
 
     @Override
     public String getBaseUrl() {
-        return entity.getBaseUrl();
+        return applicationEntity.getBaseUrl();
     }
 
     @Override
     public void setBaseUrl(String url) {
-        entity.setBaseUrl(url);
+        applicationEntity.setBaseUrl(url);
     }
 
     @Override
@@ -123,9 +95,9 @@ public class ApplicationAdapter implements ApplicationModel {
         if (role != null) return role;
         ApplicationRoleEntity roleEntity = new ApplicationRoleEntity();
         roleEntity.setName(name);
-        roleEntity.setApplication(entity);
+        roleEntity.setApplication(applicationEntity);
         em.persist(roleEntity);
-        entity.getRoles().add(roleEntity);
+        applicationEntity.getRoles().add(roleEntity);
         em.flush();
         return new RoleAdapter(realm, em, roleEntity);
     }
@@ -139,10 +111,10 @@ public class ApplicationAdapter implements ApplicationModel {
 
         ApplicationRoleEntity role = (ApplicationRoleEntity)roleAdapter.getRole();
 
-        entity.getRoles().remove(role);
-        entity.getDefaultRoles().remove(role);
+        applicationEntity.getRoles().remove(role);
+        applicationEntity.getDefaultRoles().remove(role);
 
-        em.createQuery("delete from " + UserScopeMappingEntity.class.getSimpleName() + " where role = :role").setParameter("role", role).executeUpdate();
+        em.createQuery("delete from " + ScopeMappingEntity.class.getSimpleName() + " where role = :role").setParameter("role", role).executeUpdate();
         em.createQuery("delete from " + UserRoleMappingEntity.class.getSimpleName() + " where role = :role").setParameter("role", role).executeUpdate();
         role.setApplication(null);
         em.flush();
@@ -154,7 +126,7 @@ public class ApplicationAdapter implements ApplicationModel {
     @Override
     public Set<RoleModel> getRoles() {
         Set<RoleModel> list = new HashSet<RoleModel>();
-        Collection<ApplicationRoleEntity> roles = entity.getRoles();
+        Collection<ApplicationRoleEntity> roles = applicationEntity.getRoles();
         if (roles == null) return list;
         for (RoleEntity entity : roles) {
             list.add(new RoleAdapter(realm, em, entity));
@@ -215,7 +187,7 @@ public class ApplicationAdapter implements ApplicationModel {
 
     @Override
     public List<String> getDefaultRoles() {
-        Collection<RoleEntity> entities = entity.getDefaultRoles();
+        Collection<RoleEntity> entities = applicationEntity.getDefaultRoles();
         List<String> roles = new ArrayList<String>();
         if (entities == null) return roles;
         for (RoleEntity entity : entities) {
@@ -230,7 +202,7 @@ public class ApplicationAdapter implements ApplicationModel {
         if (role == null) {
             role = addRole(name);
         }
-        Collection<RoleEntity> entities = entity.getDefaultRoles();
+        Collection<RoleEntity> entities = applicationEntity.getDefaultRoles();
         for (RoleEntity entity : entities) {
             if (entity.getId().equals(role.getId())) {
                 return;
@@ -249,7 +221,7 @@ public class ApplicationAdapter implements ApplicationModel {
 
     @Override
     public void updateDefaultRoles(String[] defaultRoles) {
-        Collection<RoleEntity> entities = entity.getDefaultRoles();
+        Collection<RoleEntity> entities = applicationEntity.getDefaultRoles();
         Set<String> already = new HashSet<String>();
         List<RoleEntity> remove = new ArrayList<RoleEntity>();
         for (RoleEntity rel : entities) {
@@ -287,49 +259,4 @@ public class ApplicationAdapter implements ApplicationModel {
     public String toString() {
         return getName();
     }
-
-    @Override
-    public Set<String> getWebOrigins() {
-        Set<String> result = new HashSet<String>();
-        result.addAll(entity.getWebOrigins());
-        return result;
-    }
-
-    @Override
-    public void setWebOrigins(Set<String> webOrigins) {
-        entity.setWebOrigins(webOrigins);
-    }
-
-    @Override
-    public void addWebOrigin(String webOrigin) {
-        entity.getWebOrigins().add(webOrigin);
-    }
-
-    @Override
-    public void removeWebOrigin(String webOrigin) {
-        entity.getWebOrigins().remove(webOrigin);
-    }
-
-    @Override
-    public Set<String> getRedirectUris() {
-        Set<String> result = new HashSet<String>();
-        result.addAll(entity.getRedirectUris());
-        return result;
-    }
-
-    @Override
-    public void setRedirectUris(Set<String> redirectUris) {
-        entity.setRedirectUris(redirectUris);
-    }
-
-    @Override
-    public void addRedirectUri(String redirectUri) {
-        entity.getRedirectUris().add(redirectUri);
-    }
-
-    @Override
-    public void removeRedirectUri(String redirectUri) {
-        entity.getRedirectUris().remove(redirectUri);
-    }
-
 }

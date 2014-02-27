@@ -27,7 +27,6 @@ public class UserEntity extends AbstractMongoIdentifiableEntity implements Mongo
     private String realmId;
 
     private List<String> roleIds;
-    private List<String> scopeIds;
 
     private Map<String, String> attributes;
     private List<UserModel.RequiredAction> requiredActions;
@@ -115,14 +114,6 @@ public class UserEntity extends AbstractMongoIdentifiableEntity implements Mongo
         this.roleIds = roleIds;
     }
 
-    @MongoField
-    public List<String> getScopeIds() {
-        return scopeIds;
-    }
-
-    public void setScopeIds(List<String> scopeIds) {
-        this.scopeIds = scopeIds;
-    }
 
     @MongoField
     public Map<String, String> getAttributes() {

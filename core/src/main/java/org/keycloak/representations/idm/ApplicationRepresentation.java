@@ -14,7 +14,7 @@ public class ApplicationRepresentation {
     protected String baseUrl;
     protected boolean surrogateAuthRequired;
     protected boolean enabled;
-    protected List<CredentialRepresentation> credentials;
+    protected String secret;
     protected String[] defaultRoles;
     protected List<String> redirectUris;
     protected List<String> webOrigins;
@@ -68,21 +68,12 @@ public class ApplicationRepresentation {
         this.baseUrl = baseUrl;
     }
 
-    public List<CredentialRepresentation> getCredentials() {
-        return credentials;
+    public String getSecret() {
+        return secret;
     }
 
-    public void setCredentials(List<CredentialRepresentation> credentials) {
-        this.credentials = credentials;
-    }
-
-    public ApplicationRepresentation credential(String type, String value) {
-        if (this.credentials == null) credentials = new ArrayList<CredentialRepresentation>();
-        CredentialRepresentation cred = new CredentialRepresentation();
-        cred.setType(type);
-        cred.setValue(value);
-        credentials.add(cred);
-        return this;
+    public void setSecret(String secret) {
+        this.secret = secret;
     }
 
     public List<String> getRedirectUris() {

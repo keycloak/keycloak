@@ -541,16 +541,13 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
 
     @Override
     public ApplicationModel addApplication(String name) {
-        UserAdapter resourceUser = addUserEntity(name);
-
         ApplicationEntity appData = new ApplicationEntity();
         appData.setName(name);
         appData.setRealmId(getId());
         appData.setEnabled(true);
-        appData.setResourceUserId(resourceUser.getUser().getId());
         getMongoStore().insertEntity(appData, invocationContext);
 
-        return new ApplicationAdapter(appData, resourceUser, invocationContext);
+        return new ApplicationAdapter(appData, invocationContext);
     }
 
     @Override
@@ -618,7 +615,7 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
     @Override
     public Set<RoleModel> getScopeMappings(ClientModel client) {
         Set<RoleModel> result = new HashSet<RoleModel>();
-        List<RoleEntity> roles = MongoModelUtils.getAllScopesOfUser(client.getAgent(), invocationContext);
+        List<RoleEntity> roles = MongoModelUtils.getAllScopesOfClient(client, invocationContext);
 
         for (RoleEntity role : roles) {
             if (getId().equals(role.getRealmId())) {
@@ -661,27 +658,22 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
 
     @Override
     public void addScopeMapping(ClientModel client, RoleModel role) {
-        UserEntity userEntity = ((UserAdapter)client.getAgent()).getUser();
-        getMongoStore().pushItemToList(userEntity, "scopeIds", role.getId(), true, invocationContext);
+        getMongoStore().pushItemToList(((AbstractAdapter)client).getMongoEntity(), "scopeIds", role.getId(), true, invocationContext);
     }
 
     @Override
     public void deleteScopeMapping(ClientModel client, RoleModel role) {
-        UserEntity userEntity = ((UserAdapter)client.getAgent()).getUser();
-        getMongoStore().pullItemFromList(userEntity, "scopeIds", role.getId(), invocationContext);
+        getMongoStore().pullItemFromList(((AbstractAdapter)client).getMongoEntity(), "scopeIds", role.getId(), invocationContext);
     }
 
     @Override
     public OAuthClientModel addOAuthClient(String name) {
-        UserAdapter oauthAgent = addUserEntity(name);
-
         OAuthClientEntity oauthClient = new OAuthClientEntity();
-        oauthClient.setOauthAgentId(oauthAgent.getUser().getId());
         oauthClient.setRealmId(getId());
         oauthClient.setName(name);
         getMongoStore().insertEntity(oauthClient, invocationContext);
 
-        return new OAuthClientAdapter(oauthClient, oauthAgent, invocationContext);
+        return new OAuthClientAdapter(oauthClient, invocationContext);
     }
 
     @Override
@@ -691,14 +683,12 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
 
     @Override
     public OAuthClientModel getOAuthClient(String name) {
-        UserAdapter user = getUser(name);
-        if (user == null) return null;
         DBObject query = new QueryBuilder()
                 .and("realmId").is(getId())
-                .and("oauthAgentId").is(user.getUser().getId())
+                .and("name").is(name)
                 .get();
         OAuthClientEntity oauthClient = getMongoStore().loadSingleEntity(OAuthClientEntity.class, query, invocationContext);
-        return oauthClient == null ? null : new OAuthClientAdapter(oauthClient, user, invocationContext);
+        return oauthClient == null ? null : new OAuthClientAdapter(oauthClient, invocationContext);
     }
 
     @Override
@@ -730,18 +720,6 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
         addRequiredCredential(credentialModel, realm.getRequiredCredentials());
     }
 
-    @Override
-    public void addRequiredResourceCredential(String type) {
-        RequiredCredentialModel credentialModel = initRequiredCredentialModel(type);
-        addRequiredCredential(credentialModel, realm.getRequiredApplicationCredentials());
-    }
-
-    @Override
-    public void addRequiredOAuthClientCredential(String type) {
-        RequiredCredentialModel credentialModel = initRequiredCredentialModel(type);
-        addRequiredCredential(credentialModel, realm.getRequiredOAuthClientCredentials());
-    }
-
     protected void addRequiredCredential(RequiredCredentialModel credentialModel, List<RequiredCredentialEntity> persistentCollection) {
         RequiredCredentialEntity credEntity = new RequiredCredentialEntity();
         credEntity.setType(credentialModel.getType());
@@ -757,16 +735,6 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
     @Override
     public void updateRequiredCredentials(Set<String> creds) {
         updateRequiredCredentials(creds, realm.getRequiredCredentials());
-    }
-
-    @Override
-    public void updateRequiredApplicationCredentials(Set<String> creds) {
-        updateRequiredCredentials(creds, realm.getRequiredApplicationCredentials());
-    }
-
-    @Override
-    public void updateRequiredOAuthClientCredentials(Set<String> creds) {
-        updateRequiredCredentials(creds, realm.getRequiredOAuthClientCredentials());
     }
 
     protected void updateRequiredCredentials(Set<String> creds, List<RequiredCredentialEntity> credsEntities) {
@@ -794,16 +762,6 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
     @Override
     public List<RequiredCredentialModel> getRequiredCredentials() {
         return convertRequiredCredentialEntities(realm.getRequiredCredentials());
-    }
-
-    @Override
-    public List<RequiredCredentialModel> getRequiredApplicationCredentials() {
-        return convertRequiredCredentialEntities(realm.getRequiredApplicationCredentials());
-    }
-
-    @Override
-    public List<RequiredCredentialModel> getRequiredOAuthClientCredentials() {
-        return convertRequiredCredentialEntities(realm.getRequiredOAuthClientCredentials());
     }
 
     protected List<RequiredCredentialModel> convertRequiredCredentialEntities(Collection<RequiredCredentialEntity> credEntities) {
@@ -841,28 +799,6 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
         }
         return false;
     }
-
-    @Override
-    public boolean validateSecret(UserModel user, String secret) {
-        for (CredentialEntity cred : ((UserAdapter)user).getUser().getCredentials()) {
-            if (cred.getType().equals(UserCredentialModel.SECRET)) {
-                return secret.equals(cred.getValue());
-            }
-        }
-        return false;
-    }
-
-    @Override
-    public UserCredentialModel getSecret(UserModel user) {
-        for (CredentialEntity cred : ((UserAdapter)user).getUser().getCredentials()) {
-            if (cred.getType().equals(UserCredentialModel.SECRET)) {
-                return UserCredentialModel.secret(cred.getValue());
-            }
-        }
-        return null;
-
-    }
-
 
 
     @Override

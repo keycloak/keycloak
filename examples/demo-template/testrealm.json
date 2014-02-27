@@ -62,35 +62,20 @@
             "name": "customer-portal",
             "enabled": true,
             "adminUrl": "http://localhost:8080/customer-portal",
-            "credentials": [
-                {
-                    "type": "secret",
-                    "value": "password"
-                }
-            ]
+            "secret": "password"
         },
         {
             "name": "product-portal",
             "enabled": true,
             "adminUrl": "http://localhost:8080/product-portal",
-            "credentials": [
-                {
-                    "type": "secret",
-                    "value": "password"
-                }
-            ]
+            "secret": "password"
         }
     ],
     "oauthClients": [
         {
             "name": "third-party",
             "enabled": true,
-            "credentials": [
-                {
-                    "type": "secret",
-                    "value": "password"
-                }
-            ]
+            "secret": "password"
         }
     ],
     "applicationRoleMappings": {

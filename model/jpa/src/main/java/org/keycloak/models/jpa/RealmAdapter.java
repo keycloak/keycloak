@@ -9,10 +9,10 @@ import org.keycloak.models.jpa.entities.RealmEntity;
 import org.keycloak.models.jpa.entities.RealmRoleEntity;
 import org.keycloak.models.jpa.entities.RequiredCredentialEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
+import org.keycloak.models.jpa.entities.ScopeMappingEntity;
 import org.keycloak.models.jpa.entities.SocialLinkEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.jpa.entities.UserRoleMappingEntity;
-import org.keycloak.models.jpa.entities.UserScopeMappingEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
 import org.keycloak.models.ApplicationModel;
@@ -313,125 +313,6 @@ public class RealmAdapter implements RealmModel {
         return requiredCredentialModels;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    @Override
-    public List<RequiredCredentialModel> getRequiredApplicationCredentials() {
-        List<RequiredCredentialModel> requiredCredentialModels = new ArrayList<RequiredCredentialModel>();
-        Collection<RequiredCredentialEntity> entities = realm.getRequiredAppCredentials();
-        if (entities == null) return requiredCredentialModels;
-        for (RequiredCredentialEntity entity : entities) {
-            RequiredCredentialModel model = new RequiredCredentialModel();
-            model.setFormLabel(entity.getFormLabel());
-            model.setType(entity.getType());
-            model.setSecret(entity.isSecret());
-            model.setInput(entity.isInput());
-            requiredCredentialModels.add(model);
-        }
-        return requiredCredentialModels;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public List<RequiredCredentialModel> getRequiredOAuthClientCredentials() {
-        List<RequiredCredentialModel> requiredCredentialModels = new ArrayList<RequiredCredentialModel>();
-        Collection<RequiredCredentialEntity> entities = realm.getRequiredOAuthClCredentials();
-        if (entities == null) return requiredCredentialModels;
-        for (RequiredCredentialEntity entity : entities) {
-            RequiredCredentialModel model = new RequiredCredentialModel();
-            model.setFormLabel(entity.getFormLabel());
-            model.setType(entity.getType());
-            model.setSecret(entity.isSecret());
-            model.setInput(entity.isInput());
-            requiredCredentialModels.add(model);
-        }
-        return requiredCredentialModels;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public void addRequiredOAuthClientCredential(RequiredCredentialModel model) {
-        RequiredCredentialEntity entity = new RequiredCredentialEntity();
-        entity.setInput(model.isInput());
-        entity.setSecret(model.isSecret());
-        entity.setType(model.getType());
-        entity.setFormLabel(model.getFormLabel());
-        em.persist(entity);
-        realm.getRequiredOAuthClCredentials().add(entity);
-        em.flush();
-    }
-
-    @Override
-    public void addRequiredOAuthClientCredential(String type) {
-        RequiredCredentialModel model = initRequiredCredentialModel(type);
-        addRequiredOAuthClientCredential(model);
-        em.flush();
-    }
-
-    public void addRequiredResourceCredential(RequiredCredentialModel model) {
-        RequiredCredentialEntity entity = new RequiredCredentialEntity();
-        entity.setInput(model.isInput());
-        entity.setSecret(model.isSecret());
-        entity.setType(model.getType());
-        entity.setFormLabel(model.getFormLabel());
-        em.persist(entity);
-        realm.getRequiredAppCredentials().add(entity);
-        em.flush();
-    }
-
-    @Override
-    public void addRequiredResourceCredential(String type) {
-        RequiredCredentialModel model = initRequiredCredentialModel(type);
-        addRequiredResourceCredential(model);
-        em.flush();
-    }
-
-    @Override
-    public void updateRequiredOAuthClientCredentials(Set<String> creds) {
-        Collection<RequiredCredentialEntity> relationships = realm.getRequiredOAuthClCredentials();
-        if (relationships == null) relationships = new ArrayList<RequiredCredentialEntity>();
-
-        Set<String> already = new HashSet<String>();
-        List<RequiredCredentialEntity> remove = new ArrayList<RequiredCredentialEntity>();
-        for (RequiredCredentialEntity rel : relationships) {
-            if (!creds.contains(rel.getType())) {
-                remove.add(rel);
-            } else {
-                already.add(rel.getType());
-            }
-        }
-        for (RequiredCredentialEntity entity : remove) {
-            relationships.remove(entity);
-            em.remove(entity);
-        }
-        for (String cred : creds) {
-            if (!already.contains(cred)) {
-                addRequiredOAuthClientCredential(cred);
-            }
-        }
-        em.flush();
-    }
-
-    @Override
-    public void updateRequiredApplicationCredentials(Set<String> creds) {
-        Collection<RequiredCredentialEntity> relationships = realm.getRequiredAppCredentials();
-        if (relationships == null) relationships = new ArrayList<RequiredCredentialEntity>();
-
-        Set<String> already = new HashSet<String>();
-        List<RequiredCredentialEntity> remove = new ArrayList<RequiredCredentialEntity>();
-        for (RequiredCredentialEntity rel : relationships) {
-            if (!creds.contains(rel.getType())) {
-                remove.add(rel);
-            } else {
-                already.add(rel.getType());
-            }
-        }
-        for (RequiredCredentialEntity entity : remove) {
-            relationships.remove(entity);
-            em.remove(entity);
-        }
-        for (String cred : creds) {
-            if (!already.contains(cred)) {
-                addRequiredResourceCredential(cred);
-            }
-        }
-        em.flush();
-    }
 
     @Override
     public UserModel getUser(String name) {
@@ -495,7 +376,6 @@ public class RealmAdapter implements RealmModel {
     }
 
     private void removeUser(UserEntity user) {
-        em.createQuery("delete from " + UserScopeMappingEntity.class.getSimpleName() + " where user = :user").setParameter("user", user).executeUpdate();
         em.createQuery("delete from " + UserRoleMappingEntity.class.getSimpleName() + " where user = :user").setParameter("user", user).executeUpdate();
         em.createQuery("delete from " + SocialLinkEntity.class.getSimpleName() + " where user = :user").setParameter("user", user).executeUpdate();
         em.remove(user);
@@ -588,12 +468,6 @@ public class RealmAdapter implements RealmModel {
     @Override
     public ApplicationModel addApplication(String name) {
         ApplicationEntity applicationData = new ApplicationEntity();
-        UserEntity user = new UserEntity();
-        user.setLoginName(name);
-        user.setRealm(realm);
-        user.setEnabled(true);
-        em.persist(user);
-        applicationData.setApplicationUser(user);
         applicationData.setName(name);
         applicationData.setEnabled(true);
         applicationData.setRealm(realm);
@@ -634,7 +508,8 @@ public class RealmAdapter implements RealmModel {
             return false;
         }
         em.remove(applicationEntity);
-        removeUser(applicationEntity.getApplicationUser());
+        em.createQuery("delete from " + ScopeMappingEntity.class.getSimpleName() + " where client = :client").setParameter("client", applicationEntity).executeUpdate();
+
         return true;
     }
 
@@ -783,12 +658,7 @@ public class RealmAdapter implements RealmModel {
     @Override
     public OAuthClientModel addOAuthClient(String name) {
         OAuthClientEntity data = new OAuthClientEntity();
-        UserEntity user = new UserEntity();
-        user.setLoginName(name);
-        user.setRealm(realm);
-        user.setEnabled(true);
-        em.persist(user);
-        data.setAgent(user);
+        data.setEnabled(true);
         data.setName(name);
         data.setRealm(realm);
         em.persist(data);
@@ -799,9 +669,7 @@ public class RealmAdapter implements RealmModel {
     @Override
     public boolean removeOAuthClient(String id) {
         OAuthClientEntity client = em.find(OAuthClientEntity.class, id);
-        em.createQuery("delete from " + UserScopeMappingEntity.class.getSimpleName() + " where user = :user").setParameter("user", client.getAgent()).executeUpdate();
-        em.createQuery("delete from " + UserRoleMappingEntity.class.getSimpleName() + " where user = :user").setParameter("user", client.getAgent()).executeUpdate();
-        removeUser(client.getAgent());
+        em.createQuery("delete from " + ScopeMappingEntity.class.getSimpleName() + " where client = :client").setParameter("client", client).executeUpdate();
         em.remove(client);
         return true;
     }
@@ -809,7 +677,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public OAuthClientModel getOAuthClient(String name) {
-        TypedQuery<OAuthClientEntity> query = em.createNamedQuery("findOAuthClientByUser", OAuthClientEntity.class);
+        TypedQuery<OAuthClientEntity> query = em.createNamedQuery("findOAuthClientByName", OAuthClientEntity.class);
         query.setParameter("name", name);
         query.setParameter("realm", realm);
         List<OAuthClientEntity> entities = query.getResultList();
@@ -894,7 +762,7 @@ public class RealmAdapter implements RealmModel {
         realm.getDefaultRoles().remove(role);
 
         em.createQuery("delete from " + UserRoleMappingEntity.class.getSimpleName() + " where role = :role").setParameter("role", roleEntity).executeUpdate();
-        em.createQuery("delete from " + UserScopeMappingEntity.class.getSimpleName() + " where role = :role").setParameter("role", roleEntity).executeUpdate();
+        em.createQuery("delete from " + ScopeMappingEntity.class.getSimpleName() + " where role = :role").setParameter("role", roleEntity).executeUpdate();
 
         em.remove(roleEntity);
 
@@ -1023,11 +891,11 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public Set<RoleModel> getScopeMappings(ClientModel client) {
-        TypedQuery<UserScopeMappingEntity> query = em.createNamedQuery("userScopeMappings", UserScopeMappingEntity.class);
-        query.setParameter("user", ((UserAdapter)client.getAgent()).getUser());
-        List<UserScopeMappingEntity> entities = query.getResultList();
+        TypedQuery<ScopeMappingEntity> query = em.createNamedQuery("clientScopeMappings", ScopeMappingEntity.class);
+        query.setParameter("client", ((ClientAdapter)client).getEntity());
+        List<ScopeMappingEntity> entities = query.getResultList();
         Set<RoleModel> roles = new HashSet<RoleModel>();
-        for (UserScopeMappingEntity entity : entities) {
+        for (ScopeMappingEntity entity : entities) {
             roles.add(new RoleAdapter(this, em, entity.getRole()));
         }
         return roles;
@@ -1035,41 +903,28 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public void addScopeMapping(ClientModel client, RoleModel role) {
-        UserModel agent = client.getAgent();
         if (hasScope(client, role)) return;
-        UserScopeMappingEntity entity = new UserScopeMappingEntity();
-        entity.setUser(((UserAdapter) agent).getUser());
+        ScopeMappingEntity entity = new ScopeMappingEntity();
+        entity.setClient(((ClientAdapter) client).getEntity());
         entity.setRole(((RoleAdapter)role).getRole());
         em.persist(entity);
     }
 
     @Override
     public void deleteScopeMapping(ClientModel client, RoleModel role) {
-        UserModel agent = client.getAgent();
-        TypedQuery<UserScopeMappingEntity> query = getRealmScopeMappingQuery((UserAdapter) agent, (RoleAdapter) role);
-        List<UserScopeMappingEntity> results = query.getResultList();
+        TypedQuery<ScopeMappingEntity> query = getRealmScopeMappingQuery((ClientAdapter) client, (RoleAdapter) role);
+        List<ScopeMappingEntity> results = query.getResultList();
         if (results.size() == 0) return;
-        for (UserScopeMappingEntity entity : results) {
+        for (ScopeMappingEntity entity : results) {
             em.remove(entity);
         }
     }
 
-    protected TypedQuery<UserScopeMappingEntity> getRealmScopeMappingQuery(UserAdapter user, RoleAdapter role) {
-        TypedQuery<UserScopeMappingEntity> query = em.createNamedQuery("userHasScope", UserScopeMappingEntity.class);
-        query.setParameter("user", ((UserAdapter)user).getUser());
+    protected TypedQuery<ScopeMappingEntity> getRealmScopeMappingQuery(ClientAdapter client, RoleAdapter role) {
+        TypedQuery<ScopeMappingEntity> query = em.createNamedQuery("hasScope", ScopeMappingEntity.class);
+        query.setParameter("client", client.getEntity());
         query.setParameter("role", ((RoleAdapter)role).getRole());
         return query;
-    }
-
-    @Override
-    public UserCredentialModel getSecret(UserModel user) {
-        for (CredentialEntity cred : ((UserAdapter)user).getUser().getCredentials()) {
-            if (cred.getType().equals(UserCredentialModel.SECRET)) {
-                return UserCredentialModel.secret(cred.getValue());
-            }
-        }
-        return null;
-
     }
 
     @Override
@@ -1081,18 +936,6 @@ public class RealmAdapter implements RealmModel {
         }
         return false;
     }
-
-    @Override
-    public boolean validateSecret(UserModel user, String secret) {
-        for (CredentialEntity cred : ((UserAdapter)user).getUser().getCredentials()) {
-            if (cred.getType().equals(UserCredentialModel.SECRET)) {
-                return secret.equals(cred.getValue());
-            }
-        }
-        return false;
-    }
-
-
 
     @Override
     public boolean validateTOTP(UserModel user, String password, String token) {

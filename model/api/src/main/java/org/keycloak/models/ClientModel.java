@@ -7,9 +7,19 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public interface ClientModel {
+    /**
+     * Internal database key
+     *
+     * @return
+     */
     String getId();
 
-    UserModel getAgent();
+    /**
+     * String exposed to outside world
+     *
+     * @return
+     */
+    String getClientId();
 
     long getAllowedClaimsMask();
 
@@ -35,4 +45,8 @@ public interface ClientModel {
     boolean isEnabled();
 
     void setEnabled(boolean enabled);
+
+    boolean validateSecret(String secret);
+    String getSecret();
+    public void setSecret(String secret);
 }

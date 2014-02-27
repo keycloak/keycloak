@@ -23,6 +23,7 @@ package org.keycloak.services.resources.flows;
 
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.OAuthClientModel;
@@ -107,12 +108,7 @@ public class OAuthFlows {
         isTotpConfigurationRequired(user);
         isEmailVerificationRequired(user);
 
-        RoleModel resourceRole = realm.getRole(Constants.APPLICATION_ROLE);
-        RoleModel identityRequestRole = realm.getRole(Constants.IDENTITY_REQUESTER_ROLE);
-        boolean isResource = realm.hasRole(client.getAgent(), resourceRole);
-        if (!isResource && !realm.hasRole(client.getAgent(), identityRequestRole)) {
-            return forwardToSecurityFailure("Login requester not allowed to request login.");
-        }
+        boolean isResource = client instanceof ApplicationModel;
         AccessCodeEntry accessCode = tokenManager.createAccessCode(scopeParam, state, redirect, realm, client, user);
         log.debug("processAccessCode: isResource: {0}", isResource);
         log.debug("processAccessCode: go to oauth page?: {0}",
@@ -129,7 +125,6 @@ public class OAuthFlows {
 
         if (!isResource
                 && (accessCode.getRealmRolesRequested().size() > 0 || accessCode.getResourceRolesRequested().size() > 0)) {
-            OAuthClientModel oauthClient = realm.getOAuthClient(client.getAgent().getLoginName());
             accessCode.setExpiration(System.currentTimeMillis() / 1000 + realm.getAccessCodeLifespanUserAction());
             return Flows.forms(realm, request, uriInfo).setAccessCode(accessCode.getId(), accessCode.getCode()).
                     setAccessRequest(accessCode.getRealmRolesRequested(), accessCode.getResourceRolesRequested()).

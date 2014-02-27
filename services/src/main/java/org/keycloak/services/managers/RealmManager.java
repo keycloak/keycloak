@@ -70,14 +70,9 @@ public class RealmManager {
         if (id == null) id = KeycloakModelUtils.generateId();
         RealmModel realm = identitySession.createRealm(id, name);
         realm.setName(name);
-        realm.addRole(Constants.APPLICATION_ROLE);
-        realm.addRole(Constants.IDENTITY_REQUESTER_ROLE);
 
         setupAdminManagement(realm);
         setupAccountManagement(realm);
-
-        realm.addRequiredOAuthClientCredential(UserCredentialModel.SECRET);
-        realm.addRequiredResourceCredential(UserCredentialModel.SECRET);
 
         return realm;
     }
@@ -258,9 +253,6 @@ public class RealmManager {
 
         if (rep.getApplications() != null) {
             Map<String, ApplicationModel> appMap = createApplications(rep, newRealm);
-            for (ApplicationModel app : appMap.values()) {
-                userMap.put(app.getAgent().getLoginName(), app.getAgent());
-            }
         }
 
         if (rep.getRoles() != null) {
@@ -310,11 +302,7 @@ public class RealmManager {
         }
 
         if (rep.getOauthClients() != null) {
-            Map<String, OAuthClientModel> oauthMap = createOAuthClients(rep, newRealm);
-            for (OAuthClientModel app : oauthMap.values()) {
-                userMap.put(app.getAgent().getLoginName(), app.getAgent());
-            }
-
+            createOAuthClients(rep, newRealm);
         }
 
         // Now that all possible users and applications are created (users, apps, and oauth clients), do role mappings and scope mappings
@@ -364,8 +352,7 @@ public class RealmManager {
                     if (role == null) {
                         role = newRealm.addRole(roleString.trim());
                     }
-                    UserModel user = userMap.get(scope.getClient());
-                    ClientModel client = newRealm.findClient(user.getLoginName());
+                    ClientModel client = newRealm.findClient(scope.getClient());
                     newRealm.addScopeMapping(client, role);
                 }
 
@@ -481,34 +468,21 @@ public class RealmManager {
         newRealm.addRequiredCredential(requiredCred);
     }
 
-    public void addResourceRequiredCredential(RealmModel newRealm, String requiredCred) {
-        newRealm.addRequiredResourceCredential(requiredCred);
-    }
-
-    public void addOAuthClientRequiredCredential(RealmModel newRealm, String requiredCred) {
-        newRealm.addRequiredOAuthClientCredential(requiredCred);
-    }
-
-
     protected Map<String, ApplicationModel> createApplications(RealmRepresentation rep, RealmModel realm) {
         Map<String, ApplicationModel> appMap = new HashMap<String, ApplicationModel>();
-        RoleModel loginRole = realm.getRole(Constants.APPLICATION_ROLE);
         ApplicationManager manager = new ApplicationManager(this);
         for (ApplicationRepresentation resourceRep : rep.getApplications()) {
-            ApplicationModel app = manager.createApplication(realm, loginRole, resourceRep);
+            ApplicationModel app = manager.createApplication(realm, resourceRep);
             appMap.put(app.getName(), app);
         }
         return appMap;
     }
 
-    protected Map<String, OAuthClientModel> createOAuthClients(RealmRepresentation realmRep, RealmModel realm) {
-        Map<String, OAuthClientModel> appMap = new HashMap<String, OAuthClientModel>();
+    protected void createOAuthClients(RealmRepresentation realmRep, RealmModel realm) {
         OAuthClientManager manager = new OAuthClientManager(realm);
         for (OAuthClientRepresentation rep : realmRep.getOauthClients()) {
             OAuthClientModel app = manager.create(rep);
-            appMap.put(app.getAgent().getLoginName(), app);
         }
-        return appMap;
     }
 
 

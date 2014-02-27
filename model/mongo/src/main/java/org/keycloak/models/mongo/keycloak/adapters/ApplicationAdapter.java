@@ -24,16 +24,10 @@ import java.util.Set;
 public class ApplicationAdapter extends AbstractAdapter implements ApplicationModel {
 
     private final ApplicationEntity application;
-    private UserAdapter resourceUser;
 
     public ApplicationAdapter(ApplicationEntity applicationEntity, MongoStoreInvocationContext invContext) {
-        this(applicationEntity, null, invContext);
-    }
-
-    public ApplicationAdapter(ApplicationEntity applicationEntity, UserAdapter resourceUser, MongoStoreInvocationContext invContext) {
         super(invContext);
         this.application = applicationEntity;
-        this.resourceUser = resourceUser;
     }
 
     @Override
@@ -42,22 +36,13 @@ public class ApplicationAdapter extends AbstractAdapter implements ApplicationMo
     }
 
     @Override
-    public UserAdapter getAgent() {
-        // This is not thread-safe. Assumption is that ApplicationAdapter instance is per-client object
-        if (resourceUser == null) {
-            UserEntity userEntity = getMongoStore().loadEntity(UserEntity.class, application.getResourceUserId(), invocationContext);
-            if (userEntity == null) {
-                throw new IllegalStateException("User " + application.getResourceUserId() + " not found");
-            }
-            resourceUser = new UserAdapter(userEntity, invocationContext);
-        }
-
-        return resourceUser;
+    public String getId() {
+        return application.getId();
     }
 
     @Override
-    public String getId() {
-        return application.getId();
+    public String getClientId() {
+        return getName();
     }
 
     @Override
@@ -197,14 +182,13 @@ public class ApplicationAdapter extends AbstractAdapter implements ApplicationMo
 
     @Override
     public void addScope(RoleModel role) {
-        UserAdapter appUser = getAgent();
-        getMongoStore().pushItemToList(appUser.getUser(), "scopeIds", role.getId(), true, invocationContext);
+        getMongoStore().pushItemToList(application, "scopeIds", role.getId(), true, invocationContext);
     }
 
     @Override
     public Set<RoleModel> getApplicationScopeMappings(ClientModel client) {
         Set<RoleModel> result = new HashSet<RoleModel>();
-        List<RoleEntity> roles = MongoModelUtils.getAllScopesOfUser(client.getAgent(), invocationContext);
+        List<RoleEntity> roles = MongoModelUtils.getAllScopesOfClient(client, invocationContext);
 
         for (RoleEntity role : roles) {
             if (getId().equals(role.getApplicationId())) {
@@ -300,5 +284,22 @@ public class ApplicationAdapter extends AbstractAdapter implements ApplicationMo
     public void removeRedirectUri(String redirectUri) {
         getMongoStore().pullItemFromList(application, "redirectUris", redirectUri, invocationContext);
     }
+
+    @Override
+    public String getSecret() {
+        return application.getSecret();
+    }
+
+    @Override
+    public void setSecret(String secret) {
+        application.setSecret(secret);
+    }
+
+
+    @Override
+    public boolean validateSecret(String secret) {
+        return secret.equals(application.getSecret());
+    }
+
 
 }

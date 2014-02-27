@@ -290,7 +290,7 @@ public class TokenManager {
         token.subject(user.getId());
         token.audience(realm.getName());
         token.issuedNow();
-        token.issuedFor(client.getAgent().getLoginName());
+        token.issuedFor(client.getClientId());
         token.issuer(realm.getName());
         if (realm.getAccessTokenLifespan() > 0) {
             token.expiration((System.currentTimeMillis() / 1000) + realm.getAccessTokenLifespan());

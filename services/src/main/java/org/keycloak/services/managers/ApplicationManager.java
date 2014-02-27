@@ -46,11 +46,10 @@ public class ApplicationManager {
      * Does not create scope or role mappings!
      *
      * @param realm
-     * @param loginRole
      * @param resourceRep
      * @return
      */
-    public ApplicationModel createApplication(RealmModel realm, RoleModel loginRole, ApplicationRepresentation resourceRep) {
+    public ApplicationModel createApplication(RealmModel realm, ApplicationRepresentation resourceRep) {
         logger.debug("************ CREATE APPLICATION: {0}" + resourceRep.getName());
         ApplicationModel applicationModel = realm.addApplication(resourceRep.getName());
         applicationModel.setEnabled(resourceRep.isEnabled());
@@ -59,16 +58,9 @@ public class ApplicationManager {
         applicationModel.setBaseUrl(resourceRep.getBaseUrl());
         applicationModel.updateApplication();
 
-        UserModel resourceUser = applicationModel.getAgent();
-        if (resourceRep.getCredentials() != null && resourceRep.getCredentials().size() > 0) {
-            for (CredentialRepresentation cred : resourceRep.getCredentials()) {
-                UserCredentialModel credential = new UserCredentialModel();
-                credential.setType(cred.getType());
-                credential.setValue(cred.getValue());
-                realm.updateCredential(resourceUser, credential);
-            }
-        } else {
-            generateSecret(realm, applicationModel);
+        applicationModel.setSecret(resourceRep.getSecret());
+        if (applicationModel.getSecret() == null) {
+            generateSecret(applicationModel);
         }
 
 
@@ -79,13 +71,10 @@ public class ApplicationManager {
         }
         if (resourceRep.getWebOrigins() != null) {
             for (String webOrigin : resourceRep.getWebOrigins()) {
-                logger.debug("Application: {0} webOrigin: {1}", resourceUser.getLoginName(), webOrigin);
+                logger.debug("Application: {0} webOrigin: {1}", resourceRep.getName(), webOrigin);
                 applicationModel.addWebOrigin(webOrigin);
             }
         }
-
-        realm.grantRole(resourceUser, loginRole);
-
 
         if (resourceRep.getDefaultRoles() != null) {
             applicationModel.updateDefaultRoles(resourceRep.getDefaultRoles());
@@ -129,23 +118,16 @@ public class ApplicationManager {
         }
     }
 
-    public ApplicationModel createApplication(RealmModel realm, ApplicationRepresentation resourceRep) {
-        RoleModel loginRole = realm.getRole(Constants.APPLICATION_ROLE);
-        return createApplication(realm, loginRole, resourceRep);
-    }
-
     public ApplicationModel createApplication(RealmModel realm, String name) {
-        RoleModel loginRole = realm.getRole(Constants.APPLICATION_ROLE);
         ApplicationModel app = realm.addApplication(name);
-        realm.grantRole(app.getAgent(), loginRole);
-        generateSecret(realm, app);
+        generateSecret(app);
 
         return app;
     }
 
-    public UserCredentialModel generateSecret(RealmModel realm, ApplicationModel app) {
+    public UserCredentialModel generateSecret(ApplicationModel app) {
         UserCredentialModel secret = UserCredentialModel.generateSecret();
-        realm.updateCredential(app.getAgent(), secret);
+        app.setSecret(secret.getValue());
         return secret;
     }
 
@@ -252,7 +234,7 @@ public class ApplicationManager {
         rep.setResource(applicationModel.getName());
 
         Map<String, String> creds = new HashMap<String, String>();
-        String cred = realmModel.getSecret(applicationModel.getAgent()).getValue();
+        String cred = applicationModel.getSecret();
         creds.put(CredentialRepresentation.SECRET, cred);
         rep.setCredentials(creds);
 
@@ -267,7 +249,7 @@ public class ApplicationManager {
         buffer.append("    <auth-server-url>").append(baseUri.toString()).append("</auth-server-url>\n");
         buffer.append("    <ssl-not-required>").append(realmModel.isSslNotRequired()).append("</ssl-not-required>\n");
         buffer.append("    <resource>").append(applicationModel.getName()).append("</resource>\n");
-        String cred = realmModel.getSecret(applicationModel.getAgent()).getValue();
+        String cred = applicationModel.getSecret();
         buffer.append("    <credential name=\"secret\">").append(cred).append("</credential>\n");
         buffer.append("</secure-deployment>\n");
         return buffer.toString();

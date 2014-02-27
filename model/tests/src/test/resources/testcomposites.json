@@ -65,10 +65,7 @@
         {
             "name" : "third-party",
             "enabled": true,
-            "credentials" : [
-                { "type" : "secret",
-                    "value" : "password" }
-            ]
+            "secret": "password"
         }
     ],
     "roleMappings": [
@@ -105,48 +102,28 @@
             "enabled": true,
             "baseUrl": "http://localhost:8081/app",
             "adminUrl": "http://localhost:8081/app/logout",
-            "credentials": [
-                {
-                    "type": "secret",
-                    "value": "password"
-                }
-            ]
+            "secret": "password"
          },
         {
             "name": "REALM_ROLE_1_APPLICATION",
             "enabled": true,
             "baseUrl": "http://localhost:8081/app",
             "adminUrl": "http://localhost:8081/app/logout",
-            "credentials": [
-                {
-                    "type": "secret",
-                    "value": "password"
-                }
-            ]
+            "secret": "password"
         },
         {
             "name": "APP_ROLE_APPLICATION",
             "enabled": true,
             "baseUrl": "http://localhost:8081/app",
             "adminUrl": "http://localhost:8081/app/logout",
-            "credentials": [
-                {
-                    "type": "secret",
-                    "value": "password"
-                }
-            ]
+            "secret": "password"
         },
         {
             "name": "APP_COMPOSITE_APPLICATION",
             "enabled": true,
             "baseUrl": "http://localhost:8081/app",
             "adminUrl": "http://localhost:8081/app/logout",
-            "credentials": [
-                {
-                    "type": "secret",
-                    "value": "password"
-                }
-            ]
+            "secret": "password"
         }
     ],
     "roles" : {
