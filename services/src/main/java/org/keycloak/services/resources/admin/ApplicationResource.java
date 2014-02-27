@@ -6,7 +6,6 @@ import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
-import org.keycloak.representations.adapters.config.BaseAdapterConfig;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.ApplicationManager;
@@ -138,7 +137,7 @@ public class ApplicationResource {
         auth.requireView();
 
         logger.debug("getClientSecret");
-        UserCredentialModel model = realm.getSecret(application.getApplicationUser());
+        UserCredentialModel model = realm.getSecret(application.getAgent());
         if (model == null) throw new NotFoundException("Application does not have a secret");
         return ModelToRepresentation.toRepresentation(model);
     }
@@ -146,7 +145,7 @@ public class ApplicationResource {
 
     @Path("scope-mappings")
     public ScopeMappedResource getScopeMappedResource() {
-        return new ScopeMappedResource(realm, auth, application.getApplicationUser(), session);
+        return new ScopeMappedResource(realm, auth, application.getAgent(), session);
     }
 
     @Path("roles")
@@ -161,7 +160,7 @@ public class ApplicationResource {
     {
         auth.requireView();
 
-        return application.getApplicationUser().getWebOrigins();
+        return application.getAgent().getWebOrigins();
     }
 
     @Path("allowed-origins")
@@ -171,7 +170,7 @@ public class ApplicationResource {
     {
         auth.requireManage();
 
-        application.getApplicationUser().setWebOrigins(allowedOrigins);
+        application.getAgent().setWebOrigins(allowedOrigins);
     }
 
     @Path("allowed-origins")
@@ -182,7 +181,7 @@ public class ApplicationResource {
         auth.requireManage();
 
         for (String origin : allowedOrigins) {
-            application.getApplicationUser().removeWebOrigin(origin);
+            application.getAgent().removeWebOrigin(origin);
         }
     }
 

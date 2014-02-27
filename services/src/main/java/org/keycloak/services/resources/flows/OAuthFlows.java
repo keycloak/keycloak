@@ -24,6 +24,7 @@ package org.keycloak.services.resources.flows;
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.models.Constants;
+import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
@@ -127,6 +128,7 @@ public class OAuthFlows {
 
         if (!isResource
                 && (accessCode.getRealmRolesRequested().size() > 0 || accessCode.getResourceRolesRequested().size() > 0)) {
+            OAuthClientModel oauthClient = realm.getOAuthClient(client.getLoginName());
             accessCode.setExpiration(System.currentTimeMillis() / 1000 + realm.getAccessCodeLifespanUserAction());
             return Flows.forms(realm, request, uriInfo).setAccessCode(accessCode.getId(), accessCode.getCode()).
                     setAccessRequest(accessCode.getRealmRolesRequested(), accessCode.getResourceRolesRequested()).

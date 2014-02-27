@@ -6,13 +6,10 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
-import org.keycloak.representations.adapters.config.BaseAdapterConfig;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
-import org.keycloak.services.managers.ApplicationManager;
 import org.keycloak.services.managers.ModelToRepresentation;
 import org.keycloak.services.managers.OAuthClientManager;
-import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.util.JsonSerialization;
 
@@ -29,7 +26,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
-import java.util.List;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -116,7 +112,7 @@ public class OAuthClientResource  {
 
         logger.debug("regenerateSecret");
         UserCredentialModel cred = UserCredentialModel.generateSecret();
-        realm.updateCredential(oauthClient.getOAuthAgent(), cred);
+        realm.updateCredential(oauthClient.getAgent(), cred);
         CredentialRepresentation rep = ModelToRepresentation.toRepresentation(cred);
         return rep;
     }
@@ -128,14 +124,14 @@ public class OAuthClientResource  {
         auth.requireView();
 
         logger.debug("getClientSecret");
-        UserCredentialModel model = realm.getSecret(oauthClient.getOAuthAgent());
+        UserCredentialModel model = realm.getSecret(oauthClient.getAgent());
         if (model == null) throw new NotFoundException("Application does not have a secret");
         return ModelToRepresentation.toRepresentation(model);
     }
 
     @Path("scope-mappings")
     public ScopeMappedResource getScopeMappedResource() {
-        return new ScopeMappedResource(realm, auth, oauthClient.getOAuthAgent(), session);
+        return new ScopeMappedResource(realm, auth, oauthClient.getAgent(), session);
     }
 
 

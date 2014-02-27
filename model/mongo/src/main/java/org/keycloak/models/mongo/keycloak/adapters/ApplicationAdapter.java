@@ -41,7 +41,7 @@ public class ApplicationAdapter extends AbstractAdapter implements ApplicationMo
     }
 
     @Override
-    public UserAdapter getApplicationUser() {
+    public UserAdapter getAgent() {
         // This is not thread-safe. Assumption is that ApplicationAdapter instance is per-client object
         if (resourceUser == null) {
             UserEntity userEntity = getMongoStore().loadEntity(UserEntity.class, application.getResourceUserId(), invocationContext);
@@ -196,7 +196,7 @@ public class ApplicationAdapter extends AbstractAdapter implements ApplicationMo
 
     @Override
     public void addScope(RoleModel role) {
-        UserAdapter appUser = getApplicationUser();
+        UserAdapter appUser = getAgent();
         getMongoStore().pushItemToList(appUser.getUser(), "scopeIds", role.getId(), true, invocationContext);
     }
 

@@ -1,7 +1,7 @@
 package org.keycloak.services.managers;
 
 import org.keycloak.models.ClaimMask;
-import org.keycloak.models.ClaimRequesterModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.representations.idm.ClaimRepresentation;
 
 /**
@@ -9,7 +9,7 @@ import org.keycloak.representations.idm.ClaimRepresentation;
  * @version $Revision: 1 $
  */
 public class ClaimManager {
-    public static void setClaims(ClaimRequesterModel model, ClaimRepresentation rep) {
+    public static void setClaims(ClientModel model, ClaimRepresentation rep) {
         long mask = model.getAllowedClaimsMask();
         if (rep.getAddress()) {
             mask |= ClaimMask.ADDRESS;

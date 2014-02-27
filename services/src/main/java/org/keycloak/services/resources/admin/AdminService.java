@@ -325,7 +325,7 @@ public class AdminService {
                 return redirectOnLoginError("realm not enabled");
             }
             ApplicationModel adminConsole = adminRealm.getApplicationNameMap().get(Constants.ADMIN_CONSOLE_APPLICATION);
-            UserModel adminConsoleUser = adminConsole.getApplicationUser();
+            UserModel adminConsoleUser = adminConsole.getAgent();
             if (!adminConsole.isEnabled() || !adminConsoleUser.isEnabled()) {
                 logger.debug("admin app not enabled");
                 return redirectOnLoginError("admin app not enabled");

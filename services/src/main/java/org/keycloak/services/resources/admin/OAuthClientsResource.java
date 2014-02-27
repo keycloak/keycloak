@@ -58,7 +58,7 @@ public class OAuthClientsResource {
                 rep.add(OAuthClientManager.toRepresentation(oauth));
             } else {
                 OAuthClientRepresentation client = new OAuthClientRepresentation();
-                client.setName(oauth.getOAuthAgent().getLoginName());
+                client.setName(oauth.getAgent().getLoginName());
                 rep.add(client);
             }
         }

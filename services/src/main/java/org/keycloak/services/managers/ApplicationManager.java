@@ -58,7 +58,7 @@ public class ApplicationManager {
         applicationModel.setBaseUrl(resourceRep.getBaseUrl());
         applicationModel.updateApplication();
 
-        UserModel resourceUser = applicationModel.getApplicationUser();
+        UserModel resourceUser = applicationModel.getAgent();
         if (resourceRep.getCredentials() != null && resourceRep.getCredentials().size() > 0) {
             for (CredentialRepresentation cred : resourceRep.getCredentials()) {
                 UserCredentialModel credential = new UserCredentialModel();
@@ -136,7 +136,7 @@ public class ApplicationManager {
     public ApplicationModel createApplication(RealmModel realm, String name) {
         RoleModel loginRole = realm.getRole(Constants.APPLICATION_ROLE);
         ApplicationModel app = realm.addApplication(name);
-        realm.grantRole(app.getApplicationUser(), loginRole);
+        realm.grantRole(app.getAgent(), loginRole);
         generateSecret(realm, app);
 
         return app;
@@ -144,7 +144,7 @@ public class ApplicationManager {
 
     public UserCredentialModel generateSecret(RealmModel realm, ApplicationModel app) {
         UserCredentialModel secret = UserCredentialModel.generateSecret();
-        realm.updateCredential(app.getApplicationUser(), secret);
+        realm.updateCredential(app.getAgent(), secret);
         return secret;
     }
 
@@ -162,12 +162,12 @@ public class ApplicationManager {
 
         List<String> redirectUris = rep.getRedirectUris();
         if (redirectUris != null) {
-            resource.getApplicationUser().setRedirectUris(new HashSet<String>(redirectUris));
+            resource.getAgent().setRedirectUris(new HashSet<String>(redirectUris));
         }
 
         List<String> webOrigins = rep.getWebOrigins();
         if (webOrigins != null) {
-            resource.getApplicationUser().setWebOrigins(new HashSet<String>(webOrigins));
+            resource.getAgent().setWebOrigins(new HashSet<String>(webOrigins));
         }
 
         if (rep.getClaims() != null) {
@@ -184,12 +184,12 @@ public class ApplicationManager {
         rep.setSurrogateAuthRequired(applicationModel.isSurrogateAuthRequired());
         rep.setBaseUrl(applicationModel.getBaseUrl());
 
-        Set<String> redirectUris = applicationModel.getApplicationUser().getRedirectUris();
+        Set<String> redirectUris = applicationModel.getAgent().getRedirectUris();
         if (redirectUris != null) {
             rep.setRedirectUris(new LinkedList<String>(redirectUris));
         }
 
-        Set<String> webOrigins = applicationModel.getApplicationUser().getWebOrigins();
+        Set<String> webOrigins = applicationModel.getAgent().getWebOrigins();
         if (webOrigins != null) {
             rep.setWebOrigins(new LinkedList<String>(webOrigins));
         }
@@ -251,7 +251,7 @@ public class ApplicationManager {
         rep.setResource(applicationModel.getName());
 
         Map<String, String> creds = new HashMap<String, String>();
-        String cred = realmModel.getSecret(applicationModel.getApplicationUser()).getValue();
+        String cred = realmModel.getSecret(applicationModel.getAgent()).getValue();
         creds.put(CredentialRepresentation.SECRET, cred);
         rep.setCredentials(creds);
 
@@ -266,7 +266,7 @@ public class ApplicationManager {
         buffer.append("    <auth-server-url>").append(baseUri.toString()).append("</auth-server-url>\n");
         buffer.append("    <ssl-not-required>").append(realmModel.isSslNotRequired()).append("</ssl-not-required>\n");
         buffer.append("    <resource>").append(applicationModel.getName()).append("</resource>\n");
-        String cred = realmModel.getSecret(applicationModel.getApplicationUser()).getValue();
+        String cred = realmModel.getSecret(applicationModel.getAgent()).getValue();
         buffer.append("    <credential name=\"secret\">").append(cred).append("</credential>\n");
         buffer.append("</secure-deployment>\n");
         return buffer.toString();

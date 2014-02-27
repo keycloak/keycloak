@@ -37,11 +37,11 @@ public class ApplicationModelTest extends AbstractModelTest {
         application.addDefaultRole("role-1");
         application.addDefaultRole("role-2");
 
-        application.getApplicationUser().addRedirectUri("redirect-1");
-        application.getApplicationUser().addRedirectUri("redirect-2");
+        application.getAgent().addRedirectUri("redirect-1");
+        application.getAgent().addRedirectUri("redirect-2");
 
-        application.getApplicationUser().addWebOrigin("origin-1");
-        application.getApplicationUser().addWebOrigin("origin-2");
+        application.getAgent().addWebOrigin("origin-1");
+        application.getAgent().addWebOrigin("origin-2");
 
         application.updateApplication();
     }
@@ -69,8 +69,8 @@ public class ApplicationModelTest extends AbstractModelTest {
         Assert.assertEquals(expected.getManagementUrl(), actual.getManagementUrl());
         Assert.assertEquals(expected.getDefaultRoles(), actual.getDefaultRoles());
 
-        UserModel auser = actual.getApplicationUser();
-        UserModel euser = expected.getApplicationUser();
+        UserModel auser = actual.getAgent();
+        UserModel euser = expected.getAgent();
 
         Assert.assertTrue(euser.getRedirectUris().containsAll(auser.getRedirectUris()));
         Assert.assertTrue(euser.getWebOrigins().containsAll(auser.getWebOrigins()));

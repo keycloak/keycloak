@@ -1,6 +1,6 @@
 package org.keycloak.services.resources.admin;
 
-import org.keycloak.models.ClaimRequesterModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.representations.idm.ClaimRepresentation;
 import org.keycloak.services.managers.ClaimManager;
 import org.keycloak.services.managers.ModelToRepresentation;
@@ -16,9 +16,9 @@ import javax.ws.rs.core.MediaType;
  * @version $Revision: 1 $
  */
 public class ClaimResource {
-    protected ClaimRequesterModel model;
+    protected ClientModel model;
 
-    public ClaimResource(ClaimRequesterModel model) {
+    public ClaimResource(ClientModel model) {
         this.model = model;
     }
 

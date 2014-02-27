@@ -27,12 +27,9 @@ import org.keycloak.account.Account;
 import org.keycloak.account.AccountLoader;
 import org.keycloak.account.AccountPages;
 import org.keycloak.jaxrs.JaxrsOAuthClient;
-import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.*;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.ModelToRepresentation;
@@ -257,7 +254,7 @@ public class AccountService {
                 logger.debug("realm not enabled");
                 throw new ForbiddenException();
             }
-            UserModel client = application.getApplicationUser();
+            UserModel client = application.getAgent();
             if (!client.isEnabled() || !application.isEnabled()) {
                 logger.debug("account management app not enabled");
                 throw new ForbiddenException();

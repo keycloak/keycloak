@@ -65,9 +65,9 @@ public class ProfileTest {
             appRealm.updateCredential(user2, creds);
 
             ApplicationModel app = appRealm.getApplicationNameMap().get("test-app");
-            appRealm.addScopeMapping(app.getApplicationUser(), accountApp.getRole(AccountRoles.VIEW_PROFILE));
+            appRealm.addScopeMapping(app.getAgent(), accountApp.getRole(AccountRoles.VIEW_PROFILE));
 
-            app.getApplicationUser().addWebOrigin("http://localtest.me:8081");
+            app.getAgent().addWebOrigin("http://localtest.me:8081");
 
             UserModel thirdParty = appRealm.getUser("third-party");
             appRealm.addScopeMapping(thirdParty, accountApp.getRole(AccountRoles.VIEW_PROFILE));

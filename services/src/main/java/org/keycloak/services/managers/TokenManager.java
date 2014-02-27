@@ -7,7 +7,7 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClaimMask;
-import org.keycloak.models.ClaimRequesterModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
@@ -17,7 +17,6 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
-import org.keycloak.representations.idm.ClaimRepresentation;
 import org.keycloak.util.Base64Url;
 import org.keycloak.util.JsonSerialization;
 
@@ -25,7 +24,6 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.security.PrivateKey;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -182,7 +180,7 @@ public class TokenManager {
 
             }
         }
-        ClaimRequesterModel claimRequesterModel = getClaimRequester(realm, client);
+        ClientModel claimRequesterModel = getClaimRequester(realm, client);
 
         AccessToken accessToken = initToken(realm, claimRequesterModel, client, user);
         accessToken.setRealmAccess(refreshToken.getRealmAccess());
@@ -194,8 +192,8 @@ public class TokenManager {
         return createClientAccessToken(scopeParam, realm, client, user, new LinkedList<RoleModel>(), new MultivaluedHashMap<String, RoleModel>());
     }
 
-    protected ClaimRequesterModel getClaimRequester(RealmModel realm, UserModel client) {
-        ClaimRequesterModel model = realm.getApplicationByName(client.getLoginName());
+    protected ClientModel getClaimRequester(RealmModel realm, UserModel client) {
+        ClientModel model = realm.getApplicationByName(client.getLoginName());
         if (model != null) return model;
         return realm.getOAuthClient(client.getLoginName());
     }
@@ -208,7 +206,7 @@ public class TokenManager {
 
         Set<RoleModel> roleMappings = realm.getRoleMappings(user);
         Set<RoleModel> scopeMappings = realm.getScopeMappings(client);
-        ClaimRequesterModel claimRequesterModel = getClaimRequester(realm, client);
+        ClientModel claimRequesterModel = getClaimRequester(realm, client);
         ApplicationModel clientApp = realm.getApplicationByName(client.getLoginName());
         Set<RoleModel> clientAppRoles = clientApp == null ? null : clientApp.getRoles();
         if (clientAppRoles != null) scopeMappings.addAll(clientAppRoles);
@@ -253,7 +251,7 @@ public class TokenManager {
         return token;
     }
 
-    public void initClaims(IDToken token, ClaimRequesterModel model, UserModel user) {
+    public void initClaims(IDToken token, ClientModel model, UserModel user) {
         if (ClaimMask.hasUsername(model.getAllowedClaimsMask())) {
             token.setPreferredUsername(user.getLoginName());
         }
@@ -271,7 +269,7 @@ public class TokenManager {
         }
     }
 
-    protected IDToken initIDToken(RealmModel realm, ClaimRequesterModel claimer, UserModel client, UserModel user) {
+    protected IDToken initIDToken(RealmModel realm, ClientModel claimer, UserModel client, UserModel user) {
         IDToken token = new IDToken();
         token.id(KeycloakModelUtils.generateId());
         token.subject(user.getId());
@@ -288,7 +286,7 @@ public class TokenManager {
 
 
 
-    protected AccessToken initToken(RealmModel realm, ClaimRequesterModel claimer, UserModel client, UserModel user) {
+    protected AccessToken initToken(RealmModel realm, ClientModel claimer, UserModel client, UserModel user) {
         AccessToken token = new AccessToken();
         token.id(KeycloakModelUtils.generateId());
         token.subject(user.getId());

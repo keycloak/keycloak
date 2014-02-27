@@ -6,17 +6,13 @@ import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.entities.*;
-import org.keycloak.representations.idm.ApplicationMappingsRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -41,7 +37,7 @@ public class ApplicationAdapter implements ApplicationModel {
     }
 
     @Override
-    public UserModel getApplicationUser() {
+    public UserModel getAgent() {
         return new UserAdapter(application.getApplicationUser());
     }
 
@@ -276,7 +272,7 @@ public class ApplicationAdapter implements ApplicationModel {
 
     @Override
     public void addScope(RoleModel role) {
-        realm.addScopeMapping(getApplicationUser(), role);
+        realm.addScopeMapping(getAgent(), role);
     }
 
     public boolean equals(Object o) {

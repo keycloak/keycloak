@@ -1,7 +1,6 @@
 package org.keycloak.model.test;
 
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
@@ -15,7 +14,6 @@ import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.OAuthClientManager;
 import org.keycloak.services.managers.RealmManager;
 
@@ -141,7 +139,7 @@ public class AdapterTest extends AbstractModelTest {
 
         OAuthClientModel oauth = new OAuthClientManager(realmModel).create("oauth-client");
         oauth = realmModel.getOAuthClient("oauth-client");
-        Assert.assertTrue(realmModel.hasRole(oauth.getOAuthAgent(), realmModel.getRole(Constants.IDENTITY_REQUESTER_ROLE)));
+        Assert.assertTrue(realmModel.hasRole(oauth.getAgent(), realmModel.getRole(Constants.IDENTITY_REQUESTER_ROLE)));
 
 
     }
@@ -186,10 +184,10 @@ public class AdapterTest extends AbstractModelTest {
 
         RoleModel appRole = app.addRole("test");
         realmModel.grantRole(user, appRole);
-        realmModel.addScopeMapping(client.getOAuthAgent(), appRole);
+        realmModel.addScopeMapping(client.getAgent(), appRole);
 
         RoleModel realmRole = realmModel.addRole("test");
-        realmModel.addScopeMapping(app.getApplicationUser(), realmRole);
+        realmModel.addScopeMapping(app.getAgent(), realmRole);
 
         Assert.assertTrue(realmModel.removeApplication(app.getId()));
         Assert.assertFalse(realmModel.removeApplication(app.getId()));
@@ -214,10 +212,10 @@ public class AdapterTest extends AbstractModelTest {
 
         RoleModel appRole = app.addRole("test");
         realmModel.grantRole(user, appRole);
-        realmModel.addScopeMapping(client.getOAuthAgent(), appRole);
+        realmModel.addScopeMapping(client.getAgent(), appRole);
 
         RoleModel realmRole = realmModel.addRole("test");
-        realmModel.addScopeMapping(app.getApplicationUser(), realmRole);
+        realmModel.addScopeMapping(app.getAgent(), realmRole);
 
         Assert.assertTrue(identitySession.removeRealm(realmModel.getId()));
         Assert.assertFalse(identitySession.removeRealm(realmModel.getId()));
@@ -237,10 +235,10 @@ public class AdapterTest extends AbstractModelTest {
 
         RoleModel appRole = app.addRole("test");
         realmModel.grantRole(user, appRole);
-        realmModel.addScopeMapping(client.getOAuthAgent(), appRole);
+        realmModel.addScopeMapping(client.getAgent(), appRole);
 
         RoleModel realmRole = realmModel.addRole("test");
-        realmModel.addScopeMapping(app.getApplicationUser(), realmRole);
+        realmModel.addScopeMapping(app.getAgent(), realmRole);
 
         Assert.assertTrue(realmModel.removeRoleById(realmRole.getId()));
         Assert.assertFalse(realmModel.removeRoleById(realmRole.getId()));
