@@ -15,33 +15,21 @@ import java.security.PublicKey;
  */
 public class PublishedRealmRepresentation {
     protected String realm;
-    protected String self;
 
     @JsonProperty("public_key")
     protected String publicKeyPem;
 
-    @JsonProperty("authorization")
-    protected String authorizationUrl;
+    @JsonProperty("token-service")
+    protected String tokenServiceUrl;
 
-    @JsonProperty("codes")
-    protected String codeUrl;
+    @JsonProperty("account-service")
+    protected String accountServiceUrl;
 
-    @JsonProperty("grants")
-    protected String grantUrl;
-
-    @JsonProperty("admin-role")
-    protected String adminRole;
+    @JsonProperty("admin-api")
+    protected String adminApiUrl;
 
     @JsonIgnore
     protected volatile transient PublicKey publicKey;
-
-    public String getAdminRole() {
-        return adminRole;
-    }
-
-    public void setAdminRole(String adminRole) {
-        this.adminRole = adminRole;
-    }
 
     public String getRealm() {
         return realm;
@@ -49,14 +37,6 @@ public class PublishedRealmRepresentation {
 
     public void setRealm(String realm) {
         this.realm = realm;
-    }
-
-    public String getSelf() {
-        return self;
-    }
-
-    public void setSelf(String self) {
-        this.self = self;
     }
 
     public String getPublicKeyPem() {
@@ -97,28 +77,27 @@ public class PublishedRealmRepresentation {
         this.publicKeyPem = PemUtils.removeBeginEnd(s);
     }
 
-
-    public String getAuthorizationUrl() {
-        return authorizationUrl;
+    public String getTokenServiceUrl() {
+        return tokenServiceUrl;
     }
 
-    public void setAuthorizationUrl(String authorizationUrl) {
-        this.authorizationUrl = authorizationUrl;
+    public void setTokenServiceUrl(String tokenServiceUrl) {
+        this.tokenServiceUrl = tokenServiceUrl;
     }
 
-    public String getCodeUrl() {
-        return codeUrl;
+    public String getAccountServiceUrl() {
+        return accountServiceUrl;
     }
 
-    public void setCodeUrl(String codeUrl) {
-        this.codeUrl = codeUrl;
+    public void setAccountServiceUrl(String accountServiceUrl) {
+        this.accountServiceUrl = accountServiceUrl;
     }
 
-    public String getGrantUrl() {
-        return grantUrl;
+    public String getAdminApiUrl() {
+        return adminApiUrl;
     }
 
-    public void setGrantUrl(String grantUrl) {
-        this.grantUrl = grantUrl;
+    public void setAdminApiUrl(String adminApiUrl) {
+        this.adminApiUrl = adminApiUrl;
     }
 }

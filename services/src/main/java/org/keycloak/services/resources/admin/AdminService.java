@@ -17,6 +17,7 @@ import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.TokenManager;
+import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.TokenService;
 import org.keycloak.services.resources.flows.Flows;
 
@@ -74,6 +75,12 @@ public class AdminService {
         this.tokenManager = tokenManager;
         this.authManager = new AppAuthManager("KEYCLOAK_ADMIN_CONSOLE_IDENTITY", tokenManager);
     }
+
+    public static UriBuilder adminApiUrl(UriInfo uriInfo) {
+        UriBuilder base = uriInfo.getBaseUriBuilder().path(AdminService.class).path(AdminService.class, "getRealmsAdmin").path(RealmsAdminResource.class, "getRealmAdmin");
+        return base;
+    }
+
 
     public static class WhoAmI {
         protected String userId;
