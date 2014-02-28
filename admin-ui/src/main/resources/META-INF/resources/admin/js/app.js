@@ -814,12 +814,19 @@ module.directive('kcReadOnly', function() {
     var d = {
         replace : false,
         link : function(scope, element, attrs) {
-            if (scope.$eval(attrs.kcReadOnly)) {
-                element.find('input').attr('disabled', 'disabled');
-                element.find('button').attr('disabled', 'disabled');
-                element.find('select').attr('disabled', 'disabled');
-                element.find('textarea').attr('disabled', 'disabled');
-            }
+            scope.$watch(attrs.kcReadOnly, function(readOnly, oldValue) {
+                if (readOnly) {
+                    element.find('input').attr('disabled', 'disabled');
+                    element.find('button').attr('disabled', 'disabled');
+                    element.find('select').attr('disabled', 'disabled');
+                    element.find('textarea').attr('disabled', 'disabled');
+                } else {
+                    element.find('input').removeAttr('disabled');
+                    element.find('button').removeAttr('disabled');
+                    element.find('select').removeAttr('disabled');
+                    element.find('textarea').removeAttr('disabled');
+                }
+            });
         }
     };
     return d;
