@@ -154,6 +154,10 @@ public class AdminService {
         if (realm == null)
             throw new NotFoundException();
         Auth auth = authManager.authenticateCookie(realm, headers);
+        if (auth == null) {
+            logger.debug("No auth cookie");
+            return Response.status(401).build();
+        }
         UserModel user = auth.getUser();
         if (user == null) {
             return Response.status(401).build();
