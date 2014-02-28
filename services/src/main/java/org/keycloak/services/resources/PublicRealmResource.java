@@ -4,6 +4,7 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.logging.Logger;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.PublishedRealmRepresentation;
+import org.keycloak.services.resources.admin.AdminService;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -19,7 +20,6 @@ import javax.ws.rs.core.UriInfo;
  */
 public class PublicRealmResource {
     protected static final  Logger logger = Logger.getLogger(PublicRealmResource.class);
-    public static final String ADMIN_ROLE = "$REALM-ADMIN$";
 
     @Context
     protected UriInfo uriInfo;
@@ -30,12 +30,6 @@ public class PublicRealmResource {
         this.realm = realm;
     }
 
-    public static UriBuilder realmUrl(UriInfo uriInfo) {
-        UriBuilder base = uriInfo.getBaseUriBuilder()
-                .path(RealmsResource.class).path(RealmsResource.class, "getRealmResource");
-        return base;
-    }
-
     @GET
     @NoCache
     @Produces("application/json")
@@ -43,38 +37,13 @@ public class PublicRealmResource {
         return realmRep(realm, uriInfo);
     }
 
-    @GET
-    @NoCache
-    @Path("html")
-    @Produces("text/html")
-    public String getRealmHtml(@PathParam("realm") String id) {
-        StringBuffer html = new StringBuffer();
-
-        String authUri = TokenService.loginPageUrl(uriInfo).build(realm.getName()).toString();
-        String codeUri = TokenService.accessCodeToTokenUrl(uriInfo).build(realm.getName()).toString();
-        String grantUrl = TokenService.grantAccessTokenUrl(uriInfo).build(realm.getName()).toString();
-
-        html.append("<html><body><h1>Realm: ").append(realm.getName()).append("</h1>");
-        html.append("<p>auth: ").append(authUri).append("</p>");
-        html.append("<p>code: ").append(codeUri).append("</p>");
-        html.append("<p>grant: ").append(grantUrl).append("</p>");
-        html.append("<p>public key: ").append(realm.getPublicKeyPem()).append("</p>");
-        html.append("</body></html>");
-
-        return html.toString();
-    }
-
-
     public static PublishedRealmRepresentation realmRep(RealmModel realm, UriInfo uriInfo) {
         PublishedRealmRepresentation rep = new PublishedRealmRepresentation();
         rep.setRealm(realm.getName());
-        rep.setSelf(realmUrl(uriInfo).build(realm.getId()).toString());
+        rep.setTokenServiceUrl(TokenService.tokenServiceBaseUrl(uriInfo).build(realm.getId()).toString());
+        rep.setAccountServiceUrl(AccountService.accountServiceBaseUrl(uriInfo).build(realm.getId()).toString());
+        rep.setAdminApiUrl(AdminService.adminApiUrl(uriInfo).build(realm.getId()).toString());
         rep.setPublicKeyPem(realm.getPublicKeyPem());
-        rep.setAdminRole(ADMIN_ROLE);
-
-        rep.setAuthorizationUrl(TokenService.loginPageUrl(uriInfo).build(realm.getName()).toString());
-        rep.setCodeUrl(TokenService.accessCodeToTokenUrl(uriInfo).build(realm.getName()).toString());
-        rep.setGrantUrl(TokenService.grantAccessTokenUrl(uriInfo).build(realm.getName()).toString());
         return rep;
     }
 

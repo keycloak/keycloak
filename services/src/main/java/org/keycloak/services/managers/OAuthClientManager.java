@@ -51,10 +51,7 @@ public class OAuthClientManager {
         model.setSecret(rep.getSecret());
         if (rep.getClaims() != null) {
             ClaimManager.setClaims(model, rep.getClaims());
-        } else {
-            model.setAllowedClaimsMask(ClaimMask.USERNAME);
         }
-
         return model;
     }
 

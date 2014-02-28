@@ -74,6 +74,12 @@ public class AccountService {
         this.authManager =  new AppAuthManager("KEYCLOAK_ACCOUNT_IDENTITY", tokenManager);
     }
 
+    public static UriBuilder accountServiceBaseUrl(UriInfo uriInfo) {
+        UriBuilder base = uriInfo.getBaseUriBuilder().path(RealmsResource.class).path(RealmsResource.class, "getAccountService");
+        return base;
+    }
+
+
     private Response forwardToPage(String path, AccountPages page) {
         Auth auth = getAuth(false);
         if (auth != null) {
