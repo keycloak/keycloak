@@ -5,6 +5,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.keycloak.adapters.TokenGrantRequest;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.servlet.ServletOAuthClient;
 import org.keycloak.util.JsonSerialization;
 
@@ -50,7 +51,7 @@ public class ProductDatabaseClient {
 
     static class TypedList extends ArrayList<String> {}
 
-    public static List<String> getProducts(HttpServletRequest request) throws Failure {
+    public static AccessTokenResponse getTokenResponse(HttpServletRequest request) {
         // The ServletOAuthClient is obtained by getting a context attribute
         // that is set in the Bootstrap context listener in this project.
         // You really should come up with a better way to initialize
@@ -59,17 +60,26 @@ public class ProductDatabaseClient {
         ServletOAuthClient oAuthClient = (ServletOAuthClient) request.getServletContext().getAttribute(ServletOAuthClient.class.getName());
         String token = null;
         try {
-            token = oAuthClient.getBearerToken(request).getToken();
+            return oAuthClient.getBearerToken(request);
         } catch (IOException e) {
             throw new RuntimeException(e);
         } catch (TokenGrantRequest.HttpFailure failure) {
             throw new RuntimeException(failure);
         }
 
+    }
+
+    public static List<String> getProducts(HttpServletRequest request, String accessToken) throws Failure {
+        // The ServletOAuthClient is obtained by getting a context attribute
+        // that is set in the Bootstrap context listener in this project.
+        // You really should come up with a better way to initialize
+        // and obtain the ServletOAuthClient.  I actually suggest downloading the ServletOAuthClient code
+        // and take a look how it works. You can also take a look at third-party-cdi example
+        ServletOAuthClient oAuthClient = (ServletOAuthClient) request.getServletContext().getAttribute(ServletOAuthClient.class.getName());
         HttpClient client = oAuthClient.getClient();
 
         HttpGet get = new HttpGet("http://localhost:8080/database/products");
-        get.addHeader("Authorization", "Bearer " + token);
+        get.addHeader("Authorization", "Bearer " + accessToken);
         try {
             HttpResponse response = client.execute(get);
             if (response.getStatusLine().getStatusCode() != 200) {

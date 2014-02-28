@@ -9,6 +9,16 @@
         <div id="kc-oauth" class="content-area">
             <h3><strong>${oauth.client}</strong> ${rb.oauthGrantRequest}</h3>
             <ul>
+                <#if oauth.claimsRequested??>
+                    <li>
+                        <span>
+                        Personal Info:&nbsp;
+                            <#list oauth.claimsRequested as claim>
+                                ${claim}&nbsp;
+                            </#list>
+                        </span>
+                    </li>
+                </#if>
                 <#list oauth.realmRolesRequested as role>
                     <li>
                         <span><#if role.description??>${role.description}<#else>${role.name}</#if></span>

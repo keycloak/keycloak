@@ -4,7 +4,9 @@ import org.apache.http.client.HttpClient;
 import org.keycloak.AbstractOAuthClient;
 import org.keycloak.adapters.HttpClientBuilder;
 import org.keycloak.adapters.TokenGrantRequest;
+import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.IDToken;
 import org.keycloak.util.KeycloakUriBuilder;
 
 import javax.servlet.http.Cookie;
@@ -154,6 +156,16 @@ public class ServletOAuthClient extends AbstractOAuthClient {
 
     public AccessTokenResponse refreshToken(String refreshToken) throws IOException, TokenGrantRequest.HttpFailure {
         return TokenGrantRequest.invokeRefresh(client, refreshToken, refreshUrl, clientId, credentials);
+    }
+
+    public static IDToken extractIdToken(String idToken) {
+        if (idToken == null) return null;
+        JWSInput input = new JWSInput(idToken);
+        try {
+            return input.readJsonContent(IDToken.class);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 

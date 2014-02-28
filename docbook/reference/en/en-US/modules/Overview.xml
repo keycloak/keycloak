@@ -49,6 +49,9 @@
                 OAuth 2.0 Grant requests
             </listitem>
             <listitem>
+                OpenID Connect Support.
+            </listitem>
+            <listitem>
                 CORS Support
             </listitem>
             <listitem>

@@ -21,12 +21,14 @@
  */
 package org.keycloak.login.freemarker.model;
 
+import org.keycloak.models.ClaimMask;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 
 import javax.ws.rs.core.MultivaluedMap;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -38,6 +40,7 @@ public class OAuthGrantBean {
     private MultivaluedMap<String, RoleModel> resourceRolesRequested;
     private String code;
     private ClientModel client;
+    private List<String> claimsRequested;
     private String oAuthCode;
     private String action;
 
@@ -46,6 +49,41 @@ public class OAuthGrantBean {
         this.client = client;
         this.realmRolesRequested = realmRolesRequested;
         this.resourceRolesRequested = resourceRolesRequested;
+
+        // todo support locale
+        List<String> claims = new LinkedList<String>();
+        long mask = client.getAllowedClaimsMask();
+        if (ClaimMask.hasEmail(mask)) {
+            claims.add("email");
+        }
+        if (ClaimMask.hasUsername(mask)) {
+            claims.add("username");
+        }
+        if (ClaimMask.hasName(mask)) {
+            claims.add("name");
+        }
+        if (ClaimMask.hasGender(mask)) {
+            claims.add("gender");
+        }
+        if (ClaimMask.hasAddress(mask)) {
+            claims.add("address");
+        }
+        if (ClaimMask.hasPhone(mask)) {
+            claims.add("phone");
+        }
+        if (ClaimMask.hasPicture(mask)) {
+            claims.add("picture");
+        }
+        if (ClaimMask.hasProfile(mask)) {
+            claims.add("profile page");
+        }
+        if (ClaimMask.hasLocale(mask)) {
+            claims.add("locale");
+        }
+        if (ClaimMask.hasWebsite(mask)) {
+            claims.add("website");
+        }
+        if (claims.size() > 0) this.claimsRequested = claims;
     }
 
     public String getCode() {
@@ -64,4 +102,7 @@ public class OAuthGrantBean {
         return client.getClientId();
     }
 
+    public List<String> getClaimsRequested() {
+        return claimsRequested;
+    }
 }
