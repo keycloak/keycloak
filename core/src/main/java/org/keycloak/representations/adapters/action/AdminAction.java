@@ -10,13 +10,13 @@ import org.codehaus.jackson.annotate.JsonIgnore;
  */
 public class AdminAction {
     protected String id;
-    protected long expiration;
+    protected int expiration;
     protected String resource;
 
     public AdminAction() {
     }
 
-    public AdminAction(String id, long expiration, String resource) {
+    public AdminAction(String id, int expiration, String resource) {
         this.id = id;
         this.expiration = expiration;
         this.resource = resource;
@@ -36,11 +36,16 @@ public class AdminAction {
         return time > expiration;
     }
 
-    public long getExpiration() {
+    /**
+     * Time in seconds since epoc
+     *
+     * @return
+     */
+    public int getExpiration() {
         return expiration;
     }
 
-    public void setExpiration(long expiration) {
+    public void setExpiration(int expiration) {
         this.expiration = expiration;
     }
 

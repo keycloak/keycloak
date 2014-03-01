@@ -26,7 +26,7 @@ import java.util.Map;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class TokenGrantRequest {
+public class ServerRequest {
 
     public static class HttpFailure extends Exception {
         private int status;

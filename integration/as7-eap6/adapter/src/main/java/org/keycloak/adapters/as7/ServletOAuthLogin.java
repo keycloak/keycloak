@@ -3,7 +3,7 @@ package org.keycloak.adapters.as7;
 import org.jboss.logging.Logger;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
-import org.keycloak.adapters.TokenGrantRequest;
+import org.keycloak.adapters.ServerRequest;
 import org.keycloak.adapters.config.RealmConfiguration;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.representations.AccessToken;
@@ -242,8 +242,8 @@ public class ServletOAuthLogin {
         String redirectUri = stripOauthParametersFromRedirect();
         AccessTokenResponse tokenResponse = null;
         try {
-            tokenResponse = TokenGrantRequest.invokeAccessCodeToToken(realmInfo, code, redirectUri);
-        } catch (TokenGrantRequest.HttpFailure failure) {
+            tokenResponse = ServerRequest.invokeAccessCodeToToken(realmInfo, code, redirectUri);
+        } catch (ServerRequest.HttpFailure failure) {
             log.error("failed to turn code into token");
             log.error("status from server: " + failure.getStatus());
             if (failure.getStatus() == HttpServletResponse.SC_BAD_REQUEST && failure.getError() != null) {
@@ -275,6 +275,15 @@ public class ServletOAuthLogin {
             sendError(HttpServletResponse.SC_FORBIDDEN);
             return false;
         }
+        if (tokenResponse.getNotBeforePolicy() > realmInfo.getNotBefore()) {
+            realmInfo.setNotBefore(tokenResponse.getNotBeforePolicy());
+        }
+        if (token.getIssuedAt() < realmInfo.getNotBefore()) {
+            log.error("Stale token");
+            sendError(HttpServletResponse.SC_FORBIDDEN);
+            return false;
+        }
+
         refreshToken = tokenResponse.getRefreshToken();
         // redirect to URL without oauth query parameters
         sendRedirect(redirectUri);

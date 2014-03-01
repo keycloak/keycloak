@@ -10,7 +10,7 @@ public class LogoutAction extends AdminAction {
     public LogoutAction() {
     }
 
-    public LogoutAction(String id, long expiration, String resource, String user) {
+    public LogoutAction(String id, int expiration, String resource, String user) {
         super(id, expiration, resource);
         this.user = user;
     }

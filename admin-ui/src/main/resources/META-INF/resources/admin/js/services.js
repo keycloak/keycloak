@@ -235,6 +235,12 @@ module.factory('RoleRealmComposites', function($resource) {
     });
 });
 
+module.factory('RealmPushRevocation', function($resource) {
+    return $resource('/auth/rest/admin/realms/:realm/push-revocation', {
+        realm : '@realm'
+    });
+});
+
 module.factory('RoleApplicationComposites', function($resource) {
     return $resource('/auth/rest/admin/realms/:realm/roles-by-id/:role/composites/applications/:application', {
         realm : '@realm',

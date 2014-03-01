@@ -20,6 +20,7 @@ import org.keycloak.adapters.RefreshableKeycloakSession;
 import org.keycloak.adapters.ResourceMetadata;
 import org.keycloak.adapters.as7.config.CatalinaAdapterConfigLoader;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.adapters.action.PushNotBeforeAction;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.adapters.config.RealmConfiguration;
 import org.keycloak.adapters.config.RealmConfigurationLoader;
@@ -92,6 +93,12 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
                 }
                 remoteLogout(input, response);
                 return;
+            } else if (requestURI.endsWith(AdapterConstants.K_PUSH_NOT_BEFORE)) {
+                JWSInput input = verifyAdminRequest(request, response);
+                if (input == null) {
+                    return; // we failed to verify the request
+                }
+                pushNotBefore(input, response);
             }
             checkKeycloakSession(request);
             super.invoke(request, response);
@@ -147,6 +154,30 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
         return input;
     }
 
+    protected void pushNotBefore(JWSInput token, HttpServletResponse response) throws IOException {
+        try {
+            log.debug("->> pushNotBefore: ");
+            PushNotBeforeAction action = JsonSerialization.readValue(token.getContent(), PushNotBeforeAction.class);
+            if (action.isExpired()) {
+                log.warn("admin request failed, expired token");
+                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Expired token");
+                return;
+            }
+            if (!resourceMetadata.getResourceName().equals(action.getResource())) {
+                log.warn("Resource name does not match");
+                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Resource name does not match");
+                return;
+
+            }
+            realmConfiguration.setNotBefore(action.getNotBefore());
+        } catch (Exception e) {
+            log.warn("failed to logout", e);
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to logout");
+        }
+        response.setStatus(HttpServletResponse.SC_NO_CONTENT);
+
+    }
+
     protected void remoteLogout(JWSInput token, HttpServletResponse response) throws IOException {
         try {
             log.debug("->> remoteLogout: ");
@@ -179,7 +210,7 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
 
     protected boolean bearer(boolean challenge, Request request, HttpServletResponse response) throws LoginException, IOException {
         boolean useResourceRoleMappings = adapterConfig.isUseResourceRoleMappings();
-        CatalinaBearerTokenAuthenticator bearer = new CatalinaBearerTokenAuthenticator(resourceMetadata, challenge, useResourceRoleMappings);
+        CatalinaBearerTokenAuthenticator bearer = new CatalinaBearerTokenAuthenticator(resourceMetadata, realmConfiguration.getNotBefore(), challenge, useResourceRoleMappings);
         if (bearer.login(request, response)) {
             return true;
         }

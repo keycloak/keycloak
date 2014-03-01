@@ -4,7 +4,7 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.keycloak.adapters.TokenGrantRequest;
+import org.keycloak.adapters.ServerRequest;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.servlet.ServletOAuthClient;
 import org.keycloak.util.JsonSerialization;
@@ -63,7 +63,7 @@ public class ProductDatabaseClient {
             return oAuthClient.getBearerToken(request);
         } catch (IOException e) {
             throw new RuntimeException(e);
-        } catch (TokenGrantRequest.HttpFailure failure) {
+        } catch (ServerRequest.HttpFailure failure) {
             throw new RuntimeException(failure);
         }
 

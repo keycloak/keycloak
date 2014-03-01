@@ -70,21 +70,17 @@ public class KeycloakServletExtension implements ServletExtension {
         PreflightCorsHandler.Wrapper preflight = new PreflightCorsHandler.Wrapper(keycloakConfig);
         UserSessionManagement userSessionManagement = new UserSessionManagement(realmConfiguration);
         ServletKeycloakAuthenticationMechanism auth = null;
-        if (keycloakConfig.isBearerOnly()) {
-            auth = new ServletKeycloakAuthenticationMechanism(keycloakConfig, loader.getResourceMetadata(), deploymentInfo.getConfidentialPortManager());
-        } else {
-            auth = new ServletKeycloakAuthenticationMechanism(
+        auth = new ServletKeycloakAuthenticationMechanism(
                 userSessionManagement,
                 keycloakConfig,
                 realmConfiguration,
                 deploymentInfo.getConfidentialPortManager());
-        }
         AuthenticatedActionsHandler.Wrapper actions = new AuthenticatedActionsHandler.Wrapper(keycloakConfig);
 
         // setup handlers
 
         deploymentInfo.addInitialHandlerChainWrapper(preflight); // cors preflight
-        deploymentInfo.addOuterHandlerChainWrapper(new ServletAdminActionsHandler.Wrapper(realmConfiguration, userSessionManagement));
+        deploymentInfo.addOuterHandlerChainWrapper(new ServletAdminActionsHandler.Wrapper(realmConfiguration, loader.getResourceMetadata(), userSessionManagement));
         final ServletKeycloakAuthenticationMechanism theAuth = auth;
         deploymentInfo.addAuthenticationMechanism("KEYCLOAK", new AuthenticationMechanismFactory() {
             @Override

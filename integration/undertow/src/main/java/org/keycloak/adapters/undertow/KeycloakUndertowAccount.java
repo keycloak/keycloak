@@ -69,6 +69,7 @@ public class KeycloakUndertowAccount implements Account, Serializable {
         // this object may have been serialized, so we need to reset realm config/metadata
         session.setRealmConfiguration(realmConfiguration);
         session.setMetadata(realmConfiguration.getMetadata());
+        log.info("realmConfig notBefore: " + realmConfiguration.getNotBefore());
         if (session.isActive()) return true;
 
         session.refreshExpiredToken();

@@ -5,6 +5,7 @@ import io.undertow.security.api.SecurityContext;
 import io.undertow.security.idm.Account;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.AttachmentKey;
+import io.undertow.util.Headers;
 import org.jboss.logging.Logger;
 import org.keycloak.KeycloakAuthenticatedSession;
 import org.keycloak.KeycloakPrincipal;
@@ -53,6 +54,7 @@ public class KeycloakAuthenticationMechanism implements AuthenticationMechanism 
 
     @Override
     public AuthenticationMechanismOutcome authenticate(HttpServerExchange exchange, SecurityContext securityContext) {
+        log.info("--> authenticate()");
         BearerTokenAuthenticator bearer = createBearerTokenAuthenticator();
         AuthenticationMechanismOutcome outcome = bearer.authenticate(exchange);
         if (outcome == AuthenticationMechanismOutcome.NOT_AUTHENTICATED) {
@@ -80,16 +82,26 @@ public class KeycloakAuthenticationMechanism implements AuthenticationMechanism 
 
         }
         completeAuthentication(exchange, securityContext, oauth);
+        exchange.getResponseHeaders().put(Headers.LOCATION, oauth.getStrippedOauthParametersRequestUri());
+        exchange.setResponseCode(302);
+        exchange.endExchange();
+
         log.info("AUTHENTICATED");
         return AuthenticationMechanismOutcome.AUTHENTICATED;
     }
+
+    public static void sendRedirect(final HttpServerExchange exchange, final String location) {
+        // TODO - String concatenation to construct URLS is extremely error prone - switch to a URI which will better handle this.
+        String loc = exchange.getRequestScheme() + "://" + exchange.getHostAndPort() + location;
+    }
+
 
     protected OAuthAuthenticator createOAuthAuthenticator(HttpServerExchange exchange) {
         return new OAuthAuthenticator(exchange, realmConfig, sslRedirectPort);
     }
 
     protected BearerTokenAuthenticator createBearerTokenAuthenticator() {
-        return new BearerTokenAuthenticator(resourceMetadata, adapterConfig.isUseResourceRoleMappings());
+        return new BearerTokenAuthenticator(resourceMetadata, realmConfig.getNotBefore(), adapterConfig.isUseResourceRoleMappings());
     }
 
     protected void completeAuthentication(HttpServerExchange exchange, SecurityContext securityContext, OAuthAuthenticator oauth) {

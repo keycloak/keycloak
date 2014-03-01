@@ -132,6 +132,10 @@ public class TokenManager {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Refresh token expired");
         }
 
+        if (refreshToken.getIssuedAt() < realm.getNotBefore()) {
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale refresh token");
+        }
+
         UserModel user = realm.getUserById(refreshToken.getSubject());
         if (user == null) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token", "Unknown user");
@@ -459,6 +463,7 @@ public class TokenManager {
                 String encodedToken = new JWSBuilder().jsonContent(refreshToken).rsa256(realm.getPrivateKey());
                 res.setRefreshToken(encodedToken);
             }
+            res.setNotBeforePolicy(realm.getNotBefore());
             return res;
         }
     }

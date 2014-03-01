@@ -28,6 +28,9 @@ public class PublishedRealmRepresentation {
     @JsonProperty("admin-api")
     protected String adminApiUrl;
 
+    @JsonProperty("tokens-not-before")
+    protected int notBefore;
+
     @JsonIgnore
     protected volatile transient PublicKey publicKey;
 
@@ -99,5 +102,13 @@ public class PublishedRealmRepresentation {
 
     public void setAdminApiUrl(String adminApiUrl) {
         this.adminApiUrl = adminApiUrl;
+    }
+
+    public int getNotBefore() {
+        return notBefore;
+    }
+
+    public void setNotBefore(int notBefore) {
+        this.notBefore = notBefore;
     }
 }

@@ -1,8 +1,10 @@
 package org.keycloak.adapters.undertow;
 
 import io.undertow.server.HttpServerExchange;
+import io.undertow.server.session.Session;
 import io.undertow.servlet.api.ConfidentialPortManager;
 import io.undertow.servlet.handlers.ServletRequestContext;
+import io.undertow.servlet.spec.HttpSessionImpl;
 import org.keycloak.KeycloakAuthenticatedSession;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.adapters.config.RealmConfiguration;
@@ -10,7 +12,10 @@ import org.keycloak.adapters.ResourceMetadata;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import java.io.IOException;
+import java.security.AccessController;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -45,5 +50,4 @@ public class ServletKeycloakAuthenticationMechanism extends KeycloakAuthenticati
         userSessionManagement.login(servletRequestContext.getDeployment().getSessionManager(), session, account.getPrincipal().getName());
 
     }
-
 }

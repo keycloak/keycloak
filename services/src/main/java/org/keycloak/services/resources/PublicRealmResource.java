@@ -44,6 +44,7 @@ public class PublicRealmResource {
         rep.setAccountServiceUrl(AccountService.accountServiceBaseUrl(uriInfo).build(realm.getId()).toString());
         rep.setAdminApiUrl(AdminService.adminApiUrl(uriInfo).build(realm.getId()).toString());
         rep.setPublicKeyPem(realm.getPublicKeyPem());
+        rep.setNotBefore(realm.getNotBefore());
         return rep;
     }
 

@@ -3,7 +3,7 @@ package org.keycloak.servlet;
 import org.apache.http.client.HttpClient;
 import org.keycloak.AbstractOAuthClient;
 import org.keycloak.adapters.HttpClientBuilder;
-import org.keycloak.adapters.TokenGrantRequest;
+import org.keycloak.adapters.ServerRequest;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
@@ -48,8 +48,8 @@ public class ServletOAuthClient extends AbstractOAuthClient {
         this.client = client;
     }
 
-    public AccessTokenResponse resolveBearerToken(String redirectUri, String code) throws IOException, TokenGrantRequest.HttpFailure {
-        return TokenGrantRequest.invokeAccessCodeToToken(client, code, codeUrl, redirectUri, clientId, credentials);
+    public AccessTokenResponse resolveBearerToken(String redirectUri, String code) throws IOException, ServerRequest.HttpFailure {
+        return ServerRequest.invokeAccessCodeToToken(client, code, codeUrl, redirectUri, clientId, credentials);
     }
 
     /**
@@ -134,9 +134,9 @@ public class ServletOAuthClient extends AbstractOAuthClient {
      * @param request
      * @return
      * @throws IOException
-     * @throws org.keycloak.adapters.TokenGrantRequest.HttpFailure
+     * @throws org.keycloak.adapters.ServerRequest.HttpFailure
      */
-    public AccessTokenResponse getBearerToken(HttpServletRequest request) throws IOException, TokenGrantRequest.HttpFailure {
+    public AccessTokenResponse getBearerToken(HttpServletRequest request) throws IOException, ServerRequest.HttpFailure {
         String error = request.getParameter("error");
         if (error != null) throw new IOException("OAuth error: " + error);
         String redirectUri = request.getRequestURL().append("?").append(request.getQueryString()).toString();
@@ -154,8 +154,8 @@ public class ServletOAuthClient extends AbstractOAuthClient {
         return resolveBearerToken(redirectUri, code);
     }
 
-    public AccessTokenResponse refreshToken(String refreshToken) throws IOException, TokenGrantRequest.HttpFailure {
-        return TokenGrantRequest.invokeRefresh(client, refreshToken, refreshUrl, clientId, credentials);
+    public AccessTokenResponse refreshToken(String refreshToken) throws IOException, ServerRequest.HttpFailure {
+        return ServerRequest.invokeRefresh(client, refreshToken, refreshUrl, clientId, credentials);
     }
 
     public static IDToken extractIdToken(String idToken) {

@@ -29,11 +29,13 @@ public class CatalinaBearerTokenAuthenticator {
     protected AccessToken token;
     private Principal principal;
     protected boolean useResourceRoleMappings;
+    protected int notBefore;
 
-    public CatalinaBearerTokenAuthenticator(ResourceMetadata resourceMetadata, boolean challenge, boolean useResourceRoleMappings) {
+    public CatalinaBearerTokenAuthenticator(ResourceMetadata resourceMetadata, int notBefore, boolean challenge, boolean useResourceRoleMappings) {
         this.resourceMetadata = resourceMetadata;
         this.challenge = challenge;
         this.useResourceRoleMappings = useResourceRoleMappings;
+        this.notBefore = notBefore;
     }
 
     public ResourceMetadata getResourceMetadata() {
@@ -76,6 +78,12 @@ public class CatalinaBearerTokenAuthenticator {
             log.error("Failed to verify token", e);
             challengeResponse(response, "invalid_token", e.getMessage());
         }
+
+        if (token.getIssuedAt() < notBefore) {
+            log.error("Stale token");
+            challengeResponse(response, "invalid_token", "Stale token");
+        }
+
         boolean verifyCaller = false;
         Set<String> roles = new HashSet<String>();
         if (useResourceRoleMappings) {
@@ -105,7 +113,7 @@ public class CatalinaBearerTokenAuthenticator {
         KeycloakPrincipal skeletonKeyPrincipal = new KeycloakPrincipal(token.getSubject(), surrogate);
         principal = new CatalinaSecurityContextHelper().createPrincipal(request.getContext().getRealm(), skeletonKeyPrincipal, roles);
         request.setUserPrincipal(principal);
-        request.setAuthType("OAUTH_BEARER");
+        request.setAuthType("KEYCLOAK");
         KeycloakAuthenticatedSession skSession = new KeycloakAuthenticatedSession(tokenString, token, null, null, resourceMetadata);
         request.setAttribute(KeycloakAuthenticatedSession.class.getName(), skSession);
 

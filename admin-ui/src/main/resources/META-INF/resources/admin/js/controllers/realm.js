@@ -690,6 +690,51 @@ module.controller('RealmKeysDetailCtrl', function($scope, Realm, realm, $http, $
     };
 });
 
+module.controller('RealmRevocationCtrl', function($scope, Realm, RealmPushRevocation, realm, $http, $location, Dialog, Notifications) {
+    $scope.realm = realm;
+
+    var setNotBefore = function() {
+        if ($scope.realm.notBefore == 0) {
+            $scope.notBefore = "None";
+        } else {
+            $scope.notBefore = new Date($scope.realm.notBefore * 1000);
+        }
+    };
+
+    if (realm.notBefore == 0) {
+        $scope.notBefore = "None";
+    } else {
+        $scope.notBefore = new Date(realm.notBefore);
+    }
+
+    $scope.clear = function() {
+        Realm.update({ realm: realm.realm, notBefore : 0 }, function () {
+            $scope.notBefore = "None";
+            Notifications.success('Not Before cleared for realm.');
+            Realm.get({ id : realm.realm }, function(updated) {
+                $scope.realm = updated;
+                setNotBefore();
+            })
+        });
+    }
+    $scope.setNotBeforeNow = function() {
+        Realm.update({ realm: realm.realm, notBefore : new Date().getTime()/1000}, function () {
+            Notifications.success('Not Before cleared for realm.');
+            Realm.get({ id : realm.realm }, function(updated) {
+                $scope.realm = updated;
+                setNotBefore();
+            })
+        });
+    }
+    $scope.pushRevocation = function() {
+        RealmPushRevocation.save({ realm: realm.realm}, function () {
+            Notifications.success('Push sent for realm.');
+        });
+    }
+
+});
+
+
 module.controller('RoleListCtrl', function($scope, $location, realm, roles) {
 
     $scope.realm = realm;

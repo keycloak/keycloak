@@ -35,6 +35,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             controller : 'RealmDetailCtrl'
         })
         */
+
         .when('/create/realm', {
             templateUrl : 'partials/realm-create.html',
             resolve : {
@@ -518,6 +519,16 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmDetailCtrl'
         })
+        .when('/realms/:realm/sessions/revocation', {
+            templateUrl : 'partials/session-revocation.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                }
+            },
+            controller : 'RealmRevocationCtrl'
+        })
+
         .otherwise({
             templateUrl : 'partials/notfound.html'
         });

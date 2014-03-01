@@ -173,4 +173,13 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
     void setAccountTheme(String name);
 
     boolean hasScope(ClientModel client, RoleModel role);
+
+    /**
+     * Time in seconds since epoc
+     *
+     * @return
+     */
+    int getNotBefore();
+
+    void setNotBefore(int notBefore);
 }

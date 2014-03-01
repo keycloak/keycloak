@@ -6,4 +6,5 @@
     </li>
     <li data-ng-show="access.viewApplications" data-ng-class="(path[2] == 'applications' || path[1] == 'application' || path[3] == 'applications') && 'active'"><a href="#/realms/{{realm.realm}}/applications">Applications</a></li>
     <li data-ng-show="access.viewClients" data-ng-class="(path[2] == 'oauth-clients' || path[1] == 'oauth-client') && 'active'"><a href="#/realms/{{realm.realm}}/oauth-clients">OAuth Clients</a></li>
+    <li data-ng-show="access.viewRealm" data-ng-class="(path[2] == 'sessions') && 'active'"><a href="#/realms/{{realm.realm}}/sessions/revocation">Sessions</a></li>
 </ul>

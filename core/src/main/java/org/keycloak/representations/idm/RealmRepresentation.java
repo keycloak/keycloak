@@ -13,6 +13,7 @@ public class RealmRepresentation {
     protected String self; // link
     protected String id;
     protected String realm;
+    protected Integer notBefore;
     protected Integer accessTokenLifespan;
     protected Integer refreshTokenLifespan;
     protected Integer centralLoginLifespan;
@@ -343,5 +344,13 @@ public class RealmRepresentation {
 
     public void setAccountTheme(String accountTheme) {
         this.accountTheme = accountTheme;
+    }
+
+    public Integer getNotBefore() {
+        return notBefore;
+    }
+
+    public void setNotBefore(Integer notBefore) {
+        this.notBefore = notBefore;
     }
 }
