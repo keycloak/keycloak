@@ -70,10 +70,19 @@ public class KeycloakUndertowAccount implements Account, Serializable {
         session.setRealmConfiguration(realmConfiguration);
         session.setMetadata(realmConfiguration.getMetadata());
         log.info("realmConfig notBefore: " + realmConfiguration.getNotBefore());
-        if (session.isActive()) return true;
+        if (session.isActive()) {
+            log.info("session is active");
+            return true;
+        }
 
+        log.info("session is not active try refresh");
         session.refreshExpiredToken();
-        if (!session.isActive()) return false;
+        if (!session.isActive()) {
+            log.info("session is not active return with failure");
+
+            return false;
+        }
+        log.info("refresh succeeded");
 
         setRoles(session.getToken(), config, realmConfiguration.getMetadata());
         return true;

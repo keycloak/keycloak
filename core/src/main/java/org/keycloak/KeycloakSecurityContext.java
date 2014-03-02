@@ -10,17 +10,17 @@ import java.io.Serializable;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class KeycloakAuthenticatedSession implements Serializable {
+public class KeycloakSecurityContext implements Serializable {
     protected String tokenString;
     protected AccessToken token;
     protected IDToken idToken;
     protected String idTokenString;
     protected transient ResourceMetadata metadata;
 
-    public KeycloakAuthenticatedSession() {
+    public KeycloakSecurityContext() {
     }
 
-    public KeycloakAuthenticatedSession(String tokenString, AccessToken token, String idTokenString, IDToken idToken, ResourceMetadata metadata) {
+    public KeycloakSecurityContext(String tokenString, AccessToken token, String idTokenString, IDToken idToken, ResourceMetadata metadata) {
         this.tokenString = tokenString;
         this.token = token;
         this.idToken = idToken;

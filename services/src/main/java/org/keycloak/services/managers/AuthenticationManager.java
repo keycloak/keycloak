@@ -40,6 +40,7 @@ public class AuthenticationManager {
     public static final String KEYCLOAK_REMEMBER_ME = "KEYCLOAK_REMEMBER_ME";
 
     public AccessToken createIdentityToken(RealmModel realm, UserModel user) {
+        logger.info("createIdentityToken");
         AccessToken token = new AccessToken();
         token.id(KeycloakModelUtils.generateId());
         token.issuedNow();
@@ -52,6 +53,7 @@ public class AuthenticationManager {
     }
 
     public NewCookie createLoginCookie(RealmModel realm, UserModel user, UriInfo uriInfo, boolean rememberMe) {
+        logger.info("createLoginCookie");
         String cookieName = KEYCLOAK_IDENTITY_COOKIE;
         String cookiePath = getIdentityCookiePath(realm, uriInfo);
         return createLoginCookie(realm, user, null, cookieName, cookiePath, rememberMe);
@@ -140,10 +142,17 @@ public class AuthenticationManager {
         try {
             AccessToken token = RSATokenVerifier.verifyToken(tokenString, realm.getPublicKey(), realm.getName(), checkActive);
             logger.info("identity token verified");
-            if (checkActive && !token.isActive()) {
-                logger.info("identity cookie expired");
-                expireIdentityCookie(realm, uriInfo);
-                return null;
+            if (checkActive) {
+                logger.info("Checking if identity token is active");
+                if (!token.isActive() || token.getIssuedAt() < realm.getNotBefore()) {
+                    logger.info("identity cookie expired");
+                    expireIdentityCookie(realm, uriInfo);
+                    return null;
+                } else {
+                    logger.info("token.isActive() : " + token.isActive());
+                    logger.info("token.issuedAt: " + token.getIssuedAt());
+                    logger.info("real.notbefore: " + realm.getNotBefore());
+                }
             }
 
             UserModel user = realm.getUserById(token.getSubject());

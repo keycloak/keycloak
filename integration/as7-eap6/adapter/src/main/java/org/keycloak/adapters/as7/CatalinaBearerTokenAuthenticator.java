@@ -2,7 +2,7 @@ package org.keycloak.adapters.as7;
 
 import org.apache.catalina.connector.Request;
 import org.jboss.logging.Logger;
-import org.keycloak.KeycloakAuthenticatedSession;
+import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.adapters.ResourceMetadata;
@@ -114,8 +114,8 @@ public class CatalinaBearerTokenAuthenticator {
         principal = new CatalinaSecurityContextHelper().createPrincipal(request.getContext().getRealm(), skeletonKeyPrincipal, roles);
         request.setUserPrincipal(principal);
         request.setAuthType("KEYCLOAK");
-        KeycloakAuthenticatedSession skSession = new KeycloakAuthenticatedSession(tokenString, token, null, null, resourceMetadata);
-        request.setAttribute(KeycloakAuthenticatedSession.class.getName(), skSession);
+        KeycloakSecurityContext skSession = new KeycloakSecurityContext(tokenString, token, null, null, resourceMetadata);
+        request.setAttribute(KeycloakSecurityContext.class.getName(), skSession);
 
         return true;
     }

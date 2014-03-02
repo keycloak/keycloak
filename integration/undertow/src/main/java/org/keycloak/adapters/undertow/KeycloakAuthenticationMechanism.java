@@ -2,22 +2,15 @@ package org.keycloak.adapters.undertow;
 
 import io.undertow.security.api.AuthenticationMechanism;
 import io.undertow.security.api.SecurityContext;
-import io.undertow.security.idm.Account;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.AttachmentKey;
 import io.undertow.util.Headers;
 import org.jboss.logging.Logger;
-import org.keycloak.KeycloakAuthenticatedSession;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.adapters.RefreshableKeycloakSession;
-import org.keycloak.adapters.config.RealmConfiguration;
 import org.keycloak.adapters.ResourceMetadata;
-import org.keycloak.representations.AccessToken;
+import org.keycloak.adapters.config.RealmConfiguration;
 import org.keycloak.representations.adapters.config.AdapterConfig;
-
-import java.security.Principal;
-import java.util.Collections;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -27,7 +20,6 @@ public class KeycloakAuthenticationMechanism implements AuthenticationMechanism 
     protected Logger log = Logger.getLogger(KeycloakAuthenticationMechanism.class);
 
     public static final AttachmentKey<KeycloakChallenge> KEYCLOAK_CHALLENGE_ATTACHMENT_KEY = AttachmentKey.create(KeycloakChallenge.class);
-    public static final AttachmentKey<KeycloakAuthenticatedSession> SKELETON_KEY_SESSION_ATTACHMENT_KEY = AttachmentKey.create(KeycloakAuthenticatedSession.class);
 
     protected ResourceMetadata resourceMetadata;
     protected AdapterConfig adapterConfig;
@@ -39,11 +31,6 @@ public class KeycloakAuthenticationMechanism implements AuthenticationMechanism 
         this.adapterConfig = config;
         this.realmConfig = realmConfig;
         this.sslRedirectPort = sslRedirectPort;
-    }
-
-    public KeycloakAuthenticationMechanism(AdapterConfig adapterConfig, ResourceMetadata resourceMetadata) {
-        this.resourceMetadata = resourceMetadata;
-        this.adapterConfig = adapterConfig;
     }
 
     public KeycloakAuthenticationMechanism(AdapterConfig adapterConfig, RealmConfiguration realmConfig) {
@@ -60,28 +47,38 @@ public class KeycloakAuthenticationMechanism implements AuthenticationMechanism 
         if (outcome == AuthenticationMechanismOutcome.NOT_AUTHENTICATED) {
             exchange.putAttachment(KEYCLOAK_CHALLENGE_ATTACHMENT_KEY, bearer.getChallenge());
             return AuthenticationMechanismOutcome.NOT_AUTHENTICATED;
-        }
-        else if (outcome == AuthenticationMechanismOutcome.AUTHENTICATED) {
-            completeAuthentication(securityContext, bearer);
+        } else if (outcome == AuthenticationMechanismOutcome.AUTHENTICATED) {
+            completeAuthentication(exchange, securityContext, bearer);
             return AuthenticationMechanismOutcome.AUTHENTICATED;
-        }
-        else if (adapterConfig.isBearerOnly()) {
+        } else if (adapterConfig.isBearerOnly()) {
             exchange.putAttachment(KEYCLOAK_CHALLENGE_ATTACHMENT_KEY, bearer.getChallenge());
             return AuthenticationMechanismOutcome.NOT_ATTEMPTED;
         }
+        // We cache account ourselves instead of using the Cache session handler of Undertow because
+        // Undertow will return a 403 from an invalid account when calling IdentityManager.verify(Account) and
+        // we want to just return NOT_ATTEMPTED so we can be redirected to relogin
+        KeycloakUndertowAccount account = checkCachedAccount(exchange);
+        if (account != null) {
+            log.info("Cached account found");
+            securityContext.authenticationComplete(account, "KEYCLOAK", false);
+            propagateKeycloakContext(exchange, account);
+            return AuthenticationMechanismOutcome.AUTHENTICATED;
+        }
+
 
         OAuthAuthenticator oauth = createOAuthAuthenticator(exchange);
         outcome = oauth.authenticate();
         if (outcome == AuthenticationMechanismOutcome.NOT_AUTHENTICATED) {
             exchange.putAttachment(KEYCLOAK_CHALLENGE_ATTACHMENT_KEY, oauth.getChallenge());
             return AuthenticationMechanismOutcome.NOT_AUTHENTICATED;
-        }
-        else if (outcome == AuthenticationMechanismOutcome.NOT_ATTEMPTED) {
+        } else if (outcome == AuthenticationMechanismOutcome.NOT_ATTEMPTED) {
             exchange.putAttachment(KEYCLOAK_CHALLENGE_ATTACHMENT_KEY, oauth.getChallenge());
             return AuthenticationMechanismOutcome.NOT_ATTEMPTED;
 
         }
         completeAuthentication(exchange, securityContext, oauth);
+
+        // redirect to strip out access code and state query parameters
         exchange.getResponseHeaders().put(Headers.LOCATION, oauth.getStrippedOauthParametersRequestUri());
         exchange.setResponseCode(302);
         exchange.endExchange();
@@ -89,12 +86,6 @@ public class KeycloakAuthenticationMechanism implements AuthenticationMechanism 
         log.info("AUTHENTICATED");
         return AuthenticationMechanismOutcome.AUTHENTICATED;
     }
-
-    public static void sendRedirect(final HttpServerExchange exchange, final String location) {
-        // TODO - String concatenation to construct URLS is extremely error prone - switch to a URI which will better handle this.
-        String loc = exchange.getRequestScheme() + "://" + exchange.getHostAndPort() + location;
-    }
-
 
     protected OAuthAuthenticator createOAuthAuthenticator(HttpServerExchange exchange) {
         return new OAuthAuthenticator(exchange, realmConfig, sslRedirectPort);
@@ -108,7 +99,11 @@ public class KeycloakAuthenticationMechanism implements AuthenticationMechanism 
         final KeycloakPrincipal principal = new KeycloakPrincipal(oauth.getToken().getSubject(), null);
         RefreshableKeycloakSession session = new RefreshableKeycloakSession(oauth.getTokenString(), oauth.getToken(), oauth.getIdTokenString(), oauth.getIdToken(), resourceMetadata, realmConfig, oauth.getRefreshToken());
         KeycloakUndertowAccount account = new KeycloakUndertowAccount(principal, session, adapterConfig, resourceMetadata);
-        securityContext.authenticationComplete(account, "KEYCLOAK", true);
+
+        // We cache account ourselves instead of using the Cache session handler of Undertow because
+        // Undertow will return a 403 from an invalid account when calling IdentityManager.verify(Account) and
+        // we want to just return NOT_ATTEMPTED so we can be redirected to relogin
+        securityContext.authenticationComplete(account, "KEYCLOAK", false);
         login(exchange, account);
     }
 
@@ -116,12 +111,17 @@ public class KeycloakAuthenticationMechanism implements AuthenticationMechanism 
         // complete
     }
 
+    protected void propagateKeycloakContext(HttpServerExchange exchange, KeycloakUndertowAccount account) {
+        // complete
+    }
 
-    protected void completeAuthentication(SecurityContext securityContext, BearerTokenAuthenticator bearer) {
+
+    protected void completeAuthentication(HttpServerExchange exchange, SecurityContext securityContext, BearerTokenAuthenticator bearer) {
         final KeycloakPrincipal principal = new KeycloakPrincipal(bearer.getToken().getSubject(), bearer.getSurrogate());
         RefreshableKeycloakSession session = new RefreshableKeycloakSession(bearer.getTokenString(), bearer.getToken(), null, null, resourceMetadata, realmConfig, null);
         KeycloakUndertowAccount account = new KeycloakUndertowAccount(principal, session, adapterConfig, resourceMetadata);
         securityContext.authenticationComplete(account, "KEYCLOAK", false);
+        propagateKeycloakContext(exchange, account);
     }
 
     @Override
@@ -132,4 +132,10 @@ public class KeycloakAuthenticationMechanism implements AuthenticationMechanism 
         }
         return new ChallengeResult(false);
     }
+
+    protected KeycloakUndertowAccount checkCachedAccount(HttpServerExchange exchange) {
+        return null;
+    }
+
+
 }

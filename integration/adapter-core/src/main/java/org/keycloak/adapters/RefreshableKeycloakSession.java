@@ -1,6 +1,6 @@
 package org.keycloak.adapters;
 
-import org.keycloak.KeycloakAuthenticatedSession;
+import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
 import org.keycloak.adapters.config.RealmConfiguration;
@@ -15,7 +15,7 @@ import java.io.IOException;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class RefreshableKeycloakSession extends KeycloakAuthenticatedSession {
+public class RefreshableKeycloakSession extends KeycloakSecurityContext {
 
     protected static Logger log = Logger.getLogger(RefreshableKeycloakSession.class);
 

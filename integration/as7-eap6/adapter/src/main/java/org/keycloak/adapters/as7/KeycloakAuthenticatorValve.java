@@ -13,7 +13,7 @@ import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.deploy.LoginConfig;
 import org.apache.catalina.realm.GenericPrincipal;
 import org.jboss.logging.Logger;
-import org.keycloak.KeycloakAuthenticatedSession;
+import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.adapters.AdapterConstants;
 import org.keycloak.adapters.RefreshableKeycloakSession;
@@ -224,7 +224,7 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
      */
     protected void checkKeycloakSession(Request request) {
         if (request.getSessionInternal(false) == null || request.getSessionInternal().getPrincipal() == null) return;
-        RefreshableKeycloakSession session = (RefreshableKeycloakSession)request.getSessionInternal().getNote(KeycloakAuthenticatedSession.class.getName());
+        RefreshableKeycloakSession session = (RefreshableKeycloakSession)request.getSessionInternal().getNote(KeycloakSecurityContext.class.getName());
         if (session == null) return;
         // just in case session got serialized
         session.setRealmConfiguration(realmConfiguration);
@@ -236,7 +236,7 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
         session.refreshExpiredToken();
         if (session.isActive()) return;
 
-        request.getSessionInternal().removeNote(KeycloakAuthenticatedSession.class.getName());
+        request.getSessionInternal().removeNote(KeycloakSecurityContext.class.getName());
         request.setUserPrincipal(null);
         request.setAuthType(null);
         request.getSessionInternal().setPrincipal(null);
@@ -252,9 +252,9 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
         request.setAuthType("KEYCLOAK");
         Session session = request.getSessionInternal();
         if (session != null) {
-            KeycloakAuthenticatedSession skSession = (KeycloakAuthenticatedSession) session.getNote(KeycloakAuthenticatedSession.class.getName());
+            KeycloakSecurityContext skSession = (KeycloakSecurityContext) session.getNote(KeycloakSecurityContext.class.getName());
             if (skSession != null) {
-                request.setAttribute(KeycloakAuthenticatedSession.class.getName(), skSession);
+                request.setAttribute(KeycloakSecurityContext.class.getName(), skSession);
             }
         }
         return true;
@@ -293,8 +293,8 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
             Session session = request.getSessionInternal(true);
             session.setPrincipal(principal);
             session.setAuthType("OAUTH");
-            KeycloakAuthenticatedSession skSession = new RefreshableKeycloakSession(oauth.getTokenString(), oauth.getToken(), oauth.getIdTokenString(), oauth.getIdToken(), resourceMetadata, realmConfiguration, oauth.getRefreshToken());
-            session.setNote(KeycloakAuthenticatedSession.class.getName(), skSession);
+            KeycloakSecurityContext skSession = new RefreshableKeycloakSession(oauth.getTokenString(), oauth.getToken(), oauth.getIdTokenString(), oauth.getIdToken(), resourceMetadata, realmConfiguration, oauth.getRefreshToken());
+            session.setNote(KeycloakSecurityContext.class.getName(), skSession);
 
             String username = token.getSubject();
             log.debug("userSessionManage.login: " + username);

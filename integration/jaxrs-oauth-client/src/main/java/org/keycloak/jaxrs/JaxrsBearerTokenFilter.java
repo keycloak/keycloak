@@ -2,7 +2,7 @@ package org.keycloak.jaxrs;
 
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.keycloak.KeycloakAuthenticatedSession;
+import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.adapters.ResourceMetadata;
@@ -67,8 +67,8 @@ public class JaxrsBearerTokenFilter implements ContainerRequestFilter {
 
         try {
             AccessToken token = RSATokenVerifier.verifyToken(tokenString, resourceMetadata.getRealmKey(), resourceMetadata.getRealm());
-            KeycloakAuthenticatedSession skSession = new KeycloakAuthenticatedSession(tokenString, token, null, null, resourceMetadata);
-            ResteasyProviderFactory.pushContext(KeycloakAuthenticatedSession.class, skSession);
+            KeycloakSecurityContext skSession = new KeycloakSecurityContext(tokenString, token, null, null, resourceMetadata);
+            ResteasyProviderFactory.pushContext(KeycloakSecurityContext.class, skSession);
             String callerPrincipal = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
 
             final KeycloakPrincipal principal = new KeycloakPrincipal(token.getSubject(), callerPrincipal);
