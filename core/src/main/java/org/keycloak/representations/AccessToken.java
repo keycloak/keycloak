@@ -139,7 +139,7 @@ public class AccessToken extends IDToken {
 
 
     @Override
-    public AccessToken issuedAt(long issuedAt) {
+    public AccessToken issuedAt(int issuedAt) {
         return (AccessToken) super.issuedAt(issuedAt);
     }
 

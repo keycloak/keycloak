@@ -17,7 +17,7 @@ public class JsonWebToken implements Serializable {
     @JsonProperty("nbf")
     protected long notBefore;
     @JsonProperty("iat")
-    protected long issuedAt;
+    protected int issuedAt;
     @JsonProperty("iss")
     protected String issuer;
     @JsonProperty("aud")
@@ -80,7 +80,7 @@ public class JsonWebToken implements Serializable {
         return (!isExpired() || expiration == 0) && (isNotBefore() || notBefore == 0);
     }
 
-    public long getIssuedAt() {
+    public int getIssuedAt() {
         return issuedAt;
     }
 
@@ -89,11 +89,11 @@ public class JsonWebToken implements Serializable {
      */
     @JsonIgnore
     public JsonWebToken issuedNow() {
-        issuedAt = System.currentTimeMillis() / 1000;
+        issuedAt = (int)(System.currentTimeMillis() / 1000);
         return this;
     }
 
-    public JsonWebToken issuedAt(long issuedAt) {
+    public JsonWebToken issuedAt(int issuedAt) {
         this.issuedAt = issuedAt;
         return this;
     }

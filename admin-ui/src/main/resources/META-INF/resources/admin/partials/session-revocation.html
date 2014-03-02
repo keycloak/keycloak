@@ -1,0 +1,31 @@
+<div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="'partials/realm-menu.html'"></div>
+<div id="content-area" class="col-md-9" role="main">
+    <ul class="nav nav-tabs nav-tabs-pf"  data-ng-show="!create">
+        <li class="active"><a href="#/realms/{{realm.realm}}/sessions/revocation">Revocation</a></li>
+    </ul>
+    <div id="content">
+        <ol class="breadcrumb">
+            <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
+            <li class="active">Revocation</li>
+        </ol>
+        <h2 data-ng-hide="create"><span>{{realm.realm}}</span> Revocation Policies</h2>
+        <form class="form-horizontal" name="credentialForm" novalidate kc-read-only="!access.manageRealm">
+            <fieldset class="border-top">
+                <div class="form-group">
+                    <label class="col-sm-2 control-label" for="notBefore">Not Before</label>
+                    <div class="col-sm-4">
+                        <input ng-disabled="true" class="form-control" type="text" id="notBefore" name="notBefore" data-ng-model="notBefore" autofocus>
+                    </div>
+                </div>
+            </fieldset>
+            <div class="pull-right form-actions" data-ng-show="access.manageApplications">
+                <button type="submit" data-ng-click="clear()" class="btn btn-default btn-lg">Clear
+                </button>
+                <button type="submit" data-ng-click="setNotBeforeNow()" class="btn btn-primary btn-lg">Set To Now
+                </button>
+                <button type="submit" data-ng-click="pushRevocation()" class="btn btn-primary btn-lg">Push
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

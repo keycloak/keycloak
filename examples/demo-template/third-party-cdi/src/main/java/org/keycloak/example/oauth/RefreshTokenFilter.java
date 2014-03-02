@@ -14,7 +14,7 @@ import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.keycloak.adapters.TokenGrantRequest;
+import org.keycloak.adapters.ServerRequest;
 import org.keycloak.servlet.ServletOAuthClient;
 
 /**
@@ -45,7 +45,7 @@ public class RefreshTokenFilter implements Filter {
             try {
                 String accessToken = oauthClient.getBearerToken(request).getToken();
                 userData.setAccessToken(accessToken);
-            } catch (TokenGrantRequest.HttpFailure e) {
+            } catch (ServerRequest.HttpFailure e) {
                 throw new ServletException(e);
             }
         } else if (reqParams.containsKey("error")) {

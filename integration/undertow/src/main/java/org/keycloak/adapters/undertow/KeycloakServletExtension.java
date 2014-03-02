@@ -70,21 +70,17 @@ public class KeycloakServletExtension implements ServletExtension {
         PreflightCorsHandler.Wrapper preflight = new PreflightCorsHandler.Wrapper(keycloakConfig);
         UserSessionManagement userSessionManagement = new UserSessionManagement(realmConfiguration);
         ServletKeycloakAuthenticationMechanism auth = null;
-        if (keycloakConfig.isBearerOnly()) {
-            auth = new ServletKeycloakAuthenticationMechanism(keycloakConfig, loader.getResourceMetadata(), deploymentInfo.getConfidentialPortManager());
-        } else {
-            auth = new ServletKeycloakAuthenticationMechanism(
+        auth = new ServletKeycloakAuthenticationMechanism(
                 userSessionManagement,
                 keycloakConfig,
                 realmConfiguration,
                 deploymentInfo.getConfidentialPortManager());
-        }
         AuthenticatedActionsHandler.Wrapper actions = new AuthenticatedActionsHandler.Wrapper(keycloakConfig);
 
         // setup handlers
 
         deploymentInfo.addInitialHandlerChainWrapper(preflight); // cors preflight
-        deploymentInfo.addOuterHandlerChainWrapper(new ServletAdminActionsHandler.Wrapper(realmConfiguration, userSessionManagement));
+        deploymentInfo.addOuterHandlerChainWrapper(new ServletAdminActionsHandler.Wrapper(realmConfiguration, loader.getResourceMetadata(), userSessionManagement));
         final ServletKeycloakAuthenticationMechanism theAuth = auth;
         deploymentInfo.addAuthenticationMechanism("KEYCLOAK", new AuthenticationMechanismFactory() {
             @Override
@@ -92,10 +88,24 @@ public class KeycloakServletExtension implements ServletExtension {
                 return theAuth;
             }
         }); // authentication
-        deploymentInfo.addInnerHandlerChainWrapper(ServletPropagateSessionHandler.WRAPPER); // propagates SkeletonKeySession
         deploymentInfo.addInnerHandlerChainWrapper(actions); // handles authenticated actions and cors.
 
-        deploymentInfo.setIdentityManager(new KeycloakIdentityManager(keycloakConfig, realmConfiguration));
+        deploymentInfo.setIdentityManager(new IdentityManager() {
+            @Override
+            public Account verify(Account account) {
+                return account;
+            }
+
+            @Override
+            public Account verify(String id, Credential credential) {
+                throw new IllegalStateException("Should never be called in Keycloak flow");
+            }
+
+            @Override
+            public Account verify(Credential credential) {
+                throw new IllegalStateException("Should never be called in Keycloak flow");
+            }
+        });
 
         log.info("Setting jsession cookie path to: " + deploymentInfo.getContextPath());
         ServletSessionConfig cookieConfig = new ServletSessionConfig();

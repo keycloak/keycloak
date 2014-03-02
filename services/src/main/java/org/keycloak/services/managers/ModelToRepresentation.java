@@ -67,6 +67,7 @@ public class ModelToRepresentation {
         rep.setRealm(realm.getName());
         rep.setEnabled(realm.isEnabled());
         rep.setSocial(realm.isSocial());
+        rep.setNotBefore(realm.getNotBefore());
         rep.setUpdateProfileOnInitialSocialLogin(realm.isUpdateProfileOnInitialSocialLogin());
         rep.setSslNotRequired(realm.isSslNotRequired());
         rep.setPublicKey(realm.getPublicKeyPem());

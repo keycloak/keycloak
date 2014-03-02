@@ -20,6 +20,7 @@ public class RealmConfiguration {
     protected Map<String, String> resourceCredentials = new HashMap<String, String>();
     protected boolean sslRequired = true;
     protected String stateCookieName = "OAuth_Token_Request_State";
+    protected volatile int notBefore;
 
     public RealmConfiguration() {
     }
@@ -89,4 +90,11 @@ public class RealmConfiguration {
         this.resourceCredentials = resourceCredentials;
     }
 
+    public int getNotBefore() {
+        return notBefore;
+    }
+
+    public void setNotBefore(int notBefore) {
+        this.notBefore = notBefore;
+    }
 }

@@ -9,9 +9,9 @@ import io.undertow.util.Headers;
 import io.undertow.util.StatusCodes;
 import org.jboss.logging.Logger;
 import org.keycloak.RSATokenVerifier;
+import org.keycloak.adapters.ServerRequest;
 import org.keycloak.adapters.config.RealmConfiguration;
 import org.keycloak.VerificationException;
-import org.keycloak.adapters.TokenGrantRequest;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
@@ -39,6 +39,7 @@ public class OAuthAuthenticator {
     protected HttpServerExchange exchange;
     protected KeycloakChallenge challenge;
     protected String refreshToken;
+    protected String strippedOauthParametersRequestUri;
 
     public OAuthAuthenticator(HttpServerExchange exchange, RealmConfiguration realmInfo,  int sslRedirectPort) {
         this.exchange = exchange;
@@ -76,6 +77,14 @@ public class OAuthAuthenticator {
 
     public void setIdToken(IDToken idToken) {
         this.idToken = idToken;
+    }
+
+    public String getStrippedOauthParametersRequestUri() {
+        return strippedOauthParametersRequestUri;
+    }
+
+    public void setStrippedOauthParametersRequestUri(String strippedOauthParametersRequestUri) {
+        this.strippedOauthParametersRequestUri = strippedOauthParametersRequestUri;
     }
 
     protected String getRequestUrl() {
@@ -257,10 +266,10 @@ public class OAuthAuthenticator {
         if (challenge != null) return challenge;
 
         AccessTokenResponse tokenResponse = null;
-        String redirectUri = stripOauthParametersFromRedirect();
+        strippedOauthParametersRequestUri = stripOauthParametersFromRedirect();
         try {
-            tokenResponse = TokenGrantRequest.invokeAccessCodeToToken(realmInfo, code, redirectUri);
-        } catch (TokenGrantRequest.HttpFailure failure) {
+            tokenResponse = ServerRequest.invokeAccessCodeToToken(realmInfo, code, strippedOauthParametersRequestUri);
+        } catch (ServerRequest.HttpFailure failure) {
             log.error("failed to turn code into token");
             log.error("status from server: " + failure.getStatus());
             if (failure.getStatus() == StatusCodes.BAD_REQUEST && failure.getError() != null) {
@@ -289,6 +298,13 @@ public class OAuthAuthenticator {
             log.debug("Token Verification succeeded!");
         } catch (VerificationException e) {
             log.error("failed verification of token");
+            return challenge(StatusCodes.FORBIDDEN);
+        }
+        if (tokenResponse.getNotBeforePolicy() > realmInfo.getNotBefore()) {
+            realmInfo.setNotBefore(tokenResponse.getNotBeforePolicy());
+        }
+        if (token.getIssuedAt() < realmInfo.getNotBefore()) {
+            log.error("Stale token");
             return challenge(StatusCodes.FORBIDDEN);
         }
         log.info("successful authenticated");

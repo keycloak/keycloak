@@ -28,9 +28,12 @@ public class RealmConfigurationLoader extends AdapterConfigLoader {
     }
 
     protected void initRealmConfiguration(boolean setupClient) {
+        realmConfiguration = new RealmConfiguration();
+        realmConfiguration.setMetadata(resourceMetadata);
+        realmConfiguration.setSslRequired(!adapterConfig.isSslNotRequired());
+        realmConfiguration.setResourceCredentials(adapterConfig.getCredentials());
         if (!setupClient || adapterConfig.isBearerOnly()) return;
         initClient();
-        realmConfiguration = new RealmConfiguration();
         if (adapterConfig.getAuthServerUrl() == null) {
             throw new RuntimeException("You must specify auth-url");
         }
@@ -39,9 +42,6 @@ public class RealmConfigurationLoader extends AdapterConfigLoader {
         String tokenUrl = serverBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_ACCESS_CODE_PATH).build(adapterConfig.getRealm()).toString();
         String refreshUrl = serverBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_REFRESH_PATH).build(adapterConfig.getRealm()).toString();
 
-        realmConfiguration.setMetadata(resourceMetadata);
-        realmConfiguration.setSslRequired(!adapterConfig.isSslNotRequired());
-        realmConfiguration.setResourceCredentials(adapterConfig.getCredentials());
 
         HttpClient client = getClient();
 

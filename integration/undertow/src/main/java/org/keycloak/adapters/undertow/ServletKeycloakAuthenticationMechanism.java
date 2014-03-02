@@ -3,10 +3,8 @@ package org.keycloak.adapters.undertow;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.servlet.api.ConfidentialPortManager;
 import io.undertow.servlet.handlers.ServletRequestContext;
-import org.keycloak.KeycloakAuthenticatedSession;
-import org.keycloak.KeycloakPrincipal;
+import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.config.RealmConfiguration;
-import org.keycloak.adapters.ResourceMetadata;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 
 import javax.servlet.http.HttpServletRequest;
@@ -26,24 +24,48 @@ public class ServletKeycloakAuthenticationMechanism extends KeycloakAuthenticati
         this.userSessionManagement = userSessionManagement;
     }
 
-    public ServletKeycloakAuthenticationMechanism(AdapterConfig config, ResourceMetadata metadata, ConfidentialPortManager portManager) {
-        super(config, metadata);
-        this.portManager = portManager;
-    }
-
-
     @Override
     protected OAuthAuthenticator createOAuthAuthenticator(HttpServerExchange exchange) {
         return new ServletOAuthAuthenticator(exchange, realmConfig, portManager);
     }
 
     @Override
+    protected KeycloakUndertowAccount checkCachedAccount(HttpServerExchange exchange) {
+        final ServletRequestContext servletRequestContext = exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
+        HttpServletRequest req = (HttpServletRequest) servletRequestContext.getServletRequest();
+        HttpSession session = req.getSession(false);
+        if (session == null) {
+            log.info("session was null, returning null");
+            return null;
+        }
+        KeycloakUndertowAccount account = (KeycloakUndertowAccount)session.getAttribute(KeycloakUndertowAccount.class.getName());
+        if (account == null) {
+            log.info("Account was not in session, returning null");
+            return null;
+        }
+        if (account.isActive(realmConfig, adapterConfig)) return account;
+        log.info("Account was not active, returning null");
+        session.setAttribute(KeycloakUndertowAccount.class.getName(), null);
+        return null;
+    }
+
+    @Override
+    protected void propagateKeycloakContext(HttpServerExchange exchange, KeycloakUndertowAccount account) {
+        final ServletRequestContext servletRequestContext = exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
+        HttpServletRequest req = (HttpServletRequest) servletRequestContext.getServletRequest();
+        req.setAttribute(KeycloakSecurityContext.class.getName(), account.getSession());
+    }
+
+
+
+    @Override
     protected void login(HttpServerExchange exchange, KeycloakUndertowAccount account) {
         final ServletRequestContext servletRequestContext = exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
         HttpServletRequest req = (HttpServletRequest) servletRequestContext.getServletRequest();
+        req.setAttribute(KeycloakSecurityContext.class.getName(), account.getSession());
         HttpSession session = req.getSession(true);
+        session.setAttribute(KeycloakUndertowAccount.class.getName(), account);
         userSessionManagement.login(servletRequestContext.getDeployment().getSessionManager(), session, account.getPrincipal().getName());
 
     }
-
 }

@@ -121,6 +121,7 @@ public class RealmManager {
         if (rep.getAccessCodeLifespan() != null) realm.setAccessCodeLifespan(rep.getAccessCodeLifespan());
         if (rep.getAccessCodeLifespanUserAction() != null)
             realm.setAccessCodeLifespanUserAction(rep.getAccessCodeLifespanUserAction());
+        if (rep.getNotBefore() != null) realm.setNotBefore(rep.getNotBefore());
         if (rep.getAccessTokenLifespan() != null) realm.setAccessTokenLifespan(rep.getAccessTokenLifespan());
         if (rep.getRefreshTokenLifespan() != null) realm.setRefreshTokenLifespan(rep.getRefreshTokenLifespan());
         if (rep.getCentralLoginLifespan() != null) realm.setCentralLoginLifespan(rep.getCentralLoginLifespan());
@@ -200,6 +201,8 @@ public class RealmManager {
         newRealm.setName(rep.getRealm());
         if (rep.isEnabled() != null) newRealm.setEnabled(rep.isEnabled());
         if (rep.isSocial() != null) newRealm.setSocial(rep.isSocial());
+
+        if (rep.getNotBefore() != null) newRealm.setNotBefore(rep.getNotBefore());
 
         if (rep.getAccessTokenLifespan() != null) newRealm.setAccessTokenLifespan(rep.getAccessTokenLifespan());
         else newRealm.setAccessTokenLifespan(300);

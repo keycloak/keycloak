@@ -30,10 +30,12 @@ public class BearerTokenAuthenticator {
     protected boolean useResourceRoleMappings;
     protected String surrogate;
     protected KeycloakChallenge challenge;
+    protected int notBefore;
 
-    public BearerTokenAuthenticator(ResourceMetadata resourceMetadata, boolean useResourceRoleMappings) {
+    public BearerTokenAuthenticator(ResourceMetadata resourceMetadata, int notBefore, boolean useResourceRoleMappings) {
         this.resourceMetadata = resourceMetadata;
         this.useResourceRoleMappings = useResourceRoleMappings;
+        this.notBefore = notBefore;
     }
 
     public KeycloakChallenge getChallenge() {
@@ -83,8 +85,12 @@ public class BearerTokenAuthenticator {
             challenge = challengeResponse(exchange, "invalid_token", e.getMessage());
             return AuthenticationMechanism.AuthenticationMechanismOutcome.NOT_AUTHENTICATED;
         }
+        if (token.getIssuedAt() < notBefore) {
+            log.error("Stale token");
+            challenge = challengeResponse(exchange, "invalid_token", "Stale token");
+            return AuthenticationMechanism.AuthenticationMechanismOutcome.NOT_AUTHENTICATED;
+        }
         boolean verifyCaller = false;
-        Set<String> roles = new HashSet<String>();
         if (useResourceRoleMappings) {
             verifyCaller = token.isVerifyCaller(resourceMetadata.getResourceName());
         } else {

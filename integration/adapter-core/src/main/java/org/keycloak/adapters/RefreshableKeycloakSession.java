@@ -1,6 +1,6 @@
 package org.keycloak.adapters;
 
-import org.keycloak.KeycloakAuthenticatedSession;
+import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
 import org.keycloak.adapters.config.RealmConfiguration;
@@ -15,7 +15,7 @@ import java.io.IOException;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class RefreshableKeycloakSession extends KeycloakAuthenticatedSession {
+public class RefreshableKeycloakSession extends KeycloakSecurityContext {
 
     protected static Logger log = Logger.getLogger(RefreshableKeycloakSession.class);
 
@@ -44,7 +44,7 @@ public class RefreshableKeycloakSession extends KeycloakAuthenticatedSession {
     }
 
     public boolean isActive() {
-        return this.token.isActive();
+        return this.token.isActive() && this.token.getIssuedAt() > realmConfiguration.getNotBefore();
     }
 
     public void setRealmConfiguration(RealmConfiguration realmConfiguration) {
@@ -52,17 +52,17 @@ public class RefreshableKeycloakSession extends KeycloakAuthenticatedSession {
     }
 
     public void refreshExpiredToken() {
-        if (this.token.isActive()) return;
+        if (isActive()) return;
         if (this.realmConfiguration == null || refreshToken == null) return; // Might be serialized in HttpSession?
 
         log.info("Doing refresh");
         AccessTokenResponse response = null;
         try {
-            response = TokenGrantRequest.invokeRefresh(realmConfiguration, refreshToken);
+            response = ServerRequest.invokeRefresh(realmConfiguration, refreshToken);
         } catch (IOException e) {
             log.error("Refresh token failure", e);
             return;
-        } catch (TokenGrantRequest.HttpFailure httpFailure) {
+        } catch (ServerRequest.HttpFailure httpFailure) {
             log.error("Refresh token failure status: " + httpFailure.getStatus() + " " + httpFailure.getError());
             return;
         }

@@ -8,9 +8,12 @@ import io.undertow.servlet.handlers.ServletRequestContext;
 import io.undertow.util.StatusCodes;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.AdapterConstants;
+import org.keycloak.adapters.ResourceMetadata;
 import org.keycloak.adapters.config.RealmConfiguration;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
+import org.keycloak.representations.adapters.action.PushNotBeforeAction;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.StreamUtil;
 
 import javax.servlet.http.HttpServletRequest;
@@ -26,26 +29,32 @@ public class ServletAdminActionsHandler implements HttpHandler {
     protected HttpHandler next;
     protected UserSessionManagement userSessionManagement;
     protected RealmConfiguration realmConfig;
+    protected ResourceMetadata resourceMetadata;
 
     public static class Wrapper implements HandlerWrapper {
         protected RealmConfiguration realmConfig;
+        protected ResourceMetadata resourceMetadata;
         protected UserSessionManagement userSessionManagement;
 
-        public Wrapper(RealmConfiguration realmConfig, UserSessionManagement userSessionManagement) {
+
+        public Wrapper(RealmConfiguration realmConfig, ResourceMetadata resourceMetadata, UserSessionManagement userSessionManagement) {
             this.realmConfig = realmConfig;
+            this.resourceMetadata = resourceMetadata;
             this.userSessionManagement = userSessionManagement;
         }
 
         @Override
         public HttpHandler wrap(HttpHandler handler) {
-            return new ServletAdminActionsHandler(realmConfig, userSessionManagement, handler);
+            return new ServletAdminActionsHandler(realmConfig, resourceMetadata, userSessionManagement, handler);
         }
     }
 
     protected ServletAdminActionsHandler(RealmConfiguration realmConfig,
+                                         ResourceMetadata resourceMetadata,
                                          UserSessionManagement userSessionManagement,
                                          HttpHandler next) {
         this.next = next;
+        this.resourceMetadata = resourceMetadata;
         this.userSessionManagement = userSessionManagement;
         this.realmConfig = realmConfig;
     }
@@ -89,9 +98,32 @@ public class ServletAdminActionsHandler implements HttpHandler {
             if (token == null) return;
             userSessionManagement.remoteLogout(token, manager, response);
             return;
+        } else if (requestUri.endsWith(AdapterConstants.K_PUSH_NOT_BEFORE)) {
+            handlePushNotBefore(request, response);
+            return;
         } else {
             next.handleRequest(exchange);
             return;
         }
+    }
+
+    protected void handlePushNotBefore(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        log.info("K_PUSH_NOT_BEFORE sent");
+        JWSInput token = verifyAdminRequest(request, response);
+        if (token == null) return;
+        PushNotBeforeAction action = JsonSerialization.readValue(token.getContent(), PushNotBeforeAction.class);
+        if (action.isExpired()) {
+            log.warn("admin request failed, expired token");
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Expired token");
+            return;
+        }
+        if (!resourceMetadata.getResourceName().equals(action.getResource())) {
+            log.warn("Resource name does not match");
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Resource name does not match");
+            return;
+
+        }
+        realmConfig.setNotBefore(action.getNotBefore());
+        return;
     }
 }

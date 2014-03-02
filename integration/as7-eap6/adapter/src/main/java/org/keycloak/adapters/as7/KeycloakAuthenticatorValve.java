@@ -13,13 +13,14 @@ import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.deploy.LoginConfig;
 import org.apache.catalina.realm.GenericPrincipal;
 import org.jboss.logging.Logger;
-import org.keycloak.KeycloakAuthenticatedSession;
+import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.adapters.AdapterConstants;
 import org.keycloak.adapters.RefreshableKeycloakSession;
 import org.keycloak.adapters.ResourceMetadata;
 import org.keycloak.adapters.as7.config.CatalinaAdapterConfigLoader;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.adapters.action.PushNotBeforeAction;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.adapters.config.RealmConfiguration;
 import org.keycloak.adapters.config.RealmConfigurationLoader;
@@ -92,6 +93,12 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
                 }
                 remoteLogout(input, response);
                 return;
+            } else if (requestURI.endsWith(AdapterConstants.K_PUSH_NOT_BEFORE)) {
+                JWSInput input = verifyAdminRequest(request, response);
+                if (input == null) {
+                    return; // we failed to verify the request
+                }
+                pushNotBefore(input, response);
             }
             checkKeycloakSession(request);
             super.invoke(request, response);
@@ -147,6 +154,30 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
         return input;
     }
 
+    protected void pushNotBefore(JWSInput token, HttpServletResponse response) throws IOException {
+        try {
+            log.debug("->> pushNotBefore: ");
+            PushNotBeforeAction action = JsonSerialization.readValue(token.getContent(), PushNotBeforeAction.class);
+            if (action.isExpired()) {
+                log.warn("admin request failed, expired token");
+                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Expired token");
+                return;
+            }
+            if (!resourceMetadata.getResourceName().equals(action.getResource())) {
+                log.warn("Resource name does not match");
+                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Resource name does not match");
+                return;
+
+            }
+            realmConfiguration.setNotBefore(action.getNotBefore());
+        } catch (Exception e) {
+            log.warn("failed to logout", e);
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to logout");
+        }
+        response.setStatus(HttpServletResponse.SC_NO_CONTENT);
+
+    }
+
     protected void remoteLogout(JWSInput token, HttpServletResponse response) throws IOException {
         try {
             log.debug("->> remoteLogout: ");
@@ -179,7 +210,7 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
 
     protected boolean bearer(boolean challenge, Request request, HttpServletResponse response) throws LoginException, IOException {
         boolean useResourceRoleMappings = adapterConfig.isUseResourceRoleMappings();
-        CatalinaBearerTokenAuthenticator bearer = new CatalinaBearerTokenAuthenticator(resourceMetadata, challenge, useResourceRoleMappings);
+        CatalinaBearerTokenAuthenticator bearer = new CatalinaBearerTokenAuthenticator(resourceMetadata, realmConfiguration.getNotBefore(), challenge, useResourceRoleMappings);
         if (bearer.login(request, response)) {
             return true;
         }
@@ -193,7 +224,7 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
      */
     protected void checkKeycloakSession(Request request) {
         if (request.getSessionInternal(false) == null || request.getSessionInternal().getPrincipal() == null) return;
-        RefreshableKeycloakSession session = (RefreshableKeycloakSession)request.getSessionInternal().getNote(KeycloakAuthenticatedSession.class.getName());
+        RefreshableKeycloakSession session = (RefreshableKeycloakSession)request.getSessionInternal().getNote(KeycloakSecurityContext.class.getName());
         if (session == null) return;
         // just in case session got serialized
         session.setRealmConfiguration(realmConfiguration);
@@ -205,7 +236,7 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
         session.refreshExpiredToken();
         if (session.isActive()) return;
 
-        request.getSessionInternal().removeNote(KeycloakAuthenticatedSession.class.getName());
+        request.getSessionInternal().removeNote(KeycloakSecurityContext.class.getName());
         request.setUserPrincipal(null);
         request.setAuthType(null);
         request.getSessionInternal().setPrincipal(null);
@@ -221,9 +252,9 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
         request.setAuthType("KEYCLOAK");
         Session session = request.getSessionInternal();
         if (session != null) {
-            KeycloakAuthenticatedSession skSession = (KeycloakAuthenticatedSession) session.getNote(KeycloakAuthenticatedSession.class.getName());
+            KeycloakSecurityContext skSession = (KeycloakSecurityContext) session.getNote(KeycloakSecurityContext.class.getName());
             if (skSession != null) {
-                request.setAttribute(KeycloakAuthenticatedSession.class.getName(), skSession);
+                request.setAttribute(KeycloakSecurityContext.class.getName(), skSession);
             }
         }
         return true;
@@ -262,8 +293,8 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
             Session session = request.getSessionInternal(true);
             session.setPrincipal(principal);
             session.setAuthType("OAUTH");
-            KeycloakAuthenticatedSession skSession = new RefreshableKeycloakSession(oauth.getTokenString(), oauth.getToken(), oauth.getIdTokenString(), oauth.getIdToken(), resourceMetadata, realmConfiguration, oauth.getRefreshToken());
-            session.setNote(KeycloakAuthenticatedSession.class.getName(), skSession);
+            KeycloakSecurityContext skSession = new RefreshableKeycloakSession(oauth.getTokenString(), oauth.getToken(), oauth.getIdTokenString(), oauth.getIdToken(), resourceMetadata, realmConfiguration, oauth.getRefreshToken());
+            session.setNote(KeycloakSecurityContext.class.getName(), skSession);
 
             String username = token.getSubject();
             log.debug("userSessionManage.login: " + username);

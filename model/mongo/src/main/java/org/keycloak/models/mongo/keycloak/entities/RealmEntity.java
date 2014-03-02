@@ -35,6 +35,7 @@ public class RealmEntity extends AbstractMongoIdentifiableEntity implements Mong
     private int accessCodeLifespan;
     private int accessCodeLifespanUserAction;
     private int refreshTokenLifespan;
+    private int notBefore;
 
     private String publicKeyPem;
     private String privateKeyPem;
@@ -138,6 +139,15 @@ public class RealmEntity extends AbstractMongoIdentifiableEntity implements Mong
 
     public void setPasswordPolicy(String passwordPolicy) {
         this.passwordPolicy = passwordPolicy;
+    }
+
+    @MongoField
+    public int getNotBefore() {
+        return notBefore;
+    }
+
+    public void setNotBefore(int notBefore) {
+        this.notBefore = notBefore;
     }
 
     @MongoField

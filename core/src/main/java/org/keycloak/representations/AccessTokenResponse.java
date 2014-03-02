@@ -24,6 +24,9 @@ public class AccessTokenResponse {
     @JsonProperty("id_token")
     protected String idToken;
 
+    @JsonProperty("not-before-policy")
+    protected int notBeforePolicy;
+
     public String getToken() {
         return token;
     }
@@ -62,5 +65,13 @@ public class AccessTokenResponse {
 
     public void setIdToken(String idToken) {
         this.idToken = idToken;
+    }
+
+    public int getNotBeforePolicy() {
+        return notBeforePolicy;
+    }
+
+    public void setNotBeforePolicy(int notBeforePolicy) {
+        this.notBeforePolicy = notBeforePolicy;
     }
 }

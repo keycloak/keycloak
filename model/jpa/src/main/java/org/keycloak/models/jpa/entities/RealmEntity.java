@@ -49,6 +49,7 @@ public class RealmEntity {
     protected int accessCodeLifespan;
     protected int accessCodeLifespanUserAction;
     protected int refreshTokenLifespan;
+    protected int notBefore;
 
     @Column(length = 2048)
     protected String publicKeyPem;
@@ -297,6 +298,14 @@ public class RealmEntity {
 
     public void setAccountTheme(String theme) {
         this.accountTheme = theme;
+    }
+
+    public int getNotBefore() {
+        return notBefore;
+    }
+
+    public void setNotBefore(int notBefore) {
+        this.notBefore = notBefore;
     }
 }
 

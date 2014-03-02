@@ -8,6 +8,7 @@ public interface AdapterConstants {
 
     // URL endpoints
     public static final String K_LOGOUT = "k_logout";
+    public static final String K_PUSH_NOT_BEFORE = "k_push_not_before";
     public static final String K_QUERY_BEARER_TOKEN = "k_query_bearer_token";
 
     // This param name is defined again in Keycloak Subsystem class

@@ -140,6 +140,16 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public int getNotBefore() {
+        return realm.getNotBefore();
+    }
+
+    @Override
+    public void setNotBefore(int notBefore) {
+        realm.setNotBefore(notBefore);
+    }
+
+    @Override
     public int getAccessTokenLifespan() {
         return realm.getAccessTokenLifespan();
     }
