@@ -39,11 +39,6 @@ module.controller('ApplicationCredentialsCtrl', function($scope, $location, real
     });
 });
 
-module.controller('ApplicationSessionsCtrl', function($scope, $location, realm, application) {
-    $scope.realm = realm;
-    $scope.application = application;
-});
-
 module.controller('ApplicationClaimsCtrl', function($scope, realm, application, claims,
                                                         ApplicationClaims,
                                                         $http, $location, Dialog, Notifications) {
