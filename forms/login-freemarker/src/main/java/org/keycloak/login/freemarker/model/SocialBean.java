@@ -39,8 +39,10 @@ public class SocialBean {
     private boolean displaySocial;
 
     private List<SocialProvider> providers;
+    private RealmModel realm;
 
     public SocialBean(RealmModel realm, URI baseURI) {
+        this.realm = realm;
         Map<String, String> socialConfig = realm.getSocialConfig();
         if (realm.isSocial() && !socialConfig.isEmpty()) {
             displaySocial = true;
@@ -58,6 +60,10 @@ public class SocialBean {
 
     public List<SocialProvider> getProviders() {
         return providers;
+    }
+
+    public boolean isDisplayInfo() {
+        return  realm.isRegistrationAllowed() || displaySocial;
     }
 
     public boolean isDisplaySocialProviders() {
