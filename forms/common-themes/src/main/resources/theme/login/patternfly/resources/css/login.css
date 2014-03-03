@@ -121,6 +121,12 @@ ol#kc-totp-settings li:first-of-type {
     width: 50%;
 }
 
+/* Code */
+#kc-code textarea {
+    width: 100%;
+    height: 8em;
+}
+
 /* Social */
 
 #kc-social-providers ul {

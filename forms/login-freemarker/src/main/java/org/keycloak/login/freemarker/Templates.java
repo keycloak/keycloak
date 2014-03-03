@@ -29,6 +29,8 @@ public class Templates {
                 return "error.ftl";
             case LOGIN_UPDATE_PROFILE:
                 return "login-update-profile.ftl";
+            case CODE:
+                return "code.ftl";
             default:
                 throw new IllegalArgumentException();
         }

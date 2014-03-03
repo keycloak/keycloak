@@ -11,4 +11,6 @@ public interface Constants {
     String INTERNAL_ROLE = "KEYCLOAK_";
 
     String ACCOUNT_MANAGEMENT_APP = "account";
+
+    String INSTALLED_APP_URN = "urn:ietf:wg:oauth:2.0:oob";
 }

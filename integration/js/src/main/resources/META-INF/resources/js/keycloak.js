@@ -5,7 +5,7 @@ var Keycloak = function (options) {
         return new Keycloak(options);
     }
 
-    var instance = this;
+    var kc = this;
 
     if (!options.url) {
         var scripts = document.getElementsByTagName('script');
@@ -33,7 +33,7 @@ var Keycloak = function (options) {
         throw 'clientSecret missing';
     }
 
-    this.init = function (successCallback, errorCallback) {
+    kc.init = function (successCallback, errorCallback) {
         if (window.oauth.callback) {
             delete sessionStorage.oauthToken;
             processCallback(successCallback, errorCallback);
@@ -44,50 +44,50 @@ var Keycloak = function (options) {
         } else if (options.onload) {
             switch (options.onload) {
                 case 'login-required' :
-                    window.location = createLoginUrl(true);
+                    window.location = kc.createLoginUrl(true);
                     break;
                 case 'check-sso' :
-                    window.location = createLoginUrl(false);
+                    window.location = kc.createLoginUrl(false);
                     break;
             }
         }
     }
 
-    this.login = function () {
-        window.location.href = createLoginUrl(true);
+    kc.login = function () {
+        window.location.href = kc.createLoginUrl(true);
     }
 
-    this.logout = function () {
+    kc.logout = function () {
         setToken(undefined);
-        window.location.href = createLogoutUrl();
+        window.location.href = kc.createLogoutUrl();
     }
 
-    this.hasRealmRole = function (role) {
-        var access = this.realmAccess;
+    kc.hasRealmRole = function (role) {
+        var access = kc.realmAccess;
         return access && access.roles.indexOf(role) >= 0 || false;
     }
 
-    this.hasResourceRole = function (role, resource) {
-        if (!this.resourceAccess) {
+    kc.hasResourceRole = function (role, resource) {
+        if (!kc.resourceAccess) {
             return false;
         }
 
-        var access = this.resourceAccess[resource || options.clientId];
+        var access = kc.resourceAccess[resource || options.clientId];
         return access && access.roles.indexOf(role) >= 0 || false;
     }
 
-    this.loadUserProfile = function (success, error) {
-        var url = getRealmUrl() + '/account';
+    kc.loadUserProfile = function (success, error) {
+        var url = kc.getRealmUrl() + '/account';
         var req = new XMLHttpRequest();
         req.open('GET', url, true);
         req.setRequestHeader('Accept', 'application/json');
-        req.setRequestHeader('Authorization', 'bearer ' + this.token);
+        req.setRequestHeader('Authorization', 'bearer ' + kc.token);
 
         req.onreadystatechange = function () {
             if (req.readyState == 4) {
                 if (req.status == 200) {
-                    instance.profile = JSON.parse(req.responseText);
-                    success && success(instance.profile)
+                    kc.profile = JSON.parse(req.responseText);
+                    success && success(kc.profile)
                 } else {
                     var response = { status: req.status, statusText: req.status };
                     if (req.responseText) {
@@ -108,22 +108,22 @@ var Keycloak = function (options) {
      * @param successCallback
      * @param errorCallback
      */
-    this.onValidAccessToken = function(successCallback, errorCallback) {
-        if (!this.tokenParsed) {
+    kc.onValidAccessToken = function(successCallback, errorCallback) {
+        if (!kc.tokenParsed) {
             console.log('no token');
             errorCallback();
             return;
         }
         var currTime = new Date().getTime() / 1000;
-        if (currTime > this.tokenParsed['exp']) {
-            if (!this.refreshToken) {
+        if (currTime > kc.tokenParsed['exp']) {
+            if (!kc.refreshToken) {
                 console.log('no refresh token');
                 errorCallback();
                 return;
             }
             console.log('calling refresh');
-            var params = 'grant_type=refresh_token&' + 'refresh_token=' + this.refreshToken;
-            var url = getRealmUrl() + '/tokens/refresh';
+            var params = 'grant_type=refresh_token&' + 'refresh_token=' + kc.refreshToken;
+            var url = kc.getRealmUrl() + '/tokens/refresh';
 
             var req = new XMLHttpRequest();
             req.open('POST', url, true, options.clientId, options.clientSecret);
@@ -134,8 +134,8 @@ var Keycloak = function (options) {
                     if (req.status == 200) {
                         console.log('Refresh Success');
                         var tokenResponse = JSON.parse(req.responseText);
-                        this.refreshToken = tokenResponse['refresh_token'];
-                        setToken(tokenResponse['access_token'], successCallback);
+                        kc.refreshToken = tokenResponse['refresh_token'];
+                        kc.setToken(tokenResponse['access_token'], successCallback);
                     } else {
                         console.log('error on refresh HTTP invoke: ' + req.status);
                         errorCallback && errorCallback({ authenticated: false, status: req.status, statusText: req.statusText });
@@ -150,7 +150,7 @@ var Keycloak = function (options) {
 
     }
 
-    function getRealmUrl() {
+    kc.getRealmUrl = function() {
         return options.url + '/auth/rest/realms/' + encodeURIComponent(options.realm);
     }
 
@@ -161,7 +161,7 @@ var Keycloak = function (options) {
 
         if (code) {
             var params = 'code=' + code;
-            var url = getRealmUrl() + '/tokens/access/codes';
+            var url = kc.getRealmUrl() + '/tokens/access/codes';
 
             var req = new XMLHttpRequest();
             req.open('POST', url, true, options.clientId, options.clientSecret);
@@ -171,8 +171,8 @@ var Keycloak = function (options) {
                 if (req.readyState == 4) {
                     if (req.status == 200) {
                         var tokenResponse = JSON.parse(req.responseText);
-                        instance.refreshToken = tokenResponse['refresh_token'];
-                        setToken(tokenResponse['access_token'], successCallback);
+                        kc.refreshToken = tokenResponse['refresh_token'];
+                        kc.setToken(tokenResponse['access_token'], successCallback);
                     } else {
                         errorCallback && errorCallback({ authenticated: false, status: req.status, statusText: req.statusText });
                     }
@@ -189,33 +189,33 @@ var Keycloak = function (options) {
         }
     }
 
-    function setToken(token, successCallback) {
+    kc.setToken = function(token, successCallback) {
         if (token) {
             sessionStorage.oauthToken = token;
             window.oauth.token = token;
-            instance.token = token;
+            kc.token = token;
 
-            instance.tokenParsed = JSON.parse(atob(token.split('.')[1]));
-            instance.authenticated = true;
-            instance.username = instance.tokenParsed.sub;
-            instance.realmAccess = instance.tokenParsed.realm_access;
-            instance.resourceAccess = instance.tokenParsed.resource_access;
+            kc.tokenParsed = JSON.parse(atob(token.split('.')[1]));
+            kc.authenticated = true;
+            kc.username = kc.tokenParsed.sub;
+            kc.realmAccess = kc.tokenParsed.realm_access;
+            kc.resourceAccess = kc.tokenParsed.resource_access;
 
             setTimeout(function() {
-                successCallback && successCallback({ authenticated: instance.authenticated, username: instance.username });
+                successCallback && successCallback({ authenticated: kc.authenticated, username: kc.username });
             }, 0);
         } else {
             delete sessionStorage.oauthToken;
             delete window.oauth.token;
-            delete instance.token;
+            delete kc.token;
         }
     }
 
-    function createLoginUrl(prompt) {
+    kc.createLoginUrl = function(prompt) {
         var state = createUUID();
 
         sessionStorage.oauthState = state;
-        var url = getRealmUrl()
+        var url = kc.getRealmUrl()
             + '/tokens/login'
             + '?client_id=' + encodeURIComponent(options.clientId)
             + '&redirect_uri=' + getEncodedRedirectUri()
@@ -229,17 +229,22 @@ var Keycloak = function (options) {
         return url;
     }
 
-    function createLogoutUrl() {
-        var url = getRealmUrl()
+    kc.createLogoutUrl = function() {
+        var url = kc.getRealmUrl()
             + '/tokens/logout'
             + '?redirect_uri=' + getEncodedRedirectUri();
         return url;
     }
 
     function getEncodedRedirectUri() {
-        var url = (location.protocol + '//' + location.hostname + (location.port && (':' + location.port)) + location.pathname);
-        if (location.hash) {
-            url += '?redirect_fragment=' + encodeURIComponent(location.hash.substring(1));
+        var url;
+        if (options.redirectUri) {
+            url = options.redirectUri;
+        } else {
+            url = (location.protocol + '//' + location.hostname + (location.port && (':' + location.port)) + location.pathname);
+            if (location.hash) {
+                url += '?redirect_fragment=' + encodeURIComponent(location.hash.substring(1));
+            }
         }
         return encodeURI(url);
     }
