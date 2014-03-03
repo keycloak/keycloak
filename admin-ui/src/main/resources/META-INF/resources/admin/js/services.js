@@ -467,6 +467,14 @@ module.factory('ApplicationClaims', function($resource) {
     });
 });
 
+module.factory('ApplicationPushRevocation', function($resource) {
+    return $resource('//auth/rest/admin/realms/:realm/applications/:application/push-revocation', {
+        realm : '@realm',
+        application : "@application"
+    });
+});
+
+
 
 module.factory('Application', function($resource) {
     return $resource('/auth/rest/admin/realms/:realm/applications/:application', {

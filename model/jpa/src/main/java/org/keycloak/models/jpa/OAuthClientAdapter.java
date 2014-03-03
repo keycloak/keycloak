@@ -18,5 +18,8 @@ public class OAuthClientAdapter extends ClientAdapter implements OAuthClientMode
         super(realm, entity);
     }
 
-
+    @Override
+    public void setClientId(String id) {
+        entity.setName(id);
+    }
 }

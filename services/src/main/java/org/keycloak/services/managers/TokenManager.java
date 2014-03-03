@@ -146,6 +146,15 @@ public class TokenManager {
 
         }
 
+        if (!client.getClientId().equals(refreshToken.getIssuedFor())) {
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Unmatching clients", "Unmatching clients");
+
+        }
+
+        if (refreshToken.getIssuedAt() < client.getNotBefore()) {
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale refresh token");
+        }
+
         ApplicationModel clientApp = (client instanceof ApplicationModel) ? (ApplicationModel)client : null;
 
 
@@ -194,13 +203,6 @@ public class TokenManager {
     public AccessToken createClientAccessToken(String scopeParam, RealmModel realm, ClientModel client, UserModel user) {
         return createClientAccessToken(scopeParam, realm, client, user, new LinkedList<RoleModel>(), new MultivaluedHashMap<String, RoleModel>());
     }
-
-    protected ClientModel getClaimRequester(RealmModel realm, UserModel client) {
-        ClientModel model = realm.getApplicationByName(client.getLoginName());
-        if (model != null) return model;
-        return realm.getOAuthClient(client.getLoginName());
-    }
-
 
     public AccessToken createClientAccessToken(String scopeParam, RealmModel realm, ClientModel client, UserModel user, List<RoleModel> realmRolesRequested, MultivaluedMap<String, RoleModel> resourceRolesRequested) {
         AccessScope scopeMap = null;

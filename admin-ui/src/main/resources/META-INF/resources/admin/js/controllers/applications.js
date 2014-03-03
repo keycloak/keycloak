@@ -384,3 +384,48 @@ module.controller('ApplicationScopeMappingCtrl', function($scope, $http, realm, 
 
 
 });
+
+module.controller('ApplicationRevocationCtrl', function($scope, realm, application, Application, ApplicationPushRevocation, $location, Dialog, Notifications) {
+    $scope.application = application;
+
+    var setNotBefore = function() {
+        if ($scope.application.notBefore == 0) {
+            $scope.notBefore = "None";
+        } else {
+            $scope.notBefore = new Date($scope.application.notBefore * 1000);
+        }
+    };
+
+    setNotBefore();
+
+    var refresh = function() {
+        Application.get({ realm : realm.realm, application: $scope.application.name }, function(updated) {
+            $scope.application = updated;
+            setNotBefore();
+        })
+
+    };
+
+    $scope.clear = function() {
+        $scope.application.notBefore = 0;
+        Application.update({ realm : realm.realm, application: application.name}, $scope.application, function () {
+            $scope.notBefore = "None";
+            Notifications.success('Not Before cleared for application.');
+            refresh();
+        });
+    }
+    $scope.setNotBeforeNow = function() {
+        $scope.application.notBefore = new Date().getTime()/1000;
+        Realm.update({ realm : realm.realm, application: $scope.application.name}, $scope.application, function () {
+            Notifications.success('Not Before cleared for application.');
+            refresh();
+        });
+    }
+    $scope.pushRevocation = function() {
+        ApplicationPushRevocation.save({realm : realm.realm, application: $scope.application.name}, function () {
+            Notifications.success('Push sent for application.');
+        });
+    }
+
+});
+

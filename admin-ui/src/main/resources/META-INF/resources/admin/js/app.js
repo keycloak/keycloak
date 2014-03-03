@@ -319,6 +319,18 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'ApplicationRoleListCtrl'
         })
+        .when('/realms/:realm/applications/:application/revocation', {
+            templateUrl : 'partials/application-revocation.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                application : function(ApplicationLoader) {
+                    return ApplicationLoader();
+                }
+            },
+            controller : 'ApplicationRevocationCtrl'
+        })
         .when('/realms/:realm/applications/:application/scope-mappings', {
             templateUrl : 'partials/application-scope-mappings.html',
             resolve : {
@@ -408,6 +420,18 @@ module.config([ '$routeProvider', function($routeProvider) {
                 }
             },
             controller : 'OAuthClientClaimsCtrl'
+        })
+        .when('/realms/:realm/oauth-clients/:oauth/revocation', {
+            templateUrl : 'partials/oauth-client-revocation.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                oauth : function(OAuthClientLoader) {
+                    return OAuthClientLoader();
+                }
+            },
+            controller : 'OAuthClientRevocationCtrl'
         })
         .when('/realms/:realm/oauth-clients/:oauth/credentials', {
             templateUrl : 'partials/oauth-client-credentials.html',

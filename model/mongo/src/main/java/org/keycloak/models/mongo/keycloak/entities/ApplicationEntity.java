@@ -23,6 +23,7 @@ public class ApplicationEntity extends AbstractMongoIdentifiableEntity implement
     private String managementUrl;
     private String baseUrl;
     private String secret;
+    private int notBefore;
 
     private String realmId;
     private long allowedClaimsMask;
@@ -144,6 +145,15 @@ public class ApplicationEntity extends AbstractMongoIdentifiableEntity implement
 
     public void setDefaultRoles(List<String> defaultRoles) {
         this.defaultRoles = defaultRoles;
+    }
+
+    @MongoField
+    public int getNotBefore() {
+        return notBefore;
+    }
+
+    public void setNotBefore(int notBefore) {
+        this.notBefore = notBefore;
     }
 
     @Override

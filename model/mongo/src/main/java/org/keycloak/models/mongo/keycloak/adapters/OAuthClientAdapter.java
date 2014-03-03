@@ -38,6 +38,11 @@ public class OAuthClientAdapter extends AbstractAdapter implements OAuthClientMo
     }
 
     @Override
+    public void setClientId(String id) {
+        delegate.setName(id);
+    }
+
+    @Override
     public RealmModel getRealm() {
         return realm;
     }
@@ -65,6 +70,16 @@ public class OAuthClientAdapter extends AbstractAdapter implements OAuthClientMo
     @Override
     public AbstractMongoIdentifiableEntity getMongoEntity() {
         return delegate;
+    }
+
+    @Override
+    public int getNotBefore() {
+        return delegate.getNotBefore();
+    }
+
+    @Override
+    public void setNotBefore(int notBefore) {
+        delegate.setNotBefore(notBefore);
     }
 
     @Override

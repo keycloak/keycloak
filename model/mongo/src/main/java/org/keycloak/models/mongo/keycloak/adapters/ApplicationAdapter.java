@@ -113,6 +113,15 @@ public class ApplicationAdapter extends AbstractAdapter implements ApplicationMo
         application.setAllowedClaimsMask(mask);
     }
 
+    @Override
+    public int getNotBefore() {
+        return application.getNotBefore();
+    }
+
+    @Override
+    public void setNotBefore(int notBefore) {
+        application.setNotBefore(notBefore);
+    }
 
     @Override
     public RoleAdapter getRole(String name) {

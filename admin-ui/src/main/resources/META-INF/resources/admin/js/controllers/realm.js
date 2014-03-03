@@ -691,7 +691,7 @@ module.controller('RealmKeysDetailCtrl', function($scope, Realm, realm, $http, $
 });
 
 module.controller('RealmRevocationCtrl', function($scope, Realm, RealmPushRevocation, realm, $http, $location, Dialog, Notifications) {
-    $scope.realm = realm;
+    $scope.realm = angular.copy(realm);
 
     var setNotBefore = function() {
         if ($scope.realm.notBefore == 0) {
@@ -701,29 +701,27 @@ module.controller('RealmRevocationCtrl', function($scope, Realm, RealmPushRevoca
         }
     };
 
-    if (realm.notBefore == 0) {
-        $scope.notBefore = "None";
-    } else {
-        $scope.notBefore = new Date(realm.notBefore);
-    }
+    setNotBefore();
+
+    var reset = function() {
+        Realm.get({ id : realm.realm }, function(updated) {
+            $scope.realm = updated;
+            setNotBefore();
+        })
+
+    };
 
     $scope.clear = function() {
         Realm.update({ realm: realm.realm, notBefore : 0 }, function () {
             $scope.notBefore = "None";
             Notifications.success('Not Before cleared for realm.');
-            Realm.get({ id : realm.realm }, function(updated) {
-                $scope.realm = updated;
-                setNotBefore();
-            })
+            reset();
         });
     }
     $scope.setNotBeforeNow = function() {
         Realm.update({ realm: realm.realm, notBefore : new Date().getTime()/1000}, function () {
             Notifications.success('Not Before cleared for realm.');
-            Realm.get({ id : realm.realm }, function(updated) {
-                $scope.realm = updated;
-                setNotBefore();
-            })
+            reset();
         });
     }
     $scope.pushRevocation = function() {

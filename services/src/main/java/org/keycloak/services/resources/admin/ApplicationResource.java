@@ -11,6 +11,7 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.ApplicationManager;
 import org.keycloak.services.managers.ModelToRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.util.JsonSerialization;
 
@@ -184,6 +185,14 @@ public class ApplicationResource {
             application.removeWebOrigin(origin);
         }
     }
+
+    @Path("push-revocation")
+    @POST
+    public void pushRevocation() {
+        auth.requireManage();
+        new ResourceAdminManager().pushApplicationRevocationPolicy(realm, application);
+    }
+
 
 
 

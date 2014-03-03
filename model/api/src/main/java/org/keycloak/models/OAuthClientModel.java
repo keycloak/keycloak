@@ -5,5 +5,6 @@ package org.keycloak.models;
  * @version $Revision: 1 $
  */
 public interface OAuthClientModel extends ClientModel {
+    void setClientId(String id);
 
 }

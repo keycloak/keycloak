@@ -54,25 +54,38 @@ public class ResourceAdminManager {
         }
     }
 
-    public void pushRevocationPolicies(RealmModel realm) {
+    public void pushRealmRevocationPolicy(RealmModel realm) {
         ResteasyClient client = new ResteasyClientBuilder()
                 .disableTrustManager() // todo fix this, should have a trust manager or a good default
                 .build();
 
         try {
             for (ApplicationModel application : realm.getApplications()) {
-                pushRevocationPolicies(realm, application, client);
+                pushRevocationPolicy(realm, application, realm.getNotBefore(), client);
             }
         } finally {
             client.close();
         }
     }
 
-    public boolean pushRevocationPolicies(RealmModel realm, ApplicationModel resource, ResteasyClient client) {
+    public void pushApplicationRevocationPolicy(RealmModel realm, ApplicationModel application) {
+        ResteasyClient client = new ResteasyClientBuilder()
+                .disableTrustManager() // todo fix this, should have a trust manager or a good default
+                .build();
+
+        try {
+            pushRevocationPolicy(realm, application, application.getNotBefore(), client);
+        } finally {
+            client.close();
+        }
+    }
+
+
+    protected boolean pushRevocationPolicy(RealmModel realm, ApplicationModel resource, int notBefore, ResteasyClient client) {
         if (realm.getNotBefore() <= 0) return false;
         String managementUrl = resource.getManagementUrl();
         if (managementUrl != null) {
-            PushNotBeforeAction adminAction = new PushNotBeforeAction(TokenIdGenerator.generateId(), (int)(System.currentTimeMillis() / 1000) + 30, resource.getName(), realm.getNotBefore());
+            PushNotBeforeAction adminAction = new PushNotBeforeAction(TokenIdGenerator.generateId(), (int)(System.currentTimeMillis() / 1000) + 30, resource.getName(), notBefore);
             String token = new TokenManager().encodeToken(realm, adminAction);
             logger.info("pushRevocation resource: {0} url: {1}", resource.getName(), managementUrl);
             Response response = client.target(managementUrl).path(AdapterConstants.K_PUSH_NOT_BEFORE).request().post(Entity.text(token));

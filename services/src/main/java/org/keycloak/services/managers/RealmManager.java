@@ -106,7 +106,6 @@ public class RealmManager {
 
     public void updateRealm(RealmRepresentation rep, RealmModel realm) {
         if (rep.getRealm() != null) {
-            logger.info("Updating realm name to " + rep.getRealm());
             realm.setName(rep.getRealm());
         }
         if (rep.isEnabled() != null) realm.setEnabled(rep.isEnabled());
@@ -128,10 +127,10 @@ public class RealmManager {
         if (rep.getRequiredCredentials() != null) {
             realm.updateRequiredCredentials(rep.getRequiredCredentials());
         }
-        realm.setLoginTheme(rep.getLoginTheme());
-        realm.setAccountTheme(rep.getAccountTheme());
+        if (rep.getLoginTheme() != null) realm.setLoginTheme(rep.getLoginTheme());
+        if (rep.getAccountTheme() != null) realm.setAccountTheme(rep.getAccountTheme());
 
-        realm.setPasswordPolicy(new PasswordPolicy(rep.getPasswordPolicy()));
+        if (rep.getPasswordPolicy() != null) realm.setPasswordPolicy(new PasswordPolicy(rep.getPasswordPolicy()));
 
         if (rep.getDefaultRoles() != null) {
             realm.updateDefaultRoles(rep.getDefaultRoles().toArray(new String[rep.getDefaultRoles().size()]));
@@ -232,8 +231,8 @@ public class RealmManager {
             newRealm.setPrivateKeyPem(rep.getPrivateKey());
             newRealm.setPublicKeyPem(rep.getPublicKey());
         }
-        newRealm.setLoginTheme(rep.getLoginTheme());
-        newRealm.setAccountTheme(rep.getAccountTheme());
+        if (rep.getLoginTheme() != null) newRealm.setLoginTheme(rep.getLoginTheme());
+        if (rep.getAccountTheme() != null) newRealm.setAccountTheme(rep.getAccountTheme());
 
         Map<String, UserModel> userMap = new HashMap<String, UserModel>();
 
@@ -245,7 +244,7 @@ public class RealmManager {
             addRequiredCredential(newRealm, CredentialRepresentation.PASSWORD);
         }
 
-        newRealm.setPasswordPolicy(new PasswordPolicy(rep.getPasswordPolicy()));
+        if (rep.getPasswordPolicy() != null) newRealm.setPasswordPolicy(new PasswordPolicy(rep.getPasswordPolicy()));
 
         if (rep.getUsers() != null) {
             for (UserRepresentation userRep : rep.getUsers()) {

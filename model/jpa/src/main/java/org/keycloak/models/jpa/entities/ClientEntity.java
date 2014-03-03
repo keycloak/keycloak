@@ -31,6 +31,7 @@ public class ClientEntity {
     private boolean enabled;
     private String secret;
     private long allowedClaimsMask;
+    private int notBefore;
 
 
     @ElementCollection
@@ -91,5 +92,13 @@ public class ClientEntity {
 
     public void setSecret(String secret) {
         this.secret = secret;
+    }
+
+    public int getNotBefore() {
+        return notBefore;
+    }
+
+    public void setNotBefore(int notBefore) {
+        this.notBefore = notBefore;
     }
 }

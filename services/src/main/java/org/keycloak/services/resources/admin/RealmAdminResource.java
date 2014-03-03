@@ -2,12 +2,9 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.logging.Logger;
-import org.keycloak.models.AdminRoles;
-import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.ModelToRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
@@ -112,7 +109,7 @@ public class RealmAdminResource {
     @POST
     public void pushRevocation() {
         auth.requireManage();
-        new ResourceAdminManager().pushRevocationPolicies(realm);
+        new ResourceAdminManager().pushRealmRevocationPolicy(realm);
     }
 
 }

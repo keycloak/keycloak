@@ -12,9 +12,11 @@ public class OAuthClientRepresentation {
     protected String baseUrl;
     protected List<String> redirectUris;
     protected List<String> webOrigins;
-    protected boolean enabled;
+    protected Boolean enabled;
     protected String secret;
     protected ClaimRepresentation claims;
+    protected Integer notBefore;
+
 
     public String getId() {
         return id;
@@ -32,11 +34,11 @@ public class OAuthClientRepresentation {
         this.name = name;
     }
 
-    public boolean isEnabled() {
+    public Boolean isEnabled() {
         return enabled;
     }
 
-    public void setEnabled(boolean enabled) {
+    public void setEnabled(Boolean enabled) {
         this.enabled = enabled;
     }
 
@@ -78,5 +80,13 @@ public class OAuthClientRepresentation {
 
     public void setClaims(ClaimRepresentation claims) {
         this.claims = claims;
+    }
+
+    public Integer getNotBefore() {
+        return notBefore;
+    }
+
+    public void setNotBefore(Integer notBefore) {
+        this.notBefore = notBefore;
     }
 }
