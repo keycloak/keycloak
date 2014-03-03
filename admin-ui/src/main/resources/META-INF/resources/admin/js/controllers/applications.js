@@ -386,6 +386,7 @@ module.controller('ApplicationScopeMappingCtrl', function($scope, $http, realm, 
 });
 
 module.controller('ApplicationRevocationCtrl', function($scope, realm, application, Application, ApplicationPushRevocation, $location, Dialog, Notifications) {
+    $scope.realm = realm;
     $scope.application = application;
 
     var setNotBefore = function() {
@@ -416,7 +417,7 @@ module.controller('ApplicationRevocationCtrl', function($scope, realm, applicati
     }
     $scope.setNotBeforeNow = function() {
         $scope.application.notBefore = new Date().getTime()/1000;
-        Realm.update({ realm : realm.realm, application: $scope.application.name}, $scope.application, function () {
+        Application.update({ realm : realm.realm, application: $scope.application.name}, $scope.application, function () {
             Notifications.success('Not Before cleared for application.');
             refresh();
         });

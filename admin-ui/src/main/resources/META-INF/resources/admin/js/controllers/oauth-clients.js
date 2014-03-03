@@ -290,7 +290,7 @@ module.controller('OAuthClientInstallationCtrl', function($scope, realm, install
 
 module.controller('OAuthClientRevocationCtrl', function($scope, realm, oauth, OAuthClient, $location, Dialog, Notifications) {
     $scope.oauth = oauth;
-
+    $scope.realm = realm;
     var setNotBefore = function() {
         if ($scope.oauth.notBefore == 0) {
             $scope.notBefore = "None";
