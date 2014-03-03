@@ -413,7 +413,7 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
         if (role == null) {
             return null;
         } else {
-            return new RoleAdapter(role, this, invocationContext);
+            return new RoleAdapter(this, role, this, invocationContext);
         }
     }
 
@@ -431,7 +431,12 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
         roleEntity.setRealmId(getId());
 
         getMongoStore().insertEntity(roleEntity, invocationContext);
-        return new RoleAdapter(roleEntity, this, invocationContext);
+        return new RoleAdapter(this, roleEntity, this, invocationContext);
+    }
+
+    @Override
+    public boolean removeRole(RoleModel role) {
+        return removeRoleById(role.getId());
     }
 
     @Override
@@ -450,7 +455,7 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
 
         if (roles == null) return result;
         for (RoleEntity role : roles) {
-            result.add(new RoleAdapter(role, this, invocationContext));
+            result.add(new RoleAdapter(this, role, this, invocationContext));
         }
 
         return result;
@@ -459,11 +464,14 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
     @Override
     public RoleModel getRoleById(String id) {
         RoleEntity role = getMongoStore().loadEntity(RoleEntity.class, id, invocationContext);
-        if (role == null || !getId().equals(role.getRealmId())) {
-            return null;
+        if (role == null) return null;
+        if (role.getRealmId() != null) {
+            if (!role.getRealmId().equals(this.getId())) return null;
         } else {
-            return new RoleAdapter(role, this, invocationContext);
+            ApplicationModel app = getApplicationById(role.getApplicationId());
+            if (app == null) return null;
         }
+        return new RoleAdapter(this, role, null, invocationContext);
     }
 
     @Override
@@ -514,7 +522,7 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
             return null;
         }
 
-        return new ApplicationAdapter(appData, invocationContext);
+        return new ApplicationAdapter(this, appData, invocationContext);
     }
 
     @Override
@@ -524,7 +532,7 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
                 .and("name").is(name)
                 .get();
         ApplicationEntity appEntity = getMongoStore().loadSingleEntity(ApplicationEntity.class, query, invocationContext);
-        return appEntity==null ? null : new ApplicationAdapter(appEntity, invocationContext);
+        return appEntity==null ? null : new ApplicationAdapter(this, appEntity, invocationContext);
     }
 
     @Override
@@ -545,7 +553,7 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
 
         List<ApplicationModel> result = new ArrayList<ApplicationModel>();
         for (ApplicationEntity appData : appDatas) {
-            result.add(new ApplicationAdapter(appData, invocationContext));
+            result.add(new ApplicationAdapter(this, appData, invocationContext));
         }
         return result;
     }
@@ -558,7 +566,7 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
         appData.setEnabled(true);
         getMongoStore().insertEntity(appData, invocationContext);
 
-        return new ApplicationAdapter(appData, invocationContext);
+        return new ApplicationAdapter(this, appData, invocationContext);
     }
 
     @Override
@@ -590,10 +598,10 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
 
         for (RoleEntity role : roles) {
             if (getId().equals(role.getRealmId())) {
-                result.add(new RoleAdapter(role, this, invocationContext));
+                result.add(new RoleAdapter(this, role, this, invocationContext));
             } else {
                 // Likely applicationRole, but we don't have this application yet
-                result.add(new RoleAdapter(role, invocationContext));
+                result.add(new RoleAdapter(this, role, invocationContext));
             }
         }
         return result;
@@ -630,10 +638,10 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
 
         for (RoleEntity role : roles) {
             if (getId().equals(role.getRealmId())) {
-                result.add(new RoleAdapter(role, this, invocationContext));
+                result.add(new RoleAdapter(this, role, this, invocationContext));
             } else {
                 // Likely applicationRole, but we don't have this application yet
-                result.add(new RoleAdapter(role, invocationContext));
+                result.add(new RoleAdapter(this, role, invocationContext));
             }
         }
         return result;
@@ -684,7 +692,7 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
         oauthClient.setName(name);
         getMongoStore().insertEntity(oauthClient, invocationContext);
 
-        return new OAuthClientAdapter(oauthClient, invocationContext);
+        return new OAuthClientAdapter(this, oauthClient, invocationContext);
     }
 
     @Override
@@ -699,7 +707,7 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
                 .and("name").is(name)
                 .get();
         OAuthClientEntity oauthClient = getMongoStore().loadSingleEntity(OAuthClientEntity.class, query, invocationContext);
-        return oauthClient == null ? null : new OAuthClientAdapter(oauthClient, invocationContext);
+        return oauthClient == null ? null : new OAuthClientAdapter(this, oauthClient, invocationContext);
     }
 
     @Override
@@ -709,7 +717,7 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
         // Check if client belongs to this realm
         if (clientEntity == null || !getId().equals(clientEntity.getRealmId())) return null;
 
-        return new OAuthClientAdapter(clientEntity, invocationContext);
+        return new OAuthClientAdapter(this, clientEntity, invocationContext);
     }
 
     @Override
@@ -720,7 +728,7 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
         List<OAuthClientEntity> results = getMongoStore().loadEntities(OAuthClientEntity.class, query, invocationContext);
         List<OAuthClientModel> list = new ArrayList<OAuthClientModel>();
         for (OAuthClientEntity data : results) {
-            list.add(new OAuthClientAdapter(data, invocationContext));
+            list.add(new OAuthClientAdapter(this, data, invocationContext));
         }
         return list;
     }

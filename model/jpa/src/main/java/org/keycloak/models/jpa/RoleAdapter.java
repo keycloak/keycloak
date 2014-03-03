@@ -124,13 +124,13 @@ public class RoleAdapter implements RoleModel {
 
         RoleAdapter that = (RoleAdapter) o;
 
-        if (!role.equals(that.role)) return false;
+        if (!role.getId().equals(that.role.getId())) return false;
 
         return true;
     }
 
     @Override
     public int hashCode() {
-        return role.hashCode();
+        return role.getId().hashCode();
     }
 }

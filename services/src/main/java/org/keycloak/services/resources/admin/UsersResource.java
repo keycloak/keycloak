@@ -281,8 +281,8 @@ public class UsersResource {
         }
 
         for (RoleRepresentation role : roles) {
-            RoleModel roleModel = realm.getRoleById(role.getId());
-            if (roleModel == null) {
+            RoleModel roleModel = realm.getRole(role.getName());
+            if (roleModel == null || !roleModel.getId().equals(role.getId())) {
                 throw new NotFoundException();
             }
             realm.grantRole(user, roleModel);
@@ -311,8 +311,8 @@ public class UsersResource {
 
         } else {
             for (RoleRepresentation role : roles) {
-                RoleModel roleModel = realm.getRoleById(role.getId());
-                if (roleModel == null) {
+                RoleModel roleModel = realm.getRole(role.getName());
+                if (roleModel == null || !roleModel.getId().equals(role.getId())) {
                     throw new NotFoundException();
                 }
                 realm.deleteRoleMapping(user, roleModel);
@@ -368,8 +368,8 @@ public class UsersResource {
         }
 
         for (RoleRepresentation role : roles) {
-            RoleModel roleModel = application.getRoleById(role.getId());
-            if (roleModel == null) {
+            RoleModel roleModel = application.getRole(role.getName());
+            if (roleModel == null || !roleModel.getId().equals(role.getId())) {
                 throw new NotFoundException();
             }
             realm.grantRole(user, roleModel);
@@ -406,8 +406,8 @@ public class UsersResource {
 
         } else {
             for (RoleRepresentation role : roles) {
-                RoleModel roleModel = application.getRoleById(role.getId());
-                if (roleModel == null) {
+                RoleModel roleModel = application.getRole(role.getName());
+                if (roleModel == null || !roleModel.getId().equals(role.getId())) {
                     throw new NotFoundException();
                 }
                 realm.deleteRoleMapping(user, roleModel);

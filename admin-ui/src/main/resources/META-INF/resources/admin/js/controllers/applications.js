@@ -3,6 +3,10 @@ module.controller('ApplicationRoleListCtrl', function($scope, $location, realm, 
     $scope.roles = roles;
     $scope.application = application;
 
+    for (var i = 0; i < roles.length; i++) {
+        console.log("role.id: " + roles[i].id + " role.name: " + roles[i].name);
+    }
+
     $scope.$watch(function() {
         return $location.path();
     }, function() {

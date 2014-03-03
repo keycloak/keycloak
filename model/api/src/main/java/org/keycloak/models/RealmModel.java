@@ -101,6 +101,8 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
 
     boolean removeUser(String name);
 
+    RoleModel getRoleById(String id);
+
     List<String> getDefaultRoles();
     
     void addDefaultRole(String name);
@@ -182,4 +184,6 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
     int getNotBefore();
 
     void setNotBefore(int notBefore);
+
+    boolean removeRoleById(String id);
 }

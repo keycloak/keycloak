@@ -1,6 +1,7 @@
 package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.logging.Logger;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.OAuthClientModel;
@@ -28,6 +29,7 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class RoleByIdResource extends RoleResource {
+    protected static final Logger logger = Logger.getLogger(RoleByIdResource.class);
     private final RealmModel realm;
     private final RealmAuth auth;
 
@@ -101,6 +103,8 @@ public class RoleByIdResource extends RoleResource {
     @NoCache
     @Produces("application/json")
     public Set<RoleRepresentation> getRoleComposites(final @PathParam("role-id") String id) {
+
+        logger.info("*** getRoleComposites: '" + id + "'");
         RoleModel role = getRoleModel(id);
         auth.requireView();
         return getRoleComposites(role);
