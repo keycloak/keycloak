@@ -82,7 +82,7 @@ public class ResourceAdminManager {
 
 
     protected boolean pushRevocationPolicy(RealmModel realm, ApplicationModel resource, int notBefore, ResteasyClient client) {
-        if (realm.getNotBefore() <= 0) return false;
+        if (notBefore <= 0) return false;
         String managementUrl = resource.getManagementUrl();
         if (managementUrl != null) {
             PushNotBeforeAction adminAction = new PushNotBeforeAction(TokenIdGenerator.generateId(), (int)(System.currentTimeMillis() / 1000) + 30, resource.getName(), notBefore);

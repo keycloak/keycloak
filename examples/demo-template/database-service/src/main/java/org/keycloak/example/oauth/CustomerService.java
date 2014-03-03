@@ -22,7 +22,7 @@ public class CustomerService {
         rtn.add("Bill Burke");
         rtn.add("Stian Thorgersen");
         rtn.add("Stan Silvert");
-        rtn.add("Gabriel Cordoso");
+        rtn.add("Gabriel Cardoso");
         rtn.add("Viliam Rockai");
         rtn.add("Marek Posolda");
         rtn.add("Boleslaw Dawidowicz");
