@@ -234,6 +234,7 @@ ol#kc-totp-settings li:first-of-type {
     #kc-form {
         padding-left: 40px;
         padding-right: 40px;
+        float: none;
     }
 
     #kc-info-wrapper {
