@@ -52,11 +52,15 @@ public class ApplicationManager {
     public ApplicationModel createApplication(RealmModel realm, ApplicationRepresentation resourceRep) {
         logger.debug("************ CREATE APPLICATION: {0}" + resourceRep.getName());
         ApplicationModel applicationModel = realm.addApplication(resourceRep.getName());
-        applicationModel.setEnabled(resourceRep.isEnabled());
+        if (resourceRep.isEnabled() != null) applicationModel.setEnabled(resourceRep.isEnabled());
         applicationModel.setManagementUrl(resourceRep.getAdminUrl());
-        applicationModel.setSurrogateAuthRequired(resourceRep.isSurrogateAuthRequired());
+        if (resourceRep.isSurrogateAuthRequired() != null) applicationModel.setSurrogateAuthRequired(resourceRep.isSurrogateAuthRequired());
         applicationModel.setBaseUrl(resourceRep.getBaseUrl());
         applicationModel.updateApplication();
+
+        if (resourceRep.getNotBefore() != null) {
+            applicationModel.setNotBefore(resourceRep.getNotBefore());
+        }
 
         applicationModel.setSecret(resourceRep.getSecret());
         if (applicationModel.getSecret() == null) {
@@ -132,13 +136,16 @@ public class ApplicationManager {
     }
 
     public void updateApplication(ApplicationRepresentation rep, ApplicationModel resource) {
-        resource.setName(rep.getName());
-        resource.setEnabled(rep.isEnabled());
-        resource.setManagementUrl(rep.getAdminUrl());
-        resource.setBaseUrl(rep.getBaseUrl());
-        resource.setSurrogateAuthRequired(rep.isSurrogateAuthRequired());
+        if (rep.getName() != null) resource.setName(rep.getName());
+        if (rep.isEnabled() != null) resource.setEnabled(rep.isEnabled());
+        if (rep.getAdminUrl() != null) resource.setManagementUrl(rep.getAdminUrl());
+        if (rep.getBaseUrl() != null) resource.setBaseUrl(rep.getBaseUrl());
+        if (rep.isSurrogateAuthRequired() != null) resource.setSurrogateAuthRequired(rep.isSurrogateAuthRequired());
         resource.updateApplication();
 
+        if (rep.getNotBefore() != null) {
+            resource.setNotBefore(rep.getNotBefore());
+        }
         if (rep.getDefaultRoles() != null) {
             resource.updateDefaultRoles(rep.getDefaultRoles());
         }
@@ -166,6 +173,7 @@ public class ApplicationManager {
         rep.setAdminUrl(applicationModel.getManagementUrl());
         rep.setSurrogateAuthRequired(applicationModel.isSurrogateAuthRequired());
         rep.setBaseUrl(applicationModel.getBaseUrl());
+        rep.setNotBefore(applicationModel.getNotBefore());
 
         Set<String> redirectUris = applicationModel.getRedirectUris();
         if (redirectUris != null) {

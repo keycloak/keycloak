@@ -19,6 +19,7 @@ public class OAuthClientEntity extends AbstractMongoIdentifiableEntity implement
     private String realmId;
     private String secret;
     private long allowedClaimsMask;
+    private int notBefore;
     private List<String> scopeIds;
     private List<String> webOrigins;
     private List<String> redirectUris;
@@ -96,8 +97,14 @@ public class OAuthClientEntity extends AbstractMongoIdentifiableEntity implement
         this.scopeIds = scopeIds;
     }
 
+    @MongoField
+    public int getNotBefore() {
+        return notBefore;
+    }
 
-
+    public void setNotBefore(int notBefore) {
+        this.notBefore = notBefore;
+    }
 
     @Override
     public void afterRemove(MongoStoreInvocationContext context) {

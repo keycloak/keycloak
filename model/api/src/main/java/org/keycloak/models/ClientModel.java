@@ -51,4 +51,14 @@ public interface ClientModel {
     public void setSecret(String secret);
 
     RealmModel getRealm();
+
+    /**
+     * Time in seconds since epoc
+     *
+     * @return
+     */
+    int getNotBefore();
+
+    void setNotBefore(int notBefore);
+
 }

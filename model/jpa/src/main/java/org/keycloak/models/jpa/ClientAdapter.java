@@ -120,6 +120,16 @@ public class ClientAdapter implements ClientModel {
     }
 
     @Override
+    public int getNotBefore() {
+        return entity.getNotBefore();
+    }
+
+    @Override
+    public void setNotBefore(int notBefore) {
+        entity.setNotBefore(notBefore);
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!this.getClass().equals(o.getClass())) return false;

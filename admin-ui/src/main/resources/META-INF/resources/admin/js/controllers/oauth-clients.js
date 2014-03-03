@@ -287,3 +287,43 @@ module.controller('OAuthClientInstallationCtrl', function($scope, realm, install
     $scope.installation = installation;
     $scope.download = OAuthClientInstallation.url({ realm: $routeParams.realm, oauth: $routeParams.oauth });
 });
+
+module.controller('OAuthClientRevocationCtrl', function($scope, realm, oauth, OAuthClient, $location, Dialog, Notifications) {
+    $scope.oauth = oauth;
+    $scope.realm = realm;
+    var setNotBefore = function() {
+        if ($scope.oauth.notBefore == 0) {
+            $scope.notBefore = "None";
+        } else {
+            $scope.notBefore = new Date($scope.oauth.notBefore * 1000);
+        }
+    };
+
+    setNotBefore();
+
+    var refresh = function() {
+        OAuthClient.get({ realm : realm.realm, id: $scope.oauth.id }, function(updated) {
+            $scope.oauth = updated;
+            setNotBefore();
+        })
+
+    };
+
+    $scope.clear = function() {
+        $scope.oauth.notBefore = 0;
+        OAuthClient.update({ realm : realm.realm, id: $scope.oauth.id}, $scope.oauth, function () {
+            $scope.notBefore = "None";
+            Notifications.success('Not Before cleared for application.');
+            refresh();
+        });
+    }
+    $scope.setNotBeforeNow = function() {
+        $scope.oauth.notBefore = new Date().getTime()/1000;
+        OAuthClient.update({ realm : realm.realm, id: $scope.oauth.id}, $scope.oauth, function () {
+            Notifications.success('Not Before cleared for application.');
+            refresh();
+        });
+    }
+});
+
+

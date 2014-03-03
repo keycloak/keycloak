@@ -52,11 +52,16 @@ public class OAuthClientManager {
         if (rep.getClaims() != null) {
             ClaimManager.setClaims(model, rep.getClaims());
         }
+        if (rep.getNotBefore() != null) {
+            model.setNotBefore(rep.getNotBefore());
+        }
         return model;
     }
 
-    public void update(OAuthClientRepresentation rep, OAuthClientModel model) {
-        model.setEnabled(rep.isEnabled());
+    public void update(OAuthClientRepresentation rep, OAuthClientModel model)
+    {
+        if (rep.getName() != null) model.setClientId(rep.getName());
+        if (rep.isEnabled() != null) model.setEnabled(rep.isEnabled());
         List<String> redirectUris = rep.getRedirectUris();
         if (redirectUris != null) {
             model.setRedirectUris(new HashSet<String>(redirectUris));
@@ -70,6 +75,11 @@ public class OAuthClientManager {
         if (rep.getClaims() != null) {
             ClaimManager.setClaims(model, rep.getClaims());
         }
+
+        if (rep.getNotBefore() != null) {
+            model.setNotBefore(rep.getNotBefore());
+        }
+
     }
 
     public static OAuthClientRepresentation toRepresentation(OAuthClientModel model) {
@@ -86,6 +96,7 @@ public class OAuthClientManager {
         if (webOrigins != null) {
             rep.setWebOrigins(new LinkedList<String>(webOrigins));
         }
+        rep.setNotBefore(model.getNotBefore());
         return rep;
     }
 

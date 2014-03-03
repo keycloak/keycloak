@@ -12,13 +12,15 @@ public class ApplicationRepresentation {
     protected String name;
     protected String adminUrl;
     protected String baseUrl;
-    protected boolean surrogateAuthRequired;
-    protected boolean enabled;
+    protected Boolean surrogateAuthRequired;
+    protected Boolean enabled;
     protected String secret;
     protected String[] defaultRoles;
     protected List<String> redirectUris;
     protected List<String> webOrigins;
     protected ClaimRepresentation claims;
+    protected Integer notBefore;
+
 
     public String getId() {
         return id;
@@ -36,19 +38,19 @@ public class ApplicationRepresentation {
         this.name = name;
     }
 
-    public boolean isEnabled() {
+    public Boolean isEnabled() {
         return enabled;
     }
 
-    public void setEnabled(boolean enabled) {
+    public void setEnabled(Boolean enabled) {
         this.enabled = enabled;
     }
 
-    public boolean isSurrogateAuthRequired() {
+    public Boolean isSurrogateAuthRequired() {
         return surrogateAuthRequired;
     }
 
-    public void setSurrogateAuthRequired(boolean surrogateAuthRequired) {
+    public void setSurrogateAuthRequired(Boolean surrogateAuthRequired) {
         this.surrogateAuthRequired = surrogateAuthRequired;
     }
 
@@ -106,5 +108,13 @@ public class ApplicationRepresentation {
 
     public void setClaims(ClaimRepresentation claims) {
         this.claims = claims;
+    }
+
+    public Integer getNotBefore() {
+        return notBefore;
+    }
+
+    public void setNotBefore(Integer notBefore) {
+        this.notBefore = notBefore;
     }
 }

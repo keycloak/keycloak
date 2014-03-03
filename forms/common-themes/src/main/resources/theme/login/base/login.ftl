@@ -1,5 +1,5 @@
 <#import "template.ftl" as layout>
-<@layout.registrationLayout displayInfo=social.displaySocialProviders; section>
+<@layout.registrationLayout displayInfo=social.displayInfo; section>
     <#if section = "title">
         ${rb.loginTitle} ${realm.name}
     <#elseif section = "header">
@@ -57,6 +57,7 @@
             </div>
         </#if>
 
+        <#if social.providers??>
         <div id="kc-social-providers">
             <ul>
                 <#list social.providers as p>
@@ -64,5 +65,6 @@
                 </#list>
             </ul>
         </div>
+        </#if>
     </#if>
 </@layout.registrationLayout>
