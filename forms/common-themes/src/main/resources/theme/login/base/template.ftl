@@ -4,6 +4,11 @@
 
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <#if properties.meta?has_content>
+        <#list properties.meta?split(' ') as meta>
+            <meta name="${meta?split('==')[0]}" content="${meta?split('==')[1]}"/>
+        </#list>
+    </#if>
     <title><#nested "title"></title>
     <link rel="icon" href="${url.resourcesPath}/img/favicon.ico" />
     <#if properties.styles?has_content>
@@ -19,7 +24,7 @@
 </head>
 
 <body class="${properties.kcBodyClass!}">
-    <dv id="kc-logo"></dv>
+    <div id="kc-logo"><div id="kc-logo-wrapper"></div></div>
 
     <div id="kc-container" class="${properties.kcContainerClass!}">
         <div id="kc-container-wrapper" class="${properties.kcContainerWrapperClass!}">
@@ -31,24 +36,28 @@
             <#if displayMessage && message?has_content>
                 <div id="kc-feedback" class="feedback-${message.type} ${properties.kcFeedBackClass!}">
                     <div id="kc-feedback-wrapper">
-                        <span>${message.summary}</span>
+                        <span class="kc-feedback-text">${message.summary}</span>
                     </div>
                 </div>
             </#if>
 
-            <div id="kc-form" class="${properties.kcFormAreaClass!}">
-                <div id="kc-form-wrapper" class="${properties.kcFormAreaWrapperClass!}">
-                    <#nested "form">
+            <div id="kc-content" class="${properties.kcContentClass!}">
+                <div id="kc-content-wrapper" class="${properties.kcContentWrapperClass!}">
+                    <div id="kc-form" class="${properties.kcFormAreaClass!}">
+                        <div id="kc-form-wrapper" class="${properties.kcFormAreaWrapperClass!}">
+                            <#nested "form">
+                        </div>
+                    </div>
+
+                    <#if displayInfo>
+                        <div id="kc-info" class="${properties.kcInfoAreaClass!}">
+                            <div id="kc-info-wrapper" class="${properties.kcInfoAreaWrapperClass!}">
+                                <#nested "info">
+                            </div>
+                        </div>
+                    </#if>
                 </div>
             </div>
-
-            <#if displayInfo>
-                <div id="kc-info" class="${properties.kcInfoAreaClass!}">
-                    <div id="kc-info-wrapper" class="${properties.kcInfoAreaWrapperClass!}">
-                        <#nested "info">
-                    </div>
-                </div>
-            </#if>
         </div>
     </div>
 
