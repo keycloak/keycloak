@@ -3,6 +3,7 @@ package org.keycloak.models.jpa;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.jpa.entities.ApplicationEntity;
+import org.keycloak.models.jpa.entities.ApplicationRoleEntity;
 import org.keycloak.models.jpa.entities.CredentialEntity;
 import org.keycloak.models.jpa.entities.OAuthClientEntity;
 import org.keycloak.models.jpa.entities.RealmEntity;
@@ -496,7 +497,7 @@ public class RealmAdapter implements RealmModel {
         if (application == null) return false;
 
         for (RoleModel role : application.getRoles()) {
-            application.removeRoleById(role.getId());
+            application.removeRole(role);
         }
 
         ApplicationEntity applicationEntity = null;
@@ -673,12 +674,14 @@ public class RealmAdapter implements RealmModel {
         data.setRealm(realm);
         em.persist(data);
         em.flush();
-        return new OAuthClientAdapter(data);
+        return new OAuthClientAdapter(this, data);
     }
 
     @Override
     public boolean removeOAuthClient(String id) {
-        OAuthClientEntity client = em.find(OAuthClientEntity.class, id);
+        OAuthClientModel oauth = getOAuthClientById(id);
+        if (oauth == null) return false;
+        OAuthClientEntity client = (OAuthClientEntity)((OAuthClientAdapter)oauth).getEntity();
         em.createQuery("delete from " + ScopeMappingEntity.class.getSimpleName() + " where client = :client").setParameter("client", client).executeUpdate();
         em.remove(client);
         return true;
@@ -692,7 +695,7 @@ public class RealmAdapter implements RealmModel {
         query.setParameter("realm", realm);
         List<OAuthClientEntity> entities = query.getResultList();
         if (entities.size() == 0) return null;
-        return new OAuthClientAdapter(entities.get(0));
+        return new OAuthClientAdapter(this, entities.get(0));
     }
 
     @Override
@@ -700,8 +703,8 @@ public class RealmAdapter implements RealmModel {
         OAuthClientEntity client = em.find(OAuthClientEntity.class, id);
 
         // Check if client belongs to this realm
-        if (client == null || !this.realm.equals(client.getRealm())) return null;
-        return new OAuthClientAdapter(client);
+        if (client == null || !this.realm.getId().equals(client.getRealm().getId())) return null;
+        return new OAuthClientAdapter(this, client);
     }
 
 
@@ -711,7 +714,7 @@ public class RealmAdapter implements RealmModel {
         query.setParameter("realm", realm);
         List<OAuthClientEntity> entities = query.getResultList();
         List<OAuthClientModel> list = new ArrayList<OAuthClientModel>();
-        for (OAuthClientEntity entity : entities) list.add(new OAuthClientAdapter(entity));
+        for (OAuthClientEntity entity : entities) list.add(new OAuthClientAdapter(this, entity));
         return list;
     }
 
@@ -761,12 +764,12 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public boolean removeRoleById(String id) {
-        RoleModel role = getRoleById(id);
-
+    public boolean removeRole(RoleModel role) {
         if (role == null) {
             return false;
         }
+        if (!role.getContainer().equals(this)) return false;
+
         RoleEntity roleEntity = ((RoleAdapter)role).getRole();
         realm.getRoles().remove(role);
         realm.getDefaultRoles().remove(role);
@@ -793,11 +796,22 @@ public class RealmAdapter implements RealmModel {
     @Override
     public RoleModel getRoleById(String id) {
         RoleEntity entity = em.find(RoleEntity.class, id);
+        if (entity == null) return null;
+        if (entity instanceof RealmRoleEntity) {
+            RealmRoleEntity roleEntity = (RealmRoleEntity)entity;
+            if (!roleEntity.getRealm().getId().equals(getId())) return null;
+        } else {
+            ApplicationRoleEntity roleEntity = (ApplicationRoleEntity)entity;
+            if (!roleEntity.getApplication().getRealm().getId().equals(getId())) return null;
+        }
+        return new RoleAdapter(this, em, entity);
+    }
 
-        // Check if it's realm role and belongs to this realm
-        if (entity == null || !(entity instanceof RealmRoleEntity)) return null;
-        RealmRoleEntity realmRoleEntity = (RealmRoleEntity)entity;
-        return (realmRoleEntity.getRealm().equals(this.realm)) ? new RoleAdapter(this, em, realmRoleEntity) : null;
+    @Override
+    public boolean removeRoleById(String id) {
+        RoleModel role = getRoleById(id);
+        if (role == null) return false;
+        return role.getContainer().removeRole(role);
     }
 
     @Override

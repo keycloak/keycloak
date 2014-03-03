@@ -3,6 +3,10 @@ module.controller('ApplicationRoleListCtrl', function($scope, $location, realm, 
     $scope.roles = roles;
     $scope.application = application;
 
+    for (var i = 0; i < roles.length; i++) {
+        console.log("role.id: " + roles[i].id + " role.name: " + roles[i].name);
+    }
+
     $scope.$watch(function() {
         return $location.path();
     }, function() {
@@ -37,11 +41,6 @@ module.controller('ApplicationCredentialsCtrl', function($scope, $location, real
     }, function() {
         $scope.path = $location.path().substring(1).split("/");
     });
-});
-
-module.controller('ApplicationSessionsCtrl', function($scope, $location, realm, application) {
-    $scope.realm = realm;
-    $scope.application = application;
 });
 
 module.controller('ApplicationClaimsCtrl', function($scope, realm, application, claims,

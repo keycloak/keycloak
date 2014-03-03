@@ -510,7 +510,7 @@ module.controller('RealmDefaultRolesCtrl', function ($scope, Realm, realm, appli
         // Update/save the selected application with new default roles.
         Application.update({
             realm: $scope.realm.realm,
-            id: $scope.application.name
+            application: $scope.application.name
         }, $scope.application, function () {
             Notifications.success("Your changes have been saved to the application.");
         });
@@ -534,7 +534,7 @@ module.controller('RealmDefaultRolesCtrl', function ($scope, Realm, realm, appli
         // Update/save the selected application with new default roles.
         Application.update({
             realm: $scope.realm.realm,
-            id: $scope.application.name
+            application: $scope.application.name
         }, $scope.application, function () {
             Notifications.success("Your changes have been saved to the application.");
         });

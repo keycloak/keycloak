@@ -28,7 +28,7 @@ public abstract class RoleResource {
     }
 
     protected void deleteRole(RoleModel role) {
-        if (!role.getContainer().removeRoleById(role.getId())) {
+        if (!role.getContainer().removeRole(role)) {
             throw new NotFoundException();
         }
     }

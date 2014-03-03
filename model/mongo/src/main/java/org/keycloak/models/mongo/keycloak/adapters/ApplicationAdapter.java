@@ -4,6 +4,7 @@ import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.mongo.api.AbstractMongoIdentifiableEntity;
@@ -24,10 +25,12 @@ import java.util.Set;
 public class ApplicationAdapter extends AbstractAdapter implements ApplicationModel {
 
     private final ApplicationEntity application;
+    private final RealmModel realm;
 
-    public ApplicationAdapter(ApplicationEntity applicationEntity, MongoStoreInvocationContext invContext) {
+    public ApplicationAdapter(RealmModel realm, ApplicationEntity applicationEntity, MongoStoreInvocationContext invContext) {
         super(invContext);
         this.application = applicationEntity;
+        this.realm = realm;
     }
 
     @Override
@@ -53,6 +56,11 @@ public class ApplicationAdapter extends AbstractAdapter implements ApplicationMo
     @Override
     public void setName(String name) {
         application.setName(name);
+    }
+
+    @Override
+    public RealmModel getRealm() {
+        return realm;
     }
 
     @Override
@@ -116,19 +124,7 @@ public class ApplicationAdapter extends AbstractAdapter implements ApplicationMo
         if (role == null) {
             return null;
         } else {
-            return new RoleAdapter(role, invocationContext);
-        }
-    }
-
-    @Override
-    public RoleModel getRoleById(String id) {
-        RoleEntity role = getMongoStore().loadEntity(RoleEntity.class, id, invocationContext);
-
-        // Check that role belongs to this application
-        if (role == null || !getId().equals(role.getApplicationId())) {
-            return null;
-        } else {
-            return new RoleAdapter(role, this, invocationContext);
+            return new RoleAdapter(getRealm(), role, invocationContext);
         }
     }
 
@@ -144,12 +140,12 @@ public class ApplicationAdapter extends AbstractAdapter implements ApplicationMo
         roleEntity.setApplicationId(getId());
 
         getMongoStore().insertEntity(roleEntity, invocationContext);
-        return new RoleAdapter(roleEntity, this, invocationContext);
+        return new RoleAdapter(getRealm(), roleEntity, this, invocationContext);
     }
 
     @Override
-    public boolean removeRoleById(String id) {
-        return getMongoStore().removeEntity(RoleEntity.class, id, invocationContext);
+    public boolean removeRole(RoleModel role) {
+        return getMongoStore().removeEntity(RoleEntity.class, role.getId(), invocationContext);
     }
 
     @Override
@@ -161,7 +157,7 @@ public class ApplicationAdapter extends AbstractAdapter implements ApplicationMo
 
         Set<RoleModel> result = new HashSet<RoleModel>();
         for (RoleEntity role : roles) {
-            result.add(new RoleAdapter(role, this, invocationContext));
+            result.add(new RoleAdapter(getRealm(), role, this, invocationContext));
         }
 
         return result;
@@ -174,7 +170,7 @@ public class ApplicationAdapter extends AbstractAdapter implements ApplicationMo
 
         for (RoleEntity role : roles) {
             if (getId().equals(role.getApplicationId())) {
-                result.add(new RoleAdapter(role, this, invocationContext));
+                result.add(new RoleAdapter(getRealm(), role, this, invocationContext));
             }
         }
         return result;
@@ -192,7 +188,7 @@ public class ApplicationAdapter extends AbstractAdapter implements ApplicationMo
 
         for (RoleEntity role : roles) {
             if (getId().equals(role.getApplicationId())) {
-                result.add(new RoleAdapter(role, this, invocationContext));
+                result.add(new RoleAdapter(getRealm(), role, this, invocationContext));
             }
         }
         return result;
@@ -301,5 +297,21 @@ public class ApplicationAdapter extends AbstractAdapter implements ApplicationMo
         return secret.equals(application.getSecret());
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ApplicationAdapter)) return false;
+        if (!super.equals(o)) return false;
 
+        ApplicationAdapter that = (ApplicationAdapter) o;
+
+        if (!application.getId().equals(that.application.getId())) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return application.getId().hashCode();
+    }
 }

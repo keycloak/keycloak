@@ -173,7 +173,7 @@ public class ScopeMappedResource {
         }
 
         for (RoleRepresentation role : roles) {
-            RoleModel roleModel = app.getRoleById(role.getId());
+            RoleModel roleModel = app.getRole(role.getName());
             if (roleModel == null) {
                 throw new NotFoundException();
             }
@@ -202,7 +202,7 @@ public class ScopeMappedResource {
 
         } else {
             for (RoleRepresentation role : roles) {
-                RoleModel roleModel = app.getRoleById(role.getId());
+                RoleModel roleModel = app.getRole(role.getName());
                 if (roleModel == null) {
                     throw new NotFoundException();
                 }

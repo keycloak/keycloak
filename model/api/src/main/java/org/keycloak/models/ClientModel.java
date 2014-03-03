@@ -49,4 +49,6 @@ public interface ClientModel {
     boolean validateSecret(String secret);
     String getSecret();
     public void setSecret(String secret);
+
+    RealmModel getRealm();
 }

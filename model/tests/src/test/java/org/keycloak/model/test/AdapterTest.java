@@ -241,8 +241,8 @@ public class AdapterTest extends AbstractModelTest {
         Assert.assertFalse(realmModel.removeRoleById(realmRole.getId()));
         Assert.assertNull(realmModel.getRole(realmRole.getName()));
 
-        Assert.assertTrue(app.removeRoleById(appRole.getId()));
-        Assert.assertFalse(app.removeRoleById(appRole.getId()));
+        Assert.assertTrue(realmModel.removeRoleById(appRole.getId()));
+        Assert.assertFalse(realmModel.removeRoleById(appRole.getId()));
         Assert.assertNull(app.getRole(appRole.getName()));
     }
 
@@ -431,13 +431,9 @@ public class AdapterTest extends AbstractModelTest {
         Set<RoleModel> appRoles = application.getRoles();
         Assert.assertEquals(2, appRoles.size());
         RoleModel appBarRole = application.getRole("bar");
+        Assert.assertNotNull(appBarRole);
 
-        // This should return null because it's realmRole
-        Assert.assertNull(application.getRoleById(realmUserRole.getId()));
-
-        // This should return null because appBarRole is application role
-        Assert.assertNull(realmModel.getRoleById(appBarRole.getId()));
-        found = application.getRoleById(appBarRole.getId());
+        found = realmModel.getRoleById(appBarRole.getId());
         Assert.assertNotNull(found);
         assertRolesEquals(found, appBarRole);
 

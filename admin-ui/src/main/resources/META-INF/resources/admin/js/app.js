@@ -349,18 +349,6 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'ApplicationInstallationCtrl'
         })
-        .when('/realms/:realm/applications/:application/sessions', {
-            templateUrl : 'partials/application-sessions.html',
-            resolve : {
-                realm : function(RealmLoader) {
-                    return RealmLoader();
-                },
-                application : function(ApplicationLoader) {
-                    return ApplicationLoader();
-                }
-            },
-            controller : 'ApplicationSessionsCtrl'
-        })
         .when('/create/application/:realm', {
             templateUrl : 'partials/application-detail.html',
             resolve : {

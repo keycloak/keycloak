@@ -75,20 +75,11 @@ public class MultipleRealmsTest extends AbstractModelTest {
         Assert.assertEquals(r2cl1.getId(), realm2.getOAuthClientById(r2cl1.getId()).getId());
 
         RoleModel r1App1Role = r1app1.getRole("app1Role1");
-        Assert.assertNull(realm1.getRoleById(r1App1Role.getId()));
-        Assert.assertNull(realm2.getRoleById(r1App1Role.getId()));
-        Assert.assertEquals(r1App1Role, r1app1.getRoleById(r1App1Role.getId()));
-        Assert.assertNull(r1app2.getRoleById(r1App1Role.getId()));
-        Assert.assertNull(r2app1.getRoleById(r1App1Role.getId()));
-        Assert.assertNull(r2app2.getRoleById(r1App1Role.getId()));
+        Assert.assertEquals(r1App1Role, realm1.getRoleById(r1App1Role.getId()));
 
         RoleModel r2Role1 = realm2.getRole("role2");
         Assert.assertNull(realm1.getRoleById(r2Role1.getId()));
         Assert.assertEquals(r2Role1, realm2.getRoleById(r2Role1.getId()));
-        Assert.assertNull(r1app1.getRoleById(r2Role1.getId()));
-        Assert.assertNull(r1app2.getRoleById(r2Role1.getId()));
-        Assert.assertNull(r2app1.getRoleById(r2Role1.getId()));
-        Assert.assertNull(r2app2.getRoleById(r2Role1.getId()));
     }
 
     private void createObjects(RealmModel realm) {

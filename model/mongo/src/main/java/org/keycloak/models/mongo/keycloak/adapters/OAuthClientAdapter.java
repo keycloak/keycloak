@@ -1,6 +1,7 @@
 package org.keycloak.models.mongo.keycloak.adapters;
 
 import org.keycloak.models.OAuthClientModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.mongo.api.AbstractMongoIdentifiableEntity;
 import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
@@ -18,10 +19,12 @@ import java.util.Set;
 public class OAuthClientAdapter extends AbstractAdapter implements OAuthClientModel {
 
     private final OAuthClientEntity delegate;
+    private final RealmModel realm;
 
-    public OAuthClientAdapter(OAuthClientEntity oauthClientEntity, MongoStoreInvocationContext invContext) {
+    public OAuthClientAdapter(RealmModel realm, OAuthClientEntity oauthClientEntity, MongoStoreInvocationContext invContext) {
         super(invContext);
         this.delegate = oauthClientEntity;
+        this.realm = realm;
     }
 
     @Override
@@ -32,6 +35,11 @@ public class OAuthClientAdapter extends AbstractAdapter implements OAuthClientMo
     @Override
     public String getClientId() {
         return delegate.getName();
+    }
+
+    @Override
+    public RealmModel getRealm() {
+        return realm;
     }
 
     @Override

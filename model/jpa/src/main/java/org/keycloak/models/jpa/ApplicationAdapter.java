@@ -24,10 +24,9 @@ public class ApplicationAdapter extends ClientAdapter implements ApplicationMode
 
     protected EntityManager em;
     protected ApplicationEntity applicationEntity;
-    protected RealmModel realm;
 
     public ApplicationAdapter(RealmModel realm, EntityManager em, ApplicationEntity applicationEntity) {
-        super(applicationEntity);
+        super(realm, applicationEntity);
         this.realm = realm;
         this.em = em;
         this.applicationEntity = applicationEntity;
@@ -47,7 +46,6 @@ public class ApplicationAdapter extends ClientAdapter implements ApplicationMode
     public void setName(String name) {
         entity.setName(name);
     }
-
 
     @Override
     public boolean isSurrogateAuthRequired() {
@@ -103,11 +101,14 @@ public class ApplicationAdapter extends ClientAdapter implements ApplicationMode
     }
 
     @Override
-    public boolean removeRoleById(String id) {
-        RoleAdapter roleAdapter = getRoleById(id);
+    public boolean removeRole(RoleModel roleModel) {
+        RoleAdapter roleAdapter = (RoleAdapter)roleModel;
         if (roleAdapter == null) {
             return false;
         }
+        if (!roleAdapter.getContainer().equals(this)) return false;
+
+        if (!(roleAdapter.getRole() instanceof ApplicationRoleEntity)) return false;
 
         ApplicationRoleEntity role = (ApplicationRoleEntity)roleAdapter.getRole();
 
@@ -132,16 +133,6 @@ public class ApplicationAdapter extends ClientAdapter implements ApplicationMode
             list.add(new RoleAdapter(realm, em, entity));
         }
         return list;
-    }
-
-    @Override
-    public RoleAdapter getRoleById(String id) {
-        RoleEntity entity = em.find(RoleEntity.class, id);
-
-        // Check if it's application role and belongs to this application
-        if (entity == null || !(entity instanceof ApplicationRoleEntity)) return null;
-        ApplicationRoleEntity appRoleEntity = (ApplicationRoleEntity)entity;
-        return (appRoleEntity.getApplication().equals(this.entity)) ? new RoleAdapter(this.realm, em, appRoleEntity) : null;
     }
 
     @Override

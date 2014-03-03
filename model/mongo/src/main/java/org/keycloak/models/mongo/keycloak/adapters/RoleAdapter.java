@@ -7,6 +7,7 @@ import java.util.Set;
 
 import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.mongo.api.AbstractMongoIdentifiableEntity;
@@ -26,15 +27,17 @@ public class RoleAdapter extends AbstractAdapter implements RoleModel {
 
     private final RoleEntity role;
     private RoleContainerModel roleContainer;
+    private RealmModel realm;
 
-    public RoleAdapter(RoleEntity roleEntity, MongoStoreInvocationContext invContext) {
-        this(roleEntity, null, invContext);
+    public RoleAdapter(RealmModel realm, RoleEntity roleEntity, MongoStoreInvocationContext invContext) {
+        this(realm, roleEntity, null, invContext);
     }
 
-    public RoleAdapter(RoleEntity roleEntity, RoleContainerModel roleContainer, MongoStoreInvocationContext invContext) {
+    public RoleAdapter(RealmModel realm, RoleEntity roleEntity, RoleContainerModel roleContainer, MongoStoreInvocationContext invContext) {
         super(invContext);
         this.role = roleEntity;
         this.roleContainer = roleContainer;
+        this.realm = realm;
     }
 
     @Override
@@ -96,7 +99,7 @@ public class RoleAdapter extends AbstractAdapter implements RoleModel {
 
         Set<RoleModel> set = new HashSet<RoleModel>();
         for (RoleEntity childRole : childRoles) {
-            set.add(new RoleAdapter(childRole, invocationContext));
+            set.add(new RoleAdapter(realm, childRole, invocationContext));
         }
         return set;
     }
@@ -116,7 +119,7 @@ public class RoleAdapter extends AbstractAdapter implements RoleModel {
                 if (appEntity == null) {
                     throw new IllegalStateException("Application with id: " + role.getApplicationId() + " doesn't exists");
                 }
-                roleContainer = new ApplicationAdapter(appEntity, invocationContext);
+                roleContainer = new ApplicationAdapter(realm, appEntity, invocationContext);
             } else {
                 throw new IllegalStateException("Both realmId and applicationId are null for role: " + this);
             }
@@ -141,4 +144,22 @@ public class RoleAdapter extends AbstractAdapter implements RoleModel {
     public AbstractMongoIdentifiableEntity getMongoEntity() {
         return role;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        RoleAdapter that = (RoleAdapter) o;
+
+        if (!role.getId().equals(that.role.getId())) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return role.getId().hashCode();
+    }
+
 }
