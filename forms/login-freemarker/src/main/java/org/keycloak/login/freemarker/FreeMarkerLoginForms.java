@@ -8,6 +8,7 @@ import org.keycloak.freemarker.Theme;
 import org.keycloak.freemarker.ThemeLoader;
 import org.keycloak.login.LoginForms;
 import org.keycloak.login.LoginFormsPages;
+import org.keycloak.login.freemarker.model.CodeBean;
 import org.keycloak.login.freemarker.model.LoginBean;
 import org.keycloak.login.freemarker.model.MessageBean;
 import org.keycloak.login.freemarker.model.OAuthGrantBean;
@@ -178,6 +179,9 @@ public class FreeMarkerLoginForms implements LoginForms {
             case OAUTH_GRANT:
                 attributes.put("oauth", new OAuthGrantBean(accessCode, client, realmRolesRequested, resourceRolesRequested));
                 break;
+            case CODE:
+                attributes.put("code", new CodeBean(accessCode, messageType == MessageType.ERROR ? message : null));
+                break;
         }
 
         try {
@@ -197,10 +201,6 @@ public class FreeMarkerLoginForms implements LoginForms {
         return createResponse(LoginFormsPages.LOGIN_RESET_PASSWORD);
     }
 
-    public Response createUsernameReminder() {
-        return createResponse(LoginFormsPages.LOGIN_USERNAME_REMINDER);
-    }
-
     public Response createLoginTotp() {
         return createResponse(LoginFormsPages.LOGIN_TOTP);
     }
@@ -216,6 +216,11 @@ public class FreeMarkerLoginForms implements LoginForms {
 
     public Response createOAuthGrant() {
         return createResponse(LoginFormsPages.OAUTH_GRANT);
+    }
+
+    @Override
+    public Response createCode() {
+        return createResponse(LoginFormsPages.CODE);
     }
 
     public FreeMarkerLoginForms setError(String message) {

@@ -27,6 +27,8 @@ public interface LoginForms {
 
     public Response createOAuthGrant();
 
+    public Response createCode();
+
     public LoginForms setAccessCode(String accessCodeId, String accessCode);
 
     public LoginForms setAccessRequest(List<RoleModel> realmRolesRequested, MultivaluedMap<String,RoleModel> resourceRolesRequested);

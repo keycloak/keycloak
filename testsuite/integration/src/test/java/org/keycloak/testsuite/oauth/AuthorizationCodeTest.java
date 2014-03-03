@@ -26,8 +26,8 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.OAuthClient.AuthorizationCodeResponse;
@@ -36,6 +36,7 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
 import java.io.IOException;
@@ -73,6 +74,21 @@ public class AuthorizationCodeTest {
         Assert.assertNotNull(response.getCode());
         Assert.assertEquals("mystate", response.getState());
         Assert.assertNull(response.getError());
+
+        oauth.verifyCode(response.getCode());
+    }
+
+    @Test
+    public void authorizationRequestInstalledApp() throws IOException {
+        oauth.redirectUri(Constants.INSTALLED_APP_URN);
+
+        oauth.doLogin("test-user@localhost", "password");
+
+        String title = driver.getTitle();
+        Assert.assertTrue(title.startsWith("Success code="));
+
+        String code = driver.findElement(By.id("code")).getText();
+        oauth.verifyCode(code);
     }
 
     @Test
@@ -94,6 +110,8 @@ public class AuthorizationCodeTest {
 
         Assert.assertTrue(response.isRedirected());
         Assert.assertNotNull(response.getCode());
+
+        oauth.verifyCode(response.getCode());
     }
 
     @Test
@@ -104,6 +122,8 @@ public class AuthorizationCodeTest {
         Assert.assertNotNull(response.getCode());
         Assert.assertNull(response.getState());
         Assert.assertNull(response.getError());
+
+        oauth.verifyCode(response.getCode());
     }
 
 }

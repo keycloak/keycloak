@@ -38,6 +38,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.resources.TokenService;
 
+import javax.ws.rs.Path;
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
@@ -79,24 +80,32 @@ public class OAuthFlows {
 
     public Response redirectAccessCode(AccessCodeEntry accessCode, String state, String redirect, boolean rememberMe) {
         String code = accessCode.getCode();
-        UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam("code", code);
-        log.debug("redirectAccessCode: state: {0}", state);
-        if (state != null)
-            redirectUri.queryParam("state", state);
-        Response.ResponseBuilder location = Response.status(302).location(redirectUri.build());
-        Cookie remember = request.getHttpHeaders().getCookies().get(AuthenticationManager.KEYCLOAK_REMEMBER_ME);
-        rememberMe = rememberMe || remember != null;
-        location.cookie(authManager.createLoginCookie(realm, accessCode.getUser(), uriInfo, rememberMe));
-        return location.build();
+
+        if (Constants.INSTALLED_APP_URN.equals(redirect)) {
+            return Flows.forms(realm, request, uriInfo).setAccessCode(accessCode.getId(), code).createCode();
+        } else {
+            UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam("code", code);
+            log.debug("redirectAccessCode: state: {0}", state);
+            if (state != null)
+                redirectUri.queryParam("state", state);
+            Response.ResponseBuilder location = Response.status(302).location(redirectUri.build());
+            Cookie remember = request.getHttpHeaders().getCookies().get(AuthenticationManager.KEYCLOAK_REMEMBER_ME);
+            rememberMe = rememberMe || remember != null;
+            location.cookie(authManager.createLoginCookie(realm, accessCode.getUser(), uriInfo, rememberMe));
+            return location.build();
+        }
     }
 
     public Response redirectError(ClientModel client, String error, String state, String redirect) {
-        UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam("error", error);
-        if (state != null) {
-            redirectUri.queryParam("state", state);
+        if (Constants.INSTALLED_APP_URN.equals(redirect)) {
+            return Flows.forms(realm, request, uriInfo).setError(error).createCode();
+        } else {
+            UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam("error", error);
+            if (state != null) {
+                redirectUri.queryParam("state", state);
+            }
+            return Response.status(302).location(redirectUri.build()).build();
         }
-
-        return Response.status(302).location(redirectUri.build()).build();
     }
 
     public Response processAccessCode(String scopeParam, String state, String redirect, ClientModel client, UserModel user) {
