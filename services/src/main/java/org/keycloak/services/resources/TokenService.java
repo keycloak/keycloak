@@ -38,6 +38,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.NotAcceptableException;
 import javax.ws.rs.NotAuthorizedException;
+import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -344,6 +345,13 @@ public class TokenService {
     }
 
     @Path("access/codes")
+    @OPTIONS
+    @Produces("application/json")
+    public Response accessCodeToTokenPreflight() {
+        return Cors.add(request, Response.ok()).auth().preflight().build();
+    }
+
+    @Path("access/codes")
     @POST
     @Produces("application/json")
     public Response accessCodeToToken(@HeaderParam(HttpHeaders.AUTHORIZATION) String authorizationHeader, final MultivaluedMap<String, String> formData) {
@@ -418,7 +426,7 @@ public class TokenService {
                                               .generateIDToken()
                                               .generateRefreshToken().build();
 
-        return Cors.add(request, Response.ok(res)).allowedOrigins(client).allowedMethods("POST").build();
+        return Cors.add(request, Response.ok(res)).auth().allowedOrigins(client).allowedMethods("POST").build();
     }
 
     protected ClientModel authorizeClient(String authorizationHeader) {

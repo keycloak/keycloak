@@ -47,7 +47,6 @@
 #kc-login {
     float: right;
     margin-left: 10px;
-    margin-bottom: 10px;
 }
 
 #kc-feedback-wrapper {
@@ -210,43 +209,50 @@ ol#kc-totp-settings li:first-of-type {
 
         height: 37px;
 
-        margin: 20px;
+        margin: 15px;
     }
 
     #kc-header {
-        padding-left: 40px;
-        padding-right: 40px;
+        padding-left: 15px;
+        padding-right: 15px;
         white-space: normal;
         float: none;
     }
 
     #kc-feedback {
-        padding-left: 40px;
-        padding-right: 40px;
-        float: none;
-    }
-
-    #kc-container-wrapper {
-        position: inherit;
+        padding-left: 15px;
+        padding-right: 15px;
         float: none;
     }
 
     #kc-form {
-        padding-left: 40px;
-        padding-right: 40px;
+        padding-left: 15px;
+        padding-right: 15px;
         float: none;
     }
 
     #kc-info-wrapper {
         border-top: 1px solid rgba(255, 255, 255, 0.1);
-        margin-top: 20px;
-        padding-top: 20px;
-        padding-left: 20px;
-        padding-right: 40px;
+        margin-top: 15px;
+        padding-top: 15px;
+        padding-left: 0px;
+        padding-right: 15px;
     }
 
     #kc-social-providers li {
         display: inline-block;
         margin-right: 5px;
+    }
+
+    .login-pf .container {
+        padding-top: 15px;
+        padding-bottom: 15px;
+    }
+}
+
+@media (max-height: 500px) {
+    #kc-container-wrapper {
+        position: inherit;
+        float: none;
     }
 }

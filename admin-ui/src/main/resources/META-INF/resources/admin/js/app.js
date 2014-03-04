@@ -668,12 +668,13 @@ module.directive('onoffswitch', function() {
             name: '@',
             id: '@',
             ngModel: '=',
+            ngDisabled: '=',
             kcOnText: '@onText',
             kcOffText: '@offText'
         },
         // TODO - The same code acts differently when put into the templateURL. Find why and move the code there.
         //templateUrl: "templates/kc-switch.html",
-        template: "<span><div class='onoffswitch' tabindex='0'><input type='checkbox' ng-model='ngModel' class='onoffswitch-checkbox' name='{{name}}' id='{{id}}'><label for='{{id}}' class='onoffswitch-label'><span class='onoffswitch-inner'><span class='onoffswitch-active'>{{kcOnText}}</span><span class='onoffswitch-inactive'>{{kcOffText}}</span></span><span class='onoffswitch-switch'></span></label></div></span>",
+        template: "<span><div class='onoffswitch' tabindex='0'><input type='checkbox' ng-model='ngModel' ng-disabled='ngDisabled' class='onoffswitch-checkbox' name='{{name}}' id='{{id}}'><label for='{{id}}' class='onoffswitch-label'><span class='onoffswitch-inner'><span class='onoffswitch-active'>{{kcOnText}}</span><span class='onoffswitch-inactive'>{{kcOffText}}</span></span><span class='onoffswitch-switch'></span></label></div></span>",
         compile: function(element, attrs) {
             /*
             We don't want to propagate basic attributes to the root element of directive. Id should be passed to the
@@ -834,20 +835,38 @@ module.directive('kcDropdown', function ($compile, Notifications) {
 });
 
 module.directive('kcReadOnly', function() {
+    var disabled = {};
+
     var d = {
         replace : false,
         link : function(scope, element, attrs) {
-            scope.$watch(attrs.kcReadOnly, function(readOnly, oldValue) {
+            var disable = function(i, e) {
+                if (!e.disabled) {
+                    disabled[e.tagName + i] = true;
+                    e.disabled = true;
+                }
+            }
+
+            var enable = function(i, e) {
+                if (disabled[e.tagName + i]) {
+                    e.disabled = false;
+                    delete disabled[i];
+                }
+            }
+
+            scope.$watch(attrs.kcReadOnly, function(readOnly) {
                 if (readOnly) {
-                    element.find('input').attr('disabled', 'disabled');
-                    element.find('button').attr('disabled', 'disabled');
-                    element.find('select').attr('disabled', 'disabled');
-                    element.find('textarea').attr('disabled', 'disabled');
+                    console.debug('readonly');
+                    element.find('input').each(disable);
+                    element.find('button').each(disable);
+                    element.find('select').each(disable);
+                    element.find('textarea').each(disable);
                 } else {
-                    element.find('input').removeAttr('disabled');
-                    element.find('button').removeAttr('disabled');
-                    element.find('select').removeAttr('disabled');
-                    element.find('textarea').removeAttr('disabled');
+                    element.find('input').each(enable);
+                    element.find('input').each(enable);
+                    element.find('button').each(enable);
+                    element.find('select').each(enable);
+                    element.find('textarea').each(enable);
                 }
             });
         }
