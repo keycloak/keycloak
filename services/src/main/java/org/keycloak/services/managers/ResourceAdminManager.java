@@ -7,8 +7,13 @@ import org.keycloak.TokenIdGenerator;
 import org.keycloak.adapters.AdapterConstants;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.representations.adapters.action.LogoutAction;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
+import org.keycloak.representations.adapters.action.SessionStats;
+import org.keycloak.representations.adapters.action.SessionStatsAction;
+import org.keycloak.representations.adapters.action.UserStats;
+import org.keycloak.representations.adapters.action.UserStatsAction;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Response;
@@ -20,6 +25,74 @@ import java.util.List;
  */
 public class ResourceAdminManager {
     protected static Logger logger = Logger.getLogger(ResourceAdminManager.class);
+
+    public SessionStats getSessionStats(RealmModel realm, ApplicationModel application, boolean users) {
+        ResteasyClient client = new ResteasyClientBuilder()
+                .disableTrustManager() // todo fix this, should have a trust manager or a good default
+                .build();
+
+        try {
+            return getSessionStats(realm, application, users, client);
+        } finally {
+            client.close();
+        }
+
+    }
+
+    public SessionStats getSessionStats(RealmModel realm, ApplicationModel application, boolean users, ResteasyClient client) {
+        String managementUrl = application.getManagementUrl();
+        if (managementUrl != null) {
+            SessionStatsAction adminAction = new SessionStatsAction(TokenIdGenerator.generateId(), (int)(System.currentTimeMillis() / 1000) + 30, application.getName());
+            adminAction.setListUsers(users);
+            String token = new TokenManager().encodeToken(realm, adminAction);
+            logger.info("session stats for application: {0} url: {1}", application.getName(), managementUrl);
+            Response response = client.target(managementUrl).path(AdapterConstants.K_GET_SESSION_STATS).request().post(Entity.text(token));
+            if (response.getStatus() != 200) {
+                logger.warn("Failed to get stats: " + response.getStatus());
+                return null;
+            }
+            SessionStats stats = response.readEntity(SessionStats.class);
+            return stats;
+        } else {
+            logger.info("no management url.");
+            return null;
+        }
+
+    }
+
+    public UserStats getUserStats(RealmModel realm, ApplicationModel application, UserModel user) {
+        ResteasyClient client = new ResteasyClientBuilder()
+                .disableTrustManager() // todo fix this, should have a trust manager or a good default
+                .build();
+
+        try {
+            return getUserStats(realm, application, user, client);
+        } finally {
+            client.close();
+        }
+
+    }
+
+
+    public UserStats getUserStats(RealmModel realm, ApplicationModel application, UserModel user, ResteasyClient client) {
+        String managementUrl = application.getManagementUrl();
+        if (managementUrl != null) {
+            UserStatsAction adminAction = new UserStatsAction(TokenIdGenerator.generateId(), (int)(System.currentTimeMillis() / 1000) + 30, application.getName(), user.getId());
+            String token = new TokenManager().encodeToken(realm, adminAction);
+            logger.info("session stats for application: {0} url: {1}", application.getName(), managementUrl);
+            Response response = client.target(managementUrl).path(AdapterConstants.K_GET_USER_STATS).request().post(Entity.text(token));
+            if (response.getStatus() != 200) {
+                logger.warn("Failed to get stats: " + response.getStatus());
+                return null;
+            }
+            UserStats stats = response.readEntity(UserStats.class);
+            return stats;
+        } else {
+            logger.info("no management url.");
+            return null;
+        }
+
+    }
 
     public void singleLogOut(RealmModel realm, String user) {
         ResteasyClient client = new ResteasyClientBuilder()

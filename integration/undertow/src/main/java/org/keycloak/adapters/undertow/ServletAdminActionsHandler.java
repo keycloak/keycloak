@@ -12,12 +12,18 @@ import org.keycloak.adapters.ResourceMetadata;
 import org.keycloak.adapters.config.RealmConfiguration;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
+import org.keycloak.representations.adapters.action.AdminAction;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
+import org.keycloak.representations.adapters.action.SessionStats;
+import org.keycloak.representations.adapters.action.SessionStatsAction;
+import org.keycloak.representations.adapters.action.UserStats;
+import org.keycloak.representations.adapters.action.UserStatsAction;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.StreamUtil;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -101,6 +107,12 @@ public class ServletAdminActionsHandler implements HttpHandler {
         } else if (requestUri.endsWith(AdapterConstants.K_PUSH_NOT_BEFORE)) {
             handlePushNotBefore(request, response);
             return;
+        } else if (requestUri.endsWith(AdapterConstants.K_GET_SESSION_STATS)) {
+            handleGetSessionStats(request, response);
+            return;
+        }else if (requestUri.endsWith(AdapterConstants.K_GET_USER_STATS)) {
+            handleGetUserStats(request, response);
+            return;
         } else {
             next.handleRequest(exchange);
             return;
@@ -110,20 +122,65 @@ public class ServletAdminActionsHandler implements HttpHandler {
     protected void handlePushNotBefore(HttpServletRequest request, HttpServletResponse response) throws Exception {
         log.info("K_PUSH_NOT_BEFORE sent");
         JWSInput token = verifyAdminRequest(request, response);
-        if (token == null) return;
+        if (token == null) {
+            return;
+        }
         PushNotBeforeAction action = JsonSerialization.readValue(token.getContent(), PushNotBeforeAction.class);
+        if (!validateAction(response, action)) return;
+        realmConfig.setNotBefore(action.getNotBefore());
+        return;
+    }
+
+    protected boolean validateAction(HttpServletResponse response, AdminAction action) throws IOException {
+        if (!action.validate()) {
+            log.warn("admin request failed, not validated");
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Not validated");
+            return false;
+        }
         if (action.isExpired()) {
             log.warn("admin request failed, expired token");
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Expired token");
-            return;
+            return false;
         }
         if (!resourceMetadata.getResourceName().equals(action.getResource())) {
             log.warn("Resource name does not match");
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Resource name does not match");
-            return;
+            return false;
 
         }
-        realmConfig.setNotBefore(action.getNotBefore());
+        return true;
+    }
+
+    protected void handleGetSessionStats(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        log.info("K_GET_SESSION_STATS sent");
+        JWSInput token = verifyAdminRequest(request, response);
+        if (token == null) return;
+        SessionStatsAction action = JsonSerialization.readValue(token.getContent(), SessionStatsAction.class);
+        if (!validateAction(response, action)) return;
+        SessionStats stats = new SessionStats();
+        stats.setActiveSessions(userSessionManagement.getActiveSessions());
+        stats.setActiveUsers(userSessionManagement.getActiveUsers().size());
+        if (action.isListUsers()) stats.setUsers(userSessionManagement.getActiveUsers());
+        response.setStatus(200);
+        JsonSerialization.writeValueToStream(response.getOutputStream(), stats);
+        return;
+    }
+    protected void handleGetUserStats(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        log.info("K_GET_USER_STATS sent");
+        JWSInput token = verifyAdminRequest(request, response);
+        if (token == null) return;
+        UserStatsAction action = JsonSerialization.readValue(token.getContent(), UserStatsAction.class);
+        if (!validateAction(response, action)) return;
+        UserStats stats = new UserStats();
+        Long loginTime = userSessionManagement.getUserLoginTime(action.getUser());
+        if (loginTime != null) {
+            stats.setLoggedIn(true);
+            stats.setWhenLoggedIn(loginTime);
+        } else {
+            stats.setLoggedIn(false);
+        }
+        response.setStatus(200);
+        JsonSerialization.writeValueToStream(response.getOutputStream(), stats);
         return;
     }
 }

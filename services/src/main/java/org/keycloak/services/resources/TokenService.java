@@ -160,7 +160,7 @@ public class TokenService {
             throw new NotAuthorizedException("Auth failed");
         }
         String scope = form.getFirst("scope");
-        AccessTokenResponse res = tokenManager.responseBuilder(realm)
+        AccessTokenResponse res = tokenManager.responseBuilder(realm, client)
                 .generateAccessToken(scope, client, user)
                 .generateIDToken()
                 .build();
@@ -190,7 +190,7 @@ public class TokenService {
             throw new BadRequestException(Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build(), e);
         }
 
-        AccessTokenResponse res = tokenManager.responseBuilder(realm)
+        AccessTokenResponse res = tokenManager.responseBuilder(realm, client)
                                               .accessToken(accessToken)
                                               .generateIDToken()
                                               .generateRefreshToken().build();
@@ -413,7 +413,7 @@ public class TokenService {
                     .build();
         }
         logger.debug("accessRequest SUCCESS");
-        AccessTokenResponse res = tokenManager.responseBuilder(realm)
+        AccessTokenResponse res = tokenManager.responseBuilder(realm, client)
                                               .accessToken(accessCode.getToken())
                                               .generateIDToken()
                                               .generateRefreshToken().build();

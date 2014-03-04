@@ -8,18 +8,20 @@ import org.codehaus.jackson.annotate.JsonIgnore;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class AdminAction {
+public abstract class AdminAction {
     protected String id;
     protected int expiration;
     protected String resource;
+    protected String action;
 
     public AdminAction() {
     }
 
-    public AdminAction(String id, int expiration, String resource) {
+    public AdminAction(String id, int expiration, String resource, String action) {
         this.id = id;
         this.expiration = expiration;
         this.resource = resource;
+        this.action = action;
     }
 
     public String getId() {
@@ -56,4 +58,6 @@ public class AdminAction {
     public void setResource(String resource) {
         this.resource = resource;
     }
+
+    public abstract boolean validate();
 }

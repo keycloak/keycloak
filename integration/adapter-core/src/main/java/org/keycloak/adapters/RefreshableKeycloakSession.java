@@ -52,6 +52,7 @@ public class RefreshableKeycloakSession extends KeycloakSecurityContext {
     }
 
     public void refreshExpiredToken() {
+        log.info("checking whether to refresh.");
         if (isActive()) return;
         if (this.realmConfiguration == null || refreshToken == null) return; // Might be serialized in HttpSession?
 
@@ -75,6 +76,10 @@ public class RefreshableKeycloakSession extends KeycloakSecurityContext {
         } catch (VerificationException e) {
             log.error("failed verification of token");
         }
+        if (response.getNotBeforePolicy() > realmConfiguration.getNotBefore()) {
+            realmConfiguration.setNotBefore(response.getNotBeforePolicy());
+        }
+
         this.token = token;
         this.refreshToken = response.getRefreshToken();
         this.tokenString = tokenString;

@@ -147,14 +147,21 @@ module.factory('ServerInfo', function($resource) {
 });
 
 module.factory('User', function($resource) {
-	return $resource('/auth/rest/admin/realms/:realm/users/:userId', {
-		realm : '@realm',
-		userId : '@userId'
-	}, {
+    return $resource('/auth/rest/admin/realms/:realm/users/:userId', {
+        realm : '@realm',
+        userId : '@userId'
+    }, {
         update : {
             method : 'PUT'
         }
-	});
+    });
+});
+
+module.factory('UserSessionStats', function($resource) {
+    return $resource('/auth/rest/admin/realms/:realm/users/:userId/session-stats', {
+        realm : '@realm',
+        userId : '@userId'
+    });
 });
 
 module.factory('UserCredentials', function($resource) {
@@ -240,6 +247,13 @@ module.factory('RealmPushRevocation', function($resource) {
         realm : '@realm'
     });
 });
+
+module.factory('RealmSessionStats', function($resource) {
+    return $resource('/auth/rest/admin/realms/:realm/session-stats', {
+        realm : '@realm'
+    });
+});
+
 
 module.factory('RoleApplicationComposites', function($resource) {
     return $resource('/auth/rest/admin/realms/:realm/roles-by-id/:role/composites/applications/:application', {
@@ -456,6 +470,7 @@ module.factory('ApplicationRole', function($resource) {
         }
     });
 });
+
 module.factory('ApplicationClaims', function($resource) {
     return $resource('/auth/rest/admin/realms/:realm/applications/:application/claims', {
         realm : '@realm',
@@ -464,6 +479,13 @@ module.factory('ApplicationClaims', function($resource) {
         update : {
             method : 'PUT'
         }
+    });
+});
+
+module.factory('ApplicationSessionStats', function($resource) {
+    return $resource('/auth/rest/admin/realms/:realm/applications/:application/session-stats', {
+        realm : '@realm',
+        application : "@application"
     });
 });
 

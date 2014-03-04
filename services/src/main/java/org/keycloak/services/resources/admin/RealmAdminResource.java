@@ -2,8 +2,10 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.logging.Logger;
+import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.representations.adapters.action.SessionStats;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.ModelToRepresentation;
 import org.keycloak.services.managers.RealmManager;
@@ -13,6 +15,10 @@ import org.keycloak.services.managers.TokenManager;
 import javax.ws.rs.*;
 import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -110,6 +116,21 @@ public class RealmAdminResource {
     public void pushRevocation() {
         auth.requireManage();
         new ResourceAdminManager().pushRealmRevocationPolicy(realm);
+    }
+
+    @Path("session-stats")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public Map<String,SessionStats> getSessionStats() {
+
+        Map<String, SessionStats> stats = new HashMap<String, SessionStats>();
+        for (ApplicationModel applicationModel : realm.getApplications()) {
+            if (applicationModel.getManagementUrl() == null) continue;
+            SessionStats appStats = new ResourceAdminManager().getSessionStats(realm, applicationModel, false);
+            stats.put(applicationModel.getName(), appStats);
+        }
+        return stats;
     }
 
 }

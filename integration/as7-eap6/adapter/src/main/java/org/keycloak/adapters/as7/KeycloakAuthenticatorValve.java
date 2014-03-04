@@ -156,7 +156,7 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
 
     protected void pushNotBefore(JWSInput token, HttpServletResponse response) throws IOException {
         try {
-            log.debug("->> pushNotBefore: ");
+            log.info("->> pushNotBefore: ");
             PushNotBeforeAction action = JsonSerialization.readValue(token.getContent(), PushNotBeforeAction.class);
             if (action.isExpired()) {
                 log.warn("admin request failed, expired token");

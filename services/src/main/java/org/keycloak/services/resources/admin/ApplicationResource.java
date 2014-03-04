@@ -6,6 +6,7 @@ import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
+import org.keycloak.representations.adapters.action.SessionStats;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.ApplicationManager;
@@ -28,6 +29,8 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -192,6 +195,15 @@ public class ApplicationResource {
         auth.requireManage();
         new ResourceAdminManager().pushApplicationRevocationPolicy(realm, application);
     }
+
+    @Path("session-stats")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public SessionStats getSessionStats() {
+        return new ResourceAdminManager().getSessionStats(realm, application, true);
+    }
+
 
 
 
