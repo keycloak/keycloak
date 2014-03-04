@@ -225,11 +225,6 @@ ol#kc-totp-settings li:first-of-type {
         float: none;
     }
 
-    #kc-container-wrapper {
-        position: inherit;
-        float: none;
-    }
-
     #kc-form {
         padding-left: 15px;
         padding-right: 15px;
@@ -252,5 +247,12 @@ ol#kc-totp-settings li:first-of-type {
     .login-pf .container {
         padding-top: 15px;
         padding-bottom: 15px;
+    }
+}
+
+@media (max-height: 500px) {
+    #kc-container-wrapper {
+        position: inherit;
+        float: none;
     }
 }
