@@ -38,9 +38,9 @@ var Keycloak = function (options) {
             delete sessionStorage.oauthToken;
             processCallback(successCallback, errorCallback);
         } else if (options.token) {
-            setToken(options.token, successCallback);
+            kc.setToken(options.token, successCallback);
         } else if (sessionStorage.oauthToken) {
-            setToken(sessionStorage.oauthToken, successCallback);
+            kc.setToken(sessionStorage.oauthToken, successCallback);
         } else if (options.onload) {
             switch (options.onload) {
                 case 'login-required' :
@@ -58,7 +58,7 @@ var Keycloak = function (options) {
     }
 
     kc.logout = function () {
-        setToken(undefined);
+        kc.setToken(undefined);
         window.location.href = kc.createLogoutUrl();
     }
 
@@ -164,8 +164,10 @@ var Keycloak = function (options) {
             var url = kc.getRealmUrl() + '/tokens/access/codes';
 
             var req = new XMLHttpRequest();
-            req.open('POST', url, true, options.clientId, options.clientSecret);
+            req.open('POST', url, true);
             req.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+            req.setRequestHeader('Authorization', 'Basic ' + btoa(options.clientId + ':' + options.clientSecret));
+            req.withCredentials = true;
 
             req.onreadystatechange = function () {
                 if (req.readyState == 4) {
@@ -197,12 +199,12 @@ var Keycloak = function (options) {
 
             kc.tokenParsed = JSON.parse(atob(token.split('.')[1]));
             kc.authenticated = true;
-            kc.username = kc.tokenParsed.sub;
+            kc.subject = kc.tokenParsed.sub;
             kc.realmAccess = kc.tokenParsed.realm_access;
             kc.resourceAccess = kc.tokenParsed.resource_access;
 
             setTimeout(function() {
-                successCallback && successCallback({ authenticated: kc.authenticated, username: kc.username });
+                successCallback && successCallback({ authenticated: kc.authenticated, subject: kc.subject });
             }, 0);
         } else {
             delete sessionStorage.oauthToken;
