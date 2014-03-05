@@ -8,8 +8,10 @@ import org.jboss.logging.Logger;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -20,19 +22,63 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class UserSessionManagement implements SessionListener {
     private static final Logger log = Logger.getLogger(UserSessionManagement.class);
-    protected ConcurrentHashMap<String, Map<String, Session>> userSessionMap = new ConcurrentHashMap<String, Map<String, Session>>();
+    protected ConcurrentHashMap<String, UserSessions> userSessionMap = new ConcurrentHashMap<String, UserSessions>();
+
+    public static class UserSessions {
+        protected Map<String, Session> sessions = new ConcurrentHashMap<String, Session>();
+        protected long loggedIn = System.currentTimeMillis();
+
+
+        public Map<String, Session> getSessions() {
+            return sessions;
+        }
+
+        public long getLoggedIn() {
+            return loggedIn;
+        }
+    }
+
+    public int getNumUserLogins() {
+        return userSessionMap.size();
+    }
+
+    public int getActiveSessions() {
+        int active = 0;
+        synchronized (userSessionMap) {
+            for (UserSessions sessions : userSessionMap.values()) {
+                active += sessions.getSessions().size();
+            }
+
+        }
+        return active;
+    }
+
+    /**
+     *
+     * @param username
+     * @return null if user not logged in
+     */
+    public Long getUserLoginTime(String username) {
+        UserSessions sessions = userSessionMap.get(username);
+        if (sessions == null) return null;
+        return sessions.getLoggedIn();
+    }
+
+    public Set<String> getActiveUsers() {
+        HashSet<String> set = new HashSet<String>();
+        set.addAll(userSessionMap.keySet());
+        return set;
+    }
+
 
     protected void login(Session session, String username) {
-        Map<String, Session> map = userSessionMap.get(username);
-        if (map == null) {
-            final Map<String, Session> value = new HashMap<String, Session>();
-            map = userSessionMap.putIfAbsent(username, value);
-            if (map == null) {
-                map = value;
+        synchronized (userSessionMap) {
+            UserSessions userSessions = userSessionMap.get(username);
+            if (userSessions == null) {
+                userSessions = new UserSessions();
+                userSessionMap.put(username, userSessions);
             }
-        }
-        synchronized (map) {
-            map.put(session.getId(), session);
+            userSessions.getSessions().put(session.getId(), session);
         }
         session.addSessionListener(this);
     }
@@ -43,32 +89,24 @@ public class UserSessionManagement implements SessionListener {
         for (String user : users) logout(user);
     }
 
-    public void logoutAllBut(String but) {
-        List<String> users = new ArrayList<String>();
-        users.addAll(userSessionMap.keySet());
-        for (String user : users) {
-            if (!but.equals(user)) logout(user);
-        }
-    }
-
-
     public void logout(String user) {
         log.debug("logoutUser: " + user);
-        Map<String, Session> map = userSessionMap.remove(user);
-        if (map == null) {
+        UserSessions sessions = null;
+        synchronized (userSessionMap) {
+            sessions = userSessionMap.remove(user);
+
+        }
+        if (sessions == null) {
             log.debug("no session for user: " + user);
             return;
+
         }
         log.debug("found session for user");
-        synchronized (map) {
-            for (Session session : map.values()) {
-                log.debug("invalidating session for user: " + user);
-                session.setPrincipal(null);
-                session.setAuthType(null);
-                session.getSession().invalidate();
-            }
+        for (Session session : sessions.getSessions().values()) {
+            session.setPrincipal(null);
+            session.setAuthType(null);
+            session.getSession().invalidate();
         }
-
     }
 
     public void sessionEvent(SessionEvent event) {
@@ -85,13 +123,14 @@ public class UserSessionManagement implements SessionListener {
         session.setAuthType(null);
 
         String username = principal.getUserPrincipal().getName();
-        Map<String, Session> map = userSessionMap.get(username);
-        if (map == null) return;
-        synchronized (map) {
-            map.remove(session.getId());
-            if (map.isEmpty()) userSessionMap.remove(username);
+        synchronized (userSessionMap) {
+            UserSessions sessions = userSessionMap.get(username);
+            if (sessions != null) {
+                sessions.getSessions().remove(session.getId());
+                if (sessions.getSessions().isEmpty()) {
+                    userSessionMap.remove(username);
+                }
+            }
         }
-
-
     }
 }

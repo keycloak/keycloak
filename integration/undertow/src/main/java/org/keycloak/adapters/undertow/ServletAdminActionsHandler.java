@@ -69,27 +69,6 @@ public class ServletAdminActionsHandler implements HttpHandler {
         this.realmConfig = realmConfig;
     }
 
-    protected JWSInput verifyAdminRequest(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String token = StreamUtil.readString(request.getInputStream());
-        if (token == null) {
-            log.warn("admin request failed, no token");
-            response.sendError(StatusCodes.FORBIDDEN, "no token");
-            return null;
-        }
-
-        JWSInput input = new JWSInput(token);
-        boolean verified = false;
-        try {
-            verified = RSAProvider.verify(input, realmConfig.getMetadata().getRealmKey());
-        } catch (Exception ignore) {
-        }
-        if (!verified) {
-            log.warn("admin request failed, unable to verify token");
-            response.sendError(StatusCodes.FORBIDDEN, "verification failed");
-            return null;
-        }
-        return input;
-    }
 
 
 
@@ -134,6 +113,29 @@ public class ServletAdminActionsHandler implements HttpHandler {
         realmConfig.setNotBefore(action.getNotBefore());
         return;
     }
+
+    protected JWSInput verifyAdminRequest(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String token = StreamUtil.readString(request.getInputStream());
+        if (token == null) {
+            log.warn("admin request failed, no token");
+            response.sendError(StatusCodes.FORBIDDEN, "no token");
+            return null;
+        }
+
+        JWSInput input = new JWSInput(token);
+        boolean verified = false;
+        try {
+            verified = RSAProvider.verify(input, realmConfig.getMetadata().getRealmKey());
+        } catch (Exception ignore) {
+        }
+        if (!verified) {
+            log.warn("admin request failed, unable to verify token");
+            response.sendError(StatusCodes.FORBIDDEN, "verification failed");
+            return null;
+        }
+        return input;
+    }
+
 
     protected boolean validateAction(HttpServletResponse response, AdminAction action) throws IOException {
         if (!action.validate()) {
