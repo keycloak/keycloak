@@ -8,6 +8,7 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.RealmModel;
@@ -619,7 +620,26 @@ public class TokenService {
             return redirectUri;
         } else {
             String r = redirectUri.indexOf('?') != -1 ? redirectUri.substring(0, redirectUri.indexOf('?')) : redirectUri;
-            return client.getRedirectUris().contains(r) ? redirectUri : null;
+
+            boolean valid = client.getRedirectUris().contains(r);
+
+            if (!valid && r.startsWith(Constants.INSTALLED_APP_URL) && r.indexOf(':', Constants.INSTALLED_APP_URL.length()) >= 0) {
+                int i = r.indexOf(':', Constants.INSTALLED_APP_URL.length());
+
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(r.substring(0, i));
+
+                    i = r.indexOf('/', i);
+                    if (i >= 0) {
+                        sb.append(r.substring(i));
+                    }
+
+                    r = sb.toString();
+
+                valid = client.getRedirectUris().contains(r);
+            }
+
+            return valid ? redirectUri : null;
         }
     }
 
