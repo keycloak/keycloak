@@ -2,6 +2,7 @@ package org.keycloak.theme;
 
 import org.keycloak.freemarker.Theme;
 import org.keycloak.freemarker.ThemeProvider;
+import org.keycloak.models.Config;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -18,7 +19,7 @@ public class FolderThemeProvider implements ThemeProvider {
     private File rootDir;
 
     public FolderThemeProvider() {
-        String d = System.getProperty("keycloak.theme.dir");
+        String d = Config.getThemeDir();
         if (d != null) {
             rootDir = new File(d);
         }

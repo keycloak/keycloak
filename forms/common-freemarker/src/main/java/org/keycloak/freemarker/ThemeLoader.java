@@ -1,6 +1,7 @@
 package org.keycloak.freemarker;
 
 import org.jboss.resteasy.logging.Logger;
+import org.keycloak.models.Config;
 import org.keycloak.util.ProviderLoader;
 
 import java.io.IOException;
@@ -19,12 +20,10 @@ import java.util.Properties;
 public class ThemeLoader {
 
     private static final Logger logger = Logger.getLogger(ThemeLoader.class);
-    private static String DEFAULT = "keycloak";
-    public static final String BASE = "base";
 
     public static Theme createTheme(String name, Theme.Type type) throws FreeMarkerException {
         if (name == null) {
-            name = DEFAULT;
+            name = Config.getThemeDefault();
         }
 
         List<ThemeProvider> providers = new LinkedList();
@@ -61,21 +60,21 @@ public class ThemeLoader {
                 try {
                     return p.createTheme(name, type);
                 } catch (IOException e) {
-                    if (name.equals(BASE)) {
+                    if (name.equals(Config.getThemeBase())) {
                         throw new FreeMarkerException("Failed to create " + type.toString().toLowerCase() + " theme", e);
                     } else {
                         logger.error("Failed to create " + type.toString().toLowerCase() + " theme", e);
-                        return findTheme(providers, BASE, type);
+                        return findTheme(providers, Config.getThemeBase(), type);
                     }
                 }
             }
         }
 
-        if (name.equals(BASE)) {
+        if (name.equals(Config.getThemeBase())) {
             throw new FreeMarkerException(type.toString().toLowerCase() + " theme '" + name + "' not found");
         } else {
             logger.error(type.toString().toLowerCase() + " theme '" + name + "' not found");
-            return findTheme(providers, BASE, type);
+            return findTheme(providers, Config.getThemeBase(), type);
         }
     }
 

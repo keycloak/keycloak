@@ -5,6 +5,7 @@ import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Config;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuthClientModel;
@@ -51,7 +52,7 @@ public class RealmManager {
     }
 
     public RealmModel getKeycloakAdminstrationRealm() {
-        return getRealm(Constants.ADMIN_REALM);
+        return getRealm(Config.getAdminRealm());
     }
 
     public RealmModel getRealm(String id) {
@@ -153,7 +154,7 @@ public class RealmManager {
         RealmModel adminRealm;
         RoleModel adminRole;
 
-        if (realm.getName().equals(Constants.ADMIN_REALM)) {
+        if (realm.getName().equals(Config.getAdminRealm())) {
             adminRealm = realm;
 
             adminRole = realm.addRole(AdminRoles.ADMIN);
@@ -161,7 +162,7 @@ public class RealmManager {
             RoleModel createRealmRole = realm.addRole(AdminRoles.CREATE_REALM);
             adminRole.addCompositeRole(createRealmRole);
         } else {
-            adminRealm = identitySession.getRealmByName(Constants.ADMIN_REALM);
+            adminRealm = identitySession.getRealmByName(Config.getAdminRealm());
             adminRole = adminRealm.getRole(AdminRoles.ADMIN);
         }
 

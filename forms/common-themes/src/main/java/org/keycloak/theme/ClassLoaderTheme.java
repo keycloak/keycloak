@@ -18,6 +18,8 @@ public class ClassLoaderTheme implements Theme {
 
     private final Type type;
 
+    private final ClassLoader classLoader;
+
     private final String templateRoot;
 
     private final String resourceRoot;
@@ -26,9 +28,10 @@ public class ClassLoaderTheme implements Theme {
 
     private final Properties properties;
 
-    public ClassLoaderTheme(String name, Type type) throws IOException {
+    public ClassLoaderTheme(String name, Type type, ClassLoader classLoader) throws IOException {
         this.name = name;
         this.type = type;
+        this.classLoader = classLoader;
 
         String themeRoot = "theme/" + type.toString().toLowerCase() + "/" + name + "/";
 
@@ -37,7 +40,7 @@ public class ClassLoaderTheme implements Theme {
         this.messages = themeRoot + "messages/messages.properties";
         this.properties = new Properties();
 
-        URL p = getClass().getClassLoader().getResource(themeRoot + "theme.properties");
+        URL p = classLoader.getResource(themeRoot + "theme.properties");
         if (p != null) {
             properties.load(p.openStream());
             this.parentName = properties.getProperty("parent");
@@ -63,28 +66,28 @@ public class ClassLoaderTheme implements Theme {
 
     @Override
     public URL getTemplate(String name) {
-        return getClass().getClassLoader().getResource(templateRoot + name);
+        return classLoader.getResource(templateRoot + name);
     }
 
     @Override
     public InputStream getTemplateAsStream(String name) {
-        return getClass().getClassLoader().getResourceAsStream(templateRoot + name);
+        return classLoader.getResourceAsStream(templateRoot + name);
     }
 
     @Override
     public URL getResource(String path) {
-        return getClass().getClassLoader().getResource(resourceRoot + path);
+        return classLoader.getResource(resourceRoot + path);
     }
 
     @Override
     public InputStream getResourceAsStream(String path) {
-        return getClass().getClassLoader().getResourceAsStream(resourceRoot + path);
+        return classLoader.getResourceAsStream(resourceRoot + path);
     }
 
     @Override
     public Properties getMessages() throws IOException {
         Properties m = new Properties();
-        URL url = getClass().getClassLoader().getResource(this.messages);
+        URL url = classLoader.getResource(this.messages);
         if (url != null) {
             m.load(url.openStream());
         }

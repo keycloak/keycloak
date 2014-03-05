@@ -1,6 +1,7 @@
 package org.keycloak.server;
 
 import org.jboss.resteasy.logging.Logger;
+import org.keycloak.models.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -29,15 +30,6 @@ public class KeycloakServerApplication extends KeycloakApplication {
             session.getTransaction().begin();
             RealmRepresentation rep = loadJson(new FileInputStream(importRealm), RealmRepresentation.class);
             importRealm(session, rep);
-        }
-
-        String themeDir = System.getProperty("keycloak.theme.dir");
-        if (themeDir == null) {
-            String jbossConfigDir = System.getProperty("jboss.server.config.dir");
-            if (jbossConfigDir != null) {
-                themeDir = jbossConfigDir + File.separator + "themes";
-                System.setProperty("keycloak.theme.dir", themeDir);
-            }
         }
     }
 

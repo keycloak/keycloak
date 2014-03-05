@@ -8,6 +8,7 @@ import org.jboss.resteasy.spi.HttpResponse;
 import org.keycloak.jaxrs.JaxrsOAuthClient;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.Config;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -84,6 +85,7 @@ public class AdminService {
 
     public static class WhoAmI {
         protected String userId;
+        protected String realm;
         protected String displayName;
 
         @JsonProperty("createRealm")
@@ -94,8 +96,9 @@ public class AdminService {
         public WhoAmI() {
         }
 
-        public WhoAmI(String userId, String displayName, boolean createRealm, Map<String, Set<String>> realmAccess) {
+        public WhoAmI(String userId, String realm, String displayName, boolean createRealm, Map<String, Set<String>> realmAccess) {
             this.userId = userId;
+            this.realm = realm;
             this.displayName = displayName;
             this.createRealm = createRealm;
             this.realmAccess = realmAccess;
@@ -107,6 +110,14 @@ public class AdminService {
 
         public void setUserId(String userId) {
             this.userId = userId;
+        }
+
+        public String getRealm() {
+            return realm;
+        }
+
+        public void setRealm(String realm) {
+            this.realm = realm;
         }
 
         public String getDisplayName() {
@@ -185,7 +196,7 @@ public class AdminService {
         Map<String, Set<String>> realmAccess = new HashMap<String, Set<String>>();
         addRealmAdminAccess(realmAccess, auth.getRealm().getRoleMappings(auth.getUser()));
 
-        return Response.ok(new WhoAmI(user.getId(), displayName, createRealm, realmAccess)).build();
+        return Response.ok(new WhoAmI(user.getId(), Config.getAdminRealm(), displayName, createRealm, realmAccess)).build();
     }
 
     private void addRealmAdminAccess(Map<String, Set<String>> realmAdminAccess, Set<RoleModel> roles) {
@@ -283,7 +294,7 @@ public class AdminService {
         expireCookie();
 
         JaxrsOAuthClient oauth = new JaxrsOAuthClient();
-        String authUrl = TokenService.loginPageUrl(uriInfo).build(Constants.ADMIN_REALM).toString();
+        String authUrl = TokenService.loginPageUrl(uriInfo).build(Config.getAdminRealm()).toString();
         logger.debug("authUrl: {0}", authUrl);
         oauth.setAuthUrl(authUrl);
         oauth.setClientId(Constants.ADMIN_CONSOLE_APPLICATION);
@@ -309,7 +320,7 @@ public class AdminService {
 
     protected Response redirectOnLoginError(String message) {
         URI uri = uriInfo.getBaseUriBuilder().path(AdminService.class).path(AdminService.class, "errorOnLoginRedirect").queryParam("error", message).build();
-        URI logout = TokenService.logoutUrl(uriInfo).queryParam("redirect_uri", uri.toString()).build(Constants.ADMIN_REALM);
+        URI logout = TokenService.logoutUrl(uriInfo).queryParam("redirect_uri", uri.toString()).build(Config.getAdminRealm());
         return Response.status(302).location(logout).build();
     }
 

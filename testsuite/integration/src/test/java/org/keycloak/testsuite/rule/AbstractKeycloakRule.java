@@ -3,6 +3,7 @@ package org.keycloak.testsuite.rule;
 import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.ServletInfo;
 import org.junit.rules.ExternalResource;
+import org.keycloak.models.Config;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -58,7 +59,7 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
         try {
             RealmManager manager = new RealmManager(session);
 
-            RealmModel adminstrationRealm = manager.getRealm(Constants.ADMIN_REALM);
+            RealmModel adminstrationRealm = manager.getRealm(Config.getAdminRealm());
 
             configure(manager, adminstrationRealm);
 

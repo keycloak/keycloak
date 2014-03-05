@@ -71,15 +71,15 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location
     });
 });
 
-module.controller('HomeCtrl', function(Realm, $location) {
+module.controller('HomeCtrl', function(Realm, Auth, $location) {
     Realm.query(null, function(realms) {
         var realm;
         if (realms.length == 1) {
             realm = realms[0].realm;
         } else if (realms.length == 2) {
-            if (realms[0].realm == 'keycloak-admin') {
+            if (realms[0].realm == Auth.user.realm) {
                 realm = realms[1].realm;
-            } else if (realms[1].realm == 'administration') {
+            } else if (realms[1].realm == Auth.user.realm) {
                 realm = realms[0].realm;
             }
         }
