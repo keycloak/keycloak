@@ -147,14 +147,27 @@ module.factory('ServerInfo', function($resource) {
 });
 
 module.factory('User', function($resource) {
-	return $resource('/auth/rest/admin/realms/:realm/users/:userId', {
-		realm : '@realm',
-		userId : '@userId'
-	}, {
+    return $resource('/auth/rest/admin/realms/:realm/users/:userId', {
+        realm : '@realm',
+        userId : '@userId'
+    }, {
         update : {
             method : 'PUT'
         }
-	});
+    });
+});
+
+module.factory('UserSessionStats', function($resource) {
+    return $resource('/auth/rest/admin/realms/:realm/users/:user/session-stats', {
+        realm : '@realm',
+        user : '@user'
+    });
+});
+module.factory('UserLogout', function($resource) {
+    return $resource('/auth/rest/admin/realms/:realm/users/:user/logout', {
+        realm : '@realm',
+        user : '@user'
+    });
 });
 
 module.factory('UserCredentials', function($resource) {
@@ -240,6 +253,13 @@ module.factory('RealmPushRevocation', function($resource) {
         realm : '@realm'
     });
 });
+
+module.factory('RealmSessionStats', function($resource) {
+    return $resource('/auth/rest/admin/realms/:realm/session-stats', {
+        realm : '@realm'
+    });
+});
+
 
 module.factory('RoleApplicationComposites', function($resource) {
     return $resource('/auth/rest/admin/realms/:realm/roles-by-id/:role/composites/applications/:application', {
@@ -456,6 +476,7 @@ module.factory('ApplicationRole', function($resource) {
         }
     });
 });
+
 module.factory('ApplicationClaims', function($resource) {
     return $resource('/auth/rest/admin/realms/:realm/applications/:application/claims', {
         realm : '@realm',
@@ -464,6 +485,39 @@ module.factory('ApplicationClaims', function($resource) {
         update : {
             method : 'PUT'
         }
+    });
+});
+
+module.factory('ApplicationSessionStats', function($resource) {
+    return $resource('/auth/rest/admin/realms/:realm/applications/:application/session-stats', {
+        realm : '@realm',
+        application : "@application"
+    });
+});
+
+module.factory('ApplicationSessionStatsWithUsers', function($resource) {
+    return $resource('/auth/rest/admin/realms/:realm/applications/:application/session-stats?users=true', {
+        realm : '@realm',
+        application : "@application"
+    });
+});
+
+module.factory('ApplicationLogoutAll', function($resource) {
+    return $resource('/auth/rest/admin/realms/:realm/applications/:application/logout-all', {
+        realm : '@realm',
+        application : "@application"
+    });
+});
+module.factory('ApplicationLogoutUser', function($resource) {
+    return $resource('/auth/rest/admin/realms/:realm/applications/:application/logout-user/:user', {
+        realm : '@realm',
+        application : "@application",
+        user : "@user"
+    });
+});
+module.factory('RealmLogoutAll', function($resource) {
+    return $resource('/auth/rest/admin/realms/:realm/logout-all', {
+        realm : '@realm'
     });
 });
 

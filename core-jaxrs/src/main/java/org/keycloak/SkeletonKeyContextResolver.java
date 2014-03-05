@@ -18,11 +18,11 @@ public class SkeletonKeyContextResolver implements ContextResolver<ObjectMapper>
     protected ObjectMapper mapper = new ObjectMapper();
 
     public SkeletonKeyContextResolver() {
-        mapper.setSerializationInclusion(JsonSerialize.Inclusion.NON_DEFAULT);
+        mapper.setSerializationInclusion(JsonSerialize.Inclusion.NON_NULL);
     }
 
     public SkeletonKeyContextResolver(boolean indent) {
-        mapper.setSerializationInclusion(JsonSerialize.Inclusion.NON_DEFAULT);
+        mapper.setSerializationInclusion(JsonSerialize.Inclusion.NON_NULL);
         if (indent) {
             mapper.enable(SerializationConfig.Feature.INDENT_OUTPUT);
         }

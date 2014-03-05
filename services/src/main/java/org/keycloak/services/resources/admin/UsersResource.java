@@ -10,6 +10,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.adapters.action.SessionStats;
+import org.keycloak.representations.adapters.action.UserStats;
 import org.keycloak.representations.idm.*;
 import org.keycloak.services.email.EmailException;
 import org.keycloak.services.email.EmailSender;
@@ -17,6 +19,7 @@ import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.ModelToRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.Urls;
@@ -34,6 +37,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.util.ArrayList;
@@ -138,11 +142,44 @@ public class UsersResource {
         auth.requireView();
 
         UserModel user = realm.getUser(username);
-        if (user == null || !isUser(user)) {
+        if (user == null) {
             throw new NotFoundException();
         }
         return ModelToRepresentation.toRepresentation(user);
     }
+
+    @Path("{username}/session-stats")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public Map<String,UserStats> getSessionStats(final @PathParam("username") String username) {
+        logger.info("session-stats");
+        auth.requireView();
+        UserModel user = realm.getUser(username);
+        if (user == null) {
+            throw new NotFoundException();
+        }
+        Map<String, UserStats> stats = new HashMap<String, UserStats>();
+        for (ApplicationModel applicationModel : realm.getApplications()) {
+            if (applicationModel.getManagementUrl() == null) continue;
+            UserStats appStats = new ResourceAdminManager().getUserStats(realm, applicationModel, user);
+            if (appStats.isLoggedIn()) stats.put(applicationModel.getName(), appStats);
+        }
+        return stats;
+    }
+
+    @Path("{username}/logout")
+    @POST
+    public void logout(final @PathParam("username") String username) {
+        auth.requireManage();
+        UserModel user = realm.getUser(username);
+        if (user == null) {
+            throw new NotFoundException();
+        }
+        new ResourceAdminManager().logoutUser(realm, user.getId());
+    }
+
+
 
     @Path("{username}")
     @DELETE
@@ -191,15 +228,9 @@ public class UsersResource {
         }
 
         for (UserModel user : userModels) {
-            if (isUser(user)) {
-                results.add(ModelToRepresentation.toRepresentation(user));
-            }
+            results.add(ModelToRepresentation.toRepresentation(user));
         }
         return results;
-    }
-
-    private boolean isUser(UserModel user) {
-        return true;
     }
 
     @Path("{username}/role-mappings")

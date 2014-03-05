@@ -1,0 +1,41 @@
+<div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="'partials/realm-menu.html'"></div>
+<div id="content-area" class="col-md-9" role="main">
+    <ul class="nav nav-tabs nav-tabs-pf">
+        <li><a href="#/realms/{{realm.realm}}/users/{{user.username}}">Attributes</a></li>
+        <li><a href="#/realms/{{realm.realm}}/users/{{user.username}}/user-credentials">Credentials</a></li>
+        <li><a href="#/realms/{{realm.realm}}/users/{{user.username}}/role-mappings">Role Mappings</a></li>
+        <li class="active"><a href="#/realms/{{realm.realm}}/users/{{user.username}}/sessions">Sessions</a></li>
+    </ul>
+    <div id="content">
+        <ol class="breadcrumb">
+            <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
+            <li><a href="#/realms/{{realm.realm}}/users">Users</a></li>
+            <li><a href="#/realms/{{realm.realm}}/users/{{user.username}}">{{user.username}}</a></li>
+            <li class="active">User Sessions</li>
+        </ol>
+        <h2><span>{{user.username}}</span> Sessions</h2>
+        <table class="table">
+            <thead>
+            <tr>
+                <th class="kc-table-actions" colspan="3">
+                    <div class="pull-right">
+                        <a class="btn btn-primary" ng-click="logoutAll()">Logout</a>
+                    </div>
+                </th>
+            </tr>
+            <tr>
+                <th>Application</th>
+                <th>Login Time</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr data-ng-repeat="(application, data) in stats">
+                <td><a href="#/realms/{{realm.realm}}/applications/{{application}}/sessions">{{application}}</a></td>
+                <td>{{data.whenLoggedIn | date:'medium'}}</td>
+                <td><a ng-click="logoutApplication(application)">logout</a> </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -6,6 +6,7 @@ import org.codehaus.jackson.map.annotate.JsonSerialize;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 /**
  * Utility class to handle simple JSON serializable for Keycloak.
@@ -23,6 +24,11 @@ public class JsonSerialization {
         prettyMapper.enable(SerializationConfig.Feature.INDENT_OUTPUT);
         prettyMapper.setSerializationInclusion(JsonSerialize.Inclusion.NON_DEFAULT);
         prettyMapper.setSerializationInclusion(JsonSerialize.Inclusion.NON_NULL);
+    }
+
+    public static void writeValueToStream(OutputStream os, Object obj) throws IOException {
+        mapper.writeValue(os, obj);
+
     }
 
     public static String writeValueAsString(Object obj) throws IOException {

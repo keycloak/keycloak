@@ -43,6 +43,45 @@ module.controller('ApplicationCredentialsCtrl', function($scope, $location, real
     });
 });
 
+module.controller('ApplicationSessionsCtrl', function($scope, realm, stats, application,
+                                                      ApplicationLogoutUser,
+                                                      ApplicationLogoutAll,
+                                                      ApplicationSessionStats,
+                                                      ApplicationSessionStatsWithUsers,
+                                                    $location, Dialog, Notifications) {
+    $scope.realm = realm;
+    $scope.stats = stats;
+    $scope.users = {};
+    $scope.application = application;
+
+    $scope.toDate = function(val) {
+        return new Date(val);
+    };
+
+    $scope.loadUsers = function() {
+        ApplicationSessionStatsWithUsers.get({ realm : realm.realm, application: $scope.application.name }, function(updated) {
+            $scope.stats = updated;
+            $scope.users = updated.users;
+        })
+    };
+
+    $scope.logoutAll = function() {
+        ApplicationLogoutAll.save({realm : realm.realm, application: $scope.application.name}, function () {
+            Notifications.success('Logged out all users');
+            $scope.loadUsers();
+        });
+    };
+
+    $scope.logoutUser = function(user) {
+        console.log('Trying to logout user: ' + user);
+        ApplicationLogoutUser.save({realm : realm.realm, application: $scope.application.name, user: user}, function () {
+            Notifications.success('Logged out user' + user);
+            $scope.loadUsers();
+        });
+    };
+
+});
+
 module.controller('ApplicationClaimsCtrl', function($scope, realm, application, claims,
                                                         ApplicationClaims,
                                                         $http, $location, Dialog, Notifications) {

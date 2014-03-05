@@ -1,0 +1,37 @@
+<div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="'partials/realm-menu.html'"></div>
+<div id="content-area" class="col-md-9" role="main">
+    <ul class="nav nav-tabs nav-tabs-pf">
+        <li><a href="#/realms/{{realm.realm}}/sessions/revocation">Revocation</a></li>
+        <li class="active"><a href="#/realms/{{realm.realm}}/sessions/realm">Realm Sessions</a></li>
+    </ul>
+    <div id="content">
+        <ol class="breadcrumb">
+            <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
+            <li class="active">Realm Sessions</li>
+        </ol>
+        <h2><span>{{realm.realm}}</span> Sessions</h2>
+        <table class="table">
+            <thead>
+            <tr>
+                <th class="kc-table-actions" colspan="3">
+                    <div class="pull-right">
+                        <a class="btn btn-primary" ng-click="logoutAll()">Logout All</a>
+                    </div>
+                </th>
+            </tr>
+            <tr>
+                <th>Application</th>
+                <th>Active Sessions</th>
+                <th>Active Users</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr data-ng-repeat="(application, data) in stats">
+                <td><a href="#/realms/{{realm.realm}}/applications/{{application}}/sessions">{{application}}</a></td>
+                <td>{{data.activeSessions}}</td>
+                <td>{{data.activeUsers}}</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

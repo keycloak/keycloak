@@ -31,12 +31,57 @@ import java.util.concurrent.ConcurrentHashMap;
 public class UserSessionManagement implements SessionListener {
     private static final Logger log = Logger.getLogger(UserSessionManagement.class);
     private static final String AUTH_SESSION_NAME = CachedAuthenticatedSessionHandler.class.getName() + ".AuthenticatedSession";
-    protected ConcurrentHashMap<String, Set<String>> userSessionMap = new ConcurrentHashMap<String, Set<String>>();
+    protected ConcurrentHashMap<String, UserSessions> userSessionMap = new ConcurrentHashMap<String, UserSessions>();
 
     protected RealmConfiguration realmInfo;
 
     public UserSessionManagement(RealmConfiguration realmInfo) {
         this.realmInfo = realmInfo;
+    }
+
+    public static class UserSessions {
+        protected Set<String> sessionIds = new HashSet<String>();
+        protected long loggedIn = System.currentTimeMillis();
+
+        public Set<String> getSessionIds() {
+            return sessionIds;
+        }
+
+        public long getLoggedIn() {
+            return loggedIn;
+        }
+    }
+
+    public int getNumUserLogins() {
+        return userSessionMap.size();
+    }
+
+    public int getActiveSessions() {
+        int active = 0;
+        synchronized (userSessionMap) {
+            for (UserSessions sessions : userSessionMap.values()) {
+                active += sessions.getSessionIds().size();
+            }
+
+        }
+        return active;
+    }
+
+    /**
+     *
+     * @param username
+     * @return null if user not logged in
+     */
+    public Long getUserLoginTime(String username) {
+        UserSessions sessions = userSessionMap.get(username);
+        if (sessions == null) return null;
+        return sessions.getLoggedIn();
+    }
+
+    public Set<String> getActiveUsers() {
+        HashSet<String> set = new HashSet<String>();
+        set.addAll(userSessionMap.keySet());
+        return set;
     }
 
     public void remoteLogout(JWSInput token, SessionManager manager, HttpServletResponse response) throws IOException {
@@ -77,28 +122,22 @@ public class UserSessionManagement implements SessionListener {
 
     protected void addAuthenticatedSession(String username, String sessionId) {
         synchronized (userSessionMap) {
-            Set<String> map = userSessionMap.get(username);
-            if (map == null) {
-                final Set<String> value = new HashSet<String>();
-                map = userSessionMap.putIfAbsent(username, value);
-                if (map == null) {
-                    map = value;
-                }
+            UserSessions sessions = userSessionMap.get(username);
+            if (sessions == null) {
+                sessions = new UserSessions();
+                userSessionMap.put(username, sessions);
             }
-            synchronized (map) {
-                map.add(sessionId);
-            }
-
+            sessions.getSessionIds().add(sessionId);
         }
     }
 
     protected void removeAuthenticatedSession(String sessionId, String username) {
         synchronized (userSessionMap) {
-            Set<String> map = userSessionMap.get(username);
-            if (map == null) return;
-            synchronized (map) {
-                map.remove(sessionId);
-                if (map.isEmpty()) userSessionMap.remove(username);
+            UserSessions sessions = userSessionMap.get(username);
+            if (sessions == null) return;
+            sessions.getSessionIds().remove(sessionId);
+            if (sessions.getSessionIds().isEmpty()) {
+                userSessionMap.remove(username);
             }
         }
     }
@@ -119,24 +158,24 @@ public class UserSessionManagement implements SessionListener {
 
     public void logout(SessionManager manager, String user) {
         log.info("logoutUser: " + user);
-        Set<String> map = userSessionMap.remove(user);
-        if (map == null) {
+        UserSessions sessions = null;
+        synchronized (userSessionMap) {
+            sessions = userSessionMap.remove(user);
+        }
+        if (sessions == null) {
             log.info("no session for user: " + user);
             return;
         }
         log.info("found session for user");
-        synchronized (map) {
-            for (String id : map) {
-                log.debug("invalidating session for user: " + user);
-                Session session = manager.getSession(id);
-                try {
-                    session.invalidate(null);
-                } catch (Exception e) {
-                    log.warn("Session already invalidated.");
-                }
+        for (String id : sessions.getSessionIds()) {
+            log.debug("invalidating session for user: " + user);
+            Session session = manager.getSession(id);
+            try {
+                session.invalidate(null);
+            } catch (Exception e) {
+                log.warn("Session already invalidated.");
             }
         }
-
     }
 
     @Override

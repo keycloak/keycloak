@@ -366,18 +366,20 @@ public class TokenManager {
         return encodedToken;
     }
 
-    public AccessTokenResponseBuilder responseBuilder(RealmModel realm) {
-        return new AccessTokenResponseBuilder(realm);
+    public AccessTokenResponseBuilder responseBuilder(RealmModel realm, ClientModel client) {
+        return new AccessTokenResponseBuilder(realm, client);
     }
 
     public class AccessTokenResponseBuilder {
         RealmModel realm;
+        ClientModel client;
         AccessToken accessToken;
         RefreshToken refreshToken;
         IDToken idToken;
 
-        public AccessTokenResponseBuilder(RealmModel realm) {
+        public AccessTokenResponseBuilder(RealmModel realm, ClientModel client) {
             this.realm = realm;
+            this.client = client;
         }
 
         public AccessTokenResponseBuilder accessToken(AccessToken accessToken) {
@@ -465,7 +467,9 @@ public class TokenManager {
                 String encodedToken = new JWSBuilder().jsonContent(refreshToken).rsa256(realm.getPrivateKey());
                 res.setRefreshToken(encodedToken);
             }
-            res.setNotBeforePolicy(realm.getNotBefore());
+            int notBefore = realm.getNotBefore();
+            if (client.getNotBefore() > notBefore) notBefore = client.getNotBefore();
+            res.setNotBeforePolicy(notBefore);
             return res;
         }
     }

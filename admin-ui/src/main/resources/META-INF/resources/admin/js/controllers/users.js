@@ -118,6 +118,35 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, ro
 
 });
 
+module.controller('UserSessionsCtrl', function($scope, realm, user, stats, UserLogout, ApplicationLogoutUser, UserSessionStats, Notifications) {
+    $scope.realm = realm;
+    $scope.user = user;
+    $scope.stats = stats;
+
+    $scope.logoutAll = function() {
+        UserLogout.save({realm : realm.realm, user: user.username}, function () {
+            Notifications.success('Logged out user in all applications');
+            UserSessionStats.get({realm: realm.realm, user: user.username}, function(updated) {
+                $scope.stats = updated;
+            })
+        });
+    };
+
+    $scope.logoutApplication = function(app) {
+        console.log('log user out of app: ' + app);
+        ApplicationLogoutUser.save({realm : realm.realm, application: app, user: user.username}, function () {
+            Notifications.success('Logged out user from application');
+            UserSessionStats.get({realm: realm.realm, user: user.username}, function(updated) {
+                $scope.stats = updated;
+            })
+        });
+    };
+
+
+
+});
+
+
 module.controller('UserListCtrl', function($scope, realm, User) {
     $scope.realm = realm;
     $scope.searchQuery = function() {

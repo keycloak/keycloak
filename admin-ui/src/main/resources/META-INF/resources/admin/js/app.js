@@ -176,6 +176,21 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'UserRoleMappingCtrl'
         })
+        .when('/realms/:realm/users/:user/sessions', {
+            templateUrl : 'partials/user-sessions.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                user : function(UserLoader) {
+                    return UserLoader();
+                },
+                stats : function(UserSessionStatsLoader) {
+                    return UserSessionStatsLoader();
+                }
+            },
+            controller : 'UserSessionsCtrl'
+        })
         .when('/realms/:realm/users', {
             templateUrl : 'partials/user-list.html',
             resolve : {
@@ -291,6 +306,21 @@ module.config([ '$routeProvider', function($routeProvider) {
                 }
             },
             controller : 'ApplicationClaimsCtrl'
+        })
+        .when('/realms/:realm/applications/:application/sessions', {
+            templateUrl : 'partials/application-sessions.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                application : function(ApplicationLoader) {
+                    return ApplicationLoader();
+                },
+                stats : function(ApplicationSessionStatsLoader) {
+                    return ApplicationSessionStatsLoader();
+                }
+            },
+            controller : 'ApplicationSessionsCtrl'
         })
         .when('/realms/:realm/applications/:application/credentials', {
             templateUrl : 'partials/application-credentials.html',
@@ -539,6 +569,18 @@ module.config([ '$routeProvider', function($routeProvider) {
                 }
             },
             controller : 'RealmRevocationCtrl'
+        })
+        .when('/realms/:realm/sessions/realm', {
+            templateUrl : 'partials/session-realm.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                stats : function(RealmSessionStatsLoader) {
+                    return RealmSessionStatsLoader();
+                }
+            },
+            controller : 'RealmSessionStatsCtrl'
         })
 
         .otherwise({

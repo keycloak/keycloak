@@ -5,17 +5,13 @@ import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
-import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
-import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.AccessToken;
@@ -54,7 +50,6 @@ import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Providers;
-import java.security.PrivateKey;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -161,7 +156,7 @@ public class TokenService {
             throw new NotAuthorizedException("Auth failed");
         }
         String scope = form.getFirst("scope");
-        AccessTokenResponse res = tokenManager.responseBuilder(realm)
+        AccessTokenResponse res = tokenManager.responseBuilder(realm, client)
                 .generateAccessToken(scope, client, user)
                 .generateIDToken()
                 .build();
@@ -191,7 +186,7 @@ public class TokenService {
             throw new BadRequestException(Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build(), e);
         }
 
-        AccessTokenResponse res = tokenManager.responseBuilder(realm)
+        AccessTokenResponse res = tokenManager.responseBuilder(realm, client)
                                               .accessToken(accessToken)
                                               .generateIDToken()
                                               .generateRefreshToken().build();
@@ -421,7 +416,7 @@ public class TokenService {
                     .build();
         }
         logger.debug("accessRequest SUCCESS");
-        AccessTokenResponse res = tokenManager.responseBuilder(realm)
+        AccessTokenResponse res = tokenManager.responseBuilder(realm, client)
                                               .accessToken(accessCode.getToken())
                                               .generateIDToken()
                                               .generateRefreshToken().build();
@@ -563,7 +558,7 @@ public class TokenService {
             logger.info("Logging out: {0}", user.getLoginName());
             authManager.expireIdentityCookie(realm, uriInfo);
             authManager.expireRememberMeCookie(realm, uriInfo);
-            resourceAdminManager.singleLogOut(realm, user.getId());
+            resourceAdminManager.logoutUser(realm, user.getId());
         } else {
             logger.info("No user logged in for logout");
         }
