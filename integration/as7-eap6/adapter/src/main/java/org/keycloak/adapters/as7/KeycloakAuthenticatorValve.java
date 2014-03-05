@@ -20,7 +20,12 @@ import org.keycloak.adapters.RefreshableKeycloakSession;
 import org.keycloak.adapters.ResourceMetadata;
 import org.keycloak.adapters.as7.config.CatalinaAdapterConfigLoader;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.adapters.action.AdminAction;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
+import org.keycloak.representations.adapters.action.SessionStats;
+import org.keycloak.representations.adapters.action.SessionStatsAction;
+import org.keycloak.representations.adapters.action.UserStats;
+import org.keycloak.representations.adapters.action.UserStatsAction;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.adapters.config.RealmConfiguration;
 import org.keycloak.adapters.config.RealmConfigurationLoader;
@@ -35,7 +40,9 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -99,6 +106,21 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
                     return; // we failed to verify the request
                 }
                 pushNotBefore(input, response);
+                return;
+            } else if (requestURI.endsWith(AdapterConstants.K_GET_SESSION_STATS)) {
+                JWSInput input = verifyAdminRequest(request, response);
+                if (input == null) {
+                    return; // we failed to verify the request
+                }
+                getSessionStats(input, response);
+                return;
+            } else if (requestURI.endsWith(AdapterConstants.K_GET_USER_STATS)) {
+                JWSInput input = verifyAdminRequest(request, response);
+                if (input == null) {
+                    return; // we failed to verify the request
+                }
+                getUserStats(input, response);
+                return;
             }
             checkKeycloakSession(request);
             super.invoke(request, response);
@@ -136,62 +158,111 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
         String token = StreamUtil.readString(request.getInputStream());
         if (token == null) {
             log.warn("admin request failed, no token");
-            response.sendError(HttpServletResponse.SC_FORBIDDEN, "no token");
+            response.sendError(403, "no token");
             return null;
         }
 
         JWSInput input = new JWSInput(token);
         boolean verified = false;
         try {
-            verified = RSAProvider.verify(input, resourceMetadata.getRealmKey());
+            verified = RSAProvider.verify(input, realmConfiguration.getMetadata().getRealmKey());
         } catch (Exception ignore) {
         }
         if (!verified) {
             log.warn("admin request failed, unable to verify token");
-            response.sendError(HttpServletResponse.SC_FORBIDDEN, "verification failed");
+            response.sendError(403, "verification failed");
             return null;
         }
         return input;
     }
 
-    protected void pushNotBefore(JWSInput token, HttpServletResponse response) throws IOException {
-        try {
-            log.info("->> pushNotBefore: ");
-            PushNotBeforeAction action = JsonSerialization.readValue(token.getContent(), PushNotBeforeAction.class);
-            if (action.isExpired()) {
-                log.warn("admin request failed, expired token");
-                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Expired token");
-                return;
-            }
-            if (!resourceMetadata.getResourceName().equals(action.getResource())) {
-                log.warn("Resource name does not match");
-                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Resource name does not match");
-                return;
 
-            }
-            realmConfiguration.setNotBefore(action.getNotBefore());
-        } catch (Exception e) {
-            log.warn("failed to logout", e);
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to logout");
+    protected boolean validateAction(HttpServletResponse response, AdminAction action) throws IOException {
+        if (!action.validate()) {
+            log.warn("admin request failed, not validated" + action.getAction());
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Not validated");
+            return false;
         }
+        if (action.isExpired()) {
+            log.warn("admin request failed, expired token");
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Expired token");
+            return false;
+        }
+        if (!resourceMetadata.getResourceName().equals(action.getResource())) {
+            log.warn("Resource name does not match");
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Resource name does not match");
+            return false;
+
+        }
+        return true;
+    }
+
+    protected void pushNotBefore(JWSInput token, HttpServletResponse response) throws IOException {
+        log.info("->> pushNotBefore: ");
+        PushNotBeforeAction action = JsonSerialization.readValue(token.getContent(), PushNotBeforeAction.class);
+        if (!validateAction(response, action)) {
+            return;
+        }
+        realmConfiguration.setNotBefore(action.getNotBefore());
         response.setStatus(HttpServletResponse.SC_NO_CONTENT);
 
     }
+
+    protected UserStats getUserStats(String user) {
+        UserStats stats = new UserStats();
+        Long loginTime = userSessionManagement.getUserLoginTime(user);
+        if (loginTime != null) {
+            stats.setLoggedIn(true);
+            stats.setWhenLoggedIn(loginTime);
+        } else {
+            stats.setLoggedIn(false);
+        }
+        return stats;
+    }
+
+
+    protected void getSessionStats(JWSInput token, HttpServletResponse response) throws IOException {
+        log.info("->> getSessionStats: ");
+        SessionStatsAction action = JsonSerialization.readValue(token.getContent(), SessionStatsAction.class);
+        if (!validateAction(response, action)) {
+            return;
+        }
+        SessionStats stats = new SessionStats();
+        stats.setActiveSessions(userSessionManagement.getActiveSessions());
+        stats.setActiveUsers(userSessionManagement.getActiveUsers().size());
+        if (action.isListUsers() && userSessionManagement.getActiveSessions() > 0) {
+            Map<String, UserStats> list = new HashMap<String, UserStats>();
+            for (String user : userSessionManagement.getActiveUsers()) {
+                list.put(user, getUserStats(user));
+            }
+            stats.setUsers(list);
+        }
+        response.setStatus(200);
+        response.setContentType("application/json");
+        JsonSerialization.writeValueToStream(response.getOutputStream(), stats);
+
+    }
+
+    protected void getUserStats(JWSInput token, HttpServletResponse response) throws IOException {
+        log.info("->> getUserStats: ");
+        UserStatsAction action = JsonSerialization.readValue(token.getContent(), UserStatsAction.class);
+        if (!validateAction(response, action)) {
+            return;
+        }
+        String user = action.getUser();
+        UserStats stats = getUserStats(user);
+        response.setStatus(200);
+        response.setContentType("application/json");
+        JsonSerialization.writeValueToStream(response.getOutputStream(), stats);
+    }
+
 
     protected void remoteLogout(JWSInput token, HttpServletResponse response) throws IOException {
         try {
             log.debug("->> remoteLogout: ");
             LogoutAction action = JsonSerialization.readValue(token.getContent(), LogoutAction.class);
-            if (action.isExpired()) {
-                log.warn("admin request failed, expired token");
-                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Expired token");
+            if (!validateAction(response, action)) {
                 return;
-            }
-            if (!resourceMetadata.getResourceName().equals(action.getResource())) {
-                log.warn("Resource name does not match");
-                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Resource name does not match");
-                return;
-
             }
             String user = action.getUser();
             if (user != null) {
