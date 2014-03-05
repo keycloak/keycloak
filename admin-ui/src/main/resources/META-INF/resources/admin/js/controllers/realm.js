@@ -690,6 +690,26 @@ module.controller('RealmKeysDetailCtrl', function($scope, Realm, realm, $http, $
     };
 });
 
+module.controller('RealmSessionStatsCtrl', function($scope, realm, stats, RealmSessionStats, RealmLogoutAll, Notifications) {
+    $scope.realm = realm;
+    $scope.stats = stats;
+
+    console.log(stats);
+
+    $scope.logoutAll = function() {
+        RealmLogoutAll.save({realm : realm.realm}, function () {
+            Notifications.success('Logged out all users');
+            RealmSessionStats.get({realm: realm.realm}, function(updated) {
+                Notifications.success('Logged out all users');
+                $scope.stats = updated;
+            })
+        });
+    };
+
+
+});
+
+
 module.controller('RealmRevocationCtrl', function($scope, Realm, RealmPushRevocation, realm, $http, $location, Dialog, Notifications) {
     $scope.realm = angular.copy(realm);
 

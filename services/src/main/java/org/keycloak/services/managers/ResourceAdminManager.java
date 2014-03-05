@@ -17,7 +17,9 @@ import org.keycloak.representations.adapters.action.UserStatsAction;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Response;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -52,6 +54,18 @@ public class ResourceAdminManager {
                 return null;
             }
             SessionStats stats = response.readEntity(SessionStats.class);
+
+            // replace with username
+            if (users && stats.getUsers() != null) {
+                Map<String, UserStats> newUsers = new HashMap<String, UserStats>();
+                for (Map.Entry<String, UserStats> entry : stats.getUsers().entrySet()) {
+                    UserModel user = realm.getUserById(entry.getKey());
+                    if (user == null) continue;
+                    newUsers.put(user.getLoginName(), entry.getValue());
+
+                }
+                stats.setUsers(newUsers);
+            }
             return stats;
         } else {
             logger.info("no management url.");
@@ -94,7 +108,7 @@ public class ResourceAdminManager {
 
     }
 
-    public void singleLogOut(RealmModel realm, String user) {
+    public void logoutUser(RealmModel realm, String user) {
         ResteasyClient client = new ResteasyClientBuilder()
                 .disableTrustManager() // todo fix this, should have a trust manager or a good default
                 .build();
@@ -103,14 +117,43 @@ public class ResourceAdminManager {
             List<ApplicationModel> resources = realm.getApplications();
             logger.debug("logging out {0} resources ", resources.size());
             for (ApplicationModel resource : resources) {
-                logoutResource(realm, resource, user, client);
+                logoutApplication(realm, resource, user, client);
+            }
+        } finally {
+            client.close();
+        }
+    }
+    public void logoutAll(RealmModel realm) {
+        ResteasyClient client = new ResteasyClientBuilder()
+                .disableTrustManager() // todo fix this, should have a trust manager or a good default
+                .build();
+
+        try {
+            List<ApplicationModel> resources = realm.getApplications();
+            logger.debug("logging out {0} resources ", resources.size());
+            for (ApplicationModel resource : resources) {
+                logoutApplication(realm, resource, null, client);
             }
         } finally {
             client.close();
         }
     }
 
-    protected boolean logoutResource(RealmModel realm, ApplicationModel resource, String user, ResteasyClient client) {
+    public void logoutApplication(RealmModel realm, ApplicationModel resource, String user) {
+        ResteasyClient client = new ResteasyClientBuilder()
+                .disableTrustManager() // todo fix this, should have a trust manager or a good default
+                .build();
+
+        try {
+            logoutApplication(realm, resource, user, client);
+        } finally {
+            client.close();
+        }
+
+    }
+
+
+    protected boolean logoutApplication(RealmModel realm, ApplicationModel resource, String user, ResteasyClient client) {
         String managementUrl = resource.getManagementUrl();
         if (managementUrl != null) {
             LogoutAction adminAction = new LogoutAction(TokenIdGenerator.generateId(), (int)(System.currentTimeMillis() / 1000) + 30, resource.getName(), user);
@@ -122,7 +165,7 @@ public class ResourceAdminManager {
             logger.info("logout success.");
             return success;
         } else {
-            logger.info("logout failure.");
+            logger.info("Can't logout" + resource.getName() + " no mgmt url.");
             return false;
         }
     }

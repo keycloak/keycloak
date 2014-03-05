@@ -1,0 +1,60 @@
+<div class="bs-sidebar col-md-3 clearfix" data-ng-include data-src="'partials/realm-menu.html'"></div>
+<div id="content-area" class="col-md-9" role="main">
+    <ul class="nav nav-tabs nav-tabs-pf">
+        <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}">Settings</a></li>
+        <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/credentials">Credentials</a></li>
+        <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/installation">Installation</a></li>
+        <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/roles">Roles</a></li>
+        <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/claims">Claims</a></li>
+        <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/scope-mappings">Scope</a></li>
+        <li><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/revocation">Revocation</a></li>
+        <li class="active"><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/sessions">Sessions</a></li>
+    </ul>
+    <div id="content">
+        <ol class="breadcrumb">
+            <li><a href="#/realms/{{realm.realm}}">{{application.name}}</a></li>
+            <li class="active">Application Sessions</li>
+        </ol>
+        <h2><span>{{application.name}}</span> Sessions</h2>
+        <form class="form-horizontal" name="sessionStats">
+            <fieldset class="border-top">
+                <div class="form-group">
+                    <label class="col-sm-2 control-label" for="activeSessions">Active Sessions</label>
+                    <div class="col-sm-4">
+                        <input class="form-control" type="text" id="activeSessions" name="activeSessions" data-ng-model="stats.activeSessions" ng-disabled="true">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label" for="activeUsers">Active Users</label>
+                    <div class="col-sm-4">
+                        <input class="form-control" type="text" id="activeUsers" name="activeUsers" data-ng-model="stats.activeUsers" ng-disabled="true">
+                    </div>
+                </div>
+            </fieldset>
+        </form>
+        <table class="table" data-ng-show="stats.activeSessions > 0">
+            <thead>
+            <tr>
+                <th class="kc-table-actions" colspan="3">
+                    <div class="pull-right">
+                        <a class="btn btn-primary" ng-click="logoutAll()">Logout All</a>
+                        <a class="btn btn-primary" ng-click="loadUsers()">Show Users</a>
+                    </div>
+                </th>
+            </tr>
+            <tr>
+                <th>User</th>
+                <th>Login Time</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr data-ng-repeat="(user, data) in users">
+                <td><a href="#/realms/{{realm.realm}}/users/{{user}}">{{user}}</a></td>
+                <td>{{data.whenLoggedIn | date:'medium'}}</td>
+                <td><a ng-click="logoutUser(user)">logout</a> </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

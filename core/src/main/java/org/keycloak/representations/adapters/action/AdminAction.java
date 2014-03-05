@@ -59,5 +59,13 @@ public abstract class AdminAction {
         this.resource = resource;
     }
 
+    public String getAction() {
+        return action;
+    }
+
+    public void setAction(String action) {
+        this.action = action;
+    }
+
     public abstract boolean validate();
 }

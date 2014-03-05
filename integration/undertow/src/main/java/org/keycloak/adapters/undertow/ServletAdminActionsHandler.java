@@ -24,6 +24,10 @@ import org.keycloak.util.StreamUtil;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -133,7 +137,7 @@ public class ServletAdminActionsHandler implements HttpHandler {
 
     protected boolean validateAction(HttpServletResponse response, AdminAction action) throws IOException {
         if (!action.validate()) {
-            log.warn("admin request failed, not validated");
+            log.warn("admin request failed, not validated" + action.getAction());
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Not validated");
             return false;
         }
@@ -160,8 +164,15 @@ public class ServletAdminActionsHandler implements HttpHandler {
         SessionStats stats = new SessionStats();
         stats.setActiveSessions(userSessionManagement.getActiveSessions());
         stats.setActiveUsers(userSessionManagement.getActiveUsers().size());
-        if (action.isListUsers()) stats.setUsers(userSessionManagement.getActiveUsers());
+        if (action.isListUsers() && userSessionManagement.getActiveSessions() > 0) {
+            Map<String, UserStats> list = new HashMap<String, UserStats>();
+            for (String user : userSessionManagement.getActiveUsers()) {
+                list.put(user, getUserStats(user));
+            }
+            stats.setUsers(list);
+        }
         response.setStatus(200);
+        response.setContentType("application/json");
         JsonSerialization.writeValueToStream(response.getOutputStream(), stats);
         return;
     }
@@ -171,16 +182,23 @@ public class ServletAdminActionsHandler implements HttpHandler {
         if (token == null) return;
         UserStatsAction action = JsonSerialization.readValue(token.getContent(), UserStatsAction.class);
         if (!validateAction(response, action)) return;
+        String user = action.getUser();
+        UserStats stats = getUserStats(user);
+        response.setStatus(200);
+        response.setContentType("application/json");
+        JsonSerialization.writeValueToStream(response.getOutputStream(), stats);
+        return;
+    }
+
+    protected UserStats getUserStats(String user) {
         UserStats stats = new UserStats();
-        Long loginTime = userSessionManagement.getUserLoginTime(action.getUser());
+        Long loginTime = userSessionManagement.getUserLoginTime(user);
         if (loginTime != null) {
             stats.setLoggedIn(true);
             stats.setWhenLoggedIn(loginTime);
         } else {
             stats.setLoggedIn(false);
         }
-        response.setStatus(200);
-        JsonSerialization.writeValueToStream(response.getOutputStream(), stats);
-        return;
+        return stats;
     }
 }

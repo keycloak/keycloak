@@ -1,6 +1,7 @@
 package org.keycloak.representations.adapters.action;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -10,7 +11,7 @@ import java.util.Set;
 public class SessionStats {
     protected int activeSessions;
     protected int activeUsers;
-    protected Set<String> users;
+    protected Map<String, UserStats> users;
 
     public int getActiveSessions() {
         return activeSessions;
@@ -28,11 +29,11 @@ public class SessionStats {
         this.activeUsers = activeUsers;
     }
 
-    public Set<String> getUsers() {
+    public Map<String, UserStats> getUsers() {
         return users;
     }
 
-    public void setUsers(Set<String> users) {
+    public void setUsers(Map<String, UserStats> users) {
         this.users = users;
     }
 }

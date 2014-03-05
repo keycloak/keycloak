@@ -124,8 +124,8 @@ public class UserSessionManagement implements SessionListener {
         synchronized (userSessionMap) {
             UserSessions sessions = userSessionMap.get(username);
             if (sessions == null) {
-                UserSessions session = new UserSessions();
-                userSessionMap.put(username, session);
+                sessions = new UserSessions();
+                userSessionMap.put(username, sessions);
             }
             sessions.getSessionIds().add(sessionId);
         }

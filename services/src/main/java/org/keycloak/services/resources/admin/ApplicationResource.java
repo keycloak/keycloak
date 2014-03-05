@@ -6,7 +6,9 @@ import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.representations.adapters.action.SessionStats;
+import org.keycloak.representations.adapters.action.UserStats;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.ApplicationManager;
@@ -18,12 +20,15 @@ import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -38,7 +43,7 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class ApplicationResource {
-    protected static final Logger logger = Logger.getLogger(RealmAdminResource.class);
+    protected static final Logger logger = Logger.getLogger(ApplicationResource.class);
     protected RealmModel realm;
     private RealmAuth auth;
     protected ApplicationModel application;
@@ -200,9 +205,44 @@ public class ApplicationResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public SessionStats getSessionStats() {
-        return new ResourceAdminManager().getSessionStats(realm, application, true);
+    public SessionStats getSessionStats(@QueryParam("users") @DefaultValue("false") boolean users) {
+        logger.info("session-stats");
+        auth.requireView();
+        if (application.getManagementUrl() == null || application.getManagementUrl().trim().equals("")) {
+            logger.info("sending empty stats");
+            SessionStats stats = new SessionStats();
+            if (users) stats.setUsers(new HashMap<String, UserStats>());
+            return stats;
+        }
+        SessionStats stats = new ResourceAdminManager().getSessionStats(realm, application, users);
+        if (stats == null) {
+            logger.info("app returned null stats");
+        } else {
+            logger.info("activeUsers: " + stats.getActiveUsers());
+            logger.info("activeSessions: " + stats.getActiveSessions());
+        }
+        return stats;
+     }
+
+    @Path("logout-all")
+    @POST
+    public void logoutAll() {
+        auth.requireManage();
+        new ResourceAdminManager().logoutApplication(realm, application, null);
     }
+
+    @Path("logout-user/{username}")
+    @POST
+    public void logout(final @PathParam("username") String username) {
+        auth.requireManage();
+        UserModel user = realm.getUser(username);
+        if (user == null) {
+            throw new NotFoundException();
+        }
+        new ResourceAdminManager().logoutApplication(realm, application, user.getId());
+    }
+
+
 
 
 

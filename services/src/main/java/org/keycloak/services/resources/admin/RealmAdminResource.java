@@ -118,12 +118,20 @@ public class RealmAdminResource {
         new ResourceAdminManager().pushRealmRevocationPolicy(realm);
     }
 
+    @Path("logout-all")
+    @POST
+    public void logoutAll() {
+        auth.requireManage();
+        new ResourceAdminManager().logoutAll(realm);
+    }
+
     @Path("session-stats")
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String,SessionStats> getSessionStats() {
-
+        logger.info("session-stats");
+        auth.requireView();
         Map<String, SessionStats> stats = new HashMap<String, SessionStats>();
         for (ApplicationModel applicationModel : realm.getApplications()) {
             if (applicationModel.getManagementUrl() == null) continue;

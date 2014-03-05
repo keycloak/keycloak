@@ -153,6 +153,7 @@ public class UsersResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String,UserStats> getSessionStats(final @PathParam("username") String username) {
+        logger.info("session-stats");
         auth.requireView();
         UserModel user = realm.getUser(username);
         if (user == null) {
@@ -162,10 +163,22 @@ public class UsersResource {
         for (ApplicationModel applicationModel : realm.getApplications()) {
             if (applicationModel.getManagementUrl() == null) continue;
             UserStats appStats = new ResourceAdminManager().getUserStats(realm, applicationModel, user);
-            stats.put(applicationModel.getName(), appStats);
+            if (appStats.isLoggedIn()) stats.put(applicationModel.getName(), appStats);
         }
         return stats;
     }
+
+    @Path("{username}/logout")
+    @POST
+    public void logout(final @PathParam("username") String username) {
+        auth.requireManage();
+        UserModel user = realm.getUser(username);
+        if (user == null) {
+            throw new NotFoundException();
+        }
+        new ResourceAdminManager().logoutUser(realm, user.getId());
+    }
+
 
 
     @Path("{username}")

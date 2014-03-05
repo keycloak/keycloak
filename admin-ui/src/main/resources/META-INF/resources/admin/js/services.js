@@ -158,9 +158,15 @@ module.factory('User', function($resource) {
 });
 
 module.factory('UserSessionStats', function($resource) {
-    return $resource('/auth/rest/admin/realms/:realm/users/:userId/session-stats', {
+    return $resource('/auth/rest/admin/realms/:realm/users/:user/session-stats', {
         realm : '@realm',
-        userId : '@userId'
+        user : '@user'
+    });
+});
+module.factory('UserLogout', function($resource) {
+    return $resource('/auth/rest/admin/realms/:realm/users/:user/logout', {
+        realm : '@realm',
+        user : '@user'
     });
 });
 
@@ -486,6 +492,32 @@ module.factory('ApplicationSessionStats', function($resource) {
     return $resource('/auth/rest/admin/realms/:realm/applications/:application/session-stats', {
         realm : '@realm',
         application : "@application"
+    });
+});
+
+module.factory('ApplicationSessionStatsWithUsers', function($resource) {
+    return $resource('/auth/rest/admin/realms/:realm/applications/:application/session-stats?users=true', {
+        realm : '@realm',
+        application : "@application"
+    });
+});
+
+module.factory('ApplicationLogoutAll', function($resource) {
+    return $resource('/auth/rest/admin/realms/:realm/applications/:application/logout-all', {
+        realm : '@realm',
+        application : "@application"
+    });
+});
+module.factory('ApplicationLogoutUser', function($resource) {
+    return $resource('/auth/rest/admin/realms/:realm/applications/:application/logout-user/:user', {
+        realm : '@realm',
+        application : "@application",
+        user : "@user"
+    });
+});
+module.factory('RealmLogoutAll', function($resource) {
+    return $resource('/auth/rest/admin/realms/:realm/logout-all', {
+        realm : '@realm'
     });
 });
 
