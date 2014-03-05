@@ -3,6 +3,7 @@ package org.keycloak.services.managers;
 import org.jboss.resteasy.logging.Logger;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.Config;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -34,15 +35,17 @@ public class ApplianceBootstrap {
     }
 
     public void bootstrap(KeycloakSession session) {
-        if (session.getRealm(Constants.ADMIN_REALM) != null) {
+        if (session.getRealm(Config.getAdminRealm()) != null) {
             return;
         }
 
-        logger.info("Initializing " + Constants.ADMIN_REALM + " realm");
+        String adminRealmName = Config.getAdminRealm();
+
+        logger.info("Initializing " + adminRealmName + " realm");
 
         RealmManager manager = new RealmManager(session);
-        RealmModel realm = manager.createRealm(Constants.ADMIN_REALM, Constants.ADMIN_REALM);
-        realm.setName(Constants.ADMIN_REALM);
+        RealmModel realm = manager.createRealm(adminRealmName, adminRealmName);
+        realm.setName(adminRealmName);
         realm.setEnabled(true);
         realm.addRequiredCredential(CredentialRepresentation.PASSWORD);
         realm.setCentralLoginLifespan(3000);
@@ -53,9 +56,6 @@ public class ApplianceBootstrap {
         realm.setSslNotRequired(true);
         realm.setRegistrationAllowed(false);
         manager.generateRealmKeys(realm);
-
-        realm.setLoginTheme("keycloak");
-        realm.setAccountTheme("keycloak");
 
         ApplicationModel adminConsole = new ApplicationManager(manager).createApplication(realm, Constants.ADMIN_CONSOLE_APPLICATION);
         adminConsole.setBaseUrl("/auth/admin/index.html");

@@ -51,8 +51,6 @@ public class AccountService {
 
     private static final Logger logger = Logger.getLogger(AccountService.class);
 
-    public static final String ACCOUNT_IDENTITY_COOKIE = "KEYCLOAK_ACCOUNT_IDENTITY";
-
     private RealmModel realm;
 
     @Context

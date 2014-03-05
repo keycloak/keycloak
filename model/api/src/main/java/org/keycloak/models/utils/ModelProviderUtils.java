@@ -2,6 +2,7 @@ package org.keycloak.models.utils;
 
 import java.util.ServiceLoader;
 
+import org.keycloak.models.Config;
 import org.keycloak.models.ModelProvider;
 
 /**
@@ -9,7 +10,6 @@ import org.keycloak.models.ModelProvider;
  */
 public class ModelProviderUtils {
 
-    public static final String MODEL_PROVIDER = "keycloak.model";
     public static final String DEFAULT_MODEL_PROVIDER = "jpa";
 
     public static Iterable<ModelProvider> getRegisteredProviders() {
@@ -17,7 +17,7 @@ public class ModelProviderUtils {
     }
 
     public static ModelProvider getConfiguredModelProvider(Iterable<ModelProvider> providers) {
-        String configuredProvider = System.getProperty(MODEL_PROVIDER);
+        String configuredProvider = Config.getModelProvider();
         ModelProvider provider = null;
 
         if (configuredProvider != null) {
@@ -45,6 +45,5 @@ public class ModelProviderUtils {
     public static ModelProvider getConfiguredModelProvider() {
         return getConfiguredModelProvider(getRegisteredProviders());
     }
-
 
 }

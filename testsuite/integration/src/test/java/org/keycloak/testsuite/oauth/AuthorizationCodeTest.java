@@ -96,11 +96,7 @@ public class AuthorizationCodeTest {
         keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                for (ApplicationModel app : appRealm.getApplications()) {
-                    if (app.getName().equals("test-app")) {
-                        app.addRedirectUri(oauth.getRedirectUri());
-                    }
-                }
+                appRealm.getApplicationByName("test-app").addRedirectUri(oauth.getRedirectUri());
             }
         });
 

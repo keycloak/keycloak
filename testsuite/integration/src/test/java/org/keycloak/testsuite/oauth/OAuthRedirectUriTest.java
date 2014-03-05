@@ -26,6 +26,7 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.OAuthClient;
@@ -49,6 +50,15 @@ public class OAuthRedirectUriTest {
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
             ApplicationModel app = appRealm.getApplicationNameMap().get("test-app");
             app.addRedirectUri("http://localhost:8081/app");
+
+            ApplicationModel installedApp = appRealm.addApplication("test-installed");
+            installedApp.setEnabled(true);
+            installedApp.addRedirectUri(Constants.INSTALLED_APP_URN);
+            installedApp.addRedirectUri(Constants.INSTALLED_APP_URL);
+
+            ApplicationModel installedApp2 = appRealm.addApplication("test-installed2");
+            installedApp2.setEnabled(true);
+            installedApp2.addRedirectUri(Constants.INSTALLED_APP_URL + "/myapp");
         }
     });
 
@@ -151,6 +161,15 @@ public class OAuthRedirectUriTest {
     }
 
     @Test
+    public void testValid() throws IOException {
+        oauth.redirectUri("http://localhost:8081/app");
+        OAuthClient.AuthorizationCodeResponse response = oauth.doLogin("test-user@localhost", "password");
+
+        Assert.assertNotNull(response.getCode());
+        Assert.assertTrue(driver.getCurrentUrl().startsWith("http://localhost:8081/app?code="));
+    }
+
+    @Test
     public void testInvalid() throws IOException {
         oauth.redirectUri("http://localhost:8081/app2");
         oauth.openLoginForm();
@@ -166,6 +185,42 @@ public class OAuthRedirectUriTest {
 
         Assert.assertNotNull(response.getCode());
         Assert.assertTrue(driver.getCurrentUrl().startsWith("http://localhost:8081/app?key=value&code="));
+    }
+
+
+    @Test
+    public void testLocalhost() throws IOException {
+        oauth.clientId("test-installed");
+
+        checkRedirectUri("urn:ietf:wg:oauth:2.0:oob", true);
+        checkRedirectUri("http://localhost", true);
+
+        checkRedirectUri("http://localhost:8081", true);
+
+        checkRedirectUri("http://localhosts", false);
+        checkRedirectUri("http://localhost/myapp", false);
+        checkRedirectUri("http://localhost:8081/myapp", false);
+
+        oauth.clientId("test-installed2");
+
+        checkRedirectUri("http://localhost/myapp", true);
+        checkRedirectUri("http://localhost:8081/myapp", true);
+
+        checkRedirectUri("http://localhosts/myapp", false);
+        checkRedirectUri("http://localhost", false);
+        checkRedirectUri("http://localhost/myapp2", false);
+    }
+
+    private void checkRedirectUri(String redirectUri, boolean expectValid) {
+        oauth.redirectUri(redirectUri);
+        oauth.openLoginForm();
+
+        if (expectValid) {
+            Assert.assertTrue(loginPage.isCurrent());
+        } else {
+            Assert.assertTrue(errorPage.isCurrent());
+            Assert.assertEquals("Invalid redirect_uri.", errorPage.getError());
+        }
     }
 
 }
