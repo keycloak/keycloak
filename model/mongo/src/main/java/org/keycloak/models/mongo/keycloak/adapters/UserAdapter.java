@@ -1,15 +1,12 @@
 package org.keycloak.models.mongo.keycloak.adapters;
 
 import org.keycloak.models.UserModel;
-import org.keycloak.models.mongo.api.AbstractMongoIdentifiableEntity;
 import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.mongo.keycloak.entities.UserEntity;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -18,7 +15,7 @@ import java.util.Set;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class UserAdapter extends AbstractAdapter implements UserModel {
+public class UserAdapter extends AbstractMongoAdapter<UserEntity> implements UserModel {
 
     private final UserEntity user;
 
@@ -156,11 +153,11 @@ public class UserAdapter extends AbstractAdapter implements UserModel {
     }
 
     protected void updateUser() {
-        getMongoStore().updateEntity(user, invocationContext);
+        super.updateMongoEntity();
     }
 
     @Override
-    public AbstractMongoIdentifiableEntity getMongoEntity() {
+    public UserEntity getMongoEntity() {
         return user;
     }
 }

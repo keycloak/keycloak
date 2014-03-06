@@ -17,7 +17,7 @@ public class Person extends AbstractMongoIdentifiableEntity {
     private String firstName;
     private int age;
     private List<String> kids;
-    private List<Address> addresses;
+    private List<AddressWithFlats> addresses;
     private Address mainAddress;
     private Gender gender;
     private List<Gender> genders;
@@ -69,11 +69,11 @@ public class Person extends AbstractMongoIdentifiableEntity {
     }
 
     @MongoField
-    public List<Address> getAddresses() {
+    public List<AddressWithFlats> getAddresses() {
         return addresses;
     }
 
-    public void setAddresses(List<Address> addresses) {
+    public void setAddresses(List<AddressWithFlats> addresses) {
         this.addresses = addresses;
     }
 

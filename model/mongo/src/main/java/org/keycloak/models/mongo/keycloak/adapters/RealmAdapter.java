@@ -13,7 +13,6 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.mongo.api.AbstractMongoIdentifiableEntity;
 import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.mongo.keycloak.entities.ApplicationEntity;
 import org.keycloak.models.mongo.keycloak.entities.CredentialEntity;
@@ -43,7 +42,7 @@ import java.util.regex.Pattern;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class RealmAdapter extends AbstractAdapter implements RealmModel {
+public class RealmAdapter extends AbstractMongoAdapter<RealmEntity> implements RealmModel {
 
     private static final Logger logger = Logger.getLogger(RealmAdapter.class);
 
@@ -187,6 +186,7 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
     @Override
     public void setNotBefore(int notBefore) {
         realm.setNotBefore(notBefore);
+        updateRealm();
     }
 
 
@@ -677,12 +677,12 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
 
     @Override
     public void addScopeMapping(ClientModel client, RoleModel role) {
-        getMongoStore().pushItemToList(((AbstractAdapter)client).getMongoEntity(), "scopeIds", role.getId(), true, invocationContext);
+        getMongoStore().pushItemToList(((AbstractMongoAdapter)client).getMongoEntity(), "scopeIds", role.getId(), true, invocationContext);
     }
 
     @Override
     public void deleteScopeMapping(ClientModel client, RoleModel role) {
-        getMongoStore().pullItemFromList(((AbstractAdapter)client).getMongoEntity(), "scopeIds", role.getId(), invocationContext);
+        getMongoStore().pullItemFromList(((AbstractMongoAdapter)client).getMongoEntity(), "scopeIds", role.getId(), invocationContext);
     }
 
     @Override
@@ -776,6 +776,7 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
                 addRequiredCredential(credentialModel, credsEntities);
             }
         }
+        updateRealm();
     }
 
     @Override
@@ -897,7 +898,7 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
     }
 
     protected void updateRealm() {
-        getMongoStore().updateEntity(realm, invocationContext);
+        super.updateMongoEntity();
     }
 
     protected RequiredCredentialModel initRequiredCredentialModel(String type) {
@@ -1010,7 +1011,7 @@ public class RealmAdapter extends AbstractAdapter implements RealmModel {
     }
 
     @Override
-    public AbstractMongoIdentifiableEntity getMongoEntity() {
+    public RealmEntity getMongoEntity() {
         return realm;
     }
 }

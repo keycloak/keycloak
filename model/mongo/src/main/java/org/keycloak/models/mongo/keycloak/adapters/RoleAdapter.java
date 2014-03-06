@@ -15,7 +15,6 @@ import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.mongo.keycloak.entities.ApplicationEntity;
 import org.keycloak.models.mongo.keycloak.entities.RealmEntity;
 import org.keycloak.models.mongo.keycloak.entities.RoleEntity;
-import org.keycloak.models.mongo.utils.MongoModelUtils;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 /**
@@ -23,7 +22,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class RoleAdapter extends AbstractAdapter implements RoleModel {
+public class RoleAdapter extends AbstractMongoAdapter<RoleEntity> implements RoleModel {
 
     private final RoleEntity role;
     private RoleContainerModel roleContainer;
@@ -73,7 +72,7 @@ public class RoleAdapter extends AbstractAdapter implements RoleModel {
     }
 
     protected void updateRole() {
-        getMongoStore().updateEntity(role, invocationContext);
+        super.updateMongoEntity();
     }
 
     @Override
@@ -141,25 +140,7 @@ public class RoleAdapter extends AbstractAdapter implements RoleModel {
     }
 
     @Override
-    public AbstractMongoIdentifiableEntity getMongoEntity() {
+    public RoleEntity getMongoEntity() {
         return role;
     }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        RoleAdapter that = (RoleAdapter) o;
-
-        if (!role.getId().equals(that.role.getId())) return false;
-
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        return role.getId().hashCode();
-    }
-
 }
