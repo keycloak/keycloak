@@ -76,12 +76,33 @@ module.controller('OAuthClientListCtrl', function($scope, realm, oauthClients, O
 module.controller('OAuthClientDetailCtrl', function($scope, realm, oauth, OAuthClient, $location, Dialog, Notifications) {
     $scope.realm = realm;
     $scope.create = !oauth.id;
+
+    $scope.clientTypes = [
+        "confidential",
+        "public"
+    ];
+
+    $scope.changeClientType = function() {
+        console.log('Client Type: ' + $scope.clientType);
+        if ($scope.clientType == "confidential") {
+            $scope.oauth.publicClient = false;
+        } else if ($scope.clientType == "public") {
+            $scope.oauth.publicClient = true;
+        }
+    };
+
+
     if (!$scope.create) {
         $scope.oauth= angular.copy(oauth);
+        $scope.clientType = $scope.clientTypes[0];
+        if (oauth.publicClient) {
+            $scope.clientType = $scope.clientTypes[1];
+        }
     } else {
         $scope.oauth = {};
         $scope.oauth.webOrigins = [];
         $scope.oauth.redirectUris = [];
+        $scope.clientType = $scope.clientTypes[0];
     }
 
     $scope.$watch(function() {
