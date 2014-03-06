@@ -36,6 +36,12 @@ body {
     background-image: -webkit-linear-gradient(top, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.1) 100%);
     background-image: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.1) 100%);
     background-repeat: repeat-x;
+    font-size: 12px;
+    margin-top: 0;
+}
+
+.navbar-pf .navbar-primary li.dropdown.context > a {
+	padding-right: 12px;
 }
 
 .navbar-pf .navbar-primary li.dropdown.context > a:hover,
@@ -55,8 +61,15 @@ body {
     background-repeat: repeat-x;
 }
 
-.navbar-pf .navbar-utility > li > a {
+.navbar-pf .navbar-nav > li > a {
     border-left: none;
+    padding-top: 12px;
+    padding-bottom: 11px;
+    color: #fff !important;
+}
+
+.navbar-pf .navbar-utility li.dropdown > .dropdown-toggle .pficon-user {
+	top: 11px;
 }
 
 .navbar-pf .navbar-utility > li > a:hover,
@@ -107,7 +120,7 @@ html, body, body > .container, #view, #content-area{
 
 .fieldset-notice {
     color: #B7B7B7;
-    font-size: 1.1em;
+    font-size: 11px;
     float: right;
     margin-top: -2em;
 }
@@ -137,10 +150,9 @@ th.kc-table-actions {
 
 #content-area > .nav {
     border-color: #CECECE;
-    font-size: 1.4em;
     padding: 0 20px;
     margin-bottom: 0;
-    padding: 0.8em 0 0 2em;
+    padding: 10px 0 0 30px;
 }
 
 #container-right-bg {
@@ -193,6 +205,7 @@ header .navbar {
     color: #0099D3;
     letter-spacing: 0;
     padding: 0;
+    margin-left: 0;
 }
 .kc-link:hover {
     text-decoration: underline;
@@ -241,6 +254,10 @@ header .navbar {
     font-size: 0.90909090909091em;
 }
 
+form .btn + .btn {
+	margin-left: 3px;
+}
+
 /* Top menu */
 
 #kc-navigation li.active {
@@ -251,7 +268,7 @@ header .navbar {
 
 .bs-sidebar {
     background-color: #f9f9f9;
-    padding-top: 4.3em;
+    padding-top: 43px;
     padding-right: 0;
     padding-left: 0;
     z-index: 20;
@@ -266,11 +283,10 @@ header .navbar {
     margin-left: -1em;
 }
 .bs-sidebar ul li a {
-    font-size: 1.3em;
-    font-family: "Open Sans", sans-serif;
-    padding-left: 1.92307692307692em;
+    font-size: 13px;
+    padding-left: 25px;
     color: #4d5258;
-    line-height: 2.07692307692308em;
+    line-height: 26px;
     display: block;
     border-width: 1px 0 1px 1px;
     border-style: solid;
@@ -280,6 +296,7 @@ header .navbar {
 .bs-sidebar ul li a:focus {
     text-decoration: none;
     color: #777777;
+    border-right: 2px solid #aaa;
 }
 .bs-sidebar ul li.active a {
     background-color: #c7e5f0;
@@ -288,6 +305,10 @@ header .navbar {
     background-image: url(../img/icon-sidebar-active.svg);
     background-repeat: no-repeat;
     background-position: right center;
+}
+
+.bs-sidebar ul li.active a:hover {
+	border-right: none;
 }
 
 /* On-Off switch */
@@ -377,8 +398,9 @@ header .navbar {
 /* Inputs */
 
 .form-horizontal .control-label {
-    text-align: left;
     color: #909090;
+    line-height: 1.4em;
+    padding-top: 5px;
 }
 
 /* Details stuff */
@@ -386,9 +408,13 @@ header .navbar {
 #content h2 {
     font-family: "Open Sans", sans-serif;
     font-weight: 100;
-    font-size: 2.4em;
-    margin-bottom: 1.04166666666667em;
-    margin-top: 1em;
+    font-size: 24px;
+    margin-bottom: 25px;
+    margin-top: 0;
+}
+
+#content h2.margin-top {
+	margin-top: 25px;
 }
 
 #content-area #content h2 span {
@@ -399,6 +425,14 @@ fieldset {
     padding-bottom: 1em;
 }
 
+fieldset.border-top {
+	border-top: 1px solid #E9E8E8;
+}
+
+fieldset.border-top .form-group:first-child {
+	padding-top: 25px;
+}
+
 /* Legend stuff */
 legend {
     border-color: #E9E8E8;
@@ -406,14 +440,14 @@ legend {
     border-width: 1px 0 0;
     cursor: pointer;
     display: block;
-    font-size: 1em;
+    font-size: 13px;
     margin-bottom: 0;
-    padding-bottom: 1em;
-    padding-top: 2em;
+    padding-bottom: 13px;
+    padding-top: 18px;
 }
 
 legend .text {
-    font-size: 1.3em;
+    font-size: 13px;
     font-weight: bold;
     color: #505050;
 }
@@ -550,7 +584,7 @@ legend .kc-icon-collapse {
     background-color: rgba(0, 0, 0, 0);
     border: medium none;
     font-family: "Open Sans",sans-serif;
-    font-size: 1.1em;
+    font-size: 11px;
     height: 30px;
     line-height: 30px;
     margin-left: -2px;
@@ -591,7 +625,7 @@ legend .kc-icon-collapse {
     display: inline-block;
 }
 .changing-selectors .select-title label {
-    font-size: 1.1em;
+    font-size: 11px;
     margin-left: 0.2em;
     margin-bottom: 0.3em;
     margin-top: 0.5em;
@@ -600,7 +634,7 @@ legend .kc-icon-collapse {
 }
 .changing-selectors select {
     min-height: 150px;
-    font-size: 1.1em;
+    font-size: 11px;
     padding: 0.545454545454545em;
     min-width: 18.1818181818182em;
     border: 1px #b6b6b6 solid;
@@ -665,9 +699,11 @@ legend .kc-icon-collapse {
 .kc-uploaded-file {
     float: left;
     font-weight: bold;
-    margin-right: 0.909091em;
-    padding-top: 3px;
+    margin-right: 10px;
+    padding-top: 5px;
+    line-height: 1.4em;
 }
+
 .kc-link-input-file {
     display: inline-block;
     margin-top: 0.1em;
