@@ -17,6 +17,7 @@ public class RealmConfiguration {
     protected KeycloakUriBuilder authUrl;
     protected String codeUrl;
     protected String refreshUrl;
+    protected boolean publicClient;
     protected Map<String, String> resourceCredentials = new HashMap<String, String>();
     protected boolean sslRequired = true;
     protected String stateCookieName = "OAuth_Token_Request_State";
@@ -96,5 +97,13 @@ public class RealmConfiguration {
 
     public void setNotBefore(int notBefore) {
         this.notBefore = notBefore;
+    }
+
+    public boolean isPublicClient() {
+        return publicClient;
+    }
+
+    public void setPublicClient(boolean publicClient) {
+        this.publicClient = publicClient;
     }
 }

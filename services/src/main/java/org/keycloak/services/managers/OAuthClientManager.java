@@ -2,13 +2,9 @@ package org.keycloak.services.managers;
 
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.annotate.JsonPropertyOrder;
-import org.keycloak.models.ClaimMask;
-import org.keycloak.models.Constants;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.representations.adapters.config.BaseRealmConfig;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
@@ -58,10 +54,10 @@ public class OAuthClientManager {
         return model;
     }
 
-    public void update(OAuthClientRepresentation rep, OAuthClientModel model)
-    {
+    public void update(OAuthClientRepresentation rep, OAuthClientModel model) {
         if (rep.getName() != null) model.setClientId(rep.getName());
         if (rep.isEnabled() != null) model.setEnabled(rep.isEnabled());
+        if (rep.isPublicClient() != null) model.setPublicClient(rep.isPublicClient());
         List<String> redirectUris = rep.getRedirectUris();
         if (redirectUris != null) {
             model.setRedirectUris(new HashSet<String>(redirectUris));
@@ -87,6 +83,7 @@ public class OAuthClientManager {
         rep.setId(model.getId());
         rep.setName(model.getClientId());
         rep.setEnabled(model.isEnabled());
+        rep.setPublicClient(model.isPublicClient());
         Set<String> redirectUris = model.getRedirectUris();
         if (redirectUris != null) {
             rep.setRedirectUris(new LinkedList<String>(redirectUris));
@@ -101,12 +98,14 @@ public class OAuthClientManager {
     }
 
     @JsonPropertyOrder({"realm", "realm-public-key", "auth-server-url", "ssl-not-required",
-            "resource", "credentials"})
+            "resource", "public-client", "credentials"})
     public static class InstallationAdapterConfig extends BaseRealmConfig {
+        @JsonProperty("public-client")
+        protected Boolean publicClient;
         @JsonProperty("resource")
         protected String resource;
         @JsonProperty("credentials")
-        protected Map<String, String> credentials = new HashMap<String, String>();
+        protected Map<String, String> credentials;
 
         public String getResource() {
             return resource;
@@ -115,6 +114,7 @@ public class OAuthClientManager {
         public void setResource(String resource) {
             this.resource = resource;
         }
+
         public Map<String, String> getCredentials() {
             return credentials;
         }
@@ -123,6 +123,13 @@ public class OAuthClientManager {
             this.credentials = credentials;
         }
 
+        public Boolean getPublicClient() {
+            return publicClient;
+        }
+
+        public void setPublicClient(Boolean publicClient) {
+            this.publicClient = publicClient;
+        }
     }
 
 
@@ -132,12 +139,15 @@ public class OAuthClientManager {
         rep.setRealmKey(realmModel.getPublicKeyPem());
         rep.setSslNotRequired(realmModel.isSslNotRequired());
         rep.setAuthServerUrl(baseUri.toString());
+        if (model.isPublicClient()) rep.setPublicClient(true);
 
         rep.setResource(model.getClientId());
 
-        Map<String, String> creds = new HashMap<String, String>();
-        creds.put(CredentialRepresentation.SECRET, model.getSecret());
-        rep.setCredentials(creds);
+        if (!model.isPublicClient()) {
+            Map<String, String> creds = new HashMap<String, String>();
+            creds.put(CredentialRepresentation.SECRET, model.getSecret());
+            rep.setCredentials(creds);
+        }
 
         return rep;
     }

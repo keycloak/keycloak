@@ -59,6 +59,9 @@ public class OAuthRedirectUriTest {
             ApplicationModel installedApp2 = appRealm.addApplication("test-installed2");
             installedApp2.setEnabled(true);
             installedApp2.addRedirectUri(Constants.INSTALLED_APP_URL + "/myapp");
+            ApplicationModel installedApp3 = appRealm.addApplication("test-wildcard");
+            installedApp3.setEnabled(true);
+            installedApp3.addRedirectUri("http://example.com/foo/*");
         }
     });
 
@@ -187,6 +190,13 @@ public class OAuthRedirectUriTest {
         Assert.assertTrue(driver.getCurrentUrl().startsWith("http://localhost:8081/app?key=value&code="));
     }
 
+    @Test
+    public void testWildcard() throws IOException {
+        oauth.clientId("test-wildcard");
+        checkRedirectUri("http://example.com", false);
+        checkRedirectUri("http://example.com/foo", true);
+        checkRedirectUri("http://example.com/foobar", false);
+    }
 
     @Test
     public void testLocalhost() throws IOException {

@@ -124,6 +124,26 @@ public class ApplicationAdapter extends AbstractAdapter implements ApplicationMo
     }
 
     @Override
+    public boolean isBearerOnly() {
+        return application.isBearerOnly();
+    }
+
+    @Override
+    public void setBearerOnly(boolean only) {
+        application.setBearerOnly(only);
+    }
+
+    @Override
+    public boolean isPublicClient() {
+        return application.isPublicClient();
+    }
+
+    @Override
+    public void setPublicClient(boolean flag) {
+        application.setPublicClient(flag);
+    }
+
+    @Override
     public RoleAdapter getRole(String name) {
         DBObject query = new QueryBuilder()
                 .and("name").is(name)

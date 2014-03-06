@@ -14,7 +14,7 @@ import java.util.Map;
  * @version $Revision: 1 $
  */
 @JsonPropertyOrder({"realm", "realm-public-key", "auth-server-url", "ssl-not-required",
-        "resource", "credentials",
+        "resource", "public-client", "credentials",
         "use-resource-role-mappings",
         "enable-cors", "cors-max-age", "cors-allowed-methods",
         "expose-token", "bearer-only", "scope"})
@@ -35,6 +35,8 @@ public class BaseAdapterConfig extends BaseRealmConfig {
     protected boolean exposeToken;
     @JsonProperty("bearer-only")
     protected boolean bearerOnly;
+    @JsonProperty("public-client")
+    protected boolean publicClient;
     @JsonProperty("credentials")
     protected Map<String, String> credentials = new HashMap<String, String>();
     @JsonProperty("scope")
@@ -119,5 +121,13 @@ public class BaseAdapterConfig extends BaseRealmConfig {
 
     public void setScope(AccessScope scope) {
         this.scope = scope;
+    }
+
+    public boolean isPublicClient() {
+        return publicClient;
+    }
+
+    public void setPublicClient(boolean publicClient) {
+        this.publicClient = publicClient;
     }
 }

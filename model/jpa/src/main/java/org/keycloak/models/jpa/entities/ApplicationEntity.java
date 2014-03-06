@@ -28,6 +28,7 @@ public class ApplicationEntity extends ClientEntity {
     private boolean surrogateAuthRequired;
     private String baseUrl;
     private String managementUrl;
+    private boolean bearerOnly;
 
     @ManyToOne()
     private RealmEntity realm;
@@ -87,6 +88,11 @@ public class ApplicationEntity extends ClientEntity {
         this.realm = realm;
     }
 
+    public boolean isBearerOnly() {
+        return bearerOnly;
+    }
 
-
+    public void setBearerOnly(boolean bearerOnly) {
+        this.bearerOnly = bearerOnly;
+    }
 }

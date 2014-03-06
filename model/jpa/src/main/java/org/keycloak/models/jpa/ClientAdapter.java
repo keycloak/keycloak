@@ -61,11 +61,23 @@ public class ClientAdapter implements ClientModel {
     }
 
     @Override
+    public boolean isPublicClient() {
+        return entity.isPublicClient();
+    }
+
+    @Override
+    public void setPublicClient(boolean flag) {
+        entity.setPublicClient(flag);
+    }
+
+    @Override
     public Set<String> getWebOrigins() {
         Set<String> result = new HashSet<String>();
         result.addAll(entity.getWebOrigins());
         return result;
     }
+
+
 
     @Override
     public void setWebOrigins(Set<String> webOrigins) {

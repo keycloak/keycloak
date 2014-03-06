@@ -6,7 +6,6 @@ import org.jboss.resteasy.logging.Logger;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClaimMask;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
@@ -18,12 +17,12 @@ import org.keycloak.representations.idm.ScopeMappingRepresentation;
 import org.keycloak.representations.idm.UserRoleMappingRepresentation;
 
 import java.net.URI;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 import java.util.Map;
-import java.util.HashMap;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -54,8 +53,11 @@ public class ApplicationManager {
         ApplicationModel applicationModel = realm.addApplication(resourceRep.getName());
         if (resourceRep.isEnabled() != null) applicationModel.setEnabled(resourceRep.isEnabled());
         applicationModel.setManagementUrl(resourceRep.getAdminUrl());
-        if (resourceRep.isSurrogateAuthRequired() != null) applicationModel.setSurrogateAuthRequired(resourceRep.isSurrogateAuthRequired());
+        if (resourceRep.isSurrogateAuthRequired() != null)
+            applicationModel.setSurrogateAuthRequired(resourceRep.isSurrogateAuthRequired());
         applicationModel.setBaseUrl(resourceRep.getBaseUrl());
+        if (resourceRep.isBearerOnly() != null) applicationModel.setBearerOnly(resourceRep.isBearerOnly());
+        if (resourceRep.isPublicClient() != null) applicationModel.setPublicClient(resourceRep.isPublicClient());
         applicationModel.updateApplication();
 
         if (resourceRep.getNotBefore() != null) {
@@ -138,6 +140,8 @@ public class ApplicationManager {
     public void updateApplication(ApplicationRepresentation rep, ApplicationModel resource) {
         if (rep.getName() != null) resource.setName(rep.getName());
         if (rep.isEnabled() != null) resource.setEnabled(rep.isEnabled());
+        if (rep.isBearerOnly() != null) resource.setBearerOnly(rep.isBearerOnly());
+        if (rep.isPublicClient() != null) resource.setPublicClient(rep.isPublicClient());
         if (rep.getAdminUrl() != null) resource.setManagementUrl(rep.getAdminUrl());
         if (rep.getBaseUrl() != null) resource.setBaseUrl(rep.getBaseUrl());
         if (rep.isSurrogateAuthRequired() != null) resource.setSurrogateAuthRequired(rep.isSurrogateAuthRequired());
@@ -171,6 +175,8 @@ public class ApplicationManager {
         rep.setName(applicationModel.getName());
         rep.setEnabled(applicationModel.isEnabled());
         rep.setAdminUrl(applicationModel.getManagementUrl());
+        rep.setPublicClient(applicationModel.isPublicClient());
+        rep.setBearerOnly(applicationModel.isBearerOnly());
         rep.setSurrogateAuthRequired(applicationModel.isSurrogateAuthRequired());
         rep.setBaseUrl(applicationModel.getBaseUrl());
         rep.setNotBefore(applicationModel.getNotBefore());
@@ -193,22 +199,26 @@ public class ApplicationManager {
 
     }
 
-    @JsonPropertyOrder({"realm", "realm-public-key", "auth-server-url", "ssl-not-required",
-            "resource", "credentials",
+    @JsonPropertyOrder({"realm", "realm-public-key", "bearer-only", "auth-server-url", "ssl-not-required",
+            "resource", "public-client", "credentials",
             "use-resource-role-mappings"})
     public static class InstallationAdapterConfig extends BaseRealmConfig {
         @JsonProperty("resource")
         protected String resource;
         @JsonProperty("use-resource-role-mappings")
-        protected boolean useResourceRoleMappings;
+        protected Boolean useResourceRoleMappings;
+        @JsonProperty("bearer-only")
+        protected Boolean bearerOnly;
+        @JsonProperty("public-client")
+        protected Boolean publicClient;
         @JsonProperty("credentials")
-        protected Map<String, String> credentials = new HashMap<String, String>();
+        protected Map<String, String> credentials;
 
-        public boolean isUseResourceRoleMappings() {
+        public Boolean isUseResourceRoleMappings() {
             return useResourceRoleMappings;
         }
 
-        public void setUseResourceRoleMappings(boolean useResourceRoleMappings) {
+        public void setUseResourceRoleMappings(Boolean useResourceRoleMappings) {
             this.useResourceRoleMappings = useResourceRoleMappings;
         }
 
@@ -219,6 +229,7 @@ public class ApplicationManager {
         public void setResource(String resource) {
             this.resource = resource;
         }
+
         public Map<String, String> getCredentials() {
             return credentials;
         }
@@ -227,6 +238,21 @@ public class ApplicationManager {
             this.credentials = credentials;
         }
 
+        public Boolean getPublicClient() {
+            return publicClient;
+        }
+
+        public void setPublicClient(Boolean publicClient) {
+            this.publicClient = publicClient;
+        }
+
+        public Boolean getBearerOnly() {
+            return bearerOnly;
+        }
+
+        public void setBearerOnly(Boolean bearerOnly) {
+            this.bearerOnly = bearerOnly;
+        }
     }
 
 
@@ -236,15 +262,19 @@ public class ApplicationManager {
         rep.setRealmKey(realmModel.getPublicKeyPem());
         rep.setSslNotRequired(realmModel.isSslNotRequired());
 
-        rep.setAuthServerUrl(baseUri.toString());
-        rep.setUseResourceRoleMappings(applicationModel.getRoles().size() > 0);
+        if (applicationModel.isPublicClient() && !applicationModel.isBearerOnly()) rep.setPublicClient(true);
+        if (applicationModel.isBearerOnly()) rep.setBearerOnly(true);
+        if (!applicationModel.isBearerOnly()) rep.setAuthServerUrl(baseUri.toString());
+        if (applicationModel.getRoles().size() > 0) rep.setUseResourceRoleMappings(true);
 
         rep.setResource(applicationModel.getName());
 
-        Map<String, String> creds = new HashMap<String, String>();
-        String cred = applicationModel.getSecret();
-        creds.put(CredentialRepresentation.SECRET, cred);
-        rep.setCredentials(creds);
+        if (!applicationModel.isBearerOnly() && !applicationModel.isPublicClient()) {
+            Map<String, String> creds = new HashMap<String, String>();
+            String cred = applicationModel.getSecret();
+            creds.put(CredentialRepresentation.SECRET, cred);
+            rep.setCredentials(creds);
+        }
 
         return rep;
     }
@@ -254,11 +284,21 @@ public class ApplicationManager {
         buffer.append("<secure-deployment name=\"WAR MODULE NAME.war\">\n");
         buffer.append("    <realm>").append(realmModel.getName()).append("</realm>\n");
         buffer.append("    <realm-public-key>").append(realmModel.getPublicKeyPem()).append("</realm-public-key>\n");
-        buffer.append("    <auth-server-url>").append(baseUri.toString()).append("</auth-server-url>\n");
+        if (applicationModel.isBearerOnly()){
+            buffer.append("    <bearer-only>true</bearer-only>\n");
+
+        } else {
+            buffer.append("    <auth-server-url>").append(baseUri.toString()).append("</auth-server-url>\n");
+            if (applicationModel.isPublicClient() && !applicationModel.isBearerOnly()) {
+                buffer.append("    <public-client>true</public-client>\n");
+            }
+        }
         buffer.append("    <ssl-not-required>").append(realmModel.isSslNotRequired()).append("</ssl-not-required>\n");
         buffer.append("    <resource>").append(applicationModel.getName()).append("</resource>\n");
         String cred = applicationModel.getSecret();
-        buffer.append("    <credential name=\"secret\">").append(cred).append("</credential>\n");
+        if (!applicationModel.isBearerOnly() && !applicationModel.isPublicClient()) {
+            buffer.append("    <credential name=\"secret\">").append(cred).append("</credential>\n");
+        }
         buffer.append("</secure-deployment>\n");
         return buffer.toString();
     }
