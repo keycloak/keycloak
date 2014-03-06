@@ -20,6 +20,7 @@ public class OAuthClientEntity extends AbstractMongoIdentifiableEntity implement
     private String secret;
     private long allowedClaimsMask;
     private int notBefore;
+    private boolean publicClient;
     private List<String> scopeIds;
     private List<String> webOrigins;
     private List<String> redirectUris;
@@ -105,6 +106,16 @@ public class OAuthClientEntity extends AbstractMongoIdentifiableEntity implement
     public void setNotBefore(int notBefore) {
         this.notBefore = notBefore;
     }
+
+    @MongoField
+    public boolean isPublicClient() {
+        return publicClient;
+    }
+
+    public void setPublicClient(boolean publicClient) {
+        this.publicClient = publicClient;
+    }
+
 
     @Override
     public void afterRemove(MongoStoreInvocationContext context) {

@@ -49,7 +49,7 @@ public class ServletOAuthClient extends AbstractOAuthClient {
     }
 
     public AccessTokenResponse resolveBearerToken(String redirectUri, String code) throws IOException, ServerRequest.HttpFailure {
-        return ServerRequest.invokeAccessCodeToToken(client, code, codeUrl, redirectUri, clientId, credentials);
+        return ServerRequest.invokeAccessCodeToToken(client, publicClient, code, codeUrl, redirectUri, clientId, credentials);
     }
 
     /**
@@ -155,7 +155,7 @@ public class ServletOAuthClient extends AbstractOAuthClient {
     }
 
     public AccessTokenResponse refreshToken(String refreshToken) throws IOException, ServerRequest.HttpFailure {
-        return ServerRequest.invokeRefresh(client, refreshToken, refreshUrl, clientId, credentials);
+        return ServerRequest.invokeRefresh(client, publicClient, refreshToken, refreshUrl, clientId, credentials);
     }
 
     public static IDToken extractIdToken(String idToken) {

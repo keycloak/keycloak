@@ -32,6 +32,7 @@ public class ClientEntity {
     private String secret;
     private long allowedClaimsMask;
     private int notBefore;
+    private boolean publicClient;
 
 
     @ElementCollection
@@ -100,5 +101,13 @@ public class ClientEntity {
 
     public void setNotBefore(int notBefore) {
         this.notBefore = notBefore;
+    }
+
+    public boolean isPublicClient() {
+        return publicClient;
+    }
+
+    public void setPublicClient(boolean publicClient) {
+        this.publicClient = publicClient;
     }
 }

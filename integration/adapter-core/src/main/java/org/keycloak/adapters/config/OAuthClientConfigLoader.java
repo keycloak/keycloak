@@ -28,6 +28,7 @@ public abstract class OAuthClientConfigLoader extends RealmConfigurationLoader {
 
     public void configureOAuthClient(AbstractOAuthClient oauthClient) {
         oauthClient.setClientId(adapterConfig.getResource());
+        oauthClient.setPublicClient(adapterConfig.isPublicClient());
         oauthClient.setCredentials(adapterConfig.getCredentials());
         if (adapterConfig.getAuthServerUrl() == null) {
             throw new RuntimeException("You must specify auth-url");

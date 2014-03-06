@@ -16,6 +16,7 @@ public class OAuthClientRepresentation {
     protected String secret;
     protected ClaimRepresentation claims;
     protected Integer notBefore;
+    protected Boolean publicClient;
 
 
     public String getId() {
@@ -88,5 +89,13 @@ public class OAuthClientRepresentation {
 
     public void setNotBefore(Integer notBefore) {
         this.notBefore = notBefore;
+    }
+
+    public Boolean isPublicClient() {
+        return publicClient;
+    }
+
+    public void setPublicClient(Boolean publicClient) {
+        this.publicClient = publicClient;
     }
 }

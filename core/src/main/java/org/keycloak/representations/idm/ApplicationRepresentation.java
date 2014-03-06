@@ -20,6 +20,8 @@ public class ApplicationRepresentation {
     protected List<String> webOrigins;
     protected ClaimRepresentation claims;
     protected Integer notBefore;
+    protected Boolean bearerOnly;
+    protected Boolean publicClient;
 
 
     public String getId() {
@@ -116,5 +118,21 @@ public class ApplicationRepresentation {
 
     public void setNotBefore(Integer notBefore) {
         this.notBefore = notBefore;
+    }
+
+    public Boolean isBearerOnly() {
+        return bearerOnly;
+    }
+
+    public void setBearerOnly(Boolean bearerOnly) {
+        this.bearerOnly = bearerOnly;
+    }
+
+    public Boolean isPublicClient() {
+        return publicClient;
+    }
+
+    public void setPublicClient(Boolean publicClient) {
+        this.publicClient = publicClient;
     }
 }

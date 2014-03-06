@@ -60,10 +60,16 @@ public class SecureDeploymentDefinition extends SimpleResourceDefinition {
             .build();
     protected static final SimpleAttributeDefinition BEARER_ONLY =
             new SimpleAttributeDefinitionBuilder("bearer-only", ModelType.BOOLEAN, true)
-            .setXmlName("bearer-only")
-            .setAllowExpression(true)
-            .setDefaultValue(new ModelNode(false))
-            .build();
+                    .setXmlName("bearer-only")
+                    .setAllowExpression(true)
+                    .setDefaultValue(new ModelNode(false))
+                    .build();
+    protected static final SimpleAttributeDefinition PUBLIC_CLIENT =
+            new SimpleAttributeDefinitionBuilder("public-client", ModelType.BOOLEAN, true)
+                    .setXmlName("public-client")
+                    .setAllowExpression(true)
+                    .setDefaultValue(new ModelNode(false))
+                    .build();
 
     protected static final List<SimpleAttributeDefinition> DEPLOYMENT_ONLY_ATTRIBUTES = new ArrayList<SimpleAttributeDefinition>();
     static {
@@ -71,6 +77,7 @@ public class SecureDeploymentDefinition extends SimpleResourceDefinition {
         DEPLOYMENT_ONLY_ATTRIBUTES.add(RESOURCE);
         DEPLOYMENT_ONLY_ATTRIBUTES.add(USE_RESOURCE_ROLE_MAPPINGS);
         DEPLOYMENT_ONLY_ATTRIBUTES.add(BEARER_ONLY);
+        DEPLOYMENT_ONLY_ATTRIBUTES.add(PUBLIC_CLIENT);
     }
 
     protected static final List<SimpleAttributeDefinition> ALL_ATTRIBUTES = new ArrayList<SimpleAttributeDefinition>();

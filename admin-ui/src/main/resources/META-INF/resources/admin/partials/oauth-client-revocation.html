@@ -2,7 +2,7 @@
 <div id="content-area" class="col-md-9" role="main">
     <ul class="nav nav-tabs nav-tabs-pf"  data-ng-show="!create">
         <li><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.id}}">Settings</a></li>
-        <li><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.id}}/credentials">Credentials</a></li>
+        <li data-ng-show="!oauth.publicClient"><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.id}}/credentials">Credentials</a></li>
         <li><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.id}}/claims">Claims</a></li>
         <li><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.id}}/scope-mappings">Scope</a></li>
         <li><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.id}}/installation">Installation</a></li>

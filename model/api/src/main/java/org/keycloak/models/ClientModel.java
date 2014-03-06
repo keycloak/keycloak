@@ -50,6 +50,9 @@ public interface ClientModel {
     String getSecret();
     public void setSecret(String secret);
 
+    boolean isPublicClient();
+    void setPublicClient(boolean flag);
+
     RealmModel getRealm();
 
     /**

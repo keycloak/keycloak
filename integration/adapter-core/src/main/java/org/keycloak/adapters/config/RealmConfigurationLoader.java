@@ -32,6 +32,7 @@ public class RealmConfigurationLoader extends AdapterConfigLoader {
         realmConfiguration.setMetadata(resourceMetadata);
         realmConfiguration.setSslRequired(!adapterConfig.isSslNotRequired());
         realmConfiguration.setResourceCredentials(adapterConfig.getCredentials());
+        realmConfiguration.setPublicClient(adapterConfig.isPublicClient());
         if (!setupClient || adapterConfig.isBearerOnly()) return;
         initClient();
         if (adapterConfig.getAuthServerUrl() == null) {

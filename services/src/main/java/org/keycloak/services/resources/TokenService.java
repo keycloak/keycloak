@@ -31,9 +31,11 @@ import org.keycloak.util.BasicAuthHelper;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.NotAcceptableException;
+import javax.ws.rs.NotAllowedException;
 import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
@@ -55,6 +57,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -136,7 +139,12 @@ public class TokenService {
             throw new NotAcceptableException("HTTPS required");
         }
 
-        ClientModel client = authorizeClient(authorizationHeader);
+        ClientModel client = authorizeClient(authorizationHeader, form);
+
+        if (client.isPublicClient()) {
+            // we don't allow public clients to invoke grants/access to prevent phishing attacks
+            throw new ForbiddenException("Public clients are not allowed to invoke grants/access");
+        }
 
 
         String username = form.getFirst(AuthenticationManager.FORM_USERNAME);
@@ -169,13 +177,13 @@ public class TokenService {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.APPLICATION_JSON)
     public Response refreshAccessToken(final @HeaderParam(HttpHeaders.AUTHORIZATION) String authorizationHeader,
-                                     final MultivaluedMap<String, String> form) {
+                                       final MultivaluedMap<String, String> form) {
         logger.info("--> refreshAccessToken");
         if (!checkSsl()) {
             throw new NotAcceptableException("HTTPS required");
         }
 
-        ClientModel client = authorizeClient(authorizationHeader);
+        ClientModel client = authorizeClient(authorizationHeader, form);
         String refreshToken = form.getFirst("refresh_token");
         AccessToken accessToken = null;
         try {
@@ -188,9 +196,9 @@ public class TokenService {
         }
 
         AccessTokenResponse res = tokenManager.responseBuilder(realm, client)
-                                              .accessToken(accessToken)
-                                              .generateIDToken()
-                                              .generateRefreshToken().build();
+                .accessToken(accessToken)
+                .generateIDToken()
+                .generateRefreshToken().build();
         return Response.ok(res, MediaType.APPLICATION_JSON_TYPE).build();
     }
 
@@ -198,8 +206,8 @@ public class TokenService {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processLogin(@QueryParam("client_id") final String clientId, @QueryParam("scope") final String scopeParam,
-            @QueryParam("state") final String state, @QueryParam("redirect_uri") String redirect,
-            final MultivaluedMap<String, String> formData) {
+                                 @QueryParam("state") final String state, @QueryParam("redirect_uri") String redirect,
+                                 final MultivaluedMap<String, String> formData) {
         logger.debug("TokenService.processLogin");
         OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
 
@@ -233,7 +241,7 @@ public class TokenService {
             user = realm.getUserByEmail(username);
         }
 
-        if (user == null){
+        if (user == null) {
             return Flows.forms(realm, request, uriInfo).setError(Messages.INVALID_USER).setFormData(formData).createLogin();
         }
 
@@ -273,8 +281,8 @@ public class TokenService {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processRegister(@QueryParam("client_id") final String clientId,
-            @QueryParam("scope") final String scopeParam, @QueryParam("state") final String state,
-            @QueryParam("redirect_uri") String redirect, final MultivaluedMap<String, String> formData) {
+                                    @QueryParam("scope") final String scopeParam, @QueryParam("state") final String state,
+                                    @QueryParam("redirect_uri") String redirect, final MultivaluedMap<String, String> formData) {
         OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
 
         if (!realm.isEnabled()) {
@@ -361,7 +369,7 @@ public class TokenService {
             throw new NotAuthorizedException("Realm not enabled");
         }
 
-        ClientModel client = authorizeClient(authorizationHeader);
+        ClientModel client = authorizeClient(authorizationHeader, formData);
 
         String code = formData.getFirst("code");
         if (code == null) {
@@ -418,25 +426,36 @@ public class TokenService {
         }
         logger.debug("accessRequest SUCCESS");
         AccessTokenResponse res = tokenManager.responseBuilder(realm, client)
-                                              .accessToken(accessCode.getToken())
-                                              .generateIDToken()
-                                              .generateRefreshToken().build();
+                .accessToken(accessCode.getToken())
+                .generateIDToken()
+                .generateRefreshToken().build();
 
         return Cors.add(request, Response.ok(res)).auth().allowedOrigins(client).allowedMethods("POST").build();
     }
 
-    protected ClientModel authorizeClient(String authorizationHeader) {
-        if (authorizationHeader == null) {
-            throw new NotAuthorizedException("No Authorization header to authenticate client", "Basic realm=\"" + realm.getName() + "\"");
+    protected ClientModel authorizeClient(String authorizationHeader, MultivaluedMap<String, String> formData) {
+        String client_id = null;
+        String clientSecret = null;
+        if (authorizationHeader != null) {
+            String[] usernameSecret = BasicAuthHelper.parseHeader(authorizationHeader);
+            if (usernameSecret == null) {
+                throw new NotAuthorizedException("Bad Authorization header", "Basic realm=\"" + realm.getName() + "\"");
+            }
+            client_id = usernameSecret[0];
+            clientSecret = usernameSecret[1];
+        } else {
+            logger.info("no authorization header");
+            client_id = formData.getFirst("client_id");
+            clientSecret = formData.getFirst("client_secret");
         }
 
-        String[] usernameSecret = BasicAuthHelper.parseHeader(authorizationHeader);
-        if (usernameSecret == null) {
-            throw new NotAuthorizedException("No Authorization header to authenticate client", "Basic realm=\"" + realm.getName() + "\"");
+        if (client_id == null) {
+            Map<String, String> error = new HashMap<String, String>();
+            error.put("error", "invalid_client");
+            error.put("error_description", "Could not find client");
+            throw new BadRequestException("Could not find client", Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build());
         }
 
-        String client_id = usernameSecret[0];
-        String clientSecret = usernameSecret[1];
         ClientModel client = realm.findClient(client_id);
         if (client == null) {
             Map<String, String> error = new HashMap<String, String>();
@@ -452,10 +471,12 @@ public class TokenService {
             throw new BadRequestException("Client is not enabled", Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build());
         }
 
-        if (!client.validateSecret(clientSecret)) {
-            Map<String, String> error = new HashMap<String, String>();
-            error.put("error", "unauthorized_client");
-            throw new BadRequestException("Unauthorized Client", Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build());
+        if (!client.isPublicClient()) {
+            if (!client.validateSecret(clientSecret)) {
+                Map<String, String> error = new HashMap<String, String>();
+                error.put("error", "unauthorized_client");
+                throw new BadRequestException("Unauthorized Client", Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build());
+            }
         }
         return client;
     }
@@ -463,8 +484,8 @@ public class TokenService {
     @Path("login")
     @GET
     public Response loginPage(final @QueryParam("response_type") String responseType,
-            @QueryParam("redirect_uri") String redirect, final @QueryParam("client_id") String clientId,
-            final @QueryParam("scope") String scopeParam, final @QueryParam("state") String state, final @QueryParam("prompt") String prompt) {
+                              @QueryParam("redirect_uri") String redirect, final @QueryParam("client_id") String clientId,
+                              final @QueryParam("scope") String scopeParam, final @QueryParam("state") String state, final @QueryParam("prompt") String prompt) {
         logger.info("TokenService.loginPage");
         OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
 
@@ -508,8 +529,8 @@ public class TokenService {
     @Path("registrations")
     @GET
     public Response registerPage(final @QueryParam("response_type") String responseType,
-            @QueryParam("redirect_uri") String redirect, final @QueryParam("client_id") String clientId,
-            final @QueryParam("scope") String scopeParam, final @QueryParam("state") String state) {
+                                 @QueryParam("redirect_uri") String redirect, final @QueryParam("client_id") String clientId,
+                                 final @QueryParam("scope") String scopeParam, final @QueryParam("state") String state) {
         logger.info("**********registerPage()");
         OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
 
@@ -613,30 +634,50 @@ public class TokenService {
         return location.build();
     }
 
+    public static boolean matchesRedirects(Set<String> validRedirects, String redirect) {
+        for (String validRedirect : validRedirects) {
+            if (validRedirect.endsWith("*")) {
+                // strip off *
+                int length = validRedirect.length() - 1;
+                validRedirect = validRedirect.substring(0, length);
+                if (redirect.startsWith(validRedirect)) return true;
+                // strip off trailing '/'
+                if (length - 1 > 0 && validRedirect.charAt(length - 1) == '/') length--;
+                validRedirect = validRedirect.substring(0, length);
+                if (validRedirect.equals(redirect)) return true;
+            } else if (validRedirect.equals(redirect)) return true;
+        }
+        return false;
+    }
+
     public static String verifyRedirectUri(String redirectUri, ClientModel client) {
         if (redirectUri == null) {
             return client.getRedirectUris().size() == 1 ? client.getRedirectUris().iterator().next() : null;
         } else if (client.getRedirectUris().isEmpty()) {
+            if (client.isPublicClient()) {
+                logger.error("Client redirect uri must be registered for public client");
+                return null;
+            }
             return redirectUri;
         } else {
             String r = redirectUri.indexOf('?') != -1 ? redirectUri.substring(0, redirectUri.indexOf('?')) : redirectUri;
 
-            boolean valid = client.getRedirectUris().contains(r);
+            boolean valid = matchesRedirects(client.getRedirectUris(), r);
 
             if (!valid && r.startsWith(Constants.INSTALLED_APP_URL) && r.indexOf(':', Constants.INSTALLED_APP_URL.length()) >= 0) {
                 int i = r.indexOf(':', Constants.INSTALLED_APP_URL.length());
 
-                    StringBuilder sb = new StringBuilder();
-                    sb.append(r.substring(0, i));
+                StringBuilder sb = new StringBuilder();
+                sb.append(r.substring(0, i));
 
-                    i = r.indexOf('/', i);
-                    if (i >= 0) {
-                        sb.append(r.substring(i));
-                    }
+                i = r.indexOf('/', i);
+                if (i >= 0) {
+                    sb.append(r.substring(i));
+                }
 
-                    r = sb.toString();
+                r = sb.toString();
 
-                valid = client.getRedirectUris().contains(r);
+                valid = matchesRedirects(client.getRedirectUris(), r);
             }
 
             return valid ? redirectUri : null;

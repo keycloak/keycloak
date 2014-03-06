@@ -36,6 +36,9 @@ public interface ApplicationModel extends RoleContainerModel, ClientModel {
 
     Set<RoleModel> getApplicationScopeMappings(ClientModel client);
 
+    boolean isBearerOnly();
+    void setBearerOnly(boolean only);
+
     void addScope(RoleModel role);
 
 }

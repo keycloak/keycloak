@@ -78,6 +78,16 @@ public class ApplicationAdapter extends ClientAdapter implements ApplicationMode
     }
 
     @Override
+    public boolean isBearerOnly() {
+        return applicationEntity.isBearerOnly();
+    }
+
+    @Override
+    public void setBearerOnly(boolean only) {
+        applicationEntity.setBearerOnly(only);
+    }
+
+    @Override
     public RoleModel getRole(String name) {
         TypedQuery<ApplicationRoleEntity> query = em.createNamedQuery("getAppRoleByName", ApplicationRoleEntity.class);
         query.setParameter("name", name);

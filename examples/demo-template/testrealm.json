@@ -62,12 +62,18 @@
             "name": "customer-portal",
             "enabled": true,
             "adminUrl": "http://localhost:8080/customer-portal",
+            "redirectUris": [
+                "http://localhost:8080/customer-portal/*"
+            ],
             "secret": "password"
         },
         {
             "name": "product-portal",
             "enabled": true,
             "adminUrl": "http://localhost:8080/product-portal",
+            "redirectUris": [
+                "http://localhost:8080/product-portal/*"
+            ],
             "secret": "password"
         }
     ],
@@ -75,6 +81,10 @@
         {
             "name": "third-party",
             "enabled": true,
+            "redirectUris": [
+                "http://localhost:8080/oauth-client/*",
+                "http://localhost:8080/oauth-client-cdi/*"
+            ],
             "secret": "password"
         }
     ],

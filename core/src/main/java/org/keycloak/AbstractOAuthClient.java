@@ -23,6 +23,7 @@ public class AbstractOAuthClient {
     protected String stateCookieName = OAUTH_TOKEN_REQUEST_STATE;
     protected String stateCookiePath;
     protected boolean isSecure;
+    protected boolean publicClient;
     protected final AtomicLong counter = new AtomicLong();
 
     protected String getStateCode() {
@@ -101,6 +102,14 @@ public class AbstractOAuthClient {
 
     public void setStateCookiePath(String stateCookiePath) {
         this.stateCookiePath = stateCookiePath;
+    }
+
+    public boolean isPublicClient() {
+        return publicClient;
+    }
+
+    public void setPublicClient(boolean publicClient) {
+        this.publicClient = publicClient;
     }
 
     protected String stripOauthParametersFromRedirect(String uri) {

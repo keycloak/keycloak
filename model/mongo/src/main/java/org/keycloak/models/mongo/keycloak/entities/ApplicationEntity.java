@@ -24,6 +24,8 @@ public class ApplicationEntity extends AbstractMongoIdentifiableEntity implement
     private String baseUrl;
     private String secret;
     private int notBefore;
+    private boolean bearerOnly;
+    private boolean publicClient;
 
     private String realmId;
     private long allowedClaimsMask;
@@ -154,6 +156,24 @@ public class ApplicationEntity extends AbstractMongoIdentifiableEntity implement
 
     public void setNotBefore(int notBefore) {
         this.notBefore = notBefore;
+    }
+
+    @MongoField
+    public boolean isBearerOnly() {
+        return bearerOnly;
+    }
+
+    public void setBearerOnly(boolean bearerOnly) {
+        this.bearerOnly = bearerOnly;
+    }
+
+    @MongoField
+    public boolean isPublicClient() {
+        return publicClient;
+    }
+
+    public void setPublicClient(boolean publicClient) {
+        this.publicClient = publicClient;
     }
 
     @Override

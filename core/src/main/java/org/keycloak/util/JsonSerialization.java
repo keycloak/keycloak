@@ -19,10 +19,8 @@ public class JsonSerialization {
     public static final ObjectMapper prettyMapper = new ObjectMapper();
 
     static {
-        mapper.setSerializationInclusion(JsonSerialize.Inclusion.NON_DEFAULT);
         mapper.setSerializationInclusion(JsonSerialize.Inclusion.NON_NULL);
         prettyMapper.enable(SerializationConfig.Feature.INDENT_OUTPUT);
-        prettyMapper.setSerializationInclusion(JsonSerialize.Inclusion.NON_DEFAULT);
         prettyMapper.setSerializationInclusion(JsonSerialize.Inclusion.NON_NULL);
     }
 

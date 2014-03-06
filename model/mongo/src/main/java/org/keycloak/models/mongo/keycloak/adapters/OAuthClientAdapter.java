@@ -83,6 +83,16 @@ public class OAuthClientAdapter extends AbstractAdapter implements OAuthClientMo
     }
 
     @Override
+    public boolean isPublicClient() {
+        return delegate.isPublicClient();
+    }
+
+    @Override
+    public void setPublicClient(boolean flag) {
+        delegate.setPublicClient(flag);
+    }
+
+    @Override
     public Set<String> getWebOrigins() {
         Set<String> result = new HashSet<String>();
         if (delegate.getWebOrigins() != null) {

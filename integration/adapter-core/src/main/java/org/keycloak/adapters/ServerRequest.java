@@ -9,6 +9,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicNameValuePair;
 import org.keycloak.adapters.config.RealmConfiguration;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
@@ -49,27 +50,31 @@ public class ServerRequest {
     public static AccessTokenResponse invokeAccessCodeToToken(RealmConfiguration config, String code, String redirectUri) throws HttpFailure, IOException {
         String codeUrl = config.getCodeUrl();
         String client_id = config.getMetadata().getResourceName();
-        Map<String,String> credentials = config.getResourceCredentials();
+        Map<String, String> credentials = config.getResourceCredentials();
         HttpClient client = config.getClient();
 
-        return invokeAccessCodeToToken(client, code, codeUrl, redirectUri, client_id, credentials);
+        return invokeAccessCodeToToken(client, config.isPublicClient(), code, codeUrl, redirectUri, client_id, credentials);
     }
 
-    public static AccessTokenResponse invokeAccessCodeToToken(HttpClient client, String code, String codeUrl, String redirectUri, String client_id, Map<String, String> credentials) throws IOException, HttpFailure {
+    public static AccessTokenResponse invokeAccessCodeToToken(HttpClient client, boolean publicClient, String code, String codeUrl, String redirectUri, String client_id, Map<String, String> credentials) throws IOException, HttpFailure {
         List<NameValuePair> formparams = new ArrayList<NameValuePair>();
         redirectUri = stripOauthParametersFromRedirect(redirectUri);
         formparams.add(new BasicNameValuePair("grant_type", "authorization_code"));
         formparams.add(new BasicNameValuePair("code", code));
         formparams.add(new BasicNameValuePair("redirect_uri", redirectUri));
         HttpResponse response = null;
-        UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");
         HttpPost post = new HttpPost(codeUrl);
-        String clientSecret = credentials.get(CredentialRepresentation.SECRET);
-        if (clientSecret != null) {
-            String authorization = BasicAuthHelper.createHeader(client_id, clientSecret);
-            post.setHeader("Authorization", authorization);
+        if (!publicClient) {
+            String clientSecret = credentials.get(CredentialRepresentation.SECRET);
+            if (clientSecret != null) {
+                String authorization = BasicAuthHelper.createHeader(client_id, clientSecret);
+                post.setHeader("Authorization", authorization);
+            }
+        } else {
+            formparams.add(new BasicNameValuePair("client_id", client_id));
         }
 
+        UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");
         post.setEntity(form);
         response = client.execute(post);
         int status = response.getStatusLine().getStatusCode();
@@ -106,13 +111,13 @@ public class ServerRequest {
     public static AccessTokenResponse invokeRefresh(RealmConfiguration config, String refreshToken) throws IOException, HttpFailure {
         String refreshUrl = config.getRefreshUrl();
         String client_id = config.getMetadata().getResourceName();
-        Map<String,String> credentials = config.getResourceCredentials();
+        Map<String, String> credentials = config.getResourceCredentials();
         HttpClient client = config.getClient();
-        return invokeRefresh(client, refreshToken, refreshUrl, client_id, credentials);
+        return invokeRefresh(client, config.isPublicClient(), refreshToken, refreshUrl, client_id, credentials);
     }
 
 
-    public static AccessTokenResponse invokeRefresh(HttpClient client, String refreshToken, String refreshUrl, String client_id, Map<String, String> credentials) throws IOException, HttpFailure {
+    public static AccessTokenResponse invokeRefresh(HttpClient client, boolean publicClient, String refreshToken, String refreshUrl, String client_id, Map<String, String> credentials) throws IOException, HttpFailure {
         List<NameValuePair> formparams = new ArrayList<NameValuePair>();
         for (Map.Entry<String, String> entry : credentials.entrySet()) {
             formparams.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
@@ -120,14 +125,18 @@ public class ServerRequest {
         formparams.add(new BasicNameValuePair("grant_type", "refresh_token"));
         formparams.add(new BasicNameValuePair("refresh_token", refreshToken));
         HttpResponse response = null;
-        UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");
         HttpPost post = new HttpPost(refreshUrl);
-        String clientSecret = credentials.get(CredentialRepresentation.SECRET);
-        if (clientSecret != null) {
-            String authorization = BasicAuthHelper.createHeader(client_id, clientSecret);
-            post.setHeader("Authorization", authorization);
+        if (!publicClient) {
+            String clientSecret = credentials.get(CredentialRepresentation.SECRET);
+            if (clientSecret != null) {
+                String authorization = BasicAuthHelper.createHeader(client_id, clientSecret);
+                post.setHeader("Authorization", authorization);
+            }
+        } else {
+            formparams.add(new BasicNameValuePair("client_id", client_id));
         }
 
+        UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");
         post.setEntity(form);
         response = client.execute(post);
         int status = response.getStatusLine().getStatusCode();
@@ -163,7 +172,7 @@ public class ServerRequest {
 
 
     protected static void error(int status, HttpEntity entity) throws HttpFailure, IOException {
-       String body = null;
+        String body = null;
         if (entity != null) {
             InputStream is = entity.getContent();
             try {
@@ -187,7 +196,6 @@ public class ServerRequest {
                 .replaceQueryParam("state", null);
         return builder.build().toString();
     }
-
 
 
 }
