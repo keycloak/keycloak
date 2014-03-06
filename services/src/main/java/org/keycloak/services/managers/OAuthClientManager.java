@@ -44,13 +44,6 @@ public class OAuthClientManager {
     public OAuthClientModel create(OAuthClientRepresentation rep) {
         OAuthClientModel model = create(rep.getName());
         update(rep, model);
-        model.setSecret(rep.getSecret());
-        if (rep.getClaims() != null) {
-            ClaimManager.setClaims(model, rep.getClaims());
-        }
-        if (rep.getNotBefore() != null) {
-            model.setNotBefore(rep.getNotBefore());
-        }
         return model;
     }
 
@@ -58,6 +51,13 @@ public class OAuthClientManager {
         if (rep.getName() != null) model.setClientId(rep.getName());
         if (rep.isEnabled() != null) model.setEnabled(rep.isEnabled());
         if (rep.isPublicClient() != null) model.setPublicClient(rep.isPublicClient());
+        if (rep.getClaims() != null) {
+            ClaimManager.setClaims(model, rep.getClaims());
+        }
+        if (rep.getNotBefore() != null) {
+            model.setNotBefore(rep.getNotBefore());
+        }
+        if (rep.getSecret() != null) model.setSecret(rep.getSecret());
         List<String> redirectUris = rep.getRedirectUris();
         if (redirectUris != null) {
             model.setRedirectUris(new HashSet<String>(redirectUris));

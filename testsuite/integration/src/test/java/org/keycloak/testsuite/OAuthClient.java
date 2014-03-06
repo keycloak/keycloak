@@ -22,15 +22,12 @@
 package org.keycloak.testsuite;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.jboss.resteasy.security.PemUtils;
@@ -40,12 +37,8 @@ import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
-import org.keycloak.representations.AccessScope;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.util.BasicAuthHelper;
-import org.keycloak.util.JsonSerialization;
-import org.keycloak.util.Base64Url;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
@@ -77,8 +70,6 @@ public class OAuthClient {
     private String clientId = "test-app";
 
     private String redirectUri = "http://localhost:8081/app/auth";
-
-    private AccessScope scope;
 
     private String state;
 
@@ -216,14 +207,6 @@ public class OAuthClient {
         if (redirectUri != null) {
             b.queryParam("redirect_uri", redirectUri);
         }
-        if (scope != null) {
-            try {
-
-                b.queryParam("scope", Base64Url.encode(JsonSerialization.writeValueAsBytes(scope)));
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to serialize scope", e);
-            }
-        }
         if (state != null) {
             b.queryParam("state", state);
         }
@@ -256,14 +239,6 @@ public class OAuthClient {
 
     public OAuthClient responseType(String responseType) {
         this.responseType = responseType;
-        return this;
-    }
-
-    public OAuthClient addScope(String resource, String... roles) {
-        if (scope == null) {
-            scope = new AccessScope();
-        }
-        scope.addAll(resource, roles);
         return this;
     }
 

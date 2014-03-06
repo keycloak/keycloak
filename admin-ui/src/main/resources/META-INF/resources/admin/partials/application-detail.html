@@ -39,16 +39,16 @@
                         <input ng-model="application.enabled" name="enabled" id="enabled" onoffswitch />
                     </div>
                 </div>
-                <div class="form-group clearfix block" data-ng-show="!application.publicClient">
-                    <label class="col-sm-2 control-label" for="bearerOnly">Bearer Only</label>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label" for="clientType">Client Type</label>
                     <div class="col-sm-4">
-                        <input ng-model="application.bearerOnly" name="bearerOnly" id="bearerOnly" onoffswitch />
-                    </div>
-                </div>
-                <div class="form-group clearfix block">
-                    <label class="col-sm-2 control-label" for="publicClient">Public Client</label>
-                    <div class="col-sm-4">
-                        <input ng-model="application.publicClient" name="publicClient" id="publicClient" onoffswitch />
+                        <div class="select-kc">
+                            <select id="clientType"
+                                    ng-change="changeClientType()"
+                                    ng-model="clientType"
+                                    ng-options="cType for cType in clientTypes">
+                            </select>
+                        </div>
                     </div>
                 </div>
                 <div class="form-group" data-ng-show="!application.bearerOnly">

@@ -217,15 +217,42 @@ module.controller('ApplicationInstallationCtrl', function($scope, realm, applica
 module.controller('ApplicationDetailCtrl', function($scope, realm, application, Application, $location, Dialog, Notifications) {
     console.log('ApplicationDetailCtrl');
 
+    $scope.clientTypes = [
+        "confidential",
+        "public",
+        "bearer-only"
+    ];
+
     $scope.realm = realm;
     $scope.create = !application.name;
     if (!$scope.create) {
         $scope.application= angular.copy(application);
+        $scope.clientType = $scope.clientTypes[0];
+        if (application.bearerOnly) {
+            $scope.clientType = $scope.clientTypes[2];
+        } else if (application.publicClient) {
+            $scope.clientType = $scope.clientTypes[1];
+        }
     } else {
         $scope.application = {};
         $scope.application.webOrigins = [];
         $scope.application.redirectUris = [];
+        $scope.clientType = $scope.clientTypes[0];
     }
+
+    $scope.changeClientType = function() {
+        console.log('Client Type: ' + $scope.clientType);
+        if ($scope.clientType == "confidential") {
+            $scope.application.bearerOnly = false;
+            $scope.application.publicClient = false;
+        } else if ($scope.clientType == "public") {
+            $scope.application.bearerOnly = false;
+            $scope.application.publicClient = true;
+        } else if ($scope.clientType == "bearer-only") {
+            $scope.application.bearerOnly = true;
+            $scope.application.publicClient = false;
+        }
+    };
 
     $scope.$watch(function() {
         return $location.path();

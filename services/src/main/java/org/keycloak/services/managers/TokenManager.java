@@ -12,13 +12,10 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.representations.AccessScope;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
-import org.keycloak.util.Base64Url;
-import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
@@ -52,23 +49,6 @@ public class TokenManager {
 
     public AccessCodeEntry pullAccessCode(String key) {
         return accessCodeMap.remove(key);
-    }
-
-    protected boolean desiresScope(AccessScope scope, String key, String roleName) {
-        if (scope == null || scope.isEmpty()) return true;
-        List<String> val = scope.get(key);
-        if (val == null) return false;
-        return val.contains(roleName);
-
-    }
-
-    protected boolean desiresScopeGroup(AccessScope scope, String key) {
-        if (scope == null || scope.isEmpty()) return true;
-        return scope.containsKey(key);
-    }
-
-    protected boolean isEmpty(AccessScope scope) {
-        return scope == null || scope.isEmpty();
     }
 
     public static void applyScope(RoleModel role, RoleModel scope, Set<RoleModel> visited, Set<RoleModel> requested) {
@@ -205,9 +185,7 @@ public class TokenManager {
     }
 
     public AccessToken createClientAccessToken(String scopeParam, RealmModel realm, ClientModel client, UserModel user, List<RoleModel> realmRolesRequested, MultivaluedMap<String, RoleModel> resourceRolesRequested) {
-        AccessScope scopeMap = null;
-        if (scopeParam != null) scopeMap = decodeScope(scopeParam);
-
+        // todo scopeParam is ignored until we figure out a scheme that fits with openid connect
 
         Set<RoleModel> roleMappings = realm.getRoleMappings(user);
         Set<RoleModel> scopeMappings = realm.getScopeMappings(client);
@@ -226,14 +204,11 @@ public class TokenManager {
         }
 
         for (RoleModel role : requestedRoles) {
-            if (role.getContainer() instanceof RealmModel && desiresScope(scopeMap, "realm", role.getName())) {
+            if (role.getContainer() instanceof RealmModel) {
                 realmRolesRequested.add(role);
             } else if (role.getContainer() instanceof ApplicationModel) {
                 ApplicationModel app = (ApplicationModel)role.getContainer();
-                if (desiresScope(scopeMap, app.getName(), role.getName())) {
-                    resourceRolesRequested.add(app.getName(), role);
-
-                }
+                resourceRolesRequested.add(app.getName(), role);
             }
         }
 
@@ -336,28 +311,6 @@ public class TokenManager {
         }
 
     }
-
-    public String encodeScope(AccessScope scope) {
-        String token = null;
-        try {
-            token = JsonSerialization.writeValueAsString(scope);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        return Base64Url.encode(token.getBytes());
-    }
-
-    public AccessScope decodeScope(String scopeParam) {
-        AccessScope scope = null;
-        byte[] bytes = Base64Url.decode(scopeParam);
-        try {
-            scope = JsonSerialization.readValue(bytes, AccessScope.class);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return scope;
-    }
-
 
     public String encodeToken(RealmModel realm, Object token) {
         String encodedToken = new JWSBuilder()

@@ -175,7 +175,6 @@ public class ProfileTest {
 
     @Test
     public void getProfileOAuthClient() throws Exception {
-        oauth.addScope(org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_APP, AccountRoles.VIEW_PROFILE);
         oauth.clientId("third-party");
         oauth.doLoginGrant("test-user@localhost", "password");
 
@@ -192,7 +191,6 @@ public class ProfileTest {
 
     @Test
     public void getProfileOAuthClientNoScope() throws Exception {
-        oauth.addScope(org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_APP);
         oauth.clientId("third-party");
         oauth.doLoginGrant("test-user@localhost", "password");
 

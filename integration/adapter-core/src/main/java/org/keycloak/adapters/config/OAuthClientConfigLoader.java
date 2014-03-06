@@ -41,9 +41,5 @@ public abstract class OAuthClientConfigLoader extends RealmConfigurationLoader {
         oauthClient.setCodeUrl(tokenUrl);
         oauthClient.setRefreshUrl(refreshUrl);
         oauthClient.setTruststore(truststore);
-        if (adapterConfig.getScope() != null) {
-            String scope = encodeScope(adapterConfig.getScope());
-            oauthClient.setScope(scope);
-        }
     }
 }
