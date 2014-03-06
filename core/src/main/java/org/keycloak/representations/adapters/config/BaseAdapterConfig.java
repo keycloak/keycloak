@@ -2,7 +2,6 @@ package org.keycloak.representations.adapters.config;
 
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.annotate.JsonPropertyOrder;
-import org.keycloak.representations.AccessScope;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -17,7 +16,7 @@ import java.util.Map;
         "resource", "public-client", "credentials",
         "use-resource-role-mappings",
         "enable-cors", "cors-max-age", "cors-allowed-methods",
-        "expose-token", "bearer-only", "scope"})
+        "expose-token", "bearer-only"})
 public class BaseAdapterConfig extends BaseRealmConfig {
     @JsonProperty("resource")
     protected String resource;
@@ -39,8 +38,6 @@ public class BaseAdapterConfig extends BaseRealmConfig {
     protected boolean publicClient;
     @JsonProperty("credentials")
     protected Map<String, String> credentials = new HashMap<String, String>();
-    @JsonProperty("scope")
-    protected AccessScope scope;
 
 
     public boolean isUseResourceRoleMappings() {
@@ -113,14 +110,6 @@ public class BaseAdapterConfig extends BaseRealmConfig {
 
     public void setCredentials(Map<String, String> credentials) {
         this.credentials = credentials;
-    }
-
-    public AccessScope getScope() {
-        return scope;
-    }
-
-    public void setScope(AccessScope scope) {
-        this.scope = scope;
     }
 
     public boolean isPublicClient() {
