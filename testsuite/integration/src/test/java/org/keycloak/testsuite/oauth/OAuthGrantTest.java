@@ -90,31 +90,6 @@ public class OAuthGrantTest {
     }
 
     @Test
-    public void oauthGrantAcceptTestWithScope() throws IOException {
-        oauth.addScope("test-app", "customer-user");
-        oauth.clientId("third-party");
-        oauth.doLoginGrant("test-user@localhost", "password");
-
-        grantPage.assertCurrent();
-        Assert.assertTrue(driver.getPageSource().contains(ROLE_CUSTOMER));
-
-        grantPage.accept();
-
-        Assert.assertTrue(oauth.getCurrentQuery().containsKey("code"));
-        OAuthClient.AccessTokenResponse accessToken = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get("code"), "password");
-
-        AccessToken token = oauth.verifyToken(accessToken.getAccessToken());
-
-        AccessToken.Access realmAccess = token.getRealmAccess();
-        Assert.assertNull(realmAccess);
-
-        Map<String,AccessToken.Access> resourceAccess = token.getResourceAccess();
-        Assert.assertEquals(1, resourceAccess.size());
-        Assert.assertEquals(1, resourceAccess.get("test-app").getRoles().size());
-        Assert.assertTrue(resourceAccess.get("test-app").isUserInRole("customer-user"));
-    }
-
-    @Test
     public void oauthGrantCancelTest() throws IOException {
         oauth.clientId("third-party");
         oauth.doLoginGrant("test-user@localhost", "password");
