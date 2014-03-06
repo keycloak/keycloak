@@ -5,6 +5,7 @@
                 <!ENTITY Overview SYSTEM "modules/Overview.xml">
                 <!ENTITY Installation SYSTEM "modules/server-installation.xml">
                 <!ENTITY OpenShift SYSTEM "modules/openshift.xml">
+                <!ENTITY AdminPermissions SYSTEM "modules/admin-permissions.xml">
                 <!ENTITY AdapterConfig SYSTEM "modules/adapter-config.xml">
                 <!ENTITY JBossAdapter SYSTEM "modules/jboss-adapter.xml">
                 <!ENTITY JavascriptAdapter SYSTEM "modules/javascript-adapter.xml">
@@ -57,6 +58,7 @@
     &Overview;
     &Installation;
     &OpenShift;
+    &AdminPermissions;
     <chapter>
         <title>Adapters</title>
         <para>

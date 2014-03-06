@@ -1,0 +1,69 @@
+<chapter id="admin-permissions">
+    <title>Admin Access Control</title>
+    <para>
+        Access to The Admin Console and REST endpoints can be controlled by mapping roles to users in the <literal>keycloak-admin</literal> realm.
+        It's possible to create multiple super users as well as users that have only access to certain operations in specific realms.
+    </para>
+    <section>
+        <title>Global Roles</title>
+        <para>
+            There are two realm roles in the <literal>keycloak-admin</literal> realm. These are:
+            <itemizedlist>
+                <listitem>
+                    <literal>admin</literal> - This is the super-user role and grants permissions to all operations on all realms
+                </listitem>
+                <listitem>
+                    <literal>create-realm</literal> - This grants the user permission to create new realms. A user that creates a realm is granted all permissions to the newly created realm.
+                </listitem>
+            </itemizedlist>
+        </para>
+        <para>
+            To add these roles to a user select the <literal>keycloak-admin</literal> realm, then click on <literal>Users</literal>.
+            Find the user you want to grant permissions to, open the user and click on <literal>Role Mappings</literal>. Under
+            <literal>Realm Roles</literal> assign any of the above roles to the user by selecting it and clicking on the right-arrow.
+        </para>
+    </section>
+
+    <section>
+        <title>Realm Specific Roles</title>
+        <para>
+            Each realm in Keycloak is represented by an application in the <literal>keycloak-admin</literal> realm. The name of the application
+            is <literal>&lt;realm name&gt;-realm</literal>. This allows assigning access to users for individual realms. The
+            roles available are:
+            <itemizedlist>
+                <listitem>
+                    <literal>view-realm</literal> - View the realm configuration
+                </listitem>
+                <listitem>
+                    <literal>view-users</literal> - View users (including details for specific user) in the realm
+                </listitem>
+                <listitem>
+                    <literal>view-applications</literal> - View applications in the realm
+                </listitem>
+                <listitem>
+                    <literal>view-clients</literal> - View clients in the realm
+                </listitem>
+
+                <listitem>
+                    <literal>manage-realm</literal> - Modify the realm configuration (and delete the realm)
+                </listitem>
+                <listitem>
+                    <literal>manage-users</literal> - Create, modify and delete users in the realm
+                </listitem>
+                <listitem>
+                    <literal>manage-applications</literal> - Create, modify and delete applications in the realm
+                </listitem>
+                <listitem>
+                    <literal>manage-clients</literal> - Create, modify and delete clients in the realm
+                </listitem>
+            </itemizedlist>
+            Manage roles includes permissions to view (for example a user with manage-realm role can also view the realm configuration).
+        </para>
+        <para>
+            To add these roles to a user select the <literal>keycloak-admin</literal> realm, then click on <literal>Users</literal>.
+            Find the user you want to grant permissions to, open the user and click on <literal>Role Mappings</literal>. Under
+            <literal>Application Roles</literal> select the application that represents the realm you're adding permissions to
+            (<literal>&lt;realm name&gt;-realm</literal>), then assign any of the above roles to the user by selecting it and clicking on the right-arrow.
+        </para>
+    </section>
+</chapter>
