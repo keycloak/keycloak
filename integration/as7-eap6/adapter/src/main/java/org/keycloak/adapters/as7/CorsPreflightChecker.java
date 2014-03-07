@@ -3,6 +3,7 @@ package org.keycloak.adapters.as7;
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
 import org.jboss.logging.Logger;
+import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 
 import javax.servlet.http.HttpServletResponse;
@@ -13,10 +14,10 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class CorsPreflightChecker {
     private static final Logger log = Logger.getLogger(CorsPreflightChecker.class);
-    protected AdapterConfig config;
+    protected KeycloakDeployment deployment;
 
-    public CorsPreflightChecker(AdapterConfig config) {
-        this.config = config;
+    public CorsPreflightChecker(KeycloakDeployment deployment) {
+        this.deployment = deployment;
     }
 
     public boolean checkCorsPreflight(Request request, Response response) {
@@ -37,20 +38,20 @@ public class CorsPreflightChecker {
         response.setHeader("Access-Control-Allow-Credentials", "true");
         String requestMethods = request.getHeader("Access-Control-Request-Method");
         if (requestMethods != null) {
-            if (config.getCorsAllowedMethods() != null) {
-                requestMethods = config.getCorsAllowedMethods();
+            if (deployment.getCorsAllowedMethods() != null) {
+                requestMethods = deployment.getCorsAllowedMethods();
             }
             response.setHeader("Access-Control-Allow-Methods", requestMethods);
         }
         String allowHeaders = request.getHeader("Access-Control-Request-Headers");
         if (allowHeaders != null) {
-            if (config.getCorsAllowedHeaders() != null) {
-                allowHeaders = config.getCorsAllowedHeaders();
+            if (deployment.getCorsAllowedHeaders() != null) {
+                allowHeaders = deployment.getCorsAllowedHeaders();
             }
             response.setHeader("Access-Control-Allow-Headers", allowHeaders);
         }
-        if (config.getCorsMaxAge() > -1) {
-            response.setHeader("Access-Control-Max-Age", Integer.toString(config.getCorsMaxAge()));
+        if (deployment.getCorsMaxAge() > -1) {
+            response.setHeader("Access-Control-Max-Age", Integer.toString(deployment.getCorsMaxAge()));
         }
         return true;
     }

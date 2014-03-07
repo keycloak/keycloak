@@ -46,8 +46,7 @@ public class CustomerDatabaseClient {
         KeycloakSecurityContext session = (KeycloakSecurityContext) req.getAttribute(KeycloakSecurityContext.class.getName());
 
         HttpClient client = new HttpClientBuilder()
-                .trustStore(session.getMetadata().getTruststore())
-                .hostnameVerification(HttpClientBuilder.HostnameVerificationPolicy.ANY).build();
+                .disableTrustManager().build();
         try {
             HttpGet get = new HttpGet("http://localhost:8080/database/customers");
             get.addHeader("Authorization", "Bearer " + session.getTokenString());

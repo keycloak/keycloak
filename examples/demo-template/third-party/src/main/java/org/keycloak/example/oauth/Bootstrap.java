@@ -1,7 +1,7 @@
 package org.keycloak.example.oauth;
 
 import org.keycloak.servlet.ServletOAuthClient;
-import org.keycloak.servlet.ServletOAuthClientConfigLoader;
+import org.keycloak.servlet.ServletOAuthClientBuilder;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
@@ -22,16 +22,6 @@ import java.security.KeyStore;
 public class Bootstrap implements ServletContextListener {
 
     private ServletOAuthClient client;
-
-    private static KeyStore loadKeyStore(String filename, String password) throws Exception {
-        KeyStore trustStore = KeyStore.getInstance(KeyStore
-                .getDefaultType());
-        File truststoreFile = new File(filename);
-        FileInputStream trustStream = new FileInputStream(truststoreFile);
-        trustStore.load(trustStream, password.toCharArray());
-        trustStream.close();
-        return trustStore;
-    }
 
     @Override
     public void contextInitialized(ServletContextEvent sce) {
@@ -62,8 +52,6 @@ public class Bootstrap implements ServletContextListener {
             }
         }
 
-        ServletOAuthClientConfigLoader loader = new ServletOAuthClientConfigLoader(is);
-        loader.initOAuthClientConfiguration(true);
-        loader.configureServletOAuthClient(client);
+        client = ServletOAuthClientBuilder.build(is);
     }
 }

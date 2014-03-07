@@ -10,7 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.keycloak.example.demo</groupId>
     <artifactId>customer-portal-cli-example</artifactId>
-    <packaging>war</packaging>
+    <packaging>jar</packaging>
     <name>Customer Portal CLI</name>
     <description/>
 
@@ -62,7 +62,10 @@
             <plugin>
                 <groupId>org.jboss.as.plugins</groupId>
                 <artifactId>jboss-as-maven-plugin</artifactId>
-                <version>7.4.Final</version>
+                <version>7.1.1.Final</version>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

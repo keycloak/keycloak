@@ -5,14 +5,12 @@ import io.undertow.security.api.SecurityContext;
 import io.undertow.server.HttpServerExchange;
 import org.jboss.logging.Logger;
 import org.keycloak.RSATokenVerifier;
-import org.keycloak.adapters.ResourceMetadata;
+import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.VerificationException;
 import org.keycloak.representations.AccessToken;
 
 import javax.security.cert.X509Certificate;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import static io.undertow.util.Headers.AUTHORIZATION;
 import static io.undertow.util.Headers.WWW_AUTHENTICATE;
@@ -23,27 +21,19 @@ import static io.undertow.util.StatusCodes.UNAUTHORIZED;
  * @version $Revision: 1 $
  */
 public class BearerTokenAuthenticator {
-    protected ResourceMetadata resourceMetadata;
     protected Logger log = Logger.getLogger(BearerTokenAuthenticator.class);
     protected String tokenString;
     protected AccessToken token;
-    protected boolean useResourceRoleMappings;
     protected String surrogate;
     protected KeycloakChallenge challenge;
-    protected int notBefore;
+    protected KeycloakDeployment deployment;
 
-    public BearerTokenAuthenticator(ResourceMetadata resourceMetadata, int notBefore, boolean useResourceRoleMappings) {
-        this.resourceMetadata = resourceMetadata;
-        this.useResourceRoleMappings = useResourceRoleMappings;
-        this.notBefore = notBefore;
+    public BearerTokenAuthenticator(KeycloakDeployment deployment) {
+        this.deployment = deployment;
     }
 
     public KeycloakChallenge getChallenge() {
         return challenge;
-    }
-
-    public ResourceMetadata getResourceMetadata() {
-        return resourceMetadata;
     }
 
     public String getTokenString() {
@@ -79,20 +69,20 @@ public class BearerTokenAuthenticator {
         }
 
         try {
-            token = RSATokenVerifier.verifyToken(tokenString, resourceMetadata.getRealmKey(), resourceMetadata.getRealm());
+            token = RSATokenVerifier.verifyToken(tokenString, deployment.getRealmKey(), deployment.getRealm());
         } catch (VerificationException e) {
             log.error("Failed to verify token", e);
             challenge = challengeResponse(exchange, "invalid_token", e.getMessage());
             return AuthenticationMechanism.AuthenticationMechanismOutcome.NOT_AUTHENTICATED;
         }
-        if (token.getIssuedAt() < notBefore) {
+        if (token.getIssuedAt() < deployment.getNotBefore()) {
             log.error("Stale token");
             challenge = challengeResponse(exchange, "invalid_token", "Stale token");
             return AuthenticationMechanism.AuthenticationMechanismOutcome.NOT_AUTHENTICATED;
         }
         boolean verifyCaller = false;
-        if (useResourceRoleMappings) {
-            verifyCaller = token.isVerifyCaller(resourceMetadata.getResourceName());
+        if (deployment.isUseResourceRoleMappings()) {
+            verifyCaller = token.isVerifyCaller(deployment.getResourceName());
         } else {
             verifyCaller = token.isVerifyCaller();
         }
@@ -135,7 +125,7 @@ public class BearerTokenAuthenticator {
 
     protected KeycloakChallenge challengeResponse(HttpServerExchange exchange, String error, String description) {
         StringBuilder header = new StringBuilder("Bearer realm=\"");
-        header.append(resourceMetadata.getRealm()).append("\"");
+        header.append(deployment.getRealm()).append("\"");
         if (error != null) {
             header.append(", error=\"").append(error).append("\"");
         }

@@ -3,8 +3,8 @@ package org.keycloak.adapters.as7;
 import org.jboss.logging.Logger;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
+import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.ServerRequest;
-import org.keycloak.adapters.config.RealmConfiguration;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
@@ -27,7 +27,7 @@ public class ServletOAuthLogin {
     protected HttpServletRequest request;
     protected HttpServletResponse response;
     protected boolean codePresent;
-    protected RealmConfiguration realmInfo;
+    protected KeycloakDeployment deployment;
     protected int redirectPort;
     protected String tokenString;
     protected String idTokenString;
@@ -35,10 +35,10 @@ public class ServletOAuthLogin {
     protected AccessToken token;
     protected String refreshToken;
 
-    public ServletOAuthLogin(RealmConfiguration realmInfo, HttpServletRequest request, HttpServletResponse response, int redirectPort) {
+    public ServletOAuthLogin(KeycloakDeployment deployment, HttpServletRequest request, HttpServletResponse response, int redirectPort) {
         this.request = request;
         this.response = response;
-        this.realmInfo = realmInfo;
+        this.deployment = deployment;
         this.redirectPort = redirectPort;
     }
 
@@ -60,10 +60,6 @@ public class ServletOAuthLogin {
 
     public IDToken getIdToken() {
         return idToken;
-    }
-
-    public RealmConfiguration getRealmInfo() {
-        return realmInfo;
     }
 
     protected String getDefaultCookiePath() {
@@ -145,7 +141,7 @@ public class ServletOAuthLogin {
 
     protected String getRedirectUri(String state) {
         String url = getRequestUrl();
-        if (!isRequestSecure() && realmInfo.isSslRequired()) {
+        if (!isRequestSecure() && deployment.isSslRequired()) {
             int port = redirectPort;
             if (port < 0) {
                 // disabled?
@@ -155,13 +151,13 @@ public class ServletOAuthLogin {
             if (port != 443) secureUrl.port(port);
             url = secureUrl.build().toString();
         }
-        KeycloakUriBuilder uriBuilder = realmInfo.getAuthUrl().clone()
-                .queryParam("client_id", realmInfo.getMetadata().getResourceName())
+        KeycloakUriBuilder uriBuilder = deployment.getAuthUrl().clone()
+                .queryParam("client_id", deployment.getResourceName())
                 .queryParam("redirect_uri", url)
                 .queryParam("state", state)
                 .queryParam("login", "true");
-        if (realmInfo.getMetadata().getScope() != null) {
-            uriBuilder.queryParam("scope", realmInfo.getMetadata().getScope());
+        if (deployment.getScope() != null) {
+            uriBuilder.queryParam("scope", deployment.getScope());
         }
         return uriBuilder.build().toString();
     }
@@ -179,12 +175,12 @@ public class ServletOAuthLogin {
             sendError(HttpServletResponse.SC_FORBIDDEN);
             return;
         }
-        setCookie(realmInfo.getStateCookieName(), state, null, getDefaultCookiePath(), realmInfo.isSslRequired());
+        setCookie(deployment.getStateCookieName(), state, null, getDefaultCookiePath(), deployment.isSslRequired());
         sendRedirect(redirect);
     }
 
     public boolean checkStateCookie() {
-        Cookie stateCookie = getCookie(realmInfo.getStateCookieName());
+        Cookie stateCookie = getCookie(deployment.getStateCookieName());
 
         if (stateCookie == null) {
             sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -193,12 +189,12 @@ public class ServletOAuthLogin {
         }
         // reset the cookie
         log.debug("** reseting application state cookie");
-        Cookie reset = new Cookie(realmInfo.getStateCookieName(), "");
+        Cookie reset = new Cookie(deployment.getStateCookieName(), "");
         reset.setPath(getDefaultCookiePath());
         reset.setMaxAge(0);
         response.addCookie(reset);
 
-        String stateCookieValue = getCookieValue(realmInfo.getStateCookieName());
+        String stateCookieValue = getCookieValue(deployment.getStateCookieName());
         // its ok to call request.getParameter() because this should be a redirect
         String state = request.getParameter("state");
         if (state == null) {
@@ -231,7 +227,7 @@ public class ServletOAuthLogin {
      */
     public boolean resolveCode(String code) {
         // abort if not HTTPS
-        if (realmInfo.isSslRequired() && !isRequestSecure()) {
+        if (deployment.isSslRequired() && !isRequestSecure()) {
             log.error("SSL is required");
             sendError(HttpServletResponse.SC_FORBIDDEN);
             return false;
@@ -242,7 +238,7 @@ public class ServletOAuthLogin {
         String redirectUri = stripOauthParametersFromRedirect();
         AccessTokenResponse tokenResponse = null;
         try {
-            tokenResponse = ServerRequest.invokeAccessCodeToToken(realmInfo, code, redirectUri);
+            tokenResponse = ServerRequest.invokeAccessCodeToToken(deployment, code, redirectUri);
         } catch (ServerRequest.HttpFailure failure) {
             log.error("failed to turn code into token");
             log.error("status from server: " + failure.getStatus());
@@ -260,7 +256,7 @@ public class ServletOAuthLogin {
         tokenString = tokenResponse.getToken();
         idTokenString = tokenResponse.getIdToken();
         try {
-            token = RSATokenVerifier.verifyToken(tokenString, realmInfo.getMetadata().getRealmKey(), realmInfo.getMetadata().getRealm());
+            token = RSATokenVerifier.verifyToken(tokenString, deployment.getRealmKey(), deployment.getRealm());
             if (idTokenString != null) {
                 JWSInput input = new JWSInput(idTokenString);
                 try {
@@ -275,10 +271,10 @@ public class ServletOAuthLogin {
             sendError(HttpServletResponse.SC_FORBIDDEN);
             return false;
         }
-        if (tokenResponse.getNotBeforePolicy() > realmInfo.getNotBefore()) {
-            realmInfo.setNotBefore(tokenResponse.getNotBeforePolicy());
+        if (tokenResponse.getNotBeforePolicy() > deployment.getNotBefore()) {
+            deployment.setNotBefore(tokenResponse.getNotBeforePolicy());
         }
-        if (token.getIssuedAt() < realmInfo.getNotBefore()) {
+        if (token.getIssuedAt() < deployment.getNotBefore()) {
             log.error("Stale token");
             sendError(HttpServletResponse.SC_FORBIDDEN);
             return false;

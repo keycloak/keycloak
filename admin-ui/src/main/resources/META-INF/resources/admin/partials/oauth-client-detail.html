@@ -54,9 +54,9 @@
                 </div>
                 <div class="form-group">
                     <label class="col-sm-2 control-label" for="newRedirectUri">Redirect URI <span class="required" data-ng-show="create">*</span></label>
-                    <div class="col-sm-4">
+                    <div class="col-sm-6">
                         <div ng-repeat="redirectUri in oauth.redirectUris" class="kc-item-deletable row">
-                            <div class="col-sm-9">
+                            <div class="col-sm-8">
                                 <input  class="form-control" type="text" data-ng-class="{'input-below':!$first}"
                                         name="redirectUri" id="redirectUri" data-ng-model="redirectUri" readonly />
                             </div>
@@ -66,7 +66,7 @@
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-sm-9">
+                            <div class="col-sm-8">
                                 <input  class="form-control" type="text" name="newRedirectUri" id="newRedirectUri"
                                         placeholder="New Redirect URI..." data-ng-model="newRedirectUri"
                                         data-ng-class="{'input-below':oauth.redirectUris.length}" />
@@ -79,9 +79,9 @@
                 </div>
                 <div class="form-group">
                     <label class="col-sm-2 control-label" for="newWebOrigin">Web Origin</label>
-                    <div class="col-sm-4">
+                    <div class="col-sm-6">
                         <div ng-repeat="webOrigin in oauth.webOrigins" class="kc-item-deletable row">
-                            <div class="col-sm-9">
+                            <div class="col-sm-8">
                                 <input  class="form-control" type="text" data-ng-class="{'input-below':!$first}"
                                         name="webOrigin" id="webOrigin" data-ng-model="webOrigin" readonly />
                             </div>
@@ -91,7 +91,7 @@
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-sm-9">
+                            <div class="col-sm-8">
                                 <input  class="form-control" type="text" name="newWebOrigin" id="newWebOrigin"
                                         placeholder="New Web Origin..." data-ng-model="newWebOrigin"
                                         data-ng-class="{'input-below':oauth.webOrigins.length}" />

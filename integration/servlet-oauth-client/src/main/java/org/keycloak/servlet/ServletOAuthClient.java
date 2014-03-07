@@ -22,20 +22,11 @@ import java.net.URI;
 public class ServletOAuthClient extends AbstractOAuthClient {
     protected HttpClient client;
 
-    /**
-     * Creates a Client for obtaining access token from code
-     */
     public void start() {
-        if (client == null) {
-            client = new HttpClientBuilder().trustStore(truststore)
-                    .hostnameVerification(HttpClientBuilder.HostnameVerificationPolicy.ANY)
-                    .connectionPoolSize(10)
-                    .build();
-        }
     }
 
     /**
-     * closes cllient
+     * closes client
      */
     public void stop() {
         client.getConnectionManager().shutdown();

@@ -7,9 +7,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicNameValuePair;
-import org.keycloak.adapters.config.RealmConfiguration;
 import org.keycloak.representations.AccessTokenResponse;
-import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
@@ -47,13 +45,13 @@ public class ServerRequest {
         }
     }
 
-    public static AccessTokenResponse invokeAccessCodeToToken(RealmConfiguration config, String code, String redirectUri) throws HttpFailure, IOException {
-        String codeUrl = config.getCodeUrl();
-        String client_id = config.getMetadata().getResourceName();
-        Map<String, String> credentials = config.getResourceCredentials();
-        HttpClient client = config.getClient();
+    public static AccessTokenResponse invokeAccessCodeToToken(KeycloakDeployment deployment, String code, String redirectUri) throws HttpFailure, IOException {
+        String codeUrl = deployment.getCodeUrl();
+        String client_id = deployment.getResourceName();
+        Map<String, String> credentials = deployment.getResourceCredentials();
+        HttpClient client = deployment.getClient();
 
-        return invokeAccessCodeToToken(client, config.isPublicClient(), code, codeUrl, redirectUri, client_id, credentials);
+        return invokeAccessCodeToToken(client, deployment.isPublicClient(), code, codeUrl, redirectUri, client_id, credentials);
     }
 
     public static AccessTokenResponse invokeAccessCodeToToken(HttpClient client, boolean publicClient, String code, String codeUrl, String redirectUri, String client_id, Map<String, String> credentials) throws IOException, HttpFailure {
@@ -108,12 +106,12 @@ public class ServerRequest {
         }
     }
 
-    public static AccessTokenResponse invokeRefresh(RealmConfiguration config, String refreshToken) throws IOException, HttpFailure {
-        String refreshUrl = config.getRefreshUrl();
-        String client_id = config.getMetadata().getResourceName();
-        Map<String, String> credentials = config.getResourceCredentials();
-        HttpClient client = config.getClient();
-        return invokeRefresh(client, config.isPublicClient(), refreshToken, refreshUrl, client_id, credentials);
+    public static AccessTokenResponse invokeRefresh(KeycloakDeployment deployment, String refreshToken) throws IOException, HttpFailure {
+        String refreshUrl = deployment.getRefreshUrl();
+        String client_id = deployment.getResourceName();
+        Map<String, String> credentials = deployment.getResourceCredentials();
+        HttpClient client = deployment.getClient();
+        return invokeRefresh(client, deployment.isPublicClient(), refreshToken, refreshUrl, client_id, credentials);
     }
 
 

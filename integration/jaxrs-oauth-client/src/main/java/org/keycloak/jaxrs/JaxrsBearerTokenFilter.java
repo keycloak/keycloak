@@ -5,7 +5,6 @@ import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.RSATokenVerifier;
-import org.keycloak.adapters.ResourceMetadata;
 import org.keycloak.VerificationException;
 import org.keycloak.representations.AccessToken;
 
@@ -19,6 +18,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.io.IOException;
 import java.security.Principal;
+import java.security.PublicKey;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -26,16 +26,20 @@ import java.security.Principal;
  */
 @Priority(Priorities.AUTHENTICATION)
 public class JaxrsBearerTokenFilter implements ContainerRequestFilter {
-    protected ResourceMetadata resourceMetadata;
     private static Logger log = Logger.getLogger(JaxrsBearerTokenFilter.class);
+    protected String realm;
+    protected PublicKey realmPublicKey;
+    protected String resourceName;
 
-    public JaxrsBearerTokenFilter(ResourceMetadata resourceMetadata) {
-        this.resourceMetadata = resourceMetadata;
+    public JaxrsBearerTokenFilter(String realm, PublicKey realmPublicKey, String resourceName) {
+        this.realm = realm;
+        this.realmPublicKey = realmPublicKey;
+        this.resourceName = resourceName;
     }
 
     protected void challengeResponse(ContainerRequestContext request, String error, String description) {
         StringBuilder header = new StringBuilder("Bearer realm=\"");
-        header.append(resourceMetadata.getRealm()).append("\"");
+        header.append(realm).append("\"");
         if (error != null) {
             header.append(", error=\"").append(error).append("\"");
         }
@@ -66,16 +70,16 @@ public class JaxrsBearerTokenFilter implements ContainerRequestFilter {
 
 
         try {
-            AccessToken token = RSATokenVerifier.verifyToken(tokenString, resourceMetadata.getRealmKey(), resourceMetadata.getRealm());
-            KeycloakSecurityContext skSession = new KeycloakSecurityContext(tokenString, token, null, null, resourceMetadata);
+            AccessToken token = RSATokenVerifier.verifyToken(tokenString, realmPublicKey, realm);
+            KeycloakSecurityContext skSession = new KeycloakSecurityContext(tokenString, token, null, null);
             ResteasyProviderFactory.pushContext(KeycloakSecurityContext.class, skSession);
             String callerPrincipal = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
 
             final KeycloakPrincipal principal = new KeycloakPrincipal(token.getSubject(), callerPrincipal);
             final boolean isSecure = securityContext.isSecure();
             final AccessToken.Access access;
-            if (resourceMetadata.getResourceName() != null) {
-                access = token.getResourceAccess(resourceMetadata.getResourceName());
+            if (resourceName != null) {
+                access = token.getResourceAccess(resourceName);
             } else {
                 access = token.getRealmAccess();
             }

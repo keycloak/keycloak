@@ -15,6 +15,9 @@ import org.apache.http.impl.conn.SingleClientConnManager;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
+import org.keycloak.representations.adapters.config.AdapterConfig;
+import org.keycloak.util.EnvUtil;
+import org.keycloak.util.KeystoreUtil;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
@@ -271,4 +274,41 @@ public class HttpClientBuilder {
         }
     }
 
+    public HttpClient build(AdapterConfig adapterConfig) {
+        String truststorePath = adapterConfig.getTruststore();
+        if (truststorePath != null) {
+            truststorePath = EnvUtil.replace(truststorePath);
+            String truststorePassword = adapterConfig.getTruststorePassword();
+            try {
+                this.truststore = KeystoreUtil.loadKeyStore(truststorePath, truststorePassword);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to load truststore", e);
+            }
+        }
+        String clientKeystore = adapterConfig.getClientKeystore();
+        if (clientKeystore != null) {
+            clientKeystore = EnvUtil.replace(clientKeystore);
+            String clientKeystorePassword = adapterConfig.getClientKeystorePassword();
+            try {
+                KeyStore clientCertKeystore = KeystoreUtil.loadKeyStore(clientKeystore, clientKeystorePassword);
+                keyStore(clientCertKeystore, clientKeystorePassword);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to load keystore", e);
+            }
+        }
+        int size = 10;
+        if (adapterConfig.getConnectionPoolSize() > 0)
+            size = adapterConfig.getConnectionPoolSize();
+        HttpClientBuilder.HostnameVerificationPolicy policy = HttpClientBuilder.HostnameVerificationPolicy.WILDCARD;
+        if (adapterConfig.isAllowAnyHostname())
+            policy = HttpClientBuilder.HostnameVerificationPolicy.ANY;
+        connectionPoolSize(size);
+        hostnameVerification(policy);
+        if (adapterConfig.isDisableTrustManager()) {
+            disableTrustManager();
+        } else {
+            trustStore(truststore);
+        }
+        return build();
+    }
 }

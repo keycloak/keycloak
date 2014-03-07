@@ -3,7 +3,6 @@ package org.keycloak.adapters;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
-import org.keycloak.adapters.config.RealmConfiguration;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.jboss.logging.Logger;
@@ -19,15 +18,15 @@ public class RefreshableKeycloakSession extends KeycloakSecurityContext {
 
     protected static Logger log = Logger.getLogger(RefreshableKeycloakSession.class);
 
-    protected transient RealmConfiguration realmConfiguration;
+    protected transient KeycloakDeployment deployment;
     protected String refreshToken;
 
     public RefreshableKeycloakSession() {
     }
 
-    public RefreshableKeycloakSession(String tokenString, AccessToken token, String idTokenString, IDToken idToken, ResourceMetadata metadata, RealmConfiguration realmConfiguration, String refreshToken) {
-        super(tokenString, token, idTokenString, idToken, metadata);
-        this.realmConfiguration = realmConfiguration;
+    public RefreshableKeycloakSession(KeycloakDeployment deployment, String tokenString, AccessToken token, String idTokenString, IDToken idToken, String refreshToken) {
+        super(tokenString, token, idTokenString, idToken);
+        this.deployment = deployment;
         this.refreshToken = refreshToken;
     }
 
@@ -44,22 +43,22 @@ public class RefreshableKeycloakSession extends KeycloakSecurityContext {
     }
 
     public boolean isActive() {
-        return this.token.isActive() && this.token.getIssuedAt() > realmConfiguration.getNotBefore();
+        return this.token.isActive() && this.token.getIssuedAt() > deployment.getNotBefore();
     }
 
-    public void setRealmConfiguration(RealmConfiguration realmConfiguration) {
-        this.realmConfiguration = realmConfiguration;
+    public void setDeployment(KeycloakDeployment deployment) {
+        this.deployment = deployment;
     }
 
     public void refreshExpiredToken() {
         log.info("checking whether to refresh.");
         if (isActive()) return;
-        if (this.realmConfiguration == null || refreshToken == null) return; // Might be serialized in HttpSession?
+        if (this.deployment == null || refreshToken == null) return; // Might be serialized in HttpSession?
 
         log.info("Doing refresh");
         AccessTokenResponse response = null;
         try {
-            response = ServerRequest.invokeRefresh(realmConfiguration, refreshToken);
+            response = ServerRequest.invokeRefresh(deployment, refreshToken);
         } catch (IOException e) {
             log.error("Refresh token failure", e);
             return;
@@ -71,13 +70,13 @@ public class RefreshableKeycloakSession extends KeycloakSecurityContext {
         String tokenString = response.getToken();
         AccessToken token = null;
         try {
-            token = RSATokenVerifier.verifyToken(tokenString, realmConfiguration.getMetadata().getRealmKey(), realmConfiguration.getMetadata().getRealm());
+            token = RSATokenVerifier.verifyToken(tokenString, deployment.getRealmKey(), deployment.getRealm());
             log.info("Token Verification succeeded!");
         } catch (VerificationException e) {
             log.error("failed verification of token");
         }
-        if (response.getNotBeforePolicy() > realmConfiguration.getNotBefore()) {
-            realmConfiguration.setNotBefore(response.getNotBeforePolicy());
+        if (response.getNotBeforePolicy() > deployment.getNotBefore()) {
+            deployment.setNotBefore(response.getNotBeforePolicy());
         }
 
         this.token = token;

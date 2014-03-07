@@ -7,6 +7,7 @@ import io.undertow.util.Headers;
 import io.undertow.util.StatusCodes;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.AdapterConstants;
+import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 
@@ -27,25 +28,25 @@ import java.util.Set;
  */
 public class AuthenticatedActionsHandler implements HttpHandler {
     private static final Logger log = Logger.getLogger(AuthenticatedActionsHandler.class);
-    protected AdapterConfig adapterConfig;
+    protected KeycloakDeployment deployment;
     protected HttpHandler next;
 
     public static class Wrapper implements HandlerWrapper {
-        protected AdapterConfig config;
+        protected KeycloakDeployment deployment;
 
-        public Wrapper(AdapterConfig config) {
-            this.config = config;
+        public Wrapper(KeycloakDeployment deployment) {
+            this.deployment = deployment;
         }
 
         @Override
         public HttpHandler wrap(HttpHandler handler) {
-            return new AuthenticatedActionsHandler(config, handler);
+            return new AuthenticatedActionsHandler(deployment, handler);
         }
     }
 
 
-    protected AuthenticatedActionsHandler(AdapterConfig config, HttpHandler next) {
-        this.adapterConfig = config;
+    protected AuthenticatedActionsHandler(KeycloakDeployment deployment, HttpHandler next) {
+        this.deployment = deployment;
         this.next = next;
     }
 
@@ -82,13 +83,13 @@ public class AuthenticatedActionsHandler implements HttpHandler {
             exchange.endExchange();
             return true;
         }
-        if (!adapterConfig.isExposeToken()) {
+        if (!deployment.isExposeToken()) {
             exchange.setResponseCode(StatusCodes.OK);
             exchange.endExchange();
             return true;
         }
         // Don't allow a CORS request if we're not validating CORS requests.
-        if (!adapterConfig.isCors() && exchange.getRequestHeaders().getFirst(Headers.ORIGIN) != null) {
+        if (!deployment.isCors() && exchange.getRequestHeaders().getFirst(Headers.ORIGIN) != null) {
             exchange.setResponseCode(StatusCodes.OK);
             exchange.endExchange();
             return true;
@@ -97,7 +98,7 @@ public class AuthenticatedActionsHandler implements HttpHandler {
     }
 
     protected boolean corsRequest(HttpServerExchange exchange, KeycloakUndertowAccount account) throws IOException {
-        if (!adapterConfig.isCors()) return false;
+        if (!deployment.isCors()) return false;
         log.debugv("CORS enabled + request.getRequestURI()");
         String origin = exchange.getRequestHeaders().getFirst("Origin");
         log.debugv("Origin: {0} uri: {1}", origin, exchange.getRequestURI());

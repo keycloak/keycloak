@@ -1,6 +1,5 @@
 package org.keycloak;
 
-import org.keycloak.adapters.ResourceMetadata;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 
@@ -15,17 +14,15 @@ public class KeycloakSecurityContext implements Serializable {
     protected AccessToken token;
     protected IDToken idToken;
     protected String idTokenString;
-    protected transient ResourceMetadata metadata;
 
     public KeycloakSecurityContext() {
     }
 
-    public KeycloakSecurityContext(String tokenString, AccessToken token, String idTokenString, IDToken idToken, ResourceMetadata metadata) {
+    public KeycloakSecurityContext(String tokenString, AccessToken token, String idTokenString, IDToken idToken) {
         this.tokenString = tokenString;
         this.token = token;
         this.idToken = idToken;
         this.idTokenString = idTokenString;
-        this.metadata = metadata;
     }
 
     public AccessToken getToken() {
@@ -34,14 +31,6 @@ public class KeycloakSecurityContext implements Serializable {
 
     public String getTokenString() {
         return tokenString;
-    }
-
-    public ResourceMetadata getMetadata() {
-        return metadata;
-    }
-
-    public void setMetadata(ResourceMetadata metadata) {
-        this.metadata = metadata;
     }
 
     public IDToken getIdToken() {

@@ -33,22 +33,10 @@ public class JaxrsOAuthClient extends AbstractOAuthClient {
     protected Client client;
 
     /**
-     * Creates a Client for obtaining access token from code
-     */
-    public void start() {
-        if (client == null) {
-            client = new ResteasyClientBuilder().trustStore(truststore)
-                    .hostnameVerification(ResteasyClientBuilder.HostnameVerificationPolicy.ANY)
-                    .connectionPoolSize(10)
-                    .build();
-        }
-    }
-
-    /**
-     * closes cllient
+     * closes client
      */
     public void stop() {
-        client.close();
+        if (client != null) client.close();
     }
     public Client getClient() {
         return client;
