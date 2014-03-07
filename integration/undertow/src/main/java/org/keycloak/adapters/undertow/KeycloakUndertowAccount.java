@@ -4,7 +4,7 @@ import io.undertow.security.idm.Account;
 import org.jboss.logging.Logger;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.adapters.KeycloakDeployment;
-import org.keycloak.adapters.RefreshableKeycloakSession;
+import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.representations.AccessToken;
 
 import java.io.Serializable;
@@ -18,11 +18,11 @@ import java.util.Set;
 */
 public class KeycloakUndertowAccount implements Account, Serializable {
     protected static Logger log = Logger.getLogger(KeycloakUndertowAccount.class);
-    protected RefreshableKeycloakSession session;
+    protected RefreshableKeycloakSecurityContext session;
     protected KeycloakPrincipal principal;
     protected Set<String> accountRoles;
 
-    public KeycloakUndertowAccount(KeycloakPrincipal principal, RefreshableKeycloakSession session, KeycloakDeployment deployment) {
+    public KeycloakUndertowAccount(KeycloakPrincipal principal, RefreshableKeycloakSecurityContext session, KeycloakDeployment deployment) {
         this.principal = principal;
         this.session = session;
         setRoles(session.getToken(), deployment);
@@ -59,7 +59,7 @@ public class KeycloakUndertowAccount implements Account, Serializable {
         return session.getTokenString();
     }
 
-    public RefreshableKeycloakSession getSession() {
+    public RefreshableKeycloakSecurityContext getSession() {
         return session;
     }
 

@@ -1,38 +1,29 @@
-package org.keycloak.adapters.undertow;
+package org.keycloak.adapters;
 
-import io.undertow.security.api.AuthenticationMechanism;
-import io.undertow.security.api.SecurityContext;
-import io.undertow.server.HttpServerExchange;
 import org.jboss.logging.Logger;
 import org.keycloak.RSATokenVerifier;
-import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.VerificationException;
 import org.keycloak.representations.AccessToken;
 
 import javax.security.cert.X509Certificate;
 import java.util.List;
-
-import static io.undertow.util.Headers.AUTHORIZATION;
-import static io.undertow.util.Headers.WWW_AUTHENTICATE;
-import static io.undertow.util.StatusCodes.UNAUTHORIZED;
-
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class BearerTokenAuthenticator {
-    protected Logger log = Logger.getLogger(BearerTokenAuthenticator.class);
+public class BearerTokenRequestAuthenticator {
+    protected Logger log = Logger.getLogger(BearerTokenRequestAuthenticator.class);
     protected String tokenString;
     protected AccessToken token;
     protected String surrogate;
-    protected KeycloakChallenge challenge;
+    protected AuthChallenge challenge;
     protected KeycloakDeployment deployment;
 
-    public BearerTokenAuthenticator(KeycloakDeployment deployment) {
+    public BearerTokenRequestAuthenticator(KeycloakDeployment deployment) {
         this.deployment = deployment;
     }
 
-    public KeycloakChallenge getChallenge() {
+    public AuthChallenge getChallenge() {
         return challenge;
     }
 
@@ -48,11 +39,11 @@ public class BearerTokenAuthenticator {
         return surrogate;
     }
 
-    public AuthenticationMechanism.AuthenticationMechanismOutcome authenticate(HttpServerExchange exchange)  {
-        List<String> authHeaders = exchange.getRequestHeaders().get(AUTHORIZATION);
+    public AuthOutcome authenticate(HttpFacade exchange)  {
+        List<String> authHeaders = exchange.getRequest().getHeaders("Authorization");
         if (authHeaders == null || authHeaders.size() == 0) {
             challenge = challengeResponse(exchange, null, null);
-            return AuthenticationMechanism.AuthenticationMechanismOutcome.NOT_ATTEMPTED;
+            return AuthOutcome.NOT_ATTEMPTED;
         }
 
         tokenString = null;
@@ -65,7 +56,7 @@ public class BearerTokenAuthenticator {
 
         if (tokenString == null) {
             challenge = challengeResponse(exchange, null, null);
-            return AuthenticationMechanism.AuthenticationMechanismOutcome.NOT_ATTEMPTED;
+            return AuthOutcome.NOT_ATTEMPTED;
         }
 
         try {
@@ -73,12 +64,12 @@ public class BearerTokenAuthenticator {
         } catch (VerificationException e) {
             log.error("Failed to verify token", e);
             challenge = challengeResponse(exchange, "invalid_token", e.getMessage());
-            return AuthenticationMechanism.AuthenticationMechanismOutcome.NOT_AUTHENTICATED;
+            return AuthOutcome.FAILED;
         }
         if (token.getIssuedAt() < deployment.getNotBefore()) {
             log.error("Stale token");
             challenge = challengeResponse(exchange, "invalid_token", "Stale token");
-            return AuthenticationMechanism.AuthenticationMechanismOutcome.NOT_AUTHENTICATED;
+            return AuthOutcome.FAILED;
         }
         boolean verifyCaller = false;
         if (deployment.isUseResourceRoleMappings()) {
@@ -91,39 +82,39 @@ public class BearerTokenAuthenticator {
             if (token.getTrustedCertificates() == null || token.getTrustedCertificates().size() == 0) {
                 log.warn("No trusted certificates in token");
                 challenge = clientCertChallenge();
-                return AuthenticationMechanism.AuthenticationMechanismOutcome.NOT_AUTHENTICATED;
+                return AuthOutcome.FAILED;
             }
 
             // for now, we just make sure Undertow did two-way SSL
             // assume JBoss Web verifies the client cert
             X509Certificate[] chain = new X509Certificate[0];
             try {
-                chain = exchange.getConnection().getSslSessionInfo().getPeerCertificateChain();
+                chain = exchange.getCertificateChain();
             } catch (Exception ignore) {
 
             }
             if (chain == null || chain.length == 0) {
                 log.warn("No certificates provided by undertow to verify the caller");
                 challenge = clientCertChallenge();
-                return AuthenticationMechanism.AuthenticationMechanismOutcome.NOT_AUTHENTICATED;
+                return AuthOutcome.FAILED;
             }
             surrogate = chain[0].getSubjectDN().getName();
         }
-        return AuthenticationMechanism.AuthenticationMechanismOutcome.AUTHENTICATED;
+        return AuthOutcome.AUTHENTICATED;
     }
 
-    protected KeycloakChallenge clientCertChallenge() {
-        return new KeycloakChallenge() {
+    protected AuthChallenge clientCertChallenge() {
+        return new AuthChallenge() {
             @Override
-            public AuthenticationMechanism.ChallengeResult sendChallenge(HttpServerExchange httpServerExchange, SecurityContext securityContext) {
+            public boolean challenge(HttpFacade exchange) {
                 // do the same thing as client cert auth
-                return new AuthenticationMechanism.ChallengeResult(false);
+                return false;
             }
         };
     }
 
 
-    protected KeycloakChallenge challengeResponse(HttpServerExchange exchange, String error, String description) {
+    protected AuthChallenge challengeResponse(HttpFacade facade, String error, String description) {
         StringBuilder header = new StringBuilder("Bearer realm=\"");
         header.append(deployment.getRealm()).append("\"");
         if (error != null) {
@@ -132,12 +123,13 @@ public class BearerTokenAuthenticator {
         if (description != null) {
             header.append(", error_description=\"").append(description).append("\"");
         }
-        String challenge = header.toString();
-        exchange.getResponseHeaders().add(WWW_AUTHENTICATE, challenge);
-        return new KeycloakChallenge() {
+        final String challenge = header.toString();
+        return new AuthChallenge() {
             @Override
-            public AuthenticationMechanism.ChallengeResult sendChallenge(HttpServerExchange httpServerExchange, SecurityContext securityContext) {
-                return new AuthenticationMechanism.ChallengeResult(true, UNAUTHORIZED);
+            public boolean challenge(HttpFacade facade) {
+                facade.getResponse().setStatus(401);
+                facade.getResponse().addHeader("WWW-Authenticate", challenge);
+                return true;
             }
         };
     }

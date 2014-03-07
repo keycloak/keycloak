@@ -1,0 +1,118 @@
+package org.keycloak.adapters.as7;
+
+import org.apache.catalina.Session;
+import org.apache.catalina.authenticator.Constants;
+import org.apache.catalina.connector.Request;
+import org.apache.catalina.realm.GenericPrincipal;
+import org.keycloak.KeycloakPrincipal;
+import org.keycloak.KeycloakSecurityContext;
+import org.keycloak.adapters.KeycloakDeployment;
+import org.keycloak.adapters.OAuthRequestAuthenticator;
+import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
+import org.keycloak.adapters.RequestAuthenticator;
+import org.keycloak.representations.AccessToken;
+
+import java.io.IOException;
+import java.security.Principal;
+import java.util.Collections;
+import java.util.Set;
+
+/**
+ * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @version $Revision: 1 $
+ */
+public class CatalinaRequestAuthenticator extends RequestAuthenticator {
+    protected KeycloakAuthenticatorValve valve;
+    protected UserSessionManagement userSessionManagement;
+    protected Request request;
+
+    public CatalinaRequestAuthenticator(KeycloakDeployment deployment,
+                                        KeycloakAuthenticatorValve valve, UserSessionManagement userSessionManagement,
+                                        CatalinaHttpFacade facade,
+                                        Request request) {
+        super(facade, deployment, request.getConnector().getRedirectPort());
+        this.valve = valve;
+        this.userSessionManagement = userSessionManagement;
+        this.request = request;
+    }
+
+    @Override
+    protected OAuthRequestAuthenticator createOAuthAuthenticator() {
+        return new OAuthRequestAuthenticator(facade, deployment, sslRedirectPort) {
+            @Override
+            protected void saveRequest() {
+                try {
+                    valve.keycloakSaveRequest(request);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        };
+    }
+
+    @Override
+    protected void completeOAuthAuthentication(KeycloakPrincipal skp, RefreshableKeycloakSecurityContext securityContext) {
+        Set<String> roles = getRolesFromToken(securityContext);
+        GenericPrincipal principal = new CatalinaSecurityContextHelper().createPrincipal(request.getContext().getRealm(), skp, roles);
+        Session session = request.getSessionInternal(true);
+        session.setPrincipal(principal);
+        session.setAuthType("OAUTH");
+        session.setNote(KeycloakSecurityContext.class.getName(), securityContext);
+        String username = securityContext.getToken().getSubject();
+        log.debug("userSessionManage.login: " + username);
+        userSessionManagement.login(session, username);
+    }
+
+    @Override
+    protected void completeBearerAuthentication(KeycloakPrincipal principal, RefreshableKeycloakSecurityContext securityContext) {
+        Set<String> roles = getRolesFromToken(securityContext);
+        Principal generalPrincipal = new CatalinaSecurityContextHelper().createPrincipal(request.getContext().getRealm(), principal, roles);
+        request.setUserPrincipal(generalPrincipal);
+        request.setAuthType("KEYCLOAK");
+        request.setAttribute(KeycloakSecurityContext.class.getName(), securityContext);
+    }
+
+    protected Set<String> getRolesFromToken(RefreshableKeycloakSecurityContext session) {
+        Set<String> roles = null;
+        if (deployment.isUseResourceRoleMappings()) {
+            AccessToken.Access access = session.getToken().getResourceAccess(deployment.getResourceName());
+            if (access != null) roles = access.getRoles();
+        } else {
+            AccessToken.Access access =  session.getToken().getRealmAccess();
+            if (access != null) roles = access.getRoles();
+        }
+        if (roles == null) roles = Collections.emptySet();
+        return roles;
+    }
+
+    @Override
+    protected boolean isCached() {
+        if (request.getSessionInternal(false) == null || request.getSessionInternal().getPrincipal() == null)
+            return false;
+        log.debug("remote logged in already");
+        GenericPrincipal principal = (GenericPrincipal) request.getSessionInternal().getPrincipal();
+        request.setUserPrincipal(principal);
+        request.setAuthType("KEYCLOAK");
+        Session session = request.getSessionInternal();
+        if (session != null) {
+            RefreshableKeycloakSecurityContext securityContext = (RefreshableKeycloakSecurityContext) session.getNote(KeycloakSecurityContext.class.getName());
+            if (securityContext != null) {
+                securityContext.setDeployment(deployment);
+                request.setAttribute(KeycloakSecurityContext.class.getName(), securityContext);
+            }
+        }
+        restoreRequest();
+        return true;
+    }
+
+    protected void restoreRequest() {
+        if (request.getSessionInternal().getNote(Constants.FORM_REQUEST_NOTE) != null) {
+            if (valve.keycloakRestoreRequest(request)) {
+                log.debug("restoreRequest");
+            } else {
+                log.debug("Restore of original request failed");
+                throw new RuntimeException("Restore of original request failed");
+            }
+        }
+    }
+}
