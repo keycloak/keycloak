@@ -5,7 +5,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.RSATokenVerifier;
-import org.keycloak.adapters.ResourceMetadata;
+import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.VerificationException;
 import org.keycloak.representations.AccessToken;
 
@@ -22,24 +22,16 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class CatalinaBearerTokenAuthenticator {
-    protected ResourceMetadata resourceMetadata;
     protected boolean challenge;
     protected Logger log = Logger.getLogger(CatalinaBearerTokenAuthenticator.class);
     protected String tokenString;
     protected AccessToken token;
-    private Principal principal;
-    protected boolean useResourceRoleMappings;
-    protected int notBefore;
+    protected Principal principal;
+    protected KeycloakDeployment deployment;
 
-    public CatalinaBearerTokenAuthenticator(ResourceMetadata resourceMetadata, int notBefore, boolean challenge, boolean useResourceRoleMappings) {
-        this.resourceMetadata = resourceMetadata;
+    public CatalinaBearerTokenAuthenticator(KeycloakDeployment deployment, boolean challenge) {
+        this.deployment = deployment;
         this.challenge = challenge;
-        this.useResourceRoleMappings = useResourceRoleMappings;
-        this.notBefore = notBefore;
-    }
-
-    public ResourceMetadata getResourceMetadata() {
-        return resourceMetadata;
     }
 
     public String getTokenString() {
@@ -73,23 +65,23 @@ public class CatalinaBearerTokenAuthenticator {
         tokenString = split[1];
 
         try {
-            token = RSATokenVerifier.verifyToken(tokenString, resourceMetadata.getRealmKey(), resourceMetadata.getRealm());
+            token = RSATokenVerifier.verifyToken(tokenString, deployment.getRealmKey(), deployment.getRealm());
         } catch (VerificationException e) {
             log.error("Failed to verify token", e);
             challengeResponse(response, "invalid_token", e.getMessage());
         }
 
-        if (token.getIssuedAt() < notBefore) {
+        if (token.getIssuedAt() < deployment.getNotBefore()) {
             log.error("Stale token");
             challengeResponse(response, "invalid_token", "Stale token");
         }
 
         boolean verifyCaller = false;
         Set<String> roles = new HashSet<String>();
-        if (useResourceRoleMappings) {
-            AccessToken.Access access = token.getResourceAccess(resourceMetadata.getResourceName());
+        if (deployment.isUseResourceRoleMappings()) {
+            AccessToken.Access access = token.getResourceAccess(deployment.getResourceName());
             if (access != null) roles = access.getRoles();
-            verifyCaller = token.isVerifyCaller(resourceMetadata.getResourceName());
+            verifyCaller = token.isVerifyCaller(deployment.getResourceName());
         } else {
             verifyCaller = token.isVerifyCaller();
             AccessToken.Access access = token.getRealmAccess();
@@ -114,7 +106,7 @@ public class CatalinaBearerTokenAuthenticator {
         principal = new CatalinaSecurityContextHelper().createPrincipal(request.getContext().getRealm(), skeletonKeyPrincipal, roles);
         request.setUserPrincipal(principal);
         request.setAuthType("KEYCLOAK");
-        KeycloakSecurityContext skSession = new KeycloakSecurityContext(tokenString, token, null, null, resourceMetadata);
+        KeycloakSecurityContext skSession = new KeycloakSecurityContext(tokenString, token, null, null);
         request.setAttribute(KeycloakSecurityContext.class.getName(), skSession);
 
         return true;
@@ -123,7 +115,7 @@ public class CatalinaBearerTokenAuthenticator {
 
     protected void challengeResponse(HttpServletResponse response, String error, String description) throws LoginException {
         StringBuilder header = new StringBuilder("Bearer realm=\"");
-        header.append(resourceMetadata.getRealm()).append("\"");
+        header.append(deployment.getRealm()).append("\"");
         if (error != null) {
             header.append(", error=\"").append(error).append("\"");
         }

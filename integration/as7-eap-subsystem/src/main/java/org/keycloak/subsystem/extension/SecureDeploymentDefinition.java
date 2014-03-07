@@ -68,8 +68,8 @@ public class SecureDeploymentDefinition extends SimpleResourceDefinition {
                     .setDefaultValue(new ModelNode(false))
                     .build();
     protected static final SimpleAttributeDefinition PUBLIC_CLIENT =
-            new SimpleAttributeDefinitionBuilder("bearer-only", ModelType.BOOLEAN, true)
-                    .setXmlName("bearer-only")
+            new SimpleAttributeDefinitionBuilder("public-client", ModelType.BOOLEAN, true)
+                    .setXmlName("public-client")
                     .setAllowExpression(true)
                     .setDefaultValue(new ModelNode(false))
                     .build();

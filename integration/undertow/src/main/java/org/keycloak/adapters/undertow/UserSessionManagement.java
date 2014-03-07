@@ -8,7 +8,7 @@ import io.undertow.server.session.SessionManager;
 import io.undertow.servlet.handlers.security.CachedAuthenticatedSessionHandler;
 import io.undertow.util.StatusCodes;
 import org.jboss.logging.Logger;
-import org.keycloak.adapters.config.RealmConfiguration;
+import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.representations.adapters.action.LogoutAction;
 import org.keycloak.util.JsonSerialization;
@@ -33,10 +33,10 @@ public class UserSessionManagement implements SessionListener {
     private static final String AUTH_SESSION_NAME = CachedAuthenticatedSessionHandler.class.getName() + ".AuthenticatedSession";
     protected ConcurrentHashMap<String, UserSessions> userSessionMap = new ConcurrentHashMap<String, UserSessions>();
 
-    protected RealmConfiguration realmInfo;
+    protected KeycloakDeployment deployment;
 
-    public UserSessionManagement(RealmConfiguration realmInfo) {
-        this.realmInfo = realmInfo;
+    public UserSessionManagement(KeycloakDeployment deployment) {
+        this.deployment = deployment;
     }
 
     public static class UserSessions {
@@ -50,10 +50,6 @@ public class UserSessionManagement implements SessionListener {
         public long getLoggedIn() {
             return loggedIn;
         }
-    }
-
-    public int getNumUserLogins() {
-        return userSessionMap.size();
     }
 
     public int getActiveSessions() {
@@ -93,7 +89,7 @@ public class UserSessionManagement implements SessionListener {
                 response.sendError(StatusCodes.BAD_REQUEST, "Expired token");
                 return;
             }
-            if (!realmInfo.getMetadata().getResourceName().equals(action.getResource())) {
+            if (!deployment.getResourceName().equals(action.getResource())) {
                 log.warn("Resource name does not match");
                 response.sendError(StatusCodes.BAD_REQUEST, "Resource name does not match");
                 return;

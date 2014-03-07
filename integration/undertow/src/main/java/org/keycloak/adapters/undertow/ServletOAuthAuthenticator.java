@@ -2,7 +2,7 @@ package org.keycloak.adapters.undertow;
 
 import io.undertow.server.HttpServerExchange;
 import io.undertow.servlet.api.ConfidentialPortManager;
-import org.keycloak.adapters.config.RealmConfiguration;
+import org.keycloak.adapters.KeycloakDeployment;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -11,8 +11,8 @@ import org.keycloak.adapters.config.RealmConfiguration;
 public class ServletOAuthAuthenticator extends OAuthAuthenticator {
     protected ConfidentialPortManager portManager;
 
-    public ServletOAuthAuthenticator(HttpServerExchange exchange, RealmConfiguration realmInfo, ConfidentialPortManager portManager) {
-        super(exchange, realmInfo, -1);
+    public ServletOAuthAuthenticator(HttpServerExchange exchange, KeycloakDeployment deployment, ConfidentialPortManager portManager) {
+        super(exchange, deployment, -1);
         this.portManager = portManager;
     }
 

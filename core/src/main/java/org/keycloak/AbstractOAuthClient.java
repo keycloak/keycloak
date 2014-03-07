@@ -15,7 +15,6 @@ public class AbstractOAuthClient {
     public static final String OAUTH_TOKEN_REQUEST_STATE = "OAuth_Token_Request_State";
     protected String clientId;
     protected Map<String, String> credentials;
-    protected KeyStore truststore;
     protected String authUrl;
     protected String codeUrl;
     protected String refreshUrl;
@@ -46,19 +45,9 @@ public class AbstractOAuthClient {
         this.credentials = credentials;
     }
 
-    public KeyStore getTruststore() {
-        return truststore;
-    }
-
-    public void setTruststore(KeyStore truststore) {
-        this.truststore = truststore;
-    }
-
     public String getAuthUrl() {
         return authUrl;
     }
-
-
 
     public void setAuthUrl(String authUrl) {
         this.authUrl = authUrl;

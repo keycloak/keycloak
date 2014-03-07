@@ -9,6 +9,7 @@ import org.apache.catalina.valves.ValveBase;
 import org.jboss.logging.Logger;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterConstants;
+import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 
@@ -31,10 +32,10 @@ import java.util.Set;
  */
 public class AuthenticatedActionsValve extends ValveBase {
     private static final Logger log = Logger.getLogger(AuthenticatedActionsValve.class);
-    protected AdapterConfig config;
+    protected KeycloakDeployment deployment;
 
-    public AuthenticatedActionsValve(AdapterConfig config, Valve next, Container container, ObjectName controller) {
-        this.config = config;
+    public AuthenticatedActionsValve(KeycloakDeployment deployment, Valve next, Container container, ObjectName controller) {
+        this.deployment = deployment;
         if (next == null) throw new RuntimeException("WTF is next null?!");
         setNext(next);
         setContainer(container);
@@ -81,11 +82,11 @@ public class AuthenticatedActionsValve extends ValveBase {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
             return true;
         }
-        if (!config.isExposeToken()) {
+        if (!deployment.isExposeToken()) {
             response.setStatus(HttpServletResponse.SC_OK);
             return true;
         }
-        if (!config.isCors() && request.getHeader("Origin") != null) {
+        if (!deployment.isCors() && request.getHeader("Origin") != null) {
             response.setStatus(HttpServletResponse.SC_OK);
             return true;
         }
@@ -93,7 +94,7 @@ public class AuthenticatedActionsValve extends ValveBase {
     }
 
     protected boolean corsRequest(Request request, Response response, KeycloakSecurityContext session) throws IOException {
-        if (!config.isCors()) return false;
+        if (!deployment.isCors()) return false;
         log.debugv("CORS enabled + request.getRequestURI()");
         String origin = request.getHeader("Origin");
         log.debugv("Origin: {0} uri: {1}", origin, request.getRequestURI());

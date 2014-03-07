@@ -6,6 +6,7 @@ import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HttpString;
 import io.undertow.util.StatusCodes;
 import org.jboss.logging.Logger;
+import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 
 /**
@@ -14,7 +15,7 @@ import org.keycloak.representations.adapters.config.AdapterConfig;
  */
 public class PreflightCorsHandler implements HttpHandler {
     private static final Logger log = Logger.getLogger(PreflightCorsHandler.class);
-    protected AdapterConfig adapterConfig;
+    protected KeycloakDeployment deployment;
     protected HttpHandler next;
 
     public static final HttpString ACCESS_CONTROL_ALLOW_ORIGIN = new HttpString("Access-Control-Allow-Origin");
@@ -24,20 +25,20 @@ public class PreflightCorsHandler implements HttpHandler {
     public static final HttpString ACCESS_CONTROL_MAX_AGE = new HttpString("Access-Control-Max-Age");
 
     public static class Wrapper implements HandlerWrapper {
-        protected AdapterConfig config;
+        protected KeycloakDeployment deployment;
 
-        public Wrapper(AdapterConfig config) {
-            this.config = config;
+        public Wrapper(KeycloakDeployment deployment) {
+            this.deployment = deployment;
         }
 
         @Override
         public HttpHandler wrap(HttpHandler handler) {
-            return new PreflightCorsHandler(config, handler);
+            return new PreflightCorsHandler(deployment, handler);
         }
     }
 
-    protected PreflightCorsHandler(AdapterConfig config, HttpHandler next) {
-        this.adapterConfig = config;
+    protected PreflightCorsHandler(KeycloakDeployment deployment, HttpHandler next) {
+        this.deployment = deployment;
         this.next = next;
     }
 
@@ -61,20 +62,20 @@ public class PreflightCorsHandler implements HttpHandler {
         exchange.getResponseHeaders().put(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
         String requestMethods = exchange.getRequestHeaders().getFirst("Access-Control-Request-Method");
         if (requestMethods != null) {
-            if (adapterConfig.getCorsAllowedMethods() != null) {
-                requestMethods = adapterConfig.getCorsAllowedMethods();
+            if (deployment.getCorsAllowedMethods() != null) {
+                requestMethods = deployment.getCorsAllowedMethods();
             }
             exchange.getResponseHeaders().put(ACCESS_CONTROL_ALLOW_METHODS, requestMethods);
         }
         String allowHeaders = exchange.getRequestHeaders().getFirst("Access-Control-Request-Headers");
         if (allowHeaders != null) {
-            if (adapterConfig.getCorsAllowedHeaders() != null) {
-                allowHeaders = adapterConfig.getCorsAllowedHeaders();
+            if (deployment.getCorsAllowedHeaders() != null) {
+                allowHeaders = deployment.getCorsAllowedHeaders();
             }
             exchange.getResponseHeaders().put(ACCESS_CONTROL_ALLOW_HEADERS, allowHeaders);
         }
-        if (adapterConfig.getCorsMaxAge() > -1) {
-            exchange.getResponseHeaders().put(ACCESS_CONTROL_MAX_AGE, Integer.toString(adapterConfig.getCorsMaxAge()));
+        if (deployment.getCorsMaxAge() > -1) {
+            exchange.getResponseHeaders().put(ACCESS_CONTROL_MAX_AGE, Integer.toString(deployment.getCorsMaxAge()));
         }
         exchange.endExchange();
     }

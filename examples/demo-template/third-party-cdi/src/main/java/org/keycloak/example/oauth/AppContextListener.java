@@ -12,7 +12,7 @@ import javax.servlet.annotation.WebListener;
 
 import org.jboss.logging.Logger;
 import org.keycloak.servlet.ServletOAuthClient;
-import org.keycloak.servlet.ServletOAuthClientConfigLoader;
+import org.keycloak.servlet.ServletOAuthClientBuilder;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -40,12 +40,7 @@ public class AppContextListener implements ServletContextListener {
                 throw new RuntimeException(e);
             }
         }
-
-        ServletOAuthClientConfigLoader loader = new ServletOAuthClientConfigLoader(is);
-        loader.initOAuthClientConfiguration(true);
-        loader.configureServletOAuthClient(oauthClient);
-
-        oauthClient.start();
+        ServletOAuthClientBuilder.build(is, oauthClient);
         logger.info("OAuth client configured and started");
     }
 

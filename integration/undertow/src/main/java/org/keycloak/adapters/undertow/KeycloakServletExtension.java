@@ -14,9 +14,8 @@ import io.undertow.servlet.api.ServletSessionConfig;
 import java.io.ByteArrayInputStream;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.AdapterConstants;
-import org.keycloak.adapters.config.RealmConfiguration;
-import org.keycloak.representations.adapters.config.AdapterConfig;
-import org.keycloak.adapters.config.RealmConfigurationLoader;
+import org.keycloak.adapters.KeycloakDeployment;
+import org.keycloak.adapters.KeycloakDeploymentBuilder;
 
 import javax.servlet.ServletContext;
 import java.io.InputStream;
@@ -63,24 +62,20 @@ public class KeycloakServletExtension implements ServletExtension {
             is = servletContext.getResourceAsStream("/WEB-INF/keycloak.json");
         }
         if (is == null) throw new RuntimeException("Unable to find realm config in /WEB-INF/keycloak.json or in keycloak subsystem.");
-        RealmConfigurationLoader loader = new RealmConfigurationLoader(is);
-        loader.init(true);
-        AdapterConfig keycloakConfig = loader.getAdapterConfig();
-        RealmConfiguration realmConfiguration = loader.getRealmConfiguration();
-        PreflightCorsHandler.Wrapper preflight = new PreflightCorsHandler.Wrapper(keycloakConfig);
-        UserSessionManagement userSessionManagement = new UserSessionManagement(realmConfiguration);
+        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(is);
+        PreflightCorsHandler.Wrapper preflight = new PreflightCorsHandler.Wrapper(deployment);
+        UserSessionManagement userSessionManagement = new UserSessionManagement(deployment);
         ServletKeycloakAuthenticationMechanism auth = null;
         auth = new ServletKeycloakAuthenticationMechanism(
                 userSessionManagement,
-                keycloakConfig,
-                realmConfiguration,
+                deployment,
                 deploymentInfo.getConfidentialPortManager());
-        AuthenticatedActionsHandler.Wrapper actions = new AuthenticatedActionsHandler.Wrapper(keycloakConfig);
+        AuthenticatedActionsHandler.Wrapper actions = new AuthenticatedActionsHandler.Wrapper(deployment);
 
         // setup handlers
 
         deploymentInfo.addInitialHandlerChainWrapper(preflight); // cors preflight
-        deploymentInfo.addOuterHandlerChainWrapper(new ServletAdminActionsHandler.Wrapper(realmConfiguration, loader.getResourceMetadata(), userSessionManagement));
+        deploymentInfo.addOuterHandlerChainWrapper(new ServletAdminActionsHandler.Wrapper(deployment, userSessionManagement));
         final ServletKeycloakAuthenticationMechanism theAuth = auth;
         deploymentInfo.addAuthenticationMechanism("KEYCLOAK", new AuthenticationMechanismFactory() {
             @Override

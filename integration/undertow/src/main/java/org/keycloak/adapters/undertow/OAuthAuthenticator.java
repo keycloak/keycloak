@@ -9,8 +9,8 @@ import io.undertow.util.Headers;
 import io.undertow.util.StatusCodes;
 import org.jboss.logging.Logger;
 import org.keycloak.RSATokenVerifier;
+import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.ServerRequest;
-import org.keycloak.adapters.config.RealmConfiguration;
 import org.keycloak.VerificationException;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.representations.AccessToken;
@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class OAuthAuthenticator {
     private static final Logger log = Logger.getLogger(OAuthAuthenticator.class);
-    protected RealmConfiguration realmInfo;
+    protected KeycloakDeployment deployment;
     protected int sslRedirectPort;
     protected String tokenString;
     protected String idTokenString;
@@ -41,9 +41,9 @@ public class OAuthAuthenticator {
     protected String refreshToken;
     protected String strippedOauthParametersRequestUri;
 
-    public OAuthAuthenticator(HttpServerExchange exchange, RealmConfiguration realmInfo,  int sslRedirectPort) {
+    public OAuthAuthenticator(HttpServerExchange exchange, KeycloakDeployment deployment,  int sslRedirectPort) {
         this.exchange = exchange;
-        this.realmInfo = realmInfo;
+        this.deployment = deployment;
         this.sslRedirectPort = sslRedirectPort;
     }
 
@@ -129,7 +129,7 @@ public class OAuthAuthenticator {
     protected String getRedirectUri(String state) {
         String url = getRequestUrl();
         log.infof("sending redirect uri: %s", url);
-        if (!isRequestSecure() && realmInfo.isSslRequired()) {
+        if (!isRequestSecure() && deployment.isSslRequired()) {
             int port = sslRedirectPort();
             if (port < 0) {
                 // disabled?
@@ -139,8 +139,8 @@ public class OAuthAuthenticator {
             if (port != 443) secureUrl.port(port);
             url = secureUrl.build().toString();
         }
-        return realmInfo.getAuthUrl().clone()
-                .queryParam("client_id", realmInfo.getMetadata().getResourceName())
+        return deployment.getAuthUrl().clone()
+                .queryParam("client_id", deployment.getResourceName())
                 .queryParam("redirect_uri", url)
                 .queryParam("state", state)
                 .queryParam("login", "true")
@@ -166,9 +166,9 @@ public class OAuthAuthenticator {
                 if (redirect == null) {
                     return new AuthenticationMechanism.ChallengeResult(true, StatusCodes.FORBIDDEN);
                 }
-                CookieImpl cookie = new CookieImpl(realmInfo.getStateCookieName(), state);
+                CookieImpl cookie = new CookieImpl(deployment.getStateCookieName(), state);
                 //cookie.setPath(getDefaultCookiePath()); todo I don't think we need to set state cookie path as it will be the same redirect
-                cookie.setSecure(realmInfo.isSslRequired());
+                cookie.setSecure(deployment.isSslRequired());
                 exchange.setResponseCookie(cookie);
                 exchange.getResponseHeaders().put(Headers.LOCATION, redirect);
                 return new AuthenticationMechanism.ChallengeResult(true, StatusCodes.FOUND);
@@ -177,7 +177,7 @@ public class OAuthAuthenticator {
     }
 
     protected KeycloakChallenge checkStateCookie() {
-        Cookie stateCookie = getCookie(realmInfo.getStateCookieName());
+        Cookie stateCookie = getCookie(deployment.getStateCookieName());
 
         if (stateCookie == null) {
             log.warn("No state cookie");
@@ -185,12 +185,12 @@ public class OAuthAuthenticator {
         }
         // reset the cookie
         log.info("** reseting application state cookie");
-        Cookie reset = new CookieImpl(realmInfo.getStateCookieName(), "");
+        Cookie reset = new CookieImpl(deployment.getStateCookieName(), "");
         reset.setPath(stateCookie.getPath());
         reset.setMaxAge(0);
         exchange.setResponseCookie(reset);
 
-        String stateCookieValue = getCookieValue(realmInfo.getStateCookieName());
+        String stateCookieValue = getCookieValue(deployment.getStateCookieName());
 
         String state = getQueryParamValue("state");
         if (state == null) {
@@ -256,7 +256,7 @@ public class OAuthAuthenticator {
      */
     protected KeycloakChallenge resolveCode(String code) {
         // abort if not HTTPS
-        if (realmInfo.isSslRequired() && !isRequestSecure()) {
+        if (deployment.isSslRequired() && !isRequestSecure()) {
             log.error("SSL is required");
             return challenge(StatusCodes.FORBIDDEN);
         }
@@ -268,7 +268,7 @@ public class OAuthAuthenticator {
         AccessTokenResponse tokenResponse = null;
         strippedOauthParametersRequestUri = stripOauthParametersFromRedirect();
         try {
-            tokenResponse = ServerRequest.invokeAccessCodeToToken(realmInfo, code, strippedOauthParametersRequestUri);
+            tokenResponse = ServerRequest.invokeAccessCodeToToken(deployment, code, strippedOauthParametersRequestUri);
         } catch (ServerRequest.HttpFailure failure) {
             log.error("failed to turn code into token");
             log.error("status from server: " + failure.getStatus());
@@ -286,7 +286,7 @@ public class OAuthAuthenticator {
         refreshToken = tokenResponse.getRefreshToken();
         idTokenString = tokenResponse.getIdToken();
         try {
-            token = RSATokenVerifier.verifyToken(tokenString, realmInfo.getMetadata().getRealmKey(), realmInfo.getMetadata().getRealm());
+            token = RSATokenVerifier.verifyToken(tokenString, deployment.getRealmKey(), deployment.getRealm());
             if (idTokenString != null) {
                 JWSInput input = new JWSInput(idTokenString);
                 try {
@@ -300,10 +300,10 @@ public class OAuthAuthenticator {
             log.error("failed verification of token");
             return challenge(StatusCodes.FORBIDDEN);
         }
-        if (tokenResponse.getNotBeforePolicy() > realmInfo.getNotBefore()) {
-            realmInfo.setNotBefore(tokenResponse.getNotBeforePolicy());
+        if (tokenResponse.getNotBeforePolicy() > deployment.getNotBefore()) {
+            deployment.setNotBefore(tokenResponse.getNotBeforePolicy());
         }
-        if (token.getIssuedAt() < realmInfo.getNotBefore()) {
+        if (token.getIssuedAt() < deployment.getNotBefore()) {
             log.error("Stale token");
             return challenge(StatusCodes.FORBIDDEN);
         }

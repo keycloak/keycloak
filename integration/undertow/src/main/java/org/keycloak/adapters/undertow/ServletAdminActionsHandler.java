@@ -8,8 +8,7 @@ import io.undertow.servlet.handlers.ServletRequestContext;
 import io.undertow.util.StatusCodes;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.AdapterConstants;
-import org.keycloak.adapters.ResourceMetadata;
-import org.keycloak.adapters.config.RealmConfiguration;
+import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.representations.adapters.action.AdminAction;
@@ -25,8 +24,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -38,35 +35,30 @@ public class ServletAdminActionsHandler implements HttpHandler {
     private static final Logger log = Logger.getLogger(ServletAdminActionsHandler.class);
     protected HttpHandler next;
     protected UserSessionManagement userSessionManagement;
-    protected RealmConfiguration realmConfig;
-    protected ResourceMetadata resourceMetadata;
+    protected KeycloakDeployment deployment;
 
     public static class Wrapper implements HandlerWrapper {
-        protected RealmConfiguration realmConfig;
-        protected ResourceMetadata resourceMetadata;
+        protected KeycloakDeployment deployment;
         protected UserSessionManagement userSessionManagement;
 
 
-        public Wrapper(RealmConfiguration realmConfig, ResourceMetadata resourceMetadata, UserSessionManagement userSessionManagement) {
-            this.realmConfig = realmConfig;
-            this.resourceMetadata = resourceMetadata;
+        public Wrapper(KeycloakDeployment deployment, UserSessionManagement userSessionManagement) {
+            this.deployment = deployment;
             this.userSessionManagement = userSessionManagement;
         }
 
         @Override
         public HttpHandler wrap(HttpHandler handler) {
-            return new ServletAdminActionsHandler(realmConfig, resourceMetadata, userSessionManagement, handler);
+            return new ServletAdminActionsHandler(deployment, userSessionManagement, handler);
         }
     }
 
-    protected ServletAdminActionsHandler(RealmConfiguration realmConfig,
-                                         ResourceMetadata resourceMetadata,
+    protected ServletAdminActionsHandler(KeycloakDeployment deployment,
                                          UserSessionManagement userSessionManagement,
                                          HttpHandler next) {
         this.next = next;
-        this.resourceMetadata = resourceMetadata;
+        this.deployment = deployment;
         this.userSessionManagement = userSessionManagement;
-        this.realmConfig = realmConfig;
     }
 
 
@@ -110,7 +102,7 @@ public class ServletAdminActionsHandler implements HttpHandler {
         }
         PushNotBeforeAction action = JsonSerialization.readValue(token.getContent(), PushNotBeforeAction.class);
         if (!validateAction(response, action)) return;
-        realmConfig.setNotBefore(action.getNotBefore());
+        deployment.setNotBefore(action.getNotBefore());
         return;
     }
 
@@ -125,7 +117,7 @@ public class ServletAdminActionsHandler implements HttpHandler {
         JWSInput input = new JWSInput(token);
         boolean verified = false;
         try {
-            verified = RSAProvider.verify(input, realmConfig.getMetadata().getRealmKey());
+            verified = RSAProvider.verify(input, deployment.getRealmKey());
         } catch (Exception ignore) {
         }
         if (!verified) {
@@ -148,7 +140,7 @@ public class ServletAdminActionsHandler implements HttpHandler {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Expired token");
             return false;
         }
-        if (!resourceMetadata.getResourceName().equals(action.getResource())) {
+        if (!deployment.getResourceName().equals(action.getResource())) {
             log.warn("Resource name does not match");
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Resource name does not match");
             return false;

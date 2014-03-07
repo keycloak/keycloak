@@ -4,8 +4,7 @@ import io.undertow.server.HttpServerExchange;
 import io.undertow.servlet.api.ConfidentialPortManager;
 import io.undertow.servlet.handlers.ServletRequestContext;
 import org.keycloak.KeycloakSecurityContext;
-import org.keycloak.adapters.config.RealmConfiguration;
-import org.keycloak.representations.adapters.config.AdapterConfig;
+import org.keycloak.adapters.KeycloakDeployment;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -18,15 +17,15 @@ public class ServletKeycloakAuthenticationMechanism extends KeycloakAuthenticati
     protected ConfidentialPortManager portManager;
     protected UserSessionManagement userSessionManagement;
 
-    public ServletKeycloakAuthenticationMechanism(UserSessionManagement userSessionManagement, AdapterConfig config, RealmConfiguration realmConfig, ConfidentialPortManager portManager) {
-        super(config, realmConfig);
+    public ServletKeycloakAuthenticationMechanism(UserSessionManagement userSessionManagement, KeycloakDeployment deployment, ConfidentialPortManager portManager) {
+        super(deployment);
         this.portManager = portManager;
         this.userSessionManagement = userSessionManagement;
     }
 
     @Override
     protected OAuthAuthenticator createOAuthAuthenticator(HttpServerExchange exchange) {
-        return new ServletOAuthAuthenticator(exchange, realmConfig, portManager);
+        return new ServletOAuthAuthenticator(exchange, deployment, portManager);
     }
 
     @Override
@@ -43,7 +42,7 @@ public class ServletKeycloakAuthenticationMechanism extends KeycloakAuthenticati
             log.info("Account was not in session, returning null");
             return null;
         }
-        if (account.isActive(realmConfig, adapterConfig)) return account;
+        if (account.isActive(deployment)) return account;
         log.info("Account was not active, returning null");
         session.setAttribute(KeycloakUndertowAccount.class.getName(), null);
         return null;
