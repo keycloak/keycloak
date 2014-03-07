@@ -6,6 +6,9 @@ body {
     background-image: url('../img/logo.png');
     height: 25px;
     background-repeat: no-repeat;
+    width: 102px;
+    margin: 3px 20px 5px;
+    text-indent: -99999px;
 }
 
 .navbar-pf {
@@ -29,19 +32,19 @@ body {
 .navbar-pf .navbar-primary > .active > a,
 .navbar-pf .navbar-primary > .active > a:hover{
     background-color: rgba(0,0,0,0.1);
-    border-bottom-color: rgba(0,0,0,0.3);
-    border-right: rgba(0,0,0,0.3);
-    border-top-color: rgba(0,0,0,0.1);
-    font-weight: 600;
     background-image: -webkit-linear-gradient(top, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.1) 100%);
     background-image: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.1) 100%);
-    background-repeat: repeat-x;
-    font-size: 12px;
-    margin-top: 0;
+    border-bottom: none;
+    border-right-color: rgba(255,255,255,0.15);
+    border-top-color: rgba(255,255,255,0.05);
 }
 
 .navbar-pf .navbar-primary li.dropdown.context > a {
 	padding-right: 12px;
+}
+
+.navbar-pf .navbar-primary > li > a {
+	color: #fff !important;
 }
 
 .navbar-pf .navbar-primary li.dropdown.context > a:hover,
@@ -61,15 +64,15 @@ body {
     background-repeat: repeat-x;
 }
 
-.navbar-pf .navbar-nav > li > a {
+.navbar-pf .navbar-utility li.dropdown > .dropdown-toggle {
     border-left: none;
-    padding-top: 12px;
+    padding-top: 11px;
     padding-bottom: 11px;
     color: #fff !important;
 }
 
 .navbar-pf .navbar-utility li.dropdown > .dropdown-toggle .pficon-user {
-	top: 11px;
+	top: 10px;
 }
 
 .navbar-pf .navbar-utility > li > a:hover,
@@ -169,15 +172,6 @@ th.kc-table-actions {
 
 header .navbar {
     margin-bottom: 0;
-}
-
-.navbar-pf .navbar-title {
-    color: #ddd;
-    margin: .3em .4em;
-    padding: 0;
-    font-size: inherit;
-    font-size: 1.3em;
-    text-transform: uppercase;
 }
 
 #idletimeout {
