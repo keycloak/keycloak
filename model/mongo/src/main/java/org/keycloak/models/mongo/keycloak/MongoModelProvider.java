@@ -3,8 +3,8 @@ package org.keycloak.models.mongo.keycloak;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ModelProvider;
 import org.keycloak.models.mongo.keycloak.adapters.MongoKeycloakSessionFactory;
-import org.keycloak.models.mongo.utils.MongoConfiguration;
-import org.keycloak.models.mongo.utils.SystemPropertiesConfigurationProvider;
+import org.keycloak.models.mongo.keycloak.config.MongoClientProvider;
+import org.keycloak.models.mongo.keycloak.config.MongoClientProviderHolder;
 
 import java.lang.Override;
 
@@ -21,7 +21,7 @@ public class MongoModelProvider implements ModelProvider {
 
     @Override
     public KeycloakSessionFactory createFactory() {
-        MongoConfiguration config = SystemPropertiesConfigurationProvider.createConfiguration();
-        return new MongoKeycloakSessionFactory(config);
+        MongoClientProvider mongoClientProvider = MongoClientProviderHolder.getInstance();
+        return new MongoKeycloakSessionFactory(mongoClientProvider);
     }
 }

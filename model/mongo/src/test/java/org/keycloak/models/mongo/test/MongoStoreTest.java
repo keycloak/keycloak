@@ -1,8 +1,6 @@
 package org.keycloak.models.mongo.test;
 
-import com.mongodb.DB;
 import com.mongodb.DBObject;
-import com.mongodb.MongoClient;
 import com.mongodb.QueryBuilder;
 import org.junit.After;
 import org.junit.Assert;
@@ -13,9 +11,8 @@ import org.keycloak.models.mongo.api.MongoStore;
 import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.mongo.impl.MongoStoreImpl;
 import org.keycloak.models.mongo.impl.context.TransactionMongoStoreInvocationContext;
-import org.keycloak.models.mongo.utils.SystemPropertiesConfigurationProvider;
-
-import java.net.UnknownHostException;
+import org.keycloak.models.mongo.keycloak.config.MongoClientProvider;
+import org.keycloak.models.mongo.keycloak.config.MongoClientProviderHolder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -31,26 +28,18 @@ public class MongoStoreTest {
             AddressWithFlats.class
     };
 
-    private MongoClient mongoClient;
+    private MongoClientProvider mongoClientProvider;
     private MongoStore mongoStore;
 
     @Before
     public void before() throws Exception {
-        try {
-            // TODO: authentication support
-            mongoClient = new MongoClient("localhost", SystemPropertiesConfigurationProvider.getMongoPort());
-
-            DB db = mongoClient.getDB("keycloakTest");
-            mongoStore = new MongoStoreImpl(db, true, MANAGED_DATA_TYPES);
-
-        } catch (UnknownHostException e) {
-            throw new RuntimeException(e);
-        }
+        mongoClientProvider = MongoClientProviderHolder.getInstance();
+        mongoStore = new MongoStoreImpl(mongoClientProvider.getDB(), true, MANAGED_DATA_TYPES);
     }
 
     @After
     public void after() throws Exception {
-        mongoClient.close();
+        mongoClientProvider.close();
     }
 
     @Test
