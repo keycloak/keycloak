@@ -1,0 +1,25 @@
+<section id="installed-applications">
+    <title>Installed Applications</title>
+    <para>
+        Keycloak provides two special redirect uris for installed applications.
+    </para>
+    <section id="installed-applications-url">
+        <title>http://localhost</title>
+        <para>
+            This returns the code to a web server on the client as a query parameter. Any port number is allowed.
+            This makes it possible to start a web server for the installed application on any free port number without
+            requiring changes in the <literal>Admin Console</literal>.
+        </para>
+    </section>
+    <section id="installed-applications-urn">
+        <title>urn:ietf:wg:oauth:2.0:oob</title>
+        <para>
+            If its not possible to start a web server in the client (or a browser is not available) it is possible to
+            use the special <literal>urn:ietf:wg:oauth:2.0:oob</literal> redirect uri. When this redirect uri is used
+            Keycloak displays a page with the code in the title and in a box on the page. The application can either
+            detect that the browser title has changed, or the user can copy/paste the code manually to the application.
+            With this redirect uri it is also possible for a user to use a different device to obtain a code to paste
+            back to the application.
+        </para>
+    </section>
+</section>
