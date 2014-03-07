@@ -81,12 +81,12 @@ body {
     background-color: rgba(0,0,0,0.2);
 }
 
-#content, #content-area {
-    background-color: #FFFFFF;
+html, body, body > .container, #view {
+    height: 100%;
 }
 
-html, body, body > .container, #view, #content-area{
-    height: 100%;
+body > .container {
+	height: calc(100% - 80px);
 }
 
 #content .glyphicon {
@@ -144,7 +144,9 @@ th.kc-table-actions {
     border-color: #CECECE;
     border-style: solid;
     border-width: 0 1px;
-    padding: 0;
+    padding: 0 0 40px;
+    background-color: #fff;
+    min-height: 100%;
 }
 
 #content-area > * {
