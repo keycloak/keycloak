@@ -38,10 +38,6 @@ public class UserSessionManagement implements SessionListener {
         }
     }
 
-    public int getNumUserLogins() {
-        return userSessionMap.size();
-    }
-
     public int getActiveSessions() {
         int active = 0;
         synchronized (userSessionMap) {

@@ -14,17 +14,17 @@ import java.io.IOException;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class RefreshableKeycloakSession extends KeycloakSecurityContext {
+public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext {
 
-    protected static Logger log = Logger.getLogger(RefreshableKeycloakSession.class);
+    protected static Logger log = Logger.getLogger(RefreshableKeycloakSecurityContext.class);
 
     protected transient KeycloakDeployment deployment;
     protected String refreshToken;
 
-    public RefreshableKeycloakSession() {
+    public RefreshableKeycloakSecurityContext() {
     }
 
-    public RefreshableKeycloakSession(KeycloakDeployment deployment, String tokenString, AccessToken token, String idTokenString, IDToken idToken, String refreshToken) {
+    public RefreshableKeycloakSecurityContext(KeycloakDeployment deployment, String tokenString, AccessToken token, String idTokenString, IDToken idToken, String refreshToken) {
         super(tokenString, token, idTokenString, idToken);
         this.deployment = deployment;
         this.refreshToken = refreshToken;

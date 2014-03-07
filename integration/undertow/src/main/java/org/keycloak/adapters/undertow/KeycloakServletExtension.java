@@ -65,22 +65,18 @@ public class KeycloakServletExtension implements ServletExtension {
         KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(is);
         PreflightCorsHandler.Wrapper preflight = new PreflightCorsHandler.Wrapper(deployment);
         UserSessionManagement userSessionManagement = new UserSessionManagement(deployment);
-        ServletKeycloakAuthenticationMechanism auth = null;
-        auth = new ServletKeycloakAuthenticationMechanism(
-                userSessionManagement,
-                deployment,
-                deploymentInfo.getConfidentialPortManager());
+        final ServletKeycloakAuthMech mech = new ServletKeycloakAuthMech(deployment, userSessionManagement, deploymentInfo.getConfidentialPortManager());
+
         AuthenticatedActionsHandler.Wrapper actions = new AuthenticatedActionsHandler.Wrapper(deployment);
 
         // setup handlers
 
         deploymentInfo.addInitialHandlerChainWrapper(preflight); // cors preflight
         deploymentInfo.addOuterHandlerChainWrapper(new ServletAdminActionsHandler.Wrapper(deployment, userSessionManagement));
-        final ServletKeycloakAuthenticationMechanism theAuth = auth;
         deploymentInfo.addAuthenticationMechanism("KEYCLOAK", new AuthenticationMechanismFactory() {
             @Override
             public AuthenticationMechanism create(String s, FormParserFactory formParserFactory, Map<String, String> stringStringMap) {
-                return theAuth;
+                return mech;
             }
         }); // authentication
         deploymentInfo.addInnerHandlerChainWrapper(actions); // handles authenticated actions and cors.

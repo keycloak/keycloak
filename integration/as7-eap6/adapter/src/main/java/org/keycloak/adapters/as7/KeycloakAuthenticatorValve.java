@@ -17,9 +17,11 @@ import org.jboss.logging.Logger;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.adapters.AdapterConstants;
+import org.keycloak.adapters.AuthChallenge;
+import org.keycloak.adapters.AuthOutcome;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
-import org.keycloak.adapters.RefreshableKeycloakSession;
+import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.adapters.action.AdminAction;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
@@ -154,29 +156,21 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
 
     @Override
     public boolean authenticate(Request request, HttpServletResponse response, LoginConfig config) throws IOException {
-        try {
-            if (bearer(false, request, response)) return true;
-            else if (checkLoggedIn(request, response)) {
-                if (request.getSessionInternal().getNote(Constants.FORM_REQUEST_NOTE) != null) {
-                    if (restoreRequest(request, request.getSessionInternal())) {
-                        log.debug("restoreRequest");
-                        return (true);
-                    } else {
-                        log.debug("Restore of original request failed");
-                        response.sendError(HttpServletResponse.SC_BAD_REQUEST);
-                        return (false);
-                    }
-                } else {
-                    return true;
-                }
+        CatalinaHttpFacade facade = new CatalinaHttpFacade(request, response);
+        CatalinaRequestAuthenticator authenticator = new CatalinaRequestAuthenticator(deployment, this, userSessionManagement, facade, request);
+        AuthOutcome outcome = authenticator.authenticate();
+        if (outcome == AuthOutcome.AUTHENTICATED) {
+            if (facade.isEnded()) {
+                return false;
             }
-
-            // initiate or continue oauth2 protocol
-            if (!deployment.isBearerOnly()) oauth(request, response);
-        } catch (LoginException e) {
+            return true;
+        }
+        AuthChallenge challenge = authenticator.getChallenge();
+        if (challenge != null) {
+            challenge.challenge(facade);
         }
         return false;
-    }
+     }
 
     protected JWSInput verifyAdminRequest(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String token = StreamUtil.readString(request.getInputStream());
@@ -303,15 +297,6 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
         response.setStatus(HttpServletResponse.SC_NO_CONTENT);
     }
 
-    protected boolean bearer(boolean challenge, Request request, HttpServletResponse response) throws LoginException, IOException {
-        boolean useResourceRoleMappings = deployment.isUseResourceRoleMappings();
-        CatalinaBearerTokenAuthenticator bearer = new CatalinaBearerTokenAuthenticator(deployment, challenge);
-        if (bearer.login(request, response)) {
-            return true;
-        }
-        return false;
-    }
-
     /**
      * Checks that access token is still valid.  Will attempt refresh of token if it is not.
      *
@@ -319,7 +304,7 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
      */
     protected void checkKeycloakSession(Request request) {
         if (request.getSessionInternal(false) == null || request.getSessionInternal().getPrincipal() == null) return;
-        RefreshableKeycloakSession session = (RefreshableKeycloakSession)request.getSessionInternal().getNote(KeycloakSecurityContext.class.getName());
+        RefreshableKeycloakSecurityContext session = (RefreshableKeycloakSecurityContext)request.getSessionInternal().getNote(KeycloakSecurityContext.class.getName());
         if (session == null) return;
         // just in case session got serialized
         session.setDeployment(deployment);
@@ -337,62 +322,15 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
         request.getSessionInternal().setAuthType(null);
     }
 
-    protected boolean checkLoggedIn(Request request, HttpServletResponse response) {
-        if (request.getSessionInternal(false) == null || request.getSessionInternal().getPrincipal() == null)
-            return false;
-        log.debug("remote logged in already");
-        GenericPrincipal principal = (GenericPrincipal) request.getSessionInternal().getPrincipal();
-        request.setUserPrincipal(principal);
-        request.setAuthType("KEYCLOAK");
-        Session session = request.getSessionInternal();
-        if (session != null) {
-            KeycloakSecurityContext skSession = (KeycloakSecurityContext) session.getNote(KeycloakSecurityContext.class.getName());
-            if (skSession != null) {
-                request.setAttribute(KeycloakSecurityContext.class.getName(), skSession);
-            }
-        }
-        return true;
+    public void keycloakSaveRequest(Request request) throws IOException {
+        saveRequest(request, request.getSessionInternal(true));
     }
 
-    /**
-     * This method always set the HTTP response, so do not continue after invoking
-     */
-    protected void oauth(Request request, HttpServletResponse response) throws IOException {
-        ServletOAuthLogin oauth = new ServletOAuthLogin(deployment, request, response, request.getConnector().getRedirectPort());
-        String code = oauth.getCode();
-        if (code == null) {
-            String error = oauth.getError();
-            if (error != null) {
-                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "OAuth " + error);
-                return;
-            } else {
-                saveRequest(request, request.getSessionInternal(true));
-                oauth.loginRedirect();
-            }
-            return;
-        } else {
-            if (!oauth.resolveCode(code)) return;
-
-            AccessToken token = oauth.getToken();
-            Set<String> roles = new HashSet<String>();
-            if (deployment.isUseResourceRoleMappings()) {
-                AccessToken.Access access = token.getResourceAccess(deployment.getResourceName());
-                if (access != null) roles.addAll(access.getRoles());
-            } else {
-                AccessToken.Access access = token.getRealmAccess();
-                if (access != null) roles.addAll(access.getRoles());
-            }
-            KeycloakPrincipal skp = new KeycloakPrincipal(token.getSubject(), null);
-            GenericPrincipal principal = new CatalinaSecurityContextHelper().createPrincipal(context.getRealm(), skp, roles);
-            Session session = request.getSessionInternal(true);
-            session.setPrincipal(principal);
-            session.setAuthType("OAUTH");
-            KeycloakSecurityContext skSession = new RefreshableKeycloakSession(deployment, oauth.getTokenString(), oauth.getToken(), oauth.getIdTokenString(), oauth.getIdToken(), oauth.getRefreshToken());
-            session.setNote(KeycloakSecurityContext.class.getName(), skSession);
-
-            String username = token.getSubject();
-            log.debug("userSessionManage.login: " + username);
-            userSessionManagement.login(session, username);
+    public boolean keycloakRestoreRequest(Request request) {
+        try {
+            return restoreRequest(request, request.getSessionInternal());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
