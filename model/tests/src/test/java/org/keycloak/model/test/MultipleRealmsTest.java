@@ -1,7 +1,5 @@
 package org.keycloak.model.test;
 
-import java.util.List;
-
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -76,6 +74,7 @@ public class MultipleRealmsTest extends AbstractModelTest {
 
         RoleModel r1App1Role = r1app1.getRole("app1Role1");
         Assert.assertEquals(r1App1Role, realm1.getRoleById(r1App1Role.getId()));
+        Assert.assertNull(realm2.getRoleById(r1App1Role.getId()));
 
         RoleModel r2Role1 = realm2.getRole("role2");
         Assert.assertNull(realm1.getRoleById(r2Role1.getId()));

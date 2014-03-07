@@ -1,7 +1,5 @@
 package org.keycloak.models.mongo.api;
 
-import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
-
 /**
  * Base interface for object, which is persisted in Mongo
  *

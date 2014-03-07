@@ -8,6 +8,7 @@ import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
@@ -29,11 +30,14 @@ public class ImportTest extends AbstractModelTest {
 
     @Test
     public void install() throws Exception {
-        RealmManager manager = realmManager;
         RealmRepresentation rep = AbstractModelTest.loadJson("testrealm.json");
-        RealmModel realm = manager.createRealm("demo", rep.getRealm());
-        manager.importRealm(rep, realm);
+        RealmModel realm = realmManager.createRealm("demo", rep.getRealm());
+        realmManager.importRealm(rep, realm);
 
+        // Commit after import
+        commit();
+
+        realm = realmManager.getRealm("demo");
         Assert.assertTrue(realm.isVerifyEmail());
 
         Assert.assertFalse(realm.isUpdateProfileOnInitialSocialLogin());
@@ -100,10 +104,13 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertEquals(1, appRoles.size());
         Assert.assertEquals("app-admin", appRoles.iterator().next().getName());
 
+        // Test client
+        ClientModel oauthClient = realm.findClient("oauthclient");
+        Assert.assertEquals("clientpassword", oauthClient.getSecret());
+        Assert.assertEquals(true, oauthClient.isEnabled());
+        Assert.assertNotNull(oauthClient);
 
         // Test scope relationship
-        ClientModel oauthClient = realm.findClient("oauthclient");
-        Assert.assertNotNull(oauthClient);
         Set<RoleModel> allScopes = realm.getScopeMappings(oauthClient);
         Assert.assertEquals(2, allScopes.size());
         Assert.assertTrue(allScopes.contains(realm.getRole("admin")));

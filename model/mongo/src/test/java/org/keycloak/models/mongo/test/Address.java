@@ -12,7 +12,6 @@ public class Address implements MongoEntity {
 
     private String street;
     private int number;
-    private List<String> flatNumbers;
 
     @MongoField
     public String getStreet() {
@@ -30,14 +29,5 @@ public class Address implements MongoEntity {
 
     public void setNumber(int number) {
         this.number = number;
-    }
-
-    @MongoField
-    public List<String> getFlatNumbers() {
-        return flatNumbers;
-    }
-
-    public void setFlatNumbers(List<String> flatNumbers) {
-        this.flatNumbers = flatNumbers;
     }
 }

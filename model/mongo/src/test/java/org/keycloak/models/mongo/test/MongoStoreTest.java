@@ -1,8 +1,6 @@
 package org.keycloak.models.mongo.test;
 
-import com.mongodb.DB;
 import com.mongodb.DBObject;
-import com.mongodb.MongoClient;
 import com.mongodb.QueryBuilder;
 import org.junit.After;
 import org.junit.Assert;
@@ -13,9 +11,8 @@ import org.keycloak.models.mongo.api.MongoStore;
 import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.mongo.impl.MongoStoreImpl;
 import org.keycloak.models.mongo.impl.context.TransactionMongoStoreInvocationContext;
-import org.keycloak.models.mongo.utils.SystemPropertiesConfigurationProvider;
-
-import java.net.UnknownHostException;
+import org.keycloak.models.mongo.keycloak.config.MongoClientProvider;
+import org.keycloak.models.mongo.keycloak.config.MongoClientProviderHolder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -28,28 +25,21 @@ public class MongoStoreTest {
     private static final Class<? extends MongoEntity>[] MANAGED_DATA_TYPES = (Class<? extends MongoEntity>[])new Class<?>[] {
             Person.class,
             Address.class,
+            AddressWithFlats.class
     };
 
-    private MongoClient mongoClient;
+    private MongoClientProvider mongoClientProvider;
     private MongoStore mongoStore;
 
     @Before
     public void before() throws Exception {
-        try {
-            // TODO: authentication support
-            mongoClient = new MongoClient("localhost", SystemPropertiesConfigurationProvider.getMongoPort());
-
-            DB db = mongoClient.getDB("keycloakTest");
-            mongoStore = new MongoStoreImpl(db, true, MANAGED_DATA_TYPES);
-
-        } catch (UnknownHostException e) {
-            throw new RuntimeException(e);
-        }
+        mongoClientProvider = MongoClientProviderHolder.getInstance();
+        mongoStore = new MongoStoreImpl(mongoClientProvider.getDB(), true, MANAGED_DATA_TYPES);
     }
 
     @After
     public void after() throws Exception {
-        mongoClient.close();
+        mongoClientProvider.close();
     }
 
     @Test
@@ -69,12 +59,12 @@ public class MongoStoreTest {
         mary.setFirstName("mary");
         mary.setKids(asList("Peter", "Paul", "Wendy"));
 
-        Address addr1 = new Address();
+        AddressWithFlats addr1 = new AddressWithFlats();
         addr1.setStreet("Elm");
         addr1.setNumber(5);
         addr1.setFlatNumbers(asList("flat1", "flat2"));
-        Address addr2 = new Address();
-        List<Address> addresses = new ArrayList<Address>();
+        AddressWithFlats addr2 = new AddressWithFlats();
+        List<AddressWithFlats> addresses = new ArrayList<AddressWithFlats>();
         addresses.add(addr1);
         addresses.add(addr2);
 
@@ -87,6 +77,11 @@ public class MongoStoreTest {
 
         Assert.assertEquals(2, mongoStore.loadEntities(Person.class, new QueryBuilder().get(), context).size());
 
+        // Commit this context
+        context.commit();
+
+        Assert.assertEquals(2, mongoStore.loadEntities(Person.class, new QueryBuilder().get(), context).size());
+
         DBObject query = new QueryBuilder().and("addresses.flatNumbers").is("flat1").get();
         List<Person> persons = mongoStore.loadEntities(Person.class, query, context);
         Assert.assertEquals(1, persons.size());
@@ -94,7 +89,7 @@ public class MongoStoreTest {
         Assert.assertEquals(mary.getFirstName(), "mary");
         Assert.assertTrue(mary.getKids().contains("Paul"));
         Assert.assertEquals(2, mary.getAddresses().size());
-        Assert.assertEquals(Address.class, mary.getAddresses().get(0).getClass());
+        Assert.assertEquals(AddressWithFlats.class, mary.getAddresses().get(0).getClass());
 
         // Test push/pull
         mongoStore.pushItemToList(mary, "kids", "Pauline", true, context);

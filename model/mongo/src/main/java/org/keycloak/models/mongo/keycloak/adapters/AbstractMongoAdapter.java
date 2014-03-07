@@ -7,15 +7,19 @@ import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public abstract class AbstractAdapter {
+public abstract class AbstractMongoAdapter<T extends AbstractMongoIdentifiableEntity> {
 
-    protected MongoStoreInvocationContext invocationContext;
+    protected final MongoStoreInvocationContext invocationContext;
 
-    public AbstractAdapter(MongoStoreInvocationContext invocationContext) {
+    public AbstractMongoAdapter(MongoStoreInvocationContext invocationContext) {
         this.invocationContext = invocationContext;
     }
 
-    public abstract AbstractMongoIdentifiableEntity getMongoEntity();
+    protected abstract T getMongoEntity();
+
+    protected void updateMongoEntity() {
+        getMongoStore().updateEntity(getMongoEntity(), invocationContext);
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -23,7 +27,7 @@ public abstract class AbstractAdapter {
 
         if (o == null || getClass() != o.getClass()) return false;
 
-        AbstractAdapter that = (AbstractAdapter) o;
+        AbstractMongoAdapter that = (AbstractMongoAdapter) o;
 
         if (getMongoEntity() == null && that.getMongoEntity() == null) return true;
         return getMongoEntity().equals(that.getMongoEntity());
