@@ -29,18 +29,11 @@ var Keycloak = function (options) {
         throw 'clientId missing';
     }
 
-    if (!options.clientSecret) {
-        throw 'clientSecret missing';
-    }
-
     kc.init = function (successCallback, errorCallback) {
         if (window.oauth.callback) {
-            delete sessionStorage.oauthToken;
             processCallback(successCallback, errorCallback);
         } else if (options.token) {
             kc.setToken(options.token, successCallback);
-        } else if (sessionStorage.oauthToken) {
-            kc.setToken(sessionStorage.oauthToken, successCallback);
         } else if (options.onload) {
             switch (options.onload) {
                 case 'login-required' :
@@ -166,7 +159,13 @@ var Keycloak = function (options) {
             var req = new XMLHttpRequest();
             req.open('POST', url, true);
             req.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-            req.setRequestHeader('Authorization', 'Basic ' + btoa(options.clientId + ':' + options.clientSecret));
+
+            if (options.clientId && options.clientSecret) {
+                req.setRequestHeader('Authorization', 'Basic ' + btoa(options.clientId + ':' + options.clientSecret));
+            } else {
+                params += '&client_id=' + encodeURIComponent(options.clientId);
+            }
+
             req.withCredentials = true;
 
             req.onreadystatechange = function () {
@@ -193,7 +192,6 @@ var Keycloak = function (options) {
 
     kc.setToken = function(token, successCallback) {
         if (token) {
-            sessionStorage.oauthToken = token;
             window.oauth.token = token;
             kc.token = token;
 
@@ -207,7 +205,6 @@ var Keycloak = function (options) {
                 successCallback && successCallback({ authenticated: kc.authenticated, subject: kc.subject });
             }, 0);
         } else {
-            delete sessionStorage.oauthToken;
             delete window.oauth.token;
             delete kc.token;
         }
