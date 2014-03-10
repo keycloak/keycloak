@@ -569,6 +569,12 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public SocialLinkModel getSocialLink(UserModel user, String socialProvider) {
+        SocialLinkEntity entity = findSocialLink(user, socialProvider);
+        return (entity != null) ? new SocialLinkModel(entity.getSocialProvider(), entity.getSocialUsername()) : null;
+    }
+
+    @Override
     public void addSocialLink(UserModel user, SocialLinkModel socialLink) {
         SocialLinkEntity entity = new SocialLinkEntity();
         entity.setRealm(realm);
@@ -580,15 +586,23 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public void removeSocialLink(UserModel user, SocialLinkModel socialLink) {
-        TypedQuery<SocialLinkEntity> query = em.createNamedQuery("findSocialLinkByAll", SocialLinkEntity.class);
-        query.setParameter("realm", realm);
+    public boolean removeSocialLink(UserModel user, String socialProvider) {
+        SocialLinkEntity entity = findSocialLink(user, socialProvider);
+        if (entity != null) {
+            em.remove(entity);
+            em.flush();
+            return true;
+        }  else {
+            return false;
+        }
+    }
+
+    private SocialLinkEntity findSocialLink(UserModel user, String socialProvider) {
+        TypedQuery<SocialLinkEntity> query = em.createNamedQuery("findSocialLinkByUserAndProvider", SocialLinkEntity.class);
         query.setParameter("user", ((UserAdapter) user).getUser());
-        query.setParameter("socialProvider", socialLink.getSocialProvider());
-        query.setParameter("socialUsername", socialLink.getSocialUsername());
+        query.setParameter("socialProvider", socialProvider);
         List<SocialLinkEntity> results = query.getResultList();
-        for (SocialLinkEntity entity : results) em.remove(entity);
-        em.flush();
+        return results.size() > 0 ? results.get(0) : null;
     }
 
     @Override

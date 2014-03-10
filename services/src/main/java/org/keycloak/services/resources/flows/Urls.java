@@ -62,6 +62,10 @@ public class Urls {
         return accountBase(baseUri).path(AccountService.class, "socialPage").build(realmId);
     }
 
+    public static URI accountSocialUpdate(URI baseUri, String realmName) {
+        return accountBase(baseUri).path(AccountService.class, "processSocialUpdate").build(realmName);
+    }
+
     public static URI accountTotpPage(URI baseUri, String realmId) {
         return accountBase(baseUri).path(AccountService.class, "totpPage").build(realmId);
     }

@@ -26,7 +26,9 @@ import org.keycloak.login.LoginForms;
 import org.keycloak.login.LoginFormsLoader;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.SocialRequestManager;
 import org.keycloak.services.managers.TokenManager;
+import org.keycloak.social.SocialProvider;
 
 import javax.ws.rs.core.UriInfo;
 
@@ -45,6 +47,10 @@ public class Flows {
     public static OAuthFlows oauth(RealmModel realm, HttpRequest request, UriInfo uriInfo, AuthenticationManager authManager,
             TokenManager tokenManager) {
         return new OAuthFlows(realm, request, uriInfo, authManager, tokenManager);
+    }
+
+    public static SocialRedirectFlows social(SocialRequestManager socialRequestManager, RealmModel realm, UriInfo uriInfo, SocialProvider provider) {
+        return new SocialRedirectFlows(socialRequestManager, realm, uriInfo, provider);
     }
 
     public static ErrorFlows errors() {

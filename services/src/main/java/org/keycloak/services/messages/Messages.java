@@ -62,6 +62,18 @@ public class Messages {
 
     public static final String ACTION_WARN_EMAIL = "actionEmailWarning";
 
+    public static final String MISSING_SOCIAL_PROVIDER = "missingSocialProvider";
+
+    public static final String INVALID_SOCIAL_ACTION = "invalidSocialAction";
+
+    public static final String SOCIAL_PROVIDER_NOT_FOUND = "socialProviderNotFound";
+
+    public static final String SOCIAL_LINK_NOT_ACTIVE = "socialLinkNotActive";
+
+    public static final String SOCIAL_REDIRECT_ERROR = "socialRedirectError";
+
+    public static final String SOCIAL_PROVIDER_REMOVED = "socialProviderRemoved";
+
     public static final String ERROR = "error";
 
 }

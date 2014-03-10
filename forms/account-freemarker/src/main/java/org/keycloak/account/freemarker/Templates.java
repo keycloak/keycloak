@@ -15,6 +15,8 @@ public class Templates {
                 return "password.ftl";
             case TOTP:
                 return "totp.ftl";
+            case SOCIAL:
+                return "social.ftl";
             default:
                 throw new IllegalArgumentException();
         }

@@ -127,25 +127,35 @@ public class ImportTest extends AbstractModelTest {
         UserModel socialUser = realm.getUser("mySocialUser");
         Set<SocialLinkModel> socialLinks = realm.getSocialLinks(socialUser);
         Assert.assertEquals(3, socialLinks.size());
-        int facebookCount = 0;
-        int googleCount = 0;
+        boolean facebookFound = false;
+        boolean googleFound = false;
+        boolean twitterFound = false;
         for (SocialLinkModel socialLinkModel : socialLinks) {
             if ("facebook".equals(socialLinkModel.getSocialProvider())) {
-                facebookCount++;
+                facebookFound = true;
+                Assert.assertEquals(socialLinkModel.getSocialUsername(), "fbuser1");
             } else if ("google".equals(socialLinkModel.getSocialProvider())) {
-                googleCount++;
+                googleFound = true;
                 Assert.assertEquals(socialLinkModel.getSocialUsername(), "mySocialUser@gmail.com");
+            } else if ("twitter".equals(socialLinkModel.getSocialProvider())) {
+                twitterFound = true;
+                Assert.assertEquals(socialLinkModel.getSocialUsername(), "twuser1");
             }
         }
-        Assert.assertEquals(2, facebookCount);
-        Assert.assertEquals(1, googleCount);
+        Assert.assertTrue(facebookFound && twitterFound && googleFound);
 
         UserModel foundSocialUser = realm.getUserBySocialLink(new SocialLinkModel("facebook", "fbuser1"));
         Assert.assertEquals(foundSocialUser.getLoginName(), socialUser.getLoginName());
         Assert.assertNull(realm.getUserBySocialLink(new SocialLinkModel("facebook", "not-existing")));
 
+        SocialLinkModel foundSocialLink = realm.getSocialLink(socialUser, "facebook");
+        Assert.assertEquals("fbuser1", foundSocialLink.getSocialUsername());
+        Assert.assertEquals("facebook", foundSocialLink.getSocialProvider());
 
-
+        // Test removing social link
+        Assert.assertTrue(realm.removeSocialLink(socialUser, "facebook"));
+        Assert.assertNull(realm.getSocialLink(socialUser, "facebook"));
+        Assert.assertFalse(realm.removeSocialLink(socialUser, "facebook"));
     }
 
     @Test
