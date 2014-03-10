@@ -24,12 +24,16 @@ package org.keycloak.services.resources;
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
+import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.services.managers.AppAuthManager;
+import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.TokenManager;
@@ -55,6 +59,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.net.URISyntaxException;
 import java.util.HashMap;
@@ -144,6 +149,33 @@ public class SocialResource {
         SocialLinkModel socialLink = new SocialLinkModel(provider.getId(), socialUser.getId());
         UserModel user = realm.getUserBySocialLink(socialLink);
 
+        // Check if user is already authenticated (this means linking social into existing user account)
+        String userId = requestData.getClientAttribute("userId");
+        if (userId != null) {
+            UserModel authenticatedUser = realm.getUserById(userId);
+
+            if (user != null) {
+                return oauth.forwardToSecurityFailure("This social account is already linked to other user");
+            }
+
+            if (!authenticatedUser.isEnabled()) {
+                return oauth.forwardToSecurityFailure("User is disabled");
+            }
+            if (!realm.hasRole(authenticatedUser, realm.getApplicationByName(Constants.ACCOUNT_MANAGEMENT_APP).getRole(AccountRoles.MANAGE_ACCOUNT))) {
+                return oauth.forwardToSecurityFailure("Insufficient permissions to link social account");
+            }
+
+            realm.addSocialLink(authenticatedUser, socialLink);
+            logger.debug("Social provider " + provider.getId() + " linked with user " + authenticatedUser.getLoginName());
+
+            String redirectUri = requestData.getClientAttributes().get("redirectUri");
+            if (redirectUri == null) {
+                return oauth.forwardToSecurityFailure("Unknown redirectUri");
+            }
+
+            return Response.status(Status.FOUND).location(UriBuilder.fromUri(redirectUri).build()).build();
+        }
+
         if (user == null) {
             if (!realm.isRegistrationAllowed()) {
                 return oauth.forwardToSecurityFailure("Registration not allowed");
@@ -187,12 +219,6 @@ public class SocialResource {
             return Flows.forms(realm, request, uriInfo).setError("Social provider not found").createErrorPage();
         }
 
-        String key = realm.getSocialConfig().get(providerId + ".key");
-        String secret = realm.getSocialConfig().get(providerId + ".secret");
-        String callbackUri = Urls.socialCallback(uriInfo.getBaseUri()).toString();
-
-        SocialProviderConfig config = new SocialProviderConfig(key, secret, callbackUri);
-
         ClientModel client = realm.findClient(clientId);
         if (client == null) {
             logger.warn("Unknown login requester: " + clientId);
@@ -209,16 +235,11 @@ public class SocialResource {
         }
 
         try {
-            AuthRequest authRequest = provider.getAuthUrl(config);
-
-            RequestDetails socialRequest = RequestDetails.create(providerId)
-                    .putSocialAttributes(authRequest.getAttributes()).putClientAttribute("realm", realmName)
+            return Flows.social(socialRequestManager, realm, uriInfo, provider)
+                    .putClientAttribute("realm", realmName)
                     .putClientAttribute("clientId", clientId).putClientAttribute("scope", scope)
-                    .putClientAttribute("state", state).putClientAttribute("redirectUri", redirectUri).build();
-
-            socialRequestManager.addRequest(authRequest.getId(), socialRequest);
-
-            return Response.status(Status.FOUND).location(authRequest.getAuthUri()).build();
+                    .putClientAttribute("state", state).putClientAttribute("redirectUri", redirectUri)
+                    .redirectToSocialProvider();
         } catch (Throwable t) {
             return Flows.forms(realm, request, uriInfo).setError("Failed to redirect to social auth").createErrorPage();
         }

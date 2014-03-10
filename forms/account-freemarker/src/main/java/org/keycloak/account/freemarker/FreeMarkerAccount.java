@@ -4,6 +4,7 @@ import org.jboss.resteasy.logging.Logger;
 import org.keycloak.account.Account;
 import org.keycloak.account.AccountPages;
 import org.keycloak.account.freemarker.model.AccountBean;
+import org.keycloak.account.freemarker.model.AccountSocialBean;
 import org.keycloak.account.freemarker.model.MessageBean;
 import org.keycloak.account.freemarker.model.ReferrerBean;
 import org.keycloak.account.freemarker.model.TotpBean;
@@ -88,12 +89,19 @@ public class FreeMarkerAccount implements Account {
 
         attributes.put("url", new UrlBean(realm, theme, baseUri));
 
+        if (realm.isSocial()) {
+            attributes.put("isSocialRealm", true);
+        }
+
         switch (page) {
             case ACCOUNT:
                 attributes.put("account", new AccountBean(user));
                 break;
             case TOTP:
                 attributes.put("totp", new TotpBean(user, baseUri));
+                break;
+            case SOCIAL:
+                attributes.put("social", new AccountSocialBean(realm, user, uriInfo.getBaseUri()));
                 break;
         }
 

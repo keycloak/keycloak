@@ -39,10 +39,11 @@ public class KeycloakApplication extends Application {
         //classes.add(KeycloakSessionCleanupFilter.class);
 
         TokenManager tokenManager = new TokenManager();
+        SocialRequestManager socialRequestManager = new SocialRequestManager();
 
-        singletons.add(new RealmsResource(tokenManager));
+        singletons.add(new RealmsResource(tokenManager, socialRequestManager));
         singletons.add(new AdminService(tokenManager));
-        singletons.add(new SocialResource(tokenManager, new SocialRequestManager()));
+        singletons.add(new SocialResource(tokenManager, socialRequestManager));
         classes.add(SkeletonKeyContextResolver.class);
         classes.add(QRCodeResource.class);
         classes.add(ThemeResource.class);

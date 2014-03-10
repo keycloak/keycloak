@@ -6,6 +6,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.managers.SocialRequestManager;
 import org.keycloak.services.managers.TokenManager;
 
 import javax.ws.rs.NotFoundException;
@@ -38,9 +39,11 @@ public class RealmsResource {
     protected KeycloakSession session;
 
     protected TokenManager tokenManager;
+    protected SocialRequestManager socialRequestManager;
 
-    public RealmsResource(TokenManager tokenManager) {
+    public RealmsResource(TokenManager tokenManager, SocialRequestManager socialRequestManager) {
         this.tokenManager = tokenManager;
+        this.socialRequestManager = socialRequestManager;
     }
 
     public static UriBuilder realmBaseUrl(UriInfo uriInfo) {
@@ -75,7 +78,7 @@ public class RealmsResource {
             throw new NotFoundException();
         }
 
-        AccountService accountService = new AccountService(realm, application, tokenManager);
+        AccountService accountService = new AccountService(realm, application, tokenManager, socialRequestManager);
         resourceContext.initResource(accountService);
         return accountService;
     }
