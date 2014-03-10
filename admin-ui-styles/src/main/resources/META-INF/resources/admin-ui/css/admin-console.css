@@ -2,12 +2,16 @@ body {
     background-color: #F9F9F9;
 }
 
+.header .container {
+	position: relative;
+}
+
 .navbar-title {
     background-image: url('../img/logo.png');
     height: 25px;
     background-repeat: no-repeat;
     width: 103px;
-    margin: 3px 20px 5px;
+    margin: 3px 10px 5px;
     text-indent: -99999px;
 }
 
@@ -39,6 +43,11 @@ body {
     border-top-color: rgba(255,255,255,0.05);
 }
 
+.navbar-nav > li > .dropdown-menu {
+	left: 15px;
+	margin-top: 1px;
+}
+
 .navbar-pf .navbar-primary li.dropdown.context > a {
 	padding-right: 12px;
 }
@@ -64,15 +73,20 @@ body {
     background-repeat: repeat-x;
 }
 
+.navbar-pf .navbar-utility {
+	right: 15px;
+  top: -34px;
+}
+
 .navbar-pf .navbar-utility li.dropdown > .dropdown-toggle {
     border-left: none;
     padding-top: 11px;
-    padding-bottom: 11px;
+    padding-bottom: 12px;
     color: #fff !important;
 }
 
 .navbar-pf .navbar-utility li.dropdown > .dropdown-toggle .pficon-user {
-	top: 10px;
+	top: 11px;
 }
 
 .navbar-pf .navbar-utility > li > a:hover,

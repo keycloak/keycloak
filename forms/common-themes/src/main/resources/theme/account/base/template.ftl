@@ -21,17 +21,19 @@
     <header class="navbar navbar-default navbar-pf navbar-main header">
         <div>
             <nav class="navbar" role="navigation">
-                <div class="navbar-header">
-                    <div class="navbar-title">
-                    </div>
-                </div>
+            		<div class="container">
+                		<div class="navbar-header">
+		                    <div class="navbar-title">
+		                    </div>
+	                  </div>  
 
-                <div class="navbar-collapse">
-                    <ul class="nav navbar-nav navbar-utility">
-                        <#if referrer?has_content && referrer.baseUrl?has_content><li><a href="${referrer.baseUrl}">Back to ${referrer.name}</a></li></#if>
-                        <li><a href="${url.logoutUrl}">Sign Out</a></li>
-                    </ul>
-                </div>
+		                <div class="navbar-collapse">
+		                    <ul class="nav navbar-nav navbar-utility">
+		                        <#if referrer?has_content && referrer.baseUrl?has_content><li><a href="${referrer.baseUrl}">Back to ${referrer.name}</a></li></#if>
+		                        <li><a href="${url.logoutUrl}">Sign Out</a></li>
+		                    </ul>
+		                </div>
+		            </div>
             </nav>
         </div>
     </header>
