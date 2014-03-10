@@ -28,14 +28,14 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserSessionManagement implements SessionListener {
-    private static final Logger log = Logger.getLogger(UserSessionManagement.class);
+public class UndertowUserSessionManagement implements SessionListener {
+    private static final Logger log = Logger.getLogger(UndertowUserSessionManagement.class);
     private static final String AUTH_SESSION_NAME = CachedAuthenticatedSessionHandler.class.getName() + ".AuthenticatedSession";
     protected ConcurrentHashMap<String, UserSessions> userSessionMap = new ConcurrentHashMap<String, UserSessions>();
 
     protected KeycloakDeployment deployment;
 
-    public UserSessionManagement(KeycloakDeployment deployment) {
+    public UndertowUserSessionManagement(KeycloakDeployment deployment) {
         this.deployment = deployment;
     }
 
@@ -80,36 +80,6 @@ public class UserSessionManagement implements SessionListener {
         return set;
     }
 
-    public void remoteLogout(JWSInput token, SessionManager manager, HttpServletResponse response) throws IOException {
-        try {
-            log.info("->> remoteLogout: ");
-            LogoutAction action = JsonSerialization.readValue(token.getContent(), LogoutAction.class);
-            if (action.isExpired()) {
-                log.warn("admin request failed, expired token");
-                response.sendError(StatusCodes.BAD_REQUEST, "Expired token");
-                return;
-            }
-            if (!deployment.getResourceName().equals(action.getResource())) {
-                log.warn("Resource name does not match");
-                response.sendError(StatusCodes.BAD_REQUEST, "Resource name does not match");
-                return;
-
-            }
-            String user = action.getUser();
-            if (user != null) {
-                log.info("logout of session for: " + user);
-                logout(manager, user);
-            } else {
-                log.info("logout of all sessions");
-                logoutAll(manager);
-            }
-        } catch (Exception e) {
-            log.warn("failed to logout", e);
-            response.sendError(StatusCodes.INTERNAL_SERVER_ERROR, "Failed to logout");
-        }
-        response.setStatus(StatusCodes.NO_CONTENT);
-    }
-
     public void login(SessionManager manager, HttpSession session, String username) {
         String sessionId = session.getId();
         addAuthenticatedSession(username, sessionId);
@@ -142,14 +112,6 @@ public class UserSessionManagement implements SessionListener {
         List<String> users = new ArrayList<String>();
         users.addAll(userSessionMap.keySet());
         for (String user : users) logout(manager, user);
-    }
-
-    public void logoutAllBut(SessionManager manager, String but) {
-        List<String> users = new ArrayList<String>();
-        users.addAll(userSessionMap.keySet());
-        for (String user : users) {
-            if (!but.equals(user)) logout(manager, user);
-        }
     }
 
     public void logout(SessionManager manager, String user) {

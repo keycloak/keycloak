@@ -5,24 +5,20 @@ import org.apache.catalina.Lifecycle;
 import org.apache.catalina.LifecycleEvent;
 import org.apache.catalina.LifecycleException;
 import org.apache.catalina.LifecycleListener;
-import org.apache.catalina.Session;
-import org.apache.catalina.authenticator.Constants;
 import org.apache.catalina.authenticator.FormAuthenticator;
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
 import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.deploy.LoginConfig;
-import org.apache.catalina.realm.GenericPrincipal;
 import org.jboss.logging.Logger;
 import org.keycloak.KeycloakSecurityContext;
-import org.keycloak.KeycloakPrincipal;
 import org.keycloak.adapters.AdapterConstants;
 import org.keycloak.adapters.AuthChallenge;
 import org.keycloak.adapters.AuthOutcome;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
+import org.keycloak.adapters.PreAuthActionsHandler;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
-import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.adapters.action.AdminAction;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
 import org.keycloak.representations.adapters.action.SessionStats;
@@ -35,7 +31,6 @@ import org.keycloak.representations.adapters.action.LogoutAction;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.StreamUtil;
 
-import javax.security.auth.login.LoginException;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -46,9 +41,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Web deployment whose security is managed by a remote OAuth Skeleton Key authentication server
@@ -61,7 +54,7 @@ import java.util.Set;
  */
 public class KeycloakAuthenticatorValve extends FormAuthenticator implements LifecycleListener {
     private static final Logger log = Logger.getLogger(KeycloakAuthenticatorValve.class);
-    protected UserSessionManagement userSessionManagement = new UserSessionManagement();
+    protected CatalinaUserSessionManagement userSessionManagement = new CatalinaUserSessionManagement();
     protected KeycloakDeployment deployment;
 
 
@@ -115,37 +108,8 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
     @Override
     public void invoke(Request request, Response response) throws IOException, ServletException {
         try {
-            if (deployment.isCors() && new CorsPreflightChecker(deployment).checkCorsPreflight(request, response)) {
-                return;
-            }
-            String requestURI = request.getDecodedRequestURI();
-            if (requestURI.endsWith(AdapterConstants.K_LOGOUT)) {
-                JWSInput input = verifyAdminRequest(request, response);
-                if (input == null) {
-                    return; // we failed to verify the request
-                }
-                remoteLogout(input, response);
-                return;
-            } else if (requestURI.endsWith(AdapterConstants.K_PUSH_NOT_BEFORE)) {
-                JWSInput input = verifyAdminRequest(request, response);
-                if (input == null) {
-                    return; // we failed to verify the request
-                }
-                pushNotBefore(input, response);
-                return;
-            } else if (requestURI.endsWith(AdapterConstants.K_GET_SESSION_STATS)) {
-                JWSInput input = verifyAdminRequest(request, response);
-                if (input == null) {
-                    return; // we failed to verify the request
-                }
-                getSessionStats(input, response);
-                return;
-            } else if (requestURI.endsWith(AdapterConstants.K_GET_USER_STATS)) {
-                JWSInput input = verifyAdminRequest(request, response);
-                if (input == null) {
-                    return; // we failed to verify the request
-                }
-                getUserStats(input, response);
+            PreAuthActionsHandler handler = new PreAuthActionsHandler(userSessionManagement, deployment, new CatalinaHttpFacade(request, response));
+            if (handler.handleRequest()) {
                 return;
             }
             checkKeycloakSession(request);
@@ -171,131 +135,6 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
         }
         return false;
      }
-
-    protected JWSInput verifyAdminRequest(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        String token = StreamUtil.readString(request.getInputStream());
-        if (token == null) {
-            log.warn("admin request failed, no token");
-            response.sendError(403, "no token");
-            return null;
-        }
-
-        JWSInput input = new JWSInput(token);
-        boolean verified = false;
-        try {
-            verified = RSAProvider.verify(input, deployment.getRealmKey());
-        } catch (Exception ignore) {
-        }
-        if (!verified) {
-            log.warn("admin request failed, unable to verify token");
-            response.sendError(403, "verification failed");
-            return null;
-        }
-        return input;
-    }
-
-
-    protected boolean validateAction(HttpServletResponse response, AdminAction action) throws IOException {
-        if (!action.validate()) {
-            log.warn("admin request failed, not validated" + action.getAction());
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Not validated");
-            return false;
-        }
-        if (action.isExpired()) {
-            log.warn("admin request failed, expired token");
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Expired token");
-            return false;
-        }
-        if (!deployment.getResourceName().equals(action.getResource())) {
-            log.warn("Resource name does not match");
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Resource name does not match");
-            return false;
-
-        }
-        return true;
-    }
-
-    protected void pushNotBefore(JWSInput token, HttpServletResponse response) throws IOException {
-        log.info("->> pushNotBefore: ");
-        PushNotBeforeAction action = JsonSerialization.readValue(token.getContent(), PushNotBeforeAction.class);
-        if (!validateAction(response, action)) {
-            return;
-        }
-        deployment.setNotBefore(action.getNotBefore());
-        response.setStatus(HttpServletResponse.SC_NO_CONTENT);
-
-    }
-
-    protected UserStats getUserStats(String user) {
-        UserStats stats = new UserStats();
-        Long loginTime = userSessionManagement.getUserLoginTime(user);
-        if (loginTime != null) {
-            stats.setLoggedIn(true);
-            stats.setWhenLoggedIn(loginTime);
-        } else {
-            stats.setLoggedIn(false);
-        }
-        return stats;
-    }
-
-
-    protected void getSessionStats(JWSInput token, HttpServletResponse response) throws IOException {
-        log.info("->> getSessionStats: ");
-        SessionStatsAction action = JsonSerialization.readValue(token.getContent(), SessionStatsAction.class);
-        if (!validateAction(response, action)) {
-            return;
-        }
-        SessionStats stats = new SessionStats();
-        stats.setActiveSessions(userSessionManagement.getActiveSessions());
-        stats.setActiveUsers(userSessionManagement.getActiveUsers().size());
-        if (action.isListUsers() && userSessionManagement.getActiveSessions() > 0) {
-            Map<String, UserStats> list = new HashMap<String, UserStats>();
-            for (String user : userSessionManagement.getActiveUsers()) {
-                list.put(user, getUserStats(user));
-            }
-            stats.setUsers(list);
-        }
-        response.setStatus(200);
-        response.setContentType("application/json");
-        JsonSerialization.writeValueToStream(response.getOutputStream(), stats);
-
-    }
-
-    protected void getUserStats(JWSInput token, HttpServletResponse response) throws IOException {
-        log.info("->> getUserStats: ");
-        UserStatsAction action = JsonSerialization.readValue(token.getContent(), UserStatsAction.class);
-        if (!validateAction(response, action)) {
-            return;
-        }
-        String user = action.getUser();
-        UserStats stats = getUserStats(user);
-        response.setStatus(200);
-        response.setContentType("application/json");
-        JsonSerialization.writeValueToStream(response.getOutputStream(), stats);
-    }
-
-
-    protected void remoteLogout(JWSInput token, HttpServletResponse response) throws IOException {
-        try {
-            log.debug("->> remoteLogout: ");
-            LogoutAction action = JsonSerialization.readValue(token.getContent(), LogoutAction.class);
-            if (!validateAction(response, action)) {
-                return;
-            }
-            String user = action.getUser();
-            if (user != null) {
-                log.debug("logout of session for: " + user);
-                userSessionManagement.logout(user);
-            } else {
-                log.debug("logout of all sessions");
-                userSessionManagement.logoutAll();
-            }
-        } catch (Exception e) {
-            log.warn("failed to logout", e);
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to logout");
-        }
-        response.setStatus(HttpServletResponse.SC_NO_CONTENT);
-    }
 
     /**
      * Checks that access token is still valid.  Will attempt refresh of token if it is not.

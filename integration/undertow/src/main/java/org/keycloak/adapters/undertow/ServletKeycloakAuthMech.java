@@ -17,10 +17,10 @@ public class ServletKeycloakAuthMech implements AuthenticationMechanism {
     public static final AttachmentKey<AuthChallenge> KEYCLOAK_CHALLENGE_ATTACHMENT_KEY = AttachmentKey.create(AuthChallenge.class);
 
     protected KeycloakDeployment deployment;
-    protected UserSessionManagement userSessionManagement;
+    protected UndertowUserSessionManagement userSessionManagement;
     protected ConfidentialPortManager portManager;
 
-    public ServletKeycloakAuthMech(KeycloakDeployment deployment, UserSessionManagement userSessionManagement, ConfidentialPortManager portManager) {
+    public ServletKeycloakAuthMech(KeycloakDeployment deployment, UndertowUserSessionManagement userSessionManagement, ConfidentialPortManager portManager) {
         this.deployment = deployment;
         this.userSessionManagement = userSessionManagement;
         this.portManager = portManager;

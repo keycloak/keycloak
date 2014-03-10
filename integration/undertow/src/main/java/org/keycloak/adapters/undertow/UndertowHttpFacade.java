@@ -3,11 +3,18 @@ package org.keycloak.adapters.undertow;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.server.handlers.Cookie;
 import io.undertow.server.handlers.CookieImpl;
+import io.undertow.util.AttachmentKey;
+import io.undertow.util.Headers;
 import io.undertow.util.HttpString;
+import org.keycloak.KeycloakSecurityContext;
+import org.keycloak.adapters.AuthChallenge;
 import org.keycloak.adapters.HttpFacade;
 import org.keycloak.util.KeycloakUriBuilder;
 
 import javax.security.cert.X509Certificate;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +24,8 @@ import java.util.Map;
  * @version $Revision: 1 $
  */
 public class UndertowHttpFacade implements HttpFacade {
+    public static final AttachmentKey<KeycloakSecurityContext> KEYCLOAK_SECURITY_CONTEXT_KEY = AttachmentKey.create(KeycloakSecurityContext.class);
+
     protected HttpServerExchange exchange;
     protected RequestFacade requestFacade = new RequestFacade();
     protected ResponseFacade responseFacade = new ResponseFacade();
@@ -57,6 +66,23 @@ public class UndertowHttpFacade implements HttpFacade {
         public List<String> getHeaders(String name) {
             return exchange.getRequestHeaders().get(name);
         }
+
+        @Override
+        public String getMethod() {
+            return exchange.getRequestMethod().toString();
+        }
+
+
+
+        @Override
+        public String getHeader(String name) {
+            return exchange.getRequestHeaders().getFirst(name);
+        }
+
+        @Override
+        public InputStream getInputStream() {
+            return exchange.getInputStream();
+        }
     }
 
     protected class ResponseFacade implements Response {
@@ -95,6 +121,24 @@ public class UndertowHttpFacade implements HttpFacade {
         }
 
         @Override
+        public OutputStream getOutputStream() {
+            return exchange.getOutputStream();
+        }
+
+        @Override
+        public void sendError(int code, String message) {
+            exchange.setResponseCode(code);
+            exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "text/html");
+            try {
+                exchange.getOutputStream().write(message.getBytes());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            exchange.endExchange();
+        }
+
+
+        @Override
         public void end() {
             exchange.endExchange();
         }
@@ -112,6 +156,11 @@ public class UndertowHttpFacade implements HttpFacade {
     @Override
     public Response getResponse() {
         return responseFacade;
+    }
+
+    @Override
+    public KeycloakSecurityContext getSecurityContext() {
+        return exchange.getAttachment(KEYCLOAK_SECURITY_CONTEXT_KEY);
     }
 
     @Override

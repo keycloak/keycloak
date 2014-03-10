@@ -14,6 +14,7 @@ import io.undertow.servlet.api.ServletSessionConfig;
 import java.io.ByteArrayInputStream;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.AdapterConstants;
+import org.keycloak.adapters.AuthenticatedActionsHandler;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 
@@ -63,16 +64,14 @@ public class KeycloakServletExtension implements ServletExtension {
         }
         if (is == null) throw new RuntimeException("Unable to find realm config in /WEB-INF/keycloak.json or in keycloak subsystem.");
         KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(is);
-        PreflightCorsHandler.Wrapper preflight = new PreflightCorsHandler.Wrapper(deployment);
-        UserSessionManagement userSessionManagement = new UserSessionManagement(deployment);
+        UndertowUserSessionManagement userSessionManagement = new UndertowUserSessionManagement(deployment);
         final ServletKeycloakAuthMech mech = new ServletKeycloakAuthMech(deployment, userSessionManagement, deploymentInfo.getConfidentialPortManager());
 
-        AuthenticatedActionsHandler.Wrapper actions = new AuthenticatedActionsHandler.Wrapper(deployment);
+        UndertowAuthenticatedActionsHandler.Wrapper actions = new UndertowAuthenticatedActionsHandler.Wrapper(deployment);
 
         // setup handlers
 
-        deploymentInfo.addInitialHandlerChainWrapper(preflight); // cors preflight
-        deploymentInfo.addOuterHandlerChainWrapper(new ServletAdminActionsHandler.Wrapper(deployment, userSessionManagement));
+        deploymentInfo.addOuterHandlerChainWrapper(new ServletPreAuthActionsHandler.Wrapper(deployment, userSessionManagement));
         deploymentInfo.addAuthenticationMechanism("KEYCLOAK", new AuthenticationMechanismFactory() {
             @Override
             public AuthenticationMechanism create(String s, FormParserFactory formParserFactory, Map<String, String> stringStringMap) {

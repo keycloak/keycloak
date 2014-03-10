@@ -16,11 +16,11 @@ import javax.servlet.http.HttpSession;
  */
 public class ServletRequestAuthenticator extends UndertowRequestAuthenticator {
 
-    protected UserSessionManagement userSessionManagement;
+    protected UndertowUserSessionManagement userSessionManagement;
 
     public ServletRequestAuthenticator(HttpFacade facade, KeycloakDeployment deployment, int sslRedirectPort,
                                        SecurityContext securityContext, HttpServerExchange exchange,
-                                       UserSessionManagement userSessionManagement) {
+                                       UndertowUserSessionManagement userSessionManagement) {
         super(facade, deployment, sslRedirectPort, securityContext, exchange);
         this.userSessionManagement = userSessionManagement;
     }
@@ -52,16 +52,16 @@ public class ServletRequestAuthenticator extends UndertowRequestAuthenticator {
 
     @Override
     protected void propagateKeycloakContext(KeycloakUndertowAccount account) {
+        super.propagateKeycloakContext(account);
         final ServletRequestContext servletRequestContext = exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
         HttpServletRequest req = (HttpServletRequest) servletRequestContext.getServletRequest();
-        req.setAttribute(KeycloakSecurityContext.class.getName(), account.getSession());
+        req.setAttribute(KeycloakSecurityContext.class.getName(), account.getKeycloakSecurityContext());
     }
 
     @Override
     protected void login(KeycloakUndertowAccount account) {
         final ServletRequestContext servletRequestContext = exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
         HttpServletRequest req = (HttpServletRequest) servletRequestContext.getServletRequest();
-        req.setAttribute(KeycloakSecurityContext.class.getName(), account.getSession());
         HttpSession session = req.getSession(true);
         session.setAttribute(KeycloakUndertowAccount.class.getName(), account);
         userSessionManagement.login(servletRequestContext.getDeployment().getSessionManager(), session, account.getPrincipal().getName());

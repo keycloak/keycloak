@@ -1,6 +1,10 @@
 package org.keycloak.adapters;
 
+import org.keycloak.KeycloakSecurityContext;
+
 import javax.security.cert.X509Certificate;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.List;
 
 /**
@@ -48,6 +52,8 @@ public interface HttpFacade {
     }
 
     interface Request {
+
+        String getMethod();
         /**
          * Full request URI with query params
          *
@@ -64,7 +70,9 @@ public interface HttpFacade {
 
         String getQueryParamValue(String param);
         Cookie getCookie(String cookieName);
+        String getHeader(String name);
         List<String> getHeaders(String name);
+        InputStream getInputStream();
     }
 
     interface Response {
@@ -73,6 +81,8 @@ public interface HttpFacade {
         void setHeader(String name, String value);
         void resetCookie(String name, String path);
         void setCookie(String name, String value, String path, String domain, int maxAge, boolean secure, boolean httpOnly);
+        OutputStream getOutputStream();
+        void sendError(int code, String message);
 
         /**
          * If the response is finished, end it.
@@ -81,6 +91,7 @@ public interface HttpFacade {
         void end();
     }
 
+    KeycloakSecurityContext getSecurityContext();
     Request getRequest();
     Response getResponse();
     X509Certificate[] getCertificateChain();

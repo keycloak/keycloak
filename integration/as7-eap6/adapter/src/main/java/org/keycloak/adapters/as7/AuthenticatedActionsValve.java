@@ -9,6 +9,7 @@ import org.apache.catalina.valves.ValveBase;
 import org.jboss.logging.Logger;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterConstants;
+import org.keycloak.adapters.AuthenticatedActionsHandler;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.adapters.config.AdapterConfig;
@@ -46,81 +47,10 @@ public class AuthenticatedActionsValve extends ValveBase {
     @Override
     public void invoke(Request request, Response response) throws IOException, ServletException {
         log.debugv("AuthenticatedActionsValve.invoke {0}", request.getRequestURI());
-        KeycloakSecurityContext session = getSkeletonKeySession(request);
-        if (corsRequest(request, response, session)) return;
-        String requestUri = request.getRequestURI();
-        if (requestUri.endsWith(AdapterConstants.K_QUERY_BEARER_TOKEN)) {
-            queryBearerToken(request, response, session);
+        AuthenticatedActionsHandler handler = new AuthenticatedActionsHandler(deployment, new CatalinaHttpFacade(request, response));
+        if (handler.handledRequest()) {
             return;
         }
         getNext().invoke(request, response);
-    }
-
-    public KeycloakSecurityContext getSkeletonKeySession(Request request) {
-        KeycloakSecurityContext skSession = (KeycloakSecurityContext) request.getAttribute(KeycloakSecurityContext.class.getName());
-        if (skSession != null) return skSession;
-        Session session = request.getSessionInternal();
-        if (session != null) {
-            return (KeycloakSecurityContext) session.getNote(KeycloakSecurityContext.class.getName());
-        }
-        return null;
-    }
-
-    protected void queryBearerToken(Request request, Response response, KeycloakSecurityContext session) throws IOException, ServletException {
-        log.debugv("queryBearerToken {0}", request.getRequestURI());
-        if (abortTokenResponse(request, response, session)) return;
-        response.setStatus(HttpServletResponse.SC_OK);
-        response.setContentType("text/plain");
-        response.getOutputStream().write(session.getTokenString().getBytes());
-        response.getOutputStream().flush();
-
-    }
-
-    protected boolean abortTokenResponse(Request request, Response response, KeycloakSecurityContext session) throws IOException {
-        if (session == null) {
-            log.debugv("session was null, sending back 401: {0}", request.getRequestURI());
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
-            return true;
-        }
-        if (!deployment.isExposeToken()) {
-            response.setStatus(HttpServletResponse.SC_OK);
-            return true;
-        }
-        if (!deployment.isCors() && request.getHeader("Origin") != null) {
-            response.setStatus(HttpServletResponse.SC_OK);
-            return true;
-        }
-        return false;
-    }
-
-    protected boolean corsRequest(Request request, Response response, KeycloakSecurityContext session) throws IOException {
-        if (!deployment.isCors()) return false;
-        log.debugv("CORS enabled + request.getRequestURI()");
-        String origin = request.getHeader("Origin");
-        log.debugv("Origin: {0} uri: {1}", origin, request.getRequestURI());
-        if (session != null && origin != null) {
-            AccessToken token = session.getToken();
-            Set<String> allowedOrigins = token.getAllowedOrigins();
-            if (log.isDebugEnabled()) {
-                for (String a : allowedOrigins) log.debug("   " + a);
-            }
-            if (allowedOrigins == null || (!allowedOrigins.contains("*") && !allowedOrigins.contains(origin))) {
-                if (allowedOrigins == null) {
-                    log.debugv("allowedOrigins was null in token");
-                }
-                if (!allowedOrigins.contains("*") && !allowedOrigins.contains(origin)) {
-                    log.debugv("allowedOrigins did not contain origin");
-
-                }
-                response.sendError(HttpServletResponse.SC_FORBIDDEN);
-                return true;
-            }
-            log.debugv("returning origin: {0}", origin);
-            response.setHeader("Access-Control-Allow-Origin", origin);
-            response.setHeader("Access-Control-Allow-Credentials", "true");
-        } else {
-            log.debugv("letting through.  This is an unathenticated session or origin header was null: {0}", request.getRequestURI());
-        }
-        return false;
     }
 }
