@@ -3,6 +3,7 @@ package org.keycloak.adapters.undertow;
 import io.undertow.security.idm.Account;
 import org.jboss.logging.Logger;
 import org.keycloak.KeycloakPrincipal;
+import org.keycloak.adapters.KeycloakAccount;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.representations.AccessToken;
@@ -16,7 +17,7 @@ import java.util.Set;
 * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
 * @version $Revision: 1 $
 */
-public class KeycloakUndertowAccount implements Account, Serializable {
+public class KeycloakUndertowAccount implements Account, Serializable, KeycloakAccount {
     protected static Logger log = Logger.getLogger(KeycloakUndertowAccount.class);
     protected RefreshableKeycloakSecurityContext session;
     protected KeycloakPrincipal principal;
@@ -25,19 +26,27 @@ public class KeycloakUndertowAccount implements Account, Serializable {
     public KeycloakUndertowAccount(KeycloakPrincipal principal, RefreshableKeycloakSecurityContext session, KeycloakDeployment deployment) {
         this.principal = principal;
         this.session = session;
-        setRoles(session.getToken(), deployment);
+        setRoles(session.getToken());
     }
 
-    protected void setRoles(AccessToken accessToken, KeycloakDeployment deployment) {
+    protected void setRoles(AccessToken accessToken) {
         Set<String> roles = null;
-        if (deployment.isUseResourceRoleMappings()) {
-            AccessToken.Access access = accessToken.getResourceAccess(deployment.getResourceName());
+        if (session.getDeployment().isUseResourceRoleMappings()) {
+            log.info("useResourceRoleMappings");
+            AccessToken.Access access = accessToken.getResourceAccess(session.getDeployment().getResourceName());
             if (access != null) roles = access.getRoles();
         } else {
+            log.info("use realm role mappings");
             AccessToken.Access access = accessToken.getRealmAccess();
             if (access != null) roles = access.getRoles();
         }
         if (roles == null) roles = Collections.emptySet();
+        /*
+        log.info("Setting roles: ");
+        for (String role : roles) {
+            log.info("   role: " + role);
+        }
+        */
         this.accountRoles = roles;
     }
 
@@ -51,22 +60,17 @@ public class KeycloakUndertowAccount implements Account, Serializable {
         return accountRoles;
     }
 
-    public AccessToken getAccessToken() {
-        return session.getToken();
-    }
-
-    public String getEncodedAccessToken() {
-        return session.getTokenString();
-    }
-
+    @Override
     public RefreshableKeycloakSecurityContext getKeycloakSecurityContext() {
         return session;
     }
 
-    public boolean isActive(KeycloakDeployment deployment) {
-        // this object may have been serialized, so we need to reset realm config/metadata
+    public void setDeployment(KeycloakDeployment deployment) {
         session.setDeployment(deployment);
-        log.info("realmConfig notBefore: " + deployment.getNotBefore());
+    }
+
+    public boolean isActive() {
+        // this object may have been serialized, so we need to reset realm config/metadata
         if (session.isActive()) {
             log.info("session is active");
             return true;
@@ -81,7 +85,7 @@ public class KeycloakUndertowAccount implements Account, Serializable {
         }
         log.info("refresh succeeded");
 
-        setRoles(session.getToken(), deployment);
+        setRoles(session.getToken());
         return true;
     }
 

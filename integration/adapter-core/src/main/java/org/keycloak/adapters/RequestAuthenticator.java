@@ -8,7 +8,7 @@ import org.keycloak.KeycloakPrincipal;
  * @version $Revision: 1 $
  */
 public abstract class RequestAuthenticator {
-    protected Logger log = Logger.getLogger(RequestAuthenticator.class);
+    protected static Logger log = Logger.getLogger(RequestAuthenticator.class);
 
     protected HttpFacade facade;
     protected KeycloakDeployment deployment;
@@ -33,19 +33,25 @@ public abstract class RequestAuthenticator {
     public AuthOutcome authenticate() {
         log.info("--> authenticate()");
         BearerTokenRequestAuthenticator bearer = createBearerTokenAuthenticator();
+        log.info("try bearer");
         AuthOutcome outcome = bearer.authenticate(facade);
         if (outcome == AuthOutcome.FAILED) {
             challenge = bearer.getChallenge();
+            log.info("Bearer FAILED");
             return AuthOutcome.FAILED;
         } else if (outcome == AuthOutcome.AUTHENTICATED) {
             completeAuthentication(bearer);
+            log.info("Bearer AUTHENTICATED");
             return AuthOutcome.AUTHENTICATED;
         } else if (deployment.isBearerOnly()) {
             challenge = bearer.getChallenge();
+            log.info("NOT_ATTEMPTED: bearer only");
             return AuthOutcome.NOT_ATTEMPTED;
         }
 
+        log.info("try oauth");
         if (isCached()) {
+            log.info("AUTHENTICATED: was cached");
             return AuthOutcome.AUTHENTICATED;
         }
 

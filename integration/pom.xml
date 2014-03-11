@@ -18,8 +18,10 @@
         <module>adapter-core</module>
         <module>jaxrs-oauth-client</module>
         <module>servlet-oauth-client</module>
+        <module>jboss-adapter-core</module>
         <module>as7-eap6/adapter</module>
         <module>undertow</module>
+        <module>wildfly-adapter</module>
         <module>wildfly-subsystem</module>
         <module>as7-eap-subsystem</module>
         <module>js</module>

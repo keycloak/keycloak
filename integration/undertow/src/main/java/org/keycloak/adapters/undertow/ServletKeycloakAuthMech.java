@@ -29,8 +29,7 @@ public class ServletKeycloakAuthMech implements AuthenticationMechanism {
     @Override
     public AuthenticationMechanismOutcome authenticate(HttpServerExchange exchange, SecurityContext securityContext) {
         UndertowHttpFacade facade = new UndertowHttpFacade(exchange);
-        ServletRequestAuthenticator authenticator = new ServletRequestAuthenticator(facade, deployment,
-                portManager.getConfidentialPort(exchange), securityContext, exchange, userSessionManagement);
+        ServletRequestAuthenticator authenticator = createRequestAuthenticator(exchange, securityContext, facade);
         AuthOutcome outcome = authenticator.authenticate();
         if (outcome == AuthOutcome.AUTHENTICATED) {
             return AuthenticationMechanismOutcome.AUTHENTICATED;
@@ -44,6 +43,11 @@ public class ServletKeycloakAuthMech implements AuthenticationMechanism {
             return AuthenticationMechanismOutcome.NOT_AUTHENTICATED;
         }
         return AuthenticationMechanismOutcome.NOT_ATTEMPTED;
+    }
+
+    protected ServletRequestAuthenticator createRequestAuthenticator(HttpServerExchange exchange, SecurityContext securityContext, UndertowHttpFacade facade) {
+        return new ServletRequestAuthenticator(facade, deployment,
+                portManager.getConfidentialPort(exchange), securityContext, exchange, userSessionManagement);
     }
 
     @Override

@@ -218,7 +218,7 @@ public class AdminService {
         }
     }
 
-        @Path("isLoggedIn.js")
+    @Path("isLoggedIn.js")
     @GET
     @Produces("application/javascript")
     @NoCache

@@ -4,15 +4,21 @@
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
         <version>1.0-alpha-3-SNAPSHOT</version>
-        <relativePath>../../../pom.xml</relativePath>
+        <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>keycloak-as7-adapter</artifactId>
-    <name>Keycloak AS7 Integration</name>
+    <artifactId>keycloak-jboss-adapter-core</artifactId>
+    <name>Common JBoss/Wildfly Core Classes</name>
     <description/>
 
     <dependencies>
+        <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging</artifactId>
+            <version>3.1.2.GA</version>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-core</artifactId>
@@ -21,11 +27,6 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-adapter-core</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-jboss-adapter-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -59,28 +60,12 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.jboss.logging</groupId>
-            <artifactId>jboss-logging</artifactId>
-            <version>3.1.2.GA</version>
+            <groupId>org.picketbox</groupId>
+            <artifactId>picketbox</artifactId>
+            <version>4.0.20.Final</version>
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>org.jboss.web</groupId>
-            <artifactId>jbossweb</artifactId>
-            <version>7.0.17.Final</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.as</groupId>
-            <artifactId>jboss-as-web</artifactId>
-            <version>7.1.2.Final</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
+
     </dependencies>
     <build>
         <plugins>

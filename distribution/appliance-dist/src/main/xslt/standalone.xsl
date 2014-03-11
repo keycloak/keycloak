@@ -38,6 +38,18 @@
         </xsl:copy>
     </xsl:template>
 
+    <xsl:template match="node()[name(.)='security-domains']">
+        <xsl:copy>
+            <xsl:apply-templates select="node()[name(.)='security-domain']"/>
+            <security-domain name="keycloak">
+                <authentication>
+                    <login-module code="org.keycloak.adapters.jboss.KeycloakLoginModule" flag="required"/>
+                </authentication>
+            </security-domain>
+        </xsl:copy>
+    </xsl:template>
+
+
     <!-- for some reason, Wildfly 8 final decided to turn off management-native which means jboss-as-maven-plugin no
          longer works -->
     <xsl:template match="node()[name(.)='management-interfaces']">

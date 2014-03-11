@@ -1,0 +1,24 @@
+package org.keycloak.adapters.wildfly;
+
+import io.undertow.servlet.api.DeploymentInfo;
+import org.jboss.logging.Logger;
+import org.keycloak.adapters.KeycloakDeployment;
+import org.keycloak.adapters.undertow.KeycloakServletExtension;
+import org.keycloak.adapters.undertow.ServletKeycloakAuthMech;
+import org.keycloak.adapters.undertow.UndertowUserSessionManagement;
+
+/**
+ * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @version $Revision: 1 $
+ */
+public class WildflyKeycloakServletExtension extends KeycloakServletExtension {
+    protected static Logger log = Logger.getLogger(WildflyKeycloakServletExtension.class);
+
+    @Override
+    protected ServletKeycloakAuthMech createAuthenticationMechanism(DeploymentInfo deploymentInfo, KeycloakDeployment deployment,
+                                                                    UndertowUserSessionManagement userSessionManagement) {
+        log.info("creating WildflyAuthenticationMechanism");
+        return new WildflyAuthenticationMechanism(deployment, userSessionManagement, deploymentInfo.getConfidentialPortManager());
+
+    }
+}

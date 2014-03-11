@@ -1,53 +1,30 @@
-package org.keycloak.adapters.as7;
+package org.keycloak.adapters.wildfly;
 
-import org.apache.catalina.Realm;
-import org.apache.catalina.realm.GenericPrincipal;
-import org.jboss.as.web.security.JBossGenericPrincipal;
 import org.jboss.security.NestableGroup;
 import org.jboss.security.SecurityConstants;
-import org.jboss.security.SecurityContext;
 import org.jboss.security.SecurityContextAssociation;
 import org.jboss.security.SimpleGroup;
 import org.jboss.security.SimplePrincipal;
-import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.KeycloakAccount;
 
 import javax.security.auth.Subject;
 import java.security.Principal;
 import java.security.acl.Group;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class CatalinaSecurityContextHelper {
-    public GenericPrincipal createPrincipal(Realm realm, final Principal identity, final Set<String> roleSet, final KeycloakSecurityContext securityContext) {
-        KeycloakAccount account = new KeycloakAccount() {
-            @Override
-            public Principal getPrincipal() {
-                return identity;
-            }
-
-            @Override
-            public Set<String> getRoles() {
-                return roleSet;
-            }
-
-            @Override
-            public KeycloakSecurityContext getKeycloakSecurityContext() {
-                return securityContext;
-            }
-        };
+public class SecurityInfoHelper {
+    public static void propagateSessionInfo(KeycloakAccount account) {
         Subject subject = new Subject();
         Set<Principal> principals = subject.getPrincipals();
-        principals.add(identity);
-        Group[] roleSets = getRoleSets(roleSet);
+        principals.add(account.getPrincipal());
+        Group[] roleSets = getRoleSets(account.getRoles());
         for (int g = 0; g < roleSets.length; g++) {
             Group group = roleSets[g];
             String name = group.getName();
@@ -69,16 +46,11 @@ public class CatalinaSecurityContextHelper {
         }
         // add the CallerPrincipal group if none has been added in getRoleSets
         Group callerGroup = new SimpleGroup(SecurityConstants.CALLER_PRINCIPAL_GROUP);
-        callerGroup.addMember(identity);
+        callerGroup.addMember(account.getPrincipal());
         principals.add(callerGroup);
-        SecurityContext sc = SecurityContextAssociation.getSecurityContext();
+        org.jboss.security.SecurityContext sc = SecurityContextAssociation.getSecurityContext();
         Principal userPrincipal = getPrincipal(subject);
         sc.getUtil().createSubjectInfo(userPrincipal, account, subject);
-        List<String> rolesAsStringList = new ArrayList<String>();
-        rolesAsStringList.addAll(roleSet);
-        return new JBossGenericPrincipal(realm, userPrincipal.getName(), null, rolesAsStringList,
-                userPrincipal, null, account, null, subject);
-
     }
 
     /**
@@ -88,7 +60,7 @@ public class CatalinaSecurityContextHelper {
      * @param subject
      * @return the authenticated subject
      */
-    protected Principal getPrincipal(Subject subject) {
+    protected static Principal getPrincipal(Subject subject) {
         Principal principal = null;
         Principal callerPrincipal = null;
         if (subject != null) {
@@ -112,7 +84,7 @@ public class CatalinaSecurityContextHelper {
         return callerPrincipal == null ? principal : callerPrincipal;
     }
 
-    protected Group createGroup(String name, Set<Principal> principals) {
+    protected static Group createGroup(String name, Set<Principal> principals) {
         Group roles = null;
         Iterator<Principal> iter = principals.iterator();
         while (iter.hasNext()) {
@@ -133,7 +105,7 @@ public class CatalinaSecurityContextHelper {
         return roles;
     }
 
-    protected Group[] getRoleSets(Collection<String> roleSet) {
+    protected static Group[] getRoleSets(Collection<String> roleSet) {
         SimpleGroup roles = new SimpleGroup("Roles");
         Group[] roleSets = {roles};
         for (String role : roleSet) {
@@ -141,5 +113,4 @@ public class CatalinaSecurityContextHelper {
         }
         return roleSets;
     }
-
 }

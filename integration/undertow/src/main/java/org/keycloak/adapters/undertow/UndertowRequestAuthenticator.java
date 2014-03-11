@@ -4,6 +4,7 @@ import io.undertow.security.api.SecurityContext;
 import io.undertow.server.HttpServerExchange;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.adapters.HttpFacade;
+import org.keycloak.adapters.KeycloakAccount;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OAuthRequestAuthenticator;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
@@ -46,7 +47,7 @@ public class UndertowRequestAuthenticator extends RequestAuthenticator {
         login(account);
     }
 
-    protected void login(KeycloakUndertowAccount account) {
+    protected void login(KeycloakAccount account) {
 
     }
 

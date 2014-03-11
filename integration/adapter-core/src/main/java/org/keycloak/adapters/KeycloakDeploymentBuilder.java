@@ -48,6 +48,7 @@ public class KeycloakDeploymentBuilder {
         deployment.setSslRequired(!adapterConfig.isSslNotRequired());
         deployment.setResourceCredentials(adapterConfig.getCredentials());
         deployment.setPublicClient(adapterConfig.isPublicClient());
+        deployment.setUseResourceRoleMappings(adapterConfig.isUseResourceRoleMappings());
 
         if (adapterConfig.isBearerOnly()) {
             deployment.setBearerOnly(true);
