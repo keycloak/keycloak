@@ -25,6 +25,7 @@ public class UndertowRequestAuthenticator extends RequestAuthenticator {
     }
 
     protected void propagateKeycloakContext(KeycloakUndertowAccount account) {
+        exchange.putAttachment(UndertowHttpFacade.KEYCLOAK_SECURITY_CONTEXT_KEY, account.getKeycloakSecurityContext());
     }
 
     @Override
@@ -41,6 +42,7 @@ public class UndertowRequestAuthenticator extends RequestAuthenticator {
     protected void completeOAuthAuthentication(KeycloakPrincipal principal, RefreshableKeycloakSecurityContext session) {
         KeycloakUndertowAccount account = new KeycloakUndertowAccount(principal, session, deployment);
         securityContext.authenticationComplete(account, "KEYCLOAK", false);
+        propagateKeycloakContext(account);
         login(account);
     }
 

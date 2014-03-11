@@ -5,9 +5,9 @@ import org.apache.catalina.SessionEvent;
 import org.apache.catalina.SessionListener;
 import org.apache.catalina.realm.GenericPrincipal;
 import org.jboss.logging.Logger;
+import org.keycloak.adapters.UserSessionManagement;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -20,8 +20,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserSessionManagement implements SessionListener {
-    private static final Logger log = Logger.getLogger(UserSessionManagement.class);
+public class CatalinaUserSessionManagement implements SessionListener, UserSessionManagement {
+    private static final Logger log = Logger.getLogger(CatalinaUserSessionManagement.class);
     protected ConcurrentHashMap<String, UserSessions> userSessionMap = new ConcurrentHashMap<String, UserSessions>();
 
     public static class UserSessions {
@@ -38,6 +38,7 @@ public class UserSessionManagement implements SessionListener {
         }
     }
 
+    @Override
     public int getActiveSessions() {
         int active = 0;
         synchronized (userSessionMap) {
@@ -54,12 +55,14 @@ public class UserSessionManagement implements SessionListener {
      * @param username
      * @return null if user not logged in
      */
+    @Override
     public Long getUserLoginTime(String username) {
         UserSessions sessions = userSessionMap.get(username);
         if (sessions == null) return null;
         return sessions.getLoggedIn();
     }
 
+    @Override
     public Set<String> getActiveUsers() {
         HashSet<String> set = new HashSet<String>();
         set.addAll(userSessionMap.keySet());
@@ -79,12 +82,14 @@ public class UserSessionManagement implements SessionListener {
         session.addSessionListener(this);
     }
 
+    @Override
     public void logoutAll() {
         List<String> users = new ArrayList<String>();
         users.addAll(userSessionMap.keySet());
         for (String user : users) logout(user);
     }
 
+    @Override
     public void logout(String user) {
         log.debug("logoutUser: " + user);
         UserSessions sessions = null;

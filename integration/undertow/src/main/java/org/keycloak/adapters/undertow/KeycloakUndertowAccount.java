@@ -59,7 +59,7 @@ public class KeycloakUndertowAccount implements Account, Serializable {
         return session.getTokenString();
     }
 
-    public RefreshableKeycloakSecurityContext getSession() {
+    public RefreshableKeycloakSecurityContext getKeycloakSecurityContext() {
         return session;
     }
 

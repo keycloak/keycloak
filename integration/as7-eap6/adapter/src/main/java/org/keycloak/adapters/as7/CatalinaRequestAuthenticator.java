@@ -23,11 +23,11 @@ import java.util.Set;
  */
 public class CatalinaRequestAuthenticator extends RequestAuthenticator {
     protected KeycloakAuthenticatorValve valve;
-    protected UserSessionManagement userSessionManagement;
+    protected CatalinaUserSessionManagement userSessionManagement;
     protected Request request;
 
     public CatalinaRequestAuthenticator(KeycloakDeployment deployment,
-                                        KeycloakAuthenticatorValve valve, UserSessionManagement userSessionManagement,
+                                        KeycloakAuthenticatorValve valve, CatalinaUserSessionManagement userSessionManagement,
                                         CatalinaHttpFacade facade,
                                         Request request) {
         super(facade, deployment, request.getConnector().getRedirectPort());

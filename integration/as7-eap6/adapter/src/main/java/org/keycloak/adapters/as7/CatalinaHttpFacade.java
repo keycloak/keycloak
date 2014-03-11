@@ -2,10 +2,14 @@ package org.keycloak.adapters.as7;
 
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
+import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.HttpFacade;
 
 import javax.security.cert.X509Certificate;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -64,6 +68,25 @@ public class CatalinaHttpFacade implements HttpFacade {
             }
             return list;
         }
+
+        @Override
+        public InputStream getInputStream() {
+            try {
+                return request.getInputStream();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Override
+        public String getMethod() {
+            return request.getMethod();
+        }
+
+        @Override
+        public String getHeader(String name) {
+            return request.getHeader(name);
+        }
     }
 
     protected class ResponseFacade implements Response {
@@ -101,6 +124,24 @@ public class CatalinaHttpFacade implements HttpFacade {
         }
 
         @Override
+        public OutputStream getOutputStream() {
+            try {
+                return response.getOutputStream();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Override
+        public void sendError(int code, String message) {
+            try {
+                response.sendError(code, message);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Override
         public void end() {
             ended = true;
         }
@@ -123,6 +164,11 @@ public class CatalinaHttpFacade implements HttpFacade {
     @Override
     public Response getResponse() {
         return responseFacade;
+    }
+
+    @Override
+    public KeycloakSecurityContext getSecurityContext() {
+        return (KeycloakSecurityContext)request.getAttribute(KeycloakSecurityContext.class.getName());
     }
 
     @Override
