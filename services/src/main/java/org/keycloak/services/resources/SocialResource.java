@@ -23,7 +23,6 @@ package org.keycloak.services.resources;
 
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
-import org.jboss.resteasy.spi.HttpResponse;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -32,22 +31,20 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.services.managers.AppAuthManager;
-import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.managers.SocialRequestManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.OAuthFlows;
 import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.social.AuthCallback;
-import org.keycloak.social.AuthRequest;
 import org.keycloak.social.RequestDetails;
+import org.keycloak.social.SocialAccessDeniedException;
 import org.keycloak.social.SocialLoader;
 import org.keycloak.social.SocialProvider;
 import org.keycloak.social.SocialProviderConfig;
 import org.keycloak.social.SocialProviderException;
-import org.keycloak.services.managers.SocialRequestManager;
 import org.keycloak.social.SocialUser;
 
 import javax.ws.rs.GET;
@@ -57,6 +54,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriBuilder;
@@ -141,6 +139,14 @@ public class SocialResource {
         SocialUser socialUser;
         try {
             socialUser = provider.processCallback(config, callback);
+        } catch (SocialAccessDeniedException e) {
+            MultivaluedHashMap<String, String> queryParms = new MultivaluedHashMap<String, String>();
+            queryParms.putSingle("client_id", requestData.getClientAttribute("clientId"));
+            queryParms.putSingle("state", requestData.getClientAttribute("state"));
+            queryParms.putSingle("scope", requestData.getClientAttribute("scope"));
+            queryParms.putSingle("redirect_uri", requestData.getClientAttribute("redirectUri"));
+            queryParms.putSingle("response_type", requestData.getClientAttribute("responseType"));
+            return  Flows.forms(realm, request, uriInfo).setQueryParams(queryParms).setWarning("Access denied").createLogin();
         } catch (SocialProviderException e) {
             logger.warn("Failed to process social callback", e);
             return oauth.forwardToSecurityFailure("Failed to process social callback");
@@ -210,7 +216,7 @@ public class SocialResource {
     public Response redirectToProviderAuth(@PathParam("realm") final String realmName,
                                            @QueryParam("provider_id") final String providerId, @QueryParam("client_id") final String clientId,
                                            @QueryParam("scope") final String scope, @QueryParam("state") final String state,
-                                           @QueryParam("redirect_uri") String redirectUri) {
+                                           @QueryParam("redirect_uri") String redirectUri, @QueryParam("response_type") String responseType) {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = realmManager.getRealmByName(realmName);
 
@@ -239,20 +245,24 @@ public class SocialResource {
                     .putClientAttribute("realm", realmName)
                     .putClientAttribute("clientId", clientId).putClientAttribute("scope", scope)
                     .putClientAttribute("state", state).putClientAttribute("redirectUri", redirectUri)
-                    .redirectToSocialProvider();
+                    .putClientAttribute("responseType", responseType).redirectToSocialProvider();
         } catch (Throwable t) {
             return Flows.forms(realm, request, uriInfo).setError("Failed to redirect to social auth").createErrorPage();
         }
     }
 
     private RequestDetails getRequestDetails(Map<String, String[]> queryParams) {
-        for (SocialProvider provider : SocialLoader.load()) {
-            if (queryParams.containsKey(provider.getRequestIdParamName())) {
-                String requestId = queryParams.get(provider.getRequestIdParamName())[0];
-                if (socialRequestManager.isRequestId(requestId)) {
-                    return socialRequestManager.retrieveData(requestId);
-                }
-            }
+        String requestId = null;
+        if (queryParams.containsKey("state")) {
+            requestId =  queryParams.get("state")[0];
+        } else if (queryParams.containsKey("oauth_token")) {
+            requestId = queryParams.get("oauth_token")[0];
+        } else if (queryParams.containsKey("denied")) {
+            requestId = queryParams.get("denied")[0];
+        }
+
+        if (requestId != null && socialRequestManager.isRequestId(requestId)) {
+            return socialRequestManager.retrieveData(requestId);
         }
 
         return null;

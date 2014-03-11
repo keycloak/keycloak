@@ -2,6 +2,7 @@ package org.keycloak.testsuite;
 
 import org.keycloak.social.AuthCallback;
 import org.keycloak.social.AuthRequest;
+import org.keycloak.social.SocialAccessDeniedException;
 import org.keycloak.social.SocialProvider;
 import org.keycloak.social.SocialProviderConfig;
 import org.keycloak.social.SocialProviderException;
@@ -27,17 +28,17 @@ public class DummySocial implements SocialProvider {
     }
 
     @Override
-    public String getRequestIdParamName() {
-        return "state";
-    }
-
-    @Override
     public String getName() {
         return "Dummy Provider";
     }
 
     @Override
     public SocialUser processCallback(SocialProviderConfig config, AuthCallback callback) throws SocialProviderException {
+        String error = callback.getQueryParam("error");
+        if (error != null) {
+            throw new SocialAccessDeniedException();
+        }
+
         if (!callback.getQueryParam("state").equals(callback.getAttribute("state"))) {
             throw new SocialProviderException("Invalid state");
         }

@@ -27,8 +27,8 @@ public class DummySocialServlet extends HttpServlet {
         pw.print("<label for=\"firstname\">First Name</label><input type=\"text\" id=\"firstname\" name=\"firstname\" />");
         pw.print("<label for=\"lastname\">Last Name</label><input type=\"text\" id=\"lastname\" name=\"lastname\" />");
         pw.print("<label for=\"email\">Email</label><input type=\"text\" id=\"email\" name=\"email\" />");
-        pw.print("<input type=\"submit\" id=\"submit\" value=\"login\" />");
-        pw.print("<input type=\"submit\" id=\"cancel\" value=\"cancel\" />");
+        pw.print("<input type=\"submit\" id=\"login\" name=\"login\" value=\"login\" />");
+        pw.print("<input type=\"submit\" id=\"cancel\" name=\"cancel\" value=\"cancel\" />");
         pw.print("</form>");
         pw.print("</body>");
         pw.print("</html>");

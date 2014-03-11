@@ -102,7 +102,7 @@ public class SocialLoginTest {
         driver.findElement(By.id("firstname")).sendKeys("Bob");
         driver.findElement(By.id("lastname")).sendKeys("Builder");
         driver.findElement(By.id("email")).sendKeys("bob@builder.com");
-        driver.findElement(By.id("submit")).click();
+        driver.findElement(By.id("login")).click();
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
@@ -128,19 +128,12 @@ public class SocialLoginTest {
 
         driver.findElement(By.id("cancel")).click();
 
+        Assert.assertTrue(loginPage.isCurrent());
+        Assert.assertEquals("Access denied", loginPage.getWarning());
+
+        loginPage.login("test-user@localhost", "password");
+
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-
-        AccessTokenResponse response = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get("code"), "password");
-
-        AccessToken token = oauth.verifyToken(response.getAccessToken());
-        Assert.assertEquals(36, token.getSubject().length());
-
-        UserRepresentation profile = keycloakRule.getUserById("test", token.getSubject());
-        Assert.assertEquals(36, profile.getUsername().length());
-
-        Assert.assertEquals("Bob", profile.getFirstName());
-        Assert.assertEquals("Builder", profile.getLastName());
-        Assert.assertEquals("bob@builder.com", profile.getEmail());
     }
 
     @Test
@@ -162,7 +155,7 @@ public class SocialLoginTest {
             driver.findElement(By.id("firstname")).sendKeys("Bob");
             driver.findElement(By.id("lastname")).sendKeys("Builder");
             driver.findElement(By.id("email")).sendKeys("bob@builder.com");
-            driver.findElement(By.id("submit")).click();
+            driver.findElement(By.id("login")).click();
 
             profilePage.isCurrent();
 
