@@ -543,13 +543,13 @@ public class RealmAdapter implements RealmModel {
         TypedQuery<UserEntity> query = em.createNamedQuery("findUserByLinkAndRealm", UserEntity.class);
         query.setParameter("realm", realm);
         query.setParameter("socialProvider", socialLink.getSocialProvider());
-        query.setParameter("socialUsername", socialLink.getSocialUsername());
+        query.setParameter("socialUserId", socialLink.getSocialUserId());
         List<UserEntity> results = query.getResultList();
         if (results.isEmpty()) {
             return null;
         } else if (results.size() > 1) {
             throw new IllegalStateException("More results found for socialProvider=" + socialLink.getSocialProvider() +
-                    ", socialUsername=" + socialLink.getSocialUsername() + ", results=" + results);
+                    ", socialUserId=" + socialLink.getSocialUserId() + ", results=" + results);
         } else {
             UserEntity user = results.get(0);
             return new UserAdapter(user);
@@ -563,7 +563,7 @@ public class RealmAdapter implements RealmModel {
         List<SocialLinkEntity> results = query.getResultList();
         Set<SocialLinkModel> set = new HashSet<SocialLinkModel>();
         for (SocialLinkEntity entity : results) {
-            set.add(new SocialLinkModel(entity.getSocialProvider(), entity.getSocialUsername()));
+            set.add(new SocialLinkModel(entity.getSocialProvider(), entity.getSocialUserId(), entity.getSocialUsername()));
         }
         return set;
     }
@@ -571,7 +571,7 @@ public class RealmAdapter implements RealmModel {
     @Override
     public SocialLinkModel getSocialLink(UserModel user, String socialProvider) {
         SocialLinkEntity entity = findSocialLink(user, socialProvider);
-        return (entity != null) ? new SocialLinkModel(entity.getSocialProvider(), entity.getSocialUsername()) : null;
+        return (entity != null) ? new SocialLinkModel(entity.getSocialProvider(), entity.getSocialUserId(), entity.getSocialUsername()) : null;
     }
 
     @Override
@@ -579,6 +579,7 @@ public class RealmAdapter implements RealmModel {
         SocialLinkEntity entity = new SocialLinkEntity();
         entity.setRealm(realm);
         entity.setSocialProvider(socialLink.getSocialProvider());
+        entity.setSocialUserId(socialLink.getSocialUserId());
         entity.setSocialUsername(socialLink.getSocialUsername());
         entity.setUser(((UserAdapter) user).getUser());
         em.persist(entity);

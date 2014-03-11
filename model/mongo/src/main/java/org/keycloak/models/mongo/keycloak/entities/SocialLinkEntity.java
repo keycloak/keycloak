@@ -8,8 +8,18 @@ import org.keycloak.models.mongo.api.MongoField;
  */
 public class SocialLinkEntity implements MongoEntity {
 
+    private String socialUserId;
     private String socialUsername;
     private String socialProvider;
+
+    @MongoField
+    public String getSocialUserId() {
+        return socialUserId;
+    }
+
+    public void setSocialUserId(String socialUserId) {
+        this.socialUserId = socialUserId;
+    }
 
     @MongoField
     public String getSocialUsername() {
@@ -37,9 +47,9 @@ public class SocialLinkEntity implements MongoEntity {
         SocialLinkEntity that = (SocialLinkEntity) o;
 
         if (socialProvider != null && (that.socialProvider == null || !socialProvider.equals(that.socialProvider))) return false;
-        if (socialUsername != null && (that.socialUsername == null || !socialUsername.equals(that.socialUsername))) return false;
+        if (socialUserId != null && (that.socialUserId == null || !socialUserId.equals(that.socialUserId))) return false;
         if (socialProvider == null && that.socialProvider != null)return false;
-        if (socialUsername == null && that.socialUsername != null) return false;
+        if (socialUserId == null && that.socialUserId != null) return false;
 
         return true;
     }
@@ -47,7 +57,7 @@ public class SocialLinkEntity implements MongoEntity {
     @Override
     public int hashCode() {
         int code = 1;
-        if (socialUsername != null) {
+        if (socialUserId != null) {
             code = code * 13;
         }
         if (socialProvider != null) {

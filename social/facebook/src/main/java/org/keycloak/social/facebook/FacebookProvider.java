@@ -52,7 +52,7 @@ public class FacebookProvider extends AbstractOAuth2Provider {
         try {
             JSONObject profile = SimpleHttp.doGet(PROFILE_URL).header("Authorization", "Bearer " + accessToken).asJson();
 
-            SocialUser user = new SocialUser(profile.getString("id"));
+            SocialUser user = new SocialUser(profile.getString("id"), profile.getString("username"));
             user.setName(profile.optString("first_name"), profile.optString("last_name"));
             user.setEmail(profile.optString("email"));
 
@@ -64,10 +64,6 @@ public class FacebookProvider extends AbstractOAuth2Provider {
 
     @Override
     public AuthRequest getAuthUrl(SocialProviderConfig config) throws SocialProviderException {
-        if (config.getCallbackUrl().contains("//localhost")) {
-            String callbackUrl = config.getCallbackUrl().replace("//localhost", "//127.0.0.1");
-            config = new SocialProviderConfig(config.getKey(), config.getSecret(), callbackUrl);
-        }
         return super.getAuthUrl(config);
     }
 

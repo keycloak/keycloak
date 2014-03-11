@@ -146,7 +146,7 @@ public class SocialResource {
             return oauth.forwardToSecurityFailure("Failed to process social callback");
         }
 
-        SocialLinkModel socialLink = new SocialLinkModel(provider.getId(), socialUser.getId());
+        SocialLinkModel socialLink = new SocialLinkModel(provider.getId(), socialUser.getId(), socialUser.getUsername());
         UserModel user = realm.getUserBySocialLink(socialLink);
 
         // Check if user is already authenticated (this means linking social into existing user account)

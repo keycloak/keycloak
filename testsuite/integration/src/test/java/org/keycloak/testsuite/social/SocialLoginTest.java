@@ -97,11 +97,36 @@ public class SocialLoginTest {
 
         loginPage.clickSocial("dummy");
 
+        driver.findElement(By.id("id")).sendKeys("1");
         driver.findElement(By.id("username")).sendKeys("dummy-user1");
         driver.findElement(By.id("firstname")).sendKeys("Bob");
         driver.findElement(By.id("lastname")).sendKeys("Builder");
         driver.findElement(By.id("email")).sendKeys("bob@builder.com");
         driver.findElement(By.id("submit")).click();
+
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        AccessTokenResponse response = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get("code"), "password");
+
+        AccessToken token = oauth.verifyToken(response.getAccessToken());
+        Assert.assertEquals(36, token.getSubject().length());
+
+        UserRepresentation profile = keycloakRule.getUserById("test", token.getSubject());
+        Assert.assertEquals(36, profile.getUsername().length());
+
+        Assert.assertEquals("Bob", profile.getFirstName());
+        Assert.assertEquals("Builder", profile.getLastName());
+        Assert.assertEquals("bob@builder.com", profile.getEmail());
+    }
+
+
+    @Test
+    public void loginCancelled() throws Exception {
+        loginPage.open();
+
+        loginPage.clickSocial("dummy");
+
+        driver.findElement(By.id("cancel")).click();
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
@@ -132,6 +157,7 @@ public class SocialLoginTest {
 
             loginPage.clickSocial("dummy");
 
+            driver.findElement(By.id("id")).sendKeys("2");
             driver.findElement(By.id("username")).sendKeys("dummy-user2");
             driver.findElement(By.id("firstname")).sendKeys("Bob");
             driver.findElement(By.id("lastname")).sendKeys("Builder");

@@ -43,7 +43,7 @@ public class AuthCallback {
 
     public String getQueryParam(String name) {
         String[] value = queryParams.get(name);
-        if (value.length > 0) {
+        if (value != null && value.length > 0) {
             return value[0];
         }
         return null;

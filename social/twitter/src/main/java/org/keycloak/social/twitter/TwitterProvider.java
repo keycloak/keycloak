@@ -77,7 +77,7 @@ public class TwitterProvider implements SocialProvider {
             twitter.getOAuthAccessToken(requestToken, verifier);
             twitter4j.User twitterUser = twitter.verifyCredentials();
 
-            SocialUser user = new SocialUser(Long.toString(twitterUser.getId()));
+            SocialUser user = new SocialUser(Long.toString(twitterUser.getId()), twitterUser.getScreenName());
             user.setName(twitterUser.getName());
 
             return user;

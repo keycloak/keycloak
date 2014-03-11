@@ -97,7 +97,7 @@ public class CreateUsersWorker implements Worker {
                         + " which is too big.");
             }
 
-            SocialLinkModel socialLink = new SocialLinkModel(socialProvider, username);
+            SocialLinkModel socialLink = new SocialLinkModel(socialProvider, username, username);
             realm.addSocialLink(user, socialLink);
         }
 

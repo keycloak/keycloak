@@ -853,7 +853,7 @@ public class RealmAdapter extends AbstractMongoAdapter<RealmEntity> implements R
     public UserModel getUserBySocialLink(SocialLinkModel socialLink) {
         DBObject query = new QueryBuilder()
                 .and("socialLinks.socialProvider").is(socialLink.getSocialProvider())
-                .and("socialLinks.socialUsername").is(socialLink.getSocialUsername())
+                .and("socialLinks.socialUserId").is(socialLink.getSocialUserId())
                 .and("realmId").is(getId())
                 .get();
         UserEntity userEntity = getMongoStore().loadSingleEntity(UserEntity.class, query, invocationContext);
@@ -871,7 +871,7 @@ public class RealmAdapter extends AbstractMongoAdapter<RealmEntity> implements R
 
         Set<SocialLinkModel> result = new HashSet<SocialLinkModel>();
         for (SocialLinkEntity socialLinkEntity : linkEntities) {
-            SocialLinkModel model = new SocialLinkModel(socialLinkEntity.getSocialProvider(), socialLinkEntity.getSocialUsername());
+            SocialLinkModel model = new SocialLinkModel(socialLinkEntity.getSocialProvider(), socialLinkEntity.getSocialUserId(), socialLinkEntity.getSocialUsername());
             result.add(model);
         }
         return result;
@@ -880,7 +880,7 @@ public class RealmAdapter extends AbstractMongoAdapter<RealmEntity> implements R
     @Override
     public SocialLinkModel getSocialLink(UserModel user, String socialProvider) {
         SocialLinkEntity socialLinkEntity = findSocialLink(user, socialProvider);
-        return socialLinkEntity!=null ? new SocialLinkModel(socialLinkEntity.getSocialProvider(), socialLinkEntity.getSocialUsername()) : null;
+        return socialLinkEntity!=null ? new SocialLinkModel(socialLinkEntity.getSocialProvider(), socialLinkEntity.getSocialUserId(), socialLinkEntity.getSocialUsername()) : null;
     }
 
     @Override
@@ -888,6 +888,7 @@ public class RealmAdapter extends AbstractMongoAdapter<RealmEntity> implements R
         UserEntity userEntity = ((UserAdapter)user).getUser();
         SocialLinkEntity socialLinkEntity = new SocialLinkEntity();
         socialLinkEntity.setSocialProvider(socialLink.getSocialProvider());
+        socialLinkEntity.setSocialUserId(socialLink.getSocialUserId());
         socialLinkEntity.setSocialUsername(socialLink.getSocialUsername());
 
         getMongoStore().pushItemToList(userEntity, "socialLinks", socialLinkEntity, true, invocationContext);

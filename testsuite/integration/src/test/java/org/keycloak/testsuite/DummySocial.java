@@ -42,8 +42,9 @@ public class DummySocial implements SocialProvider {
             throw new SocialProviderException("Invalid state");
         }
 
+        String id = callback.getQueryParam("id");
         String username = callback.getQueryParam("username");
-        SocialUser user = new SocialUser(username);
+        SocialUser user = new SocialUser(id, username);
         user.setName(callback.getQueryParam("firstname"), callback.getQueryParam("lastname"));
         user.setEmail(callback.getQueryParam("email"));
         return user;

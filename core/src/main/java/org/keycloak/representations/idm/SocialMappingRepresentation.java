@@ -32,9 +32,10 @@ public class SocialMappingRepresentation {
         return socialLinks;
     }
 
-    public SocialLinkRepresentation socialLink(String socialProvider, String socialUsername) {
+    public SocialLinkRepresentation socialLink(String socialProvider, String socialUserId, String socialUsername) {
         SocialLinkRepresentation link = new SocialLinkRepresentation();
         link.setSocialProvider(socialProvider);
+        link.setSocialUserId(socialUserId);
         link.setSocialUsername(socialUsername);
         if (socialLinks == null) socialLinks = new ArrayList<SocialLinkRepresentation>();
         socialLinks.add(link);
