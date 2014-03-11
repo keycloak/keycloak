@@ -234,7 +234,7 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
             $scope.clientType = $scope.clientTypes[1];
         }
     } else {
-        $scope.application = {};
+        $scope.application = { enabled: true };
         $scope.application.webOrigins = [];
         $scope.application.redirectUris = [];
         $scope.clientType = $scope.clientTypes[0];

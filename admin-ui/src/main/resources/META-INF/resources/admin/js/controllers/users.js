@@ -172,6 +172,10 @@ module.controller('UserDetailCtrl', function($scope, realm, user, User, $locatio
     $scope.user = angular.copy(user);
     $scope.create = !user.username;
 
+    if ($scope.create) {
+        $scope.user.enabled = true;
+    }
+
     $scope.changed = false; // $scope.create;
 
     // ID - Name map for required actions. IDs are enum names.
