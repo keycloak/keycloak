@@ -32,7 +32,7 @@
                 <th>Base URL</th>
             </tr>
             </thead>
-            <tfoot data-ng-show="applications && applications.length > 5"> <!-- todo -->
+            <!--<tfoot data-ng-show="applications && applications.length > 5">
             <tr>
                 <td colspan="3">
                     <div class="table-nav">
@@ -43,7 +43,7 @@
                     </div>
                 </td>
             </tr>
-            </tfoot>
+            </tfoot>-->
             <tbody>
             <tr ng-repeat="app in applications | filter:search">
                 <td><a href="#/realms/{{realm.realm}}/applications/{{app.name}}">{{app.name}}</a></td>

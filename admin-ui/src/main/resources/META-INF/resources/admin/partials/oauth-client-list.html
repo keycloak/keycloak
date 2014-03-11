@@ -14,15 +14,15 @@
             <tr>
                 <th class="kc-table-actions" colspan="3">
                     <div class="search-comp clearfix">
-                        <input type="text" placeholder="Search..." class="form-control search"
+                        <input type="text" placeholder="Search..." class="form-control search" data-ng-model="search.name"
                                onkeyup="if(event.keyCode == 13){$(this).next('button').click();}">
-                        <button class="kc-icon-search" tooltip-placement="right"
-                                tooltip="Search by oauth client name">
+                        <button type="submit" class="kc-icon-search" tooltip-placement="right"
+                                tooltip="Search by application name.">
                             Icon: search
                         </button>
                     </div>
                     <div class="pull-right">
-                        <a class="btn btn-primary" href="#/create/oauth-client/{{realm.realm}}">Add OAuth Client</a>
+                        <a class="btn btn-primary" href="#/create/application/{{realm.realm}}">Add Application</a>
                     </div>
                 </th>
             </tr>
@@ -31,7 +31,7 @@
                 <th>Enabled</th>
             </tr>
             </thead>
-            <tfoot data-ng-show="oauthClients && oauthClients.length > 5"> <!-- todo -->
+            <!--<tfoot data-ng-show="oauthClients && oauthClients.length > 5">
             <tr>
                 <td colspan="2">
                     <div class="table-nav">
@@ -43,8 +43,9 @@
                 </td>
             </tr>
             </tfoot>
+            -->
             <tbody>
-            <tr ng-repeat="client in oauthClients">
+            <tr ng-repeat="client in oauthClients | filter:search">
                 <td><a href="#/realms/{{realm.realm}}/oauth-clients/{{client.id}}">{{client.name}}</a></td>
                 <td>{{client.enabled}}</td>
             </tr>

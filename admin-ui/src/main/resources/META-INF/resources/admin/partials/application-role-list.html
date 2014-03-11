@@ -30,7 +30,7 @@
                     </div>
                 </th>
             </tr>
-            <tr data-ng-show="roles && roles.length > 5">
+            <!--<tr data-ng-show="roles && roles.length > 5">
                 <th class="kc-table-actions" colspan="3">
                     <div class="search-comp clearfix">
                         <input type="text" placeholder="Search..." class="search">
@@ -41,13 +41,14 @@
                     </div>
                 </th>
             </tr>
+            -->
             <tr data-ng-hide="!roles || roles.length == 0">
                 <th>Role Name</th>
                 <th>Composite</th>
                 <th>Description</th>
             </tr>
             </thead>
-            <tfoot data-ng-show="roles && roles.length > 5"> <!-- todo -->
+            <!--<tfoot data-ng-show="roles && roles.length > 5">
             <tr>
                 <td colspan="3">
                     <div class="table-nav">
@@ -59,6 +60,7 @@
                 </td>
             </tr>
             </tfoot>
+            -->
             <tbody>
             <tr ng-repeat="role in roles">
                 <td><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/roles/{{role.name}}">{{role.name}}</a></td>
