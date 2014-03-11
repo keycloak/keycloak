@@ -99,7 +99,7 @@ module.controller('OAuthClientDetailCtrl', function($scope, realm, oauth, OAuthC
             $scope.clientType = $scope.clientTypes[1];
         }
     } else {
-        $scope.oauth = {};
+        $scope.oauth = { enabled: true };
         $scope.oauth.webOrigins = [];
         $scope.oauth.redirectUris = [];
         $scope.clientType = $scope.clientTypes[0];
