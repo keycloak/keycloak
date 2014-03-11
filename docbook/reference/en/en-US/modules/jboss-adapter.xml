@@ -73,6 +73,66 @@ $ unzip keycloak-as7-adapter-dist.zip
 ]]>
 </programlisting>
     </para>
+        <para>
+            Finally, for both AS7, EAP 6.x, and Wildfly installations you must specify a shared keycloak security domain.
+            This security domain should be used with EJBs and other components when you need the security context created
+            in the secured web tier to be propagated to the EJBs (other EE component) you are invoking.  Otherwise
+            this configuration is optional.
+        </para>
+<programlisting><![CDATA[
+<server xmlns="urn:jboss:domain:1.4">
+ <subsystem xmlns="urn:jboss:domain:security:1.2">
+    <security-domains>
+...
+      <security-domain name="keycloak">
+         <authentication>
+           <login-module code="org.keycloak.adapters.jboss.KeycloakLoginModule"
+                         flag="required"/>
+          </authentication>
+      </security-domain>
+    </security-domains>
+]]>
+</programlisting>
+        <para>
+            For example, if you have a JAX-RS service that is an EJB within your WEB-INF/classes directory, you'll want
+            to annotate it with the @SecurityDomain annotation as follows:
+        </para>
+<programlisting><![CDATA[
+import org.jboss.ejb3.annotation.SecurityDomain;
+import org.jboss.resteasy.annotations.cache.NoCache;
+
+import javax.annotation.security.RolesAllowed;
+import javax.ejb.EJB;
+import javax.ejb.Stateless;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import java.util.ArrayList;
+import java.util.List;
+
+@Path("customers")
+@Stateless
+@SecurityDomain("keycloak")
+public class CustomerService {
+
+    @EJB
+    CustomerDB db;
+
+    @GET
+    @Produces("application/json")
+    @NoCache
+    @RolesAllowed("db_user")
+    public List<String> getCustomers() {
+        return db.getCustomers();
+    }
+}
+]]>
+</programlisting>
+        <para>
+            We hope to improve our integration in the future so that you don't have to specify the @SecurityDomain
+            annotation when you want to propagate a keycloak security context to the EJB tier.
+        </para>
+
     </section>
     <section>
         <title>Per WAR Configuration</title>
