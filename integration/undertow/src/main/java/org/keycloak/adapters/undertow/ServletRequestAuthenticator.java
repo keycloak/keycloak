@@ -5,6 +5,7 @@ import io.undertow.server.HttpServerExchange;
 import io.undertow.servlet.handlers.ServletRequestContext;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.HttpFacade;
+import org.keycloak.adapters.KeycloakAccount;
 import org.keycloak.adapters.KeycloakDeployment;
 
 import javax.servlet.http.HttpServletRequest;
@@ -39,7 +40,8 @@ public class ServletRequestAuthenticator extends UndertowRequestAuthenticator {
             log.info("Account was not in session, returning null");
             return false;
         }
-        if (account.isActive(deployment)) {
+        account.setDeployment(deployment);
+        if (account.isActive()) {
             log.info("Cached account found");
             securityContext.authenticationComplete(account, "KEYCLOAK", false);
             propagateKeycloakContext( account);
@@ -59,7 +61,7 @@ public class ServletRequestAuthenticator extends UndertowRequestAuthenticator {
     }
 
     @Override
-    protected void login(KeycloakUndertowAccount account) {
+    protected void login(KeycloakAccount account) {
         final ServletRequestContext servletRequestContext = exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
         HttpServletRequest req = (HttpServletRequest) servletRequestContext.getServletRequest();
         HttpSession session = req.getSession(true);

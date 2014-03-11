@@ -48,11 +48,30 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
     // Seems wise to have this run after INSTALL_WAR_DEPLOYMENT
     public static final int PRIORITY = Phase.INSTALL_WAR_DEPLOYMENT - 1;
 
+    // not sure if we need this yet, keeping here just in case
+    protected void addSecurityDomain(DeploymentUnit deploymentUnit, KeycloakAdapterConfigService service) {
+        String deploymentName = deploymentUnit.getName();
+        if (!service.isKeycloakDeployment(deploymentName)) {
+            return;
+        }
+        WarMetaData warMetaData = deploymentUnit.getAttachment(WarMetaData.ATTACHMENT_KEY);
+        if (warMetaData == null) return;
+        JBossWebMetaData webMetaData = warMetaData.getMergedJBossWebMetaData();
+        if (webMetaData == null) return;
+
+        LoginConfigMetaData loginConfig = webMetaData.getLoginConfig();
+        if (loginConfig == null || !loginConfig.getAuthMethod().equalsIgnoreCase("KEYCLOAK")) {
+            return;
+        }
+
+        webMetaData.setSecurityDomain("keycloak");
+    }
+
     @Override
     public void deploy(DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
         DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
-        String deploymentName = deploymentUnit.getName();
 
+        String deploymentName = deploymentUnit.getName();
         KeycloakAdapterConfigService service = KeycloakAdapterConfigService.find(phaseContext.getServiceRegistry());
         //log.info("********* CHECK KEYCLOAK DEPLOYMENT: " + deploymentName);
         if (service.isKeycloakDeployment(deploymentName)) {
@@ -61,6 +80,9 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
         }
 
         // FYI, Undertow Extension will find deployments that have auth-method set to KEYCLOAK
+
+        // todo notsure if we need this
+        // addSecurityDomain(deploymentUnit, service);
     }
 
     private void addKeycloakAuthData(DeploymentPhaseContext phaseContext, String deploymentName, KeycloakAdapterConfigService service) {

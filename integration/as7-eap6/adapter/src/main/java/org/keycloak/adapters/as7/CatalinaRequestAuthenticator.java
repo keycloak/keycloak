@@ -4,6 +4,7 @@ import org.apache.catalina.Session;
 import org.apache.catalina.authenticator.Constants;
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.realm.GenericPrincipal;
+import org.jboss.logging.Logger;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.KeycloakDeployment;
@@ -22,6 +23,7 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class CatalinaRequestAuthenticator extends RequestAuthenticator {
+    private static final Logger log = Logger.getLogger(CatalinaRequestAuthenticator.class);
     protected KeycloakAuthenticatorValve valve;
     protected CatalinaUserSessionManagement userSessionManagement;
     protected Request request;
@@ -53,7 +55,7 @@ public class CatalinaRequestAuthenticator extends RequestAuthenticator {
     @Override
     protected void completeOAuthAuthentication(KeycloakPrincipal skp, RefreshableKeycloakSecurityContext securityContext) {
         Set<String> roles = getRolesFromToken(securityContext);
-        GenericPrincipal principal = new CatalinaSecurityContextHelper().createPrincipal(request.getContext().getRealm(), skp, roles);
+        GenericPrincipal principal = new CatalinaSecurityContextHelper().createPrincipal(request.getContext().getRealm(), skp, roles, securityContext);
         Session session = request.getSessionInternal(true);
         session.setPrincipal(principal);
         session.setAuthType("OAUTH");
@@ -66,7 +68,10 @@ public class CatalinaRequestAuthenticator extends RequestAuthenticator {
     @Override
     protected void completeBearerAuthentication(KeycloakPrincipal principal, RefreshableKeycloakSecurityContext securityContext) {
         Set<String> roles = getRolesFromToken(securityContext);
-        Principal generalPrincipal = new CatalinaSecurityContextHelper().createPrincipal(request.getContext().getRealm(), principal, roles);
+        for (String role : roles) {
+            log.info("Bearer role: " + role);
+        }
+        Principal generalPrincipal = new CatalinaSecurityContextHelper().createPrincipal(request.getContext().getRealm(), principal, roles, securityContext);
         request.setUserPrincipal(generalPrincipal);
         request.setAuthType("KEYCLOAK");
         request.setAttribute(KeycloakSecurityContext.class.getName(), securityContext);

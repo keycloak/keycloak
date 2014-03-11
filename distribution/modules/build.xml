@@ -59,12 +59,20 @@
             <maven-resource group="org.keycloak" artifact="keycloak-adapter-core"/>
         </module-def>
 
+        <module-def name="org.keycloak.keycloak-jboss-adapter-core">
+            <maven-resource group="org.keycloak" artifact="keycloak-jboss-adapter-core"/>
+        </module-def>
+
         <module-def name="org.keycloak.keycloak-as7-adapter">
             <maven-resource group="org.keycloak" artifact="keycloak-as7-adapter"/>
         </module-def>
 
         <module-def name="org.keycloak.keycloak-undertow-adapter">
             <maven-resource group="org.keycloak" artifact="keycloak-undertow-adapter"/>
+        </module-def>
+
+        <module-def name="org.keycloak.keycloak-wildfly-adapter">
+            <maven-resource group="org.keycloak" artifact="keycloak-wildfly-adapter"/>
         </module-def>
 
         <module-def name="org.keycloak.keycloak-wildfly-subsystem">

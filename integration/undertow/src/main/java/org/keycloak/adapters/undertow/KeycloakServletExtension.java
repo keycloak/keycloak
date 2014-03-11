@@ -65,7 +65,7 @@ public class KeycloakServletExtension implements ServletExtension {
         if (is == null) throw new RuntimeException("Unable to find realm config in /WEB-INF/keycloak.json or in keycloak subsystem.");
         KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(is);
         UndertowUserSessionManagement userSessionManagement = new UndertowUserSessionManagement(deployment);
-        final ServletKeycloakAuthMech mech = new ServletKeycloakAuthMech(deployment, userSessionManagement, deploymentInfo.getConfidentialPortManager());
+        final ServletKeycloakAuthMech mech = createAuthenticationMechanism(deploymentInfo, deployment, userSessionManagement);
 
         UndertowAuthenticatedActionsHandler.Wrapper actions = new UndertowAuthenticatedActionsHandler.Wrapper(deployment);
 
@@ -101,5 +101,10 @@ public class KeycloakServletExtension implements ServletExtension {
         ServletSessionConfig cookieConfig = new ServletSessionConfig();
         cookieConfig.setPath(deploymentInfo.getContextPath());
         deploymentInfo.setServletSessionConfig(cookieConfig);
+    }
+
+    protected ServletKeycloakAuthMech createAuthenticationMechanism(DeploymentInfo deploymentInfo, KeycloakDeployment deployment, UndertowUserSessionManagement userSessionManagement) {
+       log.info("creating ServletKeycloakAuthMech");
+       return new ServletKeycloakAuthMech(deployment, userSessionManagement, deploymentInfo.getConfidentialPortManager());
     }
 }

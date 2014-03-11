@@ -46,6 +46,10 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
         return this.token.isActive() && this.token.getIssuedAt() > deployment.getNotBefore();
     }
 
+    public KeycloakDeployment getDeployment() {
+        return deployment;
+    }
+
     public void setDeployment(KeycloakDeployment deployment) {
         this.deployment = deployment;
     }
