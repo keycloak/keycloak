@@ -69,85 +69,89 @@
 <header class="navbar navbar-default navbar-pf navbar-main header">
     <nav id="kc-navigation" class="navbar" role="navigation">
         <div class="navbar-header">
-            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse-1">
-                <span class="sr-only">Toggle navigation</span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </button>
-            <h1 class="navbar-title"><Strong>KeyCloak</Strong> Central Login</h1>
+	        	<div class="container">
+		            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse-1">
+		                <span class="sr-only">Toggle navigation</span>
+		                <span class="icon-bar"></span>
+		                <span class="icon-bar"></span>
+		                <span class="icon-bar"></span>
+		            </button>
+		            <h1 class="navbar-title"><Strong>KeyCloak</Strong> Central Login</h1>
+	        	</div>
         </div>
         <div class="collapse navbar-collapse navbar-collapse-1">
-            <ul class="nav navbar-nav navbar-utility" data-ng-show="auth.loggedIn">
-                <li class="dropdown">
-                    <a data-toggle="dropdown" class="dropdown-toggle" href="#">
-                        <span class="pficon pficon-user"></span>
-                        {{auth.user.displayName}}<b class="caret"></b>
-                    </a>
-                    <ul class="dropdown-menu">
-                        <li><a href="/auth/rest/realms/keycloak-admin/account?referrer=admin-console">Manage Account</a></li>
-                        <li class="separator"><a href="/auth/rest/admin/logout">Sign Out</a></li>
-                    </ul>
-                </li>
-            </ul>
-            <ul class="nav navbar-nav navbar-primary persistent-secondary" data-ng-controller="RealmDropdownCtrl">
-                <li class="dropdown context" data-ng-show="showNav()">
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                        Realm: {{current.realm.id}}
-                        <b class="caret"></b>
-                    </a>
-                    <ul class="dropdown-menu">
-                        <li data-ng-repeat="realm in current.realms">
-                            <a href="" ng-click="changeRealm(realm.id)" >{{realm.id}}</a>
-                        </li>
-                    </ul>
-                </li>
-
-
-                <!--------------------------------------->
-                <li class="active">
-                    <a href="#">Settings</a>
-                    <ul class="nav navbar-nav navbar-persistent">
-                        <li class="active">
-                            <a href="#">General</a>
-                        </li>
-                        <li>
-                            <a href="#">Roles</a>
-                        </li>
-                        <li>
-                            <a href="#">Default Roles</a>
-                        </li>
-                        <li>
-                            <a href="#">Credentials</a>
-                        </li>
-                        <li>
-                            <a href="#">Token</a>
-                        </li>
-                        <li>
-                            <a href="#">Keys</a>
-                        </li>
-                        <li>
-                            <a href="#">Email</a>
-                        </li>
-                    </ul>
-                </li>
-                <li>
-                    <a href="#">User</a>
-                </li>
-                <li>
-                    <a href="#">Applications</a>
-                </li>
-                <li>
-                    <a href="#">OAuth Clients</a>
-                </li>
-                <!--------------------------------------->
-
-
-                <li class="active pull-right" data-ng-show="auth.loggedIn">
-                    <a class="button primary" href="#/create/realm" data-ng-class="path[0] == 'create' && path[1] == 'realm' && 'active'"
-                       data-ng-show="auth.loggedIn">Add Realm</a>
-                </li>
-            </ul>
+        		<div class="container">
+		            <ul class="nav navbar-nav navbar-utility" data-ng-show="auth.loggedIn">
+		                <li class="dropdown">
+		                    <a data-toggle="dropdown" class="dropdown-toggle" href="#">
+		                        <span class="pficon pficon-user"></span>
+		                        {{auth.user.displayName}}<b class="caret"></b>
+		                    </a>
+		                    <ul class="dropdown-menu">
+		                        <li><a href="/auth/rest/realms/keycloak-admin/account?referrer=admin-console">Manage Account</a></li>
+		                        <li class="separator"><a href="/auth/rest/admin/logout">Sign Out</a></li>
+		                    </ul>
+		                </li>
+		            </ul>
+		            <ul class="nav navbar-nav navbar-primary persistent-secondary" data-ng-controller="RealmDropdownCtrl">
+		                <li class="dropdown context" data-ng-show="showNav()">
+		                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+		                        Realm: {{current.realm.id}}
+		                        <b class="caret"></b>
+		                    </a>
+		                    <ul class="dropdown-menu">
+		                        <li data-ng-repeat="realm in current.realms">
+		                            <a href="" ng-click="changeRealm(realm.id)" >{{realm.id}}</a>
+		                        </li>
+		                    </ul>
+		                </li>
+		
+		
+		                <!--------------------------------------->
+		                <li class="active">
+		                    <a href="#">Settings</a>
+		                    <ul class="nav navbar-nav navbar-persistent">
+		                        <li class="active">
+		                            <a href="#">General</a>
+		                        </li>
+		                        <li>
+		                            <a href="#">Roles</a>
+		                        </li>
+		                        <li>
+		                            <a href="#">Default Roles</a>
+		                        </li>
+		                        <li>
+		                            <a href="#">Credentials</a>
+		                        </li>
+		                        <li>
+		                            <a href="#">Token</a>
+		                        </li>
+		                        <li>
+		                            <a href="#">Keys</a>
+		                        </li>
+		                        <li>
+		                            <a href="#">Email</a>
+		                        </li>
+		                    </ul>
+		                </li>
+		                <li>
+		                    <a href="#">User</a>
+		                </li>
+		                <li>
+		                    <a href="#">Applications</a>
+		                </li>
+		                <li>
+		                    <a href="#">OAuth Clients</a>
+		                </li>
+		                <!--------------------------------------->
+		
+		
+		                <li class="active pull-right" data-ng-show="auth.loggedIn">
+		                    <a class="button primary" href="#/create/realm" data-ng-class="path[0] == 'create' && path[1] == 'realm' && 'active'"
+		                       data-ng-show="auth.loggedIn">Add Realm</a>
+		                </li>
+		            </ul>
+        		</div>
         </div>
     </nav>
 </header>
