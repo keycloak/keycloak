@@ -76,7 +76,9 @@
                     <label class="col-sm-2 control-label" for="reqActions">Required User Actions</label>
 
                     <div class="col-sm-4">
-                        <input type="text" ui-select2="userReqActionsOptions" ng-model="userActions" id="reqActions"/>
+                        <select ui-select2 ng-model="user.requiredActions" data-placeholder="Select an action..." multiple>
+                            <option ng-repeat="action in userReqActionList" value="{{action.id}}">{{action.text}}</option>
+                        </select>
                     </div>
                 </div>
             </fieldset>
