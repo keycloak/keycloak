@@ -19,23 +19,21 @@
 <body class="admin-console user ${bodyClass}">
 
     <header class="navbar navbar-default navbar-pf navbar-main header">
-        <div>
-            <nav class="navbar" role="navigation">
-            		<div class="container">
-                		<div class="navbar-header">
-		                    <div class="navbar-title">
-		                    </div>
-	                  </div>  
-
-		                <div class="navbar-collapse">
-		                    <ul class="nav navbar-nav navbar-utility">
-		                        <#if referrer?has_content && referrer.baseUrl?has_content><li><a href="${referrer.baseUrl}">Back to ${referrer.name}</a></li></#if>
-		                        <li><a href="${url.logoutUrl}">Sign Out</a></li>
-		                    </ul>
-		                </div>
-		            </div>
-            </nav>
-        </div>
+        <nav class="navbar" role="navigation">
+            <div class="navbar-header">
+                <div class="container">
+                    <h1 class="navbar-title">Keycloak</h1>
+                </div>
+            </div>
+            <div class="navbar-collapse navbar-collapse-1">
+                <div class="container">
+                    <ul class="nav navbar-nav navbar-utility">
+                        <#if referrer?has_content && referrer.baseUrl?has_content><li><a href="${referrer.baseUrl}">Back to ${referrer.name}</a></li></#if>
+                        <li><a href="${url.logoutUrl}">Sign Out</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
     </header>
 
     <div class="container">

@@ -11,13 +11,33 @@ body {
 
 header .navbar {
     margin-bottom: 0;
+    min-height: inherit;
+}
+
+.header .container {
+    position: relative;
 }
 
 .navbar-title {
-    background-image: url('../img/keycloak-logo.png');
-    height: 40px;
+    background-image: url('../img/logo.png');
+    height: 25px;
     background-repeat: no-repeat;
-    margin: 18px 0;
+    width: 103px;
+    margin: 3px 10px 5px;
+    text-indent: -99999px;
+}
+
+.navbar-pf .navbar-utility {
+    top: auto;
+    bottom: 0;
+    right: 15px;
+}
+
+.navbar-pf .navbar-utility > li > a {
+    color: #fff !important;
+    padding-bottom: 12px;
+    padding-top: 11px;
+    border-left: medium none;
 }
 
 .container {
