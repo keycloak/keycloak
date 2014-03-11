@@ -11,7 +11,7 @@
                     <label for="password-new" class="${properties.kcLabelClass!}">${rb.passwordNew}</label>
                 </div>
                 <div class="${properties.kcInputWrapperClass!}">
-                    <input type="password" id="password-new" name="password-new" class="${properties.kcInputClass!}" />
+                    <input type="password" id="password-new" name="password-new" class="${properties.kcInputClass!}" autofocus />
                 </div>
             </div>
 
