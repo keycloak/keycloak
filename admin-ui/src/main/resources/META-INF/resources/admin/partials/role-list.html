@@ -23,9 +23,9 @@
                 <tr data-ng-show="roles && roles.length > 5">
                     <th class="kc-table-actions" colspan="3">
                         <div class="search-comp clearfix">
-                            <input type="text" placeholder="Search..." class="search">
-                            <button class="icon-search" tooltip-placement="right"
-                                    tooltip="Search by role name.">
+                            <input type="text" placeholder="Search..." data-ng-model="searchQuery" class="form-control search">
+                            <button class="kc-icon-search" tooltip-placement="right"
+                                    tooltip="Search by name.">
                                 Icon: search
                             </button>
                         </div>
@@ -37,20 +37,21 @@
                     <th>Description</th>
                 </tr>
                 </thead>
-                <tfoot data-ng-show="roles && roles.length > 5"> <!-- todo -->
+                <!--
+                <tfoot data-ng-show="roles && roles.length > 5">
                 <tr>
                     <td colspan="3">
                         <div class="table-nav">
-                            <a href="#" class="first disabled">First page</a><a href="#" class="prev disabled">Previous
-                            page</a><span><strong>1-8</strong> of <strong>10</strong></span><a href="#"
-                                                                                               class="next">Next
-                            page</a><a href="#" class="last">Last page</a>
+                            <a href="#" class="first disabled">First page</a>
+                            <a href="#" class="prev disabled">Previous page</a><span><strong>1-8</strong> of <strong>10</strong></span>
+                            <a href="#" class="next">Next page</a><a href="#" class="last">Last page</a>
                         </div>
                     </td>
                 </tr>
                 </tfoot>
+                 -->
                 <tbody>
-                <tr ng-repeat="role in roles">
+                <tr ng-repeat="role in roles | filter:{name: searchQuery}">
                     <td><a href="#/realms/{{realm.realm}}/roles/{{role.name}}">{{role.name}}</a></td>
                     <td>{{role.composite}}</td>
                     <td>{{role.description}}</td>
