@@ -56,9 +56,8 @@ keycloak-appliance-dist-all-1.0-alpha-3/
             After executing that, log into the admin console at<ulink
                 url="http://localhost:8080/auth/rest/admin/login">
             http://localhost:8080/auth/rest/admin/login</ulink>.
-            Username:
-            <emphasis>admin</emphasis>
-            Password:<emphasis>admin</emphasis>. Keycloak with then prompt you to
+            Username: <emphasis>admin</emphasis>
+            Password: <emphasis>admin</emphasis>. Keycloak will then prompt you to
             enter in a new password.
         </para>
     </section>
@@ -105,9 +104,8 @@ keycloak-war-dist-all-1.0-alpha-3/
             by logging into the admin console at<ulink
                 url="http://localhost:8080/auth/rest/admin/login">
             http://localhost:8080/auth/rest/admin/login</ulink>.
-            Username:
-            <emphasis>admin</emphasis>
-            Password:<emphasis>admin</emphasis>. Keycloak will then prompt you to
+            Username: <emphasis>admin</emphasis>
+            Password: <emphasis>admin</emphasis>. Keycloak will then prompt you to
             enter in a new password.
         </para>
     </section>

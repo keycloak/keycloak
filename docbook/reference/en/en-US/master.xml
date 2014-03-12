@@ -41,17 +41,17 @@
          inside the available page width. These lines have been broken up. A '\' at the end of a
          line means that a break has been introduced to fit in the page, with the following lines
          indented. So:
-         <programlisting>
-            Let's pretend to have an extremely \
-            long line that \
-            does not fit
-            This one is short
-         </programlisting>
+<programlisting>
+Let's pretend to have an extremely \
+long line that \
+does not fit
+This one is short
+</programlisting>
          Is really:
-         <programlisting>
-            Let's pretend to have an extremely long line that does not fit
-            This one is short
-         </programlisting>
+<programlisting>
+Let's pretend to have an extremely long line that does not fit
+This one is short
+</programlisting>
       </para>
    </preface>
 
@@ -63,7 +63,7 @@
     <chapter>
         <title>Adapters</title>
         <para>
-            Keycloak can secure a wide variety of application types.  This section defines which application
+            Keycloak can secure a wide variety of application types. This section defines which application
             types are supported and how to configure and install them so that you can use Keycloak to secure
             your applications.
         </para>
