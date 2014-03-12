@@ -156,7 +156,7 @@ public class AdapterTest extends AbstractModelTest {
         RoleModel appRole = app.addRole("test");
         realmModel.grantRole(user, appRole);
 
-        SocialLinkModel socialLink = new SocialLinkModel("google", user.getLoginName());
+        SocialLinkModel socialLink = new SocialLinkModel("google", "google1", user.getLoginName());
         realmModel.addSocialLink(user, socialLink);
 
         UserCredentialModel cred = new UserCredentialModel();

@@ -28,6 +28,9 @@ public class SocialProviderException extends Exception {
 
     private static final long serialVersionUID = 1L;
 
+    protected SocialProviderException() {
+    }
+
     public SocialProviderException(String message) {
         super(message);
     }

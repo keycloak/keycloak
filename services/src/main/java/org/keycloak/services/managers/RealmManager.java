@@ -366,7 +366,7 @@ public class RealmManager {
             for (SocialMappingRepresentation socialMapping : rep.getSocialMappings()) {
                 UserModel user = userMap.get(socialMapping.getUsername());
                 for (SocialLinkRepresentation link : socialMapping.getSocialLinks()) {
-                    SocialLinkModel mappingModel = new SocialLinkModel(link.getSocialProvider(), link.getSocialUsername());
+                    SocialLinkModel mappingModel = new SocialLinkModel(link.getSocialProvider(), link.getSocialUserId(), link.getSocialUsername());
                     newRealm.addSocialLink(user, mappingModel);
                 }
             }

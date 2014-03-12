@@ -51,6 +51,7 @@ public class FreeMarkerLoginForms implements LoginForms {
     private Response.Status status = Response.Status.OK;
     private List<RoleModel> realmRolesRequested;
     private MultivaluedMap<String, RoleModel> resourceRolesRequested;
+    private MultivaluedMap<String, String> queryParams;
 
     public static enum MessageType {SUCCESS, WARNING, ERROR}
 
@@ -114,7 +115,7 @@ public class FreeMarkerLoginForms implements LoginForms {
     }
 
     private Response createResponse(LoginFormsPages page) {
-        MultivaluedMap<String, String> queryParameterMap = uriInfo.getQueryParameters();
+        MultivaluedMap<String, String> queryParameterMap = queryParams != null ? queryParams : uriInfo.getQueryParameters();
 
         String requestURI = uriInfo.getBaseUri().getPath();
         UriBuilder uriBuilder = UriBuilder.fromUri(requestURI);
@@ -276,4 +277,9 @@ public class FreeMarkerLoginForms implements LoginForms {
         return this;
     }
 
+    @Override
+    public LoginForms setQueryParams(MultivaluedMap<String, String> queryParams) {
+        this.queryParams = queryParams;
+        return this;
+    }
 }
