@@ -105,6 +105,9 @@ public class PreAuthActionsHandler {
                 userSessionManagement.logout(user);
             } else {
                 log.info("logout of all sessions");
+                if (action.getNotBefore() > deployment.getNotBefore()) {
+                    deployment.setNotBefore(action.getNotBefore());
+                }
                 userSessionManagement.logoutAll();
             }
         } catch (Exception e) {

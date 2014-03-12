@@ -83,7 +83,9 @@ public class JpaKeycloakSession implements KeycloakSession {
             adapter.removeApplication(a.getId());
         }
 
-        em.createQuery("delete from " + OAuthClientEntity.class.getSimpleName() + " where realm = :realm").setParameter("realm", realm).executeUpdate();
+        for (OAuthClientModel oauth : adapter.getOAuthClients()) {
+            adapter.removeOAuthClient(oauth.getId());
+        }
 
         for (UserEntity u : em.createQuery("from UserEntity", UserEntity.class).getResultList()) {
             adapter.removeUser(u.getLoginName());

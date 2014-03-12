@@ -23,6 +23,7 @@ public class UserEntity extends AbstractMongoIdentifiableEntity implements Mongo
     private boolean emailVerified;
     private boolean totp;
     private boolean enabled;
+    private int notBefore;
 
     private String realmId;
 
@@ -94,6 +95,15 @@ public class UserEntity extends AbstractMongoIdentifiableEntity implements Mongo
 
     public void setTotp(boolean totp) {
         this.totp = totp;
+    }
+
+    @MongoField
+    public int getNotBefore() {
+        return notBefore;
+    }
+
+    public void setNotBefore(int notBefore) {
+        this.notBefore = notBefore;
     }
 
     @MongoField

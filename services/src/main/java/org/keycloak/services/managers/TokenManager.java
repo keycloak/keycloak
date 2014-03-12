@@ -131,7 +131,7 @@ public class TokenManager {
 
         }
 
-        if (refreshToken.getIssuedAt() < client.getNotBefore()) {
+        if (refreshToken.getIssuedAt() < client.getNotBefore() || refreshToken.getIssuedAt() < user.getNotBefore()) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale refresh token");
         }
 

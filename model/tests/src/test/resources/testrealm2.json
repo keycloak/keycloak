@@ -1,5 +1,5 @@
 {
-    "realm": "demo",
+    "realm": "demo-delete",
     "enabled": true,
     "accessTokenLifespan": 3000,
     "accessCodeLifespan": 10,
@@ -62,36 +62,15 @@
             "name": "customer-portal",
             "enabled": true,
             "adminUrl": "http://localhost:8080/customer-portal",
-            "baseUrl": "http://localhost:8080/customer-portal",
             "redirectUris": [
                 "http://localhost:8080/customer-portal/*"
             ],
             "secret": "password"
         },
         {
-            "name": "customer-portal-js",
-            "enabled": true,
-            "publicClient": true,
-            "adminUrl": "http://localhost:8080/customer-portal-js",
-            "baseUrl": "http://localhost:8080/customer-portal-js",
-            "redirectUris": [
-                "http://localhost:8080/customer-portal-js/*"
-            ]
-        },
-        {
-            "name": "customer-portal-cli",
-            "enabled": true,
-            "publicClient": true,
-            "redirectUris": [
-                "urn:ietf:wg:oauth:2.0:oob",
-                "http://localhost"
-            ]
-        },
-        {
             "name": "product-portal",
             "enabled": true,
             "adminUrl": "http://localhost:8080/product-portal",
-            "baseUrl": "http://localhost:8080/product-portal",
             "redirectUris": [
                 "http://localhost:8080/product-portal/*"
             ],

@@ -580,7 +580,7 @@ public class TokenService {
             logger.info("Logging out: {0}", user.getLoginName());
             authManager.expireIdentityCookie(realm, uriInfo);
             authManager.expireRememberMeCookie(realm, uriInfo);
-            resourceAdminManager.logoutUser(realm, user.getId());
+            resourceAdminManager.logoutUser(realm, user);
         } else {
             logger.info("No user logged in for logout");
         }

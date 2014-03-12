@@ -176,7 +176,9 @@ public class UsersResource {
         if (user == null) {
             throw new NotFoundException();
         }
-        new ResourceAdminManager().logoutUser(realm, user.getId());
+        // set notBefore so that user will be forced to log in.
+        user.setNotBefore((int)(System.currentTimeMillis()/1000));
+        new ResourceAdminManager().logoutUser(realm, user);
     }
 
 
