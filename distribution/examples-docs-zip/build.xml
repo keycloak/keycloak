@@ -8,6 +8,7 @@
                 <exclude name="**/*.iml"/>
                 <exclude name="**/*.unconfigured"/>
                 <exclude name="**/subsystem-config.xml"/>
+                <exclude name="**/README.md.overview"/>
             </fileset>
         </copy>
         <copy todir="target/examples/unconfigured-demo" overwrite="true">
@@ -19,8 +20,10 @@
                 <exclude name="**/target/**"/>
                 <exclude name="**/*.iml"/>
                 <exclude name="**/README.md"/>
+                <exclude name="**/README.md.overview"/>
             </fileset>
         </copy>
+        <copy file="../../examples/demo-template/README.md.overview" tofile="target/examples/README.md"/>
         <move file="target/examples/unconfigured-demo/README.md.unconfigured" tofile="target/examples/unconfigured-demo/README.md"/>
         <move file="target/examples/unconfigured-demo/customer-app/src/main/webapp/WEB-INF/web.xml.unconfigured" tofile="target/examples/unconfigured-demo/customer-app/src/main/webapp/WEB-INF/web.xml"/>
         <move file="target/examples/unconfigured-demo/product-app/src/main/webapp/WEB-INF/web.xml.unconfigured" tofile="target/examples/unconfigured-demo/product-app/src/main/webapp/WEB-INF/web.xml"/>
