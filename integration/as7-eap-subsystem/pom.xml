@@ -20,13 +20,13 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-parent</artifactId>
-        <version>1.0-alpha-3-SNAPSHOT</version>
+        <version>1.0-alpha-3</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
     <groupId>org.keycloak</groupId>
     <artifactId>keycloak-as7-subsystem</artifactId>
-    <version>1.0-alpha-3-SNAPSHOT</version>
+    <version>1.0-alpha-3</version>
 
     <name>Keycloak Wildfly Subsystem</name>
 
