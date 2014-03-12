@@ -71,7 +71,7 @@ public class GoogleProvider extends AbstractOAuth2Provider {
         try {
             JSONObject profile = SimpleHttp.doGet(PROFILE_URL).header("Authorization", "Bearer " + accessToken).asJson();
 
-            SocialUser user = new SocialUser(profile.getString("sub"));
+            SocialUser user = new SocialUser(profile.getString("sub"), profile.getString("email"));
             user.setName(profile.optString("given_name"), profile.optString("family_name"));
             user.setEmail(profile.optString("email"));
 

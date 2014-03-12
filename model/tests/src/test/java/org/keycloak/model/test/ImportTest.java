@@ -133,22 +133,26 @@ public class ImportTest extends AbstractModelTest {
         for (SocialLinkModel socialLinkModel : socialLinks) {
             if ("facebook".equals(socialLinkModel.getSocialProvider())) {
                 facebookFound = true;
+                Assert.assertEquals(socialLinkModel.getSocialUserId(), "facebook1");
                 Assert.assertEquals(socialLinkModel.getSocialUsername(), "fbuser1");
             } else if ("google".equals(socialLinkModel.getSocialProvider())) {
                 googleFound = true;
+                Assert.assertEquals(socialLinkModel.getSocialUserId(), "google1");
                 Assert.assertEquals(socialLinkModel.getSocialUsername(), "mySocialUser@gmail.com");
             } else if ("twitter".equals(socialLinkModel.getSocialProvider())) {
                 twitterFound = true;
+                Assert.assertEquals(socialLinkModel.getSocialUserId(), "twitter1");
                 Assert.assertEquals(socialLinkModel.getSocialUsername(), "twuser1");
             }
         }
         Assert.assertTrue(facebookFound && twitterFound && googleFound);
 
-        UserModel foundSocialUser = realm.getUserBySocialLink(new SocialLinkModel("facebook", "fbuser1"));
+        UserModel foundSocialUser = realm.getUserBySocialLink(new SocialLinkModel("facebook", "facebook1", "fbuser1"));
         Assert.assertEquals(foundSocialUser.getLoginName(), socialUser.getLoginName());
-        Assert.assertNull(realm.getUserBySocialLink(new SocialLinkModel("facebook", "not-existing")));
+        Assert.assertNull(realm.getUserBySocialLink(new SocialLinkModel("facebook", "not-existing", "not-existing")));
 
         SocialLinkModel foundSocialLink = realm.getSocialLink(socialUser, "facebook");
+        Assert.assertEquals("facebook1", foundSocialLink.getSocialUserId());
         Assert.assertEquals("fbuser1", foundSocialLink.getSocialUsername());
         Assert.assertEquals("facebook", foundSocialLink.getSocialProvider());
 

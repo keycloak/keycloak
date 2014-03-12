@@ -51,6 +51,15 @@ public abstract class AbstractOAuth2Provider implements SocialProvider {
 
     @Override
     public SocialUser processCallback(SocialProviderConfig config, AuthCallback callback) throws SocialProviderException {
+        String error = callback.getQueryParam("error");
+        if (error != null) {
+            if (error.equals("access_denied")) {
+                throw new SocialAccessDeniedException();
+            } else {
+                throw new SocialProviderException(error);
+            }
+        }
+
         try {
             String code = callback.getQueryParam(CODE);
 
@@ -80,11 +89,6 @@ public abstract class AbstractOAuth2Provider implements SocialProvider {
         } catch (IOException e) {
             throw new SocialProviderException(e);
         }
-    }
-
-    @Override
-    public String getRequestIdParamName() {
-        return STATE;
     }
 
 }

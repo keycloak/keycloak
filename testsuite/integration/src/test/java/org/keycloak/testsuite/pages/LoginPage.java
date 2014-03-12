@@ -62,6 +62,9 @@ public class LoginPage extends AbstractPage {
     @FindBy(className = "feedback-error")
     private WebElement loginErrorMessage;
 
+    @FindBy(className = "feedback-warning")
+    private WebElement loginWarningMessage;
+
     public void login(String username, String password) {
         usernameInput.clear();
         usernameInput.sendKeys(username);
@@ -79,6 +82,11 @@ public class LoginPage extends AbstractPage {
     public String getError() {
         return loginErrorMessage != null ? loginErrorMessage.getText() : null;
     }
+
+    public String getWarning() {
+        return loginWarningMessage != null ? loginWarningMessage.getText() : null;
+    }
+
 
     public boolean isCurrent() {
         return driver.getTitle().equals("Log in to test");

@@ -40,10 +40,4 @@
             </para>
         </listitem>
     </orderedlist>
-    <tip>
-        <para>
-            Facebook doesn't allow <literal>localhost</literal> in the redirect URI. To test on a local server
-            replace <literal>localhost</literal> with <literal>127.0.0.1</literal>.
-        </para>
-    </tip>
 </section>

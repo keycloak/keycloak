@@ -33,22 +33,22 @@ public class AccountSocialBean {
             for (SocialProvider provider : SocialLoader.load()) {
                 String socialProviderId = provider.getId();
                 if (socialConfig.containsKey(socialProviderId + ".key")) {
-                    String socialUsername = getSocialUsername(userSocialLinks, socialProviderId);
+                    SocialLinkModel socialLink = getSocialLink(userSocialLinks, socialProviderId);
 
-                    String action = socialUsername!=null ? "remove" : "add";
+                    String action = socialLink != null ? "remove" : "add";
                     String actionUrl = UriBuilder.fromUri(accountSocialUpdateUri).queryParam("action", action).queryParam("provider_id", socialProviderId).build().toString();
 
-                    SocialLinkEntry entry = new SocialLinkEntry(socialProviderId, provider.getName(), socialUsername, actionUrl);
+                    SocialLinkEntry entry = new SocialLinkEntry(socialLink, provider.getName(), actionUrl);
                     this.socialLinks.add(entry);
                 }
             }
         }
     }
 
-    private String getSocialUsername(Set<SocialLinkModel> userSocialLinks, String socialProviderId) {
+    private SocialLinkModel getSocialLink(Set<SocialLinkModel> userSocialLinks, String socialProviderId) {
         for (SocialLinkModel link : userSocialLinks) {
             if (socialProviderId.equals(link.getSocialProvider())) {
-                return link.getSocialUsername();
+                return link;
             }
         }
         return null;
@@ -60,32 +60,34 @@ public class AccountSocialBean {
 
     public class SocialLinkEntry {
 
-        private final String providerId;
+        private SocialLinkModel link;
         private final String providerName;
-        private final String socialUsername;
         private final String actionUrl;
 
-        public SocialLinkEntry(String providerId, String providerName, String socialUsername, String actionUrl) {
-            this.providerId = providerId;
+        public SocialLinkEntry(SocialLinkModel link, String providerName, String actionUrl) {
+            this.link = link;
             this.providerName = providerName;
-            this.socialUsername = socialUsername!=null ? socialUsername : "";
             this.actionUrl = actionUrl;
         }
 
         public String getProviderId() {
-            return providerId;
+            return link != null ? link.getSocialProvider() : null;
         }
 
         public String getProviderName() {
             return providerName;
         }
 
+        public String getSocialUserId() {
+            return link != null ? link.getSocialUserId() : null;
+        }
+
         public String getSocialUsername() {
-            return socialUsername;
+            return link != null ? link.getSocialUsername() : null;
         }
 
         public boolean isConnected() {
-            return !socialUsername.isEmpty();
+            return link != null;
         }
 
         public String getActionUrl() {

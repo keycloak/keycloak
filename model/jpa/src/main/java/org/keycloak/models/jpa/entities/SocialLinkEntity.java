@@ -16,7 +16,7 @@ import org.hibernate.annotations.GenericGenerator;
 @NamedQueries({
         @NamedQuery(name="findSocialLinkByUser", query="select link from SocialLinkEntity link where link.user = :user"),
         @NamedQuery(name="findSocialLinkByUserAndProvider", query="select link from SocialLinkEntity link where link.user = :user and link.socialProvider = :socialProvider"),
-        @NamedQuery(name="findUserByLinkAndRealm", query="select link.user from SocialLinkEntity link where link.realm = :realm and link.socialProvider = :socialProvider and link.socialUsername = :socialUsername")
+        @NamedQuery(name="findUserByLinkAndRealm", query="select link.user from SocialLinkEntity link where link.realm = :realm and link.socialProvider = :socialProvider and link.socialUserId = :socialUserId")
 })
 @Entity
 public class SocialLinkEntity {
@@ -32,6 +32,7 @@ public class SocialLinkEntity {
     protected RealmEntity realm;
 
     protected String socialProvider;
+    protected String socialUserId;
     protected String socialUsername;
 
     public String getId() {
@@ -56,6 +57,14 @@ public class SocialLinkEntity {
 
     public void setSocialProvider(String socialProvider) {
         this.socialProvider = socialProvider;
+    }
+
+    public String getSocialUserId() {
+        return socialUserId;
+    }
+
+    public void setSocialUserId(String socialUserId) {
+        this.socialUserId = socialUserId;
     }
 
     public String getSocialUsername() {
