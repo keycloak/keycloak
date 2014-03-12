@@ -126,6 +126,21 @@
                             </exclusion>
                         </exclusions>
                     </dependency>
+                    <dependency>
+                        <groupId>org.apache.ant</groupId>
+                        <artifactId>ant-apache-bsf</artifactId>
+                        <version>1.9.3</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.apache.bsf</groupId>
+                        <artifactId>bsf-api</artifactId>
+                        <version>3.1</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>rhino</groupId>
+                        <artifactId>js</artifactId>
+                        <version>1.7R2</version>
+                    </dependency>
                 </dependencies>
             </plugin>
             <plugin>
