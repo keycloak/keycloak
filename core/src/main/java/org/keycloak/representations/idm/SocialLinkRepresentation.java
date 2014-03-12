@@ -6,6 +6,7 @@ package org.keycloak.representations.idm;
 public class SocialLinkRepresentation {
 
     protected String socialProvider;
+    protected String socialUserId;
     protected String socialUsername;
 
     public String getSocialProvider() {
@@ -14,6 +15,14 @@ public class SocialLinkRepresentation {
 
     public void setSocialProvider(String socialProvider) {
         this.socialProvider = socialProvider;
+    }
+
+    public String getSocialUserId() {
+        return socialUserId;
+    }
+
+    public void setSocialUserId(String socialUserId) {
+        this.socialUserId = socialUserId;
     }
 
     public String getSocialUsername() {

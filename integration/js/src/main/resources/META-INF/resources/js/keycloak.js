@@ -194,12 +194,21 @@ var Keycloak = function (options) {
         if (token) {
             window.oauth.token = token;
             kc.token = token;
-
             kc.tokenParsed = JSON.parse(atob(token.split('.')[1]));
             kc.authenticated = true;
             kc.subject = kc.tokenParsed.sub;
             kc.realmAccess = kc.tokenParsed.realm_access;
             kc.resourceAccess = kc.tokenParsed.resource_access;
+
+            for (var i = 0; i < idTokenProperties.length; i++) {
+                var n = idTokenProperties[i];
+                if (kc.tokenParsed[n]) {
+                    if (!kc.idToken) {
+                        kc.idToken = {};
+                    }
+                    kc.idToken[n] = kc.tokenParsed[n];
+                }
+            }
 
             setTimeout(function() {
                 successCallback && successCallback({ authenticated: kc.authenticated, subject: kc.subject });
@@ -260,6 +269,35 @@ var Keycloak = function (options) {
         var uuid = s.join('');
         return uuid;
     }
+    
+    var idTokenProperties = [
+        "name", 
+        "given_name", 
+        "family_name", 
+        "middle_name", 
+        "nickname", 
+        "preferred_username", 
+        "profile", 
+        "picture", 
+        "website", 
+        "email", 
+        "email_verified", 
+        "gender", 
+        "birthdate", 
+        "zoneinfo", 
+        "locale", 
+        "phone_number", 
+        "phone_number_verified", 
+        "address", 
+        "updated_at", 
+        "formatted", 
+        "street_address", 
+        "locality", 
+        "region", 
+        "postal_code", 
+        "country", 
+        "claims_locales"
+    ]
 }
 
 window.oauth = (function () {

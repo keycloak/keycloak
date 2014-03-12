@@ -20,9 +20,9 @@ public class SocialLinkRelationship extends AbstractAttributedType implements Re
     private static final long serialVersionUID = 154879L;
 
     public static final AttributeParameter SOCIAL_PROVIDER = new AttributeParameter("socialProvider");
-    public static final AttributeParameter SOCIAL_USERNAME = new AttributeParameter("socialUsername");
+    public static final AttributeParameter SOCIAL_USERID = new AttributeParameter("socialUserId");
 
-    // realm is needed to allow searching as combination socialUsername+socialProvider may not be unique
+    // realm is needed to allow searching as combination socialUserId+socialProvider may not be unique
     // (Same user could have mapped same facebook account to username "foo" in "realm1" and to username "bar" in "realm2")
     public static final AttributeParameter REALM = new AttributeParameter("realm");
 
@@ -54,12 +54,12 @@ public class SocialLinkRelationship extends AbstractAttributedType implements Re
     }
 
     @AttributeProperty
-    public String getSocialUsername() {
-        return (String)getAttribute("socialUsername").getValue();
+    public String getSocialUserId() {
+        return (String)getAttribute("socialUserId").getValue();
     }
 
-    public void setSocialUsername(String socialProviderUserId) {
-        setAttribute(new Attribute<String>("socialUsername", socialProviderUserId));
+    public void setSocialUserId(String socialUserId) {
+        setAttribute(new Attribute<String>("socialUserId", socialUserId));
     }
 
     @AttributeProperty

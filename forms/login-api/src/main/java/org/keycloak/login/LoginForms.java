@@ -43,6 +43,8 @@ public interface LoginForms {
 
     public LoginForms setClient(ClientModel client);
 
+    public LoginForms setQueryParams(MultivaluedMap<String, String> queryParams);
+
     public LoginForms setFormData(MultivaluedMap<String, String> formData);
 
     public LoginForms setStatus(Response.Status status);

@@ -880,14 +880,14 @@ public class RealmAdapter implements RealmModel {
     public UserModel getUserBySocialLink(SocialLinkModel socialLink) {
         RelationshipQuery<SocialLinkRelationship> query = getRelationshipManager().createRelationshipQuery(SocialLinkRelationship.class);
         query.setParameter(SocialLinkRelationship.SOCIAL_PROVIDER, socialLink.getSocialProvider());
-        query.setParameter(SocialLinkRelationship.SOCIAL_USERNAME, socialLink.getSocialUsername());
+        query.setParameter(SocialLinkRelationship.SOCIAL_USERNAME, socialLink.getSocialUserId());
         query.setParameter(SocialLinkRelationship.REALM, realm.getName());
         List<SocialLinkRelationship> results = query.getResultList();
         if (results.isEmpty()) {
             return null;
         } else if (results.size() > 1) {
             throw new IllegalStateException("More results found for socialProvider=" + socialLink.getSocialProvider() +
-                    ", socialUsername=" + socialLink.getSocialUsername() + ", results=" + results);
+                    ", socialUserId=" + socialLink.getSocialUserId() + ", results=" + results);
         } else {
             User user = results.get(0).getUser();
             return new UserAdapter(user, getIdm());
@@ -902,7 +902,7 @@ public class RealmAdapter implements RealmModel {
 
         Set<SocialLinkModel> results = new HashSet<SocialLinkModel>();
         for (SocialLinkRelationship relationship : plSocialLinks) {
-            results.add(new SocialLinkModel(relationship.getSocialProvider(), relationship.getSocialUsername()));
+            results.add(new SocialLinkModel(relationship.getSocialProvider(), relationship.getSocialUserId()));
         }
         return results;
     }
@@ -912,7 +912,7 @@ public class RealmAdapter implements RealmModel {
         SocialLinkRelationship relationship = new SocialLinkRelationship();
         relationship.setUser(((UserAdapter)user).getUser());
         relationship.setSocialProvider(socialLink.getSocialProvider());
-        relationship.setSocialUsername(socialLink.getSocialUsername());
+        relationship.setSocialUserId(socialLink.getSocialUserId());
         relationship.setRealm(realm.getName());
 
         getRelationshipManager().add(relationship);
@@ -923,7 +923,7 @@ public class RealmAdapter implements RealmModel {
         SocialLinkRelationship relationship = new SocialLinkRelationship();
         relationship.setUser(((UserAdapter)user).getUser());
         relationship.setSocialProvider(socialLink.getSocialProvider());
-        relationship.setSocialUsername(socialLink.getSocialUsername());
+        relationship.setSocialUserId(socialLink.getSocialUserId());
         relationship.setRealm(realm.getName());
 
         getRelationshipManager().remove(relationship);

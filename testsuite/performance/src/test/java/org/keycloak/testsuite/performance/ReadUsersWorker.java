@@ -112,7 +112,7 @@ public class ReadUsersWorker implements Worker {
 
             // Try to search by social links
             if (searchBySocialLinks) {
-                SocialLinkModel socialLink = new SocialLinkModel("facebook", username);
+                SocialLinkModel socialLink = new SocialLinkModel("facebook", username, username);
                 realm.getUserBySocialLink(socialLink);
             }
         }

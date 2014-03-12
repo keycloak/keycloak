@@ -97,11 +97,12 @@ public class SocialLoginTest {
 
         loginPage.clickSocial("dummy");
 
+        driver.findElement(By.id("id")).sendKeys("1");
         driver.findElement(By.id("username")).sendKeys("dummy-user1");
         driver.findElement(By.id("firstname")).sendKeys("Bob");
         driver.findElement(By.id("lastname")).sendKeys("Builder");
         driver.findElement(By.id("email")).sendKeys("bob@builder.com");
-        driver.findElement(By.id("submit")).click();
+        driver.findElement(By.id("login")).click();
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
@@ -118,6 +119,23 @@ public class SocialLoginTest {
         Assert.assertEquals("bob@builder.com", profile.getEmail());
     }
 
+
+    @Test
+    public void loginCancelled() throws Exception {
+        loginPage.open();
+
+        loginPage.clickSocial("dummy");
+
+        driver.findElement(By.id("cancel")).click();
+
+        Assert.assertTrue(loginPage.isCurrent());
+        Assert.assertEquals("Access denied", loginPage.getWarning());
+
+        loginPage.login("test-user@localhost", "password");
+
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+    }
+
     @Test
     public void profileUpdateRequired() {
         keycloakRule.configure(new KeycloakSetup() {
@@ -132,11 +150,12 @@ public class SocialLoginTest {
 
             loginPage.clickSocial("dummy");
 
+            driver.findElement(By.id("id")).sendKeys("2");
             driver.findElement(By.id("username")).sendKeys("dummy-user2");
             driver.findElement(By.id("firstname")).sendKeys("Bob");
             driver.findElement(By.id("lastname")).sendKeys("Builder");
             driver.findElement(By.id("email")).sendKeys("bob@builder.com");
-            driver.findElement(By.id("submit")).click();
+            driver.findElement(By.id("login")).click();
 
             profilePage.isCurrent();
 

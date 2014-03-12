@@ -52,14 +52,17 @@
             "socialLinks": [
                 {
                     "socialProvider": "facebook",
+                    "socialUserId": "facebook1",
                     "socialUsername": "fbuser1"
                 },
                 {
                     "socialProvider": "twitter",
+                    "socialUserId": "twitter1",
                     "socialUsername": "twuser1"
                 },
                 {
                     "socialProvider": "google",
+                    "socialUserId": "google1",
                     "socialUsername": "mySocialUser@gmail.com"
                 }
             ]

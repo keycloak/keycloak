@@ -52,7 +52,7 @@ public class GitHubProvider extends AbstractOAuth2Provider {
         try {
             JSONObject profile = SimpleHttp.doGet(PROFILE_URL).header("Authorization", "Bearer " + accessToken).asJson();
 
-            SocialUser user = new SocialUser(profile.get("id").toString());
+            SocialUser user = new SocialUser(profile.get("id").toString(), profile.getString("login"));
             user.setName(profile.optString("name"));
             user.setEmail(profile.optString("email"));
 

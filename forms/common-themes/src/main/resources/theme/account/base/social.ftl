@@ -11,16 +11,16 @@
         <#list social.links as socialLink>
             <div class="form-group">
                 <div class="col-sm-2 col-md-2">
-                    <label for="${socialLink.providerId}" class="control-label">${socialLink.providerName}</label>
+                    <label for="${socialLink.providerId!}" class="control-label">${socialLink.providerName!}</label>
                 </div>
                 <div class="col-sm-5 col-md-5">
-                    <input disabled="true" class="form-control" value="${socialLink.socialUsername}">
+                    <input disabled="true" class="form-control" value="${socialLink.socialUsername!}">
                 </div>
                 <div class="col-sm-5 col-md-5">
                     <#if socialLink.connected>
-                        <a href="${socialLink.actionUrl}" type="submit" class="btn btn-primary btn-lg">Remove ${socialLink.providerName}</a>
+                        <a href="${socialLink.actionUrl}" type="submit" class="btn btn-primary btn-lg">Remove ${socialLink.providerName!}</a>
                     <#else>
-                        <a href="${socialLink.actionUrl}" type="submit" class="btn btn-primary btn-lg">Add ${socialLink.providerName}</a>
+                        <a href="${socialLink.actionUrl}" type="submit" class="btn btn-primary btn-lg">Add ${socialLink.providerName!}</a>
                     </#if>
                 </div>
             </div>

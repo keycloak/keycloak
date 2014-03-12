@@ -31,8 +31,6 @@ public interface SocialProvider {
 
     AuthRequest getAuthUrl(SocialProviderConfig config) throws SocialProviderException;
 
-    String getRequestIdParamName();
-
     String getName();
 
     SocialUser processCallback(SocialProviderConfig config, AuthCallback callback) throws SocialProviderException;

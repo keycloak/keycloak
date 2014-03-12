@@ -23,6 +23,7 @@ package org.keycloak.social.twitter;
 
 import org.keycloak.social.AuthCallback;
 import org.keycloak.social.AuthRequest;
+import org.keycloak.social.SocialAccessDeniedException;
 import org.keycloak.social.SocialProvider;
 import org.keycloak.social.SocialProviderConfig;
 import org.keycloak.social.SocialProviderException;
@@ -67,6 +68,10 @@ public class TwitterProvider implements SocialProvider {
 
     @Override
     public SocialUser processCallback(SocialProviderConfig config, AuthCallback callback) throws SocialProviderException {
+        if (callback.getQueryParam("denied") != null) {
+            throw new SocialAccessDeniedException();
+        }
+
         try {
             Twitter twitter = new TwitterFactory().getInstance();
             twitter.setOAuthConsumer(config.getKey(), config.getSecret());
@@ -77,18 +82,13 @@ public class TwitterProvider implements SocialProvider {
             twitter.getOAuthAccessToken(requestToken, verifier);
             twitter4j.User twitterUser = twitter.verifyCredentials();
 
-            SocialUser user = new SocialUser(Long.toString(twitterUser.getId()));
+            SocialUser user = new SocialUser(Long.toString(twitterUser.getId()), twitterUser.getScreenName());
             user.setName(twitterUser.getName());
 
             return user;
         } catch (Exception e) {
             throw new SocialProviderException(e);
         }
-    }
-
-    @Override
-    public String getRequestIdParamName() {
-        return "oauth_token";
     }
 
 }

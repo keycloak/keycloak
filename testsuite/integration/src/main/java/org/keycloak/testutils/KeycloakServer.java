@@ -202,11 +202,12 @@ public class KeycloakServer {
         try {
             RealmManager manager = new RealmManager(session);
 
-            if (rep.getId() == null) {
-                throw new RuntimeException("Realm id not specified");
+            if (rep.getId() != null && manager.getRealm(rep.getId()) != null) {
+                info("Not importing realm " + rep.getRealm() + " realm already exists");
+                return;
             }
 
-            if (manager.getRealm(rep.getId()) != null) {
+            if (manager.getRealmByName(rep.getRealm()) != null) {
                 info("Not importing realm " + rep.getRealm() + " realm already exists");
                 return;
             }
@@ -268,7 +269,7 @@ public class KeycloakServer {
 
         server.deploy(di);
 
-        factory = ((KeycloakApplication)deployment.getApplication()).getFactory();
+        factory = ((KeycloakApplication) deployment.getApplication()).getFactory();
 
         setupDevConfig();
 

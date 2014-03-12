@@ -1,0 +1,24 @@
+<html>
+<head>
+    <script src="http://192.168.0.16/js/keycloak.js"></script>
+</head>
+<body>
+<button onclick="keycloak.login()">Login</button>
+
+<script>
+    var keycloak = Keycloak({ realm: 'test', clientId: 'test', clientSecret: 'password' });
+
+    keycloak.init(function () {
+        console.debug('Token: ' + keycloak.tokenParsed);
+        console.debug('Realm access: ' + keycloak.realmAccess);
+        console.debug('Resource access: ' + keycloak.resourceAccess);
+
+        keycloak.loadUserProfile(function (profile) {
+            console.debug(profile);
+        }, function (error) {
+            console.debug(error);
+        })
+    });
+</script>
+</body>
+</html>
