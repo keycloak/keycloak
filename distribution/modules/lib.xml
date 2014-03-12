@@ -99,7 +99,7 @@
         </sequential>
     </macrodef>
 
-    <scriptdef name="define-module-dir" language="javascript">
+    <scriptdef name="define-module-dir" language="javascript" manager="bsf">
         <attribute name="name"/>
         <attribute name="slot"/>
         <![CDATA[
@@ -109,7 +109,7 @@
         ]]>
     </scriptdef>
 
-    <scriptdef name="define-bundle-dir" language="javascript">
+    <scriptdef name="define-bundle-dir" language="javascript"  manager="bsf">
         <attribute name="name"/>
         <attribute name="slot"/>
         <![CDATA[
@@ -123,7 +123,7 @@
        Get the version from the parent directory of the jar.  If the parent directory is 'target' this
        means that the jar is contained in AS build so extract the version from the file name
     -->
-    <scriptdef name="define-maven-artifact" language="javascript">
+    <scriptdef name="define-maven-artifact" language="javascript"  manager="bsf">
         <attribute name="group"/>
         <attribute name="artifact"/>
         <attribute name="classifier"/>
@@ -258,7 +258,7 @@
         </sequential>
     </macrodef>
 
-    <scriptdef name="define-resource-root" language="javascript">
+    <scriptdef name="define-resource-root" language="javascript" manager="bsf">
         <attribute name="path"/>
         <attribute name="jandex"/>
         <![CDATA[
