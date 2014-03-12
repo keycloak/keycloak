@@ -11,6 +11,7 @@ There are multiple WAR projects.  These will all run on the same WildFly instanc
 machine on the network or Internet.
 * **customer-app** A WAR application that does remote login using OAuth2 browser redirects with the auth server
 * **customer-app-js** A pure HTML/Javascript application that does remote login using OAuth2 browser redirects with the auth server
+* **customer-app-cli** A pure CLI application that does remote login using OAuth2 browser redirects with the auth server
 * **product-app** A WAR application that does remote login using OAuth2 browser redirects with the auth server
 * **database-service** JAX-RS services authenticated by bearer tokens only. The customer and product app invoke on it to get data
 * **third-party** Simple WAR that obtain a bearer token using OAuth2 using browser redirects to the auth-server.
@@ -147,7 +148,7 @@ are still happening, but the auth-server knows you are already logged in so the 
 
 If you click on the logout link of either of the product or customer app, you'll be logged out of all the applications.
 
-Ff you click on [http://localhost:8080/customer-portal-js](http://localhost:8080/customer-portal-js) you can invoke
+If you click on [http://localhost:8080/customer-portal-js](http://localhost:8080/customer-portal-js) you can invoke
 on the pure HTML/Javascript application.
 
 Step 6: Traditional OAuth2 Example
@@ -159,6 +160,19 @@ to get permission to access a user's data. To run this example open
 
 If you area already logged in, you will not be asked for a username and password, but you will be redirected to
 an oauth grant page.  This page asks you if you want to grant certain permissions to the third-part app.
+
+Step 7: Try the CLI Example
+---------------------------
+To try the CLI example run the following commands:
+
+$ cd customer-app-cli
+$ mvn exec:java
+
+This will open a shell that lets you specify a few different commands. For example type 'login' and press enter to login. Pressing enter with a blank line will display the available commands.
+
+The CLI example has two alternative methods for login. When a browser is available the CLI opens the login form in a browser, and will automatically retrieve the return code by starting a 
+temporary web server on a free port. If a browser is not available the URL to login is displayed on the CLI. The user can copy this URL to another computer that has a browser available. The code
+is displayed to the user after login and the user has to copy this code back to the application.
 
 Admin Console
 ==========================

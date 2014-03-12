@@ -1,7 +1,7 @@
 <html>
 <head>
     <title>Customer View Page</title>
-    <script src="http://localhost:8081/auth/js/keycloak.js"></script>
+    <script src="/auth/js/keycloak.js"></script>
 </head>
 <body bgcolor="#E3F6CE">
 
@@ -19,7 +19,7 @@ User <b id="subject"></b> made this request.
 
 <script>
     var keycloak = Keycloak({
-        clientId: 'customer-portal',
+        clientId: 'customer-portal-js',
         realm: 'demo',
         onload: 'login-required'
     });
@@ -48,7 +48,7 @@ User <b id="subject"></b> made this request.
             });
         }
 
-        var url = 'http://localhost:8080/database/customers';
+        var url = '/database/customers';
 
         var req = new XMLHttpRequest();
         req.open('GET', url, true);

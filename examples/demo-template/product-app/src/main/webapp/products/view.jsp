@@ -10,7 +10,7 @@
 <%
    String logoutUri = KeycloakUriBuilder.fromUri("http://localhost:8080/auth/rest/realms/demo/tokens/logout")
                                      .queryParam("redirect_uri", "http://localhost:8080/product-portal").build().toString();
-    String acctUri =   "http://localhost:8080/auth/rest/realms/demo/account";
+    String acctUri =   "http://localhost:8080/auth/rest/realms/demo/account?referrer=product-portal";
 %>
 
 <p>Goto: <a href="http://localhost:8080/customer-portal">customers</a> | <a href="<%=logoutUri%>">logout</a> | <a href="<%=acctUri%>">manage acct</a></p>
