@@ -29,6 +29,16 @@ import java.util.Set;
 public class ImportTest extends AbstractModelTest {
 
     @Test
+    public void demoDelete() throws Exception {
+        // was having trouble deleting this realm from admin console
+        RealmRepresentation rep = AbstractModelTest.loadJson("testrealm2.json");
+        RealmModel realm = realmManager.importRealm(rep);
+        commit();
+        realm = realmManager.getRealmByName("demo-delete");
+        realmManager.removeRealm(realm);
+    }
+
+    @Test
     public void install() throws Exception {
         RealmRepresentation rep = AbstractModelTest.loadJson("testrealm.json");
         RealmModel realm = realmManager.createRealm("demo", rep.getRealm());
@@ -160,6 +170,13 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertTrue(realm.removeSocialLink(socialUser, "facebook"));
         Assert.assertNull(realm.getSocialLink(socialUser, "facebook"));
         Assert.assertFalse(realm.removeSocialLink(socialUser, "facebook"));
+
+        commit();
+
+        realm = realmManager.getRealm("demo");
+        realmManager.removeRealm(realm);
+
+
     }
 
     @Test
