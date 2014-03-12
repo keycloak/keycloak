@@ -15,9 +15,9 @@
         {
             "username" : "bburke@redhat.com",
             "enabled": true,
-            "attributes" : {
-                "email" : "bburke@redhat.com"
-            },
+            "email" : "bburke@redhat.com",
+            "firstName": "Bill",
+            "lastName": "Burke",
             "credentials" : [
                 { "type" : "password",
                     "value" : "password" }

@@ -423,6 +423,8 @@ public class RealmManager {
         UserModel user = newRealm.addUser(userRep.getUsername());
         user.setEnabled(userRep.isEnabled());
         user.setEmail(userRep.getEmail());
+        user.setFirstName(userRep.getFirstName());
+        user.setLastName(userRep.getLastName());
         if (userRep.getAttributes() != null) {
             for (Map.Entry<String, String> entry : userRep.getAttributes().entrySet()) {
                 user.setAttribute(entry.getKey(), entry.getValue());
