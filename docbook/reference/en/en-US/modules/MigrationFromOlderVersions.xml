@@ -15,6 +15,9 @@
                 Adapters now check the access token expiration with every request.  If the token is expired, they will
                 attempt to invoke a refresh on the auth server using a saved refresh token.
             </listitem>
+            <listitem>
+                Subject in AccessToken has been changed to the User ID.
+            </listitem>
         </itemizedlist>
     </sect1>
     <sect1>
