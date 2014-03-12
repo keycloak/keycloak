@@ -169,7 +169,7 @@ public class FreeMarkerLoginForms implements LoginForms {
 
         switch (page) {
             case LOGIN_CONFIG_TOTP:
-                attributes.put("totp", new TotpBean(user, baseUri));
+                attributes.put("totp", new TotpBean(realm, user, baseUri));
                 break;
             case LOGIN_UPDATE_PROFILE:
                 attributes.put("user", new ProfileBean(user));
