@@ -156,10 +156,17 @@ public class AuthenticationManager {
             }
 
             UserModel user = realm.getUserById(token.getSubject());
-            if (user == null || !user.isEnabled()) {
+            if (user == null || !user.isEnabled() ) {
                 logger.info("Unknown user in identity cookie");
                 expireIdentityCookie(realm, uriInfo);
                 return null;
+            }
+
+            if (token.getIssuedAt() < user.getNotBefore()) {
+                logger.info("Stale cookie");
+                expireIdentityCookie(realm, uriInfo);
+                return null;
+
             }
 
             return user;

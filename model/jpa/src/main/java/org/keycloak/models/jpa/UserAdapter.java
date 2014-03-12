@@ -144,4 +144,14 @@ public class UserAdapter implements UserModel {
     public void setTotp(boolean totp) {
         user.setTotp(totp);
     }
+
+    @Override
+    public int getNotBefore() {
+        return user.getNotBefore();
+    }
+
+    @Override
+    public void setNotBefore(int notBefore) {
+        user.setNotBefore(notBefore);
+    }
 }

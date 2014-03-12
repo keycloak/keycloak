@@ -108,16 +108,17 @@ public class ResourceAdminManager {
 
     }
 
-    public void logoutUser(RealmModel realm, String user) {
+    public void logoutUser(RealmModel realm, UserModel user) {
         ResteasyClient client = new ResteasyClientBuilder()
                 .disableTrustManager() // todo fix this, should have a trust manager or a good default
                 .build();
 
         try {
+            // don't set user notBefore as we don't want a database hit on a user driven logout
             List<ApplicationModel> resources = realm.getApplications();
             logger.debug("logging out {0} resources ", resources.size());
             for (ApplicationModel resource : resources) {
-                logoutApplication(realm, resource, user, client);
+                logoutApplication(realm, resource, user.getId(), client, 0);
             }
         } finally {
             client.close();
@@ -129,10 +130,11 @@ public class ResourceAdminManager {
                 .build();
 
         try {
+            realm.setNotBefore((int)(System.currentTimeMillis()/1000));
             List<ApplicationModel> resources = realm.getApplications();
             logger.debug("logging out {0} resources ", resources.size());
             for (ApplicationModel resource : resources) {
-                logoutApplication(realm, resource, null, client);
+                logoutApplication(realm, resource, null, client, realm.getNotBefore());
             }
         } finally {
             client.close();
@@ -145,7 +147,8 @@ public class ResourceAdminManager {
                 .build();
 
         try {
-            logoutApplication(realm, resource, user, client);
+            resource.setNotBefore((int)(System.currentTimeMillis()/1000));
+            logoutApplication(realm, resource, user, client, resource.getNotBefore());
         } finally {
             client.close();
         }
@@ -153,10 +156,10 @@ public class ResourceAdminManager {
     }
 
 
-    protected boolean logoutApplication(RealmModel realm, ApplicationModel resource, String user, ResteasyClient client) {
+    protected boolean logoutApplication(RealmModel realm, ApplicationModel resource, String user, ResteasyClient client, int notBefore) {
         String managementUrl = resource.getManagementUrl();
         if (managementUrl != null) {
-            LogoutAction adminAction = new LogoutAction(TokenIdGenerator.generateId(), (int)(System.currentTimeMillis() / 1000) + 30, resource.getName(), user);
+            LogoutAction adminAction = new LogoutAction(TokenIdGenerator.generateId(), (int)(System.currentTimeMillis() / 1000) + 30, resource.getName(), user, notBefore);
             String token = new TokenManager().encodeToken(realm, adminAction);
             logger.info("logout user: {0} resource: {1} url: {2}", user, resource.getName(), managementUrl);
             Response response = client.target(managementUrl).path(AdapterConstants.K_LOGOUT).request().post(Entity.text(token));

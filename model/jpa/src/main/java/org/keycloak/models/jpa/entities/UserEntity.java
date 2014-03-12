@@ -46,6 +46,7 @@ public class UserEntity {
     protected boolean enabled;
     protected boolean totp;
     protected boolean emailVerified;
+    protected int notBefore;
 
     @ManyToOne
     protected RealmEntity realm;
@@ -157,5 +158,13 @@ public class UserEntity {
 
     public void setCredentials(Collection<CredentialEntity> credentials) {
         this.credentials = credentials;
+    }
+
+    public int getNotBefore() {
+        return notBefore;
+    }
+
+    public void setNotBefore(int notBefore) {
+        this.notBefore = notBefore;
     }
 }

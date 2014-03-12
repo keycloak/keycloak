@@ -33,7 +33,7 @@
             <tr data-ng-repeat="(application, data) in stats">
                 <td><a href="#/realms/{{realm.realm}}/applications/{{application}}/sessions">{{application}}</a></td>
                 <td>{{data.whenLoggedIn | date:'medium'}}</td>
-                <td><a ng-click="logoutApplication(application)">logout</a> </td>
+                <td><a ng-click="logoutApplication(application)">invalidate session</a> </td>
             </tr>
             </tbody>
         </table>

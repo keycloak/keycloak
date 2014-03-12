@@ -7,11 +7,12 @@ package org.keycloak.representations.adapters.action;
 public class LogoutAction extends AdminAction {
     public static final String LOGOUT = "LOGOUT";
     protected String user;
+    protected int notBefore;
 
     public LogoutAction() {
     }
 
-    public LogoutAction(String id, int expiration, String resource, String user) {
+    public LogoutAction(String id, int expiration, String resource, String user, int notBefore) {
         super(id, expiration, resource, LOGOUT);
         this.user = user;
     }
@@ -22,6 +23,14 @@ public class LogoutAction extends AdminAction {
 
     public void setUser(String user) {
         this.user = user;
+    }
+
+    public int getNotBefore() {
+        return notBefore;
+    }
+
+    public void setNotBefore(int notBefore) {
+        this.notBefore = notBefore;
     }
 
     @Override
