@@ -10,13 +10,15 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.representations.adapters.action.SessionStats;
 import org.keycloak.representations.adapters.action.UserStats;
-import org.keycloak.representations.idm.*;
+import org.keycloak.representations.idm.ApplicationMappingsRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.MappingsRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.email.EmailException;
 import org.keycloak.services.email.EmailSender;
 import org.keycloak.services.managers.AccessCodeEntry;
-import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.ModelToRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
@@ -108,7 +110,7 @@ public class UsersResource {
         return Response.created(uriInfo.getAbsolutePathBuilder().path(user.getLoginName()).build()).build();
     }
 
-    private void updateUserFromRep(UserModel user, UserRepresentation rep){
+    private void updateUserFromRep(UserModel user, UserRepresentation rep) {
         user.setEmail(rep.getEmail());
         user.setFirstName(rep.getFirstName());
         user.setLastName(rep.getLastName());
@@ -119,11 +121,13 @@ public class UsersResource {
 
         List<String> reqActions = rep.getRequiredActions();
 
-        for(UserModel.RequiredAction ra : UserModel.RequiredAction.values()){
-            if (reqActions.contains(ra.name())) {
-                user.addRequiredAction(ra);
-            } else {
-                user.removeRequiredAction(ra);
+        if (reqActions != null) {
+            for (UserModel.RequiredAction ra : UserModel.RequiredAction.values()) {
+                if (reqActions.contains(ra.name())) {
+                    user.addRequiredAction(ra);
+                } else {
+                    user.removeRequiredAction(ra);
+                }
             }
         }
 
@@ -152,7 +156,7 @@ public class UsersResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public Map<String,UserStats> getSessionStats(final @PathParam("username") String username) {
+    public Map<String, UserStats> getSessionStats(final @PathParam("username") String username) {
         logger.info("session-stats");
         auth.requireView();
         UserModel user = realm.getUser(username);
@@ -177,10 +181,9 @@ public class UsersResource {
             throw new NotFoundException();
         }
         // set notBefore so that user will be forced to log in.
-        user.setNotBefore((int)(System.currentTimeMillis()/1000));
+        user.setNotBefore((int) (System.currentTimeMillis() / 1000));
         new ResourceAdminManager().logoutUser(realm, user);
     }
-
 
 
     @Path("{username}")
@@ -431,7 +434,7 @@ public class UsersResource {
             Set<RoleModel> roleModels = application.getApplicationRoleMappings(user);
             for (RoleModel roleModel : roleModels) {
                 if (!(roleModel.getContainer() instanceof ApplicationModel)) {
-                   ApplicationModel app = (ApplicationModel)roleModel.getContainer();
+                    ApplicationModel app = (ApplicationModel) roleModel.getContainer();
                     if (!app.getId().equals(application.getId())) continue;
                 }
                 realm.deleteRoleMapping(user, roleModel);
