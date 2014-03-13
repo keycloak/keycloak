@@ -3,7 +3,7 @@
 	<parent>
 		<artifactId>keycloak-parent</artifactId>
 		<groupId>org.keycloak</groupId>
-		<version>1.0-alpha-4-SNAPSHOT</version>
+		<version>1.0-alpha-4</version>
         <relativePath>../../pom.xml</relativePath>
 	</parent>
 	<modelVersion>4.0.0</modelVersion>
