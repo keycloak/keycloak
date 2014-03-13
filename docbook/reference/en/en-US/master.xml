@@ -29,7 +29,7 @@
    <bookinfo>
       <title>Keycloak Reference Guide</title>
       <subtitle>SSO for Web Apps and REST Services</subtitle>
-      <releaseinfo>1.0-alpha-3</releaseinfo>
+      <releaseinfo>1.0-alpha-4</releaseinfo>
    </bookinfo>
 
    <toc/>
