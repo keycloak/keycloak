@@ -108,7 +108,7 @@ public abstract class OAuthRequestAuthenticator {
 
     protected String getRedirectUri(String state) {
         String url = getRequestUrl();
-        log.infof("sending redirect uri: %s", url);
+        log.infof("callback uri: %s", url);
         if (!isRequestSecure() && deployment.isSslRequired()) {
             int port = sslRedirectPort();
             if (port < 0) {
@@ -147,6 +147,7 @@ public abstract class OAuthRequestAuthenticator {
                     exchange.getResponse().setStatus(403);
                     return true;
                 }
+                log.info("Sending redirect to login page: " + redirect);
                 exchange.getResponse().setStatus(302);
                 exchange.getResponse().setCookie(deployment.getStateCookieName(), state, /* need to set path? */ null, null, -1, deployment.isSslRequired(), false);
                 exchange.getResponse().setHeader("Location", redirect);
