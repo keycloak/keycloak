@@ -17,6 +17,8 @@ public class KeycloakDeployment {
     protected KeycloakUriBuilder authUrl;
     protected String codeUrl;
     protected String refreshUrl;
+    protected KeycloakUriBuilder logoutUrl;
+    protected String accountUrl;
 
     protected String resourceName;
     protected boolean bearerOnly;
@@ -193,5 +195,21 @@ public class KeycloakDeployment {
 
     public void setNotBefore(int notBefore) {
         this.notBefore = notBefore;
+    }
+
+    public KeycloakUriBuilder getLogoutUrl() {
+        return logoutUrl;
+    }
+
+    public void setLogoutUrl(KeycloakUriBuilder logoutUrl) {
+        this.logoutUrl = logoutUrl;
+    }
+
+    public String getAccountUrl() {
+        return accountUrl;
+    }
+
+    public void setAccountUrl(String accountUrl) {
+        this.accountUrl = accountUrl;
     }
 }

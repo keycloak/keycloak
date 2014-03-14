@@ -63,14 +63,14 @@ public class KeycloakDeploymentBuilder {
         String authUrl = serverBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_LOGIN_PATH).build(adapterConfig.getRealm()).toString();
         String tokenUrl = serverBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_ACCESS_CODE_PATH).build(adapterConfig.getRealm()).toString();
         String refreshUrl = serverBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_REFRESH_PATH).build(adapterConfig.getRealm()).toString();
-
-
+        String logoutUrl = serverBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_LOGOUT_PATH).build(adapterConfig.getRealm()).toString();
+        String accountUrl = serverBuilder.clone().path(ServiceUrlConstants.ACCOUNT_SERVICE_PATH).build(adapterConfig.getRealm()).toString();
 
         deployment.setAuthUrl(KeycloakUriBuilder.fromUri(authUrl).queryParam("client_id", deployment.getResourceName()));
         deployment.setCodeUrl(tokenUrl);
         deployment.setRefreshUrl(refreshUrl);
-
-
+        deployment.setLogoutUrl(KeycloakUriBuilder.fromUri(logoutUrl));
+        deployment.setAccountUrl(accountUrl);
 
         return deployment;
     }
