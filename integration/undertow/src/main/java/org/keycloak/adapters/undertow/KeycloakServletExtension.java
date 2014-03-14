@@ -19,6 +19,8 @@ import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 
 import javax.servlet.ServletContext;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.Map;
 
@@ -43,13 +45,32 @@ public class KeycloakServletExtension implements ServletExtension {
         return false;
     }
 
-    private InputStream getJSONFromServletContext(ServletContext servletContext) {
+    private static InputStream getJSONFromServletContext(ServletContext servletContext) {
         String json = servletContext.getInitParameter(AdapterConstants.AUTH_DATA_PARAM_NAME);
         if (json == null) {
             return null;
         }
         return new ByteArrayInputStream(json.getBytes());
     }
+
+    private static InputStream getConfigInputStream(ServletContext context) {
+        InputStream is = getJSONFromServletContext(context);
+        if (is == null) {
+            String path = context.getInitParameter("keycloak.config.file");
+            if (path == null) {
+                log.info("**** using /WEB-INF/keycloak.json");
+                is = context.getResourceAsStream("/WEB-INF/keycloak.json");
+            } else {
+                try {
+                    is = new FileInputStream(path);
+                } catch (FileNotFoundException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+        return is;
+    }
+
 
     @Override
     public void handleDeployment(DeploymentInfo deploymentInfo, ServletContext servletContext) {
@@ -58,10 +79,7 @@ public class KeycloakServletExtension implements ServletExtension {
             return;
         }
         log.info("KeycloakServletException initialization");
-        InputStream is = getJSONFromServletContext(servletContext);
-        if (is == null) {
-            is = servletContext.getResourceAsStream("/WEB-INF/keycloak.json");
-        }
+        InputStream is = getConfigInputStream(servletContext);
         if (is == null) throw new RuntimeException("Unable to find realm config in /WEB-INF/keycloak.json or in keycloak subsystem.");
         KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(is);
         UndertowUserSessionManagement userSessionManagement = new UndertowUserSessionManagement(deployment);

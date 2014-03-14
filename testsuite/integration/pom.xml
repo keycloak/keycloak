@@ -66,6 +66,17 @@
             <artifactId>keycloak-js-adapter</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-undertow-adapter</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.2.1</version>
+        </dependency>
+
         <!--
         <dependency>
             <groupId>org.keycloak</groupId>

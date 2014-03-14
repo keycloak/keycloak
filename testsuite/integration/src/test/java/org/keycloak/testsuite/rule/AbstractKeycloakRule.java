@@ -1,7 +1,10 @@
 package org.keycloak.testsuite.rule;
 
 import io.undertow.servlet.api.DeploymentInfo;
+import io.undertow.servlet.api.LoginConfig;
+import io.undertow.servlet.api.SecurityConstraint;
 import io.undertow.servlet.api.ServletInfo;
+import io.undertow.servlet.api.WebResourceCollection;
 import org.junit.rules.ExternalResource;
 import org.keycloak.models.Config;
 import org.keycloak.models.Constants;
@@ -75,6 +78,11 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
     }
 
     public void deployServlet(String name, String contextPath, Class<? extends Servlet> servletClass) {
+        DeploymentInfo deploymentInfo = createDeploymentInfo(name, contextPath, servletClass);
+        server.getServer().deploy(deploymentInfo);
+    }
+
+    private DeploymentInfo createDeploymentInfo(String name, String contextPath, Class<? extends Servlet> servletClass) {
         DeploymentInfo deploymentInfo = new DeploymentInfo();
         deploymentInfo.setClassLoader(getClass().getClassLoader());
         deploymentInfo.setDeploymentName(name);
@@ -84,7 +92,21 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
         servlet.addMapping("/*");
 
         deploymentInfo.addServlet(servlet);
-        server.getServer().deploy(deploymentInfo);
+        return deploymentInfo;
+    }
+
+    public void deployApplication(String name, String contextPath, Class<? extends Servlet> servletClass, String adapterConfigPath, String role) {
+        DeploymentInfo di = createDeploymentInfo(name, contextPath, servletClass);
+        di.addInitParameter("keycloak.config.file", adapterConfigPath);
+        SecurityConstraint constraint = new SecurityConstraint();
+        WebResourceCollection collection = new WebResourceCollection();
+        collection.addUrlPattern("/*");
+        constraint.addWebResourceCollection(collection);
+        constraint.addRoleAllowed(role);
+        di.addSecurityConstraint(constraint);
+        LoginConfig loginConfig = new LoginConfig("KEYCLOAK", "demo");
+        di.setLoginConfig(loginConfig);
+        server.getServer().deploy(di);
     }
 
     @Override
