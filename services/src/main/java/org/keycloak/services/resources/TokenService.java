@@ -28,6 +28,7 @@ import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.OAuthFlows;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.util.BasicAuthHelper;
+import org.keycloak.util.Time;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
@@ -622,7 +623,7 @@ public class TokenService {
             return redirectAccessDenied(redirect, state);
         }
 
-        accessCodeEntry.setExpiration((System.currentTimeMillis() / 1000) + realm.getAccessCodeLifespan());
+        accessCodeEntry.setExpiration(Time.currentTime() + realm.getAccessCodeLifespan());
         return oauth.redirectAccessCode(accessCodeEntry, state, redirect);
     }
 

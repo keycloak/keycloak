@@ -16,6 +16,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.util.Time;
 
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
@@ -47,7 +48,7 @@ public class AuthenticationManager {
         token.subject(user.getId());
         token.audience(realm.getName());
         if (realm.getCentralLoginLifespan() > 0) {
-            token.expiration((System.currentTimeMillis() / 1000) + realm.getCentralLoginLifespan());
+            token.expiration(Time.currentTime() + realm.getCentralLoginLifespan());
         }
         return token;
     }

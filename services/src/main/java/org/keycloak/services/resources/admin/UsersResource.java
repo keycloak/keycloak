@@ -25,6 +25,7 @@ import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.Urls;
+import org.keycloak.util.Time;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
@@ -181,7 +182,7 @@ public class UsersResource {
             throw new NotFoundException();
         }
         // set notBefore so that user will be forced to log in.
-        user.setNotBefore((int) (System.currentTimeMillis() / 1000));
+        user.setNotBefore(Time.currentTime());
         new ResourceAdminManager().logoutUser(realm, user);
     }
 
@@ -514,7 +515,7 @@ public class UsersResource {
 
         AccessCodeEntry accessCode = tokenManager.createAccessCode(scope, state, redirect, realm, client, user);
         accessCode.setRequiredActions(requiredActions);
-        accessCode.setExpiration(System.currentTimeMillis() / 1000 + realm.getAccessCodeLifespanUserAction());
+        accessCode.setExpiration(Time.currentTime() + realm.getAccessCodeLifespanUserAction());
 
         try {
             new EmailSender(realm.getSmtpConfig()).sendPasswordReset(user, realm, accessCode, uriInfo);

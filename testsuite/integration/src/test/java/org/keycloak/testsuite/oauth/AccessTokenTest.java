@@ -25,10 +25,7 @@ import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.models.RealmModel;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.OAuthClient.AccessTokenResponse;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -36,6 +33,10 @@ import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
+
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -66,7 +67,7 @@ public class AccessTokenTest {
 
         Assert.assertEquals(200, response.getStatusCode());
 
-        Assert.assertTrue(response.getExpiresIn() <= 600 && response.getExpiresIn() >= 550);
+        Assert.assertThat(response.getExpiresIn(), allOf(greaterThanOrEqualTo(250), lessThanOrEqualTo(300)));
 
         Assert.assertEquals("bearer", response.getTokenType());
 

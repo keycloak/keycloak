@@ -38,6 +38,7 @@ import org.keycloak.VerificationException;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.RefreshToken;
 import org.keycloak.util.BasicAuthHelper;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
@@ -141,6 +142,40 @@ public class OAuthClient {
         }
     }
 
+    public AccessTokenResponse doRefreshTokenRequest(String refreshToken, String password) {
+        HttpClient client = new DefaultHttpClient();
+        HttpPost post = new HttpPost(getRefreshTokenUrl());
+
+        List<NameValuePair> parameters = new LinkedList<NameValuePair>();
+        if (grantType != null) {
+            parameters.add(new BasicNameValuePair("grant_type", grantType));
+        }
+        if (refreshToken != null) {
+            parameters.add(new BasicNameValuePair("refresh_token", refreshToken));
+        }
+        if (clientId != null && password != null) {
+            String authorization = BasicAuthHelper.createHeader(clientId, password);
+            post.setHeader("Authorization", authorization);
+        }
+        else if (clientId != null) {
+            parameters.add(new BasicNameValuePair("client_id", clientId));
+        }
+
+        UrlEncodedFormEntity formEntity = null;
+        try {
+            formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+        post.setEntity(formEntity);
+
+        try {
+            return new AccessTokenResponse(client.execute(post));
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to retrieve access token", e);
+        }
+    }
+
     public AccessToken verifyToken(String token) {
         try {
             return RSATokenVerifier.verifyToken(token, realmPublicKey, realm);
@@ -152,6 +187,18 @@ public class OAuthClient {
     public void verifyCode(String code) {
         if (!RSAProvider.verify(new JWSInput(code), realmPublicKey)) {
             throw new RuntimeException("Failed to verify code");
+        }
+    }
+
+    public RefreshToken verifyRefreshToken(String refreshToken) {
+        try {
+            JWSInput jws = new JWSInput(refreshToken);
+            if (!RSAProvider.verify(jws, realmPublicKey)) {
+                throw new RuntimeException("Invalid refresh token");
+            }
+            return jws.readJsonContent(RefreshToken.class);
+        } catch (Exception e) {
+            throw new RuntimeException("Invalid refresh token", e);
         }
     }
 
@@ -215,6 +262,11 @@ public class OAuthClient {
 
     public String getAccessTokenUrl() {
         UriBuilder b = UriBuilder.fromUri(baseUrl + "/realms/" + realm + "/tokens/access/codes");
+        return b.build().toString();
+    }
+
+    public String getRefreshTokenUrl() {
+        UriBuilder b = UriBuilder.fromUri(baseUrl + "/realms/" + realm + "/tokens/refresh");
         return b.build().toString();
     }
 

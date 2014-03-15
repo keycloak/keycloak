@@ -6,6 +6,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.util.Time;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
@@ -25,7 +26,7 @@ public class AccessCodeEntry {
     protected String redirectUri;
     protected boolean rememberMe;
 
-    protected long expiration;
+    protected int expiration;
     protected RealmModel realm;
     protected AccessToken token;
     protected UserModel user;
@@ -35,7 +36,7 @@ public class AccessCodeEntry {
     MultivaluedMap<String, RoleModel> resourceRolesRequested = new MultivaluedHashMap<String, RoleModel>();
 
     public boolean isExpired() {
-        return expiration != 0 && (System.currentTimeMillis() / 1000) > expiration;
+        return expiration != 0 && Time.currentTime() > expiration;
     }
 
     public String getId() {
@@ -58,11 +59,11 @@ public class AccessCodeEntry {
         this.code = code;
     }
 
-    public long getExpiration() {
+    public int getExpiration() {
         return expiration;
     }
 
-    public void setExpiration(long expiration) {
+    public void setExpiration(int expiration) {
         this.expiration = expiration;
     }
 

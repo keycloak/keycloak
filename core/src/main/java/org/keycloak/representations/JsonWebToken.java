@@ -2,6 +2,7 @@ package org.keycloak.representations;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
+import org.keycloak.util.Time;
 
 import java.io.Serializable;
 
@@ -13,9 +14,9 @@ public class JsonWebToken implements Serializable {
     @JsonProperty("jti")
     protected String id;
     @JsonProperty("exp")
-    protected long expiration;
+    protected int expiration;
     @JsonProperty("nbf")
-    protected long notBefore;
+    protected int notBefore;
     @JsonProperty("iat")
     protected int issuedAt;
     @JsonProperty("iss")
@@ -39,26 +40,25 @@ public class JsonWebToken implements Serializable {
     }
 
 
-    public long getExpiration() {
+    public int getExpiration() {
         return expiration;
     }
 
-    public JsonWebToken expiration(long expiration) {
+    public JsonWebToken expiration(int expiration) {
         this.expiration = expiration;
         return this;
     }
 
     @JsonIgnore
     public boolean isExpired() {
-        long time = System.currentTimeMillis() / 1000;
-        return time > expiration;
+        return Time.currentTime() > expiration;
     }
 
-    public long getNotBefore() {
+    public int getNotBefore() {
         return notBefore;
     }
 
-    public JsonWebToken notBefore(long notBefore) {
+    public JsonWebToken notBefore(int notBefore) {
         this.notBefore = notBefore;
         return this;
     }
@@ -66,7 +66,7 @@ public class JsonWebToken implements Serializable {
 
     @JsonIgnore
     public boolean isNotBefore() {
-        return (System.currentTimeMillis() / 1000) >= notBefore;
+        return Time.currentTime() >= notBefore;
 
     }
 
@@ -89,7 +89,7 @@ public class JsonWebToken implements Serializable {
      */
     @JsonIgnore
     public JsonWebToken issuedNow() {
-        issuedAt = (int)(System.currentTimeMillis() / 1000);
+        issuedAt = Time.currentTime();
         return this;
     }
 

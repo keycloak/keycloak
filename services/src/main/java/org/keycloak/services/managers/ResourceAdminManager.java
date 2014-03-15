@@ -14,6 +14,7 @@ import org.keycloak.representations.adapters.action.SessionStats;
 import org.keycloak.representations.adapters.action.SessionStatsAction;
 import org.keycloak.representations.adapters.action.UserStats;
 import org.keycloak.representations.adapters.action.UserStatsAction;
+import org.keycloak.util.Time;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Response;
@@ -44,7 +45,7 @@ public class ResourceAdminManager {
     public SessionStats getSessionStats(RealmModel realm, ApplicationModel application, boolean users, ResteasyClient client) {
         String managementUrl = application.getManagementUrl();
         if (managementUrl != null) {
-            SessionStatsAction adminAction = new SessionStatsAction(TokenIdGenerator.generateId(), (int)(System.currentTimeMillis() / 1000) + 30, application.getName());
+            SessionStatsAction adminAction = new SessionStatsAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, application.getName());
             adminAction.setListUsers(users);
             String token = new TokenManager().encodeToken(realm, adminAction);
             logger.info("session stats for application: {0} url: {1}", application.getName(), managementUrl);
@@ -91,7 +92,7 @@ public class ResourceAdminManager {
     public UserStats getUserStats(RealmModel realm, ApplicationModel application, UserModel user, ResteasyClient client) {
         String managementUrl = application.getManagementUrl();
         if (managementUrl != null) {
-            UserStatsAction adminAction = new UserStatsAction(TokenIdGenerator.generateId(), (int)(System.currentTimeMillis() / 1000) + 30, application.getName(), user.getId());
+            UserStatsAction adminAction = new UserStatsAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, application.getName(), user.getId());
             String token = new TokenManager().encodeToken(realm, adminAction);
             logger.info("session stats for application: {0} url: {1}", application.getName(), managementUrl);
             Response response = client.target(managementUrl).path(AdapterConstants.K_GET_USER_STATS).request().post(Entity.text(token));
@@ -130,7 +131,7 @@ public class ResourceAdminManager {
                 .build();
 
         try {
-            realm.setNotBefore((int)(System.currentTimeMillis()/1000));
+            realm.setNotBefore(Time.currentTime());
             List<ApplicationModel> resources = realm.getApplications();
             logger.debug("logging out {0} resources ", resources.size());
             for (ApplicationModel resource : resources) {
@@ -147,7 +148,7 @@ public class ResourceAdminManager {
                 .build();
 
         try {
-            resource.setNotBefore((int)(System.currentTimeMillis()/1000));
+            resource.setNotBefore(Time.currentTime());
             logoutApplication(realm, resource, user, client, resource.getNotBefore());
         } finally {
             client.close();
@@ -159,7 +160,7 @@ public class ResourceAdminManager {
     protected boolean logoutApplication(RealmModel realm, ApplicationModel resource, String user, ResteasyClient client, int notBefore) {
         String managementUrl = resource.getManagementUrl();
         if (managementUrl != null) {
-            LogoutAction adminAction = new LogoutAction(TokenIdGenerator.generateId(), (int)(System.currentTimeMillis() / 1000) + 30, resource.getName(), user, notBefore);
+            LogoutAction adminAction = new LogoutAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, resource.getName(), user, notBefore);
             String token = new TokenManager().encodeToken(realm, adminAction);
             logger.info("logout user: {0} resource: {1} url: {2}", user, resource.getName(), managementUrl);
             Response response = client.target(managementUrl).path(AdapterConstants.K_LOGOUT).request().post(Entity.text(token));
@@ -204,7 +205,7 @@ public class ResourceAdminManager {
         if (notBefore <= 0) return false;
         String managementUrl = resource.getManagementUrl();
         if (managementUrl != null) {
-            PushNotBeforeAction adminAction = new PushNotBeforeAction(TokenIdGenerator.generateId(), (int)(System.currentTimeMillis() / 1000) + 30, resource.getName(), notBefore);
+            PushNotBeforeAction adminAction = new PushNotBeforeAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, resource.getName(), notBefore);
             String token = new TokenManager().encodeToken(realm, adminAction);
             logger.info("pushRevocation resource: {0} url: {1}", resource.getName(), managementUrl);
             Response response = client.target(managementUrl).path(AdapterConstants.K_PUSH_NOT_BEFORE).request().post(Entity.text(token));

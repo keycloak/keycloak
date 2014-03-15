@@ -128,12 +128,12 @@ public class AccessToken extends IDToken {
     }
 
     @Override
-    public AccessToken expiration(long expiration) {
+    public AccessToken expiration(int expiration) {
         return (AccessToken) super.expiration(expiration);
     }
 
     @Override
-    public AccessToken notBefore(long notBefore) {
+    public AccessToken notBefore(int notBefore) {
         return (AccessToken) super.notBefore(notBefore);
     }
 

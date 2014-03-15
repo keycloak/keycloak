@@ -9,6 +9,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.util.Time;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
@@ -145,7 +146,7 @@ public class RSAVerifierTest {
 
     @Test
     public void testNotBeforeGood() throws Exception {
-        token.notBefore((System.currentTimeMillis() / 1000) - 100);
+        token.notBefore(Time.currentTime() - 100);
 
         String encoded = new JWSBuilder()
                 .jsonContent(token)
@@ -161,7 +162,7 @@ public class RSAVerifierTest {
 
     @Test
     public void testNotBeforeBad() throws Exception {
-        token.notBefore((System.currentTimeMillis() / 1000) + 100);
+        token.notBefore(Time.currentTime() + 100);
 
         String encoded = new JWSBuilder()
                 .jsonContent(token)
@@ -178,7 +179,7 @@ public class RSAVerifierTest {
 
     @Test
     public void testExpirationGood() throws Exception {
-        token.expiration((System.currentTimeMillis() / 1000) + 100);
+        token.expiration(Time.currentTime() + 100);
 
         String encoded = new JWSBuilder()
                 .jsonContent(token)
@@ -194,7 +195,7 @@ public class RSAVerifierTest {
 
     @Test
     public void testExpirationBad() throws Exception {
-        token.expiration((System.currentTimeMillis() / 1000) - 100);
+        token.expiration(Time.currentTime() - 100);
 
         String encoded = new JWSBuilder()
                 .jsonContent(token)

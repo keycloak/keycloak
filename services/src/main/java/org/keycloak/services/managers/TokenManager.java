@@ -16,6 +16,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
+import org.keycloak.util.Time;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
@@ -82,7 +83,7 @@ public class TokenManager {
 
         code.setToken(token);
         code.setRealm(realm);
-        code.setExpiration((System.currentTimeMillis() / 1000) + realm.getAccessCodeLifespan());
+        code.setExpiration(Time.currentTime() + realm.getAccessCodeLifespan());
         code.setClient(client);
         code.setUser(user);
         code.setState(state);
@@ -158,7 +159,7 @@ public class TokenManager {
                 if (app == null) {
                     throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "Application no longer exists", "Application no longer exists: " + app.getName());
                 }
-                for (String roleName : refreshToken.getRealmAccess().getRoles()) {
+                for (String roleName : entry.getValue().getRoles()) {
                     RoleModel role = app.getRole(roleName);
                     if (role == null) {
                         throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token", "Unknown application role: " + roleName);
@@ -257,7 +258,7 @@ public class TokenManager {
         token.issuedFor(client.getLoginName());
         token.issuer(realm.getName());
         if (realm.getAccessTokenLifespan() > 0) {
-            token.expiration((System.currentTimeMillis() / 1000) + realm.getAccessTokenLifespan());
+            token.expiration(Time.currentTime() + realm.getAccessTokenLifespan());
         }
         initClaims(token, claimer, user);
         return token;
@@ -274,7 +275,7 @@ public class TokenManager {
         token.issuedFor(client.getClientId());
         token.issuer(realm.getName());
         if (realm.getAccessTokenLifespan() > 0) {
-            token.expiration((System.currentTimeMillis() / 1000) + realm.getAccessTokenLifespan());
+            token.expiration(Time.currentTime() + realm.getAccessTokenLifespan());
         }
         Set<String> allowedOrigins = client.getWebOrigins();
         if (allowedOrigins != null) {
@@ -356,7 +357,7 @@ public class TokenManager {
             refreshToken = new RefreshToken(accessToken);
             refreshToken.id(KeycloakModelUtils.generateId());
             refreshToken.issuedNow();
-            refreshToken.expiration((System.currentTimeMillis() / 1000) + realm.getRefreshTokenLifespan());
+            refreshToken.expiration(Time.currentTime() + realm.getRefreshTokenLifespan());
             return this;
         }
 
@@ -372,7 +373,7 @@ public class TokenManager {
             idToken.issuedFor(accessToken.getIssuedFor());
             idToken.issuer(accessToken.getIssuer());
             if (realm.getAccessTokenLifespan() > 0) {
-                idToken.expiration((System.currentTimeMillis() / 1000) + realm.getAccessTokenLifespan());
+                idToken.expiration(Time.currentTime() + realm.getAccessTokenLifespan());
             }
             idToken.setPreferredUsername(accessToken.getPreferredUsername());
             idToken.setGivenName(accessToken.getGivenName());
@@ -412,8 +413,7 @@ public class TokenManager {
                 res.setToken(encodedToken);
                 res.setTokenType("bearer");
                 if (accessToken.getExpiration() != 0) {
-                    long time = accessToken.getExpiration() - (System.currentTimeMillis() / 1000);
-                    res.setExpiresIn(time);
+                    res.setExpiresIn(accessToken.getExpiration() - Time.currentTime());
                 }
             }
             if (refreshToken != null) {

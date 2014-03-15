@@ -41,6 +41,7 @@ import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.validation.Validation;
+import org.keycloak.util.Time;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -268,7 +269,7 @@ public class RequiredActionsService {
 
             AccessCodeEntry accessCode = tokenManager.createAccessCode(scopeParam, state, redirect, realm, client, user);
             accessCode.setRequiredActions(requiredActions);
-            accessCode.setExpiration(System.currentTimeMillis() / 1000 + realm.getAccessCodeLifespanUserAction());
+            accessCode.setExpiration(Time.currentTime() + realm.getAccessCodeLifespanUserAction());
 
             try {
                 new EmailSender(realm.getSmtpConfig()).sendPasswordReset(user, realm, accessCode, uriInfo);
@@ -312,7 +313,7 @@ public class RequiredActionsService {
         if (accessCodeEntry.isExpired()) {
             logger.debug("getAccessCodeEntry: access code id: {0}", accessCodeEntry.getId());
             logger.debug("getAccessCodeEntry access code entry expired: {0}", accessCodeEntry.getExpiration());
-            logger.debug("getAccessCodeEntry current time: {0}", (System.currentTimeMillis() / 1000));
+            logger.debug("getAccessCodeEntry current time: {0}", Time.currentTime());
             return null;
         }
 
@@ -339,7 +340,7 @@ public class RequiredActionsService {
                     .createResponse(requiredActions.iterator().next());
         } else {
             logger.debug("redirectOauth: redirecting to: {0}", accessCode.getRedirectUri());
-            accessCode.setExpiration((System.currentTimeMillis() / 1000) + realm.getAccessCodeLifespan());
+            accessCode.setExpiration(Time.currentTime() + realm.getAccessCodeLifespan());
             return Flows.oauth(realm, request, uriInfo, authManager, tokenManager).redirectAccessCode(accessCode,
                     accessCode.getState(), accessCode.getRedirectUri());
         }

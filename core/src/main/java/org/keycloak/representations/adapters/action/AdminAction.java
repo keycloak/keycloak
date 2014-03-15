@@ -1,6 +1,7 @@
 package org.keycloak.representations.adapters.action;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
+import org.keycloak.util.Time;
 
 /**
  * Posted to managed client from admin server.
@@ -34,8 +35,7 @@ public abstract class AdminAction {
 
     @JsonIgnore
     public boolean isExpired() {
-        long time = System.currentTimeMillis() / 1000;
-        return time > expiration;
+        return Time.currentTime() > expiration;
     }
 
     /**

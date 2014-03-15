@@ -37,6 +37,7 @@ import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.resources.TokenService;
+import org.keycloak.util.Time;
 
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Cookie;
@@ -127,14 +128,14 @@ public class OAuthFlows {
         Set<RequiredAction> requiredActions = user.getRequiredActions();
         if (!requiredActions.isEmpty()) {
             accessCode.setRequiredActions(new HashSet<UserModel.RequiredAction>(requiredActions));
-            accessCode.setExpiration(System.currentTimeMillis() / 1000 + realm.getAccessCodeLifespanUserAction());
+            accessCode.setExpiration(Time.currentTime() + realm.getAccessCodeLifespanUserAction());
             return Flows.forms(realm, request, uriInfo).setAccessCode(accessCode.getId(), accessCode.getCode()).setUser(user)
                     .createResponse(user.getRequiredActions().iterator().next());
         }
 
         if (!isResource
                 && (accessCode.getRealmRolesRequested().size() > 0 || accessCode.getResourceRolesRequested().size() > 0)) {
-            accessCode.setExpiration(System.currentTimeMillis() / 1000 + realm.getAccessCodeLifespanUserAction());
+            accessCode.setExpiration(Time.currentTime() + realm.getAccessCodeLifespanUserAction());
             return Flows.forms(realm, request, uriInfo).setAccessCode(accessCode.getId(), accessCode.getCode()).
                     setAccessRequest(accessCode.getRealmRolesRequested(), accessCode.getResourceRolesRequested()).
                     setClient(client).createOAuthGrant();
