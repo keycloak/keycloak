@@ -2,6 +2,7 @@ package org.keycloak.login.freemarker;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.freemarker.FreeMarkerException;
 import org.keycloak.freemarker.FreeMarkerUtil;
 import org.keycloak.freemarker.Theme;
@@ -125,7 +126,7 @@ public class FreeMarkerLoginForms implements LoginForms {
         }
 
         if (accessCode != null) {
-            uriBuilder.replaceQueryParam("code", accessCode);
+            uriBuilder.replaceQueryParam(OAuth2Constants.CODE, accessCode);
         }
 
         Map<String, Object> attributes = new HashMap<String, Object>();
@@ -181,7 +182,7 @@ public class FreeMarkerLoginForms implements LoginForms {
                 attributes.put("oauth", new OAuthGrantBean(accessCode, client, realmRolesRequested, resourceRolesRequested));
                 break;
             case CODE:
-                attributes.put("code", new CodeBean(accessCode, messageType == MessageType.ERROR ? message : null));
+                attributes.put(OAuth2Constants.CODE, new CodeBean(accessCode, messageType == MessageType.ERROR ? message : null));
                 break;
         }
 

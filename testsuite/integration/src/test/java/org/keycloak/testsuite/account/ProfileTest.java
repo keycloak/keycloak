@@ -10,6 +10,7 @@ import org.json.JSONObject;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
@@ -97,7 +98,7 @@ public class ProfileTest {
     public void getProfile() throws Exception {
         oauth.doLogin("test-user@localhost", "password");
 
-        String code = oauth.getCurrentQuery().get("code");
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
         String token = oauth.doAccessTokenRequest(code, "password").getAccessToken();
 
         HttpResponse response = doGetProfile(token, null);
@@ -119,7 +120,7 @@ public class ProfileTest {
     public void getProfileCors() throws Exception {
         oauth.doLogin("test-user@localhost", "password");
 
-        String code = oauth.getCurrentQuery().get("code");
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
         String token = oauth.doAccessTokenRequest(code, "password").getAccessToken();
 
         driver.navigate().to("http://localtest.me:8081/app");
@@ -132,7 +133,7 @@ public class ProfileTest {
     public void getProfileCorsInvalidOrigin() throws Exception {
         oauth.doLogin("test-user@localhost", "password");
 
-        String code = oauth.getCurrentQuery().get("code");
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
         String token = oauth.doAccessTokenRequest(code, "password").getAccessToken();
 
         driver.navigate().to("http://invalid.localtest.me:8081");
@@ -166,7 +167,7 @@ public class ProfileTest {
     public void getProfileNoAccess() throws Exception {
         oauth.doLogin("test-user-no-access@localhost", "password");
 
-        String code = oauth.getCurrentQuery().get("code");
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
         String token = oauth.doAccessTokenRequest(code, "password").getAccessToken();
 
         HttpResponse response = doGetProfile(token, null);
@@ -180,7 +181,7 @@ public class ProfileTest {
 
         grantPage.accept();
 
-        String token = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get("code"), "password").getAccessToken();
+        String token = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE), "password").getAccessToken();
         HttpResponse response = doGetProfile(token, null);
 
         assertEquals(200, response.getStatusLine().getStatusCode());
@@ -194,7 +195,7 @@ public class ProfileTest {
         oauth.clientId("third-party");
         oauth.doLoginGrant("test-user@localhost", "password");
 
-        String token = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get("code"), "password").getAccessToken();
+        String token = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE), "password").getAccessToken();
         HttpResponse response = doGetProfile(token, null);
 
         assertEquals(403, response.getStatusLine().getStatusCode());

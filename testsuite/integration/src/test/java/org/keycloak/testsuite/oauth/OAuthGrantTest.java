@@ -28,6 +28,7 @@ import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -74,8 +75,8 @@ public class OAuthGrantTest {
 
         grantPage.accept();
 
-        Assert.assertTrue(oauth.getCurrentQuery().containsKey("code"));
-        OAuthClient.AccessTokenResponse accessToken = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get("code"), "password");
+        Assert.assertTrue(oauth.getCurrentQuery().containsKey(OAuth2Constants.CODE));
+        OAuthClient.AccessTokenResponse accessToken = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE), "password");
 
         AccessToken token = oauth.verifyToken(accessToken.getAccessToken());
 
@@ -100,7 +101,7 @@ public class OAuthGrantTest {
 
         grantPage.cancel();
 
-        Assert.assertTrue(oauth.getCurrentQuery().containsKey("error"));
-        Assert.assertEquals("access_denied", oauth.getCurrentQuery().get("error"));
+        Assert.assertTrue(oauth.getCurrentQuery().containsKey(OAuth2Constants.ERROR));
+        Assert.assertEquals("access_denied", oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
     }
 }

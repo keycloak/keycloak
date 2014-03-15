@@ -26,6 +26,7 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
@@ -106,7 +107,7 @@ public class SocialLoginTest {
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        AccessTokenResponse response = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get("code"), "password");
+        AccessTokenResponse response = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE), "password");
 
         AccessToken token = oauth.verifyToken(response.getAccessToken());
         Assert.assertEquals(36, token.getSubject().length());
@@ -167,7 +168,7 @@ public class SocialLoginTest {
 
             Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-            AccessTokenResponse response = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get("code"), "password");
+            AccessTokenResponse response = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE), "password");
             AccessToken token = oauth.verifyToken(response.getAccessToken());
 
             UserRepresentation profile = keycloakRule.getUserById("test", token.getSubject());

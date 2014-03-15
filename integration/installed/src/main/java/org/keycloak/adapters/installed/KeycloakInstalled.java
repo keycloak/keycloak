@@ -1,5 +1,6 @@
 package org.keycloak.adapters.installed;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
@@ -96,9 +97,9 @@ public class KeycloakInstalled {
         String state = UUID.randomUUID().toString();
 
         String authUrl = deployment.getAuthUrl().clone()
-                .queryParam("client_id", deployment.getResourceName())
-                .queryParam("redirect_uri", redirectUri)
-                .queryParam("state", state)
+                .queryParam(OAuth2Constants.CLIENT_ID, deployment.getResourceName())
+                .queryParam(OAuth2Constants.REDIRECT_URI, redirectUri)
+                .queryParam(OAuth2Constants.STATE, state)
                 .queryParam("login", "true")
                 .build().toString();
 
@@ -130,7 +131,7 @@ public class KeycloakInstalled {
         String redirectUri = "http://localhost:" + callback.server.getLocalPort();
 
         String logoutUrl = deployment.getLogoutUrl()
-                .queryParam("redirect_uri", redirectUri)
+                .queryParam(OAuth2Constants.REDIRECT_URI, redirectUri)
                 .build().toString();
 
         Desktop.getDesktop().browse(new URI(logoutUrl));
@@ -153,8 +154,8 @@ public class KeycloakInstalled {
         String redirectUri = "urn:ietf:wg:oauth:2.0:oob";
 
         String authUrl = deployment.getAuthUrl().clone()
-                .queryParam("client_id", deployment.getResourceName())
-                .queryParam("redirect_uri", redirectUri)
+                .queryParam(OAuth2Constants.CLIENT_ID, deployment.getResourceName())
+                .queryParam(OAuth2Constants.REDIRECT_URI, redirectUri)
                 .queryParam("login", "true")
                 .build().toString();
 
@@ -281,13 +282,13 @@ public class KeycloakInstalled {
 
                     for (String param : params) {
                         String[] p = param.split("=");
-                        if (p[0].equals("code")) {
+                        if (p[0].equals(OAuth2Constants.CODE)) {
                             code = p[1];
-                        } else if (p[0].equals("error")) {
+                        } else if (p[0].equals(OAuth2Constants.ERROR)) {
                             error = p[1];
                         } else if (p[0].equals("error-description")) {
                             errorDescription = p[1];
-                        } else if (p[0].equals("state")) {
+                        } else if (p[0].equals(OAuth2Constants.STATE)) {
                             state = p[1];
                         }
                     }

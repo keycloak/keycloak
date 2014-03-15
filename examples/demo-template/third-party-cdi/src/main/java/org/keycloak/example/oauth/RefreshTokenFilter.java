@@ -14,6 +14,7 @@ import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.ServerRequest;
 import org.keycloak.servlet.ServletOAuthClient;
 
@@ -41,15 +42,15 @@ public class RefreshTokenFilter implements Filter {
         HttpServletResponse response = (HttpServletResponse)resp;
         Map<String, String[]> reqParams = request.getParameterMap();
 
-        if (reqParams.containsKey("code")) {
+        if (reqParams.containsKey(OAuth2Constants.CODE)) {
             try {
                 String accessToken = oauthClient.getBearerToken(request).getToken();
                 userData.setAccessToken(accessToken);
             } catch (ServerRequest.HttpFailure e) {
                 throw new ServletException(e);
             }
-        } else if (reqParams.containsKey("error")) {
-            String oauthError = reqParams.get("error")[0];
+        } else if (reqParams.containsKey(OAuth2Constants.ERROR)) {
+            String oauthError = reqParams.get(OAuth2Constants.ERROR)[0];
             request.setAttribute(OAUTH_ERROR_ATTR, oauthError);
         }
 

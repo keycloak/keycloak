@@ -25,6 +25,7 @@ import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -81,7 +82,7 @@ public class CompositeImportRoleTest {
         oauth.clientId("APP_COMPOSITE_APPLICATION");
         oauth.doLogin("APP_COMPOSITE_USER", "password");
 
-        String code = oauth.getCurrentQuery().get("code");
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
         AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
 
         Assert.assertEquals(200, response.getStatusCode());
@@ -106,7 +107,7 @@ public class CompositeImportRoleTest {
         oauth.clientId("APP_ROLE_APPLICATION");
         oauth.doLogin("REALM_APP_COMPOSITE_USER", "password");
 
-        String code = oauth.getCurrentQuery().get("code");
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
         AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
 
         Assert.assertEquals(200, response.getStatusCode());
@@ -130,7 +131,7 @@ public class CompositeImportRoleTest {
         oauth.clientId("REALM_COMPOSITE_1_APPLICATION");
         oauth.doLogin("REALM_COMPOSITE_1_USER", "password");
 
-        String code = oauth.getCurrentQuery().get("code");
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
         AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
 
         Assert.assertEquals(200, response.getStatusCode());
@@ -153,7 +154,7 @@ public class CompositeImportRoleTest {
         oauth.clientId("REALM_ROLE_1_APPLICATION");
         oauth.doLogin("REALM_COMPOSITE_1_USER", "password");
 
-        String code = oauth.getCurrentQuery().get("code");
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
         AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
 
         Assert.assertEquals(200, response.getStatusCode());
@@ -175,7 +176,7 @@ public class CompositeImportRoleTest {
         oauth.clientId("REALM_COMPOSITE_1_APPLICATION");
         oauth.doLogin("REALM_ROLE_1_USER", "password");
 
-        String code = oauth.getCurrentQuery().get("code");
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
         AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
 
         Assert.assertEquals(200, response.getStatusCode());

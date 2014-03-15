@@ -25,6 +25,7 @@ import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
@@ -87,7 +88,7 @@ public class AuthorizationCodeTest {
         String title = driver.getTitle();
         Assert.assertTrue(title.startsWith("Success code="));
 
-        String code = driver.findElement(By.id("code")).getText();
+        String code = driver.findElement(By.id(OAuth2Constants.CODE)).getText();
         oauth.verifyCode(code);
     }
 

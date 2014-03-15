@@ -4,6 +4,7 @@ import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.util.BasicAuthHelper;
 import org.keycloak.AbstractOAuthClient;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.CredentialRepresentation;
 
@@ -49,10 +50,10 @@ public class JaxrsOAuthClient extends AbstractOAuthClient {
     public String resolveBearerToken(String redirectUri, String code) {
         redirectUri = stripOauthParametersFromRedirect(redirectUri);
         Form codeForm = new Form()
-                .param("grant_type", "authorization_code")
-                .param("code", code)
-                .param("client_id", clientId)
-                .param("redirect_uri", redirectUri);
+                .param(OAuth2Constants.GRANT_TYPE, "authorization_code")
+                .param(OAuth2Constants.CODE, code)
+                .param(OAuth2Constants.CLIENT_ID, clientId)
+                .param(OAuth2Constants.REDIRECT_URI, redirectUri);
         for (Map.Entry<String, String> entry : credentials.entrySet()) {
             codeForm.param(entry.getKey(), entry.getValue());
         }
@@ -73,11 +74,11 @@ public class JaxrsOAuthClient extends AbstractOAuthClient {
         String state = getStateCode();
 
         UriBuilder uriBuilder = UriBuilder.fromUri(authUrl)
-                .queryParam("client_id", clientId)
-                .queryParam("redirect_uri", redirectUri)
-                .queryParam("state", state);
+                .queryParam(OAuth2Constants.CLIENT_ID, clientId)
+                .queryParam(OAuth2Constants.REDIRECT_URI, redirectUri)
+                .queryParam(OAuth2Constants.STATE, state);
         if (scope != null) {
-            uriBuilder.queryParam("scope", scope);
+            uriBuilder.queryParam(OAuth2Constants.SCOPE, scope);
         }
 
         URI url = uriBuilder.build();
@@ -105,17 +106,17 @@ public class JaxrsOAuthClient extends AbstractOAuthClient {
     }
 
     public String getError(UriInfo uriInfo) {
-        return uriInfo.getQueryParameters().getFirst("error");
+        return uriInfo.getQueryParameters().getFirst(OAuth2Constants.ERROR);
     }
 
     public String getAccessCode(UriInfo uriInfo) {
-        return uriInfo.getQueryParameters().getFirst("code");
+        return uriInfo.getQueryParameters().getFirst(OAuth2Constants.CODE);
     }
 
     public void checkStateCookie(UriInfo uriInfo, HttpHeaders headers) {
         Cookie stateCookie = headers.getCookies().get(stateCookieName);
         if (stateCookie == null) throw new BadRequestException("state cookie not set");
-        String state = uriInfo.getQueryParameters().getFirst("state");
+        String state = uriInfo.getQueryParameters().getFirst(OAuth2Constants.STATE);
         if (state == null) throw new BadRequestException("state parameter was null");
         if (!state.equals(stateCookie.getValue())) {
             throw new BadRequestException("state parameter invalid");

@@ -23,6 +23,7 @@ package org.keycloak.services.resources.flows;
 
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -85,10 +86,10 @@ public class OAuthFlows {
         if (Constants.INSTALLED_APP_URN.equals(redirect)) {
             return Flows.forms(realm, request, uriInfo).setAccessCode(accessCode.getId(), code).createCode();
         } else {
-            UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam("code", code);
+            UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam(OAuth2Constants.CODE, code);
             log.debug("redirectAccessCode: state: {0}", state);
             if (state != null)
-                redirectUri.queryParam("state", state);
+                redirectUri.queryParam(OAuth2Constants.STATE, state);
             Response.ResponseBuilder location = Response.status(302).location(redirectUri.build());
             Cookie remember = request.getHttpHeaders().getCookies().get(AuthenticationManager.KEYCLOAK_REMEMBER_ME);
             rememberMe = rememberMe || remember != null;
@@ -101,9 +102,9 @@ public class OAuthFlows {
         if (Constants.INSTALLED_APP_URN.equals(redirect)) {
             return Flows.forms(realm, request, uriInfo).setError(error).createCode();
         } else {
-            UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam("error", error);
+            UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam(OAuth2Constants.ERROR, error);
             if (state != null) {
-                redirectUri.queryParam("state", state);
+                redirectUri.queryParam(OAuth2Constants.STATE, state);
             }
             return Response.status(302).location(redirectUri.build()).build();
         }

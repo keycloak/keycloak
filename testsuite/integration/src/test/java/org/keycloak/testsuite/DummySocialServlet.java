@@ -2,6 +2,7 @@ package org.keycloak.testsuite;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
+import org.keycloak.OAuth2Constants;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -48,9 +49,9 @@ public class DummySocialServlet extends HttpServlet {
             throw new RuntimeException(e);
         }
         for (NameValuePair p : query) {
-            if ("state".equals(p.getName())) {
+            if (OAuth2Constants.STATE.equals(p.getName())) {
                 state = p.getValue();
-            } else if ("redirect_uri".equals(p.getName())) {
+            } else if (OAuth2Constants.REDIRECT_URI.equals(p.getName())) {
                 redirectUri = p.getValue();
             }
         }

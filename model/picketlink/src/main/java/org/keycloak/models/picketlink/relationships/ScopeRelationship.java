@@ -25,7 +25,7 @@ public class ScopeRelationship extends AbstractAttributedType implements Relatio
 
         @Override
         public String getName() {
-            return "scope";
+            return OAuth2Constants.SCOPE;
         }
     };
 

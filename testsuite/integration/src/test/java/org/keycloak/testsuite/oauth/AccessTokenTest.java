@@ -25,6 +25,7 @@ import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.OAuthClient.AccessTokenResponse;
@@ -62,7 +63,7 @@ public class AccessTokenTest {
     public void accessTokenRequest() throws Exception {
         oauth.doLogin("test-user@localhost", "password");
 
-        String code = oauth.getCurrentQuery().get("code");
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
         AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
 
         Assert.assertEquals(200, response.getStatusCode());

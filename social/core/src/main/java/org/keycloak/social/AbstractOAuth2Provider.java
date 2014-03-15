@@ -1,6 +1,7 @@
 package org.keycloak.social;
 
 import org.json.JSONObject;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.social.utils.SimpleHttp;
 
 import java.io.IOException;
@@ -51,7 +52,7 @@ public abstract class AbstractOAuth2Provider implements SocialProvider {
 
     @Override
     public SocialUser processCallback(SocialProviderConfig config, AuthCallback callback) throws SocialProviderException {
-        String error = callback.getQueryParam("error");
+        String error = callback.getQueryParam(OAuth2Constants.ERROR);
         if (error != null) {
             if (error.equals("access_denied")) {
                 throw new SocialAccessDeniedException();

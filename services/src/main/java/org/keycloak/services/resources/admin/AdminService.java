@@ -5,6 +5,7 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.jaxrs.JaxrsOAuthClient;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ApplicationModel;
@@ -319,8 +320,8 @@ public class AdminService {
     }
 
     protected Response redirectOnLoginError(String message) {
-        URI uri = uriInfo.getBaseUriBuilder().path(AdminService.class).path(AdminService.class, "errorOnLoginRedirect").queryParam("error", message).build();
-        URI logout = TokenService.logoutUrl(uriInfo).queryParam("redirect_uri", uri.toString()).build(Config.getAdminRealm());
+        URI uri = uriInfo.getBaseUriBuilder().path(AdminService.class).path(AdminService.class, "errorOnLoginRedirect").queryParam(OAuth2Constants.ERROR, message).build();
+        URI logout = TokenService.logoutUrl(uriInfo).queryParam(OAuth2Constants.REDIRECT_URI, uri.toString()).build(Config.getAdminRealm());
         return Response.status(302).location(logout).build();
     }
 

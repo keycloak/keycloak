@@ -25,6 +25,7 @@ import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.AppPage;
@@ -68,7 +69,7 @@ public class SSOTest {
         loginPage.login("test-user@localhost", "password");
         
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.getCurrentQuery().get("code"));
+        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 
         appPage.open();
 

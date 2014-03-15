@@ -1,5 +1,6 @@
 package org.keycloak.testsuite;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.social.AuthCallback;
 import org.keycloak.social.AuthRequest;
 import org.keycloak.social.SocialAccessDeniedException;
@@ -23,8 +24,8 @@ public class DummySocial implements SocialProvider {
     public AuthRequest getAuthUrl(SocialProviderConfig config) throws SocialProviderException {
         String state = UUID.randomUUID().toString();
 
-        return AuthRequest.create(state, AUTH_PATH).setQueryParam("response_type", "token")
-                .setQueryParam("redirect_uri", config.getCallbackUrl()).setQueryParam("state", state).setAttribute("state", state).build();
+        return AuthRequest.create(state, AUTH_PATH).setQueryParam(OAuth2Constants.RESPONSE_TYPE, "token")
+                .setQueryParam(OAuth2Constants.REDIRECT_URI, config.getCallbackUrl()).setQueryParam(OAuth2Constants.STATE, state).setAttribute(OAuth2Constants.STATE, state).build();
     }
 
     @Override
@@ -34,12 +35,12 @@ public class DummySocial implements SocialProvider {
 
     @Override
     public SocialUser processCallback(SocialProviderConfig config, AuthCallback callback) throws SocialProviderException {
-        String error = callback.getQueryParam("error");
+        String error = callback.getQueryParam(OAuth2Constants.ERROR);
         if (error != null) {
             throw new SocialAccessDeniedException();
         }
 
-        if (!callback.getQueryParam("state").equals(callback.getAttribute("state"))) {
+        if (!callback.getQueryParam(OAuth2Constants.STATE).equals(callback.getAttribute(OAuth2Constants.STATE))) {
             throw new SocialProviderException("Invalid state");
         }
 

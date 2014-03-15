@@ -4,6 +4,7 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
@@ -165,7 +166,7 @@ public class TokenService {
         if (authManager.authenticateForm(realm, user, form) != AuthenticationStatus.SUCCESS) {
             throw new NotAuthorizedException("Auth failed");
         }
-        String scope = form.getFirst("scope");
+        String scope = form.getFirst(OAuth2Constants.SCOPE);
         AccessTokenResponse res = tokenManager.responseBuilder(realm, client)
                 .generateAccessToken(scope, client, user)
                 .generateIDToken()
@@ -185,14 +186,14 @@ public class TokenService {
         }
 
         ClientModel client = authorizeClient(authorizationHeader, form);
-        String refreshToken = form.getFirst("refresh_token");
+        String refreshToken = form.getFirst(OAuth2Constants.REFRESH_TOKEN);
         AccessToken accessToken = null;
         try {
             accessToken = tokenManager.refreshAccessToken(realm, client, refreshToken);
         } catch (OAuthErrorException e) {
             Map<String, String> error = new HashMap<String, String>();
-            error.put("error", e.getError());
-            if (e.getDescription() != null) error.put("error_description", e.getDescription());
+            error.put(OAuth2Constants.ERROR, e.getError());
+            if (e.getDescription() != null) error.put(OAuth2Constants.ERROR_DESCRIPTION, e.getDescription());
             throw new BadRequestException(Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build(), e);
         }
 
@@ -372,11 +373,11 @@ public class TokenService {
 
         ClientModel client = authorizeClient(authorizationHeader, formData);
 
-        String code = formData.getFirst("code");
+        String code = formData.getFirst(OAuth2Constants.CODE);
         if (code == null) {
             Map<String, String> error = new HashMap<String, String>();
-            error.put("error", "invalid_request");
-            error.put("error_description", "code not specified");
+            error.put(OAuth2Constants.ERROR, "invalid_request");
+            error.put(OAuth2Constants.ERROR_DESCRIPTION, "code not specified");
             throw new BadRequestException("Code not specified", Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build());
 
         }
@@ -390,8 +391,8 @@ public class TokenService {
         }
         if (!verifiedCode) {
             Map<String, String> res = new HashMap<String, String>();
-            res.put("error", "invalid_grant");
-            res.put("error_description", "Unable to verify code signature");
+            res.put(OAuth2Constants.ERROR, "invalid_grant");
+            res.put(OAuth2Constants.ERROR_DESCRIPTION, "Unable to verify code signature");
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res)
                     .build();
         }
@@ -399,29 +400,29 @@ public class TokenService {
         AccessCodeEntry accessCode = tokenManager.pullAccessCode(key);
         if (accessCode == null) {
             Map<String, String> res = new HashMap<String, String>();
-            res.put("error", "invalid_grant");
-            res.put("error_description", "Code not found");
+            res.put(OAuth2Constants.ERROR, "invalid_grant");
+            res.put(OAuth2Constants.ERROR_DESCRIPTION, "Code not found");
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res)
                     .build();
         }
         if (accessCode.isExpired()) {
             Map<String, String> res = new HashMap<String, String>();
-            res.put("error", "invalid_grant");
-            res.put("error_description", "Code is expired");
+            res.put(OAuth2Constants.ERROR, "invalid_grant");
+            res.put(OAuth2Constants.ERROR_DESCRIPTION, "Code is expired");
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res)
                     .build();
         }
         if (!accessCode.getToken().isActive()) {
             Map<String, String> res = new HashMap<String, String>();
-            res.put("error", "invalid_grant");
-            res.put("error_description", "Token expired");
+            res.put(OAuth2Constants.ERROR, "invalid_grant");
+            res.put(OAuth2Constants.ERROR_DESCRIPTION, "Token expired");
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res)
                     .build();
         }
         if (!client.getClientId().equals(accessCode.getClient().getClientId())) {
             Map<String, String> res = new HashMap<String, String>();
-            res.put("error", "invalid_grant");
-            res.put("error_description", "Auth error");
+            res.put(OAuth2Constants.ERROR, "invalid_grant");
+            res.put(OAuth2Constants.ERROR_DESCRIPTION, "Auth error");
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res)
                     .build();
         }
@@ -446,36 +447,36 @@ public class TokenService {
             clientSecret = usernameSecret[1];
         } else {
             logger.info("no authorization header");
-            client_id = formData.getFirst("client_id");
+            client_id = formData.getFirst(OAuth2Constants.CLIENT_ID);
             clientSecret = formData.getFirst("client_secret");
         }
 
         if (client_id == null) {
             Map<String, String> error = new HashMap<String, String>();
-            error.put("error", "invalid_client");
-            error.put("error_description", "Could not find client");
+            error.put(OAuth2Constants.ERROR, "invalid_client");
+            error.put(OAuth2Constants.ERROR_DESCRIPTION, "Could not find client");
             throw new BadRequestException("Could not find client", Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build());
         }
 
         ClientModel client = realm.findClient(client_id);
         if (client == null) {
             Map<String, String> error = new HashMap<String, String>();
-            error.put("error", "invalid_client");
-            error.put("error_description", "Could not find client");
+            error.put(OAuth2Constants.ERROR, "invalid_client");
+            error.put(OAuth2Constants.ERROR_DESCRIPTION, "Could not find client");
             throw new BadRequestException("Could not find client", Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build());
         }
 
         if (!client.isEnabled()) {
             Map<String, String> error = new HashMap<String, String>();
-            error.put("error", "invalid_client");
-            error.put("error_description", "Client is not enabled");
+            error.put(OAuth2Constants.ERROR, "invalid_client");
+            error.put(OAuth2Constants.ERROR_DESCRIPTION, "Client is not enabled");
             throw new BadRequestException("Client is not enabled", Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build());
         }
 
         if (!client.isPublicClient()) {
             if (!client.validateSecret(clientSecret)) {
                 Map<String, String> error = new HashMap<String, String>();
-                error.put("error", "unauthorized_client");
+                error.put(OAuth2Constants.ERROR, "unauthorized_client");
                 throw new BadRequestException("Unauthorized Client", Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build());
             }
         }
@@ -599,7 +600,7 @@ public class TokenService {
             return oauth.forwardToSecurityFailure("HTTPS required");
         }
 
-        String code = formData.getFirst("code");
+        String code = formData.getFirst(OAuth2Constants.CODE);
         JWSInput input = new JWSInput(code);
         boolean verifiedCode = false;
         try {
@@ -628,9 +629,9 @@ public class TokenService {
     }
 
     protected Response redirectAccessDenied(String redirect, String state) {
-        UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam("error", "access_denied");
+        UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam(OAuth2Constants.ERROR, "access_denied");
         if (state != null)
-            redirectUri.queryParam("state", state);
+            redirectUri.queryParam(OAuth2Constants.STATE, state);
         Response.ResponseBuilder location = Response.status(302).location(redirectUri.build());
         return location.build();
     }

@@ -2,6 +2,7 @@ package org.keycloak.adapters;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.ServiceUrlConstants;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.util.EnvUtil;
@@ -66,7 +67,7 @@ public class KeycloakDeploymentBuilder {
         String logoutUrl = serverBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_LOGOUT_PATH).build(adapterConfig.getRealm()).toString();
         String accountUrl = serverBuilder.clone().path(ServiceUrlConstants.ACCOUNT_SERVICE_PATH).build(adapterConfig.getRealm()).toString();
 
-        deployment.setAuthUrl(KeycloakUriBuilder.fromUri(authUrl).queryParam("client_id", deployment.getResourceName()));
+        deployment.setAuthUrl(KeycloakUriBuilder.fromUri(authUrl).queryParam(OAuth2Constants.CLIENT_ID, deployment.getResourceName()));
         deployment.setCodeUrl(tokenUrl);
         deployment.setRefreshUrl(refreshUrl);
         deployment.setLogoutUrl(KeycloakUriBuilder.fromUri(logoutUrl));

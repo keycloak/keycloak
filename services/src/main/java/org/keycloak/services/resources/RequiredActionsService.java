@@ -23,6 +23,7 @@ package org.keycloak.services.resources;
 
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.login.LoginForms;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
@@ -241,10 +242,10 @@ public class RequiredActionsService {
     public Response sendPasswordReset(final MultivaluedMap<String, String> formData) {
         String username = formData.getFirst("username");
 
-        String scopeParam = uriInfo.getQueryParameters().getFirst("scope");
-        String state = uriInfo.getQueryParameters().getFirst("state");
-        String redirect = uriInfo.getQueryParameters().getFirst("redirect_uri");
-        String clientId = uriInfo.getQueryParameters().getFirst("client_id");
+        String scopeParam = uriInfo.getQueryParameters().getFirst(OAuth2Constants.SCOPE);
+        String state = uriInfo.getQueryParameters().getFirst(OAuth2Constants.STATE);
+        String redirect = uriInfo.getQueryParameters().getFirst(OAuth2Constants.REDIRECT_URI);
+        String clientId = uriInfo.getQueryParameters().getFirst(OAuth2Constants.CLIENT_ID);
 
         ClientModel client = realm.findClient(clientId);
         if (client == null) {
@@ -283,7 +284,7 @@ public class RequiredActionsService {
     }
 
     private AccessCodeEntry getAccessCodeEntry(RequiredAction requiredAction) {
-        String code = uriInfo.getQueryParameters().getFirst("code");
+        String code = uriInfo.getQueryParameters().getFirst(OAuth2Constants.CODE);
         if (code == null) {
             logger.debug("getAccessCodeEntry code as not in query param");
             return null;

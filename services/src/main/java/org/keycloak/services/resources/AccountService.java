@@ -23,6 +23,7 @@ package org.keycloak.services.resources;
 
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.account.Account;
 import org.keycloak.account.AccountLoader;
 import org.keycloak.account.AccountPages;
@@ -291,7 +292,7 @@ public class AccountService {
                     return Flows.social(socialRequestManager, realm, uriInfo, provider)
                             .putClientAttribute("realm", realm.getName())
                             .putClientAttribute("clientId", Constants.ACCOUNT_MANAGEMENT_APP)
-                            .putClientAttribute("state", UUID.randomUUID().toString()).putClientAttribute("redirectUri", redirectUri)
+                            .putClientAttribute(OAuth2Constants.STATE, UUID.randomUUID().toString()).putClientAttribute("redirectUri", redirectUri)
                             .putClientAttribute("userId", user.getId())
                             .redirectToSocialProvider();
                 } catch (SocialProviderException spe) {

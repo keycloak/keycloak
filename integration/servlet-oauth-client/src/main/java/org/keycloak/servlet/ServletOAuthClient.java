@@ -2,6 +2,7 @@ package org.keycloak.servlet;
 
 import org.apache.http.client.HttpClient;
 import org.keycloak.AbstractOAuthClient;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.HttpClientBuilder;
 import org.keycloak.adapters.ServerRequest;
 import org.keycloak.jose.jws.JWSInput;
@@ -75,11 +76,11 @@ public class ServletOAuthClient extends AbstractOAuthClient {
         String state = getStateCode();
 
         KeycloakUriBuilder uriBuilder =  KeycloakUriBuilder.fromUri(authUrl)
-                .queryParam("client_id", clientId)
-                .queryParam("redirect_uri", redirectUri)
-                .queryParam("state", state);
+                .queryParam(OAuth2Constants.CLIENT_ID, clientId)
+                .queryParam(OAuth2Constants.REDIRECT_URI, redirectUri)
+                .queryParam(OAuth2Constants.STATE, state);
         if (scope != null) {
-            uriBuilder.queryParam("scope", scope);
+            uriBuilder.queryParam(OAuth2Constants.SCOPE, scope);
         }
         URI url = uriBuilder.build();
 
@@ -111,7 +112,7 @@ public class ServletOAuthClient extends AbstractOAuthClient {
             int eq = param.indexOf('=');
             if (eq == -1) continue;
             String name = param.substring(0, eq);
-            if (!name.equals("code")) continue;
+            if (!name.equals(OAuth2Constants.CODE)) continue;
             return param.substring(eq + 1);
         }
         return null;
@@ -128,14 +129,14 @@ public class ServletOAuthClient extends AbstractOAuthClient {
      * @throws org.keycloak.adapters.ServerRequest.HttpFailure
      */
     public AccessTokenResponse getBearerToken(HttpServletRequest request) throws IOException, ServerRequest.HttpFailure {
-        String error = request.getParameter("error");
+        String error = request.getParameter(OAuth2Constants.ERROR);
         if (error != null) throw new IOException("OAuth error: " + error);
         String redirectUri = request.getRequestURL().append("?").append(request.getQueryString()).toString();
         String stateCookie = getCookieValue(stateCookieName, request);
         if (stateCookie == null) throw new IOException("state cookie not set");
         // we can call get parameter as this should be a redirect
-        String state = request.getParameter("state");
-        String code = request.getParameter("code");
+        String state = request.getParameter(OAuth2Constants.STATE);
+        String code = request.getParameter(OAuth2Constants.CODE);
 
         if (state == null) throw new IOException("state parameter was null");
         if (!state.equals(stateCookie)) {

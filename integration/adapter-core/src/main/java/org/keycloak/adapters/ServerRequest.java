@@ -7,6 +7,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicNameValuePair;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.util.BasicAuthHelper;
@@ -57,9 +58,9 @@ public class ServerRequest {
     public static AccessTokenResponse invokeAccessCodeToToken(HttpClient client, boolean publicClient, String code, String codeUrl, String redirectUri, String client_id, Map<String, String> credentials) throws IOException, HttpFailure {
         List<NameValuePair> formparams = new ArrayList<NameValuePair>();
         redirectUri = stripOauthParametersFromRedirect(redirectUri);
-        formparams.add(new BasicNameValuePair("grant_type", "authorization_code"));
-        formparams.add(new BasicNameValuePair("code", code));
-        formparams.add(new BasicNameValuePair("redirect_uri", redirectUri));
+        formparams.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, "authorization_code"));
+        formparams.add(new BasicNameValuePair(OAuth2Constants.CODE, code));
+        formparams.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, redirectUri));
         HttpResponse response = null;
         HttpPost post = new HttpPost(codeUrl);
         if (!publicClient) {
@@ -69,7 +70,7 @@ public class ServerRequest {
                 post.setHeader("Authorization", authorization);
             }
         } else {
-            formparams.add(new BasicNameValuePair("client_id", client_id));
+            formparams.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, client_id));
         }
 
         UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");
@@ -120,8 +121,8 @@ public class ServerRequest {
         for (Map.Entry<String, String> entry : credentials.entrySet()) {
             formparams.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
         }
-        formparams.add(new BasicNameValuePair("grant_type", "refresh_token"));
-        formparams.add(new BasicNameValuePair("refresh_token", refreshToken));
+        formparams.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.REFRESH_TOKEN));
+        formparams.add(new BasicNameValuePair(OAuth2Constants.REFRESH_TOKEN, refreshToken));
         HttpResponse response = null;
         HttpPost post = new HttpPost(refreshUrl);
         if (!publicClient) {
@@ -131,7 +132,7 @@ public class ServerRequest {
                 post.setHeader("Authorization", authorization);
             }
         } else {
-            formparams.add(new BasicNameValuePair("client_id", client_id));
+            formparams.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, client_id));
         }
 
         UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");
@@ -190,8 +191,8 @@ public class ServerRequest {
 
     protected static String stripOauthParametersFromRedirect(String uri) {
         KeycloakUriBuilder builder = KeycloakUriBuilder.fromUri(uri)
-                .replaceQueryParam("code", null)
-                .replaceQueryParam("state", null);
+                .replaceQueryParam(OAuth2Constants.CODE, null)
+                .replaceQueryParam(OAuth2Constants.STATE, null);
         return builder.build().toString();
     }
 

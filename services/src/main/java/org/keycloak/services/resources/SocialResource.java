@@ -23,6 +23,7 @@ package org.keycloak.services.resources;
 
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -141,11 +142,11 @@ public class SocialResource {
             socialUser = provider.processCallback(config, callback);
         } catch (SocialAccessDeniedException e) {
             MultivaluedHashMap<String, String> queryParms = new MultivaluedHashMap<String, String>();
-            queryParms.putSingle("client_id", requestData.getClientAttribute("clientId"));
-            queryParms.putSingle("state", requestData.getClientAttribute("state"));
-            queryParms.putSingle("scope", requestData.getClientAttribute("scope"));
-            queryParms.putSingle("redirect_uri", requestData.getClientAttribute("redirectUri"));
-            queryParms.putSingle("response_type", requestData.getClientAttribute("responseType"));
+            queryParms.putSingle(OAuth2Constants.CLIENT_ID, requestData.getClientAttribute("clientId"));
+            queryParms.putSingle(OAuth2Constants.STATE, requestData.getClientAttribute(OAuth2Constants.STATE));
+            queryParms.putSingle(OAuth2Constants.SCOPE, requestData.getClientAttribute(OAuth2Constants.SCOPE));
+            queryParms.putSingle(OAuth2Constants.REDIRECT_URI, requestData.getClientAttribute("redirectUri"));
+            queryParms.putSingle(OAuth2Constants.RESPONSE_TYPE, requestData.getClientAttribute("responseType"));
             return  Flows.forms(realm, request, uriInfo).setQueryParams(queryParms).setWarning("Access denied").createLogin();
         } catch (SocialProviderException e) {
             logger.warn("Failed to process social callback", e);
@@ -204,8 +205,8 @@ public class SocialResource {
             return oauth.forwardToSecurityFailure("Your account is not enabled.");
         }
 
-        String scope = requestData.getClientAttributes().get("scope");
-        String state = requestData.getClientAttributes().get("state");
+        String scope = requestData.getClientAttributes().get(OAuth2Constants.SCOPE);
+        String state = requestData.getClientAttributes().get(OAuth2Constants.STATE);
         String redirectUri = requestData.getClientAttributes().get("redirectUri");
 
         return oauth.processAccessCode(scope, state, redirectUri, client, user);
@@ -214,7 +215,7 @@ public class SocialResource {
     @GET
     @Path("{realm}/login")
     public Response redirectToProviderAuth(@PathParam("realm") final String realmName,
-                                           @QueryParam("provider_id") final String providerId, @QueryParam("client_id") final String clientId,
+                                           @QueryParam("provider_id") final String providerId, @QueryParam(OAuth2Constants.CLIENT_ID) final String clientId,
                                            @QueryParam("scope") final String scope, @QueryParam("state") final String state,
                                            @QueryParam("redirect_uri") String redirectUri, @QueryParam("response_type") String responseType) {
         RealmManager realmManager = new RealmManager(session);
@@ -243,8 +244,8 @@ public class SocialResource {
         try {
             return Flows.social(socialRequestManager, realm, uriInfo, provider)
                     .putClientAttribute("realm", realmName)
-                    .putClientAttribute("clientId", clientId).putClientAttribute("scope", scope)
-                    .putClientAttribute("state", state).putClientAttribute("redirectUri", redirectUri)
+                    .putClientAttribute("clientId", clientId).putClientAttribute(OAuth2Constants.SCOPE, scope)
+                    .putClientAttribute(OAuth2Constants.STATE, state).putClientAttribute("redirectUri", redirectUri)
                     .putClientAttribute("responseType", responseType).redirectToSocialProvider();
         } catch (Throwable t) {
             return Flows.forms(realm, request, uriInfo).setError("Failed to redirect to social auth").createErrorPage();
@@ -253,8 +254,8 @@ public class SocialResource {
 
     private RequestDetails getRequestDetails(Map<String, String[]> queryParams) {
         String requestId = null;
-        if (queryParams.containsKey("state")) {
-            requestId =  queryParams.get("state")[0];
+        if (queryParams.containsKey(OAuth2Constants.STATE)) {
+            requestId =  queryParams.get(OAuth2Constants.STATE)[0];
         } else if (queryParams.containsKey("oauth_token")) {
             requestId = queryParams.get("oauth_token")[0];
         } else if (queryParams.containsKey("denied")) {

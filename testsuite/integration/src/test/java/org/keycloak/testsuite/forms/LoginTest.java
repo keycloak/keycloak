@@ -25,6 +25,7 @@ import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
@@ -101,7 +102,7 @@ public class LoginTest {
         loginPage.login("login-test", "password");
         
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.getCurrentQuery().get("code"));
+        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
     }
 
     @Test
@@ -110,7 +111,7 @@ public class LoginTest {
         loginPage.login("login@test.com", "password");
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.getCurrentQuery().get("code"));
+        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
     }
 
     @Test
@@ -120,7 +121,7 @@ public class LoginTest {
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        Assert.assertEquals("access_denied", oauth.getCurrentQuery().get("error"));
+        Assert.assertEquals("access_denied", oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
     }
 
 }

@@ -25,6 +25,7 @@ import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
@@ -139,7 +140,7 @@ public class AdapterTest {
         // test logout
 
         String logoutUri = UriBuilder.fromUri("http://localhost:8081/auth/rest/realms/demo/tokens/logout")
-                .queryParam("redirect_uri", "http://localhost:8081/customer-portal").build().toString();
+                .queryParam(OAuth2Constants.REDIRECT_URI, "http://localhost:8081/customer-portal").build().toString();
         driver.navigate().to(logoutUri);
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
         driver.navigate().to("http://localhost:8081/product-portal");

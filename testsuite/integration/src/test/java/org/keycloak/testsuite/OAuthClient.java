@@ -33,6 +33,7 @@ import org.apache.http.message.BasicNameValuePair;
 import org.jboss.resteasy.security.PemUtils;
 import org.json.JSONObject;
 import org.junit.Assert;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
 import org.keycloak.jose.jws.JWSInput;
@@ -64,7 +65,7 @@ public class OAuthClient {
 
     private String realm = "test";
 
-    private String responseType = "code";
+    private String responseType = OAuth2Constants.CODE;
 
     private String grantType = "authorization_code";
 
@@ -111,20 +112,20 @@ public class OAuthClient {
 
         List<NameValuePair> parameters = new LinkedList<NameValuePair>();
         if (grantType != null) {
-            parameters.add(new BasicNameValuePair("grant_type", grantType));
+            parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, grantType));
         }
         if (code != null) {
-            parameters.add(new BasicNameValuePair("code", code));
+            parameters.add(new BasicNameValuePair(OAuth2Constants.CODE, code));
         }
         if (redirectUri != null) {
-            parameters.add(new BasicNameValuePair("redirect_uri", redirectUri));
+            parameters.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, redirectUri));
         }
         if (clientId != null && password != null) {
             String authorization = BasicAuthHelper.createHeader(clientId, password);
             post.setHeader("Authorization", authorization);
         }
         else if (clientId != null) {
-            parameters.add(new BasicNameValuePair("client_id", clientId));
+            parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, clientId));
         }
 
         UrlEncodedFormEntity formEntity = null;
@@ -148,17 +149,17 @@ public class OAuthClient {
 
         List<NameValuePair> parameters = new LinkedList<NameValuePair>();
         if (grantType != null) {
-            parameters.add(new BasicNameValuePair("grant_type", grantType));
+            parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, grantType));
         }
         if (refreshToken != null) {
-            parameters.add(new BasicNameValuePair("refresh_token", refreshToken));
+            parameters.add(new BasicNameValuePair(OAuth2Constants.REFRESH_TOKEN, refreshToken));
         }
         if (clientId != null && password != null) {
             String authorization = BasicAuthHelper.createHeader(clientId, password);
             post.setHeader("Authorization", authorization);
         }
         else if (clientId != null) {
-            parameters.add(new BasicNameValuePair("client_id", clientId));
+            parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, clientId));
         }
 
         UrlEncodedFormEntity formEntity = null;
@@ -234,7 +235,7 @@ public class OAuthClient {
     public void openLogout() {
         UriBuilder b = UriBuilder.fromUri(baseUrl + "/realms/" + realm + "/tokens/logout");
         if (redirectUri != null) {
-            b.queryParam("redirect_uri", redirectUri);
+            b.queryParam(OAuth2Constants.REDIRECT_URI, redirectUri);
         }
         driver.navigate().to(b.build().toString());
     }
@@ -246,16 +247,16 @@ public class OAuthClient {
     public String getLoginFormUrl() {
         UriBuilder b = UriBuilder.fromUri(baseUrl + "/realms/" + realm + "/tokens/login");
         if (responseType != null) {
-            b.queryParam("response_type", responseType);
+            b.queryParam(OAuth2Constants.RESPONSE_TYPE, responseType);
         }
         if (clientId != null) {
-            b.queryParam("client_id", clientId);
+            b.queryParam(OAuth2Constants.CLIENT_ID, clientId);
         }
         if (redirectUri != null) {
-            b.queryParam("redirect_uri", redirectUri);
+            b.queryParam(OAuth2Constants.REDIRECT_URI, redirectUri);
         }
         if (state != null) {
-            b.queryParam("state", state);
+            b.queryParam(OAuth2Constants.STATE, state);
         }
         return b.build().toString();
     }
@@ -312,9 +313,9 @@ public class OAuthClient {
 
         public AuthorizationCodeResponse(OAuthClient client) {
             isRedirected = client.getCurrentRequest().equals(client.getRedirectUri());
-            code = client.getCurrentQuery().get("code");
-            state = client.getCurrentQuery().get("state");
-            error = client.getCurrentQuery().get("error");
+            code = client.getCurrentQuery().get(OAuth2Constants.CODE);
+            state = client.getCurrentQuery().get(OAuth2Constants.STATE);
+            error = client.getCurrentQuery().get(OAuth2Constants.ERROR);
         }
 
         public boolean isRedirected() {
@@ -358,11 +359,11 @@ public class OAuthClient {
                 tokenType = responseJson.getString("token_type");
                 expiresIn = responseJson.getInt("expires_in");
 
-                if (responseJson.has("refresh_token")) {
-                    refreshToken = responseJson.getString("refresh_token");
+                if (responseJson.has(OAuth2Constants.REFRESH_TOKEN)) {
+                    refreshToken = responseJson.getString(OAuth2Constants.REFRESH_TOKEN);
                 }
             } else {
-                error = responseJson.getString("error");
+                error = responseJson.getString(OAuth2Constants.ERROR);
             }
         }
 

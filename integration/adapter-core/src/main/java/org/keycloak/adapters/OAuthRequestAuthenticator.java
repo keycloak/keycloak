@@ -1,6 +1,7 @@
 package org.keycloak.adapters;
 
 import org.jboss.logging.Logger;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
 import org.keycloak.jose.jws.JWSInput;
@@ -99,11 +100,11 @@ public abstract class OAuthRequestAuthenticator {
     }
 
     protected String getError() {
-        return getQueryParamValue("error");
+        return getQueryParamValue(OAuth2Constants.ERROR);
     }
 
     protected String getCode() {
-        return getQueryParamValue("code");
+        return getQueryParamValue(OAuth2Constants.CODE);
     }
 
     protected String getRedirectUri(String state) {
@@ -120,9 +121,9 @@ public abstract class OAuthRequestAuthenticator {
             url = secureUrl.build().toString();
         }
         return deployment.getAuthUrl().clone()
-                .queryParam("client_id", deployment.getResourceName())
-                .queryParam("redirect_uri", url)
-                .queryParam("state", state)
+                .queryParam(OAuth2Constants.CLIENT_ID, deployment.getResourceName())
+                .queryParam(OAuth2Constants.REDIRECT_URI, url)
+                .queryParam(OAuth2Constants.STATE, state)
                 .queryParam("login", "true")
                 .build().toString();
     }
@@ -168,7 +169,7 @@ public abstract class OAuthRequestAuthenticator {
         facade.getResponse().resetCookie(deployment.getStateCookieName(), stateCookie.getPath());
         String stateCookieValue = getCookieValue(deployment.getStateCookieName());
 
-        String state = getQueryParamValue("state");
+        String state = getQueryParamValue(OAuth2Constants.STATE);
         if (state == null) {
             log.warn("state parameter was null");
             return challenge(400);
@@ -300,8 +301,8 @@ public abstract class OAuthRequestAuthenticator {
      */
     protected String stripOauthParametersFromRedirect() {
         KeycloakUriBuilder builder = KeycloakUriBuilder.fromUri(facade.getRequest().getURI())
-                .replaceQueryParam("code", null)
-                .replaceQueryParam("state", null);
+                .replaceQueryParam(OAuth2Constants.CODE, null)
+                .replaceQueryParam(OAuth2Constants.STATE, null);
         return builder.build().toString();
     }
 
