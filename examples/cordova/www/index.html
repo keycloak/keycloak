@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Authentication Example</title>
+
+    <script type="text/javascript" charset="utf-8" src="cordova.js"></script>
+    <script type="text/javascript" charset="utf-8" src="keycloak.js"></script>
+    <script type="text/javascript" charset="utf-8">
+        var keycloak = new Keycloak();
+
+        keycloak.onReady = updateState;
+        keycloak.onAuthSuccess = updateState;
+        keycloak.onAuthRefreshSuccess = updateState;
+        keycloak.onAuthLogout = updateState;
+
+        function updateState() {
+            console.debug('Updating state');
+
+            if (keycloak.authenticated) {
+                document.getElementById('authenticated').style.display = 'block';
+                document.getElementById('not-authenticated').style.display = 'none';
+
+                document.getElementById('subject').innerText = keycloak.subject;
+                document.getElementById('username').innerText = keycloak.idToken.preferred_username;
+                document.getElementById('tokenExpires').innerText = new Date(keycloak.tokenParsed.exp * 1000).toLocaleString();
+                document.getElementById('tokenRefreshExpires').innerText = new Date(keycloak.refreshTokenParsed.exp * 1000).toLocaleString();
+            } else {
+                document.getElementById('authenticated').style.display = 'none';
+                document.getElementById('not-authenticated').style.display = 'block';
+            }
+        }
+
+        document.addEventListener("deviceready", function() {
+            console.debug('Device ready');
+
+            keycloak.init('check-sso');
+        }, false);
+    </script>
+</head>
+<body>
+<div id="authenticated" style="display: none;">
+    <div>
+        <button onclick="keycloak.logout()">Log out</button>
+        <button onclick="keycloak.updateToken()">Refresh token</button>
+    </div>
+    <div>
+        <table>
+            <tr>
+                <td>Subject</td>
+                <td id="subject"></td>
+            </tr>
+            <tr>
+                <td>Username</td>
+                <td id="username"></td>
+            </tr>
+            <tr>
+                <td>Token expires</td>
+                <td id="tokenExpires"></td>
+            </tr>
+            <tr>
+                <td>Refresh token expires</td>
+                <td id="tokenRefreshExpires"></td>
+            </tr>
+        </table>
+    </div>
+</div>
+<div id="not-authenticated" style="display: none;">
+    <div>
+        <button onclick="keycloak.login()">Log in</button>
+    </div>
+    <div>
+        <p>Not authenticated</p>
+    </div>
+</div>
+</body>
+</html>
+

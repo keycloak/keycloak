@@ -52,6 +52,10 @@
             "roles": ["user"]
         },
         {
+            "client": "customer-portal-js",
+            "roles": ["user"]
+        },
+        {
             "client": "product-portal",
             "roles": ["user"]
         }

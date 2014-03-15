@@ -5,7 +5,8 @@
 </head>
 <body bgcolor="#E3F6CE">
 
-<p>Goto: <a href="#" onclick="keycloak.logout()">logout</a></p>
+<p>Goto: <a href="http://localhost:8080/product-portal">products</a> | <a href="#" onclick="keycloak.logout()">logout</a> | <a href="#" onclick="keycloak.accountManagement()">manage acct</a></p>
+
 User <b id="subject"></b> made this request.
 <p><b>User details (from <span id="profileType"></span>)</b></p>
 <p>Username: <span id="username"></span></p>
@@ -18,16 +19,11 @@ User <b id="subject"></b> made this request.
 <div id="customers"></div>
 
 <script>
-    var keycloak = Keycloak({
-        clientId: 'customer-portal-js',
-        realm: 'demo',
-        onload: 'login-required'
-    });
+    var keycloak = Keycloak('../keycloak.json');
 
     var loadData = function () {
         document.getElementById('subject').innerText = keycloak.subject;
 
-        console.debug(keycloak.idToken);
         if (keycloak.idToken) {
             document.getElementById('profileType').innerText = 'IDToken';
             document.getElementById('username').innerText = keycloak.idToken.preferred_username;
@@ -74,14 +70,14 @@ User <b id="subject"></b> made this request.
 
     var loadFailure = function () {
         document.getElementById('customers').innerHTML = '<b>Failed to load data.  Check console log</b>';
-
     };
 
     var reloadData = function () {
-        keycloak.onValidAccessToken(loadData, loadFailure);
+        keycloak.updateToken(10).success(loadData).error(loadFailure);
     }
 
-    keycloak.init(loadData, loadFailure);
+    keycloak.onAuthSuccess = loadData;
+    keycloak.init('login-required');
 
 </script>
 

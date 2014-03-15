@@ -14,14 +14,6 @@
     <name>Customer Portal CLI</name>
     <description/>
 
-    <repositories>
-        <repository>
-            <id>jboss</id>
-            <name>jboss repo</name>
-            <url>http://repository.jboss.org/nexus/content/groups/public/</url>
-        </repository>
-    </repositories>
-
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -32,6 +24,14 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.jboss.as.plugins</groupId>
+                <artifactId>jboss-as-maven-plugin</artifactId>
+                <version>7.4.Final</version>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-deploy-plugin</artifactId>
