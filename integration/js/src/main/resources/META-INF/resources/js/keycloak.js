@@ -1,58 +1,108 @@
-var Keycloak = function (options) {
-    options = options || {};
-
+var Keycloak = function (config) {
     if (!(this instanceof Keycloak)) {
-        return new Keycloak(options);
+        return new Keycloak(config);
     }
 
     var kc = this;
+    kc.authenticated = false;
 
-    if (!options.url) {
-        var scripts = document.getElementsByTagName('script');
-        for (var i = 0; i < scripts.length; i++) {
-            if (scripts[i].src.match(/.*keycloak\.js/)) {
-                options.url = scripts[i].src.substr(0, scripts[i].src.indexOf('/auth/js/keycloak.js'));
-                break;
+    var configPromise = createPromise();
+    configPromise.name = 'config';
+
+    if (!config) {
+        loadConfig('keycloak.json', configPromise);
+    } else if (typeof config === 'string') {
+        loadConfig(config, configPromise);
+    } else {
+        if (!config['url']) {
+            var scripts = document.getElementsByTagName('script');
+            for (var i = 0; i < scripts.length; i++) {
+                if (scripts[i].src.match(/.*keycloak\.js/)) {
+                    config.url = scripts[i].src.substr(0, scripts[i].src.indexOf('/js/keycloak.js'));
+                    break;
+                }
             }
         }
-    }
 
-    if (!options.url) {
-        throw 'url missing';
-    }
-
-    if (!options.realm) {
-        throw 'realm missing';
-    }
-
-    if (!options.clientId) {
-        throw 'clientId missing';
-    }
-
-    kc.init = function (successCallback, errorCallback) {
-        if (window.oauth.callback) {
-            processCallback(successCallback, errorCallback);
-        } else if (options.token) {
-            kc.setToken(options.token, successCallback);
-        } else if (options.onload) {
-            switch (options.onload) {
-                case 'login-required' :
-                    window.location = kc.createLoginUrl(true);
-                    break;
-                case 'check-sso' :
-                    window.location = kc.createLoginUrl(false);
-                    break;
-            }
+        if (!config.realm) {
+            throw 'realm missing';
         }
+
+        if (!config.clientId) {
+            throw 'clientId missing';
+        }
+
+        kc.authServerUrl = config.url;
+        kc.realm = config.realm;
+        kc.clientId = config.clientId;
+
+        configPromise.setSuccess();
     }
 
-    kc.login = function () {
-        window.location.href = kc.createLoginUrl(true);
+    kc.init = function (init) {
+        var promise = createPromise();
+        var callback = parseCallback(window.location.href);
+
+        function processInit() {
+            if (callback) {
+                window.history.replaceState({}, null, location.protocol + '//' + location.host + location.pathname + (callback.fragment ? '#' + callback.fragment : ''));
+                processCallback(callback, promise);
+                return;
+            } else if (init) {
+                if (init.code || init.error) {
+                    processCallback(init, promise);
+                    return;
+                } else if (init.token || init.refreshToken) {
+                    setToken(init.token, init.refreshToken);
+                } else if (init == 'login-required') {
+                    kc.login();
+                    return;
+                } else if (init == 'check-sso') {
+                    window.location = kc.createLoginUrl() + '&prompt=none';
+                    return;
+                }
+            }
+
+            promise.setSuccess(false);
+        }
+
+        configPromise.promise.success(processInit);
+
+        return promise.promise;
     }
 
-    kc.logout = function () {
-        kc.setToken(undefined);
-        window.location.href = kc.createLogoutUrl();
+    kc.login = function (redirectUri) {
+        window.location.href = kc.createLoginUrl(redirectUri);
+    }
+
+    kc.createLoginUrl = function(redirectUri) {
+        var state = createUUID();
+
+        sessionStorage.oauthState = state;
+        var url = getRealmUrl()
+            + '/tokens/login'
+            + '?client_id=' + encodeURIComponent(kc.clientId)
+            + '&redirect_uri=' + getEncodedRedirectUri(redirectUri)
+            + '&state=' + encodeURIComponent(state)
+            + '&response_type=code';
+
+        return url;
+    }
+
+    kc.logout = function(redirectUri) {
+        setToken(null, null);
+        window.location.href = kc.createLogoutUrl(redirectUri);
+    }
+
+    kc.clearToken = function() {
+        setToken(null, null);
+    }
+
+    kc.createLogoutUrl = function(redirectUri) {
+        var url = getRealmUrl()
+            + '/tokens/logout'
+            + '?redirect_uri=' + getEncodedRedirectUri(redirectUri);
+        return url;
     }
 
     kc.hasRealmRole = function (role) {
@@ -60,122 +110,131 @@ var Keycloak = function (options) {
         return access && access.roles.indexOf(role) >= 0 || false;
     }
 
-    kc.hasResourceRole = function (role, resource) {
+    kc.hasResourceRole = function(role, resource) {
         if (!kc.resourceAccess) {
             return false;
         }
 
-        var access = kc.resourceAccess[resource || options.clientId];
+        var access = kc.resourceAccess[resource || kc.clientId];
         return access && access.roles.indexOf(role) >= 0 || false;
     }
 
-    kc.loadUserProfile = function (success, error) {
-        var url = kc.getRealmUrl() + '/account';
+    kc.loadUserProfile = function() {
+        var url = getRealmUrl() + '/account';
         var req = new XMLHttpRequest();
         req.open('GET', url, true);
         req.setRequestHeader('Accept', 'application/json');
         req.setRequestHeader('Authorization', 'bearer ' + kc.token);
 
+        var promise = createPromise();
+
         req.onreadystatechange = function () {
             if (req.readyState == 4) {
                 if (req.status == 200) {
                     kc.profile = JSON.parse(req.responseText);
-                    success && success(kc.profile)
+                    promise.setSuccess(kc.profile);
                 } else {
-                    var response = { status: req.status, statusText: req.status };
-                    if (req.responseText) {
-                        response.data = JSON.parse(req.responseText);
-                    }
-                    error && error(response);
+                    promise.setError();
                 }
             }
         }
 
         req.send();
+
+        return promise.promise;
     }
 
-    /**
-     * checks to make sure token is valid.  If it is, it calls successCallback with no parameters.
-     * If it isn't valid, it tries to refresh the access token.  On successful refresh, it calls successCallback.
-     *
-     * @param successCallback
-     * @param errorCallback
-     */
-    kc.onValidAccessToken = function(successCallback, errorCallback) {
-        if (!kc.tokenParsed) {
-            console.log('no token');
-            errorCallback();
-            return;
+    kc.refreshAccessToken = function(minValidity) {
+        if (!kc.tokenParsed || !kc.refreshToken) {
+            throw 'Not authenticated';
         }
-        var currTime = new Date().getTime() / 1000;
-        if (currTime > kc.tokenParsed['exp']) {
-            if (!kc.refreshToken) {
-                console.log('no refresh token');
-                errorCallback();
-                return;
+
+        var promise = createPromise();
+
+        if (minValidity) {
+            var expiresIn = kc.tokenParsed['exp'] - (new Date().getTime() / 1000);
+            if (expiresIn > minValidity) {
+                promise.setSuccess(false);
+                return promise.promise;
             }
-            console.log('calling refresh');
-            var params = 'grant_type=refresh_token&' + 'refresh_token=' + kc.refreshToken;
-            var url = kc.getRealmUrl() + '/tokens/refresh';
-
-            var req = new XMLHttpRequest();
-            req.open('POST', url, true, options.clientId, options.clientSecret);
-            req.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-
-            req.onreadystatechange = function () {
-                if (req.readyState == 4) {
-                    if (req.status == 200) {
-                        console.log('Refresh Success');
-                        var tokenResponse = JSON.parse(req.responseText);
-                        kc.refreshToken = tokenResponse['refresh_token'];
-                        kc.setToken(tokenResponse['access_token'], successCallback);
-                    } else {
-                        console.log('error on refresh HTTP invoke: ' + req.status);
-                        errorCallback && errorCallback({ authenticated: false, status: req.status, statusText: req.statusText });
-                    }
-                }
-            };
-            req.send(params);
-        } else {
-            console.log('Token is still valid');
-            successCallback();
         }
 
+        var params = 'grant_type=refresh_token&' + 'refresh_token=' + kc.refreshToken;
+        var url = getRealmUrl() + '/tokens/refresh';
+
+        var req = new XMLHttpRequest();
+        req.open('POST', url, true);
+        req.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+
+        if (kc.clientId && kc.clientSecret) {
+            req.setRequestHeader('Authorization', 'Basic ' + btoa(kc.clientId + ':' + kc.clientSecret));
+        } else {
+            params += '&client_id=' + encodeURIComponent(kc.clientId);
+        }
+
+        req.onreadystatechange = function() {
+            if (req.readyState == 4) {
+                if (req.status == 200) {
+                    var tokenResponse = JSON.parse(req.responseText);
+                    setToken(tokenResponse['access_token'], tokenResponse['refresh_token']);
+                    kc.onAuthRefreshSuccess && kc.onAuthRefreshSuccess();
+                    promise.setSuccess(true);
+                } else {
+                    kc.onAuthRefreshError && kc.onAuthRefreshError();
+                    promise.setError();
+                }
+            }
+        };
+
+        req.send(params);
+
+        return promise.promise;
     }
 
-    kc.getRealmUrl = function() {
-        return options.url + '/auth/rest/realms/' + encodeURIComponent(options.realm);
+    kc.processCallback = function(url) {
+        var callback = parseCallback(url);
+        if (callback) {
+            var promise = createPromise();
+            processCallback(callback, promise);
+            return promise;
+        }
     }
 
-    function processCallback(successCallback, errorCallback) {
-        var code = window.oauth.code;
-        var error = window.oauth.error;
-        var prompt = window.oauth.prompt;
+    function getRealmUrl() {
+        return kc.authServerUrl + '/rest/realms/' + encodeURIComponent(kc.realm);
+    }
+
+    function processCallback(oauth, promise) {
+        var code = oauth.code;
+        var error = oauth.error;
+        var prompt = oauth.prompt;
 
         if (code) {
             var params = 'code=' + code;
-            var url = kc.getRealmUrl() + '/tokens/access/codes';
+            var url = getRealmUrl() + '/tokens/access/codes';
 
             var req = new XMLHttpRequest();
             req.open('POST', url, true);
             req.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
 
-            if (options.clientId && options.clientSecret) {
-                req.setRequestHeader('Authorization', 'Basic ' + btoa(options.clientId + ':' + options.clientSecret));
+            if (kc.clientId && kc.clientSecret) {
+                req.setRequestHeader('Authorization', 'Basic ' + btoa(kc.clientId + ':' + kc.clientSecret));
             } else {
-                params += '&client_id=' + encodeURIComponent(options.clientId);
+                params += '&client_id=' + encodeURIComponent(kc.clientId);
             }
 
             req.withCredentials = true;
 
-            req.onreadystatechange = function () {
+            req.onreadystatechange = function() {
                 if (req.readyState == 4) {
                     if (req.status == 200) {
                         var tokenResponse = JSON.parse(req.responseText);
-                        kc.refreshToken = tokenResponse['refresh_token'];
-                        kc.setToken(tokenResponse['access_token'], successCallback);
+                        setToken(tokenResponse['access_token'], tokenResponse['refresh_token']);
+                        kc.onAuthSuccess && kc.onAuthSuccess();
+                        promise.setSuccess(true);
                     } else {
-                        errorCallback && errorCallback({ authenticated: false, status: req.status, statusText: req.statusText });
+                        kc.onAuthError && kc.onAuthError();
+                        promise.setError();
                     }
                 }
             };
@@ -183,16 +242,38 @@ var Keycloak = function (options) {
             req.send(params);
         } else if (error) {
             if (prompt != 'none') {
-                setTimeout(function() {
-                    errorCallback && errorCallback({  authenticated: false, error: error })
-                }, 0);
+                kc.onAuthError && kc.onAuthError();
+                promise.setError();
             }
         }
     }
 
-    kc.setToken = function(token, successCallback) {
+    function loadConfig(url, configPromise) {
+        var req = new XMLHttpRequest();
+        req.open('GET', url, true);
+        req.setRequestHeader('Accept', 'application/json');
+
+        req.onreadystatechange = function () {
+            if (req.readyState == 4) {
+                if (req.status == 200) {
+                    var config = JSON.parse(req.responseText);
+
+                    kc.authServerUrl = config['auth-server-url'];
+                    kc.realm = config['realm'];
+                    kc.clientId = config['resource'];
+
+                    configPromise.setSuccess();
+                } else {
+                    configPromise.setError();
+                }
+            }
+        };
+
+        req.send();
+    }
+
+    function setToken(token, refreshToken) {
         if (token) {
-            window.oauth.token = token;
             kc.token = token;
             kc.tokenParsed = JSON.parse(atob(token.split('.')[1]));
             kc.authenticated = true;
@@ -209,45 +290,32 @@ var Keycloak = function (options) {
                     kc.idToken[n] = kc.tokenParsed[n];
                 }
             }
-
-            setTimeout(function() {
-                successCallback && successCallback({ authenticated: kc.authenticated, subject: kc.subject });
-            }, 0);
         } else {
-            delete window.oauth.token;
             delete kc.token;
+            delete kc.tokenParsed;
+            delete kc.subject;
+            delete kc.realmAccess;
+            delete kc.resourceAccess;
+            delete kc.idToken;
+
+            kc.authenticated = false;
+        }
+
+        if (refreshToken) {
+            kc.refreshToken = refreshToken;
+            kc.refreshTokenParsed = JSON.parse(atob(refreshToken.split('.')[1]));
+        } else {
+            delete kc.refreshToken;
+            delete kc.refreshTokenParsed;
         }
     }
 
-    kc.createLoginUrl = function(prompt) {
-        var state = createUUID();
-
-        sessionStorage.oauthState = state;
-        var url = kc.getRealmUrl()
-            + '/tokens/login'
-            + '?client_id=' + encodeURIComponent(options.clientId)
-            + '&redirect_uri=' + getEncodedRedirectUri()
-            + '&state=' + encodeURIComponent(state)
-            + '&response_type=code';
-
-        if (prompt == false) {
-            url += '&prompt=none';
-        }
-
-        return url;
-    }
-
-    kc.createLogoutUrl = function() {
-        var url = kc.getRealmUrl()
-            + '/tokens/logout'
-            + '?redirect_uri=' + getEncodedRedirectUri();
-        return url;
-    }
-
-    function getEncodedRedirectUri() {
+    function getEncodedRedirectUri(redirectUri) {
         var url;
-        if (options.redirectUri) {
-            url = options.redirectUri;
+        if (redirectUri) {
+            url = redirectUri;
+        } else if (kc.redirectUri) {
+            url = kc.redirectUri;
         } else {
             url = (location.protocol + '//' + location.hostname + (location.port && (':' + location.port)) + location.pathname);
             if (location.hash) {
@@ -269,7 +337,81 @@ var Keycloak = function (options) {
         var uuid = s.join('');
         return uuid;
     }
-    
+
+    function parseCallback(url) {
+
+        if (url.indexOf('?') != -1) {
+            var oauth = {};
+
+            var params = url.split('?')[1].split('&');
+            for (var i = 0; i < params.length; i++) {
+                var p = params[i].split('=');
+                switch (decodeURIComponent(p[0])) {
+                    case 'code':
+                        oauth.code = p[1];
+                        break;
+                    case 'error':
+                        oauth.error = p[1];
+                        break;
+                    case 'state':
+                        oauth.state = decodeURIComponent(p[1]);
+                        break;
+                    case 'redirect_fragment':
+                        oauth.fragment = decodeURIComponent(p[1]);
+                        break;
+                    case 'prompt':
+                        oauth.prompt = p[1];
+                        break;
+                }
+            }
+
+            if (oauth.state && oauth.state == sessionStorage.oauthState) {
+                delete sessionStorage.oauthState;
+                return oauth;
+            }
+        }
+    }
+
+    function createPromise() {
+        var p = {
+            setSuccess: function(result) {
+                p.success = true;
+                p.result = result;
+                if (p.successCallback) {
+                    p.successCallback(result);
+                }
+            },
+
+            setError: function(result) {
+                p.error = true;
+                p.result = result;
+                if (p.errorCallback) {
+                    p.errorCallback(result);
+                }
+            },
+
+            promise: {
+                success: function(callback) {
+                    if (p.success) {
+                        callback(p.result);
+                    } else if (!p.error) {
+                        p.successCallback = callback;
+                    }
+                    return p.promise;
+                },
+                error: function(callback) {
+                    if (p.error) {
+                        callback(p.result);
+                    } else if (!p.success) {
+                        p.errorCallback = callback;
+                    }
+                    return p.promise;
+                }
+            }
+        }
+        return p;
+    }
+
     var idTokenProperties = [
         "name", 
         "given_name", 
@@ -299,44 +441,3 @@ var Keycloak = function (options) {
         "claims_locales"
     ]
 }
-
-window.oauth = (function () {
-    var oauth = {};
-
-    var params = window.location.search.substring(1).split('&');
-    for (var i = 0; i < params.length; i++) {
-        var p = params[i].split('=');
-        switch (decodeURIComponent(p[0])) {
-            case 'code':
-                oauth.code = p[1];
-                break;
-            case 'error':
-                oauth.error = p[1];
-                break;
-            case 'state':
-                oauth.state = decodeURIComponent(p[1]);
-                break;
-            case 'redirect_fragment':
-                oauth.fragment = decodeURIComponent(p[1]);
-                break;
-            case 'prompt':
-                oauth.prompt = p[1];
-                break;
-        }
-    }
-
-    if (oauth.state && oauth.state == sessionStorage.oauthState) {
-        oauth.callback = true;
-        delete sessionStorage.oauthState;
-    } else {
-        oauth.callback = false;
-    }
-
-    if (oauth.callback) {
-        window.history.replaceState({}, null, location.protocol + '//' + location.host + location.pathname + (oauth.fragment ? '#' + oauth.fragment : ''));
-    } else if (oauth.fragment) {
-        window.history.replaceState({}, null, location.protocol + '//' + location.host + location.pathname + (oauth.fragment ? '#' + oauth.fragment : ''));
-    }
-
-    return oauth;
-}());
