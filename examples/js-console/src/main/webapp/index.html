@@ -1,0 +1,97 @@
+<html>
+<head>
+    <script src="http://localhost:8080/auth/js/keycloak.js"></script>
+</head>
+<body>
+
+<div>
+    <button onclick="keycloak.login()">Login</button>
+    <button onclick="keycloak.logout()">Logout</button>
+    <button onclick="refreshToken()">Refresh Token</button>
+    <button onclick="refreshToken(30)">Refresh Token (if <30s validity)</button>
+    <button onclick="loadProfile()">Get Profile</button>
+    <button onclick="output(keycloak.tokenParsed)">Show Token</button>
+    <button onclick="output(keycloak.refreshTokenParsed)">Show Refresh Token</button>
+    <button onclick="showExpires()">Show Expires</button>
+    <button onclick="output(keycloak.idToken)">Show ID Token</button>
+    <button onclick="output(keycloak)">Show Details</button>
+    <button onclick="output(keycloak.createLoginUrl())">Show Login URL</button>
+    <button onclick="output(keycloak.createLogoutUrl())">Show Logout URL</button>
+</div>
+
+<h2>Result</h2>
+<pre style="background-color: #ddd; border: 1px solid #ccc; padding: 10px;" id="output"></pre>
+
+<h2>Events</h2>
+<pre style="background-color: #ddd; border: 1px solid #ccc; padding: 10px;" id="events"></pre>
+
+
+<script>
+    function loadProfile() {
+        keycloak.loadUserProfile().success(function(profile) {
+            output(profile);
+        }).error(function() {
+            output('Failed to load profile');
+        });
+    }
+
+    function refreshToken(minValidity) {
+        keycloak.refreshAccessToken(minValidity).success(function(refreshed) {
+            if (refreshed) {
+                output(keycloak.tokenParsed);
+            } else {
+                output('Token not refreshed, valid for ' + Math.round(keycloak.tokenParsed.exp - new Date().getTime() / 1000) + ' seconds');
+            }
+        }).error(function() {
+            output('Failed to refresh token');
+        });
+    }
+
+    function showExpires() {
+        var o = 'Token Expires:\t\t' + new Date(keycloak.tokenParsed.exp * 1000).toLocaleString() + '\n';
+        o += 'Token Expires in:\t' + Math.round(keycloak.tokenParsed.exp - new Date().getTime() / 1000) + ' seconds\n';
+
+        o += 'Refresh Token Expires:\t' + new Date(keycloak.refreshTokenParsed.exp * 1000).toLocaleString() + '\n';
+        o += 'Refresh Expires in:\t' + Math.round(keycloak.refreshTokenParsed.exp - new Date().getTime() / 1000) + ' seconds';
+        output(o);
+    }
+
+    function output(data) {
+        if (typeof data === 'object') {
+            data = JSON.stringify(data, null, '  ');
+        }
+        document.getElementById('output').innerText = data;
+    }
+
+    function event(event) {
+        var e = document.getElementById('events').innerText;
+        document.getElementById('events').innerText = new Date().toLocaleString() + "\t" + event + "\n" + e;
+    }
+
+    var keycloak = Keycloak();
+
+    keycloak.onAuthSuccess = function () {
+        event('Auth Success');
+    };
+
+    keycloak.onAuthError = function () {
+        event('Auth Error');
+    };
+
+    keycloak.onAuthRefreshSuccess = function () {
+        event('Auth Refresh Success');
+    };
+
+    keycloak.onAuthRefreshError = function () {
+        event('Auth Refresh Error');
+    };
+
+    keycloak.init().success(function(authenticated) {
+        output('Init Success (' + (authenticated ? 'Authenticated' : 'Not Authenticated') + ')');
+    }).error(function() {
+        output('Init Error');
+    });
+
+</script>
+</body>
+</html>
