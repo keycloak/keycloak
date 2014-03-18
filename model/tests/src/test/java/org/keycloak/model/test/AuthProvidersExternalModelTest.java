@@ -1,0 +1,185 @@
+package org.keycloak.model.test;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.ws.rs.core.MultivaluedHashMap;
+import javax.ws.rs.core.MultivaluedMap;
+
+import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.keycloak.models.AuthenticationLinkModel;
+import org.keycloak.models.AuthenticationProviderModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.PasswordPolicy;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.spi.authentication.AuthProviderConstants;
+import org.keycloak.spi.authentication.AuthenticationProviderException;
+import org.keycloak.spi.authentication.AuthenticationProviderManager;
+
+/**
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
+ */
+public class AuthProvidersExternalModelTest extends AbstractModelTest {
+
+    private RealmModel realm1;
+    private RealmModel realm2;
+    private AuthenticationManager am;
+
+    @Before
+    @Override
+    public void  before() throws Exception {
+        super.before();
+
+        // Create 2 realms and user in realm1
+        realm1 = realmManager.createRealm("realm1");
+        realm2 = realmManager.createRealm("realm2");
+        realm1.addRequiredCredential(CredentialRepresentation.PASSWORD);
+        realm2.addRequiredCredential(CredentialRepresentation.PASSWORD);
+
+        UserModel john = realm1.addUser("john");
+        john.setEnabled(true);
+        john.setFirstName("John");
+        john.setLastName("Doe");
+        john.setEmail("john@email.org");
+
+        UserCredentialModel credential = new UserCredentialModel();
+        credential.setType(CredentialRepresentation.PASSWORD);
+        credential.setValue("password");
+        realm1.updateCredential(john, credential);
+
+        am = new AuthenticationManager();
+    }
+
+
+    @Test
+    public void testExternalModelPasswordValidation() {
+        MultivaluedMap<String, String> formData = createFormData("john", "password");
+
+        // Authenticate user with realm1
+        Assert.assertEquals(AuthenticationManager.AuthenticationStatus.SUCCESS, am.authenticateForm(realm1, formData));
+
+        // Verify that user doesn't exists in realm2 and can't authenticate here
+        Assert.assertEquals(AuthenticationManager.AuthenticationStatus.INVALID_CREDENTIALS, am.authenticateForm(realm2, formData));
+        Assert.assertNull(realm2.getUser("john"));
+
+        // Add externalModel authenticationProvider into realm2 and point to realm1
+        setupAuthenticationProviders();
+
+        try {
+            // this is needed for externalModel provider
+            ResteasyProviderFactory.pushContext(KeycloakSession.class, identitySession);
+
+            // Authenticate john in realm2 and verify that now he exists here.
+            Assert.assertEquals(AuthenticationManager.AuthenticationStatus.SUCCESS, am.authenticateForm(realm2, formData));
+            UserModel john2 = realm2.getUser("john");
+            Assert.assertNotNull(john2);
+            Assert.assertEquals("john", john2.getLoginName());
+            Assert.assertEquals("John", john2.getFirstName());
+            Assert.assertEquals("Doe", john2.getLastName());
+            Assert.assertEquals("john@email.org", john2.getEmail());
+
+            // Verify link exists
+            Set<AuthenticationLinkModel> authLinks = realm2.getAuthenticationLinks(john2);
+            Assert.assertEquals(1, authLinks.size());
+            AuthenticationLinkModel authLink = authLinks.iterator().next();
+            Assert.assertEquals(authLink.getAuthProvider(), AuthProviderConstants.PROVIDER_NAME_EXTERNAL_MODEL);
+        } finally {
+            ResteasyProviderFactory.clearContextData();
+        }
+
+    }
+
+    @Test
+    public void testExternalModelPasswordUpdate() {
+        // Add externalModel authenticationProvider into realm2 and point to realm1
+        setupAuthenticationProviders();
+
+        try {
+            // this is needed for externalModel provider
+            ResteasyProviderFactory.pushContext(KeycloakSession.class, identitySession);
+
+            // Change credential via realm2 and validate that they are changed in both realms
+            AuthenticationProviderManager authProviderManager = AuthenticationProviderManager.getManager(realm2);
+            try {
+                authProviderManager.updatePassword("john", "password-updated");
+            } catch (AuthenticationProviderException ape) {
+                ape.printStackTrace();
+                Assert.fail("Error not expected");
+            }
+            MultivaluedMap<String, String> formData = createFormData("john", "password-updated");
+            Assert.assertEquals(AuthenticationManager.AuthenticationStatus.SUCCESS, am.authenticateForm(realm1, formData));
+            Assert.assertEquals(AuthenticationManager.AuthenticationStatus.SUCCESS, am.authenticateForm(realm2, formData));
+
+
+            // Switch to disallow password update propagation to realm1
+            setPasswordUpdateForProvider(false, AuthProviderConstants.PROVIDER_NAME_EXTERNAL_MODEL, realm2);
+
+            // Change credential and validate that password is updated just for realm2
+            try {
+                authProviderManager.updatePassword("john", "password-updated2");
+            } catch (AuthenticationProviderException ape) {
+                ape.printStackTrace();
+                Assert.fail("Error not expected");
+            }
+            formData = createFormData("john", "password-updated2");
+            Assert.assertEquals(AuthenticationManager.AuthenticationStatus.INVALID_CREDENTIALS, am.authenticateForm(realm1, formData));
+            Assert.assertEquals(AuthenticationManager.AuthenticationStatus.SUCCESS, am.authenticateForm(realm2, formData));
+
+
+            // Allow passwordUpdate propagation again
+            setPasswordUpdateForProvider(true, AuthProviderConstants.PROVIDER_NAME_EXTERNAL_MODEL, realm2);
+
+            // Set passwordPolicy for realm1 and verify that password update fail
+            realm1.setPasswordPolicy(new PasswordPolicy("length(8)"));
+            try {
+                authProviderManager.updatePassword("john", "passw");
+                Assert.fail("Update not expected to pass");
+            } catch (AuthenticationProviderException ape) {
+
+            }
+
+        } finally {
+            ResteasyProviderFactory.clearContextData();
+        }
+    }
+
+    /**
+     * Setup authentication providers into realm2
+     */
+    private void setupAuthenticationProviders() {
+        AuthenticationProviderModel ap1 = new AuthenticationProviderModel(AuthProviderConstants.PROVIDER_NAME_MODEL, true, Collections.EMPTY_MAP);
+        Map<String,String> config = new HashMap<String,String>();
+        config.put(AuthProviderConstants.EXTERNAL_REALM_ID, "realm1");
+        AuthenticationProviderModel ap2 = new AuthenticationProviderModel(AuthProviderConstants.PROVIDER_NAME_EXTERNAL_MODEL, true, config);
+        realm2.setAuthenticationProviders(Arrays.asList(ap1, ap2));
+    }
+
+    public static void setPasswordUpdateForProvider(boolean isPasswordUpdate, String providerName, RealmModel realm) {
+        List<AuthenticationProviderModel> authProviders = realm.getAuthenticationProviders();
+        for (AuthenticationProviderModel authProvider : authProviders) {
+            if (providerName.equals(authProvider.getProviderName())) {
+                authProvider.setPasswordUpdateSupported(isPasswordUpdate);
+                break;
+            }
+        }
+        realm.setAuthenticationProviders(authProviders);
+    }
+
+    public static MultivaluedMap<String, String> createFormData(String username, String password) {
+        MultivaluedMap<String, String> formData = new MultivaluedHashMap<String, String>();
+        formData.add("username", username);
+        formData.add(CredentialRepresentation.PASSWORD, password);
+        return formData;
+    }
+}

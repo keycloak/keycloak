@@ -10,7 +10,9 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.bouncycastle.openssl.PEMWriter;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.util.PemUtils;
 
 /**
@@ -22,8 +24,6 @@ public final class KeycloakModelUtils {
 
     private KeycloakModelUtils() {
     }
-
-    private static AtomicLong counter = new AtomicLong(1);
 
     public static String generateId() {
         return UUID.randomUUID().toString();
@@ -83,5 +83,20 @@ public final class KeycloakModelUtils {
             if (searchFor(role, contained, visited)) return true;
         }
         return false;
+    }
+
+    /**
+     * Try to find user by given username. If it fails, then fallback to find him by email
+     *
+     * @param realm realm
+     * @param username username or email of user
+     * @return found user
+     */
+    public static UserModel findUserByNameOrEmail(RealmModel realm, String username) {
+        UserModel user = realm.getUser(username);
+        if (user == null && username.contains("@")) {
+            user = realm.getUserByEmail(username);
+        }
+        return user;
     }
 }

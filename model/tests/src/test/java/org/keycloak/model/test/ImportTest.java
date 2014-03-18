@@ -6,9 +6,10 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.AuthenticationLinkModel;
+import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
-import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
@@ -16,6 +17,7 @@ import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.spi.authentication.AuthProviderConstants;
 
 import java.util.List;
 import java.util.Map;
@@ -170,6 +172,60 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertTrue(realm.removeSocialLink(socialUser, "facebook"));
         Assert.assertNull(realm.getSocialLink(socialUser, "facebook"));
         Assert.assertFalse(realm.removeSocialLink(socialUser, "facebook"));
+
+        // Test smtp config
+        Map<String, String> smtpConfig = realm.getSmtpConfig();
+        Assert.assertTrue(smtpConfig.size() == 3);
+        Assert.assertEquals("auto@keycloak.org", smtpConfig.get("from"));
+        Assert.assertEquals("localhost", smtpConfig.get("host"));
+        Assert.assertEquals("3025", smtpConfig.get("port"));
+
+        // Test social config
+        Map<String, String> socialConfig = realm.getSocialConfig();
+        Assert.assertTrue(socialConfig.size() == 2);
+        Assert.assertEquals("abc", socialConfig.get("google.key"));
+        Assert.assertEquals("def", socialConfig.get("google.secret"));
+
+        // Test ldap config
+        Map<String, String> ldapConfig = realm.getLdapServerConfig();
+        Assert.assertTrue(ldapConfig.size() == 5);
+        Assert.assertEquals("ldap://localhost:10389", ldapConfig.get("connectionUrl"));
+        Assert.assertEquals("dc=keycloak,dc=org", ldapConfig.get("baseDn"));
+        Assert.assertEquals("ou=People,dc=keycloak,dc=org", ldapConfig.get("userDnSuffix"));
+
+        // Test authentication providers
+        List<AuthenticationProviderModel> authProviderModels = realm.getAuthenticationProviders();
+        Assert.assertTrue(authProviderModels.size() == 3);
+        AuthenticationProviderModel authProv1 = authProviderModels.get(0);
+        AuthenticationProviderModel authProv2 = authProviderModels.get(1);
+        AuthenticationProviderModel authProv3 = authProviderModels.get(2);
+        Assert.assertEquals(AuthProviderConstants.PROVIDER_NAME_MODEL, authProv1.getProviderName());
+        Assert.assertTrue(authProv1.isPasswordUpdateSupported());
+        Assert.assertEquals(AuthProviderConstants.PROVIDER_NAME_EXTERNAL_MODEL, authProv2.getProviderName());
+        Assert.assertFalse(authProv2.isPasswordUpdateSupported());
+        Assert.assertEquals("trustedRealm", authProv2.getConfig().get("externalRealmId"));
+        Assert.assertEquals(AuthProviderConstants.PROVIDER_NAME_PICKETLINK, authProv3.getProviderName());
+        Assert.assertTrue(authProv3.isPasswordUpdateSupported());
+
+        // Test authentication linking
+        Set<AuthenticationLinkModel> authLinks = realm.getAuthenticationLinks(socialUser);
+        Assert.assertEquals(2, authLinks.size());
+        boolean plFound = false;
+        boolean extFound = false;
+        for (AuthenticationLinkModel authLinkModel : authLinks) {
+            if (AuthProviderConstants.PROVIDER_NAME_PICKETLINK.equals(authLinkModel.getAuthProvider())) {
+                plFound = true;
+                Assert.assertEquals(authLinkModel.getAuthUserId(), "myUser1");
+            } else if (AuthProviderConstants.PROVIDER_NAME_EXTERNAL_MODEL.equals(authLinkModel.getAuthProvider())) {
+                extFound = true;
+                Assert.assertEquals(authLinkModel.getAuthUserId(), "myUser11");
+            }
+        }
+        Assert.assertTrue(plFound && extFound);
+
+        UserModel foundAuthUser = realm.getUserByAuthenticationLink(new AuthenticationLinkModel(AuthProviderConstants.PROVIDER_NAME_PICKETLINK, "myUser1"));
+        Assert.assertEquals(foundAuthUser.getLoginName(), socialUser.getLoginName());
+        Assert.assertNull(realm.getUserByAuthenticationLink(new AuthenticationLinkModel(AuthProviderConstants.PROVIDER_NAME_PICKETLINK, "not-existing")));
 
         commit();
 

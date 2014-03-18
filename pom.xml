@@ -15,7 +15,8 @@
         <keycloak.apache.httpcomponents.version>4.1.2</keycloak.apache.httpcomponents.version>
         <resteasy.version>3.0.6.Final</resteasy.version>
         <undertow.version>1.0.0.Final</undertow.version>
-        <picketlink.version>2.5.0.Beta6</picketlink.version>
+        <picketlink.version>2.6.0.CR1</picketlink.version>
+        <picketbox.ldap.version>1.0.2.Final</picketbox.ldap.version>
         <mongo.driver.version>2.11.3</mongo.driver.version>
         <jboss.logging.version>3.1.1.GA</jboss.logging.version>
         <jboss-logging-tools.version>1.2.0.Beta1</jboss-logging-tools.version>
@@ -27,7 +28,7 @@
         <dom4j.version>1.6.1</dom4j.version>
         <xml-apis.version>1.4.01</xml-apis.version>
         <mysql.version>5.1.25</mysql.version>
-        <slf4j.version>1.6.1</slf4j.version>
+        <slf4j.version>1.5.10</slf4j.version>
         <jboss.version>7.1.1.Final</jboss.version>
         <wildfly.version>8.0.0.Final</wildfly.version>
         <json.version>20131018</json.version>
@@ -91,6 +92,7 @@
         <module>examples</module>
         <module>testsuite</module>
         <module>server</module>
+        <module>spi</module>
     </modules>
 
     <dependencyManagement>
@@ -216,6 +218,17 @@
                 <version>${picketlink.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.picketbox</groupId>
+                <artifactId>picketbox-ldap</artifactId>
+                <version>${picketbox.ldap.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.picketbox</groupId>
+                <artifactId>picketbox-ldap</artifactId>
+                <version>${picketbox.ldap.version}</version>
+                <type>test-jar</type>
+            </dependency>
+            <dependency>
                 <groupId>org.jboss.logging</groupId>
                 <artifactId>jboss-logging</artifactId>
                 <version>${jboss.logging.version}</version>
@@ -339,11 +352,18 @@
                 <artifactId>xml-apis</artifactId>
                 <version>${xml-apis.version}</version>
             </dependency>
+            <!-- Older 1.5.10 binding required by embedded ApacheDS -->
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
                 <version>${slf4j.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-simple</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
+
             <!-- Needed for picketlink perf test -->
             <dependency>
                 <groupId>mysql</groupId>

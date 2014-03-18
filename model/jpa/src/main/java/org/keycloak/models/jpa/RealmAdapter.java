@@ -1,9 +1,13 @@
 package org.keycloak.models.jpa;
 
+import org.keycloak.models.AuthenticationLinkModel;
+import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.jpa.entities.ApplicationEntity;
 import org.keycloak.models.jpa.entities.ApplicationRoleEntity;
+import org.keycloak.models.jpa.entities.AuthenticationLinkEntity;
+import org.keycloak.models.jpa.entities.AuthenticationProviderEntity;
 import org.keycloak.models.jpa.entities.CredentialEntity;
 import org.keycloak.models.jpa.entities.OAuthClientEntity;
 import org.keycloak.models.jpa.entities.RealmEntity;
@@ -389,6 +393,7 @@ public class RealmAdapter implements RealmModel {
     private void removeUser(UserEntity user) {
         em.createQuery("delete from " + UserRoleMappingEntity.class.getSimpleName() + " where user = :user").setParameter("user", user).executeUpdate();
         em.createQuery("delete from " + SocialLinkEntity.class.getSimpleName() + " where user = :user").setParameter("user", user).executeUpdate();
+        em.createQuery("delete from " + AuthenticationLinkEntity.class.getSimpleName() + " where user = :user").setParameter("user", user).executeUpdate();
         em.remove(user);
     }
 
@@ -607,6 +612,47 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public UserModel getUserByAuthenticationLink(AuthenticationLinkModel authenticationLink) {
+        TypedQuery<UserEntity> query = em.createNamedQuery("findUserByAuthLinkAndRealm", UserEntity.class);
+        query.setParameter("realm", realm);
+        query.setParameter("authProvider", authenticationLink.getAuthProvider());
+        query.setParameter("authUserId", authenticationLink.getAuthUserId());
+        List<UserEntity> results = query.getResultList();
+        if (results.isEmpty()) {
+            return null;
+        } else if (results.size() > 1) {
+            throw new IllegalStateException("More results found for authenticationProvider=" + authenticationLink.getAuthProvider() +
+                    ", authUserId=" + authenticationLink.getAuthUserId() + ", results=" + results);
+        } else {
+            UserEntity user = results.get(0);
+            return new UserAdapter(user);
+        }
+    }
+
+    @Override
+    public Set<AuthenticationLinkModel> getAuthenticationLinks(UserModel user) {
+        TypedQuery<AuthenticationLinkEntity> query = em.createNamedQuery("findAuthLinkByUser", AuthenticationLinkEntity.class);
+        query.setParameter("user", ((UserAdapter) user).getUser());
+        List<AuthenticationLinkEntity> results = query.getResultList();
+        Set<AuthenticationLinkModel> set = new HashSet<AuthenticationLinkModel>();
+        for (AuthenticationLinkEntity entity : results) {
+            set.add(new AuthenticationLinkModel(entity.getAuthProvider(), entity.getAuthUserId()));
+        }
+        return set;
+    }
+
+    @Override
+    public void addAuthenticationLink(UserModel user, AuthenticationLinkModel authenticationLink) {
+        AuthenticationLinkEntity entity = new AuthenticationLinkEntity();
+        entity.setRealm(realm);
+        entity.setAuthProvider(authenticationLink.getAuthProvider());
+        entity.setAuthUserId(authenticationLink.getAuthUserId());
+        entity.setUser(((UserAdapter) user).getUser());
+        em.persist(entity);
+        em.flush();
+    }
+
+    @Override
     public boolean isSocial() {
         return realm.isSocial();
     }
@@ -752,6 +798,56 @@ public class RealmAdapter implements RealmModel {
     @Override
     public void setSocialConfig(Map<String, String> socialConfig) {
         realm.setSocialConfig(socialConfig);
+        em.flush();
+    }
+
+    @Override
+    public Map<String, String> getLdapServerConfig() {
+        return realm.getLdapServerConfig();
+    }
+
+    @Override
+    public void setLdapServerConfig(Map<String, String> ldapServerConfig) {
+        realm.setLdapServerConfig(ldapServerConfig);
+        em.flush();
+    }
+
+    @Override
+    public List<AuthenticationProviderModel> getAuthenticationProviders() {
+        Collection<AuthenticationProviderEntity> entities = realm.getAuthenticationProviders();
+        List<AuthenticationProviderModel> result = new ArrayList<AuthenticationProviderModel>();
+        for (AuthenticationProviderEntity entity : entities) {
+            result.add(new AuthenticationProviderModel(entity.getProviderName(), entity.isPasswordUpdateSupported(), entity.getConfig()));
+        }
+
+        return result;
+    }
+
+    @Override
+    public void setAuthenticationProviders(List<AuthenticationProviderModel> authenticationProviders) {
+        List<AuthenticationProviderEntity> newEntities = new ArrayList<AuthenticationProviderEntity>();
+        for (AuthenticationProviderModel model : authenticationProviders) {
+            AuthenticationProviderEntity entity = new AuthenticationProviderEntity();
+            entity.setProviderName(model.getProviderName());
+            entity.setPasswordUpdateSupported(model.isPasswordUpdateSupported());
+            entity.setConfig(model.getConfig());
+            newEntities.add(entity);
+        }
+
+        // Remove all existing first
+        Collection<AuthenticationProviderEntity> existing = realm.getAuthenticationProviders();
+        Collection<AuthenticationProviderEntity> copy = new ArrayList<AuthenticationProviderEntity>(existing);
+        for (AuthenticationProviderEntity apToRemove : copy) {
+            existing.remove(apToRemove);
+            em.remove(apToRemove);
+        }
+
+        // Now create all new providers
+        for (AuthenticationProviderEntity apToAdd : newEntities) {
+            existing.add(apToAdd);
+            em.persist(apToAdd);
+        }
+
         em.flush();
     }
 

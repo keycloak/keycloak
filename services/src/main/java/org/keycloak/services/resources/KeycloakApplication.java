@@ -4,6 +4,7 @@ import org.jboss.resteasy.logging.Logger;
 import org.keycloak.SkeletonKeyContextResolver;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ModelProvider;
+import org.keycloak.util.KeycloakRegistry;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.SocialRequestManager;
 import org.keycloak.services.managers.TokenManager;
@@ -35,7 +36,9 @@ public class KeycloakApplication extends Application {
     public KeycloakApplication(@Context ServletContext context) {
         this.factory = createSessionFactory();
         this.contextPath = context.getContextPath();
-        context.setAttribute(KeycloakSessionFactory.class.getName(), factory);
+        KeycloakRegistry registry = new KeycloakRegistry();
+        registry.putService(KeycloakSessionFactory.class, factory);
+        context.setAttribute(KeycloakRegistry.class.getName(), registry);
         //classes.add(KeycloakSessionCleanupFilter.class);
 
         TokenManager tokenManager = new TokenManager();

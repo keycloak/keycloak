@@ -19,6 +19,7 @@ public class MultipleRealmsTest extends AbstractModelTest {
     private RealmModel realm2;
 
     @Before
+    @Override
     public void before() throws Exception {
         super.before();
         realm1 = identitySession.createRealm("id1", "realm1");

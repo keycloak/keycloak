@@ -6,16 +6,19 @@ import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
 import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.models.AuthenticationLinkModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
-import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.spi.authentication.AuthProviderStatus;
+import org.keycloak.spi.authentication.AuthResult;
+import org.keycloak.spi.authentication.AuthenticatedUser;
+import org.keycloak.spi.authentication.AuthenticationProviderManager;
 import org.keycloak.util.Time;
 
 import javax.ws.rs.core.Cookie;
@@ -25,7 +28,6 @@ import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -178,16 +180,14 @@ public class AuthenticationManager {
         return null;
     }
 
-    public AuthenticationStatus authenticateForm(RealmModel realm, UserModel user, MultivaluedMap<String, String> formData) {
-        if (user == null) {
-            logger.debug("Not Authenticated! Incorrect user name");
+    public AuthenticationStatus authenticateForm(RealmModel realm, MultivaluedMap<String, String> formData) {
+        String username = formData.getFirst(FORM_USERNAME);
+        if (username == null) {
+            logger.warn("Username not provided");
             return AuthenticationStatus.INVALID_USER;
         }
 
-        if (!user.isEnabled()) {
-            logger.debug("Account is disabled, contact admin. " + user.getLoginName());
-            return AuthenticationStatus.ACCOUNT_DISABLED;
-        }
+        UserModel user = KeycloakModelUtils.findUserByNameOrEmail(realm, username);
 
         Set<String> types = new HashSet<String>();
 
@@ -202,21 +202,70 @@ public class AuthenticationManager {
                 return AuthenticationStatus.MISSING_PASSWORD;
             }
 
-            if (user.isTotp()) {
+            if (user == null && types.contains(CredentialRepresentation.TOTP)) {
+                logger.warn("User doesn't exists and TOTP is required for the realm");
+                return AuthenticationStatus.INVALID_USER;
+            }
+
+            if (user != null && user.isTotp()) {
                 String token = formData.getFirst(CredentialRepresentation.TOTP);
                 if (token == null) {
                     logger.warn("TOTP token not provided");
                     return AuthenticationStatus.MISSING_TOTP;
+                }
+                if (!checkEnabled(user)) {
+                    return AuthenticationStatus.ACCOUNT_DISABLED;
                 }
                 logger.debug("validating TOTP");
                 if (!realm.validateTOTP(user, password, token)) {
                     return AuthenticationStatus.INVALID_CREDENTIALS;
                 }
             } else {
-                logger.debug("validating password for user: " + user.getLoginName());
-                if (!realm.validatePassword(user, password)) {
-                    logger.debug("invalid password for user: " + user.getLoginName());
+                logger.debug("validating password for user: " + username);
+
+                AuthResult authResult = AuthenticationProviderManager.getManager(realm).validatePassword(username, password);
+                if (authResult.getAuthProviderStatus() == AuthProviderStatus.FAILED) {
+                    logger.debug("invalid password for user: " + username);
                     return AuthenticationStatus.INVALID_CREDENTIALS;
+                }
+
+                if (authResult.getAuthenticatedUser() != null) {
+                    AuthenticatedUser authUser = authResult.getAuthenticatedUser();
+                    AuthenticationLinkModel authLink = new AuthenticationLinkModel(authResult.getProviderName(), authUser.getId());
+                    user = realm.getUserByAuthenticationLink(authLink);
+                    if (user == null) {
+                        // Create new user, which has been successfully authenticated and link him with authentication provider
+                        user = realm.addUser(authUser.getUsername());
+                        user.setEnabled(true);
+                        user.setFirstName(authUser.getFirstName());
+                        user.setLastName(authUser.getLastName());
+                        user.setEmail(authUser.getEmail());
+
+                        realm.addAuthenticationLink(user, authLink);
+                        logger.info("User " + username + " successfully authenticated and created based on provider " + authResult.getProviderName());
+                    } else {
+                        // Existing user has been authenticated
+                        if (!checkEnabled(user)) {
+                            return AuthenticationStatus.ACCOUNT_DISABLED;
+                        }
+
+                        // TODO: Update of existing account?
+                    }
+
+                    // Authenticated username could be different from the "form" username. In this case, we will change it
+                    if (!username.equals(user.getLoginName())) {
+                        formData.putSingle(FORM_USERNAME, user.getLoginName());
+                        logger.debug("Existing user " + user.getLoginName() + " successfully authenticated");
+                    }
+
+                } else {
+                    // Authentication provider didn't send AuthenticatedUser. Using already retrieved user based on username from "form"
+                    if (user == null) {
+                        logger.warn("User '" + username + "' successfully authenticated, but he doesn't exists and don't know how to create him");
+                        return AuthenticationStatus.INVALID_USER;
+                    } else if (!checkEnabled(user)) {
+                        return AuthenticationStatus.ACCOUNT_DISABLED;
+                    }
                 }
             }
 
@@ -239,6 +288,15 @@ public class AuthenticationManager {
         } else {
             logger.warn("Do not know how to authenticate user");
             return AuthenticationStatus.FAILED;
+        }
+    }
+
+    private boolean checkEnabled(UserModel user) {
+        if (!user.isEnabled()) {
+            logger.warn("Account is disabled, contact admin. " + user.getLoginName());
+            return false;
+        } else {
+            return true;
         }
     }
 

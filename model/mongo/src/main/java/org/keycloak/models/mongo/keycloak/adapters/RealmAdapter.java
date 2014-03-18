@@ -4,6 +4,8 @@ import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
 import org.jboss.logging.Logger;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.AuthenticationLinkModel;
+import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
@@ -15,6 +17,8 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.mongo.keycloak.entities.ApplicationEntity;
+import org.keycloak.models.mongo.keycloak.entities.AuthenticationLinkEntity;
+import org.keycloak.models.mongo.keycloak.entities.AuthenticationProviderEntity;
 import org.keycloak.models.mongo.keycloak.entities.CredentialEntity;
 import org.keycloak.models.mongo.keycloak.entities.OAuthClientEntity;
 import org.keycloak.models.mongo.keycloak.entities.RealmEntity;
@@ -387,7 +391,8 @@ public class RealmAdapter extends AbstractMongoAdapter<RealmEntity> implements R
 
         UserEntity userEntity = new UserEntity();
         userEntity.setLoginName(username);
-        userEntity.setEnabled(true);
+        // Compatibility with JPA model, which has user disabled by default
+        // userEntity.setEnabled(true);
         userEntity.setRealmId(getId());
 
         getMongoStore().insertEntity(userEntity, invocationContext);
@@ -920,6 +925,44 @@ public class RealmAdapter extends AbstractMongoAdapter<RealmEntity> implements R
         return null;
     }
 
+    @Override
+    public UserModel getUserByAuthenticationLink(AuthenticationLinkModel authenticationLink) {
+        DBObject query = new QueryBuilder()
+                .and("authenticationLinks.authProvider").is(authenticationLink.getAuthProvider())
+                .and("authenticationLinks.authUserId").is(authenticationLink.getAuthUserId())
+                .and("realmId").is(getId())
+                .get();
+        UserEntity userEntity = getMongoStore().loadSingleEntity(UserEntity.class, query, invocationContext);
+        return userEntity==null ? null : new UserAdapter(userEntity, invocationContext);
+    }
+
+    @Override
+    public Set<AuthenticationLinkModel> getAuthenticationLinks(UserModel user) {
+        UserEntity userEntity = ((UserAdapter)user).getUser();
+        List<AuthenticationLinkEntity> linkEntities = userEntity.getAuthenticationLinks();
+
+        if (linkEntities == null) {
+            return Collections.EMPTY_SET;
+        }
+
+        Set<AuthenticationLinkModel> result = new HashSet<AuthenticationLinkModel>();
+        for (AuthenticationLinkEntity authLinkEntity : linkEntities) {
+            AuthenticationLinkModel model = new AuthenticationLinkModel(authLinkEntity.getAuthProvider(), authLinkEntity.getAuthUserId());
+            result.add(model);
+        }
+        return result;
+    }
+
+    @Override
+    public void addAuthenticationLink(UserModel user, AuthenticationLinkModel authenticationLink) {
+        UserEntity userEntity = ((UserAdapter)user).getUser();
+        AuthenticationLinkEntity authLinkEntity = new AuthenticationLinkEntity();
+        authLinkEntity.setAuthProvider(authenticationLink.getAuthProvider());
+        authLinkEntity.setAuthUserId(authenticationLink.getAuthUserId());
+
+        getMongoStore().pushItemToList(userEntity, "authenticationLinks", authLinkEntity, true, invocationContext);
+    }
+
     protected void updateRealm() {
         super.updateMongoEntity();
     }
@@ -1030,6 +1073,43 @@ public class RealmAdapter extends AbstractMongoAdapter<RealmEntity> implements R
     @Override
     public void setSocialConfig(Map<String, String> socialConfig) {
         realm.setSocialConfig(socialConfig);
+        updateRealm();
+    }
+
+    @Override
+    public Map<String, String> getLdapServerConfig() {
+        return realm.getLdapServerConfig();
+    }
+
+    @Override
+    public void setLdapServerConfig(Map<String, String> ldapServerConfig) {
+        realm.setLdapServerConfig(ldapServerConfig);
+        updateRealm();
+    }
+
+    @Override
+    public List<AuthenticationProviderModel> getAuthenticationProviders() {
+        List<AuthenticationProviderEntity> entities = realm.getAuthenticationProviders();
+        List<AuthenticationProviderModel> result = new ArrayList<AuthenticationProviderModel>();
+        for (AuthenticationProviderEntity entity : entities) {
+            result.add(new AuthenticationProviderModel(entity.getProviderName(), entity.isPasswordUpdateSupported(), entity.getConfig()));
+        }
+
+        return result;
+    }
+
+    @Override
+    public void setAuthenticationProviders(List<AuthenticationProviderModel> authenticationProviders) {
+        List<AuthenticationProviderEntity> entities = new ArrayList<AuthenticationProviderEntity>();
+        for (AuthenticationProviderModel model : authenticationProviders) {
+            AuthenticationProviderEntity entity = new AuthenticationProviderEntity();
+            entity.setProviderName(model.getProviderName());
+            entity.setPasswordUpdateSupported(model.isPasswordUpdateSupported());
+            entity.setConfig(model.getConfig());
+            entities.add(entity);
+        }
+
+        realm.setAuthenticationProviders(entities);
         updateRealm();
     }
 

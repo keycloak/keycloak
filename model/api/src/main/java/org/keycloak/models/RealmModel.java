@@ -134,6 +134,12 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
 
     boolean removeSocialLink(UserModel user, String socialProvider);
 
+    UserModel getUserByAuthenticationLink(AuthenticationLinkModel authenticationLink);
+
+    Set<AuthenticationLinkModel> getAuthenticationLinks(UserModel user);
+
+    void addAuthenticationLink(UserModel user, AuthenticationLinkModel authenticationLink);
+
     boolean isSocial();
 
     void setSocial(boolean social);
@@ -163,6 +169,14 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
     Map<String, String> getSocialConfig();
 
     void setSocialConfig(Map<String, String> socialConfig);
+
+    Map<String, String> getLdapServerConfig();
+
+    void setLdapServerConfig(Map<String, String> ldapServerConfig);
+
+    List<AuthenticationProviderModel> getAuthenticationProviders();
+
+    void setAuthenticationProviders(List<AuthenticationProviderModel> authenticationProviders);
 
     Set<RoleModel> getRealmRoleMappings(UserModel user);
 

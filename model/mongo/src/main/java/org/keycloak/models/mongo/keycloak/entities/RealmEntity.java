@@ -47,9 +47,11 @@ public class RealmEntity extends AbstractMongoIdentifiableEntity implements Mong
     private List<String> defaultRoles = new ArrayList<String>();
 
     private List<RequiredCredentialEntity> requiredCredentials = new ArrayList<RequiredCredentialEntity>();
+    private List<AuthenticationProviderEntity> authenticationProviders = new ArrayList<AuthenticationProviderEntity>();
 
     private Map<String, String> smtpConfig = new HashMap<String, String>();
     private Map<String, String> socialConfig = new HashMap<String, String>();
+    private Map<String, String> ldapServerConfig;
 
     @MongoField
     public String getName() {
@@ -250,6 +252,15 @@ public class RealmEntity extends AbstractMongoIdentifiableEntity implements Mong
     }
 
     @MongoField
+    public List<AuthenticationProviderEntity> getAuthenticationProviders() {
+        return authenticationProviders;
+    }
+
+    public void setAuthenticationProviders(List<AuthenticationProviderEntity> authenticationProviders) {
+        this.authenticationProviders = authenticationProviders;
+    }
+
+    @MongoField
     public Map<String, String> getSmtpConfig() {
         return smtpConfig;
     }
@@ -265,6 +276,15 @@ public class RealmEntity extends AbstractMongoIdentifiableEntity implements Mong
 
     public void setSocialConfig(Map<String, String> socialConfig) {
         this.socialConfig = socialConfig;
+    }
+
+    @MongoField
+    public Map<String, String> getLdapServerConfig() {
+        return ldapServerConfig;
+    }
+
+    public void setLdapServerConfig(Map<String, String> ldapServerConfig) {
+        this.ldapServerConfig = ldapServerConfig;
     }
 
     @Override
