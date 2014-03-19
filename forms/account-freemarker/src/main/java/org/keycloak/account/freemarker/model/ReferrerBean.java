@@ -1,24 +1,22 @@
 package org.keycloak.account.freemarker.model;
 
-import org.keycloak.models.ApplicationModel;
-
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class ReferrerBean {
 
-    private ApplicationModel referrer;
+    private String[] referrer;
 
-    public ReferrerBean(ApplicationModel referrer) {
+    public ReferrerBean(String[] referrer) {
         this.referrer = referrer;
     }
 
     public String getName() {
-        return referrer.getName();
+        return referrer[0];
     }
 
-    public String getBaseUrl() {
-        return referrer.getBaseUrl();
+    public String getUrl() {
+        return referrer[1];
     }
 
 }

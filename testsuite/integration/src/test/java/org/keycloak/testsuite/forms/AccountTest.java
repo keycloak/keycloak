@@ -107,19 +107,7 @@ public class AccountTest {
         });
     }
 
-    //@Test
-    public void returnToAppFromHeader() {
-        appPage.open();
-        appPage.openAccount();
-        loginPage.login("test-user@localhost", "password");
-
-        Assert.assertTrue(profilePage.isCurrent());
-        profilePage.backToApplication();
-
-        Assert.assertTrue(appPage.isCurrent());
-    }
-
-    //@Test
+    @Test
     public void returnToAppFromQueryParam() {
         driver.navigate().to(AccountUpdateProfilePage.PATH + "?referrer=test-app");
         loginPage.login("test-user@localhost", "password");
@@ -127,6 +115,13 @@ public class AccountTest {
         profilePage.backToApplication();
 
         Assert.assertTrue(appPage.isCurrent());
+
+        driver.navigate().to(AccountUpdateProfilePage.PATH + "?referrer=test-app&referrer_uri=http://localhost:8081/app?test");
+        Assert.assertTrue(profilePage.isCurrent());
+        profilePage.backToApplication();
+
+        Assert.assertTrue(appPage.isCurrent());
+        Assert.assertEquals(appPage.baseUrl + "?test", driver.getCurrentUrl());
     }
 
     @Test

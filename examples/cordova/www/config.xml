@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<widget xmlns="http://www.w3.org/ns/widgets" xmlns:gap="http://phonegap.com/ns/1.0" id="org.keycloak.examples.cordova" version="1.0.0">
+    <name>Keycloak Auth</name>
+    <description>Keycloak Cordova Example</description>
+    <author href="http://www.keycloak.org">Keycloak Team</author>
+
+    <feature name="http://api.phonegap.com/1.0/device" />
+
+    <preference name="permissions" value="none"/>
+
+    <gap:plugin name="org.apache.cordova.inappbrowser" />
+
+    <access origin="http://*"/>
+</widget>

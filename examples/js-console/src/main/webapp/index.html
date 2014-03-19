@@ -1,6 +1,6 @@
 <html>
 <head>
-    <script src="http://localhost:8080/auth/js/keycloak.js"></script>
+    <script src="/auth/js/keycloak.js"></script>
 </head>
 <body>
 
@@ -36,7 +36,7 @@
     }
 
     function refreshToken(minValidity) {
-        keycloak.refreshAccessToken(minValidity).success(function(refreshed) {
+        keycloak.updateToken(minValidity).success(function(refreshed) {
             if (refreshed) {
                 output(keycloak.tokenParsed);
             } else {

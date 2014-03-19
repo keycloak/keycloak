@@ -99,7 +99,7 @@ public class AccountService {
 
             Account account = AccountLoader.load().createAccount(uriInfo).setRealm(realm).setUser(auth.getUser());
 
-            String referrer = getReferrer();
+            String[] referrer = getReferrer();
             if (referrer != null) {
                 account.setReferrer(referrer);
             }
@@ -377,13 +377,17 @@ public class AccountService {
             uriBuilder.queryParam("path", path);
         }
 
-        String referrer = getReferrer();
+        String referrer = uriInfo.getQueryParameters().getFirst("referrer");
         if (referrer != null) {
             uriBuilder.queryParam("referrer", referrer);
         }
 
-        URI accountUri = uriBuilder.build(realm.getName());
+        String referrerUri = uriInfo.getQueryParameters().getFirst("referrer_uri");
+        if (referrerUri != null) {
+            uriBuilder.queryParam("referrer_uri", referrerUri);
+        }
 
+        URI accountUri = uriBuilder.build(realm.getName());
 
         oauth.setStateCookiePath(accountUri.getRawPath());
         return oauth.redirect(uriInfo, accountUri.toString());
@@ -397,20 +401,34 @@ public class AccountService {
         return auth;
     }
 
-    private String getReferrer() {
+    private String[] getReferrer() {
         String referrer = uriInfo.getQueryParameters().getFirst("referrer");
-        if (referrer != null) {
-            return referrer;
+        if (referrer == null) {
+            return null;
         }
 
-        String referrerUrl = headers.getHeaderString("Referer");
-        if (referrerUrl != null) {
-            for (ApplicationModel a : realm.getApplications()) {
-                if (a.getBaseUrl() != null && referrerUrl.startsWith(a.getBaseUrl())) {
-                    return a.getName();
+        String referrerUri = uriInfo.getQueryParameters().getFirst("referrer_uri");
+
+        ApplicationModel application = realm.getApplicationByName(referrer);
+        if (application != null) {
+            if (referrerUri != null) {
+                referrerUri = TokenService.verifyRedirectUri(referrerUri, application);
+            } else {
+                referrerUri = application.getBaseUrl();
+            }
+
+            if (referrerUri != null) {
+                return new String[] { referrer, referrerUri };
+            }
+        } else if (referrerUri != null) {
+            ClientModel client = realm.getOAuthClient(referrer);
+            if (client != null) {
+                referrerUri = TokenService.verifyRedirectUri(referrerUri, application);
+
+                if (referrerUri != null) {
+                    return new String[] { referrer, referrerUri };
                 }
             }
-            return null;
         }
 
         return null;

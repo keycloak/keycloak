@@ -36,7 +36,7 @@ public class FreeMarkerAccount implements Account {
     private UserModel user;
     private Response.Status status = Response.Status.OK;
     private RealmModel realm;
-    private String referrer;
+    private String[] referrer;
 
     public static enum MessageType {SUCCESS, WARNING, ERROR}
 
@@ -82,9 +82,8 @@ public class FreeMarkerAccount implements Account {
             attributes.put("message", new MessageBean(messages.containsKey(message) ? messages.getProperty(message) : message, messageType));
         }
 
-        ApplicationModel referrerApp = getReferrer();
-        if (referrerApp != null) {
-            attributes.put("referrer", new ReferrerBean(referrerApp));
+        if (referrer != null) {
+            attributes.put("referrer", new ReferrerBean(referrer));
         }
 
         attributes.put("url", new UrlBean(realm, theme, baseUri));
@@ -112,16 +111,6 @@ public class FreeMarkerAccount implements Account {
             logger.error("Failed to process template", e);
             return Response.serverError().build();
         }
-    }
-
-    private ApplicationModel getReferrer() {
-        if (referrer != null) {
-            ApplicationModel app = realm.getApplicationByName(referrer);
-            if (app != null) {
-                return app;
-            }
-        }
-        return null;
     }
 
     @Override
@@ -164,7 +153,7 @@ public class FreeMarkerAccount implements Account {
     }
 
     @Override
-    public Account setReferrer(String referrer) {
+    public Account setReferrer(String[] referrer) {
         this.referrer = referrer;
         return this;
     }
