@@ -30,7 +30,7 @@ import org.openqa.selenium.support.FindBy;
  */
 public class AppPage extends AbstractPage {
 
-    private String baseUrl = "http://localhost:8081/app";
+    public static final String baseUrl = "http://localhost:8081/app";
 
     @FindBy(id = "account")
     private WebElement accountLink;

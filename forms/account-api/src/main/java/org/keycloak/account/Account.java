@@ -25,6 +25,6 @@ public interface Account {
 
     public Account setRealm(RealmModel realm);
 
-    public Account setReferrer(String referrer);
+    public Account setReferrer(String[] referrer);
 
 }

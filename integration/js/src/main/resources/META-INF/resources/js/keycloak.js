@@ -103,10 +103,11 @@ var Keycloak = function (config) {
         return url;
     }
 
-    kc.createAccountUrl = function() {
+    kc.createAccountUrl = function(options) {
         var url = getRealmUrl()
             + '/account'
-            + '?referrer=' + kc.clientId;
+            + '?referrer=' + kc.clientId
+            + '&referrer_uri=' + encodeURIComponent(adapter.redirectUri(options));
 
         return url;
     }

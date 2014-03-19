@@ -42,7 +42,7 @@ public class AccountUpdateProfilePage extends AbstractAccountPage {
     private WebElement emailInput;
 
 
-    @FindBy(linkText = "Back to application")
+    @FindBy(id = "referrer")
     private WebElement backToApplicationLink;
 
     @FindBy(css = "button[type=\"submit\"]")
