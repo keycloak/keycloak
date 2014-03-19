@@ -1,8 +1,0 @@
-{
-  "realm" : "test",
-  "realm-public-key" : "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDddHi8/MoYNtdafydQ+e4P0qrvClCW0o/x9fAbZ09dET/VBZCU28M54LmgJT7snXfreyYBpaQpHkW52/tyuEcJ5KO28LIcvObDQFDq3Z7esrovHl4NRETJBF9Xqwt+XLTZF6m37fYzaUK6MVJzUHP9qmu90LYyyvQ+hBJD0GSw1QIDAQAB",
-  "auth-server-url" : "http://localhost:8081/auth",
-  "ssl-not-required" : true,
-  "resource" : "test",
-  "public-client" : true
-}
