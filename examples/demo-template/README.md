@@ -88,12 +88,20 @@ Step 2: Boot Keycloak Server
 Where you go to start up the Keycloak Server depends on which distro you installed.
 
 From appliance:
+
+```
 $ cd keycloak/bin
 $ ./standalone.sh
+```
+
 
 From existing Wildfly/EAP6/AS7 distro
+
+```
 $ cd ${wildfly.jboss.home}/bin
 $ ./standalone.sh
+```
+
 
 Step 3: Import the Test Realm
 ---------------------------------------
@@ -110,9 +118,11 @@ Step 4: Build and deploy
 ---------------------------------------
 next you must build and deploy
 
-1. cd preconfigured-demo
-2. mvn clean install
-3. mvn jboss-as:deploy
+```
+cd preconfigured-demo
+mvn clean install
+mvn jboss-as:deploy
+```
 
 Please note that jboss-as:deploy may fail on Wildfly distributions.  This is because Wildfly 8.0.0.Final has turned
 off a management interface.  You will hae to add this back in order to run the build.  Edit standalone/configuration/standalone.xml
@@ -158,7 +168,7 @@ to get permission to access a user's data. To run this example open
 
 [http://localhost:8080/oauth-client](http://localhost:8080/oauth-client)
 
-If you area already logged in, you will not be asked for a username and password, but you will be redirected to
+If you are already logged in, you will not be asked for a username and password, but you will be redirected to
 an oauth grant page.  This page asks you if you want to grant certain permissions to the third-part app.
 
 Step 7: Try the CLI Example
