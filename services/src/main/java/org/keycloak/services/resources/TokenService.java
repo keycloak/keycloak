@@ -6,6 +6,10 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.audit.Audit;
+import org.keycloak.audit.Details;
+import org.keycloak.audit.Errors;
+import org.keycloak.audit.Events;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.ClientModel;
@@ -73,6 +77,7 @@ public class TokenService {
 
     protected RealmModel realm;
     protected TokenManager tokenManager;
+    private Audit audit;
     protected AuthenticationManager authManager = new AuthenticationManager();
 
     @Context
@@ -97,9 +102,10 @@ public class TokenService {
 
     private ResourceAdminManager resourceAdminManager = new ResourceAdminManager();
 
-    public TokenService(RealmModel realm, TokenManager tokenManager) {
+    public TokenService(RealmModel realm, TokenManager tokenManager, Audit audit) {
         this.realm = realm;
         this.tokenManager = tokenManager;
+        this.audit = audit;
     }
 
     public static UriBuilder tokenServiceBaseUrl(UriInfo uriInfo) {
@@ -143,31 +149,42 @@ public class TokenService {
             throw new NotAcceptableException("HTTPS required");
         }
 
-        ClientModel client = authorizeClient(authorizationHeader, form);
+        audit.event(Events.LOGIN).detail(Details.AUTH_METHOD, "oauth_credentials").detail(Details.RESPONSE_TYPE, "token");
+
+        ClientModel client = authorizeClient(authorizationHeader, form, audit);
 
         if (client.isPublicClient()) {
             // we don't allow public clients to invoke grants/access to prevent phishing attacks
+            audit.error(Errors.NOT_ALLOWED);
             throw new ForbiddenException("Public clients are not allowed to invoke grants/access");
         }
 
-
-        if (form.getFirst(AuthenticationManager.FORM_USERNAME) == null) {
+        String username = form.getFirst(AuthenticationManager.FORM_USERNAME);
+        if (username == null) {
+            audit.error(Errors.USERNAME_MISSING);
             throw new NotAuthorizedException("No username");
         }
+        audit.detail(Details.USERNAME, username);
         if (!realm.isEnabled()) {
+            audit.error(Errors.REALM_DISABLED);
             throw new NotAuthorizedException("Disabled realm");
         }
 
         if (authManager.authenticateForm(realm, form) != AuthenticationStatus.SUCCESS) {
+            audit.error(Errors.INVALID_USER_CREDENTIALS);
             throw new NotAuthorizedException("Auth failed");
         }
 
         UserModel user = realm.getUser(form.getFirst(AuthenticationManager.FORM_USERNAME));
         String scope = form.getFirst(OAuth2Constants.SCOPE);
-        AccessTokenResponse res = tokenManager.responseBuilder(realm, client)
+
+        AccessTokenResponse res = tokenManager.responseBuilder(realm, client, audit)
                 .generateAccessToken(scope, client, user)
                 .generateIDToken()
                 .build();
+
+        audit.success();
+
         return Response.ok(res, MediaType.APPLICATION_JSON_TYPE).build();
     }
 
@@ -182,22 +199,28 @@ public class TokenService {
             throw new NotAcceptableException("HTTPS required");
         }
 
-        ClientModel client = authorizeClient(authorizationHeader, form);
+        audit.event(Events.REFRESH_TOKEN);
+
+        ClientModel client = authorizeClient(authorizationHeader, form, audit);
         String refreshToken = form.getFirst(OAuth2Constants.REFRESH_TOKEN);
         AccessToken accessToken = null;
         try {
-            accessToken = tokenManager.refreshAccessToken(realm, client, refreshToken);
+            accessToken = tokenManager.refreshAccessToken(realm, client, refreshToken, audit);
         } catch (OAuthErrorException e) {
             Map<String, String> error = new HashMap<String, String>();
             error.put(OAuth2Constants.ERROR, e.getError());
             if (e.getDescription() != null) error.put(OAuth2Constants.ERROR_DESCRIPTION, e.getDescription());
+            audit.error(Errors.INVALID_TOKEN);
             throw new BadRequestException(Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build(), e);
         }
 
-        AccessTokenResponse res = tokenManager.responseBuilder(realm, client)
+        AccessTokenResponse res = tokenManager.responseBuilder(realm, client, audit)
                 .accessToken(accessToken)
                 .generateIDToken()
                 .generateRefreshToken().build();
+
+        audit.success();
+
         return Response.ok(res, MediaType.APPLICATION_JSON_TYPE).build();
     }
 
@@ -208,6 +231,23 @@ public class TokenService {
                                  @QueryParam("state") final String state, @QueryParam("redirect_uri") String redirect,
                                  final MultivaluedMap<String, String> formData) {
         logger.debug("TokenService.processLogin");
+
+        String username = formData.getFirst(AuthenticationManager.FORM_USERNAME);
+
+        String rememberMe = formData.getFirst("rememberMe");
+        boolean remember = rememberMe != null && rememberMe.equalsIgnoreCase("on");
+        logger.debug("*** Remember me: " + remember);
+
+        audit.event(Events.LOGIN).client(clientId)
+                .detail(Details.REDIRECT_URI, redirect)
+                .detail(Details.RESPONSE_TYPE, "code")
+                .detail(Details.AUTH_METHOD, "form")
+                .detail(Details.USERNAME, username);
+
+        if (remember) {
+            audit.detail(Details.REMEMBER_ME, "true");
+        }
+
         OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
 
         if (!checkSsl()) {
@@ -215,30 +255,32 @@ public class TokenService {
         }
 
         if (!realm.isEnabled()) {
+            audit.error(Errors.REALM_DISABLED);
             return oauth.forwardToSecurityFailure("Realm not enabled.");
         }
         ClientModel client = realm.findClient(clientId);
         if (client == null) {
+            audit.error(Errors.CLIENT_NOT_FOUND);
             return oauth.forwardToSecurityFailure("Unknown login requester.");
         }
         if (!client.isEnabled()) {
+            audit.error(Errors.CLIENT_NOT_FOUND);
             return oauth.forwardToSecurityFailure("Login requester not enabled.");
         }
 
         redirect = verifyRedirectUri(redirect, client);
         if (redirect == null) {
+            audit.error(Errors.INVALID_REDIRECT_URI);
             return oauth.forwardToSecurityFailure("Invalid redirect_uri.");
         }
 
         if (formData.containsKey("cancel")) {
+            audit.error(Errors.REJECTED_BY_USER);
             return oauth.redirectError(client, "access_denied", state, redirect);
         }
 
         AuthenticationStatus status = authManager.authenticateForm(realm, formData);
 
-        String rememberMe = formData.getFirst("rememberMe");
-        boolean remember = rememberMe != null && rememberMe.equalsIgnoreCase("on");
-        logger.debug("*** Remember me: " + remember);
         if (remember) {
             NewCookie cookie = authManager.createRememberMeCookie(realm, uriInfo);
             response.addNewCookie(cookie);
@@ -249,20 +291,26 @@ public class TokenService {
         switch (status) {
             case SUCCESS:
             case ACTIONS_REQUIRED:
-                UserModel user = KeycloakModelUtils.findUserByNameOrEmail(realm, formData.getFirst(AuthenticationManager.FORM_USERNAME));
-                return oauth.processAccessCode(scopeParam, state, redirect, client, user, remember);
+                UserModel user = KeycloakModelUtils.findUserByNameOrEmail(realm, username);
+		        audit.user(user);
+                return oauth.processAccessCode(scopeParam, state, redirect, client, user, username, remember, "form", audit);
             case ACCOUNT_DISABLED:
+                audit.error(Errors.USER_DISABLED);
                 return Flows.forms(realm, request, uriInfo).setError(Messages.ACCOUNT_DISABLED).setFormData(formData).createLogin();
             case MISSING_TOTP:
                 return Flows.forms(realm, request, uriInfo).setFormData(formData).createLoginTotp();
+            case INVALID_USER:
+                audit.error(Errors.USER_NOT_FOUND);
+                return Flows.forms(realm, request, uriInfo).setError(Messages.INVALID_USER).setFormData(formData).createLogin();
             default:
+                audit.error(Errors.INVALID_USER_CREDENTIALS);
                 return Flows.forms(realm, request, uriInfo).setError(Messages.INVALID_USER).setFormData(formData).createLogin();
         }
     }
 
     @Path("auth/request/login-actions")
     public RequiredActionsService getRequiredActionsService() {
-        RequiredActionsService service = new RequiredActionsService(realm, tokenManager);
+        RequiredActionsService service = new RequiredActionsService(realm, tokenManager, audit);
         resourceContext.initResource(service);
         return service;
     }
@@ -273,30 +321,46 @@ public class TokenService {
     public Response processRegister(@QueryParam("client_id") final String clientId,
                                     @QueryParam("scope") final String scopeParam, @QueryParam("state") final String state,
                                     @QueryParam("redirect_uri") String redirect, final MultivaluedMap<String, String> formData) {
+
+        String username = formData.getFirst("username");
+        String email = formData.getFirst("email");
+
+        audit.event(Events.REGISTER).client(clientId)
+                .detail(Details.REDIRECT_URI, redirect)
+                .detail(Details.RESPONSE_TYPE, "code")
+                .detail(Details.USERNAME, username)
+                .detail(Details.EMAIL, email)
+                .detail(Details.REGISTER_METHOD, "form");
+
         OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
 
         if (!realm.isEnabled()) {
             logger.warn("Realm not enabled");
+            audit.error(Errors.REALM_DISABLED);
             return oauth.forwardToSecurityFailure("Realm not enabled");
         }
         ClientModel client = realm.findClient(clientId);
         if (client == null) {
             logger.warn("Unknown login requester.");
+            audit.error(Errors.CLIENT_NOT_FOUND);
             return oauth.forwardToSecurityFailure("Unknown login requester.");
         }
 
         if (!client.isEnabled()) {
             logger.warn("Login requester not enabled.");
+            audit.error(Errors.CLIENT_DISABLED);
             return oauth.forwardToSecurityFailure("Login requester not enabled.");
         }
 
         redirect = verifyRedirectUri(redirect, client);
         if (redirect == null) {
+            audit.error(Errors.INVALID_REDIRECT_URI);
             return oauth.forwardToSecurityFailure("Invalid redirect_uri.");
         }
 
         if (!realm.isRegistrationAllowed()) {
             logger.warn("Registration not allowed");
+            audit.error(Errors.REGISTRATION_DISABLED);
             return oauth.forwardToSecurityFailure("Registration not allowed");
         }
 
@@ -312,13 +376,13 @@ public class TokenService {
         }
 
         if (error != null) {
+            audit.error(Errors.INVALID_REGISTRATION);
             return Flows.forms(realm, request, uriInfo).setError(error).setFormData(formData).createRegistration();
         }
 
-        String username = formData.getFirst("username");
-
         UserModel user = realm.getUser(username);
         if (user != null) {
+            audit.error(Errors.USERNAME_IN_USE);
             return Flows.forms(realm, request, uriInfo).setError(Messages.USERNAME_EXISTS).setFormData(formData).createRegistration();
         }
 
@@ -327,7 +391,7 @@ public class TokenService {
         user.setFirstName(formData.getFirst("firstName"));
         user.setLastName(formData.getFirst("lastName"));
 
-        user.setEmail(formData.getFirst("email"));
+        user.setEmail(email);
 
         if (requiredCredentialTypes.contains(CredentialRepresentation.PASSWORD)) {
             UserCredentialModel credentials = new UserCredentialModel();
@@ -341,6 +405,9 @@ public class TokenService {
                 return Flows.forms(realm, request, uriInfo).setError(ape.getMessage()).createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
             }
         }
+
+        audit.user(user).success();
+        audit.reset();
 
         return processLogin(clientId, scopeParam, state, redirect, formData);
     }
@@ -362,19 +429,20 @@ public class TokenService {
             throw new NotAcceptableException("HTTPS required");
         }
 
+        audit.event(Events.CODE_TO_TOKEN);
+
         if (!realm.isEnabled()) {
+            audit.error(Errors.REALM_DISABLED);
             throw new NotAuthorizedException("Realm not enabled");
         }
-
-        ClientModel client = authorizeClient(authorizationHeader, formData);
 
         String code = formData.getFirst(OAuth2Constants.CODE);
         if (code == null) {
             Map<String, String> error = new HashMap<String, String>();
             error.put(OAuth2Constants.ERROR, "invalid_request");
             error.put(OAuth2Constants.ERROR_DESCRIPTION, "code not specified");
+            audit.error(Errors.INVALID_CODE);
             throw new BadRequestException("Code not specified", Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build());
-
         }
 
         JWSInput input = new JWSInput(code);
@@ -388,22 +456,33 @@ public class TokenService {
             Map<String, String> res = new HashMap<String, String>();
             res.put(OAuth2Constants.ERROR, "invalid_grant");
             res.put(OAuth2Constants.ERROR_DESCRIPTION, "Unable to verify code signature");
+            audit.error(Errors.INVALID_CODE);
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res)
                     .build();
         }
         String key = input.readContentAsString();
+
+        audit.detail(Details.CODE_ID, key);
+
         AccessCodeEntry accessCode = tokenManager.pullAccessCode(key);
         if (accessCode == null) {
             Map<String, String> res = new HashMap<String, String>();
             res.put(OAuth2Constants.ERROR, "invalid_grant");
             res.put(OAuth2Constants.ERROR_DESCRIPTION, "Code not found");
+            audit.error(Errors.INVALID_CODE);
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res)
                     .build();
         }
+
+        audit.user(accessCode.getUser());
+
+        ClientModel client = authorizeClient(authorizationHeader, formData, audit);
+
         if (accessCode.isExpired()) {
             Map<String, String> res = new HashMap<String, String>();
             res.put(OAuth2Constants.ERROR, "invalid_grant");
             res.put(OAuth2Constants.ERROR_DESCRIPTION, "Code is expired");
+            audit.error(Errors.INVALID_CODE);
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res)
                     .build();
         }
@@ -411,6 +490,7 @@ public class TokenService {
             Map<String, String> res = new HashMap<String, String>();
             res.put(OAuth2Constants.ERROR, "invalid_grant");
             res.put(OAuth2Constants.ERROR_DESCRIPTION, "Token expired");
+            audit.error(Errors.INVALID_CODE);
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res)
                     .build();
         }
@@ -418,19 +498,24 @@ public class TokenService {
             Map<String, String> res = new HashMap<String, String>();
             res.put(OAuth2Constants.ERROR, "invalid_grant");
             res.put(OAuth2Constants.ERROR_DESCRIPTION, "Auth error");
+            audit.error(Errors.INVALID_CODE);
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res)
                     .build();
         }
+
         logger.debug("accessRequest SUCCESS");
-        AccessTokenResponse res = tokenManager.responseBuilder(realm, client)
+
+        AccessTokenResponse res = tokenManager.responseBuilder(realm, client, audit)
                 .accessToken(accessCode.getToken())
                 .generateIDToken()
                 .generateRefreshToken().build();
 
+        audit.success();
+
         return Cors.add(request, Response.ok(res)).auth().allowedOrigins(client).allowedMethods("POST").build();
     }
 
-    protected ClientModel authorizeClient(String authorizationHeader, MultivaluedMap<String, String> formData) {
+    protected ClientModel authorizeClient(String authorizationHeader, MultivaluedMap<String, String> formData, Audit audit) {
         String client_id = null;
         String clientSecret = null;
         if (authorizationHeader != null) {
@@ -453,11 +538,14 @@ public class TokenService {
             throw new BadRequestException("Could not find client", Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build());
         }
 
+        audit.client(client_id);
+
         ClientModel client = realm.findClient(client_id);
         if (client == null) {
             Map<String, String> error = new HashMap<String, String>();
             error.put(OAuth2Constants.ERROR, "invalid_client");
             error.put(OAuth2Constants.ERROR_DESCRIPTION, "Could not find client");
+            audit.error(Errors.CLIENT_NOT_FOUND);
             throw new BadRequestException("Could not find client", Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build());
         }
 
@@ -465,6 +553,7 @@ public class TokenService {
             Map<String, String> error = new HashMap<String, String>();
             error.put(OAuth2Constants.ERROR, "invalid_client");
             error.put(OAuth2Constants.ERROR_DESCRIPTION, "Client is not enabled");
+            audit.error(Errors.CLIENT_DISABLED);
             throw new BadRequestException("Client is not enabled", Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build());
         }
 
@@ -472,6 +561,7 @@ public class TokenService {
             if (!client.validateSecret(clientSecret)) {
                 Map<String, String> error = new HashMap<String, String>();
                 error.put(OAuth2Constants.ERROR, "unauthorized_client");
+                audit.error(Errors.INVALID_CLIENT_CREDENTIALS);
                 throw new BadRequestException("Unauthorized Client", Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build());
             }
         }
@@ -484,6 +574,9 @@ public class TokenService {
                               @QueryParam("redirect_uri") String redirect, final @QueryParam("client_id") String clientId,
                               final @QueryParam("scope") String scopeParam, final @QueryParam("state") String state, final @QueryParam("prompt") String prompt) {
         logger.info("TokenService.loginPage");
+
+        audit.event(Events.LOGIN).client(clientId).detail(Details.REDIRECT_URI, redirect).detail(Details.RESPONSE_TYPE, "code");
+
         OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
 
         if (!checkSsl()) {
@@ -492,20 +585,24 @@ public class TokenService {
 
         if (!realm.isEnabled()) {
             logger.warn("Realm not enabled");
+            audit.error(Errors.REALM_DISABLED);
             return oauth.forwardToSecurityFailure("Realm not enabled");
         }
         ClientModel client = realm.findClient(clientId);
         if (client == null) {
             logger.warn("Unknown login requester: " + clientId);
+            audit.error(Errors.CLIENT_NOT_FOUND);
             return oauth.forwardToSecurityFailure("Unknown login requester.");
         }
 
         if (!client.isEnabled()) {
             logger.warn("Login requester not enabled.");
+            audit.error(Errors.CLIENT_DISABLED);
             return oauth.forwardToSecurityFailure("Login requester not enabled.");
         }
         redirect = verifyRedirectUri(redirect, client);
         if (redirect == null) {
+            audit.error(Errors.INVALID_REDIRECT_URI);
             return oauth.forwardToSecurityFailure("Invalid redirect_uri.");
         }
 
@@ -513,7 +610,8 @@ public class TokenService {
         UserModel user = authManager.authenticateIdentityCookie(realm, uriInfo, headers);
         if (user != null) {
             logger.debug(user.getLoginName() + " already logged in.");
-            return oauth.processAccessCode(scopeParam, state, redirect, client, user);
+            audit.user(user).detail(Details.AUTH_METHOD, "sso");
+            return oauth.processAccessCode(scopeParam, state, redirect, client, user, null, false, "sso", audit);
         }
 
         if (prompt != null && prompt.equals("none")) {
@@ -529,6 +627,9 @@ public class TokenService {
                                  @QueryParam("redirect_uri") String redirect, final @QueryParam("client_id") String clientId,
                                  final @QueryParam("scope") String scopeParam, final @QueryParam("state") String state) {
         logger.info("**********registerPage()");
+
+        audit.event(Events.REGISTER).client(clientId).detail(Details.REDIRECT_URI, redirect).detail(Details.RESPONSE_TYPE, "code");
+
         OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
 
         if (!checkSsl()) {
@@ -537,26 +638,31 @@ public class TokenService {
 
         if (!realm.isEnabled()) {
             logger.warn("Realm not enabled");
+            audit.error(Errors.REALM_DISABLED);
             return oauth.forwardToSecurityFailure("Realm not enabled");
         }
         ClientModel client = realm.findClient(clientId);
         if (client == null) {
             logger.warn("Unknown login requester.");
+            audit.error(Errors.CLIENT_NOT_FOUND);
             return oauth.forwardToSecurityFailure("Unknown login requester.");
         }
 
         if (!client.isEnabled()) {
             logger.warn("Login requester not enabled.");
+            audit.error(Errors.CLIENT_DISABLED);
             return oauth.forwardToSecurityFailure("Login requester not enabled.");
         }
 
         redirect = verifyRedirectUri(redirect, client);
         if (redirect == null) {
+            audit.error(Errors.INVALID_REDIRECT_URI);
             return oauth.forwardToSecurityFailure("Invalid redirect_uri.");
         }
 
         if (!realm.isRegistrationAllowed()) {
             logger.warn("Registration not allowed");
+            audit.error(Errors.REGISTRATION_DISABLED);
             return oauth.forwardToSecurityFailure("Registration not allowed");
         }
 
@@ -571,6 +677,8 @@ public class TokenService {
     public Response logout(final @QueryParam("redirect_uri") String redirectUri) {
         // todo do we care if anybody can trigger this?
 
+        audit.event(Events.LOGOUT).detail(Details.REDIRECT_URI, redirectUri);
+
         // authenticate identity cookie, but ignore an access token timeout as we're logging out anyways.
         UserModel user = authManager.authenticateIdentityCookie(realm, uriInfo, headers, false);
         if (user != null) {
@@ -578,6 +686,8 @@ public class TokenService {
             authManager.expireIdentityCookie(realm, uriInfo);
             authManager.expireRememberMeCookie(realm, uriInfo);
             resourceAdminManager.logoutUser(realm, user);
+
+            audit.user(user).success();
         } else {
             logger.info("No user logged in for logout");
         }
@@ -589,6 +699,8 @@ public class TokenService {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processOAuth(final MultivaluedMap<String, String> formData) {
+        audit.event(Events.LOGIN).detail(Details.RESPONSE_TYPE, "code");
+
         OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
 
         if (!checkSsl()) {
@@ -604,20 +716,38 @@ public class TokenService {
             logger.debug("Failed to verify signature", ignored);
         }
         if (!verifiedCode) {
+            audit.error(Errors.INVALID_CODE);
             return oauth.forwardToSecurityFailure("Illegal access code.");
         }
         String key = input.readContentAsString();
+        audit.detail(Details.CODE_ID, key);
+
         AccessCodeEntry accessCodeEntry = tokenManager.getAccessCode(key);
         if (accessCodeEntry == null) {
+            audit.error(Errors.INVALID_CODE);
             return oauth.forwardToSecurityFailure("Unknown access code.");
         }
 
         String redirect = accessCodeEntry.getRedirectUri();
         String state = accessCodeEntry.getState();
 
+        audit.client(accessCodeEntry.getClient())
+                .user(accessCodeEntry.getUser())
+                .detail(Details.RESPONSE_TYPE, "code")
+                .detail(Details.AUTH_METHOD, accessCodeEntry.getAuthMethod())
+                .detail(Details.REDIRECT_URI, redirect)
+                .detail(Details.USERNAME, accessCodeEntry.getUsername());
+
+        if (accessCodeEntry.isRememberMe()) {
+            audit.detail(Details.REMEMBER_ME, "true");
+        }
+
         if (formData.containsKey("cancel")) {
+            audit.error(Errors.REJECTED_BY_USER);
             return redirectAccessDenied(redirect, state);
         }
+
+        audit.success();
 
         accessCodeEntry.setExpiration(Time.currentTime() + realm.getAccessCodeLifespan());
         return oauth.redirectAccessCode(accessCodeEntry, state, redirect);

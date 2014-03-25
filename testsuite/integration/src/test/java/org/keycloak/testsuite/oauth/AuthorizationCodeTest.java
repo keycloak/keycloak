@@ -26,13 +26,14 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.models.ApplicationModel;
+import org.keycloak.audit.Details;
+import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.OAuthClient.AuthorizationCodeResponse;
-import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
@@ -62,8 +63,8 @@ public class AuthorizationCodeTest {
     @WebResource
     protected LoginPage loginPage;
 
-    @WebResource
-    protected ErrorPage errorPage;
+    @Rule
+    public AssertEvents events = new AssertEvents(keycloakRule);
 
     @Test
     public void authorizationRequest() throws IOException {
@@ -77,6 +78,9 @@ public class AuthorizationCodeTest {
         Assert.assertNull(response.getError());
 
         oauth.verifyCode(response.getCode());
+
+        String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
+        Assert.assertEquals(codeId, new JWSInput(response.getCode()).readContentAsString());
     }
 
     @Test
@@ -90,6 +94,9 @@ public class AuthorizationCodeTest {
 
         String code = driver.findElement(By.id(OAuth2Constants.CODE)).getText();
         oauth.verifyCode(code);
+
+        String codeId = events.expectLogin().detail(Details.REDIRECT_URI, Constants.INSTALLED_APP_URN).assertEvent().getDetails().get(Details.CODE_ID);
+        Assert.assertEquals(codeId, new JWSInput(code).readContentAsString());
     }
 
     @Test
@@ -109,6 +116,9 @@ public class AuthorizationCodeTest {
         Assert.assertNotNull(response.getCode());
 
         oauth.verifyCode(response.getCode());
+
+        String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
+        Assert.assertEquals(codeId, new JWSInput(response.getCode()).readContentAsString());
     }
 
     @Test
@@ -121,6 +131,9 @@ public class AuthorizationCodeTest {
         Assert.assertNull(response.getError());
 
         oauth.verifyCode(response.getCode());
+
+        String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
+        Assert.assertEquals(codeId, new JWSInput(response.getCode()).readContentAsString());
     }
 
 }

@@ -1,6 +1,7 @@
 package org.keycloak.services.resources;
 
 import org.jboss.resteasy.logging.Logger;
+import org.keycloak.audit.Audit;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -9,6 +10,7 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.SocialRequestManager;
 import org.keycloak.services.managers.TokenManager;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -38,6 +40,9 @@ public class RealmsResource {
     @Context
     protected KeycloakSession session;
 
+    @Context
+    protected HttpServletRequest servletRequest;
+
     protected TokenManager tokenManager;
     protected SocialRequestManager socialRequestManager;
 
@@ -54,7 +59,8 @@ public class RealmsResource {
     public TokenService getTokenService(final @PathParam("realm") String name) {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = locateRealm(name, realmManager);
-        TokenService tokenService = new TokenService(realm, tokenManager);
+        Audit audit = Audit.create(realm, servletRequest.getRemoteAddr());
+        TokenService tokenService = new TokenService(realm, tokenManager, audit);
         resourceContext.initResource(tokenService);
         return tokenService;
     }
@@ -78,7 +84,9 @@ public class RealmsResource {
             throw new NotFoundException();
         }
 
-        AccountService accountService = new AccountService(realm, application, tokenManager, socialRequestManager);
+        Audit audit = Audit.create(realm, servletRequest.getRemoteAddr());
+
+        AccountService accountService = new AccountService(realm, application, tokenManager, socialRequestManager, audit);
         resourceContext.initResource(accountService);
         return accountService;
     }
@@ -91,6 +99,5 @@ public class RealmsResource {
         resourceContext.initResource(realmResource);
         return realmResource;
     }
-
 
 }

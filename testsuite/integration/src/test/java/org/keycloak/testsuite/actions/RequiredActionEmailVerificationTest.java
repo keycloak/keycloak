@@ -22,13 +22,17 @@
 package org.keycloak.testsuite.actions;
 
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.audit.Details;
+import org.keycloak.audit.Event;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -53,17 +57,10 @@ import java.util.regex.Pattern;
 public class RequiredActionEmailVerificationTest {
 
     @ClassRule
-    public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakSetup() {
+    public static KeycloakRule keycloakRule = new KeycloakRule();
 
-        @Override
-        public void config(RealmManager manager, RealmModel defaultRealm, RealmModel appRealm) {
-            appRealm.setVerifyEmail(true);
-
-            UserModel user = appRealm.getUser("test-user@localhost");
-            user.addRequiredAction(RequiredAction.VERIFY_EMAIL);
-        }
-
-    });
+    @Rule
+    public AssertEvents events = new AssertEvents(keycloakRule);
 
     @Rule
     public WebRule webRule = new WebRule(this);
@@ -73,6 +70,9 @@ public class RequiredActionEmailVerificationTest {
 
     @WebResource
     protected WebDriver driver;
+
+    @WebResource
+    protected OAuthClient oauth;
 
     @WebResource
     protected AppPage appPage;
@@ -85,6 +85,21 @@ public class RequiredActionEmailVerificationTest {
 
     @WebResource
     protected RegisterPage registerPage;
+
+    @Before
+    public void before() {
+        keycloakRule.configure(new KeycloakSetup() {
+
+            @Override
+            public void config(RealmManager manager, RealmModel defaultRealm, RealmModel appRealm) {
+                appRealm.setVerifyEmail(true);
+
+                UserModel user = appRealm.getUser("test-user@localhost");
+                user.setEmailVerified(false);
+            }
+
+        });
+    }
 
     @Test
     public void verifyEmailExisting() throws IOException, MessagingException {
@@ -105,9 +120,19 @@ public class RequiredActionEmailVerificationTest {
 
         String verificationUrl = m.group(1);
 
+        Event sendEvent = events.expectRequiredAction("send_verify_email").detail("email", "test-user@localhost").assertEvent();
+
+        String mailCodeId = sendEvent.getDetails().get(Details.CODE_ID);
+
+        Assert.assertEquals(mailCodeId, verificationUrl.split("key=")[1]);
+
         driver.navigate().to(verificationUrl.trim());
 
+        events.expectRequiredAction("verify_email").detail("email", "test-user@localhost").detail(Details.CODE_ID, mailCodeId).assertEvent();
+
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        events.expectLogin().detail(Details.CODE_ID, mailCodeId).assertEvent();
     }
 
     @Test
@@ -115,6 +140,8 @@ public class RequiredActionEmailVerificationTest {
         loginPage.open();
         loginPage.clickRegister();
         registerPage.register("firstName", "lastName", "email", "verifyEmail", "password", "password");
+
+        String userId = events.expectRegister("verifyEmail", "email").assertEvent().getUserId();
 
         Assert.assertTrue(verifyEmailPage.isCurrent());
 
@@ -128,22 +155,33 @@ public class RequiredActionEmailVerificationTest {
         Matcher m = p.matcher(body);
         m.matches();
 
+        Event sendEvent = events.expectRequiredAction("send_verify_email").user(userId).detail("username", "verifyEmail").detail("email", "email").assertEvent();
+
+        String mailCodeId = sendEvent.getDetails().get(Details.CODE_ID);
+
         String verificationUrl = m.group(1);
 
         driver.navigate().to(verificationUrl.trim());
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        events.expectRequiredAction("verify_email").user(userId).detail("username", "verifyEmail").detail("email", "email").detail(Details.CODE_ID, mailCodeId).assertEvent();
+
+        events.expectLogin().user(userId).detail("username", "verifyEmail").detail(Details.CODE_ID, mailCodeId).assertEvent();
     }
 
     @Test
     public void verifyEmailResend() throws IOException, MessagingException {
         loginPage.open();
-        loginPage.clickRegister();
-        registerPage.register("firstName2", "lastName2", "email2", "verifyEmail2", "password2", "password2");
+        loginPage.login("test-user@localhost", "password");
 
         Assert.assertTrue(verifyEmailPage.isCurrent());
 
         Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+
+        Event sendEvent = events.expectRequiredAction("send_verify_email").detail("email", "test-user@localhost").assertEvent();
+
+        String mailCodeId = sendEvent.getDetails().get(Details.CODE_ID);
 
         verifyEmailPage.clickResendEmail();
 
@@ -157,11 +195,17 @@ public class RequiredActionEmailVerificationTest {
         Matcher m = p.matcher(body);
         m.matches();
 
+        events.expectRequiredAction("send_verify_email").detail("email", "test-user@localhost").assertEvent(sendEvent);
+
         String verificationUrl = m.group(1);
 
         driver.navigate().to(verificationUrl.trim());
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        events.expectRequiredAction("verify_email").detail("email", "test-user@localhost").detail(Details.CODE_ID, mailCodeId).assertEvent();
+
+        events.expectLogin().assertEvent();
     }
 
 }

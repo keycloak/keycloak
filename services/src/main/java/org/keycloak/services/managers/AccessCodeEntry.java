@@ -25,6 +25,8 @@ public class AccessCodeEntry {
     protected String state;
     protected String redirectUri;
     protected boolean rememberMe;
+    protected String authMethod;
+    protected String username;
 
     protected int expiration;
     protected RealmModel realm;
@@ -129,5 +131,21 @@ public class AccessCodeEntry {
 
     public void setRememberMe(boolean rememberMe) {
         this.rememberMe = rememberMe;
+    }
+
+    public String getAuthMethod() {
+        return authMethod;
+    }
+
+    public void setAuthMethod(String authMethod) {
+        this.authMethod = authMethod;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 }

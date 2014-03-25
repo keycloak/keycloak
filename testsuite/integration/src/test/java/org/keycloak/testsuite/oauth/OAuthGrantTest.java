@@ -21,15 +21,14 @@
  */
 package org.keycloak.testsuite.oauth;
 
-import java.io.IOException;
-import java.util.Map;
-
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.audit.Details;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
@@ -38,6 +37,9 @@ import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
 
+import java.io.IOException;
+import java.util.Map;
+
 /**
  * @author <a href="mailto:vrockai@redhat.com">Viliam Rockai</a>
  */
@@ -45,6 +47,9 @@ public class OAuthGrantTest {
 
     @ClassRule
     public static KeycloakRule keycloakRule = new KeycloakRule();
+
+    @Rule
+    public AssertEvents events = new AssertEvents(keycloakRule);
 
     @Rule
     public WebRule webRule = new WebRule(this);
@@ -76,6 +81,9 @@ public class OAuthGrantTest {
         grantPage.accept();
 
         Assert.assertTrue(oauth.getCurrentQuery().containsKey(OAuth2Constants.CODE));
+
+        String codeId = events.expectLogin().client("third-party").assertEvent().getDetails().get(Details.CODE_ID);
+
         OAuthClient.AccessTokenResponse accessToken = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE), "password");
 
         AccessToken token = oauth.verifyToken(accessToken.getAccessToken());
@@ -88,6 +96,8 @@ public class OAuthGrantTest {
         Assert.assertEquals(1, resourceAccess.size());
         Assert.assertEquals(1, resourceAccess.get("test-app").getRoles().size());
         Assert.assertTrue(resourceAccess.get("test-app").isUserInRole("customer-user"));
+
+        events.expectCodeToToken(codeId).client("third-party").assertEvent();
     }
 
     @Test
@@ -103,5 +113,8 @@ public class OAuthGrantTest {
 
         Assert.assertTrue(oauth.getCurrentQuery().containsKey(OAuth2Constants.ERROR));
         Assert.assertEquals("access_denied", oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
+
+        events.expectLogin().client("third-party").error("rejected_by_user").assertEvent();
     }
+
 }

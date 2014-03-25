@@ -25,12 +25,14 @@ import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.audit.Details;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
@@ -46,6 +48,7 @@ import org.openqa.selenium.WebDriver;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 import java.io.IOException;
+import java.util.Collections;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -60,13 +63,18 @@ public class ResetPasswordTest {
             user.setEmail("login@test.com");
             user.setEnabled(true);
 
+            userId = user.getId();
+
             UserCredentialModel creds = new UserCredentialModel();
             creds.setType(CredentialRepresentation.PASSWORD);
             creds.setValue("password");
 
             appRealm.updateCredential(user, creds);
+            appRealm.setAuditListeners(Collections.singleton("dummy"));
         }
     }));
+
+    private static String userId;
 
     @Rule
     public WebRule webRule = new WebRule(this);
@@ -92,16 +100,30 @@ public class ResetPasswordTest {
     @WebResource
     protected LoginPasswordUpdatePage updatePasswordPage;
 
+    @Rule
+    public AssertEvents events = new AssertEvents(keycloakRule);
+
     @Test
     public void resetPassword() throws IOException, MessagingException {
+        resetPassword("login-test");
+    }
+
+    @Test
+    public void resetPasswordByEmail() throws IOException, MessagingException {
+        resetPassword("login@test.com");
+    }
+
+    private void resetPassword(String username) throws IOException, MessagingException {
         loginPage.open();
         loginPage.resetPassword();
 
         resetPasswordPage.assertCurrent();
 
-        resetPasswordPage.changePassword("login-test");
+        resetPasswordPage.changePassword(username);
 
         resetPasswordPage.assertCurrent();
+
+        events.expectRequiredAction("send_reset_password").user(userId).detail(Details.USERNAME, username).detail(Details.EMAIL, "login@test.com").assertEvent();
 
         Assert.assertEquals("You should receive an email shortly with further instructions.", resetPasswordPage.getSuccessMessage());
 
@@ -118,50 +140,21 @@ public class ResetPasswordTest {
 
         updatePasswordPage.changePassword("resetPassword", "resetPassword");
 
+        events.expectRequiredAction("update_password").user(userId).detail(Details.USERNAME, username).assertEvent();
+
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
+        events.expectLogin().user(userId).detail(Details.USERNAME, username).assertEvent();
+
         oauth.openLogout();
+
+        events.expectLogout().user(userId).assertEvent();
 
         loginPage.open();
 
         loginPage.login("login-test", "resetPassword");
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-    }
-
-    @Test
-    public void resetPasswordByEmail() throws IOException, MessagingException {
-        loginPage.open();
-        loginPage.resetPassword();
-
-        resetPasswordPage.assertCurrent();
-
-        resetPasswordPage.changePassword("login@test.com");
-
-        resetPasswordPage.assertCurrent();
-
-        Assert.assertEquals("You should receive an email shortly with further instructions.", resetPasswordPage.getSuccessMessage());
-
-        Assert.assertEquals(1, greenMail.getReceivedMessages().length);
-
-        MimeMessage message = greenMail.getReceivedMessages()[0];
-
-        String body = (String) message.getContent();
-        String changePasswordUrl = body.split("\n")[3];
-
-        driver.navigate().to(changePasswordUrl.trim());
-
-        updatePasswordPage.assertCurrent();
-
-        updatePasswordPage.changePassword("resetPassword", "resetPassword");
-
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-
-        oauth.openLogout();
-
-        loginPage.open();
-
-        loginPage.login("login@test.com", "resetPassword");
+        events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
     }
@@ -182,6 +175,8 @@ public class ResetPasswordTest {
         Thread.sleep(1000);
 
         Assert.assertEquals(0, greenMail.getReceivedMessages().length);
+
+        events.expectRequiredAction("send_reset_password").user((String) null).detail(Details.USERNAME, "invalid").removeDetail(Details.EMAIL).removeDetail(Details.CODE_ID).error("user_not_found").assertEvent();
     }
 
     @Test
@@ -211,6 +206,8 @@ public class ResetPasswordTest {
         String body = (String) message.getContent();
         String changePasswordUrl = body.split("\n")[3];
 
+        events.expectRequiredAction("send_reset_password").user(userId).detail(Details.USERNAME, "login-test").detail(Details.EMAIL, "login@test.com").assertEvent();
+
         driver.navigate().to(changePasswordUrl.trim());
 
         updatePasswordPage.assertCurrent();
@@ -221,14 +218,23 @@ public class ResetPasswordTest {
 
         updatePasswordPage.changePassword("resetPasswordWithPasswordPolicy", "resetPasswordWithPasswordPolicy");
 
+        events.expectRequiredAction("update_password").user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
+        events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+
         oauth.openLogout();
+
+        events.expectLogout().user(userId).assertEvent();
 
         loginPage.open();
 
         loginPage.login("login-test", "resetPasswordWithPasswordPolicy");
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
     }
+
 }

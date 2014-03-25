@@ -27,13 +27,12 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.models.AccountRoles;
-import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.Constants;
+import org.keycloak.audit.Details;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.DummySocialServlet;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.OAuthClient.AccessTokenResponse;
@@ -87,6 +86,9 @@ public class SocialLoginTest {
     @WebResource
     protected OAuthClient oauth;
 
+    @Rule
+    public AssertEvents events = new AssertEvents(keycloakRule);
+
     @BeforeClass
     public static void before() {
         keycloakRule.deployServlet("dummy-social", "/dummy-social", DummySocialServlet.class);
@@ -107,7 +109,20 @@ public class SocialLoginTest {
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
+        String userId = events.expect("register")
+                .user(AssertEvents.isUUID())
+                .detail(Details.EMAIL, "bob@builder.com")
+                .detail(Details.RESPONSE_TYPE, "code")
+                .detail(Details.REGISTER_METHOD, "social")
+                .detail(Details.REDIRECT_URI, AssertEvents.DEFAULT_REDIRECT_URI)
+                .detail(Details.USERNAME, "1@dummy")
+                .assertEvent().getUserId();
+
+        String codeId = events.expectLogin().user(userId).detail(Details.USERNAME, "1@dummy").detail(Details.AUTH_METHOD, "social").assertEvent().getDetails().get(Details.CODE_ID);
+
         AccessTokenResponse response = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE), "password");
+
+        events.expectCodeToToken(codeId).user(userId).assertEvent();
 
         AccessToken token = oauth.verifyToken(response.getAccessToken());
         Assert.assertEquals(36, token.getSubject().length());
@@ -118,8 +133,21 @@ public class SocialLoginTest {
         Assert.assertEquals("Bob", profile.getFirstName());
         Assert.assertEquals("Builder", profile.getLastName());
         Assert.assertEquals("bob@builder.com", profile.getEmail());
-    }
 
+        oauth.openLogout();
+
+        events.expectLogout().user(userId).assertEvent();
+
+        loginPage.open();
+
+        loginPage.clickSocial("dummy");
+
+        driver.findElement(By.id("id")).sendKeys("1");
+        driver.findElement(By.id("username")).sendKeys("dummy-user1");
+        driver.findElement(By.id("login")).click();
+
+        events.expectLogin().user(userId).detail(Details.USERNAME, "1@dummy").detail(Details.AUTH_METHOD, "social").assertEvent();
+    }
 
     @Test
     public void loginCancelled() throws Exception {
@@ -132,9 +160,13 @@ public class SocialLoginTest {
         Assert.assertTrue(loginPage.isCurrent());
         Assert.assertEquals("Access denied", loginPage.getWarning());
 
+        events.expectLogin().error("rejected_by_user").user((String) null).detail(Details.AUTH_METHOD, "social").removeDetail(Details.USERNAME).removeDetail(Details.CODE_ID).assertEvent();
+
         loginPage.login("test-user@localhost", "password");
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        events.expectLogin().assertEvent();
     }
 
     @Test
@@ -164,12 +196,28 @@ public class SocialLoginTest {
             Assert.assertEquals("Builder", profilePage.getLastName());
             Assert.assertEquals("bob@builder.com", profilePage.getEmail());
 
+            String userId = events.expect("register")
+                    .user(AssertEvents.isUUID())
+                    .detail(Details.EMAIL, "bob@builder.com")
+                    .detail(Details.RESPONSE_TYPE, "code")
+                    .detail(Details.REGISTER_METHOD, "social")
+                    .detail(Details.REDIRECT_URI, AssertEvents.DEFAULT_REDIRECT_URI)
+                    .detail(Details.USERNAME, "2@dummy")
+                    .assertEvent().getUserId();
+
             profilePage.update("Dummy", "User", "dummy-user-reg@dummy-social");
+
+            events.expectRequiredAction("update_profile").user(userId).detail(Details.AUTH_METHOD, "social").detail(Details.USERNAME, "2@dummy").assertEvent();
+            events.expectRequiredAction("update_email").user(userId).detail(Details.AUTH_METHOD, "social").detail(Details.USERNAME, "2@dummy").detail(Details.PREVIOUS_EMAIL, "bob@builder.com").detail(Details.UPDATED_EMAIL, "dummy-user-reg@dummy-social").assertEvent();
 
             Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
+            String codeId = events.expectLogin().user(userId).removeDetail(Details.USERNAME).detail(Details.AUTH_METHOD, "social").detail(Details.USERNAME, "2@dummy").assertEvent().getDetails().get(Details.CODE_ID);
+
             AccessTokenResponse response = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE), "password");
             AccessToken token = oauth.verifyToken(response.getAccessToken());
+
+            events.expectCodeToToken(codeId).user(userId).assertEvent();
 
             UserRepresentation profile = keycloakRule.getUserById("test", token.getSubject());
 

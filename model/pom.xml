@@ -6,7 +6,7 @@
         <version>1.0-beta-1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-    <name>Examples</name>
+    <name>Model Parent</name>
     <description/>
     <modelVersion>4.0.0</modelVersion>
 

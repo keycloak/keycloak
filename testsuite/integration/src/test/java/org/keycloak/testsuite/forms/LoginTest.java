@@ -26,11 +26,13 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.audit.Details;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
@@ -53,6 +55,8 @@ public class LoginTest {
             user.setEmail("login@test.com");
             user.setEnabled(true);
 
+            userId = user.getId();
+
             UserCredentialModel creds = new UserCredentialModel();
             creds.setType(CredentialRepresentation.PASSWORD);
             creds.setValue("password");
@@ -60,6 +64,9 @@ public class LoginTest {
             appRealm.updateCredential(user, creds);
         }
     });
+
+    @Rule
+    public AssertEvents events = new AssertEvents(keycloakRule);
 
     @Rule
     public WebRule webRule = new WebRule(this);
@@ -76,6 +83,8 @@ public class LoginTest {
     @WebResource
     protected LoginPage loginPage;
 
+    private static String userId;
+
     @Test
     public void loginInvalidPassword() {
         loginPage.open();
@@ -84,6 +93,8 @@ public class LoginTest {
         loginPage.assertCurrent();
 
         Assert.assertEquals("Invalid username or password.", loginPage.getError());
+
+        events.expectLogin().user((String) null).error("invalid_user_credentials").detail(Details.USERNAME, "login-test").removeDetail(Details.CODE_ID).assertEvent();
     }
 
     @Test
@@ -94,6 +105,8 @@ public class LoginTest {
         loginPage.assertCurrent();
 
         Assert.assertEquals("Invalid username or password.", loginPage.getError());
+
+        events.expectLogin().user((String) null).error("user_not_found").detail(Details.USERNAME, "invalid").removeDetail(Details.CODE_ID).assertEvent();
     }
 
     @Test
@@ -103,6 +116,8 @@ public class LoginTest {
         
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+
+        events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
     }
 
     @Test
@@ -112,6 +127,8 @@ public class LoginTest {
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+
+        events.expectLogin().user(userId).detail(Details.USERNAME, "login@test.com").assertEvent();
     }
 
     @Test
@@ -120,8 +137,9 @@ public class LoginTest {
         loginPage.cancel();
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-
         Assert.assertEquals("access_denied", oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
+
+        events.expectLogin().error("rejected_by_user").user((String) null).removeDetail(Details.USERNAME).removeDetail(Details.CODE_ID).assertEvent();
     }
 
 }
