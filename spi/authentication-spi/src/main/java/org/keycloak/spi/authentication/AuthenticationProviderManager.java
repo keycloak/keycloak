@@ -61,7 +61,7 @@ public class AuthenticationProviderManager {
 
             try {
                 AuthResult currentResult = delegate.validatePassword(realm, authProviderConfig.getConfig(), username, password);
-                logger.debugf("Authentication provider '%s' finished with '%s' for authentication of '%s'", delegate.getName(), currentResult.toString(), username);
+                logger.debugf("Authentication provider '%s' finished with '%s' for authentication of '%s'", delegate.getName(), currentResult.getAuthProviderStatus().toString(), username);
 
                 if (currentResult.getAuthProviderStatus() == AuthProviderStatus.SUCCESS || currentResult.getAuthProviderStatus() == AuthProviderStatus.FAILED) {
                     return currentResult;
@@ -90,8 +90,11 @@ public class AuthenticationProviderManager {
                 }
 
                 try {
-                    delegate.updateCredential(realm, authProviderConfig.getConfig(), username, password);
-                    logger.debugf("Updated password in authentication provider '%s' for user '%s'", delegate.getName(), username);
+                    if (delegate.updateCredential(realm, authProviderConfig.getConfig(), username, password)) {
+                        logger.debugf("Updated password in authentication provider '%s' for user '%s'", delegate.getName(), username);
+                    } else {
+                        logger.debugf("Password not updated in authentication provider '%s' for user '%s'", delegate.getName(), username);
+                    }
                 } catch (AuthenticationProviderException ape) {
                     // Rethrow it to upper layer
                     logger.warn("Failed to update password", ape);
