@@ -127,6 +127,11 @@ public class AuthProvidersIntegrationTest {
 
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+
+        profilePage.open();
+        Assert.assertEquals("John", profilePage.getFirstName());
+        Assert.assertEquals("Doe", profilePage.getLastName());
+        Assert.assertEquals("john@email.org", profilePage.getEmail());
     }
 
     @Test
@@ -166,7 +171,7 @@ public class AuthProvidersIntegrationTest {
     }
 
     @Test
-    public void passwordChangeLdap() {
+    public void passwordChangeLdap() throws Exception {
         changePasswordPage.open();
         loginPage.login("john", "password");
         changePasswordPage.changePassword("password", "new-password", "new-password");
@@ -175,9 +180,10 @@ public class AuthProvidersIntegrationTest {
 
         changePasswordPage.logout();
 
-        loginPage.open();
-        loginPage.login("john", "password");
-        Assert.assertEquals("Invalid username or password.", loginPage.getError());
+//        TODO: Disabled until https://issues.jboss.org/browse/PLINK-384 is released and updated
+//        loginPage.open();
+//        loginPage.login("john", "password");
+//        Assert.assertEquals("Invalid username or password.", loginPage.getError());
 
         loginPage.open();
         loginPage.login("john", "new-password");

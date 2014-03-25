@@ -234,22 +234,26 @@ public class AuthenticationManager {
                     AuthenticationLinkModel authLink = new AuthenticationLinkModel(authResult.getProviderName(), authUser.getId());
                     user = realm.getUserByAuthenticationLink(authLink);
                     if (user == null) {
-                        // Create new user, which has been successfully authenticated and link him with authentication provider
-                        user = realm.addUser(authUser.getUsername());
-                        user.setEnabled(true);
-                        user.setFirstName(authUser.getFirstName());
-                        user.setLastName(authUser.getLastName());
-                        user.setEmail(authUser.getEmail());
+                        user = KeycloakModelUtils.findUserByNameOrEmail(realm, username);
+                        if (user != null) {
+                            // Case when we already have user with the same username like authenticated, but he is not yet linked to current provider.
+                            // TODO: Revisit if it's ok to link if we allow to change username. Maybe ask user?
+                            // TODO: Update of existing account?
+                            realm.addAuthenticationLink(user, authLink);
+                            logger.info("User " + authUser.getUsername() + " successfully authenticated and linked with provider " + authResult.getProviderName());
+                        }  else {
+                            // Create new user, which has been successfully authenticated and link him with authentication provider
+                            user = realm.addUser(authUser.getUsername());
+                            user.setEnabled(true);
+                            user.setFirstName(authUser.getFirstName());
+                            user.setLastName(authUser.getLastName());
+                            user.setEmail(authUser.getEmail());
 
-                        realm.addAuthenticationLink(user, authLink);
-                        logger.info("User " + username + " successfully authenticated and created based on provider " + authResult.getProviderName());
-                    } else {
-                        // Existing user has been authenticated
-                        if (!checkEnabled(user)) {
-                            return AuthenticationStatus.ACCOUNT_DISABLED;
+                            realm.addAuthenticationLink(user, authLink);
+                            logger.info("User " + username + " successfully authenticated and created based on provider " + authResult.getProviderName());
                         }
-
-                        // TODO: Update of existing account?
+                    } else {
+                        // Existing and linked user has been authenticated TODO: Update of existing account?
                     }
 
                     // Authenticated username could be different from the "form" username. In this case, we will change it
@@ -263,9 +267,11 @@ public class AuthenticationManager {
                     if (user == null) {
                         logger.warn("User '" + username + "' successfully authenticated, but he doesn't exists and don't know how to create him");
                         return AuthenticationStatus.INVALID_USER;
-                    } else if (!checkEnabled(user)) {
-                        return AuthenticationStatus.ACCOUNT_DISABLED;
                     }
+                }
+
+                if (!checkEnabled(user)) {
+                    return AuthenticationStatus.ACCOUNT_DISABLED;
                 }
             }
 

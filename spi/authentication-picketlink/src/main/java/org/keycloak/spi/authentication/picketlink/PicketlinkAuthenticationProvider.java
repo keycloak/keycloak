@@ -55,7 +55,6 @@ public class PicketlinkAuthenticationProvider implements AuthenticationProvider 
             result.setUser(authenticatedUser).setProviderName(getName());
             return result;
         } else {
-            logger.debugf("Username: %s, Credential status: %s", username, credential.getStatus());
             return new AuthResult(AuthProviderStatus.IGNORE);
         }
     }
