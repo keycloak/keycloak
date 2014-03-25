@@ -23,8 +23,6 @@ import org.keycloak.util.JsonSerialization;
  */
 public class AbstractModelTest {
 
-    private final Logger log = Logger.getLogger(getClass());
-
     protected KeycloakSessionFactory factory;
     protected KeycloakSession identitySession;
     protected RealmManager realmManager;

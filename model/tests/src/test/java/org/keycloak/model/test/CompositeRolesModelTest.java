@@ -19,6 +19,7 @@ import org.keycloak.services.managers.RealmManager;
 public class CompositeRolesModelTest extends AbstractModelTest {
 
     @Before
+    @Override
     public void before() throws Exception {
         super.before();
         RealmManager manager = realmManager;

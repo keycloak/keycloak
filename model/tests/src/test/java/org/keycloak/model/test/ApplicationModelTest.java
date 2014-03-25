@@ -22,6 +22,7 @@ public class ApplicationModelTest extends AbstractModelTest {
     private ApplicationManager appManager;
 
     @Before
+    @Override
     public void before() throws Exception {
         super.before();
         appManager = new ApplicationManager(realmManager);

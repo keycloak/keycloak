@@ -42,6 +42,8 @@ import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.validation.Validation;
+import org.keycloak.spi.authentication.AuthenticationProviderException;
+import org.keycloak.spi.authentication.AuthenticationProviderManager;
 import org.keycloak.util.Time;
 
 import javax.ws.rs.Consumes;
@@ -171,16 +173,11 @@ public class RequiredActionsService {
             return loginForms.setError(Messages.NOTMATCH_PASSWORD).createResponse(RequiredAction.UPDATE_PASSWORD);
         }
 
-        String error = realm.getPasswordPolicy().validate(passwordNew);
-        if (error != null) {
-            return loginForms.setError(error).createResponse(RequiredAction.UPDATE_PASSWORD);
+        try {
+            AuthenticationProviderManager.getManager(realm).updatePassword(user.getLoginName(), passwordNew);
+        } catch (AuthenticationProviderException ape) {
+            return loginForms.setError(ape.getMessage()).createResponse(RequiredAction.UPDATE_PASSWORD);
         }
-
-        UserCredentialModel credentials = new UserCredentialModel();
-        credentials.setType(CredentialRepresentation.PASSWORD);
-        credentials.setValue(passwordNew);
-
-        realm.updateCredential(user, credentials);
 
         logger.debug("updatePassword updated credential");
 

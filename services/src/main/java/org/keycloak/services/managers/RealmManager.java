@@ -4,6 +4,8 @@ import org.jboss.resteasy.logging.Logger;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.AuthenticationLinkModel;
+import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Config;
 import org.keycloak.models.Constants;
@@ -18,6 +20,9 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.ApplicationRepresentation;
+import org.keycloak.representations.idm.AuthenticationLinkRepresentation;
+import org.keycloak.representations.idm.AuthenticationMappingRepresentation;
+import org.keycloak.representations.idm.AuthenticationProviderRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -31,6 +36,7 @@ import org.keycloak.representations.idm.UserRoleMappingRepresentation;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -143,6 +149,14 @@ public class RealmManager {
 
         if (rep.getSocialProviders() != null) {
             realm.setSocialConfig(new HashMap(rep.getSocialProviders()));
+        }
+
+        if (rep.getLdapServer() != null) {
+            realm.setLdapServerConfig(new HashMap(rep.getLdapServer()));
+        }
+        if (rep.getAuthenticationProviders() != null) {
+            List<AuthenticationProviderModel> authProviderModels = convertAuthenticationProviders(rep.getAuthenticationProviders());
+            realm.setAuthenticationProviders(authProviderModels);
         }
 
         if ("GENERATE".equals(rep.getPublicKey())) {
@@ -371,6 +385,15 @@ public class RealmManager {
                 }
             }
         }
+        if (rep.getAuthenticationMappings() != null) {
+            for (AuthenticationMappingRepresentation authMapping : rep.getAuthenticationMappings()) {
+                UserModel user = userMap.get(authMapping.getUsername());
+                for (AuthenticationLinkRepresentation link : authMapping.getAuthenticationLinks()) {
+                    AuthenticationLinkModel mappingModel = new AuthenticationLinkModel(link.getAuthProvider(), link.getAuthUserId());
+                    newRealm.addAuthenticationLink(user, mappingModel);
+                }
+            }
+        }
 
         if (rep.getSmtpServer() != null) {
             newRealm.setSmtpConfig(new HashMap(rep.getSmtpServer()));
@@ -378,6 +401,14 @@ public class RealmManager {
 
         if (rep.getSocialProviders() != null) {
             newRealm.setSocialConfig(new HashMap(rep.getSocialProviders()));
+        }
+        if (rep.getLdapServer() != null) {
+            newRealm.setLdapServerConfig(new HashMap(rep.getLdapServer()));
+        }
+
+        if (rep.getAuthenticationProviders() != null) {
+            List<AuthenticationProviderModel> authProviderModels = convertAuthenticationProviders(rep.getAuthenticationProviders());
+            newRealm.setAuthenticationProviders(authProviderModels);
         }
     }
 
@@ -488,6 +519,17 @@ public class RealmManager {
         for (OAuthClientRepresentation rep : realmRep.getOauthClients()) {
             OAuthClientModel app = manager.create(rep);
         }
+    }
+
+    protected List<AuthenticationProviderModel> convertAuthenticationProviders(List<AuthenticationProviderRepresentation> authenticationProviders) {
+        List<AuthenticationProviderModel> result = new ArrayList<AuthenticationProviderModel>();
+
+        for (AuthenticationProviderRepresentation representation : authenticationProviders) {
+            AuthenticationProviderModel model = new AuthenticationProviderModel(representation.getProviderName(),
+                    representation.isPasswordUpdateSupported(), representation.getConfig());
+            result.add(model);
+        }
+        return result;
     }
 
 

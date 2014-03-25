@@ -39,10 +39,13 @@ public class RealmRepresentation {
     protected Map<String, List<UserRoleMappingRepresentation>> applicationRoleMappings;
     protected Map<String, List<ScopeMappingRepresentation>> applicationScopeMappings;
     protected List<SocialMappingRepresentation> socialMappings;
+    protected List<AuthenticationMappingRepresentation> authenticationMappings;
     protected List<ApplicationRepresentation> applications;
     protected List<OAuthClientRepresentation> oauthClients;
     protected Map<String, String> socialProviders;
     protected Map<String, String> smtpServer;
+    protected Map<String, String> ldapServer;
+    protected List<AuthenticationProviderRepresentation> authenticationProviders;
     protected String loginTheme;
     protected String accountTheme;
 
@@ -178,6 +181,18 @@ public class RealmRepresentation {
         return mapping;
     }
 
+    public List<AuthenticationMappingRepresentation> getAuthenticationMappings() {
+        return authenticationMappings;
+    }
+
+    public AuthenticationMappingRepresentation authenticationMapping(String username) {
+        AuthenticationMappingRepresentation mapping = new AuthenticationMappingRepresentation();
+        mapping.setUsername(username);
+        if (authenticationMappings == null) authenticationMappings = new ArrayList<AuthenticationMappingRepresentation>();
+        authenticationMappings.add(mapping);
+        return mapping;
+    }
+
     public Set<String> getRequiredCredentials() {
         return requiredCredentials;
     }
@@ -296,6 +311,22 @@ public class RealmRepresentation {
 
     public void setSmtpServer(Map<String, String> smtpServer) {
         this.smtpServer = smtpServer;
+    }
+
+    public Map<String, String> getLdapServer() {
+        return ldapServer;
+    }
+
+    public void setLdapServer(Map<String, String> ldapServer) {
+        this.ldapServer = ldapServer;
+    }
+
+    public List<AuthenticationProviderRepresentation> getAuthenticationProviders() {
+        return authenticationProviders;
+    }
+
+    public void setAuthenticationProviders(List<AuthenticationProviderRepresentation> authenticationProviders) {
+        this.authenticationProviders = authenticationProviders;
     }
 
     public List<OAuthClientRepresentation> getOauthClients() {

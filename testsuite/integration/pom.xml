@@ -139,6 +139,16 @@
             <artifactId>keycloak-login-freemarker</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-authentication-spi</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-authentication-model</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>org.jboss.logging</groupId>
@@ -255,6 +265,12 @@
         <dependency>
             <groupId>com.icegreen</groupId>
             <artifactId>greenmail</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.seleniumhq.selenium</groupId>
@@ -282,6 +298,13 @@
         <dependency>
             <groupId>org.picketlink</groupId>
             <artifactId>picketlink-common</artifactId>
+        </dependency>
+
+        <!-- This adds couple of other dependencies (like picketlink) -->
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-model-tests</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
     </dependencies>

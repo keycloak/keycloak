@@ -58,10 +58,10 @@ public class SocialLinkEntity implements MongoEntity {
     public int hashCode() {
         int code = 1;
         if (socialUserId != null) {
-            code = code * 13;
+            code = code * socialUserId.hashCode() * 13;
         }
         if (socialProvider != null) {
-            code = code * 17;
+            code = code * socialProvider.hashCode() * 17;
         }
         return code;
     }

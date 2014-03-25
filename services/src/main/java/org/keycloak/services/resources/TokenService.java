@@ -16,6 +16,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -28,6 +29,8 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.OAuthFlows;
 import org.keycloak.services.validation.Validation;
+import org.keycloak.spi.authentication.AuthenticationProviderException;
+import org.keycloak.spi.authentication.AuthenticationProviderManager;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.Time;
 
@@ -37,7 +40,6 @@ import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.NotAcceptableException;
-import javax.ws.rs.NotAllowedException;
 import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
@@ -149,23 +151,18 @@ public class TokenService {
         }
 
 
-        String username = form.getFirst(AuthenticationManager.FORM_USERNAME);
-        if (username == null) {
-            throw new NotAuthorizedException("No user");
+        if (form.getFirst(AuthenticationManager.FORM_USERNAME) == null) {
+            throw new NotAuthorizedException("No username");
         }
         if (!realm.isEnabled()) {
             throw new NotAuthorizedException("Disabled realm");
         }
-        UserModel user = realm.getUser(username);
-        if (user == null) {
-            throw new NotAuthorizedException("No user");
-        }
-        if (!user.isEnabled()) {
-            throw new NotAuthorizedException("Disabled user.");
-        }
-        if (authManager.authenticateForm(realm, user, form) != AuthenticationStatus.SUCCESS) {
+
+        if (authManager.authenticateForm(realm, form) != AuthenticationStatus.SUCCESS) {
             throw new NotAuthorizedException("Auth failed");
         }
+
+        UserModel user = realm.getUser(form.getFirst(AuthenticationManager.FORM_USERNAME));
         String scope = form.getFirst(OAuth2Constants.SCOPE);
         AccessTokenResponse res = tokenManager.responseBuilder(realm, client)
                 .generateAccessToken(scope, client, user)
@@ -237,17 +234,7 @@ public class TokenService {
             return oauth.redirectError(client, "access_denied", state, redirect);
         }
 
-        String username = formData.getFirst("username");
-        UserModel user = realm.getUser(username);
-        if (user == null && username.contains("@")) {
-            user = realm.getUserByEmail(username);
-        }
-
-        if (user == null) {
-            return Flows.forms(realm, request, uriInfo).setError(Messages.INVALID_USER).setFormData(formData).createLogin();
-        }
-
-        AuthenticationStatus status = authManager.authenticateForm(realm, user, formData);
+        AuthenticationStatus status = authManager.authenticateForm(realm, formData);
 
         String rememberMe = formData.getFirst("rememberMe");
         boolean remember = rememberMe != null && rememberMe.equalsIgnoreCase("on");
@@ -262,6 +249,7 @@ public class TokenService {
         switch (status) {
             case SUCCESS:
             case ACTIONS_REQUIRED:
+                UserModel user = KeycloakModelUtils.findUserByNameOrEmail(realm, formData.getFirst(AuthenticationManager.FORM_USERNAME));
                 return oauth.processAccessCode(scopeParam, state, redirect, client, user, remember);
             case ACCOUNT_DISABLED:
                 return Flows.forms(realm, request, uriInfo).setError(Messages.ACCOUNT_DISABLED).setFormData(formData).createLogin();
@@ -317,6 +305,7 @@ public class TokenService {
             requiredCredentialTypes.add(m.getType());
         }
 
+        // Validate here, so user is not created if password doesn't validate to passwordPolicy of current realm
         String error = Validation.validateRegistrationForm(formData, requiredCredentialTypes);
         if (error == null) {
             error = Validation.validatePassword(formData, realm.getPasswordPolicy());
@@ -344,7 +333,13 @@ public class TokenService {
             UserCredentialModel credentials = new UserCredentialModel();
             credentials.setType(CredentialRepresentation.PASSWORD);
             credentials.setValue(formData.getFirst("password"));
-            realm.updateCredential(user, credentials);
+            try {
+                AuthenticationProviderManager.getManager(realm).updatePassword(username, formData.getFirst("password"));
+            } catch (AuthenticationProviderException ape) {
+                // User already registered, but force him to update password
+                user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+                return Flows.forms(realm, request, uriInfo).setError(ape.getMessage()).createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
+            }
         }
 
         return processLogin(clientId, scopeParam, state, redirect, formData);

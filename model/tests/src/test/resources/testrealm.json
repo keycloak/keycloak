@@ -7,6 +7,38 @@
     "requiredCredentials": [ "password" ],
     "defaultRoles": [ "foo", "bar" ],
     "verifyEmail" : "true",
+    "smtpServer": {
+        "from": "auto@keycloak.org",
+        "host": "localhost",
+        "port":"3025"
+    },
+    "ldapServer": {
+        "connectionUrl": "ldap://localhost:10389",
+        "baseDn": "dc=keycloak,dc=org",
+        "userDnSuffix": "ou=People,dc=keycloak,dc=org",
+        "bindDn": "uid=admin,ou=system",
+        "bindCredential": "secret"
+    },
+    "socialProviders": {
+        "google.key": "abc",
+        "google.secret": "def"
+    },
+    "authenticationProviders": [
+        {
+            "providerName": "model"
+        },
+        {
+            "providerName": "externalModel",
+            "passwordUpdateSupported": false,
+            "config": {
+                "externalRealmId": "trustedRealm"
+            }
+        },
+        {
+            "providerName": "picketlink",
+            "passwordUpdateSupported": true
+        }
+    ],
     "users": [
         {
             "username": "wburke",
@@ -64,6 +96,21 @@
                     "socialProvider": "google",
                     "socialUserId": "google1",
                     "socialUsername": "mySocialUser@gmail.com"
+                }
+            ]
+        }
+    ],
+    "authenticationMappings": [
+        {
+            "username": "mySocialUser",
+            "authenticationLinks": [
+                {
+                    "authProvider": "picketlink",
+                    "authUserId": "myUser1"
+                },
+                {
+                    "authProvider": "externalModel",
+                    "authUserId": "myUser11"
                 }
             ]
         }

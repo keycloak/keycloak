@@ -8,6 +8,8 @@ import org.keycloak.models.mongo.api.MongoStore;
 import org.keycloak.models.mongo.impl.MongoStoreImpl;
 import org.keycloak.models.mongo.keycloak.config.MongoClientProvider;
 import org.keycloak.models.mongo.keycloak.entities.ApplicationEntity;
+import org.keycloak.models.mongo.keycloak.entities.AuthenticationLinkEntity;
+import org.keycloak.models.mongo.keycloak.entities.AuthenticationProviderEntity;
 import org.keycloak.models.mongo.keycloak.entities.CredentialEntity;
 import org.keycloak.models.mongo.keycloak.entities.OAuthClientEntity;
 import org.keycloak.models.mongo.keycloak.entities.RealmEntity;
@@ -29,8 +31,10 @@ public class MongoKeycloakSessionFactory implements KeycloakSessionFactory {
             UserEntity.class,
             RoleEntity.class,
             RequiredCredentialEntity.class,
+            AuthenticationProviderEntity.class,
             CredentialEntity.class,
             SocialLinkEntity.class,
+            AuthenticationLinkEntity.class,
             ApplicationEntity.class,
             OAuthClientEntity.class
     };

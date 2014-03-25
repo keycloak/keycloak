@@ -1,6 +1,7 @@
 package org.keycloak.services.managers;
 
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClaimMask;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -9,6 +10,7 @@ import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.AuthenticationProviderRepresentation;
 import org.keycloak.representations.idm.ClaimRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -83,6 +85,7 @@ public class ModelToRepresentation {
         rep.setAccessCodeLifespanUserAction(realm.getAccessCodeLifespanUserAction());
         rep.setSmtpServer(realm.getSmtpConfig());
         rep.setSocialProviders(realm.getSocialConfig());
+        rep.setLdapServer(realm.getLdapServerConfig());
         rep.setAccountTheme(realm.getAccountTheme());
         rep.setLoginTheme(realm.getLoginTheme());
         if (realm.getPasswordPolicy() != null) {
@@ -104,6 +107,19 @@ public class ModelToRepresentation {
             for (RequiredCredentialModel cred : requiredCredentialModels) {
                 rep.getRequiredCredentials().add(cred.getType());
             }
+        }
+
+        List<AuthenticationProviderModel> authProviderModels = realm.getAuthenticationProviders();
+        if (authProviderModels.size() > 0) {
+            List<AuthenticationProviderRepresentation> authProviderReps = new ArrayList<AuthenticationProviderRepresentation>();
+            for (AuthenticationProviderModel model : authProviderModels) {
+                AuthenticationProviderRepresentation authProvRep = new AuthenticationProviderRepresentation();
+                authProvRep.setProviderName(model.getProviderName());
+                authProvRep.setPasswordUpdateSupported(model.isPasswordUpdateSupported());
+                authProvRep.setConfig(model.getConfig());
+                authProviderReps.add(authProvRep);
+            }
+            rep.setAuthenticationProviders(authProviderReps);
         }
         return rep;
     }

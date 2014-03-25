@@ -42,8 +42,10 @@ import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.social.SocialLoader;
 import org.keycloak.social.SocialProvider;
-import org.keycloak.social.SocialProviderConfig;
 import org.keycloak.social.SocialProviderException;
+import org.keycloak.spi.authentication.AuthProviderStatus;
+import org.keycloak.spi.authentication.AuthenticationProviderException;
+import org.keycloak.spi.authentication.AuthenticationProviderManager;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
@@ -237,22 +239,19 @@ public class AccountService {
             return account.setError(Messages.INVALID_PASSWORD_CONFIRM).createResponse(AccountPages.PASSWORD);
         }
 
+        AuthenticationProviderManager authProviderManager = AuthenticationProviderManager.getManager(realm);
         if (Validation.isEmpty(password)) {
             return account.setError(Messages.MISSING_PASSWORD).createResponse(AccountPages.PASSWORD);
-        } else if (!realm.validatePassword(user, password)) {
+            // TODO: This may not work in some cases. For example if ldap username is "foo" but actual loginName of user is "bar", which could theoretically happen...
+        } else if (authProviderManager.validatePassword(user.getLoginName(), password).getAuthProviderStatus() != AuthProviderStatus.SUCCESS) {
             return account.setError(Messages.INVALID_PASSWORD_EXISTING).createResponse(AccountPages.PASSWORD);
         }
 
-        String error = Validation.validatePassword(formData, realm.getPasswordPolicy());
-        if (error != null) {
-            return account.setError(error).createResponse(AccountPages.PASSWORD);
+        try {
+            authProviderManager.updatePassword(user.getLoginName(), passwordNew);
+        } catch (AuthenticationProviderException ape) {
+            return account.setError(ape.getMessage()).createResponse(AccountPages.PASSWORD);
         }
-
-        UserCredentialModel credentials = new UserCredentialModel();
-        credentials.setType(CredentialRepresentation.PASSWORD);
-        credentials.setValue(passwordNew);
-
-        realm.updateCredential(user, credentials);
 
         return account.setSuccess("accountPasswordUpdated").createResponse(AccountPages.PASSWORD);
     }
