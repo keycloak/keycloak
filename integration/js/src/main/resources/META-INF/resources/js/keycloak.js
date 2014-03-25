@@ -21,7 +21,9 @@ var Keycloak = function (config) {
         initPromise.promise.success(function() {
             kc.onReady && kc.onReady(kc.authenticated);
             promise.setSuccess(kc.authenticated);
-        }).error(promise.error);
+        }).error(function() {
+            promise.setError();
+        });
 
         var configPromise = loadConfig(config);
 
@@ -65,6 +67,9 @@ var Keycloak = function (config) {
         }
 
         configPromise.success(processInit);
+        configPromise.error(function() {
+            promise.setError();
+        });
 
         return promise.promise;
     }
@@ -76,11 +81,21 @@ var Keycloak = function (config) {
     kc.createLoginUrl = function(options) {
         var state = createUUID();
 
+        var redirectUri = adapter.redirectUri(options);
+        if (options && options.prompt) {
+            if (redirectUri.indexOf('?') == -1) {
+                redirectUri += '?prompt=' + options.prompt;
+            } else {
+                redirectUri += '&prompt=' + options.prompt;
+            }
+        }
+
         sessionStorage.oauthState = state;
+
         var url = getRealmUrl()
             + '/tokens/login'
             + '?client_id=' + encodeURIComponent(kc.clientId)
-            + '&redirect_uri=' + encodeURIComponent(adapter.redirectUri(options))
+            + '&redirect_uri=' + encodeURIComponent(redirectUri)
             + '&state=' + encodeURIComponent(state)
             + '&response_type=code';
 
@@ -258,6 +273,8 @@ var Keycloak = function (config) {
             if (prompt != 'none') {
                 kc.onAuthError && kc.onAuthError();
                 promise && promise.setError();
+            } else {
+                promise && promise.setSuccess();
             }
         }
     }
@@ -497,17 +514,29 @@ var Keycloak = function (config) {
 
                     var loginUrl = kc.createLoginUrl(options);
                     var ref = window.open(loginUrl, '_blank', o);
+
+                    var callback;
+                    var error;
+
                     ref.addEventListener('loadstart', function(event) {
                         if (event.url.indexOf('http://localhost') == 0) {
-                            var callback = parseCallback(event.url);
+                            callback = parseCallback(event.url);
                             ref.close();
-                            processCallback(callback);
+                        }
+                    });
 
-                            if (callback.code) {
-                                promise.setSuccess();
-                            } else {
-                                promise.setError();
-                            }
+                    ref.addEventListener('loaderror', function(event) {
+                        if (event.url.indexOf('http://localhost') != 0) {
+                            error = true;
+                            ref.close();
+                        }
+                    });
+
+                    ref.addEventListener('exit', function(event) {
+                        if (error || !callback) {
+                            promise.setError();
+                        } else {
+                            processCallback(callback, promise);
                         }
                     });
 
@@ -519,9 +548,26 @@ var Keycloak = function (config) {
 
                     var logoutUrl = kc.createLogoutUrl(options);
                     var ref = window.open(logoutUrl, '_blank', 'location=no,hidden=yes');
+
+                    var error;
+
                     ref.addEventListener('loadstart', function(event) {
                         if (event.url.indexOf('http://localhost') == 0) {
                             ref.close();
+                        }
+                    });
+
+                    ref.addEventListener('loaderror', function(event) {
+                        if (event.url.indexOf('http://localhost') != 0) {
+                            error = true;
+                            ref.close();
+                        }
+                    });
+
+                    ref.addEventListener('exit', function(event) {
+                        if (error) {
+                            promise.setError();
+                        } else {
                             clearToken();
                             promise.setSuccess();
                         }
