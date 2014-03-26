@@ -17,7 +17,6 @@ import org.keycloak.util.ProviderLoader;
  *
  * Example of usage: AuthenticationProviderManager.getManager(realm).validateUser("joe", "password");
  *
- *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class AuthenticationProviderManager {
@@ -50,6 +49,7 @@ public class AuthenticationProviderManager {
 
     public AuthResult validatePassword(String username, String password) {
         List<AuthenticationProviderModel> configuredProviders = getConfiguredProviders(realm);
+        boolean userExists = false;
 
         for (AuthenticationProviderModel authProviderConfig : configuredProviders) {
             String providerName = authProviderConfig.getProviderName();
@@ -63,17 +63,20 @@ public class AuthenticationProviderManager {
                 AuthResult currentResult = delegate.validatePassword(realm, authProviderConfig.getConfig(), username, password);
                 logger.debugf("Authentication provider '%s' finished with '%s' for authentication of '%s'", delegate.getName(), currentResult.getAuthProviderStatus().toString(), username);
 
-                if (currentResult.getAuthProviderStatus() == AuthProviderStatus.SUCCESS || currentResult.getAuthProviderStatus() == AuthProviderStatus.FAILED) {
+                if (currentResult.getAuthProviderStatus() == AuthProviderStatus.SUCCESS) {
                     return currentResult;
+                } else if (currentResult.getAuthProviderStatus() == AuthProviderStatus.INVALID_CREDENTIALS) {
+                    userExists = true;
                 }
             } catch (AuthenticationProviderException ape) {
                 logger.warn(ape.getMessage(), ape);
             }
         }
 
-        logger.debugf("Not able to authenticate '%s' with any authentication provider", username);
+        AuthProviderStatus status = userExists ? AuthProviderStatus.INVALID_CREDENTIALS : AuthProviderStatus.USER_NOT_FOUND;
+        logger.debugf("Not able to authenticate '%s' with any authentication provider. Status: '%s'", username, status.toString());
 
-        return new AuthResult(AuthProviderStatus.FAILED);
+        return new AuthResult(status);
     }
 
     public void updatePassword(String username, String password) throws AuthenticationProviderException {
@@ -97,7 +100,7 @@ public class AuthenticationProviderManager {
                     }
                 } catch (AuthenticationProviderException ape) {
                     // Rethrow it to upper layer
-                    logger.warn("Failed to update password", ape);
+                    logger.warn("Failed to update password: " + ape.getMessage());
                     throw ape;
                 }
             } else {

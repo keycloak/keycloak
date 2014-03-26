@@ -224,9 +224,12 @@ public class AuthenticationManager {
                 logger.debug("validating password for user: " + username);
 
                 AuthResult authResult = AuthenticationProviderManager.getManager(realm).validatePassword(username, password);
-                if (authResult.getAuthProviderStatus() == AuthProviderStatus.FAILED) {
+                if (authResult.getAuthProviderStatus() == AuthProviderStatus.INVALID_CREDENTIALS) {
                     logger.debug("invalid password for user: " + username);
                     return AuthenticationStatus.INVALID_CREDENTIALS;
+                } else if (authResult.getAuthProviderStatus() == AuthProviderStatus.USER_NOT_FOUND) {
+                    logger.debug("User " + username + " not found in any Authentication provider");
+                    return AuthenticationStatus.INVALID_USER;
                 }
 
                 if (authResult.getAuthenticatedUser() != null) {

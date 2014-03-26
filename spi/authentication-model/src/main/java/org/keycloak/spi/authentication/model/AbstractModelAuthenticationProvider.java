@@ -29,14 +29,13 @@ public abstract class AbstractModelAuthenticationProvider implements Authenticat
 
         UserModel user = KeycloakModelUtils.findUserByNameOrEmail(realm, username);
 
-        // Ignore if user doesn't exists, so that other providers have opportunity to authenticate (and possibly create) him
         if (user == null) {
-            return new AuthResult(AuthProviderStatus.IGNORE);
+            return new AuthResult(AuthProviderStatus.USER_NOT_FOUND);
         }
 
         boolean result = realm.validatePassword(user, password);
         if (!result) {
-            return  new AuthResult(AuthProviderStatus.IGNORE);
+            return  new AuthResult(AuthProviderStatus.INVALID_CREDENTIALS);
         }
 
         AuthenticatedUser authUser = createAuthenticatedUserInstance(user);

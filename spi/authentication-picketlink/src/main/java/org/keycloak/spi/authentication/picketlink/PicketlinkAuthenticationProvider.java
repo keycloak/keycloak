@@ -39,23 +39,26 @@ public class PicketlinkAuthenticationProvider implements AuthenticationProvider 
     public AuthResult validatePassword(RealmModel realm, Map<String, String> configuration, String username, String password) throws AuthenticationProviderException {
         IdentityManager identityManager = getIdentityManager(realm);
 
+        User picketlinkUser = BasicModel.getUser(identityManager, username);
+        if (picketlinkUser == null) {
+            return new AuthResult(AuthProviderStatus.USER_NOT_FOUND);
+        }
+
         UsernamePasswordCredentials credential = new UsernamePasswordCredentials();
         credential.setUsername(username);
         credential.setPassword(new Password(password.toCharArray()));
         identityManager.validateCredentials(credential);
 
-        AuthResult result;
         if (credential.getStatus() == Credentials.Status.VALID) {
-            result = new AuthResult(AuthProviderStatus.SUCCESS);
+            AuthResult result = new AuthResult(AuthProviderStatus.SUCCESS);
 
-            User picketlinkUser = BasicModel.getUser(identityManager, username);
             AuthenticatedUser authenticatedUser = new AuthenticatedUser(picketlinkUser.getId(), picketlinkUser.getLoginName())
                     .setName(picketlinkUser.getFirstName(), picketlinkUser.getLastName())
                     .setEmail(picketlinkUser.getEmail());
             result.setUser(authenticatedUser).setProviderName(getName());
             return result;
         } else {
-            return new AuthResult(AuthProviderStatus.IGNORE);
+            return new AuthResult(AuthProviderStatus.INVALID_CREDENTIALS);
         }
     }
 

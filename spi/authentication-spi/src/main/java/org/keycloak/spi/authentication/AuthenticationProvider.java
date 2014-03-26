@@ -16,7 +16,7 @@ public interface AuthenticationProvider {
      *
      * @param username
      * @param password
-     * @return
+     * @return result of authentication, which might eventually encapsulate info about authenticated user and provider which successfully authenticated
      */
     AuthResult validatePassword(RealmModel realm, Map<String, String> configuration, String username, String password) throws AuthenticationProviderException;
 

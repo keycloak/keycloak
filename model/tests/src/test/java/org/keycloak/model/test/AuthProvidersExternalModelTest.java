@@ -13,7 +13,9 @@ import javax.ws.rs.core.MultivaluedMap;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 import org.keycloak.models.AuthenticationLinkModel;
 import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.KeycloakSession;
@@ -30,6 +32,7 @@ import org.keycloak.spi.authentication.AuthenticationProviderManager;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class AuthProvidersExternalModelTest extends AbstractModelTest {
 
     private RealmModel realm1;
@@ -63,14 +66,14 @@ public class AuthProvidersExternalModelTest extends AbstractModelTest {
 
 
     @Test
-    public void testExternalModelPasswordValidation() {
+    public void testExternalModelAuthentication() {
         MultivaluedMap<String, String> formData = createFormData("john", "password");
 
         // Authenticate user with realm1
         Assert.assertEquals(AuthenticationManager.AuthenticationStatus.SUCCESS, am.authenticateForm(realm1, formData));
 
         // Verify that user doesn't exists in realm2 and can't authenticate here
-        Assert.assertEquals(AuthenticationManager.AuthenticationStatus.INVALID_CREDENTIALS, am.authenticateForm(realm2, formData));
+        Assert.assertEquals(AuthenticationManager.AuthenticationStatus.INVALID_USER, am.authenticateForm(realm2, formData));
         Assert.assertNull(realm2.getUser("john"));
 
         // Add externalModel authenticationProvider into realm2 and point to realm1
