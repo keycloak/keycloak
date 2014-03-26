@@ -7,6 +7,6 @@ package org.keycloak.spi.authentication;
  */
 public enum AuthProviderStatus {
 
-    // Ignore means that AuthenticationProvider wasn't able to authenticate result, but it should postpone authentication to next provider (for example user didn't exists in realm)
-    SUCCESS, FAILED, IGNORE
+    SUCCESS, INVALID_CREDENTIALS, USER_NOT_FOUND
+
 }

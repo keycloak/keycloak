@@ -10,10 +10,13 @@ import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 import org.keycloak.models.AuthenticationLinkModel;
 import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -25,6 +28,7 @@ import org.keycloak.util.KeycloakRegistry;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class AuthProvidersLDAPTest extends AbstractModelTest {
 
     private RealmModel realm;
@@ -64,11 +68,11 @@ public class AuthProvidersLDAPTest extends AbstractModelTest {
     }
 
     @Test
-    public void testLdapPasswordValidation() {
+    public void testLdapAuthentication() {
         MultivaluedMap<String, String> formData = AuthProvidersExternalModelTest.createFormData("john", "password");
 
         // Verify that user doesn't exists in realm2 and can't authenticate here
-        Assert.assertEquals(AuthenticationManager.AuthenticationStatus.INVALID_CREDENTIALS, am.authenticateForm(realm, formData));
+        Assert.assertEquals(AuthenticationManager.AuthenticationStatus.INVALID_USER, am.authenticateForm(realm, formData));
         Assert.assertNull(realm.getUser("john"));
 
         // Add ldap authenticationProvider
@@ -87,9 +91,6 @@ public class AuthProvidersLDAPTest extends AbstractModelTest {
             Assert.assertEquals("Doe", john.getLastName());
             Assert.assertEquals("john@email.org", john.getEmail());
 
-            formData = AuthProvidersExternalModelTest.createFormData("john", "invalid");
-            Assert.assertEquals(AuthenticationManager.AuthenticationStatus.INVALID_CREDENTIALS, am.authenticateForm(realm, formData));
-
             // Verify link exists
             Set<AuthenticationLinkModel> authLinks = realm.getAuthenticationLinks(john);
             Assert.assertEquals(1, authLinks.size());
@@ -99,6 +100,41 @@ public class AuthProvidersLDAPTest extends AbstractModelTest {
             ResteasyProviderFactory.clearContextData();
         }
 
+    }
+
+    @Test
+    public void testLdapInvalidAuthentication() {
+        setupAuthenticationProviders();
+
+        try {
+            ResteasyProviderFactory.pushContext(KeycloakRegistry.class, new KeycloakRegistry());
+
+            // Add some user and password to realm
+            UserModel realmUser = realm.addUser("realmUser");
+            UserCredentialModel credential = new UserCredentialModel();
+            credential.setType(CredentialRepresentation.PASSWORD);
+            credential.setValue("pass");
+            realm.updateCredential(realmUser, credential);
+
+            // User doesn't exists
+            MultivaluedMap<String, String> formData = AuthProvidersExternalModelTest.createFormData("invalid", "invalid");
+            Assert.assertEquals(AuthenticationManager.AuthenticationStatus.INVALID_USER, am.authenticateForm(realm, formData));
+
+            // User exists in ldap
+            formData = AuthProvidersExternalModelTest.createFormData("john", "invalid");
+            Assert.assertEquals(AuthenticationManager.AuthenticationStatus.INVALID_CREDENTIALS, am.authenticateForm(realm, formData));
+
+            // User exists in realm
+            formData = AuthProvidersExternalModelTest.createFormData("realmUser", "invalid");
+            Assert.assertEquals(AuthenticationManager.AuthenticationStatus.INVALID_CREDENTIALS, am.authenticateForm(realm, formData));
+
+            // User disabled
+            realmUser.setEnabled(false);
+            formData = AuthProvidersExternalModelTest.createFormData("realmUser", "pass");
+            Assert.assertEquals(AuthenticationManager.AuthenticationStatus.ACCOUNT_DISABLED, am.authenticateForm(realm, formData));
+        } finally {
+            ResteasyProviderFactory.clearContextData();
+        }
     }
 
     @Test

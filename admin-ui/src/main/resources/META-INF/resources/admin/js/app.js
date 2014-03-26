@@ -122,6 +122,15 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmSMTPSettingsCtrl'
         })
+        .when('/realms/:realm/ldap-settings', {
+            templateUrl : 'partials/realm-ldap.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                }
+            },
+            controller : 'RealmSMTPSettingsCtrl'
+        })
         .when('/create/user/:realm', {
             templateUrl : 'partials/user-detail.html',
             resolve : {
