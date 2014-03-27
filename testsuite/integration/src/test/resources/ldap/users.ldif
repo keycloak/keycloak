@@ -28,4 +28,3 @@ uid: john
 cn: John
 sn: Doe
 mail: john@email.org
-userPassword: password

@@ -71,16 +71,19 @@ public class AuthProvidersLDAPTest extends AbstractModelTest {
     public void testLdapAuthentication() {
         MultivaluedMap<String, String> formData = AuthProvidersExternalModelTest.createFormData("john", "password");
 
-        // Verify that user doesn't exists in realm2 and can't authenticate here
-        Assert.assertEquals(AuthenticationManager.AuthenticationStatus.INVALID_USER, am.authenticateForm(realm, formData));
-        Assert.assertNull(realm.getUser("john"));
-
-        // Add ldap authenticationProvider
-        setupAuthenticationProviders();
-
         try {
             // this is needed for Picketlink model provider
             ResteasyProviderFactory.pushContext(KeycloakRegistry.class, new KeycloakRegistry());
+
+            // Set password of user in LDAP
+            LdapTestUtils.setLdapPassword(realm, "john", "password");
+
+            // Verify that user doesn't exists in realm2 and can't authenticate here
+            Assert.assertEquals(AuthenticationManager.AuthenticationStatus.INVALID_USER, am.authenticateForm(realm, formData));
+            Assert.assertNull(realm.getUser("john"));
+
+            // Add ldap authenticationProvider
+            setupAuthenticationProviders();
 
             // Authenticate john and verify that now he exists in realm
             Assert.assertEquals(AuthenticationManager.AuthenticationStatus.SUCCESS, am.authenticateForm(realm, formData));

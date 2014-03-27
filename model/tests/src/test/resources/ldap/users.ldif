@@ -9,16 +9,6 @@ objectclass: top
 objectclass: organizationalUnit
 ou: People
 
-dn: ou=Roles,dc=keycloak,dc=org
-objectclass: top
-objectclass: organizationalUnit
-ou: Roles
-
-dn: ou=Groups,dc=keycloak,dc=org
-objectclass: top
-objectclass: organizationalUnit
-ou: Groups
-
 dn: uid=john,ou=People,dc=keycloak,dc=org
 objectclass: top
 objectclass: uidObject
@@ -28,4 +18,13 @@ uid: john
 cn: John
 sn: Doe
 mail: john@email.org
-userPassword: password
+
+dn: ou=Roles,dc=keycloak,dc=org
+objectclass: top
+objectclass: organizationalUnit
+ou: Roles
+
+dn: ou=Groups,dc=keycloak,dc=org
+objectclass: top
+objectclass: organizationalUnit
+ou: Groups
