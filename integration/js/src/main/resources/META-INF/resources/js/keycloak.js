@@ -348,7 +348,7 @@ var Keycloak = function (config) {
     function setToken(token, refreshToken) {
         if (token) {
             kc.token = token;
-            kc.tokenParsed = JSON.parse(atob(token.split('.')[1]));
+            kc.tokenParsed = JSON.parse(decodeURIComponent(escape(window.atob( token.split('.')[1] ))));
             kc.authenticated = true;
             kc.subject = kc.tokenParsed.sub;
             kc.realmAccess = kc.tokenParsed.realm_access;
