@@ -14,6 +14,7 @@ import org.junit.rules.RuleChain;
 import org.junit.rules.TestRule;
 import org.junit.runners.MethodSorters;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.model.test.LdapTestUtils;
 import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
@@ -51,15 +52,16 @@ public class AuthProvidersIntegrationTest {
             AuthenticationProviderModel modelProvider = new AuthenticationProviderModel(AuthProviderConstants.PROVIDER_NAME_MODEL, false, Collections.EMPTY_MAP);
             AuthenticationProviderModel picketlinkProvider = new AuthenticationProviderModel(AuthProviderConstants.PROVIDER_NAME_PICKETLINK, true, Collections.EMPTY_MAP);
 
-            // Configure LDAP
-            ldapRule.getEmbeddedServer().setupLdapInRealm(appRealm);
-
             // Delegate authentication to admin realm
             Map<String,String> config = new HashMap<String,String>();
             config.put(AuthProviderConstants.EXTERNAL_REALM_ID, adminstrationRealm.getId());
             AuthenticationProviderModel externalModelProvider = new AuthenticationProviderModel(AuthProviderConstants.PROVIDER_NAME_EXTERNAL_MODEL, true, config);
 
             appRealm.setAuthenticationProviders(Arrays.asList(modelProvider, picketlinkProvider, externalModelProvider));
+
+            // Configure LDAP
+            ldapRule.getEmbeddedServer().setupLdapInRealm(appRealm);
+            LdapTestUtils.setLdapPassword(appRealm, "john", "password");
         }
     });
 

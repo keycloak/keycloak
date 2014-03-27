@@ -48,7 +48,6 @@ public class PicketlinkAuthenticationProvider implements AuthenticationProvider 
         credential.setUsername(username);
         credential.setPassword(new Password(password.toCharArray()));
         identityManager.validateCredentials(credential);
-
         if (credential.getStatus() == Credentials.Status.VALID) {
             AuthResult result = new AuthResult(AuthProviderStatus.SUCCESS);
 
@@ -76,7 +75,7 @@ public class PicketlinkAuthenticationProvider implements AuthenticationProvider 
         return true;
     }
 
-    protected IdentityManager getIdentityManager(RealmModel realm) throws AuthenticationProviderException {
+    public IdentityManager getIdentityManager(RealmModel realm) throws AuthenticationProviderException {
         IdentityManager identityManager = ResteasyProviderFactory.getContextData(IdentityManager.class);
         if (identityManager == null) {
             Iterable<PartitionManagerProvider> providers = ProviderLoader.load(PartitionManagerProvider.class);
