@@ -37,6 +37,7 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -410,6 +411,9 @@ public class RealmManager {
 
         if (rep.getAuthenticationProviders() != null) {
             List<AuthenticationProviderModel> authProviderModels = convertAuthenticationProviders(rep.getAuthenticationProviders());
+            newRealm.setAuthenticationProviders(authProviderModels);
+        }  else {
+            List<AuthenticationProviderModel> authProviderModels = Arrays.asList(AuthenticationProviderModel.DEFAULT_PROVIDER);
             newRealm.setAuthenticationProviders(authProviderModels);
         }
     }

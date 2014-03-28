@@ -25,6 +25,7 @@ public class AuthenticationProviderEntity {
 
     private String providerName;
     private boolean passwordUpdateSupported;
+    private int priority;
 
     @ElementCollection
     @MapKeyColumn(name="name")
@@ -54,6 +55,14 @@ public class AuthenticationProviderEntity {
 
     public void setPasswordUpdateSupported(boolean passwordUpdateSupported) {
         this.passwordUpdateSupported = passwordUpdateSupported;
+    }
+
+    public int getPriority() {
+        return priority;
+    }
+
+    public void setPriority(int priority) {
+        this.priority = priority;
     }
 
     public Map<String, String> getConfig() {

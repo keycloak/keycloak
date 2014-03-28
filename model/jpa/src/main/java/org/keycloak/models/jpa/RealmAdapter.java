@@ -38,6 +38,8 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -814,7 +816,15 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public List<AuthenticationProviderModel> getAuthenticationProviders() {
-        Collection<AuthenticationProviderEntity> entities = realm.getAuthenticationProviders();
+        List<AuthenticationProviderEntity> entities = realm.getAuthenticationProviders();
+        Collections.sort(entities, new Comparator<AuthenticationProviderEntity>() {
+
+            @Override
+            public int compare(AuthenticationProviderEntity o1, AuthenticationProviderEntity o2) {
+                return o1.getPriority() - o2.getPriority();
+            }
+
+        });
         List<AuthenticationProviderModel> result = new ArrayList<AuthenticationProviderModel>();
         for (AuthenticationProviderEntity entity : entities) {
             result.add(new AuthenticationProviderModel(entity.getProviderName(), entity.isPasswordUpdateSupported(), entity.getConfig()));
@@ -826,11 +836,13 @@ public class RealmAdapter implements RealmModel {
     @Override
     public void setAuthenticationProviders(List<AuthenticationProviderModel> authenticationProviders) {
         List<AuthenticationProviderEntity> newEntities = new ArrayList<AuthenticationProviderEntity>();
+        int counter = 1;
         for (AuthenticationProviderModel model : authenticationProviders) {
             AuthenticationProviderEntity entity = new AuthenticationProviderEntity();
             entity.setProviderName(model.getProviderName());
             entity.setPasswordUpdateSupported(model.isPasswordUpdateSupported());
             entity.setConfig(model.getConfig());
+            entity.setPriority(counter++);
             newEntities.add(entity);
         }
 

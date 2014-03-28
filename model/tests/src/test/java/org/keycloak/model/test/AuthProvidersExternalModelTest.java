@@ -49,6 +49,8 @@ public class AuthProvidersExternalModelTest extends AbstractModelTest {
         realm2 = realmManager.createRealm("realm2");
         realm1.addRequiredCredential(CredentialRepresentation.PASSWORD);
         realm2.addRequiredCredential(CredentialRepresentation.PASSWORD);
+        realm1.setAuthenticationProviders(Arrays.asList(AuthenticationProviderModel.DEFAULT_PROVIDER));
+        realm2.setAuthenticationProviders(Arrays.asList(AuthenticationProviderModel.DEFAULT_PROVIDER));
 
         UserModel john = realm1.addUser("john");
         john.setEnabled(true);

@@ -22,7 +22,6 @@ import org.keycloak.util.ProviderLoader;
 public class AuthenticationProviderManager {
 
     private static final Logger logger = Logger.getLogger(AuthenticationProviderManager.class);
-    private static final AuthenticationProviderModel DEFAULT_PROVIDER = new AuthenticationProviderModel(AuthProviderConstants.PROVIDER_NAME_MODEL, true, Collections.EMPTY_MAP);
 
     private final RealmModel realm;
     private final Map<String, AuthenticationProvider> delegates;
@@ -122,8 +121,8 @@ public class AuthenticationProviderManager {
 
         // Use model based authentication of current realm by default
         if (configuredProviders == null || configuredProviders.isEmpty()) {
-            configuredProviders = new ArrayList<AuthenticationProviderModel>();
-            configuredProviders.add(DEFAULT_PROVIDER);
+            configuredProviders = Collections.EMPTY_LIST;
+            logger.warnf("No authentication providers found");
         }
 
         return configuredProviders;
