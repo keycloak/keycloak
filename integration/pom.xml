@@ -10,7 +10,6 @@
     <description/>
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.keycloak</groupId>
     <artifactId>integration-pom</artifactId>
     <packaging>pom</packaging>
 

@@ -8,7 +8,6 @@
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <groupId>org.keycloak</groupId>
     <artifactId>keycloak-server</artifactId>
     <packaging>war</packaging>
     <name>Keycloak Server</name>
