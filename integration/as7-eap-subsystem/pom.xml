@@ -25,10 +25,7 @@
     </parent>
 
     <artifactId>keycloak-as7-subsystem</artifactId>
-    <version>1.0-beta-1-SNAPSHOT</version>
-
     <name>Keycloak Wildfly Subsystem</name>
-
     <packaging>jar</packaging>
 
     <build>
