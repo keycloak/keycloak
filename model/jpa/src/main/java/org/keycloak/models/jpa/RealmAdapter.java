@@ -1154,4 +1154,15 @@ public class RealmAdapter implements RealmModel {
         realm.setAccountTheme(name);
         em.flush();
     }
+
+    @Override
+    public Set<String> getAuditListeners() {
+        return realm.getAuditListeners();
+    }
+
+    @Override
+    public void setAuditListeners(Set<String> listeners) {
+        realm.setAuditListeners(listeners);
+        em.flush();
+    }
 }

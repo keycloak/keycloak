@@ -29,6 +29,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
@@ -63,6 +64,9 @@ public class RequiredActionResetPasswordTest {
     public WebRule webRule = new WebRule(this);
 
     @Rule
+    public AssertEvents events = new AssertEvents(keycloakRule);
+
+    @Rule
     public GreenMailRule greenMail = new GreenMailRule();
 
     @WebResource
@@ -88,12 +92,20 @@ public class RequiredActionResetPasswordTest {
         changePasswordPage.assertCurrent();
         changePasswordPage.changePassword("new-password", "new-password");
 
+        events.expectRequiredAction("update_password").assertEvent();
+
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        events.expectLogin().assertEvent();
 
         oauth.openLogout();
 
+        events.expectLogout().assertEvent();
+
         loginPage.open();
         loginPage.login("test-user@localhost", "new-password");
+
+        events.expectLogin().assertEvent();
     }
 
 }

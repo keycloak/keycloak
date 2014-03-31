@@ -24,6 +24,10 @@ package org.keycloak.services.resources;
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.audit.Audit;
+import org.keycloak.audit.Details;
+import org.keycloak.audit.Errors;
+import org.keycloak.audit.Events;
 import org.keycloak.login.LoginForms;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
@@ -84,9 +88,12 @@ public class RequiredActionsService {
 
     private TokenManager tokenManager;
 
-    public RequiredActionsService(RealmModel realm, TokenManager tokenManager) {
+    private Audit audit;
+
+    public RequiredActionsService(RealmModel realm, TokenManager tokenManager, Audit audit) {
         this.realm = realm;
         this.tokenManager = tokenManager;
+        this.audit = audit;
     }
 
     @Path("profile")
@@ -100,6 +107,8 @@ public class RequiredActionsService {
 
         UserModel user = getUser(accessCode);
 
+        initAudit(accessCode);
+
         String error = Validation.validateUpdateProfileForm(formData);
         if (error != null) {
             return Flows.forms(realm, request, uriInfo).setUser(user).setError(error).createResponse(RequiredAction.UPDATE_PROFILE);
@@ -107,10 +116,21 @@ public class RequiredActionsService {
 
         user.setFirstName(formData.getFirst("firstName"));
         user.setLastName(formData.getFirst("lastName"));
-        user.setEmail(formData.getFirst("email"));
+
+        String email = formData.getFirst("email");
+        String oldEmail = user.getEmail();
+        boolean emailChanged = oldEmail != null ? !oldEmail.equals(email) : email != null;
+
+        user.setEmail(email);
 
         user.removeRequiredAction(RequiredAction.UPDATE_PROFILE);
         accessCode.getRequiredActions().remove(RequiredAction.UPDATE_PROFILE);
+
+        audit.clone().event(Events.UPDATE_PROFILE).success();
+        if (emailChanged) {
+            user.setEmailVerified(false);
+            audit.clone().event(Events.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, email).success();
+        }
 
         return redirectOauth(user, accessCode);
     }
@@ -125,6 +145,8 @@ public class RequiredActionsService {
         }
 
         UserModel user = getUser(accessCode);
+
+        initAudit(accessCode);
 
         String totp = formData.getFirst("totp");
         String totpSecret = formData.getFirst("totpSecret");
@@ -146,6 +168,8 @@ public class RequiredActionsService {
         user.removeRequiredAction(RequiredAction.CONFIGURE_TOTP);
         accessCode.getRequiredActions().remove(RequiredAction.CONFIGURE_TOTP);
 
+        audit.clone().event(Events.UPDATE_TOTP).success();
+
         return redirectOauth(user, accessCode);
     }
 
@@ -162,6 +186,8 @@ public class RequiredActionsService {
         logger.debug("updatePassword has access code");
 
         UserModel user = getUser(accessCode);
+
+        initAudit(accessCode);
 
         String passwordNew = formData.getFirst("password-new");
         String passwordConfirm = formData.getFirst("password-confirm");
@@ -186,6 +212,8 @@ public class RequiredActionsService {
             accessCode.getRequiredActions().remove(RequiredAction.UPDATE_PASSWORD);
         }
 
+        audit.clone().event(Events.UPDATE_PASSWORD).success();
+
         return redirectOauth(user, accessCode);
     }
 
@@ -201,10 +229,15 @@ public class RequiredActionsService {
             }
 
             UserModel user = getUser(accessCode);
+
+            initAudit(accessCode);
+
             user.setEmailVerified(true);
 
             user.removeRequiredAction(RequiredAction.VERIFY_EMAIL);
             accessCode.getRequiredActions().remove(RequiredAction.VERIFY_EMAIL);
+
+            audit.clone().event(Events.VERIFY_EMAIL).detail(Details.EMAIL, accessCode.getUser().getEmail()).success();
 
             return redirectOauth(user, accessCode);
         } else {
@@ -212,6 +245,9 @@ public class RequiredActionsService {
             if (accessCode == null) {
                 return unauthorized();
             }
+
+            initAudit(accessCode);
+            //audit.clone().event(Events.SEND_VERIFY_EMAIL).detail(Details.EMAIL, accessCode.getUser().getEmail()).success();
 
             return Flows.forms(realm, request, uriInfo).setAccessCode(accessCode.getId(), accessCode.getCode()).setUser(accessCode.getUser())
                     .createResponse(RequiredAction.VERIFY_EMAIL);
@@ -223,10 +259,12 @@ public class RequiredActionsService {
     public Response passwordReset() {
         if (uriInfo.getQueryParameters().containsKey("key")) {
             AccessCodeEntry accessCode = tokenManager.getAccessCode(uriInfo.getQueryParameters().getFirst("key"));
+            accessCode.setAuthMethod("form");
             if (accessCode == null || accessCode.isExpired()
                     || !accessCode.getRequiredActions().contains(RequiredAction.UPDATE_PASSWORD)) {
                 return unauthorized();
             }
+
             return Flows.forms(realm, request, uriInfo).setAccessCode(accessCode.getId(), accessCode.getCode()).createResponse(RequiredAction.UPDATE_PASSWORD);
         } else {
             return Flows.forms(realm, request, uriInfo).createPasswordReset();
@@ -254,6 +292,12 @@ public class RequiredActionsService {
                     "Login requester not enabled.");
         }
 
+        audit.event(Events.SEND_RESET_PASSWORD).client(clientId)
+                .detail(Details.REDIRECT_URI, redirect)
+                .detail(Details.RESPONSE_TYPE, "code")
+                .detail(Details.AUTH_METHOD, "form")
+                .detail(Details.USERNAME, username);
+
         UserModel user = realm.getUser(username);
         if (user == null && username.contains("@")) {
             user = realm.getUserByEmail(username);
@@ -261,6 +305,7 @@ public class RequiredActionsService {
 
         if (user == null) {
             logger.warn("Failed to send password reset email: user not found");
+            audit.error(Errors.USER_NOT_FOUND);
         } else {
             Set<RequiredAction> requiredActions = new HashSet<RequiredAction>(user.getRequiredActions());
             requiredActions.add(RequiredAction.UPDATE_PASSWORD);
@@ -268,9 +313,12 @@ public class RequiredActionsService {
             AccessCodeEntry accessCode = tokenManager.createAccessCode(scopeParam, state, redirect, realm, client, user);
             accessCode.setRequiredActions(requiredActions);
             accessCode.setExpiration(Time.currentTime() + realm.getAccessCodeLifespanUserAction());
+            accessCode.setAuthMethod("form");
+            accessCode.setUsername(username);
 
             try {
                 new EmailSender(realm.getSmtpConfig()).sendPasswordReset(user, realm, accessCode, uriInfo);
+                audit.user(user).detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, accessCode.getId()).success();
             } catch (EmailException e) {
                 logger.error("Failed to send password reset email", e);
                 return Flows.forms(realm, request, uriInfo).setError("emailSendError").createErrorPage();
@@ -339,8 +387,24 @@ public class RequiredActionsService {
         } else {
             logger.debug("redirectOauth: redirecting to: {0}", accessCode.getRedirectUri());
             accessCode.setExpiration(Time.currentTime() + realm.getAccessCodeLifespan());
+
+            audit.success();
             return Flows.oauth(realm, request, uriInfo, authManager, tokenManager).redirectAccessCode(accessCode,
                     accessCode.getState(), accessCode.getRedirectUri());
+        }
+    }
+
+    private void initAudit(AccessCodeEntry accessCode) {
+        audit.event(Events.LOGIN).client(accessCode.getClient())
+                .user(accessCode.getUser())
+                .detail(Details.CODE_ID, accessCode.getId())
+                .detail(Details.REDIRECT_URI, accessCode.getRedirectUri())
+                .detail(Details.RESPONSE_TYPE, "code")
+                .detail(Details.AUTH_METHOD, accessCode.getAuthMethod())
+                .detail(Details.USERNAME, accessCode.getUsername());
+
+        if (accessCode.isRememberMe()) {
+            audit.detail(Details.REMEMBER_ME, "true");
         }
     }
 

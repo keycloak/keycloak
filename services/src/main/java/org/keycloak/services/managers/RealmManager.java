@@ -81,6 +81,8 @@ public class RealmManager {
         setupAdminManagement(realm);
         setupAccountManagement(realm);
 
+        realm.setAuditListeners(Collections.singleton("jboss-logging"));
+
         return realm;
     }
 

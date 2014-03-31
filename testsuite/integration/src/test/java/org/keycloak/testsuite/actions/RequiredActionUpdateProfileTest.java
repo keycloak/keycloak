@@ -22,18 +22,20 @@
 package org.keycloak.testsuite.actions;
 
 import org.junit.Assert;
+import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.audit.Details;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
 import org.keycloak.testsuite.rule.KeycloakRule;
-import org.keycloak.testsuite.rule.KeycloakRule.KeycloakSetup;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
@@ -43,19 +45,14 @@ import org.openqa.selenium.WebDriver;
  */
 public class RequiredActionUpdateProfileTest {
 
-    @Rule
-    public KeycloakRule keycloakRule = new KeycloakRule(new KeycloakSetup() {
-
-        @Override
-        public void config(RealmManager manager, RealmModel defaultRealm, RealmModel appRealm) {
-            UserModel user = appRealm.getUser("test-user@localhost");
-            user.addRequiredAction(RequiredAction.UPDATE_PROFILE);
-        }
-
-    });
+    @ClassRule
+    public static KeycloakRule keycloakRule = new KeycloakRule();
 
     @Rule
     public WebRule webRule = new WebRule(this);
+
+    @Rule
+    public AssertEvents events = new AssertEvents(keycloakRule);
 
     @WebResource
     protected WebDriver driver;
@@ -69,6 +66,17 @@ public class RequiredActionUpdateProfileTest {
     @WebResource
     protected LoginUpdateProfilePage updateProfilePage;
 
+    @Before
+    public void before() {
+        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel defaultRealm, RealmModel appRealm) {
+                UserModel user = appRealm.getUser("test-user@localhost");
+                user.addRequiredAction(UserModel.RequiredAction.UPDATE_PROFILE);
+            }
+        });
+    }
+
     @Test
     public void updateProfile() {
         loginPage.open();
@@ -79,7 +87,12 @@ public class RequiredActionUpdateProfileTest {
 
         updateProfilePage.update("New first", "New last", "new@email.com");
 
+        events.expectRequiredAction("update_profile").assertEvent();
+        events.expectRequiredAction("update_email").detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
+
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        events.expectLogin().assertEvent();
     }
 
     @Test
@@ -95,6 +108,8 @@ public class RequiredActionUpdateProfileTest {
         updateProfilePage.assertCurrent();
 
         Assert.assertEquals("Please specify first name", updateProfilePage.getError());
+
+        events.assertEmpty();
     }
 
     @Test
@@ -110,6 +125,8 @@ public class RequiredActionUpdateProfileTest {
         updateProfilePage.assertCurrent();
 
         Assert.assertEquals("Please specify last name", updateProfilePage.getError());
+
+        events.assertEmpty();
     }
 
     @Test
@@ -125,7 +142,8 @@ public class RequiredActionUpdateProfileTest {
         updateProfilePage.assertCurrent();
 
         Assert.assertEquals("Please specify email", updateProfilePage.getError());
-    }
 
+        events.assertEmpty();
+    }
 
 }

@@ -13,6 +13,8 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 
+import java.util.Collections;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -60,6 +62,8 @@ public class ApplianceBootstrap {
         ApplicationModel adminConsole = new ApplicationManager(manager).createApplication(realm, Constants.ADMIN_CONSOLE_APPLICATION);
         adminConsole.setBaseUrl("/auth/admin/index.html");
         adminConsole.setEnabled(true);
+
+        realm.setAuditListeners(Collections.singleton("jboss-logging"));
 
         RoleModel adminRole = realm.getRole(AdminRoles.ADMIN);
 

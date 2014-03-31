@@ -16,7 +16,9 @@ import javax.persistence.OneToMany;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -94,6 +96,9 @@ public class RealmEntity {
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
     @JoinTable(name="RealmDefaultRoles")
     Collection<RoleEntity> defaultRoles = new ArrayList<RoleEntity>();
+
+    @ElementCollection
+    protected Set<String> auditListeners= new HashSet<String>();
 
     public String getId() {
         return id;
@@ -332,6 +337,14 @@ public class RealmEntity {
 
     public void setNotBefore(int notBefore) {
         this.notBefore = notBefore;
+    }
+
+    public Set<String> getAuditListeners() {
+        return auditListeners;
+    }
+
+    public void setAuditListeners(Set<String> auditListeners) {
+        this.auditListeners = auditListeners;
     }
 }
 

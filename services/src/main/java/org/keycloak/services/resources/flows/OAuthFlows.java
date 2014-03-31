@@ -24,23 +24,22 @@ package org.keycloak.services.resources.flows;
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.audit.Audit;
+import org.keycloak.audit.Details;
+import org.keycloak.audit.Events;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
-import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
-import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.TokenManager;
-import org.keycloak.services.resources.TokenService;
 import org.keycloak.util.Time;
 
-import javax.ws.rs.Path;
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
@@ -56,15 +55,15 @@ public class OAuthFlows {
 
     private static final Logger log = Logger.getLogger(OAuthFlows.class);
 
-    private RealmModel realm;
+    private final RealmModel realm;
 
-    private HttpRequest request;
+    private final HttpRequest request;
 
-    private UriInfo uriInfo;
+    private final UriInfo uriInfo;
 
-    private AuthenticationManager authManager;
+    private final AuthenticationManager authManager;
 
-    private TokenManager tokenManager;
+    private final TokenManager tokenManager;
 
     OAuthFlows(RealmModel realm, HttpRequest request, UriInfo uriInfo, AuthenticationManager authManager,
             TokenManager tokenManager) {
@@ -110,28 +109,40 @@ public class OAuthFlows {
         }
     }
 
-    public Response processAccessCode(String scopeParam, String state, String redirect, ClientModel client, UserModel user) {
-        return processAccessCode(scopeParam, state, redirect, client, user, false);
+    public Response processAccessCode(String scopeParam, String state, String redirect, ClientModel client, UserModel user, Audit audit) {
+        return processAccessCode(scopeParam, state, redirect, client, user, null, false, "form", audit);
     }
 
 
-    public Response processAccessCode(String scopeParam, String state, String redirect, ClientModel client, UserModel user, boolean rememberMe) {
+    public Response processAccessCode(String scopeParam, String state, String redirect, ClientModel client, UserModel user, String username, boolean rememberMe, String authMethod, Audit audit) {
         isTotpConfigurationRequired(user);
         isEmailVerificationRequired(user);
 
         boolean isResource = client instanceof ApplicationModel;
         AccessCodeEntry accessCode = tokenManager.createAccessCode(scopeParam, state, redirect, realm, client, user);
+        accessCode.setUsername(username);
+        accessCode.setRememberMe(rememberMe);
+        accessCode.setAuthMethod(authMethod);
+
         log.debug("processAccessCode: isResource: {0}", isResource);
         log.debug("processAccessCode: go to oauth page?: {0}",
                 (!isResource && (accessCode.getRealmRolesRequested().size() > 0 || accessCode.getResourceRolesRequested()
                         .size() > 0)));
 
+        audit.detail(Details.CODE_ID, accessCode.getId());
+
         Set<RequiredAction> requiredActions = user.getRequiredActions();
         if (!requiredActions.isEmpty()) {
             accessCode.setRequiredActions(new HashSet<UserModel.RequiredAction>(requiredActions));
             accessCode.setExpiration(Time.currentTime() + realm.getAccessCodeLifespanUserAction());
+
+            RequiredAction action = user.getRequiredActions().iterator().next();
+            if (action.equals(RequiredAction.VERIFY_EMAIL)) {
+                audit.clone().event(Events.SEND_VERIFY_EMAIL).detail(Details.EMAIL, accessCode.getUser().getEmail()).success();
+            }
+
             return Flows.forms(realm, request, uriInfo).setAccessCode(accessCode.getId(), accessCode.getCode()).setUser(user)
-                    .createResponse(user.getRequiredActions().iterator().next());
+                    .createResponse(action);
         }
 
         if (!isResource
@@ -143,6 +154,7 @@ public class OAuthFlows {
         }
 
         if (redirect != null) {
+            audit.success();
             return redirectAccessCode(accessCode, state, redirect, rememberMe);
         } else {
             return null;

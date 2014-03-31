@@ -2,6 +2,8 @@ package org.keycloak.services.managers;
 
 import org.jboss.resteasy.logging.Logger;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.audit.Audit;
+import org.keycloak.audit.Details;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
@@ -98,7 +100,7 @@ public class TokenManager {
         return code;
     }
 
-    public AccessToken refreshAccessToken(RealmModel realm, ClientModel client, String encodedRefreshToken) throws OAuthErrorException {
+    public AccessToken refreshAccessToken(RealmModel realm, ClientModel client, String encodedRefreshToken, Audit audit) throws OAuthErrorException {
         JWSInput jws = new JWSInput(encodedRefreshToken);
         RefreshToken refreshToken = null;
         try {
@@ -116,6 +118,8 @@ public class TokenManager {
         if (refreshToken.getIssuedAt() < realm.getNotBefore()) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale refresh token");
         }
+
+        audit.user(refreshToken.getSubject()).detail(Details.REFRESH_TOKEN_ID, refreshToken.getId());
 
         UserModel user = realm.getUserById(refreshToken.getSubject());
         if (user == null) {
@@ -320,8 +324,8 @@ public class TokenManager {
         return encodedToken;
     }
 
-    public AccessTokenResponseBuilder responseBuilder(RealmModel realm, ClientModel client) {
-        return new AccessTokenResponseBuilder(realm, client);
+    public AccessTokenResponseBuilder responseBuilder(RealmModel realm, ClientModel client, Audit audit) {
+        return new AccessTokenResponseBuilder(realm, client, audit);
     }
 
     public class AccessTokenResponseBuilder {
@@ -330,10 +334,12 @@ public class TokenManager {
         AccessToken accessToken;
         RefreshToken refreshToken;
         IDToken idToken;
+        Audit audit;
 
-        public AccessTokenResponseBuilder(RealmModel realm, ClientModel client) {
+        public AccessTokenResponseBuilder(RealmModel realm, ClientModel client, Audit audit) {
             this.realm = realm;
             this.client = client;
+            this.audit = audit;
         }
 
         public AccessTokenResponseBuilder accessToken(AccessToken accessToken) {
@@ -402,7 +408,21 @@ public class TokenManager {
             return this;
         }
 
+
+
         public AccessTokenResponse build() {
+            if (accessToken != null) {
+                audit.detail(Details.TOKEN_ID, accessToken.getId());
+            }
+
+            if (refreshToken != null) {
+                if (audit.getEvent().getDetails().containsKey(Details.REFRESH_TOKEN_ID)) {
+                    audit.detail(Details.UPDATED_REFRESH_TOKEN_ID, refreshToken.getId());
+                } else {
+                    audit.detail(Details.REFRESH_TOKEN_ID, refreshToken.getId());
+                }
+            }
+
             AccessTokenResponse res = new AccessTokenResponse();
             if (idToken != null) {
                 String encodedToken = new JWSBuilder().jsonContent(idToken).rsa256(realm.getPrivateKey());

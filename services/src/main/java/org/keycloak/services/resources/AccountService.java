@@ -27,10 +27,14 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.account.Account;
 import org.keycloak.account.AccountLoader;
 import org.keycloak.account.AccountPages;
+import org.keycloak.audit.Audit;
+import org.keycloak.audit.Details;
+import org.keycloak.audit.Events;
 import org.keycloak.jaxrs.JaxrsOAuthClient;
 import org.keycloak.models.*;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.ModelToRepresentation;
@@ -75,11 +79,13 @@ public class AccountService {
 
     private final AppAuthManager authManager;
     private final ApplicationModel application;
+    private Audit audit;
     private final SocialRequestManager socialRequestManager;
 
-    public AccountService(RealmModel realm, ApplicationModel application, TokenManager tokenManager, SocialRequestManager socialRequestManager) {
+    public AccountService(RealmModel realm, ApplicationModel application, TokenManager tokenManager, SocialRequestManager socialRequestManager, Audit audit) {
         this.realm = realm;
         this.application = application;
+        this.audit = audit;
         this.authManager =  new AppAuthManager(KEYCLOAK_ACCOUNT_IDENTITY_COOKIE, tokenManager);
         this.socialRequestManager = socialRequestManager;
     }
@@ -170,7 +176,19 @@ public class AccountService {
 
         user.setFirstName(formData.getFirst("firstName"));
         user.setLastName(formData.getFirst("lastName"));
+
+        String email = formData.getFirst("email");
+        String oldEmail = user.getEmail();
+        boolean emailChanged = oldEmail != null ? !oldEmail.equals(email) : email != null;
+
         user.setEmail(formData.getFirst("email"));
+
+        audit.event(Events.UPDATE_PROFILE).client(auth.getClient()).user(auth.getUser()).success();
+
+        if (emailChanged) {
+            user.setEmailVerified(false);
+            audit.clone().event(Events.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, email).success();
+        }
 
         return account.setSuccess("accountUpdated").createResponse(AccountPages.ACCOUNT);
     }
@@ -183,6 +201,8 @@ public class AccountService {
 
         UserModel user = auth.getUser();
         user.setTotp(false);
+
+        audit.event(Events.REMOVE_TOTP).client(auth.getClient()).user(auth.getUser()).success();
 
         Account account = AccountLoader.load().createAccount(uriInfo).setRealm(realm).setUser(auth.getUser());
         return account.setSuccess("successTotpRemoved").createResponse(AccountPages.TOTP);
@@ -214,6 +234,8 @@ public class AccountService {
         realm.updateCredential(user, credentials);
 
         user.setTotp(true);
+
+        audit.event(Events.UPDATE_TOTP).client(auth.getClient()).user(auth.getUser()).success();
 
         return account.setSuccess("successTotp").createResponse(AccountPages.TOTP);
     }
@@ -252,6 +274,8 @@ public class AccountService {
         } catch (AuthenticationProviderException ape) {
             return account.setError(ape.getMessage()).createResponse(AccountPages.PASSWORD);
         }
+
+        audit.event(Events.UPDATE_PASSWORD).client(auth.getClient()).user(auth.getUser()).success();
 
         return account.setSuccess("accountPasswordUpdated").createResponse(AccountPages.PASSWORD);
     }
@@ -298,8 +322,16 @@ public class AccountService {
                     return account.setError(Messages.SOCIAL_REDIRECT_ERROR).createResponse(AccountPages.SOCIAL);
                 }
             case REMOVE:
-                if (realm.removeSocialLink(user, providerId)) {
+                SocialLinkModel link = realm.getSocialLink(user, providerId);
+                if (link != null) {
+                    realm.removeSocialLink(user, providerId);
+
                     logger.debug("Social provider " + providerId + " removed successfully from user " + user.getLoginName());
+
+                    audit.event(Events.REMOVE_SOCIAL_LINK).client(auth.getClient()).user(auth.getUser())
+                            .detail(Details.USERNAME, link.getSocialUserId() + "@" + link.getSocialProvider())
+                            .success();
+
                     return account.setSuccess(Messages.SOCIAL_PROVIDER_REMOVED).createResponse(AccountPages.SOCIAL);
                 } else {
                     return account.setError(Messages.SOCIAL_LINK_NOT_ACTIVE).createResponse(AccountPages.SOCIAL);

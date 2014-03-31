@@ -80,6 +80,7 @@
     </contributors>
 
     <modules>
+        <module>audit</module>
         <module>core</module>
         <module>core-jaxrs</module>
         <module>model</module>

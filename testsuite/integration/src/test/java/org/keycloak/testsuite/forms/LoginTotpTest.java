@@ -26,12 +26,14 @@ import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.audit.Details;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -44,6 +46,7 @@ import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
 
 import java.net.MalformedURLException;
+import java.util.Collections;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -63,9 +66,13 @@ public class LoginTotpTest {
             appRealm.updateCredential(user, credentials);
 
             user.setTotp(true);
+            appRealm.setAuditListeners(Collections.singleton("dummy"));
         }
 
     });
+
+    @Rule
+    public AssertEvents events = new AssertEvents(keycloakRule);
 
     @Rule
     public WebRule webRule = new WebRule(this);
@@ -83,7 +90,7 @@ public class LoginTotpTest {
     protected LoginPage loginPage;
 
     @WebResource
-    private LoginTotpPage loginTotpPage;
+    protected LoginTotpPage loginTotpPage;
 
     private TimeBasedOTP totp = new TimeBasedOTP();
 
@@ -103,6 +110,8 @@ public class LoginTotpTest {
 
         loginPage.assertCurrent();
         Assert.assertEquals("Invalid username or password.", loginPage.getError());
+
+        events.expectLogin().error("invalid_user_credentials").removeDetail(Details.CODE_ID).user((String) null).assertEvent();
     }
 
     @Test
@@ -115,6 +124,8 @@ public class LoginTotpTest {
         loginTotpPage.login(totp.generate("totpSecret"));
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        events.expectLogin().assertEvent();
     }
 
 }

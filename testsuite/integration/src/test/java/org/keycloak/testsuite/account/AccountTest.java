@@ -19,23 +19,37 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.keycloak.testsuite.forms;
+package org.keycloak.testsuite.account;
 
-import org.junit.*;
-import org.keycloak.models.*;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
+import org.junit.Test;
+import org.keycloak.audit.Details;
+import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.PasswordPolicy;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
-import org.keycloak.testsuite.pages.*;
+import org.keycloak.testsuite.pages.AccountPasswordPage;
+import org.keycloak.testsuite.pages.AccountTotpPage;
+import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
+import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
+import org.keycloak.testsuite.pages.ErrorPage;
+import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.KeycloakRule.KeycloakSetup;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -61,6 +75,11 @@ public class AccountTest {
             appRealm.updateCredential(user2, creds);
         }
     });
+
+    public static String ACCOUNT_REDIRECT = "http://localhost:8081/auth/rest/realms/test/account/login-redirect";
+
+    @Rule
+    public AssertEvents events = new AssertEvents(keycloakRule);
 
     @Rule
     public WebRule webRule = new WebRule(this);
@@ -90,6 +109,12 @@ public class AccountTest {
     protected ErrorPage errorPage;
 
     private TimeBasedOTP totp = new TimeBasedOTP();
+    private String userId;
+
+    @Before
+    public void before() {
+        userId = keycloakRule.getUser("test", "test-user@localhost").getId();
+    }
 
     @After
     public void after() {
@@ -122,12 +147,16 @@ public class AccountTest {
 
         Assert.assertTrue(appPage.isCurrent());
         Assert.assertEquals(appPage.baseUrl + "?test", driver.getCurrentUrl());
+
+        events.clear();
     }
 
     @Test
     public void changePassword() {
         changePasswordPage.open();
         loginPage.login("test-user@localhost", "password");
+
+        events.expectLogin().client("account").detail(Details.REDIRECT_URI, ACCOUNT_REDIRECT + "?path=password").assertEvent();
 
         changePasswordPage.changePassword("", "new-password", "new-password");
 
@@ -141,6 +170,8 @@ public class AccountTest {
 
         Assert.assertEquals("Your password has been updated", profilePage.getSuccess());
 
+        events.expectAccount("update_password").assertEvent();
+
         changePasswordPage.logout();
 
         loginPage.open();
@@ -148,10 +179,14 @@ public class AccountTest {
 
         Assert.assertEquals("Invalid username or password.", loginPage.getError());
 
+        events.expectLogin().user((String) null).error("invalid_user_credentials").removeDetail(Details.CODE_ID).assertEvent();
+
         loginPage.open();
         loginPage.login("test-user@localhost", "new-password");
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        events.expectLogin().assertEvent();
     }
 
     @Test
@@ -167,6 +202,8 @@ public class AccountTest {
             changePasswordPage.open();
             loginPage.login("test-user@localhost", "password");
 
+            events.expectLogin().client("account").detail(Details.REDIRECT_URI, ACCOUNT_REDIRECT + "?path=password").assertEvent();
+
             changePasswordPage.changePassword("", "new", "new");
 
             Assert.assertEquals("Please specify password.", profilePage.getError());
@@ -174,6 +211,8 @@ public class AccountTest {
             changePasswordPage.changePassword("password", "new-password", "new-password");
 
             Assert.assertEquals("Your password has been updated", profilePage.getSuccess());
+
+            events.expectAccount("update_password").assertEvent();
         } finally {
             keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
                 @Override
@@ -189,6 +228,8 @@ public class AccountTest {
         profilePage.open();
         loginPage.login("test-user@localhost", "password");
 
+        events.expectLogin().client("account").detail(Details.REDIRECT_URI, ACCOUNT_REDIRECT).assertEvent();
+
         Assert.assertEquals("", profilePage.getFirstName());
         Assert.assertEquals("", profilePage.getLastName());
         Assert.assertEquals("test-user@localhost", profilePage.getEmail());
@@ -201,12 +242,16 @@ public class AccountTest {
         Assert.assertEquals("", profilePage.getLastName());
         Assert.assertEquals("test-user@localhost", profilePage.getEmail());
 
+        events.assertEmpty();
+
         profilePage.updateProfile("New first", "", "new@email.com");
 
         Assert.assertEquals("Please specify last name", profilePage.getError());
         Assert.assertEquals("", profilePage.getFirstName());
         Assert.assertEquals("", profilePage.getLastName());
         Assert.assertEquals("test-user@localhost", profilePage.getEmail());
+
+        events.assertEmpty();
 
         profilePage.updateProfile("New first", "New last", "");
 
@@ -215,18 +260,25 @@ public class AccountTest {
         Assert.assertEquals("", profilePage.getLastName());
         Assert.assertEquals("test-user@localhost", profilePage.getEmail());
 
+        events.assertEmpty();
+
         profilePage.updateProfile("New first", "New last", "new@email.com");
 
         Assert.assertEquals("Your account has been updated", profilePage.getSuccess());
         Assert.assertEquals("New first", profilePage.getFirstName());
         Assert.assertEquals("New last", profilePage.getLastName());
         Assert.assertEquals("new@email.com", profilePage.getEmail());
+
+        events.expectAccount("update_profile").assertEvent();
+        events.expectAccount("update_email").detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
     }
 
     @Test
     public void setupTotp() {
         totpPage.open();
         loginPage.login("test-user@localhost", "password");
+
+        events.expectLogin().client("account").detail(Details.REDIRECT_URI, ACCOUNT_REDIRECT + "?path=totp").assertEvent();
 
         Assert.assertTrue(totpPage.isCurrent());
 
@@ -241,13 +293,23 @@ public class AccountTest {
 
         Assert.assertEquals("Google authenticator configured.", profilePage.getSuccess());
 
+        events.expectAccount("update_totp").assertEvent();
+
         Assert.assertTrue(driver.getPageSource().contains("pficon-delete"));
+
+        totpPage.removeTotp();
+
+        events.expectAccount("remove_totp").assertEvent();
     }
 
     @Test
     public void changeProfileNoAccess() throws Exception {
         profilePage.open();
         loginPage.login("test-user-no-access@localhost", "password");
+
+        events.expectLogin().client("account").user(keycloakRule.getUser("test", "test-user-no-access@localhost").getId())
+                .detail(Details.USERNAME, "test-user-no-access@localhost")
+                .detail(Details.REDIRECT_URI, ACCOUNT_REDIRECT).assertEvent();
 
         Assert.assertTrue(errorPage.isCurrent());
         Assert.assertEquals("No access", errorPage.getError());

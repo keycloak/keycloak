@@ -38,6 +38,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1111,6 +1112,20 @@ public class RealmAdapter extends AbstractMongoAdapter<RealmEntity> implements R
 
         realm.setAuthenticationProviders(entities);
         updateRealm();
+    }
+
+    @Override
+    public Set<String> getAuditListeners() {
+        return realm.getAuditListeners() != null ? new HashSet<String>(realm.getAuditListeners()) : null;
+    }
+
+    @Override
+    public void setAuditListeners(Set<String> listeners) {
+         if (listeners != null) {
+             realm.setAuditListeners(new LinkedList<String>(listeners));
+         } else {
+             realm.setAuditListeners(null);
+         }
     }
 
     @Override
