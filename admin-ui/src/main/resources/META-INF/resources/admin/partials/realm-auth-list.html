@@ -1,0 +1,41 @@
+<div class="bs-sidebar col-sm-3 " data-ng-include data-src="'partials/realm-menu.html'"></div>
+<div id="content-area" class="col-sm-9" role="main">
+    <data-kc-navigation data-kc-current="auth-settings" data-kc-realm="realm.realm" data-kc-social="realm.social"></data-kc-navigation>
+    <div id="content">
+        <ol class="breadcrumb">
+            <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
+            <li><a href="#/realms/{{realm.realm}}">Settings</a></li>
+            <li class="active">Authentication</li>
+        </ol>
+        <h2><span>{{realm.realm}}</span> Authentication Providers</h2>
+
+        <div class="panel">
+            <table class="table">
+                <thead>
+                <tr>
+                    <th class="kc-table-actions" colspan="3">
+                        <div class="pull-right" data-ng-show="access.manageRealm">
+                            <a class="btn btn-primary" href="#/realms/{{realm.realm}}/auth-settings/create">Add Provider</a>
+                        </div>
+                    </th>
+                </tr>
+                <tr data-ng-show="authenticationProviders && authenticationProviders.length > 0">
+                    <th>Provider Name</th>
+                    <th>Password Update Supported</th>
+                    <th>Configuration</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr ng-repeat="authProvider in authenticationProviders">
+                    <td><a href="#/realms/{{realm.realm}}/auth-settings/{{$index}}">{{authProvider.providerName|humanFriendlyFormat}}</a></td>
+                    <td>{{authProvider.passwordUpdateSupported}}</td>
+                    <td>{{authProvider.config}}</td>
+                </tr>
+                <tr data-ng-show="!authenticationProviders || authenticationProviders.length == 0">
+                    <td>No authentication providers available</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

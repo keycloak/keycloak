@@ -131,6 +131,39 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmLdapSettingsCtrl'
         })
+        .when('/realms/:realm/auth-settings', {
+            templateUrl : 'partials/realm-auth-list.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                }
+            },
+            controller : 'RealmAuthSettingsCtrl'
+        })
+        .when('/realms/:realm/auth-settings/create', {
+            templateUrl : 'partials/realm-auth-detail.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                }
+            },
+            controller : 'RealmAuthSettingsDetailCtrl'
+        })
+        .when('/realms/:realm/auth-settings/:index', {
+            templateUrl : 'partials/realm-auth-detail.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                }
+            },
+            controller : 'RealmAuthSettingsDetailCtrl'
+        })
         .when('/create/user/:realm', {
             templateUrl : 'partials/user-detail.html',
             resolve : {
@@ -1011,4 +1044,23 @@ module.filter('capitalize', function() {
     return function(input) {
         return input.substring(0, 1).toUpperCase() + input.substring(1);
     }
+});
+
+// Convert string like "externalRealmId" to more human-friendly "External Realm Id"
+module.filter('humanFriendlyFormat', function() {
+    return function(input) {
+        if (!input) {
+            return;
+        }
+        var result = input.substring(0, 1).toUpperCase();
+        var s = input.substring(1);
+        for (var i=0; i<s.length ; i++) {
+            var c = s[i];
+            if (c.match(/[A-Z]/)) {
+                result = result.concat(" ")
+            };
+            result = result.concat(c);
+        };
+        return result;
+    };
 });

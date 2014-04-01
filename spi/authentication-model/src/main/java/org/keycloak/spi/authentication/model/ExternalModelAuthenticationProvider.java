@@ -1,5 +1,7 @@
 package org.keycloak.spi.authentication.model;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
@@ -20,6 +22,11 @@ public class ExternalModelAuthenticationProvider extends AbstractModelAuthentica
     @Override
     public String getName() {
         return AuthProviderConstants.PROVIDER_NAME_EXTERNAL_MODEL;
+    }
+
+    @Override
+    public List<String> getAvailableOptions() {
+        return Arrays.asList(AuthProviderConstants.EXTERNAL_REALM_ID);
     }
 
     @Override
