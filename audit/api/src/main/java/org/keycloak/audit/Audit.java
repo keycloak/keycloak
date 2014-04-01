@@ -4,6 +4,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.provider.ProviderFactoryLoader;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -20,14 +21,17 @@ public class Audit {
     private Event event;
 
     public static Audit create(RealmModel realm, String ipAddress) {
+        ProviderFactoryLoader<AuditListenerFactory> loader = ProviderFactoryLoader.load(AuditListenerFactory.class);
+
         List<AuditListener> listeners = null;
         if (realm.getAuditListeners() != null) {
             listeners = new LinkedList<AuditListener>();
 
             for (String id : realm.getAuditListeners()) {
-                listeners.add(AuditLoader.load(id));
+                listeners.add(loader.find(id).create());
             }
         }
+
         return new Audit(listeners, new Event()).realm(realm).ipAddress(ipAddress);
     }
 

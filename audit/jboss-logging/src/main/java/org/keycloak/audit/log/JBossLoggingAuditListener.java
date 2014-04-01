@@ -11,11 +11,10 @@ import java.util.Map;
  */
 public class JBossLoggingAuditListener implements AuditListener {
 
-    private static final Logger logger = Logger.getLogger("org.keycloak.audit");
+    private final Logger logger;
 
-    @Override
-    public String getId() {
-        return "jboss-logging";
+    public JBossLoggingAuditListener(Logger logger) {
+        this.logger = logger;
     }
 
     @Override
@@ -58,6 +57,10 @@ public class JBossLoggingAuditListener implements AuditListener {
 
             logger.log(level, sb.toString());
         }
+    }
+
+    @Override
+    public void close() {
     }
 
 }
