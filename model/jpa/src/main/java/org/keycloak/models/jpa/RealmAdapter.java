@@ -395,7 +395,9 @@ public class RealmAdapter implements RealmModel {
     private void removeUser(UserEntity user) {
         em.createQuery("delete from " + UserRoleMappingEntity.class.getSimpleName() + " where user = :user").setParameter("user", user).executeUpdate();
         em.createQuery("delete from " + SocialLinkEntity.class.getSimpleName() + " where user = :user").setParameter("user", user).executeUpdate();
-        em.createQuery("delete from " + AuthenticationLinkEntity.class.getSimpleName() + " where user = :user").setParameter("user", user).executeUpdate();
+        if (user.getAuthenticationLink() != null) {
+            em.remove(user.getAuthenticationLink());
+        }
         em.remove(user);
     }
 
@@ -614,43 +616,22 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public UserModel getUserByAuthenticationLink(AuthenticationLinkModel authenticationLink) {
-        TypedQuery<UserEntity> query = em.createNamedQuery("findUserByAuthLinkAndRealm", UserEntity.class);
-        query.setParameter("realm", realm);
-        query.setParameter("authProvider", authenticationLink.getAuthProvider());
-        query.setParameter("authUserId", authenticationLink.getAuthUserId());
-        List<UserEntity> results = query.getResultList();
-        if (results.isEmpty()) {
-            return null;
-        } else if (results.size() > 1) {
-            throw new IllegalStateException("More results found for authenticationProvider=" + authenticationLink.getAuthProvider() +
-                    ", authUserId=" + authenticationLink.getAuthUserId() + ", results=" + results);
-        } else {
-            UserEntity user = results.get(0);
-            return new UserAdapter(user);
-        }
+    public AuthenticationLinkModel getAuthenticationLink(UserModel user) {
+        UserEntity userEntity = ((UserAdapter) user).getUser();
+        AuthenticationLinkEntity authLinkEntity = userEntity.getAuthenticationLink();
+        return authLinkEntity == null ? null : new AuthenticationLinkModel(authLinkEntity.getAuthProvider(), authLinkEntity.getAuthUserId());
     }
 
     @Override
-    public Set<AuthenticationLinkModel> getAuthenticationLinks(UserModel user) {
-        TypedQuery<AuthenticationLinkEntity> query = em.createNamedQuery("findAuthLinkByUser", AuthenticationLinkEntity.class);
-        query.setParameter("user", ((UserAdapter) user).getUser());
-        List<AuthenticationLinkEntity> results = query.getResultList();
-        Set<AuthenticationLinkModel> set = new HashSet<AuthenticationLinkModel>();
-        for (AuthenticationLinkEntity entity : results) {
-            set.add(new AuthenticationLinkModel(entity.getAuthProvider(), entity.getAuthUserId()));
-        }
-        return set;
-    }
-
-    @Override
-    public void addAuthenticationLink(UserModel user, AuthenticationLinkModel authenticationLink) {
+    public void setAuthenticationLink(UserModel user, AuthenticationLinkModel authenticationLink) {
         AuthenticationLinkEntity entity = new AuthenticationLinkEntity();
-        entity.setRealm(realm);
         entity.setAuthProvider(authenticationLink.getAuthProvider());
         entity.setAuthUserId(authenticationLink.getAuthUserId());
-        entity.setUser(((UserAdapter) user).getUser());
+
+        UserEntity userEntity = ((UserAdapter) user).getUser();
+        userEntity.setAuthenticationLink(entity);
         em.persist(entity);
+        em.persist(userEntity);
         em.flush();
     }
 

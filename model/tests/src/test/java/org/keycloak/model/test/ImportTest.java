@@ -208,24 +208,9 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertTrue(authProv3.isPasswordUpdateSupported());
 
         // Test authentication linking
-        Set<AuthenticationLinkModel> authLinks = realm.getAuthenticationLinks(socialUser);
-        Assert.assertEquals(2, authLinks.size());
-        boolean plFound = false;
-        boolean extFound = false;
-        for (AuthenticationLinkModel authLinkModel : authLinks) {
-            if (AuthProviderConstants.PROVIDER_NAME_PICKETLINK.equals(authLinkModel.getAuthProvider())) {
-                plFound = true;
-                Assert.assertEquals(authLinkModel.getAuthUserId(), "myUser1");
-            } else if (AuthProviderConstants.PROVIDER_NAME_EXTERNAL_MODEL.equals(authLinkModel.getAuthProvider())) {
-                extFound = true;
-                Assert.assertEquals(authLinkModel.getAuthUserId(), "myUser11");
-            }
-        }
-        Assert.assertTrue(plFound && extFound);
-
-        UserModel foundAuthUser = realm.getUserByAuthenticationLink(new AuthenticationLinkModel(AuthProviderConstants.PROVIDER_NAME_PICKETLINK, "myUser1"));
-        Assert.assertEquals(foundAuthUser.getLoginName(), socialUser.getLoginName());
-        Assert.assertNull(realm.getUserByAuthenticationLink(new AuthenticationLinkModel(AuthProviderConstants.PROVIDER_NAME_PICKETLINK, "not-existing")));
+        AuthenticationLinkModel authLink = realm.getAuthenticationLink(socialUser);
+        Assert.assertEquals(AuthProviderConstants.PROVIDER_NAME_PICKETLINK, authLink.getAuthProvider());
+        Assert.assertEquals("myUser1", authLink.getAuthUserId());
 
         commit();
 

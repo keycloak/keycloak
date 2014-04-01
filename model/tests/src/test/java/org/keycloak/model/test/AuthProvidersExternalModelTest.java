@@ -95,10 +95,10 @@ public class AuthProvidersExternalModelTest extends AbstractModelTest {
             Assert.assertEquals("john@email.org", john2.getEmail());
 
             // Verify link exists
-            Set<AuthenticationLinkModel> authLinks = realm2.getAuthenticationLinks(john2);
-            Assert.assertEquals(1, authLinks.size());
-            AuthenticationLinkModel authLink = authLinks.iterator().next();
+            AuthenticationLinkModel authLink = realm2.getAuthenticationLink(john2);
+            Assert.assertNotNull(authLink);
             Assert.assertEquals(authLink.getAuthProvider(), AuthProviderConstants.PROVIDER_NAME_EXTERNAL_MODEL);
+            Assert.assertEquals(authLink.getAuthUserId(), realm1.getUser("john").getId());
         } finally {
             ResteasyProviderFactory.clearContextData();
         }
@@ -110,14 +110,19 @@ public class AuthProvidersExternalModelTest extends AbstractModelTest {
         // Add externalModel authenticationProvider into realm2 and point to realm1
         setupAuthenticationProviders();
 
+        // Add john to realm2 and set authentication link
+        UserModel john = realm2.addUser("john");
+        john.setEnabled(true);
+        realm2.setAuthenticationLink(john, new AuthenticationLinkModel(AuthProviderConstants.PROVIDER_NAME_EXTERNAL_MODEL, realm1.getUser("john").getId()));
+
         try {
             // this is needed for externalModel provider
             ResteasyProviderFactory.pushContext(KeycloakSession.class, identitySession);
 
-            // Change credential via realm2 and validate that they are changed in both realms
+            // Change credential via realm2 and validate that they are changed also in realm1
             AuthenticationProviderManager authProviderManager = AuthenticationProviderManager.getManager(realm2);
             try {
-                authProviderManager.updatePassword("john", "password-updated");
+                Assert.assertTrue(authProviderManager.updatePassword(john, "password-updated"));
             } catch (AuthenticationProviderException ape) {
                 ape.printStackTrace();
                 Assert.fail("Error not expected");
@@ -132,14 +137,14 @@ public class AuthProvidersExternalModelTest extends AbstractModelTest {
 
             // Change credential and validate that password is updated just for realm2
             try {
-                authProviderManager.updatePassword("john", "password-updated2");
+                Assert.assertFalse(authProviderManager.updatePassword(john, "password-updated2"));
             } catch (AuthenticationProviderException ape) {
                 ape.printStackTrace();
                 Assert.fail("Error not expected");
             }
             formData = createFormData("john", "password-updated2");
             Assert.assertEquals(AuthenticationManager.AuthenticationStatus.INVALID_CREDENTIALS, am.authenticateForm(realm1, formData));
-            Assert.assertEquals(AuthenticationManager.AuthenticationStatus.SUCCESS, am.authenticateForm(realm2, formData));
+            Assert.assertEquals(AuthenticationManager.AuthenticationStatus.INVALID_CREDENTIALS, am.authenticateForm(realm2, formData));
 
 
             // Allow passwordUpdate propagation again
@@ -148,7 +153,7 @@ public class AuthProvidersExternalModelTest extends AbstractModelTest {
             // Set passwordPolicy for realm1 and verify that password update fail
             realm1.setPasswordPolicy(new PasswordPolicy("length(8)"));
             try {
-                authProviderManager.updatePassword("john", "passw");
+                authProviderManager.updatePassword(john, "passw");
                 Assert.fail("Update not expected to pass");
             } catch (AuthenticationProviderException ape) {
 

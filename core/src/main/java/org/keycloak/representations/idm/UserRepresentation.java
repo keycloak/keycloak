@@ -20,6 +20,7 @@ public class UserRepresentation {
     protected String firstName;
     protected String lastName;
     protected String email;
+    protected AuthenticationLinkRepresentation authenticationLink;
     protected Map<String, String> attributes;
     protected List<CredentialRepresentation> credentials;
     protected List<String> requiredActions;
@@ -94,6 +95,14 @@ public class UserRepresentation {
 
     public void setEmailVerified(boolean emailVerified) {
         this.emailVerified = emailVerified;
+    }
+
+    public AuthenticationLinkRepresentation getAuthenticationLink() {
+        return authenticationLink;
+    }
+
+    public void setAuthenticationLink(AuthenticationLinkRepresentation authenticationLink) {
+        this.authenticationLink = authenticationLink;
     }
 
     public Map<String, String> getAttributes() {

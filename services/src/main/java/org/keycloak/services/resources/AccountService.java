@@ -264,13 +264,15 @@ public class AccountService {
         AuthenticationProviderManager authProviderManager = AuthenticationProviderManager.getManager(realm);
         if (Validation.isEmpty(password)) {
             return account.setError(Messages.MISSING_PASSWORD).createResponse(AccountPages.PASSWORD);
-            // TODO: This may not work in some cases. For example if ldap username is "foo" but actual loginName of user is "bar", which could theoretically happen...
-        } else if (authProviderManager.validatePassword(user.getLoginName(), password).getAuthProviderStatus() != AuthProviderStatus.SUCCESS) {
+        } else if (authProviderManager.validatePassword(user, password) != AuthProviderStatus.SUCCESS) {
             return account.setError(Messages.INVALID_PASSWORD_EXISTING).createResponse(AccountPages.PASSWORD);
         }
 
         try {
-            authProviderManager.updatePassword(user.getLoginName(), passwordNew);
+            boolean passwordUpdateSuccess = authProviderManager.updatePassword(user, passwordNew);
+            if (!passwordUpdateSuccess) {
+                return account.setError("Password update failed").createResponse(AccountPages.PASSWORD);
+            }
         } catch (AuthenticationProviderException ape) {
             return account.setError(ape.getMessage()).createResponse(AccountPages.PASSWORD);
         }

@@ -7,7 +7,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.spi.authentication.AuthProviderConstants;
-import org.keycloak.spi.authentication.AuthenticatedUser;
+import org.keycloak.spi.authentication.AuthUser;
 import org.keycloak.spi.authentication.AuthenticationProviderException;
 
 /**
@@ -39,12 +39,5 @@ public class ExternalModelAuthenticationProvider extends AbstractModelAuthentica
             throw new AuthenticationProviderException("Realm with id '" + realmId + "' doesn't exists");
         }
         return realm;
-    }
-
-    @Override
-    protected AuthenticatedUser createAuthenticatedUserInstance(UserModel user) {
-        return new AuthenticatedUser(user.getId(), user.getLoginName())
-                .setName(user.getFirstName(), user.getLastName())
-                .setEmail(user.getEmail());
     }
 }

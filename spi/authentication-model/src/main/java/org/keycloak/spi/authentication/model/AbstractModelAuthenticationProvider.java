@@ -9,8 +9,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.spi.authentication.AuthProviderStatus;
-import org.keycloak.spi.authentication.AuthResult;
-import org.keycloak.spi.authentication.AuthenticatedUser;
+import org.keycloak.spi.authentication.AuthUser;
 import org.keycloak.spi.authentication.AuthenticationProvider;
 import org.keycloak.spi.authentication.AuthenticationProviderException;
 
@@ -24,22 +23,19 @@ public abstract class AbstractModelAuthenticationProvider implements Authenticat
     private static final Logger logger = Logger.getLogger(AbstractModelAuthenticationProvider.class);
 
     @Override
-    public AuthResult validatePassword(RealmModel currentRealm, Map<String, String> config, String username, String password) throws AuthenticationProviderException {
+    public AuthUser getUser(RealmModel currentRealm, Map<String, String> config, String username) throws AuthenticationProviderException {
         RealmModel realm = getRealm(currentRealm, config);
+        UserModel user = KeycloakModelUtils.findUserByNameOrEmail(realm, username);
+        return user == null ? null : createAuthenticatedUserInstance(user);
+    }
 
+    @Override
+    public AuthProviderStatus validatePassword(RealmModel currentRealm, Map<String, String> config, String username, String password) throws AuthenticationProviderException {
+        RealmModel realm = getRealm(currentRealm, config);
         UserModel user = KeycloakModelUtils.findUserByNameOrEmail(realm, username);
 
-        if (user == null) {
-            return new AuthResult(AuthProviderStatus.USER_NOT_FOUND);
-        }
-
         boolean result = realm.validatePassword(user, password);
-        if (!result) {
-            return  new AuthResult(AuthProviderStatus.INVALID_CREDENTIALS);
-        }
-
-        AuthenticatedUser authUser = createAuthenticatedUserInstance(user);
-        return new AuthResult(AuthProviderStatus.SUCCESS).setProviderName(getName()).setUser(authUser);
+        return result ? AuthProviderStatus.SUCCESS : AuthProviderStatus.INVALID_CREDENTIALS;
     }
 
     @Override
@@ -54,7 +50,7 @@ public abstract class AbstractModelAuthenticationProvider implements Authenticat
 
         UserModel user = realm.getUser(username);
         if (user == null) {
-            logger.debugf("User '%s' doesn't exists. Skip password update", username);
+            logger.warnf("User '%s' doesn't exists. Skip password update", username);
             return false;
         }
 
@@ -68,5 +64,9 @@ public abstract class AbstractModelAuthenticationProvider implements Authenticat
 
     protected abstract RealmModel getRealm(RealmModel currentRealm, Map<String, String> config) throws AuthenticationProviderException;
 
-    protected abstract AuthenticatedUser createAuthenticatedUserInstance(UserModel user);
+    protected AuthUser createAuthenticatedUserInstance(UserModel user) {
+        return new AuthUser(user.getId(), user.getLoginName(), getName())
+                .setName(user.getFirstName(), user.getLastName())
+                .setEmail(user.getEmail());
+    }
 }
