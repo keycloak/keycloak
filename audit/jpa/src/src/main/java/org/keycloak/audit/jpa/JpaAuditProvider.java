@@ -6,6 +6,7 @@ import org.keycloak.audit.Event;
 import org.keycloak.audit.EventQuery;
 
 import javax.persistence.EntityManager;
+import javax.persistence.EntityTransaction;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -16,6 +17,7 @@ import java.util.UUID;
 public class JpaAuditProvider implements AuditProvider {
 
     private EntityManager em;
+    private EntityTransaction tx;
 
     public JpaAuditProvider(EntityManager em) {
         this.em = em;
@@ -27,15 +29,37 @@ public class JpaAuditProvider implements AuditProvider {
     }
 
     @Override
+    public void clear() {
+        beginTx();
+        em.createQuery("delete from EventEntity").executeUpdate();
+    }
+
+    @Override
+    public void clear(long olderThan) {
+        beginTx();
+        em.createQuery("delete from EventEntity where time < :time").setParameter("time", olderThan).executeUpdate();
+    }
+
+    @Override
     public void onEvent(Event event) {
-        em.getTransaction().begin();
+        beginTx();
         em.persist(convert(event));
-        em.getTransaction().commit();
     }
 
     @Override
     public void close() {
+        if (tx != null) {
+            tx.commit();
+        }
+
         em.close();
+    }
+
+    private void beginTx() {
+        if (tx == null) {
+            tx = em.getTransaction();
+            tx.begin();
+        }
     }
 
     static EventEntity convert(Event o) {

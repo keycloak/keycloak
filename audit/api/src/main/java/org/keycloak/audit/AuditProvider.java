@@ -7,4 +7,8 @@ public interface AuditProvider extends AuditListener {
 
     public EventQuery createQuery();
 
+    public void clear();
+
+    public void clear(long olderThan);
+
 }
