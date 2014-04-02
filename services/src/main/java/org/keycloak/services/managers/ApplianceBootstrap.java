@@ -1,8 +1,11 @@
 package org.keycloak.services.managers;
 
+import java.util.Arrays;
+
 import org.jboss.resteasy.logging.Logger;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.Config;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -58,6 +61,7 @@ public class ApplianceBootstrap {
         realm.setSslNotRequired(true);
         realm.setRegistrationAllowed(false);
         manager.generateRealmKeys(realm);
+        realm.setAuthenticationProviders(Arrays.asList(AuthenticationProviderModel.DEFAULT_PROVIDER));
 
         ApplicationModel adminConsole = new ApplicationManager(manager).createApplication(realm, Constants.ADMIN_CONSOLE_APPLICATION);
         adminConsole.setBaseUrl("/auth/admin/index.html");

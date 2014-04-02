@@ -47,7 +47,7 @@ public class AuthProvidersIntegrationTest {
         @Override
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
             addUser(appRealm, "mary", "mary@test.com", "password-app");
-            addUser(adminstrationRealm, "mary", "mary@admin.com", "password-admin");
+            addUser(adminstrationRealm, "mary-admin", "mary@admin.com", "password-admin");
 
             AuthenticationProviderModel modelProvider = new AuthenticationProviderModel(AuthProviderConstants.PROVIDER_NAME_MODEL, false, Collections.EMPTY_MAP);
             AuthenticationProviderModel picketlinkProvider = new AuthenticationProviderModel(AuthProviderConstants.PROVIDER_NAME_PICKETLINK, true, Collections.EMPTY_MAP);
@@ -116,7 +116,7 @@ public class AuthProvidersIntegrationTest {
     @Test
     public void loginExternalModel() {
         loginPage.open();
-        loginPage.login("mary", "password-admin");
+        loginPage.login("mary-admin", "password-admin");
 
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
@@ -148,18 +148,18 @@ public class AuthProvidersIntegrationTest {
 
         try {
             changePasswordPage.open();
-            loginPage.login("mary", "password-admin");
+            loginPage.login("mary-admin", "password-admin");
 
             // Can't update to "pass" due to passwordPolicy
             changePasswordPage.changePassword("password-admin", "pass", "pass");
             Assert.assertEquals("Invalid password: minimum length 6", profilePage.getError());
 
-            changePasswordPage.changePassword("password-app", "password-updated", "password-updated");
+            changePasswordPage.changePassword("password-admin", "password-updated", "password-updated");
             Assert.assertEquals("Your password has been updated", profilePage.getSuccess());
             changePasswordPage.logout();
 
             loginPage.open();
-            loginPage.login("mary", "password-updated");
+            loginPage.login("mary-admin", "password-updated");
             Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         } finally {

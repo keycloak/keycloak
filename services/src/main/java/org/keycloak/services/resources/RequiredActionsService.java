@@ -200,7 +200,10 @@ public class RequiredActionsService {
         }
 
         try {
-            AuthenticationProviderManager.getManager(realm).updatePassword(user.getLoginName(), passwordNew);
+            boolean updateSuccessful = AuthenticationProviderManager.getManager(realm).updatePassword(user, passwordNew);
+            if (!updateSuccessful) {
+                return loginForms.setError("Password update failed").createResponse(RequiredAction.UPDATE_PASSWORD);
+            }
         } catch (AuthenticationProviderException ape) {
             return loginForms.setError(ape.getMessage()).createResponse(RequiredAction.UPDATE_PASSWORD);
         }

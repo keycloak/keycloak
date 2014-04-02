@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -67,7 +68,7 @@ public class RealmEntity {
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true)
     @JoinTable(name="AuthProviders")
-    Collection<AuthenticationProviderEntity> authenticationProviders = new ArrayList<AuthenticationProviderEntity>();
+    List<AuthenticationProviderEntity> authenticationProviders = new ArrayList<AuthenticationProviderEntity>();
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<ApplicationEntity> applications = new ArrayList<ApplicationEntity>();
@@ -244,11 +245,11 @@ public class RealmEntity {
         this.requiredCredentials = requiredCredentials;
     }
 
-    public Collection<AuthenticationProviderEntity> getAuthenticationProviders() {
+    public List<AuthenticationProviderEntity> getAuthenticationProviders() {
         return authenticationProviders;
     }
 
-    public void setAuthenticationProviders(Collection<AuthenticationProviderEntity> authenticationProviders) {
+    public void setAuthenticationProviders(List<AuthenticationProviderEntity> authenticationProviders) {
         this.authenticationProviders = authenticationProviders;
     }
 

@@ -15,6 +15,8 @@ import javax.persistence.MapKeyColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -63,6 +65,9 @@ public class UserEntity {
 
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true)
     protected Collection<CredentialEntity> credentials = new ArrayList<CredentialEntity>();
+
+    @OneToOne(cascade = CascadeType.REMOVE, orphanRemoval = true)
+    protected AuthenticationLinkEntity authenticationLink;
 
     public String getId() {
         return id;
@@ -158,6 +163,14 @@ public class UserEntity {
 
     public void setCredentials(Collection<CredentialEntity> credentials) {
         this.credentials = credentials;
+    }
+
+    public AuthenticationLinkEntity getAuthenticationLink() {
+        return authenticationLink;
+    }
+
+    public void setAuthenticationLink(AuthenticationLinkEntity authenticationLink) {
+        this.authenticationLink = authenticationLink;
     }
 
     public int getNotBefore() {

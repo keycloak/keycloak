@@ -397,12 +397,21 @@ public class TokenService {
             UserCredentialModel credentials = new UserCredentialModel();
             credentials.setType(CredentialRepresentation.PASSWORD);
             credentials.setValue(formData.getFirst("password"));
+
+            boolean passwordUpdateSuccessful;
+            String passwordUpdateError = null;
             try {
-                AuthenticationProviderManager.getManager(realm).updatePassword(username, formData.getFirst("password"));
+                passwordUpdateSuccessful = AuthenticationProviderManager.getManager(realm).updatePassword(user, formData.getFirst("password"));
+                passwordUpdateError = "Password update failed";
             } catch (AuthenticationProviderException ape) {
-                // User already registered, but force him to update password
+                passwordUpdateSuccessful = false;
+                passwordUpdateError = ape.getMessage();
+            }
+
+            // User already registered, but force him to update password
+            if (!passwordUpdateSuccessful) {
                 user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
-                return Flows.forms(realm, request, uriInfo).setError(ape.getMessage()).createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
+                return Flows.forms(realm, request, uriInfo).setError(passwordUpdateError).createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
             }
         }
 

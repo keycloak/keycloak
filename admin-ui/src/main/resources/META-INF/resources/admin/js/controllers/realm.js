@@ -886,3 +886,32 @@ module.controller('RealmSMTPSettingsCtrl', function($scope, Current, Realm, real
         return obj;
     }
 });
+
+module.controller('RealmLdapSettingsCtrl', function($scope, Realm, realm, $location, Notifications) {
+    console.log('RealmLdapSettingsCtrl');
+
+    $scope.realm = realm;
+
+    var oldCopy = angular.copy($scope.realm);
+    $scope.changed = false;
+
+    $scope.$watch('realm', function() {
+        if (!angular.equals($scope.realm, oldCopy)) {
+            $scope.changed = true;
+        }
+    }, true);
+
+    $scope.save = function() {
+        var realmCopy = angular.copy($scope.realm);
+        $scope.changed = false;
+        Realm.update(realmCopy, function () {
+            $location.url("/realms/" + realm.realm + "/ldap-settings");
+            Notifications.success("Your changes have been saved to the realm.");
+        });
+    };
+
+    $scope.reset = function() {
+        $scope.realm = angular.copy(oldCopy);
+        $scope.changed = false;
+    };
+});
