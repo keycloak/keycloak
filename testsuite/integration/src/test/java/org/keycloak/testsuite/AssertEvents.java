@@ -9,6 +9,7 @@ import org.junit.Assert;
 import org.junit.rules.TestRule;
 import org.junit.runners.model.Statement;
 import org.keycloak.audit.AuditListener;
+import org.keycloak.audit.AuditListenerFactory;
 import org.keycloak.audit.Details;
 import org.keycloak.audit.Event;
 import org.keycloak.models.ClientModel;
@@ -31,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class AssertEvents implements TestRule, AuditListener{
+public class AssertEvents implements TestRule, AuditListenerFactory {
 
     private static final Logger log = Logger.getLogger(AssertEvents.class);
 
@@ -55,11 +56,6 @@ public class AssertEvents implements TestRule, AuditListener{
     @Override
     public String getId() {
         return "assert-events";
-    }
-
-    @Override
-    public void onEvent(Event event) {
-        events.add(event);
     }
 
     @Override
@@ -163,6 +159,28 @@ public class AssertEvents implements TestRule, AuditListener{
 
     public ExpectedEvent expect(String event) {
         return new ExpectedEvent().realm(DEFAULT_REALM).client(DEFAULT_CLIENT_ID).user(keycloak.getUser(DEFAULT_REALM, DEFAULT_USERNAME).getId()).ipAddress(DEFAULT_IP_ADDRESS).event(event);
+    }
+
+    @Override
+    public AuditListener create() {
+        return new AuditListener() {
+            @Override
+            public void onEvent(Event event) {
+                events.add(event);
+            }
+
+            @Override
+            public void close() {
+            }
+        };
+    }
+
+    @Override
+    public void init() {
+    }
+
+    @Override
+    public void close() {
     }
 
     public static class ExpectedEvent {

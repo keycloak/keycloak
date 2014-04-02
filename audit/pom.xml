@@ -19,5 +19,7 @@
         <module>api</module>
         <module>jpa</module>
         <module>jboss-logging</module>
+        <module>mongo</module>
+        <module>tests</module>
     </modules>
 </project>
