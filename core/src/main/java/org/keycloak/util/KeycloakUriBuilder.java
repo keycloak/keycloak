@@ -620,8 +620,6 @@ public class KeycloakUriBuilder {
         }
         // don't set values if values is null
         if (values == null) return this;
-        // don't set values if values is null
-        if (values == null) return this;
         return queryParam(name, values);
     }
 
