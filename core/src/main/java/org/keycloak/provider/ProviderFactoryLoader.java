@@ -1,88 +1,100 @@
 package org.keycloak.provider;
 
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class ProviderFactoryLoader<P extends ProviderFactory> implements Iterable<P> {
+public class ProviderFactoryLoader<T extends Provider> implements Iterable<ProviderFactory<T>> {
 
-    private ServiceLoader<P> serviceLoader;
+    private Map<String, ProviderFactory<T>> factories = new HashMap<String, ProviderFactory<T>>();
 
-    private ProviderFactoryLoader(ServiceLoader<P> serviceLoader) {
-        this.serviceLoader = serviceLoader;
+    private ProviderFactoryLoader(ServiceLoader<? extends ProviderFactory> serviceLoader) {
+        for (ProviderFactory p : serviceLoader) {
+            if (!System.getProperties().containsKey(p.getClass().getName() + ".disabled")) {
+                if (p.lazyLoad()) {
+                    p = new LazyProviderFactory(p);
+                }
+                factories.put(p.getId(), p);
+            }
+        }
     }
 
-    public static <P extends ProviderFactory> ProviderFactoryLoader<P> load(Class<P> service) {
+    public static ProviderFactoryLoader create(Class<? extends ProviderFactory> service) {
         return new ProviderFactoryLoader(ServiceLoader.load(service));
     }
 
-    public static <P extends ProviderFactory> ProviderFactoryLoader<P> load(Class<P> service, ClassLoader loader) {
+    public static ProviderFactoryLoader create(Class<? extends ProviderFactory> service, ClassLoader loader) {
         return new ProviderFactoryLoader(ServiceLoader.load(service, loader));
     }
 
-    public P find(String id) {
-        Iterator<P> itr = iterator();
-        while (itr.hasNext()) {
-            P p = itr.next();
-            if (p.getId() != null && p.getId().equals(id)) {
-                return p;
-            }
-        }
-        return null;
+    public ProviderFactory find(String id) {
+        return factories.get(id);
     }
 
     @Override
-    public Iterator<P> iterator() {
-        return new ProviderFactoryIterator(serviceLoader.iterator());
+    public Iterator<ProviderFactory<T>> iterator() {
+        return factories.values().iterator();
+    }
+
+    public Set<String> providerIds() {
+        return factories.keySet();
+    }
+
+    public void init() {
+        for (ProviderFactory p : factories.values()) {
+            p.init();
+        }
     }
 
     public void close() {
-
+        for (ProviderFactory p : factories.values()) {
+            p.close();
+        }
     }
 
-    private static class ProviderFactoryIterator<P> implements Iterator<P> {
+    private class LazyProviderFactory<T extends Provider> implements ProviderFactory<T> {
 
-        private Iterator<P> itr;
+        private volatile boolean initialized = false;
 
-        private P next;
+        private ProviderFactory<T> factory;
 
-        private ProviderFactoryIterator(Iterator<P> itr) {
-            this.itr = itr;
-            setNext();
+        private LazyProviderFactory(ProviderFactory<T> factory) {
+            this.factory = factory;
         }
 
         @Override
-        public boolean hasNext() {
-            return next != null;
-        }
-
-        @Override
-        public P next() {
-            P n = next;
-            setNext();
-            return n;
-        }
-
-        @Override
-        public void remove() {
-            throw new UnsupportedOperationException();
-        }
-
-        private void setNext() {
-            next = null;
-            while (itr.hasNext()) {
-                if (itr.hasNext()) {
-                    P n = itr.next();
-                    if (!System.getProperties().containsKey(n.getClass().getName() + ".disabled")) {
-                        next = n;
-                        return;
-                    }
-                }
+        public synchronized T create() {
+            if (!initialized) {
+                factory.init();
+                initialized = true;
             }
+            return factory.create();
         }
 
+        @Override
+        public void init() {
+            // do nothing
+        }
+
+        @Override
+        public void close() {
+            factory.close();
+        }
+
+        @Override
+        public String getId() {
+            return factory.getId();
+        }
+
+        @Override
+        public boolean lazyLoad() {
+            return false;
+        }
     }
 
 }

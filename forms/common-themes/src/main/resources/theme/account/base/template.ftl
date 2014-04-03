@@ -42,7 +42,8 @@
                 <li class="<#if active=='account'>active</#if>"><a href="${url.accountUrl}">Account</a></li>
                 <li class="<#if active=='password'>active</#if>"><a href="${url.passwordUrl}">Password</a></li>
                 <li class="<#if active=='totp'>active</#if>"><a href="${url.totpUrl}">Authenticator</a></li>
-                <#if isSocialRealm?has_content><li class="<#if active=='social'>active</#if>"><a href="${url.socialUrl}">Social</a></li></#if>
+                <#if features.social><li class="<#if active=='social'>active</#if>"><a href="${url.socialUrl}">Social</a></li></#if>
+                <#if features.log><li class="<#if active=='log'>active</#if>"><a href="${url.logUrl}">Log</a></li></#if>
             </ul>
         </div>
 

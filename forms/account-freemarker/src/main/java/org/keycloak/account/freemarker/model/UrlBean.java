@@ -41,6 +41,10 @@ public class UrlBean {
         return Urls.accountTotpPage(baseURI, realm).toString();
     }
 
+    public String getLogUrl() {
+        return Urls.accountLogPage(baseURI, realm).toString();
+    }
+
     public String getTotpRemoveUrl() {
         return Urls.accountTotpRemove(baseURI, realm).toString();
     }

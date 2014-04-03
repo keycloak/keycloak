@@ -13,4 +13,6 @@ public interface ProviderFactory<T extends Provider> {
 
     public String getId();
 
+    public boolean lazyLoad();
+
 }

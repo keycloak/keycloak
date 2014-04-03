@@ -47,4 +47,9 @@ public class MongoAuditProviderFactory implements AuditProviderFactory {
         return ID;
     }
 
+    @Override
+    public boolean lazyLoad() {
+        return true;
+    }
+
 }

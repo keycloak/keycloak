@@ -1,5 +1,6 @@
 package org.keycloak.audit.jpa;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 
@@ -26,6 +27,7 @@ public class EventEntity {
 
     private String error;
 
+    @Column(length = 2550)
     private String detailsJson;
 
     public String getId() {

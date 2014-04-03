@@ -34,8 +34,6 @@ import java.util.concurrent.TimeUnit;
  */
 public class AssertEvents implements TestRule, AuditListenerFactory {
 
-    private static final Logger log = Logger.getLogger(AssertEvents.class);
-
     public static String DEFAULT_CLIENT_ID = "test-app";
     public static String DEFAULT_REDIRECT_URI = "http://localhost:8081/app/auth";
     public static String DEFAULT_IP_ADDRESS = "127.0.0.1";
@@ -56,6 +54,11 @@ public class AssertEvents implements TestRule, AuditListenerFactory {
     @Override
     public String getId() {
         return "assert-events";
+    }
+
+    @Override
+    public boolean lazyLoad() {
+        return false;
     }
 
     @Override

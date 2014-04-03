@@ -34,4 +34,9 @@ public class JpaAuditProviderFactory implements AuditProviderFactory {
         return ID;
     }
 
+    @Override
+    public boolean lazyLoad() {
+        return true;
+    }
+
 }

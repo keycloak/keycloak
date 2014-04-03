@@ -74,6 +74,10 @@ public class Urls {
         return accountBase(baseUri).path(AccountService.class, "processTotpRemove").build(realmId);
     }
 
+    public static URI accountLogPage(URI baseUri, String realmId) {
+        return accountBase(baseUri).path(AccountService.class, "logPage").build(realmId);
+    }
+
     public static URI accountLogout(URI baseUri, String realmId) {
         return accountBase(baseUri).path(AccountService.class, "logout").build(realmId);
     }

@@ -17,6 +17,8 @@ public class Templates {
                 return "totp.ftl";
             case SOCIAL:
                 return "social.ftl";
+            case LOG:
+                return "log.ftl";
             default:
                 throw new IllegalArgumentException();
         }

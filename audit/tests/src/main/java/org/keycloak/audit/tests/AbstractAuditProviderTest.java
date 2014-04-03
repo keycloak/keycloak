@@ -7,6 +7,7 @@ import org.junit.Test;
 import org.keycloak.audit.AuditProvider;
 import org.keycloak.audit.AuditProviderFactory;
 import org.keycloak.audit.Event;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.ProviderFactoryLoader;
 
 import java.util.HashMap;
@@ -17,12 +18,12 @@ import java.util.Map;
  */
 public abstract class AbstractAuditProviderTest {
 
-    private AuditProviderFactory factory;
+    private ProviderFactory<AuditProvider> factory;
     private AuditProvider provider;
 
     @Before
     public void before() {
-        ProviderFactoryLoader<AuditProviderFactory> loader = ProviderFactoryLoader.load(AuditProviderFactory.class);
+        ProviderFactoryLoader<AuditProvider> loader = ProviderFactoryLoader.create(AuditProviderFactory.class);
         factory = loader.find(getProviderId());
         factory.init();
 
@@ -45,10 +46,13 @@ public abstract class AbstractAuditProviderTest {
 
     @Test
     public void query() {
+        long oldest = System.currentTimeMillis() - 30000;
+        long newest = System.currentTimeMillis() + 30000;
+
         provider.onEvent(create("event", "realmId", "clientId", "userId", "127.0.0.1", "error"));
-        provider.onEvent(create("event2", "realmId", "clientId", "userId", "127.0.0.1", "error"));
+        provider.onEvent(create(newest, "event2", "realmId", "clientId", "userId", "127.0.0.1", "error"));
         provider.onEvent(create("event", "realmId2", "clientId", "userId", "127.0.0.1", "error"));
-        provider.onEvent(create("event", "realmId", "clientId2", "userId", "127.0.0.1", "error"));
+        provider.onEvent(create(oldest, "event", "realmId", "clientId2", "userId", "127.0.0.1", "error"));
         provider.onEvent(create("event", "realmId", "clientId", "userId2", "127.0.0.1", "error"));
 
         provider.close();
@@ -57,12 +61,16 @@ public abstract class AbstractAuditProviderTest {
         Assert.assertEquals(4, provider.createQuery().client("clientId").getResultList().size());
         Assert.assertEquals(4, provider.createQuery().realm("realmId").getResultList().size());
         Assert.assertEquals(4, provider.createQuery().event("event").getResultList().size());
+        Assert.assertEquals(5, provider.createQuery().event("event", "event2").getResultList().size());
         Assert.assertEquals(4, provider.createQuery().user("userId").getResultList().size());
 
         Assert.assertEquals(1, provider.createQuery().user("userId").event("event2").getResultList().size());
 
         Assert.assertEquals(2, provider.createQuery().maxResults(2).getResultList().size());
         Assert.assertEquals(1, provider.createQuery().firstResult(4).getResultList().size());
+
+        Assert.assertEquals(newest, provider.createQuery().maxResults(1).getResultList().get(0).getTime());
+        Assert.assertEquals(oldest, provider.createQuery().firstResult(4).maxResults(1).getResultList().get(0).getTime());
     }
 
     @Test

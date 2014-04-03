@@ -28,13 +28,22 @@ import org.keycloak.account.Account;
 import org.keycloak.account.AccountLoader;
 import org.keycloak.account.AccountPages;
 import org.keycloak.audit.Audit;
+import org.keycloak.audit.AuditProvider;
 import org.keycloak.audit.Details;
+import org.keycloak.audit.Event;
 import org.keycloak.audit.Events;
 import org.keycloak.jaxrs.JaxrsOAuthClient;
-import org.keycloak.models.*;
+import org.keycloak.models.AccountRoles;
+import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.SocialLinkModel;
+import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.services.managers.AccessCodeEntry;
+import org.keycloak.services.ProviderSession;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.ModelToRepresentation;
@@ -51,8 +60,23 @@ import org.keycloak.spi.authentication.AuthProviderStatus;
 import org.keycloak.spi.authentication.AuthenticationProviderException;
 import org.keycloak.spi.authentication.AuthenticationProviderManager;
 
-import javax.ws.rs.*;
-import javax.ws.rs.core.*;
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.ForbiddenException;
+import javax.ws.rs.GET;
+import javax.ws.rs.OPTIONS;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.NewCookie;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriInfo;
+import javax.ws.rs.core.Variant;
 import java.net.URI;
 import java.util.List;
 import java.util.UUID;
@@ -77,10 +101,16 @@ public class AccountService {
     @Context
     private UriInfo uriInfo;
 
+    @Context
+    private ProviderSession providers;
+
     private final AppAuthManager authManager;
     private final ApplicationModel application;
     private Audit audit;
     private final SocialRequestManager socialRequestManager;
+    private Account account;
+    private Auth auth;
+    private AuditProvider auditProvider;
 
     public AccountService(RealmModel realm, ApplicationModel application, TokenManager tokenManager, SocialRequestManager socialRequestManager, Audit audit) {
         this.realm = realm;
@@ -90,22 +120,29 @@ public class AccountService {
         this.socialRequestManager = socialRequestManager;
     }
 
+    public void init() {
+        auditProvider = providers.getProvider(AuditProvider.class);
+
+        account = AccountLoader.load().createAccount(uriInfo).setRealm(realm).setFeatures(realm.isSocial(), auditProvider != null);
+
+        auth = authManager.authenticate(realm, headers);
+        if (auth != null) {
+            account.setUser(auth.getUser());
+        }
+    }
+
     public static UriBuilder accountServiceBaseUrl(UriInfo uriInfo) {
         UriBuilder base = uriInfo.getBaseUriBuilder().path(RealmsResource.class).path(RealmsResource.class, "getAccountService");
         return base;
     }
 
-
     private Response forwardToPage(String path, AccountPages page) {
-        Auth auth = getAuth(false);
         if (auth != null) {
             try {
-                require(auth, AccountRoles.MANAGE_ACCOUNT);
+                require(AccountRoles.MANAGE_ACCOUNT);
             } catch (ForbiddenException e) {
                 return Flows.forms(realm, request, uriInfo).setError("No access").createErrorPage();
             }
-
-            Account account = AccountLoader.load().createAccount(uriInfo).setRealm(realm).setUser(auth.getUser());
 
             String[] referrer = getReferrer();
             if (referrer != null) {
@@ -131,8 +168,7 @@ public class AccountService {
         if (types.contains(MediaType.WILDCARD_TYPE) || (types.contains(MediaType.TEXT_HTML_TYPE))) {
             return forwardToPage(null, AccountPages.ACCOUNT);
         } else if (types.contains(MediaType.APPLICATION_JSON_TYPE)) {
-            Auth auth = getAuth(true);
-            requireOneOf(auth, AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
+            requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
 
             return Cors.add(request, Response.ok(ModelToRepresentation.toRepresentation(auth.getUser()))).auth().allowedOrigins(auth.getClient()).build();
         } else {
@@ -158,16 +194,23 @@ public class AccountService {
         return forwardToPage("social", AccountPages.SOCIAL);
     }
 
+    @Path("log")
+    @GET
+    public Response logPage() {
+        if (auth != null) {
+            List<Event> events = auditProvider.createQuery().user(auth.getUser().getId()).maxResults(20).getResultList();
+            account.setEvents(events);
+        }
+        return forwardToPage("log", AccountPages.LOG);
+    }
+
     @Path("/")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processAccountUpdate(final MultivaluedMap<String, String> formData) {
-        Auth auth = getAuth(true);
-        require(auth, AccountRoles.MANAGE_ACCOUNT);
+        require(AccountRoles.MANAGE_ACCOUNT);
 
         UserModel user = auth.getUser();
-
-        Account account = AccountLoader.load().createAccount(uriInfo).setRealm(realm).setUser(auth.getUser());
 
         String error = Validation.validateUpdateProfileForm(formData);
         if (error != null) {
@@ -196,15 +239,13 @@ public class AccountService {
     @Path("totp-remove")
     @GET
     public Response processTotpRemove() {
-        Auth auth = getAuth(true);
-        require(auth, AccountRoles.MANAGE_ACCOUNT);
+        require(AccountRoles.MANAGE_ACCOUNT);
 
         UserModel user = auth.getUser();
         user.setTotp(false);
 
         audit.event(Events.REMOVE_TOTP).client(auth.getClient()).user(auth.getUser()).success();
 
-        Account account = AccountLoader.load().createAccount(uriInfo).setRealm(realm).setUser(auth.getUser());
         return account.setSuccess("successTotpRemoved").createResponse(AccountPages.TOTP);
     }
 
@@ -212,15 +253,12 @@ public class AccountService {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processTotpUpdate(final MultivaluedMap<String, String> formData) {
-        Auth auth = getAuth(true);
-        require(auth, AccountRoles.MANAGE_ACCOUNT);
+        require(AccountRoles.MANAGE_ACCOUNT);
 
         UserModel user = auth.getUser();
 
         String totp = formData.getFirst("totp");
         String totpSecret = formData.getFirst("totpSecret");
-
-        Account account = AccountLoader.load().createAccount(uriInfo).setRealm(realm).setUser(auth.getUser());
 
         if (Validation.isEmpty(totp)) {
             return account.setError(Messages.MISSING_TOTP).createResponse(AccountPages.TOTP);
@@ -244,12 +282,9 @@ public class AccountService {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processPasswordUpdate(final MultivaluedMap<String, String> formData) {
-        Auth auth = getAuth(true);
-        require(auth, AccountRoles.MANAGE_ACCOUNT);
+        require(AccountRoles.MANAGE_ACCOUNT);
 
         UserModel user = auth.getUser();
-
-        Account account = AccountLoader.load().createAccount(uriInfo).setRealm(realm).setUser(auth.getUser());
 
         String password = formData.getFirst("password");
         String passwordNew = formData.getFirst("password-new");
@@ -286,11 +321,8 @@ public class AccountService {
     @GET
     public Response processSocialUpdate(@QueryParam("action") String action,
                                         @QueryParam("provider_id") String providerId) {
-        Auth auth = getAuth(true);
-        require(auth, AccountRoles.MANAGE_ACCOUNT);
+        require(AccountRoles.MANAGE_ACCOUNT);
         UserModel user = auth.getUser();
-
-        Account account = AccountLoader.load().createAccount(uriInfo).setRealm(realm).setUser(auth.getUser());
 
         if (Validation.isEmpty(providerId)) {
             return account.setError(Messages.MISSING_SOCIAL_PROVIDER).createResponse(AccountPages.SOCIAL);
@@ -426,14 +458,6 @@ public class AccountService {
         return oauth.redirect(uriInfo, accountUri.toString());
     }
 
-    private Auth getAuth(boolean error) {
-        Auth auth = authManager.authenticate(realm, headers);
-        if (auth == null && error) {
-            throw new ForbiddenException();
-        }
-        return auth;
-    }
-
     private String[] getReferrer() {
         String referrer = uriInfo.getQueryParameters().getFirst("referrer");
         if (referrer == null) {
@@ -467,13 +491,21 @@ public class AccountService {
         return null;
     }
 
-    public void require(Auth auth, String role) {
+    public void require(String role) {
+        if (auth == null) {
+            throw new ForbiddenException();
+        }
+
         if (!auth.hasAppRole(application.getName(), role)) {
             throw new ForbiddenException();
         }
     }
 
-    public void requireOneOf(Auth auth, String... roles) {
+    public void requireOneOf(String... roles) {
+        if (auth == null) {
+            throw new ForbiddenException();
+        }
+
         if (!auth.hasOneOfAppRole(application.getName(), roles)) {
             throw new ForbiddenException();
         }

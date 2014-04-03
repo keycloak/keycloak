@@ -36,8 +36,8 @@ public class JpaEventQuery implements EventQuery {
     }
 
     @Override
-    public EventQuery event(String event) {
-        predicates.add(cb.equal(root.get("event"), event));
+    public EventQuery event(String... events) {
+        predicates.add(root.get("event").in(events));
         return this;
     }
 
@@ -77,7 +77,7 @@ public class JpaEventQuery implements EventQuery {
             cq.where(cb.and(predicates.toArray(new Predicate[predicates.size()])));
         }
 
-        cq.orderBy(cb.asc(root.get("time")), cb.asc(root.get("id")));
+        cq.orderBy(cb.desc(root.get("time")));
 
         TypedQuery<EventEntity> query = em.createQuery(cq);
 
