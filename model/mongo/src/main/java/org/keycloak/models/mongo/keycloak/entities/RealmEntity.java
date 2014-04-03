@@ -57,7 +57,7 @@ public class RealmEntity extends AbstractMongoIdentifiableEntity implements Mong
     private Map<String, String> socialConfig = new HashMap<String, String>();
     private Map<String, String> ldapServerConfig;
 
-    private List<String> auditListeners = new LinkedList<String>();
+    private List<String> auditListeners = new ArrayList<String>();
 
     @MongoField
     public String getName() {
