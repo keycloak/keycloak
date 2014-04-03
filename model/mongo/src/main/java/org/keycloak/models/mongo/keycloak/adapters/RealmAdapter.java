@@ -26,6 +26,7 @@ import org.keycloak.models.mongo.keycloak.entities.RequiredCredentialEntity;
 import org.keycloak.models.mongo.keycloak.entities.RoleEntity;
 import org.keycloak.models.mongo.keycloak.entities.SocialLinkEntity;
 import org.keycloak.models.mongo.keycloak.entities.UserEntity;
+import org.keycloak.models.mongo.keycloak.entities.UsernameLoginFailureEntity;
 import org.keycloak.models.mongo.utils.MongoModelUtils;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
@@ -123,6 +124,15 @@ public class RealmAdapter extends AbstractMongoAdapter<RealmEntity> implements R
         updateRealm();
     }
 
+    @Override
+    public boolean isBruteForceProtected() {
+        return realm.isBruteForceProtected();
+    }
+
+    @Override
+    public void setBruteForceProtected(boolean value) {
+        realm.setBruteForceProtected(value);
+    }
 
     @Override
     public boolean isVerifyEmail() {
@@ -338,6 +348,38 @@ public class RealmAdapter extends AbstractMongoAdapter<RealmEntity> implements R
         } else {
             return new UserAdapter(user, invocationContext);
         }
+    }
+
+    @Override
+    public UsernameLoginFailureAdapter getUserLoginFailure(String name) {
+        DBObject query = new QueryBuilder()
+                .and("username").is(name)
+                .and("realmId").is(getId())
+                .get();
+        UsernameLoginFailureEntity user = getMongoStore().loadSingleEntity(UsernameLoginFailureEntity.class, query, invocationContext);
+
+        if (user == null) {
+            return null;
+        } else {
+            return new UsernameLoginFailureAdapter(invocationContext, user);
+        }
+    }
+
+    @Override
+    public UsernameLoginFailureAdapter addUserLoginFailure(String username) {
+        UsernameLoginFailureAdapter userLoginFailure = getUserLoginFailure(username);
+        if (userLoginFailure != null) {
+            return userLoginFailure;
+        }
+
+        UsernameLoginFailureEntity userEntity = new UsernameLoginFailureEntity();
+        userEntity.setUsername(username);
+        // Compatibility with JPA model, which has user disabled by default
+        // userEntity.setEnabled(true);
+        userEntity.setRealmId(getId());
+
+        getMongoStore().insertEntity(userEntity, invocationContext);
+        return new UsernameLoginFailureAdapter(invocationContext, userEntity);
     }
 
     @Override

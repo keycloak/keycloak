@@ -24,6 +24,11 @@ public class UserEntity extends AbstractMongoIdentifiableEntity implements Mongo
     private boolean totp;
     private boolean enabled;
     private int notBefore;
+    private int failedLoginNotBefore;
+    private int numFailures;
+    private long lastFailure;
+    private String lastIPFailure;
+
 
     private String realmId;
 
@@ -170,4 +175,41 @@ public class UserEntity extends AbstractMongoIdentifiableEntity implements Mongo
     public void setAuthenticationLink(AuthenticationLinkEntity authenticationLink) {
         this.authenticationLink = authenticationLink;
     }
+
+    @MongoField
+    public int getFailedLoginNotBefore() {
+        return failedLoginNotBefore;
+    }
+
+    public void setFailedLoginNotBefore(int failedLoginNotBefore) {
+        this.failedLoginNotBefore = failedLoginNotBefore;
+    }
+
+    @MongoField
+    public int getNumFailures() {
+        return numFailures;
+    }
+
+    public void setNumFailures(int numFailures) {
+        this.numFailures = numFailures;
+    }
+
+    @MongoField
+    public long getLastFailure() {
+        return lastFailure;
+    }
+
+    public void setLastFailure(long lastFailure) {
+        this.lastFailure = lastFailure;
+    }
+
+    @MongoField
+    public String getLastIPFailure() {
+        return lastIPFailure;
+    }
+
+    public void setLastIPFailure(String lastIPFailure) {
+        this.lastIPFailure = lastIPFailure;
+    }
+
 }

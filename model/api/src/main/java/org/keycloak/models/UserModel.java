@@ -58,6 +58,7 @@ public interface UserModel {
     int getNotBefore();
     void setNotBefore(int notBefore);
 
+
     public static enum RequiredAction {
         VERIFY_EMAIL, UPDATE_PROFILE, CONFIGURE_TOTP, UPDATE_PASSWORD
     }

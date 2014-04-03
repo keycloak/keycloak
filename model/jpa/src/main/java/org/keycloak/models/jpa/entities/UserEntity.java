@@ -50,6 +50,7 @@ public class UserEntity {
     protected boolean emailVerified;
     protected int notBefore;
 
+
     @ManyToOne
     protected RealmEntity realm;
 
