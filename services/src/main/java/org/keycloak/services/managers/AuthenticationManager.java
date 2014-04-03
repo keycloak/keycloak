@@ -14,6 +14,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.services.ClientConnection;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.spi.authentication.AuthProviderStatus;
 import org.keycloak.spi.authentication.AuthResult;
@@ -41,6 +42,15 @@ public class AuthenticationManager {
     public static final String FORM_USERNAME = "username";
     public static final String KEYCLOAK_IDENTITY_COOKIE = "KEYCLOAK_IDENTITY";
     public static final String KEYCLOAK_REMEMBER_ME = "KEYCLOAK_REMEMBER_ME";
+
+    protected BruteForceProtector protector;
+
+    public AuthenticationManager() {
+    }
+
+    public AuthenticationManager(BruteForceProtector protector) {
+        this.protector = protector;
+    }
 
     public AccessToken createIdentityToken(RealmModel realm, UserModel user) {
         logger.info("createIdentityToken");
@@ -180,13 +190,37 @@ public class AuthenticationManager {
         return null;
     }
 
-    public AuthenticationStatus authenticateForm(RealmModel realm, MultivaluedMap<String, String> formData) {
+    public AuthenticationStatus authenticateForm(ClientConnection clientConnection, RealmModel realm, MultivaluedMap<String, String> formData) {
         String username = formData.getFirst(FORM_USERNAME);
         if (username == null) {
             logger.warn("Username not provided");
             return AuthenticationStatus.INVALID_USER;
         }
 
+        AuthenticationStatus status = authenticateInternal(realm, formData, username);
+        if (realm.isBruteForceProtected()) {
+            switch (status) {
+                case SUCCESS:
+                    protector.successfulLogin(realm, username, clientConnection);
+                    break;
+                case FAILED:
+                case MISSING_TOTP:
+                case MISSING_PASSWORD:
+                case INVALID_CREDENTIALS:
+                    protector.failedLogin(realm, username, clientConnection);
+                    break;
+                case INVALID_USER:
+                    protector.invalidUser(realm, username, clientConnection);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        return status;
+    }
+
+    protected AuthenticationStatus authenticateInternal(RealmModel realm, MultivaluedMap<String, String> formData, String username) {
         UserModel user = KeycloakModelUtils.findUserByNameOrEmail(realm, username);
 
         Set<String> types = new HashSet<String>();

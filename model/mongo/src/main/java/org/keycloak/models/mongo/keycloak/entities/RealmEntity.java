@@ -29,6 +29,7 @@ public class RealmEntity extends AbstractMongoIdentifiableEntity implements Mong
     private boolean social;
     private boolean updateProfileOnInitialSocialLogin;
     private String passwordPolicy;
+    private boolean bruteForceProtected;
 
     private int centralLoginLifespan;
     private int accessTokenLifespan;
@@ -132,6 +133,15 @@ public class RealmEntity extends AbstractMongoIdentifiableEntity implements Mong
 
     public void setUpdateProfileOnInitialSocialLogin(boolean updateProfileOnInitialSocialLogin) {
         this.updateProfileOnInitialSocialLogin = updateProfileOnInitialSocialLogin;
+    }
+
+    @MongoField
+    public boolean isBruteForceProtected() {
+        return bruteForceProtected;
+    }
+
+    public void setBruteForceProtected(boolean bruteForceProtected) {
+        this.bruteForceProtected = bruteForceProtected;
     }
 
     @MongoField

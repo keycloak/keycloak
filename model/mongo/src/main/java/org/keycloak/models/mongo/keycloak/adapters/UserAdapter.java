@@ -170,4 +170,7 @@ public class UserAdapter extends AbstractMongoAdapter<UserEntity> implements Use
     public UserEntity getMongoEntity() {
         return user;
     }
+
+
+
 }

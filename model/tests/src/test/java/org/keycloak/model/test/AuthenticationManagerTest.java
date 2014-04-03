@@ -26,7 +26,7 @@ public class AuthenticationManagerTest extends AbstractModelTest {
 
     @Test
     public void authForm() {
-        AuthenticationStatus status = am.authenticateForm(realm, formData);
+        AuthenticationStatus status = am.authenticateForm(null, realm, formData);
         Assert.assertEquals(AuthenticationStatus.SUCCESS, status);
     }
 
@@ -35,7 +35,7 @@ public class AuthenticationManagerTest extends AbstractModelTest {
         formData.remove(CredentialRepresentation.PASSWORD);
         formData.add(CredentialRepresentation.PASSWORD, "invalid");
 
-        AuthenticationStatus status = am.authenticateForm(realm, formData);
+        AuthenticationStatus status = am.authenticateForm(null, realm, formData);
         Assert.assertEquals(AuthenticationStatus.INVALID_CREDENTIALS, status);
     }
 
@@ -43,7 +43,7 @@ public class AuthenticationManagerTest extends AbstractModelTest {
     public void authFormMissingUsername() {
         formData.remove("username");
 
-        AuthenticationStatus status = am.authenticateForm(realm, formData);
+        AuthenticationStatus status = am.authenticateForm(null, realm, formData);
         Assert.assertEquals(AuthenticationStatus.INVALID_USER, status);
     }
 
@@ -51,7 +51,7 @@ public class AuthenticationManagerTest extends AbstractModelTest {
     public void authFormMissingPassword() {
         formData.remove(CredentialRepresentation.PASSWORD);
 
-        AuthenticationStatus status = am.authenticateForm(realm, formData);
+        AuthenticationStatus status = am.authenticateForm(null, realm, formData);
         Assert.assertEquals(AuthenticationStatus.MISSING_PASSWORD, status);
     }
 
@@ -60,7 +60,7 @@ public class AuthenticationManagerTest extends AbstractModelTest {
         realm.addRequiredCredential(CredentialRepresentation.TOTP);
         user.addRequiredAction(RequiredAction.CONFIGURE_TOTP);
         
-        AuthenticationStatus status = am.authenticateForm(realm, formData);
+        AuthenticationStatus status = am.authenticateForm(null, realm, formData);
         Assert.assertEquals(AuthenticationStatus.ACTIONS_REQUIRED, status);
     }
 
@@ -68,7 +68,7 @@ public class AuthenticationManagerTest extends AbstractModelTest {
     public void authFormUserDisabled() {
         user.setEnabled(false);
 
-        AuthenticationStatus status = am.authenticateForm(realm, formData);
+        AuthenticationStatus status = am.authenticateForm(null, realm, formData);
         Assert.assertEquals(AuthenticationStatus.ACCOUNT_DISABLED, status);
     }
 
@@ -90,7 +90,7 @@ public class AuthenticationManagerTest extends AbstractModelTest {
 
         formData.add(CredentialRepresentation.TOTP, token);
 
-        AuthenticationStatus status = am.authenticateForm(realm, formData);
+        AuthenticationStatus status = am.authenticateForm(null, realm, formData);
         Assert.assertEquals(AuthenticationStatus.SUCCESS, status);
     }
 
@@ -101,7 +101,7 @@ public class AuthenticationManagerTest extends AbstractModelTest {
         formData.remove(CredentialRepresentation.PASSWORD);
         formData.add(CredentialRepresentation.PASSWORD, "invalid");
 
-        AuthenticationStatus status = am.authenticateForm(realm, formData);
+        AuthenticationStatus status = am.authenticateForm(null, realm, formData);
         Assert.assertEquals(AuthenticationStatus.INVALID_CREDENTIALS, status);
     }
 
@@ -112,7 +112,7 @@ public class AuthenticationManagerTest extends AbstractModelTest {
         formData.remove(CredentialRepresentation.TOTP);
         formData.add(CredentialRepresentation.TOTP, "invalid");
 
-        AuthenticationStatus status = am.authenticateForm(realm, formData);
+        AuthenticationStatus status = am.authenticateForm(null, realm, formData);
         Assert.assertEquals(AuthenticationStatus.INVALID_CREDENTIALS, status);
     }
 
@@ -122,7 +122,7 @@ public class AuthenticationManagerTest extends AbstractModelTest {
 
         formData.remove(CredentialRepresentation.TOTP);
 
-        AuthenticationStatus status = am.authenticateForm(realm, formData);
+        AuthenticationStatus status = am.authenticateForm(null, realm, formData);
         Assert.assertEquals(AuthenticationStatus.MISSING_TOTP, status);
     }
 

@@ -39,6 +39,7 @@ public class RealmEntity {
     protected boolean resetPasswordAllowed;
     protected boolean social;
     protected boolean rememberMe;
+    protected boolean bruteForceProtected;
 
     @Column(name="updateProfileOnInitSocLogin")
     protected boolean updateProfileOnInitialSocialLogin;
@@ -332,6 +333,14 @@ public class RealmEntity {
 
     public void setNotBefore(int notBefore) {
         this.notBefore = notBefore;
+    }
+
+    public boolean isBruteForceProtected() {
+        return bruteForceProtected;
+    }
+
+    public void setBruteForceProtected(boolean bruteForceProtected) {
+        this.bruteForceProtected = bruteForceProtected;
     }
 }
 

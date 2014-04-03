@@ -20,6 +20,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.services.ClientConnection;
 import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthenticationStatus;
@@ -91,6 +92,8 @@ public class TokenService {
     protected KeycloakSession session;
     @Context
     protected KeycloakTransaction transaction;
+    @Context
+    protected ClientConnection clientConnection;
 
     @Context
     protected ResourceContext resourceContext;
@@ -158,7 +161,7 @@ public class TokenService {
             throw new NotAuthorizedException("Disabled realm");
         }
 
-        if (authManager.authenticateForm(realm, form) != AuthenticationStatus.SUCCESS) {
+        if (authManager.authenticateForm(clientConnection, realm, form) != AuthenticationStatus.SUCCESS) {
             throw new NotAuthorizedException("Auth failed");
         }
 
@@ -234,7 +237,7 @@ public class TokenService {
             return oauth.redirectError(client, "access_denied", state, redirect);
         }
 
-        AuthenticationStatus status = authManager.authenticateForm(realm, formData);
+        AuthenticationStatus status = authManager.authenticateForm(clientConnection, realm, formData);
 
         String rememberMe = formData.getFirst("rememberMe");
         boolean remember = rememberMe != null && rememberMe.equalsIgnoreCase("on");

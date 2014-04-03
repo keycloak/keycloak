@@ -33,6 +33,10 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
 
     void setRememberMe(boolean rememberMe);
 
+    boolean isBruteForceProtected();
+
+    void setBruteForceProtected(boolean value);
+
     boolean isVerifyEmail();
 
     void setVerifyEmail(boolean verifyEmail);
@@ -147,6 +151,9 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
     public boolean isUpdateProfileOnInitialSocialLogin();
 
     public void setUpdateProfileOnInitialSocialLogin(boolean updateProfileOnInitialSocialLogin);
+
+    public UsernameLoginFailureModel getUserLoginFailure(String username);
+    UsernameLoginFailureModel addUserLoginFailure(String username);
 
     List<UserModel> getUsers();
 

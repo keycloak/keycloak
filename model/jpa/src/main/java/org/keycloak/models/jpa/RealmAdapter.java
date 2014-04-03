@@ -4,6 +4,7 @@ import org.keycloak.models.AuthenticationLinkModel;
 import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RoleContainerModel;
+import org.keycloak.models.UsernameLoginFailureModel;
 import org.keycloak.models.jpa.entities.ApplicationEntity;
 import org.keycloak.models.jpa.entities.ApplicationRoleEntity;
 import org.keycloak.models.jpa.entities.AuthenticationLinkEntity;
@@ -18,6 +19,7 @@ import org.keycloak.models.jpa.entities.ScopeMappingEntity;
 import org.keycloak.models.jpa.entities.SocialLinkEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.jpa.entities.UserRoleMappingEntity;
+import org.keycloak.models.jpa.entities.UsernameLoginFailureEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
 import org.keycloak.models.ApplicationModel;
@@ -120,6 +122,16 @@ public class RealmAdapter implements RealmModel {
     public void setRememberMe(boolean rememberMe) {
         realm.setRememberMe(rememberMe);
         em.flush();
+    }
+
+    @Override
+    public boolean isBruteForceProtected() {
+        return realm.isBruteForceProtected();
+    }
+
+    @Override
+    public void setBruteForceProtected(boolean value) {
+        realm.setBruteForceProtected(value);
     }
 
     @Override
@@ -340,6 +352,27 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public UsernameLoginFailureModel getUserLoginFailure(String username) {
+        String id = username + "-" + realm.getId();
+        UsernameLoginFailureEntity entity = em.find(UsernameLoginFailureEntity.class, id);
+        if (entity == null) return null;
+        return new UsernameLoginFailureAdapter(entity);
+    }
+
+    @Override
+    public UsernameLoginFailureModel addUserLoginFailure(String username) {
+        UsernameLoginFailureModel model = getUserLoginFailure(username);
+        if (model != null) return model;
+        String id = username + "-" + realm.getId();
+        UsernameLoginFailureEntity entity = new UsernameLoginFailureEntity();
+        entity.setId(id);
+        entity.setUsername(username);
+        entity.setRealm(realm);
+        em.persist(entity);
+        return new UsernameLoginFailureAdapter(entity);
+    }
+
+    @Override
     public UserModel getUserByEmail(String email) {
         TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUserByEmail", UserEntity.class);
         query.setParameter("email", email);
@@ -359,6 +392,9 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public UserModel addUser(String username) {
+        if (getUser(username) != null) {
+            throw new RuntimeException("Username already exists: " + username);
+        }
         UserEntity entity = new UserEntity();
         entity.setLoginName(username);
         entity.setRealm(realm);

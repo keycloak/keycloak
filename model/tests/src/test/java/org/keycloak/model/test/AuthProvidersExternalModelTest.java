@@ -70,10 +70,10 @@ public class AuthProvidersExternalModelTest extends AbstractModelTest {
         MultivaluedMap<String, String> formData = createFormData("john", "password");
 
         // Authenticate user with realm1
-        Assert.assertEquals(AuthenticationManager.AuthenticationStatus.SUCCESS, am.authenticateForm(realm1, formData));
+        Assert.assertEquals(AuthenticationManager.AuthenticationStatus.SUCCESS, am.authenticateForm(null, realm1, formData));
 
         // Verify that user doesn't exists in realm2 and can't authenticate here
-        Assert.assertEquals(AuthenticationManager.AuthenticationStatus.INVALID_USER, am.authenticateForm(realm2, formData));
+        Assert.assertEquals(AuthenticationManager.AuthenticationStatus.INVALID_USER, am.authenticateForm(null, realm2, formData));
         Assert.assertNull(realm2.getUser("john"));
 
         // Add externalModel authenticationProvider into realm2 and point to realm1
@@ -84,7 +84,7 @@ public class AuthProvidersExternalModelTest extends AbstractModelTest {
             ResteasyProviderFactory.pushContext(KeycloakSession.class, identitySession);
 
             // Authenticate john in realm2 and verify that now he exists here.
-            Assert.assertEquals(AuthenticationManager.AuthenticationStatus.SUCCESS, am.authenticateForm(realm2, formData));
+            Assert.assertEquals(AuthenticationManager.AuthenticationStatus.SUCCESS, am.authenticateForm(null, realm2, formData));
             UserModel john2 = realm2.getUser("john");
             Assert.assertNotNull(john2);
             Assert.assertEquals("john", john2.getLoginName());
@@ -121,8 +121,8 @@ public class AuthProvidersExternalModelTest extends AbstractModelTest {
                 Assert.fail("Error not expected");
             }
             MultivaluedMap<String, String> formData = createFormData("john", "password-updated");
-            Assert.assertEquals(AuthenticationManager.AuthenticationStatus.SUCCESS, am.authenticateForm(realm1, formData));
-            Assert.assertEquals(AuthenticationManager.AuthenticationStatus.SUCCESS, am.authenticateForm(realm2, formData));
+            Assert.assertEquals(AuthenticationManager.AuthenticationStatus.SUCCESS, am.authenticateForm(null, realm1, formData));
+            Assert.assertEquals(AuthenticationManager.AuthenticationStatus.SUCCESS, am.authenticateForm(null, realm2, formData));
 
 
             // Switch to disallow password update propagation to realm1
@@ -136,8 +136,8 @@ public class AuthProvidersExternalModelTest extends AbstractModelTest {
                 Assert.fail("Error not expected");
             }
             formData = createFormData("john", "password-updated2");
-            Assert.assertEquals(AuthenticationManager.AuthenticationStatus.INVALID_CREDENTIALS, am.authenticateForm(realm1, formData));
-            Assert.assertEquals(AuthenticationManager.AuthenticationStatus.SUCCESS, am.authenticateForm(realm2, formData));
+            Assert.assertEquals(AuthenticationManager.AuthenticationStatus.INVALID_CREDENTIALS, am.authenticateForm(null, realm1, formData));
+            Assert.assertEquals(AuthenticationManager.AuthenticationStatus.SUCCESS, am.authenticateForm(null, realm2, formData));
 
 
             // Allow passwordUpdate propagation again
