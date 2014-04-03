@@ -7,6 +7,6 @@ package org.keycloak.spi.authentication;
  */
 public enum AuthProviderStatus {
 
-    SUCCESS, INVALID_CREDENTIALS, USER_NOT_FOUND
+    SUCCESS, INVALID_CREDENTIALS, FAILED
 
 }

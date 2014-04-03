@@ -75,7 +75,11 @@
         },
         {
             "username": "mySocialUser",
-            "enabled": true
+            "enabled": true,
+            "authenticationLink": {
+                "authProvider": "picketlink",
+                "authUserId": "myUser1"
+            }
         }
     ],
     "socialMappings": [
@@ -96,21 +100,6 @@
                     "socialProvider": "google",
                     "socialUserId": "google1",
                     "socialUsername": "mySocialUser@gmail.com"
-                }
-            ]
-        }
-    ],
-    "authenticationMappings": [
-        {
-            "username": "mySocialUser",
-            "authenticationLinks": [
-                {
-                    "authProvider": "picketlink",
-                    "authUserId": "myUser1"
-                },
-                {
-                    "authProvider": "externalModel",
-                    "authUserId": "myUser11"
                 }
             ]
         }

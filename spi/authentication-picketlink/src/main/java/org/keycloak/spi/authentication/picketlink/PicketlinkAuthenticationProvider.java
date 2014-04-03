@@ -6,9 +6,8 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.spi.authentication.AuthProviderStatus;
-import org.keycloak.spi.authentication.AuthResult;
 import org.keycloak.spi.authentication.AuthProviderConstants;
-import org.keycloak.spi.authentication.AuthenticatedUser;
+import org.keycloak.spi.authentication.AuthUser;
 import org.keycloak.spi.authentication.AuthenticationProvider;
 import org.keycloak.spi.authentication.AuthenticationProviderException;
 import org.keycloak.spi.picketlink.PartitionManagerProvider;
@@ -36,28 +35,27 @@ public class PicketlinkAuthenticationProvider implements AuthenticationProvider 
     }
 
     @Override
-    public AuthResult validatePassword(RealmModel realm, Map<String, String> configuration, String username, String password) throws AuthenticationProviderException {
+    public AuthUser getUser(RealmModel realm, Map<String, String> configuration, String username) throws AuthenticationProviderException {
         IdentityManager identityManager = getIdentityManager(realm);
-
         User picketlinkUser = BasicModel.getUser(identityManager, username);
-        if (picketlinkUser == null) {
-            return new AuthResult(AuthProviderStatus.USER_NOT_FOUND);
-        }
+        return picketlinkUser == null ? null : new AuthUser(picketlinkUser.getId(), picketlinkUser.getLoginName(), getName())
+                .setName(picketlinkUser.getFirstName(), picketlinkUser.getLastName())
+                .setEmail(picketlinkUser.getEmail())
+                .setProviderName(getName());
+    }
+
+    @Override
+    public AuthProviderStatus validatePassword(RealmModel realm, Map<String, String> configuration, String username, String password) throws AuthenticationProviderException {
+        IdentityManager identityManager = getIdentityManager(realm);
 
         UsernamePasswordCredentials credential = new UsernamePasswordCredentials();
         credential.setUsername(username);
         credential.setPassword(new Password(password.toCharArray()));
         identityManager.validateCredentials(credential);
         if (credential.getStatus() == Credentials.Status.VALID) {
-            AuthResult result = new AuthResult(AuthProviderStatus.SUCCESS);
-
-            AuthenticatedUser authenticatedUser = new AuthenticatedUser(picketlinkUser.getId(), picketlinkUser.getLoginName())
-                    .setName(picketlinkUser.getFirstName(), picketlinkUser.getLastName())
-                    .setEmail(picketlinkUser.getEmail());
-            result.setUser(authenticatedUser).setProviderName(getName());
-            return result;
+            return AuthProviderStatus.SUCCESS;
         } else {
-            return new AuthResult(AuthProviderStatus.INVALID_CREDENTIALS);
+            return AuthProviderStatus.INVALID_CREDENTIALS;
         }
     }
 

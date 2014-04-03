@@ -5,11 +5,10 @@ package org.keycloak.spi.authentication;
  */
 public class AuthProviderConstants {
 
+    // Model is default provider. See AuthenticationProviderModel.DEFAULT_PROVIDER
     public static final String PROVIDER_NAME_MODEL = "model";
     public static final String PROVIDER_NAME_EXTERNAL_MODEL = "externalModel";
     public static final String PROVIDER_NAME_PICKETLINK = "picketlink";
-
-    public static final String DEFAULT_PROVIDER = PROVIDER_NAME_MODEL;
 
     // Used in external-model provider
     public static final String EXTERNAL_REALM_ID = "externalRealmId";

@@ -5,7 +5,7 @@ import java.util.Map;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.spi.authentication.AuthProviderConstants;
-import org.keycloak.spi.authentication.AuthenticatedUser;
+import org.keycloak.spi.authentication.AuthUser;
 
 /**
  * AbstractModelAuthenticationProvider, which uses current realm to call operations on
@@ -22,11 +22,5 @@ public class ModelAuthenticationProvider extends AbstractModelAuthenticationProv
     @Override
     protected RealmModel getRealm(RealmModel currentRealm, Map<String, String> config) {
         return currentRealm;
-    }
-
-    @Override
-    protected AuthenticatedUser createAuthenticatedUserInstance(UserModel user) {
-        // We don't want AuthenticatedUser instance. Auto-registration won't never happen with this provider
-        return null;
     }
 }

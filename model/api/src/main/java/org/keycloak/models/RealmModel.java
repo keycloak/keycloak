@@ -138,11 +138,9 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
 
     boolean removeSocialLink(UserModel user, String socialProvider);
 
-    UserModel getUserByAuthenticationLink(AuthenticationLinkModel authenticationLink);
+    AuthenticationLinkModel getAuthenticationLink(UserModel user);
 
-    Set<AuthenticationLinkModel> getAuthenticationLinks(UserModel user);
-
-    void addAuthenticationLink(UserModel user, AuthenticationLinkModel authenticationLink);
+    void setAuthenticationLink(UserModel user, AuthenticationLinkModel authenticationLink);
 
     boolean isSocial();
 
@@ -209,4 +207,8 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
     void setNotBefore(int notBefore);
 
     boolean removeRoleById(String id);
+
+    Set<String> getAuditListeners();
+
+    void setAuditListeners(Set<String> listeners);
 }

@@ -8,7 +8,6 @@
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <groupId>org.keycloak</groupId>
     <artifactId>keycloak-server</artifactId>
     <packaging>war</packaging>
     <name>Keycloak Server</name>
@@ -46,6 +45,21 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-model-jpa</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-audit-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-audit-jpa</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-audit-jboss-logging</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -183,6 +197,11 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-audit-mongo</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>mongo-java-driver</artifactId>
         </dependency>
@@ -226,8 +245,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>1.6</source>
-                    <target>1.6</target>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
                 </configuration>
             </plugin>
         </plugins>

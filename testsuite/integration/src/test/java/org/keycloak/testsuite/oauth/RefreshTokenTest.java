@@ -26,8 +26,11 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.audit.Details;
+import org.keycloak.audit.Event;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
+import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.OAuthClient.AccessTokenResponse;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -61,9 +64,14 @@ public class RefreshTokenTest {
     @WebResource
     protected LoginPage loginPage;
 
+    @Rule
+    public AssertEvents events = new AssertEvents(keycloakRule);
+
     @Test
     public void refreshTokenRequest() throws Exception {
         oauth.doLogin("test-user@localhost", "password");
+
+        String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
 
@@ -71,6 +79,8 @@ public class RefreshTokenTest {
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
         String refreshTokenString = tokenResponse.getRefreshToken();
         RefreshToken refreshToken = oauth.verifyRefreshToken(refreshTokenString);
+
+        Event tokenEvent = events.expectCodeToToken(codeId).assertEvent();
 
         Assert.assertNotNull(refreshTokenString);
 
@@ -106,6 +116,10 @@ public class RefreshTokenTest {
 
         Assert.assertEquals(1, refreshedToken.getResourceAccess(oauth.getClientId()).getRoles().size());
         Assert.assertTrue(refreshedToken.getResourceAccess(oauth.getClientId()).isUserInRole("customer-user"));
+
+        Event refreshEvent = events.expectRefresh(tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID)).assertEvent();
+        Assert.assertNotEquals(tokenEvent.getDetails().get(Details.TOKEN_ID), refreshEvent.getDetails().get(Details.TOKEN_ID));
+        Assert.assertNotEquals(tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID), refreshEvent.getDetails().get(Details.UPDATED_REFRESH_TOKEN_ID));
     }
 
 }

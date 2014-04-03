@@ -129,7 +129,7 @@ module.config([ '$routeProvider', function($routeProvider) {
                     return RealmLoader();
                 }
             },
-            controller : 'RealmSMTPSettingsCtrl'
+            controller : 'RealmLdapSettingsCtrl'
         })
         .when('/create/user/:realm', {
             templateUrl : 'partials/user-detail.html',

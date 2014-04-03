@@ -7,9 +7,9 @@ import io.undertow.servlet.api.ServletInfo;
 import io.undertow.servlet.api.WebResourceCollection;
 import org.junit.rules.ExternalResource;
 import org.keycloak.models.Config;
-import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.ModelToRepresentation;
@@ -40,7 +40,8 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
     public UserRepresentation getUser(String realm, String name) {
         KeycloakSession session = server.getKeycloakSessionFactory().createSession();
         try {
-            return ModelToRepresentation.toRepresentation(session.getRealmByName(realm).getUser(name));
+            UserModel user = session.getRealmByName(realm).getUser(name);
+            return user != null ? ModelToRepresentation.toRepresentation(user) : null;
         } finally {
             session.close();
         }

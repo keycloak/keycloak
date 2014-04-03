@@ -7,60 +7,39 @@
             <li><a href="#/realms/{{realm.realm}}">Settings</a></li>
             <li class="active">Ldap Configuration</li>
         </ol>
-        <h2><span>{{realm.realm}}</span> Email Server Settings</h2>
+        <h2><span>{{realm.realm}}</span> Ldap Server Settings</h2>
         <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
             <span class="fieldset-notice"><span class="required">*</span> Required fields</span>
             <fieldset>
                 <legend><span class="text">Required Settings</span></legend>
                 <div class="form-group clearfix">
-                    <label class="col-sm-2 control-label" for="smtpHost">Host <span class="required">*</span></label>
+                    <label class="col-sm-2 control-label" for="ldapConnectionUrl">Connection URL <span class="required">*</span></label>
                     <div class="col-sm-4">
-                        <input class="form-control" id="smtpHost" type="text" ng-model="realm.smtpServer.host" placeholder="SMTP Host" required>
+                        <input class="form-control" id="ldapConnectionUrl" type="text" ng-model="realm.ldapServer.connectionUrl" placeholder="LDAP connection URL" required>
                     </div>
                 </div>
                 <div class="form-group clearfix">
-                    <label class="col-sm-2 control-label" for="smtpPort">Port <span class="required">*</span></label>
+                    <label class="col-sm-2 control-label" for="ldapBaseDn">Base DN <span class="required">*</span></label>
                     <div class="col-sm-4">
-                        <input class="form-control" id="smtpPort" type="number" ng-model="realm.smtpServer.port" placeholder="SMTP Port (defaults to 25)" required>
+                        <input class="form-control" id="ldapBaseDn" type="text" ng-model="realm.ldapServer.baseDn" placeholder="LDAP Base DN" required>
                     </div>
                 </div>
                 <div class="form-group clearfix">
-                    <label class="col-sm-2 control-label" for="smtpFrom">From <span class="required">*</span></label>
+                    <label class="col-sm-2 control-label" for="ldapUserDnSuffix">User DN Suffix <span class="required">*</span></label>
                     <div class="col-sm-4">
-                        <input class="form-control" id="smtpFrom" type="email" ng-model="realm.smtpServer.from" placeholder="Sender Email Address" required>
+                        <input class="form-control" id="ldapUserDnSuffix" type="text" ng-model="realm.ldapServer.userDnSuffix" placeholder="LDAP User DN Suffix" required>
                     </div>
                 </div>
                 <div class="form-group clearfix">
-                    <label class="col-sm-2 control-label" for="smtpSSL">Enable SSL</label>
+                    <label class="col-sm-2 control-label" for="ldapBindDn">Bind DN <span class="required">*</span></label>
                     <div class="col-sm-4">
-                        <input ng-model="realm.smtpServer.ssl" name="smtpSSL" id="smtpSSL" onoffswitch />
+                        <input class="form-control" id="ldapBindDn" type="text" ng-model="realm.ldapServer.bindDn" placeholder="LDAP Bind DN" required>
                     </div>
                 </div>
                 <div class="form-group clearfix">
-                    <label class="col-sm-2 control-label" for="smtpStartTLS">Enable StartTLS</label>
+                    <label class="col-sm-2 control-label" for="ldapBindCredential">Bind Credential <span class="required">*</span></label>
                     <div class="col-sm-4">
-                        <input ng-model="realm.smtpServer.starttls" name="smtpStartTLS" id="smtpStartTLS" onoffswitch />
-                    </div>
-                </div>
-            </fieldset>
-            <fieldset>
-                <legend><span class="text">Authentication</span></legend>
-                <div class="form-group clearfix">
-                    <label class="col-sm-2 control-label" for="smtpAuth">Enable Authentication</label>
-                    <div class="col-sm-4">
-                        <input ng-model="realm.smtpServer.auth" name="smtpAuth" id="smtpAuth" onoffswitch />
-                    </div>
-                </div>
-                <div class="form-group clearfix" data-ng-show="realm.smtpServer.auth">
-                    <label class="col-sm-2 control-label" for="smtpUsername">Username <span class="required" ng-show="realm.smtpServer.auth">*</span></label>
-                    <div class="col-sm-4">
-                        <input class="form-control" id="smtpUsername" type="text" ng-model="realm.smtpServer.user" placeholder="Login Username" ng-disabled="!realm.smtpServer.auth" ng-required="realm.smtpServer.auth">
-                    </div>
-                </div>
-                <div class="form-group clearfix" data-ng-show="realm.smtpServer.auth">
-                    <label class="col-sm-2 control-label" for="smtpPassword">Password <span class="required" ng-show="realm.smtpServer.auth">*</span></label>
-                    <div class="col-sm-4">
-                        <input class="form-control" id="smtpPassword" type="password" ng-model="realm.smtpServer.password" placeholder="Login Password" ng-disabled="!realm.smtpServer.auth" ng-required="realm.smtpServer.auth">
+                        <input class="form-control" id="ldapBindCredential" type="text" ng-model="realm.ldapServer.bindCredential" placeholder="LDAP Bind Credentials" required>
                     </div>
                 </div>
             </fieldset>

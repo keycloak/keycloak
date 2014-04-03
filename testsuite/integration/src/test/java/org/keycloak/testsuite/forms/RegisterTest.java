@@ -25,9 +25,12 @@ import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.audit.Details;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -46,6 +49,9 @@ public class RegisterTest {
     public static KeycloakRule keycloakRule = new KeycloakRule();
 
     @Rule
+    public AssertEvents events = new AssertEvents(keycloakRule);
+
+    @Rule
     public WebRule webRule = new WebRule(this);
 
     @WebResource
@@ -60,6 +66,9 @@ public class RegisterTest {
     @WebResource
     protected RegisterPage registerPage;
 
+    @WebResource
+    protected OAuthClient oauth;
+
     @Test
     public void registerExistingUser() {
         loginPage.open();
@@ -70,6 +79,8 @@ public class RegisterTest {
 
         registerPage.assertCurrent();
         Assert.assertEquals("Username already exists", registerPage.getError());
+
+        events.expectRegister("test-user@localhost", "email").user((String) null).error("username_in_use").assertEvent();
     }
 
     @Test
@@ -82,6 +93,8 @@ public class RegisterTest {
 
         registerPage.assertCurrent();
         Assert.assertEquals("Password confirmation doesn't match", registerPage.getError());
+
+        events.expectRegister("registerUserInvalidPasswordConfirm", "email").user((String) null).error("invalid_registration").assertEvent();
     }
 
     @Test
@@ -94,6 +107,8 @@ public class RegisterTest {
 
         registerPage.assertCurrent();
         Assert.assertEquals("Please specify password.", registerPage.getError());
+
+        events.expectRegister("registerUserMissingPassword", "email").user((String) null).error("invalid_registration").assertEvent();
     }
 
     @Test
@@ -115,8 +130,14 @@ public class RegisterTest {
             registerPage.assertCurrent();
             Assert.assertEquals("Invalid password: minimum length 8", registerPage.getError());
 
+            events.expectRegister("registerPasswordPolicy", "email").user((String) null).error("invalid_registration").assertEvent();
+
             registerPage.register("firstName", "lastName", "email", "registerPasswordPolicy", "password", "password");
             Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+            String userId = events.expectRegister("registerPasswordPolicy", "email").assertEvent().getUserId();
+
+            events.expectLogin().user(userId).detail(Details.USERNAME, "registerPasswordPolicy").assertEvent();
         } finally {
             keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
                 @Override
@@ -137,6 +158,8 @@ public class RegisterTest {
 
         registerPage.assertCurrent();
         Assert.assertEquals("Please specify username", registerPage.getError());
+
+        events.expectRegister(null, "email").removeDetail("username").error("invalid_registration").assertEvent();
     }
 
     @Test
@@ -148,6 +171,9 @@ public class RegisterTest {
         registerPage.register("firstName", "lastName", "email", "registerUserSuccess", "password", "password");
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        String userId = events.expectRegister("registerUserSuccess", "email").assertEvent().getUserId();
+        events.expectLogin().detail("username", "registerUserSuccess").user(userId).assertEvent();
     }
 
 }

@@ -26,7 +26,10 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.audit.Details;
+import org.keycloak.audit.Event;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.OAuthClient.AccessTokenResponse;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -59,9 +62,14 @@ public class AccessTokenTest {
     @WebResource
     protected LoginPage loginPage;
 
+    @Rule
+    public AssertEvents events = new AssertEvents(keycloakRule);
+
     @Test
     public void accessTokenRequest() throws Exception {
         oauth.doLogin("test-user@localhost", "password");
+
+        String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
         AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
@@ -82,6 +90,28 @@ public class AccessTokenTest {
 
         Assert.assertEquals(1, token.getResourceAccess(oauth.getClientId()).getRoles().size());
         Assert.assertTrue(token.getResourceAccess(oauth.getClientId()).isUserInRole("customer-user"));
+
+        Event event = events.expectCodeToToken(codeId).assertEvent();
+        Assert.assertEquals(token.getId(), event.getDetails().get(Details.TOKEN_ID));
+        Assert.assertEquals(oauth.verifyRefreshToken(response.getRefreshToken()).getId(), event.getDetails().get(Details.REFRESH_TOKEN_ID));
+
+        response = oauth.doAccessTokenRequest(code, "password");
+        Assert.assertEquals(400, response.getStatusCode());
+
+        events.expectCodeToToken(codeId).error("invalid_code").removeDetail(Details.TOKEN_ID).removeDetail(Details.REFRESH_TOKEN_ID).client((String) null).user((String) null).assertEvent();
+    }
+
+    @Test
+    public void accessTokenInvalidClientCredentials() throws Exception {
+        oauth.doLogin("test-user@localhost", "password");
+
+        String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code, "invalid");
+        Assert.assertEquals(400, response.getStatusCode());
+
+        events.expectCodeToToken(codeId).error("invalid_client_credentials").removeDetail(Details.TOKEN_ID).removeDetail(Details.REFRESH_TOKEN_ID).assertEvent();
     }
 
 }

@@ -95,9 +95,8 @@ public class AuthProvidersLDAPTest extends AbstractModelTest {
             Assert.assertEquals("john@email.org", john.getEmail());
 
             // Verify link exists
-            Set<AuthenticationLinkModel> authLinks = realm.getAuthenticationLinks(john);
-            Assert.assertEquals(1, authLinks.size());
-            AuthenticationLinkModel authLink = authLinks.iterator().next();
+            AuthenticationLinkModel authLink = realm.getAuthenticationLink(john);
+            Assert.assertNotNull(authLink);
             Assert.assertEquals(authLink.getAuthProvider(), AuthProviderConstants.PROVIDER_NAME_PICKETLINK);
         } finally {
             ResteasyProviderFactory.clearContextData();
@@ -114,6 +113,7 @@ public class AuthProvidersLDAPTest extends AbstractModelTest {
 
             // Add some user and password to realm
             UserModel realmUser = realm.addUser("realmUser");
+            realmUser.setEnabled(true);
             UserCredentialModel credential = new UserCredentialModel();
             credential.setType(CredentialRepresentation.PASSWORD);
             credential.setValue("pass");
@@ -135,6 +135,11 @@ public class AuthProvidersLDAPTest extends AbstractModelTest {
             realmUser.setEnabled(false);
             formData = AuthProvidersExternalModelTest.createFormData("realmUser", "pass");
             Assert.assertEquals(AuthenticationManager.AuthenticationStatus.ACCOUNT_DISABLED, am.authenticateForm(null, realm, formData));
+
+            // Successful authentication
+            realmUser.setEnabled(true);
+            formData = AuthProvidersExternalModelTest.createFormData("realmUser", "pass");
+            Assert.assertEquals(AuthenticationManager.AuthenticationStatus.SUCCESS, am.authenticateForm(null, realm, formData));
         } finally {
             ResteasyProviderFactory.clearContextData();
         }
@@ -149,26 +154,34 @@ public class AuthProvidersLDAPTest extends AbstractModelTest {
             // this is needed for ldap provider
             ResteasyProviderFactory.pushContext(KeycloakRegistry.class, new KeycloakRegistry());
 
+            LdapTestUtils.setLdapPassword(realm, "john", "password");
+
+            // First authenticate successfully to sync john into realm
+            MultivaluedMap<String, String> formData = AuthProvidersExternalModelTest.createFormData("john", "password");
+            Assert.assertEquals(AuthenticationManager.AuthenticationStatus.SUCCESS, am.authenticateForm(null, realm, formData));
+
             // Change credential and validate that user can authenticate
             AuthenticationProviderManager authProviderManager = AuthenticationProviderManager.getManager(realm);
+
+            UserModel john = realm.getUser("john");
             try {
-                authProviderManager.updatePassword("john", "password-updated");
+                Assert.assertTrue(authProviderManager.updatePassword(john, "password-updated"));
             } catch (AuthenticationProviderException ape) {
                 ape.printStackTrace();
                 Assert.fail("Error not expected");
             }
-            MultivaluedMap<String, String> formData = AuthProvidersExternalModelTest.createFormData("john", "password-updated");
+            formData = AuthProvidersExternalModelTest.createFormData("john", "password-updated");
             Assert.assertEquals(AuthenticationManager.AuthenticationStatus.SUCCESS, am.authenticateForm(null, realm, formData));
 
             // Password updated just in LDAP, so validating directly in realm should fail
-            Assert.assertFalse(realm.validatePassword(realm.getUser("john"), "password-updated"));
+            Assert.assertFalse(realm.validatePassword(john, "password-updated"));
 
             // Switch to not allow updating passwords in ldap
             AuthProvidersExternalModelTest.setPasswordUpdateForProvider(false, AuthProviderConstants.PROVIDER_NAME_PICKETLINK, realm);
 
             // Change credential and validate that password is not updated
             try {
-                authProviderManager.updatePassword("john", "password-updated2");
+                Assert.assertFalse(authProviderManager.updatePassword(john, "password-updated2"));
             } catch (AuthenticationProviderException ape) {
                 ape.printStackTrace();
                 Assert.fail("Error not expected");

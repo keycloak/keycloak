@@ -16,7 +16,10 @@ import javax.persistence.OneToMany;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -66,7 +69,7 @@ public class RealmEntity {
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true)
     @JoinTable(name="AuthProviders")
-    Collection<AuthenticationProviderEntity> authenticationProviders = new ArrayList<AuthenticationProviderEntity>();
+    List<AuthenticationProviderEntity> authenticationProviders = new ArrayList<AuthenticationProviderEntity>();
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<ApplicationEntity> applications = new ArrayList<ApplicationEntity>();
@@ -95,6 +98,9 @@ public class RealmEntity {
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
     @JoinTable(name="RealmDefaultRoles")
     Collection<RoleEntity> defaultRoles = new ArrayList<RoleEntity>();
+
+    @ElementCollection
+    protected Set<String> auditListeners= new HashSet<String>();
 
     public String getId() {
         return id;
@@ -240,11 +246,11 @@ public class RealmEntity {
         this.requiredCredentials = requiredCredentials;
     }
 
-    public Collection<AuthenticationProviderEntity> getAuthenticationProviders() {
+    public List<AuthenticationProviderEntity> getAuthenticationProviders() {
         return authenticationProviders;
     }
 
-    public void setAuthenticationProviders(Collection<AuthenticationProviderEntity> authenticationProviders) {
+    public void setAuthenticationProviders(List<AuthenticationProviderEntity> authenticationProviders) {
         this.authenticationProviders = authenticationProviders;
     }
 
@@ -341,6 +347,14 @@ public class RealmEntity {
 
     public void setBruteForceProtected(boolean bruteForceProtected) {
         this.bruteForceProtected = bruteForceProtected;
+    }
+
+    public Set<String> getAuditListeners() {
+        return auditListeners;
+    }
+
+    public void setAuditListeners(Set<String> auditListeners) {
+        this.auditListeners = auditListeners;
     }
 }
 

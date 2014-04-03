@@ -25,10 +25,13 @@ import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.audit.Details;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -60,8 +63,14 @@ public class RequiredActionMultipleActionsTest {
     @Rule
     public WebRule webRule = new WebRule(this);
 
+    @Rule
+    public AssertEvents events = new AssertEvents(keycloakRule);
+
     @WebResource
     protected WebDriver driver;
+
+    @WebResource
+    protected OAuthClient oauth;
 
     @WebResource
     protected AppPage appPage;
@@ -95,14 +104,21 @@ public class RequiredActionMultipleActionsTest {
         }
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        events.expectLogin().assertEvent();
     }
 
     public void updatePassword() {
         changePasswordPage.changePassword("new-password", "new-password");
+
+        events.expectRequiredAction("update_password").assertEvent();
     }
 
     public void updateProfile() {
         updateProfilePage.update("New first", "New last", "new@email.com");
+
+        events.expectRequiredAction("update_profile").assertEvent();
+        events.expectRequiredAction("update_email").detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
     }
 
 }

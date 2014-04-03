@@ -38,7 +38,7 @@ public class UserEntity extends AbstractMongoIdentifiableEntity implements Mongo
     private List<UserModel.RequiredAction> requiredActions;
     private List<CredentialEntity> credentials = new ArrayList<CredentialEntity>();
     private List<SocialLinkEntity> socialLinks;
-    private List<AuthenticationLinkEntity> authenticationLinks;
+    private AuthenticationLinkEntity authenticationLink;
 
     @MongoField
     public String getLoginName() {
@@ -168,12 +168,12 @@ public class UserEntity extends AbstractMongoIdentifiableEntity implements Mongo
     }
 
     @MongoField
-    public List<AuthenticationLinkEntity> getAuthenticationLinks() {
-        return authenticationLinks;
+    public AuthenticationLinkEntity getAuthenticationLink() {
+        return authenticationLink;
     }
 
-    public void setAuthenticationLinks(List<AuthenticationLinkEntity> authenticationLinks) {
-        this.authenticationLinks = authenticationLinks;
+    public void setAuthenticationLink(AuthenticationLinkEntity authenticationLink) {
+        this.authenticationLink = authenticationLink;
     }
 
     @MongoField

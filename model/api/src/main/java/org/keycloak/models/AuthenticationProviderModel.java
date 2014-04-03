@@ -1,11 +1,14 @@
 package org.keycloak.models;
 
+import java.util.Collections;
 import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class AuthenticationProviderModel {
+
+    public static final AuthenticationProviderModel DEFAULT_PROVIDER = new AuthenticationProviderModel("model", true, Collections.EMPTY_MAP);
 
     private String providerName;
     private boolean passwordUpdateSupported = true;

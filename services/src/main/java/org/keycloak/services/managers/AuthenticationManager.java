@@ -17,8 +17,7 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.ClientConnection;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.spi.authentication.AuthProviderStatus;
-import org.keycloak.spi.authentication.AuthResult;
-import org.keycloak.spi.authentication.AuthenticatedUser;
+import org.keycloak.spi.authentication.AuthUser;
 import org.keycloak.spi.authentication.AuthenticationProviderManager;
 import org.keycloak.util.Time;
 
@@ -222,6 +221,25 @@ public class AuthenticationManager {
 
     protected AuthenticationStatus authenticateInternal(RealmModel realm, MultivaluedMap<String, String> formData, String username) {
         UserModel user = KeycloakModelUtils.findUserByNameOrEmail(realm, username);
+        if (user == null) {
+            AuthUser authUser = AuthenticationProviderManager.getManager(realm).getUser(username);
+            if (authUser != null) {
+                // Create new user and link him with authentication provider
+                user = realm.addUser(authUser.getUsername());
+                user.setEnabled(true);
+                user.setFirstName(authUser.getFirstName());
+                user.setLastName(authUser.getLastName());
+                user.setEmail(authUser.getEmail());
+                realm.setAuthenticationLink(user, new AuthenticationLinkModel(authUser.getProviderName(), authUser.getId()));
+            } else {
+                logger.warn("User " + username + " not found");
+                return AuthenticationStatus.INVALID_USER;
+            }
+        }
+
+        if (!checkEnabled(user)) {
+            return AuthenticationStatus.ACCOUNT_DISABLED;
+        }
 
         Set<String> types = new HashSet<String>();
 
@@ -236,20 +254,13 @@ public class AuthenticationManager {
                 return AuthenticationStatus.MISSING_PASSWORD;
             }
 
-            if (user == null && types.contains(CredentialRepresentation.TOTP)) {
-                logger.warn("User doesn't exists and TOTP is required for the realm");
-                return AuthenticationStatus.INVALID_USER;
-            }
-
-            if (user != null && user.isTotp()) {
+            if (user.isTotp()) {
                 String token = formData.getFirst(CredentialRepresentation.TOTP);
                 if (token == null) {
                     logger.warn("TOTP token not provided");
                     return AuthenticationStatus.MISSING_TOTP;
                 }
-                if (!checkEnabled(user)) {
-                    return AuthenticationStatus.ACCOUNT_DISABLED;
-                }
+
                 logger.debug("validating TOTP");
                 if (!realm.validateTOTP(user, password, token)) {
                     return AuthenticationStatus.INVALID_CREDENTIALS;
@@ -257,58 +268,12 @@ public class AuthenticationManager {
             } else {
                 logger.debug("validating password for user: " + username);
 
-                AuthResult authResult = AuthenticationProviderManager.getManager(realm).validatePassword(username, password);
-                if (authResult.getAuthProviderStatus() == AuthProviderStatus.INVALID_CREDENTIALS) {
+                AuthProviderStatus authStatus = AuthenticationProviderManager.getManager(realm).validatePassword(user, password);
+                if (authStatus == AuthProviderStatus.INVALID_CREDENTIALS) {
                     logger.debug("invalid password for user: " + username);
                     return AuthenticationStatus.INVALID_CREDENTIALS;
-                } else if (authResult.getAuthProviderStatus() == AuthProviderStatus.USER_NOT_FOUND) {
-                    logger.debug("User " + username + " not found in any Authentication provider");
-                    return AuthenticationStatus.INVALID_USER;
-                }
-
-                if (authResult.getAuthenticatedUser() != null) {
-                    AuthenticatedUser authUser = authResult.getAuthenticatedUser();
-                    AuthenticationLinkModel authLink = new AuthenticationLinkModel(authResult.getProviderName(), authUser.getId());
-                    user = realm.getUserByAuthenticationLink(authLink);
-                    if (user == null) {
-                        user = KeycloakModelUtils.findUserByNameOrEmail(realm, username);
-                        if (user != null) {
-                            // Case when we already have user with the same username like authenticated, but he is not yet linked to current provider.
-                            // TODO: Revisit if it's ok to link if we allow to change username. Maybe ask user?
-                            // TODO: Update of existing account?
-                            realm.addAuthenticationLink(user, authLink);
-                            logger.info("User " + authUser.getUsername() + " successfully authenticated and linked with provider " + authResult.getProviderName());
-                        }  else {
-                            // Create new user, which has been successfully authenticated and link him with authentication provider
-                            user = realm.addUser(authUser.getUsername());
-                            user.setEnabled(true);
-                            user.setFirstName(authUser.getFirstName());
-                            user.setLastName(authUser.getLastName());
-                            user.setEmail(authUser.getEmail());
-
-                            realm.addAuthenticationLink(user, authLink);
-                            logger.info("User " + username + " successfully authenticated and created based on provider " + authResult.getProviderName());
-                        }
-                    } else {
-                        // Existing and linked user has been authenticated TODO: Update of existing account?
-                    }
-
-                    // Authenticated username could be different from the "form" username. In this case, we will change it
-                    if (!username.equals(user.getLoginName())) {
-                        formData.putSingle(FORM_USERNAME, user.getLoginName());
-                        logger.debug("Existing user " + user.getLoginName() + " successfully authenticated");
-                    }
-
-                } else {
-                    // Authentication provider didn't send AuthenticatedUser. Using already retrieved user based on username from "form"
-                    if (user == null) {
-                        logger.warn("User '" + username + "' successfully authenticated, but he doesn't exists and don't know how to create him");
-                        return AuthenticationStatus.INVALID_USER;
-                    }
-                }
-
-                if (!checkEnabled(user)) {
-                    return AuthenticationStatus.ACCOUNT_DISABLED;
+                } else if (authStatus == AuthProviderStatus.FAILED) {
+                    return AuthenticationStatus.FAILED;
                 }
             }
 

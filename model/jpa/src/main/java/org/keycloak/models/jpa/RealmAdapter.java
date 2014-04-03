@@ -40,6 +40,8 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -429,7 +431,9 @@ public class RealmAdapter implements RealmModel {
     private void removeUser(UserEntity user) {
         em.createQuery("delete from " + UserRoleMappingEntity.class.getSimpleName() + " where user = :user").setParameter("user", user).executeUpdate();
         em.createQuery("delete from " + SocialLinkEntity.class.getSimpleName() + " where user = :user").setParameter("user", user).executeUpdate();
-        em.createQuery("delete from " + AuthenticationLinkEntity.class.getSimpleName() + " where user = :user").setParameter("user", user).executeUpdate();
+        if (user.getAuthenticationLink() != null) {
+            em.remove(user.getAuthenticationLink());
+        }
         em.remove(user);
     }
 
@@ -648,43 +652,22 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public UserModel getUserByAuthenticationLink(AuthenticationLinkModel authenticationLink) {
-        TypedQuery<UserEntity> query = em.createNamedQuery("findUserByAuthLinkAndRealm", UserEntity.class);
-        query.setParameter("realm", realm);
-        query.setParameter("authProvider", authenticationLink.getAuthProvider());
-        query.setParameter("authUserId", authenticationLink.getAuthUserId());
-        List<UserEntity> results = query.getResultList();
-        if (results.isEmpty()) {
-            return null;
-        } else if (results.size() > 1) {
-            throw new IllegalStateException("More results found for authenticationProvider=" + authenticationLink.getAuthProvider() +
-                    ", authUserId=" + authenticationLink.getAuthUserId() + ", results=" + results);
-        } else {
-            UserEntity user = results.get(0);
-            return new UserAdapter(user);
-        }
+    public AuthenticationLinkModel getAuthenticationLink(UserModel user) {
+        UserEntity userEntity = ((UserAdapter) user).getUser();
+        AuthenticationLinkEntity authLinkEntity = userEntity.getAuthenticationLink();
+        return authLinkEntity == null ? null : new AuthenticationLinkModel(authLinkEntity.getAuthProvider(), authLinkEntity.getAuthUserId());
     }
 
     @Override
-    public Set<AuthenticationLinkModel> getAuthenticationLinks(UserModel user) {
-        TypedQuery<AuthenticationLinkEntity> query = em.createNamedQuery("findAuthLinkByUser", AuthenticationLinkEntity.class);
-        query.setParameter("user", ((UserAdapter) user).getUser());
-        List<AuthenticationLinkEntity> results = query.getResultList();
-        Set<AuthenticationLinkModel> set = new HashSet<AuthenticationLinkModel>();
-        for (AuthenticationLinkEntity entity : results) {
-            set.add(new AuthenticationLinkModel(entity.getAuthProvider(), entity.getAuthUserId()));
-        }
-        return set;
-    }
-
-    @Override
-    public void addAuthenticationLink(UserModel user, AuthenticationLinkModel authenticationLink) {
+    public void setAuthenticationLink(UserModel user, AuthenticationLinkModel authenticationLink) {
         AuthenticationLinkEntity entity = new AuthenticationLinkEntity();
-        entity.setRealm(realm);
         entity.setAuthProvider(authenticationLink.getAuthProvider());
         entity.setAuthUserId(authenticationLink.getAuthUserId());
-        entity.setUser(((UserAdapter) user).getUser());
+
+        UserEntity userEntity = ((UserAdapter) user).getUser();
+        userEntity.setAuthenticationLink(entity);
         em.persist(entity);
+        em.persist(userEntity);
         em.flush();
     }
 
@@ -850,7 +833,15 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public List<AuthenticationProviderModel> getAuthenticationProviders() {
-        Collection<AuthenticationProviderEntity> entities = realm.getAuthenticationProviders();
+        List<AuthenticationProviderEntity> entities = realm.getAuthenticationProviders();
+        Collections.sort(entities, new Comparator<AuthenticationProviderEntity>() {
+
+            @Override
+            public int compare(AuthenticationProviderEntity o1, AuthenticationProviderEntity o2) {
+                return o1.getPriority() - o2.getPriority();
+            }
+
+        });
         List<AuthenticationProviderModel> result = new ArrayList<AuthenticationProviderModel>();
         for (AuthenticationProviderEntity entity : entities) {
             result.add(new AuthenticationProviderModel(entity.getProviderName(), entity.isPasswordUpdateSupported(), entity.getConfig()));
@@ -862,11 +853,13 @@ public class RealmAdapter implements RealmModel {
     @Override
     public void setAuthenticationProviders(List<AuthenticationProviderModel> authenticationProviders) {
         List<AuthenticationProviderEntity> newEntities = new ArrayList<AuthenticationProviderEntity>();
+        int counter = 1;
         for (AuthenticationProviderModel model : authenticationProviders) {
             AuthenticationProviderEntity entity = new AuthenticationProviderEntity();
             entity.setProviderName(model.getProviderName());
             entity.setPasswordUpdateSupported(model.isPasswordUpdateSupported());
             entity.setConfig(model.getConfig());
+            entity.setPriority(counter++);
             newEntities.add(entity);
         }
 
@@ -1188,6 +1181,17 @@ public class RealmAdapter implements RealmModel {
     @Override
     public void setAccountTheme(String name) {
         realm.setAccountTheme(name);
+        em.flush();
+    }
+
+    @Override
+    public Set<String> getAuditListeners() {
+        return realm.getAuditListeners();
+    }
+
+    @Override
+    public void setAuditListeners(Set<String> listeners) {
+        realm.setAuditListeners(listeners);
         em.flush();
     }
 }

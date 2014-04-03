@@ -10,8 +10,11 @@ import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -53,6 +56,8 @@ public class RealmEntity extends AbstractMongoIdentifiableEntity implements Mong
     private Map<String, String> smtpConfig = new HashMap<String, String>();
     private Map<String, String> socialConfig = new HashMap<String, String>();
     private Map<String, String> ldapServerConfig;
+
+    private List<String> auditListeners = new LinkedList<String>();
 
     @MongoField
     public String getName() {
@@ -295,6 +300,15 @@ public class RealmEntity extends AbstractMongoIdentifiableEntity implements Mong
 
     public void setLdapServerConfig(Map<String, String> ldapServerConfig) {
         this.ldapServerConfig = ldapServerConfig;
+    }
+
+    @MongoField
+    public List<String> getAuditListeners() {
+        return auditListeners;
+    }
+
+    public void setAuditListeners(List<String> auditListeners) {
+        this.auditListeners = auditListeners;
     }
 
     @Override

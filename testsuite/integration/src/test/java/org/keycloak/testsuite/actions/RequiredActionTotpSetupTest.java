@@ -25,10 +25,12 @@ import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.audit.Details;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AccountTotpPage;
 import org.keycloak.testsuite.pages.AppPage;
@@ -58,6 +60,9 @@ public class RequiredActionTotpSetupTest {
         }
 
     });
+
+    @Rule
+    public AssertEvents events = new AssertEvents(keycloakRule);
 
     @Rule
     public WebRule webRule = new WebRule(this);
@@ -94,11 +99,17 @@ public class RequiredActionTotpSetupTest {
         loginPage.clickRegister();
         registerPage.register("firstName", "lastName", "email", "setupTotp", "password", "password");
 
+        String userId = events.expectRegister("setupTotp", "email").assertEvent().getUserId();
+
         totpPage.assertCurrent();
 
         totpPage.configure(totp.generate(totpPage.getTotpSecret()));
 
+        events.expectRequiredAction("update_totp").user(userId).detail(Details.USERNAME, "setupTotp").assertEvent();
+
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        events.expectLogin().user(userId).detail(Details.USERNAME, "setupTotp").assertEvent();
     }
 
     @Test
@@ -112,15 +123,23 @@ public class RequiredActionTotpSetupTest {
 
         totpPage.configure(totp.generate(totpSecret));
 
+        events.expectRequiredAction("update_totp").assertEvent();
+
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
+        events.expectLogin().assertEvent();
+
         oauth.openLogout();
+
+        events.expectLogout().assertEvent();
 
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
         loginTotpPage.login(totp.generate(totpSecret));
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        events.expectLogin().assertEvent();
     }
 
     @Test
@@ -129,6 +148,8 @@ public class RequiredActionTotpSetupTest {
         loginPage.open();
         loginPage.clickRegister();
         registerPage.register("firstName2", "lastName2", "email2", "setupTotp2", "password2", "password2");
+
+        String userId = events.expectRegister("setupTotp2", "email2").assertEvent().getUserId();
 
         // Configure totp
         totpPage.assertCurrent();
@@ -139,8 +160,13 @@ public class RequiredActionTotpSetupTest {
         // After totp config, user should be on the app page
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
+        events.expectRequiredAction("update_totp").user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent();
+
+        events.expectLogin().user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent();
+
         // Logout
         oauth.openLogout();
+        events.expectLogout().user(userId).assertEvent();
 
         // Try to login after logout
         loginPage.open();
@@ -153,15 +179,24 @@ public class RequiredActionTotpSetupTest {
         // Login with one-time password
         loginTotpPage.login(totp.generate(totpCode));
 
+        events.expectLogin().user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent();
+
         // Open account page
         accountTotpPage.open();
         accountTotpPage.assertCurrent();
 
+        events.expectLogin().user(userId).detail(Details.AUTH_METHOD, "sso").client("account")
+                .detail(Details.REDIRECT_URI, "http://localhost:8081/auth/rest/realms/test/account/login-redirect?path=totp")
+                .removeDetail(Details.USERNAME).assertEvent();
+
         // Remove google authentificator
         accountTotpPage.removeTotp();
 
+        events.expectAccount("remove_totp").user(userId).assertEvent();
+
         // Logout
         oauth.openLogout();
+        events.expectLogout().user(userId).assertEvent();
 
         // Try to login
         loginPage.open();
@@ -171,7 +206,11 @@ public class RequiredActionTotpSetupTest {
         totpPage.assertCurrent();
         totpPage.configure(totp.generate(totpPage.getTotpSecret()));
 
+        events.expectRequiredAction("update_totp").user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent();
+
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
+        events.expectLogin().user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent();
     }
+
 }

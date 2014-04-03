@@ -21,7 +21,6 @@ import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.AuthenticationLinkRepresentation;
-import org.keycloak.representations.idm.AuthenticationMappingRepresentation;
 import org.keycloak.representations.idm.AuthenticationProviderRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
@@ -37,6 +36,7 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -80,6 +80,8 @@ public class RealmManager {
 
         setupAdminManagement(realm);
         setupAccountManagement(realm);
+
+        realm.setAuditListeners(Collections.singleton("jboss-logging"));
 
         return realm;
     }
@@ -385,15 +387,6 @@ public class RealmManager {
                 }
             }
         }
-        if (rep.getAuthenticationMappings() != null) {
-            for (AuthenticationMappingRepresentation authMapping : rep.getAuthenticationMappings()) {
-                UserModel user = userMap.get(authMapping.getUsername());
-                for (AuthenticationLinkRepresentation link : authMapping.getAuthenticationLinks()) {
-                    AuthenticationLinkModel mappingModel = new AuthenticationLinkModel(link.getAuthProvider(), link.getAuthUserId());
-                    newRealm.addAuthenticationLink(user, mappingModel);
-                }
-            }
-        }
 
         if (rep.getSmtpServer() != null) {
             newRealm.setSmtpConfig(new HashMap(rep.getSmtpServer()));
@@ -408,6 +401,9 @@ public class RealmManager {
 
         if (rep.getAuthenticationProviders() != null) {
             List<AuthenticationProviderModel> authProviderModels = convertAuthenticationProviders(rep.getAuthenticationProviders());
+            newRealm.setAuthenticationProviders(authProviderModels);
+        }  else {
+            List<AuthenticationProviderModel> authProviderModels = Arrays.asList(AuthenticationProviderModel.DEFAULT_PROVIDER);
             newRealm.setAuthenticationProviders(authProviderModels);
         }
     }
@@ -471,6 +467,11 @@ public class RealmManager {
                 UserCredentialModel credential = fromRepresentation(cred);
                 newRealm.updateCredential(user, credential);
             }
+        }
+        if (userRep.getAuthenticationLink() != null) {
+            AuthenticationLinkRepresentation link = userRep.getAuthenticationLink();
+            AuthenticationLinkModel authLink = new AuthenticationLinkModel(link.getAuthProvider(), link.getAuthUserId());
+            newRealm.setAuthenticationLink(user, authLink);
         }
         return user;
     }

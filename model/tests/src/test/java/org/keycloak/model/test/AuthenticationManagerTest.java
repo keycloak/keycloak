@@ -3,6 +3,7 @@ package org.keycloak.model.test;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
@@ -14,6 +15,8 @@ import org.keycloak.services.managers.AuthenticationManager.AuthenticationStatus
 
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
+
+import java.util.Arrays;
 import java.util.UUID;
 
 public class AuthenticationManagerTest extends AbstractModelTest {
@@ -138,6 +141,7 @@ public class AuthenticationManagerTest extends AbstractModelTest {
         realm.setPublicKeyPem("0234234");
         realm.setAccessTokenLifespan(1000);
         realm.addRequiredCredential(CredentialRepresentation.PASSWORD);
+        realm.setAuthenticationProviders(Arrays.asList(AuthenticationProviderModel.DEFAULT_PROVIDER));
 
         am = new AuthenticationManager();
 
