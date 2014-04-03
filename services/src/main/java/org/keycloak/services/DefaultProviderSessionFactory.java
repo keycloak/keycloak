@@ -41,6 +41,10 @@ public class DefaultProviderSessionFactory implements ProviderSessionFactory {
         return loader != null ? loader.providerIds() : null;
     }
 
+    public String getDefaultProvider(Class<? extends Provider> clazz) {
+        return defaultFactories.get(clazz);
+    }
+
     public void registerLoader(Class<? extends Provider> clazz, ProviderFactoryLoader loader) {
         loaders.put(clazz, loader);
 

@@ -11,24 +11,16 @@ import java.util.Set;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class DefaultProviderSession implements ProviderSession {
-    private ProviderSessionFactory factory;
+    private DefaultProviderSessionFactory factory;
     private Map<Integer, Provider> providers = new HashMap<Integer, Provider>();
 
-    public DefaultProviderSession(ProviderSessionFactory factory) {
+    public DefaultProviderSession(DefaultProviderSessionFactory factory) {
         this.factory = factory;
     }
 
     public <T extends Provider> T getProvider(Class<T> clazz) {
-        Integer hash = clazz.hashCode();
-        T provider = (T) providers.get(hash);
-        if (provider == null) {
-            ProviderFactory<T> providerFactory = factory.getProviderFactory(clazz);
-            if (providerFactory != null) {
-                provider = providerFactory.create();
-                providers.put(hash, provider);
-            }
-        }
-        return provider;
+        String id = factory.getDefaultProvider(clazz);
+        return id != null ? getProvider(clazz, id) : null;
     }
 
     public <T extends Provider> T getProvider(Class<T> clazz, String id) {

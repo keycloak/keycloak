@@ -46,10 +46,13 @@ public abstract class AbstractAuditProviderTest {
 
     @Test
     public void query() {
+        long oldest = System.currentTimeMillis() - 30000;
+        long newest = System.currentTimeMillis() + 30000;
+
         provider.onEvent(create("event", "realmId", "clientId", "userId", "127.0.0.1", "error"));
-        provider.onEvent(create("event2", "realmId", "clientId", "userId", "127.0.0.1", "error"));
+        provider.onEvent(create(newest, "event2", "realmId", "clientId", "userId", "127.0.0.1", "error"));
         provider.onEvent(create("event", "realmId2", "clientId", "userId", "127.0.0.1", "error"));
-        provider.onEvent(create("event", "realmId", "clientId2", "userId", "127.0.0.1", "error"));
+        provider.onEvent(create(oldest, "event", "realmId", "clientId2", "userId", "127.0.0.1", "error"));
         provider.onEvent(create("event", "realmId", "clientId", "userId2", "127.0.0.1", "error"));
 
         provider.close();
@@ -65,6 +68,9 @@ public abstract class AbstractAuditProviderTest {
 
         Assert.assertEquals(2, provider.createQuery().maxResults(2).getResultList().size());
         Assert.assertEquals(1, provider.createQuery().firstResult(4).getResultList().size());
+
+        Assert.assertEquals(newest, provider.createQuery().maxResults(1).getResultList().get(0).getTime());
+        Assert.assertEquals(oldest, provider.createQuery().firstResult(4).maxResults(1).getResultList().get(0).getTime());
     }
 
     @Test

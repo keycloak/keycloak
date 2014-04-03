@@ -5,6 +5,7 @@ import org.keycloak.account.Account;
 import org.keycloak.account.AccountPages;
 import org.keycloak.account.freemarker.model.AccountBean;
 import org.keycloak.account.freemarker.model.AccountSocialBean;
+import org.keycloak.account.freemarker.model.FeaturesBean;
 import org.keycloak.account.freemarker.model.LogBean;
 import org.keycloak.account.freemarker.model.MessageBean;
 import org.keycloak.account.freemarker.model.ReferrerBean;
@@ -41,6 +42,8 @@ public class FreeMarkerAccount implements Account {
     private RealmModel realm;
     private String[] referrer;
     private List<Event> events;
+    private boolean social;
+    private boolean audit;
 
     public static enum MessageType {SUCCESS, WARNING, ERROR}
 
@@ -92,9 +95,7 @@ public class FreeMarkerAccount implements Account {
 
         attributes.put("url", new UrlBean(realm, theme, baseUri));
 
-        if (realm.isSocial()) {
-            attributes.put("isSocialRealm", true);
-        }
+        attributes.put("features", new FeaturesBean(social, audit));
 
         switch (page) {
             case ACCOUNT:
@@ -170,4 +171,10 @@ public class FreeMarkerAccount implements Account {
         return this;
     }
 
+    @Override
+    public Account setFeatures(boolean social, boolean audit) {
+        this.social = social;
+        this.audit = audit;
+        return this;
+    }
 }

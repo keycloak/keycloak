@@ -30,7 +30,7 @@ public class Config {
     }
 
     public static String getAuditProvider() {
-        return System.getProperty(MODEL_PROVIDER_KEY);
+        return System.getProperty(MODEL_PROVIDER_KEY, "jpa");
     }
 
     public static void setAuditProvider(String provider) {

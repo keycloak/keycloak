@@ -110,6 +110,7 @@ public class AccountService {
     private final SocialRequestManager socialRequestManager;
     private Account account;
     private Auth auth;
+    private AuditProvider auditProvider;
 
     public AccountService(RealmModel realm, ApplicationModel application, TokenManager tokenManager, SocialRequestManager socialRequestManager, Audit audit) {
         this.realm = realm;
@@ -120,7 +121,9 @@ public class AccountService {
     }
 
     public void init() {
-        account = AccountLoader.load().createAccount(uriInfo).setRealm(realm);
+        auditProvider = providers.getProvider(AuditProvider.class);
+
+        account = AccountLoader.load().createAccount(uriInfo).setRealm(realm).setFeatures(realm.isSocial(), auditProvider != null);
 
         auth = authManager.authenticate(realm, headers);
         if (auth != null) {
@@ -132,7 +135,6 @@ public class AccountService {
         UriBuilder base = uriInfo.getBaseUriBuilder().path(RealmsResource.class).path(RealmsResource.class, "getAccountService");
         return base;
     }
-
 
     private Response forwardToPage(String path, AccountPages page) {
         if (auth != null) {
@@ -195,9 +197,10 @@ public class AccountService {
     @Path("log")
     @GET
     public Response logPage() {
-        AuditProvider audit = providers.getProvider(AuditProvider.class);
-        List<Event> events = audit.createQuery().user(auth.getUser().getId()).maxResults(20).getResultList();
-        account.setEvents(events);
+        if (auth != null) {
+            List<Event> events = auditProvider.createQuery().user(auth.getUser().getId()).maxResults(20).getResultList();
+            account.setEvents(events);
+        }
         return forwardToPage("log", AccountPages.LOG);
     }
 

@@ -28,6 +28,8 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.audit.Details;
+import org.keycloak.audit.Event;
+import org.keycloak.audit.jpa.JpaAuditProviderFactory;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
@@ -38,6 +40,7 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
+import org.keycloak.testsuite.pages.AccountLogPage;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
 import org.keycloak.testsuite.pages.AccountTotpPage;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
@@ -45,11 +48,17 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.KeycloakRule.KeycloakSetup;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
+
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -97,6 +106,9 @@ public class AccountTest {
     protected LoginPage loginPage;
 
     @WebResource
+    protected RegisterPage registerPage;
+
+    @WebResource
     protected AccountPasswordPage changePasswordPage;
 
     @WebResource
@@ -104,6 +116,9 @@ public class AccountTest {
 
     @WebResource
     protected AccountTotpPage totpPage;
+
+    @WebResource
+    protected AccountLogPage logPage;
 
     @WebResource
     protected ErrorPage errorPage;
@@ -130,6 +145,8 @@ public class AccountTest {
                 appRealm.updateCredential(user, cred);
             }
         });
+
+        System.out.println(JpaAuditProviderFactory.class);
     }
 
     @Test
@@ -313,6 +330,45 @@ public class AccountTest {
 
         Assert.assertTrue(errorPage.isCurrent());
         Assert.assertEquals("No access", errorPage.getError());
+    }
+
+    @Test
+    public void viewLog() {
+        List<Event> e = new LinkedList<Event>();
+
+        loginPage.open();
+        loginPage.clickRegister();
+
+        registerPage.register("view", "log", "view-log@localhost", "view-log", "password", "password");
+
+        e.add(events.poll());
+        e.add(events.poll());
+
+        profilePage.open();
+        profilePage.updateProfile("view", "log2", "view-log@localhost");
+
+        e.add(events.poll());
+
+        logPage.open();
+
+        e.add(events.poll());
+
+        Collections.reverse(e);
+
+        Assert.assertTrue(logPage.isCurrent());
+
+        List<List<String>> actual = logPage.getEvents();
+
+        Assert.assertEquals(e.size(), actual.size());
+
+        Iterator<List<String>> itr = actual.iterator();
+        for (Event event : e) {
+            List<String> a = itr.next();
+            Assert.assertEquals(event.getEvent().replace('_', ' '), a.get(1));
+            Assert.assertEquals(event.getIpAddress(), a.get(2));
+            Assert.assertEquals(event.getClientId(), a.get(3));
+        }
+
     }
 
 }

@@ -62,7 +62,7 @@ public class MongoEventQuery implements EventQuery {
 
     @Override
     public List<Event> getResultList() {
-        DBCursor cur = audit.find(query);
+        DBCursor cur = audit.find(query).sort(new BasicDBObject("time", -1));
         if (firstResult != null) {
             cur.skip(firstResult);
         }
