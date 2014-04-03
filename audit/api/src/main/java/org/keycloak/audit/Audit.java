@@ -20,24 +20,15 @@ public class Audit {
     private List<AuditListener> listeners;
     private Event event;
 
-    public static Audit create(RealmModel realm, String ipAddress) {
-        ProviderFactoryLoader<AuditListenerFactory> loader = ProviderFactoryLoader.load(AuditListenerFactory.class);
+    public Audit(List<AuditListener> listeners, RealmModel realm, String ipAddress) {
+        this.listeners = listeners;
+        this.event = new Event();
 
-        List<AuditListener> listeners = null;
-        if (realm.getAuditListeners() != null) {
-            listeners = new LinkedList<AuditListener>();
-
-            for (String id : realm.getAuditListeners()) {
-                listeners.add(loader.find(id).create());
-            }
-        }
-
-        return new Audit(listeners, new Event()).realm(realm).ipAddress(ipAddress);
+        realm(realm);
+        ipAddress(ipAddress);
     }
 
-    private Audit(List<AuditListener> listeners, Event event) {
-        this.listeners = listeners;
-        this.event = event;
+    Audit() {
     }
 
     public Audit realm(RealmModel realm) {
@@ -113,7 +104,10 @@ public class Audit {
     }
 
     public Audit clone() {
-        return new Audit(listeners, event.clone());
+        Audit clone = new Audit();
+        clone.listeners = listeners;
+        clone.event = event.clone();
+        return clone;
     }
 
     public Audit reset() {

@@ -25,8 +25,8 @@ public class MongoEventQuery implements EventQuery {
     }
 
     @Override
-    public EventQuery event(String event) {
-        query.put("event", event);
+    public EventQuery event(String... events) {
+        query.put("event", new BasicDBObject("$in", events));
         return this;
     }
 

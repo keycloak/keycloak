@@ -36,8 +36,8 @@ public class JpaEventQuery implements EventQuery {
     }
 
     @Override
-    public EventQuery event(String event) {
-        predicates.add(cb.equal(root.get("event"), event));
+    public EventQuery event(String... events) {
+        predicates.add(root.get("event").in(events));
         return this;
     }
 

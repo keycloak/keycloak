@@ -5,10 +5,12 @@ import org.keycloak.account.Account;
 import org.keycloak.account.AccountPages;
 import org.keycloak.account.freemarker.model.AccountBean;
 import org.keycloak.account.freemarker.model.AccountSocialBean;
+import org.keycloak.account.freemarker.model.LogBean;
 import org.keycloak.account.freemarker.model.MessageBean;
 import org.keycloak.account.freemarker.model.ReferrerBean;
 import org.keycloak.account.freemarker.model.TotpBean;
 import org.keycloak.account.freemarker.model.UrlBean;
+import org.keycloak.audit.Event;
 import org.keycloak.freemarker.FreeMarkerException;
 import org.keycloak.freemarker.FreeMarkerUtil;
 import org.keycloak.freemarker.Theme;
@@ -23,6 +25,7 @@ import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -37,6 +40,7 @@ public class FreeMarkerAccount implements Account {
     private Response.Status status = Response.Status.OK;
     private RealmModel realm;
     private String[] referrer;
+    private List<Event> events;
 
     public static enum MessageType {SUCCESS, WARNING, ERROR}
 
@@ -102,6 +106,8 @@ public class FreeMarkerAccount implements Account {
             case SOCIAL:
                 attributes.put("social", new AccountSocialBean(realm, user, uriInfo.getBaseUri()));
                 break;
+            case LOG:
+                attributes.put("log", new LogBean(events));
         }
 
         try {
@@ -157,4 +163,11 @@ public class FreeMarkerAccount implements Account {
         this.referrer = referrer;
         return this;
     }
+
+    @Override
+    public Account setEvents(List<Event> events) {
+        this.events = events;
+        return this;
+    }
+
 }

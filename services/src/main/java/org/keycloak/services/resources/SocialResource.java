@@ -25,6 +25,8 @@ import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.audit.Audit;
+import org.keycloak.audit.AuditListener;
+import org.keycloak.audit.AuditProvider;
 import org.keycloak.audit.Details;
 import org.keycloak.audit.Errors;
 import org.keycloak.audit.Events;
@@ -36,6 +38,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.services.ClientConnection;
+import org.keycloak.services.ProviderSession;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.SocialRequestManager;
@@ -67,6 +71,7 @@ import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.net.URISyntaxException;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -95,7 +100,10 @@ public class SocialResource {
     protected KeycloakSession session;
 
     @Context
-    protected HttpServletRequest servletRequest;
+    protected ProviderSession providers;
+
+    @Context
+    protected ClientConnection clientConnection;
 
     private SocialRequestManager socialRequestManager;
 
@@ -121,7 +129,7 @@ public class SocialResource {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = realmManager.getRealmByName(realmName);
 
-        Audit audit = Audit.create(realm, servletRequest.getRemoteAddr())
+        Audit audit = createAudit(realm)
                 .event(Events.LOGIN)
                 .detail(Details.RESPONSE_TYPE, "code")
                 .detail(Details.AUTH_METHOD, "social");
@@ -260,7 +268,7 @@ public class SocialResource {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = realmManager.getRealmByName(realmName);
 
-        Audit audit = Audit.create(realm, servletRequest.getRemoteAddr())
+        Audit audit = createAudit(realm)
                 .event(Events.LOGIN).client(clientId)
                 .detail(Details.REDIRECT_URI, redirectUri)
                 .detail(Details.RESPONSE_TYPE, "code")
@@ -325,6 +333,26 @@ public class SocialResource {
             queryParams.put(e.getKey(), e.getValue().toArray(new String[e.getValue().size()]));
         }
         return queryParams;
+    }
+
+    private Audit createAudit(RealmModel realm) {
+        List<AuditListener> listeners = new LinkedList<AuditListener>();
+
+        AuditProvider auditProvider = providers.getProvider(AuditProvider.class);
+        if (auditProvider != null) {
+            listeners.add(auditProvider);
+        }
+
+        if (realm.getAuditListeners() != null) {
+            for (String id : realm.getAuditListeners()) {
+                AuditListener listener = providers.getProvider(AuditListener.class, id);
+                if (listener != null) {
+                    listeners.add(listener);
+                }
+            }
+        }
+
+        return new Audit(listeners, realm, clientConnection.getRemoteAddr());
     }
 
 }

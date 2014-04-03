@@ -2,10 +2,14 @@ package org.keycloak.services.resources;
 
 import org.jboss.resteasy.logging.Logger;
 import org.keycloak.audit.Audit;
+import org.keycloak.audit.AuditListener;
+import org.keycloak.audit.AuditProvider;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.services.ClientConnection;
+import org.keycloak.services.ProviderSession;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.SocialRequestManager;
 import org.keycloak.services.managers.TokenManager;
@@ -19,6 +23,8 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -41,7 +47,10 @@ public class RealmsResource {
     protected KeycloakSession session;
 
     @Context
-    protected HttpServletRequest servletRequest;
+    protected ProviderSession providers;
+
+    @Context
+    protected ClientConnection clientConnection;
 
     protected TokenManager tokenManager;
     protected SocialRequestManager socialRequestManager;
@@ -59,7 +68,7 @@ public class RealmsResource {
     public TokenService getTokenService(final @PathParam("realm") String name) {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = locateRealm(name, realmManager);
-        Audit audit = Audit.create(realm, servletRequest.getRemoteAddr());
+        Audit audit = createAudit(realm);
         TokenService tokenService = new TokenService(realm, tokenManager, audit);
         resourceContext.initResource(tokenService);
         return tokenService;
@@ -84,10 +93,10 @@ public class RealmsResource {
             throw new NotFoundException();
         }
 
-        Audit audit = Audit.create(realm, servletRequest.getRemoteAddr());
-
+        Audit audit = createAudit(realm);
         AccountService accountService = new AccountService(realm, application, tokenManager, socialRequestManager, audit);
         resourceContext.initResource(accountService);
+        accountService.init();
         return accountService;
     }
 
@@ -98,6 +107,26 @@ public class RealmsResource {
         PublicRealmResource realmResource = new PublicRealmResource(realm);
         resourceContext.initResource(realmResource);
         return realmResource;
+    }
+
+    private Audit createAudit(RealmModel realm) {
+        List<AuditListener> listeners = new LinkedList<AuditListener>();
+
+        AuditProvider auditProvider = providers.getProvider(AuditProvider.class);
+        if (auditProvider != null) {
+            listeners.add(auditProvider);
+        }
+
+        if (realm.getAuditListeners() != null) {
+            for (String id : realm.getAuditListeners()) {
+                AuditListener listener = providers.getProvider(AuditListener.class, id);
+                if (listener != null) {
+                    listeners.add(listener);
+                }
+            }
+        }
+
+        return new Audit(listeners, realm, clientConnection.getRemoteAddr());
     }
 
 }

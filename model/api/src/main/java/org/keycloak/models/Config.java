@@ -12,6 +12,8 @@ public class Config {
 
     public static final String MODEL_PROVIDER_KEY = "keycloak.model";
 
+    public static final String MODEL_AUDIT_KEY = "keycloak.audit";
+
     public static final String THEME_BASE_KEY = "keycloak.theme.base";
     public static final String THEME_BASE_DEFAULT = "base";
     public static final String THEME_DEFAULT_KEY = "keycloak.theme.default";
@@ -25,6 +27,14 @@ public class Config {
 
     public static void setAdminRealm(String realm) {
         System.setProperty(ADMIN_REALM_KEY, realm);
+    }
+
+    public static String getAuditProvider() {
+        return System.getProperty(MODEL_PROVIDER_KEY);
+    }
+
+    public static void setAuditProvider(String provider) {
+        System.setProperty(MODEL_PROVIDER_KEY, provider);
     }
 
     public static String getModelProvider() {

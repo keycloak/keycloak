@@ -7,6 +7,7 @@ import org.junit.Test;
 import org.keycloak.audit.AuditProvider;
 import org.keycloak.audit.AuditProviderFactory;
 import org.keycloak.audit.Event;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.ProviderFactoryLoader;
 
 import java.util.HashMap;
@@ -17,12 +18,12 @@ import java.util.Map;
  */
 public abstract class AbstractAuditProviderTest {
 
-    private AuditProviderFactory factory;
+    private ProviderFactory<AuditProvider> factory;
     private AuditProvider provider;
 
     @Before
     public void before() {
-        ProviderFactoryLoader<AuditProviderFactory> loader = ProviderFactoryLoader.load(AuditProviderFactory.class);
+        ProviderFactoryLoader<AuditProvider> loader = ProviderFactoryLoader.create(AuditProviderFactory.class);
         factory = loader.find(getProviderId());
         factory.init();
 
@@ -57,6 +58,7 @@ public abstract class AbstractAuditProviderTest {
         Assert.assertEquals(4, provider.createQuery().client("clientId").getResultList().size());
         Assert.assertEquals(4, provider.createQuery().realm("realmId").getResultList().size());
         Assert.assertEquals(4, provider.createQuery().event("event").getResultList().size());
+        Assert.assertEquals(5, provider.createQuery().event("event", "event2").getResultList().size());
         Assert.assertEquals(4, provider.createQuery().user("userId").getResultList().size());
 
         Assert.assertEquals(1, provider.createQuery().user("userId").event("event2").getResultList().size());

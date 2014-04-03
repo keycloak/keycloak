@@ -1,10 +1,12 @@
 package org.keycloak.account;
 
+import org.keycloak.audit.Event;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+import java.util.List;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -26,5 +28,7 @@ public interface Account {
     public Account setRealm(RealmModel realm);
 
     public Account setReferrer(String[] referrer);
+
+    public Account setEvents(List<Event> events);
 
 }

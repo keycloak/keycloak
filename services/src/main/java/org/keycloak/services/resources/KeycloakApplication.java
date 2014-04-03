@@ -2,8 +2,16 @@ package org.keycloak.services.resources;
 
 import org.jboss.resteasy.logging.Logger;
 import org.keycloak.SkeletonKeyContextResolver;
+import org.keycloak.audit.AuditListener;
+import org.keycloak.audit.AuditListenerFactory;
+import org.keycloak.audit.AuditProvider;
+import org.keycloak.audit.AuditProviderFactory;
+import org.keycloak.models.Config;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ModelProvider;
+import org.keycloak.provider.ProviderFactoryLoader;
+import org.keycloak.services.DefaultProviderSessionFactory;
+import org.keycloak.services.ProviderSessionFactory;
 import org.keycloak.util.KeycloakRegistry;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.SocialRequestManager;
@@ -40,6 +48,8 @@ public class KeycloakApplication extends Application {
         registry.putService(KeycloakSessionFactory.class, factory);
         context.setAttribute(KeycloakRegistry.class.getName(), registry);
         //classes.add(KeycloakSessionCleanupFilter.class);
+
+        context.setAttribute(ProviderSessionFactory.class.getName(), createProviderSessionFactory());
 
         TokenManager tokenManager = new TokenManager();
         SocialRequestManager socialRequestManager = new SocialRequestManager();
@@ -82,6 +92,15 @@ public class KeycloakApplication extends Application {
         }
 
         throw new RuntimeException("Model provider not found");
+    }
+
+    public static DefaultProviderSessionFactory createProviderSessionFactory() {
+        DefaultProviderSessionFactory factory = new DefaultProviderSessionFactory();
+
+        factory.registerLoader(AuditProvider.class, ProviderFactoryLoader.create(AuditProviderFactory.class), Config.getAuditProvider());
+        factory.registerLoader(AuditListener.class, ProviderFactoryLoader.create(AuditListenerFactory.class));
+
+        return factory;
     }
 
     public KeycloakSessionFactory getFactory() {

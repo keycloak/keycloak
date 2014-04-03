@@ -31,4 +31,9 @@ public class JBossLoggingAuditListenerFactory implements AuditListenerFactory {
         return ID;
     }
 
+    @Override
+    public boolean lazyLoad() {
+        return false;
+    }
+
 }
