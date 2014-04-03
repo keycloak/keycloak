@@ -1143,16 +1143,17 @@ public class RealmAdapter extends AbstractMongoAdapter<RealmEntity> implements R
 
     @Override
     public Set<String> getAuditListeners() {
-        return realm.getAuditListeners() != null ? new HashSet<String>(realm.getAuditListeners()) : null;
+        return new HashSet<String>(realm.getAuditListeners());
     }
 
     @Override
     public void setAuditListeners(Set<String> listeners) {
-         if (listeners != null) {
-             realm.setAuditListeners(new LinkedList<String>(listeners));
-         } else {
-             realm.setAuditListeners(null);
-         }
+        if (listeners != null) {
+            realm.setAuditListeners(new ArrayList<String>(listeners));
+        } else {
+            realm.setAuditListeners(Collections.EMPTY_LIST);
+        }
+        updateRealm();
     }
 
     @Override
