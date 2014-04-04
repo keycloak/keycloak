@@ -58,6 +58,19 @@ public class PicketlinkAuthenticationProvider implements AuthenticationProvider 
     }
 
     @Override
+    public String registerUser(RealmModel realm, Map<String, String> configuration, String username) throws AuthenticationProviderException {
+        IdentityManager identityManager = getIdentityManager(realm);
+
+        try {
+            User picketlinkUser = new User(username);
+            identityManager.add(picketlinkUser);
+            return picketlinkUser.getId();
+        } catch (IdentityManagementException ie) {
+            throw convertIDMException(ie);
+        }
+    }
+
+    @Override
     public AuthProviderStatus validatePassword(RealmModel realm, Map<String, String> configuration, String username, String password) throws AuthenticationProviderException {
         IdentityManager identityManager = getIdentityManager(realm);
 

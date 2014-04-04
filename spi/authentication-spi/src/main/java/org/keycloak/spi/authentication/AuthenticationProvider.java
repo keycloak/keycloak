@@ -31,6 +31,17 @@ public interface AuthenticationProvider {
     AuthUser getUser(RealmModel realm, Map<String, String> configuration, String username) throws AuthenticationProviderException;
 
     /**
+     * Try to register user with this authentication provider
+     *
+     * @param realm
+     * @param configuration
+     * @param username
+     * @return ID of newly created user (For example ID from LDAP)
+     * @throws AuthenticationProviderException if user creation couldn't happen
+     */
+    String registerUser(RealmModel realm, Map<String, String> configuration, String username) throws AuthenticationProviderException;
+
+    /**
      * Standard Authentication flow
      *
      * @param username

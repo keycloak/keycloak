@@ -28,3 +28,13 @@ uid: john
 cn: John
 sn: Doe
 mail: john@email.org
+
+dn: uid=existing,ou=People,dc=keycloak,dc=org
+objectclass: top
+objectclass: uidObject
+objectclass: person
+objectclass: inetOrgPerson
+uid: existing
+cn: Existing
+sn: Foo
+mail: existing@email.org

@@ -30,6 +30,14 @@ public abstract class AbstractModelAuthenticationProvider implements Authenticat
     }
 
     @Override
+    public String registerUser(RealmModel currentRealm, Map<String, String> config, String username) throws AuthenticationProviderException {
+        RealmModel realm = getRealm(currentRealm, config);
+        UserModel user = currentRealm.addUser(username);
+        user.setEnabled(true);
+        return user.getId();
+    }
+
+    @Override
     public AuthProviderStatus validatePassword(RealmModel currentRealm, Map<String, String> config, String username, String password) throws AuthenticationProviderException {
         RealmModel realm = getRealm(currentRealm, config);
         UserModel user = KeycloakModelUtils.findUserByNameOrEmail(realm, username);
