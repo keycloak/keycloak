@@ -14,6 +14,7 @@
             <td>Event</td>
             <td>IP</td>
             <td>Client</td>
+            <td>Details</td>
         </tr>
         </thead>
 
@@ -23,10 +24,12 @@
                 <td>${event.date?datetime}</td>
                 <td>${event.event}</td>
                 <td>${event.ipAddress}</td>
-                <td>${event.client}</td
+                <td>${event.client}</td>
+                <td><#list event.details as detail>${detail.key} = ${detail.value} <#if detail_has_next>, </#if></#list></td>
             </tr>
         </#list>
         </tbody>
+
     </table>
 
 </@layout.mainLayout>

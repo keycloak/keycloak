@@ -78,7 +78,13 @@ import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.core.Variant;
 import java.net.URI;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -87,6 +93,20 @@ import java.util.UUID;
 public class AccountService {
 
     private static final Logger logger = Logger.getLogger(AccountService.class);
+
+    private static final String[] AUDIT_EVENTS = {Events.LOGIN, Events.LOGOUT, Events.REGISTER, Events.REMOVE_SOCIAL_LINK, Events.REMOVE_TOTP, Events.SEND_RESET_PASSWORD,
+            Events.SEND_VERIFY_EMAIL, Events.SOCIAL_LINK, Events.UPDATE_EMAIL, Events.UPDATE_PASSWORD, Events.UPDATE_PASSWORD, Events.UPDATE_TOTP, Events.VERIFY_EMAIL};
+
+    private static final Set<String> AUDIT_DETAILS = new HashSet<String>();
+    static {
+        AUDIT_DETAILS.add(Details.UPDATED_EMAIL);
+        AUDIT_DETAILS.add(Details.EMAIL);
+        AUDIT_DETAILS.add(Details.PREVIOUS_EMAIL);
+        AUDIT_DETAILS.add(Details.USERNAME);
+        AUDIT_DETAILS.add(Details.REMEMBER_ME);
+        AUDIT_DETAILS.add(Details.REGISTER_METHOD);
+        AUDIT_DETAILS.add(Details.AUTH_METHOD);
+    }
 
     public static final String KEYCLOAK_ACCOUNT_IDENTITY_COOKIE = "KEYCLOAK_ACCOUNT_IDENTITY";
 
@@ -116,7 +136,7 @@ public class AccountService {
         this.realm = realm;
         this.application = application;
         this.audit = audit;
-        this.authManager =  new AppAuthManager(KEYCLOAK_ACCOUNT_IDENTITY_COOKIE, tokenManager);
+        this.authManager = new AppAuthManager(KEYCLOAK_ACCOUNT_IDENTITY_COOKIE, tokenManager);
         this.socialRequestManager = socialRequestManager;
     }
 
@@ -198,7 +218,20 @@ public class AccountService {
     @GET
     public Response logPage() {
         if (auth != null) {
-            List<Event> events = auditProvider.createQuery().user(auth.getUser().getId()).maxResults(20).getResultList();
+            List<Event> events = auditProvider.createQuery().event(AUDIT_EVENTS).user(auth.getUser().getId()).maxResults(30).getResultList();
+            for (Event e : events) {
+                e.setEvent(e.getEvent().replace('_', ' '));
+
+                Map<String, String> details = new HashMap<String, String>();
+                Iterator<String> itr = e.getDetails().keySet().iterator();
+                for (Map.Entry<String, String> d : e.getDetails().entrySet()) {
+                    if (AUDIT_DETAILS.contains(d.getKey())) {
+                        details.put(d.getKey().replace('_', ' '), d.getValue());
+                    }
+                }
+
+                e.setDetails(details);
+            }
             account.setEvents(events);
         }
         return forwardToPage("log", AccountPages.LOG);
@@ -475,7 +508,7 @@ public class AccountService {
             }
 
             if (referrerUri != null) {
-                return new String[] { referrer, referrerUri };
+                return new String[]{referrer, referrerUri};
             }
         } else if (referrerUri != null) {
             ClientModel client = realm.getOAuthClient(referrer);
@@ -483,7 +516,7 @@ public class AccountService {
                 referrerUri = TokenService.verifyRedirectUri(referrerUri, application);
 
                 if (referrerUri != null) {
-                    return new String[] { referrer, referrerUri };
+                    return new String[]{referrer, referrerUri};
                 }
             }
         }

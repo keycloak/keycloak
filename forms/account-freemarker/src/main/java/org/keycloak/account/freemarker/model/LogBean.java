@@ -5,6 +5,7 @@ import org.keycloak.audit.Event;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -37,7 +38,7 @@ public class LogBean {
         }
 
         public String getEvent() {
-            return event.getEvent().replace('_', ' ');
+            return event.getEvent();
         }
 
         public String getClient() {
@@ -46,6 +47,32 @@ public class LogBean {
 
         public String getIpAddress() {
             return event.getIpAddress();
+        }
+
+        public List<DetailBean> getDetails() {
+            List<DetailBean> details = new LinkedList<DetailBean>();
+            for (Map.Entry<String, String> e : event.getDetails().entrySet()) {
+                details.add(new DetailBean(e));
+            }
+            return details;
+        }
+
+    }
+
+    public static class DetailBean {
+
+        private Map.Entry<String, String> entry;
+
+        public DetailBean(Map.Entry<String, String> entry) {
+            this.entry = entry;
+        }
+
+        public String getKey() {
+            return entry.getKey();
+        }
+
+        public String getValue() {
+            return entry.getValue();
         }
 
     }
