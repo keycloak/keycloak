@@ -115,6 +115,9 @@ public class AuthProvidersIntegrationTest {
 
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+
+        profilePage.open();
+        Assert.assertFalse(profilePage.isPasswordUpdateSupported());
     }
 
     @Test
@@ -124,6 +127,9 @@ public class AuthProvidersIntegrationTest {
 
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+
+        profilePage.open();
+        Assert.assertTrue(profilePage.isPasswordUpdateSupported());
     }
 
     @Test
@@ -135,6 +141,7 @@ public class AuthProvidersIntegrationTest {
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 
         profilePage.open();
+        Assert.assertTrue(profilePage.isPasswordUpdateSupported());
         Assert.assertEquals("John", profilePage.getFirstName());
         Assert.assertEquals("Doe", profilePage.getLastName());
         Assert.assertEquals("john@email.org", profilePage.getEmail());

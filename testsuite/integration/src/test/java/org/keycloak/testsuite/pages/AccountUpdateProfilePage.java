@@ -96,4 +96,8 @@ public class AccountUpdateProfilePage extends AbstractAccountPage {
     public String getError() {
         return errorMessage.getText();
     }
+
+    public boolean isPasswordUpdateSupported() {
+        return driver.getPageSource().contains(PATH + "/password");
+    }
 }

@@ -31,5 +31,5 @@ public interface Account {
 
     Account setEvents(List<Event> events);
 
-    Account setFeatures(boolean social, boolean audit);
+    Account setFeatures(boolean social, boolean audit, boolean passwordUpdateSupported);
 }

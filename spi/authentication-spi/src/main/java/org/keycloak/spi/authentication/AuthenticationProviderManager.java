@@ -182,7 +182,7 @@ public class AuthenticationProviderManager {
         return delegate;
     }
 
-    private List<AuthenticationProviderModel> getConfiguredProviderModels(RealmModel realm) {
+    private static List<AuthenticationProviderModel> getConfiguredProviderModels(RealmModel realm) {
         List<AuthenticationProviderModel> configuredProviders = realm.getAuthenticationProviders();
 
         // Use model based authentication of current realm by default
@@ -194,7 +194,7 @@ public class AuthenticationProviderManager {
         return configuredProviders;
     }
 
-    private AuthenticationProviderModel getConfiguredProviderModel(RealmModel realm, String providerName) {
+    public static AuthenticationProviderModel getConfiguredProviderModel(RealmModel realm, String providerName) {
         List<AuthenticationProviderModel> providers = getConfiguredProviderModels(realm);
         for (AuthenticationProviderModel provider : providers) {
             if (providerName.equals(provider.getProviderName())) {
