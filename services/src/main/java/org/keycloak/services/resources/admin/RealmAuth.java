@@ -13,7 +13,7 @@ public class RealmAuth {
     private Resource resource;
 
     public enum Resource {
-        APPLICATION, CLIENT, USER, REALM
+        APPLICATION, CLIENT, USER, REALM, AUDIT
     }
 
     private Auth auth;
@@ -65,6 +65,8 @@ public class RealmAuth {
                 return AdminRoles.VIEW_USERS;
             case REALM:
                 return AdminRoles.VIEW_REALM;
+            case AUDIT:
+                return AdminRoles.VIEW_AUDIT;
             default:
                 throw new IllegalStateException();
         }
@@ -80,6 +82,8 @@ public class RealmAuth {
                 return AdminRoles.MANAGE_USERS;
             case REALM:
                 return AdminRoles.MANAGE_REALM;
+            case AUDIT:
+                return AdminRoles.MANAGE_AUDIT;
             default:
                 throw new IllegalStateException();
         }

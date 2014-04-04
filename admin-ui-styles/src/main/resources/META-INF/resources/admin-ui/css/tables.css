@@ -11,6 +11,9 @@ table caption {
 table tbody tr:nth-child(even) {
   background-color: #f6f6f6;
 }
+table tbody tr:nth-child(odd) {
+  background-color: #fff;
+}
 table tbody tr td,
 table thead tr th {
   font-weight: normal;
@@ -138,10 +141,14 @@ table tfoot tr {
 table tfoot tr .table-nav {
   float: right;
 }
-table tfoot tr .table-nav a {
+table tfoot tr .table-nav a,
+table tfoot tr .table-nav button {
   display: inline-block;
-  line-height: 2.4em;
+  line-height: 22px;
   border-left: 1px solid #d9d9d9;
+  border-right: none;
+  border-top: none;
+  border-bottom: none;
   width: 3.5em;
   background-color: #f3f3f3;
   background-image: linear-gradient(top, #fafafa 0%, #ededed 100%);
@@ -156,28 +163,35 @@ table tfoot tr .table-nav a {
   background-position: left top;
   vertical-align: top;
 }
-table tfoot tr .table-nav a.last {
+table tfoot tr .table-nav a.last,
+table tfoot tr .table-nav button.last {
   background-position: top right;
 }
-table tfoot tr .table-nav a.prev {
+table tfoot tr .table-nav a.prev,
+table tfoot tr .table-nav button.prev {
   background-position: bottom left;
 }
-table tfoot tr .table-nav a.next {
+table tfoot tr .table-nav a.next,
+table tfoot tr .table-nav button.next {
   background-position: bottom right;
 }
-table tfoot tr .table-nav a:hover {
+table tfoot tr .table-nav a:hover,
+table tfoot tr .table-nav button:hover {
   background-image: url(img/sprite-table-nav.png);
   background-color: #eeeeee;
 }
-table tfoot tr .table-nav a:active {
+table tfoot tr .table-nav a:active,
+table tfoot tr .table-nav button:active {
   box-shadow: 0 0 5px 2px rgba(0, 0, 0, 0.25) inset;
 }
-table tfoot tr .table-nav a.disabled {
+table tfoot tr .table-nav a.disabled,
+table tfoot tr .table-nav button:disabled {
   opacity: 0.5;
   filter: alpha(opacity=50);
   cursor: default;
 }
-table tfoot tr .table-nav a.disabled:active {
+table tfoot tr .table-nav a.disabled:active,
+table tfoot tr .table-nav button:disabled:active {
   box-shadow: none;
 }
 table tfoot tr .table-nav span {
@@ -194,4 +208,21 @@ table tfoot tr .table-nav span {
 
 td .form-group {
     margin-bottom: 0;
+}
+
+td.audit-success {
+    background-color: #E4F1E1;
+}
+
+td.audit-error {
+    background-color: #F8E7E7;
+}
+
+.kc-table-actions .form-group {
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.kc-table-actions select {
+    height: 26px;
 }

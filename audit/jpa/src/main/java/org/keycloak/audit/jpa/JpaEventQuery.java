@@ -60,6 +60,12 @@ public class JpaEventQuery implements EventQuery {
     }
 
     @Override
+    public EventQuery ipAddress(String ipAddress) {
+        predicates.add(cb.equal(root.get("ipAddress"), ipAddress));
+        return this;
+    }
+
+    @Override
     public EventQuery firstResult(int firstResult) {
         this.firstResult = firstResult;
         return this;

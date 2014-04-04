@@ -49,6 +49,12 @@ public class MongoEventQuery implements EventQuery {
     }
 
     @Override
+    public EventQuery ipAddress(String ipAddress) {
+        query.put("ipAddress", ipAddress);
+        return this;
+    }
+
+    @Override
     public EventQuery firstResult(int firstResult) {
         this.firstResult = firstResult;
         return this;
