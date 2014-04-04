@@ -3,6 +3,8 @@ package org.keycloak.services.resources.admin;
 import org.keycloak.freemarker.Theme;
 import org.keycloak.freemarker.ThemeProvider;
 import org.keycloak.social.SocialProvider;
+import org.keycloak.spi.authentication.AuthenticationProvider;
+import org.keycloak.spi.authentication.AuthenticationProviderManager;
 import org.keycloak.util.ProviderLoader;
 
 import javax.ws.rs.GET;
@@ -22,6 +24,7 @@ public class ServerInfoAdminResource {
         ServerInfoRepresentation info = new ServerInfoRepresentation();
         setSocialProviders(info);
         setThemes(info);
+        setAuthProviders(info);
         return info;
     }
 
@@ -46,11 +49,21 @@ public class ServerInfoAdminResource {
         Collections.sort(info.socialProviders);
     }
 
+    private void setAuthProviders(ServerInfoRepresentation info) {
+        info.authProviders = new HashMap<String, List<String>>();
+        Iterable<AuthenticationProvider> authProviders = AuthenticationProviderManager.load();
+        for (AuthenticationProvider authProvider : authProviders) {
+            info.authProviders.put(authProvider.getName(), authProvider.getAvailableOptions());
+        }
+    }
+
     public static class ServerInfoRepresentation {
 
         private Map<String, List<String>> themes;
 
         private List<String> socialProviders;
+
+        private Map<String, List<String>> authProviders;
 
         public ServerInfoRepresentation() {
         }
@@ -63,6 +76,9 @@ public class ServerInfoAdminResource {
             return socialProviders;
         }
 
+        public Map<String, List<String>> getAuthProviders() {
+            return authProviders;
+        }
     }
 
 }

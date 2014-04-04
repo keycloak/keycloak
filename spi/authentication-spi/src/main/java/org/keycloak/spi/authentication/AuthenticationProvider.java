@@ -1,5 +1,6 @@
 package org.keycloak.spi.authentication;
 
+import java.util.List;
 import java.util.Map;
 
 import org.keycloak.models.RealmModel;
@@ -10,6 +11,13 @@ import org.keycloak.models.RealmModel;
 public interface AuthenticationProvider {
 
     String getName();
+
+    /**
+     * Get names of all available configuration options of current provider
+     *
+     * @return options or empty list if no options available
+     */
+    List<String> getAvailableOptions();
 
     /**
      * Get user by given username or email. Return user instance or null if user doesn't exists in this authentication provider
