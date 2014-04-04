@@ -27,7 +27,7 @@
                 </thead>
                 <tbody>
                 <tr ng-repeat="authProvider in authenticationProviders">
-                    <td><a href="#/realms/{{realm.realm}}/auth-settings/{{$index}}">{{authProvider.providerName|humanFriendlyFormat}}</a></td>
+                    <td><a href="#/realms/{{realm.realm}}/auth-settings/{{$index}}">{{authProvider.providerName|capitalize}}</a></td>
                     <td>{{authProvider.passwordUpdateSupported}}</td>
                     <td>{{authProvider.config}}</td>
                 </tr>

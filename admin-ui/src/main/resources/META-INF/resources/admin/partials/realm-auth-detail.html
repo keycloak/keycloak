@@ -16,7 +16,7 @@
             <li><a href="#/realms/{{realm.realm}}/auth-settings">Authentication</a></li>
             <li class="active">{{authProviderIndex}}</li>
         </ol>
-        <h2 data-ng-hide="create"><span>{{authProvider.providerName|humanFriendlyFormat}}'s</span> Attributes</h2>
+        <h2 data-ng-hide="create"><span>{{authProvider.providerName|capitalize}}'s</span> Attributes</h2>
 
         <form class="form-horizontal" name="userForm" novalidate kc-read-only="!access.manageRealm">
             <fieldset class="border-top">
@@ -28,7 +28,7 @@
                                 <select id="authProviders" name="authProviders"
                                         data-ng-change="changeAuthProvider()"
                                         data-ng-model="authProvider.providerName"
-                                        data-ng-options="(p|humanFriendlyFormat) for p in availableProviderNames"
+                                        data-ng-options="(p|capitalize) for p in availableProviderNames"
                                         data-ng-disabled="!create">
                                     <option value="" selected> Select Authentication Provider...</option>
                                 </select>
@@ -47,9 +47,9 @@
             </fieldset>
 
             <fieldset>
-                <legend data-ng-show="authProvider.providerName"><span class="text">{{authProvider.providerName|humanFriendlyFormat}}'s provider options</span></legend>
+                <legend data-ng-show="authProvider.providerName"><span class="text">{{authProvider.providerName|capitalize}}'s provider options</span></legend>
                 <div data-ng-repeat="option in authProviderOptionNames" class="form-group">
-                    <label class="col-sm-2 control-label">{{option|humanFriendlyFormat}} </label>
+                    <label class="col-sm-2 control-label">{{option|capitalize}} </label>
 
                     <div class="col-sm-4">
                         <input class="form-control" type="text" data-ng-model="authProvider.config[ option ]" >
