@@ -131,6 +131,15 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmLdapSettingsCtrl'
         })
+        .when('/realms/:realm/audit', {
+            templateUrl : 'partials/realm-audit.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                }
+            },
+            controller : 'RealmAuditCtrl'
+        })
         .when('/create/user/:realm', {
             templateUrl : 'partials/user-detail.html',
             resolve : {

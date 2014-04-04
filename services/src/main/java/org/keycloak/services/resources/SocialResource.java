@@ -243,7 +243,7 @@ public class SocialResource {
             realm.addSocialLink(user, socialLink);
 
             audit.clone().user(user).event(Events.REGISTER)
-                    .detail(Details.REGISTER_METHOD, "social")
+                    .detail(Details.REGISTER_METHOD, "social@" + provider.getId())
                     .detail(Details.EMAIL, socialUser.getEmail())
                     .removeDetail("auth_method")
                     .success();
@@ -256,7 +256,7 @@ public class SocialResource {
             return oauth.forwardToSecurityFailure("Your account is not enabled.");
         }
 
-        return oauth.processAccessCode(scope, state, redirectUri, client, user, socialLink.getSocialUserId() + "@" + socialLink.getSocialProvider(), false, "social", audit);
+        return oauth.processAccessCode(scope, state, redirectUri, client, user, socialLink.getSocialUserId() + "@" + socialLink.getSocialProvider(), false, "social@" + provider.getId(), audit);
     }
 
     @GET

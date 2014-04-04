@@ -2,11 +2,15 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.logging.Logger;
+import org.keycloak.audit.AuditProvider;
+import org.keycloak.audit.Event;
+import org.keycloak.audit.EventQuery;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.adapters.action.SessionStats;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.ProviderSession;
 import org.keycloak.services.managers.ModelToRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
@@ -35,6 +39,9 @@ public class RealmAdminResource {
 
     @Context
     protected KeycloakSession session;
+
+    @Context
+    protected ProviderSession providers;
 
     public RealmAdminResource(RealmAuth auth, RealmModel realm, TokenManager tokenManager) {
         this.auth = auth;
@@ -129,7 +136,7 @@ public class RealmAdminResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public Map<String,SessionStats> getSessionStats() {
+    public Map<String, SessionStats> getSessionStats() {
         logger.info("session-stats");
         auth.requireView();
         Map<String, SessionStats> stats = new HashMap<String, SessionStats>();
@@ -139,6 +146,39 @@ public class RealmAdminResource {
             stats.put(applicationModel.getName(), appStats);
         }
         return stats;
+    }
+
+    @Path("audit")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<Event> getAudit(@QueryParam("client") String client, @QueryParam("event") String event, @QueryParam("user") String user,
+                                @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult, @QueryParam("max") Integer maxResults) {
+        auth.init(RealmAuth.Resource.AUDIT).requireView();
+
+        AuditProvider audit = providers.getProvider(AuditProvider.class);
+
+        EventQuery query = audit.createQuery().realm(realm.getId());
+        if (client != null) {
+            query.client(client);
+        }
+        if (event != null) {
+            query.event(event);
+        }
+        if (user != null) {
+            query.user(user);
+        }
+        if (ipAddress != null) {
+            query.ipAddress(ipAddress);
+        }
+        if (firstResult != null) {
+            query.firstResult(firstResult);
+        }
+        if (maxResults != null) {
+            query.maxResults(maxResults);
+        }
+
+        return query.getResultList();
     }
 
 }

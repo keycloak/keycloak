@@ -42,6 +42,10 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location
                 return getAccess('view-users') || this.manageClients;
             },
 
+            get viewAudit() {
+                return getAccess('view-audit') || this.manageClients;
+            },
+
             get manageRealm() {
                 return getAccess('manage-realm');
             },
@@ -56,6 +60,10 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location
 
             get manageUsers() {
                 return getAccess('manage-users');
+            },
+
+            get manageAudit() {
+                return getAccess('manage-audit');
             }
         }
     })
@@ -914,4 +922,49 @@ module.controller('RealmLdapSettingsCtrl', function($scope, Realm, realm, $locat
         $scope.realm = angular.copy(oldCopy);
         $scope.changed = false;
     };
+});
+
+
+module.controller('RealmAuditCtrl', function($scope, RealmAudit, realm) {
+    $scope.realm = realm;
+    $scope.page = 0;
+
+    $scope.query = {
+        id : realm.realm,
+        max : 5,
+        first : 0
+    }
+
+    $scope.update = function() {
+        for (var i in $scope.query) {
+            if ($scope.query[i] === '') {
+                delete $scope.query[i];
+           }
+        }
+        console.debug($scope.query.first);
+        $scope.events = RealmAudit.query($scope.query);
+    }
+
+    $scope.firstPage = function() {
+        $scope.query.first = 0;
+        if ($scope.query.first < 0) {
+            $scope.query.first = 0;
+        }
+        $scope.update();
+    }
+
+    $scope.previousPage = function() {
+        $scope.query.first -= parseInt($scope.query.max);
+        if ($scope.query.first < 0) {
+            $scope.query.first = 0;
+        }
+        $scope.update();
+    }
+
+    $scope.nextPage = function() {
+        $scope.query.first += parseInt($scope.query.max);
+        $scope.update();
+    }
+
+    $scope.update();
 });

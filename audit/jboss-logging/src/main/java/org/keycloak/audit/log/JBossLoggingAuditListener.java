@@ -19,7 +19,7 @@ public class JBossLoggingAuditListener implements AuditListener {
 
     @Override
     public void onEvent(Event event) {
-        Logger.Level level = event.isError() ? Logger.Level.WARN : Logger.Level.INFO;
+        Logger.Level level = event.getError() != null ? Logger.Level.WARN : Logger.Level.INFO;
 
         if (logger.isEnabled(level)) {
             StringBuilder sb = new StringBuilder();
@@ -35,7 +35,7 @@ public class JBossLoggingAuditListener implements AuditListener {
             sb.append(", ipAddress=");
             sb.append(event.getIpAddress());
 
-            if (event.isError()) {
+            if (event.getError() != null) {
                 sb.append(", error=");
                 sb.append(event.getError());
             }

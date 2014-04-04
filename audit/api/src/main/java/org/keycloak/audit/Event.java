@@ -72,10 +72,6 @@ public class Event {
         this.ipAddress = ipAddress;
     }
 
-    public boolean isError() {
-        return error != null;
-    }
-
     public String getError() {
         return error;
     }

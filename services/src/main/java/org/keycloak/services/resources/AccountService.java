@@ -95,7 +95,7 @@ public class AccountService {
     private static final Logger logger = Logger.getLogger(AccountService.class);
 
     private static final String[] AUDIT_EVENTS = {Events.LOGIN, Events.LOGOUT, Events.REGISTER, Events.REMOVE_SOCIAL_LINK, Events.REMOVE_TOTP, Events.SEND_RESET_PASSWORD,
-            Events.SEND_VERIFY_EMAIL, Events.SOCIAL_LINK, Events.UPDATE_EMAIL, Events.UPDATE_PASSWORD, Events.UPDATE_PASSWORD, Events.UPDATE_TOTP, Events.VERIFY_EMAIL};
+            Events.SEND_VERIFY_EMAIL, Events.SOCIAL_LINK, Events.UPDATE_EMAIL, Events.UPDATE_PASSWORD, Events.UPDATE_PROFILE, Events.UPDATE_TOTP, Events.VERIFY_EMAIL};
 
     private static final Set<String> AUDIT_DETAILS = new HashSet<String>();
     static {

@@ -15,13 +15,15 @@ public class AdminRoles {
     public static String VIEW_USERS = "view-users";
     public static String VIEW_APPLICATIONS = "view-applications";
     public static String VIEW_CLIENTS = "view-clients";
+    public static String VIEW_AUDIT = "view-audit";
 
     public static String MANAGE_REALM = "manage-realm";
     public static String MANAGE_USERS = "manage-users";
     public static String MANAGE_APPLICATIONS = "manage-applications";
     public static String MANAGE_CLIENTS = "manage-clients";
+    public static String MANAGE_AUDIT = "manage-audit";
 
-    public static String[] ALL_REALM_ROLES = {VIEW_REALM, VIEW_USERS, VIEW_APPLICATIONS, VIEW_CLIENTS, MANAGE_REALM, MANAGE_USERS, MANAGE_APPLICATIONS, MANAGE_CLIENTS};
+    public static String[] ALL_REALM_ROLES = {VIEW_REALM, VIEW_USERS, VIEW_APPLICATIONS, VIEW_CLIENTS, VIEW_AUDIT, MANAGE_REALM, MANAGE_USERS, MANAGE_APPLICATIONS, MANAGE_CLIENTS, MANAGE_AUDIT};
 
     public static String getAdminApp(RealmModel realm) {
         return realm.getName() + APP_SUFFIX;

@@ -15,6 +15,8 @@ public interface EventQuery {
 
     public EventQuery user(String userId);
 
+    public EventQuery ipAddress(String ipAddress);
+
     public EventQuery firstResult(int result);
 
     public EventQuery maxResults(int results);

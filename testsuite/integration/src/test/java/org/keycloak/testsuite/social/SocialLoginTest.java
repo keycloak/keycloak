@@ -113,12 +113,12 @@ public class SocialLoginTest {
                 .user(AssertEvents.isUUID())
                 .detail(Details.EMAIL, "bob@builder.com")
                 .detail(Details.RESPONSE_TYPE, "code")
-                .detail(Details.REGISTER_METHOD, "social")
+                .detail(Details.REGISTER_METHOD, "social@dummy")
                 .detail(Details.REDIRECT_URI, AssertEvents.DEFAULT_REDIRECT_URI)
                 .detail(Details.USERNAME, "1@dummy")
                 .assertEvent().getUserId();
 
-        String codeId = events.expectLogin().user(userId).detail(Details.USERNAME, "1@dummy").detail(Details.AUTH_METHOD, "social").assertEvent().getDetails().get(Details.CODE_ID);
+        String codeId = events.expectLogin().user(userId).detail(Details.USERNAME, "1@dummy").detail(Details.AUTH_METHOD, "social@dummy").assertEvent().getDetails().get(Details.CODE_ID);
 
         AccessTokenResponse response = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE), "password");
 
@@ -146,7 +146,7 @@ public class SocialLoginTest {
         driver.findElement(By.id("username")).sendKeys("dummy-user1");
         driver.findElement(By.id("login")).click();
 
-        events.expectLogin().user(userId).detail(Details.USERNAME, "1@dummy").detail(Details.AUTH_METHOD, "social").assertEvent();
+        events.expectLogin().user(userId).detail(Details.USERNAME, "1@dummy").detail(Details.AUTH_METHOD, "social@dummy").assertEvent();
     }
 
     @Test
@@ -160,7 +160,7 @@ public class SocialLoginTest {
         Assert.assertTrue(loginPage.isCurrent());
         Assert.assertEquals("Access denied", loginPage.getWarning());
 
-        events.expectLogin().error("rejected_by_user").user((String) null).detail(Details.AUTH_METHOD, "social").removeDetail(Details.USERNAME).removeDetail(Details.CODE_ID).assertEvent();
+        events.expectLogin().error("rejected_by_user").user((String) null).detail(Details.AUTH_METHOD, "social@dummy").removeDetail(Details.USERNAME).removeDetail(Details.CODE_ID).assertEvent();
 
         loginPage.login("test-user@localhost", "password");
 
@@ -200,19 +200,19 @@ public class SocialLoginTest {
                     .user(AssertEvents.isUUID())
                     .detail(Details.EMAIL, "bob@builder.com")
                     .detail(Details.RESPONSE_TYPE, "code")
-                    .detail(Details.REGISTER_METHOD, "social")
+                    .detail(Details.REGISTER_METHOD, "social@dummy")
                     .detail(Details.REDIRECT_URI, AssertEvents.DEFAULT_REDIRECT_URI)
                     .detail(Details.USERNAME, "2@dummy")
                     .assertEvent().getUserId();
 
             profilePage.update("Dummy", "User", "dummy-user-reg@dummy-social");
 
-            events.expectRequiredAction("update_profile").user(userId).detail(Details.AUTH_METHOD, "social").detail(Details.USERNAME, "2@dummy").assertEvent();
-            events.expectRequiredAction("update_email").user(userId).detail(Details.AUTH_METHOD, "social").detail(Details.USERNAME, "2@dummy").detail(Details.PREVIOUS_EMAIL, "bob@builder.com").detail(Details.UPDATED_EMAIL, "dummy-user-reg@dummy-social").assertEvent();
+            events.expectRequiredAction("update_profile").user(userId).detail(Details.AUTH_METHOD, "social@dummy").detail(Details.USERNAME, "2@dummy").assertEvent();
+            events.expectRequiredAction("update_email").user(userId).detail(Details.AUTH_METHOD, "social@dummy").detail(Details.USERNAME, "2@dummy").detail(Details.PREVIOUS_EMAIL, "bob@builder.com").detail(Details.UPDATED_EMAIL, "dummy-user-reg@dummy-social").assertEvent();
 
             Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-            String codeId = events.expectLogin().user(userId).removeDetail(Details.USERNAME).detail(Details.AUTH_METHOD, "social").detail(Details.USERNAME, "2@dummy").assertEvent().getDetails().get(Details.CODE_ID);
+            String codeId = events.expectLogin().user(userId).removeDetail(Details.USERNAME).detail(Details.AUTH_METHOD, "social@dummy").detail(Details.USERNAME, "2@dummy").assertEvent().getDetails().get(Details.CODE_ID);
 
             AccessTokenResponse response = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE), "password");
             AccessToken token = oauth.verifyToken(response.getAccessToken());

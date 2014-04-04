@@ -142,6 +142,12 @@ module.factory('Realm', function($resource) {
     });
 });
 
+module.factory('RealmAudit', function($resource) {
+    return $resource('/auth/rest/admin/realms/:id/audit', {
+        id : '@realm'
+    });
+});
+
 module.factory('ServerInfo', function($resource) {
     return $resource('/auth/rest/admin/serverinfo');
 });
