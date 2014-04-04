@@ -887,7 +887,7 @@ module.controller('RealmSMTPSettingsCtrl', function($scope, Current, Realm, real
     }
 });
 
-module.controller('RealmLdapSettingsCtrl', function($scope, Realm, realm, $location, Notifications) {
+module.controller('RealmLdapSettingsCtrl', function($scope, $location, Notifications, Realm, realm) {
     console.log('RealmLdapSettingsCtrl');
 
     $scope.realm = realm;
@@ -913,5 +913,101 @@ module.controller('RealmLdapSettingsCtrl', function($scope, Realm, realm, $locat
     $scope.reset = function() {
         $scope.realm = angular.copy(oldCopy);
         $scope.changed = false;
+    };
+});
+
+module.controller('RealmAuthSettingsCtrl', function($scope, realm) {
+    console.log('RealmAuthSettingsCtrl');
+
+    $scope.realm = realm;
+    $scope.authenticationProviders = realm.authenticationProviders;
+});
+
+module.controller('RealmAuthSettingsDetailCtrl', function($scope, $routeParams, $location, Notifications, Dialog, Realm, realm, serverInfo) {
+    console.log('RealmAuthSettingsDetailCtrl');
+
+    $scope.realm = realm;
+    $scope.availableProviders = serverInfo.authProviders;
+    $scope.availableProviderNames = Object.keys(serverInfo.authProviders);
+
+    $scope.create = !$routeParams.index;
+    $scope.changed = false;
+
+    if ($scope.create) {
+        $scope.authProvider = {
+            passwordUpdateSupported: true,
+            config: {}
+        };
+
+        $scope.authProviderOptionNames = [];
+    } else {
+        $scope.authProvider = realm.authenticationProviders[ $routeParams.index ];
+        if (!$scope.authProvider.config) {
+            $scope.authProvider.config = {};
+        }
+
+        $scope.authProviderOptionNames = serverInfo.authProviders[ $scope.authProvider.providerName ];
+        $scope.authProviderIndex = $routeParams.index;
+    }
+
+    var oldCopy = angular.copy($scope.authProvider);
+    $scope.$watch('authProvider', function() {
+        if (!angular.equals($scope.authProvider, oldCopy)) {
+            $scope.changed = true;
+        }
+    }, true);
+
+    $scope.changeAuthProvider = function() {
+        console.log('RealmAuthSettingsDetailCtrl: provider changed to ' + $scope.authProvider.providerName);
+        $scope.authProviderOptionNames = serverInfo.authProviders[ $scope.authProvider.providerName ];
+    }
+
+    $scope.cancel = function() {
+        $location.url("/realms/" + realm.realm + "/auth-settings");
+    }
+
+    $scope.reset = function() {
+        $scope.authProvider = angular.copy(oldCopy);
+        $scope.changed = false;
+    }
+
+    $scope.save = function() {
+        if (!$scope.authProvider.providerName) {
+            console.log('RealmAuthSettingsDetailCtrl: no provider selected. Skip creation');
+            return;
+        }
+
+        console.log('RealmAuthSettingsDetailCtrl: creating provider ' + $scope.authProvider.providerName);
+        var realmCopy = angular.copy($scope.realm);
+        if (!realmCopy.authenticationProviders) {
+            realmCopy.authenticationProviders = [];
+        }
+
+        if ($scope.create) {
+            realmCopy.authenticationProviders.push($scope.authProvider);
+        } else {
+            realmCopy.authenticationProviders[ $scope.authProviderIndex ] = $scope.authProvider;
+        }
+
+        $scope.changed = false;
+        Realm.update(realmCopy, function () {
+            $location.url("/realms/" + realm.realm + "/auth-settings");
+            Notifications.success("Authentication provider has been saved.");
+        });
+    };
+
+    $scope.remove = function() {
+        Dialog.confirmDelete($scope.realm.authenticationProviders.providerName, 'authentication Provider', function() {
+            console.log('RealmAuthSettingsDetailCtrl: deleting provider ' + $scope.authProvider.providerName);
+
+            var realmCopy = angular.copy($scope.realm);
+            realmCopy.authenticationProviders.splice($scope.authProviderIndex, 1);
+
+            $scope.changed = false;
+            Realm.update(realmCopy, function () {
+                $location.url("/realms/" + realm.realm + "/auth-settings");
+                Notifications.success("Authentication provider has been deleted.");
+            });
+        });
     };
 });

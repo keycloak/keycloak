@@ -1,11 +1,11 @@
 package org.keycloak.spi.authentication.model;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.spi.authentication.AuthProviderConstants;
-import org.keycloak.spi.authentication.AuthUser;
 
 /**
  * AbstractModelAuthenticationProvider, which uses current realm to call operations on
@@ -17,6 +17,11 @@ public class ModelAuthenticationProvider extends AbstractModelAuthenticationProv
     @Override
     public String getName() {
         return AuthProviderConstants.PROVIDER_NAME_MODEL;
+    }
+
+    @Override
+    public List<String> getAvailableOptions() {
+        return Collections.EMPTY_LIST;
     }
 
     @Override

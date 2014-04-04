@@ -1,5 +1,7 @@
 package org.keycloak.spi.authentication.picketlink;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import org.jboss.logging.Logger;
@@ -32,6 +34,11 @@ public class PicketlinkAuthenticationProvider implements AuthenticationProvider 
     @Override
     public String getName() {
         return AuthProviderConstants.PROVIDER_NAME_PICKETLINK;
+    }
+
+    @Override
+    public List<String> getAvailableOptions() {
+        return Collections.EMPTY_LIST;
     }
 
     @Override

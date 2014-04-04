@@ -38,7 +38,7 @@ public class AuthenticationProviderManager {
         return new AuthenticationProviderManager(realm, providersMap);
     }
 
-    private static Iterable<AuthenticationProvider> load() {
+    public static Iterable<AuthenticationProvider> load() {
         return ProviderLoader.load(AuthenticationProvider.class);
     }
 
