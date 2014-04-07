@@ -37,7 +37,8 @@ public class PartitionManagerRegistry {
 
         // Ldap config might have changed for the realm. In this case, we must re-initialize
         if (context == null || !ldapConfig.equals(context.config)) {
-            logger.infof("Creating new partition manager for the realm: %s", realm.getId());
+            logger.infof("Creating new partition manager for the realm: %s, LDAP Connection URL: %s, LDAP Base DN: %s", realm.getId(),
+                    ldapConfig.get(LdapConstants.CONNECTION_URL), ldapConfig.get(LdapConstants.BASE_DN));
             PartitionManager manager = createPartitionManager(ldapConfig);
             context = new PartitionManagerContext(ldapConfig, manager);
             partitionManagers.put(realm.getId(), context);
