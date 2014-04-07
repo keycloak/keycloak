@@ -5,15 +5,15 @@
     <meta charset="utf-8">
     <title>Keycloak Admin Console</title>
 
-    <link rel="icon" href="/auth/admin-ui/img/favicon.ico">
+    <link rel="icon" href="img/favicon.ico">
 
     <!-- Frameworks -->
-    <link rel="stylesheet" href="/auth/admin-ui/patternfly/css/patternfly.css">
+    <link rel="stylesheet" href="lib/patternfly/css/patternfly.css">
 
     <!-- Page styles -->
-    <link rel="stylesheet" href="/auth/admin-ui/css/admin-console.css">
-    <link rel="stylesheet" href="/auth/admin-ui/css/tables.css">
-    <link rel="stylesheet" href="/auth/admin-ui/css/sprites.css">
+    <link rel="stylesheet" href="css/admin-console.css">
+    <link rel="stylesheet" href="css/tables.css">
+    <link rel="stylesheet" href="css/sprites.css">
     <link href="lib/select2-3.4.1/select2.css" rel="stylesheet">
 
     <script src="lib/jquery/jquery-1.10.2.js" type="text/javascript"></script>
@@ -29,13 +29,13 @@
     <script src="lib/angular/select2.js" type="text/javascript"></script>
     <script src="lib/fileupload/angular-file-upload.min.js"></script>
 
-    <script src="js/app.js"></script>
-    <script src="js/controllers/realm.js"></script>
-    <script src="js/controllers/applications.js"></script>
-    <script src="js/controllers/oauth-clients.js"></script>
-    <script src="js/controllers/users.js"></script>
-    <script src="js/loaders.js"></script>
-    <script src="js/services.js"></script>
+    <script src="js/app.js" type="text/javascript"></script>
+    <script src="js/controllers/realm.js" type="text/javascript"></script>
+    <script src="js/controllers/applications.js" type="text/javascript"></script>
+    <script src="js/controllers/oauth-clients.js" type="text/javascript"></script>
+    <script src="js/controllers/users.js" type="text/javascript"></script>
+    <script src="js/loaders.js" type="text/javascript"></script>
+    <script src="js/services.js" type="text/javascript"></script>
 
     <style>
         [ng\:cloak], [ng-cloak], .ng-cloak {
@@ -83,12 +83,12 @@
     $.idleTimeout('#idletimeout', '#idletimeout a', {
         idleAfter: 300,
         pollingInterval: 60,
-        keepAliveURL: '/auth/rest/admin/keepalive',
+        keepAliveURL: authUrl + '/rest/admin/keepalive',
         serverResponseEquals: '',
         failedRequests: 1,
         onTimeout: function(){
             $(this).slideUp();
-            window.location = "/auth/rest/admin/logout";
+            window.location = authUrl + '/rest/admin/logout';
         },
         onIdle: function(){
             $(this).slideDown(); // show the warning bar

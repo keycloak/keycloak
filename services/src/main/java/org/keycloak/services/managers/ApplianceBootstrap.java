@@ -26,12 +26,12 @@ public class ApplianceBootstrap {
 
     private static final Logger logger = Logger.getLogger(ApplianceBootstrap.class);
 
-    public void bootstrap(KeycloakSessionFactory factory) {
+    public void bootstrap(KeycloakSessionFactory factory, String contextPath) {
         KeycloakSession session = factory.createSession();
         session.getTransaction().begin();
 
         try {
-            bootstrap(session);
+            bootstrap(session, contextPath);
             session.getTransaction().commit();
         } finally {
             session.close();
@@ -39,7 +39,7 @@ public class ApplianceBootstrap {
 
     }
 
-    public void bootstrap(KeycloakSession session) {
+    public void bootstrap(KeycloakSession session, String contextPath) {
         if (session.getRealm(Config.getAdminRealm()) != null) {
             return;
         }
@@ -64,7 +64,7 @@ public class ApplianceBootstrap {
         realm.setAuthenticationProviders(Arrays.asList(AuthenticationProviderModel.DEFAULT_PROVIDER));
 
         ApplicationModel adminConsole = new ApplicationManager(manager).createApplication(realm, Constants.ADMIN_CONSOLE_APPLICATION);
-        adminConsole.setBaseUrl("/auth/admin/index.html");
+        adminConsole.setBaseUrl(contextPath + "/admin/index.html");
         adminConsole.setEnabled(true);
 
         realm.setAuditListeners(Collections.singleton("jboss-logging"));

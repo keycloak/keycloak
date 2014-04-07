@@ -34,7 +34,7 @@ public class AbstractModelTest {
         identitySession.getTransaction().begin();
         realmManager = new RealmManager(identitySession);
 
-        new ApplianceBootstrap().bootstrap(identitySession);
+        new ApplianceBootstrap().bootstrap(identitySession, "/auth");
     }
 
     @After

@@ -61,7 +61,7 @@ public class KeycloakApplication extends Application {
         classes.add(QRCodeResource.class);
         classes.add(ThemeResource.class);
 
-        setupDefaultRealm();
+        setupDefaultRealm(context.getContextPath());
     }
 
     public String getContextPath() {
@@ -78,8 +78,8 @@ public class KeycloakApplication extends Application {
         return uriInfo.getBaseUriBuilder().replacePath(getContextPath()).build();
     }
 
-    protected void setupDefaultRealm() {
-        new ApplianceBootstrap().bootstrap(factory);
+    protected void setupDefaultRealm(String contextPath) {
+        new ApplianceBootstrap().bootstrap(factory, contextPath);
     }
 
 

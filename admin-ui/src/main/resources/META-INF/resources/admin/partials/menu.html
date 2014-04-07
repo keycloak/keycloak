@@ -19,8 +19,8 @@
 		                    {{auth.user.displayName}}<b class="caret"></b>
 		                </a>
 		                <ul class="dropdown-menu">
-		                    <li><a href="/auth/rest/realms/{{auth.user.realm}}/account?referrer=admin-console">Manage Account</a></li>
-		                    <li class="separator"><a href="/auth/rest/admin/logout">Sign Out</a></li>
+		                    <li><a href="{{authUrl}}/rest/realms/{{auth.user.realm}}/account?referrer=admin-console">Manage Account</a></li>
+		                    <li class="separator"><a href="{{authUrl}}/rest/admin/logout">Sign Out</a></li>
 		                </ul>
 		            </li>
 		        </ul>

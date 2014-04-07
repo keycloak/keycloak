@@ -244,7 +244,7 @@ public class AdminService {
     }
 
     public static UriBuilder saasCookiePath(UriInfo uriInfo) {
-        return contextRoot(uriInfo).path("rest").path(AdminService.class);
+        return UriBuilder.fromUri(uriInfo.getBaseUri()).path(AdminService.class);
     }
 
     @Path("realms")
@@ -366,7 +366,7 @@ public class AdminService {
             logger.debug("loginRedirect SUCCESS");
             NewCookie cookie = authManager.createCookie(adminRealm, adminConsole, code, AdminService.saasCookiePath(uriInfo).build());
 
-            URI redirectUri = contextRoot(uriInfo).path(adminPath).build();
+            URI redirectUri = UriBuilder.fromUri(uriInfo.getBaseUri()).path("../").path(adminPath).build();
             if (path != null) {
                 redirectUri = redirectUri.resolve("#" + UriBuilder.fromPath(path).build().toString());
             }
