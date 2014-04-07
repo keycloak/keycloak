@@ -51,6 +51,13 @@ public class KeycloakDeploymentBuilder {
         deployment.setPublicClient(adapterConfig.isPublicClient());
         deployment.setUseResourceRoleMappings(adapterConfig.isUseResourceRoleMappings());
 
+        if (adapterConfig.isCors()) {
+            deployment.setCors(true);
+            deployment.setCorsMaxAge(adapterConfig.getCorsMaxAge());
+            deployment.setCorsAllowedHeaders(adapterConfig.getCorsAllowedHeaders());
+            deployment.setCorsAllowedMethods(adapterConfig.getCorsAllowedMethods());
+        }
+
         if (adapterConfig.isBearerOnly()) {
             deployment.setBearerOnly(true);
             return deployment;
@@ -72,13 +79,6 @@ public class KeycloakDeploymentBuilder {
         deployment.setRefreshUrl(refreshUrl);
         deployment.setLogoutUrl(KeycloakUriBuilder.fromUri(logoutUrl));
         deployment.setAccountUrl(accountUrl);
-
-        if (adapterConfig.isCors()) {
-            deployment.setCors(true);
-            deployment.setCorsMaxAge(adapterConfig.getCorsMaxAge());
-            deployment.setCorsAllowedHeaders(adapterConfig.getCorsAllowedHeaders());
-            deployment.setCorsAllowedMethods(adapterConfig.getCorsAllowedMethods());
-        }
 
         return deployment;
     }
