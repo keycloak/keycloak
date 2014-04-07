@@ -1185,6 +1185,28 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public boolean isAuditEnabled() {
+        return realm.isAuditEnabled();
+    }
+
+    @Override
+    public void setAuditEnabled(boolean enabled) {
+        realm.setAuditEnabled(enabled);
+        em.flush();
+    }
+
+    @Override
+    public long getAuditExpiration() {
+        return realm.getAuditExpiration();
+    }
+
+    @Override
+    public void setAuditExpiration(long expiration) {
+        realm.setAuditExpiration(expiration);
+        em.flush();
+    }
+
+    @Override
     public Set<String> getAuditListeners() {
         return realm.getAuditListeners();
     }

@@ -334,41 +334,56 @@ public class AccountTest {
 
     @Test
     public void viewLog() {
-        List<Event> e = new LinkedList<Event>();
+        keycloakRule.configure(new KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                appRealm.setAuditEnabled(true);
+            }
+        });
 
-        loginPage.open();
-        loginPage.clickRegister();
+        try {
+            List<Event> e = new LinkedList<Event>();
 
-        registerPage.register("view", "log", "view-log@localhost", "view-log", "password", "password");
+            loginPage.open();
+            loginPage.clickRegister();
 
-        e.add(events.poll());
-        e.add(events.poll());
+            registerPage.register("view", "log", "view-log@localhost", "view-log", "password", "password");
 
-        profilePage.open();
-        profilePage.updateProfile("view", "log2", "view-log@localhost");
+            e.add(events.poll());
+            e.add(events.poll());
 
-        e.add(events.poll());
+            profilePage.open();
+            profilePage.updateProfile("view", "log2", "view-log@localhost");
 
-        logPage.open();
+            e.add(events.poll());
 
-        e.add(events.poll());
+            logPage.open();
 
-        Collections.reverse(e);
+            e.add(events.poll());
 
-        Assert.assertTrue(logPage.isCurrent());
+            Collections.reverse(e);
 
-        List<List<String>> actual = logPage.getEvents();
+            Assert.assertTrue(logPage.isCurrent());
 
-        Assert.assertEquals(e.size(), actual.size());
+            List<List<String>> actual = logPage.getEvents();
 
-        Iterator<List<String>> itr = actual.iterator();
-        for (Event event : e) {
-            List<String> a = itr.next();
-            Assert.assertEquals(event.getEvent().replace('_', ' '), a.get(1));
-            Assert.assertEquals(event.getIpAddress(), a.get(2));
-            Assert.assertEquals(event.getClientId(), a.get(3));
+            Assert.assertEquals(e.size(), actual.size());
+
+            Iterator<List<String>> itr = actual.iterator();
+            for (Event event : e) {
+                List<String> a = itr.next();
+                Assert.assertEquals(event.getEvent().replace('_', ' '), a.get(1));
+                Assert.assertEquals(event.getIpAddress(), a.get(2));
+                Assert.assertEquals(event.getClientId(), a.get(3));
+            }
+        } finally {
+            keycloakRule.configure(new KeycloakSetup() {
+                @Override
+                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                    appRealm.setAuditEnabled(false);
+                }
+            });
         }
-
     }
 
 }

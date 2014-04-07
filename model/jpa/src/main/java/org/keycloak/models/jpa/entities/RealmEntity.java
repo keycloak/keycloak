@@ -99,8 +99,11 @@ public class RealmEntity {
     @JoinTable(name="RealmDefaultRoles")
     Collection<RoleEntity> defaultRoles = new ArrayList<RoleEntity>();
 
+    private boolean auditEnabled;
+    private long auditExpiration;
+
     @ElementCollection
-    protected Set<String> auditListeners= new HashSet<String>();
+    private Set<String> auditListeners= new HashSet<String>();
 
     public String getId() {
         return id;
@@ -347,6 +350,22 @@ public class RealmEntity {
 
     public void setBruteForceProtected(boolean bruteForceProtected) {
         this.bruteForceProtected = bruteForceProtected;
+    }
+
+    public boolean isAuditEnabled() {
+        return auditEnabled;
+    }
+
+    public void setAuditEnabled(boolean auditEnabled) {
+        this.auditEnabled = auditEnabled;
+    }
+
+    public long getAuditExpiration() {
+        return auditExpiration;
+    }
+
+    public void setAuditExpiration(long auditExpiration) {
+        this.auditExpiration = auditExpiration;
     }
 
     public Set<String> getAuditListeners() {

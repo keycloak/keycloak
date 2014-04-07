@@ -13,6 +13,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.AuthenticationProviderRepresentation;
 import org.keycloak.representations.idm.ClaimRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.RealmAuditRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -20,6 +21,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -120,6 +122,20 @@ public class ModelToRepresentation {
                 authProviderReps.add(authProvRep);
             }
             rep.setAuthenticationProviders(authProviderReps);
+        }
+        return rep;
+    }
+
+    public static RealmAuditRepresentation toAuditReprensetation(RealmModel realm) {
+        RealmAuditRepresentation rep = new RealmAuditRepresentation();
+        rep.setAuditEnabled(realm.isAuditEnabled());
+
+        if (realm.getAuditExpiration() != 0) {
+            rep.setAuditExpiration(realm.getAuditExpiration());
+        }
+
+        if (realm.getAuditListeners() != null) {
+            rep.setAuditListeners(new LinkedList<String>(realm.getAuditListeners()));
         }
         return rep;
     }

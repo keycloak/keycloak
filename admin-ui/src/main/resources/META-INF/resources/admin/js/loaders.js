@@ -47,6 +47,14 @@ module.factory('RealmLoader', function(Loader, Realm, $route, $q) {
 	});
 });
 
+module.factory('RealmAuditLoader', function(Loader, RealmAudit, $route, $q) {
+    return Loader.get(RealmAudit, function() {
+        return {
+            id : $route.current.params.realm
+        }
+    });
+});
+
 module.factory('UserListLoader', function(Loader, User, $route, $q) {
     return Loader.query(User, function() {
         return {

@@ -208,6 +208,14 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
 
     boolean removeRoleById(String id);
 
+    boolean isAuditEnabled();
+
+    void setAuditEnabled(boolean enabled);
+
+    long getAuditExpiration();
+
+    void setAuditExpiration(long expiration);
+
     Set<String> getAuditListeners();
 
     void setAuditListeners(Set<String> listeners);

@@ -1142,6 +1142,28 @@ public class RealmAdapter extends AbstractMongoAdapter<RealmEntity> implements R
     }
 
     @Override
+    public boolean isAuditEnabled() {
+        return realm.isAuditEnabled();
+    }
+
+    @Override
+    public void setAuditEnabled(boolean enabled) {
+        realm.setAuditEnabled(enabled);
+        updateRealm();
+    }
+
+    @Override
+    public long getAuditExpiration() {
+        return realm.getAuditExpiration();
+    }
+
+    @Override
+    public void setAuditExpiration(long expiration) {
+        realm.setAuditExpiration(expiration);
+        updateRealm();
+    }
+
+    @Override
     public Set<String> getAuditListeners() {
         return new HashSet<String>(realm.getAuditListeners());
     }

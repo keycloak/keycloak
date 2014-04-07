@@ -1,5 +1,6 @@
 package org.keycloak.audit.mongo;
 
+import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
@@ -27,13 +28,16 @@ public class MongoAuditProvider implements AuditProvider {
     }
 
     @Override
-    public void clear() {
-        audit.remove(new BasicDBObject());
+    public void clear(String realmId) {
+        audit.remove(new BasicDBObject("realmId", realmId));
     }
 
     @Override
-    public void clear(long olderThan) {
-        audit.remove(new BasicDBObject("time", new BasicDBObject("$lt", olderThan)));
+    public void clear(String realmId, long olderThan) {
+        BasicDBObject q = new BasicDBObject();
+        q.put("realmId", realmId);
+        q.put("time", new BasicDBObject("$lt", olderThan));
+        audit.remove(q);
     }
 
     @Override

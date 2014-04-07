@@ -1022,7 +1022,65 @@ module.controller('RealmAuthSettingsDetailCtrl', function($scope, $routeParams, 
     };
 });
 
-module.controller('RealmAuditCtrl', function($scope, RealmAudit, realm) {
+module.controller('RealmAuditCtrl', function($scope, auditConfig, RealmAudit, RealmAuditEvents, realm, serverInfo, $location, Notifications, TimeUnit, Dialog) {
+    $scope.realm = realm;
+
+    $scope.auditConfig = auditConfig;
+
+    $scope.auditConfig.expirationUnit = TimeUnit.autoUnit(auditConfig.auditExpiration);
+    if ($scope.auditConfig.expirationUnit) {
+        $scope.auditConfig.expirationUnit = 'Hours';
+    }
+
+    $scope.auditConfig.auditExpiration = TimeUnit.toUnit(auditConfig.auditExpiration, $scope.auditConfig.expirationUnit);
+    $scope.$watch('auditConfig.expirationUnit', function(to, from) {
+        if ($scope.auditConfig.auditExpiration) {
+            $scope.auditConfig.auditExpiration = TimeUnit.convert($scope.auditConfig.auditExpiration, from, to);
+        }
+    });
+
+    $scope.auditListeners = serverInfo.auditListeners;
+
+    var oldCopy = angular.copy($scope.auditConfig);
+    $scope.changed = false;
+
+    $scope.$watch('auditConfig', function() {
+        if (!angular.equals($scope.auditConfig, oldCopy)) {
+            $scope.changed = true;
+        }
+    }, true);
+
+    $scope.save = function() {
+        $scope.changed = false;
+
+        var copy = angular.copy($scope.auditConfig)
+        delete copy['expirationUnit'];
+
+        copy.auditExpiration = TimeUnit.toSeconds($scope.auditConfig.auditExpiration, $scope.auditConfig.expirationUnit);
+
+        RealmAudit.update({
+            id : realm.realm
+        }, copy, function () {
+            $location.url("/realms/" + realm.realm + "/audit-settings");
+            Notifications.success("Your changes have been saved to the realm.");
+        });
+    };
+
+    $scope.reset = function() {
+        $scope.auditConfig = angular.copy(oldCopy);
+        $scope.changed = false;
+    };
+
+    $scope.clearAudit = function() {
+        Dialog.confirmDelete($scope.realm.realm, 'audit events', function() {
+            RealmAuditEvents.remove({ id : $scope.realm.realm }, function() {
+                Notifications.success("The audit events has been cleared.");
+            });
+        });
+    };
+});
+
+module.controller('RealmAuditEventsCtrl', function($scope, RealmAuditEvents, realm) {
     $scope.realm = realm;
     $scope.page = 0;
 
@@ -1038,8 +1096,7 @@ module.controller('RealmAuditCtrl', function($scope, RealmAudit, realm) {
                 delete $scope.query[i];
            }
         }
-        console.debug($scope.query.first);
-        $scope.events = RealmAudit.query($scope.query);
+        $scope.events = RealmAuditEvents.query($scope.query);
     }
 
     $scope.firstPage = function() {

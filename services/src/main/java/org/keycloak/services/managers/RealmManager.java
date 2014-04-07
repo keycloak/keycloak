@@ -24,6 +24,7 @@ import org.keycloak.representations.idm.AuthenticationLinkRepresentation;
 import org.keycloak.representations.idm.AuthenticationProviderRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
+import org.keycloak.representations.idm.RealmAuditRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.ScopeMappingRepresentation;
@@ -39,6 +40,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -163,6 +165,14 @@ public class RealmManager {
 
         if ("GENERATE".equals(rep.getPublicKey())) {
             generateRealmKeys(realm);
+        }
+    }
+
+    public void updateRealmAudit(RealmAuditRepresentation rep, RealmModel realm) {
+        realm.setAuditEnabled(rep.isAuditEnabled());
+        realm.setAuditExpiration(rep.getAuditExpiration());
+        if (rep.getAuditListeners() != null) {
+            realm.setAuditListeners(new HashSet<String>(rep.getAuditListeners()));
         }
     }
 
