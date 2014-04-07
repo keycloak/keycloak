@@ -141,6 +141,21 @@ module.config([ '$routeProvider', function($routeProvider) {
                     return RealmLoader();
                 }
             },
+            controller : 'RealmAuditEventsCtrl'
+        })
+        .when('/realms/:realm/audit-settings', {
+            templateUrl : 'partials/realm-audit-config.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                },
+                auditConfig : function(RealmAuditLoader) {
+                    return RealmAuditLoader();
+                }
+            },
             controller : 'RealmAuditCtrl'
         })
         .when('/realms/:realm/auth-settings', {

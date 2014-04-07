@@ -1,23 +1,30 @@
 package org.keycloak.services.resources.admin;
 
+import org.keycloak.audit.AuditListener;
 import org.keycloak.freemarker.Theme;
 import org.keycloak.freemarker.ThemeProvider;
+import org.keycloak.services.ProviderSession;
 import org.keycloak.social.SocialProvider;
 import org.keycloak.spi.authentication.AuthenticationProvider;
 import org.keycloak.spi.authentication.AuthenticationProviderManager;
 import org.keycloak.util.ProviderLoader;
 
 import javax.ws.rs.GET;
+import javax.ws.rs.core.Context;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class ServerInfoAdminResource {
+
+    @Context
+    private ProviderSession providers;
 
     @GET
     public ServerInfoRepresentation getInfo() {
@@ -25,6 +32,7 @@ public class ServerInfoAdminResource {
         setSocialProviders(info);
         setThemes(info);
         setAuthProviders(info);
+        setAuditListeners(info);
         return info;
     }
 
@@ -57,6 +65,15 @@ public class ServerInfoAdminResource {
         }
     }
 
+    private void setAuditListeners(ServerInfoRepresentation info) {
+        info.auditListeners = new LinkedList<String>();
+
+        Set<String> providers = this.providers.listProviderIds(AuditListener.class);
+        if (providers != null) {
+            info.auditListeners.addAll(providers);
+        }
+    }
+
     public static class ServerInfoRepresentation {
 
         private Map<String, List<String>> themes;
@@ -64,6 +81,8 @@ public class ServerInfoAdminResource {
         private List<String> socialProviders;
 
         private Map<String, List<String>> authProviders;
+
+        private List<String> auditListeners;
 
         public ServerInfoRepresentation() {
         }
@@ -78,6 +97,10 @@ public class ServerInfoAdminResource {
 
         public Map<String, List<String>> getAuthProviders() {
             return authProviders;
+        }
+
+        public List<String> getAuditListeners() {
+            return auditListeners;
         }
     }
 

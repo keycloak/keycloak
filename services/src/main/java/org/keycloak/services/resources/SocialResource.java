@@ -40,6 +40,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.ClientConnection;
 import org.keycloak.services.ProviderSession;
+import org.keycloak.services.managers.AuditManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.SocialRequestManager;
@@ -129,7 +130,7 @@ public class SocialResource {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = realmManager.getRealmByName(realmName);
 
-        Audit audit = createAudit(realm)
+        Audit audit = new AuditManager(realm, providers, clientConnection).createAudit()
                 .event(Events.LOGIN)
                 .detail(Details.RESPONSE_TYPE, "code")
                 .detail(Details.AUTH_METHOD, "social@" + provider.getId());
@@ -268,7 +269,7 @@ public class SocialResource {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = realmManager.getRealmByName(realmName);
 
-        Audit audit = createAudit(realm)
+        Audit audit = new AuditManager(realm, providers, clientConnection).createAudit()
                 .event(Events.LOGIN).client(clientId)
                 .detail(Details.REDIRECT_URI, redirectUri)
                 .detail(Details.RESPONSE_TYPE, "code")
@@ -333,26 +334,6 @@ public class SocialResource {
             queryParams.put(e.getKey(), e.getValue().toArray(new String[e.getValue().size()]));
         }
         return queryParams;
-    }
-
-    private Audit createAudit(RealmModel realm) {
-        List<AuditListener> listeners = new LinkedList<AuditListener>();
-
-        AuditProvider auditProvider = providers.getProvider(AuditProvider.class);
-        if (auditProvider != null) {
-            listeners.add(auditProvider);
-        }
-
-        if (realm.getAuditListeners() != null) {
-            for (String id : realm.getAuditListeners()) {
-                AuditListener listener = providers.getProvider(AuditListener.class, id);
-                if (listener != null) {
-                    listeners.add(listener);
-                }
-            }
-        }
-
-        return new Audit(listeners, realm, clientConnection.getRemoteAddr());
     }
 
 }

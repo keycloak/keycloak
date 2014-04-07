@@ -57,6 +57,8 @@ public class RealmEntity extends AbstractMongoIdentifiableEntity implements Mong
     private Map<String, String> socialConfig = new HashMap<String, String>();
     private Map<String, String> ldapServerConfig;
 
+    private boolean auditEnabled;
+    private long auditExpiration;
     private List<String> auditListeners = new ArrayList<String>();
 
     @MongoField
@@ -300,6 +302,24 @@ public class RealmEntity extends AbstractMongoIdentifiableEntity implements Mong
 
     public void setLdapServerConfig(Map<String, String> ldapServerConfig) {
         this.ldapServerConfig = ldapServerConfig;
+    }
+
+    @MongoField
+    public boolean isAuditEnabled() {
+        return auditEnabled;
+    }
+
+    public void setAuditEnabled(boolean auditEnabled) {
+        this.auditEnabled = auditEnabled;
+    }
+
+    @MongoField
+    public long getAuditExpiration() {
+        return auditExpiration;
+    }
+
+    public void setAuditExpiration(long auditExpiration) {
+        this.auditExpiration = auditExpiration;
     }
 
     @MongoField

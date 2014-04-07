@@ -9,6 +9,7 @@ import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.adapters.action.SessionStats;
+import org.keycloak.representations.idm.RealmAuditRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.ProviderSession;
 import org.keycloak.services.managers.ModelToRepresentation;
@@ -148,7 +149,26 @@ public class RealmAdminResource {
         return stats;
     }
 
+    @GET
     @Path("audit")
+    @Produces("application/json")
+    public RealmAuditRepresentation getRealmAudit() {
+        auth.init(RealmAuth.Resource.AUDIT).requireView();
+
+        return ModelToRepresentation.toAuditReprensetation(realm);
+    }
+
+    @PUT
+    @Path("audit")
+    @Consumes("application/json")
+    public void updateRealmAudit(final RealmAuditRepresentation rep) {
+        auth.init(RealmAuth.Resource.AUDIT).requireManage();
+
+        logger.debug("updating realm audit: " + realm.getName());
+        new RealmManager(session).updateRealmAudit(rep, realm);
+    }
+
+    @Path("audit/events")
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
@@ -181,4 +201,12 @@ public class RealmAdminResource {
         return query.getResultList();
     }
 
+    @Path("audit/events")
+    @DELETE
+    public void clearAudit() {
+        auth.init(RealmAuth.Resource.AUDIT).requireManage();
+
+        AuditProvider audit = providers.getProvider(AuditProvider.class);
+        audit.clear(realm.getId());
+    }
 }

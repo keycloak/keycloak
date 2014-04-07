@@ -34,7 +34,8 @@ public abstract class AbstractAuditProviderTest {
 
     @After
     public void after() {
-        provider.clear();
+        provider.clear("realmId");
+        provider.clear("realmId2");
         provider.close();
         factory.close();
     }
@@ -51,6 +52,7 @@ public abstract class AbstractAuditProviderTest {
 
         provider.onEvent(create("event", "realmId", "clientId", "userId", "127.0.0.1", "error"));
         provider.onEvent(create(newest, "event2", "realmId", "clientId", "userId", "127.0.0.1", "error"));
+        provider.onEvent(create(newest, "event2", "realmId", "clientId", "userId2", "127.0.0.1", "error"));
         provider.onEvent(create("event", "realmId2", "clientId", "userId", "127.0.0.1", "error"));
         provider.onEvent(create(oldest, "event", "realmId", "clientId2", "userId", "127.0.0.1", "error"));
         provider.onEvent(create("event", "realmId", "clientId", "userId2", "127.0.0.1", "error"));
@@ -58,19 +60,19 @@ public abstract class AbstractAuditProviderTest {
         provider.close();
         provider = factory.create();
 
-        Assert.assertEquals(4, provider.createQuery().client("clientId").getResultList().size());
-        Assert.assertEquals(4, provider.createQuery().realm("realmId").getResultList().size());
+        Assert.assertEquals(5, provider.createQuery().client("clientId").getResultList().size());
+        Assert.assertEquals(5, provider.createQuery().realm("realmId").getResultList().size());
         Assert.assertEquals(4, provider.createQuery().event("event").getResultList().size());
-        Assert.assertEquals(5, provider.createQuery().event("event", "event2").getResultList().size());
+        Assert.assertEquals(6, provider.createQuery().event("event", "event2").getResultList().size());
         Assert.assertEquals(4, provider.createQuery().user("userId").getResultList().size());
 
         Assert.assertEquals(1, provider.createQuery().user("userId").event("event2").getResultList().size());
 
         Assert.assertEquals(2, provider.createQuery().maxResults(2).getResultList().size());
-        Assert.assertEquals(1, provider.createQuery().firstResult(4).getResultList().size());
+        Assert.assertEquals(1, provider.createQuery().firstResult(5).getResultList().size());
 
         Assert.assertEquals(newest, provider.createQuery().maxResults(1).getResultList().get(0).getTime());
-        Assert.assertEquals(oldest, provider.createQuery().firstResult(4).maxResults(1).getResultList().get(0).getTime());
+        Assert.assertEquals(oldest, provider.createQuery().firstResult(5).maxResults(1).getResultList().get(0).getTime());
     }
 
     @Test
@@ -79,13 +81,14 @@ public abstract class AbstractAuditProviderTest {
         provider.onEvent(create(System.currentTimeMillis() - 20000, "event", "realmId", "clientId", "userId", "127.0.0.1", "error"));
         provider.onEvent(create(System.currentTimeMillis(), "event", "realmId", "clientId", "userId", "127.0.0.1", "error"));
         provider.onEvent(create(System.currentTimeMillis(), "event", "realmId", "clientId", "userId", "127.0.0.1", "error"));
+        provider.onEvent(create(System.currentTimeMillis() - 30000, "event", "realmId2", "clientId", "userId", "127.0.0.1", "error"));
 
         provider.close();
         provider = factory.create();
 
-        provider.clear();
+        provider.clear("realmId");
 
-        Assert.assertEquals(0, provider.createQuery().getResultList().size());
+        Assert.assertEquals(1, provider.createQuery().getResultList().size());
     }
 
     @Test
@@ -94,13 +97,14 @@ public abstract class AbstractAuditProviderTest {
         provider.onEvent(create(System.currentTimeMillis() - 20000, "event", "realmId", "clientId", "userId", "127.0.0.1", "error"));
         provider.onEvent(create(System.currentTimeMillis(), "event", "realmId", "clientId", "userId", "127.0.0.1", "error"));
         provider.onEvent(create(System.currentTimeMillis(), "event", "realmId", "clientId", "userId", "127.0.0.1", "error"));
+        provider.onEvent(create(System.currentTimeMillis() - 30000, "event", "realmId2", "clientId", "userId", "127.0.0.1", "error"));
 
         provider.close();
         provider = factory.create();
 
-        provider.clear(System.currentTimeMillis() - 10000);
+        provider.clear("realmId", System.currentTimeMillis() - 10000);
 
-        Assert.assertEquals(2, provider.createQuery().getResultList().size());
+        Assert.assertEquals(3, provider.createQuery().getResultList().size());
     }
 
     private Event create(String event, String realmId, String clientId, String userId, String ipAddress, String error) {

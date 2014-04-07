@@ -29,15 +29,15 @@ public class JpaAuditProvider implements AuditProvider {
     }
 
     @Override
-    public void clear() {
+    public void clear(String realmId) {
         beginTx();
-        em.createQuery("delete from EventEntity").executeUpdate();
+        em.createQuery("delete from EventEntity where realmId = :realmId").setParameter("realmId", realmId).executeUpdate();
     }
 
     @Override
-    public void clear(long olderThan) {
+    public void clear(String realmId, long olderThan) {
         beginTx();
-        em.createQuery("delete from EventEntity where time < :time").setParameter("time", olderThan).executeUpdate();
+        em.createQuery("delete from EventEntity where realmId = :realmId and time < :time").setParameter("realmId", realmId).setParameter("time", olderThan).executeUpdate();
     }
 
     @Override

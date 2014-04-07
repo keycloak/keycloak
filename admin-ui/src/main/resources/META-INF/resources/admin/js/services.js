@@ -145,6 +145,16 @@ module.factory('Realm', function($resource) {
 module.factory('RealmAudit', function($resource) {
     return $resource(authUrl + '/rest/admin/realms/:id/audit', {
         id : '@realm'
+    }, {
+        update : {
+            method : 'PUT'
+        }
+    });
+});
+
+module.factory('RealmAuditEvents', function($resource) {
+    return $resource(authUrl + '/rest/admin/realms/:id/audit/events', {
+        id : '@realm'
     });
 });
 

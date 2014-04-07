@@ -1,6 +1,7 @@
 package org.keycloak.representations.idm;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -47,6 +48,9 @@ public class RealmRepresentation {
     protected List<AuthenticationProviderRepresentation> authenticationProviders;
     protected String loginTheme;
     protected String accountTheme;
+    protected boolean auditEnabled;
+    protected long auditExpiration;
+    protected List<String> auditListeners;
 
     public String getSelf() {
         return self;
