@@ -319,8 +319,6 @@ public class KeycloakServer {
                 File file;
                 if (path.startsWith("/admin/")) {
                     file = file(resourcesHome, "admin-ui", "src", "main", "resources", "META-INF", "resources", path.replace('/', File.separatorChar));
-                } else if (path.startsWith("/admin-ui/")) {
-                    file = file(resourcesHome, "admin-ui-styles", "src", "main", "resources", "META-INF", "resources", path.replace('/', File.separatorChar));
                 } else if (path.startsWith("/js/")) {
                     file = file(resourcesHome, "integration", "js", "src", "main", "resources", "META-INF", "resources", path.replace('/', File.separatorChar));
                 } else {
