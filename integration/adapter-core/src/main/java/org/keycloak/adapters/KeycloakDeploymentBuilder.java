@@ -73,6 +73,13 @@ public class KeycloakDeploymentBuilder {
         deployment.setLogoutUrl(KeycloakUriBuilder.fromUri(logoutUrl));
         deployment.setAccountUrl(accountUrl);
 
+        if (adapterConfig.isCors()) {
+            deployment.setCors(true);
+            deployment.setCorsMaxAge(adapterConfig.getCorsMaxAge());
+            deployment.setCorsAllowedHeaders(adapterConfig.getCorsAllowedHeaders());
+            deployment.setCorsAllowedMethods(adapterConfig.getCorsAllowedMethods());
+        }
+
         return deployment;
     }
 
