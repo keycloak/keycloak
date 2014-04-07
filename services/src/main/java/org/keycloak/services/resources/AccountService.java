@@ -35,6 +35,8 @@ import org.keycloak.audit.Events;
 import org.keycloak.jaxrs.JaxrsOAuthClient;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.AuthenticationLinkModel;
+import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
@@ -143,12 +145,21 @@ public class AccountService {
     public void init() {
         auditProvider = providers.getProvider(AuditProvider.class);
 
-        account = AccountLoader.load().createAccount(uriInfo).setRealm(realm).setFeatures(realm.isSocial(), auditProvider != null);
+        account = AccountLoader.load().createAccount(uriInfo).setRealm(realm);
 
+        boolean passwordUpdateSupported = false;
         auth = authManager.authenticate(realm, headers);
         if (auth != null) {
             account.setUser(auth.getUser());
+
+            AuthenticationLinkModel authLinkModel = realm.getAuthenticationLink(auth.getUser());
+            if (authLinkModel != null) {
+                AuthenticationProviderModel authProviderModel = AuthenticationProviderManager.getConfiguredProviderModel(realm, authLinkModel.getAuthProvider());
+                passwordUpdateSupported = authProviderModel.isPasswordUpdateSupported();
+            }
         }
+
+        account.setFeatures(realm.isSocial(), auditProvider != null, passwordUpdateSupported);
     }
 
     public static UriBuilder accountServiceBaseUrl(UriInfo uriInfo) {

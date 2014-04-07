@@ -23,6 +23,7 @@ import org.keycloak.testsuite.pages.AccountPasswordPage;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.LDAPRule;
 import org.keycloak.testsuite.rule.WebResource;
@@ -83,6 +84,9 @@ public class AuthProvidersIntegrationTest {
     protected AppPage appPage;
 
     @WebResource
+    protected RegisterPage registerPage;
+
+    @WebResource
     protected LoginPage loginPage;
 
     @WebResource
@@ -111,6 +115,9 @@ public class AuthProvidersIntegrationTest {
 
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+
+        profilePage.open();
+        Assert.assertFalse(profilePage.isPasswordUpdateSupported());
     }
 
     @Test
@@ -120,6 +127,9 @@ public class AuthProvidersIntegrationTest {
 
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+
+        profilePage.open();
+        Assert.assertTrue(profilePage.isPasswordUpdateSupported());
     }
 
     @Test
@@ -131,6 +141,7 @@ public class AuthProvidersIntegrationTest {
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 
         profilePage.open();
+        Assert.assertTrue(profilePage.isPasswordUpdateSupported());
         Assert.assertEquals("John", profilePage.getFirstName());
         Assert.assertEquals("Doe", profilePage.getLastName());
         Assert.assertEquals("john@email.org", profilePage.getEmail());
@@ -189,6 +200,28 @@ public class AuthProvidersIntegrationTest {
 
         loginPage.open();
         loginPage.login("john", "new-password");
+        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+    }
+
+    @Test
+    public void registerExistingLdapUser() {
+        loginPage.open();
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
+
+        registerPage.register("firstName", "lastName", "email", "existing", "password", "password");
+
+        registerPage.assertCurrent();
+        Assert.assertEquals("Username already exists", registerPage.getError());
+    }
+
+    @Test
+    public void registerUserLdapSuccess() {
+        loginPage.open();
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
+
+        registerPage.register("firstName", "lastName", "email", "registerUserSuccess", "password", "password");
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
     }
 }

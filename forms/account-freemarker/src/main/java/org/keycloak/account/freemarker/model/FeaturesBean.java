@@ -7,10 +7,12 @@ public class FeaturesBean {
 
     private final boolean social;
     private final boolean log;
+    private final boolean passwordUpdateSupported;
 
-    public FeaturesBean(boolean social, boolean log) {
+    public FeaturesBean(boolean social, boolean log, boolean passwordUpdateSupported) {
         this.social = social;
         this.log = log;
+        this.passwordUpdateSupported = passwordUpdateSupported;
     }
 
     public boolean isSocial() {
@@ -21,4 +23,7 @@ public class FeaturesBean {
         return log;
     }
 
+    public boolean isPasswordUpdateSupported() {
+        return passwordUpdateSupported;
+    }
 }

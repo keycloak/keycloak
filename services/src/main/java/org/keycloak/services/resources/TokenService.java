@@ -383,13 +383,15 @@ public class TokenService {
             return Flows.forms(realm, request, uriInfo).setError(error).setFormData(formData).createRegistration();
         }
 
-        UserModel user = realm.getUser(username);
-        if (user != null) {
+        AuthenticationProviderManager authenticationProviderManager = AuthenticationProviderManager.getManager(realm);
+
+        // Validate that user with this username doesn't exist in realm or any authentication provider
+        if (realm.getUser(username) != null || authenticationProviderManager.getUser(username) != null) {
             audit.error(Errors.USERNAME_IN_USE);
             return Flows.forms(realm, request, uriInfo).setError(Messages.USERNAME_EXISTS).setFormData(formData).createRegistration();
         }
 
-        user = realm.addUser(username);
+        UserModel user = realm.addUser(username);
         user.setEnabled(true);
         user.setFirstName(formData.getFirst("firstName"));
         user.setLastName(formData.getFirst("lastName"));

@@ -44,6 +44,7 @@ public class FreeMarkerAccount implements Account {
     private List<Event> events;
     private boolean social;
     private boolean audit;
+    private boolean passwordUpdateSupported;
 
     public static enum MessageType {SUCCESS, WARNING, ERROR}
 
@@ -95,7 +96,7 @@ public class FreeMarkerAccount implements Account {
 
         attributes.put("url", new UrlBean(realm, theme, baseUri));
 
-        attributes.put("features", new FeaturesBean(social, audit));
+        attributes.put("features", new FeaturesBean(social, audit, passwordUpdateSupported));
 
         switch (page) {
             case ACCOUNT:
@@ -172,9 +173,10 @@ public class FreeMarkerAccount implements Account {
     }
 
     @Override
-    public Account setFeatures(boolean social, boolean audit) {
+    public Account setFeatures(boolean social, boolean audit, boolean passwordUpdateSupported) {
         this.social = social;
         this.audit = audit;
+        this.passwordUpdateSupported = passwordUpdateSupported;
         return this;
     }
 }

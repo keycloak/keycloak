@@ -14,6 +14,7 @@ import org.keycloak.spi.authentication.AuthenticationProvider;
 import org.keycloak.spi.authentication.AuthenticationProviderException;
 import org.keycloak.spi.picketlink.PartitionManagerProvider;
 import org.keycloak.util.ProviderLoader;
+import org.picketlink.idm.IdentityManagementException;
 import org.picketlink.idm.IdentityManager;
 import org.picketlink.idm.PartitionManager;
 import org.picketlink.idm.credential.Credentials;
@@ -44,25 +45,47 @@ public class PicketlinkAuthenticationProvider implements AuthenticationProvider 
     @Override
     public AuthUser getUser(RealmModel realm, Map<String, String> configuration, String username) throws AuthenticationProviderException {
         IdentityManager identityManager = getIdentityManager(realm);
-        User picketlinkUser = BasicModel.getUser(identityManager, username);
-        return picketlinkUser == null ? null : new AuthUser(picketlinkUser.getId(), picketlinkUser.getLoginName(), getName())
-                .setName(picketlinkUser.getFirstName(), picketlinkUser.getLastName())
-                .setEmail(picketlinkUser.getEmail())
-                .setProviderName(getName());
+
+        try {
+            User picketlinkUser = BasicModel.getUser(identityManager, username);
+            return picketlinkUser == null ? null : new AuthUser(picketlinkUser.getId(), picketlinkUser.getLoginName(), getName())
+                    .setName(picketlinkUser.getFirstName(), picketlinkUser.getLastName())
+                    .setEmail(picketlinkUser.getEmail())
+                    .setProviderName(getName());
+        } catch (IdentityManagementException ie) {
+            throw convertIDMException(ie);
+        }
+    }
+
+    @Override
+    public String registerUser(RealmModel realm, Map<String, String> configuration, String username) throws AuthenticationProviderException {
+        IdentityManager identityManager = getIdentityManager(realm);
+
+        try {
+            User picketlinkUser = new User(username);
+            identityManager.add(picketlinkUser);
+            return picketlinkUser.getId();
+        } catch (IdentityManagementException ie) {
+            throw convertIDMException(ie);
+        }
     }
 
     @Override
     public AuthProviderStatus validatePassword(RealmModel realm, Map<String, String> configuration, String username, String password) throws AuthenticationProviderException {
         IdentityManager identityManager = getIdentityManager(realm);
 
-        UsernamePasswordCredentials credential = new UsernamePasswordCredentials();
-        credential.setUsername(username);
-        credential.setPassword(new Password(password.toCharArray()));
-        identityManager.validateCredentials(credential);
-        if (credential.getStatus() == Credentials.Status.VALID) {
-            return AuthProviderStatus.SUCCESS;
-        } else {
-            return AuthProviderStatus.INVALID_CREDENTIALS;
+        try {
+            UsernamePasswordCredentials credential = new UsernamePasswordCredentials();
+            credential.setUsername(username);
+            credential.setPassword(new Password(password.toCharArray()));
+            identityManager.validateCredentials(credential);
+            if (credential.getStatus() == Credentials.Status.VALID) {
+                return AuthProviderStatus.SUCCESS;
+            } else {
+                return AuthProviderStatus.INVALID_CREDENTIALS;
+            }
+        } catch (IdentityManagementException ie) {
+            throw convertIDMException(ie);
         }
     }
 
@@ -70,14 +93,18 @@ public class PicketlinkAuthenticationProvider implements AuthenticationProvider 
     public boolean updateCredential(RealmModel realm, Map<String, String> configuration, String username, String password) throws AuthenticationProviderException {
         IdentityManager identityManager = getIdentityManager(realm);
 
-        User picketlinkUser = BasicModel.getUser(identityManager, username);
-        if (picketlinkUser == null) {
-            logger.debugf("User '%s' doesn't exists. Skip password update", username);
-            return false;
-        }
+        try {
+            User picketlinkUser = BasicModel.getUser(identityManager, username);
+            if (picketlinkUser == null) {
+                logger.debugf("User '%s' doesn't exists. Skip password update", username);
+                return false;
+            }
 
-        identityManager.updateCredential(picketlinkUser, new Password(password.toCharArray()));
-        return true;
+            identityManager.updateCredential(picketlinkUser, new Password(password.toCharArray()));
+            return true;
+        } catch (IdentityManagementException ie) {
+            throw convertIDMException(ie);
+        }
     }
 
     public IdentityManager getIdentityManager(RealmModel realm) throws AuthenticationProviderException {
@@ -102,5 +129,15 @@ public class PicketlinkAuthenticationProvider implements AuthenticationProvider 
             ResteasyProviderFactory.pushContext(IdentityManager.class, identityManager);
         }
         return identityManager;
+    }
+
+    private AuthenticationProviderException convertIDMException(IdentityManagementException ie) {
+        Throwable realCause = ie;
+        while (realCause.getCause() != null) {
+            realCause = realCause.getCause();
+        }
+
+        // Use the message from the realCause
+        return new AuthenticationProviderException(realCause.getMessage(), ie);
     }
 }
