@@ -29,13 +29,13 @@
     <script src="lib/angular/select2.js" type="text/javascript"></script>
     <script src="lib/fileupload/angular-file-upload.min.js"></script>
 
-    <script src="js/app.js"></script>
-    <script src="js/controllers/realm.js"></script>
-    <script src="js/controllers/applications.js"></script>
-    <script src="js/controllers/oauth-clients.js"></script>
-    <script src="js/controllers/users.js"></script>
-    <script src="js/loaders.js"></script>
-    <script src="js/services.js"></script>
+    <script src="js/app.js" type="text/javascript"></script>
+    <script src="js/controllers/realm.js" type="text/javascript"></script>
+    <script src="js/controllers/applications.js" type="text/javascript"></script>
+    <script src="js/controllers/oauth-clients.js" type="text/javascript"></script>
+    <script src="js/controllers/users.js" type="text/javascript"></script>
+    <script src="js/loaders.js" type="text/javascript"></script>
+    <script src="js/services.js" type="text/javascript"></script>
 
     <style>
         [ng\:cloak], [ng-cloak], .ng-cloak {
@@ -83,12 +83,12 @@
     $.idleTimeout('#idletimeout', '#idletimeout a', {
         idleAfter: 300,
         pollingInterval: 60,
-        keepAliveURL: '/auth/rest/admin/keepalive',
+        keepAliveURL: authUrl + '/rest/admin/keepalive',
         serverResponseEquals: '',
         failedRequests: 1,
         onTimeout: function(){
             $(this).slideUp();
-            window.location = "/auth/rest/admin/logout";
+            window.location = authUrl + '/rest/admin/logout';
         },
         onIdle: function(){
             $(this).slideDown(); // show the warning bar
