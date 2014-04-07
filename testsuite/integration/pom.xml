@@ -303,6 +303,11 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-audit-mongo</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>mongo-java-driver</artifactId>
         </dependency>
@@ -425,6 +430,12 @@
                                         <keycloak.mongo.host>${keycloak.mongo.host}</keycloak.mongo.host>
                                         <keycloak.mongo.port>${keycloak.mongo.port}</keycloak.mongo.port>
                                         <keycloak.mongo.db>${keycloak.mongo.db}</keycloak.mongo.db>
+
+                                        <keycloak.audit>mongo</keycloak.audit>
+                                        <keycloak.audit.host>${keycloak.mongo.host}</keycloak.audit.host>
+                                        <keycloak.audit.port>${keycloak.mongo.port}</keycloak.audit.port>
+                                        <keycloak.audit.db>${keycloak.mongo.db}</keycloak.audit.db>
+
                                         <keycloak.mongo.clearOnStartup>${keycloak.mongo.clearOnStartup}</keycloak.mongo.clearOnStartup>
                                     </systemPropertyVariables>
                                 </configuration>

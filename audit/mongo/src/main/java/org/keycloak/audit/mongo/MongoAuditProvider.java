@@ -56,8 +56,10 @@ public class MongoAuditProvider implements AuditProvider {
         e.put("error", o.getError());
 
         BasicDBObject details = new BasicDBObject();
-        for (Map.Entry<String, String> entry : o.getDetails().entrySet())  {
-            details.put(entry.getKey(), entry.getValue());
+        if (o.getDetails() != null) {
+            for (Map.Entry<String, String> entry : o.getDetails().entrySet()) {
+                details.put(entry.getKey(), entry.getValue());
+            }
         }
         e.put("details", details);
 
@@ -75,12 +77,14 @@ public class MongoAuditProvider implements AuditProvider {
         e.setError(o.getString("error"));
 
         BasicDBObject d = (BasicDBObject) o.get("details");
-        Map<String, String> details = new HashMap<String, String>();
-        for (Object k : d.keySet()) {
-            details.put((String) k, d.getString((String) k));
+        if (d != null) {
+            Map<String, String> details = new HashMap<String, String>();
+            for (Object k : d.keySet()) {
+                details.put((String) k, d.getString((String) k));
+            }
+            e.setDetails(details);
         }
 
-        e.setDetails(details);
         return e;
     }
 
