@@ -1,6 +1,7 @@
 package org.keycloak.models;
 
 import java.io.File;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -12,7 +13,9 @@ public class Config {
 
     public static final String MODEL_PROVIDER_KEY = "keycloak.model";
 
-    public static final String MODEL_AUDIT_KEY = "keycloak.audit";
+    public static final String AUDIT_KEY = "keycloak.audit";
+    public static final String AUDIT_EXPIRATION_SCHEDULE_KEY = "keycloak.audit.expirationSchedule";
+    public static final String AUDIT_EXPIRATION_SCHEDULE_DEFAULT = String.valueOf(TimeUnit.MINUTES.toMillis(15));
 
     public static final String THEME_BASE_KEY = "keycloak.theme.base";
     public static final String THEME_BASE_DEFAULT = "base";
@@ -20,6 +23,9 @@ public class Config {
     public static final String THEME_DEFAULT_DEFAULT = "keycloak";
     public static final String THEME_DIR_KEY = "keycloak.theme.dir";
     public static final String JBOSS_SERVER_CONFIG_DIR_KEY = "jboss.server.config.dir";
+
+    public static final String TIMER_PROVIDER_KEY = "keycloak.timer";
+    public static final String TIMER_PROVIDER_DEFAULT = "basic";
 
     public static String getAdminRealm() {
         return System.getProperty(ADMIN_REALM_KEY, ADMIN_REALM_DEFAULT);
@@ -30,11 +36,19 @@ public class Config {
     }
 
     public static String getAuditProvider() {
-        return System.getProperty(MODEL_PROVIDER_KEY, "jpa");
+        return System.getProperty(AUDIT_KEY);
     }
 
     public static void setAuditProvider(String provider) {
         System.setProperty(MODEL_PROVIDER_KEY, provider);
+    }
+
+    public static String getAuditExpirationSchedule() {
+        return System.getProperty(AUDIT_EXPIRATION_SCHEDULE_KEY, AUDIT_EXPIRATION_SCHEDULE_DEFAULT);
+    }
+
+    public static void setAuditExpirationSchedule(String schedule) {
+        System.setProperty(AUDIT_EXPIRATION_SCHEDULE_KEY, schedule);
     }
 
     public static String getModelProvider() {
@@ -43,6 +57,14 @@ public class Config {
 
     public static void setModelProvider(String provider) {
         System.setProperty(MODEL_PROVIDER_KEY, provider);
+    }
+
+    public static String getTimerProvider() {
+        return System.getProperty(TIMER_PROVIDER_KEY, TIMER_PROVIDER_DEFAULT);
+    }
+
+    public static void setTimerProvider(String provider) {
+        System.setProperty(TIMER_PROVIDER_KEY, provider);
     }
 
     public static String getThemeDir() {

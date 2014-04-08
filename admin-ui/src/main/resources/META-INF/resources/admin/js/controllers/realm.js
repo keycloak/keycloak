@@ -1028,10 +1028,6 @@ module.controller('RealmAuditCtrl', function($scope, auditConfig, RealmAudit, Re
     $scope.auditConfig = auditConfig;
 
     $scope.auditConfig.expirationUnit = TimeUnit.autoUnit(auditConfig.auditExpiration);
-    if ($scope.auditConfig.expirationUnit) {
-        $scope.auditConfig.expirationUnit = 'Hours';
-    }
-
     $scope.auditConfig.auditExpiration = TimeUnit.toUnit(auditConfig.auditExpiration, $scope.auditConfig.expirationUnit);
     $scope.$watch('auditConfig.expirationUnit', function(to, from) {
         if ($scope.auditConfig.auditExpiration) {

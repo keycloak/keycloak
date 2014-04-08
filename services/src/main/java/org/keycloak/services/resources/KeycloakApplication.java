@@ -7,11 +7,16 @@ import org.keycloak.audit.AuditListenerFactory;
 import org.keycloak.audit.AuditProvider;
 import org.keycloak.audit.AuditProviderFactory;
 import org.keycloak.models.Config;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ModelProvider;
+import org.keycloak.models.RealmModel;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.ProviderFactoryLoader;
 import org.keycloak.services.DefaultProviderSessionFactory;
 import org.keycloak.services.ProviderSessionFactory;
+import org.keycloak.timer.TimerProvider;
+import org.keycloak.timer.TimerProviderFactory;
 import org.keycloak.util.KeycloakRegistry;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.SocialRequestManager;
@@ -24,6 +29,7 @@ import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -49,7 +55,9 @@ public class KeycloakApplication extends Application {
         context.setAttribute(KeycloakRegistry.class.getName(), registry);
         //classes.add(KeycloakSessionCleanupFilter.class);
 
-        context.setAttribute(ProviderSessionFactory.class.getName(), createProviderSessionFactory());
+        DefaultProviderSessionFactory providerSessionFactory = createProviderSessionFactory();
+
+        context.setAttribute(ProviderSessionFactory.class.getName(), providerSessionFactory);
 
         TokenManager tokenManager = new TokenManager();
         SocialRequestManager socialRequestManager = new SocialRequestManager();
@@ -62,6 +70,8 @@ public class KeycloakApplication extends Application {
         classes.add(ThemeResource.class);
 
         setupDefaultRealm(context.getContextPath());
+
+        setupScheduledTasks(providerSessionFactory, factory);
     }
 
     public String getContextPath() {
@@ -99,8 +109,43 @@ public class KeycloakApplication extends Application {
 
         factory.registerLoader(AuditProvider.class, ProviderFactoryLoader.create(AuditProviderFactory.class), Config.getAuditProvider());
         factory.registerLoader(AuditListener.class, ProviderFactoryLoader.create(AuditListenerFactory.class));
+        factory.registerLoader(TimerProvider.class, ProviderFactoryLoader.create(TimerProviderFactory.class), Config.getTimerProvider());
 
         return factory;
+    }
+
+    public static void setupScheduledTasks(final ProviderSessionFactory providerSessionFactory, final KeycloakSessionFactory keycloakSessionFactory) {
+        ProviderFactory<TimerProvider> timerFactory = providerSessionFactory.getProviderFactory(TimerProvider.class);
+        if (timerFactory == null) {
+            log.error("Can't setup schedule tasks, no timer provider found");
+            return;
+        }
+        TimerProvider timer = timerFactory.create();
+
+        final ProviderFactory<AuditProvider> auditFactory = providerSessionFactory.getProviderFactory(AuditProvider.class);
+        if (auditFactory != null) {
+            timer.schedule(new Runnable() {
+                @Override
+                public void run() {
+                    KeycloakSession keycloakSession = keycloakSessionFactory.createSession();
+                    AuditProvider audit = providerSessionFactory.getProviderFactory(AuditProvider.class).create();
+                    try {
+                        for (RealmModel realm : keycloakSession.getRealms()) {
+                            if (realm.isAuditEnabled() && realm.getAuditExpiration() > 0) {
+                                long olderThan = System.currentTimeMillis() - realm.getAuditExpiration() * 1000;
+                                log.info("Expiring audit events for " + realm.getName() + " older than " + new Date(olderThan));
+                                audit.clear(realm.getId(), olderThan);
+                            }
+                        }
+                    } finally {
+                        keycloakSession.close();
+                        audit.close();
+                    }
+                }
+            }, Config.getAuditExpirationSchedule());
+        } else {
+            log.info("Not scheduling audit expiration, no audit provider found");
+        }
     }
 
     public KeycloakSessionFactory getFactory() {
