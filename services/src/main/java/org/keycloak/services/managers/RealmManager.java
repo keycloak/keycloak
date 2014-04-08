@@ -170,7 +170,7 @@ public class RealmManager {
 
     public void updateRealmAudit(RealmAuditRepresentation rep, RealmModel realm) {
         realm.setAuditEnabled(rep.isAuditEnabled());
-        realm.setAuditExpiration(rep.getAuditExpiration());
+        realm.setAuditExpiration(rep.getAuditExpiration() != null ? rep.getAuditExpiration() : 0);
         if (rep.getAuditListeners() != null) {
             realm.setAuditListeners(new HashSet<String>(rep.getAuditListeners()));
         }

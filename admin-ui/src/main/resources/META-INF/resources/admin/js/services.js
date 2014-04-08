@@ -696,6 +696,10 @@ module.factory('TimeUnit', function() {
     var t = {};
 
     t.autoUnit = function(time) {
+        if (!time) {
+            return 'Hours';
+        }
+
         var unit = 'Seconds';
         if (time % 60 == 0) {
             unit = 'Minutes';
