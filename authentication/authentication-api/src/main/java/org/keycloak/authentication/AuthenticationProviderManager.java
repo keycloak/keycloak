@@ -211,6 +211,9 @@ public class AuthenticationProviderManager {
     private void checkCorrectAuthLink(AuthenticationProvider authProvider, AuthenticationProviderModel providerModel,
                                       AuthenticationLinkModel authLinkModel, String username) throws AuthenticationProviderException {
         AuthUser authUser = authProvider.getUser(realm, providerModel.getConfig(), username);
+        if (authUser == null) {
+            throw new AuthenticationProviderException("User " + username + " not found in authentication provider " + providerModel.getProviderName());
+        }
         String userExternalId = authUser.getId();
         if (!userExternalId.equals(authLinkModel.getAuthUserId())) {
             throw new AuthenticationProviderException("ID did not match! ID from provider: " + userExternalId + ", ID from authentication link: " + authLinkModel.getAuthUserId());
