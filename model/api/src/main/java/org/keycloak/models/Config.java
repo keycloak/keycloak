@@ -13,7 +13,8 @@ public class Config {
 
     public static final String MODEL_PROVIDER_KEY = "keycloak.model";
 
-    public static final String AUDIT_KEY = "keycloak.audit";
+    public static final String AUDIT_PROVIDER_KEY = "keycloak.audit";
+    public static final String AUDIT_PROVIDER_DEFAULT = "jpa";
     public static final String AUDIT_EXPIRATION_SCHEDULE_KEY = "keycloak.audit.expirationSchedule";
     public static final String AUDIT_EXPIRATION_SCHEDULE_DEFAULT = String.valueOf(TimeUnit.MINUTES.toMillis(15));
 
@@ -36,7 +37,7 @@ public class Config {
     }
 
     public static String getAuditProvider() {
-        return System.getProperty(AUDIT_KEY);
+        return System.getProperty(AUDIT_PROVIDER_KEY, AUDIT_PROVIDER_DEFAULT);
     }
 
     public static void setAuditProvider(String provider) {

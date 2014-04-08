@@ -22,8 +22,10 @@
 package org.keycloak.testsuite.account;
 
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -31,6 +33,7 @@ import org.keycloak.audit.Details;
 import org.keycloak.audit.Event;
 import org.keycloak.audit.jpa.JpaAuditProviderFactory;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.Config;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
@@ -40,6 +43,7 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
+import org.keycloak.testsuite.Retry;
 import org.keycloak.testsuite.pages.AccountLogPage;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
 import org.keycloak.testsuite.pages.AccountTotpPage;
@@ -145,8 +149,6 @@ public class AccountTest {
                 appRealm.updateCredential(user, cred);
             }
         });
-
-        System.out.println(JpaAuditProviderFactory.class);
     }
 
     @Test
@@ -365,17 +367,23 @@ public class AccountTest {
 
             Assert.assertTrue(logPage.isCurrent());
 
-            List<List<String>> actual = logPage.getEvents();
+            final int expectedEvents = e.size();
+            Retry.execute(new Runnable() {
+                @Override
+                public void run() {
+                    Assert.assertEquals(expectedEvents, logPage.getEvents().size());
+                }
+            }, 10, 500);
 
-            Assert.assertEquals(e.size(), actual.size());
-
-            Iterator<List<String>> itr = actual.iterator();
+            Iterator<List<String>> itr = logPage.getEvents().iterator();
             for (Event event : e) {
                 List<String> a = itr.next();
                 Assert.assertEquals(event.getEvent().replace('_', ' '), a.get(1));
                 Assert.assertEquals(event.getIpAddress(), a.get(2));
                 Assert.assertEquals(event.getClientId(), a.get(3));
             }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         } finally {
             keycloakRule.configure(new KeycloakSetup() {
                 @Override
