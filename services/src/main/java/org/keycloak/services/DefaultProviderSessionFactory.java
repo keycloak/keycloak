@@ -3,6 +3,8 @@ package org.keycloak.services;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.ProviderFactoryLoader;
+import org.keycloak.provider.ProviderSession;
+import org.keycloak.provider.ProviderSessionFactory;
 
 import java.util.HashMap;
 import java.util.Map;

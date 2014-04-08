@@ -37,6 +37,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.utils.TimeBasedOTP;
+import org.keycloak.provider.ProviderSession;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.email.EmailException;
 import org.keycloak.services.email.EmailSender;
@@ -84,7 +85,8 @@ public class RequiredActionsService {
     @Context
     protected Providers providers;
 
-    protected AuthenticationManager authManager = new AuthenticationManager();
+    @Context
+    protected ProviderSession providerSession;
 
     private TokenManager tokenManager;
 
@@ -200,7 +202,7 @@ public class RequiredActionsService {
         }
 
         try {
-            boolean updateSuccessful = AuthenticationProviderManager.getManager(realm).updatePassword(user, passwordNew);
+            boolean updateSuccessful = AuthenticationProviderManager.getManager(realm, providerSession).updatePassword(user, passwordNew);
             if (!updateSuccessful) {
                 return loginForms.setError("Password update failed").createResponse(RequiredAction.UPDATE_PASSWORD);
             }
@@ -284,6 +286,8 @@ public class RequiredActionsService {
         String state = uriInfo.getQueryParameters().getFirst(OAuth2Constants.STATE);
         String redirect = uriInfo.getQueryParameters().getFirst(OAuth2Constants.REDIRECT_URI);
         String clientId = uriInfo.getQueryParameters().getFirst(OAuth2Constants.CLIENT_ID);
+
+        AuthenticationManager authManager = new AuthenticationManager(providerSession);
 
         ClientModel client = realm.findClient(clientId);
         if (client == null) {
@@ -392,6 +396,9 @@ public class RequiredActionsService {
             accessCode.setExpiration(Time.currentTime() + realm.getAccessCodeLifespan());
 
             audit.success();
+
+            AuthenticationManager authManager = new AuthenticationManager(providerSession);
+
             return Flows.oauth(realm, request, uriInfo, authManager, tokenManager).redirectAccessCode(accessCode,
                     accessCode.getState(), accessCode.getRedirectUri());
         }

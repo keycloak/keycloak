@@ -16,6 +16,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.provider.ProviderSession;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.rule.KeycloakRule;
@@ -165,7 +166,7 @@ public class AssertEvents implements TestRule, AuditListenerFactory {
     }
 
     @Override
-    public AuditListener create() {
+    public AuditListener create(ProviderSession providerSession) {
         return new AuditListener() {
             @Override
             public void onEvent(Event event) {

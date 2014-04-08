@@ -5,6 +5,8 @@ import com.mongodb.MongoClient;
 import com.mongodb.WriteConcern;
 import org.keycloak.audit.AuditProvider;
 import org.keycloak.audit.AuditProviderFactory;
+import org.keycloak.provider.ProviderSession;
+import org.keycloak.provider.ProviderSessionFactory;
 
 import java.net.UnknownHostException;
 
@@ -22,7 +24,7 @@ public class MongoAuditProviderFactory implements AuditProviderFactory {
     private DB db;
 
     @Override
-    public AuditProvider create() {
+    public AuditProvider create(ProviderSession providerSession) {
         return new MongoAuditProvider(db.getCollection("audit"));
     }
 

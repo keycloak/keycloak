@@ -1,11 +1,5 @@
-package org.keycloak.services;
+package org.keycloak.provider;
 
-import org.keycloak.provider.Provider;
-import org.keycloak.provider.ProviderFactory;
-import org.keycloak.provider.ProviderFactoryLoader;
-
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 
 /**

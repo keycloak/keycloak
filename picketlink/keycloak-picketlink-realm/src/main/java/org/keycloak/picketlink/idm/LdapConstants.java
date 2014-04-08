@@ -1,4 +1,4 @@
-package org.keycloak.picketlink.impl;
+package org.keycloak.picketlink.idm;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

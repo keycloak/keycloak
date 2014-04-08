@@ -15,6 +15,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.provider.ProviderSession;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.RealmManager;
@@ -69,13 +70,16 @@ public class AdminService {
     @Context
     protected Providers providers;
 
+    @Context
+    protected ProviderSession providerSession;
+
     protected String adminPath = "/admin/index.html";
     protected AppAuthManager authManager;
     protected TokenManager tokenManager;
 
     public AdminService(TokenManager tokenManager) {
         this.tokenManager = tokenManager;
-        this.authManager = new AppAuthManager("KEYCLOAK_ADMIN_CONSOLE_IDENTITY", tokenManager);
+        this.authManager = new AppAuthManager(providerSession, "KEYCLOAK_ADMIN_CONSOLE_IDENTITY", tokenManager);
     }
 
     public static UriBuilder adminApiUrl(UriInfo uriInfo) {

@@ -12,7 +12,7 @@ import org.keycloak.authentication.AuthProviderConstants;
 import org.keycloak.authentication.AuthUser;
 import org.keycloak.authentication.AuthenticationProvider;
 import org.keycloak.authentication.AuthenticationProviderException;
-import org.keycloak.picketlink.PartitionManagerProvider;
+import org.keycloak.picketlink.IdentityManagerProvider;
 import org.keycloak.util.ProviderLoader;
 import org.picketlink.idm.IdentityManagementException;
 import org.picketlink.idm.IdentityManager;
@@ -31,6 +31,12 @@ import org.picketlink.idm.model.basic.User;
 public class PicketlinkAuthenticationProvider implements AuthenticationProvider {
 
     private static final Logger logger = Logger.getLogger(PicketlinkAuthenticationProvider.class);
+
+    private final IdentityManagerProvider identityManagerProvider;
+
+    public PicketlinkAuthenticationProvider(IdentityManagerProvider identityManagerProvider) {
+        this.identityManagerProvider = identityManagerProvider;
+    }
 
     @Override
     public String getName() {
@@ -107,28 +113,12 @@ public class PicketlinkAuthenticationProvider implements AuthenticationProvider 
         }
     }
 
+    @Override
+    public void close() {
+    }
+
     public IdentityManager getIdentityManager(RealmModel realm) throws AuthenticationProviderException {
-        IdentityManager identityManager = ResteasyProviderFactory.getContextData(IdentityManager.class);
-        if (identityManager == null) {
-            Iterable<PartitionManagerProvider> providers = ProviderLoader.load(PartitionManagerProvider.class);
-
-            // TODO: Priority?
-            PartitionManager partitionManager = null;
-            for (PartitionManagerProvider provider : providers) {
-                partitionManager = provider.getPartitionManager(realm);
-                if (partitionManager != null) {
-                    break;
-                }
-            }
-
-            if (partitionManager == null) {
-                throw new AuthenticationProviderException("Not able to locate PartitionManager with any PartitionManagerProvider");
-            }
-
-            identityManager = partitionManager.createIdentityManager();
-            ResteasyProviderFactory.pushContext(IdentityManager.class, identityManager);
-        }
-        return identityManager;
+        return identityManagerProvider.getIdentityManager(realm);
     }
 
     private AuthenticationProviderException convertIDMException(IdentityManagementException ie) {

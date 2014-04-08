@@ -70,6 +70,10 @@ public abstract class AbstractModelAuthenticationProvider implements Authenticat
         return true;
     }
 
+    @Override
+    public void close() {
+    }
+
     protected abstract RealmModel getRealm(RealmModel currentRealm, Map<String, String> config) throws AuthenticationProviderException;
 
     protected AuthUser createAuthenticatedUserInstance(UserModel user) {

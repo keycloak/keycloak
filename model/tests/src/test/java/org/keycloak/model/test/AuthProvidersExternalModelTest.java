@@ -62,7 +62,7 @@ public class AuthProvidersExternalModelTest extends AbstractModelTest {
         credential.setValue("password");
         realm1.updateCredential(john, credential);
 
-        am = new AuthenticationManager();
+        am = new AuthenticationManager(providerSession);
     }
 
 
@@ -119,7 +119,7 @@ public class AuthProvidersExternalModelTest extends AbstractModelTest {
             ResteasyProviderFactory.pushContext(KeycloakSession.class, identitySession);
 
             // Change credential via realm2 and validate that they are changed also in realm1
-            AuthenticationProviderManager authProviderManager = AuthenticationProviderManager.getManager(realm2);
+            AuthenticationProviderManager authProviderManager = AuthenticationProviderManager.getManager(realm2, providerSession);
             try {
                 Assert.assertTrue(authProviderManager.updatePassword(john, "password-updated"));
             } catch (AuthenticationProviderException ape) {

@@ -1,4 +1,4 @@
-package org.keycloak.picketlink.impl;
+package org.keycloak.picketlink.idm;
 
 import org.picketlink.idm.IdentityManager;
 import org.picketlink.idm.ldap.internal.LDAPPlainTextPasswordCredentialHandler;

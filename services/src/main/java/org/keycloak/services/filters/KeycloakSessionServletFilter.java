@@ -4,9 +4,8 @@ import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakTransaction;
-import org.keycloak.services.ProviderSession;
-import org.keycloak.services.ProviderSessionFactory;
-import org.keycloak.util.KeycloakRegistry;
+import org.keycloak.provider.ProviderSession;
+import org.keycloak.provider.ProviderSessionFactory;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -33,9 +32,7 @@ public class KeycloakSessionServletFilter implements Filter {
 
         ResteasyProviderFactory.pushContext(ProviderSession.class, providerSession);
 
-        KeycloakRegistry registry = (KeycloakRegistry)servletRequest.getServletContext().getAttribute(KeycloakRegistry.class.getName());
-        ResteasyProviderFactory.pushContext(KeycloakRegistry.class, registry);
-        KeycloakSessionFactory factory = registry.getService(KeycloakSessionFactory.class);
+        KeycloakSessionFactory factory = (KeycloakSessionFactory) servletRequest.getServletContext().getAttribute(KeycloakSessionFactory.class.getName());
         if (factory == null) throw new ServletException("Factory was null");
         KeycloakSession session = factory.createSession();
         ResteasyProviderFactory.pushContext(KeycloakSession.class, session);

@@ -5,7 +5,7 @@ package org.keycloak.provider;
  */
 public interface ProviderFactory<T extends Provider> {
 
-    public T create();
+    public T create(ProviderSession providerSession);
 
     public void init();
 

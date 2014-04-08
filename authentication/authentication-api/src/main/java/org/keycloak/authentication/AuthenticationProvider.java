@@ -4,11 +4,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.keycloak.models.RealmModel;
+import org.keycloak.provider.Provider;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public interface AuthenticationProvider {
+public interface AuthenticationProvider extends Provider {
 
     String getName();
 

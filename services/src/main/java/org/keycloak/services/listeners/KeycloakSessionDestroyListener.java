@@ -1,7 +1,7 @@
 package org.keycloak.services.listeners;
 
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.util.KeycloakRegistry;
+import org.keycloak.provider.ProviderSessionFactory;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
@@ -17,10 +17,13 @@ public class KeycloakSessionDestroyListener implements ServletContextListener {
 
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
-        KeycloakRegistry registry = (KeycloakRegistry)sce.getServletContext().getAttribute(KeycloakRegistry.class.getName());
-        KeycloakSessionFactory factory = registry.getService(KeycloakSessionFactory.class);
-        if (factory != null) {
-            factory.close();
+        ProviderSessionFactory providerSessionFactory = (ProviderSessionFactory) sce.getServletContext().getAttribute(ProviderSessionFactory.class.getName());
+        KeycloakSessionFactory kcSessionFactory = (KeycloakSessionFactory) sce.getServletContext().getAttribute(KeycloakSessionFactory.class.getName());
+        if (providerSessionFactory != null) {
+            providerSessionFactory.close();
+        }
+        if (kcSessionFactory != null) {
+            kcSessionFactory.close();
         }
     }
 

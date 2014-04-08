@@ -91,6 +91,7 @@
         <module>core-jaxrs</module>
         <module>model</module>
         <module>integration</module>
+        <module>picketlink</module>
         <module>services</module>
         <module>social</module>
         <module>forms</module>

@@ -7,7 +7,7 @@ package org.keycloak.models.mongo.keycloak.config;
  */
 public class MongoClientProviderHolder {
 
-    // Just use static object for now. Default impl is SystemPropsMongoClientProvider
+    // Just use static object for now. Default idm is SystemPropsMongoClientProvider
     private static MongoClientProvider instance = new SystemPropertiesMongoClientProvider();
 
     public static MongoClientProvider getInstance() {

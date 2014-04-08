@@ -24,6 +24,7 @@ import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.RegisterPage;
+import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.LDAPRule;
 import org.keycloak.testsuite.rule.WebResource;
@@ -62,7 +63,7 @@ public class AuthProvidersIntegrationTest {
 
             // Configure LDAP
             ldapRule.getEmbeddedServer().setupLdapInRealm(appRealm);
-            LdapTestUtils.setLdapPassword(appRealm, "john", "password");
+            LdapTestUtils.setLdapPassword(providerSession, appRealm, "john", "password");
         }
     });
 

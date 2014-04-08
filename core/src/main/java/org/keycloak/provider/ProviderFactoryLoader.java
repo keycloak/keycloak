@@ -68,12 +68,12 @@ public class ProviderFactoryLoader<T extends Provider> implements Iterable<Provi
         }
 
         @Override
-        public synchronized T create() {
+        public synchronized T create(ProviderSession providerSession) {
             if (!initialized) {
                 factory.init();
                 initialized = true;
             }
-            return factory.create();
+            return factory.create(providerSession);
         }
 
         @Override
@@ -82,8 +82,10 @@ public class ProviderFactoryLoader<T extends Provider> implements Iterable<Provi
         }
 
         @Override
-        public void close() {
-            factory.close();
+        public synchronized void close() {
+            if (initialized) {
+                factory.close();
+            }
         }
 
         @Override

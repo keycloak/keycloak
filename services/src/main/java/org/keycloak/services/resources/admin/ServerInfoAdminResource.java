@@ -3,7 +3,7 @@ package org.keycloak.services.resources.admin;
 import org.keycloak.audit.AuditListener;
 import org.keycloak.freemarker.Theme;
 import org.keycloak.freemarker.ThemeProvider;
-import org.keycloak.services.ProviderSession;
+import org.keycloak.provider.ProviderSession;
 import org.keycloak.social.SocialProvider;
 import org.keycloak.authentication.AuthenticationProvider;
 import org.keycloak.authentication.AuthenticationProviderManager;
@@ -59,7 +59,7 @@ public class ServerInfoAdminResource {
 
     private void setAuthProviders(ServerInfoRepresentation info) {
         info.authProviders = new HashMap<String, List<String>>();
-        Iterable<AuthenticationProvider> authProviders = AuthenticationProviderManager.load();
+        Iterable<AuthenticationProvider> authProviders = providers.getAllProviders(AuthenticationProvider.class);
         for (AuthenticationProvider authProvider : authProviders) {
             info.authProviders.put(authProvider.getName(), authProvider.getAvailableOptions());
         }

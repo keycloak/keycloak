@@ -10,6 +10,7 @@ import org.keycloak.models.AuthenticationLinkModel;
 import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.provider.ProviderSession;
 import org.keycloak.util.ProviderLoader;
 
 /**
@@ -27,8 +28,8 @@ public class AuthenticationProviderManager {
     private final RealmModel realm;
     private final Map<String, AuthenticationProvider> delegates;
 
-    public static AuthenticationProviderManager getManager(RealmModel realm) {
-        Iterable<AuthenticationProvider> providers = load();
+    public static AuthenticationProviderManager getManager(RealmModel realm, ProviderSession providerSession) {
+        Iterable<AuthenticationProvider> providers = providerSession.getAllProviders(AuthenticationProvider.class);
 
         Map<String, AuthenticationProvider> providersMap = new HashMap<String, AuthenticationProvider>();
         for (AuthenticationProvider provider : providers) {
@@ -36,10 +37,6 @@ public class AuthenticationProviderManager {
         }
 
         return new AuthenticationProviderManager(realm, providersMap);
-    }
-
-    public static Iterable<AuthenticationProvider> load() {
-        return ProviderLoader.load(AuthenticationProvider.class);
     }
 
     public AuthenticationProviderManager(RealmModel realm, Map<String, AuthenticationProvider> delegates) {

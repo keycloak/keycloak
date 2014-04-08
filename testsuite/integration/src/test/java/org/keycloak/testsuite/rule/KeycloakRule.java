@@ -24,6 +24,7 @@ package org.keycloak.testsuite.rule;
 import org.keycloak.models.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.provider.ProviderSession;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.ApplicationServlet;
 
@@ -58,6 +59,7 @@ public class KeycloakRule extends AbstractKeycloakRule {
 
     public void configure(KeycloakSetup configurer) {
         KeycloakSession session = server.getKeycloakSessionFactory().createSession();
+        ProviderSession providerSession = server.getProviderSessionFactory().createSession();
         session.getTransaction().begin();
 
         try {
@@ -66,17 +68,21 @@ public class KeycloakRule extends AbstractKeycloakRule {
             RealmModel adminstrationRealm = manager.getRealm(Config.getAdminRealm());
             RealmModel appRealm = manager.getRealm("test");
 
+            configurer.providerSession = providerSession;
             configurer.config(manager, adminstrationRealm, appRealm);
 
             session.getTransaction().commit();
         } finally {
+            providerSession.close();
             session.close();
         }
     }
 
-    public interface KeycloakSetup {
+    public abstract static class KeycloakSetup {
 
-        void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm);
+        protected ProviderSession providerSession;
+
+        public abstract void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm);
 
     }
 

@@ -38,6 +38,7 @@ import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
 import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.keycloak.models.Config;
+import org.keycloak.provider.ProviderSessionFactory;
 import org.keycloak.services.filters.ClientConnectionFilter;
 import org.keycloak.theme.DefaultLoginThemeProvider;
 import org.keycloak.services.tmp.TmpAdminRedirectServlet;
@@ -173,6 +174,8 @@ public class KeycloakServer {
 
     private KeycloakSessionFactory factory;
 
+    private ProviderSessionFactory providerSessionFactory;
+
     private UndertowJaxrsServer server;
 
     public KeycloakServer() {
@@ -185,6 +188,10 @@ public class KeycloakServer {
 
     public KeycloakSessionFactory getKeycloakSessionFactory() {
         return factory;
+    }
+
+    public ProviderSessionFactory getProviderSessionFactory() {
+        return providerSessionFactory;
     }
 
     public UndertowJaxrsServer getServer() {
@@ -275,6 +282,7 @@ public class KeycloakServer {
         server.deploy(di);
 
         factory = ((KeycloakApplication) deployment.getApplication()).getFactory();
+        providerSessionFactory = ((KeycloakApplication) deployment.getApplication()).getProviderSessionFactory();
 
         setupDevConfig();
 
@@ -295,6 +303,7 @@ public class KeycloakServer {
     }
 
     public void stop() {
+        providerSessionFactory.close();
         factory.close();
         server.stop();
 

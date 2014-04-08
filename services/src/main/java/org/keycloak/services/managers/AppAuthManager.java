@@ -12,6 +12,7 @@ import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.provider.ProviderSession;
 import org.keycloak.representations.AccessToken;
 
 import javax.ws.rs.BadRequestException;
@@ -26,12 +27,13 @@ import java.net.URI;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class AppAuthManager extends AuthenticationManager {
-    protected static Logger logger = Logger.getLogger(AuthenticationManager.class);
+    protected static Logger logger = Logger.getLogger(AppAuthManager.class);
 
     private String cookieName;
     private TokenManager tokenManager;
 
-    public AppAuthManager(String cookieName, TokenManager tokenManager) {
+    public AppAuthManager(ProviderSession providerSession, String cookieName, TokenManager tokenManager) {
+        super(providerSession);
         this.cookieName = cookieName;
         this.tokenManager = tokenManager;
     }

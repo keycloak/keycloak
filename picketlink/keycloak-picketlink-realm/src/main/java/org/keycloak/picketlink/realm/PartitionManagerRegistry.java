@@ -1,10 +1,12 @@
-package org.keycloak.picketlink.impl;
+package org.keycloak.picketlink.realm;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.jboss.logging.Logger;
 import org.keycloak.models.RealmModel;
+import org.keycloak.picketlink.idm.LDAPAgentIgnoreCredentialHandler;
+import org.keycloak.picketlink.idm.LdapConstants;
 import org.picketlink.idm.PartitionManager;
 import org.picketlink.idm.config.IdentityConfigurationBuilder;
 import org.picketlink.idm.internal.DefaultPartitionManager;

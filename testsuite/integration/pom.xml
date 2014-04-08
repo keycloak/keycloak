@@ -170,6 +170,16 @@
             <artifactId>keycloak-authentication-model</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-picketlink-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-picketlink-realm</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>org.jboss.logging</groupId>
@@ -186,7 +196,7 @@
         </dependency>
         <dependency>
             <groupId>org.picketlink</groupId>
-            <artifactId>picketlink-idm-impl</artifactId>
+            <artifactId>picketlink-idm-idm</artifactId>
         </dependency>
         <dependency>
             <groupId>org.picketlink</groupId>

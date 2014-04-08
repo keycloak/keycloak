@@ -45,7 +45,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.services.ProviderSession;
+import org.keycloak.provider.ProviderSession;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.ModelToRepresentation;
@@ -137,7 +137,7 @@ public class AccountService {
         this.realm = realm;
         this.application = application;
         this.audit = audit;
-        this.authManager = new AppAuthManager(KEYCLOAK_ACCOUNT_IDENTITY_COOKIE, tokenManager);
+        this.authManager = new AppAuthManager(providers, KEYCLOAK_ACCOUNT_IDENTITY_COOKIE, tokenManager);
         this.socialRequestManager = socialRequestManager;
     }
 
@@ -339,7 +339,7 @@ public class AccountService {
             return account.setError(Messages.INVALID_PASSWORD_CONFIRM).createResponse(AccountPages.PASSWORD);
         }
 
-        AuthenticationProviderManager authProviderManager = AuthenticationProviderManager.getManager(realm);
+        AuthenticationProviderManager authProviderManager = AuthenticationProviderManager.getManager(realm, providers);
         if (Validation.isEmpty(password)) {
             return account.setError(Messages.MISSING_PASSWORD).createResponse(AccountPages.PASSWORD);
         } else if (authProviderManager.validatePassword(user, password) != AuthProviderStatus.SUCCESS) {

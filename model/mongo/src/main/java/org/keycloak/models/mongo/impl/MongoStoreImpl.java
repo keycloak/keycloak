@@ -65,7 +65,7 @@ public class MongoStoreImpl implements MongoStore {
             mapperRegistry.addDBObjectMapper(converter);
         }
 
-        // Specific converter for ArrayList is added just for performance purposes to avoid recursive converter lookup (most of list impl will be ArrayList)
+        // Specific converter for ArrayList is added just for performance purposes to avoid recursive converter lookup (most of list idm will be ArrayList)
         mapperRegistry.addAppObjectMapper(new ListMapper(mapperRegistry, ArrayList.class));
         mapperRegistry.addAppObjectMapper(new ListMapper(mapperRegistry, List.class));
         mapperRegistry.addDBObjectMapper(new BasicDBListMapper(mapperRegistry));
