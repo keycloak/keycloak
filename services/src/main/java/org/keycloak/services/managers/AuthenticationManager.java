@@ -12,13 +12,14 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.provider.ProviderSession;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.ClientConnection;
 import org.keycloak.services.resources.RealmsResource;
-import org.keycloak.spi.authentication.AuthProviderStatus;
-import org.keycloak.spi.authentication.AuthUser;
-import org.keycloak.spi.authentication.AuthenticationProviderManager;
+import org.keycloak.authentication.AuthProviderStatus;
+import org.keycloak.authentication.AuthUser;
+import org.keycloak.authentication.AuthenticationProviderManager;
 import org.keycloak.util.Time;
 
 import javax.ws.rs.core.Cookie;
@@ -42,9 +43,11 @@ public class AuthenticationManager {
     public static final String KEYCLOAK_IDENTITY_COOKIE = "KEYCLOAK_IDENTITY";
     public static final String KEYCLOAK_REMEMBER_ME = "KEYCLOAK_REMEMBER_ME";
 
+    protected ProviderSession providerSession;
     protected BruteForceProtector protector;
 
-    public AuthenticationManager() {
+    public AuthenticationManager(ProviderSession providerSession) {
+        this.providerSession = providerSession;
     }
 
     public AuthenticationManager(BruteForceProtector protector) {
@@ -222,7 +225,7 @@ public class AuthenticationManager {
     protected AuthenticationStatus authenticateInternal(RealmModel realm, MultivaluedMap<String, String> formData, String username) {
         UserModel user = KeycloakModelUtils.findUserByNameOrEmail(realm, username);
         if (user == null) {
-            AuthUser authUser = AuthenticationProviderManager.getManager(realm).getUser(username);
+            AuthUser authUser = AuthenticationProviderManager.getManager(realm, providerSession).getUser(username);
             if (authUser != null) {
                 // Create new user and link him with authentication provider
                 user = realm.addUser(authUser.getUsername());
@@ -269,7 +272,7 @@ public class AuthenticationManager {
             } else {
                 logger.debug("validating password for user: " + username);
 
-                AuthProviderStatus authStatus = AuthenticationProviderManager.getManager(realm).validatePassword(user, password);
+                AuthProviderStatus authStatus = AuthenticationProviderManager.getManager(realm, providerSession).validatePassword(user, password);
                 if (authStatus == AuthProviderStatus.INVALID_CREDENTIALS) {
                     logger.debug("invalid password for user: " + username);
                     return AuthenticationStatus.INVALID_CREDENTIALS;

@@ -18,6 +18,8 @@ public class Config {
     public static final String AUDIT_EXPIRATION_SCHEDULE_KEY = "keycloak.audit.expirationSchedule";
     public static final String AUDIT_EXPIRATION_SCHEDULE_DEFAULT = String.valueOf(TimeUnit.MINUTES.toMillis(15));
 
+    public static final String PICKETLINK_PROVIDER_KEY = "keycloak.picketlink";
+
     public static final String THEME_BASE_KEY = "keycloak.theme.base";
     public static final String THEME_BASE_DEFAULT = "base";
     public static final String THEME_DEFAULT_KEY = "keycloak.theme.default";
@@ -66,6 +68,14 @@ public class Config {
 
     public static void setTimerProvider(String provider) {
         System.setProperty(TIMER_PROVIDER_KEY, provider);
+    }
+
+    public static String getIdentityManagerProvider() {
+        return System.getProperty(PICKETLINK_PROVIDER_KEY, "realm");
+    }
+
+    public static void setIdentityManagerProvider(String provider) {
+        System.setProperty(PICKETLINK_PROVIDER_KEY, provider);
     }
 
     public static String getThemeDir() {

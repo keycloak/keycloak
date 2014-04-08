@@ -2,20 +2,18 @@ package org.keycloak.services.resources;
 
 import org.jboss.resteasy.logging.Logger;
 import org.keycloak.audit.Audit;
-import org.keycloak.audit.AuditListener;
-import org.keycloak.audit.AuditProvider;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.ClientConnection;
-import org.keycloak.services.ProviderSession;
+import org.keycloak.provider.ProviderSession;
 import org.keycloak.services.managers.AuditManager;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.SocialRequestManager;
 import org.keycloak.services.managers.TokenManager;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -24,8 +22,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -70,7 +66,8 @@ public class RealmsResource {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = locateRealm(name, realmManager);
         Audit audit = new AuditManager(realm, providers, clientConnection).createAudit();
-        TokenService tokenService = new TokenService(realm, tokenManager, audit);
+        AuthenticationManager authManager = new AuthenticationManager(providers);
+        TokenService tokenService = new TokenService(realm, tokenManager, audit, authManager);
         resourceContext.initResource(tokenService);
         return tokenService;
     }

@@ -27,7 +27,7 @@ public abstract class AbstractAuditProviderTest {
         factory = loader.find(getProviderId());
         factory.init();
 
-        provider = factory.create();
+        provider = factory.create(null);
     }
 
     protected abstract String getProviderId();
@@ -58,7 +58,7 @@ public abstract class AbstractAuditProviderTest {
         provider.onEvent(create("event", "realmId", "clientId", "userId2", "127.0.0.1", "error"));
 
         provider.close();
-        provider = factory.create();
+        provider = factory.create(null);
 
         Assert.assertEquals(5, provider.createQuery().client("clientId").getResultList().size());
         Assert.assertEquals(5, provider.createQuery().realm("realmId").getResultList().size());
@@ -84,7 +84,7 @@ public abstract class AbstractAuditProviderTest {
         provider.onEvent(create(System.currentTimeMillis() - 30000, "event", "realmId2", "clientId", "userId", "127.0.0.1", "error"));
 
         provider.close();
-        provider = factory.create();
+        provider = factory.create(null);
 
         provider.clear("realmId");
 
@@ -100,7 +100,7 @@ public abstract class AbstractAuditProviderTest {
         provider.onEvent(create(System.currentTimeMillis() - 30000, "event", "realmId2", "clientId", "userId", "127.0.0.1", "error"));
 
         provider.close();
-        provider = factory.create();
+        provider = factory.create(null);
 
         provider.clear("realmId", System.currentTimeMillis() - 10000);
 

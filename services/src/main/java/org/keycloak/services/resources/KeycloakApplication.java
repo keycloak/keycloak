@@ -6,6 +6,8 @@ import org.keycloak.audit.AuditListener;
 import org.keycloak.audit.AuditListenerFactory;
 import org.keycloak.audit.AuditProvider;
 import org.keycloak.audit.AuditProviderFactory;
+import org.keycloak.authentication.AuthenticationProvider;
+import org.keycloak.authentication.AuthenticationProviderFactory;
 import org.keycloak.models.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -14,15 +16,16 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.ProviderFactoryLoader;
 import org.keycloak.services.DefaultProviderSessionFactory;
-import org.keycloak.services.ProviderSessionFactory;
-import org.keycloak.timer.TimerProvider;
-import org.keycloak.timer.TimerProviderFactory;
-import org.keycloak.util.KeycloakRegistry;
+import org.keycloak.picketlink.IdentityManagerProvider;
+import org.keycloak.picketlink.IdentityManagerProviderFactory;
+import org.keycloak.provider.ProviderSessionFactory;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.SocialRequestManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.resources.admin.AdminService;
 import org.keycloak.models.utils.ModelProviderUtils;
+import org.keycloak.timer.TimerProvider;
+import org.keycloak.timer.TimerProviderFactory;
 
 import javax.servlet.ServletContext;
 import javax.ws.rs.core.Application;
@@ -45,19 +48,17 @@ public class KeycloakApplication extends Application {
     protected Set<Class<?>> classes = new HashSet<Class<?>>();
 
     protected KeycloakSessionFactory factory;
+    protected ProviderSessionFactory providerSessionFactory;
     protected String contextPath;
 
     public KeycloakApplication(@Context ServletContext context) {
         this.factory = createSessionFactory();
         this.contextPath = context.getContextPath();
-        KeycloakRegistry registry = new KeycloakRegistry();
-        registry.putService(KeycloakSessionFactory.class, factory);
-        context.setAttribute(KeycloakRegistry.class.getName(), registry);
+        this.providerSessionFactory = createProviderSessionFactory();
+        context.setAttribute(KeycloakSessionFactory.class.getName(), factory);
         //classes.add(KeycloakSessionCleanupFilter.class);
 
-        DefaultProviderSessionFactory providerSessionFactory = createProviderSessionFactory();
-
-        context.setAttribute(ProviderSessionFactory.class.getName(), providerSessionFactory);
+        context.setAttribute(ProviderSessionFactory.class.getName(), this.providerSessionFactory);
 
         TokenManager tokenManager = new TokenManager();
         SocialRequestManager socialRequestManager = new SocialRequestManager();
@@ -110,6 +111,9 @@ public class KeycloakApplication extends Application {
         factory.registerLoader(AuditProvider.class, ProviderFactoryLoader.create(AuditProviderFactory.class), Config.getAuditProvider());
         factory.registerLoader(AuditListener.class, ProviderFactoryLoader.create(AuditListenerFactory.class));
         factory.registerLoader(TimerProvider.class, ProviderFactoryLoader.create(TimerProviderFactory.class), Config.getTimerProvider());
+        factory.registerLoader(IdentityManagerProvider.class, ProviderFactoryLoader.create(IdentityManagerProviderFactory.class), Config.getIdentityManagerProvider());
+        factory.registerLoader(AuthenticationProvider.class, ProviderFactoryLoader.create(AuthenticationProviderFactory.class));
+        factory.init();
 
         return factory;
     }
@@ -120,7 +124,7 @@ public class KeycloakApplication extends Application {
             log.error("Can't setup schedule tasks, no timer provider found");
             return;
         }
-        TimerProvider timer = timerFactory.create();
+        TimerProvider timer = timerFactory.create(null);
 
         final ProviderFactory<AuditProvider> auditFactory = providerSessionFactory.getProviderFactory(AuditProvider.class);
         if (auditFactory != null) {
@@ -128,7 +132,7 @@ public class KeycloakApplication extends Application {
                 @Override
                 public void run() {
                     KeycloakSession keycloakSession = keycloakSessionFactory.createSession();
-                    AuditProvider audit = providerSessionFactory.getProviderFactory(AuditProvider.class).create();
+                    AuditProvider audit = providerSessionFactory.getProviderFactory(AuditProvider.class).create(null);
                     try {
                         for (RealmModel realm : keycloakSession.getRealms()) {
                             if (realm.isAuditEnabled() && realm.getAuditExpiration() > 0) {
@@ -150,6 +154,10 @@ public class KeycloakApplication extends Application {
 
     public KeycloakSessionFactory getFactory() {
         return factory;
+    }
+
+    public ProviderSessionFactory getProviderSessionFactory() {
+        return providerSessionFactory;
     }
 
     @Override

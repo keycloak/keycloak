@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Wrapper around UserData object, which will persist wrapped object after each set operation (compatibility with picketlink based impl)
+ * Wrapper around UserData object, which will persist wrapped object after each set operation (compatibility with picketlink based idm)
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */

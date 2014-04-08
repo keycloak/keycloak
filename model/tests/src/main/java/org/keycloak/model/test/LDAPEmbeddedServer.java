@@ -17,7 +17,7 @@ import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 
 import org.keycloak.models.RealmModel;
-import org.keycloak.spi.picketlink.impl.LdapConstants;
+import org.keycloak.picketlink.idm.LdapConstants;
 import org.picketbox.test.ldap.AbstractLDAPTest;
 
 /**

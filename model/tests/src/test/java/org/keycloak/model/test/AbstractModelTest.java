@@ -12,6 +12,8 @@ import org.junit.Before;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RoleModel;
+import org.keycloak.provider.ProviderSession;
+import org.keycloak.provider.ProviderSessionFactory;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.RealmManager;
@@ -26,6 +28,8 @@ public class AbstractModelTest {
     protected KeycloakSessionFactory factory;
     protected KeycloakSession identitySession;
     protected RealmManager realmManager;
+    protected ProviderSessionFactory providerSessionFactory;
+    protected ProviderSession providerSession;
 
     @Before
     public void before() throws Exception {
@@ -34,13 +38,18 @@ public class AbstractModelTest {
         identitySession.getTransaction().begin();
         realmManager = new RealmManager(identitySession);
 
+        providerSessionFactory = KeycloakApplication.createProviderSessionFactory();
+        providerSession = providerSessionFactory.createSession();
+
         new ApplianceBootstrap().bootstrap(identitySession, "/auth");
     }
 
     @After
     public void after() throws Exception {
         identitySession.getTransaction().commit();
+        providerSession.close();
         identitySession.close();
+        providerSessionFactory.close();
         factory.close();
     }
 

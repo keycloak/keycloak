@@ -25,8 +25,6 @@ import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.audit.Audit;
-import org.keycloak.audit.AuditListener;
-import org.keycloak.audit.AuditProvider;
 import org.keycloak.audit.Details;
 import org.keycloak.audit.Errors;
 import org.keycloak.audit.Events;
@@ -39,7 +37,7 @@ import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.ClientConnection;
-import org.keycloak.services.ProviderSession;
+import org.keycloak.provider.ProviderSession;
 import org.keycloak.services.managers.AuditManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
@@ -57,7 +55,6 @@ import org.keycloak.social.SocialProviderConfig;
 import org.keycloak.social.SocialProviderException;
 import org.keycloak.social.SocialUser;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -72,7 +69,6 @@ import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.net.URISyntaxException;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -110,8 +106,6 @@ public class SocialResource {
 
     private TokenManager tokenManager;
 
-    private AuthenticationManager authManager = new AuthenticationManager();
-
     public SocialResource(TokenManager tokenManager, SocialRequestManager socialRequestManager) {
         this.tokenManager = tokenManager;
         this.socialRequestManager = socialRequestManager;
@@ -135,6 +129,7 @@ public class SocialResource {
                 .detail(Details.RESPONSE_TYPE, "code")
                 .detail(Details.AUTH_METHOD, "social@" + provider.getId());
 
+        AuthenticationManager authManager = new AuthenticationManager(providers);
         OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
 
         if (!realm.isEnabled()) {

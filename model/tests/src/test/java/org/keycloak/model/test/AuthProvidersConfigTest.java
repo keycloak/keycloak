@@ -10,7 +10,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.spi.authentication.AuthProviderConstants;
+import org.keycloak.authentication.AuthProviderConstants;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

@@ -161,7 +161,7 @@
                             <!--
                             <dependency>
                                 <groupId>org.picketlink</groupId>
-                                <artifactId>picketlink-idm-impl</artifactId>
+                                <artifactId>picketlink-idm-idm</artifactId>
                                 <version>${picketlink.version}</version>
                             </dependency>
                             <dependency>

@@ -143,7 +143,7 @@ public class AuthenticationManagerTest extends AbstractModelTest {
         realm.addRequiredCredential(CredentialRepresentation.PASSWORD);
         realm.setAuthenticationProviders(Arrays.asList(AuthenticationProviderModel.DEFAULT_PROVIDER));
 
-        am = new AuthenticationManager();
+        am = new AuthenticationManager(providerSession);
 
         user = realm.addUser("test");
         user.setEnabled(true);

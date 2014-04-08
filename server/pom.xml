@@ -129,7 +129,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-authentication-spi</artifactId>
+            <artifactId>keycloak-authentication-api</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -150,6 +150,16 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-timer-basic</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-picketlink-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-picketlink-realm</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

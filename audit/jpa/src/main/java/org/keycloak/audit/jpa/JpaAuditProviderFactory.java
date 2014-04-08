@@ -2,6 +2,8 @@ package org.keycloak.audit.jpa;
 
 import org.keycloak.audit.AuditProvider;
 import org.keycloak.audit.AuditProviderFactory;
+import org.keycloak.provider.ProviderSession;
+import org.keycloak.provider.ProviderSessionFactory;
 
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
@@ -15,7 +17,7 @@ public class JpaAuditProviderFactory implements AuditProviderFactory {
     private EntityManagerFactory emf;
 
     @Override
-    public AuditProvider create() {
+    public AuditProvider create(ProviderSession providerSession) {
         return new JpaAuditProvider(emf.createEntityManager());
     }
 

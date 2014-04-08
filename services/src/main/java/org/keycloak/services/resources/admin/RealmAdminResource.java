@@ -11,7 +11,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.representations.adapters.action.SessionStats;
 import org.keycloak.representations.idm.RealmAuditRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.services.ProviderSession;
+import org.keycloak.provider.ProviderSession;
 import org.keycloak.services.managers.ModelToRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;

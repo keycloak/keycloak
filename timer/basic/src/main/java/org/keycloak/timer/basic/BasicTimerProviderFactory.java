@@ -1,5 +1,6 @@
 package org.keycloak.timer.basic;
 
+import org.keycloak.provider.ProviderSession;
 import org.keycloak.timer.TimerProvider;
 import org.keycloak.timer.TimerProviderFactory;
 
@@ -13,7 +14,7 @@ public class BasicTimerProviderFactory implements TimerProviderFactory {
     private Timer timer;
 
     @Override
-    public TimerProvider create() {
+    public TimerProvider create(ProviderSession providerSession) {
         return new BasicTimerProvider(timer);
     }
 

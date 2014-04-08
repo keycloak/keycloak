@@ -18,7 +18,7 @@ import org.keycloak.models.mongo.keycloak.entities.RoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 /**
- * Wrapper around RoleData object, which will persist wrapped object after each set operation (compatibility with picketlink based impl)
+ * Wrapper around RoleData object, which will persist wrapped object after each set operation (compatibility with picketlink based idm)
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */

@@ -6,7 +6,7 @@ import org.keycloak.audit.AuditListener;
 import org.keycloak.audit.AuditProvider;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.ClientConnection;
-import org.keycloak.services.ProviderSession;
+import org.keycloak.provider.ProviderSession;
 
 import java.util.LinkedList;
 import java.util.List;

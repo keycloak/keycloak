@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
@@ -25,9 +24,9 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.spi.authentication.AuthProviderConstants;
-import org.keycloak.spi.authentication.AuthenticationProviderException;
-import org.keycloak.spi.authentication.AuthenticationProviderManager;
+import org.keycloak.authentication.AuthProviderConstants;
+import org.keycloak.authentication.AuthenticationProviderException;
+import org.keycloak.authentication.AuthenticationProviderManager;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -63,7 +62,7 @@ public class AuthProvidersExternalModelTest extends AbstractModelTest {
         credential.setValue("password");
         realm1.updateCredential(john, credential);
 
-        am = new AuthenticationManager();
+        am = new AuthenticationManager(providerSession);
     }
 
 
@@ -120,7 +119,7 @@ public class AuthProvidersExternalModelTest extends AbstractModelTest {
             ResteasyProviderFactory.pushContext(KeycloakSession.class, identitySession);
 
             // Change credential via realm2 and validate that they are changed also in realm1
-            AuthenticationProviderManager authProviderManager = AuthenticationProviderManager.getManager(realm2);
+            AuthenticationProviderManager authProviderManager = AuthenticationProviderManager.getManager(realm2, providerSession);
             try {
                 Assert.assertTrue(authProviderManager.updatePassword(john, "password-updated"));
             } catch (AuthenticationProviderException ape) {

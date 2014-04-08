@@ -2,8 +2,10 @@ package org.keycloak.services;
 
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.provider.ProviderSession;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -29,7 +31,7 @@ public class DefaultProviderSession implements ProviderSession {
         if (provider == null) {
             ProviderFactory<T> providerFactory = factory.getProviderFactory(clazz, id);
             if (providerFactory != null) {
-                provider = providerFactory.create();
+                provider = providerFactory.create(this);
                 providers.put(hash, provider);
             }
         }
@@ -38,6 +40,16 @@ public class DefaultProviderSession implements ProviderSession {
 
     public <T extends Provider> Set<String> listProviderIds(Class<T> clazz) {
         return factory.providerIds(clazz);
+    }
+
+    @Override
+    public <T extends Provider> Set<T> getAllProviders(Class<T> clazz) {
+        Set<String> providerIds = listProviderIds(clazz);
+        Set<T> providers = new HashSet<T>();
+        for (String providerId : providerIds) {
+            providers.add(getProvider(clazz, providerId));
+        }
+        return providers;
     }
 
     public void close() {

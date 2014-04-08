@@ -21,6 +21,7 @@ import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.provider.ProviderSession;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -34,8 +35,8 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.OAuthFlows;
 import org.keycloak.services.validation.Validation;
-import org.keycloak.spi.authentication.AuthenticationProviderException;
-import org.keycloak.spi.authentication.AuthenticationProviderManager;
+import org.keycloak.authentication.AuthenticationProviderException;
+import org.keycloak.authentication.AuthenticationProviderManager;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.Time;
 
@@ -79,7 +80,7 @@ public class TokenService {
     protected RealmModel realm;
     protected TokenManager tokenManager;
     private Audit audit;
-    protected AuthenticationManager authManager = new AuthenticationManager();
+    protected AuthenticationManager authManager;
 
     @Context
     protected Providers providers;
@@ -99,16 +100,19 @@ public class TokenService {
     protected KeycloakTransaction transaction;
     @Context
     protected ClientConnection clientConnection;
+    @Context
+    protected ProviderSession providerSession;
 
     @Context
     protected ResourceContext resourceContext;
 
     private ResourceAdminManager resourceAdminManager = new ResourceAdminManager();
 
-    public TokenService(RealmModel realm, TokenManager tokenManager, Audit audit) {
+    public TokenService(RealmModel realm, TokenManager tokenManager, Audit audit, AuthenticationManager authManager) {
         this.realm = realm;
         this.tokenManager = tokenManager;
         this.audit = audit;
+        this.authManager = authManager;
     }
 
     public static UriBuilder tokenServiceBaseUrl(UriInfo uriInfo) {
@@ -383,7 +387,7 @@ public class TokenService {
             return Flows.forms(realm, request, uriInfo).setError(error).setFormData(formData).createRegistration();
         }
 
-        AuthenticationProviderManager authenticationProviderManager = AuthenticationProviderManager.getManager(realm);
+        AuthenticationProviderManager authenticationProviderManager = AuthenticationProviderManager.getManager(realm, providerSession);
 
         // Validate that user with this username doesn't exist in realm or any authentication provider
         if (realm.getUser(username) != null || authenticationProviderManager.getUser(username) != null) {
@@ -406,7 +410,7 @@ public class TokenService {
             boolean passwordUpdateSuccessful;
             String passwordUpdateError = null;
             try {
-                passwordUpdateSuccessful = AuthenticationProviderManager.getManager(realm).updatePassword(user, formData.getFirst("password"));
+                passwordUpdateSuccessful = AuthenticationProviderManager.getManager(realm, providerSession).updatePassword(user, formData.getFirst("password"));
                 passwordUpdateError = "Password update failed";
             } catch (AuthenticationProviderException ape) {
                 passwordUpdateSuccessful = false;
