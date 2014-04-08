@@ -5,8 +5,8 @@ import org.keycloak.freemarker.Theme;
 import org.keycloak.freemarker.ThemeProvider;
 import org.keycloak.services.ProviderSession;
 import org.keycloak.social.SocialProvider;
-import org.keycloak.spi.authentication.AuthenticationProvider;
-import org.keycloak.spi.authentication.AuthenticationProviderManager;
+import org.keycloak.authentication.AuthenticationProvider;
+import org.keycloak.authentication.AuthenticationProviderManager;
 import org.keycloak.util.ProviderLoader;
 
 import javax.ws.rs.GET;

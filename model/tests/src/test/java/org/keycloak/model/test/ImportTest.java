@@ -17,7 +17,7 @@ import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.spi.authentication.AuthProviderConstants;
+import org.keycloak.authentication.AuthProviderConstants;
 
 import java.util.List;
 import java.util.Map;

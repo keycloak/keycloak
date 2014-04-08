@@ -17,7 +17,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.spi.authentication.AuthProviderConstants;
+import org.keycloak.authentication.AuthProviderConstants;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;

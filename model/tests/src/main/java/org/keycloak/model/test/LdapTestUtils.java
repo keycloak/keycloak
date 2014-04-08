@@ -2,7 +2,7 @@ package org.keycloak.model.test;
 
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.models.RealmModel;
-import org.keycloak.spi.authentication.picketlink.PicketlinkAuthenticationProvider;
+import org.keycloak.authentication.picketlink.PicketlinkAuthenticationProvider;
 import org.keycloak.util.KeycloakRegistry;
 import org.picketlink.idm.IdentityManager;
 import org.picketlink.idm.credential.Password;

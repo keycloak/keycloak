@@ -16,9 +16,9 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.ClientConnection;
 import org.keycloak.services.resources.RealmsResource;
-import org.keycloak.spi.authentication.AuthProviderStatus;
-import org.keycloak.spi.authentication.AuthUser;
-import org.keycloak.spi.authentication.AuthenticationProviderManager;
+import org.keycloak.authentication.AuthProviderStatus;
+import org.keycloak.authentication.AuthUser;
+import org.keycloak.authentication.AuthenticationProviderManager;
 import org.keycloak.util.Time;
 
 import javax.ws.rs.core.Cookie;

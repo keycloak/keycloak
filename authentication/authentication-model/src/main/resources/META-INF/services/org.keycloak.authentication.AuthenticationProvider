@@ -1,0 +1,2 @@
+org.keycloak.authentication.model.ModelAuthenticationProvider
+org.keycloak.authentication.model.ExternalModelAuthenticationProvider

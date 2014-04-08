@@ -34,8 +34,8 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.OAuthFlows;
 import org.keycloak.services.validation.Validation;
-import org.keycloak.spi.authentication.AuthenticationProviderException;
-import org.keycloak.spi.authentication.AuthenticationProviderManager;
+import org.keycloak.authentication.AuthenticationProviderException;
+import org.keycloak.authentication.AuthenticationProviderManager;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.Time;
 

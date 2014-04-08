@@ -1,2 +1,0 @@
-org.keycloak.spi.authentication.model.ModelAuthenticationProvider
-org.keycloak.spi.authentication.model.ExternalModelAuthenticationProvider

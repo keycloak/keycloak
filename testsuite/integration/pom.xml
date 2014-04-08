@@ -162,7 +162,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-authentication-spi</artifactId>
+            <artifactId>keycloak-authentication-api</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

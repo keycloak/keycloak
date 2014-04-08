@@ -2,7 +2,6 @@ package org.keycloak.model.test;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Set;
 
 import javax.ws.rs.core.MultivaluedMap;
 
@@ -20,9 +19,9 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.spi.authentication.AuthProviderConstants;
-import org.keycloak.spi.authentication.AuthenticationProviderException;
-import org.keycloak.spi.authentication.AuthenticationProviderManager;
+import org.keycloak.authentication.AuthProviderConstants;
+import org.keycloak.authentication.AuthenticationProviderException;
+import org.keycloak.authentication.AuthenticationProviderManager;
 import org.keycloak.util.KeycloakRegistry;
 
 /**

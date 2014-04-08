@@ -86,6 +86,7 @@
 
     <modules>
         <module>audit</module>
+        <module>authentication</module>
         <module>core</module>
         <module>core-jaxrs</module>
         <module>model</module>
@@ -97,8 +98,7 @@
         <module>examples</module>
         <module>testsuite</module>
         <module>server</module>
-        <module>spi</module>
-        <module>timer</module>    
+        <module>timer</module>
     </modules>
 
     <dependencyManagement>
