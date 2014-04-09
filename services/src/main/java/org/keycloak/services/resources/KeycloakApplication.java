@@ -15,6 +15,7 @@ import org.keycloak.models.ModelProvider;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.ProviderFactoryLoader;
+import org.keycloak.provider.ProviderSession;
 import org.keycloak.services.DefaultProviderSessionFactory;
 import org.keycloak.picketlink.IdentityManagerProvider;
 import org.keycloak.picketlink.IdentityManagerProviderFactory;
@@ -132,7 +133,8 @@ public class KeycloakApplication extends Application {
                 @Override
                 public void run() {
                     KeycloakSession keycloakSession = keycloakSessionFactory.createSession();
-                    AuditProvider audit = providerSessionFactory.getProviderFactory(AuditProvider.class).create(null);
+                    ProviderSession providerSession = providerSessionFactory.createSession();
+                    AuditProvider audit = providerSession.getProvider(AuditProvider.class);
                     try {
                         for (RealmModel realm : keycloakSession.getRealms()) {
                             if (realm.isAuditEnabled() && realm.getAuditExpiration() > 0) {
