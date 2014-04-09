@@ -1,6 +1,6 @@
 package org.keycloak.account.freemarker;
 
-import org.jboss.resteasy.logging.Logger;
+import org.jboss.logging.Logger;
 import org.keycloak.account.Account;
 import org.keycloak.account.AccountPages;
 import org.keycloak.account.freemarker.model.AccountBean;

@@ -1,6 +1,6 @@
 package org.keycloak.freemarker;
 
-import org.jboss.resteasy.logging.Logger;
+import org.jboss.logging.Logger;
 import org.keycloak.models.Config;
 import org.keycloak.util.ProviderLoader;
 

@@ -1,7 +1,6 @@
 package org.keycloak.login.freemarker;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.freemarker.FreeMarkerException;
 import org.keycloak.freemarker.FreeMarkerUtil;
@@ -62,18 +61,14 @@ public class FreeMarkerLoginForms implements LoginForms {
 
     private RealmModel realm;
 
-    // TODO Remove
-    private HttpRequest request;
-
     private UserModel user;
 
     private ClientModel client;
 
     private UriInfo uriInfo;
 
-    FreeMarkerLoginForms(RealmModel realm, org.jboss.resteasy.spi.HttpRequest request, UriInfo uriInfo) {
+    FreeMarkerLoginForms(RealmModel realm, UriInfo uriInfo) {
         this.realm = realm;
-        this.request = request;
         this.uriInfo = uriInfo;
     }
 

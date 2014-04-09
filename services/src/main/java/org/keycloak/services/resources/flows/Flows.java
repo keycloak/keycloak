@@ -40,8 +40,8 @@ public class Flows {
     private Flows() {
     }
 
-    public static LoginForms forms(RealmModel realm, HttpRequest request, UriInfo uriInfo) {
-        return LoginFormsLoader.load().createForms(realm, request, uriInfo);
+    public static LoginForms forms(RealmModel realm, UriInfo uriInfo) {
+        return LoginFormsLoader.load().createForms(realm, uriInfo);
     }
 
     public static OAuthFlows oauth(RealmModel realm, HttpRequest request, UriInfo uriInfo, AuthenticationManager authManager,
