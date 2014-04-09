@@ -46,6 +46,13 @@
             <artifactId>mongo-java-driver</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>${keycloak.apache.httpcomponents.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
 
         <dependency>
             <groupId>org.keycloak</groupId>
