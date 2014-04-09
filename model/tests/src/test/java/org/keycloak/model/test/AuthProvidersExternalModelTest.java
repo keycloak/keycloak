@@ -6,9 +6,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.junit.Assert;
 import org.junit.Before;
@@ -186,7 +186,7 @@ public class AuthProvidersExternalModelTest extends AbstractModelTest {
     }
 
     public static MultivaluedMap<String, String> createFormData(String username, String password) {
-        MultivaluedMap<String, String> formData = new MultivaluedHashMap<String, String>();
+        MultivaluedMap<String, String> formData = new MultivaluedMapImpl<String, String>();
         formData.add("username", username);
         formData.add(CredentialRepresentation.PASSWORD, password);
         return formData;

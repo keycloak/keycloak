@@ -1,12 +1,12 @@
 package org.keycloak.services.resources.admin;
 
+import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.managers.ModelToRepresentation;
 
-import javax.ws.rs.NotFoundException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -29,7 +29,7 @@ public abstract class RoleResource {
 
     protected void deleteRole(RoleModel role) {
         if (!role.getContainer().removeRole(role)) {
-            throw new NotFoundException();
+            throw new NotFoundException("Role not found");
         }
     }
 

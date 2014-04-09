@@ -22,6 +22,7 @@
 package org.keycloak.services.resources;
 
 import org.jboss.resteasy.logging.Logger;
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.audit.Audit;
@@ -59,10 +60,9 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MultivaluedHashMap;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriBuilder;
@@ -90,8 +90,10 @@ public class SocialResource {
     @Context
     private HttpRequest request;
 
+    /*
     @Context
     ResourceContext resourceContext;
+    */
 
     @Context
     protected KeycloakSession session;
@@ -166,7 +168,7 @@ public class SocialResource {
         try {
             socialUser = provider.processCallback(config, callback);
         } catch (SocialAccessDeniedException e) {
-            MultivaluedHashMap<String, String> queryParms = new MultivaluedHashMap<String, String>();
+            MultivaluedMap<String, String> queryParms = new MultivaluedMapImpl<String, String>();
             queryParms.putSingle(OAuth2Constants.CLIENT_ID, clientId);
             queryParms.putSingle(OAuth2Constants.STATE, state);
             queryParms.putSingle(OAuth2Constants.SCOPE, scope);
@@ -216,7 +218,7 @@ public class SocialResource {
             logger.debug("Social provider " + provider.getId() + " linked with user " + authenticatedUser.getLoginName());
 
             audit.success();
-            return Response.status(Status.FOUND).location(UriBuilder.fromUri(redirectUri).build()).build();
+            return Response.status(302).location(UriBuilder.fromUri(redirectUri).build()).build();
         }
 
         if (user == null) {

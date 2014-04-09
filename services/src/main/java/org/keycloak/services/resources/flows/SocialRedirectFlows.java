@@ -46,6 +46,6 @@ public class SocialRedirectFlows {
         AuthRequest authRequest = socialProvider.getAuthUrl(config);
         RequestDetails socialRequest = socialRequestBuilder.putSocialAttributes(authRequest.getAttributes()).build();
         socialRequestManager.addRequest(authRequest.getId(), socialRequest);
-        return Response.status(Response.Status.FOUND).location(authRequest.getAuthUri()).build();
+        return Response.status(302).location(authRequest.getAuthUri()).build();
     }
 }

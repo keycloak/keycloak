@@ -1,5 +1,6 @@
 package org.keycloak.services.managers;
 
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -8,7 +9,6 @@ import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.util.Time;
 
-import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,7 +35,7 @@ public class AccessCodeEntry {
     protected Set<RequiredAction> requiredActions;
     protected ClientModel client;
     protected List<RoleModel> realmRolesRequested = new ArrayList<RoleModel>();
-    MultivaluedMap<String, RoleModel> resourceRolesRequested = new MultivaluedHashMap<String, RoleModel>();
+    MultivaluedMap<String, RoleModel> resourceRolesRequested = new MultivaluedMapImpl<String, RoleModel>();
 
     public boolean isExpired() {
         return expiration != 0 && Time.currentTime() > expiration;

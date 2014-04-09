@@ -117,7 +117,10 @@ public class FreeMarkerLoginForms implements LoginForms {
         UriBuilder uriBuilder = UriBuilder.fromUri(requestURI);
 
         for (String k : queryParameterMap.keySet()) {
-            uriBuilder.replaceQueryParam(k, queryParameterMap.get(k).toArray());
+
+            Object[] objects = queryParameterMap.get(k).toArray();
+            if (objects.length == 1 && objects[0] == null) continue; //
+            uriBuilder.replaceQueryParam(k, objects);
         }
 
         if (accessCode != null) {

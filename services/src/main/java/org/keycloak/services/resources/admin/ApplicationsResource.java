@@ -2,6 +2,8 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.logging.Logger;
+import org.jboss.resteasy.spi.NotFoundException;
+import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -12,12 +14,10 @@ import org.keycloak.services.resources.flows.Flows;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
-import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -33,9 +33,6 @@ public class ApplicationsResource {
     protected static final Logger logger = Logger.getLogger(RealmAdminResource.class);
     protected RealmModel realm;
     private RealmAuth auth;
-
-    @Context
-    protected ResourceContext resourceContext;
 
     @Context
     protected KeycloakSession session;
@@ -90,7 +87,8 @@ public class ApplicationsResource {
             throw new NotFoundException("Could not find application: " + name);
         }
         ApplicationResource applicationResource = new ApplicationResource(realm, auth, applicationModel, session);
-        resourceContext.initResource(applicationResource);
+        ResteasyProviderFactory.getInstance().injectProperties(applicationResource);
+        //resourceContext.initResource(applicationResource);
         return applicationResource;
     }
 

@@ -1,6 +1,7 @@
 package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
@@ -12,7 +13,6 @@ import org.keycloak.services.resources.flows.Flows;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
-import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -41,7 +41,6 @@ public class RoleContainerResource extends RoleResource {
         this.roleContainer = roleContainer;
     }
 
-    @Path("")
     @GET
     @NoCache
     @Produces("application/json")
@@ -58,7 +57,6 @@ public class RoleContainerResource extends RoleResource {
         return roles;
     }
 
-    @Path("")
     @POST
     @Consumes("application/json")
     public Response createRole(final @Context UriInfo uriInfo, final RoleRepresentation rep) {
@@ -69,7 +67,7 @@ public class RoleContainerResource extends RoleResource {
         }
         RoleModel role = roleContainer.addRole(rep.getName());
         if (role == null) {
-            throw new NotFoundException();
+            throw new NotFoundException("Role not found");
         }
         role.setDescription(rep.getDescription());
         return Response.created(uriInfo.getAbsolutePathBuilder().path(role.getName()).build()).build();

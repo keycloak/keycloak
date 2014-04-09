@@ -66,7 +66,7 @@ public class Cors {
     }
 
     public Response build() {
-        String origin = request.getHttpHeaders().getHeaderString(ORIGIN);
+        String origin = request.getHttpHeaders().getRequestHeaders().getFirst(ORIGIN);
         if (origin == null) {
             return response.build();
         }

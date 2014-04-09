@@ -22,6 +22,7 @@
 package org.keycloak.services.resources;
 
 import org.jboss.resteasy.logging.Logger;
+import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.account.Account;
@@ -46,6 +47,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.provider.ProviderSession;
+import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.ModelToRepresentation;
@@ -62,9 +64,7 @@ import org.keycloak.authentication.AuthProviderStatus;
 import org.keycloak.authentication.AuthenticationProviderException;
 import org.keycloak.authentication.AuthenticationProviderManager;
 
-import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
@@ -443,11 +443,11 @@ public class AccountService {
             }
             if (code == null) {
                 logger.debug("code not specified");
-                throw new BadRequestException();
+                throw new BadRequestException("code not specified");
             }
             if (state == null) {
                 logger.debug("state not specified");
-                throw new BadRequestException();
+                throw new BadRequestException("state not specified");
             }
 
             URI accountUri = Urls.accountBase(uriInfo.getBaseUri()).path("/").build(realm.getName());

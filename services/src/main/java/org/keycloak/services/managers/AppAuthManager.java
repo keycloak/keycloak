@@ -3,6 +3,7 @@ package org.keycloak.services.managers;
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.jboss.resteasy.spi.UnauthorizedException;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
 import org.keycloak.jose.jws.JWSBuilder;
@@ -15,8 +16,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.provider.ProviderSession;
 import org.keycloak.representations.AccessToken;
 
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.NotAuthorizedException;
+import org.jboss.resteasy.spi.BadRequestException;
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.NewCookie;
@@ -48,30 +48,30 @@ public class AppAuthManager extends AuthenticationManager {
         }
         if (!verifiedCode) {
             logger.debug("unverified access code");
-            throw new BadRequestException();
+            throw new BadRequestException("unverified access code");
         }
         String key = input.readContentAsString();
         AccessCodeEntry accessCode = tokenManager.pullAccessCode(key);
         if (accessCode == null) {
             logger.debug("bad access code");
-            throw new BadRequestException();
+            throw new BadRequestException("bad access code");
         }
         if (accessCode.isExpired()) {
             logger.debug("access code expired");
-            throw new BadRequestException();
+            throw new BadRequestException("access code expired");
         }
         if (!accessCode.getToken().isActive()) {
             logger.debug("access token expired");
-            throw new BadRequestException();
+            throw new BadRequestException("access token expired");
         }
         if (!accessCode.getRealm().getId().equals(realm.getId())) {
             logger.debug("bad realm");
-            throw new BadRequestException();
+            throw new BadRequestException("bad realm");
 
         }
         if (!client.getClientId().equals(accessCode.getClient().getClientId())) {
             logger.debug("bad client");
-            throw new BadRequestException();
+            throw new BadRequestException("bad client");
         }
 
         return createLoginCookie(realm, accessCode.getUser(), accessCode.getClient(), cookieName, uri.getRawPath(), false);
@@ -140,39 +140,39 @@ public class AppAuthManager extends AuthenticationManager {
 
     private Auth authenticateBearerToken(RealmModel realm, HttpHeaders headers) {
         String tokenString;
-        String authHeader = headers.getHeaderString(HttpHeaders.AUTHORIZATION);
+        String authHeader = headers.getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION);
         if (authHeader == null) {
             return null;
         } else {
             String[] split = authHeader.trim().split("\\s+");
-            if (split == null || split.length != 2) throw new NotAuthorizedException("Bearer");
-            if (!split[0].equalsIgnoreCase("Bearer")) throw new NotAuthorizedException("Bearer");
+            if (split == null || split.length != 2) throw new UnauthorizedException("Bearer");
+            if (!split[0].equalsIgnoreCase("Bearer")) throw new UnauthorizedException("Bearer");
             tokenString = split[1];
         }
 
         try {
             AccessToken token = RSATokenVerifier.verifyToken(tokenString, realm.getPublicKey(), realm.getName());
             if (!token.isActive()) {
-                throw new NotAuthorizedException("token_expired");
+                throw new UnauthorizedException("token_expired");
             }
 
             UserModel user = realm.getUserById(token.getSubject());
             if (user == null || !user.isEnabled()) {
-                throw new NotAuthorizedException("invalid_user");
+                throw new UnauthorizedException("invalid_user");
             }
 
             ClientModel client = null;
             if (token.getIssuedFor() != null) {
                 client = realm.findClient(token.getIssuedFor());
                 if (client == null || !client.isEnabled()) {
-                    throw new NotAuthorizedException("invalid_user");
+                    throw new UnauthorizedException("invalid_user");
                 }
             }
 
             return new Auth(token, user, client);
         } catch (VerificationException e) {
             logger.error("Failed to verify token", e);
-            throw new NotAuthorizedException("invalid_token");
+            throw new UnauthorizedException("invalid_token");
         }
     }
 

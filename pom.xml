@@ -13,7 +13,9 @@
 
     <properties>
         <keycloak.apache.httpcomponents.version>4.1.2</keycloak.apache.httpcomponents.version>
-        <resteasy.version>3.0.6.Final</resteasy.version>
+        <resteasy.version>2.3.7.Final</resteasy.version>
+        <resteasy.version.eap.6.3>2.3.7.Final</resteasy.version.eap.6.3>
+        <resteasy.version.latest>3.0.8.Final</resteasy.version.latest>
         <undertow.version>1.0.0.Final</undertow.version>
         <picketlink.version>2.6.0.CR1</picketlink.version>
         <picketbox.ldap.version>1.0.2.Final</picketbox.ldap.version>
