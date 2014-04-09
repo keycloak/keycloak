@@ -1,5 +1,6 @@
 package org.keycloak.model.test;
 
+import java.io.File;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -90,6 +91,13 @@ public class LDAPEmbeddedServer extends AbstractLDAPTest {
     public void setup() throws Exception {
         // suppress emb. LDAP server start
         if (isStartEmbeddedLdapLerver()) {
+            // On Windows, the directory may not be fully deleted from previous test
+            String tempDir = System.getProperty("java.io.tmpdir");
+            File workDir = new File(tempDir + "/server-work");
+            if (workDir.exists()) {
+                recursiveDeleteDir(workDir);
+            }
+
             super.setup();
         }
     }
