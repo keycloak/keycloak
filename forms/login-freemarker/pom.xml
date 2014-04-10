@@ -18,31 +18,37 @@
 			<groupId>org.keycloak</groupId>
 			<artifactId>keycloak-core</artifactId>
 			<version>${project.version}</version>
+            <scope>provided</scope>
 		</dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-forms-common-freemarker</artifactId>
             <version>${project.version}</version>
+            <scope>provided</scope>
         </dependency>
 		<dependency>
 			<groupId>org.keycloak</groupId>
 			<artifactId>keycloak-login-api</artifactId>
 			<version>${project.version}</version>
+            <scope>provided</scope>
 		</dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-model-api</artifactId>
             <version>${project.version}</version>
+            <scope>provided</scope>
         </dependency>
 		<dependency>
 			<groupId>org.keycloak</groupId>
 			<artifactId>keycloak-services</artifactId>
 			<version>${project.version}</version>
+            <scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.keycloak</groupId>
 			<artifactId>keycloak-social-core</artifactId>
 			<version>${project.version}</version>
+            <scope>provided</scope>
 		</dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
@@ -52,11 +58,13 @@
         <dependency>
 			<groupId>org.freemarker</groupId>
 			<artifactId>freemarker</artifactId>
+            <scope>provided</scope>
 		</dependency>
         <dependency>
             <groupId>org.jboss</groupId>
             <artifactId>jboss-vfs</artifactId>
             <version>3.2.2.Final</version>
+            <scope>provided</scope>
         </dependency>
 	</dependencies>
 

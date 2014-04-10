@@ -1,5 +1,8 @@
 <jboss-deployment-structure>
     <deployment>
+        <dependencies>
+            <module name="org.apache.httpcomponents"/>
+        </dependencies>
         <exclusions>
 
             <!-- Exclude keycloak modules -->
@@ -8,11 +11,9 @@
             <module name="org.keycloak.keycloak-undertow-adapter" />
             <module name="org.keycloak.keycloak-as7-adapter" />
 
-            <!-- Exclude Version cxf of JBOSS -->
+            <!--
             <module name="org.apache.cxf" />
-            <!-- Exclude JAVA EE of JBOSS (javax.ws..) => Add dependency javax.annotation -->
             <module name="javaee.api" />
-            <!-- Exclude RestEasy conflict (javax.ws.rs.ext.RunDelegate) -->
             <module name="javax.ws.rs.api"/>
             <module name="org.codehaus.jackson.jackson-core-asl" />
             <module name="org.jboss.resteasy.resteasy-atom-provider" />
@@ -27,6 +28,7 @@
             <module name="org.jboss.resteasy.resteasy-multipart-provider" />
             <module name="org.jboss.resteasy.resteasy-validator-provider-11" />
             <module name="org.jboss.resteasy.resteasy-yaml-provider" />
+            ->
         </exclusions>
     </deployment>
 </jboss-deployment-structure>

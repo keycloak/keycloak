@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Set;
 
-import org.jboss.resteasy.logging.Logger;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
