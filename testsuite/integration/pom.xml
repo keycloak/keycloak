@@ -80,7 +80,6 @@
         <dependency>
             <groupId>com.google.zxing</groupId>
             <artifactId>javase</artifactId>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
@@ -192,7 +191,6 @@
         <dependency>
             <groupId>org.freemarker</groupId>
             <artifactId>freemarker</artifactId>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
