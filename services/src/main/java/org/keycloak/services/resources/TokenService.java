@@ -303,15 +303,15 @@ public class TokenService {
                 return oauth.processAccessCode(scopeParam, state, redirect, client, user, username, remember, "form", audit);
             case ACCOUNT_DISABLED:
                 audit.error(Errors.USER_DISABLED);
-                return Flows.forms(realm, request, uriInfo).setError(Messages.ACCOUNT_DISABLED).setFormData(formData).createLogin();
+                return Flows.forms(realm, uriInfo).setError(Messages.ACCOUNT_DISABLED).setFormData(formData).createLogin();
             case MISSING_TOTP:
-                return Flows.forms(realm, request, uriInfo).setFormData(formData).createLoginTotp();
+                return Flows.forms(realm, uriInfo).setFormData(formData).createLoginTotp();
             case INVALID_USER:
                 audit.error(Errors.USER_NOT_FOUND);
-                return Flows.forms(realm, request, uriInfo).setError(Messages.INVALID_USER).setFormData(formData).createLogin();
+                return Flows.forms(realm, uriInfo).setError(Messages.INVALID_USER).setFormData(formData).createLogin();
             default:
                 audit.error(Errors.INVALID_USER_CREDENTIALS);
-                return Flows.forms(realm, request, uriInfo).setError(Messages.INVALID_USER).setFormData(formData).createLogin();
+                return Flows.forms(realm, uriInfo).setError(Messages.INVALID_USER).setFormData(formData).createLogin();
         }
     }
 
@@ -384,7 +384,7 @@ public class TokenService {
 
         if (error != null) {
             audit.error(Errors.INVALID_REGISTRATION);
-            return Flows.forms(realm, request, uriInfo).setError(error).setFormData(formData).createRegistration();
+            return Flows.forms(realm, uriInfo).setError(error).setFormData(formData).createRegistration();
         }
 
         AuthenticationProviderManager authenticationProviderManager = AuthenticationProviderManager.getManager(realm, providerSession);
@@ -392,7 +392,7 @@ public class TokenService {
         // Validate that user with this username doesn't exist in realm or any authentication provider
         if (realm.getUser(username) != null || authenticationProviderManager.getUser(username) != null) {
             audit.error(Errors.USERNAME_IN_USE);
-            return Flows.forms(realm, request, uriInfo).setError(Messages.USERNAME_EXISTS).setFormData(formData).createRegistration();
+            return Flows.forms(realm, uriInfo).setError(Messages.USERNAME_EXISTS).setFormData(formData).createRegistration();
         }
 
         UserModel user = realm.addUser(username);
@@ -420,7 +420,7 @@ public class TokenService {
             // User already registered, but force him to update password
             if (!passwordUpdateSuccessful) {
                 user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
-                return Flows.forms(realm, request, uriInfo).setError(passwordUpdateError).createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
+                return Flows.forms(realm, uriInfo).setError(passwordUpdateError).createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
             }
         }
 
@@ -636,7 +636,7 @@ public class TokenService {
             return oauth.redirectError(client, "access_denied", state, redirect);
         }
         logger.info("createLogin() now...");
-        return Flows.forms(realm, request, uriInfo).createLogin();
+        return Flows.forms(realm, uriInfo).createLogin();
     }
 
     @Path("registrations")
@@ -686,7 +686,7 @@ public class TokenService {
 
         authManager.expireIdentityCookie(realm, uriInfo);
 
-        return Flows.forms(realm, request, uriInfo).createRegistration();
+        return Flows.forms(realm, uriInfo).createRegistration();
     }
 
     @Path("logout")

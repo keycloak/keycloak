@@ -3,6 +3,7 @@ package org.keycloak.testsuite.forms;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
@@ -217,6 +218,7 @@ public class AuthProvidersIntegrationTest {
     }
 
     @Test
+    @Ignore
     public void registerUserLdapSuccess() {
         loginPage.open();
         loginPage.clickRegister();

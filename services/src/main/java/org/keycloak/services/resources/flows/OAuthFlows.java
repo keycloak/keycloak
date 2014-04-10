@@ -83,7 +83,7 @@ public class OAuthFlows {
         String code = accessCode.getCode();
 
         if (Constants.INSTALLED_APP_URN.equals(redirect)) {
-            return Flows.forms(realm, request, uriInfo).setAccessCode(accessCode.getId(), code).createCode();
+            return Flows.forms(realm, uriInfo).setAccessCode(accessCode.getId(), code).createCode();
         } else {
             UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam(OAuth2Constants.CODE, code);
             log.debug("redirectAccessCode: state: {0}", state);
@@ -99,7 +99,7 @@ public class OAuthFlows {
 
     public Response redirectError(ClientModel client, String error, String state, String redirect) {
         if (Constants.INSTALLED_APP_URN.equals(redirect)) {
-            return Flows.forms(realm, request, uriInfo).setError(error).createCode();
+            return Flows.forms(realm, uriInfo).setError(error).createCode();
         } else {
             UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam(OAuth2Constants.ERROR, error);
             if (state != null) {
@@ -141,14 +141,14 @@ public class OAuthFlows {
                 audit.clone().event(Events.SEND_VERIFY_EMAIL).detail(Details.EMAIL, accessCode.getUser().getEmail()).success();
             }
 
-            return Flows.forms(realm, request, uriInfo).setAccessCode(accessCode.getId(), accessCode.getCode()).setUser(user)
+            return Flows.forms(realm, uriInfo).setAccessCode(accessCode.getId(), accessCode.getCode()).setUser(user)
                     .createResponse(action);
         }
 
         if (!isResource
                 && (accessCode.getRealmRolesRequested().size() > 0 || accessCode.getResourceRolesRequested().size() > 0)) {
             accessCode.setExpiration(Time.currentTime() + realm.getAccessCodeLifespanUserAction());
-            return Flows.forms(realm, request, uriInfo).setAccessCode(accessCode.getId(), accessCode.getCode()).
+            return Flows.forms(realm, uriInfo).setAccessCode(accessCode.getId(), accessCode.getCode()).
                     setAccessRequest(accessCode.getRealmRolesRequested(), accessCode.getResourceRolesRequested()).
                     setClient(client).createOAuthGrant();
         }
@@ -162,7 +162,7 @@ public class OAuthFlows {
     }
 
     public Response forwardToSecurityFailure(String message) {
-        return Flows.forms(realm, request, uriInfo).setError(message).createErrorPage();
+        return Flows.forms(realm, uriInfo).setError(message).createErrorPage();
     }
 
     private void isTotpConfigurationRequired(UserModel user) {

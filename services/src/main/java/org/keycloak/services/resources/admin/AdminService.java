@@ -20,7 +20,6 @@ import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.TokenManager;
-import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.TokenService;
 import org.keycloak.services.resources.flows.Flows;
 
@@ -320,7 +319,7 @@ public class AdminService {
     public Response errorOnLoginRedirect(@QueryParam ("error") String message) {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = getAdminstrationRealm(realmManager);
-        return Flows.forms(realm, request, uriInfo).setError(message).createErrorPage();
+        return Flows.forms(realm, uriInfo).setError(message).createErrorPage();
     }
 
     protected Response redirectOnLoginError(String message) {

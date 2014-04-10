@@ -1,6 +1,5 @@
 package org.keycloak.login;
 
-import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.models.RealmModel;
 
 import javax.ws.rs.core.UriInfo;
@@ -10,6 +9,6 @@ import javax.ws.rs.core.UriInfo;
  */
 public interface LoginFormsProvider {
 
-    public LoginForms createForms(RealmModel realm, HttpRequest request, UriInfo uriInfo);
+    public LoginForms createForms(RealmModel realm, UriInfo uriInfo);
 
 }
