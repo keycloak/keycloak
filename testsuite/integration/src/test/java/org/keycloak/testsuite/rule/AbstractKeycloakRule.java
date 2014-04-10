@@ -113,6 +113,14 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
     @Override
     protected void after() {
         server.stop();
+
+        // Add some variable delay (Some windows envs have issues as server is not stopped immediately after server.stop)
+        try {
+            int sleepInterval = Integer.parseInt(System.getProperty("testsuite.delay", "0"));
+            Thread.sleep(sleepInterval);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     public RealmRepresentation loadJson(String path) throws IOException {
