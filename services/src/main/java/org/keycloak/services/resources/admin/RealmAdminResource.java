@@ -2,6 +2,8 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.logging.Logger;
+import org.jboss.resteasy.spi.NotFoundException;
+import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.audit.AuditProvider;
 import org.keycloak.audit.Event;
 import org.keycloak.audit.EventQuery;
@@ -18,7 +20,6 @@ import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.managers.TokenManager;
 
 import javax.ws.rs.*;
-import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.util.HashMap;
@@ -35,8 +36,10 @@ public class RealmAdminResource {
     protected RealmModel realm;
     private TokenManager tokenManager;
 
+    /*
     @Context
     protected ResourceContext resourceContext;
+    */
 
     @Context
     protected KeycloakSession session;
@@ -55,14 +58,16 @@ public class RealmAdminResource {
     @Path("applications")
     public ApplicationsResource getApplications() {
         ApplicationsResource applicationsResource = new ApplicationsResource(realm, auth);
-        resourceContext.initResource(applicationsResource);
+        ResteasyProviderFactory.getInstance().injectProperties(applicationsResource);
+        //resourceContext.initResource(applicationsResource);
         return applicationsResource;
     }
 
     @Path("oauth-clients")
     public OAuthClientsResource getOAuthClients() {
         OAuthClientsResource oauth = new OAuthClientsResource(realm, auth, session);
-        resourceContext.initResource(oauth);
+        ResteasyProviderFactory.getInstance().injectProperties(oauth);
+        //resourceContext.initResource(oauth);
         return oauth;
     }
 
@@ -101,21 +106,23 @@ public class RealmAdminResource {
         auth.requireManage();
 
         if (!new RealmManager(session).removeRealm(realm)) {
-            throw new NotFoundException();
+            throw new NotFoundException("Realm doesn't exist");
         }
     }
 
     @Path("users")
     public UsersResource users() {
         UsersResource users = new UsersResource(realm, auth, tokenManager);
-        resourceContext.initResource(users);
+        ResteasyProviderFactory.getInstance().injectProperties(users);
+        //resourceContext.initResource(users);
         return users;
     }
 
     @Path("roles-by-id")
     public RoleByIdResource rolesById() {
         RoleByIdResource resource = new RoleByIdResource(realm, auth);
-        resourceContext.initResource(resource);
+        ResteasyProviderFactory.getInstance().injectProperties(resource);
+        //resourceContext.initResource(resource);
         return resource;
     }
 

@@ -1,6 +1,8 @@
 package org.keycloak.services.resources;
 
 import org.jboss.resteasy.logging.Logger;
+import org.jboss.resteasy.spi.NotFoundException;
+import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.audit.Audit;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
@@ -14,10 +16,8 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.SocialRequestManager;
 import org.keycloak.services.managers.TokenManager;
 
-import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
-import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.UriBuilder;
@@ -37,8 +37,10 @@ public class RealmsResource {
     @Context
     protected HttpHeaders headers;
 
+    /*
     @Context
     protected ResourceContext resourceContext;
+    */
 
     @Context
     protected KeycloakSession session;
@@ -68,7 +70,8 @@ public class RealmsResource {
         Audit audit = new AuditManager(realm, providers, clientConnection).createAudit();
         AuthenticationManager authManager = new AuthenticationManager(providers);
         TokenService tokenService = new TokenService(realm, tokenManager, audit, authManager);
-        resourceContext.initResource(tokenService);
+        ResteasyProviderFactory.getInstance().injectProperties(tokenService);
+        //resourceContext.initResource(tokenService);
         return tokenService;
     }
 
@@ -88,12 +91,13 @@ public class RealmsResource {
         ApplicationModel application = realm.getApplicationNameMap().get(Constants.ACCOUNT_MANAGEMENT_APP);
         if (application == null || !application.isEnabled()) {
             logger.debug("account management not enabled");
-            throw new NotFoundException();
+            throw new NotFoundException("account management not enabled");
         }
 
         Audit audit = new AuditManager(realm, providers, clientConnection).createAudit();
         AccountService accountService = new AccountService(realm, application, tokenManager, socialRequestManager, audit);
-        resourceContext.initResource(accountService);
+        ResteasyProviderFactory.getInstance().injectProperties(accountService);
+        //resourceContext.initResource(accountService);
         accountService.init();
         return accountService;
     }
@@ -103,7 +107,8 @@ public class RealmsResource {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = locateRealm(name, realmManager);
         PublicRealmResource realmResource = new PublicRealmResource(realm);
-        resourceContext.initResource(realmResource);
+        ResteasyProviderFactory.getInstance().injectProperties(realmResource);
+        //resourceContext.initResource(realmResource);
         return realmResource;
     }
 

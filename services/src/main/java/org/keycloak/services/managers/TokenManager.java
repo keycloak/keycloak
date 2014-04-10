@@ -1,6 +1,7 @@
 package org.keycloak.services.managers;
 
 import org.jboss.resteasy.logging.Logger;
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.audit.Audit;
 import org.keycloak.audit.Details;
@@ -20,7 +21,6 @@ import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.util.Time;
 
-import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -186,7 +186,7 @@ public class TokenManager {
     }
 
     public AccessToken createClientAccessToken(String scopeParam, RealmModel realm, ClientModel client, UserModel user) {
-        return createClientAccessToken(scopeParam, realm, client, user, new LinkedList<RoleModel>(), new MultivaluedHashMap<String, RoleModel>());
+        return createClientAccessToken(scopeParam, realm, client, user, new LinkedList<RoleModel>(), new MultivaluedMapImpl<String, RoleModel>());
     }
 
     public AccessToken createClientAccessToken(String scopeParam, RealmModel realm, ClientModel client, UserModel user, List<RoleModel> realmRolesRequested, MultivaluedMap<String, RoleModel> resourceRolesRequested) {

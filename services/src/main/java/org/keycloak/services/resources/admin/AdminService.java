@@ -5,6 +5,9 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
+import org.jboss.resteasy.spi.NotFoundException;
+import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.jboss.resteasy.spi.UnauthorizedException;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.jaxrs.JaxrsOAuthClient;
 import org.keycloak.models.AdminRoles;
@@ -24,12 +27,9 @@ import org.keycloak.services.resources.TokenService;
 import org.keycloak.services.resources.flows.Flows;
 
 import javax.ws.rs.GET;
-import javax.ws.rs.NotAuthorizedException;
-import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.NewCookie;
@@ -63,8 +63,10 @@ public class AdminService {
     @Context
     protected KeycloakSession session;
 
+    /*
     @Context
     protected ResourceContext resourceContext;
+    */
 
     @Context
     protected Providers providers;
@@ -157,7 +159,7 @@ public class AdminService {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = getAdminstrationRealm(realmManager);
         if (realm == null)
-            throw new NotFoundException();
+            throw new NotFoundException("No realm found");
         Auth auth = authManager.authenticateCookie(realm, headers);
         if (auth == null) {
             return Response.status(401).build();
@@ -174,7 +176,7 @@ public class AdminService {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = getAdminstrationRealm(realmManager);
         if (realm == null)
-            throw new NotFoundException();
+            throw new NotFoundException("No realm found");
         Auth auth = authManager.authenticateCookie(realm, headers);
         if (auth == null) {
             logger.debug("No auth cookie");
@@ -255,14 +257,15 @@ public class AdminService {
         RealmManager realmManager = new RealmManager(session);
         RealmModel adminRealm = getAdminstrationRealm(realmManager);
         if (adminRealm == null)
-            throw new NotFoundException();
+            throw new NotFoundException("Admin realm not found");
         Auth auth = authManager.authenticate(adminRealm, headers);
         if (auth == null) {
-            throw new NotAuthorizedException("Bearer");
+            throw new UnauthorizedException("Bearer");
         }
 
         RealmsAdminResource adminResource = new RealmsAdminResource(auth, tokenManager);
-        resourceContext.initResource(adminResource);
+        ResteasyProviderFactory.getInstance().injectProperties(adminResource);
+        //resourceContext.initResource(adminResource);
         return adminResource;
     }
 
@@ -271,18 +274,19 @@ public class AdminService {
         RealmManager realmManager = new RealmManager(session);
         RealmModel adminRealm = getAdminstrationRealm(realmManager);
         if (adminRealm == null)
-            throw new NotFoundException();
+            throw new NotFoundException("Admin realm not found");
         Auth auth = authManager.authenticate(adminRealm, headers);
         UserModel admin = auth.getUser();
         if (admin == null) {
-            throw new NotAuthorizedException("Bearer");
+            throw new UnauthorizedException("Bearer");
         }
         ApplicationModel adminConsole = adminRealm.getApplicationNameMap().get(Constants.ADMIN_CONSOLE_APPLICATION);
         if (adminConsole == null) {
-            throw new NotFoundException();
+            throw new NotFoundException("Admin console application not found");
         }
         ServerInfoAdminResource adminResource = new ServerInfoAdminResource();
-        resourceContext.initResource(adminResource);
+        ResteasyProviderFactory.getInstance().injectProperties(adminResource);
+        //resourceContext.initResource(adminResource);
         return adminResource;
     }
 

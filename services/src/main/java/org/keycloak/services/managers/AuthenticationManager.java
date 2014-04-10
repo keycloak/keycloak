@@ -87,7 +87,7 @@ public class AuthenticationManager {
             maxAge = realm.getCentralLoginLifespan();
             logger.info("createLoginCookie maxAge: " + maxAge);
         }
-        NewCookie cookie = new NewCookie(cookieName, encoded, cookiePath, null, null, maxAge, secureOnly, true);
+        NewCookie cookie = new NewCookie(cookieName, encoded, cookiePath, null, null, maxAge, secureOnly);// todo httponly , true);
         return cookie;
     }
 
@@ -95,7 +95,7 @@ public class AuthenticationManager {
         String path = getIdentityCookiePath(realm, uriInfo);
         boolean secureOnly = !realm.isSslNotRequired();
         // remember me cookie should be persistent
-        NewCookie cookie = new NewCookie(KEYCLOAK_REMEMBER_ME, "true", path, null, null, realm.getCentralLoginLifespan(), secureOnly, true);
+        NewCookie cookie = new NewCookie(KEYCLOAK_REMEMBER_ME, "true", path, null, null, realm.getCentralLoginLifespan(), secureOnly);// todo httponly , true);
         return cookie;
     }
 

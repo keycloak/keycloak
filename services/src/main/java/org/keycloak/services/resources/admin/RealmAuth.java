@@ -1,9 +1,11 @@
 package org.keycloak.services.resources.admin;
 
 import org.keycloak.models.AdminRoles;
+import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.Auth;
 
-import javax.ws.rs.ForbiddenException;
+import javax.ws.rs.WebApplicationException;
+
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

@@ -4,6 +4,8 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
+import org.jboss.resteasy.spi.NotFoundException;
+import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.jboss.resteasy.util.GenericType;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ApplicationModel;
@@ -11,6 +13,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.ModelToRepresentation;
 import org.keycloak.services.managers.RealmManager;
@@ -18,7 +21,6 @@ import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.resources.flows.Flows;
 
 import javax.ws.rs.*;
-import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
@@ -51,8 +53,10 @@ public class RealmsAdminResource {
         noCache.setNoCache(true);
     }
 
+    /*
     @Context
     protected ResourceContext resourceContext;
+    */
 
     @Context
     protected KeycloakSession session;
@@ -158,7 +162,8 @@ public class RealmsAdminResource {
         RealmAuth realmAuth = new RealmAuth(auth, AdminRoles.getAdminApp(realm));
 
         RealmAdminResource adminResource = new RealmAdminResource(realmAuth, realm, tokenManager);
-        resourceContext.initResource(adminResource);
+        ResteasyProviderFactory.getInstance().injectProperties(adminResource);
+        //resourceContext.initResource(adminResource);
         return adminResource;
     }
 

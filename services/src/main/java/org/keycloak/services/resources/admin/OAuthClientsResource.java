@@ -2,6 +2,8 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.logging.Logger;
+import org.jboss.resteasy.spi.NotFoundException;
+import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
@@ -10,12 +12,10 @@ import org.keycloak.services.managers.OAuthClientManager;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
-import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -33,8 +33,11 @@ public class OAuthClientsResource {
 
     protected KeycloakSession session;
 
+    /*
     @Context
     protected ResourceContext resourceContext;
+
+    */
     private RealmAuth auth;
 
     public OAuthClientsResource(RealmModel realm, RealmAuth auth, KeycloakSession session) {
@@ -81,10 +84,11 @@ public class OAuthClientsResource {
 
         OAuthClientModel oauth = realm.getOAuthClientById(id);
         if (oauth == null) {
-            throw new NotFoundException();
+            throw new NotFoundException("OAuth Client not found");
         }
         OAuthClientResource oAuthClientResource = new OAuthClientResource(realm, auth, oauth, session);
-        resourceContext.initResource(oAuthClientResource);
+        ResteasyProviderFactory.getInstance().injectProperties(oAuthClientResource);
+        //resourceContext.initResource(oAuthClientResource);
         return oAuthClientResource;
     }
 

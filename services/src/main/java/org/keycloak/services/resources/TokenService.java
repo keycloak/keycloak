@@ -2,8 +2,12 @@ package org.keycloak.services.resources;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.logging.Logger;
+import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
+import org.jboss.resteasy.spi.NotAcceptableException;
+import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.jboss.resteasy.spi.UnauthorizedException;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.audit.Audit;
@@ -26,6 +30,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.ClientConnection;
+import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthenticationStatus;
@@ -40,19 +45,14 @@ import org.keycloak.authentication.AuthenticationProviderManager;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.Time;
 
-import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
-import javax.ws.rs.NotAcceptableException;
-import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
@@ -103,8 +103,10 @@ public class TokenService {
     @Context
     protected ProviderSession providerSession;
 
+    /*
     @Context
     protected ResourceContext resourceContext;
+    */
 
     private ResourceAdminManager resourceAdminManager = new ResourceAdminManager();
 
@@ -169,17 +171,17 @@ public class TokenService {
         String username = form.getFirst(AuthenticationManager.FORM_USERNAME);
         if (username == null) {
             audit.error(Errors.USERNAME_MISSING);
-            throw new NotAuthorizedException("No username");
+            throw new UnauthorizedException("No username");
         }
         audit.detail(Details.USERNAME, username);
         if (!realm.isEnabled()) {
             audit.error(Errors.REALM_DISABLED);
-            throw new NotAuthorizedException("Disabled realm");
+            throw new UnauthorizedException("Disabled realm");
         }
 
         if (authManager.authenticateForm(clientConnection, realm, form) != AuthenticationStatus.SUCCESS) {
             audit.error(Errors.INVALID_USER_CREDENTIALS);
-            throw new NotAuthorizedException("Auth failed");
+            throw new UnauthorizedException("Auth failed");
         }
 
         UserModel user = realm.getUser(form.getFirst(AuthenticationManager.FORM_USERNAME));
@@ -218,7 +220,7 @@ public class TokenService {
             error.put(OAuth2Constants.ERROR, e.getError());
             if (e.getDescription() != null) error.put(OAuth2Constants.ERROR_DESCRIPTION, e.getDescription());
             audit.error(Errors.INVALID_TOKEN);
-            throw new BadRequestException(Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build(), e);
+            throw new BadRequestException("OAuth Error", e, Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build());
         }
 
         AccessTokenResponse res = tokenManager.responseBuilder(realm, client, audit)
@@ -318,7 +320,9 @@ public class TokenService {
     @Path("auth/request/login-actions")
     public RequiredActionsService getRequiredActionsService() {
         RequiredActionsService service = new RequiredActionsService(realm, tokenManager, audit);
-        resourceContext.initResource(service);
+        ResteasyProviderFactory.getInstance().injectProperties(service);
+
+        //resourceContext.initResource(service);
         return service;
     }
 
@@ -451,7 +455,7 @@ public class TokenService {
 
         if (!realm.isEnabled()) {
             audit.error(Errors.REALM_DISABLED);
-            throw new NotAuthorizedException("Realm not enabled");
+            throw new UnauthorizedException("Realm not enabled");
         }
 
         String code = formData.getFirst(OAuth2Constants.CODE);
@@ -539,7 +543,7 @@ public class TokenService {
         if (authorizationHeader != null) {
             String[] usernameSecret = BasicAuthHelper.parseHeader(authorizationHeader);
             if (usernameSecret == null) {
-                throw new NotAuthorizedException("Bad Authorization header", "Basic realm=\"" + realm.getName() + "\"");
+                throw new UnauthorizedException("Bad Authorization header", Response.status(401).header(HttpHeaders.WWW_AUTHENTICATE, "Basic realm=\"" + realm.getName() + "\"").build());
             }
             client_id = usernameSecret[0];
             clientSecret = usernameSecret[1];

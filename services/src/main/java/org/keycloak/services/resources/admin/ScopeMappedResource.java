@@ -1,6 +1,7 @@
 package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -16,7 +17,6 @@ import org.keycloak.services.managers.RealmManager;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
-import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -108,7 +108,7 @@ public class ScopeMappedResource {
         for (RoleRepresentation role : roles) {
             RoleModel roleModel = realm.getRoleById(role.getId());
             if (roleModel == null) {
-                throw new NotFoundException();
+                throw new NotFoundException("Role not found");
             }
             realm.addScopeMapping(client, roleModel);
         }
@@ -132,7 +132,7 @@ public class ScopeMappedResource {
             for (RoleRepresentation role : roles) {
                 RoleModel roleModel = realm.getRoleById(role.getId());
                 if (roleModel == null) {
-                    throw new NotFoundException();
+                    throw new NotFoundException("Role not found");
                 }
                 realm.deleteScopeMapping(client, roleModel);
             }
@@ -149,7 +149,7 @@ public class ScopeMappedResource {
         ApplicationModel app = realm.getApplicationByName(appName);
 
         if (app == null) {
-            throw new NotFoundException();
+            throw new NotFoundException("Role not found");
         }
 
         Set<RoleModel> mappings = app.getApplicationScopeMappings(client);
@@ -169,13 +169,13 @@ public class ScopeMappedResource {
         ApplicationModel app = realm.getApplicationByName(appName);
 
         if (app == null) {
-            throw new NotFoundException();
+            throw new NotFoundException("Application not found");
         }
 
         for (RoleRepresentation role : roles) {
             RoleModel roleModel = app.getRole(role.getName());
             if (roleModel == null) {
-                throw new NotFoundException();
+                throw new NotFoundException("Role not found");
             }
             realm.addScopeMapping(client, roleModel);
         }
@@ -191,7 +191,7 @@ public class ScopeMappedResource {
         ApplicationModel app = realm.getApplicationByName(appName);
 
         if (app == null) {
-            throw new NotFoundException();
+            throw new NotFoundException("Application not found");
         }
 
         if (roles == null) {
@@ -204,7 +204,7 @@ public class ScopeMappedResource {
             for (RoleRepresentation role : roles) {
                 RoleModel roleModel = app.getRole(role.getName());
                 if (roleModel == null) {
-                    throw new NotFoundException();
+                    throw new NotFoundException("Role not found");
                 }
                 realm.deleteScopeMapping(client, roleModel);
             }

@@ -1,5 +1,6 @@
 package org.keycloak.model.test;
 
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -13,7 +14,6 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthenticationStatus;
 
-import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
 import java.util.Arrays;
@@ -154,7 +154,7 @@ public class AuthenticationManagerTest extends AbstractModelTest {
 
         realm.updateCredential(user, credential);
 
-        formData = new MultivaluedHashMap<String, String>();
+        formData = new MultivaluedMapImpl<String, String>();
         formData.add("username", "test");
         formData.add(CredentialRepresentation.PASSWORD, "password");
 
