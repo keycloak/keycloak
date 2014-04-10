@@ -9,7 +9,6 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.jboss.resteasy.spi.UnauthorizedException;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.jaxrs.JaxrsOAuthClient;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Config;
@@ -25,6 +24,7 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.resources.TokenService;
 import org.keycloak.services.resources.flows.Flows;
+import org.keycloak.services.resources.flows.OAuthRedirect;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -301,7 +301,7 @@ public class AdminService {
         logger.debug("loginPage ********************** <---");
         expireCookie();
 
-        JaxrsOAuthClient oauth = new JaxrsOAuthClient();
+        OAuthRedirect oauth = new OAuthRedirect();
         String authUrl = TokenService.loginPageUrl(uriInfo).build(Config.getAdminRealm()).toString();
         logger.debug("authUrl: {0}", authUrl);
         oauth.setAuthUrl(authUrl);
@@ -368,7 +368,7 @@ public class AdminService {
                 logger.debug("state not specified");
                 return redirectOnLoginError("invalid login data");
             }
-            new JaxrsOAuthClient().checkStateCookie(uriInfo, headers);
+            new OAuthRedirect().checkStateCookie(uriInfo, headers);
 
             logger.debug("loginRedirect SUCCESS");
             NewCookie cookie = authManager.createCookie(adminRealm, adminConsole, code, AdminService.saasCookiePath(uriInfo).build());

@@ -33,7 +33,6 @@ import org.keycloak.audit.AuditProvider;
 import org.keycloak.audit.Details;
 import org.keycloak.audit.Event;
 import org.keycloak.audit.Events;
-import org.keycloak.jaxrs.JaxrsOAuthClient;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.AuthenticationLinkModel;
@@ -55,6 +54,7 @@ import org.keycloak.services.managers.SocialRequestManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Flows;
+import org.keycloak.services.resources.flows.OAuthRedirect;
 import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.social.SocialLoader;
@@ -473,7 +473,7 @@ public class AccountService {
     }
 
     private Response login(String path) {
-        JaxrsOAuthClient oauth = new JaxrsOAuthClient();
+        OAuthRedirect oauth = new OAuthRedirect();
         String authUrl = Urls.realmLoginPage(uriInfo.getBaseUri(), realm.getName()).toString();
         oauth.setAuthUrl(authUrl);
 

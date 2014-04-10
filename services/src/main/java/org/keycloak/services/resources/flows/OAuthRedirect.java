@@ -1,16 +1,12 @@
-package org.keycloak.jaxrs;
+package org.keycloak.services.resources.flows;
 
 import org.jboss.resteasy.logging.Logger;
+import org.jboss.resteasy.spi.BadRequestException;
 import org.keycloak.AbstractOAuthClient;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.representations.AccessTokenResponse;
 
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.InternalServerErrorException;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Cookie;
-import javax.ws.rs.core.Form;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
@@ -25,47 +21,15 @@ import java.util.Map;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class JaxrsOAuthClient extends AbstractOAuthClient {
-    protected static final Logger logger = Logger.getLogger(JaxrsOAuthClient.class);
-    protected Client client;
+public class OAuthRedirect extends AbstractOAuthClient {
+    protected static final Logger logger = Logger.getLogger(OAuthRedirect.class);
 
     /**
      * closes client
      */
     public void stop() {
-        if (client != null) client.close();
-    }
-    public Client getClient() {
-        return client;
     }
 
-    public void setClient(Client client) {
-        this.client = client;
-    }
-
-    public String resolveBearerToken(String redirectUri, String code) {
-        redirectUri = stripOauthParametersFromRedirect(redirectUri);
-        Form codeForm = new Form()
-                .param(OAuth2Constants.GRANT_TYPE, "authorization_code")
-                .param(OAuth2Constants.CODE, code)
-                .param(OAuth2Constants.CLIENT_ID, clientId)
-                .param(OAuth2Constants.REDIRECT_URI, redirectUri);
-        for (Map.Entry<String, String> entry : credentials.entrySet()) {
-            codeForm.param(entry.getKey(), entry.getValue());
-        }
-        Response res = client.target(codeUrl).request().post(Entity.form(codeForm));
-        try {
-            if (res.getStatus() == 400) {
-                throw new BadRequestException();
-            } else if (res.getStatus() != 200) {
-                throw new InternalServerErrorException(new Exception("Unknown error when getting acess token"));
-            }
-            AccessTokenResponse tokenResponse = res.readEntity(AccessTokenResponse.class);
-            return tokenResponse.getToken();
-        } finally {
-            res.close();
-        }
-    }
     public Response redirect(UriInfo uriInfo, String redirectUri) {
         String state = getStateCode();
 
@@ -79,7 +43,8 @@ public class JaxrsOAuthClient extends AbstractOAuthClient {
 
         URI url = uriBuilder.build();
 
-        NewCookie cookie = new NewCookie(getStateCookieName(), state, getStateCookiePath(uriInfo), null, null, -1, isSecure, true);
+        // todo httpOnly!
+        NewCookie cookie = new NewCookie(getStateCookieName(), state, getStateCookiePath(uriInfo), null, null, -1, isSecure);
         logger.debug("NewCookie: " + cookie.toString());
         logger.debug("Oauth Redirect to: " + url);
         return Response.status(302)
@@ -90,15 +55,6 @@ public class JaxrsOAuthClient extends AbstractOAuthClient {
     public String getStateCookiePath(UriInfo uriInfo) {
         if (stateCookiePath != null) return stateCookiePath;
         return uriInfo.getBaseUri().getRawPath();
-    }
-
-    public String getBearerToken(UriInfo uriInfo, HttpHeaders headers) throws BadRequestException, InternalServerErrorException {
-        String error = getError(uriInfo);
-        if (error != null) throw new BadRequestException(new Exception("OAuth error: " + error));
-        checkStateCookie(uriInfo, headers);
-        String code = getAccessCode(uriInfo);
-        if (code == null) throw new BadRequestException(new Exception("code parameter was null"));
-        return resolveBearerToken(uriInfo.getRequestUri().toString(), code);
     }
 
     public String getError(UriInfo uriInfo) {
