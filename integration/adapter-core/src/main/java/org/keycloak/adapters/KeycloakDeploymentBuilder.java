@@ -27,7 +27,7 @@ public class KeycloakDeploymentBuilder {
 
 
     protected KeycloakDeployment internalBuild(AdapterConfig adapterConfig) {
-
+        deployment.setConfigured(true);
         if (adapterConfig.getRealm() == null) throw new RuntimeException("Must set 'realm' in config");
         deployment.setRealm(adapterConfig.getRealm());
         String resource = adapterConfig.getResource();

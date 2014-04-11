@@ -9,6 +9,7 @@ import org.apache.catalina.valves.ValveBase;
 import org.jboss.logging.Logger;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterConstants;
+import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.AuthenticatedActionsHandler;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.representations.AccessToken;
@@ -33,10 +34,10 @@ import java.util.Set;
  */
 public class AuthenticatedActionsValve extends ValveBase {
     private static final Logger log = Logger.getLogger(AuthenticatedActionsValve.class);
-    protected KeycloakDeployment deployment;
+    protected AdapterDeploymentContext deploymentContext;
 
-    public AuthenticatedActionsValve(KeycloakDeployment deployment, Valve next, Container container, ObjectName controller) {
-        this.deployment = deployment;
+    public AuthenticatedActionsValve(AdapterDeploymentContext deploymentContext, Valve next, Container container, ObjectName controller) {
+        this.deploymentContext = deploymentContext;
         if (next == null) throw new RuntimeException("WTF is next null?!");
         setNext(next);
         setContainer(container);
@@ -47,7 +48,7 @@ public class AuthenticatedActionsValve extends ValveBase {
     @Override
     public void invoke(Request request, Response response) throws IOException, ServletException {
         log.debugv("AuthenticatedActionsValve.invoke {0}", request.getRequestURI());
-        AuthenticatedActionsHandler handler = new AuthenticatedActionsHandler(deployment, new CatalinaHttpFacade(request, response));
+        AuthenticatedActionsHandler handler = new AuthenticatedActionsHandler(deploymentContext.getDeployment(), new CatalinaHttpFacade(request, response));
         if (handler.handledRequest()) {
             return;
         }

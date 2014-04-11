@@ -35,6 +35,7 @@ public class PreAuthActionsHandler {
     }
 
     public boolean handleRequest() {
+        if (!deployment.isConfigured()) return false;
         String requestUri = facade.getRequest().getURI();
         log.debugv("adminRequest {0}", requestUri);
         if (preflightCors()) {

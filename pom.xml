@@ -102,6 +102,7 @@
         <module>testsuite</module>
         <module>server</module>
         <module>timer</module>
+        <module>bundled-war-example</module>
     </modules>
 
     <dependencyManagement>
