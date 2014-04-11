@@ -169,6 +169,7 @@ public class UsersResource {
         for (ApplicationModel applicationModel : realm.getApplications()) {
             if (applicationModel.getManagementUrl() == null) continue;
             UserStats appStats = new ResourceAdminManager().getUserStats(realm, applicationModel, user);
+            if (appStats == null) continue;
             if (appStats.isLoggedIn()) stats.put(applicationModel.getName(), appStats);
         }
         return stats;

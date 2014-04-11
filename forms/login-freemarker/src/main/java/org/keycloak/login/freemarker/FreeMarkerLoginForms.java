@@ -155,7 +155,10 @@ public class FreeMarkerLoginForms implements LoginForms {
         if (message != null) {
             attributes.put("message", new MessageBean(messages.containsKey(message) ? messages.getProperty(message) : message, messageType));
         }
-
+        if (page == LoginFormsPages.OAUTH_GRANT) {
+            // for some reason Resteasy 2.3.7 doesn't like query params and form params with the same name and will null out the code form param
+            uriBuilder.replaceQuery(null);
+        }
         URI baseUri = uriBuilder.build();
 
         if (realm != null) {
