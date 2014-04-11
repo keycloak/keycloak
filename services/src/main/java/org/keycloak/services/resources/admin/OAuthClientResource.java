@@ -41,7 +41,7 @@ public class OAuthClientResource  {
     protected UriInfo uriInfo;
 
     @Context
-    protected Application application;
+    protected KeycloakApplication application;
 
     protected KeycloakApplication getApplication() {
         return (KeycloakApplication)application;

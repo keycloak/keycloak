@@ -1,5 +1,6 @@
 package org.keycloak.services.resources;
 
+import org.jboss.resteasy.core.Dispatcher;
 import org.jboss.resteasy.logging.Logger;
 import org.keycloak.SkeletonKeyContextResolver;
 import org.keycloak.audit.AuditListener;
@@ -52,9 +53,10 @@ public class KeycloakApplication extends Application {
     protected ProviderSessionFactory providerSessionFactory;
     protected String contextPath;
 
-    public KeycloakApplication(@Context ServletContext context) {
-        this.factory = createSessionFactory();
+    public KeycloakApplication(@Context ServletContext context, @Context Dispatcher dispatcher) {
+        dispatcher.getDefaultContextObjects().put(KeycloakApplication.class, this);
         this.contextPath = context.getContextPath();
+        this.factory = createSessionFactory();
         this.providerSessionFactory = createProviderSessionFactory();
         context.setAttribute(KeycloakSessionFactory.class.getName(), factory);
         //classes.add(KeycloakSessionCleanupFilter.class);

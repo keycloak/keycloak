@@ -1,0 +1,70 @@
+{
+    "realm": "demo",
+    "enabled": true,
+    "accessTokenLifespan": 3000,
+    "accessCodeLifespan": 10,
+    "accessCodeLifespanUserAction": 6000,
+    "sslNotRequired": true,
+    "registrationAllowed": false,
+    "social": false,
+    "updateProfileOnInitialSocialLogin": false,
+    "requiredCredentials": [ "password" ],
+    "users" : [
+        {
+            "username" : "bburke@redhat.com",
+            "enabled": true,
+            "email" : "bburke@redhat.com",
+            "firstName": "Bill",
+            "lastName": "Burke",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ]
+        }
+    ],
+    "roles" : {
+        "realm" : [
+            {
+                "name": "user",
+                "description": "User privileges"
+            },
+            {
+                "name": "admin",
+                "description": "Administrator privileges"
+            }
+        ]
+    },
+    "roleMappings": [
+        {
+            "username": "bburke@redhat.com",
+            "roles": ["user"]
+        }
+    ],
+    "scopeMappings": [
+        {
+            "client": "customer-portal",
+            "roles": ["user"]
+        }
+    ],
+    "applications": [
+        {
+            "name": "customer-portal",
+            "enabled": true,
+            "adminUrl": "http://localhost:8080/app-bundle",
+            "baseUrl": "http://localhost:8080/app-bundle",
+            "redirectUris": [
+                "http://localhost:8080/app-bundle/*"
+            ],
+            "secret": "password"
+        }
+    ],
+    "applicationRoleMappings": {
+        "account": [
+            {
+                "username": "bburke@redhat.com",
+                "roles": ["manage-account"]
+            }
+        ]
+    }
+
+}

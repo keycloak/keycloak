@@ -52,7 +52,7 @@ public class ApplicationResource {
     protected UriInfo uriInfo;
 
     @Context
-    protected Application keycloak;
+    protected KeycloakApplication keycloak;
 
     protected KeycloakApplication getKeycloakApplication() {
         return (KeycloakApplication)keycloak;

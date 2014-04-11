@@ -12,6 +12,7 @@ import java.util.Map;
  * @version $Revision: 1 $
  */
 public class KeycloakDeployment {
+    protected boolean configured;
     protected String realm;
     protected PublicKey realmKey;
     protected KeycloakUriBuilder authUrl;
@@ -36,6 +37,14 @@ public class KeycloakDeployment {
     protected String corsAllowedMethods;
     protected boolean exposeToken;
     protected volatile int notBefore;
+
+    public boolean isConfigured() {
+        return configured;
+    }
+
+    public void setConfigured(boolean configured) {
+        this.configured = configured;
+    }
 
     public String getResourceName() {
         return resourceName;

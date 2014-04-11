@@ -13,6 +13,7 @@ import org.apache.catalina.deploy.LoginConfig;
 import org.jboss.logging.Logger;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterConstants;
+import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.AuthChallenge;
 import org.keycloak.adapters.AuthOutcome;
 import org.keycloak.adapters.KeycloakDeployment;
@@ -55,7 +56,7 @@ import java.util.Map;
 public class KeycloakAuthenticatorValve extends FormAuthenticator implements LifecycleListener {
     private static final Logger log = Logger.getLogger(KeycloakAuthenticatorValve.class);
     protected CatalinaUserSessionManagement userSessionManagement = new CatalinaUserSessionManagement();
-    protected KeycloakDeployment deployment;
+    protected AdapterDeploymentContext deploymentContext;
 
 
     @Override
@@ -100,15 +101,26 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
 
 
     protected void init() {
-        this.deployment = KeycloakDeploymentBuilder.build(getConfigInputStream(context));
-        AuthenticatedActionsValve actions = new AuthenticatedActionsValve(deployment, getNext(), getContainer(), getController());
+        InputStream configInputStream = getConfigInputStream(context);
+        KeycloakDeployment kd = null;
+        if (configInputStream == null) {
+            log.warn("No adapter configuration.  Keycloak is unconfigured and will deny all requests.");
+            kd = new KeycloakDeployment();
+            kd.setConfigured(false);
+
+        } else {
+            kd = KeycloakDeploymentBuilder.build(configInputStream);
+        }
+        deploymentContext = new AdapterDeploymentContext(kd);
+        context.getServletContext().setAttribute(AdapterDeploymentContext.class.getName(), deploymentContext);
+        AuthenticatedActionsValve actions = new AuthenticatedActionsValve(deploymentContext, getNext(), getContainer(), getController());
         setNext(actions);
     }
 
     @Override
     public void invoke(Request request, Response response) throws IOException, ServletException {
         try {
-            PreAuthActionsHandler handler = new PreAuthActionsHandler(userSessionManagement, deployment, new CatalinaHttpFacade(request, response));
+            PreAuthActionsHandler handler = new PreAuthActionsHandler(userSessionManagement, deploymentContext.getDeployment(), new CatalinaHttpFacade(request, response));
             if (handler.handleRequest()) {
                 return;
             }
@@ -120,8 +132,9 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
 
     @Override
     public boolean authenticate(Request request, HttpServletResponse response, LoginConfig config) throws IOException {
+        if (!deploymentContext.getDeployment().isConfigured()) return false;
         CatalinaHttpFacade facade = new CatalinaHttpFacade(request, response);
-        CatalinaRequestAuthenticator authenticator = new CatalinaRequestAuthenticator(deployment, this, userSessionManagement, facade, request);
+        CatalinaRequestAuthenticator authenticator = new CatalinaRequestAuthenticator(deploymentContext.getDeployment(), this, userSessionManagement, facade, request);
         AuthOutcome outcome = authenticator.authenticate();
         if (outcome == AuthOutcome.AUTHENTICATED) {
             if (facade.isEnded()) {
@@ -146,7 +159,7 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
         RefreshableKeycloakSecurityContext session = (RefreshableKeycloakSecurityContext)request.getSessionInternal().getNote(KeycloakSecurityContext.class.getName());
         if (session == null) return;
         // just in case session got serialized
-        session.setDeployment(deployment);
+        session.setDeployment(deploymentContext.getDeployment());
         if (session.isActive()) return;
 
         // FYI: A refresh requires same scope, so same roles will be set.  Otherwise, refresh will fail and token will

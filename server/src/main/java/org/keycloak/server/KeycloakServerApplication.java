@@ -1,5 +1,6 @@
 package org.keycloak.server;
 
+import org.jboss.resteasy.core.Dispatcher;
 import org.jboss.resteasy.logging.Logger;
 import org.keycloak.models.Config;
 import org.keycloak.models.KeycloakSession;
@@ -21,8 +22,8 @@ public class KeycloakServerApplication extends KeycloakApplication {
 
     private static final Logger log = Logger.getLogger(KeycloakServerApplication.class);
 
-    public KeycloakServerApplication(@Context ServletContext servletContext) throws FileNotFoundException {
-        super(servletContext);
+    public KeycloakServerApplication(@Context ServletContext servletContext, @Context Dispatcher dispatcher) throws FileNotFoundException {
+        super(servletContext, dispatcher);
 
         String importRealm = System.getProperty("keycloak.import");
         if (importRealm != null) {
