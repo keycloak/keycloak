@@ -2,6 +2,7 @@
     <deployment>
         <dependencies>
             <module name="org.apache.httpcomponents"/>
+            <module name="org.bouncycastle"/>
         </dependencies>
         <exclusions>
 
@@ -28,7 +29,7 @@
             <module name="org.jboss.resteasy.resteasy-multipart-provider" />
             <module name="org.jboss.resteasy.resteasy-validator-provider-11" />
             <module name="org.jboss.resteasy.resteasy-yaml-provider" />
-            ->
+            -->
         </exclusions>
     </deployment>
 </jboss-deployment-structure>
