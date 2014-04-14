@@ -1,21 +1,18 @@
 <div class="bs-sidebar col-sm-3 " data-ng-include data-src="'partials/realm-menu.html'"></div>
 <div id="content-area" class="col-sm-9" role="main">
-    <data-kc-navigation data-kc-current="token" data-kc-realm="realm.realm" data-kc-social="realm.social"></data-kc-navigation>
+    <ul class="nav nav-tabs nav-tabs-pf"  data-ng-show="!create">
+        <li><a href="#/realms/{{realm.realm}}/sessions/realm">Realm Sessions</a></li>
+        <li><a href="#/realms/{{realm.realm}}/token-settings">Token Settings</a></li>
+        <li class="active"><a href="#/realms/{{realm.realm}}/sessions/revocation">Revocation</a></li>
+    </ul>
     <div id="content">
         <ol class="breadcrumb">
             <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
-            <li><a href="#/realms/{{realm.realm}}">Settings</a></li>
             <li class="active">Token</li>
         </ol>
         <h2><span>{{realm.realm}}</span> Token Settings</h2>
         <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
             <fieldset class="border-top">
-                <div class="form-group">
-                    <label class="col-sm-2 control-label" for="rememberMe">Remember Me</label>
-                    <div class="col-sm-4">
-                        <input ng-model="realm.rememberMe" name="rememberMe" id="rememberMe" onoffswitch />
-                    </div>
-                </div>
                 <div class="form-group input-select">
                     <label class="col-sm-2 control-label" for="centralLoginLifespan">Central Login Lifespan</label>
                     <div class="col-sm-10">
