@@ -48,6 +48,7 @@ public class AuthProvidersLDAPTest extends AbstractModelTest {
 
         // Create realm and configure ldap
         realm = realmManager.createRealm("realm");
+        realm.setBruteForceProtected(false);
         realm.addRequiredCredential(CredentialRepresentation.PASSWORD);
         this.embeddedServer.setupLdapInRealm(realm);
 

@@ -28,6 +28,7 @@ public class RealmRepresentation {
     protected Boolean resetPasswordAllowed;
     protected Boolean social;
     protected Boolean updateProfileOnInitialSocialLogin;
+    protected Boolean bruteForceProtected;
     protected String privateKey;
     protected String publicKey;
     protected RolesRepresentation roles;
@@ -374,5 +375,13 @@ public class RealmRepresentation {
 
     public void setNotBefore(Integer notBefore) {
         this.notBefore = notBefore;
+    }
+
+    public Boolean isBruteForceProtected() {
+        return bruteForceProtected;
+    }
+
+    public void setBruteForceProtected(Boolean bruteForceProtected) {
+        this.bruteForceProtected = bruteForceProtected;
     }
 }

@@ -79,6 +79,7 @@ public class RealmManager {
         if (id == null) id = KeycloakModelUtils.generateId();
         RealmModel realm = identitySession.createRealm(id, name);
         realm.setName(name);
+        realm.setBruteForceProtected(false); // default settings off for now todo set it on
 
         setupAdminManagement(realm);
         setupAccountManagement(realm);
@@ -121,6 +122,7 @@ public class RealmManager {
         }
         if (rep.isEnabled() != null) realm.setEnabled(rep.isEnabled());
         if (rep.isSocial() != null) realm.setSocial(rep.isSocial());
+        if (rep.isBruteForceProtected() != null) realm.setBruteForceProtected(rep.isBruteForceProtected());
         if (rep.isRegistrationAllowed() != null) realm.setRegistrationAllowed(rep.isRegistrationAllowed());
         if (rep.isRememberMe() != null) realm.setRememberMe(rep.isRememberMe());
         if (rep.isVerifyEmail() != null) realm.setVerifyEmail(rep.isVerifyEmail());
@@ -227,6 +229,7 @@ public class RealmManager {
         newRealm.setName(rep.getRealm());
         if (rep.isEnabled() != null) newRealm.setEnabled(rep.isEnabled());
         if (rep.isSocial() != null) newRealm.setSocial(rep.isSocial());
+        if (rep.isBruteForceProtected() != null) newRealm.setBruteForceProtected(rep.isBruteForceProtected());
 
         if (rep.getNotBefore() != null) newRealm.setNotBefore(rep.getNotBefore());
 

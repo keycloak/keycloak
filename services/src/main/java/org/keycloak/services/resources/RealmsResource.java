@@ -12,6 +12,7 @@ import org.keycloak.services.ClientConnection;
 import org.keycloak.provider.ProviderSession;
 import org.keycloak.services.managers.AuditManager;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.SocialRequestManager;
 import org.keycloak.services.managers.TokenManager;
@@ -51,6 +52,9 @@ public class RealmsResource {
     @Context
     protected ClientConnection clientConnection;
 
+    @Context
+    protected BruteForceProtector protector;
+
     protected TokenManager tokenManager;
     protected SocialRequestManager socialRequestManager;
 
@@ -68,7 +72,7 @@ public class RealmsResource {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = locateRealm(name, realmManager);
         Audit audit = new AuditManager(realm, providers, clientConnection).createAudit();
-        AuthenticationManager authManager = new AuthenticationManager(providers);
+        AuthenticationManager authManager = new AuthenticationManager(providers, protector);
         TokenService tokenService = new TokenService(realm, tokenManager, audit, authManager);
         ResteasyProviderFactory.getInstance().injectProperties(tokenService);
         //resourceContext.initResource(tokenService);

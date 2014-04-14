@@ -639,6 +639,15 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmRevocationCtrl'
         })
+        .when('/realms/:realm/sessions/brute-force', {
+            templateUrl : 'partials/session-brute-force.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                }
+            },
+            controller : 'RealmBruteForceCtrl'
+        })
         .when('/realms/:realm/sessions/realm', {
             templateUrl : 'partials/session-realm.html',
             resolve : {

@@ -78,6 +78,7 @@ public class ModelToRepresentation {
         rep.setPrivateKey(realm.getPrivateKeyPem());
         rep.setRegistrationAllowed(realm.isRegistrationAllowed());
         rep.setRememberMe(realm.isRememberMe());
+        rep.setBruteForceProtected(realm.isBruteForceProtected());
         rep.setVerifyEmail(realm.isVerifyEmail());
         rep.setResetPasswordAllowed(realm.isResetPasswordAllowed());
         rep.setAccessTokenLifespan(realm.getAccessTokenLifespan());

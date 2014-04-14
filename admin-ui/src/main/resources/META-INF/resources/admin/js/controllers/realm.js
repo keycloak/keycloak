@@ -1118,3 +1118,33 @@ module.controller('RealmAuditEventsCtrl', function($scope, RealmAuditEvents, rea
 
     $scope.update();
 });
+
+module.controller('RealmBruteForceCtrl', function($scope, Realm, realm, $http, $location, Dialog, Notifications) {
+    console.log('RealmBruteForceCtrl');
+
+    $scope.realm = realm;
+
+    var oldCopy = angular.copy($scope.realm);
+    $scope.changed = false;
+
+    $scope.$watch('realm', function() {
+        if (!angular.equals($scope.realm, oldCopy)) {
+            $scope.changed = true;
+        }
+    }, true);
+
+    $scope.save = function() {
+        var realmCopy = angular.copy($scope.realm);
+        $scope.changed = false;
+        Realm.update(realmCopy, function () {
+            $location.url("/realms/" + realm.realm + "/sessions/brute-force");
+            Notifications.success("Your changes have been saved to the realm.");
+        });
+    };
+
+    $scope.reset = function() {
+        $scope.realm = angular.copy(oldCopy);
+        $scope.changed = false;
+    };
+});
+

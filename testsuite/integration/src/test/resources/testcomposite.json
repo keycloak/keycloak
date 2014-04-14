@@ -6,6 +6,7 @@
     "accessCodeLifespan": 600,
     "accessCodeLifespanUserAction": 600,
     "sslNotRequired": true,
+    "bruteForceProtected": true,
     "registrationAllowed": true,
     "resetPasswordAllowed": true,
     "requiredCredentials": [ "password" ],

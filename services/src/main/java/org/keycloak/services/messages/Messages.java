@@ -27,6 +27,7 @@ package org.keycloak.services.messages;
 public class Messages {
 
     public static final String ACCOUNT_DISABLED = "accountDisabled";
+    public static final String ACCOUNT_TEMPORARILY_DISABLED = "accountTemporarilyDisabled";
 
     public static final String INVALID_PASSWORD = "invalidPassword";
 
