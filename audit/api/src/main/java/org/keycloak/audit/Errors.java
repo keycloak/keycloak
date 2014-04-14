@@ -13,6 +13,7 @@ public interface Errors {
 
     String USER_NOT_FOUND = "user_not_found";
     String USER_DISABLED = "user_disabled";
+    String USER_TEMPORARILY_DISABLED = "user_temporarily_disabled";
     String INVALID_USER_CREDENTIALS = "invalid_user_credentials";
 
     String USERNAME_MISSING = "username_missing";

@@ -179,9 +179,20 @@ public class TokenService {
             throw new UnauthorizedException("Disabled realm");
         }
 
-        if (authManager.authenticateForm(clientConnection, realm, form) != AuthenticationStatus.SUCCESS) {
-            audit.error(Errors.INVALID_USER_CREDENTIALS);
-            throw new UnauthorizedException("Auth failed");
+        AuthenticationStatus authenticationStatus = authManager.authenticateForm(clientConnection, realm, form);
+
+        switch (authenticationStatus) {
+            case SUCCESS:
+                break;
+            case ACCOUNT_TEMPORARILY_DISABLED:
+            case ACTIONS_REQUIRED:
+                audit.error(Errors.USER_TEMPORARILY_DISABLED);
+                return Response.status(503).type(MediaType.TEXT_PLAIN).entity("Account temporarily disabled").build();
+            case ACCOUNT_DISABLED:
+                return Response.status(403).type(MediaType.TEXT_PLAIN).entity("Account disabled").build();
+            default:
+                audit.error(Errors.INVALID_USER_CREDENTIALS);
+                throw new UnauthorizedException("Auth failed");
         }
 
         UserModel user = realm.getUser(form.getFirst(AuthenticationManager.FORM_USERNAME));
@@ -303,6 +314,9 @@ public class TokenService {
                 UserModel user = KeycloakModelUtils.findUserByNameOrEmail(realm, username);
 		        audit.user(user);
                 return oauth.processAccessCode(scopeParam, state, redirect, client, user, username, remember, "form", audit);
+            case ACCOUNT_TEMPORARILY_DISABLED:
+                audit.error(Errors.USER_TEMPORARILY_DISABLED);
+                return Flows.forms(realm, uriInfo).setError(Messages.ACCOUNT_TEMPORARILY_DISABLED).setFormData(formData).createLogin();
             case ACCOUNT_DISABLED:
                 audit.error(Errors.USER_DISABLED);
                 return Flows.forms(realm, uriInfo).setError(Messages.ACCOUNT_DISABLED).setFormData(formData).createLogin();

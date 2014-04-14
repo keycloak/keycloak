@@ -5,7 +5,6 @@ import org.jboss.resteasy.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.UsernameLoginFailureModel;
 import org.keycloak.services.ClientConnection;
 
@@ -28,8 +27,8 @@ public class BruteForceProtector implements Runnable {
     protected int minimumQuickLoginWaitSeconds = 60;
     protected int waitIncrementSeconds = 60;
     protected long quickLoginCheckMilliSeconds = 1000;
-    protected int maxDeltaTime = 60 * 60 * 24 * 1000;
-    protected int failureFactor = 10;
+    protected long maxDeltaTimeMilliSeconds = 60 * 60 * 12 * 1000; // 12 hours
+    protected int failureFactor = 30;
     protected volatile boolean run = true;
     protected KeycloakSessionFactory factory;
     protected CountDownLatch shutdownLatch = new CountDownLatch(1);
@@ -65,6 +64,12 @@ public class BruteForceProtector implements Runnable {
         }
     }
 
+    protected class ShutdownEvent extends LoginEvent {
+        public ShutdownEvent() {
+            super(null, null, null);
+        }
+    }
+
     protected class FailedLogin extends LoginEvent {
         protected final CountDownLatch latch = new CountDownLatch(1);
 
@@ -90,7 +95,7 @@ public class BruteForceProtector implements Runnable {
         user.setLastFailure(currentTime);
         if (deltaTime > 0) {
             // if last failure was more than MAX_DELTA clear failures
-            if (deltaTime > maxDeltaTime) {
+            if (deltaTime > maxDeltaTimeMilliSeconds) {
                 user.clearFailures();
             }
         }
@@ -109,20 +114,27 @@ public class BruteForceProtector implements Runnable {
     }
 
     protected UsernameLoginFailureModel getUserModel(KeycloakSession session, LoginEvent event) {
-        RealmModel realm = session.getRealm(event.realmId);
+        RealmModel realm = getRealmModel(session, event);
         if (realm == null) return null;
         UsernameLoginFailureModel user = realm.getUserLoginFailure(event.username);
         if (user == null) return null;
         return user;
     }
 
+    protected RealmModel getRealmModel(KeycloakSession session, LoginEvent event) {
+        RealmModel realm = session.getRealm(event.realmId);
+        if (realm == null) return null;
+        return realm;
+    }
+
     public void start() {
-        new Thread(this).start();
+        new Thread(this, "Brute Force Protector").start();
     }
 
     public void shutdown() {
         run = false;
         try {
+            queue.offer(new ShutdownEvent());
             shutdownLatch.await(5, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -144,7 +156,7 @@ public class BruteForceProtector implements Runnable {
                     for (LoginEvent event : events) {
                         if (event instanceof FailedLogin) {
                             logFailure(event);
-                        } else {
+                        } else if (event instanceof SuccessfulLogin) {
                             logSuccess(event);
                         }
                     }
@@ -191,7 +203,7 @@ public class BruteForceProtector implements Runnable {
         long delta = 0;
         if (lastFailure > 0) {
             delta = System.currentTimeMillis() - lastFailure;
-            if (delta > maxDeltaTime) {
+            if (delta > maxDeltaTimeMilliSeconds) {
                 totalTime = 0;
 
             } else {
@@ -220,5 +232,74 @@ public class BruteForceProtector implements Runnable {
 
         } catch (InterruptedException e) {
         }
+    }
+
+    public boolean isTemporarilyDisabled(RealmModel realm, String username) {
+        UsernameLoginFailureModel failure = realm.getUserLoginFailure(username);
+        if (failure == null) {
+            return false;
+        }
+
+        int currTime = (int)(System.currentTimeMillis()/1000);
+        if (currTime < failure.getFailedLoginNotBefore()) {
+            return true;
+        }
+        return false;
+    }
+
+    public long getFailures() {
+        return failures;
+    }
+
+    public long getLastFailure() {
+        return lastFailure;
+    }
+
+    public int getMaxFailureWaitSeconds() {
+        return maxFailureWaitSeconds;
+    }
+
+    public void setMaxFailureWaitSeconds(int maxFailureWaitSeconds) {
+        this.maxFailureWaitSeconds = maxFailureWaitSeconds;
+    }
+
+    public int getMinimumQuickLoginWaitSeconds() {
+        return minimumQuickLoginWaitSeconds;
+    }
+
+    public void setMinimumQuickLoginWaitSeconds(int minimumQuickLoginWaitSeconds) {
+        this.minimumQuickLoginWaitSeconds = minimumQuickLoginWaitSeconds;
+    }
+
+    public int getWaitIncrementSeconds() {
+        return waitIncrementSeconds;
+    }
+
+    public void setWaitIncrementSeconds(int waitIncrementSeconds) {
+        this.waitIncrementSeconds = waitIncrementSeconds;
+    }
+
+    public long getQuickLoginCheckMilliSeconds() {
+        return quickLoginCheckMilliSeconds;
+    }
+
+    public void setQuickLoginCheckMilliSeconds(long quickLoginCheckMilliSeconds) {
+        this.quickLoginCheckMilliSeconds = quickLoginCheckMilliSeconds;
+    }
+
+    public long getMaxDeltaTimeMilliSeconds() {
+        return maxDeltaTimeMilliSeconds;
+    }
+
+    public void setMaxDeltaTimeMilliSeconds(long maxDeltaTimeMilliSeconds) {
+        this.maxDeltaTimeMilliSeconds = maxDeltaTimeMilliSeconds;
+    }
+
+    public int getFailureFactor() {
+        return failureFactor;
+    }
+
+    public void setFailureFactor(int failureFactor) {
+        this.failureFactor = failureFactor;
     }
 }

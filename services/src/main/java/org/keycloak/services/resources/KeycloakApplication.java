@@ -2,6 +2,7 @@ package org.keycloak.services.resources;
 
 import org.jboss.resteasy.core.Dispatcher;
 import org.jboss.resteasy.logging.Logger;
+import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.SkeletonKeyContextResolver;
 import org.keycloak.audit.AuditListener;
 import org.keycloak.audit.AuditListenerFactory;
@@ -22,6 +23,7 @@ import org.keycloak.picketlink.IdentityManagerProvider;
 import org.keycloak.picketlink.IdentityManagerProviderFactory;
 import org.keycloak.provider.ProviderSessionFactory;
 import org.keycloak.services.managers.ApplianceBootstrap;
+import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.SocialRequestManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.resources.admin.AdminService;
@@ -57,6 +59,11 @@ public class KeycloakApplication extends Application {
         dispatcher.getDefaultContextObjects().put(KeycloakApplication.class, this);
         this.contextPath = context.getContextPath();
         this.factory = createSessionFactory();
+        BruteForceProtector protector = new BruteForceProtector(factory);
+        dispatcher.getDefaultContextObjects().put(BruteForceProtector.class, protector);
+        ResteasyProviderFactory.pushContext(BruteForceProtector.class, protector); // for injection
+        protector.start();
+        context.setAttribute(BruteForceProtector.class.getName(), protector);
         this.providerSessionFactory = createProviderSessionFactory();
         context.setAttribute(KeycloakSessionFactory.class.getName(), factory);
         //classes.add(KeycloakSessionCleanupFilter.class);

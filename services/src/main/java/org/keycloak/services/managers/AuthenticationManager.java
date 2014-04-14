@@ -50,7 +50,8 @@ public class AuthenticationManager {
         this.providerSession = providerSession;
     }
 
-    public AuthenticationManager(BruteForceProtector protector) {
+    public AuthenticationManager(ProviderSession providerSession, BruteForceProtector protector) {
+        this.providerSession = providerSession;
         this.protector = protector;
     }
 
@@ -199,6 +200,12 @@ public class AuthenticationManager {
             return AuthenticationStatus.INVALID_USER;
         }
 
+        if (realm.isBruteForceProtected()) {
+            if (protector.isTemporarilyDisabled(realm, username)) {
+                return AuthenticationStatus.ACCOUNT_TEMPORARILY_DISABLED;
+            }
+        }
+
         AuthenticationStatus status = authenticateInternal(realm, formData, username);
         if (realm.isBruteForceProtected()) {
             switch (status) {
@@ -313,7 +320,7 @@ public class AuthenticationManager {
     }
 
     public enum AuthenticationStatus {
-        SUCCESS, ACCOUNT_DISABLED, ACTIONS_REQUIRED, INVALID_USER, INVALID_CREDENTIALS, MISSING_PASSWORD, MISSING_TOTP, FAILED
+        SUCCESS, ACCOUNT_TEMPORARILY_DISABLED, ACCOUNT_DISABLED, ACTIONS_REQUIRED, INVALID_USER, INVALID_CREDENTIALS, MISSING_PASSWORD, MISSING_TOTP, FAILED
     }
 
 }

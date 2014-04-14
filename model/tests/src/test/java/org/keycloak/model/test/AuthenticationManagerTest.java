@@ -1,6 +1,7 @@
 package org.keycloak.model.test;
 
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -11,8 +12,10 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.services.ClientConnection;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthenticationStatus;
+import org.keycloak.services.managers.BruteForceProtector;
 
 import javax.ws.rs.core.MultivaluedMap;
 
@@ -26,10 +29,29 @@ public class AuthenticationManagerTest extends AbstractModelTest {
     private TimeBasedOTP otp;
     private RealmModel realm;
     private UserModel user;
+    private BruteForceProtector protector;
+    private ClientConnection dummyConnection = new ClientConnection() {
+        @Override
+        public String getRemoteAddr() {
+            return "127.0.0.1";
+
+        }
+
+        @Override
+        public String getRemoteHost() {
+            return "localhost";
+
+        }
+
+        @Override
+        public int getReportPort() {
+            return 8080;
+        }
+    };
 
     @Test
     public void authForm() {
-        AuthenticationStatus status = am.authenticateForm(null, realm, formData);
+        AuthenticationStatus status = am.authenticateForm(dummyConnection, realm, formData);
         Assert.assertEquals(AuthenticationStatus.SUCCESS, status);
     }
 
@@ -38,7 +60,7 @@ public class AuthenticationManagerTest extends AbstractModelTest {
         formData.remove(CredentialRepresentation.PASSWORD);
         formData.add(CredentialRepresentation.PASSWORD, "invalid");
 
-        AuthenticationStatus status = am.authenticateForm(null, realm, formData);
+        AuthenticationStatus status = am.authenticateForm(dummyConnection, realm, formData);
         Assert.assertEquals(AuthenticationStatus.INVALID_CREDENTIALS, status);
     }
 
@@ -46,7 +68,7 @@ public class AuthenticationManagerTest extends AbstractModelTest {
     public void authFormMissingUsername() {
         formData.remove("username");
 
-        AuthenticationStatus status = am.authenticateForm(null, realm, formData);
+        AuthenticationStatus status = am.authenticateForm(dummyConnection, realm, formData);
         Assert.assertEquals(AuthenticationStatus.INVALID_USER, status);
     }
 
@@ -54,7 +76,7 @@ public class AuthenticationManagerTest extends AbstractModelTest {
     public void authFormMissingPassword() {
         formData.remove(CredentialRepresentation.PASSWORD);
 
-        AuthenticationStatus status = am.authenticateForm(null, realm, formData);
+        AuthenticationStatus status = am.authenticateForm(dummyConnection, realm, formData);
         Assert.assertEquals(AuthenticationStatus.MISSING_PASSWORD, status);
     }
 
@@ -62,8 +84,8 @@ public class AuthenticationManagerTest extends AbstractModelTest {
     public void authFormRequiredAction() {
         realm.addRequiredCredential(CredentialRepresentation.TOTP);
         user.addRequiredAction(RequiredAction.CONFIGURE_TOTP);
-        
-        AuthenticationStatus status = am.authenticateForm(null, realm, formData);
+
+        AuthenticationStatus status = am.authenticateForm(dummyConnection, realm, formData);
         Assert.assertEquals(AuthenticationStatus.ACTIONS_REQUIRED, status);
     }
 
@@ -71,7 +93,7 @@ public class AuthenticationManagerTest extends AbstractModelTest {
     public void authFormUserDisabled() {
         user.setEnabled(false);
 
-        AuthenticationStatus status = am.authenticateForm(null, realm, formData);
+        AuthenticationStatus status = am.authenticateForm(dummyConnection, realm, formData);
         Assert.assertEquals(AuthenticationStatus.ACCOUNT_DISABLED, status);
     }
 
@@ -93,7 +115,7 @@ public class AuthenticationManagerTest extends AbstractModelTest {
 
         formData.add(CredentialRepresentation.TOTP, token);
 
-        AuthenticationStatus status = am.authenticateForm(null, realm, formData);
+        AuthenticationStatus status = am.authenticateForm(dummyConnection, realm, formData);
         Assert.assertEquals(AuthenticationStatus.SUCCESS, status);
     }
 
@@ -104,7 +126,7 @@ public class AuthenticationManagerTest extends AbstractModelTest {
         formData.remove(CredentialRepresentation.PASSWORD);
         formData.add(CredentialRepresentation.PASSWORD, "invalid");
 
-        AuthenticationStatus status = am.authenticateForm(null, realm, formData);
+        AuthenticationStatus status = am.authenticateForm(dummyConnection, realm, formData);
         Assert.assertEquals(AuthenticationStatus.INVALID_CREDENTIALS, status);
     }
 
@@ -115,7 +137,7 @@ public class AuthenticationManagerTest extends AbstractModelTest {
         formData.remove(CredentialRepresentation.TOTP);
         formData.add(CredentialRepresentation.TOTP, "invalid");
 
-        AuthenticationStatus status = am.authenticateForm(null, realm, formData);
+        AuthenticationStatus status = am.authenticateForm(dummyConnection, realm, formData);
         Assert.assertEquals(AuthenticationStatus.INVALID_CREDENTIALS, status);
     }
 
@@ -125,7 +147,7 @@ public class AuthenticationManagerTest extends AbstractModelTest {
 
         formData.remove(CredentialRepresentation.TOTP);
 
-        AuthenticationStatus status = am.authenticateForm(null, realm, formData);
+        AuthenticationStatus status = am.authenticateForm(dummyConnection, realm, formData);
         Assert.assertEquals(AuthenticationStatus.MISSING_TOTP, status);
     }
 
@@ -142,8 +164,9 @@ public class AuthenticationManagerTest extends AbstractModelTest {
         realm.setAccessTokenLifespan(1000);
         realm.addRequiredCredential(CredentialRepresentation.PASSWORD);
         realm.setAuthenticationProviders(Arrays.asList(AuthenticationProviderModel.DEFAULT_PROVIDER));
-
-        am = new AuthenticationManager(providerSession);
+        protector = new BruteForceProtector(factory);
+        protector.start();
+        am = new AuthenticationManager(providerSession, protector);
 
         user = realm.addUser("test");
         user.setEnabled(true);
@@ -159,6 +182,14 @@ public class AuthenticationManagerTest extends AbstractModelTest {
         formData.add(CredentialRepresentation.PASSWORD, "password");
 
         otp = new TimeBasedOTP();
+    }
+
+    @After
+    public void after() throws Exception {
+        protector.shutdown();
+        super.after();
+
+
     }
 
 }
