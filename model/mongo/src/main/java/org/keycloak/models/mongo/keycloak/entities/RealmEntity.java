@@ -32,7 +32,15 @@ public class RealmEntity extends AbstractMongoIdentifiableEntity implements Mong
     private boolean social;
     private boolean updateProfileOnInitialSocialLogin;
     private String passwordPolicy;
+    //--- brute force settings
     private boolean bruteForceProtected;
+    private int maxFailureWaitSeconds;
+    private int minimumQuickLoginWaitSeconds;
+    private int waitIncrementSeconds;
+    private long quickLoginCheckMilliSeconds;
+    private int maxDeltaTimeSeconds;
+    private int failureFactor;
+    //--- end brute force settings
 
     private int centralLoginLifespan;
     private int accessTokenLifespan;
@@ -149,6 +157,60 @@ public class RealmEntity extends AbstractMongoIdentifiableEntity implements Mong
 
     public void setBruteForceProtected(boolean bruteForceProtected) {
         this.bruteForceProtected = bruteForceProtected;
+    }
+
+    @MongoField
+    public int getMaxFailureWaitSeconds() {
+        return maxFailureWaitSeconds;
+    }
+
+    public void setMaxFailureWaitSeconds(int maxFailureWaitSeconds) {
+        this.maxFailureWaitSeconds = maxFailureWaitSeconds;
+    }
+
+    @MongoField
+    public int getMinimumQuickLoginWaitSeconds() {
+        return minimumQuickLoginWaitSeconds;
+    }
+
+    public void setMinimumQuickLoginWaitSeconds(int minimumQuickLoginWaitSeconds) {
+        this.minimumQuickLoginWaitSeconds = minimumQuickLoginWaitSeconds;
+    }
+
+    @MongoField
+    public int getWaitIncrementSeconds() {
+        return waitIncrementSeconds;
+    }
+
+    public void setWaitIncrementSeconds(int waitIncrementSeconds) {
+        this.waitIncrementSeconds = waitIncrementSeconds;
+    }
+
+    @MongoField
+    public long getQuickLoginCheckMilliSeconds() {
+        return quickLoginCheckMilliSeconds;
+    }
+
+    public void setQuickLoginCheckMilliSeconds(long quickLoginCheckMilliSeconds) {
+        this.quickLoginCheckMilliSeconds = quickLoginCheckMilliSeconds;
+    }
+
+    @MongoField
+    public int getMaxDeltaTimeSeconds() {
+        return maxDeltaTimeSeconds;
+    }
+
+    public void setMaxDeltaTimeSeconds(int maxDeltaTimeSeconds) {
+        this.maxDeltaTimeSeconds = maxDeltaTimeSeconds;
+    }
+
+    @MongoField
+    public int getFailureFactor() {
+        return failureFactor;
+    }
+
+    public void setFailureFactor(int failureFactor) {
+        this.failureFactor = failureFactor;
     }
 
     @MongoField
