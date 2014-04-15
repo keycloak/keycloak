@@ -135,6 +135,68 @@ public class RealmAdapter extends AbstractMongoAdapter<RealmEntity> implements R
     }
 
     @Override
+    public int getMaxFailureWaitSeconds() {
+        return realm.getMaxFailureWaitSeconds();
+    }
+
+    @Override
+    public void setMaxFailureWaitSeconds(int val) {
+        realm.setMaxFailureWaitSeconds(val);
+    }
+
+    @Override
+    public int getWaitIncrementSeconds() {
+        return realm.getWaitIncrementSeconds();
+    }
+
+    @Override
+    public void setWaitIncrementSeconds(int val) {
+        realm.setWaitIncrementSeconds(val);
+    }
+
+    @Override
+    public long getQuickLoginCheckMilliSeconds() {
+        return realm.getQuickLoginCheckMilliSeconds();
+    }
+
+    @Override
+    public void setQuickLoginCheckMilliSeconds(long val) {
+        realm.setQuickLoginCheckMilliSeconds(val);
+    }
+
+    @Override
+    public int getMinimumQuickLoginWaitSeconds() {
+        return realm.getMinimumQuickLoginWaitSeconds();
+    }
+
+    @Override
+    public void setMinimumQuickLoginWaitSeconds(int val) {
+        realm.setMinimumQuickLoginWaitSeconds(val);
+    }
+
+
+    @Override
+    public int getMaxDeltaTimeSeconds() {
+        return realm.getMaxDeltaTimeSeconds();
+    }
+
+    @Override
+    public void setMaxDeltaTimeSeconds(int val) {
+        realm.setMaxDeltaTimeSeconds(val);
+    }
+
+    @Override
+    public int getFailureFactor() {
+        return realm.getFailureFactor();
+    }
+
+    @Override
+    public void setFailureFactor(int failureFactor) {
+        realm.setFailureFactor(failureFactor);
+    }
+
+
+    @Override
     public boolean isVerifyEmail() {
         return realm.isVerifyEmail();
     }

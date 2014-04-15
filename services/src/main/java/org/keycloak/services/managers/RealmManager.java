@@ -79,7 +79,9 @@ public class RealmManager {
         if (id == null) id = KeycloakModelUtils.generateId();
         RealmModel realm = identitySession.createRealm(id, name);
         realm.setName(name);
-        realm.setBruteForceProtected(false); // default settings off for now todo set it on
+
+        // setup defaults
+        setupRealmDefaults(realm);
 
         setupAdminManagement(realm);
         setupAccountManagement(realm);
@@ -87,6 +89,17 @@ public class RealmManager {
         realm.setAuditListeners(Collections.singleton("jboss-logging"));
 
         return realm;
+    }
+
+    protected void setupRealmDefaults(RealmModel realm) {
+        // brute force
+        realm.setBruteForceProtected(false); // default settings off for now todo set it on
+        realm.setMaxFailureWaitSeconds(900);
+        realm.setMinimumQuickLoginWaitSeconds(60);
+        realm.setWaitIncrementSeconds(60);
+        realm.setQuickLoginCheckMilliSeconds(1000);
+        realm.setMaxDeltaTimeSeconds(60 * 60 * 12); // 12 hours
+        realm.setFailureFactor(30);
     }
 
     public boolean removeRealm(RealmModel realm) {
@@ -123,6 +136,12 @@ public class RealmManager {
         if (rep.isEnabled() != null) realm.setEnabled(rep.isEnabled());
         if (rep.isSocial() != null) realm.setSocial(rep.isSocial());
         if (rep.isBruteForceProtected() != null) realm.setBruteForceProtected(rep.isBruteForceProtected());
+        if (rep.getMaxFailureWaitSeconds() != null) realm.setMaxFailureWaitSeconds(rep.getMaxFailureWaitSeconds());
+        if (rep.getMinimumQuickLoginWaitSeconds() != null) realm.setMinimumQuickLoginWaitSeconds(rep.getMinimumQuickLoginWaitSeconds());
+        if (rep.getWaitIncrementSeconds() != null) realm.setWaitIncrementSeconds(rep.getWaitIncrementSeconds());
+        if (rep.getQuickLoginCheckMilliSeconds() != null) realm.setQuickLoginCheckMilliSeconds(rep.getQuickLoginCheckMilliSeconds());
+        if (rep.getMaxDeltaTimeSeconds() != null) realm.setMaxDeltaTimeSeconds(rep.getMaxDeltaTimeSeconds());
+        if (rep.getFailureFactor() != null) realm.setFailureFactor(rep.getFailureFactor());
         if (rep.isRegistrationAllowed() != null) realm.setRegistrationAllowed(rep.isRegistrationAllowed());
         if (rep.isRememberMe() != null) realm.setRememberMe(rep.isRememberMe());
         if (rep.isVerifyEmail() != null) realm.setVerifyEmail(rep.isVerifyEmail());
@@ -230,6 +249,12 @@ public class RealmManager {
         if (rep.isEnabled() != null) newRealm.setEnabled(rep.isEnabled());
         if (rep.isSocial() != null) newRealm.setSocial(rep.isSocial());
         if (rep.isBruteForceProtected() != null) newRealm.setBruteForceProtected(rep.isBruteForceProtected());
+        if (rep.getMaxFailureWaitSeconds() != null) newRealm.setMaxFailureWaitSeconds(rep.getMaxFailureWaitSeconds());
+        if (rep.getMinimumQuickLoginWaitSeconds() != null) newRealm.setMinimumQuickLoginWaitSeconds(rep.getMinimumQuickLoginWaitSeconds());
+        if (rep.getWaitIncrementSeconds() != null) newRealm.setWaitIncrementSeconds(rep.getWaitIncrementSeconds());
+        if (rep.getQuickLoginCheckMilliSeconds() != null) newRealm.setQuickLoginCheckMilliSeconds(rep.getQuickLoginCheckMilliSeconds());
+        if (rep.getMaxDeltaTimeSeconds() != null) newRealm.setMaxDeltaTimeSeconds(rep.getMaxDeltaTimeSeconds());
+        if (rep.getFailureFactor() != null) newRealm.setFailureFactor(rep.getFailureFactor());
 
         if (rep.getNotBefore() != null) newRealm.setNotBefore(rep.getNotBefore());
 

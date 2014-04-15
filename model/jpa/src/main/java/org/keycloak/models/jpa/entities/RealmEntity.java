@@ -42,7 +42,16 @@ public class RealmEntity {
     protected boolean resetPasswordAllowed;
     protected boolean social;
     protected boolean rememberMe;
+    //--- brute force settings
     protected boolean bruteForceProtected;
+    protected int maxFailureWaitSeconds;
+    protected int minimumQuickLoginWaitSeconds;
+    protected int waitIncrementSeconds;
+    protected long quickLoginCheckMilliSeconds;
+    protected int maxDeltaTimeSeconds;
+    protected int failureFactor;
+    //--- end brute force settings
+
 
     @Column(name="updateProfileOnInitSocLogin")
     protected boolean updateProfileOnInitialSocialLogin;
@@ -350,6 +359,54 @@ public class RealmEntity {
 
     public void setBruteForceProtected(boolean bruteForceProtected) {
         this.bruteForceProtected = bruteForceProtected;
+    }
+
+    public int getMaxFailureWaitSeconds() {
+        return maxFailureWaitSeconds;
+    }
+
+    public void setMaxFailureWaitSeconds(int maxFailureWaitSeconds) {
+        this.maxFailureWaitSeconds = maxFailureWaitSeconds;
+    }
+
+    public int getMinimumQuickLoginWaitSeconds() {
+        return minimumQuickLoginWaitSeconds;
+    }
+
+    public void setMinimumQuickLoginWaitSeconds(int minimumQuickLoginWaitSeconds) {
+        this.minimumQuickLoginWaitSeconds = minimumQuickLoginWaitSeconds;
+    }
+
+    public int getWaitIncrementSeconds() {
+        return waitIncrementSeconds;
+    }
+
+    public void setWaitIncrementSeconds(int waitIncrementSeconds) {
+        this.waitIncrementSeconds = waitIncrementSeconds;
+    }
+
+    public long getQuickLoginCheckMilliSeconds() {
+        return quickLoginCheckMilliSeconds;
+    }
+
+    public void setQuickLoginCheckMilliSeconds(long quickLoginCheckMilliSeconds) {
+        this.quickLoginCheckMilliSeconds = quickLoginCheckMilliSeconds;
+    }
+
+    public int getMaxDeltaTimeSeconds() {
+        return maxDeltaTimeSeconds;
+    }
+
+    public void setMaxDeltaTimeSeconds(int maxDeltaTimeSeconds) {
+        this.maxDeltaTimeSeconds = maxDeltaTimeSeconds;
+    }
+
+    public int getFailureFactor() {
+        return failureFactor;
+    }
+
+    public void setFailureFactor(int failureFactor) {
+        this.failureFactor = failureFactor;
     }
 
     public boolean isAuditEnabled() {

@@ -1119,10 +1119,34 @@ module.controller('RealmAuditEventsCtrl', function($scope, RealmAuditEvents, rea
     $scope.update();
 });
 
-module.controller('RealmBruteForceCtrl', function($scope, Realm, realm, $http, $location, Dialog, Notifications) {
+module.controller('RealmBruteForceCtrl', function($scope, Realm, realm, $http, $location, Dialog, Notifications, TimeUnit) {
     console.log('RealmBruteForceCtrl');
 
     $scope.realm = realm;
+
+    $scope.realm.waitIncrementUnit = TimeUnit.autoUnit(realm.waitIncrementSeconds);
+    $scope.realm.waitIncrement = TimeUnit.toUnit(realm.waitIncrementSeconds, $scope.realm.waitIncrementUnit);
+    $scope.$watch('realm.waitIncrementUnit', function(to, from) {
+        $scope.realm.waitIncrement = TimeUnit.convert($scope.realm.waitIncrement, from, to);
+    });
+
+    $scope.realm.minimumQuickLoginWaitUnit = TimeUnit.autoUnit(realm.minimumQuickLoginWaitSeconds);
+    $scope.realm.minimumQuickLoginWait = TimeUnit.toUnit(realm.minimumQuickLoginWaitSeconds, $scope.realm.minimumQuickLoginWaitUnit);
+    $scope.$watch('realm.minimumQuickLoginWaitUnit', function(to, from) {
+        $scope.realm.minimumQuickLoginWait = TimeUnit.convert($scope.realm.minimumQuickLoginWait, from, to);
+    });
+
+    $scope.realm.maxFailureWaitUnit = TimeUnit.autoUnit(realm.maxFailureWaitSeconds);
+    $scope.realm.maxFailureWait = TimeUnit.toUnit(realm.maxFailureWaitSeconds, $scope.realm.maxFailureWaitUnit);
+    $scope.$watch('realm.maxFailureWaitUnit', function(to, from) {
+        $scope.realm.maxFailureWait = TimeUnit.convert($scope.realm.maxFailureWait, from, to);
+    });
+
+    $scope.realm.maxDeltaTimeUnit = TimeUnit.autoUnit(realm.maxDeltaTimeSeconds);
+    $scope.realm.maxDeltaTime = TimeUnit.toUnit(realm.maxDeltaTimeSeconds, $scope.realm.maxDeltaTimeUnit);
+    $scope.$watch('realm.maxDeltaTimeUnit', function(to, from) {
+        $scope.realm.maxDeltaTime = TimeUnit.convert($scope.realm.maxDeltaTime, from, to);
+    });
 
     var oldCopy = angular.copy($scope.realm);
     $scope.changed = false;
@@ -1135,6 +1159,20 @@ module.controller('RealmBruteForceCtrl', function($scope, Realm, realm, $http, $
 
     $scope.save = function() {
         var realmCopy = angular.copy($scope.realm);
+        delete realmCopy["waitIncrementUnit"];
+        delete realmCopy["waitIncrement"];
+        delete realmCopy["minimumQuickLoginWaitUnit"];
+        delete realmCopy["minimumQuickLoginWait"];
+        delete realmCopy["maxFailureWaitUnit"];
+        delete realmCopy["maxFailureWait"];
+        delete realmCopy["maxDeltaTimeUnit"];
+        delete realmCopy["maxDeltaTime"];
+
+        realmCopy.waitIncrementSeconds = TimeUnit.toSeconds($scope.realm.waitIncrement, $scope.realm.waitIncrementUnit)
+        realmCopy.minimumQuickLoginWaitSeconds = TimeUnit.toSeconds($scope.realm.minimumQuickLoginWait, $scope.realm.minimumQuickLoginWaitUnit)
+        realmCopy.maxFailureWaitSeconds = TimeUnit.toSeconds($scope.realm.maxFailureWait, $scope.realm.maxFailureWaitUnit)
+        realmCopy.maxDeltaTimeSeconds = TimeUnit.toSeconds($scope.realm.maxDeltaTime, $scope.realm.maxDeltaTimeUnit)
+
         $scope.changed = false;
         Realm.update(realmCopy, function () {
             $location.url("/realms/" + realm.realm + "/sessions/brute-force");
@@ -1147,4 +1185,5 @@ module.controller('RealmBruteForceCtrl', function($scope, Realm, realm, $http, $
         $scope.changed = false;
     };
 });
+
 

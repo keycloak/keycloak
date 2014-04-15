@@ -23,13 +23,8 @@ import java.util.concurrent.TimeUnit;
 public class BruteForceProtector implements Runnable {
     protected static Logger logger = Logger.getLogger(BruteForceProtector.class);
 
-    protected int maxFailureWaitSeconds = 900;
-    protected int minimumQuickLoginWaitSeconds = 60;
-    protected int waitIncrementSeconds = 60;
-    protected long quickLoginCheckMilliSeconds = 1000;
-    protected long maxDeltaTimeMilliSeconds = 60 * 60 * 12 * 1000; // 12 hours
-    protected int failureFactor = 30;
     protected volatile boolean run = true;
+    protected int maxDeltaTimeSeconds = 60 * 60 * 12; // 12 hours
     protected KeycloakSessionFactory factory;
     protected CountDownLatch shutdownLatch = new CountDownLatch(1);
 
@@ -83,6 +78,8 @@ public class BruteForceProtector implements Runnable {
     }
 
     public void failure(KeycloakSession session, LoginEvent event) {
+        RealmModel realm = getRealmModel(session, event);
+        logFailure(event);
         UsernameLoginFailureModel user = getUserModel(session, event);
         if (user == null) return;
         user.setLastIPFailure(event.ip);
@@ -95,19 +92,19 @@ public class BruteForceProtector implements Runnable {
         user.setLastFailure(currentTime);
         if (deltaTime > 0) {
             // if last failure was more than MAX_DELTA clear failures
-            if (deltaTime > maxDeltaTimeMilliSeconds) {
+            if (deltaTime > (long)realm.getMaxDeltaTimeSeconds() *1000L) {
                 user.clearFailures();
             }
         }
         user.incrementFailures();
 
-        int waitSeconds = waitIncrementSeconds * (user.getNumFailures() / failureFactor);
+        int waitSeconds = realm.getWaitIncrementSeconds() * (user.getNumFailures() / realm.getFailureFactor());
         if (waitSeconds == 0) {
-            if (deltaTime > quickLoginCheckMilliSeconds) {
-                waitSeconds = minimumQuickLoginWaitSeconds;
+            if (deltaTime > realm.getQuickLoginCheckMilliSeconds()) {
+                waitSeconds = realm.getMinimumQuickLoginWaitSeconds();
             }
         }
-        waitSeconds = Math.min(maxFailureWaitSeconds, waitSeconds);
+        waitSeconds = Math.min(realm.getMaxFailureWaitSeconds(), waitSeconds);
         if (waitSeconds > 0) {
             user.setFailedLoginNotBefore((int) (currentTime / 1000) + waitSeconds);
         }
@@ -153,14 +150,6 @@ public class BruteForceProtector implements Runnable {
                 try {
                     events.add(take);
                     queue.drainTo(events, TRANSACTION_SIZE);
-                    for (LoginEvent event : events) {
-                        if (event instanceof FailedLogin) {
-                            logFailure(event);
-                        } else if (event instanceof SuccessfulLogin) {
-                            logSuccess(event);
-                        }
-                    }
-
                     Collections.sort(events); // we sort to avoid deadlock due to ordered updates.  Maybe I'm overthinking this.
                     KeycloakSession session = factory.createSession();
                     try {
@@ -203,7 +192,7 @@ public class BruteForceProtector implements Runnable {
         long delta = 0;
         if (lastFailure > 0) {
             delta = System.currentTimeMillis() - lastFailure;
-            if (delta > maxDeltaTimeMilliSeconds) {
+            if (delta > (long)maxDeltaTimeSeconds * 1000L) {
                 totalTime = 0;
 
             } else {
@@ -255,51 +244,5 @@ public class BruteForceProtector implements Runnable {
         return lastFailure;
     }
 
-    public int getMaxFailureWaitSeconds() {
-        return maxFailureWaitSeconds;
-    }
 
-    public void setMaxFailureWaitSeconds(int maxFailureWaitSeconds) {
-        this.maxFailureWaitSeconds = maxFailureWaitSeconds;
-    }
-
-    public int getMinimumQuickLoginWaitSeconds() {
-        return minimumQuickLoginWaitSeconds;
-    }
-
-    public void setMinimumQuickLoginWaitSeconds(int minimumQuickLoginWaitSeconds) {
-        this.minimumQuickLoginWaitSeconds = minimumQuickLoginWaitSeconds;
-    }
-
-    public int getWaitIncrementSeconds() {
-        return waitIncrementSeconds;
-    }
-
-    public void setWaitIncrementSeconds(int waitIncrementSeconds) {
-        this.waitIncrementSeconds = waitIncrementSeconds;
-    }
-
-    public long getQuickLoginCheckMilliSeconds() {
-        return quickLoginCheckMilliSeconds;
-    }
-
-    public void setQuickLoginCheckMilliSeconds(long quickLoginCheckMilliSeconds) {
-        this.quickLoginCheckMilliSeconds = quickLoginCheckMilliSeconds;
-    }
-
-    public long getMaxDeltaTimeMilliSeconds() {
-        return maxDeltaTimeMilliSeconds;
-    }
-
-    public void setMaxDeltaTimeMilliSeconds(long maxDeltaTimeMilliSeconds) {
-        this.maxDeltaTimeMilliSeconds = maxDeltaTimeMilliSeconds;
-    }
-
-    public int getFailureFactor() {
-        return failureFactor;
-    }
-
-    public void setFailureFactor(int failureFactor) {
-        this.failureFactor = failureFactor;
-    }
 }

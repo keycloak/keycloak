@@ -33,9 +33,23 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
 
     void setRememberMe(boolean rememberMe);
 
+    //--- brute force settings
     boolean isBruteForceProtected();
-
     void setBruteForceProtected(boolean value);
+    int getMaxFailureWaitSeconds();
+    void setMaxFailureWaitSeconds(int val);
+    int getWaitIncrementSeconds();
+    void setWaitIncrementSeconds(int val);
+    int getMinimumQuickLoginWaitSeconds();
+    void setMinimumQuickLoginWaitSeconds(int val);
+    long getQuickLoginCheckMilliSeconds();
+    void setQuickLoginCheckMilliSeconds(long val);
+    int getMaxDeltaTimeSeconds();
+    void setMaxDeltaTimeSeconds(int val);
+    int getFailureFactor();
+    void setFailureFactor(int failureFactor);
+    //--- end brute force settings
+
 
     boolean isVerifyEmail();
 

@@ -20,6 +20,102 @@
                         <input ng-model="realm.bruteForceProtected" name="bruteForceProtected" id="bruteForceProtected" onoffswitch />
                     </div>
                 </div>
+                <div class="form-group" data-ng-show="realm.bruteForceProtected">
+                    <label class="col-sm-2 control-label" for="failureFactor">Failure Factor</label>
+
+                    <div class="col-sm-4">
+                        <input class="form-control" type="number" min="1" max="31536000" id="failureFactor" name="failureFactor" data-ng-model="realm.failureFactor" autofocus
+                               required>
+                    </div>
+                </div>
+                <div class="form-group input-select" data-ng-show="realm.bruteForceProtected">
+                    <label class="col-sm-2 control-label" for="waitIncrement">Wait Increment</label>
+                    <div class="col-sm-10">
+                        <div class="row">
+                            <div class="col-sm-2">
+                                <input class="form-control" type="number" required min="1"
+                                       max="31536000" data-ng-model="realm.waitIncrement"
+                                       id="waitIncrement" name="waitIncrement"/>
+                            </div>
+                            <div class="col-sm-2 select-kc">
+                                <select name="waitIncrementUnit" data-ng-model="realm.waitIncrementUnit" >
+                                    <option data-ng-selected="!realm.waitIncrementUnit">Seconds</option>
+                                    <option>Minutes</option>
+                                    <option>Hours</option>
+                                    <option>Days</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group" data-ng-show="realm.bruteForceProtected">
+                    <label class="col-sm-2 control-label" for="quickLoginCheckMilliSeconds">Quick Login Check Milli Seconds</label>
+
+                    <div class="col-sm-4">
+                        <input class="form-control" type="number" min="1" max="31536000" id="quickLoginCheckMilliSeconds" name="quickLoginCheckMilliSeconds" data-ng-model="realm.quickLoginCheckMilliSeconds" autofocus
+                               required>
+                    </div>
+                </div>
+                <div class="form-group input-select" data-ng-show="realm.bruteForceProtected">
+                    <label class="col-sm-2 control-label" for="minimumQuickLoginWait">Minimum Quick Login Wait</label>
+                    <div class="col-sm-10">
+                        <div class="row">
+                            <div class="col-sm-2">
+                                <input class="form-control" type="number" required min="1"
+                                       max="31536000" data-ng-model="realm.minimumQuickLoginWait"
+                                       id="minimumQuickLoginWait" name="minimumQuickLoginWait"/>
+                            </div>
+                            <div class="col-sm-2 select-kc">
+                                <select name="minimumQuickLoginWaitUnit" data-ng-model="realm.minimumQuickLoginWaitUnit" >
+                                    <option data-ng-selected="!realm.minimumQuickLoginWaitUnit">Seconds</option>
+                                    <option>Minutes</option>
+                                    <option>Hours</option>
+                                    <option>Days</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group input-select" data-ng-show="realm.bruteForceProtected">
+                    <label class="col-sm-2 control-label" for="maxFailureWait">Max Wait</label>
+                    <div class="col-sm-10">
+                        <div class="row">
+                            <div class="col-sm-2">
+                                <input class="form-control" type="number" required min="1"
+                                       max="31536000" data-ng-model="realm.maxFailureWait"
+                                       id="maxFailureWait" name="maxFailureWait"/>
+                            </div>
+                            <div class="col-sm-2 select-kc">
+                                <select name="maxFailureWaitUnit" data-ng-model="realm.maxFailureWaitUnit" >
+                                    <option data-ng-selected="!realm.maxFailureWaitUnit">Seconds</option>
+                                    <option>Minutes</option>
+                                    <option>Hours</option>
+                                    <option>Days</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group input-select" data-ng-show="realm.bruteForceProtected">
+                    <label class="col-sm-2 control-label" for="maxDeltaTime">Failure Reset Time</label>
+                    <div class="col-sm-10">
+                        <div class="row">
+                            <div class="col-sm-2">
+                                <input class="form-control" type="number" required min="1"
+                                       max="31536000" data-ng-model="realm.maxDeltaTime"
+                                       id="maxDeltaTime" name="maxDeltaTime"/>
+                            </div>
+                            <div class="col-sm-2 select-kc">
+                                <select name="maxDeltaTimeUnit" data-ng-model="realm.maxDeltaTimeUnit" >
+                                    <option data-ng-selected="!realm.maxDeltaTimeUnit">Seconds</option>
+                                    <option>Minutes</option>
+                                    <option>Hours</option>
+                                    <option>Days</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </fieldset>
             <div class="pull-right form-actions" data-ng-show="access.manageRealm">
                 <button kc-reset data-ng-show="changed">Clear changes</button>

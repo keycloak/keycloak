@@ -79,6 +79,12 @@ public class ModelToRepresentation {
         rep.setRegistrationAllowed(realm.isRegistrationAllowed());
         rep.setRememberMe(realm.isRememberMe());
         rep.setBruteForceProtected(realm.isBruteForceProtected());
+        rep.setMaxFailureWaitSeconds(realm.getMaxFailureWaitSeconds());
+        rep.setMinimumQuickLoginWaitSeconds(realm.getMinimumQuickLoginWaitSeconds());
+        rep.setWaitIncrementSeconds(realm.getWaitIncrementSeconds());
+        rep.setQuickLoginCheckMilliSeconds(realm.getQuickLoginCheckMilliSeconds());
+        rep.setMaxDeltaTimeSeconds(realm.getMaxDeltaTimeSeconds());
+        rep.setFailureFactor(realm.getFailureFactor());
         rep.setVerifyEmail(realm.isVerifyEmail());
         rep.setResetPasswordAllowed(realm.isResetPasswordAllowed());
         rep.setAccessTokenLifespan(realm.getAccessTokenLifespan());

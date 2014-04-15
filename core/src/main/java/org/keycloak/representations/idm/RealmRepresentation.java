@@ -28,7 +28,16 @@ public class RealmRepresentation {
     protected Boolean resetPasswordAllowed;
     protected Boolean social;
     protected Boolean updateProfileOnInitialSocialLogin;
+    //--- brute force settings
     protected Boolean bruteForceProtected;
+    protected Integer maxFailureWaitSeconds;
+    protected Integer minimumQuickLoginWaitSeconds;
+    protected Integer waitIncrementSeconds;
+    protected Long quickLoginCheckMilliSeconds;
+    protected Integer maxDeltaTimeSeconds;
+    protected Integer failureFactor;
+    //--- end brute force settings
+
     protected String privateKey;
     protected String publicKey;
     protected RolesRepresentation roles;
@@ -383,5 +392,53 @@ public class RealmRepresentation {
 
     public void setBruteForceProtected(Boolean bruteForceProtected) {
         this.bruteForceProtected = bruteForceProtected;
+    }
+
+    public Integer getMaxFailureWaitSeconds() {
+        return maxFailureWaitSeconds;
+    }
+
+    public void setMaxFailureWaitSeconds(Integer maxFailureWaitSeconds) {
+        this.maxFailureWaitSeconds = maxFailureWaitSeconds;
+    }
+
+    public Integer getMinimumQuickLoginWaitSeconds() {
+        return minimumQuickLoginWaitSeconds;
+    }
+
+    public void setMinimumQuickLoginWaitSeconds(Integer minimumQuickLoginWaitSeconds) {
+        this.minimumQuickLoginWaitSeconds = minimumQuickLoginWaitSeconds;
+    }
+
+    public Integer getWaitIncrementSeconds() {
+        return waitIncrementSeconds;
+    }
+
+    public void setWaitIncrementSeconds(Integer waitIncrementSeconds) {
+        this.waitIncrementSeconds = waitIncrementSeconds;
+    }
+
+    public Long getQuickLoginCheckMilliSeconds() {
+        return quickLoginCheckMilliSeconds;
+    }
+
+    public void setQuickLoginCheckMilliSeconds(Long quickLoginCheckMilliSeconds) {
+        this.quickLoginCheckMilliSeconds = quickLoginCheckMilliSeconds;
+    }
+
+    public Integer getMaxDeltaTimeSeconds() {
+        return maxDeltaTimeSeconds;
+    }
+
+    public void setMaxDeltaTimeSeconds(Integer maxDeltaTimeSeconds) {
+        this.maxDeltaTimeSeconds = maxDeltaTimeSeconds;
+    }
+
+    public Integer getFailureFactor() {
+        return failureFactor;
+    }
+
+    public void setFailureFactor(Integer failureFactor) {
+        this.failureFactor = failureFactor;
     }
 }
