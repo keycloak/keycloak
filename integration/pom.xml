@@ -19,12 +19,12 @@
         <module>servlet-oauth-client</module>
         <module>jboss-adapter-core</module>
         <module>as7-eap6/adapter</module>
+        <module>tomcat7/adapter</module>
         <module>undertow</module>
         <module>wildfly-adapter</module>
         <module>wildfly-subsystem</module>
         <module>as7-eap-subsystem</module>
         <module>js</module>
         <module>installed</module>
-        <!-- <module>as7-eap6/jboss-modules</module> -->
     </modules>
 </project>
