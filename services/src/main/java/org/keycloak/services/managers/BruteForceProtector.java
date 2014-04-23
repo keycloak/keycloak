@@ -1,7 +1,7 @@
 package org.keycloak.services.managers;
 
 
-import org.jboss.resteasy.logging.Logger;
+import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
@@ -78,10 +78,13 @@ public class BruteForceProtector implements Runnable {
     }
 
     public void failure(KeycloakSession session, LoginEvent event) {
+        logger.debug("failure");
         RealmModel realm = getRealmModel(session, event);
         logFailure(event);
         UsernameLoginFailureModel user = getUserModel(session, event);
-        if (user == null) return;
+        if (user == null) {
+            user = realm.addUserLoginFailure(event.username);
+        }
         user.setLastIPFailure(event.ip);
         long currentTime = System.currentTimeMillis();
         long last = user.getLastFailure();
@@ -97,16 +100,22 @@ public class BruteForceProtector implements Runnable {
             }
         }
         user.incrementFailures();
+        logger.debugv("new num failures: {0}" , user.getNumFailures());
 
         int waitSeconds = realm.getWaitIncrementSeconds() * (user.getNumFailures() / realm.getFailureFactor());
+        logger.debugv("waitSeconds: {0}", waitSeconds);
+        logger.debugv("deltaTime: {0}", deltaTime);
         if (waitSeconds == 0) {
-            if (deltaTime > realm.getQuickLoginCheckMilliSeconds()) {
+            if (last > 0 && deltaTime < realm.getQuickLoginCheckMilliSeconds()) {
+                logger.debugv("quick login, set min wait seconds");
                 waitSeconds = realm.getMinimumQuickLoginWaitSeconds();
             }
         }
-        waitSeconds = Math.min(realm.getMaxFailureWaitSeconds(), waitSeconds);
         if (waitSeconds > 0) {
-            user.setFailedLoginNotBefore((int) (currentTime / 1000) + waitSeconds);
+            waitSeconds = Math.min(realm.getMaxFailureWaitSeconds(), waitSeconds);
+            int notBefore = (int) (currentTime / 1000) + waitSeconds;
+            logger.debugv("set notBefore: {0}", notBefore);
+            user.setFailedLoginNotBefore(notBefore);
         }
     }
 
@@ -152,6 +161,7 @@ public class BruteForceProtector implements Runnable {
                     queue.drainTo(events, TRANSACTION_SIZE);
                     Collections.sort(events); // we sort to avoid deadlock due to ordered updates.  Maybe I'm overthinking this.
                     KeycloakSession session = factory.createSession();
+                    session.getTransaction().begin();
                     try {
                         for (LoginEvent event : events) {
                             if (event instanceof FailedLogin) {
@@ -231,6 +241,7 @@ public class BruteForceProtector implements Runnable {
 
         int currTime = (int)(System.currentTimeMillis()/1000);
         if (currTime < failure.getFailedLoginNotBefore()) {
+            logger.debugv("Current: {0} notBefore: {1}", currTime , failure.getFailedLoginNotBefore());
             return true;
         }
         return false;
