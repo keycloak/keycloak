@@ -7,7 +7,9 @@ import org.keycloak.models.Config;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -19,12 +21,14 @@ public class DefaultLoginThemeProvider implements ThemeProvider {
     public static final String PATTERNFLY = "patternfly";
     public static final String KEYCLOAK = "keycloak";
 
-    private static Set<String> defaultThemes = new HashSet<String>();
+    private static Set<String> ACCOUNT_THEMES = new HashSet<String>();
+    private static Set<String> LOGIN_THEMES = new HashSet<String>();
+    private static Set<String> COMMON_THEMES = new HashSet<String>();
 
     static {
-        defaultThemes.add(BASE);
-        defaultThemes.add(PATTERNFLY);
-        defaultThemes.add(KEYCLOAK);
+        Collections.addAll(ACCOUNT_THEMES, BASE, PATTERNFLY, KEYCLOAK);
+        Collections.addAll(LOGIN_THEMES, BASE, PATTERNFLY, KEYCLOAK);
+        Collections.addAll(COMMON_THEMES, PATTERNFLY);
     }
 
     @Override
@@ -43,10 +47,15 @@ public class DefaultLoginThemeProvider implements ThemeProvider {
 
     @Override
     public Set<String> nameSet(Theme.Type type) {
-        if (type == Theme.Type.LOGIN || type == Theme.Type.ACCOUNT) {
-            return defaultThemes;
-        } else {
-            return Collections.emptySet();
+        switch (type) {
+            case LOGIN:
+                return LOGIN_THEMES;
+            case ACCOUNT:
+                return ACCOUNT_THEMES;
+            case COMMON:
+                return COMMON_THEMES;
+            default:
+                return Collections.emptySet();
         }
     }
 
