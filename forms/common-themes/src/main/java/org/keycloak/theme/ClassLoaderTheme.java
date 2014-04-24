@@ -16,6 +16,8 @@ public class ClassLoaderTheme implements Theme {
 
     private final String parentName;
 
+    private final String importName;
+
     private final Type type;
 
     private final ClassLoader classLoader;
@@ -44,8 +46,10 @@ public class ClassLoaderTheme implements Theme {
         if (p != null) {
             properties.load(p.openStream());
             this.parentName = properties.getProperty("parent");
+            this.importName = properties.getProperty("import");
         } else {
             this.parentName = null;
+            this.importName = null;
         }
     }
 
@@ -57,6 +61,11 @@ public class ClassLoaderTheme implements Theme {
     @Override
     public String getParentName() {
         return parentName;
+    }
+
+    @Override
+    public String getImportName() {
+        return importName;
     }
 
     @Override
