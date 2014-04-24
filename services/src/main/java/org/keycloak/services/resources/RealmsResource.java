@@ -28,7 +28,7 @@ import javax.ws.rs.core.UriInfo;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-@Path("/realms")
+@Path("/rest/realms")
 public class RealmsResource {
     protected static Logger logger = Logger.getLogger(RealmsResource.class);
 

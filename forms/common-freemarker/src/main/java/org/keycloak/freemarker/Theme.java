@@ -10,7 +10,7 @@ import java.util.Properties;
  */
 public interface Theme {
 
-    public enum Type { LOGIN, ACCOUNT, COMMON };
+    public enum Type { LOGIN, ACCOUNT, ADMIN, COMMON };
 
     public String getName();
 

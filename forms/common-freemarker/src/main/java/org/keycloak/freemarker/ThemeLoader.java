@@ -48,6 +48,11 @@ public class ThemeLoader {
             for (String parentName = theme.getParentName(); parentName != null; parentName = theme.getParentName()) {
                 theme = findTheme(providers, parentName, type);
                 themes.add(theme);
+
+                if (theme.getImportName() != null) {
+                    String[] s = theme.getImportName().split("/");
+                    themes.add(findTheme(providers, s[1], Theme.Type.valueOf(s[0].toUpperCase())));
+                }
             }
 
             return new ExtendingTheme(themes);

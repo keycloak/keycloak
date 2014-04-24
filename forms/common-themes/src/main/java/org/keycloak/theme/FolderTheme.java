@@ -29,7 +29,7 @@ public class FolderTheme implements Theme {
         if (propertiesFile .isFile()) {
             properties.load(new FileInputStream(propertiesFile));
             parentName = properties.getProperty("parent");
-            parentName = properties.getProperty("import");
+            importName = properties.getProperty("import");
         }
     }
 

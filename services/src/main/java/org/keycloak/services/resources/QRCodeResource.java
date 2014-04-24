@@ -20,7 +20,7 @@ import java.io.OutputStream;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@Path("/qrcode")
+@Path("/rest/qrcode")
 public class QRCodeResource {
 
     @GET

@@ -84,6 +84,7 @@
                                     <outputDirectory>${project.build.directory}/unpacked/adapter</outputDirectory>
                                 </artifactItem>
                             </artifactItems>
+                            <excludes>**/welcome-content/*</excludes>
                         </configuration>
                     </execution>
                 </executions>

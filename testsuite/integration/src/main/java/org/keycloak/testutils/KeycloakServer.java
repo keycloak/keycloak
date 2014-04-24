@@ -23,42 +23,32 @@ package org.keycloak.testutils;
 
 import io.undertow.Undertow;
 import io.undertow.Undertow.Builder;
-import io.undertow.server.handlers.resource.FileResource;
-import io.undertow.server.handlers.resource.FileResourceManager;
-import io.undertow.server.handlers.resource.Resource;
-import io.undertow.server.handlers.resource.ResourceChangeListener;
-import io.undertow.server.handlers.resource.ResourceManager;
-import io.undertow.server.handlers.resource.URLResource;
 import io.undertow.servlet.Servlets;
 import io.undertow.servlet.api.DefaultServletConfig;
 import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.FilterInfo;
-import io.undertow.servlet.api.ServletInfo;
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
 import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.keycloak.models.Config;
-import org.keycloak.provider.ProviderSessionFactory;
-import org.keycloak.services.filters.ClientConnectionFilter;
-import org.keycloak.theme.DefaultLoginThemeProvider;
-import org.keycloak.services.tmp.TmpAdminRedirectServlet;
-import org.keycloak.util.JsonSerialization;
-import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.provider.ProviderSessionFactory;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.filters.ClientConnectionFilter;
 import org.keycloak.services.filters.KeycloakSessionServletFilter;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
+import org.keycloak.theme.DefaultKeycloakThemeProvider;
+import org.keycloak.util.JsonSerialization;
 
 import javax.servlet.DispatcherType;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -135,12 +125,12 @@ public class KeycloakServer {
             }
 
             File dir = new File(resources).getAbsoluteFile();
-            if (!dir.isDirectory() || !new File(dir, "admin-ui").isDirectory()) {
+            if (!dir.isDirectory() || !new File(dir, "forms").isDirectory()) {
                 throw new RuntimeException("Invalid resources directory");
             }
 
             if (Config.getThemeDir() == null) {
-                System.setProperty(DefaultLoginThemeProvider.class.getName() + ".disabled", "");
+                System.setProperty(DefaultKeycloakThemeProvider.class.getName() + ".disabled", "");
                 Config.setThemeDir(file(dir.getAbsolutePath(), "forms", "common-themes", "src", "main", "resources", "theme").getAbsolutePath());
             }
 
@@ -258,26 +248,21 @@ public class KeycloakServer {
 
         server = new UndertowJaxrsServer().start(builder);
 
-        DeploymentInfo di = server.undertowDeployment(deployment, "rest");
+        DeploymentInfo di = server.undertowDeployment(deployment, "");
         di.setClassLoader(getClass().getClassLoader());
         di.setContextPath("/auth");
         di.setDeploymentName("Keycloak");
-        di.setResourceManager(new KeycloakResourceManager(config.getResourcesHome()));
 
         di.setDefaultServletConfig(new DefaultServletConfig(true));
-        di.addWelcomePage("index.html");
+        di.addWelcomePage("welcome-content/index.html");
 
         FilterInfo filter = Servlets.filter("SessionFilter", KeycloakSessionServletFilter.class);
         di.addFilter(filter);
-        di.addFilterUrlMapping("SessionFilter", "/rest/*", DispatcherType.REQUEST);
+        di.addFilterUrlMapping("SessionFilter", "/*", DispatcherType.REQUEST);
 
         FilterInfo connectionFilter = Servlets.filter("ClientConnectionFilter", ClientConnectionFilter.class);
         di.addFilter(connectionFilter);
-        di.addFilterUrlMapping("ClientConnectionFilter", "/rest/*", DispatcherType.REQUEST);
-
-        ServletInfo tmpAdminRedirectServlet = Servlets.servlet("TmpAdminRedirectServlet", TmpAdminRedirectServlet.class);
-        tmpAdminRedirectServlet.addMappings("/admin", "/admin/");
-        di.addServlet(tmpAdminRedirectServlet);
+        di.addFilterUrlMapping("ClientConnectionFilter", "/*", DispatcherType.REQUEST);
 
         server.deploy(di);
 
@@ -308,52 +293,6 @@ public class KeycloakServer {
         server.stop();
 
         info("Stopped Keycloak");
-    }
-
-    public static class KeycloakResourceManager implements ResourceManager {
-
-        private String resourcesHome;
-
-        public KeycloakResourceManager(String resourcesHome) {
-            this.resourcesHome = resourcesHome;
-        }
-
-        @Override
-        public Resource getResource(String path) throws IOException {
-            if (resourcesHome == null) {
-                String realPath = "META-INF/resources" + path;
-                URL url = getClass().getClassLoader().getResource(realPath);
-                return new URLResource(url, url.openConnection(), path);
-            } else {
-                File file;
-                if (path.startsWith("/admin/")) {
-                    file = file(resourcesHome, "admin-ui", "src", "main", "resources", "META-INF", "resources", path.replace('/', File.separatorChar));
-                } else if (path.startsWith("/js/")) {
-                    file = file(resourcesHome, "integration", "js", "src", "main", "resources", "META-INF", "resources", path.replace('/', File.separatorChar));
-                } else {
-                    throw new IOException("Unknown resource " + path);
-                }
-                return new FileResource(file, new FileResourceManager(file.getParentFile(), 1), path);
-            }
-        }
-
-        @Override
-        public boolean isResourceChangeListenerSupported() {
-            return false;
-        }
-
-        @Override
-        public void registerResourceChangeListener(ResourceChangeListener listener) {
-        }
-
-        @Override
-        public void removeResourceChangeListener(ResourceChangeListener listener) {
-        }
-
-        @Override
-        public void close() throws IOException {
-        }
-
     }
 
     private static File file(String... path) {
