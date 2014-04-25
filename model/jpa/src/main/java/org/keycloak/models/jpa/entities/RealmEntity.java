@@ -1,8 +1,6 @@
 package org.keycloak.models.jpa.entities;
 
 
-import org.keycloak.models.ApplicationModel;
-
 import javax.persistence.CascadeType;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
@@ -37,7 +35,9 @@ public class RealmEntity {
     @Id
     protected String id;
 
+    //@Column(unique = true)
     protected String name;
+
     protected boolean enabled;
     protected boolean sslNotRequired;
     protected boolean registrationAllowed;

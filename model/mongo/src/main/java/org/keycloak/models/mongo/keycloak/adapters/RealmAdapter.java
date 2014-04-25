@@ -1242,12 +1242,13 @@ public class RealmAdapter extends AbstractMongoAdapter<RealmEntity> implements R
 
     @Override
     public ApplicationModel getAdminApp() {
-        return new ApplicationAdapter(this, realm.getAdminApp(), invocationContext);
+        ApplicationEntity appData = getMongoStore().loadEntity(ApplicationEntity.class, realm.getAdminAppId(), invocationContext);
+        return new ApplicationAdapter(this, appData, invocationContext);
     }
 
     @Override
     public void setAdminApp(ApplicationModel app) {
-        realm.setAdminApp(((ApplicationAdapter) app).getMongoEntity());
+        realm.setAdminAppId(app.getId());
     }
 
     @Override

@@ -7,6 +7,8 @@ import org.keycloak.models.mongo.api.AbstractMongoIdentifiableEntity;
 import org.keycloak.models.mongo.api.MongoCollection;
 import org.keycloak.models.mongo.api.MongoEntity;
 import org.keycloak.models.mongo.api.MongoField;
+import org.keycloak.models.mongo.api.MongoIndex;
+import org.keycloak.models.mongo.api.MongoIndexes;
 import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
 
 import java.util.ArrayList;
@@ -21,6 +23,7 @@ import java.util.Set;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @MongoCollection(collectionName = "realms")
+//@MongoIndex(fields = { "name" }, unique = true)
 public class RealmEntity extends AbstractMongoIdentifiableEntity implements MongoEntity {
 
     private String name;
@@ -70,7 +73,7 @@ public class RealmEntity extends AbstractMongoIdentifiableEntity implements Mong
     private long auditExpiration;
     private List<String> auditListeners = new ArrayList<String>();
 
-    private ApplicationEntity adminApp;
+    private String adminAppId;
 
     @MongoField
     public String getName() {
@@ -397,12 +400,12 @@ public class RealmEntity extends AbstractMongoIdentifiableEntity implements Mong
     }
 
     @MongoField
-    public ApplicationEntity getAdminApp() {
-        return adminApp;
+    public String getAdminAppId() {
+        return adminAppId;
     }
 
-    public void setAdminApp(ApplicationEntity adminApp) {
-        this.adminApp = adminApp;
+    public void setAdminAppId(String adminAppId) {
+        this.adminAppId = adminAppId;
     }
 
     @Override
