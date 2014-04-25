@@ -23,7 +23,7 @@ import java.util.Set;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @MongoCollection(collectionName = "realms")
-@MongoIndex(fields = { "name" }, unique = true)
+//@MongoIndex(fields = { "name" }, unique = true)
 public class RealmEntity extends AbstractMongoIdentifiableEntity implements MongoEntity {
 
     private String name;

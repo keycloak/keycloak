@@ -35,7 +35,7 @@ public class RealmEntity {
     @Id
     protected String id;
 
-    @Column(unique = true)
+    //@Column(unique = true)
     protected String name;
 
     protected boolean enabled;
