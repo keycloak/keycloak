@@ -241,7 +241,7 @@ public class TokenService {
 
         audit.success();
 
-        return Response.ok(res, MediaType.APPLICATION_JSON_TYPE).build();
+        return Cors.add(request, Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).auth().allowedOrigins(client).allowedMethods("POST").build();
     }
 
     @Path("auth/request/login")
