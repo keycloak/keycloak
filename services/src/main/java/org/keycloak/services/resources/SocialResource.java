@@ -76,7 +76,7 @@ import java.util.Map.Entry;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@Path("/social")
+@Path("/rest/social")
 public class SocialResource {
 
     protected static Logger logger = Logger.getLogger(SocialResource.class);

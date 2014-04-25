@@ -47,7 +47,7 @@
             <outputDirectory>keycloak</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>${project.build.directory}/unpacked/deployments/auth-server.war</directory>
+            <directory>src/main/welcome-content</directory>
             <outputDirectory>keycloak/welcome-content</outputDirectory>
             <includes>
                 <include>*.*</include>

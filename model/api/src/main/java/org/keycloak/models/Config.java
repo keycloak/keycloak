@@ -25,6 +25,9 @@ public class Config {
     public static final String THEME_DEFAULT_KEY = "keycloak.theme.default";
     public static final String THEME_DEFAULT_DEFAULT = "keycloak";
     public static final String THEME_DIR_KEY = "keycloak.theme.dir";
+    public static final String THEME_ADMIN_KEY = "keycloak.theme.admin";
+    public static final String THEME_ADMIN_DEFAULT  = "keycloak";
+
     public static final String JBOSS_SERVER_CONFIG_DIR_KEY = "jboss.server.config.dir";
 
     public static final String TIMER_PROVIDER_KEY = "keycloak.timer";
@@ -104,6 +107,14 @@ public class Config {
 
     public static void setThemeDefault(String defaultTheme) {
         System.setProperty(THEME_DEFAULT_KEY, defaultTheme);
+    }
+
+    public static String getThemeAdmin() {
+        return System.getProperty(THEME_ADMIN_KEY, THEME_ADMIN_DEFAULT);
+    }
+
+    public static void setThemeAdmin(String adminTheme) {
+        System.setProperty(THEME_ADMIN_KEY, adminTheme);
     }
 
 }

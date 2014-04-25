@@ -78,7 +78,10 @@ public class KeycloakApplication extends Application {
         singletons.add(new SocialResource(tokenManager, socialRequestManager));
         classes.add(SkeletonKeyContextResolver.class);
         classes.add(QRCodeResource.class);
+        classes.add(AdminResource.class);
         classes.add(ThemeResource.class);
+        classes.add(JsResource.class);
+        classes.add(WelcomeResource.class);
 
         setupDefaultRealm(context.getContextPath());
 
