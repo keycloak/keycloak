@@ -15,7 +15,7 @@ import org.keycloak.models.mongo.keycloak.entities.ClientEntity;
  */
 public class ClientAdapter<T extends ClientEntity> extends AbstractMongoAdapter<T> implements ClientModel {
 
-    private final T clientEntity;
+    protected final T clientEntity;
     private final RealmModel realm;
 
     public ClientAdapter(RealmModel realm, T clientEntity, MongoStoreInvocationContext invContext) {
@@ -157,4 +157,5 @@ public class ClientAdapter<T extends ClientEntity> extends AbstractMongoAdapter<
         clientEntity.setNotBefore(notBefore);
         updateMongoEntity();
     }
+
 }

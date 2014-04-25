@@ -1,6 +1,8 @@
 package org.keycloak.models.jpa.entities;
 
 
+import org.keycloak.models.ApplicationModel;
+
 import javax.persistence.CascadeType;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
@@ -13,6 +15,7 @@ import javax.persistence.MapKeyColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -113,6 +116,9 @@ public class RealmEntity {
 
     @ElementCollection
     private Set<String> auditListeners= new HashSet<String>();
+
+    @OneToOne
+    private ApplicationEntity adminApp;
 
     public String getId() {
         return id;
@@ -432,5 +438,14 @@ public class RealmEntity {
     public void setAuditListeners(Set<String> auditListeners) {
         this.auditListeners = auditListeners;
     }
+
+    public ApplicationEntity getAdminApp() {
+        return adminApp;
+    }
+
+    public void setAdminApp(ApplicationEntity adminApp) {
+        this.adminApp = adminApp;
+    }
+
 }
 

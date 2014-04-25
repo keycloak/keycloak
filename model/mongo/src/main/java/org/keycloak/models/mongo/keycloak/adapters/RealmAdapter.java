@@ -642,7 +642,7 @@ public class RealmAdapter extends AbstractMongoAdapter<RealmEntity> implements R
                 .and("name").is(name)
                 .get();
         ApplicationEntity appEntity = getMongoStore().loadSingleEntity(ApplicationEntity.class, query, invocationContext);
-        return appEntity==null ? null : new ApplicationAdapter(this, appEntity, invocationContext);
+        return appEntity == null ? null : new ApplicationAdapter(this, appEntity, invocationContext);
     }
 
     @Override
@@ -697,7 +697,7 @@ public class RealmAdapter extends AbstractMongoAdapter<RealmEntity> implements R
 
     @Override
     public void grantRole(UserModel user, RoleModel role) {
-        UserEntity userEntity = ((UserAdapter)user).getUser();
+        UserEntity userEntity = ((UserAdapter) user).getUser();
         getMongoStore().pushItemToList(userEntity, "roleIds", role.getId(), true, invocationContext);
     }
 
@@ -724,7 +724,7 @@ public class RealmAdapter extends AbstractMongoAdapter<RealmEntity> implements R
         // Filter to retrieve just realm roles TODO: Maybe improve to avoid filter programmatically... Maybe have separate fields for realmRoles and appRoles on user?
         Set<RoleModel> realmRoles = new HashSet<RoleModel>();
         for (RoleModel role : allRoles) {
-            RoleEntity roleEntity = ((RoleAdapter)role).getRole();
+            RoleEntity roleEntity = ((RoleAdapter) role).getRole();
 
             if (getId().equals(roleEntity.getRealmId())) {
                 realmRoles.add(role);
@@ -737,7 +737,7 @@ public class RealmAdapter extends AbstractMongoAdapter<RealmEntity> implements R
     public void deleteRoleMapping(UserModel user, RoleModel role) {
         if (user == null || role == null) return;
 
-        UserEntity userEntity = ((UserAdapter)user).getUser();
+        UserEntity userEntity = ((UserAdapter) user).getUser();
         getMongoStore().pullItemFromList(userEntity, "roleIds", role.getId(), invocationContext);
     }
 
@@ -764,7 +764,7 @@ public class RealmAdapter extends AbstractMongoAdapter<RealmEntity> implements R
         // Filter to retrieve just realm roles TODO: Maybe improve to avoid filter programmatically... Maybe have separate fields for realmRoles and appRoles on user?
         Set<RoleModel> realmRoles = new HashSet<RoleModel>();
         for (RoleModel role : allScopes) {
-            RoleEntity roleEntity = ((RoleAdapter)role).getRole();
+            RoleEntity roleEntity = ((RoleAdapter) role).getRole();
 
             if (getId().equals(roleEntity.getRealmId())) {
                 realmRoles.add(role);
@@ -787,12 +787,12 @@ public class RealmAdapter extends AbstractMongoAdapter<RealmEntity> implements R
 
     @Override
     public void addScopeMapping(ClientModel client, RoleModel role) {
-        getMongoStore().pushItemToList(((AbstractMongoAdapter)client).getMongoEntity(), "scopeIds", role.getId(), true, invocationContext);
+        getMongoStore().pushItemToList(((AbstractMongoAdapter) client).getMongoEntity(), "scopeIds", role.getId(), true, invocationContext);
     }
 
     @Override
     public void deleteScopeMapping(ClientModel client, RoleModel role) {
-        getMongoStore().pullItemFromList(((AbstractMongoAdapter)client).getMongoEntity(), "scopeIds", role.getId(), invocationContext);
+        getMongoStore().pullItemFromList(((AbstractMongoAdapter) client).getMongoEntity(), "scopeIds", role.getId(), invocationContext);
     }
 
     @Override
@@ -911,7 +911,7 @@ public class RealmAdapter extends AbstractMongoAdapter<RealmEntity> implements R
 
     @Override
     public boolean validatePassword(UserModel user, String password) {
-        for (CredentialEntity cred : ((UserAdapter)user).getUser().getCredentials()) {
+        for (CredentialEntity cred : ((UserAdapter) user).getUser().getCredentials()) {
             if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
                 return new Pbkdf2PasswordEncoder(cred.getSalt()).verify(password, cred.getValue());
             }
@@ -922,7 +922,7 @@ public class RealmAdapter extends AbstractMongoAdapter<RealmEntity> implements R
     @Override
     public boolean validateTOTP(UserModel user, String password, String token) {
         if (!validatePassword(user, password)) return false;
-        for (CredentialEntity cred : ((UserAdapter)user).getUser().getCredentials()) {
+        for (CredentialEntity cred : ((UserAdapter) user).getUser().getCredentials()) {
             if (cred.getType().equals(UserCredentialModel.TOTP)) {
                 return new TimeBasedOTP().validate(token, cred.getValue().getBytes());
             }
@@ -967,12 +967,12 @@ public class RealmAdapter extends AbstractMongoAdapter<RealmEntity> implements R
                 .and("realmId").is(getId())
                 .get();
         UserEntity userEntity = getMongoStore().loadSingleEntity(UserEntity.class, query, invocationContext);
-        return userEntity==null ? null : new UserAdapter(userEntity, invocationContext);
+        return userEntity == null ? null : new UserAdapter(userEntity, invocationContext);
     }
 
     @Override
     public Set<SocialLinkModel> getSocialLinks(UserModel user) {
-        UserEntity userEntity = ((UserAdapter)user).getUser();
+        UserEntity userEntity = ((UserAdapter) user).getUser();
         List<SocialLinkEntity> linkEntities = userEntity.getSocialLinks();
 
         if (linkEntities == null) {
@@ -990,12 +990,12 @@ public class RealmAdapter extends AbstractMongoAdapter<RealmEntity> implements R
     @Override
     public SocialLinkModel getSocialLink(UserModel user, String socialProvider) {
         SocialLinkEntity socialLinkEntity = findSocialLink(user, socialProvider);
-        return socialLinkEntity!=null ? new SocialLinkModel(socialLinkEntity.getSocialProvider(), socialLinkEntity.getSocialUserId(), socialLinkEntity.getSocialUsername()) : null;
+        return socialLinkEntity != null ? new SocialLinkModel(socialLinkEntity.getSocialProvider(), socialLinkEntity.getSocialUserId(), socialLinkEntity.getSocialUsername()) : null;
     }
 
     @Override
     public void addSocialLink(UserModel user, SocialLinkModel socialLink) {
-        UserEntity userEntity = ((UserAdapter)user).getUser();
+        UserEntity userEntity = ((UserAdapter) user).getUser();
         SocialLinkEntity socialLinkEntity = new SocialLinkEntity();
         socialLinkEntity.setSocialProvider(socialLink.getSocialProvider());
         socialLinkEntity.setSocialUserId(socialLink.getSocialUserId());
@@ -1005,18 +1005,18 @@ public class RealmAdapter extends AbstractMongoAdapter<RealmEntity> implements R
     }
 
     @Override
-    public boolean removeSocialLink(UserModel user,String socialProvider) {
+    public boolean removeSocialLink(UserModel user, String socialProvider) {
         SocialLinkEntity socialLinkEntity = findSocialLink(user, socialProvider);
         if (socialLinkEntity == null) {
             return false;
         }
-        UserEntity userEntity = ((UserAdapter)user).getUser();
+        UserEntity userEntity = ((UserAdapter) user).getUser();
 
         return getMongoStore().pullItemFromList(userEntity, "socialLinks", socialLinkEntity, invocationContext);
     }
 
     private SocialLinkEntity findSocialLink(UserModel user, String socialProvider) {
-        UserEntity userEntity = ((UserAdapter)user).getUser();
+        UserEntity userEntity = ((UserAdapter) user).getUser();
         List<SocialLinkEntity> linkEntities = userEntity.getSocialLinks();
         if (linkEntities == null) {
             return null;
@@ -1032,19 +1032,19 @@ public class RealmAdapter extends AbstractMongoAdapter<RealmEntity> implements R
 
     @Override
     public AuthenticationLinkModel getAuthenticationLink(UserModel user) {
-        UserEntity userEntity = ((UserAdapter)user).getUser();
+        UserEntity userEntity = ((UserAdapter) user).getUser();
         AuthenticationLinkEntity authLinkEntity = userEntity.getAuthenticationLink();
 
         if (authLinkEntity == null) {
             return null;
-        }  else {
+        } else {
             return new AuthenticationLinkModel(authLinkEntity.getAuthProvider(), authLinkEntity.getAuthUserId());
         }
     }
 
     @Override
     public void setAuthenticationLink(UserModel user, AuthenticationLinkModel authenticationLink) {
-        UserEntity userEntity = ((UserAdapter)user).getUser();
+        UserEntity userEntity = ((UserAdapter) user).getUser();
         AuthenticationLinkEntity authLinkEntity = new AuthenticationLinkEntity();
         authLinkEntity.setAuthProvider(authenticationLink.getAuthProvider());
         authLinkEntity.setAuthUserId(authenticationLink.getAuthUserId());
@@ -1086,8 +1086,8 @@ public class RealmAdapter extends AbstractMongoAdapter<RealmEntity> implements R
         if (spaceInd != -1) {
             String firstName = search.substring(0, spaceInd);
             String lastName = search.substring(spaceInd + 1);
-            Pattern firstNamePattern =  Pattern.compile("(?i:" + firstName + "$)");
-            Pattern lastNamePattern =  Pattern.compile("(?i:^" + lastName + ")");
+            Pattern firstNamePattern = Pattern.compile("(?i:" + firstName + "$)");
+            Pattern lastNamePattern = Pattern.compile("(?i:^" + lastName + ")");
             nameBuilder = new QueryBuilder().and(
                     new QueryBuilder().put("firstName").regex(firstNamePattern).get(),
                     new QueryBuilder().put("lastName").regex(lastNamePattern).get()
@@ -1238,6 +1238,16 @@ public class RealmAdapter extends AbstractMongoAdapter<RealmEntity> implements R
             realm.setAuditListeners(Collections.EMPTY_LIST);
         }
         updateRealm();
+    }
+
+    @Override
+    public ApplicationModel getAdminApp() {
+        return new ApplicationAdapter(this, realm.getAdminApp(), invocationContext);
+    }
+
+    @Override
+    public void setAdminApp(ApplicationModel app) {
+        realm.setAdminApp(((ApplicationAdapter) app).getMongoEntity());
     }
 
     @Override

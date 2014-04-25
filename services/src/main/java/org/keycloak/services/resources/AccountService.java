@@ -539,7 +539,7 @@ public class AccountService {
             throw new ForbiddenException();
         }
 
-        if (!auth.hasAppRole(application.getName(), role)) {
+        if (!auth.hasAppRole(application, role)) {
             throw new ForbiddenException();
         }
     }
@@ -549,7 +549,7 @@ public class AccountService {
             throw new ForbiddenException();
         }
 
-        if (!auth.hasOneOfAppRole(application.getName(), roles)) {
+        if (!auth.hasOneOfAppRole(application, roles)) {
             throw new ForbiddenException();
         }
     }
