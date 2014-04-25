@@ -245,11 +245,6 @@ public class ApplicationAdapter extends ClientAdapter implements ApplicationMode
         em.flush();
     }
 
-    @Override
-    public void addScope(RoleModel role) {
-        realm.addScopeMapping(this, role);
-    }
-
     public boolean equals(Object o) {
         if (o == null) return false;
         if (o == this) return true;

@@ -23,7 +23,7 @@ import java.util.Set;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @MongoCollection(collectionName = "realms")
-//@MongoIndex(fields = { "name" }, unique = true)
+@MongoIndex(fields = { "name" }, unique = true)
 public class RealmEntity extends AbstractMongoIdentifiableEntity implements MongoEntity {
 
     private String name;
@@ -422,5 +422,8 @@ public class RealmEntity extends AbstractMongoIdentifiableEntity implements Mong
 
         // Remove all applications of this realm
         context.getMongoStore().removeEntities(ApplicationEntity.class, query, context);
+
+        // Remove all clients of this realm
+        context.getMongoStore().removeEntities(OAuthClientEntity.class, query, context);
     }
 }

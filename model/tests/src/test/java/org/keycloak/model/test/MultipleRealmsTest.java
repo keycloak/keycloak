@@ -22,8 +22,8 @@ public class MultipleRealmsTest extends AbstractModelTest {
     @Override
     public void before() throws Exception {
         super.before();
-        realm1 = identitySession.createRealm("id1", "realm1");
-        realm2 = identitySession.createRealm("id2", "realm2");
+        realm1 = realmManager.createRealm("id1", "realm1");
+        realm2 = realmManager.createRealm("id2", "realm2");
 
         createObjects(realm1);
         createObjects(realm2);
@@ -93,7 +93,7 @@ public class MultipleRealmsTest extends AbstractModelTest {
         realm.addRole("role2");
 
         app1.addRole("app1Role1");
-        app1.addScope(realm.getRole("role1"));
+        realm.addScopeMapping(app1, realm.getRole("role1"));
 
         realm.addOAuthClient("cl1");
     }

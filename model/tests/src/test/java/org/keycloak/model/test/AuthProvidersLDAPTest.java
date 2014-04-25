@@ -7,8 +7,10 @@ import javax.ws.rs.core.MultivaluedMap;
 
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
@@ -29,22 +31,38 @@ import org.keycloak.authentication.AuthenticationProviderManager;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class AuthProvidersLDAPTest extends AbstractModelTest {
 
+    private static LDAPEmbeddedServer embeddedServer;
+
     private RealmModel realm;
     private AuthenticationManager am;
-    private LDAPEmbeddedServer embeddedServer;
 
-    @Before
-    @Override
-    public void before() throws Exception {
-        super.before();
+    @BeforeClass
+    public static void beforeClass() {
+        AbstractModelTest.beforeClass();
 
         try {
-            this.embeddedServer = new LDAPEmbeddedServer();
-            this.embeddedServer.setup();
-            this.embeddedServer.importLDIF("ldap/users.ldif");
+            embeddedServer = new LDAPEmbeddedServer();
+            embeddedServer.setup();
+            embeddedServer.importLDIF("ldap/users.ldif");
         } catch (Exception e) {
             throw new RuntimeException("Error starting Embedded LDAP server.", e);
         }
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        AbstractModelTest.afterClass();
+
+        try {
+            embeddedServer.tearDown();
+        } catch (Exception e) {
+            throw new RuntimeException("Error starting Embedded LDAP server.", e);
+        }
+    }
+
+    @Before
+    public void before() throws Exception {
+        super.before();
 
         // Create realm and configure ldap
         realm = realmManager.createRealm("realm");
@@ -53,17 +71,6 @@ public class AuthProvidersLDAPTest extends AbstractModelTest {
         this.embeddedServer.setupLdapInRealm(realm);
 
         am = new AuthenticationManager(providerSession);
-    }
-
-    @After
-    @Override
-    public void after() throws Exception {
-        super.after();
-        try {
-            this.embeddedServer.tearDown();
-        } catch (Exception e) {
-            throw new RuntimeException("Error starting Embedded LDAP server.", e);
-        }
     }
 
     @Test

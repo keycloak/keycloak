@@ -87,14 +87,14 @@ public class CompositeRoleTest {
 
             final ApplicationModel realmComposite1Application = new ApplicationManager(manager).createApplication(realm, "REALM_COMPOSITE_1_APPLICATION");
             realmComposite1Application.setEnabled(true);
-            realmComposite1Application.addScope(realmComposite1);
+            realm.addScopeMapping(realmComposite1Application, realmComposite1);
             realmComposite1Application.setBaseUrl("http://localhost:8081/app");
             realmComposite1Application.setManagementUrl("http://localhost:8081/app/logout");
             realmComposite1Application.setSecret("password");
 
             final ApplicationModel realmRole1Application = new ApplicationManager(manager).createApplication(realm, "REALM_ROLE_1_APPLICATION");
             realmRole1Application.setEnabled(true);
-            realmRole1Application.addScope(realmRole1);
+            realm.addScopeMapping(realmRole1Application, realmRole1);
             realmRole1Application.setBaseUrl("http://localhost:8081/app");
             realmRole1Application.setManagementUrl("http://localhost:8081/app/logout");
             realmRole1Application.setSecret("password");
@@ -127,7 +127,7 @@ public class CompositeRoleTest {
             appCompositeApplication.setManagementUrl("http://localhost:8081/app/logout");
             appCompositeApplication.setSecret("password");
             final RoleModel appCompositeRole = appCompositeApplication.addRole("APP_COMPOSITE_ROLE");
-            appCompositeApplication.addScope(appRole2);
+            realm.addScopeMapping(appCompositeApplication, appRole2);
             appCompositeRole.addCompositeRole(realmRole1);
             appCompositeRole.addCompositeRole(realmRole2);
             appCompositeRole.addCompositeRole(realmRole3);

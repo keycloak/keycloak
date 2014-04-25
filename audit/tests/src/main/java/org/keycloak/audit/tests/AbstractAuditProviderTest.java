@@ -34,8 +34,7 @@ public abstract class AbstractAuditProviderTest {
 
     @After
     public void after() {
-        provider.clear("realmId");
-        provider.clear("realmId2");
+        provider.clear();
         provider.close();
         factory.close();
     }

@@ -1,6 +1,5 @@
 package org.keycloak.audit.mongo;
 
-import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
@@ -25,6 +24,11 @@ public class MongoAuditProvider implements AuditProvider {
     @Override
     public EventQuery createQuery() {
         return new MongoEventQuery(audit);
+    }
+
+    @Override
+    public void clear() {
+        audit.remove(new BasicDBObject());
     }
 
     @Override

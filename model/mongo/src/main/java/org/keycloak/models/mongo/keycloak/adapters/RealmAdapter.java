@@ -541,6 +541,7 @@ public class RealmAdapter extends AbstractMongoAdapter<RealmEntity> implements R
         roleEntity.setRealmId(getId());
 
         getMongoStore().insertEntity(roleEntity, invocationContext);
+
         return new RoleAdapter(this, roleEntity, this, invocationContext);
     }
 

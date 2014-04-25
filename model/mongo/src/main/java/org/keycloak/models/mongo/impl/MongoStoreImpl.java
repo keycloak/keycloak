@@ -179,15 +179,19 @@ public class MongoStoreImpl implements MongoStore {
         try {
             dbCollection.insert(dbObject);
         } catch (MongoException e) {
-            if (e instanceof MongoException.DuplicateKey) {
-                throw new ModelDuplicateException(e);
-            } else {
-                throw new ModelException(e);
-            }
+            throw convertException(e);
         }
 
         // Treat object as created in this transaction (It is already submited to transaction)
         context.addCreatedEntity(entity);
+    }
+
+    public static ModelException convertException(MongoException e) {
+        if (e instanceof MongoException.DuplicateKey) {
+            return new ModelDuplicateException(e);
+        } else {
+            return new ModelException(e);
+        }
     }
 
     @Override

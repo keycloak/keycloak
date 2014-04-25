@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
@@ -44,7 +45,6 @@ public class AdapterTest extends AbstractModelTest {
         realmModel.setUpdateProfileOnInitialSocialLogin(true);
         realmModel.addDefaultRole("foo");
 
-        System.out.println(realmModel.getId());
         realmModel = realmManager.getRealm(realmModel.getId());
         Assert.assertNotNull(realmModel);
         Assert.assertEquals(realmModel.getAccessCodeLifespan(), 100);
@@ -302,7 +302,7 @@ public class AdapterTest extends AbstractModelTest {
             }
             String[] usernames = users.toArray(new String[users.size()]);
             Arrays.sort(usernames);
-            Assert.assertArrayEquals(new String[] { "doublefirst", "doublelast"}, usernames);
+            Assert.assertArrayEquals(new String[]{"doublefirst", "doublelast"}, usernames);
         }
 
         {
@@ -472,5 +472,67 @@ public class AdapterTest extends AbstractModelTest {
         Assert.assertFalse(realmModel.hasRole(user, appBarRole));
     }
 
-    // TODO: test scopes
+    @Test
+    public void testScopes() throws Exception {
+        test1CreateRealm();
+        RoleModel realmRole = realmModel.addRole("realm");
+
+        ApplicationModel app1 = realmModel.addApplication("app1");
+        RoleModel appRole = app1.addRole("app");
+
+        ApplicationModel app2 = realmModel.addApplication("app2");
+        realmModel.addScopeMapping(app2, realmRole);
+        realmModel.addScopeMapping(app2, appRole);
+
+        OAuthClientModel client = realmModel.addOAuthClient("client");
+        realmModel.addScopeMapping(client, realmRole);
+        realmModel.addScopeMapping(client, appRole);
+
+        commit();
+
+        realmModel = identitySession.getRealmByName("JUGGLER");
+        app1 = realmModel.getApplicationByName("app1");
+        app2 = realmModel.getApplicationByName("app2");
+        client = realmModel.getOAuthClient("client");
+
+        Set<RoleModel> scopeMappings = realmModel.getScopeMappings(app2);
+        Assert.assertEquals(2, scopeMappings.size());
+        Assert.assertTrue(scopeMappings.contains(realmModel.getRole("realm")));
+        Assert.assertTrue(scopeMappings.contains(app1.getRole("app")));
+
+        scopeMappings = realmModel.getScopeMappings(client);
+        Assert.assertEquals(2, scopeMappings.size());
+        Assert.assertTrue(scopeMappings.contains(realmModel.getRole("realm")));
+        Assert.assertTrue(scopeMappings.contains(app1.getRole("app")));
+    }
+
+    @Test
+    public void testRealmNameCollisions() throws Exception {
+        test1CreateRealm();
+
+        commit();
+
+        // Try to create realm with duplicate name
+        try {
+            test1CreateRealm();
+            commit();
+            Assert.fail("Expected exception");
+        } catch (ModelDuplicateException e) {
+        }
+        commit(true);
+
+        // Ty to rename realm to duplicate name
+        realmModel = realmManager.createRealm("JUGGLER2");
+        commit();
+
+        realmModel = realmManager.getRealmByName("JUGGLER2");
+        try {
+            realmModel.setName("JUGGLER");
+            commit();
+            Assert.fail("Expected exception");
+        } catch (ModelDuplicateException e) {
+        }
+        commit(true);
+    }
+
 }

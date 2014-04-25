@@ -39,6 +39,4 @@ public interface ApplicationModel extends RoleContainerModel, ClientModel {
     boolean isBearerOnly();
     void setBearerOnly(boolean only);
 
-    void addScope(RoleModel role);
-
 }

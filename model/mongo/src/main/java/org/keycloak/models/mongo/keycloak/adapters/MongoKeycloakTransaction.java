@@ -1,7 +1,9 @@
 package org.keycloak.models.mongo.keycloak.adapters;
 
+import com.mongodb.MongoException;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
+import org.keycloak.models.mongo.impl.MongoStoreImpl;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -35,7 +37,11 @@ public class MongoKeycloakTransaction implements KeycloakTransaction {
             throw new IllegalStateException("Can't commit as transaction marked for rollback");
         }
 
-        invocationContext.commit();
+        try {
+            invocationContext.commit();
+        } catch (MongoException e) {
+            throw MongoStoreImpl.convertException(e);
+        }
     }
 
     @Override
