@@ -1,5 +1,6 @@
 package org.keycloak.services.managers;
 
+import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -72,16 +73,16 @@ public class Auth {
         return false;
     }
 
-    public boolean hasAppRole(String app, String role) {
+    public boolean hasAppRole(ApplicationModel app, String role) {
         if (cookie) {
-            return realm.hasRole(user, realm.getApplicationByName(app).getRole(role));
+            return realm.hasRole(user, app.getRole(role));
         } else {
-            AccessToken.Access access = token.getResourceAccess(app);
+            AccessToken.Access access = token.getResourceAccess(app.getName());
             return access != null && access.isUserInRole(role);
         }
     }
 
-    public boolean hasOneOfAppRole(String app, String... roles) {
+    public boolean hasOneOfAppRole(ApplicationModel app, String... roles) {
         for (String r : roles) {
             if (hasAppRole(app, r)) {
                 return true;

@@ -25,8 +25,4 @@ public class AdminRoles {
 
     public static String[] ALL_REALM_ROLES = {VIEW_REALM, VIEW_USERS, VIEW_APPLICATIONS, VIEW_CLIENTS, VIEW_AUDIT, MANAGE_REALM, MANAGE_USERS, MANAGE_APPLICATIONS, MANAGE_CLIENTS, MANAGE_AUDIT};
 
-    public static String getAdminApp(RealmModel realm) {
-        return realm.getName() + APP_SUFFIX;
-    }
-
 }

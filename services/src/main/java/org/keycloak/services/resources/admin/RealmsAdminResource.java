@@ -69,11 +69,9 @@ public class RealmsAdminResource {
         List<RealmModel> realms = session.getRealms();
         List<RealmRepresentation> reps = new ArrayList<RealmRepresentation>();
         for (RealmModel realm : realms) {
-            String realmAdminApp = AdminRoles.getAdminApp(realm);
-
-            if (auth.hasAppRole(realmAdminApp, AdminRoles.MANAGE_REALM)) {
+            if (auth.hasAppRole(realm.getAdminApp(), AdminRoles.MANAGE_REALM)) {
                 reps.add(ModelToRepresentation.toRepresentation(realm));
-            } else if (auth.hasOneOfAppRole(realmAdminApp, AdminRoles.ALL_REALM_ROLES)) {
+            } else if (auth.hasOneOfAppRole(realm.getAdminApp(), AdminRoles.ALL_REALM_ROLES)) {
                 RealmRepresentation rep = new RealmRepresentation();
                 rep.setRealm(realm.getName());
                 reps.add(rep);
@@ -144,7 +142,7 @@ public class RealmsAdminResource {
         }
 
         RealmModel adminRealm = new RealmManager(session).getKeycloakAdminstrationRealm();
-        ApplicationModel realmAdminApp = adminRealm.getApplicationByName(AdminRoles.getAdminApp(realm));
+        ApplicationModel realmAdminApp = realm.getAdminApp();
         for (String r : AdminRoles.ALL_REALM_ROLES) {
             RoleModel role = realmAdminApp.getRole(r);
             adminRealm.grantRole(auth.getUser(), role);
@@ -159,7 +157,7 @@ public class RealmsAdminResource {
         RealmModel realm = realmManager.getRealmByName(name);
         if (realm == null) throw new NotFoundException("{realm} = " + name);
 
-        RealmAuth realmAuth = new RealmAuth(auth, AdminRoles.getAdminApp(realm));
+        RealmAuth realmAuth = new RealmAuth(auth, realm.getAdminApp());
 
         RealmAdminResource adminResource = new RealmAdminResource(realmAuth, realm, tokenManager);
         ResteasyProviderFactory.getInstance().injectProperties(adminResource);

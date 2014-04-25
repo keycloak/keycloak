@@ -233,4 +233,9 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
     Set<String> getAuditListeners();
 
     void setAuditListeners(Set<String> listeners);
+
+    ApplicationModel getAdminApp();
+
+    void setAdminApp(ApplicationModel app);
+
 }

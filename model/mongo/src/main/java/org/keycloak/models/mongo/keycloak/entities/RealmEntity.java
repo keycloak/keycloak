@@ -2,6 +2,7 @@ package org.keycloak.models.mongo.keycloak.entities;
 
 import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
+import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.mongo.api.AbstractMongoIdentifiableEntity;
 import org.keycloak.models.mongo.api.MongoCollection;
 import org.keycloak.models.mongo.api.MongoEntity;
@@ -68,6 +69,8 @@ public class RealmEntity extends AbstractMongoIdentifiableEntity implements Mong
     private boolean auditEnabled;
     private long auditExpiration;
     private List<String> auditListeners = new ArrayList<String>();
+
+    private ApplicationEntity adminApp;
 
     @MongoField
     public String getName() {
@@ -391,6 +394,15 @@ public class RealmEntity extends AbstractMongoIdentifiableEntity implements Mong
 
     public void setAuditListeners(List<String> auditListeners) {
         this.auditListeners = auditListeners;
+    }
+
+    @MongoField
+    public ApplicationEntity getAdminApp() {
+        return adminApp;
+    }
+
+    public void setAdminApp(ApplicationEntity adminApp) {
+        this.adminApp = adminApp;
     }
 
     @Override

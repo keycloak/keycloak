@@ -108,7 +108,7 @@ public class RealmManager {
         RealmModel adminRealm = getKeycloakAdminstrationRealm();
         RoleModel adminRole = adminRealm.getRole(AdminRoles.ADMIN);
 
-        ApplicationModel realmAdminApp = adminRealm.getApplicationByName(AdminRoles.getAdminApp(realm));
+        ApplicationModel realmAdminApp = realm.getAdminApp();
         for (RoleModel r : realmAdminApp.getRoles()) {
             adminRole.removeCompositeRole(r);
         }
@@ -214,7 +214,9 @@ public class RealmManager {
         }
 
         ApplicationManager applicationManager = new ApplicationManager(new RealmManager(identitySession));
-        ApplicationModel realmAdminApp = applicationManager.createApplication(adminRealm, AdminRoles.getAdminApp(realm));
+
+        ApplicationModel realmAdminApp = applicationManager.createApplication(adminRealm, realm.getName() + "-realm");
+        realm.setAdminApp(realmAdminApp);
 
         for (String r : AdminRoles.ALL_REALM_ROLES) {
             RoleModel role = realmAdminApp.addRole(r);

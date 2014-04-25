@@ -1276,4 +1276,16 @@ public class RealmAdapter implements RealmModel {
         realm.setAuditListeners(listeners);
         em.flush();
     }
+
+    @Override
+    public ApplicationModel getAdminApp() {
+        return new ApplicationAdapter(this, em, realm.getAdminApp());
+    }
+
+    @Override
+    public void setAdminApp(ApplicationModel app) {
+        realm.setAdminApp(((ApplicationAdapter) app).getJpaEntity());
+        em.flush();
+    }
+
 }

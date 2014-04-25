@@ -207,4 +207,5 @@ public class ApplicationAdapter extends ClientAdapter<ApplicationEntity> impleme
         getMongoEntity().setDefaultRoles(roleNames);
         updateMongoEntity();
     }
+
 }

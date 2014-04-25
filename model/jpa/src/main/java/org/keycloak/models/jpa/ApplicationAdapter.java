@@ -260,4 +260,8 @@ public class ApplicationAdapter extends ClientAdapter implements ApplicationMode
     public String toString() {
         return getName();
     }
+
+    ApplicationEntity getJpaEntity() {
+        return applicationEntity;
+    }
 }
