@@ -6,11 +6,16 @@ import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
+import com.mongodb.MongoException;
 import org.jboss.logging.Logger;
+import org.keycloak.models.ModelException;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.mongo.api.MongoCollection;
 import org.keycloak.models.mongo.api.MongoEntity;
 import org.keycloak.models.mongo.api.MongoField;
 import org.keycloak.models.mongo.api.MongoIdentifiableEntity;
+import org.keycloak.models.mongo.api.MongoIndex;
+import org.keycloak.models.mongo.api.MongoIndexes;
 import org.keycloak.models.mongo.api.MongoStore;
 import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.mongo.api.context.MongoTask;
@@ -88,6 +93,8 @@ public class MongoStoreImpl implements MongoStore {
             // dropDatabase();
             clearManagedCollections(managedEntityTypes);
         }
+
+        initManagedCollections(managedEntityTypes);
     }
 
     protected void dropDatabase() {
@@ -104,6 +111,46 @@ public class MongoStoreImpl implements MongoStore {
                 logger.debug("Collection " + dbCollection.getName() + " cleared from " + this.database.getName());
             }
         }
+    }
+
+    protected void initManagedCollections(Class<? extends MongoEntity>[] managedEntityTypes) {
+        for (Class<? extends MongoEntity> clazz : managedEntityTypes) {
+            EntityInfo entityInfo = getEntityInfo(clazz);
+            String dbCollectionName = entityInfo.getDbCollectionName();
+            if (dbCollectionName != null && !database.collectionExists(dbCollectionName)) {
+                DBCollection dbCollection = database.getCollection(dbCollectionName);
+
+                logger.debug("Created collection " + dbCollection.getName() + " in " + this.database.getName());
+
+                MongoIndex index = clazz.getAnnotation(MongoIndex.class);
+                if (index != null) {
+                    createIndex(dbCollection, index);
+                }
+
+                MongoIndexes indexes = clazz.getAnnotation(MongoIndexes.class);
+                if (indexes != null) {
+                    for (MongoIndex i : indexes.value()) {
+                        createIndex(dbCollection, i);
+                    }
+                }
+            }
+        }
+    }
+
+    protected void createIndex(DBCollection dbCollection, MongoIndex index) {
+        BasicDBObject fields = new BasicDBObject();
+        for (String f : index.fields())  {
+            fields.put(f, 1);
+        }
+        String name = index.name();
+        if (name.length() == 0) {
+            name = null;
+        }
+        boolean unique = index.unique();
+
+        dbCollection.ensureIndex(fields, name, unique);
+
+        logger.debug("Created index " + fields + (unique ? " (unique)" : "") + " on " + dbCollection.getName() + " in " + this.database.getName());
     }
 
     @Override
@@ -129,7 +176,15 @@ public class MongoStoreImpl implements MongoStore {
         // Adding "_id"
         dbObject.put("_id", currentId);
 
-        dbCollection.insert(dbObject);
+        try {
+            dbCollection.insert(dbObject);
+        } catch (MongoException e) {
+            if (e instanceof MongoException.DuplicateKey) {
+                throw new ModelDuplicateException(e);
+            } else {
+                throw new ModelException(e);
+            }
+        }
 
         // Treat object as created in this transaction (It is already submited to transaction)
         context.addCreatedEntity(entity);

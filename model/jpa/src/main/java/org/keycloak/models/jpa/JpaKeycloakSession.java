@@ -6,6 +6,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
+import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -18,7 +19,7 @@ public class JpaKeycloakSession implements KeycloakSession {
     protected EntityManager em;
 
     public JpaKeycloakSession(EntityManager em) {
-        this.em = em;
+        this.em = PersistenceExceptionConverter.create(em);
     }
 
     @Override
