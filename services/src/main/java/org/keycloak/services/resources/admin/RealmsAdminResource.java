@@ -10,6 +10,7 @@ import org.jboss.resteasy.util.GenericType;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -49,6 +50,7 @@ public class RealmsAdminResource {
     }
 
     public static final CacheControl noCache = new CacheControl();
+
     static {
         noCache.setNoCache(true);
     }
@@ -97,21 +99,22 @@ public class RealmsAdminResource {
 
         logger.debug("importRealm: {0}", rep.getRealm());
         RealmManager realmManager = new RealmManager(session);
-        if (realmManager.getRealmByName(rep.getRealm()) != null) {
+
+        try {
+            RealmModel realm = realmManager.importRealm(rep);
+            grantPermissionsToRealmCreator(realm);
+
+            URI location = realmUrl(uriInfo).build(realm.getName());
+            logger.debug("imported realm success, sending back: {0}", location.toString());
+            return Response.created(location).build();
+        } catch (ModelDuplicateException e) {
             return Flows.errors().exists("Realm " + rep.getRealm() + " already exists");
         }
-
-        RealmModel realm = realmManager.importRealm(rep);
-        grantPermissionsToRealmCreator(realm);
-
-        URI location = realmUrl(uriInfo).build(realm.getName());
-        logger.debug("imported realm success, sending back: {0}", location.toString());
-        return Response.created(location).build();
     }
 
     @POST
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public Response uploadRealm(@Context final UriInfo uriInfo, MultipartFormDataInput input) throws IOException  {
+    public Response uploadRealm(@Context final UriInfo uriInfo, MultipartFormDataInput input) throws IOException {
         if (!auth.hasRealmRole(AdminRoles.CREATE_REALM)) {
             throw new ForbiddenException();
         }
@@ -122,9 +125,16 @@ public class RealmsAdminResource {
         RealmManager realmManager = new RealmManager(session);
         for (InputPart inputPart : inputParts) {
             inputPart.setMediaType(MediaType.APPLICATION_JSON_TYPE);
-            RealmRepresentation rep = inputPart.getBody(new GenericType<RealmRepresentation>(){});
+            RealmRepresentation rep = inputPart.getBody(new GenericType<RealmRepresentation>() {
+            });
 
-            RealmModel realm = realmManager.importRealm(rep);
+            RealmModel realm;
+            try {
+                realm = realmManager.importRealm(rep);
+            } catch (ModelDuplicateException e) {
+                return Flows.errors().exists("Realm " + rep.getRealm() + " already exists");
+            }
+
             grantPermissionsToRealmCreator(realm);
 
             if (inputParts.size() == 1) {
