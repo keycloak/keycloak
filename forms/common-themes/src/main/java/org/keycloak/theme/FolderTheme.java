@@ -15,6 +15,7 @@ import java.util.Properties;
 public class FolderTheme implements Theme {
 
     private String parentName;
+    private String importName;
     private File themeDir;
     private Type type;
     private final Properties properties;
@@ -28,6 +29,7 @@ public class FolderTheme implements Theme {
         if (propertiesFile .isFile()) {
             properties.load(new FileInputStream(propertiesFile));
             parentName = properties.getProperty("parent");
+            importName = properties.getProperty("import");
         }
     }
 
@@ -39,6 +41,11 @@ public class FolderTheme implements Theme {
     @Override
     public String getParentName() {
         return parentName;
+    }
+
+    @Override
+    public String getImportName() {
+        return importName;
     }
 
     @Override

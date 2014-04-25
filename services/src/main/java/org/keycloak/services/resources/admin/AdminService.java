@@ -47,7 +47,7 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-@Path("/admin")
+@Path("/rest/admin")
 public class AdminService {
     protected static final Logger logger = Logger.getLogger(AdminService.class);
 
@@ -74,7 +74,7 @@ public class AdminService {
     @Context
     protected ProviderSession providerSession;
 
-    protected String adminPath = "/admin/index.html";
+    protected String adminPath = "/admin/";
     protected AppAuthManager authManager;
     protected TokenManager tokenManager;
 
@@ -373,7 +373,7 @@ public class AdminService {
             logger.debug("loginRedirect SUCCESS");
             NewCookie cookie = authManager.createCookie(adminRealm, adminConsole, code, AdminService.saasCookiePath(uriInfo).build());
 
-            URI redirectUri = UriBuilder.fromUri(uriInfo.getBaseUri()).path("../").path(adminPath).build();
+            URI redirectUri = UriBuilder.fromUri(uriInfo.getBaseUri()).path(adminPath).build();
             if (path != null) {
                 redirectUri = redirectUri.resolve("#" + UriBuilder.fromPath(path).build().toString());
             }

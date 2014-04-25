@@ -1,6 +1,5 @@
 package org.keycloak.freemarker;
 
-import org.jboss.logging.Logger;
 import org.keycloak.models.Config;
 import org.keycloak.util.ProviderLoader;
 
@@ -18,8 +17,6 @@ import java.util.Properties;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class ThemeLoader {
-
-    private static final Logger logger = Logger.getLogger(ThemeLoader.class);
 
     public static Theme createTheme(String name, Theme.Type type) throws FreeMarkerException {
         if (name == null) {
@@ -43,9 +40,19 @@ public class ThemeLoader {
             List<Theme> themes = new LinkedList<Theme>();
             themes.add(theme);
 
+            if (theme.getImportName() != null) {
+                String[] s = theme.getImportName().split("/");
+                themes.add(findTheme(providers, s[1], Theme.Type.valueOf(s[0].toUpperCase())));
+            }
+
             for (String parentName = theme.getParentName(); parentName != null; parentName = theme.getParentName()) {
                 theme = findTheme(providers, parentName, type);
                 themes.add(theme);
+
+                if (theme.getImportName() != null) {
+                    String[] s = theme.getImportName().split("/");
+                    themes.add(findTheme(providers, s[1], Theme.Type.valueOf(s[0].toUpperCase())));
+                }
             }
 
             return new ExtendingTheme(themes);
@@ -54,28 +61,17 @@ public class ThemeLoader {
         }
     }
 
-    private static Theme findTheme(Iterable<ThemeProvider> providers, String name, Theme.Type type) throws FreeMarkerException {
+    private static Theme findTheme(Iterable<ThemeProvider> providers, String name, Theme.Type type) {
         for (ThemeProvider p : providers) {
             if (p.hasTheme(name, type)) {
                 try {
                     return p.createTheme(name, type);
                 } catch (IOException e) {
-                    if (name.equals(Config.getThemeBase())) {
-                        throw new FreeMarkerException("Failed to create " + type.toString().toLowerCase() + " theme", e);
-                    } else {
-                        logger.error("Failed to create " + type.toString().toLowerCase() + " theme", e);
-                        return findTheme(providers, Config.getThemeBase(), type);
-                    }
+                    throw new RuntimeException("Failed to create " + type.toString().toLowerCase() + " theme", e);
                 }
             }
         }
-
-        if (name.equals(Config.getThemeBase())) {
-            throw new FreeMarkerException(type.toString().toLowerCase() + " theme '" + name + "' not found");
-        } else {
-            logger.error(type.toString().toLowerCase() + " theme '" + name + "' not found");
-            return findTheme(providers, Config.getThemeBase(), type);
-        }
+        throw new RuntimeException(type.toString().toLowerCase() + " theme '" + name + "' not found");
     }
 
     public static class ExtendingTheme implements Theme {
@@ -94,6 +90,11 @@ public class ThemeLoader {
         @Override
         public String getParentName() {
             return themes.get(0).getParentName();
+        }
+
+        @Override
+        public String getImportName() {
+            return themes.get(0).getImportName();
         }
 
         @Override

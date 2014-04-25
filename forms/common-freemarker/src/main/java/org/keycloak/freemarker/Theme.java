@@ -10,11 +10,13 @@ import java.util.Properties;
  */
 public interface Theme {
 
-    public enum Type { LOGIN, ACCOUNT };
+    public enum Type { LOGIN, ACCOUNT, ADMIN, COMMON };
 
     public String getName();
 
     public String getParentName();
+
+    public String getImportName();
 
     public Type getType();
 

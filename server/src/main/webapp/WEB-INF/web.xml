@@ -15,24 +15,15 @@
         </init-param>
         <init-param>
             <param-name>resteasy.servlet.mapping.prefix</param-name>
-            <param-value>/rest</param-value>
+            <param-value>/</param-value>
         </init-param>
         <load-on-startup>1</load-on-startup>
         <async-supported>true</async-supported>
     </servlet>
 
-    <servlet>
-        <servlet-name>TmpAdminRedirectServlet</servlet-name>
-        <servlet-class>org.keycloak.services.tmp.TmpAdminRedirectServlet</servlet-class>
-    </servlet>
-
     <listener>
         <listener-class>org.keycloak.services.listeners.KeycloakSessionDestroyListener</listener-class>
     </listener>
-
-    <welcome-file-list>
-        <welcome-file>index.html</welcome-file>
-    </welcome-file-list>
 
     <filter>
         <filter-name>Keycloak Client Connection Filter</filter-name>
@@ -56,13 +47,7 @@
 
     <servlet-mapping>
         <servlet-name>Resteasy</servlet-name>
-        <url-pattern>/rest/*</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
-        <servlet-name>TmpAdminRedirectServlet</servlet-name>
-        <url-pattern>/admin</url-pattern>
-        <url-pattern>/admin/</url-pattern>
+        <url-pattern>/*</url-pattern>
     </servlet-mapping>
 
     <!--
