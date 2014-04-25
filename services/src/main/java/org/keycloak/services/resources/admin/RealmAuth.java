@@ -1,6 +1,7 @@
 package org.keycloak.services.resources.admin;
 
 import org.keycloak.models.AdminRoles;
+import org.keycloak.models.ApplicationModel;
 import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.Auth;
 
@@ -19,9 +20,9 @@ public class RealmAuth {
     }
 
     private Auth auth;
-    private String realmAdminApp;
+    private ApplicationModel realmAdminApp;
 
-    public RealmAuth(Auth auth, String realmAdminApp) {
+    public RealmAuth(Auth auth, ApplicationModel realmAdminApp) {
         this.auth = auth;
         this.realmAdminApp = realmAdminApp;
     }
