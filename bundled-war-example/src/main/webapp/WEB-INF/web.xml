@@ -19,7 +19,7 @@
         </init-param>
         <init-param>
             <param-name>resteasy.servlet.mapping.prefix</param-name>
-            <param-value>/rest</param-value>
+            <param-value>/auth</param-value>
         </init-param>
         <load-on-startup>1</load-on-startup>
         <async-supported>true</async-supported>
@@ -38,11 +38,6 @@
         </init-param>
         <load-on-startup>2</load-on-startup>
         <async-supported>true</async-supported>
-    </servlet>
-
-    <servlet>
-        <servlet-name>TmpAdminRedirectServlet</servlet-name>
-        <servlet-class>org.keycloak.services.tmp.TmpAdminRedirectServlet</servlet-class>
     </servlet>
 
     <listener>
@@ -65,28 +60,22 @@
 
     <filter-mapping>
         <filter-name>Keycloak Session Management</filter-name>
-        <url-pattern>/rest/*</url-pattern>
+        <url-pattern>/auth/rest/*</url-pattern>
     </filter-mapping>
 
     <filter-mapping>
         <filter-name>Keycloak Client Connection Filter</filter-name>
-        <url-pattern>/rest/*</url-pattern>
+        <url-pattern>/auth/rest/*</url-pattern>
     </filter-mapping>
 
     <servlet-mapping>
         <servlet-name>Keycloak REST Interface</servlet-name>
-        <url-pattern>/rest/*</url-pattern>
+        <url-pattern>/auth/*</url-pattern>
     </servlet-mapping>
 
     <servlet-mapping>
         <servlet-name>Customer REST Interface</servlet-name>
         <url-pattern>/database/*</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
-        <servlet-name>TmpAdminRedirectServlet</servlet-name>
-        <url-pattern>/admin</url-pattern>
-        <url-pattern>/admin/</url-pattern>
     </servlet-mapping>
 
     <!--
