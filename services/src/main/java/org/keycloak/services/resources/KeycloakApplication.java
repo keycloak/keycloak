@@ -18,27 +18,35 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.ProviderFactoryLoader;
 import org.keycloak.provider.ProviderSession;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.DefaultProviderSessionFactory;
 import org.keycloak.picketlink.IdentityManagerProvider;
 import org.keycloak.picketlink.IdentityManagerProviderFactory;
 import org.keycloak.provider.ProviderSessionFactory;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.BruteForceProtector;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.SocialRequestManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.resources.admin.AdminService;
 import org.keycloak.models.utils.ModelProviderUtils;
 import org.keycloak.timer.TimerProvider;
 import org.keycloak.timer.TimerProviderFactory;
+import org.keycloak.util.JsonSerialization;
 
 import javax.servlet.ServletContext;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.UriInfo;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.StringTokenizer;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -66,7 +74,6 @@ public class KeycloakApplication extends Application {
         context.setAttribute(BruteForceProtector.class.getName(), protector);
         this.providerSessionFactory = createProviderSessionFactory();
         context.setAttribute(KeycloakSessionFactory.class.getName(), factory);
-        //classes.add(KeycloakSessionCleanupFilter.class);
 
         context.setAttribute(ProviderSessionFactory.class.getName(), this.providerSessionFactory);
 
@@ -86,6 +93,7 @@ public class KeycloakApplication extends Application {
         setupDefaultRealm(context.getContextPath());
 
         setupScheduledTasks(providerSessionFactory, factory);
+        importRealms(context);
     }
 
     public String getContextPath() {
@@ -183,5 +191,76 @@ public class KeycloakApplication extends Application {
     public Set<Object> getSingletons() {
         return singletons;
     }
+
+    public void importRealms(ServletContext context) {
+        importRealmFile();
+        importRealmResources(context);
+
+    }
+
+    public void importRealmResources(ServletContext context) {
+        String resources = context.getInitParameter("keycloak.import.realm.resources");
+        if (resources != null) {
+            StringTokenizer tokenizer = new StringTokenizer(resources, ",");
+            while (tokenizer.hasMoreTokens()) {
+                String resource = tokenizer.nextToken().trim();
+                InputStream is = context.getResourceAsStream(resource);
+                if (is == null) {
+                    log.warn("Could not find realm resource to import: " + resource);
+                }
+                RealmRepresentation rep = loadJson(is, RealmRepresentation.class);
+                importRealm(rep, "resource " + resource);
+            }
+        }
+    }
+
+    public void importRealmFile() {
+        String file = System.getProperty("keycloak.import");
+        if (file != null) {
+            RealmRepresentation rep = null;
+            try {
+                rep = loadJson(new FileInputStream(file), RealmRepresentation.class);
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+            importRealm(rep, "file " + file);
+        }
+    }
+
+    public void importRealm(RealmRepresentation rep, String from) {
+        KeycloakSession session = factory.createSession();
+        try {
+            session.getTransaction().begin();
+            RealmManager manager = new RealmManager(session);
+
+            if (rep.getId() != null && manager.getRealm(rep.getId()) != null) {
+                log.info("Not importing realm " + rep.getRealm() + " from " + from + ".  It already exists.");
+                return;
+            }
+
+            if (manager.getRealmByName(rep.getRealm()) != null) {
+                log.info("Not importing realm " + rep.getRealm() + " from " + from + ".  It already exists.");
+                return;
+            }
+
+            RealmModel realm = manager.createRealm(rep.getId(), rep.getRealm());
+            manager.importRealm(rep, realm);
+
+            log.info("Imported realm " + realm.getName() + " from " + from);
+
+            session.getTransaction().commit();
+        } finally {
+            session.close();
+        }
+    }
+
+    private static <T> T loadJson(InputStream is, Class<T> type) {
+        try {
+            return JsonSerialization.readValue(is, type);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to parse json", e);
+        }
+    }
+
 
 }
