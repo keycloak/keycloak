@@ -212,6 +212,10 @@ public class AdapterTest extends AbstractModelTest {
         realmModel.addScopeMapping(client, appRole);
 
         RoleModel realmRole = realmModel.addRole("test");
+        RoleModel realmRole2 = realmModel.addRole("test2");
+        realmRole.addCompositeRole(realmRole2);
+        realmRole.addCompositeRole(appRole);
+
         realmModel.addScopeMapping(app, realmRole);
 
         Assert.assertTrue(identitySession.removeRealm(realmModel.getId()));
