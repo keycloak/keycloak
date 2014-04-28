@@ -7,11 +7,11 @@
 	<module-name>auth</module-name>
 
     <servlet>
-        <servlet-name>Resteasy</servlet-name>
+        <servlet-name>Keycloak REST Interface</servlet-name>
         <servlet-class>org.jboss.resteasy.plugins.server.servlet.HttpServlet30Dispatcher</servlet-class>
         <init-param>
             <param-name>javax.ws.rs.Application</param-name>
-            <param-value>org.keycloak.server.KeycloakServerApplication</param-value>
+            <param-value>org.keycloak.services.resources.KeycloakApplication</param-value>
         </init-param>
         <init-param>
             <param-name>resteasy.servlet.mapping.prefix</param-name>
@@ -46,7 +46,7 @@
     </filter-mapping>
 
     <servlet-mapping>
-        <servlet-name>Resteasy</servlet-name>
+        <servlet-name>Keycloak REST Interface</servlet-name>
         <url-pattern>/*</url-pattern>
     </servlet-mapping>
 
