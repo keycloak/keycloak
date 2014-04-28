@@ -39,7 +39,7 @@ public class KeycloakServerApplication extends KeycloakApplication {
             AdapterDeploymentContext deploymentContext = (AdapterDeploymentContext)servletContext.getAttribute(AdapterDeploymentContext.class.getName());
             AdapterConfig adapterConfig = new AdapterConfig();
             String host = (String)servletContext.getInitParameter("host-port");
-            String uri = KeycloakUriBuilder.fromUri("http://" + host).path(servletContext.getContextPath()).build().toString();
+            String uri = KeycloakUriBuilder.fromUri("http://" + host).path(servletContext.getContextPath()).path("auth").build().toString();
             log.info("**** auth server url: " + uri);
             adapterConfig.setRealm("demo");
             adapterConfig.setResource("customer-portal");
