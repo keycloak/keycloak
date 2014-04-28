@@ -6,6 +6,8 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -27,7 +29,7 @@ public abstract class RoleEntity {
     private String name;
     private String description;
     @ManyToMany(fetch = FetchType.LAZY, cascade = {})
-    //@JoinTable(name = "COMPOSITE_ROLE")
+    @JoinTable(name = "CompositeRole", joinColumns = @JoinColumn(name = "composite"), inverseJoinColumns = @JoinColumn(name = "role"))
     private Collection<RoleEntity> compositeRoles = new ArrayList<RoleEntity>();
 
 

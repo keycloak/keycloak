@@ -105,15 +105,7 @@ public class RealmManager {
     public boolean removeRealm(RealmModel realm) {
         boolean removed = identitySession.removeRealm(realm.getId());
 
-        RealmModel adminRealm = getKeycloakAdminstrationRealm();
-        RoleModel adminRole = adminRealm.getRole(AdminRoles.ADMIN);
-
-        ApplicationModel realmAdminApp = realm.getAdminApp();
-        for (RoleModel r : realmAdminApp.getRoles()) {
-            adminRole.removeCompositeRole(r);
-        }
-
-        adminRealm.removeApplication(realmAdminApp.getId());
+        getKeycloakAdminstrationRealm().removeApplication(realm.getAdminApp().getId());
 
         return removed;
     }
