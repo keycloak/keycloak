@@ -7,10 +7,13 @@ import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
+import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -29,9 +32,6 @@ public class ApplicationEntity extends ClientEntity {
     private String baseUrl;
     private String managementUrl;
     private boolean bearerOnly;
-
-    @ManyToOne()
-    private RealmEntity realm;
 
     @OneToMany(fetch = FetchType.EAGER, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "application")
     Collection<ApplicationRoleEntity> roles = new ArrayList<ApplicationRoleEntity>();
@@ -78,14 +78,6 @@ public class ApplicationEntity extends ClientEntity {
 
     public void setDefaultRoles(Collection<RoleEntity> defaultRoles) {
         this.defaultRoles = defaultRoles;
-    }
-
-    public RealmEntity getRealm() {
-        return realm;
-    }
-
-    public void setRealm(RealmEntity realm) {
-        this.realm = realm;
     }
 
     public boolean isBearerOnly() {

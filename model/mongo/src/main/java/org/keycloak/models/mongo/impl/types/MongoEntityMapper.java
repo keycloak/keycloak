@@ -39,8 +39,10 @@ public class MongoEntityMapper<T extends MongoEntity> implements Mapper<T, Basic
             String propName = property.getName();
             Object propValue = property.getValue(applicationObject);
 
-            Object dbValue = propValue == null ? null : mapperRegistry.convertApplicationObjectToDBObject(propValue, Object.class);
-            dbObject.put(propName, dbValue);
+            if (propValue != null) {
+                Object dbValue = mapperRegistry.convertApplicationObjectToDBObject(propValue, Object.class);
+                dbObject.put(propName, dbValue);
+            }
         }
 
         return dbObject;

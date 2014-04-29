@@ -218,9 +218,9 @@ public class AdapterTest extends AbstractModelTest {
 
         realmModel.addScopeMapping(app, realmRole);
 
-        Assert.assertTrue(identitySession.removeRealm(realmModel.getId()));
-        Assert.assertFalse(identitySession.removeRealm(realmModel.getId()));
-        Assert.assertNull(identitySession.getRealm(realmModel.getId()));
+        Assert.assertTrue(realmManager.removeRealm(realmModel));
+        Assert.assertFalse(realmManager.removeRealm(realmModel));
+        Assert.assertNull(realmManager.getRealm(realmModel.getId()));
     }
 
 
@@ -267,7 +267,7 @@ public class AdapterTest extends AbstractModelTest {
             UserModel user3 = realmModel.addUser("doublelast");
             user3.setFirstName("Ole");
             user3.setLastName("Alver Veland");
-            user3.setEmail("knut@redhat.com");
+            user3.setEmail("knut2@redhat.com");
         }
 
         RealmManager adapter = realmManager;
@@ -522,17 +522,131 @@ public class AdapterTest extends AbstractModelTest {
         commit(true);
 
         // Ty to rename realm to duplicate name
-        realmModel = realmManager.createRealm("JUGGLER2");
+        realmManager.createRealm("JUGGLER2");
+        commit();
+        try {
+            realmManager.getRealmByName("JUGGLER2").setName("JUGGLER");
+            commit();
+            Assert.fail("Expected exception");
+        } catch (ModelDuplicateException e) {
+        }
+
+        resetSession();
+    }
+
+    @Test
+    public void testAppNameCollisions() throws Exception {
+        realmManager.createRealm("JUGGLER1").addApplication("app1");
+        realmManager.createRealm("JUGGLER2").addApplication("app1");
+
         commit();
 
-        realmModel = realmManager.getRealmByName("JUGGLER2");
+        // Try to create app with duplicate name
         try {
-            realmModel.setName("JUGGLER");
+            realmManager.getRealmByName("JUGGLER1").addApplication("app1");
             commit();
             Assert.fail("Expected exception");
         } catch (ModelDuplicateException e) {
         }
         commit(true);
+
+        // Ty to rename app to duplicate name
+        realmManager.getRealmByName("JUGGLER1").addApplication("app2");
+        commit();
+        try {
+            realmManager.getRealmByName("JUGGLER1").getApplicationByName("app2").setName("app1");
+            commit();
+            Assert.fail("Expected exception");
+        } catch (ModelDuplicateException e) {
+        }
+
+        resetSession();
+    }
+
+    @Test
+    public void testClientNameCollisions() throws Exception {
+        realmManager.createRealm("JUGGLER1").addOAuthClient("client1");
+        realmManager.createRealm("JUGGLER2").addOAuthClient("client1");
+
+        commit();
+
+        // Try to create app with duplicate name
+        try {
+            realmManager.getRealmByName("JUGGLER1").addOAuthClient("client1");
+            commit();
+            Assert.fail("Expected exception");
+        } catch (ModelDuplicateException e) {
+        }
+        commit(true);
+
+        // Ty to rename app to duplicate name
+        realmManager.getRealmByName("JUGGLER1").addOAuthClient("client2");
+        commit();
+        try {
+            realmManager.getRealmByName("JUGGLER1").getOAuthClient("client2").setClientId("client1");
+            commit();
+            Assert.fail("Expected exception");
+        } catch (ModelDuplicateException e) {
+        }
+
+        resetSession();
+    }
+
+    @Test
+    public void testUsernameCollisions() throws Exception {
+        realmManager.createRealm("JUGGLER1").addUser("user1");
+        realmManager.createRealm("JUGGLER2").addUser("user1");
+        commit();
+
+        // Try to create user with duplicate login name
+        try {
+            realmManager.getRealmByName("JUGGLER1").addUser("user1");
+            commit();
+            Assert.fail("Expected exception");
+        } catch (ModelDuplicateException e) {
+        }
+        commit(true);
+
+        // Ty to rename user to duplicate login name
+        realmManager.getRealmByName("JUGGLER1").addUser("user2");
+        commit();
+        try {
+            realmManager.getRealmByName("JUGGLER1").getUser("user2").setLoginName("user1");
+            commit();
+            Assert.fail("Expected exception");
+        } catch (ModelDuplicateException e) {
+        }
+
+        resetSession();
+    }
+
+    @Test
+    public void testEmailCollisions() throws Exception {
+        realmManager.createRealm("JUGGLER1").addUser("user1").setEmail("email@example.com");
+        realmManager.createRealm("JUGGLER2").addUser("user1").setEmail("email@example.com");
+        commit();
+
+        // Try to create user with duplicate email
+        try {
+            realmManager.getRealmByName("JUGGLER1").addUser("user2").setEmail("email@example.com");
+            commit();
+            Assert.fail("Expected exception");
+        } catch (ModelDuplicateException e) {
+        }
+
+        resetSession();
+
+        // Ty to rename user to duplicate email
+        realmManager.getRealmByName("JUGGLER1").addUser("user3").setEmail("email2@example.com");
+        commit();
+        try {
+            realmManager.getRealmByName("JUGGLER1").getUser("user3").setEmail("email@example.com");
+            commit();
+            Assert.fail("Expected exception");
+        } catch (ModelDuplicateException e) {
+        }
+
+        resetSession();
     }
 
 }

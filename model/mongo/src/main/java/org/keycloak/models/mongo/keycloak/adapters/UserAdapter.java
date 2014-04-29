@@ -35,6 +35,12 @@ public class UserAdapter extends AbstractMongoAdapter<UserEntity> implements Use
     }
 
     @Override
+    public void setLoginName(String loginName) {
+        user.setLoginName(loginName);
+        updateUser();
+    }
+
+    @Override
     public boolean isEnabled() {
         return user.isEnabled();
     }

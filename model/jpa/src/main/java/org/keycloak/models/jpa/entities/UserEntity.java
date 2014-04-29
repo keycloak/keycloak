@@ -10,12 +10,15 @@ import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
+import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -35,6 +38,10 @@ import java.util.Set;
         @NamedQuery(name="getRealmUserByFirstLastName", query="select u from UserEntity u where u.firstName = :first and u.lastName = :last and u.realm = :realm")
 })
 @Entity
+@Table(uniqueConstraints = {
+        @UniqueConstraint(columnNames = { "realm", "loginName" }),
+        @UniqueConstraint(columnNames = { "realm", "email" })
+})
 public class UserEntity {
     @Id
     @GenericGenerator(name="uuid_generator", strategy="org.keycloak.models.jpa.utils.JpaIdGenerator")
@@ -52,6 +59,7 @@ public class UserEntity {
 
 
     @ManyToOne
+    @JoinColumn(name = "realm")
     protected RealmEntity realm;
 
     @ElementCollection

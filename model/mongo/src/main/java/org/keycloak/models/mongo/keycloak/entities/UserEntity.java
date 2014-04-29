@@ -5,6 +5,8 @@ import org.keycloak.models.mongo.api.AbstractMongoIdentifiableEntity;
 import org.keycloak.models.mongo.api.MongoCollection;
 import org.keycloak.models.mongo.api.MongoEntity;
 import org.keycloak.models.mongo.api.MongoField;
+import org.keycloak.models.mongo.api.MongoIndex;
+import org.keycloak.models.mongo.api.MongoIndexes;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +16,10 @@ import java.util.Map;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @MongoCollection(collectionName = "users")
+@MongoIndexes({
+        @MongoIndex(name = "loginName-within-realm", fields = { "realmId", "loginName" }, unique = true),
+        @MongoIndex(name = "email-within-realm", fields = { "emailRealm" }, unique = true, sparse = true),
+})
 public class UserEntity extends AbstractMongoIdentifiableEntity implements MongoEntity {
 
     private String loginName;
@@ -74,6 +80,15 @@ public class UserEntity extends AbstractMongoIdentifiableEntity implements Mongo
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    @MongoField
+    // TODO This is required as Mongo doesn't support sparse indexes with compound keys (see https://jira.mongodb.org/browse/SERVER-2193)
+    public String getEmailRealm() {
+        return email != null ? realmId + "//" + email : null;
+    }
+
+    public void setEmailRealm(String emailRealm) {
     }
 
     @MongoField

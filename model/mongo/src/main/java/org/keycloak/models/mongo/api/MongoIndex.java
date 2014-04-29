@@ -23,4 +23,6 @@ public @interface MongoIndex {
 
     boolean unique() default false;
 
+    boolean sparse() default false;
+
 }

@@ -5,6 +5,7 @@ import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
@@ -17,6 +18,7 @@ import org.keycloak.services.managers.ModelToRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.resources.KeycloakApplication;
+import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.Consumes;
@@ -32,6 +34,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.util.HashMap;
@@ -74,11 +77,16 @@ public class ApplicationResource {
 
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
-    public void update(final ApplicationRepresentation rep) {
+    public Response update(final ApplicationRepresentation rep) {
         auth.requireManage();
 
         ApplicationManager applicationManager = new ApplicationManager(new RealmManager(session));
-        applicationManager.updateApplication(rep, application);
+        try {
+            applicationManager.updateApplication(rep, application);
+            return Response.noContent().build();
+        } catch (ModelDuplicateException e) {
+            return Flows.errors().exists("Application " + rep.getName() + " already exists");
+        }
     }
 
 

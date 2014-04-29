@@ -99,6 +99,10 @@ public class AbstractModelTest {
         } else {
             identitySession.getTransaction().commit();
         }
+        resetSession();
+    }
+
+    protected void resetSession() {
         identitySession.close();
         identitySession = factory.createSession();
         identitySession.getTransaction().begin();

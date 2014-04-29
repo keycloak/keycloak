@@ -3,6 +3,7 @@ package org.keycloak.models.jpa;
 import org.keycloak.models.KeycloakTransaction;
 
 import javax.persistence.EntityManager;
+import javax.persistence.PersistenceException;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -23,7 +24,11 @@ public class JpaKeycloakTransaction implements KeycloakTransaction {
 
     @Override
     public void commit() {
-        em.getTransaction().commit();
+        try {
+            em.getTransaction().commit();
+        } catch (PersistenceException e) {
+            throw PersistenceExceptionConverter.convert(e.getCause() != null ? e.getCause() : e);
+        }
     }
 
     @Override

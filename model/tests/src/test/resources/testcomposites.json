@@ -18,7 +18,7 @@
         {
             "username" : "REALM_COMPOSITE_1_USER",
             "enabled": true,
-            "email" : "test-user@localhost",
+            "email" : "test-user1@localhost",
             "credentials" : [
                 { "type" : "password",
                     "value" : "password" }
@@ -27,7 +27,7 @@
         {
             "username" : "REALM_ROLE_1_USER",
             "enabled": true,
-            "email" : "test-user@localhost",
+            "email" : "test-user2@localhost",
             "credentials" : [
                 { "type" : "password",
                     "value" : "password" }
@@ -36,7 +36,7 @@
         {
             "username" : "REALM_APP_COMPOSITE_USER",
             "enabled": true,
-            "email" : "test-user@localhost",
+            "email" : "test-user3@localhost",
             "credentials" : [
                 { "type" : "password",
                     "value" : "password" }
@@ -45,7 +45,7 @@
         {
             "username" : "REALM_APP_ROLE_USER",
             "enabled": true,
-            "email" : "test-user@localhost",
+            "email" : "test-user4@localhost",
             "credentials" : [
                 { "type" : "password",
                     "value" : "password" }
@@ -54,7 +54,7 @@
         {
             "username" : "APP_COMPOSITE_USER",
             "enabled": true,
-            "email" : "test-user@localhost",
+            "email" : "test-user5@localhost",
             "credentials" : [
                 { "type" : "password",
                     "value" : "password" }

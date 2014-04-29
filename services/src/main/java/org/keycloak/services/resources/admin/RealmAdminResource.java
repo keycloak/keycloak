@@ -9,6 +9,7 @@ import org.keycloak.audit.Event;
 import org.keycloak.audit.EventQuery;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.adapters.action.SessionStats;
 import org.keycloak.representations.idm.RealmAuditRepresentation;
@@ -18,10 +19,12 @@ import org.keycloak.services.managers.ModelToRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.managers.TokenManager;
+import org.keycloak.services.resources.flows.Flows;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -94,11 +97,16 @@ public class RealmAdminResource {
 
     @PUT
     @Consumes("application/json")
-    public void updateRealm(final RealmRepresentation rep) {
+    public Response updateRealm(final RealmRepresentation rep) {
         auth.requireManage();
 
         logger.debug("updating realm: " + realm.getName());
-        new RealmManager(session).updateRealm(rep, realm);
+        try {
+            new RealmManager(session).updateRealm(rep, realm);
+            return Response.noContent().build();
+        } catch (ModelDuplicateException e) {
+            return Flows.errors().exists("Realm " + rep.getRealm() + " already exists");
+        }
     }
 
     @DELETE

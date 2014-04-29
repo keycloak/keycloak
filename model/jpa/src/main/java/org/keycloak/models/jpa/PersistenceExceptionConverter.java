@@ -6,6 +6,7 @@ import org.keycloak.models.ModelDuplicateException;
 
 import javax.persistence.EntityExistsException;
 import javax.persistence.EntityManager;
+import javax.persistence.PersistenceException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -31,14 +32,17 @@ public class PersistenceExceptionConverter implements InvocationHandler {
         try {
             return method.invoke(em, args);
         } catch (InvocationTargetException e) {
-            Throwable c = e.getCause();
-            if (c.getCause() != null && c.getCause() instanceof ConstraintViolationException) {
-                throw new ModelDuplicateException(c);
-            } if (c instanceof EntityExistsException) {
-                throw new ModelDuplicateException(c);
-            } else {
-                throw new ModelException(c);
-            }
+            throw convert(e.getCause());
+        }
+    }
+
+    public static ModelException convert(Throwable t) {
+        if (t.getCause() != null && t.getCause() instanceof ConstraintViolationException) {
+            throw new ModelDuplicateException(t);
+        } if (t instanceof EntityExistsException) {
+            throw new ModelDuplicateException(t);
+        } else {
+            throw new ModelException(t);
         }
     }
 
