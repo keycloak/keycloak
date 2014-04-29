@@ -3,12 +3,17 @@ package org.keycloak.models.jpa.entities;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 @Entity
+@NamedQueries({
+        @NamedQuery(name="getAllFailures", query="select failure from UsernameLoginFailureEntity failure"),
+})
 public class UsernameLoginFailureEntity {
     // we manually set the id to be username-realmid
     // we may have a concurrent creation of the same login failure entry that we want to avoid

@@ -9,6 +9,8 @@ public class SocialLinkModel {
     private String socialProvider;
     private String socialUsername;
 
+    public SocialLinkModel() {};
+
     public SocialLinkModel(String socialProvider, String socialUserId, String socialUsername) {
         this.socialUserId = socialUserId;
         this.socialProvider = socialProvider;

@@ -15,12 +15,12 @@ public class SystemPropertiesMongoClientProvider implements MongoClientProvider 
 
     protected static final Logger logger = Logger.getLogger(SystemPropertiesMongoClientProvider.class);
 
-    private static final String MONGO_HOST = "keycloak.mongo.host";
-    private static final String MONGO_PORT = "keycloak.mongo.port";
-    private static final String MONGO_DB_NAME = "keycloak.mongo.db";
-    private static final String MONGO_CLEAR_ON_STARTUP = "keycloak.mongo.clearOnStartup";
+    public static final String MONGO_HOST = "keycloak.mongo.host";
+    public static final String MONGO_PORT = "keycloak.mongo.port";
+    public static final String MONGO_DB_NAME = "keycloak.mongo.db";
+    public static final String MONGO_CLEAR_ON_STARTUP = "keycloak.mongo.clearOnStartup";
 
-    // Property names from Liveoak . Those are used as fallback in case that original value is not available
+    // Property names from Liveoak . Those are used as fallback
     private static final String MONGO_HOST_2 = "mongo.host";
     private static final String MONGO_PORT_2 = "mongo.port";
     private static final String MONGO_DB_NAME_2 = "mongo.db";

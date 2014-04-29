@@ -109,11 +109,17 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
 
     void updateCredential(UserModel user, UserCredentialModel cred);
 
+    List<UserCredentialValueModel> getCredentialsDirectly(UserModel user);
+
+    void updateCredentialDirectly(UserModel user, UserCredentialValueModel cred);
+
     UserModel getUser(String name);
 
     UserModel getUserByEmail(String email);
 
     UserModel getUserById(String name);
+
+    UserModel addUser(String id, String username);
 
     UserModel addUser(String username);
 
@@ -134,6 +140,8 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
     List<ApplicationModel> getApplications();
 
     ApplicationModel addApplication(String name);
+
+    ApplicationModel addApplication(String id, String name);
 
     boolean removeApplication(String id);
 
@@ -160,12 +168,13 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
 
     void setSocial(boolean social);
 
-    public boolean isUpdateProfileOnInitialSocialLogin();
+    boolean isUpdateProfileOnInitialSocialLogin();
 
-    public void setUpdateProfileOnInitialSocialLogin(boolean updateProfileOnInitialSocialLogin);
+    void setUpdateProfileOnInitialSocialLogin(boolean updateProfileOnInitialSocialLogin);
 
-    public UsernameLoginFailureModel getUserLoginFailure(String username);
+    UsernameLoginFailureModel getUserLoginFailure(String username);
     UsernameLoginFailureModel addUserLoginFailure(String username);
+    List<UsernameLoginFailureModel> getAllUserLoginFailures();
 
     List<UserModel> getUsers();
 
@@ -174,6 +183,8 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
     List<UserModel> searchForUserByAttributes(Map<String, String> attributes);
 
     OAuthClientModel addOAuthClient(String name);
+
+    OAuthClientModel addOAuthClient(String id, String name);
 
     OAuthClientModel getOAuthClient(String name);
     OAuthClientModel getOAuthClientById(String id);

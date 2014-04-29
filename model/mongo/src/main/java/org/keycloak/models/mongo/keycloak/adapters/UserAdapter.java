@@ -2,7 +2,7 @@ package org.keycloak.models.mongo.keycloak.adapters;
 
 import org.keycloak.models.UserModel;
 import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
-import org.keycloak.models.mongo.keycloak.entities.UserEntity;
+import org.keycloak.models.mongo.keycloak.entities.MongoUserEntity;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -15,11 +15,11 @@ import java.util.Set;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class UserAdapter extends AbstractMongoAdapter<UserEntity> implements UserModel {
+public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implements UserModel {
 
-    private final UserEntity user;
+    private final MongoUserEntity user;
 
-    public UserAdapter(UserEntity userEntity, MongoStoreInvocationContext invContext) {
+    public UserAdapter(MongoUserEntity userEntity, MongoStoreInvocationContext invContext) {
         super(invContext);
         this.user = userEntity;
     }
@@ -133,7 +133,7 @@ public class UserAdapter extends AbstractMongoAdapter<UserEntity> implements Use
         return user.getAttributes()==null ? Collections.EMPTY_MAP : Collections.unmodifiableMap(user.getAttributes());
     }
 
-    public UserEntity getUser() {
+    public MongoUserEntity getUser() {
         return user;
     }
 
@@ -173,7 +173,7 @@ public class UserAdapter extends AbstractMongoAdapter<UserEntity> implements Use
     }
 
     @Override
-    public UserEntity getMongoEntity() {
+    public MongoUserEntity getMongoEntity() {
         return user;
     }
 

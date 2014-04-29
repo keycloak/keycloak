@@ -14,6 +14,8 @@ public class AuthenticationProviderModel {
     private boolean passwordUpdateSupported = true;
     private Map<String, String> config;
 
+    public AuthenticationProviderModel() {};
+
     public AuthenticationProviderModel(String providerName, boolean passwordUpdateSupported, Map<String, String> config) {
         this.providerName = providerName;
         this.passwordUpdateSupported = passwordUpdateSupported;

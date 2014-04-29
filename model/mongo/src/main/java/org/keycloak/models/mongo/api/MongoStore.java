@@ -40,4 +40,9 @@ public interface MongoStore {
     <S> boolean pushItemToList(MongoIdentifiableEntity entity, String listPropertyName, S itemToPush, boolean skipIfAlreadyPresent, MongoStoreInvocationContext context);
 
     <S> boolean pullItemFromList(MongoIdentifiableEntity entity, String listPropertyName, S itemToPull, MongoStoreInvocationContext context);
+
+    /**
+     * Completely remove all data from DB
+     */
+    void removeAllEntities();
 }

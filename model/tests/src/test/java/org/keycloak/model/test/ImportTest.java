@@ -50,6 +50,16 @@ public class ImportTest extends AbstractModelTest {
         commit();
 
         realm = realmManager.getRealm("demo");
+        assertDataImportedInRealm(realm);
+
+        commit();
+
+        realm = realmManager.getRealm("demo");
+        realmManager.removeRealm(realm);
+    }
+
+    // Moved to static method, so it's possible to test this from other places too (for example export-import tests)
+    public static void assertDataImportedInRealm(RealmModel realm) {
         Assert.assertTrue(realm.isVerifyEmail());
 
         Assert.assertFalse(realm.isUpdateProfileOnInitialSocialLogin());
@@ -211,13 +221,6 @@ public class ImportTest extends AbstractModelTest {
         AuthenticationLinkModel authLink = realm.getAuthenticationLink(socialUser);
         Assert.assertEquals(AuthProviderConstants.PROVIDER_NAME_PICKETLINK, authLink.getAuthProvider());
         Assert.assertEquals("myUser1", authLink.getAuthUserId());
-
-        commit();
-
-        realm = realmManager.getRealm("demo");
-        realmManager.removeRealm(realm);
-
-
     }
 
     @Test

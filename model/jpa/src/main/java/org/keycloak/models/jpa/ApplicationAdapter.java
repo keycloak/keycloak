@@ -7,6 +7,7 @@ import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.entities.*;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
@@ -99,7 +100,13 @@ public class ApplicationAdapter extends ClientAdapter implements ApplicationMode
 
     @Override
     public RoleModel addRole(String name) {
+        return this.addRole(KeycloakModelUtils.generateId(), name);
+    }
+
+    @Override
+    public RoleModel addRole(String id, String name) {
         ApplicationRoleEntity roleEntity = new ApplicationRoleEntity();
+        roleEntity.setId(id);
         roleEntity.setName(name);
         roleEntity.setApplication(applicationEntity);
         em.persist(roleEntity);

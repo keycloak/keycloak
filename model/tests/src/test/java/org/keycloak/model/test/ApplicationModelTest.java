@@ -64,6 +64,15 @@ public class ApplicationModelTest extends AbstractModelTest {
         assertEquals(application, copy);
     }
 
+    @Test
+    public void testAddApplicationWithId() {
+        application = realm.addApplication("app-123", "application2");
+        commit();
+        application = realmManager.getRealm(realm.getId()).getApplicationById("app-123");
+        Assert.assertNotNull(application);
+    }
+
+
     public static void assertEquals(ApplicationModel expected, ApplicationModel actual) {
         Assert.assertEquals(expected.getName(), actual.getName());
         Assert.assertEquals(expected.getBaseUrl(), actual.getBaseUrl());

@@ -13,7 +13,6 @@ public class AddressWithFlats extends Address {
 
     private List<String> flatNumbers;
 
-    @MongoField
     public List<String> getFlatNumbers() {
         return flatNumbers;
     }

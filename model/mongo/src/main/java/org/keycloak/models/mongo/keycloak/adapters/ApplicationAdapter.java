@@ -8,8 +8,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
-import org.keycloak.models.mongo.keycloak.entities.ApplicationEntity;
-import org.keycloak.models.mongo.keycloak.entities.RoleEntity;
+import org.keycloak.models.mongo.keycloak.entities.MongoApplicationEntity;
+import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
 import org.keycloak.models.mongo.utils.MongoModelUtils;
 
 import java.util.ArrayList;
@@ -20,9 +20,9 @@ import java.util.Set;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class ApplicationAdapter extends ClientAdapter<ApplicationEntity> implements ApplicationModel {
+public class ApplicationAdapter extends ClientAdapter<MongoApplicationEntity> implements ApplicationModel {
 
-    public ApplicationAdapter(RealmModel realm, ApplicationEntity applicationEntity, MongoStoreInvocationContext invContext) {
+    public ApplicationAdapter(RealmModel realm, MongoApplicationEntity applicationEntity, MongoStoreInvocationContext invContext) {
         super(realm, applicationEntity, invContext);
     }
 
@@ -103,7 +103,7 @@ public class ApplicationAdapter extends ClientAdapter<ApplicationEntity> impleme
                 .and("name").is(name)
                 .and("applicationId").is(getId())
                 .get();
-        RoleEntity role = getMongoStore().loadSingleEntity(RoleEntity.class, query, invocationContext);
+        MongoRoleEntity role = getMongoStore().loadSingleEntity(MongoRoleEntity.class, query, invocationContext);
         if (role == null) {
             return null;
         } else {
@@ -113,7 +113,13 @@ public class ApplicationAdapter extends ClientAdapter<ApplicationEntity> impleme
 
     @Override
     public RoleAdapter addRole(String name) {
-        RoleEntity roleEntity = new RoleEntity();
+        return this.addRole(null, name);
+    }
+
+    @Override
+    public RoleAdapter addRole(String id, String name) {
+        MongoRoleEntity roleEntity = new MongoRoleEntity();
+        roleEntity.setId(id);
         roleEntity.setName(name);
         roleEntity.setApplicationId(getId());
 
@@ -124,7 +130,7 @@ public class ApplicationAdapter extends ClientAdapter<ApplicationEntity> impleme
 
     @Override
     public boolean removeRole(RoleModel role) {
-        return getMongoStore().removeEntity(RoleEntity.class, role.getId(), invocationContext);
+        return getMongoStore().removeEntity(MongoRoleEntity.class, role.getId(), invocationContext);
     }
 
     @Override
@@ -132,10 +138,10 @@ public class ApplicationAdapter extends ClientAdapter<ApplicationEntity> impleme
         DBObject query = new QueryBuilder()
                 .and("applicationId").is(getId())
                 .get();
-        List<RoleEntity> roles = getMongoStore().loadEntities(RoleEntity.class, query, invocationContext);
+        List<MongoRoleEntity> roles = getMongoStore().loadEntities(MongoRoleEntity.class, query, invocationContext);
 
         Set<RoleModel> result = new HashSet<RoleModel>();
-        for (RoleEntity role : roles) {
+        for (MongoRoleEntity role : roles) {
             result.add(new RoleAdapter(getRealm(), role, this, invocationContext));
         }
 
@@ -145,9 +151,9 @@ public class ApplicationAdapter extends ClientAdapter<ApplicationEntity> impleme
     @Override
     public Set<RoleModel> getApplicationRoleMappings(UserModel user) {
         Set<RoleModel> result = new HashSet<RoleModel>();
-        List<RoleEntity> roles = MongoModelUtils.getAllRolesOfUser(user, invocationContext);
+        List<MongoRoleEntity> roles = MongoModelUtils.getAllRolesOfUser(user, invocationContext);
 
-        for (RoleEntity role : roles) {
+        for (MongoRoleEntity role : roles) {
             if (getId().equals(role.getApplicationId())) {
                 result.add(new RoleAdapter(getRealm(), role, this, invocationContext));
             }
@@ -158,9 +164,9 @@ public class ApplicationAdapter extends ClientAdapter<ApplicationEntity> impleme
     @Override
     public Set<RoleModel> getApplicationScopeMappings(ClientModel client) {
         Set<RoleModel> result = new HashSet<RoleModel>();
-        List<RoleEntity> roles = MongoModelUtils.getAllScopesOfClient(client, invocationContext);
+        List<MongoRoleEntity> roles = MongoModelUtils.getAllScopesOfClient(client, invocationContext);
 
-        for (RoleEntity role : roles) {
+        for (MongoRoleEntity role : roles) {
             if (getId().equals(role.getApplicationId())) {
                 result.add(new RoleAdapter(getRealm(), role, this, invocationContext));
             }

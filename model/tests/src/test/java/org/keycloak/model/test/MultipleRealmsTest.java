@@ -48,6 +48,10 @@ public class MultipleRealmsTest extends AbstractModelTest {
         // Test searching
         Assert.assertEquals(2, realm1.searchForUser("user").size());
 
+        commit();
+        realm1 = identitySession.getRealm("id1");
+        realm2 = identitySession.getRealm("id2");
+
         realm1.removeUser("user1");
         realm1.removeUser("user2");
         Assert.assertEquals(0, realm1.searchForUser("user").size());

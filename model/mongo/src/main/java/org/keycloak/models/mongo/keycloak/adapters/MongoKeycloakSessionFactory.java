@@ -3,20 +3,20 @@ package org.keycloak.models.mongo.keycloak.adapters;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.mongo.api.MongoEntity;
+import org.keycloak.models.entities.AuthenticationLinkEntity;
+import org.keycloak.models.entities.AuthenticationProviderEntity;
+import org.keycloak.models.entities.CredentialEntity;
+import org.keycloak.models.entities.RequiredCredentialEntity;
+import org.keycloak.models.entities.SocialLinkEntity;
 import org.keycloak.models.mongo.api.MongoStore;
 import org.keycloak.models.mongo.impl.MongoStoreImpl;
 import org.keycloak.models.mongo.keycloak.config.MongoClientProvider;
-import org.keycloak.models.mongo.keycloak.entities.ApplicationEntity;
-import org.keycloak.models.mongo.keycloak.entities.AuthenticationLinkEntity;
-import org.keycloak.models.mongo.keycloak.entities.AuthenticationProviderEntity;
-import org.keycloak.models.mongo.keycloak.entities.CredentialEntity;
-import org.keycloak.models.mongo.keycloak.entities.OAuthClientEntity;
-import org.keycloak.models.mongo.keycloak.entities.RealmEntity;
-import org.keycloak.models.mongo.keycloak.entities.RequiredCredentialEntity;
-import org.keycloak.models.mongo.keycloak.entities.RoleEntity;
-import org.keycloak.models.mongo.keycloak.entities.SocialLinkEntity;
-import org.keycloak.models.mongo.keycloak.entities.UserEntity;
+import org.keycloak.models.mongo.keycloak.entities.MongoApplicationEntity;
+import org.keycloak.models.mongo.keycloak.entities.MongoOAuthClientEntity;
+import org.keycloak.models.mongo.keycloak.entities.MongoRealmEntity;
+import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
+import org.keycloak.models.mongo.keycloak.entities.MongoUserEntity;
+import org.keycloak.models.mongo.keycloak.entities.MongoUsernameLoginFailureEntity;
 
 /**
  * KeycloakSessionFactory implementation based on MongoDB
@@ -26,17 +26,18 @@ import org.keycloak.models.mongo.keycloak.entities.UserEntity;
 public class MongoKeycloakSessionFactory implements KeycloakSessionFactory {
     protected static final Logger logger = Logger.getLogger(MongoKeycloakSessionFactory.class);
 
-    private static final Class<? extends MongoEntity>[] MANAGED_ENTITY_TYPES = (Class<? extends MongoEntity>[])new Class<?>[] {
-            RealmEntity.class,
-            UserEntity.class,
-            RoleEntity.class,
+    private static final Class<?>[] MANAGED_ENTITY_TYPES = (Class<?>[])new Class<?>[] {
+            MongoRealmEntity.class,
+            MongoUserEntity.class,
+            MongoRoleEntity.class,
             RequiredCredentialEntity.class,
             AuthenticationProviderEntity.class,
             CredentialEntity.class,
             SocialLinkEntity.class,
             AuthenticationLinkEntity.class,
-            ApplicationEntity.class,
-            OAuthClientEntity.class
+            MongoApplicationEntity.class,
+            MongoOAuthClientEntity.class,
+            MongoUsernameLoginFailureEntity.class
     };
 
     private final MongoClientProvider mongoClientProvider;

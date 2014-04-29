@@ -8,12 +8,11 @@ import java.util.List;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class Address implements MongoEntity {
+public class Address {
 
     private String street;
     private int number;
 
-    @MongoField
     public String getStreet() {
         return street;
     }
@@ -22,7 +21,6 @@ public class Address implements MongoEntity {
         this.street = street;
     }
 
-    @MongoField
     public int getNumber() {
         return number;
     }
