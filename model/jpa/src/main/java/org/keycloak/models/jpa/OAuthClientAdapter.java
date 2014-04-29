@@ -21,5 +21,6 @@ public class OAuthClientAdapter extends ClientAdapter implements OAuthClientMode
     @Override
     public void setClientId(String id) {
         entity.setName(id);
+
     }
 }

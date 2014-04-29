@@ -5,10 +5,12 @@ import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
 import org.keycloak.services.managers.OAuthClientManager;
+import org.keycloak.services.resources.flows.Flows;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -74,8 +76,12 @@ public class OAuthClientsResource {
         auth.requireManage();
 
         OAuthClientManager resourceManager = new OAuthClientManager(realm);
-        OAuthClientModel oauth = resourceManager.create(rep);
-        return Response.created(uriInfo.getAbsolutePathBuilder().path(oauth.getId()).build()).build();
+        try {
+            OAuthClientModel oauth = resourceManager.create(rep);
+            return Response.created(uriInfo.getAbsolutePathBuilder().path(oauth.getId()).build()).build();
+        } catch (ModelDuplicateException e) {
+            return Flows.errors().exists("Client " + rep.getName() + " already exists");
+        }
     }
 
     @Path("{id}")

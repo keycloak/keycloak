@@ -4,6 +4,7 @@ import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.CascadeType;
 import javax.persistence.CollectionTable;
+import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -11,8 +12,11 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
+import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -21,12 +25,14 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 @Entity
-@Inheritance(strategy = InheritanceType.JOINED)
-public class ClientEntity {
+@Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
+@Table(uniqueConstraints = {@UniqueConstraint(columnNames = {"realm", "name"})})
+public abstract class ClientEntity {
     @Id
     @GenericGenerator(name="keycloak_generator", strategy="org.keycloak.models.jpa.utils.JpaIdGenerator")
     @GeneratedValue(generator = "keycloak_generator")
     private String id;
+    @Column(name = "name")
     private String name;
     private boolean enabled;
     private String secret;
@@ -34,6 +40,9 @@ public class ClientEntity {
     private int notBefore;
     private boolean publicClient;
 
+    @ManyToOne
+    @JoinColumn(name = "realm")
+    protected RealmEntity realm;
 
     @ElementCollection
     @CollectionTable
@@ -42,6 +51,13 @@ public class ClientEntity {
     @CollectionTable
     protected Set<String> redirectUris = new HashSet<String>();
 
+    public RealmEntity getRealm() {
+        return realm;
+    }
+
+    public void setRealm(RealmEntity realm) {
+        this.realm = realm;
+    }
 
     public String getId() {
         return id;

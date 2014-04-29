@@ -4,6 +4,7 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
@@ -12,6 +13,7 @@ import org.keycloak.representations.idm.OAuthClientRepresentation;
 import org.keycloak.services.managers.ModelToRepresentation;
 import org.keycloak.services.managers.OAuthClientManager;
 import org.keycloak.services.resources.KeycloakApplication;
+import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.Consumes;
@@ -24,6 +26,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 
@@ -64,11 +67,16 @@ public class OAuthClientResource  {
 
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
-    public void update(final OAuthClientRepresentation rep) {
+    public Response update(final OAuthClientRepresentation rep) {
         auth.requireManage();
 
         OAuthClientManager manager = new OAuthClientManager(realm);
-        manager.update(rep, oauthClient);
+        try {
+            manager.update(rep, oauthClient);
+            return Response.noContent().build();
+        } catch (ModelDuplicateException e) {
+            return Flows.errors().exists("Client " + rep.getName() + " already exists");
+        }
     }
 
 

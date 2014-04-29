@@ -6,6 +6,7 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.services.managers.ApplicationManager;
@@ -72,12 +73,13 @@ public class ApplicationsResource {
     public Response createApplication(final @Context UriInfo uriInfo, final ApplicationRepresentation rep) {
         auth.requireManage();
 
-        if (realm.getApplicationNameMap().containsKey(rep.getName())) {
+        ApplicationManager resourceManager = new ApplicationManager(new RealmManager(session));
+        try {
+            ApplicationModel applicationModel = resourceManager.createApplication(realm, rep);
+            return Response.created(uriInfo.getAbsolutePathBuilder().path(applicationModel.getName()).build()).build();
+        } catch (ModelDuplicateException e) {
             return Flows.errors().exists("Application " + rep.getName() + " already exists");
         }
-        ApplicationManager resourceManager = new ApplicationManager(new RealmManager(session));
-        ApplicationModel applicationModel = resourceManager.createApplication(realm, rep);
-        return Response.created(uriInfo.getAbsolutePathBuilder().path(applicationModel.getName()).build()).build();
     }
 
     @Path("{app-name}")

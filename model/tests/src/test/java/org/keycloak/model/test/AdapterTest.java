@@ -218,9 +218,9 @@ public class AdapterTest extends AbstractModelTest {
 
         realmModel.addScopeMapping(app, realmRole);
 
-        Assert.assertTrue(identitySession.removeRealm(realmModel.getId()));
-        Assert.assertFalse(identitySession.removeRealm(realmModel.getId()));
-        Assert.assertNull(identitySession.getRealm(realmModel.getId()));
+        Assert.assertTrue(realmManager.removeRealm(realmModel));
+        Assert.assertFalse(realmManager.removeRealm(realmModel));
+        Assert.assertNull(realmManager.getRealm(realmModel.getId()));
     }
 
 
@@ -522,17 +522,80 @@ public class AdapterTest extends AbstractModelTest {
         commit(true);
 
         // Ty to rename realm to duplicate name
-        realmModel = realmManager.createRealm("JUGGLER2");
+        realmManager.createRealm("JUGGLER2");
+        commit();
+        try {
+            realmManager.getRealmByName("JUGGLER2").setName("JUGGLER");
+            commit();
+            Assert.fail("Expected exception");
+        } catch (ModelDuplicateException e) {
+        }
+
+        identitySession.close();
+        identitySession = factory.createSession();
+        identitySession.getTransaction().begin();
+    }
+
+    @Test
+    public void testAppNameCollisions() throws Exception {
+        realmManager.createRealm("JUGGLER1").addApplication("app1");
+        realmManager.createRealm("JUGGLER2").addApplication("app1");
+
         commit();
 
-        realmModel = realmManager.getRealmByName("JUGGLER2");
+        // Try to create app with duplicate name
         try {
-            realmModel.setName("JUGGLER");
+            realmManager.getRealmByName("JUGGLER1").addApplication("app1");
             commit();
             Assert.fail("Expected exception");
         } catch (ModelDuplicateException e) {
         }
         commit(true);
+
+        // Ty to rename app to duplicate name
+        realmManager.getRealmByName("JUGGLER1").addApplication("app2");
+        commit();
+        try {
+            realmManager.getRealmByName("JUGGLER1").getApplicationByName("app2").setName("app1");
+            commit();
+            Assert.fail("Expected exception");
+        } catch (ModelDuplicateException e) {
+        }
+
+        identitySession.close();
+        identitySession = factory.createSession();
+        identitySession.getTransaction().begin();
+    }
+
+    @Test
+    public void testClientNameCollisions() throws Exception {
+        realmManager.createRealm("JUGGLER1").addOAuthClient("client1");
+        realmManager.createRealm("JUGGLER2").addOAuthClient("client1");
+
+        commit();
+
+        // Try to create app with duplicate name
+        try {
+            realmManager.getRealmByName("JUGGLER1").addOAuthClient("client1");
+            commit();
+            Assert.fail("Expected exception");
+        } catch (ModelDuplicateException e) {
+        }
+        commit(true);
+
+        // Ty to rename app to duplicate name
+        realmManager.getRealmByName("JUGGLER1").addOAuthClient("client2");
+        commit();
+        try {
+            realmManager.getRealmByName("JUGGLER1").getOAuthClient("client2").setClientId("client1");
+            commit();
+            Assert.fail("Expected exception");
+        } catch (ModelDuplicateException e) {
+        }
+
+        identitySession.close();
+        identitySession = factory.createSession();
+        identitySession.getTransaction().begin();
     }
 
 }

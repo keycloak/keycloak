@@ -104,9 +104,9 @@ public class RealmManager {
 
     public boolean removeRealm(RealmModel realm) {
         boolean removed = identitySession.removeRealm(realm.getId());
-
-        getKeycloakAdminstrationRealm().removeApplication(realm.getAdminApp().getId());
-
+        if (removed) {
+            getKeycloakAdminstrationRealm().removeApplication(realm.getAdminApp().getId());
+        }
         return removed;
     }
 
