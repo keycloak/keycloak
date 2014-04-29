@@ -454,9 +454,6 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public UserModel addUser(String username) {
-        if (getUser(username) != null) {
-            throw new RuntimeException("Username already exists: " + username);
-        }
         UserEntity entity = new UserEntity();
         entity.setLoginName(username);
         entity.setRealm(realm);

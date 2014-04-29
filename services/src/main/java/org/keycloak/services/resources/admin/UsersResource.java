@@ -8,6 +8,7 @@ import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
@@ -84,14 +85,20 @@ public class UsersResource {
     @Path("{username}")
     @PUT
     @Consumes("application/json")
-    public void updateUser(final @PathParam("username") String username, final UserRepresentation rep) {
+    public Response updateUser(final @PathParam("username") String username, final UserRepresentation rep) {
         auth.requireManage();
 
-        UserModel user = realm.getUser(username);
-        if (user == null) {
-            throw new NotFoundException("User not found");
+        try {
+            UserModel user = realm.getUser(username);
+            if (user == null) {
+                throw new NotFoundException("User not found");
+            }
+            updateUserFromRep(user, rep);
+
+            return Response.noContent().build();
+        } catch (ModelDuplicateException e) {
+            return Flows.errors().exists("User exists with same username or email");
         }
-        updateUserFromRep(user, rep);
     }
 
     @POST
@@ -99,17 +106,14 @@ public class UsersResource {
     public Response createUser(final @Context UriInfo uriInfo, final UserRepresentation rep) {
         auth.requireManage();
 
-        if (realm.getUser(rep.getUsername()) != null) {
-            return Flows.errors().exists("User with username " + rep.getUsername() + " already exists");
-        }
-        UserModel user = realm.addUser(rep.getUsername());
-        if (user == null) {
-            throw new NotFoundException("User not found");
-        }
+        try {
+            UserModel user = realm.addUser(rep.getUsername());
+            updateUserFromRep(user, rep);
 
-        updateUserFromRep(user, rep);
-
-        return Response.created(uriInfo.getAbsolutePathBuilder().path(user.getLoginName()).build()).build();
+            return Response.created(uriInfo.getAbsolutePathBuilder().path(user.getLoginName()).build()).build();
+        } catch (ModelDuplicateException e) {
+            return Flows.errors().exists("User exists with same username or email");
+        }
     }
 
     private void updateUserFromRep(UserModel user, UserRepresentation rep) {

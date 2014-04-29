@@ -35,6 +35,11 @@ public class UserAdapter implements UserModel {
     }
 
     @Override
+    public void setLoginName(String loginName) {
+        user.setLoginName(loginName);
+    }
+
+    @Override
     public boolean isEnabled() {
         return user.isEnabled();
     }

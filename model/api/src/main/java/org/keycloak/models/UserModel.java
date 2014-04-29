@@ -17,6 +17,8 @@ public interface UserModel {
 
     String getLoginName();
 
+    void setLoginName(String loginName);
+
     boolean isEnabled();
 
     boolean isTotp();

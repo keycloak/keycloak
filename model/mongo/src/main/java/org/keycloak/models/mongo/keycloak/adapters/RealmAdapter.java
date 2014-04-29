@@ -490,10 +490,6 @@ public class RealmAdapter extends AbstractMongoAdapter<RealmEntity> implements R
 
     // Add just user entity without defaultRoles
     protected UserAdapter addUserEntity(String username) {
-        if (getUser(username) != null) {
-            throw new IllegalArgumentException("User " + username + " already exists");
-        }
-
         UserEntity userEntity = new UserEntity();
         userEntity.setLoginName(username);
         // Compatibility with JPA model, which has user disabled by default

@@ -139,7 +139,7 @@ public class MongoStoreImpl implements MongoStore {
 
     protected void createIndex(DBCollection dbCollection, MongoIndex index) {
         BasicDBObject fields = new BasicDBObject();
-        for (String f : index.fields())  {
+        for (String f : index.fields()) {
             fields.put(f, 1);
         }
         String name = index.name();
@@ -147,10 +147,22 @@ public class MongoStoreImpl implements MongoStore {
             name = null;
         }
         boolean unique = index.unique();
+        boolean sparse = index.sparse();
 
-        dbCollection.ensureIndex(fields, name, unique);
+        BasicDBObject options = new BasicDBObject();
+        if (name != null) {
+            options.put("name", name);
+        }
+        if (unique) {
+            options.put("unique", unique);
+        }
+        if (sparse) {
+            options.put("sparse", sparse);
+        }
 
-        logger.debug("Created index " + fields + (unique ? " (unique)" : "") + " on " + dbCollection.getName() + " in " + this.database.getName());
+        dbCollection.ensureIndex(fields, options);
+
+        logger.debug("Created index " + fields + "(options: " + options + ") on " + dbCollection.getName() + " in " + this.database.getName());
     }
 
     @Override
