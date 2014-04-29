@@ -7,6 +7,8 @@ public interface AuditProvider extends AuditListener {
 
     public EventQuery createQuery();
 
+    public void clear();
+
     public void clear(String realmId);
 
     public void clear(String realmId, long olderThan);

@@ -29,6 +29,12 @@ public class JpaAuditProvider implements AuditProvider {
     }
 
     @Override
+    public void clear() {
+        beginTx();
+        em.createQuery("delete from EventEntity").executeUpdate();
+    }
+
+    @Override
     public void clear(String realmId) {
         beginTx();
         em.createQuery("delete from EventEntity where realmId = :realmId").setParameter("realmId", realmId).executeUpdate();

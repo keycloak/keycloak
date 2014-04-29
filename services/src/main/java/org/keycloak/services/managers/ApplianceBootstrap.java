@@ -71,7 +71,7 @@ public class ApplianceBootstrap {
 
         RoleModel adminRole = realm.getRole(AdminRoles.ADMIN);
 
-        adminConsole.addScope(adminRole);
+        realm.addScopeMapping(adminConsole, adminRole);
 
         UserModel adminUser = realm.addUser("admin");
         adminUser.setEnabled(true);

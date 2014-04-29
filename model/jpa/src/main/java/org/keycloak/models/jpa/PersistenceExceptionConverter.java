@@ -4,6 +4,7 @@ import org.hibernate.exception.ConstraintViolationException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelDuplicateException;
 
+import javax.persistence.EntityExistsException;
 import javax.persistence.EntityManager;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
@@ -32,6 +33,8 @@ public class PersistenceExceptionConverter implements InvocationHandler {
         } catch (InvocationTargetException e) {
             Throwable c = e.getCause();
             if (c.getCause() != null && c.getCause() instanceof ConstraintViolationException) {
+                throw new ModelDuplicateException(c);
+            } if (c instanceof EntityExistsException) {
                 throw new ModelDuplicateException(c);
             } else {
                 throw new ModelException(c);

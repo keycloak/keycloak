@@ -123,6 +123,7 @@ public class ApplicationAdapter extends ClientAdapter<ApplicationEntity> impleme
         roleEntity.setApplicationId(getId());
 
         getMongoStore().insertEntity(roleEntity, invocationContext);
+
         return new RoleAdapter(getRealm(), roleEntity, this, invocationContext);
     }
 
@@ -157,11 +158,6 @@ public class ApplicationAdapter extends ClientAdapter<ApplicationEntity> impleme
             }
         }
         return result;
-    }
-
-    @Override
-    public void addScope(RoleModel role) {
-        getMongoStore().pushItemToList(getMongoEntity(), "scopeIds", role.getId(), true, invocationContext);
     }
 
     @Override
