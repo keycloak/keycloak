@@ -1,6 +1,7 @@
 package org.keycloak.picketlink.realm;
 
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.jboss.logging.Logger;
@@ -54,11 +55,23 @@ public class PartitionManagerRegistry {
     protected PartitionManager createPartitionManager(Map<String,String> ldapConfig) {
         IdentityConfigurationBuilder builder = new IdentityConfigurationBuilder();
 
+        Properties connectionProps = new Properties();
+        connectionProps.put("com.sun.jndi.ldap.connect.pool", "true");
+
+        checkSystemProperty("com.sun.jndi.ldap.connect.pool.authentication", "none simple");
+        checkSystemProperty("com.sun.jndi.ldap.connect.pool.initsize", "1");
+        checkSystemProperty("com.sun.jndi.ldap.connect.pool.maxsize", "10");
+        checkSystemProperty("com.sun.jndi.ldap.connect.pool.prefsize", "5");
+        checkSystemProperty("com.sun.jndi.ldap.connect.pool.timeout", "300000");
+        checkSystemProperty("com.sun.jndi.ldap.connect.pool.protocol", "plain");
+        checkSystemProperty("com.sun.jndi.ldap.connect.pool.debug", "off");
+
         // Use same mapping for User and Agent for now
         builder
             .named("SIMPLE_LDAP_STORE_CONFIG")
                 .stores()
                     .ldap()
+                        .connectionProperties(connectionProps)
                         .addCredentialHandler(LDAPAgentIgnoreCredentialHandler.class)
                         .baseDN(ldapConfig.get(LdapConstants.BASE_DN))
                         .bindDN(ldapConfig.get(LdapConstants.BIND_DN))
@@ -75,6 +88,12 @@ public class PartitionManagerRegistry {
                             .readOnlyAttribute("createdDate", CREATE_TIMESTAMP);
 
         return new DefaultPartitionManager(builder.buildAll());
+    }
+
+    private void checkSystemProperty(String name, String defaultValue) {
+        if (System.getProperty(name) == null) {
+            System.setProperty(name, defaultValue);
+        }
     }
 
     private class PartitionManagerContext {
