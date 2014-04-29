@@ -462,9 +462,9 @@
                                         <keycloak.mongo.db>${keycloak.mongo.db}</keycloak.mongo.db>
 
                                         <keycloak.audit>mongo</keycloak.audit>
-                                        <keycloak.audit.host>${keycloak.mongo.host}</keycloak.audit.host>
-                                        <keycloak.audit.port>${keycloak.mongo.port}</keycloak.audit.port>
-                                        <keycloak.audit.db>${keycloak.mongo.db}</keycloak.audit.db>
+                                        <keycloak.audit.mongo.host>${keycloak.mongo.host}</keycloak.audit.mongo.host>
+                                        <keycloak.audit.mongo.port>${keycloak.mongo.port}</keycloak.audit.mongo.port>
+                                        <keycloak.audit.mongo.db>${keycloak.mongo.db}</keycloak.audit.mongo.db>
 
                                         <keycloak.mongo.clearOnStartup>${keycloak.mongo.clearOnStartup}</keycloak.mongo.clearOnStartup>
                                     </systemPropertyVariables>

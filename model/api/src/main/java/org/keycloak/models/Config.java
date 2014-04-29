@@ -46,7 +46,7 @@ public class Config {
     }
 
     public static void setAuditProvider(String provider) {
-        System.setProperty(MODEL_PROVIDER_KEY, provider);
+        System.setProperty(AUDIT_PROVIDER_KEY, provider);
     }
 
     public static String getAuditExpirationSchedule() {
