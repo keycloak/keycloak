@@ -99,8 +99,6 @@ public class ApplicationAdapter extends ClientAdapter implements ApplicationMode
 
     @Override
     public RoleModel addRole(String name) {
-        RoleModel role = getRole(name);
-        if (role != null) return role;
         ApplicationRoleEntity roleEntity = new ApplicationRoleEntity();
         roleEntity.setName(name);
         roleEntity.setApplication(applicationEntity);

@@ -949,8 +949,6 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public RoleModel addRole(String name) {
-        RoleModel role = getRole(name);
-        if (role != null) return role;
         RealmRoleEntity entity = new RealmRoleEntity();
         entity.setName(name);
         entity.setRealm(realm);

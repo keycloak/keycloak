@@ -3,6 +3,7 @@ package org.keycloak.services.resources.admin;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.models.Constants;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
@@ -50,9 +51,7 @@ public class RoleContainerResource extends RoleResource {
         Set<RoleModel> roleModels = roleContainer.getRoles();
         List<RoleRepresentation> roles = new ArrayList<RoleRepresentation>();
         for (RoleModel roleModel : roleModels) {
-            if (!roleModel.getName().startsWith(Constants.INTERNAL_ROLE)) {
-                roles.add(ModelToRepresentation.toRepresentation(roleModel));
-            }
+            roles.add(ModelToRepresentation.toRepresentation(roleModel));
         }
         return roles;
     }
@@ -62,15 +61,13 @@ public class RoleContainerResource extends RoleResource {
     public Response createRole(final @Context UriInfo uriInfo, final RoleRepresentation rep) {
         auth.requireManage();
 
-        if (roleContainer.getRole(rep.getName()) != null || rep.getName().startsWith(Constants.INTERNAL_ROLE)) {
+        try {
+            RoleModel role = roleContainer.addRole(rep.getName());
+            role.setDescription(rep.getDescription());
+            return Response.created(uriInfo.getAbsolutePathBuilder().path(role.getName()).build()).build();
+        } catch (ModelDuplicateException e) {
             return Flows.errors().exists("Role with name " + rep.getName() + " already exists");
         }
-        RoleModel role = roleContainer.addRole(rep.getName());
-        if (role == null) {
-            throw new NotFoundException("Role not found");
-        }
-        role.setDescription(rep.getDescription());
-        return Response.created(uriInfo.getAbsolutePathBuilder().path(role.getName()).build()).build();
     }
 
     @Path("{role-name}")
@@ -81,7 +78,7 @@ public class RoleContainerResource extends RoleResource {
         auth.requireView();
 
         RoleModel roleModel = roleContainer.getRole(roleName);
-        if (roleModel == null || roleModel.getName().startsWith(Constants.INTERNAL_ROLE)) {
+        if (roleModel == null) {
             throw new NotFoundException("Could not find role: " + roleName);
         }
         return getRole(roleModel);
@@ -103,14 +100,19 @@ public class RoleContainerResource extends RoleResource {
     @Path("{role-name}")
     @PUT
     @Consumes("application/json")
-    public void updateRole(final @PathParam("role-name") String roleName, final RoleRepresentation rep) {
+    public Response updateRole(final @PathParam("role-name") String roleName, final RoleRepresentation rep) {
         auth.requireManage();
 
         RoleModel role = roleContainer.getRole(roleName);
-        if (role == null || role.getName().startsWith(Constants.INTERNAL_ROLE)) {
+        if (role == null) {
             throw new NotFoundException("Could not find role: " + roleName);
         }
-        updateRole(rep, role);
+        try {
+            updateRole(rep, role);
+            return Response.noContent().build();
+        } catch (ModelDuplicateException e) {
+            return Flows.errors().exists("Role with name " + rep.getName() + " already exists");
+        }
     }
 
     @Path("{role-name}/composites")
@@ -120,7 +122,7 @@ public class RoleContainerResource extends RoleResource {
         auth.requireManage();
 
         RoleModel role = roleContainer.getRole(roleName);
-        if (role == null || role.getName().startsWith(Constants.INTERNAL_ROLE)) {
+        if (role == null) {
             throw new NotFoundException("Could not find role: " + roleName);
         }
         addComposites(roles, role);
@@ -134,7 +136,7 @@ public class RoleContainerResource extends RoleResource {
         auth.requireManage();
 
         RoleModel role = roleContainer.getRole(roleName);
-        if (role == null || role.getName().startsWith(Constants.INTERNAL_ROLE)) {
+        if (role == null) {
             throw new NotFoundException("Could not find role: " + roleName);
         }
         return getRoleComposites(role);
@@ -148,7 +150,7 @@ public class RoleContainerResource extends RoleResource {
         auth.requireManage();
 
         RoleModel role = roleContainer.getRole(roleName);
-        if (role == null || role.getName().startsWith(Constants.INTERNAL_ROLE)) {
+        if (role == null) {
             throw new NotFoundException("Could not find role: " + roleName);
         }
         return getRealmRoleComposites(role);
@@ -163,7 +165,7 @@ public class RoleContainerResource extends RoleResource {
         auth.requireManage();
 
         RoleModel role = roleContainer.getRole(roleName);
-        if (role == null || role.getName().startsWith(Constants.INTERNAL_ROLE)) {
+        if (role == null) {
             throw new NotFoundException("Could not find role: " + roleName);
         }
         return getApplicationRoleComposites(appName, role);
@@ -177,7 +179,7 @@ public class RoleContainerResource extends RoleResource {
         auth.requireManage();
 
         RoleModel role = roleContainer.getRole(roleName);
-        if (role == null || role.getName().startsWith(Constants.INTERNAL_ROLE)) {
+        if (role == null) {
             throw new NotFoundException("Could not find role: " + roleName);
         }
         deleteComposites(roles, role);

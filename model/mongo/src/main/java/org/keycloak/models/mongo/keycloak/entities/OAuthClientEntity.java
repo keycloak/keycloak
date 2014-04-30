@@ -9,7 +9,7 @@ import java.util.List;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @MongoCollection(collectionName = "oauthClients")
-@MongoIndex(name = "name-within-realm", fields = { "realmId", "name" }, unique = true)
+@MongoIndex(fields = { "realmId", "name" }, unique = true)
 public class OAuthClientEntity extends ClientEntity {
 
 }

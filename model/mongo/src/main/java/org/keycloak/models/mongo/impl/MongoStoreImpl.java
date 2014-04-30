@@ -142,17 +142,11 @@ public class MongoStoreImpl implements MongoStore {
         for (String f : index.fields()) {
             fields.put(f, 1);
         }
-        String name = index.name();
-        if (name.length() == 0) {
-            name = null;
-        }
+
         boolean unique = index.unique();
         boolean sparse = index.sparse();
 
         BasicDBObject options = new BasicDBObject();
-        if (name != null) {
-            options.put("name", name);
-        }
         if (unique) {
             options.put("unique", unique);
         }

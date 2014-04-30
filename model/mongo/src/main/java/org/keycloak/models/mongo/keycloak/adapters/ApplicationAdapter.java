@@ -113,11 +113,6 @@ public class ApplicationAdapter extends ClientAdapter<ApplicationEntity> impleme
 
     @Override
     public RoleAdapter addRole(String name) {
-        RoleAdapter existing = getRole(name);
-        if (existing != null) {
-            return existing;
-        }
-
         RoleEntity roleEntity = new RoleEntity();
         roleEntity.setName(name);
         roleEntity.setApplicationId(getId());

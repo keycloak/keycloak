@@ -7,6 +7,7 @@ import org.keycloak.models.mongo.api.AbstractMongoIdentifiableEntity;
 import org.keycloak.models.mongo.api.MongoCollection;
 import org.keycloak.models.mongo.api.MongoEntity;
 import org.keycloak.models.mongo.api.MongoField;
+import org.keycloak.models.mongo.api.MongoIndex;
 import org.keycloak.models.mongo.api.MongoStore;
 import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
 
@@ -16,6 +17,7 @@ import java.util.List;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @MongoCollection(collectionName = "roles")
+@MongoIndex(fields = "nameIndex", unique = true)
 public class RoleEntity extends AbstractMongoIdentifiableEntity implements MongoEntity {
 
     private static final Logger logger = Logger.getLogger(RoleEntity.class);
@@ -27,6 +29,19 @@ public class RoleEntity extends AbstractMongoIdentifiableEntity implements Mongo
 
     private String realmId;
     private String applicationId;
+
+    @MongoField
+    // TODO This is required as Mongo doesn't support sparse indexes with compound keys (see https://jira.mongodb.org/browse/SERVER-2193)
+    public String getNameIndex() {
+        if (realmId != null) {
+            return realmId + "//" + name;
+        } else {
+            return applicationId + "//" + name;
+        }
+    }
+
+    public void setNameIndex(String ignored) {
+    }
 
     @MongoField
     public String getName() {

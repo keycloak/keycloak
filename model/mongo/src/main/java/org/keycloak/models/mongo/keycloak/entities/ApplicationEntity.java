@@ -14,7 +14,7 @@ import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @MongoCollection(collectionName = "applications")
-@MongoIndex(name = "name-within-realm", fields = { "realmId", "name" }, unique = true)
+@MongoIndex(fields = { "realmId", "name" }, unique = true)
 public class ApplicationEntity extends ClientEntity {
 
     private boolean surrogateAuthRequired;
