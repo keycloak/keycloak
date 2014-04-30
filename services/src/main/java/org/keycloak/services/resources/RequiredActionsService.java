@@ -21,7 +21,7 @@
  */
 package org.keycloak.services.resources;
 
-import org.jboss.resteasy.logging.Logger;
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.audit.Audit;
@@ -364,14 +364,14 @@ public class RequiredActionsService {
         }
 
         if (accessCodeEntry.isExpired()) {
-            logger.debug("getAccessCodeEntry: access code id: {0}", accessCodeEntry.getId());
-            logger.debug("getAccessCodeEntry access code entry expired: {0}", accessCodeEntry.getExpiration());
-            logger.debug("getAccessCodeEntry current time: {0}", Time.currentTime());
+            logger.debugv("getAccessCodeEntry: access code id: {0}", accessCodeEntry.getId());
+            logger.debugv("getAccessCodeEntry access code entry expired: {0}", accessCodeEntry.getExpiration());
+            logger.debugv("getAccessCodeEntry current time: {0}", Time.currentTime());
             return null;
         }
 
         if (accessCodeEntry.getRequiredActions() == null || !accessCodeEntry.getRequiredActions().contains(requiredAction)) {
-            logger.debug("getAccessCodeEntry required actions null || entry does not contain required action: {0}|{1}", (accessCodeEntry.getRequiredActions() == null),!accessCodeEntry.getRequiredActions().contains(requiredAction) );
+            logger.debugv("getAccessCodeEntry required actions null || entry does not contain required action: {0}|{1}", (accessCodeEntry.getRequiredActions() == null),!accessCodeEntry.getRequiredActions().contains(requiredAction) );
             return null;
         }
 
@@ -392,7 +392,7 @@ public class RequiredActionsService {
             return Flows.forms(realm, uriInfo).setAccessCode(accessCode.getId(), accessCode.getCode()).setUser(user)
                     .createResponse(requiredActions.iterator().next());
         } else {
-            logger.debug("redirectOauth: redirecting to: {0}", accessCode.getRedirectUri());
+            logger.debugv("redirectOauth: redirecting to: {0}", accessCode.getRedirectUri());
             accessCode.setExpiration(Time.currentTime() + realm.getAccessCodeLifespan());
 
             audit.success();

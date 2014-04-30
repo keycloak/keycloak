@@ -1,7 +1,7 @@
 package org.keycloak.services.resources.admin;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.models.ApplicationModel;
@@ -317,7 +317,7 @@ public class UsersResource {
     public void addRealmRoleMappings(@PathParam("username") String username, List<RoleRepresentation> roles) {
         auth.requireManage();
 
-        logger.debug("** addRealmRoleMappings: {0}", roles);
+        logger.debugv("** addRealmRoleMappings: {0}", roles);
         UserModel user = realm.getUser(username);
         if (user == null) {
             throw new NotFoundException("User not found");
@@ -388,7 +388,7 @@ public class UsersResource {
         for (RoleModel roleModel : mappings) {
             mapRep.add(ModelToRepresentation.toRepresentation(roleModel));
         }
-        logger.debug("getApplicationRoleMappings.size() = {0}", mapRep.size());
+        logger.debugv("getApplicationRoleMappings.size() = {0}", mapRep.size());
         return mapRep;
     }
 

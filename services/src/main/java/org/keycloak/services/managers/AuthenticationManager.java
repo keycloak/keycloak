@@ -1,6 +1,6 @@
 package org.keycloak.services.managers;
 
-import org.jboss.resteasy.logging.Logger;
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.RSATokenVerifier;
@@ -82,7 +82,7 @@ public class AuthenticationManager {
         }
         String encoded = encodeToken(realm, identityToken);
         boolean secureOnly = !realm.isSslNotRequired();
-        logger.debug("creatingLoginCookie - name: {0} path: {1}", cookieName, cookiePath);
+        logger.debugv("creatingLoginCookie - name: {0} path: {1}", cookieName, cookiePath);
         int maxAge = NewCookie.DEFAULT_MAX_AGE;
         if (rememberMe) {
             maxAge = realm.getCentralLoginLifespan();
@@ -131,7 +131,7 @@ public class AuthenticationManager {
             logger.debug("can't expire identity cookie, no HttpResponse");
             return;
         }
-        logger.debug("Expiring cookie: {0} path: {1}", cookieName, path);
+        logger.debugv("Expiring cookie: {0} path: {1}", cookieName, path);
         NewCookie expireIt = new NewCookie(cookieName, "", path, null, "Expiring cookie", 0, false);
         response.addNewCookie(expireIt);
     }
@@ -150,7 +150,7 @@ public class AuthenticationManager {
         logger.info("authenticateIdentityCookie");
         Cookie cookie = headers.getCookies().get(cookieName);
         if (cookie == null) {
-            logger.info("authenticateCookie could not find cookie: {0}", cookieName);
+            logger.infov("authenticateCookie could not find cookie: {0}", cookieName);
             return null;
         }
 

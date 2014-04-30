@@ -1,8 +1,8 @@
 package org.keycloak.services.resources.admin;
 
 import org.codehaus.jackson.annotate.JsonProperty;
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.jboss.resteasy.spi.NotFoundException;
@@ -303,7 +303,7 @@ public class AdminService {
 
         OAuthRedirect oauth = new OAuthRedirect();
         String authUrl = TokenService.loginPageUrl(uriInfo).build(Config.getAdminRealm()).toString();
-        logger.debug("authUrl: {0}", authUrl);
+        logger.debugv("authUrl: {0}", authUrl);
         oauth.setAuthUrl(authUrl);
         oauth.setClientId(Constants.ADMIN_CONSOLE_APPLICATION);
 
@@ -312,7 +312,7 @@ public class AdminService {
             redirectBuilder.queryParam("path", path);
         }
         URI redirectUri = redirectBuilder.build();
-        logger.debug("redirectUri: {0}", redirectUri.toString());
+        logger.debugv("redirectUri: {0}", redirectUri.toString());
         oauth.setStateCookiePath(redirectUri.getRawPath());
         return oauth.redirect(uriInfo, redirectUri.toString());
     }

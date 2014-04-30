@@ -1,6 +1,6 @@
 package org.keycloak.services.resources;
 
-import org.jboss.resteasy.logging.Logger;
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.audit.Audit;
@@ -8,8 +8,8 @@ import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.services.ClientConnection;
 import org.keycloak.provider.ProviderSession;
+import org.keycloak.services.ClientConnection;
 import org.keycloak.services.managers.AuditManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.BruteForceProtector;

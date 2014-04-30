@@ -1,6 +1,6 @@
 package org.keycloak.jaxrs;
 
-import org.jboss.resteasy.logging.Logger;
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.KeycloakPrincipal;

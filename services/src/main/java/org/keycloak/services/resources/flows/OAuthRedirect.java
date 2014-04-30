@@ -1,10 +1,9 @@
 package org.keycloak.services.resources.flows;
 
-import org.jboss.resteasy.logging.Logger;
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.keycloak.AbstractOAuthClient;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.representations.AccessTokenResponse;
 
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
@@ -13,7 +12,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
-import java.util.Map;
 
 /**
  * Helper code to obtain oauth access tokens via browser redirects

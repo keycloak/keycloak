@@ -21,7 +21,7 @@
  */
 package org.keycloak.services.resources.flows;
 
-import org.jboss.resteasy.logging.Logger;
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.audit.Audit;
@@ -86,7 +86,7 @@ public class OAuthFlows {
             return Flows.forms(realm, uriInfo).setAccessCode(accessCode.getId(), code).createCode();
         } else {
             UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam(OAuth2Constants.CODE, code);
-            log.debug("redirectAccessCode: state: {0}", state);
+            log.debugv("redirectAccessCode: state: {0}", state);
             if (state != null)
                 redirectUri.queryParam(OAuth2Constants.STATE, state);
             Response.ResponseBuilder location = Response.status(302).location(redirectUri.build());
@@ -124,8 +124,8 @@ public class OAuthFlows {
         accessCode.setRememberMe(rememberMe);
         accessCode.setAuthMethod(authMethod);
 
-        log.debug("processAccessCode: isResource: {0}", isResource);
-        log.debug("processAccessCode: go to oauth page?: {0}",
+        log.debugv("processAccessCode: isResource: {0}", isResource);
+        log.debugv("processAccessCode: go to oauth page?: {0}",
                 (!isResource && (accessCode.getRealmRolesRequested().size() > 0 || accessCode.getResourceRolesRequested()
                         .size() > 0)));
 

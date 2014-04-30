@@ -4,7 +4,7 @@ import org.apache.http.client.HttpClient;
 import org.jboss.resteasy.client.ClientRequest;
 import org.jboss.resteasy.client.ClientResponse;
 import org.jboss.resteasy.client.core.executors.ApacheHttpClient4Executor;
-import org.jboss.resteasy.logging.Logger;
+import org.jboss.logging.Logger;
 import org.keycloak.TokenIdGenerator;
 import org.keycloak.adapters.AdapterConstants;
 import org.keycloak.models.ApplicationModel;
@@ -57,7 +57,7 @@ public class ResourceAdminManager {
             SessionStatsAction adminAction = new SessionStatsAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, application.getName());
             adminAction.setListUsers(users);
             String token = new TokenManager().encodeToken(realm, adminAction);
-            logger.info("session stats for application: {0} url: {1}", application.getName(), managementUrl);
+            logger.infov("session stats for application: {0} url: {1}", application.getName(), managementUrl);
             ClientRequest request = client.createRequest(UriBuilder.fromUri(managementUrl).path(AdapterConstants.K_GET_SESSION_STATS).build().toString());
             ClientResponse<SessionStats> response = null;
             try {
@@ -111,7 +111,7 @@ public class ResourceAdminManager {
         if (managementUrl != null) {
             UserStatsAction adminAction = new UserStatsAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, application.getName(), user.getId());
             String token = new TokenManager().encodeToken(realm, adminAction);
-            logger.info("session stats for application: {0} url: {1}", application.getName(), managementUrl);
+            logger.infov("session stats for application: {0} url: {1}", application.getName(), managementUrl);
             ClientRequest request = client.createRequest(UriBuilder.fromUri(managementUrl).path(AdapterConstants.K_GET_USER_STATS).build().toString());
             ClientResponse<UserStats> response = null;
             try {
@@ -143,7 +143,7 @@ public class ResourceAdminManager {
         try {
             // don't set user notBefore as we don't want a database hit on a user driven logout
             List<ApplicationModel> resources = realm.getApplications();
-            logger.debug("logging out {0} resources ", resources.size());
+            logger.debugv("logging out {0} resources ", resources.size());
             for (ApplicationModel resource : resources) {
                 logoutApplication(realm, resource, user.getId(), executor, 0);
             }
@@ -157,7 +157,7 @@ public class ResourceAdminManager {
         try {
             realm.setNotBefore(Time.currentTime());
             List<ApplicationModel> resources = realm.getApplications();
-            logger.debug("logging out {0} resources ", resources.size());
+            logger.debugv("logging out {0} resources ", resources.size());
             for (ApplicationModel resource : resources) {
                 logoutApplication(realm, resource, null, executor, realm.getNotBefore());
             }
@@ -184,7 +184,7 @@ public class ResourceAdminManager {
         if (managementUrl != null) {
             LogoutAction adminAction = new LogoutAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, resource.getName(), user, notBefore);
             String token = new TokenManager().encodeToken(realm, adminAction);
-            logger.info("logout user: {0} resource: {1} url: {2}", user, resource.getName(), managementUrl);
+            logger.infov("logout user: {0} resource: {1} url: {2}", user, resource.getName(), managementUrl);
             ClientRequest request = client.createRequest(UriBuilder.fromUri(managementUrl).path(AdapterConstants.K_LOGOUT).build().toString());
             ClientResponse response = null;
             try {
@@ -234,7 +234,7 @@ public class ResourceAdminManager {
         if (managementUrl != null) {
             PushNotBeforeAction adminAction = new PushNotBeforeAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, resource.getName(), notBefore);
             String token = new TokenManager().encodeToken(realm, adminAction);
-            logger.info("pushRevocation resource: {0} url: {1}", resource.getName(), managementUrl);
+            logger.infov("pushRevocation resource: {0} url: {1}", resource.getName(), managementUrl);
             ClientRequest request = client.createRequest(UriBuilder.fromUri(managementUrl).path(AdapterConstants.K_PUSH_NOT_BEFORE).build().toString());
             ClientResponse response = null;
             try {

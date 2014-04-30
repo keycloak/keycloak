@@ -1,6 +1,6 @@
 package org.keycloak.services.managers;
 
-import org.jboss.resteasy.logging.Logger;
+import org.jboss.logging.Logger;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ApplicationModel;
