@@ -54,7 +54,7 @@ public class AccountTotpPage extends AbstractAccountPage {
     }
 
     public boolean isCurrent() {
-        return driver.getTitle().contains("Account Management") && driver.getCurrentUrl().endsWith("/account/totp");
+        return driver.getTitle().contains("Account Management") && driver.getCurrentUrl().split("\\?")[0].endsWith("/account/totp");
     }
 
     public void open() {

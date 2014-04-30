@@ -14,43 +14,45 @@ public class UrlBean {
     private String realm;
     private Theme theme;
     private URI baseURI;
+    private URI baseQueryURI;
 
-    public UrlBean(RealmModel realm, Theme theme, URI baseURI) {
+    public UrlBean(RealmModel realm, Theme theme, URI baseURI, URI baseQueryURI) {
         this.realm = realm.getName();
         this.theme = theme;
         this.baseURI = baseURI;
+        this.baseQueryURI = baseQueryURI;
     }
 
     public String getAccessUrl() {
-        return Urls.accountAccessPage(baseURI, realm).toString();
+        return Urls.accountAccessPage(baseQueryURI, realm).toString();
     }
 
     public String getAccountUrl() {
-        return Urls.accountPage(baseURI, realm).toString();
+        return Urls.accountPage(baseQueryURI, realm).toString();
     }
 
     public String getPasswordUrl() {
-        return Urls.accountPasswordPage(baseURI, realm).toString();
+        return Urls.accountPasswordPage(baseQueryURI, realm).toString();
     }
 
     public String getSocialUrl() {
-        return Urls.accountSocialPage(baseURI, realm).toString();
+        return Urls.accountSocialPage(baseQueryURI, realm).toString();
     }
 
     public String getTotpUrl() {
-        return Urls.accountTotpPage(baseURI, realm).toString();
+        return Urls.accountTotpPage(baseQueryURI, realm).toString();
     }
 
     public String getLogUrl() {
-        return Urls.accountLogPage(baseURI, realm).toString();
+        return Urls.accountLogPage(baseQueryURI, realm).toString();
     }
 
     public String getTotpRemoveUrl() {
-        return Urls.accountTotpRemove(baseURI, realm).toString();
+        return Urls.accountTotpRemove(baseQueryURI, realm).toString();
     }
 
     public String getLogoutUrl() {
-        return Urls.accountLogout(baseURI, realm).toString();
+        return Urls.accountLogout(baseQueryURI, realm).toString();
     }
 
     public String getResourcesPath() {
