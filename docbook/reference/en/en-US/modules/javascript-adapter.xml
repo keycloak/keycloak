@@ -2,7 +2,7 @@
     <title>Pure Client Javascript Adapter</title>
     <para>
         The Keycloak Server comes with a Javascript library you can use to secure pure HTML/Javascript applications.  It
-        works in the same way as other application adapters accept that your browser is driving the OAuth redirect protocol
+        works in the same way as other application adapters except that your browser is driving the OAuth redirect protocol
         rather than the server.
     </para>
     <para>
@@ -10,31 +10,50 @@
         disadvantage of using this approach is that you end up having a non-confidential, public client.  This can be mitigated
         by registering valid redirect URLs.  You are still vulnerable if somebody hijacks the IP/DNS name of your pure
         HTML/Javascript application though.
-    </para>                                                                  startAsync
+    </para>
     <para>
-        To use this adapter, you first must load and initialize the keycloak javascript library into your application.
+        To use this adapter, you must first configure an application (or client) through the <literal>Keycloak Admin Console</literal>.
+        You should select <literal>public</literal> for the <literal>Client Type</literal> field. As public clients can't
+        be verified with a client secret you are required to configure one or more valid redirect uris as well.
+        Once you've configured the application click on the <literal>Installation</literal> tab and download the <literal>keycloak.json</literal>
+        file. This file should be hosted in your web-server at the same root as your HTML pages. Alternatively you can either
+        specify the URL for this file, or manually configure the adapter.
+    </para>
+    <para>
+        Next you have to initialize the adapter in your application. An example on how to do this is shown below.
 <programlisting><![CDATA[
 <head>
-    <title>Customer View Page</title>
-    <script src="/auth/js/keycloak.js"></script>
+    <script src="http://<keycloak server>/auth/js/keycloak.js"></script>
     <script>
-        var keycloak = Keycloak({
-            clientId: 'application-name',
-            clientSecret: '1234234-234234-234234-234234',
-            realm: 'demo',
-            onload: 'login-required'
+        var keycloak = Keycloak();
+        keycloak.init().success(function(authenticated) {
+            alert(authenticated ? 'authenticated' : 'not authenticated');
+        }).error(function() {
+            alert('failed to initialize');
         });
-        keycloak.init();
     </script>
 </head>
 ]]></programlisting>
+        To specify the location of the keycloak.json file:
+<programlisting><![CDATA[
+var keycloak = Keycloak('http://localhost:8080/myapp/keycloak.json'));
+]]></programlisting>
+        Or finally to manually configure the adapter:
+        <programlisting><![CDATA[
+var keycloak = Keycloak({
+    url: 'http://keycloak-server/auth',
+    realm: 'myrealm',
+    clientId: 'myapp'
+});
+]]></programlisting>
+        You can also pass <literal>login-required</literal> or <literal>check-sso</literal> to the init function. Login
+        required will redirect to the login form on the server, while check-sso will redirect to the auth server to check
+        if the user is already logged in to the realm. For example:
+<programlisting><![CDATA[
+keycloak.init('login-required')
+]]></programlisting>
     </para>
-    <para>
-        The above code will initialize the adapter and redirect you to your realm's login screen.  You must fill in the
-        appropriate <literal>clientId</literal>, <literal>clientSecret</literal>, and <literal>realm</literal> options
-        based on how you created your application in your realm through the admin console. The <literal>init()</literal>
-        method can also take a success and error callback function as parameters.
-    </para>
+
     <para>
         After you login, your application will be able to make REST calls using bearer token authentication.  Here's
         an example pulled from the <literal>customer-portal-js</literal> example that comes with the distribution.
@@ -73,14 +92,13 @@
     };
 
     var reloadData = function () {
-        keycloak.onValidAccessToken(loadData, loadFailure);
+        keycloak.updateToken().success(loadData).error(loadFailure);
     }
 </script>
 
-<button onclick="reloadData()">Submit</button>
+<button onclick="loadData()">Submit</button>
 ]]></programlisting>
-
-    </para>
+     </para>
     <para>
         The <literal>loadData()</literal> method builds an HTTP request setting the <literal>Authorization</literal>
         header to a bearer token.  The <literal>keycloak.token</literal> points to the access token the browser obtained
@@ -91,4 +109,86 @@
         will refresh the access token.  Finally, if successful, it will invoke the success callback, which in this case
         is the <literal>loadData()</literal> method.
     </para>
+
+    <para>
+        To refresh the token if it's expired call the <literal>updateToken</literal> method. This method returns a promise
+        object which can be used to invoke a function on success or failure. This method can be used to wrap functions
+        that should only be called with a valid token. For example the following method will refresh the token if it
+        expires within 30 seconds, and then invoke the specified function. If the token is valid for more than 30 seconds it
+        will just call the specified function.
+<programlisting><![CDATA[
+keycloak.updateToken(30).success(function() {
+    // send request with valid token
+}).error(function() {
+    alert('failed to refresh token');
+);
+]]></programlisting>
+    </para>
+
+    <section>
+        <title>JavaScript Adapter reference</title>
+
+        <section>
+            <title>Constructor</title>
+<programlisting><![CDATA[
+new Keycloak();
+new Keycloak('http://localhost/keycloak.json');
+new Keycloak({ url: 'http://localhost/auth', realm: 'myrealm', clientId: 'myApp' });
+]]></programlisting>
+        </section>
+
+        <section>
+            <title>Properties</title>
+
+            <itemizedlist>
+                <listitem>authenticated - true if the user is authenticated</listitem>
+                <listitem>token - the base64 encoded token that can be sent in the <literal>Authorization</literal> header in requests to services</listitem>
+                <listitem>tokenParsed - the parsed token</listitem>
+                <listitem>subject - the user id</listitem>
+                <listitem>idToken - the id token if claims is enabled for the application, null otherwise</listitem>
+                <listitem>realmAccess - the realm roles associated with the token</listitem>
+                <listitem>resourceAccess - the resource roles assocaited with the token</listitem>
+                <listitem>refreshToken - the base64 encoded token that can be used to retrieve a new token</listitem>
+                <listitem>refreshTokenParsed - the parsed refresh token</listitem>
+            </itemizedlist>
+        </section>
+
+        <section>
+            <title>Methods</title>
+
+            <itemizedlist>
+                <listitem>init - called to initialize the adapter. Returns promise to set functions to be invoked on success or error</listitem>
+                <listitem>login(options) - redirects to login form on (options is an optional object with redirectUri and/or prompt fields)</listitem>
+                <listitem>createLoginUrl(options) - returns the url to login form on (options is an optional object with redirectUri and/or prompt fields)</listitem>
+                <listitem>logout(options) - redirects to logout (options is an optional object with redirectUri)</listitem>
+                <listitem>createLogoutUrl(options) - returns the url to logout (options is an optional object with redirectUri)</listitem>
+                <listitem>accountManagement - redirects to account management</listitem>
+                <listitem>createAccountUrl - returns the url to account management</listitem>
+                <listitem>hasRealmRole(role) - returns true if the token has the given realm role</listitem>
+                <listitem>hasResourceRole(role, resource) - returns true if the token has the given role for the resource (resource is optional, if not specified clientId is used)</listitem>
+                <listitem>loadUserProfile() - loads the users profile. Returns promise to set functions to be invoked on success or error</listitem>
+                <listitem>isTokenExpired(minValidity) - returns true if the token has less than minValidity seconds left before it expires (minValidity is optional, if not specified 0 is used)</listitem>
+                <listitem>updateToken(minValidity) - refreshes the token if the token expires within minValidity seconds (minValidity is optional, if not specified 0 is used). Returns promise to set functions to be invoked on success or error</listitem>
+            </itemizedlist>
+        </section>
+
+        <section>
+            <title>Callback Events</title>
+
+            <para>The adapter supports setting callback listeners for certain events. For example:
+<programlisting><![CDATA[
+keycloak.onAuthSuccess = function() { alert('authenticated'); }
+]]></programlisting>
+            </para>
+
+            <itemizedlist>
+                <listitem>onReady(authenticated) - called when the adapter is initialized</listitem>
+                <listitem>onAuthSuccess - called when a user is successfully authenticated</listitem>
+                <listitem>onAuthError - called if there was an error during authentication</listitem>
+                <listitem>onAuthRefreshSuccess - called when the token is refreshed</listitem>
+                <listitem>onAuthRefreshError - called if there was an error while trying to refresh the token</listitem>
+                <listitem>onAuthLogout - called when the user is logged out (only relevant to Cordova)</listitem>
+            </itemizedlist>
+        </section>
+    </section>
 </section>
