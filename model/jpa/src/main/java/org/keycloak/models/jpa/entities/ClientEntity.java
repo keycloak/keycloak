@@ -25,7 +25,7 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 @Entity
-@Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @Table(uniqueConstraints = {@UniqueConstraint(columnNames = {"realm", "name"})})
 public abstract class ClientEntity {
     @Id

@@ -19,8 +19,6 @@ public @interface MongoIndex {
 
     String[] fields();
 
-    String name() default "";
-
     boolean unique() default false;
 
     boolean sparse() default false;

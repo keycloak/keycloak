@@ -649,4 +649,64 @@ public class AdapterTest extends AbstractModelTest {
         resetSession();
     }
 
+    @Test
+    public void testAppRoleCollisions() throws Exception {
+        realmManager.createRealm("JUGGLER1").addRole("role1");
+        realmManager.getRealmByName("JUGGLER1").addApplication("app1").addRole("role1");
+        realmManager.getRealmByName("JUGGLER1").addApplication("app2").addRole("role1");
+
+        commit();
+
+        // Try to add role with same name
+        try {
+            realmManager.getRealmByName("JUGGLER1").getApplicationByName("app1").addRole("role1");
+            commit();
+            Assert.fail("Expected exception");
+        } catch (ModelDuplicateException e) {
+        }
+        commit(true);
+
+        // Ty to rename role to duplicate name
+        realmManager.getRealmByName("JUGGLER1").getApplicationByName("app1").addRole("role2");
+        commit();
+        try {
+            realmManager.getRealmByName("JUGGLER1").getApplicationByName("app1").getRole("role2").setName("role1");
+            commit();
+            Assert.fail("Expected exception");
+        } catch (ModelDuplicateException e) {
+        }
+
+        resetSession();
+    }
+
+    @Test
+    public void testRealmRoleCollisions() throws Exception {
+        realmManager.createRealm("JUGGLER1").addRole("role1");
+        realmManager.getRealmByName("JUGGLER1").addApplication("app1").addRole("role1");
+        realmManager.getRealmByName("JUGGLER1").addApplication("app2").addRole("role1");
+
+        commit();
+
+        // Try to add role with same name
+        try {
+            realmManager.getRealmByName("JUGGLER1").addRole("role1");
+            commit();
+            Assert.fail("Expected exception");
+        } catch (ModelDuplicateException e) {
+        }
+        commit(true);
+
+        // Ty to rename role to duplicate name
+        realmManager.getRealmByName("JUGGLER1").addRole("role2");
+        commit();
+        try {
+            realmManager.getRealmByName("JUGGLER1").getRole("role2").setName("role1");
+            commit();
+            Assert.fail("Expected exception");
+        } catch (ModelDuplicateException e) {
+        }
+
+        resetSession();
+    }
+
 }

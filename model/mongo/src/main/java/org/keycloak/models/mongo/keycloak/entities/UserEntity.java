@@ -17,8 +17,8 @@ import java.util.Map;
  */
 @MongoCollection(collectionName = "users")
 @MongoIndexes({
-        @MongoIndex(name = "loginName-within-realm", fields = { "realmId", "loginName" }, unique = true),
-        @MongoIndex(name = "email-within-realm", fields = { "emailRealm" }, unique = true, sparse = true),
+        @MongoIndex(fields = { "realmId", "loginName" }, unique = true),
+        @MongoIndex(fields = { "emailIndex" }, unique = true, sparse = true),
 })
 public class UserEntity extends AbstractMongoIdentifiableEntity implements MongoEntity {
 
@@ -84,11 +84,11 @@ public class UserEntity extends AbstractMongoIdentifiableEntity implements Mongo
 
     @MongoField
     // TODO This is required as Mongo doesn't support sparse indexes with compound keys (see https://jira.mongodb.org/browse/SERVER-2193)
-    public String getEmailRealm() {
+    public String getEmailIndex() {
         return email != null ? realmId + "//" + email : null;
     }
 
-    public void setEmailRealm(String emailRealm) {
+    public void setEmailIndex(String ignored) {
     }
 
     @MongoField

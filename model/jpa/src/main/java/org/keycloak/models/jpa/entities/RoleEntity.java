@@ -9,6 +9,8 @@ import javax.persistence.InheritanceType;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
+import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -20,18 +22,20 @@ import org.hibernate.annotations.GenericGenerator;
  */
 @Entity
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@Table(uniqueConstraints = {
+        @UniqueConstraint(columnNames = { "name", "application" }),
+        @UniqueConstraint(columnNames = { "name", "realm" })
+})
 public abstract class RoleEntity {
     @Id
     @GenericGenerator(name="keycloak_generator", strategy="org.keycloak.models.jpa.utils.JpaIdGenerator")
     @GeneratedValue(generator = "keycloak_generator")
     private String id;
 
-    private String name;
     private String description;
     @ManyToMany(fetch = FetchType.LAZY, cascade = {})
     @JoinTable(name = "CompositeRole", joinColumns = @JoinColumn(name = "composite"), inverseJoinColumns = @JoinColumn(name = "role"))
     private Collection<RoleEntity> compositeRoles = new ArrayList<RoleEntity>();
-
 
     public String getId() {
         return id;
@@ -41,13 +45,9 @@ public abstract class RoleEntity {
         this.id = id;
     }
 
-    public String getName() {
-        return name;
-    }
+    public abstract String getName();
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    public abstract void setName(String name);
 
     public String getDescription() {
         return description;

@@ -525,13 +525,6 @@ public class RealmAdapter extends AbstractMongoAdapter<RealmEntity> implements R
 
     @Override
     public RoleModel addRole(String name) {
-        RoleAdapter role = getRole(name);
-        if (role != null) {
-            // Compatibility with JPA model
-            return role;
-            // throw new IllegalArgumentException("Role " + name + " already exists");
-        }
-
         RoleEntity roleEntity = new RoleEntity();
         roleEntity.setName(name);
         roleEntity.setRealmId(getId());
