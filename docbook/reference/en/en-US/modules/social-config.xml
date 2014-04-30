@@ -8,7 +8,7 @@
     <section>
         <title>Enable social login</title>
         <para>
-            To configure your SMTP server, open the <literal>Keycloak Admin Console</literal>, select your realm from the
+            To configure social login, open the <literal>Keycloak Admin Console</literal>, select your realm from the
             drop-down box in the top left corner. In the <literal>Login Options</literal> section click on
             <literal>Social login</literal> to set it to <literal>ON</literal>. Click save settings, then click on
             <literal>Social</literal> in the menu at the top.
@@ -17,6 +17,16 @@
             To enable a social provider select the provider you want from the drop-down and click on
             <literal>Add Provider</literal>. Then continue to the section below that provides specific instructions for
             the provider you are adding.
+        </para>
+    </section>
+
+    <section>
+        <title>Social-only login</title>
+        <para>
+            It's possible to configure a realm to only allow social login. To do this open the <literal>Keycloak Admin Console</literal>,
+            select your realm from the drop-down box in the top left corner. Click the <literal>Credentials</literal> tab, and
+            click on the <literal>x</literal> next to <literal>password</literal> in the <literal>Required User Credentials</literal>.
+            This will disable login with username and password.
         </para>
     </section>
 
