@@ -1,15 +1,11 @@
 package org.keycloak.services.managers;
 
-import org.jboss.resteasy.logging.Logger;
-import org.jboss.resteasy.spi.HttpResponse;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.UnauthorizedException;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
-import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
-import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -99,7 +95,7 @@ public class AppAuthManager extends AuthenticationManager {
         logger.info("authenticateCookie");
         Cookie cookie = headers.getCookies().get(cookieName);
         if (cookie == null) {
-            logger.info("authenticateCookie could not find cookie: {0}", cookieName);
+            logger.infov("authenticateCookie could not find cookie: {0}", cookieName);
             return null;
         }
 

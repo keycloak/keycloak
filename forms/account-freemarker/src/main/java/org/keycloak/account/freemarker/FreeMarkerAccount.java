@@ -22,6 +22,7 @@ import org.keycloak.models.UserModel;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.net.URI;
@@ -85,6 +86,11 @@ public class FreeMarkerAccount implements Account {
         }
 
         URI baseUri = uriInfo.getBaseUri();
+        UriBuilder baseUriBuilder = uriInfo.getBaseUriBuilder();
+        for (Map.Entry<String, List<String>> e : uriInfo.getQueryParameters().entrySet()) {
+           baseUriBuilder.queryParam(e.getKey(), e.getValue().toArray());
+        }
+        URI baseQueryUri = baseUriBuilder.build();
 
         if (message != null) {
             attributes.put("message", new MessageBean(messages.containsKey(message) ? messages.getProperty(message) : message, messageType));
@@ -94,7 +100,7 @@ public class FreeMarkerAccount implements Account {
             attributes.put("referrer", new ReferrerBean(referrer));
         }
 
-        attributes.put("url", new UrlBean(realm, theme, baseUri));
+        attributes.put("url", new UrlBean(realm, theme, baseUri, baseQueryUri));
 
         attributes.put("features", new FeaturesBean(social, audit, passwordUpdateSupported));
 

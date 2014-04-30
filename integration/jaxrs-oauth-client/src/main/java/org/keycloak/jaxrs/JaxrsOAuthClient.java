@@ -1,6 +1,6 @@
 package org.keycloak.jaxrs;
 
-import org.jboss.resteasy.logging.Logger;
+import org.jboss.logging.Logger;
 import org.keycloak.AbstractOAuthClient;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.representations.AccessTokenResponse;

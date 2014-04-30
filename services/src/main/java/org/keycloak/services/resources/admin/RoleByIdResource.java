@@ -1,10 +1,9 @@
 package org.keycloak.services.resources.admin;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.Constants;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;

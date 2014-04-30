@@ -1,7 +1,7 @@
 package org.keycloak.services.resources.admin;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.jboss.resteasy.spi.NotFoundException;
@@ -21,7 +21,12 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.resources.flows.Flows;
 
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
@@ -97,7 +102,7 @@ public class RealmsAdminResource {
             throw new ForbiddenException();
         }
 
-        logger.debug("importRealm: {0}", rep.getRealm());
+        logger.debugv("importRealm: {0}", rep.getRealm());
         RealmManager realmManager = new RealmManager(session);
 
         try {
@@ -105,7 +110,7 @@ public class RealmsAdminResource {
             grantPermissionsToRealmCreator(realm);
 
             URI location = realmUrl(uriInfo).build(realm.getName());
-            logger.debug("imported realm success, sending back: {0}", location.toString());
+            logger.debugv("imported realm success, sending back: {0}", location.toString());
             return Response.created(location).build();
         } catch (ModelDuplicateException e) {
             return Flows.errors().exists("Realm " + rep.getRealm() + " already exists");

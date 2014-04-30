@@ -1,7 +1,7 @@
 package org.keycloak.services.resources;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.logging.Logger;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
@@ -14,6 +14,8 @@ import org.keycloak.audit.Audit;
 import org.keycloak.audit.Details;
 import org.keycloak.audit.Errors;
 import org.keycloak.audit.Events;
+import org.keycloak.authentication.AuthenticationProviderException;
+import org.keycloak.authentication.AuthenticationProviderManager;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.ClientModel;
@@ -40,8 +42,6 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.OAuthFlows;
 import org.keycloak.services.validation.Validation;
-import org.keycloak.authentication.AuthenticationProviderException;
-import org.keycloak.authentication.AuthenticationProviderManager;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.Time;
 
@@ -718,7 +718,7 @@ public class TokenService {
         // authenticate identity cookie, but ignore an access token timeout as we're logging out anyways.
         UserModel user = authManager.authenticateIdentityCookie(realm, uriInfo, headers, false);
         if (user != null) {
-            logger.info("Logging out: {0}", user.getLoginName());
+            logger.infov("Logging out: {0}", user.getLoginName());
             authManager.expireIdentityCookie(realm, uriInfo);
             authManager.expireRememberMeCookie(realm, uriInfo);
             resourceAdminManager.logoutUser(realm, user);

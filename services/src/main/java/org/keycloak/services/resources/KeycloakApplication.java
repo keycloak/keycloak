@@ -1,7 +1,7 @@
 package org.keycloak.services.resources;
 
 import org.jboss.resteasy.core.Dispatcher;
-import org.jboss.resteasy.logging.Logger;
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.SkeletonKeyContextResolver;
 import org.keycloak.audit.AuditListener;

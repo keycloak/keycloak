@@ -2,7 +2,7 @@ package org.keycloak.services.managers;
 
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.annotate.JsonPropertyOrder;
-import org.jboss.resteasy.logging.Logger;
+import org.jboss.logging.Logger;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClaimMask;
 import org.keycloak.models.ClientModel;
@@ -77,7 +77,7 @@ public class ApplicationManager {
         }
         if (resourceRep.getWebOrigins() != null) {
             for (String webOrigin : resourceRep.getWebOrigins()) {
-                logger.debug("Application: {0} webOrigin: {1}", resourceRep.getName(), webOrigin);
+                logger.debugv("Application: {0} webOrigin: {1}", resourceRep.getName(), webOrigin);
                 applicationModel.addWebOrigin(webOrigin);
             }
         }

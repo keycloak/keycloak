@@ -1,6 +1,6 @@
 package org.keycloak.services.managers;
 
-import org.jboss.resteasy.logging.Logger;
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.audit.Audit;

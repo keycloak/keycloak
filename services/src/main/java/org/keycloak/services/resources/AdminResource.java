@@ -1,6 +1,6 @@
 package org.keycloak.services.resources;
 
-import org.jboss.resteasy.logging.Logger;
+import org.jboss.logging.Logger;
 import org.keycloak.models.Config;
 import org.keycloak.freemarker.Theme;
 import org.keycloak.freemarker.ThemeLoader;

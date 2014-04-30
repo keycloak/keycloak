@@ -57,6 +57,7 @@ import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.KeycloakRule.KeycloakSetup;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
 import java.util.Collections;
@@ -166,6 +167,19 @@ public class AccountTest {
 
         Assert.assertTrue(appPage.isCurrent());
         Assert.assertEquals(appPage.baseUrl + "?test", driver.getCurrentUrl());
+
+        driver.navigate().to(AccountUpdateProfilePage.PATH + "?referrer=test-app");
+        Assert.assertTrue(profilePage.isCurrent());
+
+        driver.findElement(By.linkText("Authenticator")).click();
+        Assert.assertTrue(totpPage.isCurrent());
+
+        driver.findElement(By.linkText("Account")).click();
+        Assert.assertTrue(profilePage.isCurrent());
+
+        profilePage.backToApplication();
+
+        Assert.assertTrue(appPage.isCurrent());
 
         events.clear();
     }

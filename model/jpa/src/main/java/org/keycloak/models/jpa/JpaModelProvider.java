@@ -1,9 +1,7 @@
 package org.keycloak.models.jpa;
 
-import java.util.Map;
 import java.util.Properties;
 
-import org.jboss.resteasy.logging.Logger;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ModelProvider;
 
