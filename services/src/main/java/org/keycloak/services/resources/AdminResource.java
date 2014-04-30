@@ -49,7 +49,6 @@ public class AdminResource {
             InputStream resource = theme.getResourceAsStream(path);
             if (resource != null) {
                 String contentType = mimeTypes.getContentType(path);
-                logger.info("contentType: " + contentType);
                 return Response.ok(resource).type(contentType).build();
             } else {
                 return Response.status(Response.Status.NOT_FOUND).build();
