@@ -5,14 +5,11 @@ import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.ServiceUrlConstants;
 import org.keycloak.representations.adapters.config.AdapterConfig;
-import org.keycloak.util.EnvUtil;
 import org.keycloak.util.KeycloakUriBuilder;
-import org.keycloak.util.KeystoreUtil;
 import org.keycloak.util.PemUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.KeyStore;
 import java.security.PublicKey;
 
 /**
@@ -22,12 +19,11 @@ import java.security.PublicKey;
 public class KeycloakDeploymentBuilder {
     protected KeycloakDeployment deployment = new KeycloakDeployment();
 
-    protected KeycloakDeploymentBuilder() {}
-
+    protected KeycloakDeploymentBuilder() {
+    }
 
 
     protected KeycloakDeployment internalBuild(AdapterConfig adapterConfig) {
-        deployment.setConfigured(true);
         if (adapterConfig.getRealm() == null) throw new RuntimeException("Must set 'realm' in config");
         deployment.setRealm(adapterConfig.getRealm());
         String resource = adapterConfig.getResource();
@@ -35,17 +31,15 @@ public class KeycloakDeploymentBuilder {
         deployment.setResourceName(resource);
 
         String realmKeyPem = adapterConfig.getRealmKey();
-        if (realmKeyPem == null) {
-            throw new IllegalArgumentException("You must set the realm-public-key");
+        if (realmKeyPem != null) {
+            PublicKey realmKey = null;
+            try {
+                realmKey = PemUtils.decodePublicKey(realmKeyPem);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            deployment.setRealmKey(realmKey);
         }
-
-        PublicKey realmKey = null;
-        try {
-            realmKey = PemUtils.decodePublicKey(realmKeyPem);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        deployment.setRealmKey(realmKey);
         deployment.setSslRequired(!adapterConfig.isSslNotRequired());
         deployment.setResourceCredentials(adapterConfig.getCredentials());
         deployment.setPublicClient(adapterConfig.isPublicClient());
@@ -58,28 +52,21 @@ public class KeycloakDeploymentBuilder {
             deployment.setCorsAllowedMethods(adapterConfig.getCorsAllowedMethods());
         }
 
+        deployment.setBearerOnly(adapterConfig.isBearerOnly());
+
         if (adapterConfig.isBearerOnly()) {
-            deployment.setBearerOnly(true);
-            return deployment;
         }
 
-        deployment.setClient(new HttpClientBuilder().build(adapterConfig));
-        if (adapterConfig.getAuthServerUrl() == null) {
+        if (realmKeyPem == null && adapterConfig.isBearerOnly() && adapterConfig.getAuthServerUrl() == null) {
+            throw new IllegalArgumentException("For bearer auth, you must set the realm-public-key or auth-server-url");
+        }
+        if (realmKeyPem == null || !deployment.isBearerOnly()) {
+            deployment.setClient(new HttpClientBuilder().build(adapterConfig));
+        }
+        if (adapterConfig.getAuthServerUrl() == null && (!deployment.isBearerOnly() || realmKeyPem == null)) {
             throw new RuntimeException("You must specify auth-url");
         }
-        KeycloakUriBuilder serverBuilder = KeycloakUriBuilder.fromUri(adapterConfig.getAuthServerUrl());
-        String authUrl = serverBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_LOGIN_PATH).build(adapterConfig.getRealm()).toString();
-        String tokenUrl = serverBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_ACCESS_CODE_PATH).build(adapterConfig.getRealm()).toString();
-        String refreshUrl = serverBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_REFRESH_PATH).build(adapterConfig.getRealm()).toString();
-        String logoutUrl = serverBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_LOGOUT_PATH).build(adapterConfig.getRealm()).toString();
-        String accountUrl = serverBuilder.clone().path(ServiceUrlConstants.ACCOUNT_SERVICE_PATH).build(adapterConfig.getRealm()).toString();
-
-        deployment.setAuthUrl(KeycloakUriBuilder.fromUri(authUrl).queryParam(OAuth2Constants.CLIENT_ID, deployment.getResourceName()));
-        deployment.setCodeUrl(tokenUrl);
-        deployment.setRefreshUrl(refreshUrl);
-        deployment.setLogoutUrl(KeycloakUriBuilder.fromUri(logoutUrl));
-        deployment.setAccountUrl(accountUrl);
-
+        deployment.setAuthServerBaseUrl(adapterConfig.getAuthServerUrl());
         return deployment;
     }
 

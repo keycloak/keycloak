@@ -25,32 +25,46 @@ public class PreAuthActionsHandler {
     private static final Logger log = Logger.getLogger(PreAuthActionsHandler.class);
 
     protected UserSessionManagement userSessionManagement;
+    protected AdapterDeploymentContext deploymentContext;
     protected KeycloakDeployment deployment;
     protected HttpFacade facade;
 
-    public PreAuthActionsHandler(UserSessionManagement userSessionManagement, KeycloakDeployment deployment, HttpFacade facade) {
+    public PreAuthActionsHandler(UserSessionManagement userSessionManagement, AdapterDeploymentContext deploymentContext, HttpFacade facade) {
         this.userSessionManagement = userSessionManagement;
-        this.deployment = deployment;
+        this.deploymentContext = deploymentContext;
         this.facade = facade;
     }
 
+    protected boolean resolveDeployment() {
+        deployment = deploymentContext.resolveDeployment(facade);
+        if (!deployment.isConfigured()) {
+            log.warn("can't take request, adapter not configured");
+            facade.getResponse().sendError(403, "adapter not configured");
+            return false;
+        }
+        return true;
+    }
+
     public boolean handleRequest() {
-        if (!deployment.isConfigured()) return false;
         String requestUri = facade.getRequest().getURI();
         log.debugv("adminRequest {0}", requestUri);
         if (preflightCors()) {
             return true;
         }
         if (requestUri.endsWith(AdapterConstants.K_LOGOUT)) {
+            if (!resolveDeployment()) return true;
             handleLogout();
             return true;
         } else if (requestUri.endsWith(AdapterConstants.K_PUSH_NOT_BEFORE)) {
+            if (!resolveDeployment()) return true;
             handlePushNotBefore();
             return true;
         } else if (requestUri.endsWith(AdapterConstants.K_GET_SESSION_STATS)) {
+            if (!resolveDeployment()) return true;
             handleGetSessionStats();
             return true;
         }else if (requestUri.endsWith(AdapterConstants.K_GET_USER_STATS)) {
+            if (!resolveDeployment()) return true;
             handleGetUserStats();
             return true;
         }
@@ -58,6 +72,9 @@ public class PreAuthActionsHandler {
     }
 
     public boolean preflightCors() {
+        // don't need to resolve deployment on cors requests.  Just need to know local cors config.
+        KeycloakDeployment deployment = deploymentContext.getDeployment();
+        if (!deployment.isCors()) return false;
         log.debugv("checkCorsPreflight {0}", facade.getRequest().getURI());
         if (!facade.getRequest().getMethod().equalsIgnoreCase("OPTIONS")) {
             return false;
@@ -134,6 +151,11 @@ public class PreAuthActionsHandler {
     }
 
     protected JWSInput verifyAdminRequest() throws Exception {
+        if (deployment.isSslRequired() && !facade.getRequest().isSecure()) {
+            log.warn("SSL is required for adapter admin action");
+            facade.getResponse().sendError(403, "ssl required");
+
+        }
         String token = StreamUtil.readString(facade.getRequest().getInputStream());
         if (token == null) {
             log.warn("admin request failed, no token");

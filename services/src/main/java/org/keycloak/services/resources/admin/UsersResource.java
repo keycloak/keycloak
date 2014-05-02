@@ -172,7 +172,7 @@ public class UsersResource {
         Map<String, UserStats> stats = new HashMap<String, UserStats>();
         for (ApplicationModel applicationModel : realm.getApplications()) {
             if (applicationModel.getManagementUrl() == null) continue;
-            UserStats appStats = new ResourceAdminManager().getUserStats(realm, applicationModel, user);
+            UserStats appStats = new ResourceAdminManager().getUserStats(uriInfo.getRequestUri(), realm, applicationModel, user);
             if (appStats == null) continue;
             if (appStats.isLoggedIn()) stats.put(applicationModel.getName(), appStats);
         }
@@ -189,7 +189,7 @@ public class UsersResource {
         }
         // set notBefore so that user will be forced to log in.
         user.setNotBefore(Time.currentTime());
-        new ResourceAdminManager().logoutUser(realm, user);
+        new ResourceAdminManager().logoutUser(uriInfo.getRequestUri(), realm, user);
     }
 
 

@@ -1,8 +1,12 @@
 package org.keycloak.adapters;
 
 import org.apache.http.client.HttpClient;
+import org.jboss.logging.Logger;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.ServiceUrlConstants;
 import org.keycloak.util.KeycloakUriBuilder;
 
+import java.net.URI;
 import java.security.PublicKey;
 import java.util.HashMap;
 import java.util.Map;
@@ -12,9 +16,14 @@ import java.util.Map;
  * @version $Revision: 1 $
  */
 public class KeycloakDeployment {
-    protected boolean configured;
+    private static final Logger log = Logger.getLogger(KeycloakDeployment.class);
+
+    protected boolean relativeUrls;
     protected String realm;
     protected PublicKey realmKey;
+    protected KeycloakUriBuilder serverBuilder;
+    protected String authServerBaseUrl;
+    protected String realmInfoUrl;
     protected KeycloakUriBuilder authUrl;
     protected String codeUrl;
     protected String refreshUrl;
@@ -38,12 +47,11 @@ public class KeycloakDeployment {
     protected boolean exposeToken;
     protected volatile int notBefore;
 
-    public boolean isConfigured() {
-        return configured;
+    public KeycloakDeployment() {
     }
 
-    public void setConfigured(boolean configured) {
-        this.configured = configured;
+    public boolean isConfigured() {
+        return getRealm() != null && getRealmKey() != null && (isBearerOnly() || getAuthServerBaseUrl() != null);
     }
 
     public String getResourceName() {
@@ -66,28 +74,54 @@ public class KeycloakDeployment {
         this.realmKey = realmKey;
     }
 
-    public KeycloakUriBuilder getAuthUrl() {
-        return authUrl;
+    public String getAuthServerBaseUrl() {
+        return authServerBaseUrl;
     }
 
-    public void setAuthUrl(KeycloakUriBuilder authUrl) {
-        this.authUrl = authUrl;
+    public void setAuthServerBaseUrl(String authServerBaseUrl) {
+        this.authServerBaseUrl = authServerBaseUrl;
+        if (authServerBaseUrl == null) return;
+
+        URI uri = URI.create(authServerBaseUrl);
+        if (uri.getHost() == null) {
+            relativeUrls = true;
+            return;
+        }
+
+        relativeUrls = false;
+
+        serverBuilder = KeycloakUriBuilder.fromUri(authServerBaseUrl);
+        String login = serverBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_LOGIN_PATH).build(getRealm()).toString();
+        authUrl = KeycloakUriBuilder.fromUri(login);
+        refreshUrl = serverBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_REFRESH_PATH).build(getRealm()).toString();
+        logoutUrl = KeycloakUriBuilder.fromUri(serverBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_LOGOUT_PATH).build(getRealm()).toString());
+        accountUrl = serverBuilder.clone().path(ServiceUrlConstants.ACCOUNT_SERVICE_PATH).build(getRealm()).toString();
+        realmInfoUrl = serverBuilder.clone().path(ServiceUrlConstants.REALM_INFO_PATH).build(getRealm()).toString();
+        codeUrl = serverBuilder.clone().path(ServiceUrlConstants.TOKEN_SERVICE_ACCESS_CODE_PATH).build(getRealm()).toString();
+    }
+
+    public String getRealmInfoUrl() {
+        return realmInfoUrl;
+    }
+
+    public KeycloakUriBuilder getAuthUrl() {
+        return authUrl;
     }
 
     public String getCodeUrl() {
         return codeUrl;
     }
 
-    public void setCodeUrl(String codeUrl) {
-        this.codeUrl = codeUrl;
-    }
-
     public String getRefreshUrl() {
         return refreshUrl;
     }
 
-    public void setRefreshUrl(String refreshUrl) {
-        this.refreshUrl = refreshUrl;
+    public KeycloakUriBuilder getLogoutUrl() {
+        return logoutUrl;
+    }
+
+    public String getAccountUrl() {
+        return accountUrl;
     }
 
     public void setResourceName(String resourceName) {
@@ -206,19 +240,4 @@ public class KeycloakDeployment {
         this.notBefore = notBefore;
     }
 
-    public KeycloakUriBuilder getLogoutUrl() {
-        return logoutUrl;
-    }
-
-    public void setLogoutUrl(KeycloakUriBuilder logoutUrl) {
-        this.logoutUrl = logoutUrl;
-    }
-
-    public String getAccountUrl() {
-        return accountUrl;
-    }
-
-    public void setAccountUrl(String accountUrl) {
-        this.accountUrl = accountUrl;
-    }
 }

@@ -63,7 +63,9 @@ import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Providers;
+import java.net.URI;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -288,7 +290,7 @@ public class TokenService {
             return oauth.forwardToSecurityFailure("Login requester not enabled.");
         }
 
-        redirect = verifyRedirectUri(redirect, client);
+        redirect = verifyRedirectUri(uriInfo, redirect, client);
         if (redirect == null) {
             audit.error(Errors.INVALID_REDIRECT_URI);
             return oauth.forwardToSecurityFailure("Invalid redirect_uri.");
@@ -377,7 +379,7 @@ public class TokenService {
             return oauth.forwardToSecurityFailure("Login requester not enabled.");
         }
 
-        redirect = verifyRedirectUri(redirect, client);
+        redirect = verifyRedirectUri(uriInfo, redirect, client);
         if (redirect == null) {
             audit.error(Errors.INVALID_REDIRECT_URI);
             return oauth.forwardToSecurityFailure("Invalid redirect_uri.");
@@ -636,7 +638,7 @@ public class TokenService {
             audit.error(Errors.CLIENT_DISABLED);
             return oauth.forwardToSecurityFailure("Login requester not enabled.");
         }
-        redirect = verifyRedirectUri(redirect, client);
+        redirect = verifyRedirectUri(uriInfo, redirect, client);
         if (redirect == null) {
             audit.error(Errors.INVALID_REDIRECT_URI);
             return oauth.forwardToSecurityFailure("Invalid redirect_uri.");
@@ -690,7 +692,7 @@ public class TokenService {
             return oauth.forwardToSecurityFailure("Login requester not enabled.");
         }
 
-        redirect = verifyRedirectUri(redirect, client);
+        redirect = verifyRedirectUri(uriInfo, redirect, client);
         if (redirect == null) {
             audit.error(Errors.INVALID_REDIRECT_URI);
             return oauth.forwardToSecurityFailure("Invalid redirect_uri.");
@@ -721,7 +723,7 @@ public class TokenService {
             logger.infov("Logging out: {0}", user.getLoginName());
             authManager.expireIdentityCookie(realm, uriInfo);
             authManager.expireRememberMeCookie(realm, uriInfo);
-            resourceAdminManager.logoutUser(realm, user);
+            resourceAdminManager.logoutUser(uriInfo.getRequestUri(), realm, user);
 
             audit.user(user).success();
         } else {
@@ -813,10 +815,11 @@ public class TokenService {
         return false;
     }
 
-    public static String verifyRedirectUri(String redirectUri, ClientModel client) {
+    public static String verifyRedirectUri(UriInfo uriInfo, String redirectUri, ClientModel client) {
+        Set<String> validRedirects = client.getRedirectUris();
         if (redirectUri == null) {
-            return client.getRedirectUris().size() == 1 ? client.getRedirectUris().iterator().next() : null;
-        } else if (client.getRedirectUris().isEmpty()) {
+            return validRedirects.size() == 1 ? validRedirects.iterator().next() : null;
+        } else if (validRedirects.isEmpty()) {
             if (client.isPublicClient()) {
                 logger.error("Client redirect uri must be registered for public client");
                 return null;
@@ -825,7 +828,22 @@ public class TokenService {
         } else {
             String r = redirectUri.indexOf('?') != -1 ? redirectUri.substring(0, redirectUri.indexOf('?')) : redirectUri;
 
-            boolean valid = matchesRedirects(client.getRedirectUris(), r);
+            // If the valid redirect URI is relative (no scheme, host, port) then use the request's scheme, host, and port
+            Set<String> resolveValidRedirects = new HashSet<String>();
+            for (String validRedirect : validRedirects) {
+                if (validRedirect.startsWith("/")) {
+                    URI baseUri = uriInfo.getBaseUri();
+                    String uri = baseUri.getScheme() + "://" + baseUri.getHost();
+                    if (baseUri.getPort() != -1) {
+                        uri += ":" + baseUri.getPort();
+                    }
+                    validRedirect = uri + validRedirect;
+                    logger.debugv("replacing relative valid redirect with: {0}", validRedirect);
+                }
+                resolveValidRedirects.add(validRedirect);
+            }
+
+            boolean valid = matchesRedirects(resolveValidRedirects, r);
 
             if (!valid && r.startsWith(Constants.INSTALLED_APP_URL) && r.indexOf(':', Constants.INSTALLED_APP_URL.length()) >= 0) {
                 int i = r.indexOf(':', Constants.INSTALLED_APP_URL.length());
@@ -840,9 +858,8 @@ public class TokenService {
 
                 r = sb.toString();
 
-                valid = matchesRedirects(client.getRedirectUris(), r);
+                valid = matchesRedirects(resolveValidRedirects, r);
             }
-
             return valid ? redirectUri : null;
         }
     }

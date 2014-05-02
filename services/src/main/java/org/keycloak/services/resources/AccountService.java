@@ -56,6 +56,7 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.OAuthRedirect;
 import org.keycloak.services.resources.flows.Urls;
+import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.social.SocialLoader;
 import org.keycloak.social.SocialProvider;
@@ -512,9 +513,9 @@ public class AccountService {
         ApplicationModel application = realm.getApplicationByName(referrer);
         if (application != null) {
             if (referrerUri != null) {
-                referrerUri = TokenService.verifyRedirectUri(referrerUri, application);
+                referrerUri = TokenService.verifyRedirectUri(uriInfo, referrerUri, application);
             } else {
-                referrerUri = application.getBaseUrl();
+                referrerUri = ResolveRelative.resolveRelativeUri(uriInfo.getRequestUri(), application.getBaseUrl());
             }
 
             if (referrerUri != null) {
@@ -523,7 +524,7 @@ public class AccountService {
         } else if (referrerUri != null) {
             ClientModel client = realm.getOAuthClient(referrer);
             if (client != null) {
-                referrerUri = TokenService.verifyRedirectUri(referrerUri, application);
+                referrerUri = TokenService.verifyRedirectUri(uriInfo, referrerUri, application);
 
                 if (referrerUri != null) {
                     return new String[]{referrer, referrerUri};

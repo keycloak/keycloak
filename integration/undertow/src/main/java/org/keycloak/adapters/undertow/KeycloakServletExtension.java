@@ -14,6 +14,7 @@ import io.undertow.servlet.api.ServletSessionConfig;
 import java.io.ByteArrayInputStream;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.AdapterConstants;
+import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.AuthenticatedActionsHandler;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
@@ -80,16 +81,22 @@ public class KeycloakServletExtension implements ServletExtension {
         }
         log.info("KeycloakServletException initialization");
         InputStream is = getConfigInputStream(servletContext);
-        if (is == null) throw new RuntimeException("Unable to find realm config in /WEB-INF/keycloak.json or in keycloak subsystem.");
-        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(is);
-        UndertowUserSessionManagement userSessionManagement = new UndertowUserSessionManagement(deployment);
-        final ServletKeycloakAuthMech mech = createAuthenticationMechanism(deploymentInfo, deployment, userSessionManagement);
+        KeycloakDeployment deployment = null;
+        if (is == null) {
+            throw new RuntimeException("Unable to find realm config in /WEB-INF/keycloak.json or in keycloak subsystem.");
+        } else {
+            deployment = KeycloakDeploymentBuilder.build(is);
 
-        UndertowAuthenticatedActionsHandler.Wrapper actions = new UndertowAuthenticatedActionsHandler.Wrapper(deployment);
+        }
+        AdapterDeploymentContext deploymentContext = new AdapterDeploymentContext(deployment);
+        UndertowUserSessionManagement userSessionManagement = new UndertowUserSessionManagement();
+        final ServletKeycloakAuthMech mech = createAuthenticationMechanism(deploymentInfo, deploymentContext, userSessionManagement);
+
+        UndertowAuthenticatedActionsHandler.Wrapper actions = new UndertowAuthenticatedActionsHandler.Wrapper(deploymentContext);
 
         // setup handlers
 
-        deploymentInfo.addOuterHandlerChainWrapper(new ServletPreAuthActionsHandler.Wrapper(deployment, userSessionManagement));
+        deploymentInfo.addOuterHandlerChainWrapper(new ServletPreAuthActionsHandler.Wrapper(deploymentContext, userSessionManagement));
         deploymentInfo.addAuthenticationMechanism("KEYCLOAK", new AuthenticationMechanismFactory() {
             @Override
             public AuthenticationMechanism create(String s, FormParserFactory formParserFactory, Map<String, String> stringStringMap) {
@@ -121,8 +128,8 @@ public class KeycloakServletExtension implements ServletExtension {
         deploymentInfo.setServletSessionConfig(cookieConfig);
     }
 
-    protected ServletKeycloakAuthMech createAuthenticationMechanism(DeploymentInfo deploymentInfo, KeycloakDeployment deployment, UndertowUserSessionManagement userSessionManagement) {
+    protected ServletKeycloakAuthMech createAuthenticationMechanism(DeploymentInfo deploymentInfo, AdapterDeploymentContext deploymentContext, UndertowUserSessionManagement userSessionManagement) {
        log.info("creating ServletKeycloakAuthMech");
-       return new ServletKeycloakAuthMech(deployment, userSessionManagement, deploymentInfo.getConfidentialPortManager());
+       return new ServletKeycloakAuthMech(deploymentContext, userSessionManagement, deploymentInfo.getConfidentialPortManager());
     }
 }
