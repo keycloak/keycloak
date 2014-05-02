@@ -290,7 +290,7 @@ public class SocialResource {
             logger.warn("Login requester not enabled.");
             return Flows.forms(realm, uriInfo).setError("Login requester not enabled.").createErrorPage();
         }
-        redirectUri = TokenService.verifyRedirectUri(redirectUri, client);
+        redirectUri = TokenService.verifyRedirectUri(uriInfo, redirectUri, client);
         if (redirectUri == null) {
             audit.error(Errors.INVALID_REDIRECT_URI);
             return Flows.forms(realm, uriInfo).setError("Invalid redirect_uri.").createErrorPage();

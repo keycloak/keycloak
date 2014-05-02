@@ -512,7 +512,7 @@ public class AccountService {
         ApplicationModel application = realm.getApplicationByName(referrer);
         if (application != null) {
             if (referrerUri != null) {
-                referrerUri = TokenService.verifyRedirectUri(referrerUri, application);
+                referrerUri = TokenService.verifyRedirectUri(uriInfo, referrerUri, application);
             } else {
                 referrerUri = application.getBaseUrl();
             }
@@ -523,7 +523,7 @@ public class AccountService {
         } else if (referrerUri != null) {
             ClientModel client = realm.getOAuthClient(referrer);
             if (client != null) {
-                referrerUri = TokenService.verifyRedirectUri(referrerUri, application);
+                referrerUri = TokenService.verifyRedirectUri(uriInfo, referrerUri, application);
 
                 if (referrerUri != null) {
                     return new String[]{referrer, referrerUri};
