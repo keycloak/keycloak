@@ -17,11 +17,12 @@ import org.keycloak.representations.adapters.action.SessionStatsAction;
 import org.keycloak.representations.adapters.action.UserStats;
 import org.keycloak.representations.adapters.action.UserStatsAction;
 import org.keycloak.services.util.HttpClientBuilder;
+import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.util.Time;
 
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
+import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,11 +34,11 @@ import java.util.Map;
 public class ResourceAdminManager {
     protected static Logger logger = Logger.getLogger(ResourceAdminManager.class);
 
-    public SessionStats getSessionStats(RealmModel realm, ApplicationModel application, boolean users) {
+    public SessionStats getSessionStats(URI requestUri, RealmModel realm, ApplicationModel application, boolean users) {
         ApacheHttpClient4Executor executor = createExecutor();
 
         try {
-            return getSessionStats(realm, application, users, executor);
+            return getSessionStats(requestUri, realm, application, users, executor);
         } finally {
             executor.getHttpClient().getConnectionManager().shutdown();
         }
@@ -51,8 +52,8 @@ public class ResourceAdminManager {
         return new ApacheHttpClient4Executor(client);
     }
 
-    public SessionStats getSessionStats(RealmModel realm, ApplicationModel application, boolean users, ApacheHttpClient4Executor client) {
-        String managementUrl = application.getManagementUrl();
+    public SessionStats getSessionStats(URI requestUri, RealmModel realm, ApplicationModel application, boolean users, ApacheHttpClient4Executor client) {
+        String managementUrl = getManagementUrl(requestUri, application);
         if (managementUrl != null) {
             SessionStatsAction adminAction = new SessionStatsAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, application.getName());
             adminAction.setListUsers(users);
@@ -94,11 +95,19 @@ public class ResourceAdminManager {
 
     }
 
-    public UserStats getUserStats(RealmModel realm, ApplicationModel application, UserModel user) {
+    protected String getManagementUrl(URI requestUri, ApplicationModel application) {
+        String mgmtUrl = application.getManagementUrl();
+
+        // this is to support relative admin urls when keycloak and applications are deployed on the same machine
+        return ResolveRelative.resolveRelativeUri(requestUri, mgmtUrl);
+
+    }
+
+    public UserStats getUserStats(URI requestUri, RealmModel realm, ApplicationModel application, UserModel user) {
         ApacheHttpClient4Executor executor = createExecutor();
 
         try {
-            return getUserStats(realm, application, user, executor);
+            return getUserStats(requestUri, realm, application, user, executor);
         } finally {
             executor.getHttpClient().getConnectionManager().shutdown();
         }
@@ -106,8 +115,8 @@ public class ResourceAdminManager {
     }
 
 
-    public UserStats getUserStats(RealmModel realm, ApplicationModel application, UserModel user, ApacheHttpClient4Executor client) {
-        String managementUrl = application.getManagementUrl();
+    public UserStats getUserStats(URI requestUri, RealmModel realm, ApplicationModel application, UserModel user, ApacheHttpClient4Executor client) {
+        String managementUrl = getManagementUrl(requestUri, application);
         if (managementUrl != null) {
             UserStatsAction adminAction = new UserStatsAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, application.getName(), user.getId());
             String token = new TokenManager().encodeToken(realm, adminAction);
@@ -137,7 +146,7 @@ public class ResourceAdminManager {
 
     }
 
-    public void logoutUser(RealmModel realm, UserModel user) {
+    public void logoutUser(URI requestUri, RealmModel realm, UserModel user) {
         ApacheHttpClient4Executor executor = createExecutor();
 
         try {
@@ -145,13 +154,13 @@ public class ResourceAdminManager {
             List<ApplicationModel> resources = realm.getApplications();
             logger.debugv("logging out {0} resources ", resources.size());
             for (ApplicationModel resource : resources) {
-                logoutApplication(realm, resource, user.getId(), executor, 0);
+                logoutApplication(requestUri, realm, resource, user.getId(), executor, 0);
             }
         } finally {
             executor.getHttpClient().getConnectionManager().shutdown();
         }
     }
-    public void logoutAll(RealmModel realm) {
+    public void logoutAll(URI requestUri, RealmModel realm) {
         ApacheHttpClient4Executor executor = createExecutor();
 
         try {
@@ -159,19 +168,19 @@ public class ResourceAdminManager {
             List<ApplicationModel> resources = realm.getApplications();
             logger.debugv("logging out {0} resources ", resources.size());
             for (ApplicationModel resource : resources) {
-                logoutApplication(realm, resource, null, executor, realm.getNotBefore());
+                logoutApplication(requestUri, realm, resource, null, executor, realm.getNotBefore());
             }
         } finally {
             executor.getHttpClient().getConnectionManager().shutdown();
         }
     }
 
-    public void logoutApplication(RealmModel realm, ApplicationModel resource, String user) {
+    public void logoutApplication(URI requestUri, RealmModel realm, ApplicationModel resource, String user) {
         ApacheHttpClient4Executor executor = createExecutor();
 
         try {
             resource.setNotBefore(Time.currentTime());
-            logoutApplication(realm, resource, user, executor, resource.getNotBefore());
+            logoutApplication(requestUri, realm, resource, user, executor, resource.getNotBefore());
         } finally {
             executor.getHttpClient().getConnectionManager().shutdown();
         }
@@ -179,8 +188,8 @@ public class ResourceAdminManager {
     }
 
 
-    protected boolean logoutApplication(RealmModel realm, ApplicationModel resource, String user, ApacheHttpClient4Executor client, int notBefore) {
-        String managementUrl = resource.getManagementUrl();
+    protected boolean logoutApplication(URI requestUri, RealmModel realm, ApplicationModel resource, String user, ApacheHttpClient4Executor client, int notBefore) {
+        String managementUrl = getManagementUrl(requestUri, resource);
         if (managementUrl != null) {
             LogoutAction adminAction = new LogoutAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, resource.getName(), user, notBefore);
             String token = new TokenManager().encodeToken(realm, adminAction);
@@ -205,32 +214,32 @@ public class ResourceAdminManager {
         }
     }
 
-    public void pushRealmRevocationPolicy(RealmModel realm) {
+    public void pushRealmRevocationPolicy(URI requestUri, RealmModel realm) {
         ApacheHttpClient4Executor executor = createExecutor();
 
         try {
             for (ApplicationModel application : realm.getApplications()) {
-                pushRevocationPolicy(realm, application, realm.getNotBefore(), executor);
+                pushRevocationPolicy(requestUri, realm, application, realm.getNotBefore(), executor);
             }
         } finally {
             executor.getHttpClient().getConnectionManager().shutdown();
         }
     }
 
-    public void pushApplicationRevocationPolicy(RealmModel realm, ApplicationModel application) {
+    public void pushApplicationRevocationPolicy(URI requestUri, RealmModel realm, ApplicationModel application) {
         ApacheHttpClient4Executor executor = createExecutor();
 
         try {
-            pushRevocationPolicy(realm, application, application.getNotBefore(), executor);
+            pushRevocationPolicy(requestUri, realm, application, application.getNotBefore(), executor);
         } finally {
             executor.getHttpClient().getConnectionManager().shutdown();
         }
     }
 
 
-    protected boolean pushRevocationPolicy(RealmModel realm, ApplicationModel resource, int notBefore, ApacheHttpClient4Executor client) {
+    protected boolean pushRevocationPolicy(URI requestUri, RealmModel realm, ApplicationModel resource, int notBefore, ApacheHttpClient4Executor client) {
         if (notBefore <= 0) return false;
-        String managementUrl = resource.getManagementUrl();
+        String managementUrl = getManagementUrl(requestUri, resource);
         if (managementUrl != null) {
             PushNotBeforeAction adminAction = new PushNotBeforeAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, resource.getName(), notBefore);
             String token = new TokenManager().encodeToken(realm, adminAction);

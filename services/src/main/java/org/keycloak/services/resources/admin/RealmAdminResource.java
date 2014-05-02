@@ -32,6 +32,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,6 +57,9 @@ public class RealmAdminResource {
 
     @Context
     protected ProviderSession providers;
+
+    @Context
+    protected UriInfo uriInfo;
 
     public RealmAdminResource(RealmAuth auth, RealmModel realm, TokenManager tokenManager) {
         this.auth = auth;
@@ -145,14 +149,14 @@ public class RealmAdminResource {
     @POST
     public void pushRevocation() {
         auth.requireManage();
-        new ResourceAdminManager().pushRealmRevocationPolicy(realm);
+        new ResourceAdminManager().pushRealmRevocationPolicy(uriInfo.getRequestUri(), realm);
     }
 
     @Path("logout-all")
     @POST
     public void logoutAll() {
         auth.requireManage();
-        new ResourceAdminManager().logoutAll(realm);
+        new ResourceAdminManager().logoutAll(uriInfo.getRequestUri(), realm);
     }
 
     @Path("session-stats")
@@ -165,7 +169,7 @@ public class RealmAdminResource {
         Map<String, SessionStats> stats = new HashMap<String, SessionStats>();
         for (ApplicationModel applicationModel : realm.getApplications()) {
             if (applicationModel.getManagementUrl() == null) continue;
-            SessionStats appStats = new ResourceAdminManager().getSessionStats(realm, applicationModel, false);
+            SessionStats appStats = new ResourceAdminManager().getSessionStats(uriInfo.getRequestUri(), realm, applicationModel, false);
             stats.put(applicationModel.getName(), appStats);
         }
         return stats;

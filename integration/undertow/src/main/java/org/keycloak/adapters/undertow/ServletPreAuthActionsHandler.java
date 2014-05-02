@@ -47,13 +47,10 @@ public class ServletPreAuthActionsHandler implements HttpHandler {
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
         UndertowHttpFacade facade = new UndertowHttpFacade(exchange);
-        KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
-        if (deployment != null && deployment.isConfigured()) {
-            final ServletRequestContext servletRequestContext = exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
-            SessionManagementBridge bridge = new SessionManagementBridge(userSessionManagement, servletRequestContext.getDeployment().getSessionManager());
-            PreAuthActionsHandler handler = new PreAuthActionsHandler(bridge, deployment, facade);
-            if (handler.handleRequest()) return;
-        }
+        final ServletRequestContext servletRequestContext = exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
+        SessionManagementBridge bridge = new SessionManagementBridge(userSessionManagement, servletRequestContext.getDeployment().getSessionManager());
+        PreAuthActionsHandler handler = new PreAuthActionsHandler(bridge, deploymentContext, facade);
+        if (handler.handleRequest()) return;
         next.handleRequest(exchange);
     }
 }

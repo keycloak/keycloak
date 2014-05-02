@@ -204,7 +204,7 @@ public class ApplicationResource {
     @POST
     public void pushRevocation() {
         auth.requireManage();
-        new ResourceAdminManager().pushApplicationRevocationPolicy(realm, application);
+        new ResourceAdminManager().pushApplicationRevocationPolicy(uriInfo.getRequestUri(), realm, application);
     }
 
     @Path("session-stats")
@@ -220,7 +220,7 @@ public class ApplicationResource {
             if (users) stats.setUsers(new HashMap<String, UserStats>());
             return stats;
         }
-        SessionStats stats = new ResourceAdminManager().getSessionStats(realm, application, users);
+        SessionStats stats = new ResourceAdminManager().getSessionStats(uriInfo.getRequestUri(), realm, application, users);
         if (stats == null) {
             logger.info("app returned null stats");
         } else {
@@ -234,7 +234,7 @@ public class ApplicationResource {
     @POST
     public void logoutAll() {
         auth.requireManage();
-        new ResourceAdminManager().logoutApplication(realm, application, null);
+        new ResourceAdminManager().logoutApplication(uriInfo.getRequestUri(), realm, application, null);
     }
 
     @Path("logout-user/{username}")
@@ -245,7 +245,7 @@ public class ApplicationResource {
         if (user == null) {
             throw new NotFoundException("User not found");
         }
-        new ResourceAdminManager().logoutApplication(realm, application, user.getId());
+        new ResourceAdminManager().logoutApplication(uriInfo.getRequestUri(), realm, application, user.getId());
     }
 
 

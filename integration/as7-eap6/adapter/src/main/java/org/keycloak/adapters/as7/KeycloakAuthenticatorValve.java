@@ -107,12 +107,9 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
     public void invoke(Request request, Response response) throws IOException, ServletException {
         try {
             CatalinaHttpFacade facade = new CatalinaHttpFacade(request, response);
-            KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
-            if (deployment != null && deployment.isConfigured()) {
-                PreAuthActionsHandler handler = new PreAuthActionsHandler(userSessionManagement, deployment, facade);
-                if (handler.handleRequest()) {
-                    return;
-                }
+            PreAuthActionsHandler handler = new PreAuthActionsHandler(userSessionManagement, deploymentContext, facade);
+            if (handler.handleRequest()) {
+                return;
             }
             checkKeycloakSession(request, facade);
             super.invoke(request, response);
@@ -153,7 +150,7 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
         RefreshableKeycloakSecurityContext session = (RefreshableKeycloakSecurityContext) request.getSessionInternal().getNote(KeycloakSecurityContext.class.getName());
         if (session == null) return;
         // just in case session got serialized
-        session.setDeployment(deploymentContext.resolveDeployment(facade));
+        if (session.getDeployment() == null) session.setDeployment(deploymentContext.resolveDeployment(facade));
         if (session.isActive()) return;
 
         // FYI: A refresh requires same scope, so same roles will be set.  Otherwise, refresh will fail and token will

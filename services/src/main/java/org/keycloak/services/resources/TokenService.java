@@ -723,7 +723,7 @@ public class TokenService {
             logger.infov("Logging out: {0}", user.getLoginName());
             authManager.expireIdentityCookie(realm, uriInfo);
             authManager.expireRememberMeCookie(realm, uriInfo);
-            resourceAdminManager.logoutUser(realm, user);
+            resourceAdminManager.logoutUser(uriInfo.getRequestUri(), realm, user);
 
             audit.user(user).success();
         } else {

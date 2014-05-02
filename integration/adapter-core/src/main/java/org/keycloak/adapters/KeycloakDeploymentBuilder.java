@@ -52,16 +52,18 @@ public class KeycloakDeploymentBuilder {
             deployment.setCorsAllowedMethods(adapterConfig.getCorsAllowedMethods());
         }
 
+        deployment.setBearerOnly(adapterConfig.isBearerOnly());
+
+        if (adapterConfig.isBearerOnly()) {
+        }
+
         if (realmKeyPem == null && adapterConfig.isBearerOnly() && adapterConfig.getAuthServerUrl() == null) {
             throw new IllegalArgumentException("For bearer auth, you must set the realm-public-key or auth-server-url");
         }
-        if (adapterConfig.isBearerOnly()) {
-            deployment.setBearerOnly(true);
-            return deployment;
+        if (realmKeyPem == null || !deployment.isBearerOnly()) {
+            deployment.setClient(new HttpClientBuilder().build(adapterConfig));
         }
-
-        deployment.setClient(new HttpClientBuilder().build(adapterConfig));
-        if (adapterConfig.getAuthServerUrl() == null) {
+        if (adapterConfig.getAuthServerUrl() == null && (!deployment.isBearerOnly() || realmKeyPem == null)) {
             throw new RuntimeException("You must specify auth-url");
         }
         deployment.setAuthServerBaseUrl(adapterConfig.getAuthServerUrl());

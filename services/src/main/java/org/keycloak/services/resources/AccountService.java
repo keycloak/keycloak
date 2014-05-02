@@ -56,6 +56,7 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.OAuthRedirect;
 import org.keycloak.services.resources.flows.Urls;
+import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.social.SocialLoader;
 import org.keycloak.social.SocialProvider;
@@ -514,7 +515,7 @@ public class AccountService {
             if (referrerUri != null) {
                 referrerUri = TokenService.verifyRedirectUri(uriInfo, referrerUri, application);
             } else {
-                referrerUri = application.getBaseUrl();
+                referrerUri = ResolveRelative.resolveRelativeUri(uriInfo.getRequestUri(), application.getBaseUrl());
             }
 
             if (referrerUri != null) {

@@ -1,0 +1,9 @@
+{
+  "realm" : "demo",
+  "resource" : "product-portal",
+  "auth-server-url" : "/auth",
+  "ssl-not-required" : true,
+  "credentials" : {
+      "secret": "password"
+   }
+}

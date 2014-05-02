@@ -46,6 +46,7 @@ public class AdapterDeploymentContext {
     public KeycloakDeployment resolveDeployment(HttpFacade facade) {
         KeycloakDeployment deployment = this.deployment;
         if (deployment == null) return null;
+        if (deployment.getAuthServerBaseUrl() == null) return deployment;
         if (deployment.relativeUrls) {
             deployment = new DeploymentDelegate(this.deployment);
             deployment.setAuthServerBaseUrl(getBaseBuilder(facade, this.deployment.getAuthServerBaseUrl()).build().toString());
@@ -93,16 +94,16 @@ public class AdapterDeploymentContext {
         }
     }
 
+    /**
+     * This delegate is used to store temporary, per-request metadata like request resolved URLs.
+     * Ever method is delegated except URL get methods and isConfigured()
+     *
+     */
     protected static class DeploymentDelegate extends KeycloakDeployment {
         protected KeycloakDeployment delegate;
 
         public DeploymentDelegate(KeycloakDeployment delegate) {
             this.delegate = delegate;
-        }
-
-        @Override
-        public boolean isConfigured() {
-            return delegate.isConfigured();
         }
 
         @Override

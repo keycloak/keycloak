@@ -51,7 +51,7 @@ public class KeycloakDeployment {
     }
 
     public boolean isConfigured() {
-        return realm != null && realmKey != null && (bearerOnly || authServerBaseUrl != null);
+        return getRealm() != null && getRealmKey() != null && (isBearerOnly() || getAuthServerBaseUrl() != null);
     }
 
     public String getResourceName() {
