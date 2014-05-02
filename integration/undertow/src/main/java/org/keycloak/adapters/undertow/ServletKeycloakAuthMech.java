@@ -5,6 +5,7 @@ import io.undertow.security.api.SecurityContext;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.servlet.api.ConfidentialPortManager;
 import io.undertow.util.AttachmentKey;
+import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.AuthChallenge;
 import org.keycloak.adapters.AuthOutcome;
 import org.keycloak.adapters.KeycloakDeployment;
@@ -16,12 +17,12 @@ import org.keycloak.adapters.KeycloakDeployment;
 public class ServletKeycloakAuthMech implements AuthenticationMechanism {
     public static final AttachmentKey<AuthChallenge> KEYCLOAK_CHALLENGE_ATTACHMENT_KEY = AttachmentKey.create(AuthChallenge.class);
 
-    protected KeycloakDeployment deployment;
+    protected AdapterDeploymentContext deploymentContext;
     protected UndertowUserSessionManagement userSessionManagement;
     protected ConfidentialPortManager portManager;
 
-    public ServletKeycloakAuthMech(KeycloakDeployment deployment, UndertowUserSessionManagement userSessionManagement, ConfidentialPortManager portManager) {
-        this.deployment = deployment;
+    public ServletKeycloakAuthMech(AdapterDeploymentContext deploymentContext, UndertowUserSessionManagement userSessionManagement, ConfidentialPortManager portManager) {
+        this.deploymentContext = deploymentContext;
         this.userSessionManagement = userSessionManagement;
         this.portManager = portManager;
     }
@@ -29,7 +30,11 @@ public class ServletKeycloakAuthMech implements AuthenticationMechanism {
     @Override
     public AuthenticationMechanismOutcome authenticate(HttpServerExchange exchange, SecurityContext securityContext) {
         UndertowHttpFacade facade = new UndertowHttpFacade(exchange);
-        ServletRequestAuthenticator authenticator = createRequestAuthenticator(exchange, securityContext, facade);
+        KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
+        if (!deployment.isConfigured()) {
+            return AuthenticationMechanismOutcome.NOT_ATTEMPTED;
+        }
+        ServletRequestAuthenticator authenticator = createRequestAuthenticator(deployment, exchange, securityContext, facade);
         AuthOutcome outcome = authenticator.authenticate();
         if (outcome == AuthOutcome.AUTHENTICATED) {
             return AuthenticationMechanismOutcome.AUTHENTICATED;
@@ -45,7 +50,7 @@ public class ServletKeycloakAuthMech implements AuthenticationMechanism {
         return AuthenticationMechanismOutcome.NOT_ATTEMPTED;
     }
 
-    protected ServletRequestAuthenticator createRequestAuthenticator(HttpServerExchange exchange, SecurityContext securityContext, UndertowHttpFacade facade) {
+    protected ServletRequestAuthenticator createRequestAuthenticator(KeycloakDeployment deployment, HttpServerExchange exchange, SecurityContext securityContext, UndertowHttpFacade facade) {
         int confidentialPort = 8443;
         if (portManager != null) confidentialPort = portManager.getConfidentialPort(exchange);
         return new ServletRequestAuthenticator(facade, deployment,

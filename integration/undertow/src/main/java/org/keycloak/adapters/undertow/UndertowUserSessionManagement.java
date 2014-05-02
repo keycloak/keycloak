@@ -33,11 +33,6 @@ public class UndertowUserSessionManagement implements SessionListener {
     private static final String AUTH_SESSION_NAME = CachedAuthenticatedSessionHandler.class.getName() + ".AuthenticatedSession";
     protected ConcurrentHashMap<String, UserSessions> userSessionMap = new ConcurrentHashMap<String, UserSessions>();
 
-    protected KeycloakDeployment deployment;
-
-    public UndertowUserSessionManagement(KeycloakDeployment deployment) {
-        this.deployment = deployment;
-    }
 
     public static class UserSessions {
         protected Set<String> sessionIds = new HashSet<String>();

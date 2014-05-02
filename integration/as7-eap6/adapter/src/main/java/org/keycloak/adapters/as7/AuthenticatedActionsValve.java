@@ -48,9 +48,14 @@ public class AuthenticatedActionsValve extends ValveBase {
     @Override
     public void invoke(Request request, Response response) throws IOException, ServletException {
         log.debugv("AuthenticatedActionsValve.invoke {0}", request.getRequestURI());
-        AuthenticatedActionsHandler handler = new AuthenticatedActionsHandler(deploymentContext.getDeployment(), new CatalinaHttpFacade(request, response));
-        if (handler.handledRequest()) {
-            return;
+        CatalinaHttpFacade facade = new CatalinaHttpFacade(request, response);
+        KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
+        if (deployment != null && deployment.isConfigured()) {
+            AuthenticatedActionsHandler handler = new AuthenticatedActionsHandler(deployment, new CatalinaHttpFacade(request, response));
+            if (handler.handledRequest()) {
+                return;
+            }
+
         }
         getNext().invoke(request, response);
     }

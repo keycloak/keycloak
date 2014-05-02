@@ -11,5 +11,6 @@ public interface ServiceUrlConstants {
     public static final String TOKEN_SERVICE_REFRESH_PATH = "/rest/realms/{realm-name}/tokens/refresh";
     public static final String TOKEN_SERVICE_LOGOUT_PATH = "/rest/realms/{realm-name}/tokens/logout";
     public static final String ACCOUNT_SERVICE_PATH = "/rest/realms/{realm-name}/account";
+    public static final String REALM_INFO_PATH = "/rest/realms/{realm-name}";
 
 }

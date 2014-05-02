@@ -4,6 +4,7 @@ import io.undertow.server.HandlerWrapper;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import org.jboss.logging.Logger;
+import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.AuthenticatedActionsHandler;
 import org.keycloak.adapters.KeycloakDeployment;
 
@@ -15,32 +16,36 @@ import org.keycloak.adapters.KeycloakDeployment;
  */
 public class UndertowAuthenticatedActionsHandler implements HttpHandler {
     private static final Logger log = Logger.getLogger(UndertowAuthenticatedActionsHandler.class);
-    protected KeycloakDeployment deployment;
+    protected AdapterDeploymentContext deploymentContext;
     protected HttpHandler next;
 
     public static class Wrapper implements HandlerWrapper {
-        protected KeycloakDeployment deployment;
+        protected AdapterDeploymentContext deploymentContext;
 
-        public Wrapper(KeycloakDeployment deployment) {
-            this.deployment = deployment;
+        public Wrapper(AdapterDeploymentContext deploymentContext) {
+            this.deploymentContext = deploymentContext;
         }
 
         @Override
         public HttpHandler wrap(HttpHandler handler) {
-            return new UndertowAuthenticatedActionsHandler(deployment, handler);
+            return new UndertowAuthenticatedActionsHandler(deploymentContext, handler);
         }
     }
 
 
-    protected UndertowAuthenticatedActionsHandler(KeycloakDeployment deployment, HttpHandler next) {
-        this.deployment = deployment;
+    protected UndertowAuthenticatedActionsHandler(AdapterDeploymentContext deploymentContext, HttpHandler next) {
+        this.deploymentContext = deploymentContext;
         this.next = next;
     }
 
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
-        AuthenticatedActionsHandler handler = new AuthenticatedActionsHandler(deployment, new UndertowHttpFacade(exchange));
-        if (handler.handledRequest()) return;
+        UndertowHttpFacade facade = new UndertowHttpFacade(exchange);
+        KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
+        if (deployment != null && deployment.isConfigured()) {
+            AuthenticatedActionsHandler handler = new AuthenticatedActionsHandler(deployment, facade);
+            if (handler.handledRequest()) return;
+        }
         next.handleRequest(exchange);
     }
 }

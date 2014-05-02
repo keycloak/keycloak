@@ -169,8 +169,7 @@ public class ServerRequest {
         }
     }
 
-
-    protected static void error(int status, HttpEntity entity) throws HttpFailure, IOException {
+    public static void error(int status, HttpEntity entity) throws HttpFailure, IOException {
         String body = null;
         if (entity != null) {
             InputStream is = entity.getContent();

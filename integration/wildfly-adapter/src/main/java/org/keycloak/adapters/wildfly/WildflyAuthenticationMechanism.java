@@ -3,6 +3,7 @@ package org.keycloak.adapters.wildfly;
 import io.undertow.security.api.SecurityContext;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.servlet.api.ConfidentialPortManager;
+import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.undertow.ServletKeycloakAuthMech;
 import org.keycloak.adapters.undertow.ServletRequestAuthenticator;
@@ -15,14 +16,14 @@ import org.keycloak.adapters.undertow.UndertowUserSessionManagement;
  */
 public class WildflyAuthenticationMechanism extends ServletKeycloakAuthMech {
 
-    public WildflyAuthenticationMechanism(KeycloakDeployment deployment,
+    public WildflyAuthenticationMechanism(AdapterDeploymentContext deploymentContext,
                                           UndertowUserSessionManagement userSessionManagement,
                                           ConfidentialPortManager portManager) {
-        super(deployment, userSessionManagement, portManager);
+        super(deploymentContext, userSessionManagement, portManager);
     }
 
     @Override
-    protected ServletRequestAuthenticator createRequestAuthenticator(HttpServerExchange exchange, SecurityContext securityContext, UndertowHttpFacade facade) {
+    protected ServletRequestAuthenticator createRequestAuthenticator(KeycloakDeployment deployment, HttpServerExchange exchange, SecurityContext securityContext, UndertowHttpFacade facade) {
         return new WildflyRequestAuthenticator(facade, deployment,
                 portManager.getConfidentialPort(exchange), securityContext, exchange, userSessionManagement);
     }
