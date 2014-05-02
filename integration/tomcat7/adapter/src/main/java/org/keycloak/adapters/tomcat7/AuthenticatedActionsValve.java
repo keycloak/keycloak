@@ -11,6 +11,7 @@ import org.apache.catalina.Valve;
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
 import org.apache.catalina.valves.ValveBase;
+import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.AuthenticatedActionsHandler;
 import org.keycloak.adapters.KeycloakDeployment;
 
@@ -27,10 +28,10 @@ import org.keycloak.adapters.KeycloakDeployment;
  */
 public class AuthenticatedActionsValve extends ValveBase {
     private static final Logger log = Logger.getLogger(""+AuthenticatedActionsValve.class);
-    protected KeycloakDeployment deployment;
+    protected AdapterDeploymentContext deploymentContext;
 
-    public AuthenticatedActionsValve(KeycloakDeployment deployment, Valve next, Container container, ObjectName objectName) {
-        this.deployment = deployment;
+    public AuthenticatedActionsValve(AdapterDeploymentContext deploymentContext, Valve next, Container container, ObjectName controller) {
+        this.deploymentContext = deploymentContext;
         if (next == null) throw new RuntimeException("WTF is next null?!");
         setNext(next);
         setContainer(container);
@@ -40,10 +41,17 @@ public class AuthenticatedActionsValve extends ValveBase {
     @Override
     public void invoke(Request request, Response response) throws IOException, ServletException {
         log.finer("AuthenticatedActionsValve.invoke" + request.getRequestURI());
-        AuthenticatedActionsHandler handler = new AuthenticatedActionsHandler(deployment, new CatalinaHttpFacade(request, response));
-        if (handler.handledRequest()) {
-            return;
+        CatalinaHttpFacade facade = new CatalinaHttpFacade(request, response);
+        KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
+        if (deployment != null && deployment.isConfigured()) {
+            AuthenticatedActionsHandler handler = new AuthenticatedActionsHandler(deployment, new CatalinaHttpFacade(request, response));
+            if (handler.handledRequest()) {
+                return;
+            }
+
         }
         getNext().invoke(request, response);
     }
+
+
 }
