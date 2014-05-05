@@ -20,8 +20,6 @@ import org.keycloak.provider.ProviderFactoryLoader;
 import org.keycloak.provider.ProviderSession;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.DefaultProviderSessionFactory;
-import org.keycloak.picketlink.IdentityManagerProvider;
-import org.keycloak.picketlink.IdentityManagerProviderFactory;
 import org.keycloak.provider.ProviderSessionFactory;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.BruteForceProtector;
@@ -132,7 +130,14 @@ public class KeycloakApplication extends Application {
         factory.registerLoader(AuditProvider.class, ProviderFactoryLoader.create(AuditProviderFactory.class), Config.getAuditProvider());
         factory.registerLoader(AuditListener.class, ProviderFactoryLoader.create(AuditListenerFactory.class));
         factory.registerLoader(TimerProvider.class, ProviderFactoryLoader.create(TimerProviderFactory.class), Config.getTimerProvider());
-        factory.registerLoader(IdentityManagerProvider.class, ProviderFactoryLoader.create(IdentityManagerProviderFactory.class), Config.getIdentityManagerProvider());
+        try {
+            Class identityManagerProvider = Class.forName("org.keycloak.picketlink.IdentityManagerProvider");
+            Class identityManagerProviderFactory = Class.forName("org.keycloak.picketlink.IdentityManagerProviderFactory");
+            factory.registerLoader(identityManagerProvider, ProviderFactoryLoader.create(identityManagerProviderFactory), Config.getIdentityManagerProvider());
+        } catch (ClassNotFoundException e) {
+            log.warn("Picketlink libraries not installed for IdentityManagerProviderFactory");
+        }
+
         factory.registerLoader(AuthenticationProvider.class, ProviderFactoryLoader.create(AuthenticationProviderFactory.class));
         factory.init();
 
