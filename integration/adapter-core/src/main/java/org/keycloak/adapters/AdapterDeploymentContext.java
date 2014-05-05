@@ -285,6 +285,7 @@ public class AdapterDeploymentContext {
             scheme = "https";
         }
         if (!request.getScheme().equals(scheme) && request.getPort() != -1) {
+            log.error("request scheme: " + request.getScheme() + " ssl required: " + deployment.isSslRequired());
             throw new RuntimeException("Can't resolve relative url from adapter config.");
         }
         builder.scheme(scheme);
