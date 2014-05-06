@@ -290,7 +290,9 @@ public class AdapterDeploymentContext {
         }
         builder.scheme(scheme);
         builder.host(request.getHost());
-        builder.port(request.getPort());
+        if (request.getPort() != -1) {
+           builder.port(request.getPort());
+        }
         return builder;
     }
 
