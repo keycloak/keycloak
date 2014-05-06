@@ -20,6 +20,7 @@ public class BootstrapListener implements ServletContextListener {
         config.setAuthServerUrl("/auth");
         config.setSslNotRequired(true);
         config.setPublicClient(true);
+        config.setDisableTrustManager(true);
         deploymentContext.updateDeployment(config);
 
     }
