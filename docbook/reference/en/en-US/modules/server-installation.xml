@@ -271,6 +271,28 @@ keycloak-war-dist-all-1.0-beta-1-SNAPSHOT/
             </para>
         </section>
         <section>
+            <title>AS7/EAP6.x Logging</title>
+            <para>
+                Accessing the admin console will get these annoying log messages:
+            </para>
+<programlisting>
+    WARN  [org.jboss.resteasy.core.ResourceLocator] (http-/127.0.0.1:8080-3)
+                Field providers of subresource xxx will not be injected according to spec
+
+</programlisting>
+
+            <para>
+                These can be ignored by editing standalone.xml of your jboss installation:
+            </para>
+<programlisting>
+<![CDATA[
+    <logger category="org.jboss.resteasy.core.ResourceLocator">
+        <level name="ERROR"/>
+    </logger>
+]]>
+</programlisting>
+        </section>
+        <section>
             <title>SSL/HTTPS Setup</title>
             <warning>
                 <para>
