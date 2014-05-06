@@ -1,13 +1,15 @@
 package org.keycloak.audit.jpa;
 
-import org.json.JSONObject;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.type.TypeReference;
+import org.jboss.logging.Logger;
 import org.keycloak.audit.AuditProvider;
 import org.keycloak.audit.Event;
 import org.keycloak.audit.EventQuery;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
-import java.util.HashMap;
+import java.io.IOException;
 import java.util.Map;
 import java.util.UUID;
 
@@ -15,6 +17,11 @@ import java.util.UUID;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class JpaAuditProvider implements AuditProvider {
+
+    private static final ObjectMapper mapper = new ObjectMapper();
+    private static final TypeReference<Map<String, String>> mapType = new TypeReference<Map<String, String>>() {
+    };
+    private static final Logger logger = Logger.getLogger(JpaAuditProvider.class);
 
     private EntityManager em;
     private EntityTransaction tx;
@@ -78,7 +85,11 @@ public class JpaAuditProvider implements AuditProvider {
         e.setUserId(o.getUserId());
         e.setIpAddress(o.getIpAddress());
         e.setError(o.getError());
-        e.setDetailsJson(new JSONObject(o.getDetails()).toString());
+        try {
+            e.setDetailsJson(mapper.writeValueAsString(o.getDetails()));
+        } catch (IOException ex) {
+            logger.error("Failed to write log details", ex);
+        }
         return e;
     }
 
@@ -91,14 +102,12 @@ public class JpaAuditProvider implements AuditProvider {
         e.setUserId(o.getUserId());
         e.setIpAddress(o.getIpAddress());
         e.setError(o.getError());
-
-        JSONObject object = new JSONObject(o.getDetailsJson());
-        Map<String, String> details = new HashMap<String, String>();
-        for (Object k : object.keySet()) {
-            details.put((String) k, object.getString((String) k));
+        try {
+            Map<String, String> details = mapper.readValue(o.getDetailsJson(), mapType);
+            e.setDetails(details);
+        } catch (IOException ex) {
+            logger.error("Failed to read log details", ex);
         }
-
-        e.setDetails(details);
         return e;
     }
 

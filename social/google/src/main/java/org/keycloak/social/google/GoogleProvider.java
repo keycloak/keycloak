@@ -21,11 +21,11 @@
  */
 package org.keycloak.social.google;
 
-import org.json.JSONObject;
+import org.codehaus.jackson.JsonNode;
 import org.keycloak.social.AbstractOAuth2Provider;
-import org.keycloak.social.utils.SimpleHttp;
 import org.keycloak.social.SocialProviderException;
 import org.keycloak.social.SocialUser;
+import org.keycloak.social.utils.SimpleHttp;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -69,11 +69,12 @@ public class GoogleProvider extends AbstractOAuth2Provider {
     @Override
     protected SocialUser getProfile(String accessToken) throws SocialProviderException {
         try {
-            JSONObject profile = SimpleHttp.doGet(PROFILE_URL).header("Authorization", "Bearer " + accessToken).asJson();
+            JsonNode profile = SimpleHttp.doGet(PROFILE_URL).header("Authorization", "Bearer " + accessToken).asJson();
 
-            SocialUser user = new SocialUser(profile.getString("sub"), profile.getString("email"));
-            user.setName(profile.optString("given_name"), profile.optString("family_name"));
-            user.setEmail(profile.optString("email"));
+            SocialUser user = new SocialUser(profile.get("sub").getTextValue(), profile.get("email").getTextValue());
+            user.setName(profile.has("given_name") ? profile.get("given_name").getTextValue() : null,
+                    profile.has("family_name") ? profile.get("family_name").getTextValue() : null);
+            user.setEmail(profile.has("email") ? profile.get("email").getTextValue() : null);
 
             return user;
         } catch (Exception e) {

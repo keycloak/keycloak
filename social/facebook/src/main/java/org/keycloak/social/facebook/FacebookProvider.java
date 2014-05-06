@@ -1,6 +1,6 @@
 package org.keycloak.social.facebook;
 
-import org.json.JSONObject;
+import org.codehaus.jackson.JsonNode;
 import org.keycloak.social.AbstractOAuth2Provider;
 import org.keycloak.social.AuthRequest;
 import org.keycloak.social.SocialProviderConfig;
@@ -50,11 +50,12 @@ public class FacebookProvider extends AbstractOAuth2Provider {
     @Override
     protected SocialUser getProfile(String accessToken) throws SocialProviderException {
         try {
-            JSONObject profile = SimpleHttp.doGet(PROFILE_URL).header("Authorization", "Bearer " + accessToken).asJson();
+            JsonNode profile = SimpleHttp.doGet(PROFILE_URL).header("Authorization", "Bearer " + accessToken).asJson();
 
-            SocialUser user = new SocialUser(profile.getString("id"), profile.getString("username"));
-            user.setName(profile.optString("first_name"), profile.optString("last_name"));
-            user.setEmail(profile.optString("email"));
+            SocialUser user = new SocialUser(profile.get("id").getTextValue(), profile.get("username").getTextValue());
+            user.setName(profile.has("first_name") ? profile.get("first_name").getTextValue() : null,
+                    profile.has("last_name") ? profile.get("last_name").getTextValue() : null);
+            user.setEmail(profile.has("email") ? profile.get("email").getTextValue() : null);
 
             return user;
         } catch (Exception e) {

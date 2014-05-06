@@ -73,10 +73,6 @@
             <artifactId>keycloak-social-core</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>org.json</groupId>
-            <artifactId>json</artifactId>
-        </dependency>
         <!-- forms -->
         <dependency>
             <groupId>org.keycloak</groupId>
