@@ -1,6 +1,7 @@
 package org.keycloak.social.utils;
 
-import org.json.JSONObject;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.ObjectMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,6 +18,8 @@ import java.util.Map;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class SimpleHttp {
+
+    private static ObjectMapper mapper = new ObjectMapper();
 
     private String url;
     private String method;
@@ -52,8 +55,8 @@ public class SimpleHttp {
         return this;
     }
 
-    public JSONObject asJson() throws IOException {
-        return new JSONObject(asString());
+    public JsonNode asJson() throws IOException {
+        return mapper.readTree(asString());
     }
 
     public String asString() throws IOException {

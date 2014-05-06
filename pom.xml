@@ -33,7 +33,6 @@
         <slf4j.version>1.5.10</slf4j.version>
         <jboss.version>7.1.1.Final</jboss.version>
         <wildfly.version>8.0.0.Final</wildfly.version>
-        <json.version>20131018</json.version>
 
         <!-- maven-compiler-plugin -->
         <maven.compiler.target>1.6</maven.compiler.target>
@@ -284,12 +283,6 @@
                 <groupId>org.freemarker</groupId>
                 <artifactId>freemarker</artifactId>
                 <version>2.3.19</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.json</groupId>
-                <artifactId>json</artifactId>
-                <version>${json.version}</version>
             </dependency>
 
             <!-- Google+ -->

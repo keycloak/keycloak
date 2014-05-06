@@ -1,6 +1,8 @@
 package org.keycloak.social.utils;
 
-import org.json.JSONObject;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.node.ObjectNode;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -14,6 +16,8 @@ import java.util.Enumeration;
  */
 public class ToJsonServlet extends HttpServlet {
 
+    private static final ObjectMapper mapper = new ObjectMapper();
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         toJson(req, resp);
@@ -25,9 +29,9 @@ public class ToJsonServlet extends HttpServlet {
     }
 
     private void toJson(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        JSONObject o = new JSONObject();
+        ObjectNode o = mapper.createObjectNode();
 
-        JSONObject headers = new JSONObject();
+        ObjectNode headers = mapper.createObjectNode();
         Enumeration<String> headerNames = req.getHeaderNames();
         while (headerNames.hasMoreElements()) {
             String n = headerNames.nextElement();
@@ -35,7 +39,7 @@ public class ToJsonServlet extends HttpServlet {
         }
         o.put("headers", headers);
 
-        JSONObject params = new JSONObject();
+        ObjectNode params = mapper.createObjectNode();
         Enumeration<String> parameterNames = req.getParameterNames();
         while (parameterNames.hasMoreElements()) {
             String n = parameterNames.nextElement();

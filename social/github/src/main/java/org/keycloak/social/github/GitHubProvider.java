@@ -1,9 +1,7 @@
 package org.keycloak.social.github;
 
-import org.json.JSONObject;
+import org.codehaus.jackson.JsonNode;
 import org.keycloak.social.AbstractOAuth2Provider;
-import org.keycloak.social.AuthRequest;
-import org.keycloak.social.SocialProviderConfig;
 import org.keycloak.social.SocialProviderException;
 import org.keycloak.social.SocialUser;
 import org.keycloak.social.utils.SimpleHttp;
@@ -50,11 +48,11 @@ public class GitHubProvider extends AbstractOAuth2Provider {
     @Override
     protected SocialUser getProfile(String accessToken) throws SocialProviderException {
         try {
-            JSONObject profile = SimpleHttp.doGet(PROFILE_URL).header("Authorization", "Bearer " + accessToken).asJson();
+            JsonNode profile = SimpleHttp.doGet(PROFILE_URL).header("Authorization", "Bearer " + accessToken).asJson();
 
-            SocialUser user = new SocialUser(profile.get("id").toString(), profile.getString("login"));
-            user.setName(profile.optString("name"));
-            user.setEmail(profile.optString("email"));
+            SocialUser user = new SocialUser(profile.get("id").toString(), profile.get("login").getTextValue());
+            user.setName(profile.has("name") ? profile.get("name").getTextValue() : null);
+            user.setEmail(profile.has("email") ? profile.get("email").getTextValue() : null);
 
             return user;
         } catch (Exception e) {
