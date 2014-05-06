@@ -1,6 +1,6 @@
 package org.keycloak.social;
 
-import org.json.JSONObject;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.social.utils.SimpleHttp;
 
@@ -13,6 +13,8 @@ import java.util.regex.Pattern;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public abstract class AbstractOAuth2Provider implements SocialProvider {
+
+    private static ObjectMapper mapper = new ObjectMapper();
 
     private static final String AUTHORIZATION_CODE = "authorization_code";
     private static final String ACCESS_TOKEN = "access_token";
@@ -76,7 +78,7 @@ public abstract class AbstractOAuth2Provider implements SocialProvider {
             String accessToken;
 
             if (response.startsWith("{")) {
-                accessToken = new JSONObject(response).getString(ACCESS_TOKEN);
+                accessToken = mapper.readTree(response).get(ACCESS_TOKEN).getTextValue();
             } else {
                 Matcher matcher = Pattern.compile(TOKEN_REGEX).matcher(response);
                 if (matcher.find()) {

@@ -234,13 +234,14 @@ public class AccountService {
                 e.setEvent(e.getEvent().replace('_', ' '));
 
                 Map<String, String> details = new HashMap<String, String>();
-                Iterator<String> itr = e.getDetails().keySet().iterator();
-                for (Map.Entry<String, String> d : e.getDetails().entrySet()) {
-                    if (AUDIT_DETAILS.contains(d.getKey())) {
-                        details.put(d.getKey().replace('_', ' '), d.getValue());
+                if (e.getDetails() != null) {
+                    Iterator<String> itr = e.getDetails().keySet().iterator();
+                    for (Map.Entry<String, String> d : e.getDetails().entrySet()) {
+                        if (AUDIT_DETAILS.contains(d.getKey())) {
+                            details.put(d.getKey().replace('_', ' '), d.getValue());
+                        }
                     }
                 }
-
                 e.setDetails(details);
             }
             account.setEvents(events);

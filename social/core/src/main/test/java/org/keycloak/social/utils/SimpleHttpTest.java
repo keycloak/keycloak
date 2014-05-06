@@ -2,7 +2,7 @@ package org.keycloak.social.utils;
 
 import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.ServletInfo;
-import org.json.JSONObject;
+import org.codehaus.jackson.JsonNode;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,56 +45,56 @@ public class SimpleHttpTest {
 
     @Test
     public void testPostNoParams() throws IOException {
-        JSONObject o = SimpleHttp.doPost("http://localhost:8081/tojson").asJson();
-        JSONObject p = o.getJSONObject("params");
+        JsonNode o = SimpleHttp.doPost("http://localhost:8081/tojson").asJson();
+        JsonNode p = o.get("params");
 
-        assertEquals(0, p.length());
+        assertEquals(0, p.size());
     }
 
     @Test
     public void testPost() throws IOException {
-        JSONObject o = SimpleHttp.doPost("http://localhost:8081/tojson").param("key-one", "value one ;)").param("key-two", "value two!&").asJson();
-        JSONObject p = o.getJSONObject("params");
+        JsonNode o = SimpleHttp.doPost("http://localhost:8081/tojson").param("key-one", "value one ;)").param("key-two", "value two!&").asJson();
+        JsonNode p = o.get("params");
 
-        assertEquals(2, p.length());
-        assertEquals("value one ;)", p.getString("key-one"));
-        assertEquals("value two!&", p.getString("key-two"));
+        assertEquals(2, p.size());
+        assertEquals("value one ;)", p.get("key-one").getTextValue());
+        assertEquals("value two!&", p.get("key-two").getTextValue());
     }
 
     @Test
     public void testPostCustomHeader() throws IOException {
-        JSONObject o = SimpleHttp.doPost("http://localhost:8081/tojson").header("Accept", "application/json").header("Authorization", "bearer dsfsadfsdf").asJson();
-        JSONObject h = o.getJSONObject("headers");
+        JsonNode o = SimpleHttp.doPost("http://localhost:8081/tojson").header("Accept", "application/json").header("Authorization", "bearer dsfsadfsdf").asJson();
+        JsonNode h = o.get("headers");
 
-        assertEquals("application/json", h.getString("Accept"));
-        assertEquals("bearer dsfsadfsdf", h.getString("Authorization"));
+        assertEquals("application/json", h.get("Accept").getTextValue());
+        assertEquals("bearer dsfsadfsdf", h.get("Authorization").getTextValue());
     }
 
     @Test
     public void testGetNoParams() throws IOException {
-        JSONObject o = SimpleHttp.doGet("http://localhost:8081/tojson").asJson();
-        JSONObject p = o.getJSONObject("params");
+        JsonNode o = SimpleHttp.doGet("http://localhost:8081/tojson").asJson();
+        JsonNode p = o.get("params");
 
-        assertEquals(0, p.length());
+        assertEquals(0, p.size());
     }
 
     @Test
     public void testGet() throws IOException {
-        JSONObject o = SimpleHttp.doGet("http://localhost:8081/tojson").param("key-one", "value one ;)").param("key-two", "value two!&").asJson();
-        JSONObject p = o.getJSONObject("params");
+        JsonNode o = SimpleHttp.doGet("http://localhost:8081/tojson").param("key-one", "value one ;)").param("key-two", "value two!&").asJson();
+        JsonNode p = o.get("params");
 
-        assertEquals(2, p.length());
-        assertEquals("value one ;)", p.getString("key-one"));
-        assertEquals("value two!&", p.getString("key-two"));
+        assertEquals(2, p.size());
+        assertEquals("value one ;)", p.get("key-one").getTextValue());
+        assertEquals("value two!&", p.get("key-two").getTextValue());
     }
 
     @Test
     public void testGetCustomHeader() throws IOException {
-        JSONObject o = SimpleHttp.doGet("http://localhost:8081/tojson").header("Accept", "application/json").header("Authorization", "bearer dsfsadfsdf").asJson();
-        JSONObject h = o.getJSONObject("headers");
+        JsonNode o = SimpleHttp.doGet("http://localhost:8081/tojson").header("Accept", "application/json").header("Authorization", "bearer dsfsadfsdf").asJson();
+        JsonNode h = o.get("headers");
 
-        assertEquals("application/json", h.getString("Accept"));
-        assertEquals("bearer dsfsadfsdf", h.getString("Authorization"));
+        assertEquals("application/json", h.get("Accept"));
+        assertEquals("bearer dsfsadfsdf", h.get("Authorization").getTextValue());
     }
 
 }
