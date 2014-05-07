@@ -149,7 +149,6 @@ public class KeycloakUriBuilder {
             Matcher hostPortMatch = hostPortPattern.matcher(host);
             if (hostPortMatch.matches()) {
                 this.host = hostPortMatch.group(1);
-                int val = 0;
                 try {
                     this.port = Integer.parseInt(hostPortMatch.group(2));
                 } catch (NumberFormatException e) {

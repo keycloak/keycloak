@@ -221,7 +221,6 @@ public class Encode
    private static String decodeBytes(String enc, CharsetDecoder decoder)
    {
       Matcher matcher = encodedChars.matcher(enc);
-      StringBuffer buf = new StringBuffer();
       ByteBuffer bytes = ByteBuffer.allocate(enc.length() / 3);
       while (matcher.find())
       {
