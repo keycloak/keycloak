@@ -10,7 +10,7 @@
 </head>
 <body bgcolor="#E3F6CE">
 <%
-    String logoutUri = KeycloakUriBuilder.fromUri("http://localhost:8080/auth").path(ServiceUrlConstants.TOKEN_SERVICE_LOGIN_PATH)
+    String logoutUri = KeycloakUriBuilder.fromUri("http://localhost:8080/auth").path(ServiceUrlConstants.TOKEN_SERVICE_LOGOUT_PATH)
             .queryParam("redirect_uri", "http://localhost:8080/customer-portal").build("demo").toString();
     String acctUri = KeycloakUriBuilder.fromUri("http://localhost:8080/auth").path(ServiceUrlConstants.ACCOUNT_SERVICE_PATH)
             .queryParam("referrer", "customer-portal").build("demo").toString();

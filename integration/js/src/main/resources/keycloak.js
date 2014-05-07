@@ -230,7 +230,7 @@ var Keycloak = function (config) {
     }
 
     function getRealmUrl() {
-        return kc.authServerUrl + '/rest/realms/' + encodeURIComponent(kc.realm);
+        return kc.authServerUrl + '/realms/' + encodeURIComponent(kc.realm);
     }
 
     function processCallback(oauth, promise) {

@@ -37,12 +37,12 @@
 
     <filter-mapping>
         <filter-name>Keycloak Session Management</filter-name>
-        <url-pattern>/rest/*</url-pattern>
+        <url-pattern>/*</url-pattern>
     </filter-mapping>
 
     <filter-mapping>
         <filter-name>Keycloak Client Connection Filter</filter-name>
-        <url-pattern>/rest/*</url-pattern>
+        <url-pattern>/*</url-pattern>
     </filter-mapping>
 
     <servlet-mapping>
