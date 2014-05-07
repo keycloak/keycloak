@@ -260,6 +260,21 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'UserSessionsCtrl'
         })
+        .when('/realms/:realm/users/:user/social-links', {
+            templateUrl : 'partials/user-social-links.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                user : function(UserLoader) {
+                    return UserLoader();
+                },
+                socialLinks : function(UserSocialLinksLoader) {
+                    return UserSocialLinksLoader();
+                }
+            },
+            controller : 'UserSocialCtrl'
+        })
         .when('/realms/:realm/users', {
             templateUrl : 'partials/user-list.html',
             resolve : {

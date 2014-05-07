@@ -8,6 +8,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.AuthenticationProviderRepresentation;
@@ -16,6 +17,7 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmAuditRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.SocialLinkRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
 import java.util.ArrayList;
@@ -166,6 +168,14 @@ public class ModelToRepresentation {
         rep.setProfile(ClaimMask.hasProfile(model.getAllowedClaimsMask()));
         rep.setWebsite(ClaimMask.hasWebsite(model.getAllowedClaimsMask()));
         rep.setUsername(ClaimMask.hasUsername(model.getAllowedClaimsMask()));
+        return rep;
+    }
+
+    public static SocialLinkRepresentation toRepresentation(SocialLinkModel socialLink) {
+        SocialLinkRepresentation rep = new SocialLinkRepresentation();
+        rep.setSocialUsername(socialLink.getSocialUsername());
+        rep.setSocialProvider(socialLink.getSocialProvider());
+        rep.setSocialUserId(socialLink.getSocialUserId());
         return rep;
     }
 }

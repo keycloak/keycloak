@@ -11,6 +11,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.adapters.action.UserStats;
@@ -18,6 +19,7 @@ import org.keycloak.representations.idm.ApplicationMappingsRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.SocialLinkRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.email.EmailException;
 import org.keycloak.services.email.EmailSender;
@@ -177,6 +179,25 @@ public class UsersResource {
             if (appStats.isLoggedIn()) stats.put(applicationModel.getName(), appStats);
         }
         return stats;
+    }
+
+    @Path("{username}/social-links")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<SocialLinkRepresentation> getSocialLinks(final @PathParam("username") String username) {
+        auth.requireView();
+        UserModel user = realm.getUser(username);
+        if (user == null) {
+            throw new NotFoundException("User not found");
+        }
+        Set<SocialLinkModel> socialLinks = realm.getSocialLinks(user);
+        List<SocialLinkRepresentation> result = new ArrayList<SocialLinkRepresentation>();
+        for (SocialLinkModel socialLink : socialLinks) {
+            SocialLinkRepresentation rep = ModelToRepresentation.toRepresentation(socialLink);
+            result.add(rep);
+        }
+        return result;
     }
 
     @Path("{username}/logout")
