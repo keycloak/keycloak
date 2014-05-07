@@ -42,7 +42,6 @@ public class MultivaluedHashMap<K, V> extends HashMap<K, List<V>>
       if (list == null)
       {
          add(key, value);
-         return;
       }
       else
       {
