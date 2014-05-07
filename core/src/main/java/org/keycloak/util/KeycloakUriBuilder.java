@@ -55,8 +55,8 @@ public class KeycloakUriBuilder {
         return impl;
     }
 
-    public static final Pattern opaqueUri = Pattern.compile("^([^:/?#]+):([^/].*)");
-    public static final Pattern hierarchicalUri = Pattern.compile("^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?");
+    private static final Pattern opaqueUri = Pattern.compile("^([^:/?#]+):([^/].*)");
+    private static final Pattern hierarchicalUri = Pattern.compile("^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?");
     private static final Pattern hostPortPattern = Pattern.compile("([^/:]+):(\\d+)");
 
     public static boolean compare(String s1, String s2) {
@@ -149,7 +149,6 @@ public class KeycloakUriBuilder {
             Matcher hostPortMatch = hostPortPattern.matcher(host);
             if (hostPortMatch.matches()) {
                 this.host = hostPortMatch.group(1);
-                int val = 0;
                 try {
                     this.port = Integer.parseInt(hostPortMatch.group(2));
                 } catch (NumberFormatException e) {
@@ -359,12 +358,12 @@ public class KeycloakUriBuilder {
         return this;
     }
 
-    public URI buildFromMap(Map<String, ? extends Object> values) throws IllegalArgumentException {
+    public URI buildFromMap(Map<String, ?> values) throws IllegalArgumentException {
         if (values == null) throw new IllegalArgumentException("values parameter is null");
         return buildUriFromMap(values, false, true);
     }
 
-    public URI buildFromEncodedMap(Map<String, ? extends Object> values) throws IllegalArgumentException {
+    public URI buildFromEncodedMap(Map<String, ?> values) throws IllegalArgumentException {
         if (values == null) throw new IllegalArgumentException("values parameter is null");
         return buildUriFromMap(values, true, false);
     }
@@ -374,7 +373,7 @@ public class KeycloakUriBuilder {
         return buildUriFromMap(values, false, encodeSlashInPath);
     }
 
-    protected URI buildUriFromMap(Map<String, ? extends Object> paramMap, boolean fromEncodedMap, boolean encodeSlash) throws IllegalArgumentException {
+    protected URI buildUriFromMap(Map<String, ?> paramMap, boolean fromEncodedMap, boolean encodeSlash) throws IllegalArgumentException {
         String buf = buildString(paramMap, fromEncodedMap, false, encodeSlash);
         try {
             return URI.create(buf);
@@ -383,7 +382,7 @@ public class KeycloakUriBuilder {
         }
     }
 
-    private String buildString(Map<String, ? extends Object> paramMap, boolean fromEncodedMap, boolean isTemplate, boolean encodeSlash) {
+    private String buildString(Map<String, ?> paramMap, boolean fromEncodedMap, boolean isTemplate, boolean encodeSlash) {
         for (Map.Entry<String, ? extends Object> entry : paramMap.entrySet()) {
             if (entry.getKey() == null) throw new IllegalArgumentException("map key is null");
             if (entry.getValue() == null) throw new IllegalArgumentException("map value is null");
@@ -448,11 +447,10 @@ public class KeycloakUriBuilder {
     }
 
     public static Matcher createUriParamMatcher(String string) {
-        Matcher matcher = PathHelper.URI_PARAM_PATTERN.matcher(PathHelper.replaceEnclosedCurlyBraces(string));
-        return matcher;
+        return PathHelper.URI_PARAM_PATTERN.matcher(PathHelper.replaceEnclosedCurlyBraces(string));
     }
 
-    protected StringBuffer replaceParameter(Map<String, ? extends Object> paramMap, boolean fromEncodedMap, boolean isTemplate, String string, StringBuffer buffer, boolean encodeSlash) {
+    protected StringBuffer replaceParameter(Map<String, ?> paramMap, boolean fromEncodedMap, boolean isTemplate, String string, StringBuffer buffer, boolean encodeSlash) {
         Matcher matcher = createUriParamMatcher(string);
         while (matcher.find()) {
             String param = matcher.group(1);
@@ -481,7 +479,7 @@ public class KeycloakUriBuilder {
         return buffer;
     }
 
-    protected StringBuffer replaceQueryStringParameter(Map<String, ? extends Object> paramMap, boolean fromEncodedMap, boolean isTemplate, String string, StringBuffer buffer) {
+    protected StringBuffer replaceQueryStringParameter(Map<String, ?> paramMap, boolean fromEncodedMap, boolean isTemplate, String string, StringBuffer buffer) {
         Matcher matcher = createUriParamMatcher(string);
         while (matcher.find()) {
             String param = matcher.group(1);

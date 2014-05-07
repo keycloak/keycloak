@@ -15,7 +15,7 @@ import java.security.NoSuchAlgorithmException;
  * @version $Revision: 1 $
  */
 public class HMACProvider {
-    public static String getJavaAlgorithm(Algorithm alg) {
+    private static String getJavaAlgorithm(Algorithm alg) {
         switch (alg) {
             case HS256:
                 return "HMACSHA256";
@@ -28,7 +28,7 @@ public class HMACProvider {
         }
     }
 
-    public static Mac getMAC(final Algorithm alg) {
+    private static Mac getMAC(final Algorithm alg) {
 
         try {
             return Mac.getInstance(getJavaAlgorithm(alg));

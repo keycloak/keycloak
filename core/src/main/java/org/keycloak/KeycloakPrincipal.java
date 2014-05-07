@@ -8,8 +8,8 @@ import java.security.Principal;
  * @version $Revision: 1 $
  */
 public class KeycloakPrincipal implements Principal, Serializable {
-    protected String name;
-    protected String surrogate;
+    protected final String name;
+    protected final String surrogate;
 
     public KeycloakPrincipal(String name, String surrogate) {
         this.name = name;

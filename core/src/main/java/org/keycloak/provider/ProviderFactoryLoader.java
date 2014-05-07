@@ -11,7 +11,7 @@ import java.util.Set;
  */
 public class ProviderFactoryLoader<T extends Provider> implements Iterable<ProviderFactory<T>> {
 
-    private Map<String, ProviderFactory<T>> factories = new HashMap<String, ProviderFactory<T>>();
+    private final Map<String, ProviderFactory<T>> factories = new HashMap<String, ProviderFactory<T>>();
 
     private ProviderFactoryLoader(ServiceLoader<? extends ProviderFactory> serviceLoader) {
         for (ProviderFactory p : serviceLoader) {
@@ -59,9 +59,9 @@ public class ProviderFactoryLoader<T extends Provider> implements Iterable<Provi
 
     private class LazyProviderFactory<T extends Provider> implements ProviderFactory<T> {
 
-        private volatile boolean initialized = false;
+        private final ProviderFactory<T> factory;
 
-        private ProviderFactory<T> factory;
+        private volatile boolean initialized = false;
 
         private LazyProviderFactory(ProviderFactory<T> factory) {
             this.factory = factory;

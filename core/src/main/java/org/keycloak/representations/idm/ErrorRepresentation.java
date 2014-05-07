@@ -4,7 +4,7 @@ package org.keycloak.representations.idm;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class ErrorRepresentation {
-    public String errorMessage;
+    private String errorMessage;
 
     public ErrorRepresentation() {
     }

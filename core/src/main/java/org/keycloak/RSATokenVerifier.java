@@ -27,7 +27,7 @@ public class RSATokenVerifier {
         }
         if (!verified) throw new VerificationException("Token signature not validated");
 
-        AccessToken token = null;
+        AccessToken token;
         try {
             token = input.readJsonContent(AccessToken.class);
         } catch (IOException e) {

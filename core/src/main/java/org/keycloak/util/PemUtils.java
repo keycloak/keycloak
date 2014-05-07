@@ -76,8 +76,7 @@ public final class PemUtils {
      */
     public static byte[] pemToDer(InputStream is) throws IOException {
         String pem = pemFromStream(is);
-        byte[] der = pemToDer(pem);
-        return der;
+        return pemToDer(pem);
     }
 
     /**
