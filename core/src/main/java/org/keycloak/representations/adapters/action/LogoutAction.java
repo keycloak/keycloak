@@ -15,6 +15,7 @@ public class LogoutAction extends AdminAction {
     public LogoutAction(String id, int expiration, String resource, String user, int notBefore) {
         super(id, expiration, resource, LOGOUT);
         this.user = user;
+        this.notBefore = notBefore;
     }
 
     public String getUser() {

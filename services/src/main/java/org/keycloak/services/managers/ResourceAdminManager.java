@@ -195,7 +195,7 @@ public class ResourceAdminManager {
             String token = new TokenManager().encodeToken(realm, adminAction);
             logger.infov("logout user: {0} resource: {1} url: {2}", user, resource.getName(), managementUrl);
             ClientRequest request = client.createRequest(UriBuilder.fromUri(managementUrl).path(AdapterConstants.K_LOGOUT).build().toString());
-            ClientResponse response = null;
+            ClientResponse response;
             try {
                 response = request.body(MediaType.TEXT_PLAIN_TYPE, token).post(UserStats.class);
             } catch (Exception e) {
