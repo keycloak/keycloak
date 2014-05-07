@@ -29,8 +29,6 @@ import java.util.Set;
 @Table(uniqueConstraints = {@UniqueConstraint(columnNames = {"realm", "name"})})
 public abstract class ClientEntity {
     @Id
-    @GenericGenerator(name="keycloak_generator", strategy="org.keycloak.models.jpa.utils.JpaIdGenerator")
-    @GeneratedValue(generator = "keycloak_generator")
     private String id;
     @Column(name = "name")
     private String name;
@@ -61,6 +59,10 @@ public abstract class ClientEntity {
 
     public String getId() {
         return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     public boolean isEnabled() {

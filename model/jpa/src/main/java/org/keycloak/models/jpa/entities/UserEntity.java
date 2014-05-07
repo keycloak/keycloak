@@ -44,8 +44,6 @@ import java.util.Set;
 })
 public class UserEntity {
     @Id
-    @GenericGenerator(name="uuid_generator", strategy="org.keycloak.models.jpa.utils.JpaIdGenerator")
-    @GeneratedValue(generator = "uuid_generator")
     protected String id;
 
     protected String loginName;

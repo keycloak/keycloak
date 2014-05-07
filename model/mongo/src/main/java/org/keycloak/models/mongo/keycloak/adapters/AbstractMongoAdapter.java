@@ -1,13 +1,13 @@
 package org.keycloak.models.mongo.keycloak.adapters;
 
-import org.keycloak.models.mongo.api.AbstractMongoIdentifiableEntity;
+import org.keycloak.models.mongo.api.MongoIdentifiableEntity;
 import org.keycloak.models.mongo.api.MongoStore;
 import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public abstract class AbstractMongoAdapter<T extends AbstractMongoIdentifiableEntity> {
+public abstract class AbstractMongoAdapter<T extends MongoIdentifiableEntity> {
 
     protected final MongoStoreInvocationContext invocationContext;
 

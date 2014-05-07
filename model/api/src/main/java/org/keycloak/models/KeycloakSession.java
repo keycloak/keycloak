@@ -16,5 +16,7 @@ public interface KeycloakSession {
     List<RealmModel> getRealms();
     boolean removeRealm(String id);
 
+    void removeAllData();
+
     void close();
 }

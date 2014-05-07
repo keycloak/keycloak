@@ -1,0 +1,2 @@
+org.keycloak.exportimport.io.directory.TmpDirExportImportIOProvider
+org.keycloak.exportimport.io.zip.EncryptedZIPIOProvider

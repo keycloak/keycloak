@@ -7,8 +7,10 @@ package org.keycloak.models;
  */
 public class AuthenticationLinkModel {
 
-    private final String authProvider;
-    private final String authUserId;
+    private String authProvider;
+    private String authUserId;
+
+    public AuthenticationLinkModel() {};
 
     public AuthenticationLinkModel(String authProvider, String authUserId) {
         this.authProvider = authProvider;
@@ -19,7 +21,15 @@ public class AuthenticationLinkModel {
         return authUserId;
     }
 
+    public void setAuthUserId(String authUserId) {
+        this.authUserId = authUserId;
+    }
+
     public String getAuthProvider() {
         return authProvider;
+    }
+
+    public void setAuthProvider(String authProvider) {
+        this.authProvider = authProvider;
     }
 }

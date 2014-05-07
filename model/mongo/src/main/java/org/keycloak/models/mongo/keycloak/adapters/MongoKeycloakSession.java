@@ -9,7 +9,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.mongo.api.MongoStore;
 import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.mongo.impl.context.TransactionMongoStoreInvocationContext;
-import org.keycloak.models.mongo.keycloak.entities.RealmEntity;
+import org.keycloak.models.mongo.keycloak.entities.MongoRealmEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.ArrayList;
@@ -40,13 +40,18 @@ public class MongoKeycloakSession implements KeycloakSession {
     }
 
     @Override
+    public void removeAllData() {
+        getMongoStore().removeAllEntities();
+    }
+
+    @Override
     public RealmModel createRealm(String name) {
         return createRealm(KeycloakModelUtils.generateId(), name);
     }
 
     @Override
     public RealmModel createRealm(String id, String name) {
-        RealmEntity newRealm = new RealmEntity();
+        MongoRealmEntity newRealm = new MongoRealmEntity();
         newRealm.setId(id);
         newRealm.setName(name);
 
@@ -57,17 +62,17 @@ public class MongoKeycloakSession implements KeycloakSession {
 
     @Override
     public RealmModel getRealm(String id) {
-        RealmEntity realmEntity = getMongoStore().loadEntity(RealmEntity.class, id, invocationContext);
+        MongoRealmEntity realmEntity = getMongoStore().loadEntity(MongoRealmEntity.class, id, invocationContext);
         return realmEntity != null ? new RealmAdapter(realmEntity, invocationContext) : null;
     }
 
     @Override
     public List<RealmModel> getRealms() {
         DBObject query = new BasicDBObject();
-        List<RealmEntity> realms = getMongoStore().loadEntities(RealmEntity.class, query, invocationContext);
+        List<MongoRealmEntity> realms = getMongoStore().loadEntities(MongoRealmEntity.class, query, invocationContext);
 
         List<RealmModel> results = new ArrayList<RealmModel>();
-        for (RealmEntity realmEntity : realms) {
+        for (MongoRealmEntity realmEntity : realms) {
             results.add(new RealmAdapter(realmEntity, invocationContext));
         }
         return results;
@@ -78,7 +83,7 @@ public class MongoKeycloakSession implements KeycloakSession {
         DBObject query = new QueryBuilder()
                 .and("name").is(name)
                 .get();
-        RealmEntity realm = getMongoStore().loadSingleEntity(RealmEntity.class, query, invocationContext);
+        MongoRealmEntity realm = getMongoStore().loadSingleEntity(MongoRealmEntity.class, query, invocationContext);
 
         if (realm == null) return null;
         return new RealmAdapter(realm, invocationContext);
@@ -86,7 +91,7 @@ public class MongoKeycloakSession implements KeycloakSession {
 
     @Override
     public boolean removeRealm(String id) {
-        return getMongoStore().removeEntity(RealmEntity.class, id, invocationContext);
+        return getMongoStore().removeEntity(MongoRealmEntity.class, id, invocationContext);
     }
 
     protected MongoStore getMongoStore() {

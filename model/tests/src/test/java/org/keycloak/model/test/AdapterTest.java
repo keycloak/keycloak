@@ -164,6 +164,9 @@ public class AdapterTest extends AbstractModelTest {
         cred.setValue("password");
         realmModel.updateCredential(user, cred);
 
+        commit();
+
+        realmModel = identitySession.getRealm("JUGGLER");
         Assert.assertTrue(realmModel.removeUser("bburke"));
         Assert.assertFalse(realmModel.removeUser("bburke"));
         Assert.assertNull(realmModel.getUser("bburke"));
@@ -218,6 +221,9 @@ public class AdapterTest extends AbstractModelTest {
 
         realmModel.addScopeMapping(app, realmRole);
 
+        commit();
+        realmModel = identitySession.getRealm("JUGGLER");
+
         Assert.assertTrue(realmManager.removeRealm(realmModel));
         Assert.assertFalse(realmManager.removeRealm(realmModel));
         Assert.assertNull(realmManager.getRealm(realmModel.getId()));
@@ -240,6 +246,10 @@ public class AdapterTest extends AbstractModelTest {
 
         RoleModel realmRole = realmModel.addRole("test");
         realmModel.addScopeMapping(app, realmRole);
+
+        commit();
+        realmModel = identitySession.getRealm("JUGGLER");
+        app = realmModel.getApplicationByName("test-app");
 
         Assert.assertTrue(realmModel.removeRoleById(realmRole.getId()));
         Assert.assertFalse(realmModel.removeRoleById(realmRole.getId()));
@@ -521,7 +531,7 @@ public class AdapterTest extends AbstractModelTest {
         }
         commit(true);
 
-        // Ty to rename realm to duplicate name
+        // Try to rename realm to duplicate name
         realmManager.createRealm("JUGGLER2");
         commit();
         try {

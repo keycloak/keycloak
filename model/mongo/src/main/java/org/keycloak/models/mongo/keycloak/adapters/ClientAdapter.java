@@ -7,13 +7,14 @@ import java.util.Set;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.entities.ClientEntity;
+import org.keycloak.models.mongo.api.MongoIdentifiableEntity;
 import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
-import org.keycloak.models.mongo.keycloak.entities.ClientEntity;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class ClientAdapter<T extends ClientEntity> extends AbstractMongoAdapter<T> implements ClientModel {
+public class ClientAdapter<T extends MongoIdentifiableEntity> extends AbstractMongoAdapter<T> implements ClientModel {
 
     protected final T clientEntity;
     private final RealmModel realm;
@@ -29,6 +30,11 @@ public class ClientAdapter<T extends ClientEntity> extends AbstractMongoAdapter<
         return clientEntity;
     }
 
+    // ClientEntity doesn't extend MongoIdentifiableEntity
+    public ClientEntity getMongoEntityAsClient() {
+        return (ClientEntity)getMongoEntity();
+    }
+
     @Override
     public String getId() {
         return getMongoEntity().getId();
@@ -36,25 +42,25 @@ public class ClientAdapter<T extends ClientEntity> extends AbstractMongoAdapter<
 
     @Override
     public String getClientId() {
-        return getMongoEntity().getName();
+        return getMongoEntityAsClient().getName();
     }
 
     @Override
     public long getAllowedClaimsMask() {
-        return getMongoEntity().getAllowedClaimsMask();
+        return getMongoEntityAsClient().getAllowedClaimsMask();
     }
 
     @Override
     public void setAllowedClaimsMask(long mask) {
-        getMongoEntity().setAllowedClaimsMask(mask);
+        getMongoEntityAsClient().setAllowedClaimsMask(mask);
         updateMongoEntity();
     }
 
     @Override
     public Set<String> getWebOrigins() {
         Set<String> result = new HashSet<String>();
-        if (getMongoEntity().getWebOrigins() != null) {
-            result.addAll(clientEntity.getWebOrigins());
+        if (getMongoEntityAsClient().getWebOrigins() != null) {
+            result.addAll(getMongoEntityAsClient().getWebOrigins());
         }
         return result;
     }
@@ -63,7 +69,7 @@ public class ClientAdapter<T extends ClientEntity> extends AbstractMongoAdapter<
     public void setWebOrigins(Set<String> webOrigins) {
         List<String> result = new ArrayList<String>();
         result.addAll(webOrigins);
-        clientEntity.setWebOrigins(result);
+        getMongoEntityAsClient().setWebOrigins(result);
         updateMongoEntity();
     }
 
@@ -80,8 +86,8 @@ public class ClientAdapter<T extends ClientEntity> extends AbstractMongoAdapter<
     @Override
     public Set<String> getRedirectUris() {
         Set<String> result = new HashSet<String>();
-        if (clientEntity.getRedirectUris() != null) {
-            result.addAll(clientEntity.getRedirectUris());
+        if (getMongoEntityAsClient().getRedirectUris() != null) {
+            result.addAll(getMongoEntityAsClient().getRedirectUris());
         }
         return result;
     }
@@ -90,7 +96,7 @@ public class ClientAdapter<T extends ClientEntity> extends AbstractMongoAdapter<
     public void setRedirectUris(Set<String> redirectUris) {
         List<String> result = new ArrayList<String>();
         result.addAll(redirectUris);
-        clientEntity.setRedirectUris(result);
+        getMongoEntityAsClient().setRedirectUris(result);
         updateMongoEntity();
     }
 
@@ -106,39 +112,39 @@ public class ClientAdapter<T extends ClientEntity> extends AbstractMongoAdapter<
 
     @Override
     public boolean isEnabled() {
-        return clientEntity.isEnabled();
+        return getMongoEntityAsClient().isEnabled();
     }
 
     @Override
     public void setEnabled(boolean enabled) {
-        clientEntity.setEnabled(enabled);
+        getMongoEntityAsClient().setEnabled(enabled);
         updateMongoEntity();
     }
 
     @Override
     public boolean validateSecret(String secret) {
-        return secret.equals(clientEntity.getSecret());
+        return secret.equals(getMongoEntityAsClient().getSecret());
     }
 
     @Override
     public String getSecret() {
-        return clientEntity.getSecret();
+        return getMongoEntityAsClient().getSecret();
     }
 
     @Override
     public void setSecret(String secret) {
-        clientEntity.setSecret(secret);
+        getMongoEntityAsClient().setSecret(secret);
         updateMongoEntity();
     }
 
     @Override
     public boolean isPublicClient() {
-        return clientEntity.isPublicClient();
+        return getMongoEntityAsClient().isPublicClient();
     }
 
     @Override
     public void setPublicClient(boolean flag) {
-        clientEntity.setPublicClient(flag);
+        getMongoEntityAsClient().setPublicClient(flag);
         updateMongoEntity();
     }
 
@@ -149,12 +155,12 @@ public class ClientAdapter<T extends ClientEntity> extends AbstractMongoAdapter<
 
     @Override
     public int getNotBefore() {
-        return clientEntity.getNotBefore();
+        return getMongoEntityAsClient().getNotBefore();
     }
 
     @Override
     public void setNotBefore(int notBefore) {
-        clientEntity.setNotBefore(notBefore);
+        getMongoEntityAsClient().setNotBefore(notBefore);
         updateMongoEntity();
     }
 

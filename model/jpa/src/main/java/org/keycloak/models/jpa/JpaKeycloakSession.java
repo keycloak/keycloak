@@ -102,4 +102,13 @@ public class JpaKeycloakSession implements KeycloakSession {
         if (em.getTransaction().isActive()) em.getTransaction().rollback();
         if (em.isOpen()) em.close();
     }
+
+    @Override
+    public void removeAllData() {
+        // Should be sufficient to delete all realms. Rest data should be removed in cascade
+        List<RealmModel> realms = getRealms();
+        for (RealmModel realm : realms) {
+            removeRealm(realm.getId());
+        }
+    }
 }

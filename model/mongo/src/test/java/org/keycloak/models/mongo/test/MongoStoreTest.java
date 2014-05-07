@@ -6,7 +6,6 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.models.mongo.api.MongoEntity;
 import org.keycloak.models.mongo.api.MongoStore;
 import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.mongo.impl.MongoStoreImpl;
@@ -22,7 +21,7 @@ import java.util.List;
  */
 public class MongoStoreTest {
 
-    private static final Class<? extends MongoEntity>[] MANAGED_DATA_TYPES = (Class<? extends MongoEntity>[])new Class<?>[] {
+    private static final Class<?>[] MANAGED_DATA_TYPES = (Class<?>[])new Class<?>[] {
             Person.class,
             Address.class,
             AddressWithFlats.class

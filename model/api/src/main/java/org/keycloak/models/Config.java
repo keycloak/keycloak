@@ -33,6 +33,16 @@ public class Config {
     public static final String TIMER_PROVIDER_KEY = "keycloak.timer";
     public static final String TIMER_PROVIDER_DEFAULT = "basic";
 
+    public static final String EXPORT_IMPORT_ACTION = "keycloak.migration.action";
+    public static final String EXPORT_IMPORT_PROVIDER = "keycloak.migration.provider";
+    public static final String EXPORT_IMPORT_PROVIDER_DEFAULT = "zip";
+    // used for "directory" provider
+    public static final String EXPORT_IMPORT_DIR = "keycloak.migration.dir";
+    // used for "zip" provider
+    public static final String EXPORT_IMPORT_ZIP_FILE = "keycloak.migration.zipFile";
+    public static final String EXPORT_IMPORT_ZIP_PASSWORD = "keycloak.migration.zipPassword";
+
+
     public static String getAdminRealm() {
         return System.getProperty(ADMIN_REALM_KEY, ADMIN_REALM_DEFAULT);
     }
@@ -117,4 +127,45 @@ public class Config {
         System.setProperty(THEME_ADMIN_KEY, adminTheme);
     }
 
+    // EXPORT + IMPORT
+
+    public static String getExportImportAction() {
+        return System.getProperty(EXPORT_IMPORT_ACTION);
+    }
+
+    public static void setExportImportAction(String exportImportAction) {
+        System.setProperty(EXPORT_IMPORT_ACTION, exportImportAction);
+    }
+
+    public static String getExportImportProvider() {
+        return System.getProperty(EXPORT_IMPORT_PROVIDER, EXPORT_IMPORT_PROVIDER_DEFAULT);
+    }
+
+    public static void setExportImportProvider(String exportImportProvider) {
+        System.setProperty(EXPORT_IMPORT_PROVIDER, exportImportProvider);
+    }
+
+    public static String getExportImportDir() {
+        return System.getProperty(EXPORT_IMPORT_DIR);
+    }
+
+    public static void setExportImportDir(String exportImportDir) {
+        System.setProperty(EXPORT_IMPORT_DIR, exportImportDir);
+    }
+
+    public static String getExportImportZipFile() {
+        return System.getProperty(EXPORT_IMPORT_ZIP_FILE);
+    }
+
+    public static void setExportImportZipFile(String exportImportZipFile) {
+        System.setProperty(EXPORT_IMPORT_ZIP_FILE, exportImportZipFile);
+    }
+
+    public static String getExportImportZipPassword() {
+        return System.getProperty(EXPORT_IMPORT_ZIP_PASSWORD);
+    }
+
+    public static void setExportImportZipPassword(String exportImportZipPassword) {
+        System.setProperty(EXPORT_IMPORT_ZIP_PASSWORD, exportImportZipPassword);
+    }
 }

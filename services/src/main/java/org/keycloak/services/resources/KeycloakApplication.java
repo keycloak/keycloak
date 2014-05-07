@@ -10,6 +10,7 @@ import org.keycloak.audit.AuditProvider;
 import org.keycloak.audit.AuditProviderFactory;
 import org.keycloak.authentication.AuthenticationProvider;
 import org.keycloak.authentication.AuthenticationProviderFactory;
+import org.keycloak.exportimport.ExportImportProvider;
 import org.keycloak.models.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -31,6 +32,7 @@ import org.keycloak.models.utils.ModelProviderUtils;
 import org.keycloak.timer.TimerProvider;
 import org.keycloak.timer.TimerProviderFactory;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.ProviderLoader;
 
 import javax.servlet.ServletContext;
 import javax.ws.rs.core.Application;
@@ -43,6 +45,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.StringTokenizer;
 
@@ -92,6 +95,8 @@ public class KeycloakApplication extends Application {
 
         setupScheduledTasks(providerSessionFactory, factory);
         importRealms(context);
+
+        checkExportImportProvider();
     }
 
     public String getContextPath() {
@@ -264,6 +269,17 @@ public class KeycloakApplication extends Application {
             return JsonSerialization.readValue(is, type);
         } catch (IOException e) {
             throw new RuntimeException("Failed to parse json", e);
+        }
+    }
+
+    protected void checkExportImportProvider() {
+        Iterator<ExportImportProvider> providers = ProviderLoader.load(ExportImportProvider.class).iterator();
+
+        if (providers.hasNext()) {
+            ExportImportProvider exportImport = providers.next();
+            exportImport.checkExportImport(factory);
+        } else {
+            log.warn("No ExportImportProvider found!");
         }
     }
 

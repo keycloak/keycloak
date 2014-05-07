@@ -32,15 +32,16 @@ import org.keycloak.models.mongo.impl.types.MongoEntityMapper;
 import org.keycloak.models.mongo.impl.types.SimpleMapper;
 import org.keycloak.models.mongo.impl.types.StringToEnumMapper;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.picketlink.common.properties.Property;
-import org.picketlink.common.properties.query.AnnotatedPropertyCriteria;
-import org.picketlink.common.properties.query.PropertyQueries;
+import org.keycloak.models.utils.reflection.AnnotatedPropertyCriteria;
+import org.keycloak.models.utils.reflection.Property;
+import org.keycloak.models.utils.reflection.PropertyQueries;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -55,19 +56,19 @@ public class MongoStoreImpl implements MongoStore {
     private static final Logger logger = Logger.getLogger(MongoStoreImpl.class);
 
     private final MapperRegistry mapperRegistry;
-    private ConcurrentMap<Class<? extends MongoEntity>, EntityInfo> entityInfoCache =
-            new ConcurrentHashMap<Class<? extends MongoEntity>, EntityInfo>();
+    private ConcurrentMap<Class<?>, EntityInfo> entityInfoCache =
+            new ConcurrentHashMap<Class<?>, EntityInfo>();
 
 
-    public MongoStoreImpl(DB database, boolean clearCollectionsOnStartup, Class<? extends MongoEntity>[] managedEntityTypes) {
+    public MongoStoreImpl(DB database, boolean clearCollectionsOnStartup, Class<?>[] managedEntityTypes) {
         this.database = database;
 
         mapperRegistry = new MapperRegistry();
 
-        for (Class<?> simpleConverterClass : SIMPLE_TYPES) {
-            SimpleMapper converter = new SimpleMapper(simpleConverterClass);
-            mapperRegistry.addAppObjectMapper(converter);
-            mapperRegistry.addDBObjectMapper(converter);
+        for (Class<?> simpleMapperClass : SIMPLE_TYPES) {
+            SimpleMapper mapper = new SimpleMapper(simpleMapperClass);
+            mapperRegistry.addAppObjectMapper(mapper);
+            mapperRegistry.addDBObjectMapper(mapper);
         }
 
         // Specific converter for ArrayList is added just for performance purposes to avoid recursive converter lookup (most of list idm will be ArrayList)
@@ -83,7 +84,7 @@ public class MongoStoreImpl implements MongoStore {
         mapperRegistry.addAppObjectMapper(new EnumToStringMapper());
         mapperRegistry.addDBObjectMapper(new StringToEnumMapper());
 
-        for (Class<? extends MongoEntity> type : managedEntityTypes) {
+        for (Class<?> type : managedEntityTypes) {
             getEntityInfo(type);
             mapperRegistry.addAppObjectMapper(new MongoEntityMapper(this, mapperRegistry, type));
             mapperRegistry.addDBObjectMapper(new BasicDBObjectMapper(this, mapperRegistry, type));
@@ -102,9 +103,9 @@ public class MongoStoreImpl implements MongoStore {
         logger.info("Database " + this.database.getName() + " dropped in MongoDB");
     }
 
-    // Don't drop database, but just clear all data in managed collections (useful for development)
-    protected void clearManagedCollections(Class<? extends MongoEntity>[] managedEntityTypes) {
-        for (Class<? extends MongoEntity> clazz : managedEntityTypes) {
+    // Don't drop database, but just clear all data in managed collections (useful for export/import or during development)
+    protected void clearManagedCollections(Class<?>[] managedEntityTypes) {
+        for (Class<?> clazz : managedEntityTypes) {
             DBCollection dbCollection = getDBCollectionForType(clazz);
             if (dbCollection != null) {
                 dbCollection.remove(new BasicDBObject());
@@ -113,8 +114,8 @@ public class MongoStoreImpl implements MongoStore {
         }
     }
 
-    protected void initManagedCollections(Class<? extends MongoEntity>[] managedEntityTypes) {
-        for (Class<? extends MongoEntity> clazz : managedEntityTypes) {
+    protected void initManagedCollections(Class<?>[] managedEntityTypes) {
+        for (Class<?> clazz : managedEntityTypes) {
             EntityInfo entityInfo = getEntityInfo(clazz);
             String dbCollectionName = entityInfo.getDbCollectionName();
             if (dbCollectionName != null && !database.collectionExists(dbCollectionName)) {
@@ -416,6 +417,13 @@ public class MongoStoreImpl implements MongoStore {
         }
     }
 
+    @Override
+    public void removeAllEntities() {
+        Set<Class<?>> managedTypes = this.entityInfoCache.keySet();
+        Class<? extends MongoEntity>[] arrayTemplate = (Class<? extends MongoEntity>[])new Class<?>[0];
+        this.clearManagedCollections(managedTypes.toArray(arrayTemplate));
+    }
+
     // Possibility to add user-defined mappers
     public void addAppObjectConverter(Mapper<?, ?> mapper) {
         mapperRegistry.addAppObjectMapper(mapper);
@@ -425,10 +433,10 @@ public class MongoStoreImpl implements MongoStore {
         mapperRegistry.addDBObjectMapper(mapper);
     }
 
-    public EntityInfo getEntityInfo(Class<? extends MongoEntity> entityClass) {
+    public EntityInfo getEntityInfo(Class<?> entityClass) {
         EntityInfo entityInfo = entityInfoCache.get(entityClass);
         if (entityInfo == null) {
-            List<Property<Object>> properties = PropertyQueries.createQuery(entityClass).addCriteria(new AnnotatedPropertyCriteria(MongoField.class)).getResultList();
+            Map<String, Property<Object>> properties = PropertyQueries.createQuery(entityClass).getWritableResultList();
 
             MongoCollection classAnnotation = entityClass.getAnnotation(MongoCollection.class);
 
@@ -473,7 +481,7 @@ public class MongoStoreImpl implements MongoStore {
         return object;
     }
 
-    protected DBCollection getDBCollectionForType(Class<? extends MongoEntity> type) {
+    protected DBCollection getDBCollectionForType(Class<?> type) {
         EntityInfo entityInfo = getEntityInfo(type);
         String dbCollectionName = entityInfo.getDbCollectionName();
         return dbCollectionName==null ? null : database.getCollection(dbCollectionName);

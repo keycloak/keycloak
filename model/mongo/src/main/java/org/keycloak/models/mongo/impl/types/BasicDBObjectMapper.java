@@ -14,13 +14,13 @@ import org.keycloak.models.mongo.api.types.MapperContext;
 import org.keycloak.models.mongo.api.types.MapperRegistry;
 import org.keycloak.models.mongo.impl.MongoStoreImpl;
 import org.keycloak.models.mongo.impl.EntityInfo;
-import org.picketlink.common.properties.Property;
-import org.picketlink.common.reflection.Types;
+import org.keycloak.models.utils.reflection.Property;
+import org.keycloak.models.utils.reflection.Types;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class BasicDBObjectMapper<S extends MongoEntity> implements Mapper<BasicDBObject, S> {
+public class BasicDBObjectMapper<S> implements Mapper<BasicDBObject, S> {
 
     private static final Logger logger = Logger.getLogger(BasicDBObjectMapper.class);
 
@@ -73,7 +73,7 @@ public class BasicDBObjectMapper<S extends MongoEntity> implements Mapper<BasicD
         return entity;
     }
 
-    private void setPropertyValue(MongoEntity entity, Object valueFromDB, Property property) {
+    private void setPropertyValue(Object entity, Object valueFromDB, Property property) {
         if (valueFromDB == null) {
             property.setValue(entity, null);
             return;

@@ -1,20 +1,19 @@
 package org.keycloak.models.mongo.impl.types;
 
 import com.mongodb.BasicDBObject;
-import org.keycloak.models.mongo.api.MongoEntity;
 import org.keycloak.models.mongo.api.types.Mapper;
 import org.keycloak.models.mongo.api.types.MapperContext;
 import org.keycloak.models.mongo.api.types.MapperRegistry;
 import org.keycloak.models.mongo.impl.MongoStoreImpl;
 import org.keycloak.models.mongo.impl.EntityInfo;
-import org.picketlink.common.properties.Property;
+import org.keycloak.models.utils.reflection.Property;
 
 import java.util.Collection;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class MongoEntityMapper<T extends MongoEntity> implements Mapper<T, BasicDBObject> {
+public class MongoEntityMapper<T> implements Mapper<T, BasicDBObject> {
 
     private final MongoStoreImpl mongoStoreImpl;
     private final MapperRegistry mapperRegistry;
@@ -37,11 +36,14 @@ public class MongoEntityMapper<T extends MongoEntity> implements Mapper<T, Basic
         Collection<Property<Object>> props = entityInfo.getProperties();
         for (Property<Object> property : props) {
             String propName = property.getName();
-            Object propValue = property.getValue(applicationObject);
 
-            if (propValue != null) {
-                Object dbValue = mapperRegistry.convertApplicationObjectToDBObject(propValue, Object.class);
-                dbObject.put(propName, dbValue);
+            // Ignore "id" property
+            if (!"id".equals(propName)) {
+                Object propValue = property.getValue(applicationObject);
+                if (propValue != null) {
+                    Object dbValue = propValue == null ? null : mapperRegistry.convertApplicationObjectToDBObject(propValue, Object.class);
+                    dbObject.put(propName, dbValue);
+                }
             }
         }
 

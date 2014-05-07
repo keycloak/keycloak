@@ -1,8 +1,8 @@
 package org.keycloak.models.mongo.test;
 
-import org.keycloak.models.mongo.api.AbstractMongoIdentifiableEntity;
 import org.keycloak.models.mongo.api.MongoCollection;
-import org.keycloak.models.mongo.api.MongoField;
+import org.keycloak.models.mongo.api.MongoIdentifiableEntity;
+import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
 
 import java.util.HashMap;
 import java.util.List;
@@ -12,8 +12,9 @@ import java.util.Map;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @MongoCollection(collectionName = "persons")
-public class Person extends AbstractMongoIdentifiableEntity {
+public class Person implements MongoIdentifiableEntity {
 
+    private String id;
     private String firstName;
     private int age;
     private List<String> kids;
@@ -23,7 +24,14 @@ public class Person extends AbstractMongoIdentifiableEntity {
     private List<Gender> genders;
     private Map<String, String> attributes = new HashMap<String, String>();
 
-    @MongoField
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
     public String getFirstName() {
         return firstName;
     }
@@ -32,7 +40,6 @@ public class Person extends AbstractMongoIdentifiableEntity {
         this.firstName = firstName;
     }
 
-    @MongoField
     public int getAge() {
         return age;
     }
@@ -41,7 +48,6 @@ public class Person extends AbstractMongoIdentifiableEntity {
         this.age = age;
     }
 
-    @MongoField
     public Gender getGender() {
         return gender;
     }
@@ -50,7 +56,6 @@ public class Person extends AbstractMongoIdentifiableEntity {
         this.gender = gender;
     }
 
-    @MongoField
     public List<Gender> getGenders() {
         return genders;
     }
@@ -59,7 +64,6 @@ public class Person extends AbstractMongoIdentifiableEntity {
         this.genders = genders;
     }
 
-    @MongoField
     public List<String> getKids() {
         return kids;
     }
@@ -68,7 +72,6 @@ public class Person extends AbstractMongoIdentifiableEntity {
         this.kids = kids;
     }
 
-    @MongoField
     public List<AddressWithFlats> getAddresses() {
         return addresses;
     }
@@ -77,7 +80,6 @@ public class Person extends AbstractMongoIdentifiableEntity {
         this.addresses = addresses;
     }
 
-    @MongoField
     public Address getMainAddress() {
         return mainAddress;
     }
@@ -86,7 +88,6 @@ public class Person extends AbstractMongoIdentifiableEntity {
         this.mainAddress = mainAddress;
     }
 
-    @MongoField
     public Map<String, String> getAttributes() {
         return attributes;
     }
@@ -101,6 +102,10 @@ public class Person extends AbstractMongoIdentifiableEntity {
 
     public void removeAttribute(String key) {
         attributes.remove(key);
+    }
+
+    @Override
+    public void afterRemove(MongoStoreInvocationContext invocationContext) {
     }
 
     public static enum Gender {

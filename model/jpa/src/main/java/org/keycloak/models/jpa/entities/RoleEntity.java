@@ -28,8 +28,6 @@ import org.hibernate.annotations.GenericGenerator;
 })
 public abstract class RoleEntity {
     @Id
-    @GenericGenerator(name="keycloak_generator", strategy="org.keycloak.models.jpa.utils.JpaIdGenerator")
-    @GeneratedValue(generator = "keycloak_generator")
     private String id;
 
     private String description;

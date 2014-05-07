@@ -4,6 +4,7 @@ import org.keycloak.models.AuthenticationLinkModel;
 import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RoleContainerModel;
+import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UsernameLoginFailureModel;
 import org.keycloak.models.jpa.entities.ApplicationEntity;
 import org.keycloak.models.jpa.entities.ApplicationRoleEntity;
@@ -435,6 +436,17 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public List<UsernameLoginFailureModel> getAllUserLoginFailures() {
+        TypedQuery<UsernameLoginFailureEntity> query = em.createNamedQuery("getAllFailures", UsernameLoginFailureEntity.class);
+        List<UsernameLoginFailureEntity> entities = query.getResultList();
+        List<UsernameLoginFailureModel> models = new ArrayList<UsernameLoginFailureModel>();
+        for (UsernameLoginFailureEntity entity : entities) {
+            models.add(new UsernameLoginFailureAdapter(entity));
+        }
+        return models;
+    }
+
+    @Override
     public UserModel getUserByEmail(String email) {
         TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUserByEmail", UserEntity.class);
         query.setParameter("email", email);
@@ -454,7 +466,13 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public UserModel addUser(String username) {
+        return this.addUser(KeycloakModelUtils.generateId(), username);
+    }
+
+    @Override
+    public UserModel addUser(String id, String username) {
         UserEntity entity = new UserEntity();
+        entity.setId(id);
         entity.setLoginName(username);
         entity.setRealm(realm);
         em.persist(entity);
@@ -580,7 +598,13 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public ApplicationModel addApplication(String name) {
+        return this.addApplication(KeycloakModelUtils.generateId(), name);
+    }
+
+    @Override
+    public ApplicationModel addApplication(String id, String name) {
         ApplicationEntity applicationData = new ApplicationEntity();
+        applicationData.setId(id);
         applicationData.setName(name);
         applicationData.setEnabled(true);
         applicationData.setRealm(realm);
@@ -805,7 +829,13 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public OAuthClientModel addOAuthClient(String name) {
+        return this.addOAuthClient(KeycloakModelUtils.generateId(), name);
+    }
+
+    @Override
+    public OAuthClientModel addOAuthClient(String id, String name) {
         OAuthClientEntity data = new OAuthClientEntity();
+        data.setId(id);
         data.setEnabled(true);
         data.setName(name);
         data.setRealm(realm);
@@ -949,7 +979,13 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public RoleModel addRole(String name) {
+        return this.addRole(KeycloakModelUtils.generateId(), name);
+    }
+
+    @Override
+    public RoleModel addRole(String id, String name) {
         RealmRoleEntity entity = new RealmRoleEntity();
+        entity.setId(id);
         entity.setName(name);
         entity.setRealm(realm);
         realm.getRoles().add(entity);
@@ -1170,13 +1206,9 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public void updateCredential(UserModel user, UserCredentialModel cred) {
-        CredentialEntity credentialEntity = null;
         UserEntity userEntity = ((UserAdapter) user).getUser();
-        for (CredentialEntity entity : userEntity.getCredentials()) {
-            if (entity.getType().equals(cred.getType())) {
-               credentialEntity = entity;
-            }
-        }
+        CredentialEntity credentialEntity = getCredentialEntity(userEntity, cred.getType());
+
         if (credentialEntity == null) {
             credentialEntity = new CredentialEntity();
             credentialEntity.setType(cred.getType());
@@ -1193,6 +1225,57 @@ public class RealmAdapter implements RealmModel {
             credentialEntity.setValue(cred.getValue());
         }
         credentialEntity.setDevice(cred.getDevice());
+        em.flush();
+    }
+
+    private CredentialEntity getCredentialEntity(UserEntity userEntity, String credType) {
+        for (CredentialEntity entity : userEntity.getCredentials()) {
+            if (entity.getType().equals(credType)) {
+                return entity;
+            }
+        }
+
+        return null;
+    }
+
+    @Override
+    public List<UserCredentialValueModel> getCredentialsDirectly(UserModel user) {
+        UserEntity userEntity = ((UserAdapter) user).getUser();
+        List<CredentialEntity> credentials = new ArrayList<CredentialEntity>(userEntity.getCredentials());
+        List<UserCredentialValueModel> result = new ArrayList<UserCredentialValueModel>();
+
+        if (credentials != null) {
+            for (CredentialEntity credEntity : credentials) {
+                UserCredentialValueModel credModel = new UserCredentialValueModel();
+                credModel.setType(credEntity.getType());
+                credModel.setDevice(credEntity.getDevice());
+                credModel.setValue(credEntity.getValue());
+                credModel.setSalt(credEntity.getSalt());
+
+                result.add(credModel);
+            }
+        }
+
+        return result;
+    }
+
+    @Override
+    public void updateCredentialDirectly(UserModel user, UserCredentialValueModel credModel) {
+        UserEntity userEntity = ((UserAdapter) user).getUser();
+        CredentialEntity credentialEntity = getCredentialEntity(userEntity, credModel.getType());
+
+        if (credentialEntity == null) {
+            credentialEntity = new CredentialEntity();
+            credentialEntity.setType(credModel.getType());
+            credentialEntity.setUser(userEntity);
+            em.persist(credentialEntity);
+            userEntity.getCredentials().add(credentialEntity);
+        }
+
+        credentialEntity.setValue(credModel.getValue());
+        credentialEntity.setSalt(credModel.getSalt());
+        credentialEntity.setDevice(credModel.getDevice());
+
         em.flush();
     }
 

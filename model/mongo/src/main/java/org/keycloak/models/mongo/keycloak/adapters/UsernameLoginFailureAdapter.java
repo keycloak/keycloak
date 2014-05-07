@@ -2,23 +2,22 @@ package org.keycloak.models.mongo.keycloak.adapters;
 
 import org.keycloak.models.UsernameLoginFailureModel;
 import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
-import org.keycloak.models.mongo.keycloak.entities.UserEntity;
-import org.keycloak.models.mongo.keycloak.entities.UsernameLoginFailureEntity;
+import org.keycloak.models.mongo.keycloak.entities.MongoUsernameLoginFailureEntity;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UsernameLoginFailureAdapter  extends AbstractMongoAdapter<UsernameLoginFailureEntity> implements UsernameLoginFailureModel {
-    protected UsernameLoginFailureEntity user;
+public class UsernameLoginFailureAdapter  extends AbstractMongoAdapter<MongoUsernameLoginFailureEntity> implements UsernameLoginFailureModel {
+    protected MongoUsernameLoginFailureEntity user;
 
-    public UsernameLoginFailureAdapter(MongoStoreInvocationContext invocationContext, UsernameLoginFailureEntity user) {
+    public UsernameLoginFailureAdapter(MongoStoreInvocationContext invocationContext, MongoUsernameLoginFailureEntity user) {
         super(invocationContext);
         this.user = user;
     }
 
     @Override
-    protected UsernameLoginFailureEntity getMongoEntity() {
+    protected MongoUsernameLoginFailureEntity getMongoEntity() {
         return user;
     }
 
@@ -35,6 +34,7 @@ public class UsernameLoginFailureAdapter  extends AbstractMongoAdapter<UsernameL
     @Override
     public void setFailedLoginNotBefore(int notBefore) {
         user.setFailedLoginNotBefore(notBefore);
+        updateMongoEntity();
     }
 
     @Override
@@ -45,11 +45,13 @@ public class UsernameLoginFailureAdapter  extends AbstractMongoAdapter<UsernameL
     @Override
     public void incrementFailures() {
         user.setNumFailures(getNumFailures() + 1);
+        updateMongoEntity();
     }
 
     @Override
     public void clearFailures() {
         user.setNumFailures(0);
+        updateMongoEntity();
     }
 
     @Override
@@ -60,6 +62,7 @@ public class UsernameLoginFailureAdapter  extends AbstractMongoAdapter<UsernameL
     @Override
     public void setLastFailure(long lastFailure) {
         user.setLastFailure(lastFailure);
+        updateMongoEntity();
     }
 
     @Override
@@ -70,4 +73,5 @@ public class UsernameLoginFailureAdapter  extends AbstractMongoAdapter<UsernameL
     @Override
     public void setLastIPFailure(String ip) {
         user.setLastIPFailure(ip);
+        updateMongoEntity();
     }}
