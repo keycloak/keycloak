@@ -89,6 +89,15 @@ module.factory('UserSessionStatsLoader', function(Loader, UserSessionStats, $rou
     });
 });
 
+module.factory('UserSocialLinksLoader', function(Loader, UserSocialLinks, $route, $q) {
+    return Loader.query(UserSocialLinks, function() {
+        return {
+            realm : $route.current.params.realm,
+            user : $route.current.params.user
+        }
+    });
+});
+
 module.factory('RoleLoader', function(Loader, Role, $route, $q) {
     return Loader.get(Role, function() {
         return {
