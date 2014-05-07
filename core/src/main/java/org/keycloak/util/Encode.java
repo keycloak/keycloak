@@ -268,7 +268,7 @@ public class Encode
       return buf.toString();
    }
 
-   public static boolean savePathParams(String segment, StringBuffer newSegment, List<String> params)
+   private static boolean savePathParams(String segment, StringBuffer newSegment, List<String> params)
    {
       boolean foundParam = false;
       // Regular expressions can have '{' and '}' characters.  Replace them to do match
@@ -293,7 +293,7 @@ public class Encode
     * @param encoding
     * @return
     */
-   public static String encodeValue(String segment, String[] encoding)
+   private static String encodeValue(String segment, String[] encoding)
    {
       ArrayList<String> params = new ArrayList<String>();
       boolean foundParam = false;
@@ -395,7 +395,7 @@ public class Encode
       return encodeFromArray(nameOrValue, queryNameValueEncoding, true);
    }
 
-   protected static String encodeFromArray(String segment, String[] encodingMap, boolean encodePercent)
+   private static String encodeFromArray(String segment, String[] encodingMap, boolean encodePercent)
    {
       StringBuffer result = new StringBuffer();
       for (int i = 0; i < segment.length(); i++)
@@ -445,7 +445,7 @@ public class Encode
       return encoded;
    }
 
-   public static String pathParamReplacement(String segment, List<String> params)
+   private static String pathParamReplacement(String segment, List<String> params)
    {
       StringBuffer newSegment = new StringBuffer();
       Matcher matcher = PARAM_REPLACEMENT.matcher(segment);

@@ -55,8 +55,8 @@ public class KeycloakUriBuilder {
         return impl;
     }
 
-    public static final Pattern opaqueUri = Pattern.compile("^([^:/?#]+):([^/].*)");
-    public static final Pattern hierarchicalUri = Pattern.compile("^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?");
+    private static final Pattern opaqueUri = Pattern.compile("^([^:/?#]+):([^/].*)");
+    private static final Pattern hierarchicalUri = Pattern.compile("^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?");
     private static final Pattern hostPortPattern = Pattern.compile("([^/:]+):(\\d+)");
 
     public static boolean compare(String s1, String s2) {

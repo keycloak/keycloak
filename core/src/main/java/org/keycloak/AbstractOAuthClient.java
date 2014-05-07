@@ -12,7 +12,9 @@ import java.util.concurrent.atomic.AtomicLong;
  * @version $Revision: 1 $
  */
 public class AbstractOAuthClient {
-    public static final String OAUTH_TOKEN_REQUEST_STATE = "OAuth_Token_Request_State";
+    private static final String OAUTH_TOKEN_REQUEST_STATE = "OAuth_Token_Request_State";
+    private final AtomicLong counter = new AtomicLong();
+
     protected String clientId;
     protected Map<String, String> credentials;
     protected String authUrl;
@@ -23,8 +25,6 @@ public class AbstractOAuthClient {
     protected String stateCookiePath;
     protected boolean isSecure;
     protected boolean publicClient;
-    protected final AtomicLong counter = new AtomicLong();
-
     protected String getStateCode() {
         return counter.getAndIncrement() + "/" + UUID.randomUUID().toString();
     }
