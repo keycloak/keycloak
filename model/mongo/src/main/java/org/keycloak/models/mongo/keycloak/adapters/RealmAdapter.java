@@ -1,5 +1,6 @@
 package org.keycloak.models.mongo.keycloak.adapters;
 
+import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
 import org.jboss.logging.Logger;
@@ -16,6 +17,7 @@ import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UsernameLoginFailureModel;
 import org.keycloak.models.entities.AuthenticationLinkEntity;
 import org.keycloak.models.entities.AuthenticationProviderEntity;
@@ -28,11 +30,13 @@ import org.keycloak.models.mongo.keycloak.entities.MongoOAuthClientEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRealmEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoUserEntity;
+import org.keycloak.models.mongo.keycloak.entities.MongoUserSessionEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoUsernameLoginFailureEntity;
 import org.keycloak.models.mongo.utils.MongoModelUtils;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
 import org.keycloak.models.utils.TimeBasedOTP;
+import org.keycloak.util.Time;
 
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -1333,4 +1337,51 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     public MongoRealmEntity getMongoEntity() {
         return realm;
     }
+
+    @Override
+    public UserSessionModel createUserSession(UserModel user, String ipAddress) {
+        MongoUserSessionEntity entity = new MongoUserSessionEntity();
+        entity.setUser(user.getId());
+        entity.setIpAddress(ipAddress);
+
+        int currentTime = Time.currentTime();
+        int expires = currentTime + realm.getCentralLoginLifespan();
+
+        entity.setStarted(currentTime);
+        entity.setExpires(expires);
+
+        getMongoStore().insertEntity(entity, invocationContext);
+        return new UserSessionAdapter(entity, this, invocationContext);
+    }
+
+    @Override
+    public UserSessionModel getUserSession(String id) {
+        MongoUserSessionEntity entity = getMongoStore().loadEntity(MongoUserSessionEntity.class, id, invocationContext);
+        if (entity == null) {
+            return null;
+        } else {
+            return new UserSessionAdapter(entity, this, invocationContext);
+        }
+    }
+
+    @Override
+    public void removeUserSession(UserSessionModel session) {
+        getMongoStore().removeEntity(((UserSessionAdapter) session).getEntity(), invocationContext);
+    }
+
+    @Override
+    public void removeUserSessions(UserModel user) {
+        DBObject query = new BasicDBObject("user", user.getId());
+        getMongoStore().removeEntities(MongoUserSessionEntity.class, query, invocationContext);
+    }
+
+    @Override
+    public void removeExpiredUserSessions() {
+        DBObject query = new QueryBuilder()
+                .and("expires").lessThan(Time.currentTime())
+                .get();
+
+        getMongoStore().removeEntities(MongoUserSessionEntity.class, query, invocationContext);
+    }
+
 }

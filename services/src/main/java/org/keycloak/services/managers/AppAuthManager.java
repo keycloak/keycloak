@@ -31,9 +31,12 @@ public class AppAuthManager extends AuthenticationManager {
     }
 
     public UserModel authenticateRequest(RealmModel realm, UriInfo uriInfo, HttpHeaders headers) {
-        UserModel user = authenticateIdentityCookie(realm, uriInfo, headers);
-        if (user != null) return user;
-        return authenticateBearerToken(realm, uriInfo, headers);
+        AuthResult authResult = authenticateIdentityCookie(realm, uriInfo, headers);
+        if (authResult != null) {
+            return authResult.getUser();
+        } else {
+            return authenticateBearerToken(realm, uriInfo, headers);
+        }
     }
 
     public String extractAuthorizationHeaderToken(HttpHeaders headers) {
@@ -51,7 +54,8 @@ public class AppAuthManager extends AuthenticationManager {
     public UserModel authenticateBearerToken(RealmModel realm, UriInfo uriInfo, HttpHeaders headers) {
         String tokenString = extractAuthorizationHeaderToken(headers);
         if (tokenString == null) return null;
-        return verifyIdentityToken(realm, uriInfo, true, tokenString);
+        AuthResult authResult = verifyIdentityToken(realm, uriInfo, true, tokenString);
+        return authResult != null ? authResult.getUser() : null;
     }
 
 }

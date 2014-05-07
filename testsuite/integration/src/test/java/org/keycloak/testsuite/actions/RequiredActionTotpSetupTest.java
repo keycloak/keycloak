@@ -26,6 +26,7 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.audit.Details;
+import org.keycloak.audit.Event;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -108,11 +109,11 @@ public class RequiredActionTotpSetupTest {
 
         totpPage.configure(totp.generate(totpPage.getTotpSecret()));
 
-        events.expectRequiredAction("update_totp").user(userId).detail(Details.USERNAME, "setupTotp").assertEvent();
+        String sessionId = events.expectRequiredAction("update_totp").user(userId).detail(Details.USERNAME, "setupTotp").assertEvent().getSessionId();
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().user(userId).detail(Details.USERNAME, "setupTotp").assertEvent();
+        events.expectLogin().user(userId).session(sessionId).detail(Details.USERNAME, "setupTotp").assertEvent();
     }
 
     @Test
@@ -126,15 +127,15 @@ public class RequiredActionTotpSetupTest {
 
         totpPage.configure(totp.generate(totpSecret));
 
-        events.expectRequiredAction("update_totp").assertEvent();
+        String sessionId = events.expectRequiredAction("update_totp").assertEvent().getSessionId();
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().assertEvent();
+        Event loginEvent = events.expectLogin().session(sessionId).assertEvent();
 
         oauth.openLogout();
 
-        events.expectLogout().assertEvent();
+        events.expectLogout(loginEvent.getSessionId()).assertEvent();
 
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
@@ -165,11 +166,11 @@ public class RequiredActionTotpSetupTest {
 
         events.expectRequiredAction("update_totp").user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent();
 
-        events.expectLogin().user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent();
+        Event loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent();
 
         // Logout
         oauth.openLogout();
-        events.expectLogout().user(userId).assertEvent();
+        events.expectLogout(loginEvent.getSessionId()).user(userId).assertEvent();
 
         // Try to login after logout
         loginPage.open();
@@ -182,7 +183,7 @@ public class RequiredActionTotpSetupTest {
         // Login with one-time password
         loginTotpPage.login(totp.generate(totpCode));
 
-        events.expectLogin().user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent();
+        loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent();
 
         // Open account page
         accountTotpPage.open();
@@ -195,7 +196,7 @@ public class RequiredActionTotpSetupTest {
 
         // Logout
         oauth.openLogout();
-        events.expectLogout().user(userId).assertEvent();
+        events.expectLogout(loginEvent.getSessionId()).user(userId).assertEvent();
 
         // Try to login
         loginPage.open();
@@ -205,11 +206,11 @@ public class RequiredActionTotpSetupTest {
         totpPage.assertCurrent();
         totpPage.configure(totp.generate(totpPage.getTotpSecret()));
 
-        events.expectRequiredAction("update_totp").user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent();
+        String sessionId = events.expectRequiredAction("update_totp").user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent().getSessionId();
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent();
+        events.expectLogin().user(userId).session(sessionId).detail(Details.USERNAME, "setupTotp2").assertEvent();
     }
 
 }

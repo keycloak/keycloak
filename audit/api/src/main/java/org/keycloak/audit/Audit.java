@@ -4,6 +4,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.provider.ProviderFactoryLoader;
 
 import java.util.HashMap;
@@ -58,6 +59,16 @@ public class Audit {
 
     public Audit user(String userId) {
         event.setUserId(userId);
+        return this;
+    }
+
+    public Audit session(UserSessionModel session) {
+        event.setSessionId(session.getId());
+        return this;
+    }
+
+    public Audit session(String sessionId) {
+        event.setSessionId(sessionId);
         return this;
     }
 

@@ -36,6 +36,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.ClientConnection;
 import org.keycloak.provider.ProviderSession;
@@ -254,7 +255,10 @@ public class SocialResource {
             return oauth.forwardToSecurityFailure("Your account is not enabled.");
         }
 
-        return oauth.processAccessCode(scope, state, redirectUri, client, user, socialLink.getSocialUserId() + "@" + socialLink.getSocialProvider(), false, "social@" + provider.getId(), audit);
+        UserSessionModel session = realm.createUserSession(user, clientConnection.getRemoteAddr());
+        audit.session(session);
+
+        return oauth.processAccessCode(scope, state, redirectUri, client, user, session, socialLink.getSocialUserId() + "@" + socialLink.getSocialProvider(), false, "social@" + provider.getId(), audit);
     }
 
     @GET

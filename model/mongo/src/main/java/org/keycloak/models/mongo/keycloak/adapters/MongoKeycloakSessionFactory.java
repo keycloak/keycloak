@@ -16,6 +16,7 @@ import org.keycloak.models.mongo.keycloak.entities.MongoOAuthClientEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRealmEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoUserEntity;
+import org.keycloak.models.mongo.keycloak.entities.MongoUserSessionEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoUsernameLoginFailureEntity;
 
 /**
@@ -37,7 +38,8 @@ public class MongoKeycloakSessionFactory implements KeycloakSessionFactory {
             AuthenticationLinkEntity.class,
             MongoApplicationEntity.class,
             MongoOAuthClientEntity.class,
-            MongoUsernameLoginFailureEntity.class
+            MongoUsernameLoginFailureEntity.class,
+            MongoUserSessionEntity.class
     };
 
     private final MongoClientProvider mongoClientProvider;

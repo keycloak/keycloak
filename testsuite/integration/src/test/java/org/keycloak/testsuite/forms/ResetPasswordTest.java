@@ -26,6 +26,7 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.audit.Details;
+import org.keycloak.audit.Event;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
@@ -123,7 +124,7 @@ public class ResetPasswordTest {
 
         resetPasswordPage.assertCurrent();
 
-        events.expectRequiredAction("send_reset_password").user(userId).detail(Details.USERNAME, username).detail(Details.EMAIL, "login@test.com").assertEvent();
+        String sessionId = events.expectRequiredAction("send_reset_password").user(userId).detail(Details.USERNAME, username).detail(Details.EMAIL, "login@test.com").assertEvent().getSessionId();
 
         Assert.assertEquals("You should receive an email shortly with further instructions.", resetPasswordPage.getSuccessMessage());
 
@@ -140,15 +141,15 @@ public class ResetPasswordTest {
 
         updatePasswordPage.changePassword("resetPassword", "resetPassword");
 
-        events.expectRequiredAction("update_password").user(userId).detail(Details.USERNAME, username).assertEvent();
+        events.expectRequiredAction("update_password").user(userId).session(sessionId).detail(Details.USERNAME, username).assertEvent();
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().user(userId).detail(Details.USERNAME, username).assertEvent();
+        Event loginEvent = events.expectLogin().user(userId).session(sessionId).detail(Details.USERNAME, username).assertEvent();
 
         oauth.openLogout();
 
-        events.expectLogout().user(userId).assertEvent();
+        events.expectLogout(loginEvent.getSessionId()).user(userId).session(sessionId).assertEvent();
 
         loginPage.open();
 
@@ -176,7 +177,7 @@ public class ResetPasswordTest {
 
         Assert.assertEquals(0, greenMail.getReceivedMessages().length);
 
-        events.expectRequiredAction("send_reset_password").user((String) null).detail(Details.USERNAME, "invalid").removeDetail(Details.EMAIL).removeDetail(Details.CODE_ID).error("user_not_found").assertEvent();
+        events.expectRequiredAction("send_reset_password").user((String) null).session((String) null).detail(Details.USERNAME, "invalid").removeDetail(Details.EMAIL).removeDetail(Details.CODE_ID).error("user_not_found").assertEvent();
     }
 
     @Test
@@ -206,7 +207,7 @@ public class ResetPasswordTest {
         String body = (String) message.getContent();
         String changePasswordUrl = body.split("\n")[3];
 
-        events.expectRequiredAction("send_reset_password").user(userId).detail(Details.USERNAME, "login-test").detail(Details.EMAIL, "login@test.com").assertEvent();
+        String sessionId = events.expectRequiredAction("send_reset_password").user(userId).detail(Details.USERNAME, "login-test").detail(Details.EMAIL, "login@test.com").assertEvent().getSessionId();
 
         driver.navigate().to(changePasswordUrl.trim());
 
@@ -218,15 +219,15 @@ public class ResetPasswordTest {
 
         updatePasswordPage.changePassword("resetPasswordWithPasswordPolicy", "resetPasswordWithPasswordPolicy");
 
-        events.expectRequiredAction("update_password").user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+        events.expectRequiredAction("update_password").user(userId).session(sessionId).detail(Details.USERNAME, "login-test").assertEvent();
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+        Event loginEvent = events.expectLogin().user(userId).session(sessionId).detail(Details.USERNAME, "login-test").assertEvent();
 
         oauth.openLogout();
 
-        events.expectLogout().user(userId).assertEvent();
+        events.expectLogout(loginEvent.getSessionId()).user(userId).session(sessionId).assertEvent();
 
         loginPage.open();
 

@@ -60,6 +60,7 @@ public class MongoAuditProvider implements AuditProvider {
         e.put("realmId", o.getRealmId());
         e.put("clientId", o.getClientId());
         e.put("userId", o.getUserId());
+        e.put("sessionId", o.getSessionId());
         e.put("ipAddress", o.getIpAddress());
         e.put("error", o.getError());
 
@@ -81,6 +82,7 @@ public class MongoAuditProvider implements AuditProvider {
         e.setRealmId(o.getString("realmId"));
         e.setClientId(o.getString("clientId"));
         e.setUserId(o.getString("userId"));
+        e.setSessionId(o.getString("sessionId"));
         e.setIpAddress(o.getString("ipAddress"));
         e.setError(o.getString("error"));
 

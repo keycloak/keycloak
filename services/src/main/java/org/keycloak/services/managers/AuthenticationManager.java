@@ -11,6 +11,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderSession;
 import org.keycloak.representations.AccessToken;
@@ -55,28 +56,31 @@ public class AuthenticationManager {
         this.protector = protector;
     }
 
-    public AccessToken createIdentityToken(RealmModel realm, UserModel user) {
+    public AccessToken createIdentityToken(RealmModel realm, UserModel user, UserSessionModel session) {
         logger.info("createIdentityToken");
         AccessToken token = new AccessToken();
         token.id(KeycloakModelUtils.generateId());
         token.issuedNow();
         token.subject(user.getId());
         token.audience(realm.getName());
+        if (session != null) {
+            token.setSessionState(session.getId());
+        }
         if (realm.getCentralLoginLifespan() > 0) {
             token.expiration(Time.currentTime() + realm.getCentralLoginLifespan());
         }
         return token;
     }
 
-    public NewCookie createLoginCookie(RealmModel realm, UserModel user, UriInfo uriInfo, boolean rememberMe) {
+    public NewCookie createLoginCookie(RealmModel realm, UserModel user, UserSessionModel session, UriInfo uriInfo, boolean rememberMe) {
         logger.info("createLoginCookie");
         String cookieName = KEYCLOAK_IDENTITY_COOKIE;
         String cookiePath = getIdentityCookiePath(realm, uriInfo);
-        return createLoginCookie(realm, user, null, cookieName, cookiePath, rememberMe);
+        return createLoginCookie(realm, user, session, null, cookieName, cookiePath, rememberMe);
     }
 
-    protected NewCookie createLoginCookie(RealmModel realm, UserModel user, ClientModel client, String cookieName, String cookiePath, boolean rememberMe) {
-        AccessToken identityToken = createIdentityToken(realm, user);
+    protected NewCookie createLoginCookie(RealmModel realm, UserModel user, UserSessionModel session, ClientModel client, String cookieName, String cookiePath, boolean rememberMe) {
+        AccessToken identityToken = createIdentityToken(realm, user, session);
         if (client != null) {
             identityToken.issuedFor(client.getClientId());
         }
@@ -136,17 +140,17 @@ public class AuthenticationManager {
         response.addNewCookie(expireIt);
     }
 
-    public UserModel authenticateIdentityCookie(RealmModel realm, UriInfo uriInfo, HttpHeaders headers) {
+    public AuthResult authenticateIdentityCookie(RealmModel realm, UriInfo uriInfo, HttpHeaders headers) {
         return authenticateIdentityCookie(realm, uriInfo, headers, true);
     }
 
-    public UserModel authenticateIdentityCookie(RealmModel realm, UriInfo uriInfo, HttpHeaders headers, boolean checkActive) {
+    public AuthResult authenticateIdentityCookie(RealmModel realm, UriInfo uriInfo, HttpHeaders headers, boolean checkActive) {
         logger.info("authenticateIdentityCookie");
         String cookieName = KEYCLOAK_IDENTITY_COOKIE;
         return authenticateIdentityCookie(realm, uriInfo, headers, cookieName, checkActive);
     }
 
-    protected UserModel authenticateIdentityCookie(RealmModel realm, UriInfo uriInfo, HttpHeaders headers, String cookieName, boolean checkActive) {
+    private AuthResult authenticateIdentityCookie(RealmModel realm, UriInfo uriInfo, HttpHeaders headers, String cookieName, boolean checkActive) {
         logger.info("authenticateIdentityCookie");
         Cookie cookie = headers.getCookies().get(cookieName);
         if (cookie == null) {
@@ -155,14 +159,14 @@ public class AuthenticationManager {
         }
 
         String tokenString = cookie.getValue();
-        UserModel user = verifyIdentityToken(realm, uriInfo, checkActive, tokenString);
-        if (user == null) {
+        AuthResult authResult = verifyIdentityToken(realm, uriInfo, checkActive, tokenString);
+        if (authResult == null) {
             expireIdentityCookie(realm, uriInfo);
         }
-        return user;
+        return authResult;
     }
 
-    protected UserModel verifyIdentityToken(RealmModel realm, UriInfo uriInfo, boolean checkActive, String tokenString) {
+    protected AuthResult verifyIdentityToken(RealmModel realm, UriInfo uriInfo, boolean checkActive, String tokenString) {
         try {
             AccessToken token = RSATokenVerifier.verifyToken(tokenString, realm.getPublicKey(), realm.getName(), checkActive);
             logger.info("identity token verified");
@@ -188,10 +192,16 @@ public class AuthenticationManager {
             if (token.getIssuedAt() < user.getNotBefore()) {
                 logger.info("Stale cookie");
                 return null;
-
             }
 
-            return user;
+            UserSessionModel session = realm.getUserSession(token.getSessionState());
+            if (session == null || session.getExpires() < Time.currentTime()) {
+                logger.info("User session not active");
+                expireIdentityCookie(realm, uriInfo);
+                return null;
+            }
+
+            return new AuthResult(user, session);
         } catch (VerificationException e) {
             logger.info("Failed to verify identity token", e);
         }
@@ -326,6 +336,24 @@ public class AuthenticationManager {
 
     public enum AuthenticationStatus {
         SUCCESS, ACCOUNT_TEMPORARILY_DISABLED, ACCOUNT_DISABLED, ACTIONS_REQUIRED, INVALID_USER, INVALID_CREDENTIALS, MISSING_PASSWORD, MISSING_TOTP, FAILED
+    }
+
+    public class AuthResult {
+        private final UserModel user;
+        private final UserSessionModel session;
+
+        public AuthResult(UserModel user, UserSessionModel session) {
+            this.user = user;
+            this.session = session;
+        }
+
+        public UserSessionModel getSession() {
+            return session;
+        }
+
+        public UserModel getUser() {
+            return user;
+        }
     }
 
 }

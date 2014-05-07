@@ -29,6 +29,9 @@ import org.keycloak.services.managers.SocialRequestManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.resources.admin.AdminRoot;
 import org.keycloak.models.utils.ModelProviderUtils;
+import org.keycloak.services.scheduled.ClearExpiredAuditEvents;
+import org.keycloak.services.scheduled.ClearExpiredUserSessions;
+import org.keycloak.services.scheduled.ScheduledTaskRunner;
 import org.keycloak.timer.TimerProvider;
 import org.keycloak.timer.TimerProviderFactory;
 import org.keycloak.util.JsonSerialization;
@@ -155,32 +158,8 @@ public class KeycloakApplication extends Application {
             return;
         }
         TimerProvider timer = timerFactory.create(null);
-
-        final ProviderFactory<AuditProvider> auditFactory = providerSessionFactory.getProviderFactory(AuditProvider.class);
-        if (auditFactory != null) {
-            timer.schedule(new Runnable() {
-                @Override
-                public void run() {
-                    KeycloakSession keycloakSession = keycloakSessionFactory.createSession();
-                    ProviderSession providerSession = providerSessionFactory.createSession();
-                    AuditProvider audit = providerSession.getProvider(AuditProvider.class);
-                    try {
-                        for (RealmModel realm : keycloakSession.getRealms()) {
-                            if (realm.isAuditEnabled() && realm.getAuditExpiration() > 0) {
-                                long olderThan = System.currentTimeMillis() - realm.getAuditExpiration() * 1000;
-                                log.info("Expiring audit events for " + realm.getName() + " older than " + new Date(olderThan));
-                                audit.clear(realm.getId(), olderThan);
-                            }
-                        }
-                    } finally {
-                        keycloakSession.close();
-                        audit.close();
-                    }
-                }
-            }, Config.getAuditExpirationSchedule());
-        } else {
-            log.info("Not scheduling audit expiration, no audit provider found");
-        }
+        timer.schedule(new ScheduledTaskRunner(keycloakSessionFactory, providerSessionFactory, new ClearExpiredAuditEvents()), Config.getAuditExpirationSchedule());
+        timer.schedule(new ScheduledTaskRunner(keycloakSessionFactory, providerSessionFactory, new ClearExpiredUserSessions()), Config.getUserExpirationSchedule());
     }
 
     public KeycloakSessionFactory getFactory() {
@@ -204,7 +183,6 @@ public class KeycloakApplication extends Application {
     public void importRealms(ServletContext context) {
         importRealmFile();
         importRealmResources(context);
-
     }
 
     public void importRealmResources(ServletContext context) {

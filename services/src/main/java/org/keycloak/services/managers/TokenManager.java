@@ -14,6 +14,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
@@ -70,18 +71,23 @@ public class TokenManager {
 
 
 
-    public AccessCodeEntry createAccessCode(String scopeParam, String state, String redirect, RealmModel realm, ClientModel client, UserModel user) {
-        AccessCodeEntry code = createAccessCodeEntry(scopeParam, state, redirect, realm, client, user);
+    public AccessCodeEntry createAccessCode(String scopeParam, String state, String redirect, RealmModel realm, ClientModel client, UserModel user, UserSessionModel session) {
+        AccessCodeEntry code = createAccessCodeEntry(scopeParam, state, redirect, realm, client, user, session);
         accessCodeMap.put(code.getId(), code);
         return code;
     }
 
-    private AccessCodeEntry createAccessCodeEntry(String scopeParam, String state, String redirect, RealmModel realm, ClientModel client, UserModel user) {
+    private AccessCodeEntry createAccessCodeEntry(String scopeParam, String state, String redirect, RealmModel realm, ClientModel client, UserModel user, UserSessionModel session) {
         AccessCodeEntry code = new AccessCodeEntry();
+        if (session != null) {
+            code.setSessionState(session.getId());
+        }
+
         List<RoleModel> realmRolesRequested = code.getRealmRolesRequested();
         MultivaluedMap<String, RoleModel> resourceRolesRequested = code.getResourceRolesRequested();
 
-        AccessToken token = createClientAccessToken(scopeParam, realm, client, user, realmRolesRequested, resourceRolesRequested);
+        AccessToken token = createClientAccessToken(scopeParam, realm, client, user, session, realmRolesRequested, resourceRolesRequested);
+        token.setSessionState(code.getSessionState());
 
         code.setToken(token);
         code.setRealm(realm);
@@ -119,7 +125,7 @@ public class TokenManager {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale refresh token");
         }
 
-        audit.user(refreshToken.getSubject()).detail(Details.REFRESH_TOKEN_ID, refreshToken.getId());
+        audit.user(refreshToken.getSubject()).session(refreshToken.getSessionState()).detail(Details.REFRESH_TOKEN_ID, refreshToken.getId());
 
         UserModel user = realm.getUserById(refreshToken.getSubject());
         if (user == null) {
@@ -128,12 +134,15 @@ public class TokenManager {
 
         if (!user.isEnabled()) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "User disabled", "User disabled");
+        }
 
+        UserSessionModel session = realm.getUserSession(refreshToken.getSessionState());
+        if (session == null || session.getExpires() < Time.currentTime()) {
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Session not active", "Session not active");
         }
 
         if (!client.getClientId().equals(refreshToken.getIssuedFor())) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Unmatching clients", "Unmatching clients");
-
         }
 
         if (refreshToken.getIssuedAt() < client.getNotBefore() || refreshToken.getIssuedAt() < user.getNotBefore()) {
@@ -179,17 +188,17 @@ public class TokenManager {
             }
         }
 
-        AccessToken accessToken = initToken(realm, client, user);
+        AccessToken accessToken = initToken(realm, client, user, session);
         accessToken.setRealmAccess(refreshToken.getRealmAccess());
         accessToken.setResourceAccess(refreshToken.getResourceAccess());
         return accessToken;
     }
 
-    public AccessToken createClientAccessToken(String scopeParam, RealmModel realm, ClientModel client, UserModel user) {
-        return createClientAccessToken(scopeParam, realm, client, user, new LinkedList<RoleModel>(), new MultivaluedMapImpl<String, RoleModel>());
+    public AccessToken createClientAccessToken(String scopeParam, RealmModel realm, ClientModel client, UserModel user, UserSessionModel session) {
+        return createClientAccessToken(scopeParam, realm, client, user, session, new LinkedList<RoleModel>(), new MultivaluedMapImpl<String, RoleModel>());
     }
 
-    public AccessToken createClientAccessToken(String scopeParam, RealmModel realm, ClientModel client, UserModel user, List<RoleModel> realmRolesRequested, MultivaluedMap<String, RoleModel> resourceRolesRequested) {
+    public AccessToken createClientAccessToken(String scopeParam, RealmModel realm, ClientModel client, UserModel user, UserSessionModel session, List<RoleModel> realmRolesRequested, MultivaluedMap<String, RoleModel> resourceRolesRequested) {
         // todo scopeParam is ignored until we figure out a scheme that fits with openid connect
 
         Set<RoleModel> roleMappings = realm.getRoleMappings(user);
@@ -217,7 +226,7 @@ public class TokenManager {
             }
         }
 
-        AccessToken token = initToken(realm, client, user);
+        AccessToken token = initToken(realm, client, user, session);
 
         if (realmRolesRequested.size() > 0) {
             for (RoleModel role : realmRolesRequested) {
@@ -270,7 +279,7 @@ public class TokenManager {
 
 
 
-    protected AccessToken initToken(RealmModel realm, ClientModel client, UserModel user) {
+    protected AccessToken initToken(RealmModel realm, ClientModel client, UserModel user, UserSessionModel session) {
         AccessToken token = new AccessToken();
         token.id(KeycloakModelUtils.generateId());
         token.subject(user.getId());
@@ -278,6 +287,9 @@ public class TokenManager {
         token.issuedNow();
         token.issuedFor(client.getClientId());
         token.issuer(realm.getName());
+        if (session != null) {
+            token.setSessionState(session.getId());
+        }
         if (realm.getAccessTokenLifespan() > 0) {
             token.expiration(Time.currentTime() + realm.getAccessTokenLifespan());
         }
@@ -351,8 +363,8 @@ public class TokenManager {
             return this;
         }
 
-        public AccessTokenResponseBuilder generateAccessToken(String scopeParam, ClientModel client, UserModel user) {
-            accessToken = createClientAccessToken(scopeParam, realm, client, user);
+        public AccessTokenResponseBuilder generateAccessToken(String scopeParam, ClientModel client, UserModel user, UserSessionModel session) {
+            accessToken = createClientAccessToken(scopeParam, realm, client, user, session);
             return this;
         }
 

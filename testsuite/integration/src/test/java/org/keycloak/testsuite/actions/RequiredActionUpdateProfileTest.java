@@ -87,12 +87,12 @@ public class RequiredActionUpdateProfileTest {
 
         updateProfilePage.update("New first", "New last", "new@email.com");
 
-        events.expectRequiredAction("update_profile").assertEvent();
-        events.expectRequiredAction("update_email").detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
+        String sessionId = events.expectRequiredAction("update_profile").assertEvent().getSessionId();
+        events.expectRequiredAction("update_email").session(sessionId).detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().assertEvent();
+        events.expectLogin().session(sessionId).assertEvent();
     }
 
     @Test

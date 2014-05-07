@@ -13,7 +13,7 @@ public class RefreshToken extends AccessToken {
     }
 
     /**
-     * Deep copies issuer, subject, issuedFor, realmAccess, and resourceAccess
+     * Deep copies issuer, subject, issuedFor, sessionState, realmAccess, and resourceAccess
      * from AccessToken.
      *
      * @param token
@@ -23,6 +23,7 @@ public class RefreshToken extends AccessToken {
         this.issuer = token.issuer;
         this.subject = token.subject;
         this.issuedFor = token.issuedFor;
+        this.sessionState = token.sessionState;
         if (token.realmAccess != null) {
             realmAccess = token.realmAccess.clone();
         }

@@ -1,10 +1,10 @@
 package org.keycloak.services.managers;
 
 import org.apache.http.client.HttpClient;
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.client.ClientRequest;
 import org.jboss.resteasy.client.ClientResponse;
 import org.jboss.resteasy.client.core.executors.ApacheHttpClient4Executor;
-import org.jboss.logging.Logger;
 import org.keycloak.TokenIdGenerator;
 import org.keycloak.adapters.AdapterConstants;
 import org.keycloak.models.ApplicationModel;
@@ -146,7 +146,7 @@ public class ResourceAdminManager {
 
     }
 
-    public void logoutUser(URI requestUri, RealmModel realm, UserModel user) {
+    public void logoutUser(URI requestUri, RealmModel realm, String user, String session) {
         ApacheHttpClient4Executor executor = createExecutor();
 
         try {
@@ -154,7 +154,7 @@ public class ResourceAdminManager {
             List<ApplicationModel> resources = realm.getApplications();
             logger.debugv("logging out {0} resources ", resources.size());
             for (ApplicationModel resource : resources) {
-                logoutApplication(requestUri, realm, resource, user.getId(), executor, 0);
+                logoutApplication(requestUri, realm, resource, user, session, executor, 0);
             }
         } finally {
             executor.getHttpClient().getConnectionManager().shutdown();
@@ -168,19 +168,19 @@ public class ResourceAdminManager {
             List<ApplicationModel> resources = realm.getApplications();
             logger.debugv("logging out {0} resources ", resources.size());
             for (ApplicationModel resource : resources) {
-                logoutApplication(requestUri, realm, resource, null, executor, realm.getNotBefore());
+                logoutApplication(requestUri, realm, resource, null, null, executor, realm.getNotBefore());
             }
         } finally {
             executor.getHttpClient().getConnectionManager().shutdown();
         }
     }
 
-    public void logoutApplication(URI requestUri, RealmModel realm, ApplicationModel resource, String user) {
+    public void logoutApplication(URI requestUri, RealmModel realm, ApplicationModel resource, String user, String session) {
         ApacheHttpClient4Executor executor = createExecutor();
 
         try {
             resource.setNotBefore(Time.currentTime());
-            logoutApplication(requestUri, realm, resource, user, executor, resource.getNotBefore());
+            logoutApplication(requestUri, realm, resource, user, session, executor, resource.getNotBefore());
         } finally {
             executor.getHttpClient().getConnectionManager().shutdown();
         }
@@ -188,10 +188,10 @@ public class ResourceAdminManager {
     }
 
 
-    protected boolean logoutApplication(URI requestUri, RealmModel realm, ApplicationModel resource, String user, ApacheHttpClient4Executor client, int notBefore) {
+    protected boolean logoutApplication(URI requestUri, RealmModel realm, ApplicationModel resource, String user, String session, ApacheHttpClient4Executor client, int notBefore) {
         String managementUrl = getManagementUrl(requestUri, resource);
         if (managementUrl != null) {
-            LogoutAction adminAction = new LogoutAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, resource.getName(), user, notBefore);
+            LogoutAction adminAction = new LogoutAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, resource.getName(), user, session, notBefore);
             String token = new TokenManager().encodeToken(realm, adminAction);
             logger.infov("logout user: {0} resource: {1} url: {2}", user, resource.getName(), managementUrl);
             ClientRequest request = client.createRequest(UriBuilder.fromUri(managementUrl).path(AdapterConstants.K_LOGOUT).build().toString());
@@ -209,7 +209,7 @@ public class ResourceAdminManager {
                 response.releaseConnection();
             }
         } else {
-            logger.info("Can't logout" + resource.getName() + " no mgmt url.");
+            logger.info("Can't logout " + resource.getName() + " no mgmt url.");
             return false;
         }
     }

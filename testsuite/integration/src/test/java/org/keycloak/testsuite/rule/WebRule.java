@@ -47,6 +47,13 @@ public class WebRule extends ExternalResource {
 
     @Override
     protected void before() throws Throwable {
+        driver = createWebDriver();
+        oauth = new OAuthClient(driver);
+        initWebResources(test);
+    }
+
+    public static WebDriver createWebDriver() {
+        WebDriver driver;
         String browser = "htmlunit";
         if (System.getProperty("browser") != null) {
             browser = System.getProperty("browser");
@@ -64,10 +71,7 @@ public class WebRule extends ExternalResource {
         } else {
             throw new RuntimeException("Unsupported browser " + browser);
         }
-
-        oauth = new OAuthClient(driver);
-
-        initWebResources(test);
+        return driver;
     }
 
     protected void initWebResources(Object o) {
@@ -122,7 +126,7 @@ public class WebRule extends ExternalResource {
         driver.close();
     }
 
-    public class HtmlUnitDriver extends org.openqa.selenium.htmlunit.HtmlUnitDriver {
+    public static class HtmlUnitDriver extends org.openqa.selenium.htmlunit.HtmlUnitDriver {
         
         @Override
         public WebClient getWebClient() {

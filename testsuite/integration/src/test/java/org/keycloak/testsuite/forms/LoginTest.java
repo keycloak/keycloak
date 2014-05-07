@@ -94,7 +94,7 @@ public class LoginTest {
 
         Assert.assertEquals("Invalid username or password.", loginPage.getError());
 
-        events.expectLogin().user((String) null).error("invalid_user_credentials").detail(Details.USERNAME, "login-test").removeDetail(Details.CODE_ID).assertEvent();
+        events.expectLogin().user((String) null).session((String) null).error("invalid_user_credentials").detail(Details.USERNAME, "login-test").removeDetail(Details.CODE_ID).assertEvent();
     }
 
     @Test
@@ -106,7 +106,7 @@ public class LoginTest {
 
         Assert.assertEquals("Invalid username or password.", loginPage.getError());
 
-        events.expectLogin().user((String) null).error("user_not_found").detail(Details.USERNAME, "invalid").removeDetail(Details.CODE_ID).assertEvent();
+        events.expectLogin().user((String) null).session((String) null).error("user_not_found").detail(Details.USERNAME, "invalid").removeDetail(Details.CODE_ID).assertEvent();
     }
 
     @Test
@@ -139,7 +139,7 @@ public class LoginTest {
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertEquals("access_denied", oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
 
-        events.expectLogin().error("rejected_by_user").user((String) null).removeDetail(Details.USERNAME).removeDetail(Details.CODE_ID).assertEvent();
+        events.expectLogin().error("rejected_by_user").user((String) null).session((String) null).removeDetail(Details.USERNAME).removeDetail(Details.CODE_ID).assertEvent();
     }
 
 }

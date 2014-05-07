@@ -21,11 +21,13 @@
  */
 package org.keycloak.testsuite;
 
+import net.iharder.Base64;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.impl.client.DefaultHttpClient;
@@ -36,9 +38,12 @@ import org.junit.Assert;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
+import org.keycloak.audit.Details;
+import org.keycloak.audit.Event;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.resources.TokenService;
 import org.keycloak.util.BasicAuthHelper;
@@ -46,6 +51,7 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.core.UriBuilder;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -144,6 +150,35 @@ public class OAuthClient {
         }
     }
 
+    public AccessTokenResponse doGrantAccessTokenRequest(String clientSecret, String username,  String password) throws Exception {
+        HttpClient client = new DefaultHttpClient();
+        HttpPost post = new HttpPost(getResourceOwnerPasswordCredentialGrantUrl());
+
+        String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
+        post.setHeader("Authorization", authorization);
+
+        List<NameValuePair> parameters = new LinkedList<NameValuePair>();
+        parameters.add(new BasicNameValuePair("username", username));
+        parameters.add(new BasicNameValuePair("password", password));
+
+        UrlEncodedFormEntity formEntity;
+        try {
+            formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+        post.setEntity(formEntity);
+
+        return new AccessTokenResponse(client.execute(post));
+    }
+
+    public HttpResponse doLogout(String redirectUri, String sessionState) throws IOException {
+        HttpClient client = new DefaultHttpClient();
+        HttpGet get = new HttpGet(getLogoutUrl(redirectUri, sessionState));
+
+        return client.execute(get);
+    }
+
     public AccessTokenResponse doRefreshTokenRequest(String refreshToken, String password) {
         HttpClient client = new DefaultHttpClient();
         HttpPost post = new HttpPost(getRefreshTokenUrl());
@@ -163,7 +198,7 @@ public class OAuthClient {
             parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, clientId));
         }
 
-        UrlEncodedFormEntity formEntity = null;
+        UrlEncodedFormEntity formEntity;
         try {
             formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
         } catch (UnsupportedEncodingException e) {
@@ -264,6 +299,22 @@ public class OAuthClient {
 
     public String getAccessTokenUrl() {
         UriBuilder b = TokenService.accessCodeToTokenUrl(UriBuilder.fromUri(baseUrl));
+        return b.build(realm).toString();
+    }
+
+    public String getLogoutUrl(String redirectUri, String sessionState) {
+        UriBuilder b = TokenService.logoutUrl(UriBuilder.fromUri(baseUrl));
+        if (redirectUri != null) {
+            b.queryParam(OAuth2Constants.REDIRECT_URI, redirectUri);
+        }
+        if (sessionState != null) {
+            b.queryParam("session_state", sessionState);
+        }
+        return b.build(realm).toString();
+    }
+
+    public String getResourceOwnerPasswordCredentialGrantUrl() {
+        UriBuilder b = TokenService.grantAccessTokenUrl(UriBuilder.fromUri(baseUrl));
         return b.build(realm).toString();
     }
 

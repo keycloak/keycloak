@@ -13,9 +13,12 @@ public class Config {
 
     public static final String MODEL_PROVIDER_KEY = "keycloak.model";
 
+    public static final String USER_EXPIRATION_SCHEDULE_KEY = "keycloak.scheduled.clearExpiredUserSessions";
+    public static final String USER_EXPIRATION_SCHEDULE_DEFAULT = String.valueOf(TimeUnit.MINUTES.toMillis(15));
+
     public static final String AUDIT_PROVIDER_KEY = "keycloak.audit";
     public static final String AUDIT_PROVIDER_DEFAULT = "jpa";
-    public static final String AUDIT_EXPIRATION_SCHEDULE_KEY = "keycloak.audit.expirationSchedule";
+    public static final String AUDIT_EXPIRATION_SCHEDULE_KEY = "keycloak.scheduled.clearExpiredAuditEvents";
     public static final String AUDIT_EXPIRATION_SCHEDULE_DEFAULT = String.valueOf(TimeUnit.MINUTES.toMillis(15));
 
     public static final String PICKETLINK_PROVIDER_KEY = "keycloak.picketlink";
@@ -65,6 +68,14 @@ public class Config {
 
     public static void setAuditExpirationSchedule(String schedule) {
         System.setProperty(AUDIT_EXPIRATION_SCHEDULE_KEY, schedule);
+    }
+
+    public static String getUserExpirationSchedule() {
+        return System.getProperty(USER_EXPIRATION_SCHEDULE_KEY, USER_EXPIRATION_SCHEDULE_DEFAULT);
+    }
+
+    public static void setUserExpirationSchedule(String schedule) {
+        System.setProperty(USER_EXPIRATION_SCHEDULE_KEY, schedule);
     }
 
     public static String getModelProvider() {
@@ -168,4 +179,5 @@ public class Config {
     public static void setExportImportZipPassword(String exportImportZipPassword) {
         System.setProperty(EXPORT_IMPORT_ZIP_PASSWORD, exportImportZipPassword);
     }
+
 }
