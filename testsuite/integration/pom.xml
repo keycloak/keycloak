@@ -248,28 +248,6 @@
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging</artifactId>
         </dependency>
-        <!--
-        <dependency>
-            <groupId>org.picketlink</groupId>
-            <artifactId>picketlink-idm-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.picketlink</groupId>
-            <artifactId>picketlink-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.picketlink</groupId>
-            <artifactId>picketlink-idm-idm</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.picketlink</groupId>
-            <artifactId>picketlink-idm-simple-schema</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.picketlink</groupId>
-            <artifactId>picketlink-config</artifactId>
-        </dependency>
-        -->
         <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
@@ -351,10 +329,6 @@
         <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>mongo-java-driver</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.picketlink</groupId>
-            <artifactId>picketlink-common</artifactId>
         </dependency>
 
         <!-- Encrypted ZIP -->
