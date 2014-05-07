@@ -8,7 +8,7 @@ import java.util.ServiceLoader;
  */
 public class ProviderLoader<T> implements Iterable<T> {
 
-    private ServiceLoader<T> serviceLoader;
+    private final ServiceLoader<T> serviceLoader;
 
     public static <T> Iterable<T> load(Class<T> service) {
         ServiceLoader<T> providers = ServiceLoader.load(service);
@@ -26,7 +26,7 @@ public class ProviderLoader<T> implements Iterable<T> {
 
     private static class ProviderIterator<T> implements Iterator<T> {
 
-        private Iterator<T> itr;
+        private final Iterator<T> itr;
 
         private T next;
 
