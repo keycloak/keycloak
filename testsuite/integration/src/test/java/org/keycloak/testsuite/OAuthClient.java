@@ -40,6 +40,7 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
+import org.keycloak.services.resources.TokenService;
 import org.keycloak.util.BasicAuthHelper;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
@@ -61,7 +62,7 @@ public class OAuthClient {
 
     private WebDriver driver;
 
-    private String baseUrl = Constants.AUTH_SERVER_ROOT + "/rest";
+    private String baseUrl = Constants.AUTH_SERVER_ROOT;
 
     private String realm = "test";
 
@@ -233,11 +234,11 @@ public class OAuthClient {
     }
 
     public void openLogout() {
-        UriBuilder b = UriBuilder.fromUri(baseUrl + "/realms/" + realm + "/tokens/logout");
+        UriBuilder b = TokenService.logoutUrl(UriBuilder.fromUri(baseUrl));
         if (redirectUri != null) {
             b.queryParam(OAuth2Constants.REDIRECT_URI, redirectUri);
         }
-        driver.navigate().to(b.build().toString());
+        driver.navigate().to(b.build(realm).toString());
     }
 
     public String getRedirectUri() {
@@ -245,7 +246,7 @@ public class OAuthClient {
     }
 
     public String getLoginFormUrl() {
-        UriBuilder b = UriBuilder.fromUri(baseUrl + "/realms/" + realm + "/tokens/login");
+        UriBuilder b = TokenService.loginPageUrl(UriBuilder.fromUri(baseUrl));
         if (responseType != null) {
             b.queryParam(OAuth2Constants.RESPONSE_TYPE, responseType);
         }
@@ -258,17 +259,17 @@ public class OAuthClient {
         if (state != null) {
             b.queryParam(OAuth2Constants.STATE, state);
         }
-        return b.build().toString();
+        return b.build(realm).toString();
     }
 
     public String getAccessTokenUrl() {
-        UriBuilder b = UriBuilder.fromUri(baseUrl + "/realms/" + realm + "/tokens/access/codes");
-        return b.build().toString();
+        UriBuilder b = TokenService.accessCodeToTokenUrl(UriBuilder.fromUri(baseUrl));
+        return b.build(realm).toString();
     }
 
     public String getRefreshTokenUrl() {
-        UriBuilder b = UriBuilder.fromUri(baseUrl + "/realms/" + realm + "/tokens/refresh");
-        return b.build().toString();
+        UriBuilder b = TokenService.refreshUrl(UriBuilder.fromUri(baseUrl));
+        return b.build(realm).toString();
     }
 
     public OAuthClient realm(String realm) {

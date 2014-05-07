@@ -21,10 +21,13 @@
  */
 package org.keycloak.testsuite;
 
+import org.keycloak.services.resources.RealmsResource;
+
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.io.PrintWriter;
 
@@ -48,8 +51,8 @@ public class ApplicationServlet extends HttpServlet {
 
         PrintWriter pw = resp.getWriter();
         pw.printf("<html><head><title>%s</title></head><body>", title);
-
-        pw.printf(LINK, "http://localhost:8081/auth/rest/realms/test/account", "account", "account");
+        UriBuilder base = UriBuilder.fromUri("http://localhost:8081/auth");
+        pw.printf(LINK, RealmsResource.accountUrl(base), "account", "account");
 
         pw.print("</body></html>");
         pw.flush();

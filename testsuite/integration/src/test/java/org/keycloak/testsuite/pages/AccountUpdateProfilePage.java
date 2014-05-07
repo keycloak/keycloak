@@ -21,16 +21,20 @@
  */
 package org.keycloak.testsuite.pages;
 
+import org.keycloak.services.resources.AccountService;
+import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.Constants;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import javax.ws.rs.core.UriBuilder;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class AccountUpdateProfilePage extends AbstractAccountPage {
 
-    public static String PATH = Constants.AUTH_SERVER_ROOT + "/rest/realms/test/account";
+    public static String PATH = RealmsResource.accountUrl(UriBuilder.fromUri(Constants.AUTH_SERVER_ROOT)).build("test").toString();
 
     @FindBy(id = "firstName")
     private WebElement firstNameInput;

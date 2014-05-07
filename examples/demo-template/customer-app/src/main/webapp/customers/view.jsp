@@ -3,15 +3,17 @@
 <%@ page import="org.keycloak.example.CustomerDatabaseClient" %>
 <%@ page import="org.keycloak.util.KeycloakUriBuilder" %>
 <%@ page import="org.keycloak.representations.IDToken" %>
+<%@ page import="org.keycloak.ServiceUrlConstants" %>
 <html>
 <head>
     <title>Customer View Page</title>
 </head>
 <body bgcolor="#E3F6CE">
 <%
-    String logoutUri = KeycloakUriBuilder.fromUri("http://localhost:8080/auth/rest/realms/demo/tokens/logout")
-            .queryParam("redirect_uri", "http://localhost:8080/customer-portal").build().toString();
-    String acctUri = "http://localhost:8080/auth/rest/realms/demo/account?referrer=customer-portal";
+    String logoutUri = KeycloakUriBuilder.fromUri("http://localhost:8080/auth").path(ServiceUrlConstants.TOKEN_SERVICE_LOGIN_PATH)
+            .queryParam("redirect_uri", "http://localhost:8080/customer-portal").build("demo").toString();
+    String acctUri = KeycloakUriBuilder.fromUri("http://localhost:8080/auth").path(ServiceUrlConstants.ACCOUNT_SERVICE_PATH)
+            .queryParam("referrer", "customer-portal").build("demo").toString();
     IDToken idToken = CustomerDatabaseClient.getIDToken(request);
 %>
 <p>Goto: <a href="http://localhost:8080/product-portal">products</a> | <a href="<%=logoutUri%>">logout</a> | <a

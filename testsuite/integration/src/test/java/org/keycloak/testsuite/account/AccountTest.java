@@ -41,6 +41,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.resources.AccountService;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.Retry;
@@ -60,6 +61,7 @@ import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
+import javax.ws.rs.core.UriBuilder;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -90,7 +92,7 @@ public class AccountTest {
         }
     });
 
-    public static String ACCOUNT_REDIRECT = "http://localhost:8081/auth/rest/realms/test/account/login-redirect";
+    public static String ACCOUNT_REDIRECT = AccountService.accountServiceBaseUrl(UriBuilder.fromUri("http://localhost:8081/auth")).build("test").toString();
 
     @Rule
     public AssertEvents events = new AssertEvents(keycloakRule);
