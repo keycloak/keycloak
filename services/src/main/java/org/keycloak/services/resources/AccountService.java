@@ -422,15 +422,21 @@ public class AccountService {
             case REMOVE:
                 SocialLinkModel link = realm.getSocialLink(user, providerId);
                 if (link != null) {
-                    realm.removeSocialLink(user, providerId);
 
-                    logger.debug("Social provider " + providerId + " removed successfully from user " + user.getLoginName());
+                    // Removing last social provider is not possible if you don't have other possibility to authenticate
+                    if (realm.getSocialLinks(user).size() > 1 || realm.getAuthenticationLink(user) != null) {
+                        realm.removeSocialLink(user, providerId);
 
-                    audit.event(Events.REMOVE_SOCIAL_LINK).client(auth.getClient()).user(auth.getUser())
-                            .detail(Details.USERNAME, link.getSocialUserId() + "@" + link.getSocialProvider())
-                            .success();
+                        logger.debug("Social provider " + providerId + " removed successfully from user " + user.getLoginName());
 
-                    return account.setSuccess(Messages.SOCIAL_PROVIDER_REMOVED).createResponse(AccountPages.SOCIAL);
+                        audit.event(Events.REMOVE_SOCIAL_LINK).client(auth.getClient()).user(auth.getUser())
+                                .detail(Details.USERNAME, link.getSocialUserId() + "@" + link.getSocialProvider())
+                                .success();
+
+                        return account.setSuccess(Messages.SOCIAL_PROVIDER_REMOVED).createResponse(AccountPages.SOCIAL);
+                    } else {
+                        return account.setError(Messages.SOCIAL_REMOVING_LAST_PROVIDER).createResponse(AccountPages.SOCIAL);
+                    }
                 } else {
                     return account.setError(Messages.SOCIAL_LINK_NOT_ACTIVE).createResponse(AccountPages.SOCIAL);
                 }

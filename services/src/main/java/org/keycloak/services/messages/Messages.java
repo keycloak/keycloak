@@ -71,6 +71,8 @@ public class Messages {
 
     public static final String SOCIAL_LINK_NOT_ACTIVE = "socialLinkNotActive";
 
+    public static final String SOCIAL_REMOVING_LAST_PROVIDER = "socialRemovingLastProvider";
+
     public static final String SOCIAL_REDIRECT_ERROR = "socialRedirectError";
 
     public static final String SOCIAL_PROVIDER_REMOVED = "socialProviderRemoved";

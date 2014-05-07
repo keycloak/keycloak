@@ -18,7 +18,9 @@
                 </div>
                 <div class="col-sm-5 col-md-5">
                     <#if socialLink.connected>
-                        <a href="${socialLink.actionUrl}" type="submit" class="btn btn-primary btn-lg">Remove ${socialLink.providerName!}</a>
+                        <#if social.removeLinkPossible>
+                            <a href="${socialLink.actionUrl}" type="submit" class="btn btn-primary btn-lg">Remove ${socialLink.providerName!}</a>
+                        </#if>
                     <#else>
                         <a href="${socialLink.actionUrl}" type="submit" class="btn btn-primary btn-lg">Add ${socialLink.providerName!}</a>
                     </#if>
