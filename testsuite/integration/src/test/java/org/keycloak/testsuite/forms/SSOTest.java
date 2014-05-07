@@ -92,7 +92,7 @@ public class SSOTest {
         Assert.assertTrue(profilePage.isCurrent());
 
         events.expectLogin().detail(Details.AUTH_METHOD, "sso").removeDetail(Details.USERNAME).client("test-app").assertEvent();
-        events.expectLogin().detail(Details.AUTH_METHOD, "sso").removeDetail(Details.USERNAME).client("account").detail(Details.REDIRECT_URI, AccountService.loginRedirectUrl(UriBuilder.fromUri("http://localhost:8081/auth")).build("rest").toString()).assertEvent();
+        events.expectLogin().detail(Details.AUTH_METHOD, "sso").removeDetail(Details.USERNAME).client("account").detail(Details.REDIRECT_URI, AccountService.loginRedirectUrl(UriBuilder.fromUri("http://localhost:8081/auth")).build("test").toString()).assertEvent();
     }
 
 }

@@ -92,7 +92,7 @@ public class AccountTest {
         }
     });
 
-    public static String ACCOUNT_REDIRECT = AccountService.accountServiceBaseUrl(UriBuilder.fromUri("http://localhost:8081/auth")).build("test").toString();
+    public static String ACCOUNT_REDIRECT = AccountService.loginRedirectUrl(UriBuilder.fromUri("http://localhost:8081/auth")).build("test").toString();
 
     @Rule
     public AssertEvents events = new AssertEvents(keycloakRule);
@@ -236,6 +236,7 @@ public class AccountTest {
         try {
             changePasswordPage.open();
             loginPage.login("test-user@localhost", "password");
+
 
             events.expectLogin().client("account").detail(Details.REDIRECT_URI, ACCOUNT_REDIRECT + "?path=password").assertEvent();
 

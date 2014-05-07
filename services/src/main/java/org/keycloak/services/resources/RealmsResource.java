@@ -55,9 +55,6 @@ public class RealmsResource {
     @Context
     protected BruteForceProtector protector;
 
-    @Context
-    protected ResteasyProviderFactory providerFactory;
-
     protected TokenManager tokenManager;
     protected SocialRequestManager socialRequestManager;
 
