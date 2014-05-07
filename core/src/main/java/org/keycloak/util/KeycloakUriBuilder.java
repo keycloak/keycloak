@@ -359,12 +359,12 @@ public class KeycloakUriBuilder {
         return this;
     }
 
-    public URI buildFromMap(Map<String, ? extends Object> values) throws IllegalArgumentException {
+    public URI buildFromMap(Map<String, ?> values) throws IllegalArgumentException {
         if (values == null) throw new IllegalArgumentException("values parameter is null");
         return buildUriFromMap(values, false, true);
     }
 
-    public URI buildFromEncodedMap(Map<String, ? extends Object> values) throws IllegalArgumentException {
+    public URI buildFromEncodedMap(Map<String, ?> values) throws IllegalArgumentException {
         if (values == null) throw new IllegalArgumentException("values parameter is null");
         return buildUriFromMap(values, true, false);
     }
@@ -374,7 +374,7 @@ public class KeycloakUriBuilder {
         return buildUriFromMap(values, false, encodeSlashInPath);
     }
 
-    protected URI buildUriFromMap(Map<String, ? extends Object> paramMap, boolean fromEncodedMap, boolean encodeSlash) throws IllegalArgumentException {
+    protected URI buildUriFromMap(Map<String, ?> paramMap, boolean fromEncodedMap, boolean encodeSlash) throws IllegalArgumentException {
         String buf = buildString(paramMap, fromEncodedMap, false, encodeSlash);
         try {
             return URI.create(buf);
@@ -383,7 +383,7 @@ public class KeycloakUriBuilder {
         }
     }
 
-    private String buildString(Map<String, ? extends Object> paramMap, boolean fromEncodedMap, boolean isTemplate, boolean encodeSlash) {
+    private String buildString(Map<String, ?> paramMap, boolean fromEncodedMap, boolean isTemplate, boolean encodeSlash) {
         for (Map.Entry<String, ? extends Object> entry : paramMap.entrySet()) {
             if (entry.getKey() == null) throw new IllegalArgumentException("map key is null");
             if (entry.getValue() == null) throw new IllegalArgumentException("map value is null");
@@ -452,7 +452,7 @@ public class KeycloakUriBuilder {
         return matcher;
     }
 
-    protected StringBuffer replaceParameter(Map<String, ? extends Object> paramMap, boolean fromEncodedMap, boolean isTemplate, String string, StringBuffer buffer, boolean encodeSlash) {
+    protected StringBuffer replaceParameter(Map<String, ?> paramMap, boolean fromEncodedMap, boolean isTemplate, String string, StringBuffer buffer, boolean encodeSlash) {
         Matcher matcher = createUriParamMatcher(string);
         while (matcher.find()) {
             String param = matcher.group(1);
@@ -481,7 +481,7 @@ public class KeycloakUriBuilder {
         return buffer;
     }
 
-    protected StringBuffer replaceQueryStringParameter(Map<String, ? extends Object> paramMap, boolean fromEncodedMap, boolean isTemplate, String string, StringBuffer buffer) {
+    protected StringBuffer replaceQueryStringParameter(Map<String, ?> paramMap, boolean fromEncodedMap, boolean isTemplate, String string, StringBuffer buffer) {
         Matcher matcher = createUriParamMatcher(string);
         while (matcher.find()) {
             String param = matcher.group(1);
