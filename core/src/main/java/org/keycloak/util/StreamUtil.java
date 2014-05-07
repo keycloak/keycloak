@@ -19,7 +19,7 @@ public final class StreamUtil {
         char[] buffer = new char[1024];
         StringBuilder builder = new StringBuilder();
         BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-        int wasRead = 0;
+        int wasRead;
         do
         {
             wasRead = reader.read(buffer, 0, 1024);
