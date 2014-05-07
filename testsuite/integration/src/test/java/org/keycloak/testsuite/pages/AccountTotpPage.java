@@ -21,16 +21,19 @@
  */
 package org.keycloak.testsuite.pages;
 
+import org.keycloak.services.resources.AccountService;
 import org.keycloak.testsuite.Constants;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import javax.ws.rs.core.UriBuilder;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class AccountTotpPage extends AbstractAccountPage {
 
-    private static String PATH = Constants.AUTH_SERVER_ROOT + "/rest/realms/test/account/totp";
+    private static String PATH = AccountService.totpUrl(UriBuilder.fromUri(Constants.AUTH_SERVER_ROOT)).build("test").toString();
 
     @FindBy(id = "totpSecret")
     private WebElement totpSecret;

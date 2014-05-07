@@ -21,16 +21,19 @@
  */
 package org.keycloak.testsuite.pages;
 
+import org.keycloak.services.resources.AccountService;
 import org.keycloak.testsuite.Constants;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import javax.ws.rs.core.UriBuilder;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class AccountPasswordPage extends AbstractAccountPage {
 
-    private static String PATH = Constants.AUTH_SERVER_ROOT + "/rest/realms/test/account/password";
+    private static String PATH = AccountService.passwordUrl(UriBuilder.fromUri(Constants.AUTH_SERVER_ROOT)).build("test").toString();
 
     @FindBy(id = "password")
     private WebElement passwordInput;

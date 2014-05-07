@@ -19,6 +19,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.Constants;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
@@ -201,7 +202,7 @@ public class ProfileTest {
     }
 
     private URI getAccountURI() {
-        return UriBuilder.fromUri(Constants.AUTH_SERVER_ROOT + "/rest/realms/" + oauth.getRealm() + "/account").build();
+        return RealmsResource.accountUrl(UriBuilder.fromUri(Constants.AUTH_SERVER_ROOT)).build(oauth.getRealm());
     }
 
     private HttpResponse doGetProfile(String token, String origin) throws IOException {

@@ -30,6 +30,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.resources.AccountService;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AccountTotpPage;
@@ -44,6 +45,8 @@ import org.keycloak.testsuite.rule.KeycloakRule.KeycloakSetup;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
+
+import javax.ws.rs.core.UriBuilder;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -186,7 +189,7 @@ public class RequiredActionTotpSetupTest {
         accountTotpPage.assertCurrent();
 
         events.expectLogin().user(userId).detail(Details.AUTH_METHOD, "sso").client("account")
-                .detail(Details.REDIRECT_URI, "http://localhost:8081/auth/rest/realms/test/account/login-redirect?path=totp")
+                .detail(Details.REDIRECT_URI, AccountService.loginRedirectUrl(UriBuilder.fromUri("http://localhost:8081/auth")).queryParam("path", "totp").build("test").toString())
                 .removeDetail(Details.USERNAME).assertEvent();
 
         // Remove google authentificator

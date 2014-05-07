@@ -27,6 +27,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.audit.Details;
+import org.keycloak.services.resources.AccountService;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
@@ -37,6 +38,8 @@ import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
+
+import javax.ws.rs.core.UriBuilder;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -89,7 +92,7 @@ public class SSOTest {
         Assert.assertTrue(profilePage.isCurrent());
 
         events.expectLogin().detail(Details.AUTH_METHOD, "sso").removeDetail(Details.USERNAME).client("test-app").assertEvent();
-        events.expectLogin().detail(Details.AUTH_METHOD, "sso").removeDetail(Details.USERNAME).client("account").detail(Details.REDIRECT_URI, "http://localhost:8081/auth/rest/realms/test/account/login-redirect").assertEvent();
+        events.expectLogin().detail(Details.AUTH_METHOD, "sso").removeDetail(Details.USERNAME).client("account").detail(Details.REDIRECT_URI, AccountService.loginRedirectUrl(UriBuilder.fromUri("http://localhost:8081/auth")).build("test").toString()).assertEvent();
     }
 
 }

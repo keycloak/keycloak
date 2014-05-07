@@ -167,6 +167,10 @@ public class AccountService {
         return base;
     }
 
+    public static UriBuilder accountServiceBaseUrl(UriBuilder base) {
+        return base.path(RealmsResource.class).path(RealmsResource.class, "getAccountService");
+    }
+
     private Response forwardToPage(String path, AccountPages page) {
         if (auth != null) {
             try {
@@ -207,22 +211,37 @@ public class AccountService {
         }
     }
 
+    public static UriBuilder totpUrl(UriBuilder base) {
+        return RealmsResource.accountUrl(base).path(AccountService.class, "totpPage");
+    }
     @Path("totp")
     @GET
     public Response totpPage() {
         return forwardToPage("totp", AccountPages.TOTP);
     }
 
+    public static UriBuilder passwordUrl(UriBuilder base) {
+        return RealmsResource.accountUrl(base).path(AccountService.class, "passwordPage");
+    }
     @Path("password")
     @GET
     public Response passwordPage() {
         return forwardToPage("password", AccountPages.PASSWORD);
     }
 
+
+    public static UriBuilder socialUrl(UriBuilder base) {
+        return RealmsResource.accountUrl(base).path(AccountService.class, "socialPage");
+    }
+
     @Path("social")
     @GET
     public Response socialPage() {
         return forwardToPage("social", AccountPages.SOCIAL);
+    }
+
+    public static UriBuilder logUrl(UriBuilder base) {
+        return RealmsResource.accountUrl(base).path(AccountService.class, "logPage");
     }
 
     @Path("log")
@@ -420,6 +439,10 @@ public class AccountService {
                 logger.warn("Action is null!");
                 return null;
         }
+    }
+
+    public static UriBuilder loginRedirectUrl(UriBuilder base) {
+        return RealmsResource.accountUrl(base).path(AccountService.class, "loginRedirect");
     }
 
     @Path("login-redirect")

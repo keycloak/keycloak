@@ -28,7 +28,7 @@ import javax.ws.rs.core.UriInfo;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-@Path("/rest/realms")
+@Path("/realms")
 public class RealmsResource {
     protected static Logger logger = Logger.getLogger(RealmsResource.class);
 
@@ -65,6 +65,14 @@ public class RealmsResource {
 
     public static UriBuilder realmBaseUrl(UriInfo uriInfo) {
         return uriInfo.getBaseUriBuilder().path(RealmsResource.class).path(RealmsResource.class, "getRealmResource");
+    }
+
+    public static UriBuilder realmBaseUrl(UriBuilder base) {
+        return base.path(RealmsResource.class).path(RealmsResource.class, "getRealmResource");
+    }
+
+    public static UriBuilder accountUrl(UriBuilder base) {
+        return base.path(RealmsResource.class).path(RealmsResource.class, "getAccountService");
     }
 
     @Path("{realm}/tokens")
@@ -115,5 +123,15 @@ public class RealmsResource {
         //resourceContext.initResource(realmResource);
         return realmResource;
     }
+
+    @Path("{realm}/admin/resources")
+    public AdminResource adminResource() {
+        AdminResource adminResource = new AdminResource();
+        ResteasyProviderFactory.getInstance().injectProperties(adminResource);
+        return adminResource;
+
+    }
+
+
 
 }

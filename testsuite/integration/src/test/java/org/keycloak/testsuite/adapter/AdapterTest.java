@@ -35,6 +35,7 @@ import org.keycloak.representations.adapters.action.SessionStats;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.TokenManager;
+import org.keycloak.services.resources.TokenService;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
@@ -60,7 +61,7 @@ import java.util.Map;
  */
 public class AdapterTest {
 
-    public static final String LOGIN_URL = "http://localhost:8081/auth/rest/realms/demo/tokens/login";
+    public static final String LOGIN_URL = TokenService.loginPageUrl(UriBuilder.fromUri("http://localhost:8081/auth")).build("demo").toString();
     public static PublicKey realmPublicKey;
     @ClassRule
     public static AbstractKeycloakRule keycloakRule = new AbstractKeycloakRule(){
@@ -139,8 +140,8 @@ public class AdapterTest {
 
         // test logout
 
-        String logoutUri = UriBuilder.fromUri("http://localhost:8081/auth/rest/realms/demo/tokens/logout")
-                .queryParam(OAuth2Constants.REDIRECT_URI, "http://localhost:8081/customer-portal").build().toString();
+        String logoutUri = TokenService.logoutUrl(UriBuilder.fromUri("http://localhost:8081/auth"))
+                .queryParam(OAuth2Constants.REDIRECT_URI, "http://localhost:8081/customer-portal").build("demo").toString();
         driver.navigate().to(logoutUri);
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
         driver.navigate().to("http://localhost:8081/product-portal");

@@ -120,35 +120,83 @@ public class TokenService {
     }
 
     public static UriBuilder tokenServiceBaseUrl(UriInfo uriInfo) {
-        UriBuilder base = uriInfo.getBaseUriBuilder().path(RealmsResource.class).path(RealmsResource.class, "getTokenService");
+        UriBuilder baseUriBuilder = uriInfo.getBaseUriBuilder();
+        return tokenServiceBaseUrl(baseUriBuilder);
+    }
+
+    public static UriBuilder tokenServiceBaseUrl(UriBuilder baseUriBuilder) {
+        UriBuilder base = baseUriBuilder.path(RealmsResource.class).path(RealmsResource.class, "getTokenService");
         return base;
     }
 
     public static UriBuilder accessCodeToTokenUrl(UriInfo uriInfo) {
-        return tokenServiceBaseUrl(uriInfo).path(TokenService.class, "accessCodeToToken");
+        UriBuilder baseUriBuilder = uriInfo.getBaseUriBuilder();
+        return accessCodeToTokenUrl(baseUriBuilder);
 
+    }
+
+    public static UriBuilder accessCodeToTokenUrl(UriBuilder baseUriBuilder) {
+        UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
+        return uriBuilder.path(TokenService.class, "accessCodeToToken");
     }
 
     public static UriBuilder grantAccessTokenUrl(UriInfo uriInfo) {
-        return tokenServiceBaseUrl(uriInfo).path(TokenService.class, "grantAccessToken");
+        UriBuilder baseUriBuilder = uriInfo.getBaseUriBuilder();
+        return grantAccessTokenUrl(baseUriBuilder);
 
+    }
+
+    public static UriBuilder grantAccessTokenUrl(UriBuilder baseUriBuilder) {
+        UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
+        return uriBuilder.path(TokenService.class, "grantAccessToken");
     }
 
     public static UriBuilder loginPageUrl(UriInfo uriInfo) {
-        return tokenServiceBaseUrl(uriInfo).path(TokenService.class, "loginPage");
+        UriBuilder baseUriBuilder = uriInfo.getBaseUriBuilder();
+        return loginPageUrl(baseUriBuilder);
+    }
+
+    public static UriBuilder loginPageUrl(UriBuilder baseUriBuilder) {
+        UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
+        return uriBuilder.path(TokenService.class, "loginPage");
     }
 
     public static UriBuilder logoutUrl(UriInfo uriInfo) {
-        return tokenServiceBaseUrl(uriInfo).path(TokenService.class, "logout");
+        UriBuilder baseUriBuilder = uriInfo.getBaseUriBuilder();
+        return logoutUrl(baseUriBuilder);
+    }
+
+    public static UriBuilder logoutUrl(UriBuilder baseUriBuilder) {
+        UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
+        return uriBuilder.path(TokenService.class, "logout");
     }
 
     public static UriBuilder processLoginUrl(UriInfo uriInfo) {
-        return tokenServiceBaseUrl(uriInfo).path(TokenService.class, "processLogin");
+        UriBuilder baseUriBuilder = uriInfo.getBaseUriBuilder();
+        return processLoginUrl(baseUriBuilder);
+    }
+
+    public static UriBuilder processLoginUrl(UriBuilder baseUriBuilder) {
+        UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
+        return uriBuilder.path(TokenService.class, "processLogin");
     }
 
     public static UriBuilder processOAuthUrl(UriInfo uriInfo) {
-        return tokenServiceBaseUrl(uriInfo).path(TokenService.class, "processOAuth");
+        UriBuilder baseUriBuilder = uriInfo.getBaseUriBuilder();
+        return processOAuthUrl(baseUriBuilder);
     }
+
+    public static UriBuilder processOAuthUrl(UriBuilder baseUriBuilder) {
+        UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
+        return uriBuilder.path(TokenService.class, "processOAuth");
+    }
+
+    public static UriBuilder refreshUrl(UriBuilder baseUriBuilder) {
+        UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
+        return uriBuilder.path(TokenService.class, "refreshAccessToken");
+    }
+
+
 
     @Path("grants/access")
     @POST
