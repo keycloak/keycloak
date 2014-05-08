@@ -74,7 +74,6 @@ public class RealmsResource {
     public static UriBuilder accountUrl(UriBuilder base) {
         return base.path(RealmsResource.class).path(RealmsResource.class, "getAccountService");
     }
-
     @Path("{realm}/tokens")
     public TokenService getTokenService(final @PathParam("realm") String name) {
         RealmManager realmManager = new RealmManager(session);
@@ -124,13 +123,6 @@ public class RealmsResource {
         return realmResource;
     }
 
-    @Path("{realm}/admin/resources")
-    public AdminResource adminResource() {
-        AdminResource adminResource = new AdminResource();
-        ResteasyProviderFactory.getInstance().injectProperties(adminResource);
-        return adminResource;
-
-    }
 
 
 

@@ -155,6 +155,14 @@ public class AuthenticationManager {
         }
 
         String tokenString = cookie.getValue();
+        UserModel user = verifyIdentityToken(realm, uriInfo, checkActive, tokenString);
+        if (user == null) {
+            expireIdentityCookie(realm, uriInfo);
+        }
+        return user;
+    }
+
+    protected UserModel verifyIdentityToken(RealmModel realm, UriInfo uriInfo, boolean checkActive, String tokenString) {
         try {
             AccessToken token = RSATokenVerifier.verifyToken(tokenString, realm.getPublicKey(), realm.getName(), checkActive);
             logger.info("identity token verified");
@@ -173,22 +181,19 @@ public class AuthenticationManager {
 
             UserModel user = realm.getUserById(token.getSubject());
             if (user == null || !user.isEnabled() ) {
-                logger.info("Unknown user in identity cookie");
-                expireIdentityCookie(realm, uriInfo);
+                logger.info("Unknown user in identity token");
                 return null;
             }
 
             if (token.getIssuedAt() < user.getNotBefore()) {
                 logger.info("Stale cookie");
-                expireIdentityCookie(realm, uriInfo);
                 return null;
 
             }
 
             return user;
         } catch (VerificationException e) {
-            logger.info("Failed to verify identity cookie", e);
-            expireCookie(cookie.getName(), cookie.getPath());
+            logger.info("Failed to verify identity token", e);
         }
         return null;
     }

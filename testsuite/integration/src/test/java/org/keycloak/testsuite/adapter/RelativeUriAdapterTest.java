@@ -36,6 +36,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.resources.TokenService;
+import org.keycloak.services.resources.admin.AdminRoot;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
@@ -126,7 +127,8 @@ public class RelativeUriAdapterTest {
 
         // View stats
         Client client = ClientBuilder.newClient();
-        WebTarget adminTarget = client.target("http://localhost:8081/auth/rest/admin/realms/demo");
+        UriBuilder authBase = UriBuilder.fromUri("http://localhost:8081/auth");
+        WebTarget adminTarget = client.target(AdminRoot.realmsUrl(authBase)).path("demo");
         Map<String, SessionStats> stats = adminTarget.path("session-stats").request()
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
                 .get(new GenericType<Map<String, SessionStats>>(){});

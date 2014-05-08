@@ -4,7 +4,7 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.PublishedRealmRepresentation;
-import org.keycloak.services.resources.admin.AdminService;
+import org.keycloak.services.resources.admin.AdminRoot;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.PathParam;
@@ -38,9 +38,9 @@ public class PublicRealmResource {
     public static PublishedRealmRepresentation realmRep(RealmModel realm, UriInfo uriInfo) {
         PublishedRealmRepresentation rep = new PublishedRealmRepresentation();
         rep.setRealm(realm.getName());
-        rep.setTokenServiceUrl(TokenService.tokenServiceBaseUrl(uriInfo).build(realm.getId()).toString());
-        rep.setAccountServiceUrl(AccountService.accountServiceBaseUrl(uriInfo).build(realm.getId()).toString());
-        rep.setAdminApiUrl(AdminService.adminApiUrl(uriInfo).build(realm.getId()).toString());
+        rep.setTokenServiceUrl(TokenService.tokenServiceBaseUrl(uriInfo).build(realm.getName()).toString());
+        rep.setAccountServiceUrl(AccountService.accountServiceBaseUrl(uriInfo).build(realm.getName()).toString());
+        rep.setAdminApiUrl(uriInfo.getBaseUriBuilder().path(AdminRoot.class).build().toString());
         rep.setPublicKeyPem(realm.getPublicKeyPem());
         rep.setNotBefore(realm.getNotBefore());
         return rep;

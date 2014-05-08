@@ -361,7 +361,7 @@ module.controller('ApplicationScopeMappingCtrl', function($scope, $http, realm, 
     });
 
     $scope.addRealmRole = function() {
-        $http.post(authUrl + '/rest/admin/realms/' + realm.realm + '/applications/' + application.name + '/scope-mappings/realm',
+        $http.post(authUrl + '/admin/realms/' + realm.realm + '/applications/' + application.name + '/scope-mappings/realm',
                 $scope.selectedRealmRoles).success(function() {
                 for (var i = 0; i < $scope.selectedRealmRoles.length; i++) {
                     var role = $scope.selectedRealmRoles[i];
@@ -376,7 +376,7 @@ module.controller('ApplicationScopeMappingCtrl', function($scope, $http, realm, 
     };
 
     $scope.deleteRealmRole = function() {
-        $http.delete(authUrl + '/rest/admin/realms/' + realm.realm + '/applications/' + application.name +  '/scope-mappings/realm',
+        $http.delete(authUrl + '/admin/realms/' + realm.realm + '/applications/' + application.name +  '/scope-mappings/realm',
             {data : $scope.selectedRealmMappings, headers : {"content-type" : "application/json"}}).success(function() {
                 for (var i = 0; i < $scope.selectedRealmMappings.length; i++) {
                     var role = $scope.selectedRealmMappings[i];
@@ -391,7 +391,7 @@ module.controller('ApplicationScopeMappingCtrl', function($scope, $http, realm, 
     };
 
     $scope.addApplicationRole = function() {
-        $http.post(authUrl + '/rest/admin/realms/' + realm.realm + '/applications/' + application.name +  '/scope-mappings/applications/' + $scope.targetApp.name,
+        $http.post(authUrl + '/admin/realms/' + realm.realm + '/applications/' + application.name +  '/scope-mappings/applications/' + $scope.targetApp.name,
                 $scope.selectedApplicationRoles).success(function() {
                 for (var i = 0; i < $scope.selectedApplicationRoles.length; i++) {
                     var role = $scope.selectedApplicationRoles[i];
@@ -406,7 +406,7 @@ module.controller('ApplicationScopeMappingCtrl', function($scope, $http, realm, 
     };
 
     $scope.deleteApplicationRole = function() {
-        $http.delete(authUrl + '/rest/admin/realms/' + realm.realm + '/applications/' + application.name +  '/scope-mappings/applications/' + $scope.targetApp.name,
+        $http.delete(authUrl + '/admin/realms/' + realm.realm + '/applications/' + application.name +  '/scope-mappings/applications/' + $scope.targetApp.name,
             {data : $scope.selectedApplicationMappings, headers : {"content-type" : "application/json"}}).success(function() {
                 for (var i = 0; i < $scope.selectedApplicationMappings.length; i++) {
                     var role = $scope.selectedApplicationMappings[i];

@@ -188,10 +188,6 @@ public class RequiredActionTotpSetupTest {
         accountTotpPage.open();
         accountTotpPage.assertCurrent();
 
-        events.expectLogin().user(userId).detail(Details.AUTH_METHOD, "sso").client("account")
-                .detail(Details.REDIRECT_URI, AccountService.loginRedirectUrl(UriBuilder.fromUri("http://localhost:8081/auth")).queryParam("path", "totp").build("test").toString())
-                .removeDetail(Details.USERNAME).assertEvent();
-
         // Remove google authentificator
         accountTotpPage.removeTotp();
 

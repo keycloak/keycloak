@@ -66,6 +66,8 @@ public class ApplianceBootstrap {
         ApplicationModel adminConsole = new ApplicationManager(manager).createApplication(realm, Constants.ADMIN_CONSOLE_APPLICATION);
         adminConsole.setBaseUrl(contextPath + "/admin/index.html");
         adminConsole.setEnabled(true);
+        adminConsole.setPublicClient(true);
+        adminConsole.addRedirectUri(contextPath + "/admin/" + realm.getName() + "/console/*");
 
         realm.setAuditListeners(Collections.singleton("jboss-logging"));
 

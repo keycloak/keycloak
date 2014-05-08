@@ -1,27 +1,67 @@
 'use strict';
 
+var indexUrl = window.location.href;
+var consoleBaseUrl = window.location.href;
+consoleBaseUrl = consoleBaseUrl.substring(0, consoleBaseUrl.indexOf("/console"));
+consoleBaseUrl = consoleBaseUrl + "/console";
+var configUrl = consoleBaseUrl + "/config";
+var logoutUrl = consoleBaseUrl + "/logout";
+var auth = {};
+var logout = function(){
+    console.log('*** LOGOUT');
+    auth.loggedIn = false;
+    auth.authz = null;
+    auth.user = null;
+    window.location = logoutUrl;
+};
+
+
 var authUrl = window.location.href;
 authUrl = authUrl.substring(0, authUrl.indexOf('/admin/'));
+
 
 var module = angular.module('keycloak', [ 'keycloak.services', 'keycloak.loaders', 'ui.bootstrap', 'ui.select2', 'angularFileUpload' ]);
 var resourceRequests = 0;
 var loadingTimer = -1;
 
 angular.element(document).ready(function ($http) {
-    $http.get(authUrl + '/rest/admin/whoami').success(function(data) {
-        var auth = {};
-        auth.user = data;
-        auth.loggedIn = true;
+    var keycloakAuth = new Keycloak(configUrl);
+    var auth = {};
+    auth.loggedIn = false;
 
+    keycloakAuth.init('login-required').success(function () {
+        auth.loggedIn = true;
+        auth.authz = keycloakAuth;
         module.factory('Auth', function() {
             return auth;
         });
         angular.bootstrap(document, ["keycloak"]);
-    }).error(function() {
-        var path = window.location.hash && window.location.hash.substring(1) || '/';
-        window.location = authUrl + '/rest/admin/login?path=' + path;
-    });
+    }).error(function () {
+            window.location.reload();
+        });
+
 });
+
+module.factory('authInterceptor', function($q, Auth) {
+    return {
+        request: function (config) {
+            var deferred = $q.defer();
+            if (Auth.authz.token) {
+                Auth.authz.updateToken(5).success(function() {
+                    config.headers = config.headers || {};
+                    config.headers.Authorization = 'Bearer ' + Auth.authz.token;
+
+                    deferred.resolve(config);
+                }).error(function() {
+                        deferred.reject('Failed to refresh token');
+                    });
+            }
+            return deferred.promise;
+        }
+    };
+});
+
+
 
 
 module.config([ '$routeProvider', function($routeProvider) {
@@ -660,7 +700,10 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmSessionStatsCtrl'
         })
-
+        .when('/logout', {
+            templateUrl : 'partials/home.html',
+            controller : 'LogoutCtrl'
+        })
         .otherwise({
             templateUrl : 'partials/notfound.html'
         });
@@ -682,19 +725,19 @@ module.config(function($httpProvider) {
     $httpProvider.defaults.transformRequest.push(spinnerFunction);
 
     $httpProvider.responseInterceptors.push('spinnerInterceptor');
+    $httpProvider.interceptors.push('authInterceptor');
 
 });
 
-module.factory('errorInterceptor', function($q, $window, $rootScope, $location, Auth, Notifications) {
+module.factory('errorInterceptor', function($q, $window, $rootScope, $location,Notifications) {
     return function(promise) {
         return promise.then(function(response) {
             return response;
         }, function(response) {
             if (response.status == 401) {
                 console.log('session timeout?');
-                Auth.loggedIn = false;
-                window.location = authUrl + '/rest/admin/login?path=' + $location.path();
-            } else if (response.status == 403) {
+                logout();
+             } else if (response.status == 403) {
                 Notifications.error("Forbidden");
             } else if (response.status == 404) {
                 Notifications.error("Not found");

@@ -42,6 +42,7 @@ import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.AccountService;
+import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.Retry;
@@ -92,7 +93,9 @@ public class AccountTest {
         }
     });
 
-    public static String ACCOUNT_REDIRECT = AccountService.loginRedirectUrl(UriBuilder.fromUri("http://localhost:8081/auth")).build("test").toString();
+    private static final UriBuilder BASE = UriBuilder.fromUri("http://localhost:8081/auth");
+    private static final String ACCOUNT_URL = RealmsResource.accountUrl(BASE.clone()).build("test").toString();
+    public static String ACCOUNT_REDIRECT = AccountService.loginRedirectUrl(BASE.clone()).build("test").toString();
 
     @Rule
     public AssertEvents events = new AssertEvents(keycloakRule);
@@ -208,6 +211,8 @@ public class AccountTest {
         events.expectAccount("update_password").assertEvent();
 
         changePasswordPage.logout();
+
+        events.expectLogout().detail(Details.REDIRECT_URI, ACCOUNT_URL).assertEvent();
 
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
@@ -377,8 +382,6 @@ public class AccountTest {
             e.add(events.poll());
 
             logPage.open();
-
-            e.add(events.poll());
 
             Collections.reverse(e);
 

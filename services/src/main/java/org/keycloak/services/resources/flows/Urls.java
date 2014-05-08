@@ -23,14 +23,12 @@ package org.keycloak.services.resources.flows;
 
 import org.keycloak.services.resources.AccountService;
 import org.keycloak.services.resources.ThemeResource;
-import org.keycloak.services.resources.admin.AdminService;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.RequiredActionsService;
 import org.keycloak.services.resources.SocialResource;
 import org.keycloak.services.resources.TokenService;
 
 import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 
 /**
@@ -144,26 +142,6 @@ public class Urls {
 
     public static URI realmCode(URI baseUri, String realmId) {
         return tokenBase(baseUri).path(TokenService.class, "accessCodeToToken").build(realmId);
-    }
-
-    private static UriBuilder saasBase(URI baseUri) {
-        return UriBuilder.fromUri(baseUri).path(AdminService.class);
-    }
-
-    public static URI saasLoginAction(URI baseUri) {
-        return saasBase(baseUri).path(AdminService.class, "processLogin").build();
-    }
-
-    public static URI saasLoginPage(URI baseUri) {
-        return saasBase(baseUri).path(AdminService.class, "loginPage").build();
-    }
-
-    public static URI saasRegisterAction(URI baseUri) {
-        return saasBase(baseUri).path(AdminService.class, "processRegister").build();
-    }
-
-    public static URI saasRegisterPage(URI baseUri) {
-        return saasBase(baseUri).path(AdminService.class, "registerPage").build();
     }
 
     public static UriBuilder socialBase(URI baseUri) {
