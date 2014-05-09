@@ -208,6 +208,7 @@ public class RealmManager {
         ApplicationManager applicationManager = new ApplicationManager(new RealmManager(identitySession));
 
         ApplicationModel realmAdminApp = applicationManager.createApplication(adminRealm, realm.getName() + "-realm");
+        realmAdminApp.setBearerOnly(true);
         realm.setAdminApp(realmAdminApp);
 
         for (String r : AdminRoles.ALL_REALM_ROLES) {
