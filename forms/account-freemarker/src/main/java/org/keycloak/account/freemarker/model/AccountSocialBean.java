@@ -21,6 +21,7 @@ import org.keycloak.social.SocialProvider;
 public class AccountSocialBean {
 
     private final List<SocialLinkEntry> socialLinks;
+    private final boolean removeLinkPossible;
 
     public AccountSocialBean(RealmModel realm, UserModel user, URI baseUri) {
         URI accountSocialUpdateUri = Urls.accountSocialUpdate(baseUri, realm.getName());
@@ -29,12 +30,16 @@ public class AccountSocialBean {
         Map<String, String> socialConfig = realm.getSocialConfig();
         Set<SocialLinkModel> userSocialLinks = realm.getSocialLinks(user);
 
+        int availableLinks = 0;
         if (socialConfig != null && !socialConfig.isEmpty()) {
             for (SocialProvider provider : SocialLoader.load()) {
                 String socialProviderId = provider.getId();
                 if (socialConfig.containsKey(socialProviderId + ".key")) {
                     SocialLinkModel socialLink = getSocialLink(userSocialLinks, socialProviderId);
 
+                    if (socialLink != null) {
+                        availableLinks++;
+                    }
                     String action = socialLink != null ? "remove" : "add";
                     String actionUrl = UriBuilder.fromUri(accountSocialUpdateUri).queryParam("action", action).queryParam("provider_id", socialProviderId).build().toString();
 
@@ -43,6 +48,9 @@ public class AccountSocialBean {
                 }
             }
         }
+
+        // Removing last social provider is not possible if you don't have other possibility to authenticate
+        this.removeLinkPossible = availableLinks > 1 || realm.getAuthenticationLink(user) != null;
     }
 
     private SocialLinkModel getSocialLink(Set<SocialLinkModel> userSocialLinks, String socialProviderId) {
@@ -56,6 +64,10 @@ public class AccountSocialBean {
 
     public List<SocialLinkEntry> getLinks() {
         return socialLinks;
+    }
+
+    public boolean isRemoveLinkPossible() {
+        return removeLinkPossible;
     }
 
     public class SocialLinkEntry {

@@ -146,6 +146,13 @@ module.controller('UserSessionsCtrl', function($scope, realm, user, stats, UserL
 
 });
 
+module.controller('UserSocialCtrl', function($scope, realm, user, socialLinks) {
+    $scope.realm = realm;
+    $scope.user = user;
+    $scope.socialLinks = socialLinks;
+    console.log('showing social links of user');
+});
+
 
 module.controller('UserListCtrl', function($scope, realm, User) {
     $scope.realm = realm;

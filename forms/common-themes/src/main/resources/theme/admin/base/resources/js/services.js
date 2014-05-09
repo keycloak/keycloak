@@ -189,6 +189,12 @@ module.factory('UserLogout', function($resource) {
         user : '@user'
     });
 });
+module.factory('UserSocialLinks', function($resource) {
+    return $resource(authUrl + '/rest/admin/realms/:realm/users/:user/social-links', {
+        realm : '@realm',
+        user : '@user'
+    });
+});
 
 module.factory('UserCredentials', function($resource) {
     var credentials = {};
