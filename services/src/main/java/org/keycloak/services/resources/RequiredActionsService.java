@@ -36,9 +36,11 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.provider.ProviderSession;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.services.ClientConnection;
 import org.keycloak.services.email.EmailException;
 import org.keycloak.services.email.EmailSender;
 import org.keycloak.services.managers.AccessCodeEntry;
@@ -62,7 +64,9 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Providers;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -81,6 +85,9 @@ public class RequiredActionsService {
 
     @Context
     private UriInfo uriInfo;
+
+    @Context
+    private ClientConnection clientConnection;
 
     @Context
     protected Providers providers;
@@ -317,7 +324,10 @@ public class RequiredActionsService {
             Set<RequiredAction> requiredActions = new HashSet<RequiredAction>(user.getRequiredActions());
             requiredActions.add(RequiredAction.UPDATE_PASSWORD);
 
-            AccessCodeEntry accessCode = tokenManager.createAccessCode(scopeParam, state, redirect, realm, client, user);
+            UserSessionModel session = realm.createUserSession(user, clientConnection.getRemoteAddr());
+            audit.session(session);
+
+            AccessCodeEntry accessCode = tokenManager.createAccessCode(scopeParam, state, redirect, realm, client, user, session);
             accessCode.setRequiredActions(requiredActions);
             accessCode.setExpiration(Time.currentTime() + realm.getAccessCodeLifespanUserAction());
             accessCode.setAuthMethod("form");
@@ -395,18 +405,25 @@ public class RequiredActionsService {
             logger.debugv("redirectOauth: redirecting to: {0}", accessCode.getRedirectUri());
             accessCode.setExpiration(Time.currentTime() + realm.getAccessCodeLifespan());
 
-            audit.success();
-
             AuthenticationManager authManager = new AuthenticationManager(providerSession);
 
+            UserSessionModel session = realm.getUserSession(accessCode.getSessionState());
+            if (session == null || session.getExpires() < Time.currentTime()) {
+                return Flows.oauth(realm, request, uriInfo, authManager, tokenManager).redirectError(accessCode.getClient(), "access_denied", accessCode.getState(), accessCode.getRedirectUri());
+            }
+            audit.session(session);
+
+            audit.success();
+
             return Flows.oauth(realm, request, uriInfo, authManager, tokenManager).redirectAccessCode(accessCode,
-                    accessCode.getState(), accessCode.getRedirectUri());
+                    session, accessCode.getState(), accessCode.getRedirectUri());
         }
     }
 
     private void initAudit(AccessCodeEntry accessCode) {
         audit.event(Events.LOGIN).client(accessCode.getClient())
                 .user(accessCode.getUser())
+                .session(accessCode.getSessionState())
                 .detail(Details.CODE_ID, accessCode.getId())
                 .detail(Details.REDIRECT_URI, accessCode.getRedirectUri())
                 .detail(Details.RESPONSE_TYPE, "code")

@@ -14,6 +14,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.OAuthClientManager;
 import org.keycloak.services.managers.RealmManager;
@@ -23,6 +24,9 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -46,7 +50,7 @@ public class AdapterTest extends AbstractModelTest {
         realmModel.addDefaultRole("foo");
 
         realmModel = realmManager.getRealm(realmModel.getId());
-        Assert.assertNotNull(realmModel);
+        assertNotNull(realmModel);
         Assert.assertEquals(realmModel.getAccessCodeLifespan(), 100);
         Assert.assertEquals(600, realmModel.getAccessCodeLifespanUserAction());
         Assert.assertEquals(realmModel.getAccessTokenLifespan(), 1000);
@@ -73,7 +77,7 @@ public class AdapterTest extends AbstractModelTest {
         realmModel.addDefaultRole("foo");
 
         realmModel = realmManager.getRealm(realmModel.getId());
-        Assert.assertNotNull(realmModel);
+        assertNotNull(realmModel);
         Assert.assertEquals(realmModel.getAccessCodeLifespan(), 100);
         Assert.assertEquals(600, realmModel.getAccessCodeLifespanUserAction());
         Assert.assertEquals(realmModel.getAccessTokenLifespan(), 1000);
@@ -169,7 +173,7 @@ public class AdapterTest extends AbstractModelTest {
         realmModel = identitySession.getRealm("JUGGLER");
         Assert.assertTrue(realmModel.removeUser("bburke"));
         Assert.assertFalse(realmModel.removeUser("bburke"));
-        Assert.assertNull(realmModel.getUser("bburke"));
+        assertNull(realmModel.getUser("bburke"));
     }
 
     @Test
@@ -191,7 +195,7 @@ public class AdapterTest extends AbstractModelTest {
 
         Assert.assertTrue(realmModel.removeApplication(app.getId()));
         Assert.assertFalse(realmModel.removeApplication(app.getId()));
-        Assert.assertNull(realmModel.getApplicationById(app.getId()));
+        assertNull(realmModel.getApplicationById(app.getId()));
     }
 
 
@@ -226,7 +230,7 @@ public class AdapterTest extends AbstractModelTest {
 
         Assert.assertTrue(realmManager.removeRealm(realmModel));
         Assert.assertFalse(realmManager.removeRealm(realmModel));
-        Assert.assertNull(realmManager.getRealm(realmModel.getId()));
+        assertNull(realmManager.getRealm(realmModel.getId()));
     }
 
 
@@ -253,11 +257,11 @@ public class AdapterTest extends AbstractModelTest {
 
         Assert.assertTrue(realmModel.removeRoleById(realmRole.getId()));
         Assert.assertFalse(realmModel.removeRoleById(realmRole.getId()));
-        Assert.assertNull(realmModel.getRole(realmRole.getName()));
+        assertNull(realmModel.getRole(realmRole.getName()));
 
         Assert.assertTrue(realmModel.removeRoleById(appRole.getId()));
         Assert.assertFalse(realmModel.removeRoleById(appRole.getId()));
-        Assert.assertNull(app.getRole(appRole.getName()));
+        assertNull(app.getRole(appRole.getName()));
     }
 
     @Test
@@ -435,7 +439,7 @@ public class AdapterTest extends AbstractModelTest {
         realmModel.grantRole(user, realmUserRole);
         Assert.assertTrue(realmModel.hasRole(user, realmUserRole));
         RoleModel found = realmModel.getRoleById(realmUserRole.getId());
-        Assert.assertNotNull(found);
+        assertNotNull(found);
         assertRolesEquals(found, realmUserRole);
 
         // Test app roles
@@ -445,10 +449,10 @@ public class AdapterTest extends AbstractModelTest {
         Set<RoleModel> appRoles = application.getRoles();
         Assert.assertEquals(2, appRoles.size());
         RoleModel appBarRole = application.getRole("bar");
-        Assert.assertNotNull(appBarRole);
+        assertNotNull(appBarRole);
 
         found = realmModel.getRoleById(appBarRole.getId());
-        Assert.assertNotNull(found);
+        assertNotNull(found);
         assertRolesEquals(found, appBarRole);
 
         realmModel.grantRole(user, appBarRole);
@@ -717,6 +721,45 @@ public class AdapterTest extends AbstractModelTest {
         }
 
         resetSession();
+    }
+
+    @Test
+    public void userSessions() throws InterruptedException {
+        realmManager.createRealm("userSessions");
+        realmManager.getRealmByName("userSessions").setCentralLoginLifespan(5);
+
+        UserModel user = realmManager.getRealmByName("userSessions").addUser("userSessions1");
+
+        UserSessionModel userSession = realmManager.getRealmByName("userSessions").createUserSession(user, "127.0.0.1");
+        commit();
+
+        assertNotNull(realmManager.getRealmByName("userSessions").getUserSession(userSession.getId()));
+        commit();
+
+        realmManager.getRealmByName("userSessions").removeUserSession(realmManager.getRealmByName("userSessions").getUserSession(userSession.getId()));
+        commit();
+
+        assertNull(realmManager.getRealmByName("userSessions").getUserSession(userSession.getId()));
+
+        userSession = realmManager.getRealmByName("userSessions").createUserSession(user, "127.0.0.1");
+        commit();
+
+        realmManager.getRealmByName("userSessions").removeUserSessions(user);
+        commit();
+
+        assertNull(realmManager.getRealmByName("userSessions").getUserSession(userSession.getId()));
+
+        realmManager.getRealmByName("userSessions").setCentralLoginLifespan(1);
+
+        userSession = realmManager.getRealmByName("userSessions").createUserSession(user, "127.0.0.1");
+        commit();
+
+        Thread.sleep(2000);
+
+        realmManager.getRealmByName("userSessions").removeExpiredUserSessions();
+        commit();
+
+        assertNull(realmManager.getRealmByName("userSessions").getUserSession(userSession.getId()));
     }
 
 }

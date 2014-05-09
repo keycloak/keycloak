@@ -83,6 +83,7 @@ public class JpaAuditProvider implements AuditProvider {
         e.setRealmId(o.getRealmId());
         e.setClientId(o.getClientId());
         e.setUserId(o.getUserId());
+        e.setSessionId(o.getSessionId());
         e.setIpAddress(o.getIpAddress());
         e.setError(o.getError());
         try {
@@ -100,6 +101,7 @@ public class JpaAuditProvider implements AuditProvider {
         e.setRealmId(o.getRealmId());
         e.setClientId(o.getClientId());
         e.setUserId(o.getUserId());
+        e.setSessionId(o.getSessionId());
         e.setIpAddress(o.getIpAddress());
         e.setError(o.getError());
         try {

@@ -34,6 +34,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -74,12 +75,12 @@ public class OAuthFlows {
         this.tokenManager = tokenManager;
     }
 
-    public Response redirectAccessCode(AccessCodeEntry accessCode, String state, String redirect) {
-        return redirectAccessCode(accessCode, state, redirect, false);
+    public Response redirectAccessCode(AccessCodeEntry accessCode, UserSessionModel session, String state, String redirect) {
+        return redirectAccessCode(accessCode, session, state, redirect, false);
     }
 
 
-    public Response redirectAccessCode(AccessCodeEntry accessCode, String state, String redirect, boolean rememberMe) {
+    public Response redirectAccessCode(AccessCodeEntry accessCode, UserSessionModel session, String state, String redirect, boolean rememberMe) {
         String code = accessCode.getCode();
 
         if (Constants.INSTALLED_APP_URN.equals(redirect)) {
@@ -92,7 +93,7 @@ public class OAuthFlows {
             Response.ResponseBuilder location = Response.status(302).location(redirectUri.build());
             Cookie remember = request.getHttpHeaders().getCookies().get(AuthenticationManager.KEYCLOAK_REMEMBER_ME);
             rememberMe = rememberMe || remember != null;
-            location.cookie(authManager.createLoginCookie(realm, accessCode.getUser(), uriInfo, rememberMe));
+            location.cookie(authManager.createLoginCookie(realm, accessCode.getUser(), session, uriInfo, rememberMe));
             return location.build();
         }
     }
@@ -109,17 +110,12 @@ public class OAuthFlows {
         }
     }
 
-    public Response processAccessCode(String scopeParam, String state, String redirect, ClientModel client, UserModel user, Audit audit) {
-        return processAccessCode(scopeParam, state, redirect, client, user, null, false, "form", audit);
-    }
-
-
-    public Response processAccessCode(String scopeParam, String state, String redirect, ClientModel client, UserModel user, String username, boolean rememberMe, String authMethod, Audit audit) {
+    public Response processAccessCode(String scopeParam, String state, String redirect, ClientModel client, UserModel user, UserSessionModel session, String username, boolean rememberMe, String authMethod, Audit audit) {
         isTotpConfigurationRequired(user);
         isEmailVerificationRequired(user);
 
         boolean isResource = client instanceof ApplicationModel;
-        AccessCodeEntry accessCode = tokenManager.createAccessCode(scopeParam, state, redirect, realm, client, user);
+        AccessCodeEntry accessCode = tokenManager.createAccessCode(scopeParam, state, redirect, realm, client, user, session);
         accessCode.setUsername(username);
         accessCode.setRememberMe(rememberMe);
         accessCode.setAuthMethod(authMethod);
@@ -155,7 +151,7 @@ public class OAuthFlows {
 
         if (redirect != null) {
             audit.success();
-            return redirectAccessCode(accessCode, state, redirect, rememberMe);
+            return redirectAccessCode(accessCode, session, state, redirect, rememberMe);
         } else {
             return null;
         }

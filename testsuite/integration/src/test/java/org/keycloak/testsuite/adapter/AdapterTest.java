@@ -30,6 +30,7 @@ import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.adapters.action.SessionStats;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -83,7 +84,8 @@ public class AdapterTest {
             ApplicationModel adminConsole = adminRealm.getApplicationByName(Constants.ADMIN_CONSOLE_APPLICATION);
             TokenManager tm = new TokenManager();
             UserModel admin = adminRealm.getUser("admin");
-            AccessToken token = tm.createClientAccessToken(null, adminRealm, adminConsole, admin);
+            UserSessionModel session = adminRealm.createUserSession(admin, null);
+            AccessToken token = tm.createClientAccessToken(null, adminRealm, adminConsole, admin, session);
             adminToken = tm.encodeToken(adminRealm, token);
 
         }

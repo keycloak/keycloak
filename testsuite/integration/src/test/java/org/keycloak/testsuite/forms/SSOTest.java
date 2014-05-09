@@ -41,6 +41,9 @@ import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.core.UriBuilder;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -76,22 +79,34 @@ public class SSOTest {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
         
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 
-        events.expectLogin().assertEvent();
+        String sessionId = events.expectLogin().assertEvent().getSessionId();
 
         appPage.open();
 
         oauth.openLoginForm();
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         profilePage.open();
 
         Assert.assertTrue(profilePage.isCurrent());
 
-        events.expectLogin().detail(Details.AUTH_METHOD, "sso").removeDetail(Details.USERNAME).client("test-app").assertEvent();
+        String sessionId2 = events.expectLogin().detail(Details.AUTH_METHOD, "sso").removeDetail(Details.USERNAME).client("test-app").assertEvent().getSessionId();
+
+        assertEquals(sessionId, sessionId2);
+
+        // Expire session
+        keycloakRule.removeUserSession(sessionId);
+
+        oauth.doLogin("test-user@localhost", "password");
+
+        String sessionId4 = events.expectLogin().assertEvent().getSessionId();
+        assertNotEquals(sessionId, sessionId4);
+
+        events.clear();
     }
 
 }

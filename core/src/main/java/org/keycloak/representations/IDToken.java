@@ -88,6 +88,9 @@ public class IDToken extends JsonWebToken {
     @JsonProperty("claims_locales")
     protected String claimsLocales;
 
+    @JsonProperty("session_state")
+    protected String sessionState;
+
     public String getNonce() {
         return nonce;
     }
@@ -302,5 +305,13 @@ public class IDToken extends JsonWebToken {
 
     public void setClaimsLocales(String claimsLocales) {
         this.claimsLocales = claimsLocales;
+    }
+
+    public String getSessionState() {
+        return sessionState;
+    }
+
+    public void setSessionState(String sessionState) {
+        this.sessionState = sessionState;
     }
 }

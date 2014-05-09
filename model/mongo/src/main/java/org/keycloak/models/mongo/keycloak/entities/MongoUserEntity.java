@@ -1,5 +1,7 @@
 package org.keycloak.models.mongo.keycloak.entities;
 
+import com.mongodb.DBObject;
+import com.mongodb.QueryBuilder;
 import org.keycloak.models.entities.UserEntity;
 import org.keycloak.models.mongo.api.MongoCollection;
 import org.keycloak.models.mongo.api.MongoIdentifiableEntity;
@@ -27,6 +29,10 @@ public class MongoUserEntity extends UserEntity implements MongoIdentifiableEnti
 
     @Override
     public void afterRemove(MongoStoreInvocationContext invocationContext) {
-        //To change body of implemented methods use File | Settings | File Templates.
+        DBObject query = new QueryBuilder()
+                .and("userId").is(getId())
+                .get();
+
+        invocationContext.getMongoStore().removeEntities(MongoUserSessionEntity.class, query, invocationContext);
     }
 }

@@ -6,6 +6,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.util.Time;
 
@@ -23,6 +24,7 @@ public class AccessCodeEntry {
     protected String id = UUID.randomUUID().toString() + System.currentTimeMillis();
     protected String code;
     protected String state;
+    protected String sessionState;
     protected String redirectUri;
     protected boolean rememberMe;
     protected String authMethod;
@@ -115,6 +117,14 @@ public class AccessCodeEntry {
 
     public void setState(String state) {
         this.state = state;
+    }
+
+    public String getSessionState() {
+        return sessionState;
+    }
+
+    public void setSessionState(String sessionState) {
+        this.sessionState = sessionState;
     }
 
     public String getRedirectUri() {

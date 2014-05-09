@@ -5,6 +5,7 @@ import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.UserCredentialValueModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UsernameLoginFailureModel;
 import org.keycloak.models.jpa.entities.ApplicationEntity;
 import org.keycloak.models.jpa.entities.ApplicationRoleEntity;
@@ -19,6 +20,7 @@ import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.jpa.entities.ScopeMappingEntity;
 import org.keycloak.models.jpa.entities.SocialLinkEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
+import org.keycloak.models.jpa.entities.UserSessionEntity;
 import org.keycloak.models.jpa.entities.UserRoleMappingEntity;
 import org.keycloak.models.jpa.entities.UsernameLoginFailureEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -33,6 +35,7 @@ import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.TimeBasedOTP;
+import org.keycloak.util.Time;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
@@ -49,6 +52,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import static org.keycloak.models.utils.Pbkdf2PasswordEncoder.*;
 
 /**
@@ -452,7 +456,7 @@ public class RealmAdapter implements RealmModel {
         query.setParameter("email", email);
         query.setParameter("realm", realm);
         List<UserEntity> results = query.getResultList();
-        return results.isEmpty()? null : new UserAdapter(results.get(0));
+        return results.isEmpty() ? null : new UserAdapter(results.get(0));
     }
 
     @Override
@@ -504,6 +508,8 @@ public class RealmAdapter implements RealmModel {
     }
 
     private void removeUser(UserEntity user) {
+        removeUserSessions(user);
+
         em.createQuery("delete from " + UserRoleMappingEntity.class.getSimpleName() + " where user = :user").setParameter("user", user).executeUpdate();
         em.createQuery("delete from " + SocialLinkEntity.class.getSimpleName() + " where user = :user").setParameter("user", user).executeUpdate();
         if (user.getAuthenticationLink() != null) {
@@ -719,7 +725,7 @@ public class RealmAdapter implements RealmModel {
             em.remove(entity);
             em.flush();
             return true;
-        }  else {
+        } else {
             return false;
         }
     }
@@ -848,7 +854,7 @@ public class RealmAdapter implements RealmModel {
     public boolean removeOAuthClient(String id) {
         OAuthClientModel oauth = getOAuthClientById(id);
         if (oauth == null) return false;
-        OAuthClientEntity client = (OAuthClientEntity)((OAuthClientAdapter)oauth).getEntity();
+        OAuthClientEntity client = (OAuthClientEntity) ((OAuthClientAdapter) oauth).getEntity();
         em.createQuery("delete from " + ScopeMappingEntity.class.getSimpleName() + " where client = :client").setParameter("client", client).executeUpdate();
         em.remove(client);
         return true;
@@ -1001,7 +1007,7 @@ public class RealmAdapter implements RealmModel {
         }
         if (!role.getContainer().equals(this)) return false;
 
-        RoleEntity roleEntity = ((RoleAdapter)role).getRole();
+        RoleEntity roleEntity = ((RoleAdapter) role).getRole();
         realm.getRoles().remove(role);
         realm.getDefaultRoles().remove(role);
 
@@ -1030,10 +1036,10 @@ public class RealmAdapter implements RealmModel {
         RoleEntity entity = em.find(RoleEntity.class, id);
         if (entity == null) return null;
         if (entity instanceof RealmRoleEntity) {
-            RealmRoleEntity roleEntity = (RealmRoleEntity)entity;
+            RealmRoleEntity roleEntity = (RealmRoleEntity) entity;
             if (!roleEntity.getRealm().getId().equals(getId())) return null;
         } else {
-            ApplicationRoleEntity roleEntity = (ApplicationRoleEntity)entity;
+            ApplicationRoleEntity roleEntity = (ApplicationRoleEntity) entity;
             if (!roleEntity.getApplication().getRealm().getId().equals(getId())) return null;
         }
         return new RoleAdapter(this, em, entity);
@@ -1069,7 +1075,6 @@ public class RealmAdapter implements RealmModel {
     }
 
 
-
     protected TypedQuery<UserRoleMappingEntity> getUserRoleMappingEntityTypedQuery(UserAdapter user, RoleAdapter role) {
         TypedQuery<UserRoleMappingEntity> query = em.createNamedQuery("userHasRole", UserRoleMappingEntity.class);
         query.setParameter("user", user.getUser());
@@ -1082,7 +1087,7 @@ public class RealmAdapter implements RealmModel {
         if (hasRole(user, role)) return;
         UserRoleMappingEntity entity = new UserRoleMappingEntity();
         entity.setUser(((UserAdapter) user).getUser());
-        entity.setRole(((RoleAdapter)role).getRole());
+        entity.setRole(((RoleAdapter) role).getRole());
         em.persist(entity);
         em.flush();
     }
@@ -1095,7 +1100,7 @@ public class RealmAdapter implements RealmModel {
         for (RoleModel role : roleMappings) {
             RoleContainerModel container = role.getContainer();
             if (container instanceof RealmModel) {
-               realmRoles.add(role);
+                realmRoles.add(role);
             }
         }
         return realmRoles;
@@ -1105,7 +1110,7 @@ public class RealmAdapter implements RealmModel {
     @Override
     public Set<RoleModel> getRoleMappings(UserModel user) {
         TypedQuery<UserRoleMappingEntity> query = em.createNamedQuery("userRoleMappings", UserRoleMappingEntity.class);
-        query.setParameter("user", ((UserAdapter)user).getUser());
+        query.setParameter("user", ((UserAdapter) user).getUser());
         List<UserRoleMappingEntity> entities = query.getResultList();
         Set<RoleModel> roles = new HashSet<RoleModel>();
         for (UserRoleMappingEntity entity : entities) {
@@ -1135,7 +1140,7 @@ public class RealmAdapter implements RealmModel {
         for (RoleModel role : roleMappings) {
             RoleContainerModel container = role.getContainer();
             if (container instanceof RealmModel) {
-                if (((RealmModel)container).getId().equals(getId())) {
+                if (((RealmModel) container).getId().equals(getId())) {
                     appRoles.add(role);
                 }
             }
@@ -1148,7 +1153,7 @@ public class RealmAdapter implements RealmModel {
     @Override
     public Set<RoleModel> getScopeMappings(ClientModel client) {
         TypedQuery<ScopeMappingEntity> query = em.createNamedQuery("clientScopeMappings", ScopeMappingEntity.class);
-        query.setParameter("client", ((ClientAdapter)client).getEntity());
+        query.setParameter("client", ((ClientAdapter) client).getEntity());
         List<ScopeMappingEntity> entities = query.getResultList();
         Set<RoleModel> roles = new HashSet<RoleModel>();
         for (ScopeMappingEntity entity : entities) {
@@ -1162,7 +1167,7 @@ public class RealmAdapter implements RealmModel {
         if (hasScope(client, role)) return;
         ScopeMappingEntity entity = new ScopeMappingEntity();
         entity.setClient(((ClientAdapter) client).getEntity());
-        entity.setRole(((RoleAdapter)role).getRole());
+        entity.setRole(((RoleAdapter) role).getRole());
         em.persist(entity);
     }
 
@@ -1179,13 +1184,13 @@ public class RealmAdapter implements RealmModel {
     protected TypedQuery<ScopeMappingEntity> getRealmScopeMappingQuery(ClientAdapter client, RoleAdapter role) {
         TypedQuery<ScopeMappingEntity> query = em.createNamedQuery("hasScope", ScopeMappingEntity.class);
         query.setParameter("client", client.getEntity());
-        query.setParameter("role", ((RoleAdapter)role).getRole());
+        query.setParameter("role", ((RoleAdapter) role).getRole());
         return query;
     }
 
     @Override
     public boolean validatePassword(UserModel user, String password) {
-        for (CredentialEntity cred : ((UserAdapter)user).getUser().getCredentials()) {
+        for (CredentialEntity cred : ((UserAdapter) user).getUser().getCredentials()) {
             if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
                 return new Pbkdf2PasswordEncoder(cred.getSalt()).verify(password, cred.getValue());
             }
@@ -1196,7 +1201,7 @@ public class RealmAdapter implements RealmModel {
     @Override
     public boolean validateTOTP(UserModel user, String password, String token) {
         if (!validatePassword(user, password)) return false;
-        for (CredentialEntity cred : ((UserAdapter)user).getUser().getCredentials()) {
+        for (CredentialEntity cred : ((UserAdapter) user).getUser().getCredentials()) {
             if (cred.getType().equals(UserCredentialModel.TOTP)) {
                 return new TimeBasedOTP().validate(token, cred.getValue().getBytes());
             }
@@ -1297,7 +1302,7 @@ public class RealmAdapter implements RealmModel {
     public boolean equals(Object o) {
         if (o == null) return false;
         if (!(o instanceof RealmAdapter)) return false;
-        RealmAdapter r = (RealmAdapter)o;
+        RealmAdapter r = (RealmAdapter) o;
         return r.getId().equals(getId());
     }
 
@@ -1365,6 +1370,47 @@ public class RealmAdapter implements RealmModel {
     public void setAdminApp(ApplicationModel app) {
         realm.setAdminApp(((ApplicationAdapter) app).getJpaEntity());
         em.flush();
+    }
+
+    @Override
+    public UserSessionModel createUserSession(UserModel user, String ipAddress) {
+        UserSessionEntity entity = new UserSessionEntity();
+        entity.setUser(((UserAdapter) user).getUser());
+        entity.setIpAddress(ipAddress);
+
+        int currentTime = Time.currentTime();
+        int expires = currentTime + realm.getCentralLoginLifespan();
+
+        entity.setStarted(currentTime);
+        entity.setExpires(expires);
+
+        em.persist(entity);
+        return new UserSessionAdapter(entity);
+    }
+
+    @Override
+    public UserSessionModel getUserSession(String id) {
+        UserSessionEntity entity = em.find(UserSessionEntity.class, id);
+        return entity != null ? new UserSessionAdapter(entity) : null;
+    }
+
+    @Override
+    public void removeUserSession(UserSessionModel session) {
+        em.remove(((UserSessionAdapter) session).getEntity());
+    }
+
+    @Override
+    public void removeUserSessions(UserModel user) {
+        removeUserSessions(((UserAdapter) user).getUser());
+    }
+
+    private void removeUserSessions(UserEntity user) {
+        em.createNamedQuery("removeUserSessionByUser").setParameter("user", user).executeUpdate();
+    }
+
+    @Override
+    public void removeExpiredUserSessions() {
+        em.createNamedQuery("removeUserSessionExpired").setParameter("currentTime", Time.currentTime()).executeUpdate();
     }
 
 }

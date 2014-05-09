@@ -111,7 +111,7 @@ public class LoginTotpTest {
         loginPage.assertCurrent();
         Assert.assertEquals("Invalid username or password.", loginPage.getError());
 
-        events.expectLogin().error("invalid_user_credentials").removeDetail(Details.CODE_ID).user((String) null).assertEvent();
+        events.expectLogin().error("invalid_user_credentials").removeDetail(Details.CODE_ID).user((String) null).session((String) null).assertEvent();
     }
 
     @Test

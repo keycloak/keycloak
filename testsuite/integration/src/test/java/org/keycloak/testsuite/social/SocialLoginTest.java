@@ -28,6 +28,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.audit.Details;
+import org.keycloak.audit.Event;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -116,16 +117,21 @@ public class SocialLoginTest {
                 .detail(Details.REGISTER_METHOD, "social@dummy")
                 .detail(Details.REDIRECT_URI, AssertEvents.DEFAULT_REDIRECT_URI)
                 .detail(Details.USERNAME, "1@dummy")
+                .session((String) null)
                 .assertEvent().getUserId();
 
-        String codeId = events.expectLogin().user(userId).detail(Details.USERNAME, "1@dummy").detail(Details.AUTH_METHOD, "social@dummy").assertEvent().getDetails().get(Details.CODE_ID);
+        Event loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "1@dummy").detail(Details.AUTH_METHOD, "social@dummy").assertEvent();
+
+        String sessionId = loginEvent.getSessionId();
+        String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
         AccessTokenResponse response = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE), "password");
 
-        events.expectCodeToToken(codeId).user(userId).assertEvent();
+        events.expectCodeToToken(codeId, sessionId).user(userId).assertEvent();
 
         AccessToken token = oauth.verifyToken(response.getAccessToken());
         Assert.assertEquals(36, token.getSubject().length());
+        Assert.assertEquals(sessionId, token.getSessionState());
 
         UserRepresentation profile = keycloakRule.getUserById("test", token.getSubject());
         Assert.assertEquals(36, profile.getUsername().length());
@@ -136,7 +142,7 @@ public class SocialLoginTest {
 
         oauth.openLogout();
 
-        events.expectLogout().user(userId).assertEvent();
+        events.expectLogout(sessionId).user(userId).assertEvent();
 
         loginPage.open();
 
@@ -160,7 +166,7 @@ public class SocialLoginTest {
         Assert.assertTrue(loginPage.isCurrent());
         Assert.assertEquals("Access denied", loginPage.getWarning());
 
-        events.expectLogin().error("rejected_by_user").user((String) null).detail(Details.AUTH_METHOD, "social@dummy").removeDetail(Details.USERNAME).removeDetail(Details.CODE_ID).assertEvent();
+        events.expectLogin().error("rejected_by_user").user((String) null).session((String) null).detail(Details.AUTH_METHOD, "social@dummy").removeDetail(Details.USERNAME).removeDetail(Details.CODE_ID).assertEvent();
 
         loginPage.login("test-user@localhost", "password");
 
@@ -212,12 +218,13 @@ public class SocialLoginTest {
 
             Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-            String codeId = events.expectLogin().user(userId).removeDetail(Details.USERNAME).detail(Details.AUTH_METHOD, "social@dummy").detail(Details.USERNAME, "2@dummy").assertEvent().getDetails().get(Details.CODE_ID);
+            Event loginEvent = events.expectLogin().user(userId).removeDetail(Details.USERNAME).detail(Details.AUTH_METHOD, "social@dummy").detail(Details.USERNAME, "2@dummy").assertEvent();
+            String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
             AccessTokenResponse response = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE), "password");
             AccessToken token = oauth.verifyToken(response.getAccessToken());
 
-            events.expectCodeToToken(codeId).user(userId).assertEvent();
+            events.expectCodeToToken(codeId, loginEvent.getSessionId()).user(userId).assertEvent();
 
             UserRepresentation profile = keycloakRule.getUserById("test", token.getSubject());
 

@@ -210,7 +210,7 @@ public class UsersResource {
         }
         // set notBefore so that user will be forced to log in.
         user.setNotBefore(Time.currentTime());
-        new ResourceAdminManager().logoutUser(uriInfo.getRequestUri(), realm, user);
+        new ResourceAdminManager().logoutUser(uriInfo.getRequestUri(), realm, user.getId(), null);
     }
 
 
@@ -540,7 +540,7 @@ public class UsersResource {
         Set<UserModel.RequiredAction> requiredActions = new HashSet<UserModel.RequiredAction>(user.getRequiredActions());
         requiredActions.add(UserModel.RequiredAction.UPDATE_PASSWORD);
 
-        AccessCodeEntry accessCode = tokenManager.createAccessCode(scope, state, redirect, realm, client, user);
+        AccessCodeEntry accessCode = tokenManager.createAccessCode(scope, state, redirect, realm, client, user, null);
         accessCode.setRequiredActions(requiredActions);
         accessCode.setExpiration(Time.currentTime() + realm.getAccessCodeLifespanUserAction());
 

@@ -121,6 +121,7 @@ public class RequiredActionEmailVerificationTest {
         String verificationUrl = m.group(1);
 
         Event sendEvent = events.expectRequiredAction("send_verify_email").detail("email", "test-user@localhost").assertEvent();
+        String sessionId = sendEvent.getSessionId();
 
         String mailCodeId = sendEvent.getDetails().get(Details.CODE_ID);
 
@@ -128,11 +129,11 @@ public class RequiredActionEmailVerificationTest {
 
         driver.navigate().to(verificationUrl.trim());
 
-        events.expectRequiredAction("verify_email").detail("email", "test-user@localhost").detail(Details.CODE_ID, mailCodeId).assertEvent();
+        events.expectRequiredAction("verify_email").session(sessionId).detail("email", "test-user@localhost").detail(Details.CODE_ID, mailCodeId).assertEvent();
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().detail(Details.CODE_ID, mailCodeId).assertEvent();
+        events.expectLogin().session(sessionId).detail(Details.CODE_ID, mailCodeId).assertEvent();
     }
 
     @Test
@@ -156,6 +157,7 @@ public class RequiredActionEmailVerificationTest {
         m.matches();
 
         Event sendEvent = events.expectRequiredAction("send_verify_email").user(userId).detail("username", "verifyEmail").detail("email", "email").assertEvent();
+        String sessionId = sendEvent.getSessionId();
 
         String mailCodeId = sendEvent.getDetails().get(Details.CODE_ID);
 
@@ -165,9 +167,9 @@ public class RequiredActionEmailVerificationTest {
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectRequiredAction("verify_email").user(userId).detail("username", "verifyEmail").detail("email", "email").detail(Details.CODE_ID, mailCodeId).assertEvent();
+        events.expectRequiredAction("verify_email").user(userId).session(sessionId).detail("username", "verifyEmail").detail("email", "email").detail(Details.CODE_ID, mailCodeId).assertEvent();
 
-        events.expectLogin().user(userId).detail("username", "verifyEmail").detail(Details.CODE_ID, mailCodeId).assertEvent();
+        events.expectLogin().user(userId).session(sessionId).detail("username", "verifyEmail").detail(Details.CODE_ID, mailCodeId).assertEvent();
     }
 
     @Test
@@ -180,6 +182,7 @@ public class RequiredActionEmailVerificationTest {
         Assert.assertEquals(1, greenMail.getReceivedMessages().length);
 
         Event sendEvent = events.expectRequiredAction("send_verify_email").detail("email", "test-user@localhost").assertEvent();
+        String sessionId = sendEvent.getSessionId();
 
         String mailCodeId = sendEvent.getDetails().get(Details.CODE_ID);
 
@@ -195,7 +198,7 @@ public class RequiredActionEmailVerificationTest {
         Matcher m = p.matcher(body);
         m.matches();
 
-        events.expectRequiredAction("send_verify_email").detail("email", "test-user@localhost").assertEvent(sendEvent);
+        events.expectRequiredAction("send_verify_email").session(sessionId).detail("email", "test-user@localhost").assertEvent(sendEvent);
 
         String verificationUrl = m.group(1);
 
@@ -203,9 +206,9 @@ public class RequiredActionEmailVerificationTest {
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectRequiredAction("verify_email").detail("email", "test-user@localhost").detail(Details.CODE_ID, mailCodeId).assertEvent();
+        events.expectRequiredAction("verify_email").session(sessionId).detail("email", "test-user@localhost").detail(Details.CODE_ID, mailCodeId).assertEvent();
 
-        events.expectLogin().assertEvent();
+        events.expectLogin().session(sessionId).assertEvent();
     }
 
 }

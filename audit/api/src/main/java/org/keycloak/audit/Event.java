@@ -18,6 +18,8 @@ public class Event {
 
     private String userId;
 
+    private String sessionId;
+
     private String ipAddress;
 
     private String error;
@@ -64,6 +66,14 @@ public class Event {
         this.userId = userId;
     }
 
+    public String getSessionId() {
+        return sessionId;
+    }
+
+    public void setSessionId(String sessionId) {
+        this.sessionId = sessionId;
+    }
+
     public String getIpAddress() {
         return ipAddress;
     }
@@ -95,6 +105,7 @@ public class Event {
         clone.realmId = realmId;
         clone.clientId = clientId;
         clone.userId = userId;
+        clone.sessionId = sessionId;
         clone.ipAddress = ipAddress;
         clone.error = error;
         clone.details = details != null ? new HashMap<String, String>(details) : null;

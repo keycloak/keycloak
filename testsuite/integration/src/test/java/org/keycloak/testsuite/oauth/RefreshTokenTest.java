@@ -27,6 +27,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.audit.Details;
+import org.keycloak.audit.Errors;
 import org.keycloak.audit.Event;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
@@ -43,6 +44,8 @@ import org.openqa.selenium.WebDriver;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -71,7 +74,10 @@ public class RefreshTokenTest {
     public void refreshTokenRequest() throws Exception {
         oauth.doLogin("test-user@localhost", "password");
 
-        String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
+        Event loginEvent = events.expectLogin().assertEvent();
+
+        String sessionId = loginEvent.getSessionId();
+        String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
 
@@ -80,7 +86,7 @@ public class RefreshTokenTest {
         String refreshTokenString = tokenResponse.getRefreshToken();
         RefreshToken refreshToken = oauth.verifyRefreshToken(refreshTokenString);
 
-        Event tokenEvent = events.expectCodeToToken(codeId).assertEvent();
+        Event tokenEvent = events.expectCodeToToken(codeId, sessionId).assertEvent();
 
         Assert.assertNotNull(refreshTokenString);
 
@@ -89,6 +95,8 @@ public class RefreshTokenTest {
         Assert.assertThat(token.getExpiration() - Time.currentTime(), allOf(greaterThanOrEqualTo(250), lessThanOrEqualTo(300)));
         Assert.assertThat(refreshToken.getExpiration() - Time.currentTime(), allOf(greaterThanOrEqualTo(35950), lessThanOrEqualTo(36000)));
 
+        Assert.assertEquals(sessionId, refreshToken.getSessionState());
+
         Thread.sleep(2000);
 
         AccessTokenResponse response = oauth.doRefreshTokenRequest(refreshTokenString, "password");
@@ -96,6 +104,9 @@ public class RefreshTokenTest {
         RefreshToken refreshedRefreshToken = oauth.verifyRefreshToken(response.getRefreshToken());
 
         Assert.assertEquals(200, response.getStatusCode());
+
+        Assert.assertEquals(sessionId, refreshedToken.getSessionState());
+        Assert.assertEquals(sessionId, refreshedRefreshToken.getSessionState());
 
         Assert.assertThat(response.getExpiresIn(), allOf(greaterThanOrEqualTo(250), lessThanOrEqualTo(300)));
         Assert.assertThat(refreshedToken.getExpiration() - Time.currentTime(), allOf(greaterThanOrEqualTo(250), lessThanOrEqualTo(300)));
@@ -117,9 +128,37 @@ public class RefreshTokenTest {
         Assert.assertEquals(1, refreshedToken.getResourceAccess(oauth.getClientId()).getRoles().size());
         Assert.assertTrue(refreshedToken.getResourceAccess(oauth.getClientId()).isUserInRole("customer-user"));
 
-        Event refreshEvent = events.expectRefresh(tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID)).assertEvent();
+        Event refreshEvent = events.expectRefresh(tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID), sessionId).assertEvent();
         Assert.assertNotEquals(tokenEvent.getDetails().get(Details.TOKEN_ID), refreshEvent.getDetails().get(Details.TOKEN_ID));
         Assert.assertNotEquals(tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID), refreshEvent.getDetails().get(Details.UPDATED_REFRESH_TOKEN_ID));
+    }
+
+    @Test
+    public void refreshTokenUserSessionExpired() {
+        oauth.doLogin("test-user@localhost", "password");
+
+        Event loginEvent = events.expectLogin().assertEvent();
+
+        String sessionId = loginEvent.getSessionId();
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+
+        events.poll();
+
+        String refreshId = oauth.verifyRefreshToken(tokenResponse.getRefreshToken()).getId();
+
+        keycloakRule.removeUserSession(sessionId);
+
+        tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "password");
+
+        assertEquals(400, tokenResponse.getStatusCode());
+        assertNull(tokenResponse.getAccessToken());
+        assertNull(tokenResponse.getRefreshToken());
+
+        events.expectRefresh(refreshId, sessionId).error(Errors.INVALID_TOKEN);
+
+        events.clear();
     }
 
 }

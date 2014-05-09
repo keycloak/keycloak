@@ -15,6 +15,7 @@ import org.keycloak.audit.Event;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderSession;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -115,7 +116,7 @@ public class AssertEvents implements TestRule, AuditListenerFactory {
     }
 
     public ExpectedEvent expectRequiredAction(String event) {
-        return expectLogin().event(event);
+        return expectLogin().event(event).session(isUUID());
     }
 
     public ExpectedEvent expectLogin() {
@@ -124,26 +125,30 @@ public class AssertEvents implements TestRule, AuditListenerFactory {
                 .detail(Details.USERNAME, DEFAULT_USERNAME)
                 .detail(Details.RESPONSE_TYPE, "code")
                 .detail(Details.AUTH_METHOD, "form")
-                .detail(Details.REDIRECT_URI, DEFAULT_REDIRECT_URI);
+                .detail(Details.REDIRECT_URI, DEFAULT_REDIRECT_URI)
+                .session(isUUID());
     }
 
-    public ExpectedEvent expectCodeToToken(String codeId) {
+    public ExpectedEvent expectCodeToToken(String codeId, String sessionId) {
         return expect("code_to_token")
                 .detail(Details.CODE_ID, codeId)
                 .detail(Details.TOKEN_ID, isUUID())
-                .detail(Details.REFRESH_TOKEN_ID, isUUID());
+                .detail(Details.REFRESH_TOKEN_ID, isUUID())
+                .session(sessionId);
     }
 
-    public ExpectedEvent expectRefresh(String refreshTokenId) {
+    public ExpectedEvent expectRefresh(String refreshTokenId, String sessionId) {
         return expect("refresh_token")
                 .detail(Details.TOKEN_ID, isUUID())
                 .detail(Details.REFRESH_TOKEN_ID, refreshTokenId)
-                .detail(Details.UPDATED_REFRESH_TOKEN_ID, isUUID());
+                .detail(Details.UPDATED_REFRESH_TOKEN_ID, isUUID())
+                .session(sessionId);
     }
 
-    public ExpectedEvent expectLogout() {
+    public ExpectedEvent expectLogout(String sessionId) {
         return expect("logout").client((String) null)
-                .detail(Details.REDIRECT_URI, DEFAULT_REDIRECT_URI);
+                .detail(Details.REDIRECT_URI, DEFAULT_REDIRECT_URI)
+                .session(sessionId);
     }
 
     public ExpectedEvent expectRegister(String username, String email) {
@@ -162,7 +167,13 @@ public class AssertEvents implements TestRule, AuditListenerFactory {
     }
 
     public ExpectedEvent expect(String event) {
-        return new ExpectedEvent().realm(DEFAULT_REALM).client(DEFAULT_CLIENT_ID).user(keycloak.getUser(DEFAULT_REALM, DEFAULT_USERNAME).getId()).ipAddress(DEFAULT_IP_ADDRESS).event(event);
+        return new ExpectedEvent()
+                .realm(DEFAULT_REALM)
+                .client(DEFAULT_CLIENT_ID)
+                .user(keycloak.getUser(DEFAULT_REALM, DEFAULT_USERNAME).getId())
+                .ipAddress(DEFAULT_IP_ADDRESS)
+                .session((String) null)
+                .event(event);
     }
 
     @Override
@@ -193,6 +204,7 @@ public class AssertEvents implements TestRule, AuditListenerFactory {
     public static class ExpectedEvent {
         private Event expected = new Event();
         private Matcher<String> userId;
+        private Matcher<String> sessionId;
         private HashMap<String, Matcher<String>> details;
 
         public ExpectedEvent realm(RealmModel realm) {
@@ -216,7 +228,7 @@ public class AssertEvents implements TestRule, AuditListenerFactory {
         }
 
         public ExpectedEvent user(UserModel user) {
-            return user(CoreMatchers.equalTo(user.getId()));
+            return user(user.getId());
         }
 
         public ExpectedEvent user(String userId) {
@@ -225,6 +237,19 @@ public class AssertEvents implements TestRule, AuditListenerFactory {
 
         public ExpectedEvent user(Matcher<String> userId) {
             this.userId = userId;
+            return this;
+        }
+
+        public ExpectedEvent session(UserSessionModel session) {
+            return session(session.getId());
+        }
+
+        public ExpectedEvent session(String sessionId) {
+            return session(CoreMatchers.equalTo(sessionId));
+        }
+
+        public ExpectedEvent session(Matcher<String> sessionId) {
+            this.sessionId = sessionId;
             return this;
         }
 
@@ -277,8 +302,9 @@ public class AssertEvents implements TestRule, AuditListenerFactory {
             Assert.assertEquals(expected.getError(), actual.getError());
             Assert.assertEquals(expected.getIpAddress(), actual.getIpAddress());
             Assert.assertThat(actual.getUserId(), userId);
+            Assert.assertThat(actual.getSessionId(), sessionId);
 
-            if (details == null) {
+            if (details == null || details.isEmpty()) {
                 Assert.assertNull(actual.getDetails());
             } else {
                 Assert.assertNotNull(actual.getDetails());
@@ -288,9 +314,7 @@ public class AssertEvents implements TestRule, AuditListenerFactory {
                         Assert.fail(d.getKey() + " missing");
                     }
 
-                    if (!d.getValue().matches(actualValue)) {
-                        Assert.fail(d.getKey() + " doesn't match");
-                    }
+                    Assert.assertThat("Unexpected value for " + d.getKey(), actualValue, d.getValue());
                 }
 
                 for (String k : actual.getDetails().keySet()) {

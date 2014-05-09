@@ -89,36 +89,46 @@ public class RequiredActionMultipleActionsTest {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
 
+        String sessionId = null;
         if (changePasswordPage.isCurrent()) {
-            updatePassword();
+            sessionId = updatePassword(sessionId);
 
             updateProfilePage.assertCurrent();
-            updateProfile();
+            updateProfile(sessionId);
         } else if (updateProfilePage.isCurrent()) {
-            updateProfile();
+            sessionId = updateProfile(sessionId);
 
             changePasswordPage.assertCurrent();
-            updatePassword();
+            updatePassword(sessionId);
         } else {
             Assert.fail("Expected to update password and profile before login");
         }
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().assertEvent();
+        events.expectLogin().session(sessionId).assertEvent();
     }
 
-    public void updatePassword() {
+    public String updatePassword(String sessionId) {
         changePasswordPage.changePassword("new-password", "new-password");
 
-        events.expectRequiredAction("update_password").assertEvent();
+        AssertEvents.ExpectedEvent expectedEvent = events.expectRequiredAction("update_password");
+        if (sessionId != null) {
+            expectedEvent.session(sessionId);
+        }
+        return expectedEvent.assertEvent().getSessionId();
     }
 
-    public void updateProfile() {
+    public String updateProfile(String sessionId) {
         updateProfilePage.update("New first", "New last", "new@email.com");
 
-        events.expectRequiredAction("update_profile").assertEvent();
-        events.expectRequiredAction("update_email").detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
+        AssertEvents.ExpectedEvent expectedEvent = events.expectRequiredAction("update_profile");
+        if (sessionId != null) {
+            expectedEvent.session(sessionId);
+        }
+        sessionId = expectedEvent.assertEvent().getSessionId();
+        events.expectRequiredAction("update_email").session(sessionId).detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
+        return sessionId;
     }
 
 }

@@ -249,4 +249,14 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
 
     void setAdminApp(ApplicationModel app);
 
+    UserSessionModel createUserSession(UserModel user, String ipAddress);
+
+    UserSessionModel getUserSession(String id);
+
+    void removeUserSession(UserSessionModel session);
+
+    void removeUserSessions(UserModel user);
+
+    void removeExpiredUserSessions();
+
 }

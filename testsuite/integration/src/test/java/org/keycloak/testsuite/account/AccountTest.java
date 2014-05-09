@@ -194,7 +194,7 @@ public class AccountTest {
         changePasswordPage.open();
         loginPage.login("test-user@localhost", "password");
 
-        events.expectLogin().client("account").detail(Details.REDIRECT_URI, ACCOUNT_REDIRECT + "?path=password").assertEvent();
+        String sessionId = events.expectLogin().client("account").detail(Details.REDIRECT_URI, ACCOUNT_REDIRECT + "?path=password").assertEvent().getSessionId();
 
         changePasswordPage.changePassword("", "new-password", "new-password");
 
@@ -212,14 +212,14 @@ public class AccountTest {
 
         changePasswordPage.logout();
 
-        events.expectLogout().detail(Details.REDIRECT_URI, ACCOUNT_URL).assertEvent();
+        events.expectLogout(sessionId).detail(Details.REDIRECT_URI, ACCOUNT_URL).assertEvent();
 
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
 
         Assert.assertEquals("Invalid username or password.", loginPage.getError());
 
-        events.expectLogin().user((String) null).error("invalid_user_credentials").removeDetail(Details.CODE_ID).assertEvent();
+        events.expectLogin().user((String) null).session((String) null).error("invalid_user_credentials").removeDetail(Details.CODE_ID).assertEvent();
 
         loginPage.open();
         loginPage.login("test-user@localhost", "new-password");

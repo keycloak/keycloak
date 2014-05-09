@@ -26,6 +26,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderSession;
 import org.keycloak.representations.AccessToken;
@@ -210,6 +211,16 @@ public class TokenService {
 
         audit.event(Events.LOGIN).detail(Details.AUTH_METHOD, "oauth_credentials").detail(Details.RESPONSE_TYPE, "token");
 
+        String username = form.getFirst(AuthenticationManager.FORM_USERNAME);
+        if (username == null) {
+            audit.error(Errors.USERNAME_MISSING);
+            throw new UnauthorizedException("No username");
+        }
+        audit.detail(Details.USERNAME, username);
+
+        UserModel user = realm.getUser(username);
+        audit.user(user);
+
         ClientModel client = authorizeClient(authorizationHeader, form, audit);
 
         if (client.isPublicClient()) {
@@ -218,38 +229,49 @@ public class TokenService {
             throw new ForbiddenException("Public clients are not allowed to invoke grants/access");
         }
 
-        String username = form.getFirst(AuthenticationManager.FORM_USERNAME);
-        if (username == null) {
-            audit.error(Errors.USERNAME_MISSING);
-            throw new UnauthorizedException("No username");
-        }
-        audit.detail(Details.USERNAME, username);
         if (!realm.isEnabled()) {
             audit.error(Errors.REALM_DISABLED);
             throw new UnauthorizedException("Disabled realm");
         }
 
         AuthenticationStatus authenticationStatus = authManager.authenticateForm(clientConnection, realm, form);
+        Map<String, String> err;
 
         switch (authenticationStatus) {
             case SUCCESS:
                 break;
             case ACCOUNT_TEMPORARILY_DISABLED:
             case ACTIONS_REQUIRED:
+                err = new HashMap<String, String>();
+                err.put(OAuth2Constants.ERROR, "invalid_grant");
+                err.put(OAuth2Constants.ERROR_DESCRIPTION, "Account temporarily disabled");
                 audit.error(Errors.USER_TEMPORARILY_DISABLED);
-                return Response.status(503).type(MediaType.TEXT_PLAIN).entity("Account temporarily disabled").build();
+                return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(err)
+                        .build();
             case ACCOUNT_DISABLED:
-                return Response.status(403).type(MediaType.TEXT_PLAIN).entity("Account disabled").build();
+                err = new HashMap<String, String>();
+                err.put(OAuth2Constants.ERROR, "invalid_grant");
+                err.put(OAuth2Constants.ERROR_DESCRIPTION, "Account disabled");
+                audit.error(Errors.USER_DISABLED);
+                return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(err)
+                        .build();
             default:
+                err = new HashMap<String, String>();
+                err.put(OAuth2Constants.ERROR, "invalid_grant");
+                err.put(OAuth2Constants.ERROR_DESCRIPTION, "Invalid user credentials");
                 audit.error(Errors.INVALID_USER_CREDENTIALS);
-                throw new UnauthorizedException("Auth failed");
+                return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(err)
+                        .build();
         }
 
-        UserModel user = realm.getUser(form.getFirst(AuthenticationManager.FORM_USERNAME));
         String scope = form.getFirst(OAuth2Constants.SCOPE);
 
+        UserSessionModel session = realm.createUserSession(user, clientConnection.getRemoteAddr());
+        audit.session(session);
+
         AccessTokenResponse res = tokenManager.responseBuilder(realm, client, audit)
-                .generateAccessToken(scope, client, user)
+                .generateAccessToken(scope, client, user, session)
+                .generateRefreshToken()
                 .generateIDToken()
                 .build();
 
@@ -362,8 +384,12 @@ public class TokenService {
             case SUCCESS:
             case ACTIONS_REQUIRED:
                 UserModel user = KeycloakModelUtils.findUserByNameOrEmail(realm, username);
-		        audit.user(user);
-                return oauth.processAccessCode(scopeParam, state, redirect, client, user, username, remember, "form", audit);
+                audit.user(user);
+
+                UserSessionModel session = realm.createUserSession(user, clientConnection.getRemoteAddr());
+		        audit.session(session);
+
+                return oauth.processAccessCode(scopeParam, state, redirect, client, user, session, username, remember, "form", audit);
             case ACCOUNT_TEMPORARILY_DISABLED:
                 audit.error(Errors.USER_TEMPORARILY_DISABLED);
                 return Flows.forms(realm, uriInfo).setError(Messages.ACCOUNT_TEMPORARILY_DISABLED).setFormData(formData).createLogin();
@@ -561,6 +587,7 @@ public class TokenService {
         }
 
         audit.user(accessCode.getUser());
+        audit.session(accessCode.getSessionState());
 
         ClientModel client = authorizeClient(authorizationHeader, formData, audit);
 
@@ -584,6 +611,35 @@ public class TokenService {
             Map<String, String> res = new HashMap<String, String>();
             res.put(OAuth2Constants.ERROR, "invalid_grant");
             res.put(OAuth2Constants.ERROR_DESCRIPTION, "Auth error");
+            audit.error(Errors.INVALID_CODE);
+            return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res)
+                    .build();
+        }
+
+        UserModel user = realm.getUserById(accessCode.getUser().getId());
+        if (user == null) {
+            Map<String, String> res = new HashMap<String, String>();
+            res.put(OAuth2Constants.ERROR, "invalid_grant");
+            res.put(OAuth2Constants.ERROR_DESCRIPTION, "User not found");
+            audit.error(Errors.INVALID_CODE);
+            return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res)
+                    .build();
+        }
+
+        if (!user.isEnabled()) {
+            Map<String, String> res = new HashMap<String, String>();
+            res.put(OAuth2Constants.ERROR, "invalid_grant");
+            res.put(OAuth2Constants.ERROR_DESCRIPTION, "User disabled");
+            audit.error(Errors.INVALID_CODE);
+            return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res)
+                    .build();
+        }
+
+        UserSessionModel session = realm.getUserSession(accessCode.getSessionState());
+        if (session == null || session.getExpires() < Time.currentTime()) {
+            Map<String, String> res = new HashMap<String, String>();
+            res.put(OAuth2Constants.ERROR, "invalid_grant");
+            res.put(OAuth2Constants.ERROR_DESCRIPTION, "Session not active");
             audit.error(Errors.INVALID_CODE);
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res)
                     .build();
@@ -693,11 +749,14 @@ public class TokenService {
         }
 
         logger.info("Checking cookie...");
-        UserModel user = authManager.authenticateIdentityCookie(realm, uriInfo, headers);
-        if (user != null) {
+        AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(realm, uriInfo, headers);
+        if (authResult != null) {
+            UserModel user = authResult.getUser();
+            UserSessionModel session = authResult.getSession();
+
             logger.debug(user.getLoginName() + " already logged in.");
-            audit.user(user).detail(Details.AUTH_METHOD, "sso");
-            return oauth.processAccessCode(scopeParam, state, redirect, client, user, null, false, "sso", audit);
+            audit.user(user).session(session).detail(Details.AUTH_METHOD, "sso");
+            return oauth.processAccessCode(scopeParam, state, redirect, client, user, session, null, false, "sso", audit);
         }
 
         if (prompt != null && prompt.equals("none")) {
@@ -760,25 +819,52 @@ public class TokenService {
     @Path("logout")
     @GET
     @NoCache
-    public Response logout(final @QueryParam("redirect_uri") String redirectUri) {
+    public Response logout(final @QueryParam("session_state") String sessionState, final @QueryParam("redirect_uri") String redirectUri) {
         // todo do we care if anybody can trigger this?
 
-        audit.event(Events.LOGOUT).detail(Details.REDIRECT_URI, redirectUri);
+        audit.event(Events.LOGOUT);
+        if (redirectUri != null) {
+            audit.detail(Details.REDIRECT_URI, redirectUri);
+        }
+        if (sessionState != null) {
+            audit.session(sessionState);
+        }
 
         // authenticate identity cookie, but ignore an access token timeout as we're logging out anyways.
-        UserModel user = authManager.authenticateIdentityCookie(realm, uriInfo, headers, false);
-        if (user != null) {
-            logger.infov("Logging out: {0}", user.getLoginName());
-            authManager.expireIdentityCookie(realm, uriInfo);
-            authManager.expireRememberMeCookie(realm, uriInfo);
-            resourceAdminManager.logoutUser(uriInfo.getRequestUri(), realm, user);
-
-            audit.user(user).success();
+        AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(realm, uriInfo, headers, false);
+        if (authResult != null) {
+            logout(authResult.getSession());
+        } else if (sessionState != null) {
+            UserSessionModel userSession = realm.getUserSession(sessionState);
+            if (userSession != null) {
+                logout(userSession);
+            } else {
+                audit.error(Errors.USER_SESSION_NOT_FOUND);
+            }
         } else {
-            logger.info("No user logged in for logout");
+            audit.error(Errors.USER_NOT_LOGGED_IN);
         }
-        // todo manage legal redirects
-        return Response.status(302).location(UriBuilder.fromUri(redirectUri).build()).build();
+
+        if (redirectUri != null) {
+            // todo manage legal redirects
+            return Response.status(302).location(UriBuilder.fromUri(redirectUri).build()).build();
+        } else {
+            return Response.ok().build();
+        }
+    }
+
+    private void logout(UserSessionModel session) {
+        UserModel user = session.getUser();
+
+        logger.infov("Logging out: {0} ({1})", user.getLoginName(), session.getId());
+
+        realm.removeUserSession(session);
+        authManager.expireIdentityCookie(realm, uriInfo);
+        authManager.expireRememberMeCookie(realm, uriInfo);
+
+        resourceAdminManager.logoutUser(uriInfo.getRequestUri(), realm, user.getId(), session.getId());
+
+        audit.user(user).session(session).success();
     }
 
     @Path("oauth/grant")
@@ -828,6 +914,13 @@ public class TokenService {
             audit.detail(Details.REMEMBER_ME, "true");
         }
 
+        UserSessionModel session = realm.getUserSession(accessCodeEntry.getSessionState());
+        if (session == null || session.getExpires() < Time.currentTime()) {
+            audit.error(Errors.INVALID_CODE);
+            return oauth.forwardToSecurityFailure("Session not active");
+        }
+        audit.session(session);
+
         if (formData.containsKey("cancel")) {
             audit.error(Errors.REJECTED_BY_USER);
             return redirectAccessDenied(redirect, state);
@@ -836,7 +929,7 @@ public class TokenService {
         audit.success();
 
         accessCodeEntry.setExpiration(Time.currentTime() + realm.getAccessCodeLifespan());
-        return oauth.redirectAccessCode(accessCodeEntry, state, redirect);
+        return oauth.redirectAccessCode(accessCodeEntry, session, state, redirect);
     }
 
     protected Response redirectAccessDenied(String redirect, String state) {
