@@ -1,12 +1,13 @@
-module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location, Notifications) {
+module.controller('GlobalCtrl', function($scope, $http, Auth, WhoAmI, Current, $location, Notifications) {
     $scope.addMessage = function() {
         Notifications.success("test");
     };
 
     $scope.authUrl = authUrl;
+    $scope.logout = logout;
 
     $scope.auth = Auth;
-    $http.get(authUrl + '/rest/admin/whoami').success(function(data, status) {
+    WhoAmI.get(function(data) {
         Auth.user = data;
         Auth.loggedIn = true;
 
@@ -68,10 +69,7 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location
                 return getAccess('manage-audit');
             }
         }
-    })
-        .error(function(data, status) {
-            Auth.loggedIn = false;
-        });
+    });
 
     $scope.$watch(function() {
         return $location.path();
@@ -123,7 +121,7 @@ module.controller('RealmDropdownCtrl', function($scope, Realm, Current, Auth, $l
     }
 });
 
-module.controller('RealmCreateCtrl', function($scope, Current, Realm, $upload, $http, $location, Dialog, Notifications, Auth) {
+module.controller('RealmCreateCtrl', function($scope, Current, Realm, $upload, $http, WhoAmI, $location, Dialog, Notifications, Auth) {
     console.log('RealmCreateCtrl');
 
     Current.realm = null;
@@ -150,7 +148,7 @@ module.controller('RealmCreateCtrl', function($scope, Current, Realm, $upload, $
         for (var i = 0; i < $scope.files.length; i++) {
             var $file = $scope.files[i];
             $scope.upload = $upload.upload({
-                url: authUrl + '/rest/admin/realms', //upload.php script, node.js route, or servlet url
+                url: authUrl + '/admin/realms', //upload.php script, node.js route, or servlet url
                 // method: POST or PUT,
                 // headers: {'headerKey': 'headerValue'}, withCredential: true,
                 data: {myObj: ""},
@@ -165,7 +163,8 @@ module.controller('RealmCreateCtrl', function($scope, Current, Realm, $upload, $
                     Realm.query(function(data) {
                         Current.realms = data;
 
-                        $http.get(authUrl + '/rest/admin/whoami').success(function(user) {
+
+                        WhoAmI.get(function(user) {
                             Auth.user = user;
 
                             Notifications.success("The realm has been uploaded.");
@@ -202,7 +201,7 @@ module.controller('RealmCreateCtrl', function($scope, Current, Realm, $upload, $
             Realm.query(function(data) {
                 Current.realms = data;
 
-                $http.get(authUrl + '/rest/admin/whoami').success(function(user) {
+                $http.get(authUrl + '/admin/whoami').success(function(user) {
                     Auth.user = user;
 
                     $location.url("/realms/" + realmCopy.realm);
@@ -573,7 +572,7 @@ module.controller('RealmSocialCtrl', function($scope, realm, Realm, serverInfo, 
 
     var oldCopy = angular.copy($scope.realm);
     $scope.changed = false;
-    $scope.callbackUrl = $location.absUrl().replace(/\/admin.*/, "/rest/social/callback");
+    $scope.callbackUrl = $location.absUrl().replace(/\/admin.*/, "/social/callback");
 
     $scope.addProvider = function(pId) {
         if (!$scope.realm.socialProviders) {

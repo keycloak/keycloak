@@ -170,6 +170,9 @@ public class AssertEvents implements TestRule, AuditListenerFactory {
         return new AuditListener() {
             @Override
             public void onEvent(Event event) {
+                if (event == null) {
+                    throw new RuntimeException("Added null event");
+                }
                 events.add(event);
             }
 

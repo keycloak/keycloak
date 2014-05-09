@@ -61,12 +61,12 @@
 
     <filter-mapping>
         <filter-name>Keycloak Session Management</filter-name>
-        <url-pattern>/rest/*</url-pattern>
+        <url-pattern>/*</url-pattern>
     </filter-mapping>
 
     <filter-mapping>
         <filter-name>Keycloak Client Connection Filter</filter-name>
-        <url-pattern>/rest/*</url-pattern>
+        <url-pattern>/*</url-pattern>
     </filter-mapping>
 
     <servlet-mapping>
@@ -109,7 +109,7 @@
     <security-constraint>
         <web-resource-collection>
             <web-resource-name>deny</web-resource-name>
-            <url-pattern>/rest/customers/*</url-pattern>
+            <url-pattern>/customers/*</url-pattern>
         </web-resource-collection>
         <auth-constraint/>
     </security-constraint>

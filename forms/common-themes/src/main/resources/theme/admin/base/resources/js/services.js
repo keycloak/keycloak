@@ -127,8 +127,12 @@ module.factory('Notifications', function($rootScope, $timeout) {
 	return notifications;
 });
 
+module.factory('WhoAmI', function($resource) {
+    return $resource(consoleBaseUrl + '/whoami');
+});
+
 module.factory('Realm', function($resource) {
-	return $resource(authUrl + '/rest/admin/realms/:id', {
+	return $resource(authUrl + '/admin/realms/:id', {
 		id : '@realm'
 	}, {
 		update : {
@@ -143,7 +147,7 @@ module.factory('Realm', function($resource) {
 });
 
 module.factory('RealmAudit', function($resource) {
-    return $resource(authUrl + '/rest/admin/realms/:id/audit', {
+    return $resource(authUrl + '/admin/realms/:id/audit', {
         id : '@realm'
     }, {
         update : {
@@ -153,17 +157,17 @@ module.factory('RealmAudit', function($resource) {
 });
 
 module.factory('RealmAuditEvents', function($resource) {
-    return $resource(authUrl + '/rest/admin/realms/:id/audit/events', {
+    return $resource(authUrl + '/admin/realms/:id/audit/events', {
         id : '@realm'
     });
 });
 
 module.factory('ServerInfo', function($resource) {
-    return $resource(authUrl + '/rest/admin/serverinfo');
+    return $resource(authUrl + '/admin/serverinfo');
 });
 
 module.factory('User', function($resource) {
-    return $resource(authUrl + '/rest/admin/realms/:realm/users/:userId', {
+    return $resource(authUrl + '/admin/realms/:realm/users/:userId', {
         realm : '@realm',
         userId : '@userId'
     }, {
@@ -174,13 +178,13 @@ module.factory('User', function($resource) {
 });
 
 module.factory('UserSessionStats', function($resource) {
-    return $resource(authUrl + '/rest/admin/realms/:realm/users/:user/session-stats', {
+    return $resource(authUrl + '/admin/realms/:realm/users/:user/session-stats', {
         realm : '@realm',
         user : '@user'
     });
 });
 module.factory('UserLogout', function($resource) {
-    return $resource(authUrl + '/rest/admin/realms/:realm/users/:user/logout', {
+    return $resource(authUrl + '/admin/realms/:realm/users/:user/logout', {
         realm : '@realm',
         user : '@user'
     });
@@ -195,7 +199,7 @@ module.factory('UserSocialLinks', function($resource) {
 module.factory('UserCredentials', function($resource) {
     var credentials = {};
 
-    credentials.resetPassword = $resource(authUrl + '/rest/admin/realms/:realm/users/:userId/reset-password', {
+    credentials.resetPassword = $resource(authUrl + '/admin/realms/:realm/users/:userId/reset-password', {
         realm : '@realm',
         userId : '@userId'
     }, {
@@ -204,7 +208,7 @@ module.factory('UserCredentials', function($resource) {
         }
     }).update;
 
-    credentials.removeTotp = $resource(authUrl + '/rest/admin/realms/:realm/users/:userId/remove-totp', {
+    credentials.removeTotp = $resource(authUrl + '/admin/realms/:realm/users/:userId/remove-totp', {
         realm : '@realm',
         userId : '@userId'
     }, {
@@ -213,7 +217,7 @@ module.factory('UserCredentials', function($resource) {
         }
     }).update;
 
-    credentials.resetPasswordEmail = $resource(authUrl + '/rest/admin/realms/:realm/users/:userId/reset-password-email', {
+    credentials.resetPasswordEmail = $resource(authUrl + '/admin/realms/:realm/users/:userId/reset-password-email', {
         realm : '@realm',
         userId : '@userId'
     }, {
@@ -226,14 +230,14 @@ module.factory('UserCredentials', function($resource) {
 });
 
 module.factory('RealmRoleMapping', function($resource) {
-    return $resource(authUrl + '/rest/admin/realms/:realm/users/:userId/role-mappings/realm', {
+    return $resource(authUrl + '/admin/realms/:realm/users/:userId/role-mappings/realm', {
         realm : '@realm',
         userId : '@userId'
     });
 });
 
 module.factory('ApplicationRoleMapping', function($resource) {
-    return $resource(authUrl + '/rest/admin/realms/:realm/users/:userId/role-mappings/applications/:application', {
+    return $resource(authUrl + '/admin/realms/:realm/users/:userId/role-mappings/applications/:application', {
         realm : '@realm',
         userId : '@userId',
         application : "@application"
@@ -241,14 +245,14 @@ module.factory('ApplicationRoleMapping', function($resource) {
 });
 
 module.factory('ApplicationRealmScopeMapping', function($resource) {
-    return $resource(authUrl + '/rest/admin/realms/:realm/applications/:application/scope-mappings/realm', {
+    return $resource(authUrl + '/admin/realms/:realm/applications/:application/scope-mappings/realm', {
         realm : '@realm',
         application : '@application'
     });
 });
 
 module.factory('ApplicationApplicationScopeMapping', function($resource) {
-    return $resource(authUrl + '/rest/admin/realms/:realm/applications/:application/scope-mappings/applications/:targetApp', {
+    return $resource(authUrl + '/admin/realms/:realm/applications/:application/scope-mappings/applications/:targetApp', {
         realm : '@realm',
         application : '@application',
         targetApp : '@targetApp'
@@ -258,33 +262,33 @@ module.factory('ApplicationApplicationScopeMapping', function($resource) {
 
 
 module.factory('RealmRoles', function($resource) {
-    return $resource(authUrl + '/rest/admin/realms/:realm/roles', {
+    return $resource(authUrl + '/admin/realms/:realm/roles', {
         realm : '@realm'
     });
 });
 
 module.factory('RoleRealmComposites', function($resource) {
-    return $resource(authUrl + '/rest/admin/realms/:realm/roles-by-id/:role/composites/realm', {
+    return $resource(authUrl + '/admin/realms/:realm/roles-by-id/:role/composites/realm', {
         realm : '@realm',
         role : '@role'
     });
 });
 
 module.factory('RealmPushRevocation', function($resource) {
-    return $resource(authUrl + '/rest/admin/realms/:realm/push-revocation', {
+    return $resource(authUrl + '/admin/realms/:realm/push-revocation', {
         realm : '@realm'
     });
 });
 
 module.factory('RealmSessionStats', function($resource) {
-    return $resource(authUrl + '/rest/admin/realms/:realm/session-stats', {
+    return $resource(authUrl + '/admin/realms/:realm/session-stats', {
         realm : '@realm'
     });
 });
 
 
 module.factory('RoleApplicationComposites', function($resource) {
-    return $resource(authUrl + '/rest/admin/realms/:realm/roles-by-id/:role/composites/applications/:application', {
+    return $resource(authUrl + '/admin/realms/:realm/roles-by-id/:role/composites/applications/:application', {
         realm : '@realm',
         role : '@role',
         application : "@application"
@@ -367,7 +371,7 @@ function roleControl($scope, realm, role, roles, applications,
 
     $scope.addRealmRole = function() {
         $scope.compositeSwitchDisabled=true;
-        $http.post(authUrl + '/rest/admin/realms/' + realm.realm + '/roles-by-id/' + role.id + '/composites',
+        $http.post(authUrl + '/admin/realms/' + realm.realm + '/roles-by-id/' + role.id + '/composites',
                 $scope.selectedRealmRoles).success(function() {
                 for (var i = 0; i < $scope.selectedRealmRoles.length; i++) {
                     var role = $scope.selectedRealmRoles[i];
@@ -383,7 +387,7 @@ function roleControl($scope, realm, role, roles, applications,
 
     $scope.deleteRealmRole = function() {
         $scope.compositeSwitchDisabled=true;
-        $http.delete(authUrl + '/rest/admin/realms/' + realm.realm + '/roles-by-id/' + role.id + '/composites',
+        $http.delete(authUrl + '/admin/realms/' + realm.realm + '/roles-by-id/' + role.id + '/composites',
             {data : $scope.selectedRealmMappings, headers : {"content-type" : "application/json"}}).success(function() {
                 for (var i = 0; i < $scope.selectedRealmMappings.length; i++) {
                     var role = $scope.selectedRealmMappings[i];
@@ -399,7 +403,7 @@ function roleControl($scope, realm, role, roles, applications,
 
     $scope.addApplicationRole = function() {
         $scope.compositeSwitchDisabled=true;
-        $http.post(authUrl + '/rest/admin/realms/' + realm.realm + '/roles-by-id/' + role.id + '/composites',
+        $http.post(authUrl + '/admin/realms/' + realm.realm + '/roles-by-id/' + role.id + '/composites',
                 $scope.selectedApplicationRoles).success(function() {
                 for (var i = 0; i < $scope.selectedApplicationRoles.length; i++) {
                     var role = $scope.selectedApplicationRoles[i];
@@ -415,7 +419,7 @@ function roleControl($scope, realm, role, roles, applications,
 
     $scope.deleteApplicationRole = function() {
         $scope.compositeSwitchDisabled=true;
-        $http.delete(authUrl + '/rest/admin/realms/' + realm.realm + '/roles-by-id/' + role.id + '/composites',
+        $http.delete(authUrl + '/admin/realms/' + realm.realm + '/roles-by-id/' + role.id + '/composites',
             {data : $scope.selectedApplicationMappings, headers : {"content-type" : "application/json"}}).success(function() {
                 for (var i = 0; i < $scope.selectedApplicationMappings.length; i++) {
                     var role = $scope.selectedApplicationMappings[i];
@@ -466,7 +470,7 @@ function roleControl($scope, realm, role, roles, applications,
 
 
 module.factory('Role', function($resource) {
-    return $resource(authUrl + '/rest/admin/realms/:realm/roles/:role', {
+    return $resource(authUrl + '/admin/realms/:realm/roles/:role', {
         realm : '@realm',
         role : '@role'
     },  {
@@ -477,7 +481,7 @@ module.factory('Role', function($resource) {
 });
 
 module.factory('RoleById', function($resource) {
-    return $resource(authUrl + '/rest/admin/realms/:realm/roles-by-id/:role', {
+    return $resource(authUrl + '/admin/realms/:realm/roles-by-id/:role', {
         realm : '@realm',
         role : '@role'
     },  {
@@ -488,7 +492,7 @@ module.factory('RoleById', function($resource) {
 });
 
 module.factory('ApplicationRole', function($resource) {
-    return $resource(authUrl + '/rest/admin/realms/:realm/applications/:application/roles/:role', {
+    return $resource(authUrl + '/admin/realms/:realm/applications/:application/roles/:role', {
         realm : '@realm',
         application : "@application",
         role : '@role'
@@ -500,7 +504,7 @@ module.factory('ApplicationRole', function($resource) {
 });
 
 module.factory('ApplicationClaims', function($resource) {
-    return $resource(authUrl + '/rest/admin/realms/:realm/applications/:application/claims', {
+    return $resource(authUrl + '/admin/realms/:realm/applications/:application/claims', {
         realm : '@realm',
         application : "@application"
     },  {
@@ -511,40 +515,40 @@ module.factory('ApplicationClaims', function($resource) {
 });
 
 module.factory('ApplicationSessionStats', function($resource) {
-    return $resource(authUrl + '/rest/admin/realms/:realm/applications/:application/session-stats', {
+    return $resource(authUrl + '/admin/realms/:realm/applications/:application/session-stats', {
         realm : '@realm',
         application : "@application"
     });
 });
 
 module.factory('ApplicationSessionStatsWithUsers', function($resource) {
-    return $resource(authUrl + '/rest/admin/realms/:realm/applications/:application/session-stats?users=true', {
+    return $resource(authUrl + '/admin/realms/:realm/applications/:application/session-stats?users=true', {
         realm : '@realm',
         application : "@application"
     });
 });
 
 module.factory('ApplicationLogoutAll', function($resource) {
-    return $resource(authUrl + '/rest/admin/realms/:realm/applications/:application/logout-all', {
+    return $resource(authUrl + '/admin/realms/:realm/applications/:application/logout-all', {
         realm : '@realm',
         application : "@application"
     });
 });
 module.factory('ApplicationLogoutUser', function($resource) {
-    return $resource(authUrl + '/rest/admin/realms/:realm/applications/:application/logout-user/:user', {
+    return $resource(authUrl + '/admin/realms/:realm/applications/:application/logout-user/:user', {
         realm : '@realm',
         application : "@application",
         user : "@user"
     });
 });
 module.factory('RealmLogoutAll', function($resource) {
-    return $resource(authUrl + '/rest/admin/realms/:realm/logout-all', {
+    return $resource(authUrl + '/admin/realms/:realm/logout-all', {
         realm : '@realm'
     });
 });
 
 module.factory('ApplicationPushRevocation', function($resource) {
-    return $resource(authUrl + '/rest/admin/realms/:realm/applications/:application/push-revocation', {
+    return $resource(authUrl + '/admin/realms/:realm/applications/:application/push-revocation', {
         realm : '@realm',
         application : "@application"
     });
@@ -553,7 +557,7 @@ module.factory('ApplicationPushRevocation', function($resource) {
 
 
 module.factory('Application', function($resource) {
-    return $resource(authUrl + '/rest/admin/realms/:realm/applications/:application', {
+    return $resource(authUrl + '/admin/realms/:realm/applications/:application', {
         realm : '@realm',
         application : '@application'
     },  {
@@ -564,7 +568,7 @@ module.factory('Application', function($resource) {
 });
 
 module.factory('ApplicationInstallation', function($resource) {
-    var url = authUrl + '/rest/admin/realms/:realm/applications/:application/installation/json';
+    var url = authUrl + '/admin/realms/:realm/applications/:application/installation/json';
     return {
         url : function(parameters)
         {
@@ -573,7 +577,7 @@ module.factory('ApplicationInstallation', function($resource) {
     }
 });
 module.factory('ApplicationInstallationJBoss', function($resource) {
-    var url = authUrl + '/rest/admin/realms/:realm/applications/:application/installation/jboss';
+    var url = authUrl + '/admin/realms/:realm/applications/:application/installation/jboss';
     return {
         url : function(parameters)
      {
@@ -583,7 +587,7 @@ module.factory('ApplicationInstallationJBoss', function($resource) {
 });
 
 module.factory('ApplicationCredentials', function($resource) {
-    return $resource(authUrl + '/rest/admin/realms/:realm/applications/:application/client-secret', {
+    return $resource(authUrl + '/admin/realms/:realm/applications/:application/client-secret', {
         realm : '@realm',
         application : '@application'
     },  {
@@ -594,7 +598,7 @@ module.factory('ApplicationCredentials', function($resource) {
 });
 
 module.factory('ApplicationOrigins', function($resource) {
-    return $resource(authUrl + '/rest/admin/realms/:realm/applications/:application/allowed-origins', {
+    return $resource(authUrl + '/admin/realms/:realm/applications/:application/allowed-origins', {
         realm : '@realm',
         application : '@application'
     },  {
@@ -606,7 +610,7 @@ module.factory('ApplicationOrigins', function($resource) {
 });
 
 module.factory('OAuthClient', function($resource) {
-    return $resource(authUrl + '/rest/admin/realms/:realm/oauth-clients/:id', {
+    return $resource(authUrl + '/admin/realms/:realm/oauth-clients/:id', {
         realm : '@realm',
         id : '@id'
     },  {
@@ -617,7 +621,7 @@ module.factory('OAuthClient', function($resource) {
 });
 
 module.factory('OAuthClientClaims', function($resource) {
-    return $resource(authUrl + '/rest/admin/realms/:realm/oauth-clients/:oauth/claims', {
+    return $resource(authUrl + '/admin/realms/:realm/oauth-clients/:oauth/claims', {
         realm : '@realm',
         oauth : "@oauth"
     },  {
@@ -629,7 +633,7 @@ module.factory('OAuthClientClaims', function($resource) {
 
 
 module.factory('OAuthClientCredentials', function($resource) {
-    return $resource(authUrl + '/rest/admin/realms/:realm/oauth-clients/:oauth/client-secret', {
+    return $resource(authUrl + '/admin/realms/:realm/oauth-clients/:oauth/client-secret', {
         realm : '@realm',
         oauth : '@oauth'
     },  {
@@ -641,14 +645,14 @@ module.factory('OAuthClientCredentials', function($resource) {
 });
 
 module.factory('OAuthClientRealmScopeMapping', function($resource) {
-    return $resource(authUrl + '/rest/admin/realms/:realm/oauth-clients/:oauth/scope-mappings/realm', {
+    return $resource(authUrl + '/admin/realms/:realm/oauth-clients/:oauth/scope-mappings/realm', {
         realm : '@realm',
         oauth : '@oauth'
     });
 });
 
 module.factory('OAuthClientApplicationScopeMapping', function($resource) {
-    return $resource(authUrl + '/rest/admin/realms/:realm/oauth-clients/:oauth/scope-mappings/applications/:targetApp', {
+    return $resource(authUrl + '/admin/realms/:realm/oauth-clients/:oauth/scope-mappings/applications/:targetApp', {
         realm : '@realm',
         oauth : '@oauth',
         targetApp : '@targetApp'
@@ -656,8 +660,8 @@ module.factory('OAuthClientApplicationScopeMapping', function($resource) {
 });
 
 module.factory('OAuthClientInstallation', function($resource) {
-    var url = authUrl + '/rest/admin/realms/:realm/oauth-clients/:oauth/installation';
-    var resource = $resource(authUrl + '/rest/admin/realms/:realm/oauth-clients/:oauth/installation', {
+    var url = authUrl + '/admin/realms/:realm/oauth-clients/:oauth/installation';
+    var resource = $resource(authUrl + '/admin/realms/:realm/oauth-clients/:oauth/installation', {
         realm : '@realm',
         oauth : '@oauth'
     },  {

@@ -5,7 +5,7 @@ package org.keycloak.models;
  * @version $Revision: 1 $
  */
 public interface Constants {
-    String ADMIN_CONSOLE_APPLICATION = "admin-console";
+    String ADMIN_CONSOLE_APPLICATION = "security-admin-console";
 
     String ACCOUNT_MANAGEMENT_APP = "account";
 

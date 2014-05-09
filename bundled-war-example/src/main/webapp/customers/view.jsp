@@ -9,9 +9,9 @@
 </head>
 <body bgcolor="#E3F6CE">
 <%
-    String logoutUri = KeycloakUriBuilder.fromUri("http://localhost:8080/app-bundle/rest/realms/demo/tokens/logout")
+    String logoutUri = KeycloakUriBuilder.fromUri("http://localhost:8080/app-bundle/realms/demo/tokens/logout")
             .queryParam("redirect_uri", "http://localhost:8080/app-bundle").build().toString();
-    String acctUri = "http://localhost:8080/app-bundle/rest/realms/demo/account?referrer=customer-portal";
+    String acctUri = "http://localhost:8080/app-bundle/realms/demo/account?referrer=customer-portal";
     IDToken idToken = CustomerDatabaseClient.getIDToken(request);
 %>
 <p><a href="<%=logoutUri%>">logout</a> | <a

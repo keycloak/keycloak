@@ -15,7 +15,7 @@ import java.io.InputStream;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@Path("/rest/theme")
+@Path("/theme")
 public class ThemeResource {
 
     private static final Logger logger = Logger.getLogger(ThemeResource.class);

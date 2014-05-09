@@ -138,7 +138,7 @@ public class AccountService {
         this.realm = realm;
         this.application = application;
         this.audit = audit;
-        this.authManager = new AppAuthManager(providers, KEYCLOAK_ACCOUNT_IDENTITY_COOKIE, tokenManager);
+        this.authManager = new AppAuthManager(providers);
         this.socialRequestManager = socialRequestManager;
     }
 
@@ -148,8 +148,9 @@ public class AccountService {
         account = AccountLoader.load().createAccount(uriInfo).setRealm(realm);
 
         boolean passwordUpdateSupported = false;
-        auth = authManager.authenticate(realm, headers);
-        if (auth != null) {
+        UserModel user = authManager.authenticateRequest(realm, uriInfo, headers);
+        if (user != null) {
+            auth = new Auth(realm, user, application);
             account.setUser(auth.getUser());
 
             AuthenticationLinkModel authLinkModel = realm.getAuthenticationLink(auth.getUser());
@@ -487,20 +488,19 @@ public class AccountService {
                 redirectUri = redirectUri.resolve("?referrer=" + referrer);
             }
 
-            NewCookie cookie = authManager.createCookie(realm, application, code, Urls.accountBase(uriInfo.getBaseUri()).build(realm.getName()));
-            return Response.status(302).cookie(cookie).location(redirectUri).build();
+            return Response.status(302).location(redirectUri).build();
         } finally {
-            authManager.expireCookie(Urls.accountBase(uriInfo.getBaseUri()).build(realm.getName()));
         }
     }
 
     @Path("logout")
     @GET
     public Response logout() {
-        URI baseUri = Urls.accountBase(uriInfo.getBaseUri()).build(realm.getName());
-        authManager.expireIdentityCookie(realm, uriInfo);
-        authManager.expireCookie(baseUri);
-        return Response.status(302).location(baseUri).build();
+        URI redirect = Urls.accountBase(uriInfo.getBaseUri()).build(realm.getName());
+
+        return Response.status(302).location(
+                TokenService.logoutUrl(uriInfo).queryParam("redirect_uri", redirect.toString()).build(realm.getName())
+        ).build();
     }
 
     private Response login(String path) {

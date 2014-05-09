@@ -27,7 +27,7 @@ import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.SocialRequestManager;
 import org.keycloak.services.managers.TokenManager;
-import org.keycloak.services.resources.admin.AdminService;
+import org.keycloak.services.resources.admin.AdminRoot;
 import org.keycloak.models.utils.ModelProviderUtils;
 import org.keycloak.timer.TimerProvider;
 import org.keycloak.timer.TimerProviderFactory;
@@ -82,11 +82,10 @@ public class KeycloakApplication extends Application {
         SocialRequestManager socialRequestManager = new SocialRequestManager();
 
         singletons.add(new RealmsResource(tokenManager, socialRequestManager));
-        singletons.add(new AdminService(tokenManager));
         singletons.add(new SocialResource(tokenManager, socialRequestManager));
+        singletons.add(new AdminRoot(tokenManager));
         classes.add(SkeletonKeyContextResolver.class);
         classes.add(QRCodeResource.class);
-        classes.add(AdminResource.class);
         classes.add(ThemeResource.class);
         classes.add(JsResource.class);
         classes.add(WelcomeResource.class);
