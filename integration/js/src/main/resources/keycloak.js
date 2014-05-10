@@ -6,6 +6,10 @@ var Keycloak = function (config) {
     var kc = this;
     var adapter;
 
+    kc.callbackMap = new Object();
+
+
+
     kc.init = function (init) {
         kc.authenticated = false;
 
@@ -76,6 +80,52 @@ var Keycloak = function (config) {
 
     kc.login = function (options) {
         return adapter.login(options);
+    }
+
+    kc.setupCheckLoginIframe = function(doc, win) {
+        kc.iframe = doc.createElement('iframe');
+        var src = getRealmUrl() + "/login-status-iframe.html?client_id=" + encodeURIComponent(kc.clientId);
+        console.log('iframe src='+ src);
+        kc.iframe.setAttribute('src', src );
+        kc.iframe.style.display = "none";
+        doc.body.appendChild(kc.iframe);
+
+        var messageCallback = function(event) {
+            if (event.origin !== kc.iframe.contentWindow.location.origin) {
+                return;
+            }
+            var data = event.data;
+            var success = kc.callbackMap[data.successId];
+            var failure = kc.callbackMap[data.failureId];
+            delete kc.callbackMap[data.successId];
+            delete kc.callbackMap[data.failureId];
+            if (kc.sessionId != data.session) {
+                console.log("session doesn't match received session: " + event.data.session);
+                console.log("forcing loggedIn to be false");
+                failure();
+            }
+            if (data.loggedIn) {
+                success();
+            } else {
+                failure();
+            }
+        };
+        win.addEventListener("message", messageCallback, false);
+    }
+
+    kc.checkLoginIframe = function(success, failure) {
+        var msg = {};
+        if (!success) {
+            throw "You must define a success method";
+        }
+        if (!failure) {
+            throw "You must define a failure method";
+        }
+        msg.successId = createCallbackId();
+        msg.failureId = createCallbackId();
+        kc.callbackMap[msg.successId] = success;
+        kc.callbackMap[msg.failureId] = failure;
+        kc.iframe.contentWindow.postMessage(msg, kc.iframe.contentWindow.location.origin);
     }
 
     kc.createLoginUrl = function(options) {
@@ -349,6 +399,11 @@ var Keycloak = function (config) {
         if (token) {
             kc.token = token;
             kc.tokenParsed = JSON.parse(decodeURIComponent(escape(window.atob( token.split('.')[1] ))));
+            var sessionId = kc.realm + '-' + kc.tokenParsed.sub;
+            if (kc.tokenParsed.session_state) {
+                sessionId = sessionId + '-' + kc.tokenParsed.session_state;
+            }
+            kc.sessionId = sessionId;
             kc.authenticated = true;
             kc.subject = kc.tokenParsed.sub;
             kc.realmAccess = kc.tokenParsed.realm_access;
@@ -394,6 +449,14 @@ var Keycloak = function (config) {
         s[8] = s[13] = s[18] = s[23] = '-';
         var uuid = s.join('');
         return uuid;
+    }
+
+    kc.callback_id = 0;
+
+    function createCallbackId() {
+        var id = '<id: ' + (kc.callback_id++) + (Math.random()) + '>';
+        return id;
+
     }
 
     function parseCallback(url) {

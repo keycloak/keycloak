@@ -968,21 +968,8 @@ public class TokenService {
             return redirectUri;
         } else {
             String r = redirectUri.indexOf('?') != -1 ? redirectUri.substring(0, redirectUri.indexOf('?')) : redirectUri;
+            Set<String> resolveValidRedirects = resolveValidRedirects(uriInfo, validRedirects);
 
-            // If the valid redirect URI is relative (no scheme, host, port) then use the request's scheme, host, and port
-            Set<String> resolveValidRedirects = new HashSet<String>();
-            for (String validRedirect : validRedirects) {
-                if (validRedirect.startsWith("/")) {
-                    URI baseUri = uriInfo.getBaseUri();
-                    String uri = baseUri.getScheme() + "://" + baseUri.getHost();
-                    if (baseUri.getPort() != -1) {
-                        uri += ":" + baseUri.getPort();
-                    }
-                    validRedirect = uri + validRedirect;
-                    logger.debugv("replacing relative valid redirect with: {0}", validRedirect);
-                }
-                resolveValidRedirects.add(validRedirect);
-            }
 
             boolean valid = matchesRedirects(resolveValidRedirects, r);
 
@@ -1003,6 +990,24 @@ public class TokenService {
             }
             return valid ? redirectUri : null;
         }
+    }
+
+    public static Set<String> resolveValidRedirects(UriInfo uriInfo, Set<String> validRedirects) {
+        // If the valid redirect URI is relative (no scheme, host, port) then use the request's scheme, host, and port
+        Set<String> resolveValidRedirects = new HashSet<String>();
+        for (String validRedirect : validRedirects) {
+            if (validRedirect.startsWith("/")) {
+                URI baseUri = uriInfo.getBaseUri();
+                String uri = baseUri.getScheme() + "://" + baseUri.getHost();
+                if (baseUri.getPort() != -1) {
+                    uri += ":" + baseUri.getPort();
+                }
+                validRedirect = uri + validRedirect;
+                logger.debugv("replacing relative valid redirect with: {0}", validRedirect);
+            }
+            resolveValidRedirects.add(validRedirect);
+        }
+        return resolveValidRedirects;
     }
 
     private boolean checkSsl() {
