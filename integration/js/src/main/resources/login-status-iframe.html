@@ -1,0 +1,31 @@
+<script>
+    function getCookie(cname)
+    {
+        var name = cname + "=";
+        var ca = document.cookie.split(';');
+        for(var i=0; i<ca.length; i++)
+        {
+            var c = ca[i].trim();
+            if (c.indexOf(name)==0) return c.substring(name.length,c.length);
+        }
+        return null;
+    }
+    function receiveMessage(event)
+    {
+        if (event.origin !== "ORIGIN") {
+            console.log(event.origin + " does not match built origin");
+            return;
+
+        }
+        event.data.loggedIn = false;
+        var cookie = getCookie('KEYCLOAK_SESSION');
+        if (cookie) {
+            event.data.loggedIn = true;
+            event.data.session = cookie;
+        }
+
+        event.source.postMessage(event.data,
+                event.origin);
+    }
+    window.addEventListener("message", receiveMessage, false);
+</script>

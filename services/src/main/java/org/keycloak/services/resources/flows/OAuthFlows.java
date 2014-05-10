@@ -93,7 +93,7 @@ public class OAuthFlows {
             Response.ResponseBuilder location = Response.status(302).location(redirectUri.build());
             Cookie remember = request.getHttpHeaders().getCookies().get(AuthenticationManager.KEYCLOAK_REMEMBER_ME);
             rememberMe = rememberMe || remember != null;
-            location.cookie(authManager.createLoginCookie(realm, accessCode.getUser(), session, uriInfo, rememberMe));
+            authManager.createLoginCookie(location, realm, accessCode.getUser(), session, uriInfo, rememberMe);
             return location.build();
         }
     }

@@ -1,10 +1,13 @@
 package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.jboss.resteasy.spi.UnauthorizedException;
 import org.keycloak.audit.Audit;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -16,13 +19,21 @@ import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.SocialRequestManager;
 import org.keycloak.services.managers.TokenManager;
+import org.keycloak.util.StreamUtil;
 
+import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -74,6 +85,63 @@ public class RealmsResource {
     public static UriBuilder accountUrl(UriBuilder base) {
         return base.path(RealmsResource.class).path(RealmsResource.class, "getAccountService");
     }
+
+    /**
+     *
+     *
+     * @param name
+     * @param client_id
+     * @return
+     */
+    @Path("{realm}/login-status-iframe.html")
+    @GET
+    @Produces(MediaType.TEXT_HTML)
+    @NoCache
+    public String getLoginStatusIframe(final @PathParam("realm") String name,
+                                       @QueryParam("client_id") String client_id) {
+        AuthenticationManager auth = new AuthenticationManager(providers);
+
+        //logger.info("getting login-status-iframe.html for client_id: " + client_id);
+        RealmManager realmManager = new RealmManager(session);
+        RealmModel realm = locateRealm(name, realmManager);
+        ClientModel client = realm.findClient(client_id);
+        if (client == null) {
+            throw new NotFoundException("could not find client: " + client_id);
+        }
+        AuthenticationManager.AuthResult result = auth.authenticateIdentityCookie(realm, uriInfo, headers);
+        if (result == null) {
+            throw new UnauthorizedException("not logged in, can't get page");
+        }
+
+        InputStream is = getClass().getClassLoader().getResourceAsStream("login-status-iframe.html");
+        if (is == null) throw new NotFoundException("Could not find login-status-iframe.html ");
+        Set<String> redirectUris = TokenService.resolveValidRedirects(uriInfo, client.getRedirectUris());
+        String origin = null;
+        for (String redirect : redirectUris) {
+
+            int index = redirect.indexOf("://");
+            if (index == -1) continue;
+            index = redirect.indexOf('/', index + 3);
+            if (index == -1) {
+                origin = redirect;
+            } else {
+                origin = redirect.substring(0, index);
+            }
+            break;
+
+        }
+        String file = null;
+        try {
+            file = StreamUtil.readString(is);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        file = file.replace("ORIGIN", origin);
+        //System.out.println(file);
+        return file;
+
+    }
+
     @Path("{realm}/tokens")
     public TokenService getTokenService(final @PathParam("realm") String name) {
         RealmManager realmManager = new RealmManager(session);

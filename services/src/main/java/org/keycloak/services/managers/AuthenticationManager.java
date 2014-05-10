@@ -27,6 +27,7 @@ import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.NewCookie;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.HashSet;
@@ -41,7 +42,10 @@ import java.util.Set;
 public class AuthenticationManager {
     protected static Logger logger = Logger.getLogger(AuthenticationManager.class);
     public static final String FORM_USERNAME = "username";
+    // used for auth login
     public static final String KEYCLOAK_IDENTITY_COOKIE = "KEYCLOAK_IDENTITY";
+    // used solely to determine is user is logged in
+    public static final String KEYCLOAK_SESSION_COOKIE = "KEYCLOAK_SESSION";
     public static final String KEYCLOAK_REMEMBER_ME = "KEYCLOAK_REMEMBER_ME";
 
     protected ProviderSession providerSession;
@@ -72,18 +76,11 @@ public class AuthenticationManager {
         return token;
     }
 
-    public NewCookie createLoginCookie(RealmModel realm, UserModel user, UserSessionModel session, UriInfo uriInfo, boolean rememberMe) {
+    public void createLoginCookie(Response.ResponseBuilder builder, RealmModel realm, UserModel user, UserSessionModel session, UriInfo uriInfo, boolean rememberMe) {
         logger.info("createLoginCookie");
         String cookieName = KEYCLOAK_IDENTITY_COOKIE;
         String cookiePath = getIdentityCookiePath(realm, uriInfo);
-        return createLoginCookie(realm, user, session, null, cookieName, cookiePath, rememberMe);
-    }
-
-    protected NewCookie createLoginCookie(RealmModel realm, UserModel user, UserSessionModel session, ClientModel client, String cookieName, String cookiePath, boolean rememberMe) {
         AccessToken identityToken = createIdentityToken(realm, user, session);
-        if (client != null) {
-            identityToken.issuedFor(client.getClientId());
-        }
         String encoded = encodeToken(realm, identityToken);
         boolean secureOnly = !realm.isSslNotRequired();
         logger.debugv("creatingLoginCookie - name: {0} path: {1}", cookieName, cookiePath);
@@ -92,8 +89,14 @@ public class AuthenticationManager {
             maxAge = realm.getCentralLoginLifespan();
             logger.info("createLoginCookie maxAge: " + maxAge);
         }
-        NewCookie cookie = new NewCookie(cookieName, encoded, cookiePath, null, null, maxAge, secureOnly);// todo httponly , true);
-        return cookie;
+        builder.cookie(new NewCookie(cookieName, encoded, cookiePath, null, null, maxAge, secureOnly));// todo httponly , true);
+
+        String sessionCookieValue = realm.getName() + "-" + user.getId();
+        if (session != null) {
+            sessionCookieValue += "-" + session.getId();
+        }
+        builder.cookie(new NewCookie(KEYCLOAK_SESSION_COOKIE, sessionCookieValue, cookiePath, null, null, maxAge, secureOnly));// todo httponly , true);
+
     }
 
     public NewCookie createRememberMeCookie(RealmModel realm, UriInfo uriInfo) {
@@ -116,6 +119,7 @@ public class AuthenticationManager {
         String path = getIdentityCookiePath(realm, uriInfo);
         String cookieName = KEYCLOAK_IDENTITY_COOKIE;
         expireCookie(cookieName, path);
+        expireCookie(KEYCLOAK_SESSION_COOKIE, path);
     }
     public void expireRememberMeCookie(RealmModel realm, UriInfo uriInfo) {
         logger.debug("Expiring remember me cookie");
