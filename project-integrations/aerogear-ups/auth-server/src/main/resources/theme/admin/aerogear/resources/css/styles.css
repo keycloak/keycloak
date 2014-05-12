@@ -33,3 +33,13 @@
     border-top-color: rgba(255,255,255,0.05);
 }
 
+/* this is what I added */
+
+.navbar-title {
+    background-image: url('../img/logo.png');
+    height: 65px;
+    background-repeat: no-repeat;
+    width: 203px;
+    margin: 3px 10px 5px;
+    text-indent: -99999px;
+}

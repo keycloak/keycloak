@@ -1,5 +1,5 @@
 {
-    "realm": "demo",
+    "realm": "aerogear",
     "enabled": true,
     "accessTokenLifespan": 3000,
     "accessCodeLifespan": 10,
@@ -7,6 +7,9 @@
     "sslNotRequired": true,
     "registrationAllowed": false,
     "social": false,
+    "adminTheme": "aerogear",
+    "accountTheme": "aerogear",
+    "loginTheme": "aerogear",
     "updateProfileOnInitialSocialLogin": false,
     "requiredCredentials": [ "password" ],
     "users" : [
@@ -24,7 +27,7 @@
         {
             "username" : "admin",
             "enabled": true,
-            "firstName": "Bill",
+            "firstName": "Meister",
             "lastName": "Burke",
             "credentials" : [
                 { "type" : "password",
@@ -59,19 +62,19 @@
     ],
     "scopeMappings": [
         {
-            "client": "customer-portal",
-            "roles": ["user"]
+            "client": "unified-push-server",
+            "roles": ["user", "admin"]
         }
     ],
     "applications": [
         {
-            "name": "customer-portal",
+            "name": "unified-push-server",
             "enabled": true,
             "publicClient": true,
-            "adminUrl": "/app",
-            "baseUrl": "/app",
+            "adminUrl": "/aerogear-ups",
+            "baseUrl": "/aerogear-ups",
             "redirectUris": [
-                "/app/*"
+                "/aerogear-ups/*"
             ]
         }
     ],
@@ -80,9 +83,13 @@
             {
                 "username": "bburke@redhat.com",
                 "roles": ["manage-account"]
+            },
+            {
+                "username": "admin",
+                "roles": ["manage-account"]
             }
         ],
-        "demo-realm": [
+        "aerogear-realm": [
             {
                 "username": "admin",
                 "roles": ["realm-admin"]

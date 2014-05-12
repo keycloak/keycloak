@@ -85,7 +85,7 @@
     </dependencies>
 
     <build>
-        <finalName>app</finalName>
+        <finalName>aerogear-ups</finalName>
         <plugins>
             <plugin>
                 <groupId>org.jboss.as.plugins</groupId>

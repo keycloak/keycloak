@@ -15,8 +15,8 @@ public class BootstrapListener implements ServletContextListener {
     public void contextInitialized(ServletContextEvent sce) {
         AdapterDeploymentContext deploymentContext = (AdapterDeploymentContext)sce.getServletContext().getAttribute(AdapterDeploymentContext.class.getName());
         AdapterConfig config = new AdapterConfig();
-        config.setRealm("demo");
-        config.setResource("customer-portal");
+        config.setRealm("aerogear");
+        config.setResource("unified-push-server");
         config.setAuthServerUrl("/auth");
         config.setSslNotRequired(true);
         config.setPublicClient(true);

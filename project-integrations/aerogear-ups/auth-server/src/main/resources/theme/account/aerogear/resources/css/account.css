@@ -1,0 +1,8 @@
+.navbar-title {
+    background-image: url('../img/logo.png');
+    height: 65px;
+    background-repeat: no-repeat;
+    width: 203px;
+    margin: 3px 10px 5px;
+    text-indent: -99999px;
+}
