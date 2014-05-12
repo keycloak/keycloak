@@ -77,7 +77,10 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertEquals(0, realm.getSocialLinks(user).size());
 
         List<ApplicationModel> resources = realm.getApplications();
-        Assert.assertEquals(3, resources.size());
+        for (ApplicationModel app : resources) {
+            System.out.println("app: " + app.getName());
+        }
+        Assert.assertEquals(5, resources.size());
 
         // Test applications imported
         ApplicationModel application = realm.getApplicationByName("Application");
@@ -88,7 +91,7 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertNotNull(otherApp);
         Assert.assertNull(nonExisting);
         Map<String, ApplicationModel> apps = realm.getApplicationNameMap();
-        Assert.assertEquals(3, apps.size());
+        Assert.assertEquals(5, apps.size());
         Assert.assertTrue(apps.values().contains(application));
         Assert.assertTrue(apps.values().contains(otherApp));
         Assert.assertTrue(apps.values().contains(accountApp));

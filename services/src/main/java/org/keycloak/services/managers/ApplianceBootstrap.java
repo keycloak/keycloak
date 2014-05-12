@@ -49,6 +49,7 @@ public class ApplianceBootstrap {
         logger.info("Initializing " + adminRealmName + " realm");
 
         RealmManager manager = new RealmManager(session);
+        manager.setContextPath(contextPath);
         RealmModel realm = manager.createRealm(adminRealmName, adminRealmName);
         realm.setName(adminRealmName);
         realm.setEnabled(true);
@@ -63,17 +64,7 @@ public class ApplianceBootstrap {
         manager.generateRealmKeys(realm);
         realm.setAuthenticationProviders(Arrays.asList(AuthenticationProviderModel.DEFAULT_PROVIDER));
 
-        ApplicationModel adminConsole = new ApplicationManager(manager).createApplication(realm, Constants.ADMIN_CONSOLE_APPLICATION);
-        adminConsole.setBaseUrl(contextPath + "/admin/index.html");
-        adminConsole.setEnabled(true);
-        adminConsole.setPublicClient(true);
-        adminConsole.addRedirectUri(contextPath + "/admin/" + realm.getName() + "/console/*");
-
         realm.setAuditListeners(Collections.singleton("jboss-logging"));
-
-        RoleModel adminRole = realm.getRole(AdminRoles.ADMIN);
-
-        realm.addScopeMapping(adminConsole, adminRole);
 
         UserModel adminUser = realm.addUser("admin");
         adminUser.setEnabled(true);
@@ -83,6 +74,7 @@ public class ApplianceBootstrap {
         realm.updateCredential(adminUser, password);
         adminUser.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
 
+        RoleModel adminRole = realm.getRole(AdminRoles.ADMIN);
         realm.grantRole(adminUser, adminRole);
 
         ApplicationModel accountApp = realm.getApplicationNameMap().get(Constants.ACCOUNT_MANAGEMENT_APP);

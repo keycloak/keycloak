@@ -9,6 +9,9 @@ public class AdminRoles {
 
     public static String ADMIN = "admin";
 
+    // for admin application local to each realm
+    public static String REALM_ADMIN = "realm-admin";
+
     public static String CREATE_REALM = "create-realm";
 
     public static String VIEW_REALM = "view-realm";

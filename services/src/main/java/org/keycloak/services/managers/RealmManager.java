@@ -54,6 +54,15 @@ public class RealmManager {
     protected static final Logger logger = Logger.getLogger(RealmManager.class);
 
     protected KeycloakSession identitySession;
+    protected String contextPath = "";
+
+    public String getContextPath() {
+        return contextPath;
+    }
+
+    public void setContextPath(String contextPath) {
+        this.contextPath = contextPath;
+    }
 
     public RealmManager(KeycloakSession identitySession) {
         this.identitySession = identitySession;
@@ -83,12 +92,37 @@ public class RealmManager {
         // setup defaults
         setupRealmDefaults(realm);
 
-        setupAdminManagement(realm);
+        setupMasterAdminManagement(realm);
+        setupRealmAdminManagement(realm);
         setupAccountManagement(realm);
+        setupAdminConsole(realm);
 
         realm.setAuditListeners(Collections.singleton("jboss-logging"));
 
         return realm;
+    }
+
+    protected void setupAdminConsole(RealmModel realm) {
+        ApplicationModel adminConsole = new ApplicationManager(this).createApplication(realm, Constants.ADMIN_CONSOLE_APPLICATION);
+        String baseUrl = contextPath + "/admin/" + realm.getName() + "/console";
+        adminConsole.setBaseUrl(baseUrl + "/index.html");
+        adminConsole.setEnabled(true);
+        adminConsole.setPublicClient(true);
+        adminConsole.addRedirectUri(baseUrl + "/*");
+
+        RoleModel adminRole;
+        if (realm.getName().equals(Config.getAdminRealm())) {
+            adminRole = realm.getRole(AdminRoles.ADMIN);
+        } else {
+            ApplicationModel realmApp = realm.getApplicationByName(getRealmAdminApplicationName(realm));
+            adminRole = realmApp.getRole(AdminRoles.REALM_ADMIN);
+
+        }
+        realm.addScopeMapping(adminConsole, adminRole);
+    }
+
+    public String getRealmAdminApplicationName(RealmModel realm) {
+        return realm.getName() + "-realm";
     }
 
     protected void setupRealmDefaults(RealmModel realm) {
@@ -105,7 +139,7 @@ public class RealmManager {
     public boolean removeRealm(RealmModel realm) {
         boolean removed = identitySession.removeRealm(realm.getId());
         if (removed) {
-            getKeycloakAdminstrationRealm().removeApplication(realm.getAdminApp().getId());
+            getKeycloakAdminstrationRealm().removeApplication(realm.getMasterAdminApp().getId());
         }
         return removed;
     }
@@ -153,6 +187,7 @@ public class RealmManager {
         }
         if (rep.getLoginTheme() != null) realm.setLoginTheme(rep.getLoginTheme());
         if (rep.getAccountTheme() != null) realm.setAccountTheme(rep.getAccountTheme());
+        if (rep.getAdminTheme() != null) realm.setAdminTheme(rep.getAdminTheme());
 
         if (rep.getPasswordPolicy() != null) realm.setPasswordPolicy(new PasswordPolicy(rep.getPasswordPolicy()));
 
@@ -189,7 +224,7 @@ public class RealmManager {
         }
     }
 
-    private void setupAdminManagement(RealmModel realm) {
+    private void setupMasterAdminManagement(RealmModel realm) {
         RealmModel adminRealm;
         RoleModel adminRole;
 
@@ -207,15 +242,31 @@ public class RealmManager {
 
         ApplicationManager applicationManager = new ApplicationManager(new RealmManager(identitySession));
 
-        ApplicationModel realmAdminApp = applicationManager.createApplication(adminRealm, realm.getName() + "-realm");
+        ApplicationModel realmAdminApp = applicationManager.createApplication(adminRealm, getRealmAdminApplicationName(realm));
         realmAdminApp.setBearerOnly(true);
-        realm.setAdminApp(realmAdminApp);
+        realm.setMasterAdminApp(realmAdminApp);
 
         for (String r : AdminRoles.ALL_REALM_ROLES) {
             RoleModel role = realmAdminApp.addRole(r);
             adminRole.addCompositeRole(role);
         }
     }
+
+    private void setupRealmAdminManagement(RealmModel realm) {
+        if (realm.getName().equals(Config.getAdminRealm())) { return; } // don't need to do this for master realm
+
+        ApplicationManager applicationManager = new ApplicationManager(new RealmManager(identitySession));
+
+        ApplicationModel realmAdminApp = applicationManager.createApplication(realm, getRealmAdminApplicationName(realm));
+        RoleModel adminRole = realmAdminApp.addRole(AdminRoles.REALM_ADMIN);
+        realmAdminApp.setBearerOnly(true);
+
+        for (String r : AdminRoles.ALL_REALM_ROLES) {
+            RoleModel role = realmAdminApp.addRole(r);
+            adminRole.addCompositeRole(role);
+        }
+    }
+
 
     private void setupAccountManagement(RealmModel realm) {
         ApplicationModel application = realm.getApplicationNameMap().get(Constants.ACCOUNT_MANAGEMENT_APP);
@@ -283,6 +334,7 @@ public class RealmManager {
         }
         if (rep.getLoginTheme() != null) newRealm.setLoginTheme(rep.getLoginTheme());
         if (rep.getAccountTheme() != null) newRealm.setAccountTheme(rep.getAccountTheme());
+        if (rep.getAdminTheme() != null) newRealm.setAdminTheme(rep.getAccountTheme());
 
         Map<String, UserModel> userMap = new HashMap<String, UserModel>();
 

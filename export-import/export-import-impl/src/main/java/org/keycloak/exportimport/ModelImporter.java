@@ -182,7 +182,7 @@ public class ModelImporter {
             // admin app
             String adminAppId = realmEntity.getAdminAppId();
             if (adminAppId != null) {
-                realm.setAdminApp(adminRealm.getApplicationById(adminAppId));
+                realm.setMasterAdminApp(adminRealm.getApplicationById(adminAppId));
             }
 
             // Default roles

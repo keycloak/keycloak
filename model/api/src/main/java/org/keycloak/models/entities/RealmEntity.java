@@ -42,6 +42,7 @@ public class RealmEntity extends AbstractIdentifiableEntity {
 
     private String loginTheme;
     private String accountTheme;
+    private String adminTheme;
 
     // We are using names of defaultRoles (not ids)
     private List<String> defaultRoles = new ArrayList<String>();
@@ -273,6 +274,14 @@ public class RealmEntity extends AbstractIdentifiableEntity {
 
     public void setAccountTheme(String accountTheme) {
         this.accountTheme = accountTheme;
+    }
+
+    public String getAdminTheme() {
+        return adminTheme;
+    }
+
+    public void setAdminTheme(String adminTheme) {
+        this.adminTheme = adminTheme;
     }
 
     public List<String> getDefaultRoles() {

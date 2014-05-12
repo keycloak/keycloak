@@ -219,6 +219,7 @@ public class KeycloakApplication extends Application {
         try {
             session.getTransaction().begin();
             RealmManager manager = new RealmManager(session);
+            manager.setContextPath(getContextPath());
 
             if (rep.getId() != null && manager.getRealm(rep.getId()) != null) {
                 log.info("Not importing realm " + rep.getRealm() + " from " + from + ".  It already exists.");

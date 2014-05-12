@@ -73,7 +73,7 @@ public class ModelExporter {
             this.propertiesManager.setBasicPropertiesFromModel(realmModel, entity);
 
             // Export 'advanced' properties
-            ApplicationModel realmAdminApp = realmModel.getAdminApp();
+            ApplicationModel realmAdminApp = realmModel.getMasterAdminApp();
             if (realmAdminApp != null) {
                 entity.setAdminAppId(realmAdminApp.getId());
             }

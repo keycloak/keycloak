@@ -145,6 +145,9 @@ public class AdminRoot {
     @Path("realms")
     public RealmsAdminResource getRealmsAdmin(@Context final HttpHeaders headers) {
         Auth auth = authenticateRealmAdminRequest(headers);
+        if (auth != null) {
+            logger.info("authenticated admin access for: " + auth.getUser().getLoginName());
+        }
         RealmsAdminResource adminResource = new RealmsAdminResource(auth, tokenManager);
         ResteasyProviderFactory.getInstance().injectProperties(adminResource);
         //resourceContext.initResource(adminResource);

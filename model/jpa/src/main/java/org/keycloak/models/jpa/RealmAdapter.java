@@ -1329,6 +1329,17 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public String getAdminTheme() {
+        return realm.getAdminTheme();
+    }
+
+    @Override
+    public void setAdminTheme(String name) {
+        realm.setAdminTheme(name);
+        em.flush();
+    }
+
+    @Override
     public boolean isAuditEnabled() {
         return realm.isAuditEnabled();
     }
@@ -1362,13 +1373,13 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public ApplicationModel getAdminApp() {
-        return new ApplicationAdapter(this, em, realm.getAdminApp());
+    public ApplicationModel getMasterAdminApp() {
+        return new ApplicationAdapter(this, em, realm.getMasterAdminApp());
     }
 
     @Override
-    public void setAdminApp(ApplicationModel app) {
-        realm.setAdminApp(((ApplicationAdapter) app).getJpaEntity());
+    public void setMasterAdminApp(ApplicationModel app) {
+        realm.setMasterAdminApp(((ApplicationAdapter) app).getJpaEntity());
         em.flush();
     }
 

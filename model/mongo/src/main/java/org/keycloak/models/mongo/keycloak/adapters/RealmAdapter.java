@@ -410,6 +410,17 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
+    public String getAdminTheme() {
+        return realm.getAdminTheme();
+    }
+
+    @Override
+    public void setAdminTheme(String name) {
+        realm.setAdminTheme(name);
+        updateRealm();
+    }
+
+    @Override
     public UserAdapter getUser(String name) {
         DBObject query = new QueryBuilder()
                 .and("loginName").is(name)
@@ -1322,13 +1333,13 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
-    public ApplicationModel getAdminApp() {
+    public ApplicationModel getMasterAdminApp() {
         MongoApplicationEntity appData = getMongoStore().loadEntity(MongoApplicationEntity.class, realm.getAdminAppId(), invocationContext);
         return appData != null ? new ApplicationAdapter(this, appData, invocationContext) : null;
     }
 
     @Override
-    public void setAdminApp(ApplicationModel app) {
+    public void setMasterAdminApp(ApplicationModel app) {
         realm.setAdminAppId(app.getId());
         updateRealm();
     }
