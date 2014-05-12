@@ -20,6 +20,19 @@
                 { "type" : "password",
                     "value" : "password" }
             ]
+        },
+        {
+            "username" : "admin",
+            "enabled": true,
+            "firstName": "Bill",
+            "lastName": "Burke",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "admin" }
+            ],
+            "requiredActions": [
+                "UPDATE_PASSWORD"
+            ]
         }
     ],
     "roles" : {
@@ -38,6 +51,10 @@
         {
             "username": "bburke@redhat.com",
             "roles": ["user"]
+        },
+        {
+            "username": "admin",
+            "roles": ["user", "admin"]
         }
     ],
     "scopeMappings": [
@@ -63,6 +80,12 @@
             {
                 "username": "bburke@redhat.com",
                 "roles": ["manage-account"]
+            }
+        ],
+        "demo-realm": [
+            {
+                "username": "admin",
+                "roles": ["realm-admin"]
             }
         ]
     }

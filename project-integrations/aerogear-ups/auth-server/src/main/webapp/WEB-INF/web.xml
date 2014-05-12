@@ -16,7 +16,7 @@
         <servlet-class>org.jboss.resteasy.plugins.server.servlet.HttpServlet30Dispatcher</servlet-class>
         <init-param>
             <param-name>javax.ws.rs.Application</param-name>
-            <param-value>org.keycloak.services.resources.KeycloakApplication</param-value>
+            <param-value>org.aerogear.ups.security.UpsSecurityApplication</param-value>
         </init-param>
         <init-param>
             <param-name>resteasy.servlet.mapping.prefix</param-name>

@@ -100,7 +100,6 @@
         <module>testsuite</module>
         <module>server</module>
         <module>timer</module>
-        <module>bundled-war-example</module>
         <module>project-integrations</module>
         <module>export-import</module>
     </modules>

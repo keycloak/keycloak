@@ -23,6 +23,16 @@
 
     <security-constraint>
         <web-resource-collection>
+            <web-resource-name>AdminConsole</web-resource-name>
+            <url-pattern>/admin/*</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <role-name>admin</role-name>
+        </auth-constraint>
+    </security-constraint>
+
+    <security-constraint>
+        <web-resource-collection>
             <web-resource-name>Database</web-resource-name>
             <url-pattern>/rest/*</url-pattern>
         </web-resource-collection>
