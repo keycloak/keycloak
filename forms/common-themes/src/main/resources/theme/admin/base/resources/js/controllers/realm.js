@@ -201,7 +201,7 @@ module.controller('RealmCreateCtrl', function($scope, Current, Realm, $upload, $
             Realm.query(function(data) {
                 Current.realms = data;
 
-                $http.get(authUrl + '/admin/whoami').success(function(user) {
+                WhoAmI.get(function(user) {
                     Auth.user = user;
 
                     $location.url("/realms/" + realmCopy.realm);
