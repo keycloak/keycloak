@@ -1,6 +1,11 @@
 Self Bootstrapping Keycloak Server and Application
 ==========================================================
 
+To get this running:
+1. Boot up JBoss EAP.  (This is an EAP build!)
+2. In the project-integrations/aerogear-ups directory do:
+$ mvn clean install jboss-as:deploy
+
 This is an example of bundling two wars: a keycloak server war and application WAR together so that keycloak is bootstrapped out of the
 box.  The structure of the example is:
 
