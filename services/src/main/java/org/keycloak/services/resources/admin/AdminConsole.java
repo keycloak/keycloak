@@ -6,12 +6,8 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.jboss.resteasy.spi.NotFoundException;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.jboss.resteasy.spi.UnauthorizedException;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.freemarker.Theme;
 import org.keycloak.freemarker.ThemeLoader;
-import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Config;
@@ -21,17 +17,12 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.ProviderSession;
-import org.keycloak.representations.AccessToken;
+import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.ApplicationManager;
-import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.resources.KeycloakApplication;
-import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.TokenService;
-import org.keycloak.services.resources.flows.Flows;
-import org.keycloak.services.resources.flows.OAuthRedirect;
 
 import javax.activation.FileTypeMap;
 import javax.activation.MimetypesFileTypeMap;
@@ -39,19 +30,17 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Providers;
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -182,7 +171,7 @@ public class AdminConsole {
             return Response.status(401).build();
         }
         String displayName;
-        if (user.getFirstName() != null || user.getLastName() != null) {
+        if ((user.getFirstName() != null && !user.getFirstName().trim().equals("")) || (user.getLastName() != null && !user.getLastName().trim().equals(""))) {
             displayName = user.getFirstName();
             if (user.getLastName() != null) {
                 displayName = displayName != null ? displayName + " " + user.getLastName() : user.getLastName();
@@ -192,40 +181,54 @@ public class AdminConsole {
         }
 
         RealmModel masterRealm = getAdminstrationRealm(realmManager);
+        Map<String, Set<String>> realmAccess = new HashMap<String, Set<String>>();
         if (masterRealm == null)
             throw new NotFoundException("No realm found");
         boolean createRealm = false;
         if (realm.equals(masterRealm)) {
+            logger.info("setting up realm access for a master realm user");
             createRealm = masterRealm.hasRole(user, masterRealm.getRole(AdminRoles.CREATE_REALM));
+            addMasterRealmAccess(realm, user, realmAccess);
+        } else {
+            logger.info("setting up realm access for a realm user");
+            addRealmAccess(realm, user, realmAccess);
+        }
+        if (realmAccess.size() == 0) {
+            return Response.status(401).build();
         }
 
-        Map<String, Set<String>> realmAccess = new HashMap<String, Set<String>>();
-        addRealmAdminAccess(realmAccess, realm.getRoleMappings(user));
 
         return Response.ok(new WhoAmI(user.getId(), realm.getName(), displayName, createRealm, realmAccess)).build();
     }
 
-    private void addRealmAdminAccess(Map<String, Set<String>> realmAdminAccess, Set<RoleModel> roles) {
-        for (RoleModel r : roles) {
-            if (r.getContainer() instanceof ApplicationModel) {
-                ApplicationModel app = (ApplicationModel) r.getContainer();
-                if (app.getName().endsWith(AdminRoles.APP_SUFFIX)) {
-                    String realm = app.getName().substring(0, app.getName().length() - AdminRoles.APP_SUFFIX.length());
-                    if (!realmAdminAccess.containsKey(realm)) {
-                        realmAdminAccess.put(realm, new HashSet<String>());
-                    }
-                    realmAdminAccess.get(realm).add(r.getName());
-                }
+    private void addRealmAccess(RealmModel realm, UserModel user, Map<String, Set<String>> realmAdminAccess) {
+        RealmManager realmManager = new RealmManager(session);
+        ApplicationModel realmAdminApp = realm.getApplicationByName(realmManager.getRealmAdminApplicationName(realm));
+        Set<RoleModel> roles = realmAdminApp.getRoles();
+        for (RoleModel role : roles) {
+            if (!realm.hasRole(user, role)) continue;
+            if (!realmAdminAccess.containsKey(realm.getName())) {
+                realmAdminAccess.put(realm.getName(), new HashSet<String>());
             }
+            realmAdminAccess.get(realm.getName()).add(role.getName());
+        }
 
-            if (r.isComposite()) {
-                addRealmAdminAccess(realmAdminAccess, r.getComposites());
+    }
+
+    private void addMasterRealmAccess(RealmModel masterRealm, UserModel user, Map<String, Set<String>> realmAdminAccess) {
+        List<RealmModel> realms = session.getRealms();
+        for (RealmModel realm : realms) {
+            ApplicationModel realmAdminApp = realm.getMasterAdminApp();
+            Set<RoleModel> roles = realmAdminApp.getRoles();
+            for (RoleModel role : roles) {
+                if (!masterRealm.hasRole(user, role)) continue;
+                if (!realmAdminAccess.containsKey(realm.getName())) {
+                    realmAdminAccess.put(realm.getName(), new HashSet<String>());
+                }
+                realmAdminAccess.get(realm.getName()).add(role.getName());
             }
         }
     }
-
-
-
 
     @Path("logout")
     @GET
@@ -268,7 +271,12 @@ public class AdminConsole {
     @Path("{path:.+}")
     public Response getResource(@PathParam("path") String path) {
         try {
-            Theme theme = ThemeLoader.createTheme(Config.getThemeAdmin(), Theme.Type.ADMIN);
+            String themeName = realm.getAdminTheme();
+            if (themeName == null || themeName.trim().equals("")) {
+                themeName = Config.getThemeAdmin();
+            }
+
+            Theme theme = ThemeLoader.createTheme(themeName, Theme.Type.ADMIN);
             InputStream resource = theme.getResourceAsStream(path);
             if (resource != null) {
                 String contentType = mimeTypes.getContentType(path);

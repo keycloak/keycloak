@@ -74,6 +74,7 @@ public class RealmEntity {
 
     protected String loginTheme;
     protected String accountTheme;
+    protected String adminTheme;
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true)
     @JoinTable(name="User_RequiredCreds")
@@ -109,16 +110,16 @@ public class RealmEntity {
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
     @JoinTable(name="RealmDefaultRoles")
-    Collection<RoleEntity> defaultRoles = new ArrayList<RoleEntity>();
+    protected Collection<RoleEntity> defaultRoles = new ArrayList<RoleEntity>();
 
-    private boolean auditEnabled;
-    private long auditExpiration;
+    protected boolean auditEnabled;
+    protected long auditExpiration;
 
     @ElementCollection
-    private Set<String> auditListeners= new HashSet<String>();
+    protected Set<String> auditListeners= new HashSet<String>();
 
     @OneToOne
-    private ApplicationEntity adminApp;
+    protected ApplicationEntity masterAdminApp;
 
     public String getId() {
         return id;
@@ -351,6 +352,14 @@ public class RealmEntity {
         this.accountTheme = theme;
     }
 
+    public String getAdminTheme() {
+        return adminTheme;
+    }
+
+    public void setAdminTheme(String adminTheme) {
+        this.adminTheme = adminTheme;
+    }
+
     public int getNotBefore() {
         return notBefore;
     }
@@ -439,12 +448,12 @@ public class RealmEntity {
         this.auditListeners = auditListeners;
     }
 
-    public ApplicationEntity getAdminApp() {
-        return adminApp;
+    public ApplicationEntity getMasterAdminApp() {
+        return masterAdminApp;
     }
 
-    public void setAdminApp(ApplicationEntity adminApp) {
-        this.adminApp = adminApp;
+    public void setMasterAdminApp(ApplicationEntity masterAdminApp) {
+        this.masterAdminApp = masterAdminApp;
     }
 
 }

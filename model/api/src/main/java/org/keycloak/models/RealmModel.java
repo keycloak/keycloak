@@ -220,6 +220,10 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
 
     void setAccountTheme(String name);
 
+    String getAdminTheme();
+
+    void setAdminTheme(String name);
+
     boolean hasScope(ClientModel client, RoleModel role);
 
     /**
@@ -245,9 +249,9 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
 
     void setAuditListeners(Set<String> listeners);
 
-    ApplicationModel getAdminApp();
+    ApplicationModel getMasterAdminApp();
 
-    void setAdminApp(ApplicationModel app);
+    void setMasterAdminApp(ApplicationModel app);
 
     UserSessionModel createUserSession(UserModel user, String ipAddress);
 

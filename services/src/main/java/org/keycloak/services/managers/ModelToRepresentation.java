@@ -99,6 +99,7 @@ public class ModelToRepresentation {
         rep.setLdapServer(realm.getLdapServerConfig());
         rep.setAccountTheme(realm.getAccountTheme());
         rep.setLoginTheme(realm.getLoginTheme());
+        rep.setAdminTheme(realm.getAdminTheme());
         if (realm.getPasswordPolicy() != null) {
             rep.setPasswordPolicy(realm.getPasswordPolicy().toString());
         }
