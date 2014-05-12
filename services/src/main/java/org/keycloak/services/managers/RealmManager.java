@@ -121,9 +121,15 @@ public class RealmManager {
         realm.addScopeMapping(adminConsole, adminRole);
     }
 
-    public String getRealmAdminApplicationName(RealmModel realm) {
+    public String getMasterRealmAdminApplicationName(RealmModel realm) {
         return realm.getName() + "-realm";
     }
+
+    public String getRealmAdminApplicationName(RealmModel realm) {
+        return "realm-management";
+    }
+
+
 
     protected void setupRealmDefaults(RealmModel realm) {
         // brute force
@@ -242,7 +248,7 @@ public class RealmManager {
 
         ApplicationManager applicationManager = new ApplicationManager(new RealmManager(identitySession));
 
-        ApplicationModel realmAdminApp = applicationManager.createApplication(adminRealm, getRealmAdminApplicationName(realm));
+        ApplicationModel realmAdminApp = applicationManager.createApplication(adminRealm, getMasterRealmAdminApplicationName(realm));
         realmAdminApp.setBearerOnly(true);
         realm.setMasterAdminApp(realmAdminApp);
 

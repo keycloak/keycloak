@@ -12,25 +12,29 @@ import java.util.Properties;
  */
 public class ClassLoaderTheme implements Theme {
 
-    private final String name;
+    private String name;
 
-    private final String parentName;
+    private String parentName;
 
-    private final String importName;
+    private String importName;
 
-    private final Type type;
+    private Type type;
 
-    private final ClassLoader classLoader;
+    private ClassLoader classLoader;
 
-    private final String templateRoot;
+    private String templateRoot;
 
-    private final String resourceRoot;
+    private String resourceRoot;
 
-    private final String messages;
+    private String messages;
 
-    private final Properties properties;
+    private Properties properties;
 
     public ClassLoaderTheme(String name, Type type, ClassLoader classLoader) throws IOException {
+        init(name, type, classLoader);
+    }
+
+    public void init(String name, Type type, ClassLoader classLoader) throws IOException {
         this.name = name;
         this.type = type;
         this.classLoader = classLoader;
@@ -51,6 +55,10 @@ public class ClassLoaderTheme implements Theme {
             this.parentName = null;
             this.importName = null;
         }
+    }
+
+    public ClassLoaderTheme() {
+
     }
 
     @Override
