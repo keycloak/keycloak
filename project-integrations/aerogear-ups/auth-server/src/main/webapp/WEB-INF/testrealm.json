@@ -89,7 +89,7 @@
                 "roles": ["manage-account"]
             }
         ],
-        "aerogear-realm": [
+        "realm-management": [
             {
                 "username": "admin",
                 "roles": ["realm-admin"]
