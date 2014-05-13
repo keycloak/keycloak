@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Angular Product Portal</title>
+
+    <script src="lib/angular/angular.js"></script>
+    <script src="lib/angular/angular-resource.js"></script>
+    <script src="lib/angular/angular-route.js"></script>
+    <script src="lib/angular/ui-bootstrap-tpls-0.4.0.js"></script>
+
+    <script src="/auth/js/keycloak.js"></script>
+    <script src="js/app.js" type="text/javascript"></script>
+</head>
+
+<body data-ng-controller="GlobalCtrl">
+
+<div id="content-area" class="col-md-9" role="main">
+    <div id="content">
+        <h2><span>Products</span></h2>
+        <a href="" ng-click="logout()">Sign Out</a>
+        <button type="submit" data-ng-click="reloadData()">Reload</button>
+        <table class="table" data-ng-show="products.length > 0">
+            <thead>
+            <tr>
+                <th>Product Listing</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr data-ng-repeat="p in products">
+                <td>{{p}}</a></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>
