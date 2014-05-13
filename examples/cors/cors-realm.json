@@ -1,5 +1,5 @@
 {
-    "realm": "demo",
+    "realm": "cors-realm",
     "enabled": true,
     "accessTokenLifespan": 3000,
     "accessCodeLifespan": 10,
@@ -29,10 +29,6 @@
             {
                 "name": "user",
                 "description": "User privileges"
-            },
-            {
-                "name": "admin",
-                "description": "Administrator privileges"
             }
         ]
     },
@@ -44,47 +40,11 @@
     ],
     "scopeMappings": [
         {
-            "client": "third-party",
-            "roles": ["user"]
-        },
-        {
-            "client": "customer-portal",
-            "roles": ["user"]
-        },
-        {
-            "client": "customer-portal-js",
-            "roles": ["user"]
-        },
-        {
             "client": "angular-product",
             "roles": ["user"]
-        },
-        {
-            "client": "product-portal",
-            "roles": ["user"]
         }
-
     ],
     "applications": [
-        {
-            "name": "customer-portal",
-            "enabled": true,
-            "adminUrl": "http://localhost:8080/customer-portal",
-            "baseUrl": "http://localhost:8080/customer-portal",
-            "redirectUris": [
-                "http://localhost:8080/customer-portal/*"
-            ],
-            "secret": "password"
-        },
-        {
-            "name": "customer-portal-js",
-            "enabled": true,
-            "publicClient": true,
-            "baseUrl": "http://localhost:8080/customer-portal-js",
-            "redirectUris": [
-                "http://localhost:8080/customer-portal-js/*"
-            ]
-        },
         {
             "name": "angular-product",
             "enabled": true,
@@ -92,46 +52,10 @@
             "baseUrl": "http://localhost:8080/angular-product/index.html",
             "redirectUris": [
                 "http://localhost:8080/angular-product/*"
-            ]
-        },
-        {
-            "name": "customer-portal-cli",
-            "enabled": true,
-            "publicClient": true,
-            "redirectUris": [
-                "urn:ietf:wg:oauth:2.0:oob",
-                "http://localhost"
-            ]
-        },
-        {
-            "name": "product-portal",
-            "enabled": true,
-            "adminUrl": "http://localhost:8080/product-portal",
-            "baseUrl": "http://localhost:8080/product-portal",
-            "redirectUris": [
-                "http://localhost:8080/product-portal/*"
             ],
-            "secret": "password"
+            "webOrigins": [
+                "http://localhost:8080"
+            ]
         }
-    ],
-    "oauthClients": [
-        {
-            "name": "third-party",
-            "enabled": true,
-            "redirectUris": [
-                "http://localhost:8080/oauth-client/*",
-                "http://localhost:8080/oauth-client-cdi/*"
-            ],
-            "secret": "password"
-        }
-    ],
-    "applicationRoleMappings": {
-        "account": [
-            {
-                "username": "bburke@redhat.com",
-                "roles": ["manage-account"]
-            }
-        ]
-    }
-
+    ]
 }
