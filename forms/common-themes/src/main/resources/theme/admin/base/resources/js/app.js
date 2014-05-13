@@ -26,7 +26,6 @@ var loadingTimer = -1;
 
 angular.element(document).ready(function ($http) {
     var keycloakAuth = new Keycloak(configUrl);
-    var auth = {};
     auth.loggedIn = false;
 
     keycloakAuth.init('login-required').success(function () {

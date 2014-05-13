@@ -1,20 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
         <version>1.0-beta-1-SNAPSHOT</version>
-        <relativePath>../../pom.xml</relativePath>
+        <relativePath>../../../pom.xml</relativePath>
     </parent>
-    <name>Examples</name>
-    <description/>
     <modelVersion>4.0.0</modelVersion>
-
-    <artifactId>demo-pom</artifactId>
-    <packaging>pom</packaging>
+    <groupId>org.keycloak.example.demo</groupId>
+    <artifactId>angular-product-example</artifactId>
+    <packaging>war</packaging>
+    <name>Angular Product Portal JS</name>
+    <description/>
 
     <build>
+        <finalName>angular-product</finalName>
         <plugins>
+            <plugin>
+                <groupId>org.jboss.as.plugins</groupId>
+                <artifactId>jboss-as-maven-plugin</artifactId>
+                <version>7.4.Final</version>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-deploy-plugin</artifactId>
@@ -23,24 +30,13 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.jboss.as.plugins</groupId>
-                <artifactId>jboss-as-maven-plugin</artifactId>
-                <version>7.1.1.Final</version>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <skip>true</skip>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
                 </configuration>
             </plugin>
         </plugins>
     </build>
-    <modules>
-        <!-- <module>server</module> -->
-        <module>customer-app</module>
-        <module>customer-app-cli</module>
-        <module>customer-app-js</module>
-        <module>product-app</module>
-        <module>angular-product-app</module>
-        <module>database-service</module>
-        <module>third-party</module>
-        <module>third-party-cdi</module>
-    </modules>
 </project>

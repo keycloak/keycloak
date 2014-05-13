@@ -56,6 +56,10 @@
             "roles": ["user"]
         },
         {
+            "client": "angular-product",
+            "roles": ["user"]
+        },
+        {
             "client": "product-portal",
             "roles": ["user"]
         }
@@ -80,6 +84,16 @@
             "baseUrl": "http://localhost:8080/customer-portal-js",
             "redirectUris": [
                 "http://localhost:8080/customer-portal-js/*"
+            ]
+        },
+        {
+            "name": "angular-product",
+            "enabled": true,
+            "publicClient": true,
+            "adminUrl": "http://localhost:8080/angular-product/index.html",
+            "baseUrl": "http://localhost:8080/angular-product/index.html",
+            "redirectUris": [
+                "http://localhost:8080/angular-product/*"
             ]
         },
         {
