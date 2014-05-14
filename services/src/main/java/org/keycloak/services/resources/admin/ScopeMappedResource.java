@@ -52,7 +52,6 @@ public class ScopeMappedResource {
 
         MappingsRepresentation all = new MappingsRepresentation();
         Set<RoleModel> realmMappings = realm.getRealmScopeMappings(client);
-        RealmManager manager = new RealmManager(session);
         if (realmMappings.size() > 0) {
             List<RoleRepresentation> realmRep = new ArrayList<RoleRepresentation>();
             for (RoleModel roleModel : realmMappings) {
@@ -92,11 +91,49 @@ public class ScopeMappedResource {
 
         Set<RoleModel> realmMappings = realm.getRealmScopeMappings(client);
         List<RoleRepresentation> realmMappingsRep = new ArrayList<RoleRepresentation>();
-        RealmManager manager = new RealmManager(session);
         for (RoleModel roleModel : realmMappings) {
             realmMappingsRep.add(ModelToRepresentation.toRepresentation(roleModel));
         }
         return realmMappingsRep;
+    }
+
+    @Path("realm/available")
+    @GET
+    @Produces("application/json")
+    @NoCache
+    public List<RoleRepresentation> getAvailableRealmScopeMappings() {
+        auth.requireView();
+
+        Set<RoleModel> roles = realm.getRoles();
+        return getAvailable(roles);
+    }
+
+    private List<RoleRepresentation> getAvailable(Set<RoleModel> roles) {
+        List<RoleRepresentation> available = new ArrayList<RoleRepresentation>();
+        for (RoleModel roleModel : roles) {
+            if (realm.hasScope(client, roleModel)) continue;
+            available.add(ModelToRepresentation.toRepresentation(roleModel));
+        }
+        return available;
+    }
+
+    @Path("realm/composite")
+    @GET
+    @Produces("application/json")
+    @NoCache
+    public List<RoleRepresentation> getCompositeRealmScopeMappings() {
+        auth.requireView();
+
+        Set<RoleModel> roles = realm.getRoles();
+        return getComposite(roles);
+    }
+
+    private List<RoleRepresentation> getComposite(Set<RoleModel> roles) {
+        List<RoleRepresentation> composite = new ArrayList<RoleRepresentation>();
+        for (RoleModel roleModel : roles) {
+            if (realm.hasScope(client, roleModel)) composite.add(ModelToRepresentation.toRepresentation(roleModel));
+        }
+        return composite;
     }
 
     @Path("realm")
@@ -158,6 +195,40 @@ public class ScopeMappedResource {
             mapRep.add(ModelToRepresentation.toRepresentation(roleModel));
         }
         return mapRep;
+    }
+
+    @Path("applications/{app}/available")
+    @GET
+    @Produces("application/json")
+    @NoCache
+    public List<RoleRepresentation> getAvailableApplicationScopeMappings(@PathParam("app") String appName) {
+        auth.requireView();
+
+        ApplicationModel app = realm.getApplicationByName(appName);
+
+        if (app == null) {
+            throw new NotFoundException("Role not found");
+        }
+
+        Set<RoleModel> roles = app.getRoles();
+        return getAvailable(roles);
+    }
+
+    @Path("applications/{app}/composite")
+    @GET
+    @Produces("application/json")
+    @NoCache
+    public List<RoleRepresentation> getCompositeApplicationScopeMappings(@PathParam("app") String appName) {
+        auth.requireView();
+
+        ApplicationModel app = realm.getApplicationByName(appName);
+
+        if (app == null) {
+            throw new NotFoundException("Role not found");
+        }
+
+        Set<RoleModel> roles = app.getRoles();
+        return getComposite(roles);
     }
 
     @Path("applications/{app}")

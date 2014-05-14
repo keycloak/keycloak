@@ -282,8 +282,38 @@ module.factory('ApplicationRealmScopeMapping', function($resource) {
     });
 });
 
+module.factory('ApplicationAvailableRealmScopeMapping', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/applications/:application/scope-mappings/realm/available', {
+        realm : '@realm',
+        application : '@application'
+    });
+});
+
+module.factory('ApplicationCompositeRealmScopeMapping', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/applications/:application/scope-mappings/realm/composite', {
+        realm : '@realm',
+        application : '@application'
+    });
+});
+
 module.factory('ApplicationApplicationScopeMapping', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/applications/:application/scope-mappings/applications/:targetApp', {
+        realm : '@realm',
+        application : '@application',
+        targetApp : '@targetApp'
+    });
+});
+
+module.factory('ApplicationAvailableApplicationScopeMapping', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/applications/:application/scope-mappings/applications/:targetApp/available', {
+        realm : '@realm',
+        application : '@application',
+        targetApp : '@targetApp'
+    });
+});
+
+module.factory('ApplicationCompositeApplicationScopeMapping', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/applications/:application/scope-mappings/applications/:targetApp/composite', {
         realm : '@realm',
         application : '@application',
         targetApp : '@targetApp'

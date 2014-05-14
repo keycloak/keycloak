@@ -88,6 +88,8 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, ap
             $scope.applicationMappings = ApplicationRoleMapping.query({realm : realm.realm, userId : user.username, application : $scope.application.name});
         } else {
             $scope.applicationRoles = null;
+            $scope.applicationMappings = null;
+            $scope.applicationComposite = null;
         }
         $scope.selectedApplicationRoles = [];
         $scope.selectedApplicationMappings = [];
