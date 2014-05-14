@@ -20,8 +20,4 @@ public class ModelDuplicateException extends ModelException {
         super(cause);
     }
 
-    public ModelDuplicateException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-        super(message, cause, enableSuppression, writableStackTrace);
-    }
-
 }
