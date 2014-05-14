@@ -45,6 +45,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1373,6 +1374,16 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         } else {
             return new UserSessionAdapter(entity, this, invocationContext);
         }
+    }
+
+    @Override
+    public List<UserSessionModel> getUserSessions(UserModel user) {
+        DBObject query = new BasicDBObject("user", user.getId());
+        List<UserSessionModel> sessions = new LinkedList<UserSessionModel>();
+        for (MongoUserSessionEntity e : getMongoStore().loadEntities(MongoUserSessionEntity.class, query, invocationContext)) {
+            sessions.add(new UserSessionAdapter(e, this, invocationContext));
+        }
+        return sessions;
     }
 
     @Override

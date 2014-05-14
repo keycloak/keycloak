@@ -48,6 +48,7 @@ import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.Retry;
 import org.keycloak.testsuite.pages.AccountLogPage;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
+import org.keycloak.testsuite.pages.AccountSessionsPage;
 import org.keycloak.testsuite.pages.AccountTotpPage;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.AppPage;
@@ -131,6 +132,9 @@ public class AccountTest {
     protected AccountLogPage logPage;
 
     @WebResource
+    protected AccountSessionsPage sessionsPage;
+
+    @WebResource
     protected ErrorPage errorPage;
 
     private TimeBasedOTP totp = new TimeBasedOTP();
@@ -212,7 +216,7 @@ public class AccountTest {
 
         changePasswordPage.logout();
 
-        events.expectLogout(sessionId).detail(Details.REDIRECT_URI, ACCOUNT_URL).assertEvent();
+        events.expectLogout(sessionId).detail(Details.REDIRECT_URI, AccountPasswordPage.PATH).assertEvent();
 
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
@@ -412,6 +416,43 @@ public class AccountTest {
                 }
             });
         }
+    }
+
+    @Test
+    public void sessions() {
+        loginPage.open();
+        loginPage.clickRegister();
+
+        registerPage.register("view", "sessions", "view-sessions@localhost", "view-sessions", "password", "password");
+
+        Event registerEvent = events.expectRegister("view-sessions", "view-sessions@localhost").assertEvent();
+        String userId = registerEvent.getUserId();
+
+        events.expectLogin().user(userId).detail(Details.USERNAME, "view-sessions").assertEvent();
+
+        sessionsPage.open();
+
+        Assert.assertTrue(sessionsPage.isCurrent());
+
+        List<List<String>> sessions = sessionsPage.getSessions();
+        Assert.assertEquals(1, sessions.size());
+        Assert.assertEquals("127.0.0.1", sessions.get(0).get(0));
+
+        // Create second session
+        WebDriver driver2 = WebRule.createWebDriver();
+        OAuthClient oauth2 = new OAuthClient(driver2);
+        oauth2.doLogin("view-sessions", "password");
+
+        Event login2Event = events.expectLogin().user(userId).detail(Details.USERNAME, "view-sessions").assertEvent();
+
+        sessionsPage.open();
+        sessions = sessionsPage.getSessions();
+        Assert.assertEquals(2, sessions.size());
+
+        sessionsPage.logoutAll();
+
+        events.expectLogout(registerEvent.getSessionId());
+        events.expectLogout(login2Event.getSessionId());
     }
 
 }

@@ -7,6 +7,7 @@ import org.codehaus.jackson.map.SerializationConfig;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.keycloak.adapters.ServerRequest;
 import org.keycloak.adapters.installed.KeycloakInstalled;
+import org.keycloak.util.Time;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -65,7 +66,7 @@ public class CustomerCli {
                     System.out.println(mapper.writeValueAsString(keycloak.getIdToken()));
                 } else if (s.equals("refresh")) {
                     keycloak.refreshToken();
-                    System.out.println("Token refreshed: expires at " + new Date(keycloak.getToken().getExpiration() * 1000));
+                    System.out.println("Token refreshed: expires at " + Time.toDate(keycloak.getToken().getExpiration()));
                 } else if (s.equals("exit")) {
                     System.exit(0);
                 } else {

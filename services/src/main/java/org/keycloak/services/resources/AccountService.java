@@ -241,10 +241,6 @@ public class AccountService {
         return forwardToPage("social", AccountPages.SOCIAL);
     }
 
-    public static UriBuilder logUrl(UriBuilder base) {
-        return RealmsResource.accountUrl(base).path(AccountService.class, "logPage");
-    }
-
     @Path("log")
     @GET
     public Response logPage() {
@@ -267,6 +263,15 @@ public class AccountService {
             account.setEvents(events);
         }
         return forwardToPage("log", AccountPages.LOG);
+    }
+
+    @Path("sessions")
+    @GET
+    public Response sessionsPage() {
+        if (auth != null) {
+            account.setSessions(realm.getUserSessions(auth.getUser()));
+        }
+        return forwardToPage("sessions", AccountPages.SESSIONS);
     }
 
     @Path("/")
@@ -312,6 +317,18 @@ public class AccountService {
         audit.event(Events.REMOVE_TOTP).client(auth.getClient()).user(auth.getUser()).success();
 
         return account.setSuccess("successTotpRemoved").createResponse(AccountPages.TOTP);
+    }
+
+
+    @Path("sessions-logout")
+    @GET
+    public Response processSessionsLogout() {
+        require(AccountRoles.MANAGE_ACCOUNT);
+
+        UserModel user = auth.getUser();
+        realm.removeUserSessions(user);
+
+        return Response.seeOther(Urls.accountSessionsPage(uriInfo.getBaseUri(), realm.getName())).build();
     }
 
     @Path("totp")
@@ -491,16 +508,6 @@ public class AccountService {
             return Response.status(302).location(redirectUri).build();
         } finally {
         }
-    }
-
-    @Path("logout")
-    @GET
-    public Response logout() {
-        URI redirect = Urls.accountBase(uriInfo.getBaseUri()).build(realm.getName());
-
-        return Response.status(302).location(
-                TokenService.logoutUrl(uriInfo).queryParam("redirect_uri", redirect.toString()).build(realm.getName())
-        ).build();
     }
 
     private Response login(String path) {

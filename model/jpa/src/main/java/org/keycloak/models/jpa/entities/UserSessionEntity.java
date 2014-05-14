@@ -15,6 +15,7 @@ import javax.persistence.NamedQuery;
  */
 @Entity
 @NamedQueries({
+        @NamedQuery(name = "getUserSessionByUser", query = "select s from UserSessionEntity s where s.user = :user"),
         @NamedQuery(name = "removeUserSessionByUser", query = "delete from UserSessionEntity s where s.user = :user"),
         @NamedQuery(name = "removeUserSessionExpired", query = "delete from UserSessionEntity s where s.expires < :currentTime")
 })

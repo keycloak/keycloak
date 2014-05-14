@@ -76,8 +76,16 @@ public class Urls {
         return accountBase(baseUri).path(AccountService.class, "logPage").build(realmId);
     }
 
-    public static URI accountLogout(URI baseUri, String realmId) {
-        return accountBase(baseUri).path(AccountService.class, "logout").build(realmId);
+    public static URI accountSessionsPage(URI baseUri, String realmId) {
+        return accountBase(baseUri).path(AccountService.class, "sessionsPage").build(realmId);
+    }
+
+    public static URI accountSessionsLogoutPage(URI baseUri, String realmId) {
+        return accountBase(baseUri).path(AccountService.class, "processSessionsLogout").build(realmId);
+    }
+
+    public static URI accountLogout(URI baseUri, URI redirectUri, String realmId) {
+        return realmLogout(baseUri).queryParam("redirect_uri", redirectUri).build(realmId);
     }
 
     public static URI loginActionUpdatePassword(URI baseUri, String realmId) {
@@ -126,6 +134,10 @@ public class Urls {
 
     public static URI realmLoginPage(URI baseUri, String realmId) {
         return tokenBase(baseUri).path(TokenService.class, "loginPage").build(realmId);
+    }
+
+    public static UriBuilder realmLogout(URI baseUri) {
+        return tokenBase(baseUri).path(TokenService.class, "logout");
     }
 
     public static URI realmRegisterAction(URI baseUri, String realmId) {

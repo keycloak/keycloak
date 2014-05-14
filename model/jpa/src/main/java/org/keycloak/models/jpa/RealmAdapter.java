@@ -49,6 +49,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1403,6 +1404,15 @@ public class RealmAdapter implements RealmModel {
     public UserSessionModel getUserSession(String id) {
         UserSessionEntity entity = em.find(UserSessionEntity.class, id);
         return entity != null ? new UserSessionAdapter(entity) : null;
+    }
+
+    @Override
+    public List<UserSessionModel> getUserSessions(UserModel user) {
+        List<UserSessionModel> sessions = new LinkedList<UserSessionModel>();
+        for (UserSessionEntity e : em.createNamedQuery("getUserSessionByUser", UserSessionEntity.class).setParameter("user", ((UserAdapter) user).getUser()).getResultList()) {
+            sessions.add(new UserSessionAdapter(e));
+        }
+        return sessions;
     }
 
     @Override

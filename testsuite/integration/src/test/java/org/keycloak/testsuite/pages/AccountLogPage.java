@@ -21,11 +21,10 @@
  */
 package org.keycloak.testsuite.pages;
 
-import org.keycloak.services.resources.AccountService;
+import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.testsuite.Constants;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.FindBy;
 
 import javax.ws.rs.core.UriBuilder;
 import java.util.LinkedList;
@@ -36,7 +35,7 @@ import java.util.List;
  */
 public class AccountLogPage extends AbstractAccountPage {
 
-    private static String PATH = AccountService.logUrl(UriBuilder.fromUri(Constants.AUTH_SERVER_ROOT)).build("test").toString();
+    private static String PATH = Urls.accountLogPage(UriBuilder.fromUri(Constants.AUTH_SERVER_ROOT).build(), "test").toString();
 
     public boolean isCurrent() {
         return driver.getTitle().contains("Account Management") && driver.getCurrentUrl().endsWith("/account/log");
