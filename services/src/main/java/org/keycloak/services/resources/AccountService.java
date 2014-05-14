@@ -278,6 +278,10 @@ public class AccountService {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processAccountUpdate(final MultivaluedMap<String, String> formData) {
+        if (auth == null) {
+            return login(null);
+        }
+
         require(AccountRoles.MANAGE_ACCOUNT);
 
         UserModel user = auth.getUser();
@@ -309,6 +313,10 @@ public class AccountService {
     @Path("totp-remove")
     @GET
     public Response processTotpRemove() {
+        if (auth == null) {
+            return login("totp");
+        }
+
         require(AccountRoles.MANAGE_ACCOUNT);
 
         UserModel user = auth.getUser();
@@ -323,6 +331,10 @@ public class AccountService {
     @Path("sessions-logout")
     @GET
     public Response processSessionsLogout() {
+        if (auth == null) {
+            return login("sessions");
+        }
+
         require(AccountRoles.MANAGE_ACCOUNT);
 
         UserModel user = auth.getUser();
@@ -335,6 +347,10 @@ public class AccountService {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processTotpUpdate(final MultivaluedMap<String, String> formData) {
+        if (auth == null) {
+            return login("totp");
+        }
+
         require(AccountRoles.MANAGE_ACCOUNT);
 
         UserModel user = auth.getUser();
@@ -364,6 +380,10 @@ public class AccountService {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processPasswordUpdate(final MultivaluedMap<String, String> formData) {
+        if (auth == null) {
+            return login("password");
+        }
+
         require(AccountRoles.MANAGE_ACCOUNT);
 
         UserModel user = auth.getUser();
@@ -403,6 +423,10 @@ public class AccountService {
     @GET
     public Response processSocialUpdate(@QueryParam("action") String action,
                                         @QueryParam("provider_id") String providerId) {
+        if (auth == null) {
+            return login("social");
+        }
+
         require(AccountRoles.MANAGE_ACCOUNT);
         UserModel user = auth.getUser();
 

@@ -50,7 +50,7 @@ var keycloak = Keycloak({
         required will redirect to the login form on the server, while check-sso will redirect to the auth server to check
         if the user is already logged in to the realm. For example:
 <programlisting><![CDATA[
-keycloak.init('login-required')
+keycloak.init({ onLoad: 'login-required' })
 ]]></programlisting>
     </para>
 
@@ -126,6 +126,17 @@ keycloak.updateToken(30).success(function() {
     </para>
 
     <section>
+        <title>Session status iframe</title>
+
+        <para>
+            By default the JavaScript adapter creates a non-visible iframe that is used to detect if a single-sign out has occured.
+            This does not require any network traffic, instead the status is retrieved from a special status cookie. This feature can be disabled
+            by setting <literal>checkLoginIframe: false</literal> in the options passed to the <literal>init</literal>
+            method.
+        </para>
+    </section>
+
+    <section>
         <title>JavaScript Adapter reference</title>
 
         <section>
@@ -156,20 +167,127 @@ new Keycloak({ url: 'http://localhost/auth', realm: 'myrealm', clientId: 'myApp'
         <section>
             <title>Methods</title>
 
-            <itemizedlist>
-                <listitem>init - called to initialize the adapter. Returns promise to set functions to be invoked on success or error</listitem>
-                <listitem>login(options) - redirects to login form on (options is an optional object with redirectUri and/or prompt fields)</listitem>
-                <listitem>createLoginUrl(options) - returns the url to login form on (options is an optional object with redirectUri and/or prompt fields)</listitem>
-                <listitem>logout(options) - redirects to logout (options is an optional object with redirectUri)</listitem>
-                <listitem>createLogoutUrl(options) - returns the url to logout (options is an optional object with redirectUri)</listitem>
-                <listitem>accountManagement - redirects to account management</listitem>
-                <listitem>createAccountUrl - returns the url to account management</listitem>
-                <listitem>hasRealmRole(role) - returns true if the token has the given realm role</listitem>
-                <listitem>hasResourceRole(role, resource) - returns true if the token has the given role for the resource (resource is optional, if not specified clientId is used)</listitem>
-                <listitem>loadUserProfile() - loads the users profile. Returns promise to set functions to be invoked on success or error</listitem>
-                <listitem>isTokenExpired(minValidity) - returns true if the token has less than minValidity seconds left before it expires (minValidity is optional, if not specified 0 is used)</listitem>
-                <listitem>updateToken(minValidity) - refreshes the token if the token expires within minValidity seconds (minValidity is optional, if not specified 0 is used). Returns promise to set functions to be invoked on success or error</listitem>
-            </itemizedlist>
+            <simplesect>
+                <title>init(options)</title>
+
+                <para>Called to initialize the adapter.</para>
+                <para>Options is an Object, where:
+                    <itemizedlist>
+                        <listitem>onLoad - specifies an action to do on load, can be either 'login-required' or 'check-sso'</listitem>
+                        <listitem>token - set an initial value for the token</listitem>
+                        <listitem>refreshToken - set an initial value for the refresh token</listitem>
+                        <listitem>checkLoginIframe - set to enable/disable monitoring login state (default is true)</listitem>
+                        <listitem>checkLoginIframeInterval - set the interval to check login state (default is 5 seconds)</listitem>
+                    </itemizedlist>
+                </para>
+                <para>Returns promise to set functions to be invoked on success or error.</para>
+            </simplesect>
+
+            <simplesect>
+                <title>login(options)</title>
+
+                <para>Redirects to login form on (options is an optional object with redirectUri and/or prompt fields)</para>
+                <para>Options is an Object, where:
+                    <itemizedlist>
+                        <listitem>redirectUri - specifies the uri to redirect to after login</listitem>
+                        <listitem>prompt - can be set to 'none' to check if the user is logged in already (if not logged in a login form is not displayed)</listitem>
+                    </itemizedlist>
+                </para>
+            </simplesect>
+            <simplesect>
+                <title>createLoginUrl(options)</title>
+
+                <para>Returns the url to login form on (options is an optional object with redirectUri and/or prompt fields)</para>
+                <para>Options is an Object, where:
+                    <itemizedlist>
+                        <listitem>redirectUri - specifies the uri to redirect to after login</listitem>
+                        <listitem>prompt - can be set to 'none' to check if the user is logged in already (if not logged in a login form is not displayed)</listitem>
+                    </itemizedlist>
+                </para>
+            </simplesect>
+
+            <simplesect>
+                <title>logout(options)</title>
+
+                <para>Redirects to logout</para>
+                <para>Options is an Object, where:
+                    <itemizedlist>
+                        <listitem>redirectUri - specifies the uri to redirect to after logout</listitem>
+                    </itemizedlist>
+                </para>
+            </simplesect>
+
+            <simplesect>
+                <title>createLogoutUrl(options)</title>
+
+                <para>Returns logout out</para>
+                <para>Options is an Object, where:
+                    <itemizedlist>
+                        <listitem>redirectUri - specifies the uri to redirect to after logout</listitem>
+                    </itemizedlist>
+                </para>
+            </simplesect>
+
+            <simplesect>
+                <title>accountManagement()</title>
+
+                <para>Redirects to account management</para>
+            </simplesect>
+
+            <simplesect>
+                <title>createAccountUrl()</title>
+
+                <para>Returns the url to account management</para>
+            </simplesect>
+
+            <simplesect>
+                <title>hasRealmRole(role)</title>
+
+                <para>Returns true if the token has the given realm role</para>
+            </simplesect>
+
+            <simplesect>
+                <title>hasResourceRole(role, resource)</title>
+
+                <para>Returns true if the token has the given role for the resource (resource is optional, if not specified clientId is used)</para>
+            </simplesect>
+
+            <simplesect>
+                <title>loadUserProfile()</title>
+
+                <para>Loads the users profile</para>
+
+                <para>Returns promise to set functions to be invoked on success or error.</para>
+            </simplesect>
+
+            <simplesect>
+                <title>isTokenExpired(minValidity)</title>
+
+                <para>Returns true if the token has less than minValidity seconds left before it expires (minValidity is optional, if not specified 0 is used)</para>
+            </simplesect>
+
+            <simplesect>
+                <title>updateToken(minValidity)</title>
+
+                <para>If the token expires within minValidity seconds (minValidity is optional, if not specified 0 is used) the token is refreshed.
+                    If the session status iframe is enabled, the session status is also checked.
+                </para>
+
+                <para>Returns promise to set functions that can be invoked if the token is still valid, or if the token is no longer valid. For example:</para>
+
+                <programlisting><![CDATA[
+keycloak.updateToken(5).success(function(refreshed) {
+        if (refreshed) {
+            alert('token was successfully refreshed');
+        } else {
+            alert('token is still valid');
+        }
+    }).error(function() {
+        alert('failed to refresh the token, or the session has expired');
+    });
+]]></programlisting>
+
+            </simplesect>
         </section>
 
         <section>
@@ -187,7 +305,7 @@ keycloak.onAuthSuccess = function() { alert('authenticated'); }
                 <listitem>onAuthError - called if there was an error during authentication</listitem>
                 <listitem>onAuthRefreshSuccess - called when the token is refreshed</listitem>
                 <listitem>onAuthRefreshError - called if there was an error while trying to refresh the token</listitem>
-                <listitem>onAuthLogout - called when the user is logged out (only relevant to Cordova)</listitem>
+                <listitem>onAuthLogout - called if the user is logged out (will only be called if the session status iframe is enabled, or in Cordova mode)</listitem>
             </itemizedlist>
         </section>
     </section>

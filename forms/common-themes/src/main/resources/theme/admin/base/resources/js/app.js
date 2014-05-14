@@ -9,9 +9,6 @@ var logoutUrl = consoleBaseUrl + "/logout";
 var auth = {};
 var logout = function(){
     console.log('*** LOGOUT');
-    auth.loggedIn = false;
-    auth.authz = null;
-    auth.user = null;
     window.location = logoutUrl;
 };
 
@@ -28,7 +25,11 @@ angular.element(document).ready(function ($http) {
     var keycloakAuth = new Keycloak(configUrl);
     auth.loggedIn = false;
 
-    keycloakAuth.init('login-required').success(function () {
+    keycloakAuth.onAuthLogout = function() {
+        location.reload();
+    }
+
+    keycloakAuth.init({ onLoad: 'login-required' }).success(function () {
         auth.loggedIn = true;
         auth.authz = keycloakAuth;
         module.factory('Auth', function() {
@@ -36,9 +37,8 @@ angular.element(document).ready(function ($http) {
         });
         angular.bootstrap(document, ["keycloak"]);
     }).error(function () {
-            window.location.reload();
-        });
-
+        window.location.reload();
+    });
 });
 
 module.factory('authInterceptor', function($q, Auth) {
@@ -52,8 +52,8 @@ module.factory('authInterceptor', function($q, Auth) {
 
                     deferred.resolve(config);
                 }).error(function() {
-                        deferred.reject('Failed to refresh token');
-                    });
+                    location.reload();
+                });
             }
             return deferred.promise;
         }
