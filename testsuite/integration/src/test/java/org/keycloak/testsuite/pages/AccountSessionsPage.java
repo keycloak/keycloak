@@ -21,46 +21,49 @@
  */
 package org.keycloak.testsuite.pages;
 
-import org.keycloak.services.resources.AccountService;
+import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.testsuite.Constants;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 import javax.ws.rs.core.UriBuilder;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class AccountPasswordPage extends AbstractAccountPage {
+public class AccountSessionsPage extends AbstractAccountPage {
 
-    public static String PATH = AccountService.passwordUrl(UriBuilder.fromUri(Constants.AUTH_SERVER_ROOT)).build("test").toString();
+    private static String PATH = Urls.accountSessionsPage(UriBuilder.fromUri(Constants.AUTH_SERVER_ROOT).build(), "test").toString();
 
-    @FindBy(id = "password")
-    private WebElement passwordInput;
-
-    @FindBy(id = "password-new")
-    private WebElement newPasswordInput;
-
-    @FindBy(id = "password-confirm")
-    private WebElement passwordConfirmInput;
-
-    @FindBy(className = "btn-primary")
-    private WebElement submitButton;
-
-    public void changePassword(String password, String newPassword, String passwordConfirm) {
-        passwordInput.sendKeys(password);
-        newPasswordInput.sendKeys(newPassword);
-        passwordConfirmInput.sendKeys(passwordConfirm);
-
-        submitButton.click();
-    }
+    @FindBy(id = "logout-all-sessions")
+    private WebElement logoutAllLink;
 
     public boolean isCurrent() {
-        return driver.getTitle().contains("Account Management") && driver.getCurrentUrl().endsWith("/account/password");
+        return driver.getTitle().contains("Account Management") && driver.getCurrentUrl().endsWith("/account/sessions");
     }
 
     public void open() {
         driver.navigate().to(PATH);
+    }
+
+    public void logoutAll() {
+        logoutAllLink.click();
+    }
+
+    public List<List<String>> getSessions() {
+        List<List<String>> table = new LinkedList<List<String>>();
+        for (WebElement r : driver.findElements(By.tagName("tr"))) {
+            List<String> row = new LinkedList<String>();
+            for (WebElement col : r.findElements(By.tagName("td"))) {
+                row.add(col.getText());
+            }
+            table.add(row);
+        }
+        table.remove(0);
+        return table;
     }
 
 }

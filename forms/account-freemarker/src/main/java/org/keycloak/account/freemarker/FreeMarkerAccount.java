@@ -9,6 +9,7 @@ import org.keycloak.account.freemarker.model.FeaturesBean;
 import org.keycloak.account.freemarker.model.LogBean;
 import org.keycloak.account.freemarker.model.MessageBean;
 import org.keycloak.account.freemarker.model.ReferrerBean;
+import org.keycloak.account.freemarker.model.SessionsBean;
 import org.keycloak.account.freemarker.model.TotpBean;
 import org.keycloak.account.freemarker.model.UrlBean;
 import org.keycloak.audit.Event;
@@ -19,6 +20,7 @@ import org.keycloak.freemarker.ThemeLoader;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -43,6 +45,7 @@ public class FreeMarkerAccount implements Account {
     private RealmModel realm;
     private String[] referrer;
     private List<Event> events;
+    private List<UserSessionModel> sessions;
     private boolean social;
     private boolean audit;
     private boolean passwordUpdateSupported;
@@ -100,7 +103,7 @@ public class FreeMarkerAccount implements Account {
             attributes.put("referrer", new ReferrerBean(referrer));
         }
 
-        attributes.put("url", new UrlBean(realm, theme, baseUri, baseQueryUri));
+        attributes.put("url", new UrlBean(realm, theme, baseUri, baseQueryUri, uriInfo.getRequestUri()));
 
         attributes.put("features", new FeaturesBean(social, audit, passwordUpdateSupported));
 
@@ -116,6 +119,10 @@ public class FreeMarkerAccount implements Account {
                 break;
             case LOG:
                 attributes.put("log", new LogBean(events));
+                break;
+            case SESSIONS:
+                attributes.put("sessions", new SessionsBean(sessions));
+                break;
         }
 
         try {
@@ -175,6 +182,12 @@ public class FreeMarkerAccount implements Account {
     @Override
     public Account setEvents(List<Event> events) {
         this.events = events;
+        return this;
+    }
+
+    @Override
+    public Account setSessions(List<UserSessionModel> sessions) {
+        this.sessions = sessions;
         return this;
     }
 

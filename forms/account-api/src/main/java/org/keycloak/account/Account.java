@@ -3,6 +3,7 @@ package org.keycloak.account;
 import org.keycloak.audit.Event;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -30,6 +31,8 @@ public interface Account {
     Account setReferrer(String[] referrer);
 
     Account setEvents(List<Event> events);
+
+    Account setSessions(List<UserSessionModel> sessions);
 
     Account setFeatures(boolean social, boolean audit, boolean passwordUpdateSupported);
 }

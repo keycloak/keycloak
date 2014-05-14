@@ -2,6 +2,7 @@ package org.keycloak.account.freemarker.model;
 
 import org.keycloak.freemarker.Theme;
 import org.keycloak.models.RealmModel;
+import org.keycloak.services.resources.TokenService;
 import org.keycloak.services.resources.flows.Urls;
 
 import java.net.URI;
@@ -15,12 +16,14 @@ public class UrlBean {
     private Theme theme;
     private URI baseURI;
     private URI baseQueryURI;
+    private URI currentURI;
 
-    public UrlBean(RealmModel realm, Theme theme, URI baseURI, URI baseQueryURI) {
+    public UrlBean(RealmModel realm, Theme theme, URI baseURI, URI baseQueryURI, URI currentURI) {
         this.realm = realm.getName();
         this.theme = theme;
         this.baseURI = baseURI;
         this.baseQueryURI = baseQueryURI;
+        this.currentURI = currentURI;
     }
 
     public String getAccessUrl() {
@@ -47,12 +50,20 @@ public class UrlBean {
         return Urls.accountLogPage(baseQueryURI, realm).toString();
     }
 
+    public String getSessionsUrl() {
+        return Urls.accountSessionsPage(baseQueryURI, realm).toString();
+    }
+
+    public String getSessionsLogoutUrl() {
+        return Urls.accountSessionsLogoutPage(baseQueryURI, realm).toString();
+    }
+
     public String getTotpRemoveUrl() {
         return Urls.accountTotpRemove(baseQueryURI, realm).toString();
     }
 
     public String getLogoutUrl() {
-        return Urls.accountLogout(baseQueryURI, realm).toString();
+        return Urls.accountLogout(baseQueryURI, currentURI, realm).toString();
     }
 
     public String getResourcesPath() {

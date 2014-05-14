@@ -257,6 +257,8 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
 
     UserSessionModel getUserSession(String id);
 
+    List<UserSessionModel> getUserSessions(UserModel user);
+
     void removeUserSession(UserSessionModel session);
 
     void removeUserSessions(UserModel user);
