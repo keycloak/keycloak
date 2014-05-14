@@ -258,6 +258,7 @@ public class AdminConsole {
     @Path("js/keycloak.js")
     @Produces("text/javascript")
     public Response getKeycloakJs() {
+        //logger.info("**** -> getting console keycloak.js" + " uri: " + uriInfo.getRequestUri().toString());
         InputStream inputStream = getClass().getClassLoader().getResourceAsStream("keycloak.js");
         if (inputStream != null) {
             return Response.ok(inputStream).build();
@@ -270,7 +271,15 @@ public class AdminConsole {
     @GET
     @Path("{path:.+}")
     public Response getResource(@PathParam("path") String path) {
+        // todo
+        // I don't know why I need this.  On IE 11, if I don't have this, getKeycloakJs() isn't invoked
+        // I just can't figure out what the difference is between IE11 and FF for console/js/keycloak.js calls
+        if (path.equals("js/keycloak.js")) {
+            return getKeycloakJs();
+        }
+
         try {
+            //logger.info("getting resource: " + path + " uri: " + uriInfo.getRequestUri().toString());
             String themeName = realm.getAdminTheme();
             if (themeName == null || themeName.trim().equals("")) {
                 themeName = Config.getThemeAdmin();

@@ -374,8 +374,7 @@ public class TokenService {
         AuthenticationStatus status = authManager.authenticateForm(clientConnection, realm, formData);
 
         if (remember) {
-            NewCookie cookie = authManager.createRememberMeCookie(realm, uriInfo);
-            response.addNewCookie(cookie);
+            authManager.createRememberMeCookie(response, realm, uriInfo);
         } else {
             authManager.expireRememberMeCookie(realm, uriInfo);
         }

@@ -92,12 +92,10 @@ public class AdminRoot {
 
     @Path("{realm}/console")
     public AdminConsole getAdminConsole(final @PathParam("realm") String name) {
-        logger.info("*** get console for realm: " + name);
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = locateRealm(name, realmManager);
         AdminConsole service = new AdminConsole(realm);
         ResteasyProviderFactory.getInstance().injectProperties(service);
-        logger.info("returning AdminConsole");
         return service;
     }
 

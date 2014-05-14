@@ -21,6 +21,7 @@ import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.authentication.AuthProviderStatus;
 import org.keycloak.authentication.AuthUser;
 import org.keycloak.authentication.AuthenticationProviderManager;
+import org.keycloak.services.util.CookieHelper;
 import org.keycloak.util.Time;
 
 import javax.ws.rs.core.Cookie;
@@ -89,22 +90,24 @@ public class AuthenticationManager {
             maxAge = realm.getCentralLoginLifespan();
             logger.info("createLoginCookie maxAge: " + maxAge);
         }
-        builder.cookie(new NewCookie(cookieName, encoded, cookiePath, null, null, maxAge, secureOnly));// todo httponly , true);
+        CookieHelper.addCookie(cookieName, encoded, cookiePath, null, null, maxAge, secureOnly, true);
+        //builder.cookie(new NewCookie(cookieName, encoded, cookiePath, null, null, maxAge, secureOnly));// todo httponly , true);
 
         String sessionCookieValue = realm.getName() + "-" + user.getId();
         if (session != null) {
             sessionCookieValue += "-" + session.getId();
         }
-        builder.cookie(new NewCookie(KEYCLOAK_SESSION_COOKIE, sessionCookieValue, cookiePath, null, null, maxAge, secureOnly));// todo httponly , true);
+        // THIS SHOULD NOT BE A HTTPONLY COOKIE!  It is used for OpenID Connect Iframe Session support!
+        builder.cookie(new NewCookie(KEYCLOAK_SESSION_COOKIE, sessionCookieValue, cookiePath, null, null, maxAge, secureOnly));
 
     }
 
-    public NewCookie createRememberMeCookie(RealmModel realm, UriInfo uriInfo) {
+    public void createRememberMeCookie(HttpResponse response, RealmModel realm, UriInfo uriInfo) {
         String path = getIdentityCookiePath(realm, uriInfo);
         boolean secureOnly = !realm.isSslNotRequired();
         // remember me cookie should be persistent
-        NewCookie cookie = new NewCookie(KEYCLOAK_REMEMBER_ME, "true", path, null, null, realm.getCentralLoginLifespan(), secureOnly);// todo httponly , true);
-        return cookie;
+        //NewCookie cookie = new NewCookie(KEYCLOAK_REMEMBER_ME, "true", path, null, null, realm.getCentralLoginLifespan(), secureOnly);// todo httponly , true);
+        CookieHelper.addCookie(KEYCLOAK_REMEMBER_ME, "true", path, null, null, realm.getCentralLoginLifespan(), secureOnly, true);
     }
 
     protected String encodeToken(RealmModel realm, Object token) {
@@ -117,15 +120,14 @@ public class AuthenticationManager {
     public void expireIdentityCookie(RealmModel realm, UriInfo uriInfo) {
         logger.debug("Expiring identity cookie");
         String path = getIdentityCookiePath(realm, uriInfo);
-        String cookieName = KEYCLOAK_IDENTITY_COOKIE;
-        expireCookie(cookieName, path);
-        expireCookie(KEYCLOAK_SESSION_COOKIE, path);
+        expireCookie(realm, KEYCLOAK_IDENTITY_COOKIE, path, true);
+        expireCookie(realm, KEYCLOAK_SESSION_COOKIE, path, false);
     }
     public void expireRememberMeCookie(RealmModel realm, UriInfo uriInfo) {
         logger.debug("Expiring remember me cookie");
         String path = getIdentityCookiePath(realm, uriInfo);
         String cookieName = KEYCLOAK_REMEMBER_ME;
-        expireCookie(cookieName, path);
+        expireCookie(realm, cookieName, path, true);
     }
 
     protected String getIdentityCookiePath(RealmModel realm, UriInfo uriInfo) {
@@ -133,15 +135,10 @@ public class AuthenticationManager {
         return uri.getRawPath();
     }
 
-    public void expireCookie(String cookieName, String path) {
-        HttpResponse response = ResteasyProviderFactory.getContextData(HttpResponse.class);
-        if (response == null) {
-            logger.debug("can't expire identity cookie, no HttpResponse");
-            return;
-        }
+    public void expireCookie(RealmModel realm, String cookieName, String path, boolean httpOnly) {
         logger.debugv("Expiring cookie: {0} path: {1}", cookieName, path);
-        NewCookie expireIt = new NewCookie(cookieName, "", path, null, "Expiring cookie", 0, false);
-        response.addNewCookie(expireIt);
+        boolean secureOnly = !realm.isSslNotRequired();
+        CookieHelper.addCookie(cookieName, "", path, null, "Expiring cookie", 0, secureOnly, httpOnly);
     }
 
     public AuthResult authenticateIdentityCookie(RealmModel realm, UriInfo uriInfo, HttpHeaders headers) {

@@ -89,6 +89,9 @@ var Keycloak = function (config) {
         kc.iframe.setAttribute('src', src );
         kc.iframe.style.display = "none";
         doc.body.appendChild(kc.iframe);
+        if (!kc.iframe.contentWindow.location.origin) {
+            kc.iframe.contentWindow.location.origin = kc.iframe.contentWindow.location.protocol + "//" + kc.iframe.contentWindow.location.host;
+        }
 
         var messageCallback = function(event) {
             if (event.origin !== kc.iframe.contentWindow.location.origin) {
@@ -114,6 +117,7 @@ var Keycloak = function (config) {
     }
 
     kc.checkLoginIframe = function(success, failure) {
+
         var msg = {};
         if (!success) {
             throw "You must define a success method";
@@ -125,7 +129,10 @@ var Keycloak = function (config) {
         msg.failureId = createCallbackId();
         kc.callbackMap[msg.successId] = success;
         kc.callbackMap[msg.failureId] = failure;
-        kc.iframe.contentWindow.postMessage(msg, kc.iframe.contentWindow.location.origin);
+        var origin = kc.iframe.contentWindow.location.origin;
+        console.log('*** origin: ' + origin);
+        var iframe = kc.iframe;
+        iframe.contentWindow.postMessage(msg, origin);
     }
 
     kc.createLoginUrl = function(options) {
