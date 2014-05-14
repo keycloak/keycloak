@@ -32,6 +32,10 @@ public abstract class RequestAuthenticator {
 
     public AuthOutcome authenticate() {
         log.info("--> authenticate()");
+        if (!facade.getRequest().isSecure() && deployment.isSslRequired()) {
+            log.warn("SSL is required to authenticate");
+            return AuthOutcome.FAILED;
+        }
         BearerTokenRequestAuthenticator bearer = createBearerTokenAuthenticator();
         log.info("try bearer");
         AuthOutcome outcome = bearer.authenticate(facade);
@@ -65,6 +69,7 @@ public abstract class RequestAuthenticator {
             return AuthOutcome.NOT_ATTEMPTED;
 
         }
+
         completeAuthentication(oauth);
 
         // redirect to strip out access code and state query parameters
