@@ -325,11 +325,48 @@ public class UsersResource {
 
         Set<RoleModel> realmMappings = realm.getRealmRoleMappings(user);
         List<RoleRepresentation> realmMappingsRep = new ArrayList<RoleRepresentation>();
-        RealmManager manager = new RealmManager(session);
         for (RoleModel roleModel : realmMappings) {
             realmMappingsRep.add(ModelToRepresentation.toRepresentation(roleModel));
         }
         return realmMappingsRep;
+    }
+
+    @Path("{username}/role-mappings/realm/composite")
+    @GET
+    @Produces("application/json")
+    @NoCache
+    public List<RoleRepresentation> getCompositeRealmRoleMappings(@PathParam("username") String username) {
+        auth.requireView();
+
+        UserModel user = realm.getUser(username);
+        if (user == null) {
+            throw new NotFoundException("User not found");
+        }
+
+        Set<RoleModel> roles = realm.getRoles();
+        List<RoleRepresentation> realmMappingsRep = new ArrayList<RoleRepresentation>();
+        for (RoleModel roleModel : roles) {
+            if (realm.hasRole(user, roleModel)) {
+               realmMappingsRep.add(ModelToRepresentation.toRepresentation(roleModel));
+            }
+        }
+        return realmMappingsRep;
+    }
+
+    @Path("{username}/role-mappings/realm/available")
+    @GET
+    @Produces("application/json")
+    @NoCache
+    public List<RoleRepresentation> getAvailableRealmRoleMappings(@PathParam("username") String username) {
+        auth.requireView();
+
+        UserModel user = realm.getUser(username);
+        if (user == null) {
+            throw new NotFoundException("User not found");
+        }
+
+        Set<RoleModel> available = realm.getRoles();
+        return getAvailableRoles(user, available);
     }
 
     @Path("{username}/role-mappings/realm")
@@ -411,6 +448,72 @@ public class UsersResource {
         }
         logger.debugv("getApplicationRoleMappings.size() = {0}", mapRep.size());
         return mapRep;
+    }
+
+    @Path("{username}/role-mappings/applications/{app}/composite")
+    @GET
+    @Produces("application/json")
+    @NoCache
+    public List<RoleRepresentation> getCompositeApplicationRoleMappings(@PathParam("username") String username, @PathParam("app") String appName) {
+        auth.requireView();
+
+        logger.debug("getCompositeApplicationRoleMappings");
+
+        UserModel user = realm.getUser(username);
+        if (user == null) {
+            throw new NotFoundException("User not found");
+        }
+
+        ApplicationModel application = realm.getApplicationByName(appName);
+
+        if (application == null) {
+            throw new NotFoundException("Application not found");
+        }
+
+        Set<RoleModel> roles = application.getRoles();
+        List<RoleRepresentation> mapRep = new ArrayList<RoleRepresentation>();
+        for (RoleModel roleModel : roles) {
+            if (realm.hasRole(user, roleModel)) mapRep.add(ModelToRepresentation.toRepresentation(roleModel));
+        }
+        logger.debugv("getCompositeApplicationRoleMappings.size() = {0}", mapRep.size());
+        return mapRep;
+    }
+
+    @Path("{username}/role-mappings/applications/{app}/available")
+    @GET
+    @Produces("application/json")
+    @NoCache
+    public List<RoleRepresentation> getAvailableApplicationRoleMappings(@PathParam("username") String username, @PathParam("app") String appName) {
+        auth.requireView();
+
+        logger.debug("getApplicationRoleMappings");
+
+        UserModel user = realm.getUser(username);
+        if (user == null) {
+            throw new NotFoundException("User not found");
+        }
+
+        ApplicationModel application = realm.getApplicationByName(appName);
+
+        if (application == null) {
+            throw new NotFoundException("Application not found");
+        }
+        Set<RoleModel> available = application.getRoles();
+        return getAvailableRoles(user, available);
+    }
+
+    protected List<RoleRepresentation> getAvailableRoles(UserModel user, Set<RoleModel> available) {
+        Set<RoleModel> roles = new HashSet<RoleModel>();
+        for (RoleModel roleModel : available) {
+            if (realm.hasRole(user, roleModel)) continue;
+            roles.add(roleModel);
+        }
+
+        List<RoleRepresentation> mappings = new ArrayList<RoleRepresentation>();
+        for (RoleModel roleModel : roles) {
+            mappings.add(ModelToRepresentation.toRepresentation(roleModel));
+        }
+        return mappings;
     }
 
     @Path("{username}/role-mappings/applications/{app}")
