@@ -99,6 +99,7 @@ public class RealmsResource {
     @NoCache
     public String getLoginStatusIframe(final @PathParam("realm") String name,
                                        @QueryParam("client_id") String client_id) {
+        logger.info("getLoginStatusIframe");
         AuthenticationManager auth = new AuthenticationManager(providers);
 
         //logger.info("getting login-status-iframe.html for client_id: " + client_id);

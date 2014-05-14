@@ -258,6 +258,7 @@ public class AdminConsole {
     @Path("js/keycloak.js")
     @Produces("text/javascript")
     public Response getKeycloakJs() {
+        logger.info("**** getting console keycloak.js");
         InputStream inputStream = getClass().getClassLoader().getResourceAsStream("keycloak.js");
         if (inputStream != null) {
             return Response.ok(inputStream).build();
