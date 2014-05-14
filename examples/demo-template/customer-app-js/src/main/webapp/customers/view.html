@@ -73,32 +73,14 @@ User <b id="subject"></b> made this request.
     };
 
     var reloadData = function () {
-        keycloak.checkLoginIframe(
-                function() {
-                    keycloak.updateToken(10).success(loadData).error(loadFailure);
-                },
-                function() {
+        keycloak.updateToken(10)
+                .success(loadData)
+                .error(function() {
                     document.getElementById('customers').innerHTML = '<b>Failed to load data.  User is logged out.</b>';
-                    //window.location.reload();
-                }
-        );
+                });
     }
 
-    //
-    // NOTE!!!: keycloak.setupCheckLoginIframe and checkLoginIframe are an optional way
-    // of discovering if you are logged out.  This approach may not always be feasible, but it is a lightweight
-    // approach that requires no network call to determine if the user is logged in.  The downside is that it
-    // requires a callback.
-    //
-    // Alternatively, on a single log out, the access token will eventually time out, then refresh token will fail
-    // as the session will be logged out on the auth server.
-    //
-    //
-
-    keycloak.init('login-required').success(function() {
-        // Use an iframe to detect if the user has done an SSO logout in a different window.
-        keycloak.setupCheckLoginIframe(document, window);
-    });
+    keycloak.init({ onLoad: 'login-required' }).success(reloadData);
 
 </script>
 
