@@ -375,7 +375,7 @@ public class TokenManager {
             refreshToken = new RefreshToken(accessToken);
             refreshToken.id(KeycloakModelUtils.generateId());
             refreshToken.issuedNow();
-            refreshToken.expiration(Time.currentTime() + realm.getRefreshTokenLifespan());
+            refreshToken.expiration(Time.currentTime() + realm.getSsoSessionIdleTimeout());
             return this;
         }
 

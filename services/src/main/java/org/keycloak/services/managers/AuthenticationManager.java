@@ -71,26 +71,25 @@ public class AuthenticationManager {
         if (session != null) {
             token.setSessionState(session.getId());
         }
-        if (realm.getCentralLoginLifespan() > 0) {
-            token.expiration(Time.currentTime() + realm.getCentralLoginLifespan());
+        if (realm.getSsoSessionIdleTimeout() > 0) {
+            token.expiration(Time.currentTime() + realm.getSsoSessionIdleTimeout());
         }
         return token;
     }
 
     public void createLoginCookie(Response.ResponseBuilder builder, RealmModel realm, UserModel user, UserSessionModel session, UriInfo uriInfo, boolean rememberMe) {
         logger.info("createLoginCookie");
-        String cookieName = KEYCLOAK_IDENTITY_COOKIE;
         String cookiePath = getIdentityCookiePath(realm, uriInfo);
         AccessToken identityToken = createIdentityToken(realm, user, session);
         String encoded = encodeToken(realm, identityToken);
         boolean secureOnly = !realm.isSslNotRequired();
-        logger.debugv("creatingLoginCookie - name: {0} path: {1}", cookieName, cookiePath);
+        logger.debugv("creatingLoginCookie - name: {0} path: {1}", KEYCLOAK_IDENTITY_COOKIE, cookiePath);
         int maxAge = NewCookie.DEFAULT_MAX_AGE;
         if (rememberMe) {
-            maxAge = realm.getCentralLoginLifespan();
+            maxAge = realm.getSsoSessionIdleTimeout();
             logger.info("createLoginCookie maxAge: " + maxAge);
         }
-        CookieHelper.addCookie(cookieName, encoded, cookiePath, null, null, maxAge, secureOnly, true);
+        CookieHelper.addCookie(KEYCLOAK_IDENTITY_COOKIE, encoded, cookiePath, null, null, maxAge, secureOnly, true);
         //builder.cookie(new NewCookie(cookieName, encoded, cookiePath, null, null, maxAge, secureOnly));// todo httponly , true);
 
         String sessionCookieValue = realm.getName() + "-" + user.getId();
@@ -107,7 +106,7 @@ public class AuthenticationManager {
         boolean secureOnly = !realm.isSslNotRequired();
         // remember me cookie should be persistent
         //NewCookie cookie = new NewCookie(KEYCLOAK_REMEMBER_ME, "true", path, null, null, realm.getCentralLoginLifespan(), secureOnly);// todo httponly , true);
-        CookieHelper.addCookie(KEYCLOAK_REMEMBER_ME, "true", path, null, null, realm.getCentralLoginLifespan(), secureOnly, true);
+        CookieHelper.addCookie(KEYCLOAK_REMEMBER_ME, "true", path, null, null, realm.getSsoSessionIdleTimeout(), secureOnly, true);
     }
 
     protected String encodeToken(RealmModel realm, Object token) {

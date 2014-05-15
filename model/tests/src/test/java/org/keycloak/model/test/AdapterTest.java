@@ -726,7 +726,7 @@ public class AdapterTest extends AbstractModelTest {
     @Test
     public void userSessions() throws InterruptedException {
         realmManager.createRealm("userSessions");
-        realmManager.getRealmByName("userSessions").setCentralLoginLifespan(5);
+        realmManager.getRealmByName("userSessions").setSsoSessionIdleTimeout(5);
 
         UserModel user = realmManager.getRealmByName("userSessions").addUser("userSessions1");
 
@@ -749,7 +749,7 @@ public class AdapterTest extends AbstractModelTest {
 
         assertNull(realmManager.getRealmByName("userSessions").getUserSession(userSession.getId()));
 
-        realmManager.getRealmByName("userSessions").setCentralLoginLifespan(1);
+        realmManager.getRealmByName("userSessions").setSsoSessionIdleTimeout(1);
 
         userSession = realmManager.getRealmByName("userSessions").createUserSession(user, "127.0.0.1");
         commit();

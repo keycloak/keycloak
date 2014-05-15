@@ -60,9 +60,9 @@ public class CompositeRoleTest {
             RealmModel realm = manager.createRealm("Test");
             manager.generateRealmKeys(realm);
             realmPublicKey = realm.getPublicKey();
-            realm.setCentralLoginLifespan(3000);
+            realm.setSsoSessionIdleTimeout(3000);
             realm.setAccessTokenLifespan(10000);
-            realm.setRefreshTokenLifespan(10000);
+            realm.setSsoSessionMaxLifespan(10000);
             realm.setAccessCodeLifespanUserAction(1000);
             realm.setAccessCodeLifespan(1000);
             realm.setSslNotRequired(true);

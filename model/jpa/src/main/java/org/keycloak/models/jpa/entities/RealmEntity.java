@@ -60,11 +60,11 @@ public class RealmEntity {
     protected boolean updateProfileOnInitialSocialLogin;
     protected String passwordPolicy;
 
-    protected int centralLoginLifespan;
+    private int ssoSessionIdleTimeout;
+    private int ssoSessionMaxLifespan;
     protected int accessTokenLifespan;
     protected int accessCodeLifespan;
     protected int accessCodeLifespanUserAction;
-    protected int refreshTokenLifespan;
     protected int notBefore;
 
     @Column(length = 2048)
@@ -201,20 +201,20 @@ public class RealmEntity {
         this.updateProfileOnInitialSocialLogin = updateProfileOnInitialSocialLogin;
     }
 
-    public int getCentralLoginLifespan() {
-        return centralLoginLifespan;
+    public int getSsoSessionIdleTimeout() {
+        return ssoSessionIdleTimeout;
     }
 
-    public void setCentralLoginLifespan(int centralLoginLifespan) {
-        this.centralLoginLifespan = centralLoginLifespan;
+    public void setSsoSessionIdleTimeout(int ssoSessionIdleTimeout) {
+        this.ssoSessionIdleTimeout = ssoSessionIdleTimeout;
     }
 
-    public int getRefreshTokenLifespan() {
-        return refreshTokenLifespan;
+    public int getSsoSessionMaxLifespan() {
+        return ssoSessionMaxLifespan;
     }
 
-    public void setRefreshTokenLifespan(int refreshTokenLifespan) {
-        this.refreshTokenLifespan = refreshTokenLifespan;
+    public void setSsoSessionMaxLifespan(int ssoSessionMaxLifespan) {
+        this.ssoSessionMaxLifespan = ssoSessionMaxLifespan;
     }
 
     public int getAccessTokenLifespan() {

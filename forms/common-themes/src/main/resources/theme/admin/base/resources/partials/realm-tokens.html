@@ -2,8 +2,8 @@
 <div id="content-area" class="col-sm-9" role="main">
     <ul class="nav nav-tabs nav-tabs-pf"  data-ng-show="!create">
         <li><a href="#/realms/{{realm.realm}}/sessions/realm">Realm Sessions</a></li>
-        <li><a href="#/realms/{{realm.realm}}/token-settings">Token Settings</a></li>
-        <li class="active"><a href="#/realms/{{realm.realm}}/sessions/revocation">Revocation</a></li>
+        <li class="active"><a href="#/realms/{{realm.realm}}/token-settings">Token Settings</a></li>
+        <li><a href="#/realms/{{realm.realm}}/sessions/revocation">Revocation</a></li>
         <li><a href="#/realms/{{realm.realm}}/sessions/brute-force">Brute Force</a></li>
     </ul>
     <div id="content">
@@ -15,17 +15,37 @@
         <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
             <fieldset class="border-top">
                 <div class="form-group input-select">
-                    <label class="col-sm-2 control-label" for="centralLoginLifespan">Central Login Lifespan</label>
+                    <label class="col-sm-2 control-label" for="ssoSessionIdleTimeout">SSO Session Idle Timeout</label>
                     <div class="col-sm-10">
                         <div class="row">
                             <div class="col-sm-2">
                                 <input class="form-control" type="number" required min="1"
-                                       max="31536000" data-ng-model="realm.centralLoginLifespan"
-                                       id="centralLoginLifespan" name="centralLoginLifespan"/>
+                                       max="31536000" data-ng-model="realm.ssoSessionIdleTimeout"
+                                       id="ssoSessionIdleTimeout" name="ssoSessionIdleTimeout"/>
                             </div>
                             <div class="col-sm-2 select-kc">
-                                <select name="centralLoginLifespanUnit" data-ng-model="realm.centralLoginLifespanUnit" >
-                                    <option data-ng-selected="!realm.centralLoginLifespanUnit">Seconds</option>
+                                <select name="ssoSessionIdleTimeoutUnit" data-ng-model="realm.ssoSessionIdleTimeoutUnit" >
+                                    <option data-ng-selected="!realm.ssoSessionIdleTimeoutUnit">Seconds</option>
+                                    <option>Minutes</option>
+                                    <option>Hours</option>
+                                    <option>Days</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group input-select">
+                    <label class="col-sm-2 control-label" for="ssoSessionMaxLifespan">SSO Session Max Lifespan</label>
+                    <div class="col-sm-10">
+                        <div class="row">
+                            <div class="col-sm-2">
+                                <input class="form-control" type="number" required min="1"
+                                       max="31536000" data-ng-model="realm.ssoSessionMaxLifespan"
+                                       id="ssoSessionMaxLifespan" name="ssoSessionMaxLifespan"/>
+                            </div>
+                            <div class="col-sm-2 select-kc">
+                                <select name="ssoSessionMaxLifespanUnit" data-ng-model="realm.ssoSessionMaxLifespanUnit" >
+                                    <option data-ng-selected="!realm.ssoSessionMaxLifespanUnit">Seconds</option>
                                     <option>Minutes</option>
                                     <option>Hours</option>
                                     <option>Days</option>
@@ -82,26 +102,6 @@
                             <div class="col-sm-2 select-kc">
                                 <select name="accessCodeLifespanUserActionUnit" data-ng-model="realm.accessCodeLifespanUserActionUnit">
                                     <option data-ng-selected="!realm.accessCodeLifespanUserActionUnit">Seconds</option>
-                                    <option>Minutes</option>
-                                    <option>Hours</option>
-                                    <option>Days</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="form-group input-select">
-                    <label class="col-sm-2 control-label" for="refreshTokenLifespan">Refresh token lifespan</label>
-                    <div class="col-sm-10">
-                        <div class="row">
-                            <div class="col-sm-2">
-                                <input class="form-control" type="number" required min="1"
-                                       max="31536000" data-ng-model="realm.refreshTokenLifespan"
-                                       id="refreshTokenLifespan" name="refreshTokenLifespan"/>
-                            </div>
-                            <div class="col-sm-2 select-kc">
-                                <select name="refreshTokenLifespanUnit" data-ng-model="realm.refreshTokenLifespanUnit" >
-                                    <option data-ng-selected="!realm.refreshTokenLifespanUnit">Seconds</option>
                                     <option>Minutes</option>
                                     <option>Hours</option>
                                     <option>Days</option>

@@ -30,11 +30,11 @@ public class RealmEntity extends AbstractIdentifiableEntity {
     private int failureFactor;
     //--- end brute force settings
 
-    private int centralLoginLifespan;
+    private int ssoSessionIdleTimeout;
+    private int ssoSessionMaxLifespan;
     private int accessTokenLifespan;
     private int accessCodeLifespan;
     private int accessCodeLifespanUserAction;
-    private int refreshTokenLifespan;
     private int notBefore;
 
     private String publicKeyPem;
@@ -196,12 +196,20 @@ public class RealmEntity extends AbstractIdentifiableEntity {
         this.failureFactor = failureFactor;
     }
 
-    public int getCentralLoginLifespan() {
-        return centralLoginLifespan;
+    public int getSsoSessionIdleTimeout() {
+        return ssoSessionIdleTimeout;
     }
 
-    public void setCentralLoginLifespan(int centralLoginLifespan) {
-        this.centralLoginLifespan = centralLoginLifespan;
+    public void setSsoSessionIdleTimeout(int ssoSessionIdleTimeout) {
+        this.ssoSessionIdleTimeout = ssoSessionIdleTimeout;
+    }
+
+    public int getSsoSessionMaxLifespan() {
+        return ssoSessionMaxLifespan;
+    }
+
+    public void setSsoSessionMaxLifespan(int ssoSessionMaxLifespan) {
+        this.ssoSessionMaxLifespan = ssoSessionMaxLifespan;
     }
 
     public int getAccessTokenLifespan() {
@@ -226,14 +234,6 @@ public class RealmEntity extends AbstractIdentifiableEntity {
 
     public void setAccessCodeLifespanUserAction(int accessCodeLifespanUserAction) {
         this.accessCodeLifespanUserAction = accessCodeLifespanUserAction;
-    }
-
-    public int getRefreshTokenLifespan() {
-        return refreshTokenLifespan;
-    }
-
-    public void setRefreshTokenLifespan(int refreshTokenLifespan) {
-        this.refreshTokenLifespan = refreshTokenLifespan;
     }
 
     public int getNotBefore() {
