@@ -7,6 +7,6 @@ import org.keycloak.provider.Provider;
  */
 public interface TimerProvider extends Provider {
 
-    public void schedule(Runnable runnable, String config);
+    public void schedule(Runnable runnable, long interval);
 
 }

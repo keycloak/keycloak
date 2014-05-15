@@ -4,10 +4,10 @@ import org.hamcrest.CoreMatchers;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
-import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.junit.rules.TestRule;
 import org.junit.runners.model.Statement;
+import org.keycloak.Config;
 import org.keycloak.audit.AuditListener;
 import org.keycloak.audit.AuditListenerFactory;
 import org.keycloak.audit.Details;
@@ -56,11 +56,6 @@ public class AssertEvents implements TestRule, AuditListenerFactory {
     @Override
     public String getId() {
         return "assert-events";
-    }
-
-    @Override
-    public boolean lazyLoad() {
-        return false;
     }
 
     @Override
@@ -194,7 +189,7 @@ public class AssertEvents implements TestRule, AuditListenerFactory {
     }
 
     @Override
-    public void init() {
+    public void init(Config.Scope config) {
     }
 
     @Override

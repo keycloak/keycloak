@@ -30,18 +30,16 @@ import io.undertow.servlet.api.FilterInfo;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
 import org.jboss.resteasy.spi.ResteasyDeployment;
-import org.keycloak.models.Config;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.provider.ProviderSession;
 import org.keycloak.provider.ProviderSessionFactory;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.filters.ClientConnectionFilter;
 import org.keycloak.services.filters.KeycloakSessionServletFilter;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
-import org.keycloak.theme.DefaultKeycloakThemeProvider;
 import org.keycloak.util.JsonSerialization;
 
 import javax.servlet.DispatcherType;
@@ -129,9 +127,8 @@ public class KeycloakServer {
                 throw new RuntimeException("Invalid resources directory");
             }
 
-            if (Config.getThemeDir() == null) {
-                System.setProperty(DefaultKeycloakThemeProvider.class.getName() + ".disabled", "");
-                Config.setThemeDir(file(dir.getAbsolutePath(), "forms", "common-themes", "src", "main", "resources", "theme").getAbsolutePath());
+            if (!System.getProperties().containsKey("keycloak.theme.dir")) {
+                System.setProperty("keycloak.theme.dir", file(dir.getAbsolutePath(), "forms", "common-themes", "src", "main", "resources", "theme").getAbsolutePath());
             }
 
             config.setResourcesHome(dir.getAbsolutePath());
@@ -162,8 +159,6 @@ public class KeycloakServer {
 
     private KeycloakServerConfig config;
 
-    private KeycloakSessionFactory factory;
-
     private ProviderSessionFactory providerSessionFactory;
 
     private UndertowJaxrsServer server;
@@ -174,10 +169,6 @@ public class KeycloakServer {
 
     public KeycloakServer(KeycloakServerConfig config) {
         this.config = config;
-    }
-
-    public KeycloakSessionFactory getKeycloakSessionFactory() {
-        return factory;
     }
 
     public ProviderSessionFactory getProviderSessionFactory() {
@@ -194,7 +185,8 @@ public class KeycloakServer {
     }
 
     public void importRealm(RealmRepresentation rep) {
-        KeycloakSession session = factory.createSession();
+        ProviderSession providerSession = providerSessionFactory.createSession();
+        KeycloakSession session = providerSession.getProvider(KeycloakSession.class);
         session.getTransaction().begin();
 
         try {
@@ -217,12 +209,13 @@ public class KeycloakServer {
 
             session.getTransaction().commit();
         } finally {
-            session.close();
+            providerSession.close();
         }
     }
 
     protected void setupDevConfig() {
-        KeycloakSession session = factory.createSession();
+        ProviderSession providerSession = providerSessionFactory.createSession();
+        KeycloakSession session = providerSession.getProvider(KeycloakSession.class);
         session.getTransaction().begin();
 
         try {
@@ -234,7 +227,7 @@ public class KeycloakServer {
 
             session.getTransaction().commit();
         } finally {
-            session.close();
+            providerSession.close();
         }
     }
 
@@ -266,7 +259,6 @@ public class KeycloakServer {
 
         server.deploy(di);
 
-        factory = ((KeycloakApplication) deployment.getApplication()).getFactory();
         providerSessionFactory = ((KeycloakApplication) deployment.getApplication()).getProviderSessionFactory();
 
         setupDevConfig();
@@ -289,7 +281,6 @@ public class KeycloakServer {
 
     public void stop() {
         providerSessionFactory.close();
-        factory.close();
         server.stop();
 
         info("Stopped Keycloak");

@@ -1,5 +1,6 @@
 package org.keycloak.authentication.model;
 
+import org.keycloak.Config;
 import org.keycloak.authentication.AuthProviderConstants;
 import org.keycloak.authentication.AuthenticationProvider;
 import org.keycloak.authentication.AuthenticationProviderFactory;
@@ -16,7 +17,7 @@ public class ModelAuthenticationProviderFactory implements AuthenticationProvide
     }
 
     @Override
-    public void init() {
+    public void init(Config.Scope config) {
     }
 
     @Override
@@ -28,8 +29,4 @@ public class ModelAuthenticationProviderFactory implements AuthenticationProvide
         return AuthProviderConstants.PROVIDER_NAME_MODEL;
     }
 
-    @Override
-    public boolean lazyLoad() {
-        return false;
-    }
 }

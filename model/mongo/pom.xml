@@ -45,18 +45,6 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-audit-api</artifactId>
-            <version>${project.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-audit-jboss-logging</artifactId>
-            <version>${project.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging</artifactId>
             <scope>provided</scope>
@@ -103,10 +91,10 @@
     </dependencies>
 
     <properties>
-        <keycloak.mongo.host>localhost</keycloak.mongo.host>
-        <keycloak.mongo.port>27018</keycloak.mongo.port>
-        <keycloak.mongo.db>keycloak</keycloak.mongo.db>
-        <keycloak.mongo.clearOnStartup>true</keycloak.mongo.clearOnStartup>
+        <keycloak.model.mongo.host>localhost</keycloak.model.mongo.host>
+        <keycloak.model.mongo.port>27018</keycloak.model.mongo.port>
+        <keycloak.model.mongo.db>keycloak</keycloak.model.mongo.db>
+        <keycloak.model.mongo.clearOnStartup>true</keycloak.model.mongo.clearOnStartup>
     </properties>
 
     <build>
@@ -133,10 +121,10 @@
                         </goals>
                         <configuration>
                             <systemPropertyVariables>
-                                <keycloak.mongo.host>${keycloak.mongo.host}</keycloak.mongo.host>
-                                <keycloak.mongo.port>${keycloak.mongo.port}</keycloak.mongo.port>
-                                <keycloak.mongo.db>${keycloak.mongo.db}</keycloak.mongo.db>
-                                <keycloak.mongo.clearOnStartup>${keycloak.mongo.clearOnStartup}</keycloak.mongo.clearOnStartup>
+                                <keycloak.model.mongo.host>${keycloak.model.mongo.host}</keycloak.model.mongo.host>
+                                <keycloak.model.mongo.port>${keycloak.model.mongo.port}</keycloak.model.mongo.port>
+                                <keycloak.model.mongo.db>${keycloak.model.mongo.db}</keycloak.model.mongo.db>
+                                <keycloak.model.mongo.clearOnStartup>${keycloak.model.mongo.clearOnStartup}</keycloak.model.mongo.clearOnStartup>
                             </systemPropertyVariables>
                             <dependenciesToScan>
                                 <dependency>org.keycloak:keycloak-model-tests</dependency>
@@ -164,7 +152,7 @@
                             <goal>start</goal>
                         </goals>
                         <configuration>
-                            <port>${keycloak.mongo.port}</port>
+                            <port>${keycloak.model.mongo.port}</port>
                             <logging>file</logging>
                             <logFile>${project.build.directory}/mongodb.log</logFile>
                         </configuration>

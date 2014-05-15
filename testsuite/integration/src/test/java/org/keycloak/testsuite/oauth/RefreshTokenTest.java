@@ -29,14 +29,12 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.audit.Details;
 import org.keycloak.audit.Errors;
 import org.keycloak.audit.Event;
-import org.keycloak.models.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.provider.ProviderSession;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
-import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.OAuthClient.AccessTokenResponse;
@@ -47,7 +45,11 @@ import org.keycloak.testsuite.rule.WebRule;
 import org.keycloak.util.Time;
 import org.openqa.selenium.WebDriver;
 
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.lessThan;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
@@ -181,8 +183,8 @@ public class RefreshTokenTest {
 
         String refreshId = oauth.verifyRefreshToken(tokenResponse.getRefreshToken()).getId();
 
-        KeycloakSession session = keycloakRule.startSession();
-        RealmModel realm = session.getRealmByName("test");
+        ProviderSession session = keycloakRule.startSession();
+        RealmModel realm = session.getProvider(KeycloakSession.class).getRealmByName("test");
         UserSessionModel userSession = realm.getUserSession(sessionId);
         int last = userSession.getLastSessionRefresh();
         keycloakRule.stopSession(session, false);
@@ -197,7 +199,7 @@ public class RefreshTokenTest {
         Assert.assertEquals(200, tokenResponse.getStatusCode());
 
         session = keycloakRule.startSession();
-        realm = session.getRealmByName("test");
+        realm = session.getProvider(KeycloakSession.class).getRealmByName("test");
         userSession = realm.getUserSession(sessionId);
         int next = userSession.getLastSessionRefresh();
         keycloakRule.stopSession(session, false);
@@ -208,7 +210,7 @@ public class RefreshTokenTest {
 
 
         session = keycloakRule.startSession();
-        realm = session.getRealmByName("test");
+        realm = session.getProvider(KeycloakSession.class).getRealmByName("test");
         int lastAccessTokenLifespan = realm.getAccessTokenLifespan();
         realm.setAccessTokenLifespan(100000);
         keycloakRule.stopSession(session, true);
@@ -217,7 +219,7 @@ public class RefreshTokenTest {
         tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "password");
 
         session = keycloakRule.startSession();
-        realm = session.getRealmByName("test");
+        realm = session.getProvider(KeycloakSession.class).getRealmByName("test");
         userSession = realm.getUserSession(sessionId);
         next = userSession.getLastSessionRefresh();
         keycloakRule.stopSession(session, false);
@@ -226,7 +228,7 @@ public class RefreshTokenTest {
         Assert.assertThat(next, allOf(greaterThan(last), lessThan(last + 6)));
 
         session = keycloakRule.startSession();
-        realm = session.getRealmByName("test");
+        realm = session.getProvider(KeycloakSession.class).getRealmByName("test");
         int originalIdle = realm.getSsoSessionIdleTimeout();
         realm.setSsoSessionIdleTimeout(1);
         keycloakRule.stopSession(session, true);
@@ -243,7 +245,7 @@ public class RefreshTokenTest {
         events.expectRefresh(refreshId, sessionId).error(Errors.INVALID_TOKEN);
 
         session = keycloakRule.startSession();
-        realm = session.getRealmByName("test");
+        realm = session.getProvider(KeycloakSession.class).getRealmByName("test");
         realm.setSsoSessionIdleTimeout(originalIdle);
         realm.setAccessTokenLifespan(lastAccessTokenLifespan);
         keycloakRule.stopSession(session, true);
@@ -266,8 +268,8 @@ public class RefreshTokenTest {
 
         String refreshId = oauth.verifyRefreshToken(tokenResponse.getRefreshToken()).getId();
 
-        KeycloakSession session = keycloakRule.startSession();
-        RealmModel realm = session.getRealmByName("test");
+        ProviderSession session = keycloakRule.startSession();
+        RealmModel realm = session.getProvider(KeycloakSession.class).getRealmByName("test");
         int maxLifespan = realm.getSsoSessionMaxLifespan();
         realm.setSsoSessionMaxLifespan(1);
         keycloakRule.stopSession(session, true);
@@ -281,7 +283,7 @@ public class RefreshTokenTest {
         assertNull(tokenResponse.getRefreshToken());
 
         session = keycloakRule.startSession();
-        realm = session.getRealmByName("test");
+        realm = session.getProvider(KeycloakSession.class).getRealmByName("test");
         realm.setSsoSessionMaxLifespan(maxLifespan);
         keycloakRule.stopSession(session, true);
 

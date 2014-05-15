@@ -6,14 +6,15 @@ import org.jboss.logging.Logger;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.AuthenticationProviderModel;
-import org.keycloak.models.Config;
+import org.keycloak.Config;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.provider.ProviderSession;
+import org.keycloak.provider.ProviderSessionFactory;
 import org.keycloak.representations.idm.CredentialRepresentation;
 
 import java.util.Collections;
@@ -26,25 +27,24 @@ public class ApplianceBootstrap {
 
     private static final Logger logger = Logger.getLogger(ApplianceBootstrap.class);
 
-    public void bootstrap(KeycloakSessionFactory factory, String contextPath) {
-        KeycloakSession session = factory.createSession();
+    public void bootstrap(ProviderSessionFactory factory, String contextPath) {
+        ProviderSession providerSession = factory.createSession();
+        KeycloakSession session = providerSession.getProvider(KeycloakSession.class);
         session.getTransaction().begin();
 
         try {
             bootstrap(session, contextPath);
             session.getTransaction().commit();
         } finally {
-            session.close();
+            providerSession.close();
         }
-
     }
 
     public void bootstrap(KeycloakSession session, String contextPath) {
-        if (session.getRealm(Config.getAdminRealm()) != null) {
+        String adminRealmName = Config.getAdminRealm();
+        if (session.getRealm(adminRealmName) != null) {
             return;
         }
-
-        String adminRealmName = Config.getAdminRealm();
 
         logger.info("Initializing " + adminRealmName + " realm");
 

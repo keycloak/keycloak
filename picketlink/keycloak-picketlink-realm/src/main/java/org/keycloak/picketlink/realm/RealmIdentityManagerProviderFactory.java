@@ -1,5 +1,6 @@
 package org.keycloak.picketlink.realm;
 
+import org.keycloak.Config;
 import org.keycloak.picketlink.IdentityManagerProvider;
 import org.keycloak.picketlink.IdentityManagerProviderFactory;
 import org.keycloak.provider.ProviderSession;
@@ -20,7 +21,7 @@ public class RealmIdentityManagerProviderFactory implements IdentityManagerProvi
     }
 
     @Override
-    public void init() {
+    public void init(Config.Scope config) {
         partitionManagerRegistry = new PartitionManagerRegistry();
     }
 
@@ -33,8 +34,4 @@ public class RealmIdentityManagerProviderFactory implements IdentityManagerProvi
         return "realm";
     }
 
-    @Override
-    public boolean lazyLoad() {
-        return false;
-    }
 }

@@ -1,39 +1,30 @@
 package org.keycloak.services.resources;
 
-import org.jboss.resteasy.core.Dispatcher;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.core.Dispatcher;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.Config;
 import org.keycloak.SkeletonKeyContextResolver;
-import org.keycloak.audit.AuditListener;
-import org.keycloak.audit.AuditListenerFactory;
-import org.keycloak.audit.AuditProvider;
-import org.keycloak.audit.AuditProviderFactory;
-import org.keycloak.authentication.AuthenticationProvider;
-import org.keycloak.authentication.AuthenticationProviderFactory;
 import org.keycloak.exportimport.ExportImportProvider;
-import org.keycloak.models.Config;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.ModelProvider;
 import org.keycloak.models.RealmModel;
-import org.keycloak.provider.ProviderFactory;
-import org.keycloak.provider.ProviderFactoryLoader;
 import org.keycloak.provider.ProviderSession;
+import org.keycloak.provider.ProviderSessionFactory;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.DefaultProviderSessionFactory;
-import org.keycloak.provider.ProviderSessionFactory;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.SocialRequestManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.resources.admin.AdminRoot;
-import org.keycloak.models.utils.ModelProviderUtils;
 import org.keycloak.services.scheduled.ClearExpiredAuditEvents;
 import org.keycloak.services.scheduled.ClearExpiredUserSessions;
 import org.keycloak.services.scheduled.ScheduledTaskRunner;
+import org.keycloak.services.util.JsonConfigProvider;
 import org.keycloak.timer.TimerProvider;
-import org.keycloak.timer.TimerProviderFactory;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.ProviderLoader;
 
@@ -41,12 +32,13 @@ import javax.servlet.ServletContext;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.UriInfo;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.util.Date;
+import java.net.URL;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -63,22 +55,21 @@ public class KeycloakApplication extends Application {
     protected Set<Object> singletons = new HashSet<Object>();
     protected Set<Class<?>> classes = new HashSet<Class<?>>();
 
-    protected KeycloakSessionFactory factory;
     protected ProviderSessionFactory providerSessionFactory;
     protected String contextPath;
 
     public KeycloakApplication(@Context ServletContext context, @Context Dispatcher dispatcher) {
+        loadConfig();
+
+        this.providerSessionFactory = createProviderSessionFactory();
+
         dispatcher.getDefaultContextObjects().put(KeycloakApplication.class, this);
         this.contextPath = context.getContextPath();
-        this.factory = createSessionFactory();
-        BruteForceProtector protector = new BruteForceProtector(factory);
+        BruteForceProtector protector = new BruteForceProtector(providerSessionFactory);
         dispatcher.getDefaultContextObjects().put(BruteForceProtector.class, protector);
         ResteasyProviderFactory.pushContext(BruteForceProtector.class, protector); // for injection
         protector.start();
         context.setAttribute(BruteForceProtector.class.getName(), protector);
-        this.providerSessionFactory = createProviderSessionFactory();
-        context.setAttribute(KeycloakSessionFactory.class.getName(), factory);
-
         context.setAttribute(ProviderSessionFactory.class.getName(), this.providerSessionFactory);
 
         TokenManager tokenManager = new TokenManager();
@@ -95,7 +86,7 @@ public class KeycloakApplication extends Application {
 
         setupDefaultRealm(context.getContextPath());
 
-        setupScheduledTasks(providerSessionFactory, factory);
+        setupScheduledTasks(providerSessionFactory);
         importRealms(context);
 
         checkExportImportProvider();
@@ -115,55 +106,38 @@ public class KeycloakApplication extends Application {
         return uriInfo.getBaseUriBuilder().replacePath(getContextPath()).build();
     }
 
-    protected void setupDefaultRealm(String contextPath) {
-        new ApplianceBootstrap().bootstrap(factory, contextPath);
+    protected void loadConfig() {
+        try {
+            URL config = Thread.currentThread().getContextClassLoader().getResource("META-INF/keycloak-server.json");
+
+            if (config != null) {
+                JsonNode node = new ObjectMapper().readTree(config);
+                Config.init(new JsonConfigProvider(node));
+
+                log.info("Loaded config from " + config);
+                return;
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load config", e);
+        }
     }
 
-
-    public static KeycloakSessionFactory createSessionFactory() {
-        ModelProvider provider = ModelProviderUtils.getConfiguredModelProvider();
-
-        if (provider != null) {
-            log.debug("Model provider: " + provider.getId());
-            return provider.createFactory();
-        }
-
-        throw new RuntimeException("Model provider not found");
+    protected void setupDefaultRealm(String contextPath) {
+        new ApplianceBootstrap().bootstrap(providerSessionFactory, contextPath);
     }
 
     public static DefaultProviderSessionFactory createProviderSessionFactory() {
         DefaultProviderSessionFactory factory = new DefaultProviderSessionFactory();
-
-        factory.registerLoader(AuditProvider.class, ProviderFactoryLoader.create(AuditProviderFactory.class), Config.getAuditProvider());
-        factory.registerLoader(AuditListener.class, ProviderFactoryLoader.create(AuditListenerFactory.class));
-        factory.registerLoader(TimerProvider.class, ProviderFactoryLoader.create(TimerProviderFactory.class), Config.getTimerProvider());
-        try {
-            Class identityManagerProvider = Class.forName("org.keycloak.picketlink.IdentityManagerProvider");
-            Class identityManagerProviderFactory = Class.forName("org.keycloak.picketlink.IdentityManagerProviderFactory");
-            factory.registerLoader(identityManagerProvider, ProviderFactoryLoader.create(identityManagerProviderFactory), Config.getIdentityManagerProvider());
-        } catch (ClassNotFoundException e) {
-            log.warn("Picketlink libraries not installed for IdentityManagerProviderFactory");
-        }
-
-        factory.registerLoader(AuthenticationProvider.class, ProviderFactoryLoader.create(AuthenticationProviderFactory.class));
         factory.init();
-
         return factory;
     }
 
-    public static void setupScheduledTasks(final ProviderSessionFactory providerSessionFactory, final KeycloakSessionFactory keycloakSessionFactory) {
-        ProviderFactory<TimerProvider> timerFactory = providerSessionFactory.getProviderFactory(TimerProvider.class);
-        if (timerFactory == null) {
-            log.error("Can't setup schedule tasks, no timer provider found");
-            return;
-        }
-        TimerProvider timer = timerFactory.create(null);
-        timer.schedule(new ScheduledTaskRunner(keycloakSessionFactory, providerSessionFactory, new ClearExpiredAuditEvents()), Config.getAuditExpirationSchedule());
-        timer.schedule(new ScheduledTaskRunner(keycloakSessionFactory, providerSessionFactory, new ClearExpiredUserSessions()), Config.getUserExpirationSchedule());
-    }
+    public static void setupScheduledTasks(final ProviderSessionFactory providerSessionFactory) {
+        long interval = Config.scope("scheduled").getLong("interval") * 1000;
 
-    public KeycloakSessionFactory getFactory() {
-        return factory;
+        TimerProvider timer = providerSessionFactory.createSession().getProvider(TimerProvider.class);
+        timer.schedule(new ScheduledTaskRunner(providerSessionFactory, new ClearExpiredAuditEvents()), interval);
+        timer.schedule(new ScheduledTaskRunner(providerSessionFactory, new ClearExpiredUserSessions()), interval);
     }
 
     public ProviderSessionFactory getProviderSessionFactory() {
@@ -215,7 +189,8 @@ public class KeycloakApplication extends Application {
     }
 
     public void importRealm(RealmRepresentation rep, String from) {
-        KeycloakSession session = factory.createSession();
+        ProviderSession providerSession = providerSessionFactory.createSession();
+        KeycloakSession session = providerSession.getProvider(KeycloakSession.class);
         try {
             session.getTransaction().begin();
             RealmManager manager = new RealmManager(session);
@@ -238,7 +213,7 @@ public class KeycloakApplication extends Application {
 
             session.getTransaction().commit();
         } finally {
-            session.close();
+            providerSession.close();
         }
     }
 
@@ -255,7 +230,7 @@ public class KeycloakApplication extends Application {
 
         if (providers.hasNext()) {
             ExportImportProvider exportImport = providers.next();
-            exportImport.checkExportImport(factory);
+            exportImport.checkExportImport(providerSessionFactory);
         } else {
             log.warn("No ExportImportProvider found!");
         }

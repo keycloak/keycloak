@@ -4,10 +4,10 @@ import org.jboss.logging.Logger;
 import org.keycloak.exportimport.io.ExportImportIOProvider;
 import org.keycloak.exportimport.io.ExportWriter;
 import org.keycloak.exportimport.io.ImportReader;
-import org.keycloak.models.Config;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakTransaction;
+import org.keycloak.provider.ProviderSession;
+import org.keycloak.provider.ProviderSessionFactory;
 import org.keycloak.util.ProviderLoader;
 
 /**
@@ -21,8 +21,8 @@ public class ExportImportProviderImpl implements ExportImportProvider {
     public static final String ACTION_IMPORT = "import";
 
     @Override
-    public void checkExportImport(KeycloakSessionFactory identitySessionFactory) {
-        String exportImportAction = Config.getExportImportAction();
+    public void checkExportImport(ProviderSessionFactory providerSessionFactory) {
+        String exportImportAction = ExportImportConfig.getAction();
 
         boolean export = false;
         boolean importt = false;
@@ -35,7 +35,8 @@ public class ExportImportProviderImpl implements ExportImportProvider {
         }
 
         if (export || importt) {
-            KeycloakSession session = identitySessionFactory.createSession();
+            ProviderSession providerSession = providerSessionFactory.createSession();
+            KeycloakSession session = providerSession.getProvider(KeycloakSession.class);
             KeycloakTransaction transaction = session.getTransaction();
             try {
                 transaction.begin();
@@ -63,13 +64,13 @@ public class ExportImportProviderImpl implements ExportImportProvider {
                 }
                 throw new RuntimeException(e);
             } finally {
-                session.close();
+                providerSession.close();
             }
         }
     }
 
     private ExportImportIOProvider getProvider() {
-        String providerId = Config.getExportImportProvider();
+        String providerId = ExportImportConfig.getProvider();
         logger.infof("Requested migration provider: " + providerId);
 
         Iterable<ExportImportIOProvider> providers = ProviderLoader.load(ExportImportIOProvider.class);

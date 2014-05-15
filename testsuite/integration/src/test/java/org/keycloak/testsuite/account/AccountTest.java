@@ -22,18 +22,14 @@
 package org.keycloak.testsuite.account;
 
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.audit.Details;
 import org.keycloak.audit.Event;
-import org.keycloak.audit.jpa.JpaAuditProviderFactory;
 import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.Config;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
