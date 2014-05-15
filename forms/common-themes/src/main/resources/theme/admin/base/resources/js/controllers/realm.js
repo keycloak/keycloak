@@ -600,7 +600,7 @@ module.controller('RealmSocialCtrl', function($scope, realm, Realm, serverInfo, 
         $scope.changed = false;
         Realm.update(realmCopy, function () {
             $location.url("/realms/" + realm.realm + "/social-settings");
-            Notifications.success("Saved changes to realm");
+            Notifications.success("The changes have been saved to the realm.");
             oldCopy = realmCopy;
         });
     };
@@ -674,7 +674,7 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
         $scope.changed = false;
         Realm.update(realmCopy, function () {
             $location.url("/realms/" + realm.realm + "/token-settings");
-            Notifications.success("Your changes have been saved to the realm.");
+            Notifications.success("The changes have been saved to the realm.");
         });
     };
 

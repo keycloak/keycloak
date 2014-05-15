@@ -7,7 +7,8 @@
             <li><a href="#/realms/{{realm.realm}}">Settings</a></li>
             <li class="active">Social</li>
         </ol>
-        <h2><span>{{realm.realm}}</span> Social Providers Settings</h2>
+        <h2 class="pull-left"><span>{{realm.realm}}</span> Social Providers Settings</h2>
+        <p class="subtitle"><span class="required">*</span> Required fields</p>
 
         <div class="alert alert-info alert-dismissable">
             <button type="button" class="close" data-dismiss="alert" aria-hidden="true">
@@ -20,7 +21,7 @@
         <form name="realmForm" novalidate>
             <fieldset>
                 <div>
-                    <table class="table">
+                    <table class="table table-striped table-bordered">
                         <caption class="hidden">Table of social providers</caption>
                         <thead>
                         <tr>
@@ -58,8 +59,8 @@
                                 <input class="form-control" type="text" placeholder="Secret" ng-model="realm.socialProviders[pId+'.secret']"
                                        ng-class="{'dirty': postSaveProviders.indexOf(pId) > -1}" required>
                             </td>
-                            <td>
-                                <div class="action-div"><i class="pficon pficon-delete" ng-click="removeProvider(pId)"></i></div>
+                            <td class="actions">
+                                <div class="action-div"><i class="pficon pficon-delete" ng-click="removeProvider(pId)" tooltip-placement="right" tooltip="Remove Provider"></i></div>
                             </td>
                         </tr>
                         </tbody>

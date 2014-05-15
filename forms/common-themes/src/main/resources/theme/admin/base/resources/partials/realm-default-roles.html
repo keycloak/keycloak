@@ -5,7 +5,7 @@
         <ol class="breadcrumb">
             <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
             <li><a href="#/realms/{{realm.realm}}">Settings</a></li>
-            <li class="active">Registration</li>
+            <li class="active">Default Roles</li>
         </ol>
         <h2><span>{{realm.realm}}</span> Default Roles</h2>
         <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
@@ -22,10 +22,10 @@
                             </select>
                         </div>
                         <div class="middle-buttons">
-                            <button class="kc-button kc-vertical" type="submit" ng-click="addRealmDefaultRole()" tooltip="Move right" tooltip-placement="right">
+                            <button class="btn btn-default" type="submit" ng-click="addRealmDefaultRole()" tooltip="Move right" tooltip-placement="right">
                                 <span class="kc-icon-arrow-right"><span>Move right</span></span>
                             </button>
-                            <button class="kc-button kc-vertical" type="submit" ng-click="deleteRealmDefaultRole()" tooltip="Move left" tooltip-placement="right">
+                            <button class="btn btn-default" type="submit" ng-click="deleteRealmDefaultRole()" tooltip="Move left" tooltip-placement="left">
                                 <span class="kc-icon-arrow-left"><span>Move left</span></span>
                             </button>
                         </div>
@@ -66,10 +66,10 @@
                             </select>
                         </div>
                         <div class="middle-buttons">
-                            <button class="kc-button kc-vertical" type="submit" ng-click="addAppDefaultRole()" tooltip="Move right" tooltip-placement="right">
+                            <button class="btn btn-default" type="submit" ng-click="addAppDefaultRole()" tooltip="Move right" tooltip-placement="right">
                                 <span class="kc-icon-arrow-right"><span>Move right</span></span>
                             </button>
-                            <button class="kc-button kc-vertical" type="submit" ng-click="rmAppDefaultRole()" tooltip="Move left" tooltip-placement="right">
+                            <button class="btn btn-default" type="submit" ng-click="rmAppDefaultRole()" tooltip="Move left" tooltip-placement="left">
                                 <span class="kc-icon-arrow-left"><span>Move left</span></span>
                             </button>
                         </div>

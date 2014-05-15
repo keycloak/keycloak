@@ -28,9 +28,9 @@ header .navbar {
 }
 
 .navbar-pf .navbar-utility {
-    top: auto;
-    bottom: 0;
-    right: 15px;
+	right: 20px;
+    top: -34px;
+    font-size: 12px;
 }
 
 .navbar-pf .navbar-utility > li > a {
@@ -53,54 +53,66 @@ header .navbar {
     padding: 0 30px;
 }
 
+/* Sidebar */
+
 .bs-sidebar {
-    padding-top: 4.3em;
+    background-color: #f9f9f9;
+    padding-top: 44px;
     padding-right: 0;
     padding-left: 0;
+    z-index: 20;
 }
-
 .bs-sidebar ul {
     list-style: none;
-    padding-left: 10px;
+    padding-left: 12px;
 }
 
 .bs-sidebar ul li {
     margin-bottom: 0.5em;
     margin-left: -1em;
 }
-
-.bs-sidebar ul li.active a {
-    background-color: #c7e5f0;
-    border-color: #56bae0;
-    font-weight: bold;
-    background-repeat: no-repeat;
-    background-position: right center;
-}
-
 .bs-sidebar ul li a {
-    font-size: 1.3em;
-    font-family: "Open Sans", sans-serif;
-    padding-left: 1.92307692307692em;
+    font-size: 14px;
+    padding-left: 25px;
     color: #4d5258;
-    line-height: 2.07692307692308em;
+    line-height: 28px;
     display: block;
     border-width: 1px 0 1px 1px;
     border-style: solid;
     border-color: #f9f9f9;
 }
+.bs-sidebar ul li a:hover,
+.bs-sidebar ul li a:focus {
+    text-decoration: none;
+    color: #777777;
+    border-right: 2px solid #aaa;
+}
+.bs-sidebar ul li.active a {
+    background-color: #c7e5f0;
+    border-color: #56bae0;
+    font-weight: bold;
+    background-image: url(../img/icon-sidebar-active.svg);
+    background-repeat: no-repeat;
+    background-position: right center;
+}
+
+.bs-sidebar ul li.active a:hover {
+	border-right: none;
+}
+
 
 .content-area h2 {
     font-family: "Open Sans", sans-serif;
     font-weight: 100;
-    font-size: 2.4em;
-    margin-bottom: 1.04166666666667em;
-    margin-top: 1em;
+    font-size: 24px;
+    margin-bottom: 25px;
+    margin-top: 25px;
 }
 
 .subtitle {
     text-align: right;
     margin-top: 30px;
-    color: #666;
+    color: #909090;
 }
 
 .required {
@@ -142,4 +154,70 @@ header .navbar {
 .alert.alert-info {
     background-color: #E4F3FA;
     border-color: #5994B2;
+}
+
+.form-horizontal {
+    border-top: 1px solid #E9E8E8;
+    padding-top: 23px;
+}
+
+.form-horizontal .control-label {
+    color: #909090;
+    line-height: 1.4em;
+    padding-top: 5px;
+    position: relative;
+    text-align: right;
+    width: 100%;
+}
+
+.form-group {
+    position: relative;
+}
+
+.control-label + .required {
+    position: absolute;
+    right: -2px;
+    top: 0;
+}
+
+#kc-form-buttons {
+    text-align: right;
+    margin-top: 10px;
+}
+
+#kc-form-buttons .btn-primary {
+    float: right;
+    margin-left: 8px;
+}
+
+/* Authenticator page */
+
+ol {
+    padding-left: 40px;
+}
+
+ol li {
+    font-size: 13px;
+    margin-bottom: 10px;
+    position: relative;
+}
+
+ol li img {
+    margin-top: 15px;
+    width: 180px;
+    margin-bottom: 5px;
+    border: 1px solid #eee;
+}
+
+ol li span {
+    bottom: 80px;
+    left: 200px;
+    position: absolute;
+    font-family: courier, ​monospace;
+    font-size: 13px;
+}
+
+hr + .form-horizontal {
+    border: none;
+    padding-top: 0;
 }

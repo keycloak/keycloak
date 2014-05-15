@@ -15,15 +15,13 @@
         <h2><span>{{realm.realm}}</span> Audit Config</h2>
 
         <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageAudit">
-            <fieldset>
+            <fieldset class="border-top">
                 <div class="form-group" data-ng-show="access.manageAudit">
                     <label class="col-sm-2 control-label" for="password">Clear Audit</label>
                     <div class="col-sm-4">
                         <button class="btn btn-danger" type="submit" data-ng-click="clearAudit()" >Clear Audit</button>
                     </div>
                 </div>
-            </fieldset>
-            <fieldset>
                 <div class="form-group">
                     <label class="col-sm-2 control-label" for="enabled">Enabled</label>
                     <div class="col-sm-4">

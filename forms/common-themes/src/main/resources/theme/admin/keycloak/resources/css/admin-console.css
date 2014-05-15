@@ -16,7 +16,7 @@ body {
 }
 
 .navbar-nav > li > .dropdown-menu {
-	left: 15px;
+	left: 20px;
 	margin-top: 1px;
 }
 
@@ -46,14 +46,15 @@ body {
 }
 
 .navbar-pf .navbar-utility {
-	right: 15px;
-  top: -34px;
+	right: 20px;
+    top: -34px;
+    font-size: 12px;
 }
 
 .navbar-pf .navbar-utility li.dropdown > .dropdown-toggle {
     border-left: none;
     padding-top: 11px;
-    padding-bottom: 12px;
+    padding-bottom: 10px;
     color: #fff !important;
 }
 
@@ -175,7 +176,22 @@ header .navbar {
     font-weight: bold;
 }
 
+#content { 
+    padding-top: 10px;
+}
+
 /* Forms */
+
+p.subtitle {
+    float: right;
+    color: #909090;
+    margin-top: 4px;
+}
+
+.form-horizontal,
+.subtitle + div {
+    clear: both;
+}
 
 .kc-link {
     border: none;
@@ -200,6 +216,7 @@ header .navbar {
 }
 .search-comp input[type="text"] {
     padding-right: 2.45454545454545em;
+    font-weight: normal;
 }
 .search-comp .kc-icon-search {
     position: absolute;
@@ -240,6 +257,15 @@ form .btn + .btn {
 	margin-left: 3px;
 }
 
+.input-group {
+    width: 100%;
+}
+
+.multiple + .multiple {
+    clear: both;
+    margin-left: 16.666666666666664%;
+}
+
 /* Top menu */
 
 #kc-navigation li.active {
@@ -250,14 +276,14 @@ form .btn + .btn {
 
 .bs-sidebar {
     background-color: #f9f9f9;
-    padding-top: 43px;
+    padding-top: 44px;
     padding-right: 0;
     padding-left: 0;
     z-index: 20;
 }
 .bs-sidebar ul {
     list-style: none;
-    padding-left: 10px;
+    padding-left: 12px;
 }
 
 .bs-sidebar ul li {
@@ -265,10 +291,10 @@ form .btn + .btn {
     margin-left: -1em;
 }
 .bs-sidebar ul li a {
-    font-size: 13px;
+    font-size: 14px;
     padding-left: 25px;
     color: #4d5258;
-    line-height: 26px;
+    line-height: 28px;
     display: block;
     border-width: 1px 0 1px 1px;
     border-style: solid;
@@ -383,6 +409,12 @@ form .btn + .btn {
     color: #909090;
     line-height: 1.4em;
     padding-top: 5px;
+    position: relative;
+}
+
+.control-label .required {
+    position: absolute;
+    right: -2px;
 }
 
 /* Details stuff */
@@ -399,6 +431,10 @@ form .btn + .btn {
 	margin-top: 25px;
 }
 
+#content .subtitle.margin-top {
+    margin-top: 30px;
+}
+
 #content-area #content h2 span {
     color: #a1a1a1;
 }
@@ -409,10 +445,7 @@ fieldset {
 
 fieldset.border-top {
 	border-top: 1px solid #E9E8E8;
-}
-
-fieldset.border-top .form-group:first-child {
-	padding-top: 25px;
+    padding-top: 25px;
 }
 
 /* Legend stuff */
@@ -420,12 +453,15 @@ legend {
     border-color: #E9E8E8;
     border-style: solid;
     border-width: 1px 0 0;
-    cursor: pointer;
     display: block;
     font-size: 13px;
     margin-bottom: 0;
     padding-bottom: 13px;
     padding-top: 18px;
+}
+
+legend.collapsible {
+    cursor: pointer;
 }
 
 legend .text {
@@ -542,7 +578,7 @@ legend .kc-icon-collapse {
     color: #333333;
     display: inline-block;
     font-family: "Open Sans",sans-serif;
-    height: 2.4em;
+    height: 26px;
     min-width: 75px;
     overflow: hidden;
     padding: 0 0.9em 0 0;
@@ -566,7 +602,6 @@ legend .kc-icon-collapse {
     background-color: rgba(0, 0, 0, 0);
     border: medium none;
     font-family: "Open Sans",sans-serif;
-    font-size: 11px;
     height: 30px;
     line-height: 30px;
     margin-left: -2px;
@@ -580,6 +615,12 @@ legend .kc-icon-collapse {
 }
 .select-kc option:hover {
     background-color: #D5ECF9;
+}
+
+/* Select2 */
+
+.select2-container-multi .select2-choices .select2-search-field {
+    height: 26px;
 }
 
 /* If input has a button attached to it*/
@@ -600,23 +641,19 @@ legend .kc-icon-collapse {
 }
 
 /* Left-Rigth selector form */
-.changing-selectors.application {
-    --padding-left: 12em;
-}
+
 .changing-selectors .select-title {
     display: inline-block;
 }
 .changing-selectors .select-title label {
-    font-size: 11px;
     margin-left: 0.2em;
     margin-bottom: 0.3em;
     margin-top: 0.5em;
     display: block;
-    font-weight: normal;
 }
 .changing-selectors select {
     min-height: 150px;
-    font-size: 11px;
+    font-size: 12px;
     padding: 0.545454545454545em;
     min-width: 18.1818181818182em;
     border: 1px #b6b6b6 solid;
@@ -631,10 +668,6 @@ legend .kc-icon-collapse {
 .changing-selectors select:hover {
     border-color: #62afdb;
 }
-.changing-selectors select option {
-    padding: 0.36363636363636em 0.45454545454545em;
-    display: block;
-}
 .changing-selectors select option[disabled="disabled"] {
     color: #aaa;
 }
@@ -642,7 +675,15 @@ legend .kc-icon-collapse {
     display: inline-block;
     margin-left: 0.8em;
     margin-right: 0.8em;
-    vertical-align: middle;
+    vertical-align: top;
+    margin-top: 75px;
+}
+
+.changing-selectors .middle-buttons .btn {
+    display: block;
+}
+.changing-selectors .middle-buttons .btn + .btn {
+    margin-left: 0;
 }
 .changing-selectors .middle-buttons button:first-child {
     margin-bottom: 0.5em;
@@ -653,6 +694,8 @@ legend .kc-icon-collapse {
 }
 .changing-selectors .middle-buttons button span {
     margin-right: 0;
+    vertical-align: bottom;
+    margin-bottom: 3px;
 }
 
 .changing-selectors .middle-buttons.kc-vertical .kc-button{
@@ -757,11 +800,32 @@ legend .kc-icon-collapse {
     background-color: #E4F3FA;
     border-color: #5994B2;
 }
-
 .modal-header h3 {
-    margin-top: 9.5px;
+    margin: 5px 0;
 }
-
 .modal-footer {
     margin-top: 0;
+}
+
+/* Tables */
+
+.table > thead > tr > th, 
+.table > tbody > tr > th, 
+.table > tfoot > tr > th, 
+.table > thead > tr > td, 
+.table > tbody > tr > td, 
+.table > tfoot > tr > td {
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+.actions {
+    width: 70px;
+    text-align: center;
+}
+
+/* Realm Credentials */
+
+.action-div > i {
+    cursor: pointer;
 }

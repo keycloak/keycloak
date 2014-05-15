@@ -2,6 +2,10 @@
     padding-top: 40px;
 }
 
+.login-pf a:hover {
+    color: #0099d3;
+}
+
 #kc-logo {
     width: 100%;
 }
@@ -25,9 +29,8 @@
 #kc-header-wrapper {
     font-size: 26px;
     text-transform: uppercase;
-/*    display: block;
-    position: relative;
-    top: -80px;*/
+    line-height: 1.2em;
+    margin-bottom: 15px;
 }
 
 #kc-container-wrapper {
@@ -38,6 +41,19 @@
 
 #kc-content {
     position: relative;
+}
+
+#kc-content-wrapper {
+    overflow-y: hidden;
+}
+
+#kc-info {
+    padding-bottom: 200px;
+    margin-bottom: -200px;
+}
+
+#kc-info-wrapper {
+    font-size: 13px;
 }
 
 #kc-form-options span {
@@ -52,11 +68,9 @@
 #kc-feedback-wrapper {
     display: inline-block;
     width: auto;
-
     background-position: left bottom;
     background-repeat: no-repeat;
     padding-bottom: 10px;
-
 }
 
 #kc-feedback span {
@@ -66,8 +80,7 @@
     border-width: 1px 1px 0px 1px;
     background-repeat: no-repeat;
     background-position: 1.27272727272727em center;
-    font-size: 1.1em;
-    font-weight: bold;
+    font-weight: normal;
     line-height: 1.4em;
     border-radius: 2px;
     color: #4d5258;
@@ -203,19 +216,13 @@ ol#kc-totp-settings li:first-of-type {
 
 @media (max-width: 767px) {
     #kc-logo-wrapper {
-        background-image: url("../img/keycloak-logo.png");
-        background-repeat: no-repeat;
-        background-position: top center;
-
-        height: 37px;
-
-        margin: 15px;
+        margin-top: 30px;
+        margin-right: 15px;
     }
 
     #kc-header {
         padding-left: 15px;
         padding-right: 15px;
-        white-space: normal;
         float: none;
     }
 
