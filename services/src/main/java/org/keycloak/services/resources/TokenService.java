@@ -58,7 +58,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriBuilder;
@@ -374,7 +373,7 @@ public class TokenService {
         AuthenticationStatus status = authManager.authenticateForm(clientConnection, realm, formData);
 
         if (remember) {
-            authManager.createRememberMeCookie(response, realm, uriInfo);
+            authManager.createRememberMeCookie(realm, uriInfo);
         } else {
             authManager.expireRememberMeCookie(realm, uriInfo);
         }
@@ -636,7 +635,7 @@ public class TokenService {
         }
 
         UserSessionModel session = realm.getUserSession(accessCode.getSessionState());
-        if (session == null || session.getExpires() < Time.currentTime()) {
+        if (AuthenticationManager.isSessionValid(realm, session)) {
             Map<String, String> res = new HashMap<String, String>();
             res.put(OAuth2Constants.ERROR, "invalid_grant");
             res.put(OAuth2Constants.ERROR_DESCRIPTION, "Session not active");
@@ -915,7 +914,8 @@ public class TokenService {
         }
 
         UserSessionModel session = realm.getUserSession(accessCodeEntry.getSessionState());
-        if (session == null || session.getExpires() < Time.currentTime()) {
+        int currentTime = Time.currentTime();
+        if (AuthenticationManager.isSessionValid(realm, session)) {
             audit.error(Errors.INVALID_CODE);
             return oauth.forwardToSecurityFailure("Session not active");
         }

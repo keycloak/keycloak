@@ -1389,10 +1389,9 @@ public class RealmAdapter implements RealmModel {
         entity.setIpAddress(ipAddress);
 
         int currentTime = Time.currentTime();
-        int expires = currentTime + realm.getSsoSessionIdleTimeout();
 
         entity.setStarted(currentTime);
-        entity.setExpires(expires);
+        entity.setLastSessionRefresh(currentTime);
 
         em.persist(entity);
         return new UserSessionAdapter(entity);
@@ -1429,7 +1428,10 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public void removeExpiredUserSessions() {
-        em.createNamedQuery("removeUserSessionExpired").setParameter("currentTime", Time.currentTime()).executeUpdate();
+        em.createNamedQuery("removeUserSessionExpired")
+                .setParameter("maxTime", Time.currentTime() - getSsoSessionMaxLifespan())
+                .setParameter("idleTime", Time.currentTime() - getSsoSessionIdleTimeout())
+                .executeUpdate();
     }
 
 }

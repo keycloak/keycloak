@@ -1356,10 +1356,9 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         entity.setIpAddress(ipAddress);
 
         int currentTime = Time.currentTime();
-        int expires = currentTime + realm.getSsoSessionIdleTimeout();
 
         entity.setStarted(currentTime);
-        entity.setExpires(expires);
+        entity.setLastSessionRefresh(currentTime);
 
         getMongoStore().insertEntity(entity, invocationContext);
         return new UserSessionAdapter(entity, this, invocationContext);
@@ -1398,8 +1397,14 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public void removeExpiredUserSessions() {
+        int currentTime = Time.currentTime();
         DBObject query = new QueryBuilder()
-                .and("expires").lessThan(Time.currentTime())
+                .and("started").lessThan(currentTime - realm.getSsoSessionMaxLifespan())
+                .get();
+
+        getMongoStore().removeEntities(MongoUserSessionEntity.class, query, invocationContext);
+        query = new QueryBuilder()
+                .and("lastSessionRefresh").lessThan(currentTime - realm.getSsoSessionIdleTimeout())
                 .get();
 
         getMongoStore().removeEntities(MongoUserSessionEntity.class, query, invocationContext);

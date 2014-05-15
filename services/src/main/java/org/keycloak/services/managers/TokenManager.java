@@ -137,7 +137,11 @@ public class TokenManager {
         }
 
         UserSessionModel session = realm.getUserSession(refreshToken.getSessionState());
-        if (session == null || session.getExpires() < Time.currentTime()) {
+        int currentTime = Time.currentTime();
+        if (AuthenticationManager.isSessionValid(realm, session)) {
+            if (session != null) {
+                realm.removeUserSession(session);
+            }
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Session not active", "Session not active");
         }
 
@@ -191,6 +195,12 @@ public class TokenManager {
         AccessToken accessToken = initToken(realm, client, user, session);
         accessToken.setRealmAccess(refreshToken.getRealmAccess());
         accessToken.setResourceAccess(refreshToken.getResourceAccess());
+
+        // only refresh session if next token refresh will be after idle timeout
+        if (currentTime + realm.getAccessTokenLifespan() > session.getLastSessionRefresh() + realm.getSsoSessionIdleTimeout()) {
+            session.setLastSessionRefresh(currentTime);
+        }
+
         return accessToken;
     }
 

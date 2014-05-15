@@ -21,8 +21,8 @@ public interface UserSessionModel {
 
     void setStarted(int started);
 
-    int getExpires();
+    int getLastSessionRefresh();
 
-    void setExpires(int expires);
+    void setLastSessionRefresh(int seconds);
 
 }

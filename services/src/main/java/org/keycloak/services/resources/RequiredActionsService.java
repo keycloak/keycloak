@@ -408,7 +408,7 @@ public class RequiredActionsService {
             AuthenticationManager authManager = new AuthenticationManager(providerSession);
 
             UserSessionModel session = realm.getUserSession(accessCode.getSessionState());
-            if (session == null || session.getExpires() < Time.currentTime()) {
+            if (AuthenticationManager.isSessionValid(realm, session)) {
                 return Flows.oauth(realm, request, uriInfo, authManager, tokenManager).redirectError(accessCode.getClient(), "access_denied", accessCode.getState(), accessCode.getRedirectUri());
             }
             audit.session(session);

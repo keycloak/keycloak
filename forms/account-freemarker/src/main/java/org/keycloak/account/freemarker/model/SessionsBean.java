@@ -1,5 +1,6 @@
 package org.keycloak.account.freemarker.model;
 
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.util.Time;
 
@@ -13,11 +14,12 @@ import java.util.List;
 public class SessionsBean {
 
     private List<UserSessionBean> events;
+    private RealmModel realm;
 
-    public SessionsBean(List<UserSessionModel> sessions) {
+    public SessionsBean(RealmModel realm, List<UserSessionModel> sessions) {
         this.events = new LinkedList<UserSessionBean>();
         for (UserSessionModel session : sessions) {
-            this.events.add(new UserSessionBean(session));
+            this.events.add(new UserSessionBean(realm, session));
         }
     }
 
@@ -28,8 +30,10 @@ public class SessionsBean {
     public static class UserSessionBean {
 
         private UserSessionModel session;
+        private RealmModel realm;
 
-        public UserSessionBean(UserSessionModel session) {
+        public UserSessionBean(RealmModel realm, UserSessionModel session) {
+            this.realm = realm;
             this.session = session;
         }
 
@@ -42,7 +46,8 @@ public class SessionsBean {
         }
 
         public Date getExpires() {
-            return Time.toDate(session.getExpires());
+            int max = session.getStarted() + realm.getSsoSessionMaxLifespan();
+            return Time.toDate(max);
         }
 
     }
