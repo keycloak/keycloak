@@ -246,25 +246,23 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public int getCentralLoginLifespan() {
-        return realm.getCentralLoginLifespan();
+    public int getSsoSessionIdleTimeout() {
+        return realm.getSsoSessionIdleTimeout();
     }
 
     @Override
-    public void setCentralLoginLifespan(int lifespan) {
-        realm.setCentralLoginLifespan(lifespan);
-        em.flush();
+    public void setSsoSessionIdleTimeout(int seconds) {
+        realm.setSsoSessionIdleTimeout(seconds);
     }
 
     @Override
-    public int getRefreshTokenLifespan() {
-        return realm.getRefreshTokenLifespan();
+    public int getSsoSessionMaxLifespan() {
+        return realm.getSsoSessionMaxLifespan();
     }
 
     @Override
-    public void setRefreshTokenLifespan(int tokenLifespan) {
-        realm.setRefreshTokenLifespan(tokenLifespan);
-        em.flush();
+    public void setSsoSessionMaxLifespan(int seconds) {
+        realm.setSsoSessionMaxLifespan(seconds);
     }
 
     @Override
@@ -1391,10 +1389,9 @@ public class RealmAdapter implements RealmModel {
         entity.setIpAddress(ipAddress);
 
         int currentTime = Time.currentTime();
-        int expires = currentTime + realm.getCentralLoginLifespan();
 
         entity.setStarted(currentTime);
-        entity.setExpires(expires);
+        entity.setLastSessionRefresh(currentTime);
 
         em.persist(entity);
         return new UserSessionAdapter(entity);
@@ -1431,7 +1428,10 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public void removeExpiredUserSessions() {
-        em.createNamedQuery("removeUserSessionExpired").setParameter("currentTime", Time.currentTime()).executeUpdate();
+        em.createNamedQuery("removeUserSessionExpired")
+                .setParameter("maxTime", Time.currentTime() - getSsoSessionMaxLifespan())
+                .setParameter("idleTime", Time.currentTime() - getSsoSessionIdleTimeout())
+                .executeUpdate();
     }
 
 }

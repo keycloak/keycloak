@@ -17,7 +17,7 @@ import javax.persistence.NamedQuery;
 @NamedQueries({
         @NamedQuery(name = "getUserSessionByUser", query = "select s from UserSessionEntity s where s.user = :user"),
         @NamedQuery(name = "removeUserSessionByUser", query = "delete from UserSessionEntity s where s.user = :user"),
-        @NamedQuery(name = "removeUserSessionExpired", query = "delete from UserSessionEntity s where s.expires < :currentTime")
+        @NamedQuery(name = "removeUserSessionExpired", query = "delete from UserSessionEntity s where s.started < :maxTime or s.lastSessionRefresh < :idleTime")
 })
 public class UserSessionEntity {
 
@@ -33,7 +33,7 @@ public class UserSessionEntity {
 
     int started;
 
-    int expires;
+    int lastSessionRefresh;
 
     public String getId() {
         return id;
@@ -67,12 +67,11 @@ public class UserSessionEntity {
         this.started = started;
     }
 
-    public int getExpires() {
-        return expires;
+    public int getLastSessionRefresh() {
+        return lastSessionRefresh;
     }
 
-    public void setExpires(int expires) {
-        this.expires = expires;
+    public void setLastSessionRefresh(int lastSessionRefresh) {
+        this.lastSessionRefresh = lastSessionRefresh;
     }
-
 }

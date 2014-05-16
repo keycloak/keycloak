@@ -23,6 +23,7 @@ import org.keycloak.representations.RefreshToken;
 import org.keycloak.util.Time;
 
 import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.HashSet;
@@ -106,7 +107,7 @@ public class TokenManager {
         return code;
     }
 
-    public AccessToken refreshAccessToken(RealmModel realm, ClientModel client, String encodedRefreshToken, Audit audit) throws OAuthErrorException {
+    public AccessToken refreshAccessToken(UriInfo uriInfo, RealmModel realm, ClientModel client, String encodedRefreshToken, Audit audit) throws OAuthErrorException {
         JWSInput jws = new JWSInput(encodedRefreshToken);
         RefreshToken refreshToken = null;
         try {
@@ -137,7 +138,9 @@ public class TokenManager {
         }
 
         UserSessionModel session = realm.getUserSession(refreshToken.getSessionState());
-        if (session == null || session.getExpires() < Time.currentTime()) {
+        int currentTime = Time.currentTime();
+        if (!AuthenticationManager.isSessionValid(realm, session)) {
+            AuthenticationManager.logout(realm, session, uriInfo);
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Session not active", "Session not active");
         }
 
@@ -191,6 +194,12 @@ public class TokenManager {
         AccessToken accessToken = initToken(realm, client, user, session);
         accessToken.setRealmAccess(refreshToken.getRealmAccess());
         accessToken.setResourceAccess(refreshToken.getResourceAccess());
+
+        // only refresh session if next token refresh will be after idle timeout
+        if (currentTime + realm.getAccessTokenLifespan() > session.getLastSessionRefresh() + realm.getSsoSessionIdleTimeout()) {
+            session.setLastSessionRefresh(currentTime);
+        }
+
         return accessToken;
     }
 
@@ -375,7 +384,7 @@ public class TokenManager {
             refreshToken = new RefreshToken(accessToken);
             refreshToken.id(KeycloakModelUtils.generateId());
             refreshToken.issuedNow();
-            refreshToken.expiration(Time.currentTime() + realm.getRefreshTokenLifespan());
+            refreshToken.expiration(Time.currentTime() + realm.getSsoSessionIdleTimeout());
             return this;
         }
 

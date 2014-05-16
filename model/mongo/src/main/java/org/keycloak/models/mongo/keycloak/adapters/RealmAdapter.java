@@ -281,6 +281,26 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
 
     @Override
+    public int getSsoSessionIdleTimeout() {
+        return realm.getSsoSessionIdleTimeout();
+    }
+
+    @Override
+    public void setSsoSessionIdleTimeout(int seconds) {
+        realm.setSsoSessionIdleTimeout(seconds);
+    }
+
+    @Override
+    public int getSsoSessionMaxLifespan() {
+        return realm.getSsoSessionMaxLifespan();
+    }
+
+    @Override
+    public void setSsoSessionMaxLifespan(int seconds) {
+        realm.setSsoSessionMaxLifespan(seconds);
+    }
+
+    @Override
     public int getAccessTokenLifespan() {
         return realm.getAccessTokenLifespan();
     }
@@ -291,28 +311,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         updateRealm();
     }
 
-    @Override
-    public int getCentralLoginLifespan() {
-        return realm.getCentralLoginLifespan();
-    }
 
-    @Override
-    public void setCentralLoginLifespan(int lifespan) {
-        realm.setCentralLoginLifespan(lifespan);
-        updateRealm();
-    }
-
-
-    @Override
-    public int getRefreshTokenLifespan() {
-        return realm.getRefreshTokenLifespan();
-    }
-
-    @Override
-    public void setRefreshTokenLifespan(int tokenLifespan) {
-        realm.setRefreshTokenLifespan(tokenLifespan);
-        updateRealm();
-    }
 
     @Override
     public int getAccessCodeLifespan() {
@@ -1357,10 +1356,9 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         entity.setIpAddress(ipAddress);
 
         int currentTime = Time.currentTime();
-        int expires = currentTime + realm.getCentralLoginLifespan();
 
         entity.setStarted(currentTime);
-        entity.setExpires(expires);
+        entity.setLastSessionRefresh(currentTime);
 
         getMongoStore().insertEntity(entity, invocationContext);
         return new UserSessionAdapter(entity, this, invocationContext);
@@ -1399,8 +1397,14 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public void removeExpiredUserSessions() {
+        int currentTime = Time.currentTime();
         DBObject query = new QueryBuilder()
-                .and("expires").lessThan(Time.currentTime())
+                .and("started").lessThan(currentTime - realm.getSsoSessionMaxLifespan())
+                .get();
+
+        getMongoStore().removeEntities(MongoUserSessionEntity.class, query, invocationContext);
+        query = new QueryBuilder()
+                .and("lastSessionRefresh").lessThan(currentTime - realm.getSsoSessionIdleTimeout())
                 .get();
 
         getMongoStore().removeEntities(MongoUserSessionEntity.class, query, invocationContext);

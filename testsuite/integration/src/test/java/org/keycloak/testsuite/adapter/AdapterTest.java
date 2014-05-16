@@ -28,6 +28,7 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -155,5 +156,68 @@ public class AdapterTest {
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
 
 
+    }
+
+    @Test
+    public void testLoginSSOIdle() throws Exception {
+        // test login to customer-portal which does a bearer request to customer-db
+        driver.navigate().to("http://localhost:8081/customer-portal");
+        System.out.println("Current url: " + driver.getCurrentUrl());
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+        loginPage.login("bburke@redhat.com", "password");
+        System.out.println("Current url: " + driver.getCurrentUrl());
+        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/customer-portal");
+        String pageSource = driver.getPageSource();
+        System.out.println(pageSource);
+        Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
+
+        KeycloakSession session = keycloakRule.startSession();
+        RealmModel realm = session.getRealmByName("demo");
+        int originalIdle = realm.getSsoSessionIdleTimeout();
+        realm.setSsoSessionIdleTimeout(1);
+        keycloakRule.stopSession(session, true);
+
+        Thread.sleep(2000);
+
+
+        // test SSO
+        driver.navigate().to("http://localhost:8081/product-portal");
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+
+        session = keycloakRule.startSession();
+        realm = session.getRealmByName("demo");
+        realm.setSsoSessionIdleTimeout(originalIdle);
+        keycloakRule.stopSession(session, true);
+    }
+    @Test
+    public void testLoginSSOMax() throws Exception {
+        // test login to customer-portal which does a bearer request to customer-db
+        driver.navigate().to("http://localhost:8081/customer-portal");
+        System.out.println("Current url: " + driver.getCurrentUrl());
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+        loginPage.login("bburke@redhat.com", "password");
+        System.out.println("Current url: " + driver.getCurrentUrl());
+        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/customer-portal");
+        String pageSource = driver.getPageSource();
+        System.out.println(pageSource);
+        Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
+
+        KeycloakSession session = keycloakRule.startSession();
+        RealmModel realm = session.getRealmByName("demo");
+        int original = realm.getSsoSessionMaxLifespan();
+        realm.setSsoSessionMaxLifespan(1);
+        keycloakRule.stopSession(session, true);
+
+        Thread.sleep(2000);
+
+
+        // test SSO
+        driver.navigate().to("http://localhost:8081/product-portal");
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+
+        session = keycloakRule.startSession();
+        realm = session.getRealmByName("demo");
+        realm.setSsoSessionMaxLifespan(original);
+        keycloakRule.stopSession(session, true);
     }
 }

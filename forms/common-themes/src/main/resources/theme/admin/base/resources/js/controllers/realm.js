@@ -623,16 +623,16 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
         $scope.realm.accessTokenLifespan = TimeUnit.convert($scope.realm.accessTokenLifespan, from, to);
     });
 
-    $scope.realm.centralLoginLifespanUnit = TimeUnit.autoUnit(realm.centralLoginLifespan);
-    $scope.realm.centralLoginLifespan = TimeUnit.toUnit(realm.centralLoginLifespan, $scope.realm.centralLoginLifespanUnit);
-    $scope.$watch('realm.centralLoginLifespanUnit', function(to, from) {
-        $scope.realm.centralLoginLifespan = TimeUnit.convert($scope.realm.centralLoginLifespan, from, to);
+    $scope.realm.ssoSessionIdleTimeoutUnit = TimeUnit.autoUnit(realm.ssoSessionIdleTimeout);
+    $scope.realm.ssoSessionIdleTimeout = TimeUnit.toUnit(realm.ssoSessionIdleTimeout, $scope.realm.ssoSessionIdleTimeoutUnit);
+    $scope.$watch('realm.ssoSessionIdleTimeoutUnit', function(to, from) {
+        $scope.realm.ssoSessionIdleTimeout = TimeUnit.convert($scope.realm.ssoSessionIdleTimeout, from, to);
     });
 
-    $scope.realm.refreshTokenLifespanUnit = TimeUnit.autoUnit(realm.refreshTokenLifespan);
-    $scope.realm.refreshTokenLifespan = TimeUnit.toUnit(realm.refreshTokenLifespan, $scope.realm.refreshTokenLifespanUnit);
-    $scope.$watch('realm.refreshTokenLifespanUnit', function(to, from) {
-        $scope.realm.refreshTokenLifespan = TimeUnit.convert($scope.realm.refreshTokenLifespan, from, to);
+    $scope.realm.ssoSessionMaxLifespanUnit = TimeUnit.autoUnit(realm.ssoSessionMaxLifespan);
+    $scope.realm.ssoSessionMaxLifespan = TimeUnit.toUnit(realm.ssoSessionMaxLifespan, $scope.realm.ssoSessionMaxLifespanUnit);
+    $scope.$watch('realm.ssoSessionMaxLifespanUnit', function(to, from) {
+        $scope.realm.ssoSessionMaxLifespan = TimeUnit.convert($scope.realm.ssoSessionMaxLifespan, from, to);
     });
 
     $scope.realm.accessCodeLifespanUnit = TimeUnit.autoUnit(realm.accessCodeLifespan);
@@ -660,14 +660,14 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
     $scope.save = function() {
         var realmCopy = angular.copy($scope.realm);
         delete realmCopy["accessTokenLifespanUnit"];
-        delete realmCopy["refreshTokenLifespanUnit"];
+        delete realmCopy["ssoSessionMaxLifespanUnit"];
         delete realmCopy["accessCodeLifespanUnit"];
-        delete realmCopy["centralLoginLifespanUnit"];
+        delete realmCopy["ssoSessionIdleTimeoutUnit"];
         delete realmCopy["accessCodeLifespanUserActionUnit"];
 
         realmCopy.accessTokenLifespan = TimeUnit.toSeconds($scope.realm.accessTokenLifespan, $scope.realm.accessTokenLifespanUnit)
-        realmCopy.centralLoginLifespan = TimeUnit.toSeconds($scope.realm.centralLoginLifespan, $scope.realm.centralLoginLifespanUnit)
-        realmCopy.refreshTokenLifespan = TimeUnit.toSeconds($scope.realm.refreshTokenLifespan, $scope.realm.refreshTokenLifespanUnit)
+        realmCopy.ssoSessionIdleTimeout = TimeUnit.toSeconds($scope.realm.ssoSessionIdleTimeout, $scope.realm.ssoSessionIdleTimeoutUnit)
+        realmCopy.ssoSessionMaxLifespan = TimeUnit.toSeconds($scope.realm.ssoSessionMaxLifespan, $scope.realm.ssoSessionMaxLifespanUnit)
         realmCopy.accessCodeLifespan = TimeUnit.toSeconds($scope.realm.accessCodeLifespan, $scope.realm.accessCodeLifespanUnit)
         realmCopy.accessCodeLifespanUserAction = TimeUnit.toSeconds($scope.realm.accessCodeLifespanUserAction, $scope.realm.accessCodeLifespanUserActionUnit)
 

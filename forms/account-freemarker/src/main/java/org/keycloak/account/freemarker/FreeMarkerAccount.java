@@ -121,7 +121,7 @@ public class FreeMarkerAccount implements Account {
                 attributes.put("log", new LogBean(events));
                 break;
             case SESSIONS:
-                attributes.put("sessions", new SessionsBean(sessions));
+                attributes.put("sessions", new SessionsBean(realm, sessions));
                 break;
         }
 

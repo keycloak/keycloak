@@ -186,8 +186,8 @@ public class RealmManager {
             realm.setAccessCodeLifespanUserAction(rep.getAccessCodeLifespanUserAction());
         if (rep.getNotBefore() != null) realm.setNotBefore(rep.getNotBefore());
         if (rep.getAccessTokenLifespan() != null) realm.setAccessTokenLifespan(rep.getAccessTokenLifespan());
-        if (rep.getRefreshTokenLifespan() != null) realm.setRefreshTokenLifespan(rep.getRefreshTokenLifespan());
-        if (rep.getCentralLoginLifespan() != null) realm.setCentralLoginLifespan(rep.getCentralLoginLifespan());
+        if (rep.getSsoSessionIdleTimeout() != null) realm.setSsoSessionIdleTimeout(rep.getSsoSessionIdleTimeout());
+        if (rep.getSsoSessionMaxLifespan() != null) realm.setSsoSessionMaxLifespan(rep.getSsoSessionMaxLifespan());
         if (rep.getRequiredCredentials() != null) {
             realm.updateRequiredCredentials(rep.getRequiredCredentials());
         }
@@ -313,10 +313,10 @@ public class RealmManager {
         if (rep.getAccessTokenLifespan() != null) newRealm.setAccessTokenLifespan(rep.getAccessTokenLifespan());
         else newRealm.setAccessTokenLifespan(300);
 
-        if (rep.getRefreshTokenLifespan() != null) newRealm.setRefreshTokenLifespan(rep.getRefreshTokenLifespan());
-        else newRealm.setRefreshTokenLifespan(36000);
-        if (rep.getCentralLoginLifespan() != null) newRealm.setCentralLoginLifespan(rep.getCentralLoginLifespan());
-        else newRealm.setCentralLoginLifespan(300);
+        if (rep.getSsoSessionIdleTimeout() != null) newRealm.setSsoSessionIdleTimeout(rep.getSsoSessionIdleTimeout());
+        else newRealm.setSsoSessionIdleTimeout(600);
+        if (rep.getSsoSessionMaxLifespan() != null) newRealm.setSsoSessionMaxLifespan(rep.getSsoSessionMaxLifespan());
+        else newRealm.setSsoSessionMaxLifespan(36000);
 
         if (rep.getAccessCodeLifespan() != null) newRealm.setAccessCodeLifespan(rep.getAccessCodeLifespan());
         else newRealm.setAccessCodeLifespan(60);

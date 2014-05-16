@@ -17,7 +17,7 @@ public class MongoUserSessionEntity extends AbstractIdentifiableEntity implement
 
     private int started;
 
-    private int expires;
+    private int lastSessionRefresh;
 
     public String getUser() {
         return user;
@@ -43,12 +43,12 @@ public class MongoUserSessionEntity extends AbstractIdentifiableEntity implement
         this.started = started;
     }
 
-    public int getExpires() {
-        return expires;
+    public int getLastSessionRefresh() {
+        return lastSessionRefresh;
     }
 
-    public void setExpires(int expires) {
-        this.expires = expires;
+    public void setLastSessionRefresh(int lastSessionRefresh) {
+        this.lastSessionRefresh = lastSessionRefresh;
     }
 
     @Override

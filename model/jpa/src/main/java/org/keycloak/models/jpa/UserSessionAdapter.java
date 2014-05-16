@@ -60,13 +60,12 @@ public class UserSessionAdapter implements UserSessionModel {
     }
 
     @Override
-    public int getExpires() {
-        return entity.getExpires();
+    public int getLastSessionRefresh() {
+        return entity.getLastSessionRefresh();
     }
 
     @Override
-    public void setExpires(int expires) {
-        entity.setExpires(expires);
+    public void setLastSessionRefresh(int seconds) {
+        entity.setLastSessionRefresh(seconds);
     }
-
 }

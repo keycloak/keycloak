@@ -10,13 +10,12 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class RealmRepresentation {
-    protected String self; // link
     protected String id;
     protected String realm;
     protected Integer notBefore;
     protected Integer accessTokenLifespan;
-    protected Integer refreshTokenLifespan;
-    protected Integer centralLoginLifespan;
+    protected Integer ssoSessionIdleTimeout;
+    protected Integer ssoSessionMaxLifespan;
     protected Integer accessCodeLifespan;
     protected Integer accessCodeLifespanUserAction;
     protected Boolean enabled;
@@ -61,14 +60,6 @@ public class RealmRepresentation {
     protected boolean auditEnabled;
     protected long auditExpiration;
     protected List<String> auditListeners;
-
-    public String getSelf() {
-        return self;
-    }
-
-    public void setSelf(String self) {
-        this.self = self;
-    }
 
     public String getId() {
         return id;
@@ -142,20 +133,20 @@ public class RealmRepresentation {
         this.accessTokenLifespan = accessTokenLifespan;
     }
 
-    public Integer getRefreshTokenLifespan() {
-        return refreshTokenLifespan;
+    public Integer getSsoSessionIdleTimeout() {
+        return ssoSessionIdleTimeout;
     }
 
-    public Integer getCentralLoginLifespan() {
-        return centralLoginLifespan;
+    public void setSsoSessionIdleTimeout(Integer ssoSessionIdleTimeout) {
+        this.ssoSessionIdleTimeout = ssoSessionIdleTimeout;
     }
 
-    public void setCentralLoginLifespan(Integer centralLoginLifespan) {
-        this.centralLoginLifespan = centralLoginLifespan;
+    public Integer getSsoSessionMaxLifespan() {
+        return ssoSessionMaxLifespan;
     }
 
-    public void setRefreshTokenLifespan(Integer refreshTokenLifespan) {
-        this.refreshTokenLifespan = refreshTokenLifespan;
+    public void setSsoSessionMaxLifespan(Integer ssoSessionMaxLifespan) {
+        this.ssoSessionMaxLifespan = ssoSessionMaxLifespan;
     }
 
     public List<UserRoleMappingRepresentation> getRoleMappings() {

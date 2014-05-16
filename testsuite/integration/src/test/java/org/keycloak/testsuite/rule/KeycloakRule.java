@@ -81,19 +81,6 @@ public class KeycloakRule extends AbstractKeycloakRule {
         }
     }
 
-    public KeycloakSession startSession() {
-        KeycloakSession session = server.getKeycloakSessionFactory().createSession();
-        session.getTransaction().begin();
-        return session;
-    }
-
-    public void stopSession(KeycloakSession session, boolean commit) {
-        if (commit) {
-            session.getTransaction().commit();
-        }
-        session.close();
-    }
-
     public void removeUserSession(String sessionId) {
         KeycloakSession keycloakSession = startSession();
         RealmModel realm = keycloakSession.getRealm("test");

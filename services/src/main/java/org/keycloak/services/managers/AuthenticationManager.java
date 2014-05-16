@@ -5,6 +5,7 @@ import org.jboss.resteasy.spi.HttpResponse;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
+import org.keycloak.audit.Audit;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.AuthenticationLinkModel;
 import org.keycloak.models.ClientModel;
@@ -61,6 +62,29 @@ public class AuthenticationManager {
         this.protector = protector;
     }
 
+    public static boolean isSessionValid(RealmModel realm, UserSessionModel session) {
+        if (session == null) return false;
+        int currentTime = Time.currentTime();
+        int max = session.getStarted() + realm.getSsoSessionMaxLifespan();
+        boolean valid = session != null && session.getLastSessionRefresh() + realm.getSsoSessionIdleTimeout() > currentTime && max > currentTime;
+        return valid;
+    }
+
+    public static void logout(RealmModel realm, UserSessionModel session, UriInfo uriInfo) {
+        if (session == null) return;
+        UserModel user = session.getUser();
+
+        logger.infov("Logging out: {0} ({1})", user.getLoginName(), session.getId());
+
+        realm.removeUserSession(session);
+        expireIdentityCookie(realm, uriInfo);
+        expireRememberMeCookie(realm, uriInfo);
+
+        new ResourceAdminManager().logoutUser(uriInfo.getRequestUri(), realm, user.getId(), session.getId());
+
+    }
+
+
     public AccessToken createIdentityToken(RealmModel realm, UserModel user, UserSessionModel session) {
         logger.info("createIdentityToken");
         AccessToken token = new AccessToken();
@@ -71,26 +95,25 @@ public class AuthenticationManager {
         if (session != null) {
             token.setSessionState(session.getId());
         }
-        if (realm.getCentralLoginLifespan() > 0) {
-            token.expiration(Time.currentTime() + realm.getCentralLoginLifespan());
+        if (realm.getSsoSessionIdleTimeout() > 0) {
+            token.expiration(Time.currentTime() + realm.getSsoSessionIdleTimeout());
         }
         return token;
     }
 
-    public void createLoginCookie(Response.ResponseBuilder builder, RealmModel realm, UserModel user, UserSessionModel session, UriInfo uriInfo, boolean rememberMe) {
+    public void createLoginCookie(RealmModel realm, UserModel user, UserSessionModel session, UriInfo uriInfo, boolean rememberMe) {
         logger.info("createLoginCookie");
-        String cookieName = KEYCLOAK_IDENTITY_COOKIE;
         String cookiePath = getIdentityCookiePath(realm, uriInfo);
         AccessToken identityToken = createIdentityToken(realm, user, session);
         String encoded = encodeToken(realm, identityToken);
         boolean secureOnly = !realm.isSslNotRequired();
-        logger.debugv("creatingLoginCookie - name: {0} path: {1}", cookieName, cookiePath);
+        logger.debugv("creatingLoginCookie - name: {0} path: {1}", KEYCLOAK_IDENTITY_COOKIE, cookiePath);
         int maxAge = NewCookie.DEFAULT_MAX_AGE;
         if (rememberMe) {
-            maxAge = realm.getCentralLoginLifespan();
+            maxAge = realm.getSsoSessionIdleTimeout();
             logger.info("createLoginCookie maxAge: " + maxAge);
         }
-        CookieHelper.addCookie(cookieName, encoded, cookiePath, null, null, maxAge, secureOnly, true);
+        CookieHelper.addCookie(KEYCLOAK_IDENTITY_COOKIE, encoded, cookiePath, null, null, maxAge, secureOnly, true);
         //builder.cookie(new NewCookie(cookieName, encoded, cookiePath, null, null, maxAge, secureOnly));// todo httponly , true);
 
         String sessionCookieValue = realm.getName() + "-" + user.getId();
@@ -98,16 +121,16 @@ public class AuthenticationManager {
             sessionCookieValue += "-" + session.getId();
         }
         // THIS SHOULD NOT BE A HTTPONLY COOKIE!  It is used for OpenID Connect Iframe Session support!
-        builder.cookie(new NewCookie(KEYCLOAK_SESSION_COOKIE, sessionCookieValue, cookiePath, null, null, maxAge, secureOnly));
+        CookieHelper.addCookie(KEYCLOAK_SESSION_COOKIE, sessionCookieValue, cookiePath, null, null, maxAge, secureOnly, false);
 
     }
 
-    public void createRememberMeCookie(HttpResponse response, RealmModel realm, UriInfo uriInfo) {
+    public void createRememberMeCookie(RealmModel realm, UriInfo uriInfo) {
         String path = getIdentityCookiePath(realm, uriInfo);
         boolean secureOnly = !realm.isSslNotRequired();
         // remember me cookie should be persistent
         //NewCookie cookie = new NewCookie(KEYCLOAK_REMEMBER_ME, "true", path, null, null, realm.getCentralLoginLifespan(), secureOnly);// todo httponly , true);
-        CookieHelper.addCookie(KEYCLOAK_REMEMBER_ME, "true", path, null, null, realm.getCentralLoginLifespan(), secureOnly, true);
+        CookieHelper.addCookie(KEYCLOAK_REMEMBER_ME, "true", path, null, null, realm.getSsoSessionIdleTimeout(), secureOnly, true);
     }
 
     protected String encodeToken(RealmModel realm, Object token) {
@@ -117,25 +140,26 @@ public class AuthenticationManager {
         return encodedToken;
     }
 
-    public void expireIdentityCookie(RealmModel realm, UriInfo uriInfo) {
+    public static void expireIdentityCookie(RealmModel realm, UriInfo uriInfo) {
         logger.debug("Expiring identity cookie");
         String path = getIdentityCookiePath(realm, uriInfo);
         expireCookie(realm, KEYCLOAK_IDENTITY_COOKIE, path, true);
         expireCookie(realm, KEYCLOAK_SESSION_COOKIE, path, false);
+        expireRememberMeCookie(realm, uriInfo);
     }
-    public void expireRememberMeCookie(RealmModel realm, UriInfo uriInfo) {
+    public static void expireRememberMeCookie(RealmModel realm, UriInfo uriInfo) {
         logger.debug("Expiring remember me cookie");
         String path = getIdentityCookiePath(realm, uriInfo);
         String cookieName = KEYCLOAK_REMEMBER_ME;
         expireCookie(realm, cookieName, path, true);
     }
 
-    protected String getIdentityCookiePath(RealmModel realm, UriInfo uriInfo) {
+    protected static String getIdentityCookiePath(RealmModel realm, UriInfo uriInfo) {
         URI uri = RealmsResource.realmBaseUrl(uriInfo).build(realm.getName());
         return uri.getRawPath();
     }
 
-    public void expireCookie(RealmModel realm, String cookieName, String path, boolean httpOnly) {
+    public static void expireCookie(RealmModel realm, String cookieName, String path, boolean httpOnly) {
         logger.debugv("Expiring cookie: {0} path: {1}", cookieName, path);
         boolean secureOnly = !realm.isSslNotRequired();
         CookieHelper.addCookie(cookieName, "", path, null, "Expiring cookie", 0, secureOnly, httpOnly);
@@ -147,15 +171,9 @@ public class AuthenticationManager {
 
     public AuthResult authenticateIdentityCookie(RealmModel realm, UriInfo uriInfo, HttpHeaders headers, boolean checkActive) {
         logger.info("authenticateIdentityCookie");
-        String cookieName = KEYCLOAK_IDENTITY_COOKIE;
-        return authenticateIdentityCookie(realm, uriInfo, headers, cookieName, checkActive);
-    }
-
-    private AuthResult authenticateIdentityCookie(RealmModel realm, UriInfo uriInfo, HttpHeaders headers, String cookieName, boolean checkActive) {
-        logger.info("authenticateIdentityCookie");
-        Cookie cookie = headers.getCookies().get(cookieName);
+        Cookie cookie = headers.getCookies().get(KEYCLOAK_IDENTITY_COOKIE);
         if (cookie == null) {
-            logger.infov("authenticateCookie could not find cookie: {0}", cookieName);
+            logger.infov("authenticateCookie could not find cookie: {0}", KEYCLOAK_IDENTITY_COOKIE);
             return null;
         }
 
@@ -163,7 +181,9 @@ public class AuthenticationManager {
         AuthResult authResult = verifyIdentityToken(realm, uriInfo, checkActive, tokenString);
         if (authResult == null) {
             expireIdentityCookie(realm, uriInfo);
+            return null;
         }
+        authResult.getSession().setLastSessionRefresh(Time.currentTime());
         return authResult;
     }
 
@@ -175,7 +195,6 @@ public class AuthenticationManager {
                 logger.info("Checking if identity token is active");
                 if (!token.isActive() || token.getIssuedAt() < realm.getNotBefore()) {
                     logger.info("identity cookie expired");
-                    expireIdentityCookie(realm, uriInfo);
                     return null;
                 } else {
                     logger.info("token.isActive() : " + token.isActive());
@@ -196,9 +215,9 @@ public class AuthenticationManager {
             }
 
             UserSessionModel session = realm.getUserSession(token.getSessionState());
-            if (session == null || session.getExpires() < Time.currentTime()) {
+            if (!isSessionValid(realm, session)) {
+                if (session != null) logout(realm, session, uriInfo);
                 logger.info("User session not active");
-                expireIdentityCookie(realm, uriInfo);
                 return null;
             }
 
