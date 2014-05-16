@@ -2,8 +2,6 @@ package org.keycloak.social;
 
 import org.keycloak.util.ProviderLoader;
 
-import java.util.ServiceLoader;
-
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */

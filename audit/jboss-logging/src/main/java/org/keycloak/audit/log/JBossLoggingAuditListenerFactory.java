@@ -1,10 +1,10 @@
 package org.keycloak.audit.log;
 
 import org.jboss.logging.Logger;
+import org.keycloak.Config;
 import org.keycloak.audit.AuditListener;
 import org.keycloak.audit.AuditListenerFactory;
 import org.keycloak.provider.ProviderSession;
-import org.keycloak.provider.ProviderSessionFactory;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -21,7 +21,7 @@ public class JBossLoggingAuditListenerFactory implements AuditListenerFactory {
     }
 
     @Override
-    public void init() {
+    public void init(Config.Scope config) {
     }
 
     @Override
@@ -31,11 +31,6 @@ public class JBossLoggingAuditListenerFactory implements AuditListenerFactory {
     @Override
     public String getId() {
         return ID;
-    }
-
-    @Override
-    public boolean lazyLoad() {
-        return false;
     }
 
 }

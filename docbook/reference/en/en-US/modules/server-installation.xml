@@ -252,12 +252,12 @@ keycloak-war-dist-all-1.0-beta-1-SNAPSHOT/
                 First you need to specify that you want to use <literal>mongo</literal> instead of default <literal>jpa</literal> model, and you may also specify
                 host, port and name of mongo database. So you can start keycloak with the command like this:
 <programlisting><![CDATA[
-./standalone.sh -Dkeycloak.model=mongo -Dkeycloak.mongo.host=localhost
--Dkeycloak.mongo.port=27017 -Dkeycloak.mongo.db=keycloak
+./standalone.sh -Dkeycloak.model=mongo -Dkeycloak.model.mongo.host=localhost
+-Dkeycloak.model.mongoport=27017 -Dkeycloak.model.mongo.db=keycloak
 ]]></programlisting>
                 Note that when you install MongoDB on your laptop, it's usually on localhost/270717 by default. That's why properties
-                <literal>keycloak.mongo.host</literal> and <literal>keycloak.mongo.port</literal> are not mandatory, but they already have
-                default values <literal>localhost</literal> and <literal>27017</literal> . Similarly property <literal>keycloak.mongo.db</literal>
+                <literal>keycloak.model.mongo.host</literal> and <literal>keycloak.model.mongo.port</literal> are not mandatory, but they already have
+                default values <literal>localhost</literal> and <literal>27017</literal> . Similarly property <literal>keycloak.model.mongo.db</literal>
                 has default value <literal>keycloak</literal> for name of underlying database. So the example above could be simplified like:
 <programlisting><![CDATA[
 ./standalone.sh -Dkeycloak.model=mongo

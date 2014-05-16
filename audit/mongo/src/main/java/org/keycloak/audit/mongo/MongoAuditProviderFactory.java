@@ -2,13 +2,16 @@ package org.keycloak.audit.mongo;
 
 import com.mongodb.DB;
 import com.mongodb.MongoClient;
+import com.mongodb.MongoCredential;
+import com.mongodb.ServerAddress;
 import com.mongodb.WriteConcern;
+import org.keycloak.Config;
 import org.keycloak.audit.AuditProvider;
 import org.keycloak.audit.AuditProviderFactory;
 import org.keycloak.provider.ProviderSession;
-import org.keycloak.provider.ProviderSessionFactory;
 
 import java.net.UnknownHostException;
+import java.util.Collections;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -29,11 +32,28 @@ public class MongoAuditProviderFactory implements AuditProviderFactory {
     }
 
     @Override
-    public void init() {
+    public void init(Config.Scope config) {
         try {
-            client = new MongoClient(System.getProperty(MONGO_HOST, "localhost"), Integer.parseInt(System.getProperty(MONGO_PORT, "27017")));
+            String host = config.get("host", ServerAddress.defaultHost());
+            int port = config.getInt("port", ServerAddress.defaultPort());
+            String dbName = config.get("db", "keycloak-audit");
+            boolean clearOnStartup = config.getBoolean("clearOnStartup", false);
+
+            String user = config.get("user");
+            String password = config.get("password");
+            if (user != null && password != null) {
+                MongoCredential credential = MongoCredential.createMongoCRCredential(user, dbName, password.toCharArray());
+                client = new MongoClient(new ServerAddress(host, port), Collections.singletonList(credential));
+            } else {
+                client = new MongoClient(host, port);
+            }
+
             client.setWriteConcern(WriteConcern.UNACKNOWLEDGED);
-            db = client.getDB(System.getProperty(MONGO_DB_NAME, "keycloak-audit"));
+            db = client.getDB(dbName);
+
+            if (clearOnStartup) {
+                db.getCollection("audit").drop();
+            }
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);
         }
@@ -47,11 +67,6 @@ public class MongoAuditProviderFactory implements AuditProviderFactory {
     @Override
     public String getId() {
         return ID;
-    }
-
-    @Override
-    public boolean lazyLoad() {
-        return true;
     }
 
 }

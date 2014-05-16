@@ -1,15 +1,11 @@
 package org.keycloak.theme;
 
 import org.keycloak.freemarker.Theme;
-import org.keycloak.freemarker.ThemeLoader;
 import org.keycloak.freemarker.ThemeProvider;
-import org.keycloak.models.Config;
 
 import java.io.IOException;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 /**

@@ -32,9 +32,7 @@ public class KeycloakSessionServletFilter implements Filter {
 
         ResteasyProviderFactory.pushContext(ProviderSession.class, providerSession);
 
-        KeycloakSessionFactory factory = (KeycloakSessionFactory) servletRequest.getServletContext().getAttribute(KeycloakSessionFactory.class.getName());
-        if (factory == null) throw new ServletException("Factory was null");
-        KeycloakSession session = factory.createSession();
+        KeycloakSession session = providerSession.getProvider(KeycloakSession.class);
         ResteasyProviderFactory.pushContext(KeycloakSession.class, session);
         KeycloakTransaction tx = session.getTransaction();
         ResteasyProviderFactory.pushContext(KeycloakTransaction.class, tx);
@@ -56,7 +54,6 @@ public class KeycloakSessionServletFilter implements Filter {
             if (tx.isActive()) tx.rollback();
             throw ex;
         } finally {
-            session.close();
             providerSession.close();
             ResteasyProviderFactory.clearContextData();
         }

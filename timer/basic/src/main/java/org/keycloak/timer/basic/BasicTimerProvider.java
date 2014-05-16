@@ -18,9 +18,7 @@ public class BasicTimerProvider implements TimerProvider {
     }
 
     @Override
-    public void schedule(final Runnable runnable, String config) {
-        long interval = Long.parseLong(config);
-
+    public void schedule(final Runnable runnable, final long interval) {
         TimerTask task = new TimerTask() {
             @Override
             public void run() {
