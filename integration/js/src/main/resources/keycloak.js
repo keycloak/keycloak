@@ -131,7 +131,7 @@ var Keycloak = function (config) {
     kc.createAccountUrl = function(options) {
         var url = getRealmUrl()
             + '/account'
-            + '?referrer=' + kc.clientId
+            + '?referrer=' + encodeURIComponent(kc.clientId)
             + '&referrer_uri=' + encodeURIComponent(adapter.redirectUri(options));
 
         return url;
