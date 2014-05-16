@@ -54,21 +54,22 @@ var Keycloak = function (config) {
                 if (initOptions.token || initOptions.refreshToken) {
                     setToken(initOptions.token, initOptions.refreshToken);
                 } else if (initOptions.onLoad) {
-                    if (initOptions.onLoad == 'check-sso' || initOptions.onLoad == 'login-required') {
-                        var options = {};
-                        if (initOptions.onLoad == 'check-sso') {
+                    var options = {};
+                    switch (initOptions.onLoad) {
+                        case 'check-sso':
                             options.prompt = 'none';
-                        }
-                        var p = kc.login(options);
-                        if (p) {
-                            p.success(function() {
-                                initPromise.setSuccess();
-                            }).error(function() {
-                                initPromise.setError();
-                            });
-                        };
-                    } else {
-                        throw 'Invalid value for onLoad';
+                        case 'login-required':
+                            var p = kc.login(options);
+                            if (p) {
+                                p.success(function() {
+                                    initPromise.setSuccess();
+                                }).error(function() {
+                                    initPromise.setError();
+                                });
+                            };
+                            break;
+                        default:
+                            throw 'Invalid value for onLoad';
                     }
                 }
             } else {
@@ -143,7 +144,7 @@ var Keycloak = function (config) {
 
     kc.hasRealmRole = function (role) {
         var access = kc.realmAccess;
-        return access && access.roles.indexOf(role) >= 0 || false;
+        return !!access && access.roles.indexOf(role) >= 0;
     }
 
     kc.hasResourceRole = function(role, resource) {
@@ -152,7 +153,7 @@ var Keycloak = function (config) {
         }
 
         var access = kc.resourceAccess[resource || kc.clientId];
-        return access && access.roles.indexOf(role) >= 0 || false;
+        return !!access && access.roles.indexOf(role) >= 0;
     }
 
     kc.loadUserProfile = function() {
