@@ -58,7 +58,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriBuilder;
@@ -126,8 +125,7 @@ public class TokenService {
     }
 
     public static UriBuilder tokenServiceBaseUrl(UriBuilder baseUriBuilder) {
-        UriBuilder base = baseUriBuilder.path(RealmsResource.class).path(RealmsResource.class, "getTokenService");
-        return base;
+        return baseUriBuilder.path(RealmsResource.class).path(RealmsResource.class, "getTokenService");
     }
 
     public static UriBuilder accessCodeToTokenUrl(UriInfo uriInfo) {
@@ -295,7 +293,7 @@ public class TokenService {
 
         ClientModel client = authorizeClient(authorizationHeader, form, audit);
         String refreshToken = form.getFirst(OAuth2Constants.REFRESH_TOKEN);
-        AccessToken accessToken = null;
+        AccessToken accessToken;
         try {
             accessToken = tokenManager.refreshAccessToken(realm, client, refreshToken, audit);
         } catch (OAuthErrorException e) {
@@ -313,7 +311,7 @@ public class TokenService {
 
         audit.success();
 
-        return Cors.add(request, Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).auth().allowedOrigins(client).allowedMethods("POST").build();
+        return Cors.add(request, Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).auth().allowedOrigins(client).allowedMethods("POST").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
     }
 
     @Path("auth/request/login")
@@ -501,7 +499,7 @@ public class TokenService {
             credentials.setValue(formData.getFirst("password"));
 
             boolean passwordUpdateSuccessful;
-            String passwordUpdateError = null;
+            String passwordUpdateError;
             try {
                 passwordUpdateSuccessful = AuthenticationProviderManager.getManager(realm, providerSession).updatePassword(user, formData.getFirst("password"));
                 passwordUpdateError = "Password update failed";
@@ -654,12 +652,12 @@ public class TokenService {
 
         audit.success();
 
-        return Cors.add(request, Response.ok(res)).auth().allowedOrigins(client).allowedMethods("POST").build();
+        return Cors.add(request, Response.ok(res)).auth().allowedOrigins(client).allowedMethods("POST").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
     }
 
     protected ClientModel authorizeClient(String authorizationHeader, MultivaluedMap<String, String> formData, Audit audit) {
-        String client_id = null;
-        String clientSecret = null;
+        String client_id;
+        String clientSecret;
         if (authorizationHeader != null) {
             String[] usernameSecret = BasicAuthHelper.parseHeader(authorizationHeader);
             if (usernameSecret == null) {
@@ -1011,11 +1009,7 @@ public class TokenService {
     }
 
     private boolean checkSsl() {
-        if (realm.isSslNotRequired()) {
-            return true;
-        }
-
-        return uriInfo.getBaseUri().getScheme().equals("https");
+        return realm.isSslNotRequired() || uriInfo.getBaseUri().getScheme().equals("https");
     }
 
 }

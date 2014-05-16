@@ -19,6 +19,7 @@ public class Cors {
 
     public static final long DEFAULT_MAX_AGE = TimeUnit.HOURS.toSeconds(1);
     public static final String DEFAULT_ALLOW_METHODS = "GET, HEAD, OPTIONS";
+    public static final String DEFAULT_ALLOW_HEADERS = "Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers";
 
     public static final String ORIGIN_HEADER = "Origin";
     public static final String AUTHORIZATION_HEADER = "Authorization";
@@ -26,6 +27,7 @@ public class Cors {
     public static final String ACCESS_CONTROL_ALLOW_ORIGIN = "Access-Control-Allow-Origin";
     public static final String ACCESS_CONTROL_ALLOW_METHODS = "Access-Control-Allow-Methods";
     public static final String ACCESS_CONTROL_ALLOW_HEADERS = "Access-Control-Allow-Headers";
+    public static final String ACCESS_CONTROL_EXPOSE_HEADERS = "Access-Control-Expose-Headers";
     public static final String ACCESS_CONTROL_ALLOW_CREDENTIALS = "Access-Control-Allow-Credentials";
     public static final String ACCESS_CONTROL_MAX_AGE = "Access-Control-Max-Age";
 
@@ -34,6 +36,7 @@ public class Cors {
     private ResponseBuilder response;
     private Set<String> allowedOrigins;
     private Set<String> allowedMethods;
+    private Set<String> exposedHeaders;
 
     private boolean preflight;
     private boolean auth;
@@ -69,6 +72,11 @@ public class Cors {
         return this;
     }
 
+    public Cors exposedHeaders(String... exposedHeaders) {
+        this.exposedHeaders = new HashSet<String>(Arrays.asList(exposedHeaders));
+        return this;
+    }
+
     public Response build() {
         String origin = request.getHttpHeaders().getRequestHeaders().getFirst(ORIGIN_HEADER);
         if (origin == null) {
@@ -87,9 +95,15 @@ public class Cors {
             response.header(ACCESS_CONTROL_ALLOW_METHODS, DEFAULT_ALLOW_METHODS);
         }
 
+        if (exposedHeaders != null) {
+            response.header(ACCESS_CONTROL_EXPOSE_HEADERS, CollectionUtil.join(exposedHeaders));
+        }
+
         response.header(ACCESS_CONTROL_ALLOW_CREDENTIALS, Boolean.toString(auth));
         if (auth) {
-            response.header(ACCESS_CONTROL_ALLOW_HEADERS, AUTHORIZATION_HEADER);
+            response.header(ACCESS_CONTROL_ALLOW_HEADERS, String.format("%s, %s", DEFAULT_ALLOW_HEADERS, AUTHORIZATION_HEADER));
+        } else {
+            response.header(ACCESS_CONTROL_ALLOW_HEADERS, DEFAULT_ALLOW_HEADERS);
         }
 
         response.header(ACCESS_CONTROL_MAX_AGE, DEFAULT_MAX_AGE);
