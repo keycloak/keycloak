@@ -329,6 +329,7 @@ var Keycloak = function (config) {
                         kc.authServerUrl = config['auth-server-url'];
                         kc.realm = config['realm'];
                         kc.clientId = config['resource'];
+                        kc.clientSecret = (config['credentials'] || {})['secret'];
 
                         promise.setSuccess();
                     } else {
@@ -360,6 +361,7 @@ var Keycloak = function (config) {
             kc.authServerUrl = config.url;
             kc.realm = config.realm;
             kc.clientId = config.clientId;
+            kc.clientSecret = (config.credentials || {}).secret;
 
             promise.setSuccess();
         }
