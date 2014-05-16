@@ -133,4 +133,17 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
         byte[] bytes = os.toByteArray();
         return JsonSerialization.readValue(bytes, RealmRepresentation.class);
     }
+
+    public KeycloakSession startSession() {
+        KeycloakSession session = server.getKeycloakSessionFactory().createSession();
+        session.getTransaction().begin();
+        return session;
+    }
+
+    public void stopSession(KeycloakSession session, boolean commit) {
+        if (commit) {
+            session.getTransaction().commit();
+        }
+        session.close();
+    }
 }

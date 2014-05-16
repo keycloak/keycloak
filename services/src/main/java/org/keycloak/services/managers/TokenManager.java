@@ -23,6 +23,7 @@ import org.keycloak.representations.RefreshToken;
 import org.keycloak.util.Time;
 
 import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.HashSet;
@@ -106,7 +107,7 @@ public class TokenManager {
         return code;
     }
 
-    public AccessToken refreshAccessToken(RealmModel realm, ClientModel client, String encodedRefreshToken, Audit audit) throws OAuthErrorException {
+    public AccessToken refreshAccessToken(UriInfo uriInfo, RealmModel realm, ClientModel client, String encodedRefreshToken, Audit audit) throws OAuthErrorException {
         JWSInput jws = new JWSInput(encodedRefreshToken);
         RefreshToken refreshToken = null;
         try {
@@ -138,10 +139,8 @@ public class TokenManager {
 
         UserSessionModel session = realm.getUserSession(refreshToken.getSessionState());
         int currentTime = Time.currentTime();
-        if (AuthenticationManager.isSessionValid(realm, session)) {
-            if (session != null) {
-                realm.removeUserSession(session);
-            }
+        if (!AuthenticationManager.isSessionValid(realm, session)) {
+            AuthenticationManager.logout(realm, session, uriInfo);
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Session not active", "Session not active");
         }
 

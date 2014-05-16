@@ -296,13 +296,14 @@ public class TokenService {
         String refreshToken = form.getFirst(OAuth2Constants.REFRESH_TOKEN);
         AccessToken accessToken = null;
         try {
-            accessToken = tokenManager.refreshAccessToken(realm, client, refreshToken, audit);
+            accessToken = tokenManager.refreshAccessToken(uriInfo, realm, client, refreshToken, audit);
         } catch (OAuthErrorException e) {
             Map<String, String> error = new HashMap<String, String>();
             error.put(OAuth2Constants.ERROR, e.getError());
             if (e.getDescription() != null) error.put(OAuth2Constants.ERROR_DESCRIPTION, e.getDescription());
             audit.error(Errors.INVALID_TOKEN);
-            throw new BadRequestException("OAuth Error", e, Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build());
+            logger.error("OAuth Error", e);
+            return Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build();
         }
 
         AccessTokenResponse res = tokenManager.responseBuilder(realm, client, audit)
@@ -635,7 +636,8 @@ public class TokenService {
         }
 
         UserSessionModel session = realm.getUserSession(accessCode.getSessionState());
-        if (AuthenticationManager.isSessionValid(realm, session)) {
+        if (!AuthenticationManager.isSessionValid(realm, session)) {
+            AuthenticationManager.logout(realm, session, uriInfo);
             Map<String, String> res = new HashMap<String, String>();
             res.put(OAuth2Constants.ERROR, "invalid_grant");
             res.put(OAuth2Constants.ERROR_DESCRIPTION, "Session not active");
@@ -854,15 +856,7 @@ public class TokenService {
 
     private void logout(UserSessionModel session) {
         UserModel user = session.getUser();
-
-        logger.infov("Logging out: {0} ({1})", user.getLoginName(), session.getId());
-
-        realm.removeUserSession(session);
-        authManager.expireIdentityCookie(realm, uriInfo);
-        authManager.expireRememberMeCookie(realm, uriInfo);
-
-        resourceAdminManager.logoutUser(uriInfo.getRequestUri(), realm, user.getId(), session.getId());
-
+        authManager.logout(realm, session, uriInfo);
         audit.user(user).session(session).success();
     }
 
@@ -914,8 +908,8 @@ public class TokenService {
         }
 
         UserSessionModel session = realm.getUserSession(accessCodeEntry.getSessionState());
-        int currentTime = Time.currentTime();
-        if (AuthenticationManager.isSessionValid(realm, session)) {
+        if (!AuthenticationManager.isSessionValid(realm, session)) {
+            AuthenticationManager.logout(realm, session, uriInfo);
             audit.error(Errors.INVALID_CODE);
             return oauth.forwardToSecurityFailure("Session not active");
         }
