@@ -16,29 +16,22 @@ public class RSATokenVerifier {
         return verifyToken(tokenString, realmKey, realm, true);
     }
 
-
     public static AccessToken verifyToken(String tokenString, PublicKey realmKey, String realm, boolean checkActive) throws VerificationException {
         JWSInput input = new JWSInput(tokenString);
-        boolean verified = false;
-        try {
-            verified = RSAProvider.verify(input, realmKey);
-        } catch (Exception ignore) {
-
-        }
-        if (!verified) throw new VerificationException("Token signature not validated");
+        if (!isPublicKeyValid(input, realmKey)) throw new VerificationException("Invalid token signature.");
 
         AccessToken token;
         try {
             token = input.readJsonContent(AccessToken.class);
         } catch (IOException e) {
-            throw new VerificationException(e);
+            throw new VerificationException("Couldn't parse token signature", e);
         }
         String user = token.getSubject();
         if (user == null) {
-            throw new VerificationException("Token user was null");
+            throw new VerificationException("Token user was null.");
         }
         if (!realm.equals(token.getAudience())) {
-            throw new VerificationException("Token audience doesn't match domain");
+            throw new VerificationException("Token audience doesn't match domain.");
 
         }
         if (checkActive && !token.isActive()) {
@@ -46,5 +39,13 @@ public class RSATokenVerifier {
         }
 
         return token;
+    }
+
+    private static boolean isPublicKeyValid(JWSInput input, PublicKey realmKey) throws VerificationException {
+        try {
+            return RSAProvider.verify(input, realmKey);
+        } catch (Exception e) {
+            throw new VerificationException("Token signature not validated.", e);
+        }
     }
 }
