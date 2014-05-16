@@ -11,13 +11,6 @@
         <li data-ng-show="!application.bearerOnly"><a href="#/realms/{{realm.realm}}/applications/{{application.name}}/sessions">Sessions</a></li>
     </ul>
     <div id="content">
-        <ol class="breadcrumb" data-ng-show="create">
-            <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
-            <li><a href="#/realms/{{realm.realm}}/applications">Applications</a></li>
-            <li class="active">Add Application</li>
-        </ol>
-        <h2 data-ng-show="create"><span>{{realm.realm}}</span> Add Application</h2>
-        <p class="subtitle" data-ng-show="create"><span class="required">*</span> Required fields</p>
         <ol class="breadcrumb" data-ng-hide="create">
             <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
             <li><a href="#/realms/{{realm.realm}}/applications">Applications</a></li>
@@ -25,6 +18,15 @@
             <li class="active">Settings</li>
         </ol>
         <h2 data-ng-hide="create"><span>{{application.name}}</span> Settings</h2>
+        
+        <ol class="breadcrumb" data-ng-show="create">
+            <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
+            <li><a href="#/realms/{{realm.realm}}/applications">Applications</a></li>
+            <li class="active">Add Application</li>
+        </ol>
+        <h2 data-ng-show="create" class="pull-left"><span>{{realm.realm}}</span> Add Application</h2>
+        <p class="subtitle" data-ng-show="create"><span class="required">*</span> Required fields</p>
+
         <form class="form-horizontal" name="applicationForm" novalidate kc-read-only="!access.manageApplications">
             <fieldset class="border-top">
                 <div class="form-group">
@@ -53,27 +55,24 @@
                 </div>
                 <div class="form-group" data-ng-show="!application.bearerOnly">
                     <label class="col-sm-2 control-label" for="newRedirectUri">Redirect URI <span class="required" data-ng-show="create">*</span></label>
-                    <div class="col-sm-6">
-                        <div ng-repeat="redirectUri in application.redirectUris" class="row kc-item-deletable">
-                            <div class="col-sm-8">
-                                <input class="form-control" type="text" data-ng-class="{'input-below':!$first}"
-                                       name="redirectUri" id="redirectUri" data-ng-model="redirectUri" readonly />
-                            </div>
-                            <div class="col-sm-2">
-                                <button class="btn btn-danger" type="button" data-ng-click="deleteRedirectUri($index)">
+                    <div class="col-sm-4 multiple" ng-repeat="redirectUri in application.redirectUris">
+                        <div class="input-group kc-item-deletable">
+                            <input class="form-control" type="text" data-ng-class="{'input-below':!$first}"
+                                   name="redirectUri" id="redirectUri" data-ng-model="redirectUri" readonly />
+                            <span class="input-group-btn">
+                                <button class="btn btn-default" type="button" data-ng-click="deleteRedirectUri($index)">
                                     Delete</button>
-                            </div>
+                            </span>
                         </div>
-
-                        <div class="row">
-                            <div class="col-sm-8">
-                                <input class="form-control" type="text" name="newRedirectUri" id="newRedirectUri"
-                                       placeholder="New Redirect URI..." data-ng-model="newRedirectUri"
-                                       data-ng-class="{'input-below':application.redirectUris.length}" />
-                            </div>
-                            <div class="col-sm-2">
-                                <button class="btn btn-primary" data-ng-click="addRedirectUri()" ng-show="newRedirectUri.length > 0">Add</button>
-                            </div>
+                    </div>
+                    <div class="col-sm-4 multiple">
+                        <div class="input-group">
+                            <input class="form-control" type="text" name="newRedirectUri" id="newRedirectUri"
+                                   placeholder="New Redirect URI..." data-ng-model="newRedirectUri"
+                                   data-ng-class="{'input-below':application.redirectUris.length}" />
+                            <span class="input-group-btn">
+                                <button class="btn btn-default" data-ng-click="addRedirectUri()" ng-show="newRedirectUri.length > 0">Add</button>
+                            </span>
                         </div>
                     </div>
                 </div>

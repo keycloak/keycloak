@@ -1,3 +1,4 @@
+/*
 table {
   width: 100%;
   border: 1px #dcdcdc solid;
@@ -27,22 +28,9 @@ table thead tr th {
   padding: 1px;
   border-top: none;
 }
-/*
-.kc-table-actions span:last-child {
-  float: right;
-}
-*/
 .kc-table-actions {
   padding: 1px;
 }
-/*
-.kc-table-actions button {
-  padding: 3px 8px;
-  font-size: 11px;
-  box-shadow: 1px 2px 2px #e3e3e3;
-  margin: 4px;
-}
-*/
 .kc-table-number {
   text-align: right;
   width: 100px;
@@ -59,33 +47,18 @@ table thead tr th {
   background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0, #fafafa), color-stop(1, 0, #eeeeee));
   border-bottom: 1px #cedede solid;
 }
-/*
-table tbody tr td:first-child {
-  color: #0099d3;
-}
-*/
-table thead tr th:last-child {
-  /*border-right: none;*/
-}
 table thead tr th button,
 table thead tr th .button {
   margin-left: 0.72727272727273em;
 }
 table tbody tr:first-child td {
   border-top: 1px solid #f2f2f2;
-  /*   padding-top: 9px; */
+}
 
-}
-table tbody tr td:last-child {
- /* border-right: none;*/
-}
-/*
-table tbody tr:hover {
-  cursor: pointer;
-  background-color: #ebebeb;
-}
-*/
-/* Styles from Gabriel */
+
+
+
+
 .kc-table-actions button + button,
 .kc-table-actions .button + button {
   margin-left: 5px;
@@ -226,3 +199,4 @@ td.audit-error {
 .kc-table-actions select {
     height: 26px;
 }
+*/

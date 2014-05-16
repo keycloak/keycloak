@@ -15,17 +15,18 @@
             <li><a href="#/realms/{{realm.realm}}/users">Users</a></li>
             <li class="active">Add</li>
         </ol>
-        <h2 data-ng-show="create">Add User</h2>
+        <h2 data-ng-show="create" class="pull-left">Add User</h2>
         <ol class="breadcrumb" data-ng-hide="create">
             <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
             <li><a href="#/realms/{{realm.realm}}/users">Users</a></li>
             <li><a href="#/realms/{{realm.realm}}/users/{{user.username}}">{{user.username}}</a></li>
             <li class="active">Attributes</li>
         </ol>
-        <h2 data-ng-hide="create"><span>{{user.username}}'s</span> Attributes</h2>
+        <h2 data-ng-hide="create" class="pull-left"><span>{{user.username}}'s</span> Attributes</h2>
+        <p class="subtitle"><span class="required">*</span> Required fields</p>
 
         <form class="form-horizontal" name="userForm" novalidate kc-read-only="!access.manageUsers">
-            <span class="fieldset-notice"><span class="required">*</span> Required fields</span>
+            
             <fieldset class="border-top">
                 <div class="form-group">
                     <label class="col-sm-2 control-label"for="id">ID</label>

@@ -1,17 +1,17 @@
 <div class="bs-sidebar col-sm-3 "></div>
 <div id="content-area" class="col-sm-9" role="main">
     <div id="content">
-        <h2 class="margin-top">Add Realm</h2>
+        <h2 class="margin-top pull-left">Add Realm</h2>
+        <p class="subtitle margin-top"><span class="required">*</span> Required fields</p>
 
         <form class="form-horizontal" name="realmForm" novalidate>
-            <span class="fieldset-notice"><span class="required">*</span> Required fields</span>
             <fieldset>
                 <legend><span class="text">Import Realm</span></legend>
                 <div class="form-group">
                     <label for="name" class="col-sm-2 control-label">Upload JSON File </label>
                     <div class="col-sm-4">
                         <div class="controls kc-button-input-file" data-ng-show="!files || files.length == 0">
-                            <a href="#" class="kc-button"><span class="kc-icon-upload">Icon: Upload</span>Choose a JSON File...</a>
+                            <a href="#" class="btn btn-default"><span class="kc-icon-upload">Icon: Upload</span>Choose a JSON File...</a>
                             <input id="import-file" type="file" class="transparent" ng-file-select="onFileSelect($files)">
                         </div>
                         <span class="kc-uploaded-file" data-ng-show="files.length > 0">

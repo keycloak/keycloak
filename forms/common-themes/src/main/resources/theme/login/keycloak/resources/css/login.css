@@ -10,3 +10,7 @@
 .login-pf .container .details {
     border-left: 1px solid rgba(255, 255, 255, 0.1);
 }
+
+.login-pf .form-control {
+    font-size: 12px;
+}

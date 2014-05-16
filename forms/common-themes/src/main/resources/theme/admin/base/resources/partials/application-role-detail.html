@@ -28,12 +28,12 @@
             <li class="active">{{role.name}}</li>
         </ol>
 
-        <h2 data-ng-hide="create"><span>{{application.name}}</span> {{role.name}}</h2>
-        <h2 data-ng-show="create"><span>{{application.name}}</span> Add Role</h2>
+        <h2 data-ng-hide="create" class="pull-left"><span>{{application.name}}</span> {{role.name}}</h2>
+        <h2 data-ng-show="create" class="pull-left"><span>{{application.name}}</span> Add Role</h2>
+        <p class="subtitle"><span class="required">*</span> Required fields</p>
 
         <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageApplications">
-            <span class="fieldset-notice"><span class="required">*</span> Required fields</span>
-
+            
             <fieldset class="border-top">
                 <div class="form-group">
                     <label class="col-sm-2 control-label" for="name">Role name <span class="required" data-ng-show="create">*</span></label>
@@ -73,10 +73,10 @@
                             </select>
                         </div>
                         <div class="middle-buttons kc-vertical">
-                            <button class="kc-button" type="submit" ng-click="addRealmRole()" tooltip="Move right" tooltip-placement="right">
+                            <button class="btn btn-default" type="submit" ng-click="addRealmRole()" tooltip="Move right" tooltip-placement="right">
                                 <span class="kc-icon-arrow-right">Move right</span>
                             </button>
-                            <button class="kc-button" type="submit" ng-click="deleteRealmRole()" tooltip="Move left" tooltip-placement="right">
+                            <button class="btn btn-default" type="submit" ng-click="deleteRealmRole()" tooltip="Move left" tooltip-placement="left">
                                 <span class="kc-icon-arrow-left">Move left</span>
                             </button>
                         </div>
@@ -117,10 +117,10 @@
                             </select>
                         </div>
                         <div class="middle-buttons kc-vertical">
-                            <button class="kc-button" type="submit" ng-click="addApplicationRole()" tooltip="Move right" tooltip-placement="right">
+                            <button class="btn btn-default" type="submit" ng-click="addApplicationRole()" tooltip="Move right" tooltip-placement="right">
                                 <span class="kc-icon-arrow-right">Move right</span>
                             </button>
-                            <button class="kc-button" type="submit" ng-click="deleteApplicationRole()" tooltip="Move left" tooltip-placement="right">
+                            <button class="btn btn-default" type="submit" ng-click="deleteApplicationRole()" tooltip="Move left" tooltip-placement="left">
                                 <span class="kc-icon-arrow-left">Move left</span>
                             </button>
                         </div>

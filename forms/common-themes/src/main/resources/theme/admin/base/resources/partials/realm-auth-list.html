@@ -9,33 +9,31 @@
         </ol>
         <h2><span>{{realm.realm}}</span> Authentication Providers</h2>
 
-        <div class="panel">
-            <table class="table">
-                <thead>
-                <tr>
-                    <th class="kc-table-actions" colspan="3">
-                        <div class="pull-right" data-ng-show="access.manageRealm">
-                            <a class="btn btn-primary" href="#/realms/{{realm.realm}}/auth-settings/create">Add Provider</a>
-                        </div>
-                    </th>
-                </tr>
-                <tr data-ng-show="authenticationProviders && authenticationProviders.length > 0">
-                    <th>Provider Name</th>
-                    <th>Password Update Supported</th>
-                    <th>Configuration</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr ng-repeat="authProvider in authenticationProviders">
-                    <td><a href="#/realms/{{realm.realm}}/auth-settings/{{$index}}">{{authProvider.providerName|capitalize}}</a></td>
-                    <td>{{authProvider.passwordUpdateSupported}}</td>
-                    <td>{{authProvider.config}}</td>
-                </tr>
-                <tr data-ng-show="!authenticationProviders || authenticationProviders.length == 0">
-                    <td>No authentication providers available</td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
+        <table class="table table-striped table-bordered">
+            <thead>
+            <tr>
+                <th class="kc-table-actions" colspan="3">
+                    <div class="pull-right" data-ng-show="access.manageRealm">
+                        <a class="btn btn-primary" href="#/realms/{{realm.realm}}/auth-settings/create">Add Provider</a>
+                    </div>
+                </th>
+            </tr>
+            <tr data-ng-show="authenticationProviders && authenticationProviders.length > 0">
+                <th>Provider Name</th>
+                <th>Password Update Supported</th>
+                <th>Configuration</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr ng-repeat="authProvider in authenticationProviders">
+                <td><a href="#/realms/{{realm.realm}}/auth-settings/{{$index}}">{{authProvider.providerName|capitalize}}</a></td>
+                <td>{{authProvider.passwordUpdateSupported}}</td>
+                <td>{{authProvider.config}}</td>
+            </tr>
+            <tr data-ng-show="!authenticationProviders || authenticationProviders.length == 0">
+                <td>No authentication providers available</td>
+            </tr>
+            </tbody>
+        </table>
     </div>
 </div>

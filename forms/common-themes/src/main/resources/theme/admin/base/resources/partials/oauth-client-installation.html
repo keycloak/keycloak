@@ -9,6 +9,12 @@
         <li><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.id}}/revocation">Revocation</a></li>
     </ul>
     <div id="content">
+        <ol class="breadcrumb" data-ng-hide="create">
+            <li><a href="#/realms/{{realm.realm}}">{{realm.realm}}</a></li>
+            <li><a href="#/realms/{{realm.realm}}/oauth-clients">OAuth Clients</a></li>
+            <li><a href="#/realms/{{realm.realm}}/oauth-clients/{{oauth.id}}">{{oauth.name}}</a></li>
+            <li class="active">Installation</li>
+        </ol>
         <h2>OAuth Client Installation</h2>
         <form class="form-horizontal" name="realmForm" novalidate>
             <fieldset>
