@@ -1,5 +1,7 @@
 package org.keycloak.services.resources;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -8,6 +10,7 @@ import javax.ws.rs.core.Response.ResponseBuilder;
 
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.models.ClientModel;
+import org.keycloak.util.CollectionUtil;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -17,7 +20,8 @@ public class Cors {
     public static final long DEFAULT_MAX_AGE = TimeUnit.HOURS.toSeconds(1);
     public static final String DEFAULT_ALLOW_METHODS = "GET, HEAD, OPTIONS";
 
-    public static final String ORIGIN = "Origin";
+    public static final String ORIGIN_HEADER = "Origin";
+    public static final String AUTHORIZATION_HEADER = "Authorization";
 
     public static final String ACCESS_CONTROL_ALLOW_ORIGIN = "Access-Control-Allow-Origin";
     public static final String ACCESS_CONTROL_ALLOW_METHODS = "Access-Control-Allow-Methods";
@@ -25,10 +29,11 @@ public class Cors {
     public static final String ACCESS_CONTROL_ALLOW_CREDENTIALS = "Access-Control-Allow-Credentials";
     public static final String ACCESS_CONTROL_MAX_AGE = "Access-Control-Max-Age";
 
+
     private HttpRequest request;
     private ResponseBuilder response;
     private Set<String> allowedOrigins;
-    private String[] allowedMethods;
+    private Set<String> allowedMethods;
 
     private boolean preflight;
     private boolean auth;
@@ -60,12 +65,12 @@ public class Cors {
     }
 
     public Cors allowedMethods(String... allowedMethods) {
-        this.allowedMethods = allowedMethods;
+        this.allowedMethods = new HashSet<String>(Arrays.asList(allowedMethods));
         return this;
     }
 
     public Response build() {
-        String origin = request.getHttpHeaders().getRequestHeaders().getFirst(ORIGIN);
+        String origin = request.getHttpHeaders().getRequestHeaders().getFirst(ORIGIN_HEADER);
         if (origin == null) {
             return response.build();
         }
@@ -77,21 +82,14 @@ public class Cors {
         response.header(ACCESS_CONTROL_ALLOW_ORIGIN, origin);
 
         if (allowedMethods != null) {
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < allowedMethods.length; i++) {
-                if (i > 0) {
-                    sb.append(", ");
-                }
-                sb.append(allowedMethods[i]);
-            }
-            response.header(ACCESS_CONTROL_ALLOW_METHODS, sb.toString());
+            response.header(ACCESS_CONTROL_ALLOW_METHODS, CollectionUtil.join(allowedMethods));
         } else {
             response.header(ACCESS_CONTROL_ALLOW_METHODS, DEFAULT_ALLOW_METHODS);
         }
 
         response.header(ACCESS_CONTROL_ALLOW_CREDENTIALS, Boolean.toString(auth));
         if (auth) {
-            response.header(ACCESS_CONTROL_ALLOW_HEADERS, "Authorization");
+            response.header(ACCESS_CONTROL_ALLOW_HEADERS, AUTHORIZATION_HEADER);
         }
 
         response.header(ACCESS_CONTROL_MAX_AGE, DEFAULT_MAX_AGE);
