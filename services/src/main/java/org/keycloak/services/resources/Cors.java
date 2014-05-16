@@ -16,7 +16,7 @@ import org.keycloak.models.UserModel;
 public class Cors {
 
     public static final long DEFAULT_MAX_AGE = TimeUnit.HOURS.toSeconds(1);
-    public static final String DEFAULT_ALLOW_METHODS = "GET, OPTIONS";
+    public static final String DEFAULT_ALLOW_METHODS = "GET, HEAD, OPTIONS";
 
     public static final String ORIGIN = "Origin";
 
