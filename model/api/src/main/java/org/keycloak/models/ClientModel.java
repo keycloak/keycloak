@@ -1,5 +1,6 @@
 package org.keycloak.models;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -64,4 +65,7 @@ public interface ClientModel {
 
     void setNotBefore(int notBefore);
 
+    Set<UserSessionModel> getUserSessions();
+
+    int getActiveUserSessions();
 }

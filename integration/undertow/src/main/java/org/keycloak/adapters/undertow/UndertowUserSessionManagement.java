@@ -6,19 +6,14 @@ import io.undertow.server.session.Session;
 import io.undertow.server.session.SessionListener;
 import io.undertow.server.session.SessionManager;
 import io.undertow.servlet.handlers.security.CachedAuthenticatedSessionHandler;
-import io.undertow.util.StatusCodes;
 import org.jboss.logging.Logger;
-import org.keycloak.adapters.KeycloakDeployment;
-import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.representations.adapters.action.LogoutAction;
-import org.keycloak.util.JsonSerialization;
 
-import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -32,30 +27,22 @@ public class UndertowUserSessionManagement implements SessionListener {
     private static final Logger log = Logger.getLogger(UndertowUserSessionManagement.class);
     private static final String AUTH_SESSION_NAME = CachedAuthenticatedSessionHandler.class.getName() + ".AuthenticatedSession";
     protected ConcurrentHashMap<String, UserSessions> userSessionMap = new ConcurrentHashMap<String, UserSessions>();
+    protected ConcurrentHashMap<String, UserSessions> keycloakSessionMap = new ConcurrentHashMap<String, UserSessions>();
+    protected volatile boolean registered;
 
 
     public static class UserSessions {
-        protected Set<String> sessionIds = new HashSet<String>();
+        protected String user;
         protected long loggedIn = System.currentTimeMillis();
-
-        public Set<String> getSessionIds() {
-            return sessionIds;
-        }
-
+        protected Map<String, String>  keycloakSessionToHttpSession = new HashMap<String, String>();
+        protected Map<String, String>  httpSessionToKeycloakSession = new HashMap<String, String>();
         public long getLoggedIn() {
             return loggedIn;
         }
     }
 
-    public int getActiveSessions() {
-        int active = 0;
-        synchronized (userSessionMap) {
-            for (UserSessions sessions : userSessionMap.values()) {
-                active += sessions.getSessionIds().size();
-            }
-
-        }
-        return active;
+    public synchronized int getActiveSessions() {
+        return keycloakSessionMap.size();
     }
 
     /**
@@ -63,73 +50,87 @@ public class UndertowUserSessionManagement implements SessionListener {
      * @param username
      * @return null if user not logged in
      */
-    public Long getUserLoginTime(String username) {
+    public synchronized Long getUserLoginTime(String username) {
         UserSessions sessions = userSessionMap.get(username);
         if (sessions == null) return null;
         return sessions.getLoggedIn();
     }
 
-    public Set<String> getActiveUsers() {
+    public synchronized Set<String> getActiveUsers() {
         HashSet<String> set = new HashSet<String>();
         set.addAll(userSessionMap.keySet());
         return set;
     }
 
-    public void login(SessionManager manager, HttpSession session, String username) {
+    public synchronized void login(SessionManager manager, HttpSession session, String username, String keycloakSessionId) {
         String sessionId = session.getId();
-        addAuthenticatedSession(username, sessionId);
-        manager.registerSessionListener(this);
-    }
 
-    protected void addAuthenticatedSession(String username, String sessionId) {
-        synchronized (userSessionMap) {
-            UserSessions sessions = userSessionMap.get(username);
-            if (sessions == null) {
-                sessions = new UserSessions();
-                userSessionMap.put(username, sessions);
-            }
-            sessions.getSessionIds().add(sessionId);
-        }
-    }
-
-    protected void removeAuthenticatedSession(String sessionId, String username) {
-        synchronized (userSessionMap) {
-            UserSessions sessions = userSessionMap.get(username);
-            if (sessions == null) return;
-            sessions.getSessionIds().remove(sessionId);
-            if (sessions.getSessionIds().isEmpty()) {
-                userSessionMap.remove(username);
-            }
-        }
-    }
-
-    public void logoutAll(SessionManager manager) {
-        List<String> users = new ArrayList<String>();
-        users.addAll(userSessionMap.keySet());
-        for (String user : users) logout(manager, user);
-    }
-
-    public void logout(SessionManager manager, String user) {
-        log.info("logoutUser: " + user);
-        UserSessions sessions = null;
-        synchronized (userSessionMap) {
-            sessions = userSessionMap.remove(user);
-        }
+        UserSessions sessions = userSessionMap.get(username);
         if (sessions == null) {
-            log.info("no session for user: " + user);
+            sessions = new UserSessions();
+            sessions.user = username;
+            userSessionMap.put(username, sessions);
+        }
+        sessions.httpSessionToKeycloakSession.put(sessionId, keycloakSessionId);
+        sessions.keycloakSessionToHttpSession.put(keycloakSessionId, sessionId);
+        keycloakSessionMap.put(keycloakSessionId, sessions);
+        if (!registered) {
+            manager.registerSessionListener(this);
+            registered = true;
+        }
+    }
+
+    public synchronized void logoutAll(SessionManager manager) {
+        for (String user : userSessionMap.keySet()) logoutUser(manager, user);
+    }
+
+    public synchronized void logoutUser(SessionManager manager, String user) {
+        log.debug("logoutUser: " + user);
+        UserSessions sessions = null;
+        sessions = userSessionMap.remove(user);
+        if (sessions == null) {
+            log.debug("no session for user: " + user);
             return;
         }
-        log.info("found session for user");
-        for (String id : sessions.getSessionIds()) {
+        log.debug("found session for user");
+        for (Map.Entry<String, String> entry : sessions.httpSessionToKeycloakSession.entrySet()) {
             log.debug("invalidating session for user: " + user);
-            Session session = manager.getSession(id);
+            String sessionId = entry.getKey();
+            String keycloakSessionId = entry.getValue();
+            Session session = manager.getSession(sessionId);
             try {
                 session.invalidate(null);
             } catch (Exception e) {
                 log.warn("Session already invalidated.");
             }
+            keycloakSessionMap.remove(keycloakSessionId);
         }
     }
+
+    public synchronized void logoutKeycloakSession(SessionManager manager, String keycloakSessionId) {
+        log.debug("logoutKeycloakSession: " + keycloakSessionId);
+        UserSessions sessions = keycloakSessionMap.remove(keycloakSessionId);
+        if (sessions == null) {
+            log.debug("no session for keycloak session id: " + keycloakSessionId);
+            return;
+        }
+        String sessionId = sessions.keycloakSessionToHttpSession.remove(keycloakSessionId);
+        if (sessionId == null) {
+            log.debug("no session for keycloak session id: " + keycloakSessionId);
+
+        }
+        sessions.httpSessionToKeycloakSession.remove(sessionId);
+        Session session = manager.getSession(sessionId);
+        try {
+            session.invalidate(null);
+        } catch (Exception e) {
+            log.warn("Session already invalidated.");
+        }
+        if (sessions.keycloakSessionToHttpSession.size() == 0) {
+            userSessionMap.remove(sessions.user);
+        }
+    }
+
 
     @Override
     public void sessionCreated(Session session, HttpServerExchange exchange) {
@@ -141,7 +142,21 @@ public class UndertowUserSessionManagement implements SessionListener {
         String username = getUsernameFromSession(session);
         if (username == null) return;
         String sessionId = session.getId();
-        removeAuthenticatedSession(sessionId, username);
+        UserSessions userSessions = userSessionMap.get(username);
+        if (userSessions == null) {
+            return;
+        }
+        synchronized (this) {
+            String keycloakSessionId = userSessions.httpSessionToKeycloakSession.remove(sessionId);
+            if (keycloakSessionId != null) {
+                userSessions.keycloakSessionToHttpSession.remove(keycloakSessionId);
+                keycloakSessionMap.remove(keycloakSessionId);
+            }
+            if (userSessions.httpSessionToKeycloakSession.size() == 0) {
+                userSessionMap.remove(username);
+            }
+
+        }
     }
 
     protected String getUsernameFromSession(Session session) {
@@ -156,8 +171,21 @@ public class UndertowUserSessionManagement implements SessionListener {
     public void sessionIdChanged(Session session, String oldSessionId) {
         String username = getUsernameFromSession(session);
         if (username == null) return;
-        removeAuthenticatedSession(oldSessionId, username);
-        addAuthenticatedSession(session.getId(), username);
+        String sessionId = session.getId();
+
+        UserSessions userSessions = userSessionMap.get(username);
+        if (userSessions == null) {
+            return;
+        }
+
+        synchronized (this) {
+            String keycloakSessionId = userSessions.httpSessionToKeycloakSession.remove(oldSessionId);
+            if (keycloakSessionId != null) {
+                userSessions.keycloakSessionToHttpSession.remove(keycloakSessionId);
+                userSessions.keycloakSessionToHttpSession.put(keycloakSessionId, sessionId);
+                userSessions.httpSessionToKeycloakSession.put(sessionId, keycloakSessionId);
+            }
+        }
     }
 
     @Override

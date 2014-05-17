@@ -24,14 +24,12 @@
             <tr>
                 <th>Application</th>
                 <th>Active Sessions</th>
-                <th>Active Users</th>
             </tr>
             </thead>
             <tbody>
             <tr data-ng-repeat="(application, data) in stats">
                 <td><a href="#/realms/{{realm.realm}}/applications/{{application}}/sessions">{{application}}</a></td>
-                <td>{{data.activeSessions}}</td>
-                <td>{{data.activeUsers}}</td>
+                <td>{{data}}</td>
             </tr>
             </tbody>
         </table>

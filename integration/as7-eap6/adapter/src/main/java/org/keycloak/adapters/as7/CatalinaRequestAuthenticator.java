@@ -62,7 +62,7 @@ public class CatalinaRequestAuthenticator extends RequestAuthenticator {
         session.setNote(KeycloakSecurityContext.class.getName(), securityContext);
         String username = securityContext.getToken().getSubject();
         log.debug("userSessionManage.login: " + username);
-        userSessionManagement.login(session, username);
+        userSessionManagement.login(session, username, securityContext.getToken().getSessionState());
     }
 
     @Override

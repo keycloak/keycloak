@@ -9,10 +9,12 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.adapters.action.SessionStats;
 import org.keycloak.representations.adapters.action.UserStats;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.services.managers.ApplicationManager;
 import org.keycloak.services.managers.ModelToRepresentation;
 import org.keycloak.services.managers.RealmManager;
@@ -36,7 +38,10 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -228,7 +233,32 @@ public class ApplicationResource {
             logger.info("activeSessions: " + stats.getActiveSessions());
         }
         return stats;
-     }
+    }
+
+    @Path("session-count")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public Map<String, Integer> getApplicationSessionCount() {
+        auth.requireView();
+        Map<String, Integer> map = new HashMap<String, Integer>();
+        map.put("count", application.getActiveUserSessions());
+        return map;
+    }
+
+    @Path("user-sessions")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<UserSessionRepresentation> getUserSessions() {
+        auth.requireView();
+        List<UserSessionRepresentation> sessions = new ArrayList<UserSessionRepresentation>();
+        for (UserSessionModel session : application.getUserSessions()) {
+            UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(session);
+            sessions.add(rep);
+        }
+        return sessions;
+    }
 
     @Path("logout-all")
     @POST

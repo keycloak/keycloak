@@ -120,7 +120,9 @@ public class PreAuthActionsHandler {
             String user = action.getUser();
             if (user != null) {
                 log.info("logout of session for: " + user);
-                userSessionManagement.logout(user);
+                userSessionManagement.logoutUser(user);
+            } else if (action.getSession() != null) {
+                userSessionManagement.logoutKeycloakSession(action.getSession());
             } else {
                 log.info("logout of all sessions");
                 if (action.getNotBefore() > deployment.getNotBefore()) {

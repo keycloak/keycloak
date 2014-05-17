@@ -80,6 +80,7 @@ public class JpaKeycloakSession implements KeycloakSession {
         }
 
         RealmAdapter adapter = new RealmAdapter(em, realm);
+        adapter.removeUserSessions();
         for (ApplicationEntity a : new LinkedList<ApplicationEntity>(realm.getApplications())) {
             adapter.removeApplication(a.getId());
         }

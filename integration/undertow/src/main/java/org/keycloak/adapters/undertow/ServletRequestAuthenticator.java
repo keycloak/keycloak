@@ -66,7 +66,7 @@ public class ServletRequestAuthenticator extends UndertowRequestAuthenticator {
         HttpServletRequest req = (HttpServletRequest) servletRequestContext.getServletRequest();
         HttpSession session = req.getSession(true);
         session.setAttribute(KeycloakUndertowAccount.class.getName(), account);
-        userSessionManagement.login(servletRequestContext.getDeployment().getSessionManager(), session, account.getPrincipal().getName());
+        userSessionManagement.login(servletRequestContext.getDeployment().getSessionManager(), session, account.getPrincipal().getName(), account.getKeycloakSecurityContext().getToken().getSessionState());
 
     }
 }

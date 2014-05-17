@@ -11,6 +11,7 @@ import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.provider.ProviderSession;
 import org.keycloak.representations.adapters.action.SessionStats;
 import org.keycloak.representations.idm.RealmAuditRepresentation;
@@ -27,6 +28,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
@@ -156,7 +158,32 @@ public class RealmAdminResource {
     @POST
     public void logoutAll() {
         auth.requireManage();
+        realm.removeUserSessions();
         new ResourceAdminManager().logoutAll(uriInfo.getRequestUri(), realm);
+    }
+
+    @Path("sessions/{session}")
+    @DELETE
+    public void deleteSession(@PathParam("session") String sessionId) {
+        UserSessionModel session = realm.getUserSession(sessionId);
+        if (session == null) throw new NotFoundException("Sesssion not found");
+        realm.removeUserSession(session);
+        new ResourceAdminManager().logoutSession(uriInfo.getRequestUri(), realm, session.getId());
+    }
+
+    @Path("application-session-stats")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public Map<String, Integer> getApplicationSessionStats() {
+        auth.requireView();
+        Map<String, Integer> stats = new HashMap<String, Integer>();
+        for (ApplicationModel applicationModel : realm.getApplications()) {
+            int size = applicationModel.getActiveUserSessions();
+            if (size == 0) continue;
+            stats.put(applicationModel.getName(), size);
+        }
+        return stats;
     }
 
     @Path("session-stats")

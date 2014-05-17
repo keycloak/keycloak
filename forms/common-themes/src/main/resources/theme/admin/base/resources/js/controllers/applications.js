@@ -43,15 +43,12 @@ module.controller('ApplicationCredentialsCtrl', function($scope, $location, real
     });
 });
 
-module.controller('ApplicationSessionsCtrl', function($scope, realm, stats, application,
-                                                      ApplicationLogoutUser,
-                                                      ApplicationLogoutAll,
-                                                      ApplicationSessionStats,
-                                                      ApplicationSessionStatsWithUsers,
+module.controller('ApplicationSessionsCtrl', function($scope, realm, sessionCount, application,
+                                                      ApplicationUserSessions,
                                                     $location, Dialog, Notifications) {
     $scope.realm = realm;
-    $scope.stats = stats;
-    $scope.users = {};
+    $scope.count = sessionCount.count;
+    $scope.sessions = [];
     $scope.application = application;
 
     $scope.toDate = function(val) {
@@ -59,27 +56,11 @@ module.controller('ApplicationSessionsCtrl', function($scope, realm, stats, appl
     };
 
     $scope.loadUsers = function() {
-        ApplicationSessionStatsWithUsers.get({ realm : realm.realm, application: $scope.application.name }, function(updated) {
-            $scope.stats = updated;
-            $scope.users = updated.users;
+        ApplicationUserSessions.query({ realm : realm.realm, application: $scope.application.name }, function(updated) {
+            $scope.count = updated.length;
+            $scope.sessions = updated;
         })
     };
-
-    $scope.logoutAll = function() {
-        ApplicationLogoutAll.save({realm : realm.realm, application: $scope.application.name}, function () {
-            Notifications.success('Logged out all users');
-            $scope.loadUsers();
-        });
-    };
-
-    $scope.logoutUser = function(user) {
-        console.log('Trying to logout user: ' + user);
-        ApplicationLogoutUser.save({realm : realm.realm, application: $scope.application.name, user: user}, function () {
-            Notifications.success('Logged out user' + user);
-            $scope.loadUsers();
-        });
-    };
-
 });
 
 module.controller('ApplicationClaimsCtrl', function($scope, realm, application, claims,

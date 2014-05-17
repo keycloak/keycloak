@@ -18,23 +18,37 @@
         <table class="table table-striped table-bordered">
             <thead>
             <tr>
-                <th class="kc-table-actions" colspan="3">
+                <th class="kc-table-actions" colspan="5">
                     <div class="pull-right">
-                        <a class="btn btn-primary" ng-click="logoutAll()">Logout</a>
+                        <a class="btn btn-primary" ng-click="logoutAll()">Logout All Sessions</a>
                     </div>
                 </th>
             </tr>
             <tr>
-                <th>Application</th>
+                <th>IP Address</th>
                 <th>Login Time</th>
-                <th></th>
+                <th>Applications</th>
+                <th>OAuth Clients</th>
+                <th>Action</th>
             </tr>
             </thead>
             <tbody>
-            <tr data-ng-repeat="(application, data) in stats">
-                <td><a href="#/realms/{{realm.realm}}/applications/{{application}}/sessions">{{application}}</a></td>
-                <td>{{data.whenLoggedIn | date:'medium'}}</td>
-                <td><a ng-click="logoutApplication(application)">invalidate session</a> </td>
+            <tr data-ng-repeat="session in sessions">
+                <td>{{session.ipAddress}}</td>
+                <td>{{session.start | date:'medium'}}</td>
+                <td><ul style="list-style: none; ">
+                    <li data-ng-repeat="app in session.applications">
+                        <a href="#/realms/{{realm.realm}}/applications/{{app}}/sessions">{{app}}</a>
+                    </li>
+                </ul>
+                </td>
+                <td><ul style="list-style: none; ">
+                    <li data-ng-repeat="(clientId, clientName) in session.clients">
+                        <a href="#/realms/{{realm.realm}}/oauth-clients/{{clientId}}">{{clientName}}</a>
+                    </li>
+                </ul>
+                </td>
+                <td><a ng-click="logoutSession(session.id)">logout</a> </td>
             </tr>
             </tbody>
         </table>

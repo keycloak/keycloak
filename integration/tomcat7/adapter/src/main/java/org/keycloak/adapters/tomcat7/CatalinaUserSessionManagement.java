@@ -1,6 +1,7 @@
 package org.keycloak.adapters.tomcat7;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -23,31 +24,21 @@ import org.keycloak.adapters.UserSessionManagement;
 public class CatalinaUserSessionManagement implements SessionListener, UserSessionManagement {
     private static final Logger log = Logger.getLogger(""+CatalinaUserSessionManagement.class);
     protected ConcurrentHashMap<String, UserSessions> userSessionMap = new ConcurrentHashMap<String, UserSessions>();
+    protected ConcurrentHashMap<String, UserSessions> keycloakSessionMap = new ConcurrentHashMap<String, UserSessions>();
 
     public static class UserSessions {
-        protected Map<String, Session> sessions = new ConcurrentHashMap<String, Session>();
+        protected String user;
         protected long loggedIn = System.currentTimeMillis();
-
-
-        public Map<String, Session> getSessions() {
-            return sessions;
-        }
-
+        protected Map<String, String>  keycloakSessionToHttpSession = new HashMap<String, String>();
+        protected Map<String, String>  httpSessionToKeycloakSession = new HashMap<String, String>();
+        protected Map<String, Session> sessions = new HashMap<String, Session>();
         public long getLoggedIn() {
             return loggedIn;
         }
     }
 
-    @Override
-    public int getActiveSessions() {
-        int active = 0;
-        synchronized (userSessionMap) {
-            for (UserSessions sessions : userSessionMap.values()) {
-                active += sessions.getSessions().size();
-            }
-
-        }
-        return active;
+    public synchronized int getActiveSessions() {
+        return keycloakSessionMap.size();
     }
 
     /**
@@ -56,59 +47,77 @@ public class CatalinaUserSessionManagement implements SessionListener, UserSessi
      * @return null if user not logged in
      */
     @Override
-    public Long getUserLoginTime(String username) {
+    public synchronized Long getUserLoginTime(String username) {
         UserSessions sessions = userSessionMap.get(username);
         if (sessions == null) return null;
         return sessions.getLoggedIn();
     }
 
     @Override
-    public Set<String> getActiveUsers() {
+    public synchronized Set<String> getActiveUsers() {
         HashSet<String> set = new HashSet<String>();
         set.addAll(userSessionMap.keySet());
         return set;
     }
 
-    protected void login(Session session, String username) {
-        synchronized (userSessionMap) {
-            UserSessions userSessions = userSessionMap.get(username);
-            if (userSessions == null) {
-                userSessions = new UserSessions();
-                userSessionMap.put(username, userSessions);
-            }
-            userSessions.getSessions().put(session.getId(), session);
+
+    public synchronized void login(Session session, String username, String keycloakSessionId) {
+        String sessionId = session.getId();
+
+        UserSessions sessions = userSessionMap.get(username);
+        if (sessions == null) {
+            sessions = new UserSessions();
+            sessions.user = username;
+            userSessionMap.put(username, sessions);
         }
+        keycloakSessionMap.put(keycloakSessionId, sessions);
+        sessions.httpSessionToKeycloakSession.put(sessionId, keycloakSessionId);
+        sessions.keycloakSessionToHttpSession.put(keycloakSessionId, sessionId);
         session.addSessionListener(this);
     }
 
     @Override
     public void logoutAll() {
-        List<String> users = new ArrayList<String>();
-        users.addAll(userSessionMap.keySet());
-        for (String user : users) logout(user);
+        for (String user : userSessionMap.keySet()) logoutUser(user);
     }
 
     @Override
-    public void logout(String user) {
-        log.finer("logoutUser: " + user);
+    public void logoutUser(String user) {
         UserSessions sessions = null;
-        synchronized (userSessionMap) {
-            sessions = userSessionMap.remove(user);
-
-        }
+        sessions = userSessionMap.remove(user);
         if (sessions == null) {
-            log.finer("no session for user: " + user);
             return;
-
         }
-        
-        log.finer("found session for user");
-        for (Session session : sessions.getSessions().values()) {
+        for (Map.Entry<String, String> entry : sessions.httpSessionToKeycloakSession.entrySet()) {
+            String sessionId = entry.getKey();
+            String keycloakSessionId = entry.getValue();
+            Session session = sessions.sessions.get(sessionId);
             session.setPrincipal(null);
             session.setAuthType(null);
             session.getSession().invalidate();
+            keycloakSessionMap.remove(keycloakSessionId);
         }
     }
+
+    public synchronized void logoutKeycloakSession(String keycloakSessionId) {
+        UserSessions sessions = keycloakSessionMap.remove(keycloakSessionId);
+        if (sessions == null) {
+            return;
+        }
+        String sessionId = sessions.keycloakSessionToHttpSession.remove(keycloakSessionId);
+        if (sessionId == null) {
+
+        }
+        sessions.httpSessionToKeycloakSession.remove(sessionId);
+        Session session = sessions.sessions.remove(sessionId);
+        session.setPrincipal(null);
+        session.setAuthType(null);
+        session.getSession().invalidate();
+        if (sessions.keycloakSessionToHttpSession.size() == 0) {
+            userSessionMap.remove(sessions.user);
+        }
+    }
+
 
     public void sessionEvent(SessionEvent event) {
         // We only care about session destroyed events
@@ -124,14 +133,22 @@ public class CatalinaUserSessionManagement implements SessionListener, UserSessi
         session.setAuthType(null);
 
         String username = principal.getUserPrincipal().getName();
-        synchronized (userSessionMap) {
-            UserSessions sessions = userSessionMap.get(username);
-            if (sessions != null) {
-                sessions.getSessions().remove(session.getId());
-                if (sessions.getSessions().isEmpty()) {
-                    userSessionMap.remove(username);
-                }
+        UserSessions userSessions = userSessionMap.get(username);
+        if (userSessions == null) {
+            return;
+        }
+        String sessionid = session.getId();
+        synchronized (this) {
+            String keycloakSessionId = userSessions.httpSessionToKeycloakSession.remove(sessionid);
+            if (keycloakSessionId != null) {
+                userSessions.keycloakSessionToHttpSession.remove(keycloakSessionId);
+                keycloakSessionMap.remove(keycloakSessionId);
             }
+            userSessions.sessions.remove(sessionid);
+            if (userSessions.httpSessionToKeycloakSession.size() == 0) {
+                userSessionMap.remove(username);
+            }
+
         }
     }
 }

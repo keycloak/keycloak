@@ -1,5 +1,7 @@
 package org.keycloak.models.mongo.keycloak.entities;
 
+import com.mongodb.DBObject;
+import com.mongodb.QueryBuilder;
 import org.keycloak.models.entities.OAuthClientEntity;
 import org.keycloak.models.mongo.api.MongoCollection;
 import org.keycloak.models.mongo.api.MongoIdentifiableEntity;
@@ -15,5 +17,9 @@ public class MongoOAuthClientEntity extends OAuthClientEntity implements MongoId
 
     @Override
     public void afterRemove(MongoStoreInvocationContext invocationContext) {
+        DBObject query = new QueryBuilder()
+                .and("clientId").is(getId())
+                .get();
+        invocationContext.getMongoStore().removeEntities(MongoClientUserSessionAssociationEntity.class, query, invocationContext);
     }
 }

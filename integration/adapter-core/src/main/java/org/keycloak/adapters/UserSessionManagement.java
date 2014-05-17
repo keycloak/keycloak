@@ -15,5 +15,7 @@ public interface UserSessionManagement {
 
     void logoutAll();
 
-    void logout(String user);
+    void logoutUser(String user);
+
+    void logoutKeycloakSession(String id);
 }
