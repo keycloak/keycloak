@@ -22,5 +22,11 @@ public class MongoApplicationEntity extends ApplicationEntity implements MongoId
                 .and("applicationId").is(getId())
                 .get();
         context.getMongoStore().removeEntities(MongoRoleEntity.class, query, context);
+
+        query = new QueryBuilder()
+                .and("clientId").is(getId())
+                .get();
+        context.getMongoStore().removeEntities(MongoClientUserSessionAssociationEntity.class, query, context);
+
     }
 }

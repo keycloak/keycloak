@@ -3,12 +3,17 @@ package org.keycloak.models.jpa.entities;
 import org.hibernate.annotations.GenericGenerator;
 import org.keycloak.models.UserModel;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.OneToMany;
+import java.util.ArrayList;
+import java.util.Collection;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -16,6 +21,7 @@ import javax.persistence.NamedQuery;
 @Entity
 @NamedQueries({
         @NamedQuery(name = "getUserSessionByUser", query = "select s from UserSessionEntity s where s.user = :user"),
+        @NamedQuery(name = "removeRealmUserSessions", query = "delete from UserSessionEntity s where s.realm = :realm"),
         @NamedQuery(name = "removeUserSessionByUser", query = "delete from UserSessionEntity s where s.user = :user"),
         @NamedQuery(name = "removeUserSessionExpired", query = "delete from UserSessionEntity s where s.started < :maxTime or s.lastSessionRefresh < :idleTime")
 })
@@ -29,11 +35,18 @@ public class UserSessionEntity {
     @ManyToOne
     private UserEntity user;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    private RealmEntity realm;
+
     String ipAddress;
 
     int started;
 
     int lastSessionRefresh;
+
+    @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy="session")
+    Collection<ClientUserSessionAssociationEntity> clients = new ArrayList<ClientUserSessionAssociationEntity>();
+
 
     public String getId() {
         return id;
@@ -73,5 +86,21 @@ public class UserSessionEntity {
 
     public void setLastSessionRefresh(int lastSessionRefresh) {
         this.lastSessionRefresh = lastSessionRefresh;
+    }
+
+    public Collection<ClientUserSessionAssociationEntity> getClients() {
+        return clients;
+    }
+
+    public void setClients(Collection<ClientUserSessionAssociationEntity> clients) {
+        this.clients = clients;
+    }
+
+    public RealmEntity getRealm() {
+        return realm;
+    }
+
+    public void setRealm(RealmEntity realm) {
+        this.realm = realm;
     }
 }

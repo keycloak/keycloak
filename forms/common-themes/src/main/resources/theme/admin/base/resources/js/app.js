@@ -290,8 +290,8 @@ module.config([ '$routeProvider', function($routeProvider) {
                 user : function(UserLoader) {
                     return UserLoader();
                 },
-                stats : function(UserSessionStatsLoader) {
-                    return UserSessionStatsLoader();
+                sessions : function(UserSessionsLoader) {
+                    return UserSessionsLoader();
                 }
             },
             controller : 'UserSessionsCtrl'
@@ -436,8 +436,8 @@ module.config([ '$routeProvider', function($routeProvider) {
                 application : function(ApplicationLoader) {
                     return ApplicationLoader();
                 },
-                stats : function(ApplicationSessionStatsLoader) {
-                    return ApplicationSessionStatsLoader();
+                sessionCount : function(ApplicationSessionCountLoader) {
+                    return ApplicationSessionCountLoader();
                 }
             },
             controller : 'ApplicationSessionsCtrl'
@@ -705,8 +705,8 @@ module.config([ '$routeProvider', function($routeProvider) {
                 realm : function(RealmLoader) {
                     return RealmLoader();
                 },
-                stats : function(RealmSessionStatsLoader) {
-                    return RealmSessionStatsLoader();
+                stats : function(RealmApplicationSessionStatsLoader) {
+                    return RealmApplicationSessionStatsLoader();
                 }
             },
             controller : 'RealmSessionStatsCtrl'

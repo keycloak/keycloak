@@ -661,6 +661,14 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         return getOAuthClient(clientId);
     }
 
+    @Override
+    public ClientModel findClientById(String id) {
+        ClientModel model = getApplicationById(id);
+        if (model != null) return model;
+        return getOAuthClientById(id);
+    }
+
+
 
     @Override
     public ApplicationModel getApplicationById(String id) {
@@ -1352,6 +1360,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     @Override
     public UserSessionModel createUserSession(UserModel user, String ipAddress) {
         MongoUserSessionEntity entity = new MongoUserSessionEntity();
+        entity.setRealmId(getId());
         entity.setUser(user.getId());
         entity.setIpAddress(ipAddress);
 
@@ -1386,12 +1395,18 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public void removeUserSession(UserSessionModel session) {
-        getMongoStore().removeEntity(((UserSessionAdapter) session).getEntity(), invocationContext);
+        getMongoStore().removeEntity(((UserSessionAdapter) session).getMongoEntity(), invocationContext);
     }
 
     @Override
     public void removeUserSessions(UserModel user) {
         DBObject query = new BasicDBObject("user", user.getId());
+        getMongoStore().removeEntities(MongoUserSessionEntity.class, query, invocationContext);
+    }
+
+    @Override
+    public void removeUserSessions() {
+        DBObject query = new BasicDBObject("realmId", getId());
         getMongoStore().removeEntities(MongoUserSessionEntity.class, query, invocationContext);
     }
 

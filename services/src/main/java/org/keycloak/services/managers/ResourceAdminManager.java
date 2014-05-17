@@ -160,6 +160,22 @@ public class ResourceAdminManager {
             executor.getHttpClient().getConnectionManager().shutdown();
         }
     }
+
+    public void logoutSession(URI requestUri, RealmModel realm, String session) {
+        ApacheHttpClient4Executor executor = createExecutor();
+
+        try {
+            // don't set user notBefore as we don't want a database hit on a user driven logout
+            List<ApplicationModel> resources = realm.getApplications();
+            logger.debugv("logging out {0} resources ", resources.size());
+            for (ApplicationModel resource : resources) {
+                logoutApplication(requestUri, realm, resource, null, session, executor, 0);
+            }
+        } finally {
+            executor.getHttpClient().getConnectionManager().shutdown();
+        }
+    }
+
     public void logoutAll(URI requestUri, RealmModel realm) {
         ApacheHttpClient4Executor executor = createExecutor();
 

@@ -71,6 +71,14 @@ module.factory('RealmSessionStatsLoader', function(Loader, RealmSessionStats, $r
     });
 });
 
+module.factory('RealmApplicationSessionStatsLoader', function(Loader, RealmApplicationSessionStats, $route, $q) {
+    return Loader.get(RealmApplicationSessionStats, function() {
+        return {
+            realm : $route.current.params.realm
+        }
+    });
+});
+
 module.factory('UserLoader', function(Loader, User, $route, $q) {
     return Loader.get(User, function() {
         return {
@@ -82,6 +90,15 @@ module.factory('UserLoader', function(Loader, User, $route, $q) {
 
 module.factory('UserSessionStatsLoader', function(Loader, UserSessionStats, $route, $q) {
     return Loader.get(UserSessionStats, function() {
+        return {
+            realm : $route.current.params.realm,
+            user : $route.current.params.user
+        }
+    });
+});
+
+module.factory('UserSessionsLoader', function(Loader, UserSessions, $route, $q) {
+    return Loader.query(UserSessions, function() {
         return {
             realm : $route.current.params.realm,
             user : $route.current.params.user
@@ -127,6 +144,15 @@ module.factory('ApplicationRoleLoader', function(Loader, ApplicationRole, $route
 
 module.factory('ApplicationSessionStatsLoader', function(Loader, ApplicationSessionStats, $route, $q) {
     return Loader.get(ApplicationSessionStats, function() {
+        return {
+            realm : $route.current.params.realm,
+            application : $route.current.params.application
+        }
+    });
+});
+
+module.factory('ApplicationSessionCountLoader', function(Loader, ApplicationSessionCount, $route, $q) {
+    return Loader.get(ApplicationSessionCount, function() {
         return {
             realm : $route.current.params.realm,
             application : $route.current.params.application

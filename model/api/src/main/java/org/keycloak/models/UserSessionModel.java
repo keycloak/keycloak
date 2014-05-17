@@ -1,5 +1,8 @@
 package org.keycloak.models;
 
+import java.util.List;
+import java.util.Set;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -25,4 +28,9 @@ public interface UserSessionModel {
 
     void setLastSessionRefresh(int seconds);
 
+    void associateClient(ClientModel client);
+
+    List<ClientModel> getClientAssociations();
+
+    void removeAssociatedClient(ClientModel client);
 }

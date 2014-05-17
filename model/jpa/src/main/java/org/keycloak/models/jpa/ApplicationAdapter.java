@@ -27,7 +27,7 @@ public class ApplicationAdapter extends ClientAdapter implements ApplicationMode
     protected ApplicationEntity applicationEntity;
 
     public ApplicationAdapter(RealmModel realm, EntityManager em, ApplicationEntity applicationEntity) {
-        super(realm, applicationEntity);
+        super(realm, applicationEntity, em);
         this.realm = realm;
         this.em = em;
         this.applicationEntity = applicationEntity;

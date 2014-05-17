@@ -1,6 +1,5 @@
 package org.keycloak.adapters.undertow;
 
-import io.undertow.server.HttpServerExchange;
 import io.undertow.server.session.SessionManager;
 import org.keycloak.adapters.UserSessionManagement;
 
@@ -41,7 +40,12 @@ public class SessionManagementBridge implements UserSessionManagement {
     }
 
     @Override
-    public void logout(String user) {
-        userSessionManagement.logout(sessionManager, user);
+    public void logoutUser(String user) {
+        userSessionManagement.logoutUser(sessionManager, user);
+    }
+
+    @Override
+    public void logoutKeycloakSession(String id) {
+        userSessionManagement.logoutKeycloakSession(sessionManager, id);
     }
 }

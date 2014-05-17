@@ -5,11 +5,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.mongodb.DBObject;
+import com.mongodb.QueryBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.entities.ClientEntity;
 import org.keycloak.models.mongo.api.MongoIdentifiableEntity;
 import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
+import org.keycloak.models.mongo.keycloak.entities.MongoClientUserSessionAssociationEntity;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -164,4 +169,25 @@ public class ClientAdapter<T extends MongoIdentifiableEntity> extends AbstractMo
         updateMongoEntity();
     }
 
+    @Override
+    public Set<UserSessionModel> getUserSessions() {
+        DBObject query = new QueryBuilder()
+                .and("clientId").is(getId())
+                .get();
+        List<MongoClientUserSessionAssociationEntity> associations = getMongoStore().loadEntities(MongoClientUserSessionAssociationEntity.class, query, invocationContext);
+
+        Set<UserSessionModel> result = new HashSet<UserSessionModel>();
+        for (MongoClientUserSessionAssociationEntity association : associations) {
+            UserSessionModel session = realm.getUserSession(association.getSessionId());
+            result.add(session);
+        }
+        return result;
+
+    }
+
+    @Override
+    public int getActiveUserSessions() {
+        // todo, something more efficient like COUNT in JPAQL?
+        return getUserSessions().size();
+    }
 }

@@ -265,6 +265,7 @@ public class TokenService {
         String scope = form.getFirst(OAuth2Constants.SCOPE);
 
         UserSessionModel session = realm.createUserSession(user, clientConnection.getRemoteAddr());
+        session.associateClient(client);
         audit.session(session);
 
         AccessTokenResponse res = tokenManager.responseBuilder(realm, client, audit)
@@ -646,6 +647,8 @@ public class TokenService {
         }
 
         logger.debug("accessRequest SUCCESS");
+
+        session.associateClient(client);
 
         AccessTokenResponse res = tokenManager.responseBuilder(realm, client, audit)
                 .accessToken(accessCode.getToken())

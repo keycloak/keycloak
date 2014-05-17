@@ -5,12 +5,14 @@ import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClaimMask;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.idm.AuthenticationProviderRepresentation;
 import org.keycloak.representations.idm.ClaimRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -19,6 +21,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.SocialLinkRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.UserSessionRepresentation;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -177,6 +180,22 @@ public class ModelToRepresentation {
         rep.setSocialUsername(socialLink.getSocialUsername());
         rep.setSocialProvider(socialLink.getSocialProvider());
         rep.setSocialUserId(socialLink.getSocialUserId());
+        return rep;
+    }
+
+    public static UserSessionRepresentation toRepresentation(UserSessionModel session) {
+        UserSessionRepresentation rep = new UserSessionRepresentation();
+        rep.setId(session.getId());
+        rep.setStart(((long)session.getStarted()) * 1000);
+        rep.setUser(session.getUser().getLoginName());
+        rep.setIpAddress(session.getIpAddress());
+        for (ClientModel client : session.getClientAssociations()) {
+            if (client instanceof ApplicationModel) {
+                rep.getApplications().add(client.getClientId());
+            } else if (client instanceof OAuthClientModel) {
+                rep.getClients().put(client.getId(), client.getClientId());
+            }
+        }
         return rep;
     }
 }

@@ -16,6 +16,7 @@
         <class>org.keycloak.models.jpa.entities.AuthenticationLinkEntity</class>
         <class>org.keycloak.models.jpa.entities.UserEntity</class>
         <class>org.keycloak.models.jpa.entities.UserSessionEntity</class>
+        <class>org.keycloak.models.jpa.entities.ClientUserSessionAssociationEntity</class>
         <class>org.keycloak.models.jpa.entities.UsernameLoginFailureEntity</class>
         <class>org.keycloak.models.jpa.entities.UserRoleMappingEntity</class>
         <class>org.keycloak.models.jpa.entities.ScopeMappingEntity</class>

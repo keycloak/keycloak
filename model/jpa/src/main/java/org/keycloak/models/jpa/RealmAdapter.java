@@ -72,6 +72,10 @@ public class RealmAdapter implements RealmModel {
         this.realm = realm;
     }
 
+    public RealmEntity getEntity() {
+        return realm;
+    }
+
     @Override
     public String getId() {
         return realm.getId();
@@ -583,6 +587,13 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public ClientModel findClientById(String id) {
+        ClientModel model = getApplicationById(id);
+        if (model != null) return model;
+        return getOAuthClientById(id);
+    }
+
+    @Override
     public Map<String, ApplicationModel> getApplicationNameMap() {
         Map<String, ApplicationModel> map = new HashMap<String, ApplicationModel>();
         for (ApplicationModel app : getApplications()) {
@@ -627,6 +638,7 @@ public class RealmAdapter implements RealmModel {
         ApplicationModel application = getApplicationById(id);
         if (application == null) return false;
 
+        ((ApplicationAdapter)application).deleteUserSessionAssociation();
         for (RoleModel role : application.getRoles()) {
             application.removeRole(role);
         }
@@ -846,13 +858,14 @@ public class RealmAdapter implements RealmModel {
         data.setRealm(realm);
         em.persist(data);
         em.flush();
-        return new OAuthClientAdapter(this, data);
+        return new OAuthClientAdapter(this, data, em);
     }
 
     @Override
     public boolean removeOAuthClient(String id) {
         OAuthClientModel oauth = getOAuthClientById(id);
         if (oauth == null) return false;
+        ((OAuthClientAdapter)oauth).deleteUserSessionAssociation();
         OAuthClientEntity client = (OAuthClientEntity) ((OAuthClientAdapter) oauth).getEntity();
         em.createQuery("delete from " + ScopeMappingEntity.class.getSimpleName() + " where client = :client").setParameter("client", client).executeUpdate();
         em.remove(client);
@@ -867,7 +880,7 @@ public class RealmAdapter implements RealmModel {
         query.setParameter("realm", realm);
         List<OAuthClientEntity> entities = query.getResultList();
         if (entities.size() == 0) return null;
-        return new OAuthClientAdapter(this, entities.get(0));
+        return new OAuthClientAdapter(this, entities.get(0), em);
     }
 
     @Override
@@ -876,7 +889,7 @@ public class RealmAdapter implements RealmModel {
 
         // Check if client belongs to this realm
         if (client == null || !this.realm.getId().equals(client.getRealm().getId())) return null;
-        return new OAuthClientAdapter(this, client);
+        return new OAuthClientAdapter(this, client, em);
     }
 
 
@@ -886,7 +899,7 @@ public class RealmAdapter implements RealmModel {
         query.setParameter("realm", realm);
         List<OAuthClientEntity> entities = query.getResultList();
         List<OAuthClientModel> list = new ArrayList<OAuthClientModel>();
-        for (OAuthClientEntity entity : entities) list.add(new OAuthClientAdapter(this, entity));
+        for (OAuthClientEntity entity : entities) list.add(new OAuthClientAdapter(this, entity, em));
         return list;
     }
 
@@ -1385,6 +1398,7 @@ public class RealmAdapter implements RealmModel {
     @Override
     public UserSessionModel createUserSession(UserModel user, String ipAddress) {
         UserSessionEntity entity = new UserSessionEntity();
+        entity.setRealm(realm);
         entity.setUser(((UserAdapter) user).getUser());
         entity.setIpAddress(ipAddress);
 
@@ -1394,20 +1408,20 @@ public class RealmAdapter implements RealmModel {
         entity.setLastSessionRefresh(currentTime);
 
         em.persist(entity);
-        return new UserSessionAdapter(entity);
+        return new UserSessionAdapter(em, this, entity);
     }
 
     @Override
     public UserSessionModel getUserSession(String id) {
         UserSessionEntity entity = em.find(UserSessionEntity.class, id);
-        return entity != null ? new UserSessionAdapter(entity) : null;
+        return entity != null ? new UserSessionAdapter(em, this, entity) : null;
     }
 
     @Override
     public List<UserSessionModel> getUserSessions(UserModel user) {
         List<UserSessionModel> sessions = new LinkedList<UserSessionModel>();
         for (UserSessionEntity e : em.createNamedQuery("getUserSessionByUser", UserSessionEntity.class).setParameter("user", ((UserAdapter) user).getUser()).getResultList()) {
-            sessions.add(new UserSessionAdapter(e));
+            sessions.add(new UserSessionAdapter(em, this, e));
         }
         return sessions;
     }
@@ -1418,11 +1432,19 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public void removeUserSessions() {
+        em.createNamedQuery("removeClientUserSessionByRealm").setParameter("realm", realm).executeUpdate();
+        em.createNamedQuery("removeRealmUserSessions").setParameter("realm", realm).executeUpdate();
+
+    }
+
+    @Override
     public void removeUserSessions(UserModel user) {
         removeUserSessions(((UserAdapter) user).getUser());
     }
 
     private void removeUserSessions(UserEntity user) {
+        em.createNamedQuery("removeClientUserSessionByUser").setParameter("user", user).executeUpdate();
         em.createNamedQuery("removeUserSessionByUser").setParameter("user", user).executeUpdate();
     }
 

@@ -183,6 +183,20 @@ module.factory('UserSessionStats', function($resource) {
         user : '@user'
     });
 });
+module.factory('UserSessions', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/users/:user/sessions', {
+        realm : '@realm',
+        user : '@user'
+    });
+});
+
+module.factory('UserSessionLogout', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/sessions/:session', {
+        realm : '@realm',
+        session : '@session'
+    });
+});
+
 module.factory('UserLogout', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/users/:user/logout', {
         realm : '@realm',
@@ -343,6 +357,12 @@ module.factory('RealmPushRevocation', function($resource) {
 
 module.factory('RealmSessionStats', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/session-stats', {
+        realm : '@realm'
+    });
+});
+
+module.factory('RealmApplicationSessionStats', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/application-session-stats', {
         realm : '@realm'
     });
 });
@@ -584,6 +604,20 @@ module.factory('ApplicationSessionStats', function($resource) {
 
 module.factory('ApplicationSessionStatsWithUsers', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/applications/:application/session-stats?users=true', {
+        realm : '@realm',
+        application : "@application"
+    });
+});
+
+module.factory('ApplicationSessionCount', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/applications/:application/session-count', {
+        realm : '@realm',
+        application : "@application"
+    });
+});
+
+module.factory('ApplicationUserSessions', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/applications/:application/user-sessions', {
         realm : '@realm',
         application : "@application"
     });

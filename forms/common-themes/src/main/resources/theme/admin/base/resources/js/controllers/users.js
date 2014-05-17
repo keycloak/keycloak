@@ -99,32 +99,29 @@ module.controller('UserRoleMappingCtrl', function($scope, $http, realm, user, ap
 
 });
 
-module.controller('UserSessionsCtrl', function($scope, realm, user, stats, UserLogout, ApplicationLogoutUser, UserSessionStats, Notifications) {
+module.controller('UserSessionsCtrl', function($scope, realm, user, sessions, UserSessions, UserLogout, UserSessionLogout, Notifications) {
     $scope.realm = realm;
     $scope.user = user;
-    $scope.stats = stats;
+    $scope.sessions = sessions;
 
     $scope.logoutAll = function() {
         UserLogout.save({realm : realm.realm, user: user.username}, function () {
             Notifications.success('Logged out user in all applications');
-            UserSessionStats.get({realm: realm.realm, user: user.username}, function(updated) {
-                $scope.stats = updated;
+            UserSessions.get({realm: realm.realm, user: user.username}, function(updated) {
+                $scope.sessions = updated;
             })
         });
     };
 
-    $scope.logoutApplication = function(app) {
-        console.log('log user out of app: ' + app);
-        ApplicationLogoutUser.save({realm : realm.realm, application: app, user: user.username}, function () {
-            Notifications.success('Logged out user from application');
-            UserSessionStats.get({realm: realm.realm, user: user.username}, function(updated) {
-                $scope.stats = updated;
+    $scope.logoutSession = function(sessionId) {
+        console.log('here in logoutSession');
+        UserSessionLogout.delete({realm : realm.realm, session: sessionId}, function() {
+            Notifications.success('Logged out session');
+            UserSessions.get({realm: realm.realm, user: user.username}, function(updated) {
+                $scope.sessions = updated;
             })
         });
-    };
-
-
-
+    }
 });
 
 module.controller('UserSocialCtrl', function($scope, realm, user, socialLinks) {

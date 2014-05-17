@@ -14,6 +14,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.adapters.action.UserStats;
 import org.keycloak.representations.idm.ApplicationMappingsRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -21,6 +22,7 @@ import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.SocialLinkRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.services.email.EmailException;
 import org.keycloak.services.email.EmailSender;
 import org.keycloak.services.managers.AccessCodeEntry;
@@ -181,6 +183,26 @@ public class UsersResource {
         return stats;
     }
 
+    @Path("{username}/sessions")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<UserSessionRepresentation> getSessions(final @PathParam("username") String username) {
+        logger.info("sessions");
+        auth.requireView();
+        UserModel user = realm.getUser(username);
+        if (user == null) {
+            throw new NotFoundException("User not found");
+        }
+        List<UserSessionModel> sessions = realm.getUserSessions(user);
+        List<UserSessionRepresentation> reps = new ArrayList<UserSessionRepresentation>();
+        for (UserSessionModel session : sessions) {
+            UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(session);
+            reps.add(rep);
+        }
+        return reps;
+    }
+
     @Path("{username}/social-links")
     @GET
     @NoCache
@@ -208,6 +230,7 @@ public class UsersResource {
         if (user == null) {
             throw new NotFoundException("User not found");
         }
+        realm.removeUserSessions(user);
         // set notBefore so that user will be forced to log in.
         user.setNotBefore(Time.currentTime());
         new ResourceAdminManager().logoutUser(uriInfo.getRequestUri(), realm, user.getId(), null);
