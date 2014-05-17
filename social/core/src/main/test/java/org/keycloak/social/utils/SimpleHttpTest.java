@@ -90,10 +90,9 @@ public class SimpleHttpTest {
 
     @Test
     public void testGetCustomHeader() throws IOException {
-        JsonNode o = SimpleHttp.doGet("http://localhost:8081/tojson").header("Accept", "application/json").header("Authorization", "bearer dsfsadfsdf").asJson();
+        JsonNode o = SimpleHttp.doGet("http://localhost:8081/tojson").header("Authorization", "bearer dsfsadfsdf").asJson();
         JsonNode h = o.get("headers");
 
-        assertEquals("application/json", h.get("Accept"));
         assertEquals("bearer dsfsadfsdf", h.get("Authorization").getTextValue());
     }
 

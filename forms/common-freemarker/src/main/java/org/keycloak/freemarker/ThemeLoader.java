@@ -1,6 +1,6 @@
 package org.keycloak.freemarker;
 
-import org.keycloak.models.Config;
+import org.keycloak.Config;
 import org.keycloak.util.ProviderLoader;
 
 import java.io.IOException;
@@ -20,7 +20,7 @@ public class ThemeLoader {
 
     public static Theme createTheme(String name, Theme.Type type) throws FreeMarkerException {
         if (name == null) {
-            name = Config.getThemeDefault();
+            name = Config.scope("theme").get("default");
         }
 
         List<ThemeProvider> providers = new LinkedList();

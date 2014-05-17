@@ -21,7 +21,7 @@
  */
 package org.keycloak.testsuite.rule;
 
-import org.keycloak.models.Config;
+import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
@@ -61,8 +61,8 @@ public class KeycloakRule extends AbstractKeycloakRule {
     }
 
     public void configure(KeycloakSetup configurer) {
-        KeycloakSession session = server.getKeycloakSessionFactory().createSession();
         ProviderSession providerSession = server.getProviderSessionFactory().createSession();
+        KeycloakSession session = providerSession.getProvider(KeycloakSession.class);
         session.getTransaction().begin();
 
         try {
@@ -77,17 +77,16 @@ public class KeycloakRule extends AbstractKeycloakRule {
             session.getTransaction().commit();
         } finally {
             providerSession.close();
-            session.close();
         }
     }
 
     public void removeUserSession(String sessionId) {
-        KeycloakSession keycloakSession = startSession();
-        RealmModel realm = keycloakSession.getRealm("test");
+        ProviderSession providerSession = startSession();
+        RealmModel realm = providerSession.getProvider(KeycloakSession.class).getRealm("test");
         UserSessionModel session = realm.getUserSession(sessionId);
         assertNotNull(session);
         realm.removeUserSession(session);
-        stopSession(keycloakSession, true);
+        stopSession(providerSession, true);
     }
 
     public abstract static class KeycloakSetup {

@@ -1,0 +1,26 @@
+{
+    "admin": {
+        "realm": "keycloak-admin"
+    },
+
+    "audit": {
+        "provider": "${keycloak.audit.provider:jpa}"
+    },
+
+    "model": {
+        "provider": "${keycloak.model.provider:jpa}"
+    },
+
+    "timer": {
+        "provider": "basic"
+    },
+
+    "theme": {
+        "default": "keycloak",
+        "dir": "${keycloak.theme.dir}"
+    },
+
+    "scheduled": {
+        "interval": 900
+    }
+}

@@ -1,36 +1,43 @@
 package org.keycloak.exportimport;
 
-import java.util.Iterator;
-
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.model.test.AbstractModelTest;
 import org.keycloak.model.test.ImportTest;
-import org.keycloak.models.Config;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.provider.ProviderSession;
+import org.keycloak.provider.ProviderSessionFactory;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.util.ProviderLoader;
 
+import java.util.Iterator;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public abstract class ExportImportTestBase {
 
-    protected KeycloakSessionFactory factory;
+    protected ProviderSessionFactory factory;
 
+    protected ProviderSession providerSession;
     protected KeycloakSession identitySession;
     protected RealmManager realmManager;
+
+    @After
+    public void after() {
+        System.getProperties().remove("keycloak.model.provider");
+    }
 
     @Test
     public void testExportImport() throws Exception {
         // Init JPA model
-        Config.setModelProvider(getExportModelProvider());
-        factory = KeycloakApplication.createSessionFactory();
+        System.setProperty("keycloak.model.provider", getExportModelProvider());
+        factory = KeycloakApplication.createProviderSessionFactory();
 
         // Bootstrap admin realm
         beginTransaction();
@@ -59,8 +66,8 @@ public abstract class ExportImportTestBase {
         factory.close();
 
         // Bootstrap mongo session and factory
-        Config.setModelProvider(getImportModelProvider());
-        factory = KeycloakApplication.createSessionFactory();
+        System.setProperty("keycloak.model.provider", getImportModelProvider());
+        factory = KeycloakApplication.createProviderSessionFactory();
 
         // Full import of previous export into mongo
         importModel(factory);
@@ -83,19 +90,20 @@ public abstract class ExportImportTestBase {
 
     protected abstract String getImportModelProvider();
 
-    protected abstract void exportModel(KeycloakSessionFactory factory);
+    protected abstract void exportModel(ProviderSessionFactory factory);
 
-    protected abstract void importModel(KeycloakSessionFactory factory);
+    protected abstract void importModel(ProviderSessionFactory factory);
 
     protected void beginTransaction() {
-        identitySession = factory.createSession();
+        providerSession = factory.createSession();
+        identitySession = providerSession.getProvider(KeycloakSession.class);
         identitySession.getTransaction().begin();
         realmManager = new RealmManager(identitySession);
     }
 
     protected void commitTransaction() {
         identitySession.getTransaction().commit();
-        identitySession.close();
+        providerSession.close();
     }
 
     protected ExportImportProvider getExportImportProvider() {

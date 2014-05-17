@@ -1,10 +1,10 @@
 package org.keycloak.authentication.model;
 
+import org.keycloak.Config;
 import org.keycloak.authentication.AuthProviderConstants;
 import org.keycloak.authentication.AuthenticationProvider;
 import org.keycloak.authentication.AuthenticationProviderFactory;
 import org.keycloak.provider.ProviderSession;
-import org.keycloak.provider.ProviderSessionFactory;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -17,7 +17,7 @@ public class ExternalModelAuthenticationProviderFactory implements Authenticatio
     }
 
     @Override
-    public void init() {
+    public void init(Config.Scope config) {
     }
 
     @Override
@@ -29,8 +29,4 @@ public class ExternalModelAuthenticationProviderFactory implements Authenticatio
         return AuthProviderConstants.PROVIDER_NAME_EXTERNAL_MODEL;
     }
 
-    @Override
-    public boolean lazyLoad() {
-        return false;
-    }
 }

@@ -11,10 +11,9 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.Config;
+import org.keycloak.Config;
 import org.keycloak.provider.ProviderSession;
 import org.keycloak.provider.ProviderSessionFactory;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -28,7 +27,6 @@ import org.keycloak.util.JsonSerialization;
  */
 public class AbstractModelTest {
 
-    protected static KeycloakSessionFactory factory;
     protected static ProviderSessionFactory providerSessionFactory;
 
     protected KeycloakSession identitySession;
@@ -37,41 +35,40 @@ public class AbstractModelTest {
 
     @BeforeClass
     public static void beforeClass() {
-        factory = KeycloakApplication.createSessionFactory();
         providerSessionFactory = KeycloakApplication.createProviderSessionFactory();
 
-        KeycloakSession identitySession = factory.createSession();
+        ProviderSession providerSession = providerSessionFactory.createSession();
+        KeycloakSession identitySession = providerSession.getProvider(KeycloakSession.class);
         try {
             identitySession.getTransaction().begin();
             new ApplianceBootstrap().bootstrap(identitySession, "/auth");
             identitySession.getTransaction().commit();
         } finally {
-            identitySession.close();
+            providerSession.close();
         }
     }
 
     @AfterClass
     public static void afterClass() {
         providerSessionFactory.close();
-        factory.close();
     }
 
     @Before
     public void before() throws Exception {
-        identitySession = factory.createSession();
+        providerSession = providerSessionFactory.createSession();
+
+        identitySession = providerSession.getProvider(KeycloakSession.class);
         identitySession.getTransaction().begin();
         realmManager = new RealmManager(identitySession);
-
-        providerSession = providerSessionFactory.createSession();
     }
 
     @After
     public void after() throws Exception {
         identitySession.getTransaction().commit();
         providerSession.close();
-        identitySession.close();
 
-        identitySession = factory.createSession();
+        providerSession = providerSessionFactory.createSession();
+        identitySession = providerSession.getProvider(KeycloakSession.class);
         try {
             identitySession.getTransaction().begin();
 
@@ -84,7 +81,7 @@ public class AbstractModelTest {
 
             identitySession.getTransaction().commit();
         } finally {
-            identitySession.close();
+            providerSession.close();
         }
 
     }
@@ -103,8 +100,10 @@ public class AbstractModelTest {
     }
 
     protected void resetSession() {
-        identitySession.close();
-        identitySession = factory.createSession();
+        providerSession.close();
+
+        providerSession = providerSessionFactory.createSession();
+        identitySession = providerSession.getProvider(KeycloakSession.class);
         identitySession.getTransaction().begin();
         realmManager = new RealmManager(identitySession);
     }

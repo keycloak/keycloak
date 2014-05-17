@@ -4,14 +4,15 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.Config;
 import org.keycloak.audit.AuditProvider;
 import org.keycloak.audit.AuditProviderFactory;
 import org.keycloak.audit.Event;
 import org.keycloak.provider.ProviderFactory;
-import org.keycloak.provider.ProviderFactoryLoader;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.ServiceLoader;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -23,9 +24,14 @@ public abstract class AbstractAuditProviderTest {
 
     @Before
     public void before() {
-        ProviderFactoryLoader<AuditProvider> loader = ProviderFactoryLoader.create(AuditProviderFactory.class);
-        factory = loader.find(getProviderId());
-        factory.init();
+        String providerId = getProviderId();
+        ServiceLoader<AuditProviderFactory> factories = ServiceLoader.load(AuditProviderFactory.class);
+        for (AuditProviderFactory f : factories) {
+            if (f.getId().equals(providerId)) {
+                factory = f;
+                factory.init(Config.scope("audit", providerId));
+            }
+        }
 
         provider = factory.create(null);
     }

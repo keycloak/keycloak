@@ -1,9 +1,9 @@
 package org.keycloak.audit.jpa;
 
+import org.keycloak.Config;
 import org.keycloak.audit.AuditProvider;
 import org.keycloak.audit.AuditProviderFactory;
 import org.keycloak.provider.ProviderSession;
-import org.keycloak.provider.ProviderSessionFactory;
 
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
@@ -22,7 +22,7 @@ public class JpaAuditProviderFactory implements AuditProviderFactory {
     }
 
     @Override
-    public void init() {
+    public void init(Config.Scope config) {
         emf = Persistence.createEntityManagerFactory("jpa-keycloak-audit-store");
     }
 
@@ -34,11 +34,6 @@ public class JpaAuditProviderFactory implements AuditProviderFactory {
     @Override
     public String getId() {
         return ID;
-    }
-
-    @Override
-    public boolean lazyLoad() {
-        return true;
     }
 
 }

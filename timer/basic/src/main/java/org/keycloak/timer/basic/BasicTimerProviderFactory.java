@@ -1,5 +1,6 @@
 package org.keycloak.timer.basic;
 
+import org.keycloak.Config;
 import org.keycloak.provider.ProviderSession;
 import org.keycloak.timer.TimerProvider;
 import org.keycloak.timer.TimerProviderFactory;
@@ -19,7 +20,7 @@ public class BasicTimerProviderFactory implements TimerProviderFactory {
     }
 
     @Override
-    public void init() {
+    public void init(Config.Scope config) {
         timer = new Timer();
     }
 
@@ -34,8 +35,4 @@ public class BasicTimerProviderFactory implements TimerProviderFactory {
         return "basic";
     }
 
-    @Override
-    public boolean lazyLoad() {
-        return true;
-    }
 }

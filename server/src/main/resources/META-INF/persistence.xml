@@ -25,6 +25,7 @@
 
         <properties>
             <property name="hibernate.hbm2ddl.auto" value="update" />
+            <property name="jboss.as.jpa.managed" value="false" />
         </properties>
     </persistence-unit>
 	
@@ -36,6 +37,7 @@
 
         <properties>
             <property name="hibernate.hbm2ddl.auto" value="update" />
+            <property name="jboss.as.jpa.managed" value="false" />
         </properties>
     </persistence-unit>
 	

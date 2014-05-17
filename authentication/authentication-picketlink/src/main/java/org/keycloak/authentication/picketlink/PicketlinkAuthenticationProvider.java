@@ -1,27 +1,24 @@
 package org.keycloak.authentication.picketlink;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.keycloak.models.RealmModel;
-import org.keycloak.authentication.AuthProviderStatus;
 import org.keycloak.authentication.AuthProviderConstants;
+import org.keycloak.authentication.AuthProviderStatus;
 import org.keycloak.authentication.AuthUser;
 import org.keycloak.authentication.AuthenticationProvider;
 import org.keycloak.authentication.AuthenticationProviderException;
+import org.keycloak.models.RealmModel;
 import org.keycloak.picketlink.IdentityManagerProvider;
-import org.keycloak.util.ProviderLoader;
 import org.picketlink.idm.IdentityManagementException;
 import org.picketlink.idm.IdentityManager;
-import org.picketlink.idm.PartitionManager;
 import org.picketlink.idm.credential.Credentials;
 import org.picketlink.idm.credential.Password;
 import org.picketlink.idm.credential.UsernamePasswordCredentials;
 import org.picketlink.idm.model.basic.BasicModel;
 import org.picketlink.idm.model.basic.User;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
  * AuthenticationProvider, which delegates authentication to picketlink

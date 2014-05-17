@@ -1,5 +1,6 @@
 package org.keycloak.authentication.picketlink;
 
+import org.keycloak.Config;
 import org.keycloak.authentication.AuthProviderConstants;
 import org.keycloak.authentication.AuthenticationProvider;
 import org.keycloak.authentication.AuthenticationProviderFactory;
@@ -17,7 +18,7 @@ public class PicketlinkAuthenticationProviderFactory implements AuthenticationPr
     }
 
     @Override
-    public void init() {
+    public void init(Config.Scope config) {
     }
 
     @Override
@@ -29,8 +30,4 @@ public class PicketlinkAuthenticationProviderFactory implements AuthenticationPr
         return AuthProviderConstants.PROVIDER_NAME_PICKETLINK;
     }
 
-    @Override
-    public boolean lazyLoad() {
-        return false;
-    }
 }

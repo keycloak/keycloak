@@ -1,10 +1,10 @@
 package org.keycloak.exportimport.io.zip;
 
 import org.jboss.logging.Logger;
+import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.io.ExportImportIOProvider;
 import org.keycloak.exportimport.io.ExportWriter;
 import org.keycloak.exportimport.io.ImportReader;
-import org.keycloak.models.Config;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -22,8 +22,8 @@ public class EncryptedZIPIOProvider implements ExportImportIOProvider {
 
     @Override
     public ExportWriter getExportWriter() {
-        String zipFile = Config.getExportImportZipFile();
-        String zipPassword = Config.getExportImportZipPassword();
+        String zipFile = ExportImportConfig.getZipFile();
+        String zipPassword = ExportImportConfig.getZipPassword();
         logger.infof("Using zip for export: " + zipFile);
 
         if (zipFile==null || zipPassword==null) {
@@ -35,8 +35,8 @@ public class EncryptedZIPIOProvider implements ExportImportIOProvider {
 
     @Override
     public ImportReader getImportReader() {
-        String zipFile = Config.getExportImportZipFile();
-        String zipPassword = Config.getExportImportZipPassword();
+        String zipFile = ExportImportConfig.getZipFile();
+        String zipPassword = ExportImportConfig.getZipPassword();
         logger.infof("Using zip for import: " + zipFile);
 
         if (zipFile==null || zipPassword==null) {

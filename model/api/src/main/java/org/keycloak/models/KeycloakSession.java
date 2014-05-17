@@ -1,12 +1,14 @@
 package org.keycloak.models;
 
+import org.keycloak.provider.Provider;
+
 import java.util.List;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface KeycloakSession {
+public interface KeycloakSession extends Provider {
     KeycloakTransaction getTransaction();
 
     RealmModel createRealm(String name);

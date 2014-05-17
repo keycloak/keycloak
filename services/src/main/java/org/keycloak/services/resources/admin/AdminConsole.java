@@ -10,14 +10,12 @@ import org.keycloak.freemarker.Theme;
 import org.keycloak.freemarker.ThemeLoader;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.Config;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.ProviderSession;
-import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.ApplicationManager;
 import org.keycloak.services.managers.RealmManager;
@@ -280,12 +278,7 @@ public class AdminConsole {
 
         try {
             //logger.info("getting resource: " + path + " uri: " + uriInfo.getRequestUri().toString());
-            String themeName = realm.getAdminTheme();
-            if (themeName == null || themeName.trim().equals("")) {
-                themeName = Config.getThemeAdmin();
-            }
-
-            Theme theme = ThemeLoader.createTheme(themeName, Theme.Type.ADMIN);
+            Theme theme = ThemeLoader.createTheme(realm.getAdminTheme(), Theme.Type.ADMIN);
             InputStream resource = theme.getResourceAsStream(path);
             if (resource != null) {
                 String contentType = mimeTypes.getContentType(path);
