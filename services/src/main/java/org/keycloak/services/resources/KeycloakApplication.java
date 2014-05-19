@@ -133,7 +133,7 @@ public class KeycloakApplication extends Application {
     }
 
     public static void setupScheduledTasks(final ProviderSessionFactory providerSessionFactory) {
-        long interval = Config.scope("scheduled").getLong("interval") * 1000;
+        long interval = Config.scope("scheduled").getLong("interval", 60L) * 1000;
 
         TimerProvider timer = providerSessionFactory.createSession().getProvider(TimerProvider.class);
         timer.schedule(new ScheduledTaskRunner(providerSessionFactory, new ClearExpiredAuditEvents()), interval);

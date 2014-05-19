@@ -143,7 +143,7 @@ public class BruteForceProtector implements Runnable {
         run = false;
         try {
             queue.offer(new ShutdownEvent());
-            shutdownLatch.await(5, TimeUnit.SECONDS);
+            shutdownLatch.await(10, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -152,46 +152,50 @@ public class BruteForceProtector implements Runnable {
 
     public void run() {
         final ArrayList<LoginEvent> events = new ArrayList<LoginEvent>(TRANSACTION_SIZE + 1);
-        while (run) {
-            try {
-                LoginEvent take = queue.poll(2, TimeUnit.SECONDS);
-                if (take == null) {
-                    continue;
-                }
+        try {
+            while (run) {
                 try {
-                    events.add(take);
-                    queue.drainTo(events, TRANSACTION_SIZE);
-                    Collections.sort(events); // we sort to avoid deadlock due to ordered updates.  Maybe I'm overthinking this.
-                    ProviderSession providerSession = factory.createSession();
-                    KeycloakSession session = providerSession.getProvider(KeycloakSession.class);
-                    session.getTransaction().begin();
-                    try {
-                        for (LoginEvent event : events) {
-                            if (event instanceof FailedLogin) {
-                                failure(session, event);
-                            }
-                        }
-                        session.getTransaction().commit();
-                    } catch (Exception e) {
-                        session.getTransaction().rollback();
-                        throw e;
-                    } finally {
-                        for (LoginEvent event : events) {
-                            if (event instanceof FailedLogin) {
-                                ((FailedLogin) event).latch.countDown();
-                            }
-                        }
-                        events.clear();
-                        providerSession.close();
+                    LoginEvent take = queue.poll(2, TimeUnit.SECONDS);
+                    if (take == null) {
+                        continue;
                     }
-                } catch (Exception e) {
-                    logger.error("Failed processing event", e);
+                    try {
+                        events.add(take);
+                        queue.drainTo(events, TRANSACTION_SIZE);
+                        Collections.sort(events); // we sort to avoid deadlock due to ordered updates.  Maybe I'm overthinking this.
+                        ProviderSession providerSession = factory.createSession();
+                        KeycloakSession session = providerSession.getProvider(KeycloakSession.class);
+                        session.getTransaction().begin();
+                        try {
+                            for (LoginEvent event : events) {
+                                if (event instanceof FailedLogin) {
+                                    failure(session, event);
+                                } else if (event instanceof ShutdownEvent) {
+                                    run = false;
+                                }
+                            }
+                            session.getTransaction().commit();
+                        } catch (Exception e) {
+                            session.getTransaction().rollback();
+                            throw e;
+                        } finally {
+                            for (LoginEvent event : events) {
+                                if (event instanceof FailedLogin) {
+                                    ((FailedLogin) event).latch.countDown();
+                                }
+                            }
+                            events.clear();
+                            providerSession.close();
+                        }
+                    } catch (Exception e) {
+                        logger.error("Failed processing event", e);
+                    }
+                } catch (InterruptedException e) {
+                    break;
                 }
-            } catch (InterruptedException e) {
-                break;
-            } finally {
-                shutdownLatch.countDown();
             }
+        } finally {
+            shutdownLatch.countDown();
         }
     }
 
