@@ -18,6 +18,7 @@ import org.keycloak.authentication.AuthenticationProviderException;
 import org.keycloak.authentication.AuthenticationProviderManager;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
+import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -221,10 +222,9 @@ public class TokenService {
 
         ClientModel client = authorizeClient(authorizationHeader, form, audit);
 
-        if (client.isPublicClient()) {
-            // we don't allow public clients to invoke grants/access to prevent phishing attacks
+        if ( (client instanceof ApplicationModel) && ((ApplicationModel)client).isBearerOnly()) {
             audit.error(Errors.NOT_ALLOWED);
-            throw new ForbiddenException("Public clients are not allowed to invoke grants/access");
+            throw new ForbiddenException("Bearer-only applications are not allowed to invoke grants/access");
         }
 
         if (!realm.isEnabled()) {
@@ -744,6 +744,10 @@ public class TokenService {
             logger.warn("Login requester not enabled.");
             audit.error(Errors.CLIENT_DISABLED);
             return oauth.forwardToSecurityFailure("Login requester not enabled.");
+        }
+        if ( (client instanceof ApplicationModel) && ((ApplicationModel)client).isBearerOnly()) {
+            audit.error(Errors.NOT_ALLOWED);
+            return oauth.forwardToSecurityFailure("Bearer-only applications are not allowed to initiate login");
         }
         redirect = verifyRedirectUri(uriInfo, redirect, client);
         if (redirect == null) {
