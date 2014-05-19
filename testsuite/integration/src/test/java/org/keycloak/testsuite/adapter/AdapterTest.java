@@ -190,6 +190,43 @@ public class AdapterTest {
         realm.setSsoSessionIdleTimeout(originalIdle);
         keycloakRule.stopSession(providerSession, true);
     }
+
+    @Test
+    public void testLoginSSOIdleRemoveExpiredUserSessions() throws Exception {
+        // test login to customer-portal which does a bearer request to customer-db
+        driver.navigate().to("http://localhost:8081/customer-portal");
+        System.out.println("Current url: " + driver.getCurrentUrl());
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+        loginPage.login("bburke@redhat.com", "password");
+        System.out.println("Current url: " + driver.getCurrentUrl());
+        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/customer-portal");
+        String pageSource = driver.getPageSource();
+        System.out.println(pageSource);
+        Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
+
+        ProviderSession providerSession = keycloakRule.startSession();
+        RealmModel realm = providerSession.getProvider(KeycloakSession.class).getRealmByName("demo");
+        int originalIdle = realm.getSsoSessionIdleTimeout();
+        realm.setSsoSessionIdleTimeout(1);
+        keycloakRule.stopSession(providerSession, true);
+
+        Thread.sleep(2000);
+
+        providerSession = keycloakRule.startSession();
+        realm = providerSession.getProvider(KeycloakSession.class).getRealmByName("demo");
+        realm.removeExpiredUserSessions();
+        keycloakRule.stopSession(providerSession, true);
+
+        // test SSO
+        driver.navigate().to("http://localhost:8081/product-portal");
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+
+        providerSession = keycloakRule.startSession();
+        realm = providerSession.getProvider(KeycloakSession.class).getRealmByName("demo");
+        realm.setSsoSessionIdleTimeout(originalIdle);
+        keycloakRule.stopSession(providerSession, true);
+    }
+
     @Test
     public void testLoginSSOMax() throws Exception {
         // test login to customer-portal which does a bearer request to customer-db

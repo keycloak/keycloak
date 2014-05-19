@@ -22,8 +22,7 @@ import javax.persistence.NamedQuery;
         @NamedQuery(name = "getActiveClientSessions", query = "select COUNT(s) from ClientUserSessionAssociationEntity s where s.clientId = :clientId"),
         @NamedQuery(name = "removeClientUserSessionByClient", query = "delete from ClientUserSessionAssociationEntity s where s.clientId = :clientId"),
         @NamedQuery(name = "removeClientUserSessionByUser", query = "delete from ClientUserSessionAssociationEntity s where s.user = :user"),
-        @NamedQuery(name = "removeClientUserSessionByRealm", query = "delete from ClientUserSessionAssociationEntity s where s.realm = :realm")
-})
+        @NamedQuery(name = "removeClientUserSessionByRealm", query = "delete from ClientUserSessionAssociationEntity s where s.realm = :realm")})
 public class ClientUserSessionAssociationEntity {
     @Id
     @GenericGenerator(name="uuid_generator", strategy="org.keycloak.models.jpa.utils.JpaIdGenerator")
