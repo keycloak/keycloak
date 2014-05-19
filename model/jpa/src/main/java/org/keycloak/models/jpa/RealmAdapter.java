@@ -1450,10 +1450,13 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public void removeExpiredUserSessions() {
-        em.createNamedQuery("removeUserSessionExpired")
+        TypedQuery<UserSessionEntity> query = em.createNamedQuery("getUserSessionExpired", UserSessionEntity.class)
                 .setParameter("maxTime", Time.currentTime() - getSsoSessionMaxLifespan())
-                .setParameter("idleTime", Time.currentTime() - getSsoSessionIdleTimeout())
-                .executeUpdate();
+                .setParameter("idleTime", Time.currentTime() - getSsoSessionIdleTimeout());
+        List<UserSessionEntity> results = query.getResultList();
+        for (UserSessionEntity entity : results) {
+            em.remove(entity);
+        }
     }
 
 }

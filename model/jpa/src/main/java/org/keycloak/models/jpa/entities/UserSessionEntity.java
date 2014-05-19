@@ -23,6 +23,7 @@ import java.util.Collection;
         @NamedQuery(name = "getUserSessionByUser", query = "select s from UserSessionEntity s where s.user = :user"),
         @NamedQuery(name = "removeRealmUserSessions", query = "delete from UserSessionEntity s where s.realm = :realm"),
         @NamedQuery(name = "removeUserSessionByUser", query = "delete from UserSessionEntity s where s.user = :user"),
+        @NamedQuery(name = "getUserSessionExpired", query = "select s from UserSessionEntity s where s.started < :maxTime or s.lastSessionRefresh < :idleTime"),
         @NamedQuery(name = "removeUserSessionExpired", query = "delete from UserSessionEntity s where s.started < :maxTime or s.lastSessionRefresh < :idleTime")
 })
 public class UserSessionEntity {

@@ -25,6 +25,7 @@ import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
@@ -40,7 +41,6 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.resources.TokenService;
 import org.keycloak.services.resources.admin.AdminRoot;
-import org.keycloak.services.resources.admin.RealmAdminResource;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
@@ -69,7 +69,7 @@ public class AdapterTest {
     public static final String LOGIN_URL = TokenService.loginPageUrl(UriBuilder.fromUri("http://localhost:8081/auth")).build("demo").toString();
     public static PublicKey realmPublicKey;
     @ClassRule
-    public static AbstractKeycloakRule keycloakRule = new AbstractKeycloakRule(){
+    public static AbstractKeycloakRule keycloakRule = new AbstractKeycloakRule() {
         @Override
         protected void configure(RealmManager manager, RealmModel adminRealm) {
             RealmRepresentation representation = KeycloakServer.loadJson(getClass().getResourceAsStream("/adapter-test/demorealm.json"), RealmRepresentation.class);
@@ -83,17 +83,28 @@ public class AdapterTest {
             deployApplication("customer-db", "/customer-db", CustomerDatabaseServlet.class, url.getPath(), "user");
             url = getClass().getResource("/adapter-test/product-keycloak.json");
             deployApplication("product-portal", "/product-portal", ProductServlet.class, url.getPath(), "user");
-            ApplicationModel adminConsole = adminRealm.getApplicationByName(Constants.ADMIN_CONSOLE_APPLICATION);
-            TokenManager tm = new TokenManager();
-            UserModel admin = adminRealm.getUser("admin");
-            UserSessionModel session = adminRealm.createUserSession(admin, null);
-            AccessToken token = tm.createClientAccessToken(null, adminRealm, adminConsole, admin, session);
-            adminToken = tm.encodeToken(adminRealm, token);
 
         }
     };
 
-    public static String adminToken;
+    private static String createToken() {
+        ProviderSession providerSession = keycloakRule.startSession();
+        try {
+            RealmManager manager = new RealmManager(providerSession.getProvider(KeycloakSession.class));
+
+            RealmModel adminRealm = manager.getRealm(Config.getAdminRealm());
+            ApplicationModel adminConsole = adminRealm.getApplicationByName(Constants.ADMIN_CONSOLE_APPLICATION);
+            TokenManager tm = new TokenManager();
+            UserModel admin = adminRealm.getUser("admin");
+            UserSessionModel userSession = adminRealm.createUserSession(admin, null);
+            AccessToken token = tm.createClientAccessToken(null, adminRealm, adminConsole, admin, userSession);
+            return tm.encodeToken(adminRealm, token);
+        } finally {
+            keycloakRule.stopSession(providerSession, true);
+
+        }
+    }
+
 
     @Rule
     public WebRule webRule = new WebRule(this);
@@ -128,12 +139,15 @@ public class AdapterTest {
         Assert.assertTrue(pageSource.contains("iPhone") && pageSource.contains("iPad"));
 
         // View stats
+        String adminToken = createToken();
+
         Client client = ClientBuilder.newClient();
         UriBuilder authBase = UriBuilder.fromUri("http://localhost:8081/auth");
         WebTarget adminTarget = client.target(AdminRoot.realmsUrl(authBase)).path("demo");
         Map<String, SessionStats> stats = adminTarget.path("session-stats").request()
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
-                .get(new GenericType<Map<String, SessionStats>>(){});
+                .get(new GenericType<Map<String, SessionStats>>() {
+                });
 
         SessionStats custStats = stats.get("customer-portal");
         Assert.assertNotNull(custStats);
@@ -190,6 +204,43 @@ public class AdapterTest {
         realm.setSsoSessionIdleTimeout(originalIdle);
         keycloakRule.stopSession(providerSession, true);
     }
+
+    @Test
+    public void testLoginSSOIdleRemoveExpiredUserSessions() throws Exception {
+        // test login to customer-portal which does a bearer request to customer-db
+        driver.navigate().to("http://localhost:8081/customer-portal");
+        System.out.println("Current url: " + driver.getCurrentUrl());
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+        loginPage.login("bburke@redhat.com", "password");
+        System.out.println("Current url: " + driver.getCurrentUrl());
+        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/customer-portal");
+        String pageSource = driver.getPageSource();
+        System.out.println(pageSource);
+        Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
+
+        ProviderSession providerSession = keycloakRule.startSession();
+        RealmModel realm = providerSession.getProvider(KeycloakSession.class).getRealmByName("demo");
+        int originalIdle = realm.getSsoSessionIdleTimeout();
+        realm.setSsoSessionIdleTimeout(1);
+        keycloakRule.stopSession(providerSession, true);
+
+        Thread.sleep(2000);
+
+        providerSession = keycloakRule.startSession();
+        realm = providerSession.getProvider(KeycloakSession.class).getRealmByName("demo");
+        realm.removeExpiredUserSessions();
+        keycloakRule.stopSession(providerSession, true);
+
+        // test SSO
+        driver.navigate().to("http://localhost:8081/product-portal");
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+
+        providerSession = keycloakRule.startSession();
+        realm = providerSession.getProvider(KeycloakSession.class).getRealmByName("demo");
+        realm.setSsoSessionIdleTimeout(originalIdle);
+        keycloakRule.stopSession(providerSession, true);
+    }
+
     @Test
     public void testLoginSSOMax() throws Exception {
         // test login to customer-portal which does a bearer request to customer-db
