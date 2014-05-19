@@ -25,14 +25,16 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.account.Account;
-import org.keycloak.account.AccountLoader;
 import org.keycloak.account.AccountPages;
+import org.keycloak.account.AccountProvider;
 import org.keycloak.audit.Audit;
 import org.keycloak.audit.AuditProvider;
 import org.keycloak.audit.Details;
 import org.keycloak.audit.Event;
 import org.keycloak.audit.Events;
+import org.keycloak.authentication.AuthProviderStatus;
+import org.keycloak.authentication.AuthenticationProviderException;
+import org.keycloak.authentication.AuthenticationProviderManager;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.AuthenticationLinkModel;
@@ -44,8 +46,8 @@ import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.TimeBasedOTP;
-import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.provider.ProviderSession;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
@@ -62,9 +64,6 @@ import org.keycloak.services.validation.Validation;
 import org.keycloak.social.SocialLoader;
 import org.keycloak.social.SocialProvider;
 import org.keycloak.social.SocialProviderException;
-import org.keycloak.authentication.AuthProviderStatus;
-import org.keycloak.authentication.AuthenticationProviderException;
-import org.keycloak.authentication.AuthenticationProviderManager;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -76,7 +75,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
@@ -111,8 +109,6 @@ public class AccountService {
         AUDIT_DETAILS.add(Details.AUTH_METHOD);
     }
 
-    public static final String KEYCLOAK_ACCOUNT_IDENTITY_COOKIE = "KEYCLOAK_ACCOUNT_IDENTITY";
-
     private RealmModel realm;
 
     @Context
@@ -131,7 +127,7 @@ public class AccountService {
     private final ApplicationModel application;
     private Audit audit;
     private final SocialRequestManager socialRequestManager;
-    private Account account;
+    private AccountProvider account;
     private Auth auth;
     private AuditProvider auditProvider;
 
@@ -146,7 +142,7 @@ public class AccountService {
     public void init() {
         auditProvider = providers.getProvider(AuditProvider.class);
 
-        account = AccountLoader.load().createAccount(uriInfo).setRealm(realm);
+        account = providers.getProvider(AccountProvider.class).setRealm(realm).setUriInfo(uriInfo);
 
         boolean passwordUpdateSupported = false;
         AuthenticationManager.AuthResult authResult = authManager.authenticateRequest(realm, uriInfo, headers);
@@ -181,7 +177,7 @@ public class AccountService {
             try {
                 require(AccountRoles.MANAGE_ACCOUNT);
             } catch (ForbiddenException e) {
-                return Flows.forms(realm, uriInfo).setError("No access").createErrorPage();
+                return Flows.forms(providers, realm, uriInfo).setError("No access").createErrorPage();
             }
 
             String[] referrer = getReferrer();

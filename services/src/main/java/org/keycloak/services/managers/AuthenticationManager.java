@@ -347,7 +347,7 @@ public class AuthenticationManager {
 
     private boolean checkEnabled(UserModel user) {
         if (!user.isEnabled()) {
-            logger.warn("Account is disabled, contact admin. " + user.getLoginName());
+            logger.warn("AccountProvider is disabled, contact admin. " + user.getLoginName());
             return false;
         } else {
             return true;

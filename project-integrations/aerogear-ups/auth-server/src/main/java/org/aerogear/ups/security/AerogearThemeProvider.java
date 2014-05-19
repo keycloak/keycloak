@@ -59,4 +59,8 @@ public class AerogearThemeProvider implements ThemeProvider {
         return nameSet(type).contains(name);
     }
 
+    @Override
+    public void close() {
+    }
+
 }

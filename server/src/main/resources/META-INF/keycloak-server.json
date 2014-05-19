@@ -20,6 +20,18 @@
         "dir": "${jboss.server.config.dir}/themes"
     },
 
+    "login-forms": {
+        "provider": "freemarker"
+    },
+
+    "account": {
+        "provider": "freemarker"
+    },
+
+    "email": {
+        "provider": "freemarker"
+    },
+
     "scheduled": {
         "interval": 900
     }

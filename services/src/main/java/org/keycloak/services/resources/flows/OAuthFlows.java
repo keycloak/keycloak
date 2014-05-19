@@ -35,6 +35,7 @@ import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.provider.ProviderSession;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -56,6 +57,8 @@ public class OAuthFlows {
 
     private static final Logger log = Logger.getLogger(OAuthFlows.class);
 
+    private final ProviderSession providerSession;
+
     private final RealmModel realm;
 
     private final HttpRequest request;
@@ -66,8 +69,9 @@ public class OAuthFlows {
 
     private final TokenManager tokenManager;
 
-    OAuthFlows(RealmModel realm, HttpRequest request, UriInfo uriInfo, AuthenticationManager authManager,
+    OAuthFlows(ProviderSession providerSession, RealmModel realm, HttpRequest request, UriInfo uriInfo, AuthenticationManager authManager,
             TokenManager tokenManager) {
+        this.providerSession = providerSession;
         this.realm = realm;
         this.request = request;
         this.uriInfo = uriInfo;
@@ -84,7 +88,7 @@ public class OAuthFlows {
         String code = accessCode.getCode();
 
         if (Constants.INSTALLED_APP_URN.equals(redirect)) {
-            return Flows.forms(realm, uriInfo).setAccessCode(accessCode.getId(), code).createCode();
+            return Flows.forms(providerSession, realm, uriInfo).setAccessCode(accessCode.getId(), code).createCode();
         } else {
             UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam(OAuth2Constants.CODE, code);
             log.debugv("redirectAccessCode: state: {0}", state);
@@ -102,7 +106,7 @@ public class OAuthFlows {
 
     public Response redirectError(ClientModel client, String error, String state, String redirect) {
         if (Constants.INSTALLED_APP_URN.equals(redirect)) {
-            return Flows.forms(realm, uriInfo).setError(error).createCode();
+            return Flows.forms(providerSession, realm, uriInfo).setError(error).createCode();
         } else {
             UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam(OAuth2Constants.ERROR, error);
             if (state != null) {
@@ -139,14 +143,14 @@ public class OAuthFlows {
                 audit.clone().event(Events.SEND_VERIFY_EMAIL).detail(Details.EMAIL, accessCode.getUser().getEmail()).success();
             }
 
-            return Flows.forms(realm, uriInfo).setAccessCode(accessCode.getId(), accessCode.getCode()).setUser(user)
+            return Flows.forms(providerSession, realm, uriInfo).setAccessCode(accessCode.getId(), accessCode.getCode()).setUser(user)
                     .createResponse(action);
         }
 
         if (!isResource
                 && (accessCode.getRealmRolesRequested().size() > 0 || accessCode.getResourceRolesRequested().size() > 0)) {
             accessCode.setExpiration(Time.currentTime() + realm.getAccessCodeLifespanUserAction());
-            return Flows.forms(realm, uriInfo).setAccessCode(accessCode.getId(), accessCode.getCode()).
+            return Flows.forms(providerSession, realm, uriInfo).setAccessCode(accessCode.getId(), accessCode.getCode()).
                     setAccessRequest(accessCode.getRealmRolesRequested(), accessCode.getResourceRolesRequested()).
                     setClient(client).createOAuthGrant();
         }
@@ -160,7 +164,7 @@ public class OAuthFlows {
     }
 
     public Response forwardToSecurityFailure(String message) {
-        return Flows.forms(realm, uriInfo).setError(message).createErrorPage();
+        return Flows.forms(providerSession, realm, uriInfo).setError(message).createErrorPage();
     }
 
     private void isTotpConfigurationRequired(UserModel user) {

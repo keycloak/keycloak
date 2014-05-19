@@ -22,9 +22,9 @@
 package org.keycloak.services.resources.flows;
 
 import org.jboss.resteasy.spi.HttpRequest;
-import org.keycloak.login.LoginForms;
-import org.keycloak.login.LoginFormsLoader;
+import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.RealmModel;
+import org.keycloak.provider.ProviderSession;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.SocialRequestManager;
 import org.keycloak.services.managers.TokenManager;
@@ -40,13 +40,13 @@ public class Flows {
     private Flows() {
     }
 
-    public static LoginForms forms(RealmModel realm, UriInfo uriInfo) {
-        return LoginFormsLoader.load().createForms(realm, uriInfo);
+    public static LoginFormsProvider forms(ProviderSession session, RealmModel realm, UriInfo uriInfo) {
+        return session.getProvider(LoginFormsProvider.class).setRealm(realm).setUriInfo(uriInfo);
     }
 
-    public static OAuthFlows oauth(RealmModel realm, HttpRequest request, UriInfo uriInfo, AuthenticationManager authManager,
+    public static OAuthFlows oauth(ProviderSession session, RealmModel realm, HttpRequest request, UriInfo uriInfo, AuthenticationManager authManager,
             TokenManager tokenManager) {
-        return new OAuthFlows(realm, request, uriInfo, authManager, tokenManager);
+        return new OAuthFlows(session, realm, request, uriInfo, authManager, tokenManager);
     }
 
     public static SocialRedirectFlows social(SocialRequestManager socialRequestManager, RealmModel realm, UriInfo uriInfo, SocialProvider provider) {

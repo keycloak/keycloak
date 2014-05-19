@@ -4,6 +4,8 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.NotFoundException;
+import org.keycloak.email.EmailException;
+import org.keycloak.email.EmailProvider;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -15,6 +17,7 @@ import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.provider.ProviderSession;
 import org.keycloak.representations.adapters.action.UserStats;
 import org.keycloak.representations.idm.ApplicationMappingsRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -23,8 +26,6 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.SocialLinkRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
-import org.keycloak.services.email.EmailException;
-import org.keycloak.services.email.EmailSender;
 import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.managers.ModelToRepresentation;
 import org.keycloak.services.managers.RealmManager;
@@ -46,6 +47,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -53,6 +55,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -63,10 +66,12 @@ public class UsersResource {
 
     protected RealmModel realm;
 
+    private ProviderSession providerSession;
     private RealmAuth auth;
     private TokenManager tokenManager;
 
-    public UsersResource(RealmModel realm, RealmAuth auth, TokenManager tokenManager) {
+    public UsersResource(ProviderSession providerSession, RealmModel realm, RealmAuth auth, TokenManager tokenManager) {
+        this.providerSession = providerSession;
         this.auth = auth;
         this.realm = realm;
         this.tokenManager = tokenManager;
@@ -660,7 +665,7 @@ public class UsersResource {
 
         ClientModel client = realm.findClient(clientId);
         if (client == null || !client.isEnabled()) {
-            return Flows.errors().error("Account management not enabled", Response.Status.INTERNAL_SERVER_ERROR);
+            return Flows.errors().error("AccountProvider management not enabled", Response.Status.INTERNAL_SERVER_ERROR);
         }
 
         Set<UserModel.RequiredAction> requiredActions = new HashSet<UserModel.RequiredAction>(user.getRequiredActions());
@@ -671,7 +676,14 @@ public class UsersResource {
         accessCode.setExpiration(Time.currentTime() + realm.getAccessCodeLifespanUserAction());
 
         try {
-            new EmailSender(realm.getSmtpConfig()).sendPasswordReset(user, realm, accessCode, uriInfo);
+            UriBuilder builder = Urls.loginPasswordResetBuilder(uriInfo.getBaseUri());
+            builder.queryParam("key", accessCode.getId());
+
+            String link = builder.build(realm.getName()).toString();
+            long expiration = TimeUnit.SECONDS.toMinutes(realm.getAccessCodeLifespanUserAction());
+
+            providerSession.getProvider(EmailProvider.class).setRealm(realm).setUser(user).sendPasswordReset(link, expiration);
+
             return Response.ok().build();
         } catch (EmailException e) {
             logger.error("Failed to send password reset email", e);

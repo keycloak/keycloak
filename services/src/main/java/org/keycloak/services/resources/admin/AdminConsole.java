@@ -6,8 +6,9 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.jboss.resteasy.spi.NotFoundException;
+import org.keycloak.freemarker.ExtendingThemeManager;
 import org.keycloak.freemarker.Theme;
-import org.keycloak.freemarker.ThemeLoader;
+import org.keycloak.freemarker.ThemeProvider;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
@@ -280,7 +281,8 @@ public class AdminConsole {
 
         try {
             //logger.info("getting resource: " + path + " uri: " + uriInfo.getRequestUri().toString());
-            Theme theme = ThemeLoader.createTheme(realm.getAdminTheme(), Theme.Type.ADMIN);
+            ExtendingThemeManager themeManager = new ExtendingThemeManager(providerSession);
+            Theme theme = themeManager.createTheme(realm.getAdminTheme(), Theme.Type.ADMIN);
             InputStream resource = theme.getResourceAsStream(path);
             if (resource != null) {
                 String contentType = mimeTypes.getContentType(path);

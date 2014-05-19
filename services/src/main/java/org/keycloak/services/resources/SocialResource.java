@@ -97,6 +97,9 @@ public class SocialResource {
     */
 
     @Context
+    protected ProviderSession providerSession;
+
+    @Context
     protected KeycloakSession session;
 
     @Context
@@ -133,7 +136,7 @@ public class SocialResource {
                 .detail(Details.AUTH_METHOD, "social@" + provider.getId());
 
         AuthenticationManager authManager = new AuthenticationManager(providers);
-        OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
+        OAuthFlows oauth = Flows.oauth(providerSession, realm, request, uriInfo, authManager, tokenManager);
 
         if (!realm.isEnabled()) {
             audit.error(Errors.REALM_DISABLED);
@@ -177,7 +180,7 @@ public class SocialResource {
             queryParms.putSingle(OAuth2Constants.RESPONSE_TYPE, responseType);
 
             audit.error(Errors.REJECTED_BY_USER);
-            return  Flows.forms(realm, uriInfo).setQueryParams(queryParms).setWarning("Access denied").createLogin();
+            return  Flows.forms(providerSession, realm, uriInfo).setQueryParams(queryParms).setWarning("Access denied").createLogin();
         } catch (SocialProviderException e) {
             logger.error("Failed to process social callback", e);
             return oauth.forwardToSecurityFailure("Failed to process social callback");
@@ -279,25 +282,25 @@ public class SocialResource {
         SocialProvider provider = SocialLoader.load(providerId);
         if (provider == null) {
             audit.error(Errors.SOCIAL_PROVIDER_NOT_FOUND);
-            return Flows.forms(realm, uriInfo).setError("Social provider not found").createErrorPage();
+            return Flows.forms(providerSession, realm, uriInfo).setError("Social provider not found").createErrorPage();
         }
 
         ClientModel client = realm.findClient(clientId);
         if (client == null) {
             audit.error(Errors.CLIENT_NOT_FOUND);
             logger.warn("Unknown login requester: " + clientId);
-            return Flows.forms(realm, uriInfo).setError("Unknown login requester.").createErrorPage();
+            return Flows.forms(providerSession, realm, uriInfo).setError("Unknown login requester.").createErrorPage();
         }
 
         if (!client.isEnabled()) {
             audit.error(Errors.CLIENT_DISABLED);
             logger.warn("Login requester not enabled.");
-            return Flows.forms(realm, uriInfo).setError("Login requester not enabled.").createErrorPage();
+            return Flows.forms(providerSession, realm, uriInfo).setError("Login requester not enabled.").createErrorPage();
         }
         redirectUri = TokenService.verifyRedirectUri(uriInfo, redirectUri, client);
         if (redirectUri == null) {
             audit.error(Errors.INVALID_REDIRECT_URI);
-            return Flows.forms(realm, uriInfo).setError("Invalid redirect_uri.").createErrorPage();
+            return Flows.forms(providerSession, realm, uriInfo).setError("Invalid redirect_uri.").createErrorPage();
         }
 
         try {
@@ -308,7 +311,7 @@ public class SocialResource {
                     .putClientAttribute("responseType", responseType).redirectToSocialProvider();
         } catch (Throwable t) {
             logger.error("Failed to redirect to social auth", t);
-            return Flows.forms(realm, uriInfo).setError("Failed to redirect to social auth").createErrorPage();
+            return Flows.forms(providerSession, realm, uriInfo).setError("Failed to redirect to social auth").createErrorPage();
         }
     }
 

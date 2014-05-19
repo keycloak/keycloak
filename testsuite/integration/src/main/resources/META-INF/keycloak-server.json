@@ -20,6 +20,18 @@
         "dir": "${keycloak.theme.dir}"
     },
 
+    "login-forms": {
+        "provider": "freemarker"
+    },
+
+    "account": {
+        "provider": "freemarker"
+    },
+
+    "email": {
+        "provider": "freemarker"
+    },
+
     "scheduled": {
         "interval": 900
     }
