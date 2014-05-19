@@ -21,7 +21,7 @@ public class AppAuthManager extends AuthenticationManager {
         super(providerSession);
     }
 
-    public UserModel authenticateRequest(RealmModel realm, UriInfo uriInfo, HttpHeaders headers) {
+    public AuthResult authenticateRequest(RealmModel realm, UriInfo uriInfo, HttpHeaders headers) {
         AuthResult authResult = authenticateIdentityCookie(realm, uriInfo, headers);
         if (authResult != null) {
             Cookie remember = headers.getCookies().get(AuthenticationManager.KEYCLOAK_REMEMBER_ME);
@@ -29,7 +29,7 @@ public class AppAuthManager extends AuthenticationManager {
             // refresh the cookies!
             createLoginCookie(realm, authResult.getUser(), authResult.getSession(), uriInfo, rememberMe);
             if (rememberMe) createRememberMeCookie(realm, uriInfo);
-            return authResult.getUser();
+            return authResult;
         } else {
             return authenticateBearerToken(realm, uriInfo, headers);
         }
@@ -47,11 +47,11 @@ public class AppAuthManager extends AuthenticationManager {
         return tokenString;
     }
 
-    public UserModel authenticateBearerToken(RealmModel realm, UriInfo uriInfo, HttpHeaders headers) {
+    public AuthResult authenticateBearerToken(RealmModel realm, UriInfo uriInfo, HttpHeaders headers) {
         String tokenString = extractAuthorizationHeaderToken(headers);
         if (tokenString == null) return null;
         AuthResult authResult = verifyIdentityToken(realm, uriInfo, true, tokenString);
-        return authResult != null ? authResult.getUser() : null;
+        return authResult;
     }
 
 }

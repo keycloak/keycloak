@@ -14,6 +14,7 @@ import org.keycloak.provider.ProviderSession;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.TokenManager;
 
@@ -116,8 +117,8 @@ public class AdminRoot {
         if (realm == null) {
             throw new UnauthorizedException("Unknown realm in token");
         }
-        UserModel user = authManager.authenticateBearerToken(realm, uriInfo, headers);
-        if (user == null) {
+        AuthenticationManager.AuthResult authResult = authManager.authenticateBearerToken(realm, uriInfo, headers);
+        if (authResult == null) {
             logger.debug("Token not valid");
             throw new UnauthorizedException("Bearer");
         }
@@ -126,7 +127,7 @@ public class AdminRoot {
         if (consoleApp == null) {
             throw new NotFoundException("Could not find admin console application");
         }
-        Auth auth = new Auth(realm, user, consoleApp);
+        Auth auth = new Auth(realm, authResult.getUser(), consoleApp);
         return auth;
 
 

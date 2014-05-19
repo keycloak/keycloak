@@ -49,6 +49,7 @@ import org.keycloak.provider.ProviderSession;
 import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ModelToRepresentation;
 import org.keycloak.services.managers.SocialRequestManager;
 import org.keycloak.services.managers.TokenManager;
@@ -148,9 +149,12 @@ public class AccountService {
         account = AccountLoader.load().createAccount(uriInfo).setRealm(realm);
 
         boolean passwordUpdateSupported = false;
-        UserModel user = authManager.authenticateRequest(realm, uriInfo, headers);
-        if (user != null) {
-            auth = new Auth(realm, user, application);
+        AuthenticationManager.AuthResult authResult = authManager.authenticateRequest(realm, uriInfo, headers);
+        if (authResult != null) {
+            auth = new Auth(realm, authResult.getUser(), application);
+            if (authResult.getSession() != null) {
+                authResult.getSession().associateClient(application);
+            }
             account.setUser(auth.getUser());
 
             AuthenticationLinkModel authLinkModel = realm.getAuthenticationLink(auth.getUser());
