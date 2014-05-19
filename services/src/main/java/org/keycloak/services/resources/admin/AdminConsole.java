@@ -18,6 +18,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.provider.ProviderSession;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.ApplicationManager;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.services.resources.TokenService;
@@ -164,10 +165,11 @@ public class AdminConsole {
     @NoCache
     public Response whoAmI(final @Context HttpHeaders headers) {
         RealmManager realmManager = new RealmManager(session);
-        UserModel user = authManager.authenticateBearerToken(realm, uriInfo, headers);
-        if (user == null) {
+        AuthenticationManager.AuthResult authResult = authManager.authenticateBearerToken(realm, uriInfo, headers);
+        if (authResult == null) {
             return Response.status(401).build();
         }
+        UserModel user= authResult.getUser();
         String displayName;
         if ((user.getFirstName() != null && !user.getFirstName().trim().equals("")) || (user.getLastName() != null && !user.getLastName().trim().equals(""))) {
             displayName = user.getFirstName();
