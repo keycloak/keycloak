@@ -14,6 +14,7 @@ public class UserSessionRepresentation {
     private String user;
     private String ipAddress;
     private long start;
+    private long lastAccess;
     private Set<String> applications = new HashSet<String>();
     private Map<String, String> clients = new HashMap<String, String>();
 
@@ -47,6 +48,14 @@ public class UserSessionRepresentation {
 
     public void setStart(long start) {
         this.start = start;
+    }
+
+    public long getLastAccess() {
+        return lastAccess;
+    }
+
+    public void setLastAccess(long lastAccess) {
+        this.lastAccess = lastAccess;
     }
 
     public Set<String> getApplications() {
