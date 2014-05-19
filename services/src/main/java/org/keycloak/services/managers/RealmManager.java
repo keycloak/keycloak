@@ -279,6 +279,8 @@ public class RealmManager {
         if (application == null) {
             application = new ApplicationManager(this).createApplication(realm, Constants.ACCOUNT_MANAGEMENT_APP);
             application.setEnabled(true);
+            String redirectUri = contextPath + "/realms/" + realm.getName() + "/account/*";
+            application.addRedirectUri(redirectUri);
 
             for (String role : AccountRoles.ALL) {
                 application.addDefaultRole(role);

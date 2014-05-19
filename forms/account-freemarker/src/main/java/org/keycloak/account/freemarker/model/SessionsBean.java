@@ -1,9 +1,13 @@
 package org.keycloak.account.freemarker.model;
 
+import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.util.Time;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -48,6 +52,21 @@ public class SessionsBean {
         public Date getExpires() {
             int max = session.getStarted() + realm.getSsoSessionMaxLifespan();
             return Time.toDate(max);
+        }
+
+        public List<String> getApplications() {
+            List<String> apps = new ArrayList<String>();
+            for (ClientModel client : session.getClientAssociations()) {
+                if (client instanceof ApplicationModel) apps.add(client.getClientId());
+            }
+            return apps;
+        }
+        public List<String> getClients() {
+            List<String> apps = new ArrayList<String>();
+            for (ClientModel client : session.getClientAssociations()) {
+                if (client instanceof OAuthClientModel) apps.add(client.getClientId());
+            }
+            return apps;
         }
 
     }
