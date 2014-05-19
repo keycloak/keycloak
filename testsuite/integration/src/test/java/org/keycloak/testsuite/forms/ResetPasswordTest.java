@@ -35,6 +35,7 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
+import org.keycloak.testsuite.org.keycloak.testsuite.util.MailUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -133,7 +134,7 @@ public class ResetPasswordTest {
         MimeMessage message = greenMail.getReceivedMessages()[0];
 
         String body = (String) message.getContent();
-        String changePasswordUrl = body.split("\n")[3];
+        String changePasswordUrl = MailUtil.getLink(body);
 
         driver.navigate().to(changePasswordUrl.trim());
 
@@ -205,7 +206,7 @@ public class ResetPasswordTest {
         MimeMessage message = greenMail.getReceivedMessages()[0];
 
         String body = (String) message.getContent();
-        String changePasswordUrl = body.split("\n")[3];
+        String changePasswordUrl = MailUtil.getLink(body);
 
         String sessionId = events.expectRequiredAction("send_reset_password").user(userId).detail(Details.USERNAME, "login-test").detail(Details.EMAIL, "login@test.com").assertEvent().getSessionId();
 

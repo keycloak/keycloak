@@ -21,7 +21,7 @@
  */
 package org.keycloak.login.freemarker.model;
 
-import org.keycloak.login.freemarker.FreeMarkerLoginForms;
+import org.keycloak.login.freemarker.FreeMarkerLoginFormsProvider;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -30,9 +30,9 @@ public class MessageBean {
 
     private String summary;
 
-    private FreeMarkerLoginForms.MessageType type;
+    private FreeMarkerLoginFormsProvider.MessageType type;
 
-    public MessageBean(String message, FreeMarkerLoginForms.MessageType type) {
+    public MessageBean(String message, FreeMarkerLoginFormsProvider.MessageType type) {
         this.summary = message;
         this.type = type;
     }
@@ -46,15 +46,15 @@ public class MessageBean {
     }
 
     public boolean isSuccess() {
-        return FreeMarkerLoginForms.MessageType.SUCCESS.equals(this.type);
+        return FreeMarkerLoginFormsProvider.MessageType.SUCCESS.equals(this.type);
     }
 
     public boolean isWarning() {
-        return FreeMarkerLoginForms.MessageType.WARNING.equals(this.type);
+        return FreeMarkerLoginFormsProvider.MessageType.WARNING.equals(this.type);
     }
 
     public boolean isError() {
-        return FreeMarkerLoginForms.MessageType.ERROR.equals(this.type);
+        return FreeMarkerLoginFormsProvider.MessageType.ERROR.equals(this.type);
     }
 
 }

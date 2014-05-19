@@ -148,26 +148,26 @@
             <title>Account SPI</title>
             <para>
                 The Account SPI allows implementing the account management pages using whatever web framework or templating
-                engine you want. To create an Account provider implement <literal>org.keycloak.account.AccountProvider</literal>
-                and <literal>org.keycloak.account.Account</literal> in <literal>forms/account-api</literal>.
+                engine you want. To create an Account provider implement <literal>org.keycloak.account.AccountProviderFactory</literal>
+                and <literal>org.keycloak.account.AccountProvider</literal> in <literal>forms/account-api</literal>.
             </para>
             <para>
                 Keycloaks default account management provider is built on the FreeMarker template engine (<literal>forms/account-freemarker</literal>).
                 To make sure your provider is loaded you will either need to delete <literal>standalone/deployments/auth-server.war/WEB-INF/lib/keycloak-account-freemarker-1.0-beta-1-SNAPSHOT.jar</literal>
-                or disable it with the system property <literal>org.keycloak.account.freemarker.FreeMarkerAccountProvider</literal>.
+                or disable it with the system property <literal>org.keycloak.account.freemarker.FreeMarkerAccountProviderFactory</literal>.
             </para>
         </section>
         <section>
             <title>Login SPI</title>
             <para>
                 The Login SPI allows implementing the login forms using whatever web framework or templating
-                engine you want. To create a Login forms provider implement <literal>org.keycloak.login.LoginFormsProvider</literal>
-                and <literal>org.keycloak.login.LoginForms</literal> in <literal>forms/login-api</literal>.
+                engine you want. To create a Login forms provider implement <literal>org.keycloak.login.LoginFormsProviderFactory</literal>
+                and <literal>org.keycloak.login.LoginFormsProvider</literal> in <literal>forms/login-api</literal>.
             </para>
             <para>
                 Keycloaks default login forms provider is built on the FreeMarker template engine (<literal>forms/login-freemarker</literal>).
                 To make sure your provider is loaded you will either need to delete <literal>standalone/deployments/auth-server.war/WEB-INF/lib/keycloak-login-freemarker-1.0-beta-1-SNAPSHOT.jar</literal>
-                or disable it with the system property <literal>org.keycloak.login.freemarker.FreeMarkerLoginFormsProvider</literal>.
+                or disable it with the system property <literal>org.keycloak.login.freemarker.FreeMarkerLoginFormsProviderFactory</literal>.
             </para>
         </section>
     </section>

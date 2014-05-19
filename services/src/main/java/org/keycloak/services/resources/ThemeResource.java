@@ -1,14 +1,17 @@
 package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
+import org.keycloak.freemarker.ExtendingThemeManager;
 import org.keycloak.freemarker.Theme;
-import org.keycloak.freemarker.ThemeLoader;
+import org.keycloak.freemarker.ThemeProvider;
+import org.keycloak.provider.ProviderSession;
 
 import javax.activation.FileTypeMap;
 import javax.activation.MimetypesFileTypeMap;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
 
@@ -22,11 +25,15 @@ public class ThemeResource {
 
     private static FileTypeMap mimeTypes = MimetypesFileTypeMap.getDefaultFileTypeMap();
 
+    @Context
+    private ProviderSession providerSession;
+
     @GET
     @Path("/{themType}/{themeName}/{path:.*}")
     public Response getResource(@PathParam("themType") String themType, @PathParam("themeName") String themeName, @PathParam("path") String path) {
         try {
-            Theme theme = ThemeLoader.createTheme(themeName, Theme.Type.valueOf(themType.toUpperCase()));
+            ExtendingThemeManager themeManager = new ExtendingThemeManager(providerSession);
+            Theme theme = themeManager.createTheme(themeName, Theme.Type.valueOf(themType.toUpperCase()));
             InputStream resource = theme.getResourceAsStream(path);
             if (resource != null) {
                 return Response.ok(resource).type(mimeTypes.getContentType(path)).build();
@@ -38,6 +45,5 @@ public class ThemeResource {
             return Response.serverError().build();
         }
     }
-
 
 }

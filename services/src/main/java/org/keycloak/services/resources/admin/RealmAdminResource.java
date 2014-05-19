@@ -133,7 +133,7 @@ public class RealmAdminResource {
 
     @Path("users")
     public UsersResource users() {
-        UsersResource users = new UsersResource(realm, auth, tokenManager);
+        UsersResource users = new UsersResource(providers, realm, auth, tokenManager);
         ResteasyProviderFactory.getInstance().injectProperties(users);
         //resourceContext.initResource(users);
         return users;

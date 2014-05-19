@@ -18,11 +18,8 @@ public class FolderThemeProvider implements ThemeProvider {
 
     private File rootDir;
 
-    public FolderThemeProvider() {
-        String d = Config.scope("theme").get("dir");
-        if (d != null) {
-            rootDir = new File(d);
-        }
+    public FolderThemeProvider(File rootDir) {
+        this.rootDir = rootDir;
     }
 
     @Override
@@ -73,6 +70,10 @@ public class FolderThemeProvider implements ThemeProvider {
     public boolean hasTheme(String name, Theme.Type type) {
         File typeDir = getTypeDir(type);
         return typeDir != null && new File(typeDir, name).isDirectory();
+    }
+
+    @Override
+    public void close() {
     }
 
 }

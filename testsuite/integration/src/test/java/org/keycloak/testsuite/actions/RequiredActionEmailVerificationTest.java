@@ -33,6 +33,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
+import org.keycloak.testsuite.org.keycloak.testsuite.util.MailUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -113,12 +114,7 @@ public class RequiredActionEmailVerificationTest {
         MimeMessage message = greenMail.getReceivedMessages()[0];
 
         String body = (String) message.getContent();
-
-        Pattern p = Pattern.compile("(?s).*(http://[^\\s]*).*");
-        Matcher m = p.matcher(body);
-        m.matches();
-
-        String verificationUrl = m.group(1);
+        String verificationUrl = MailUtil.getLink(body);
 
         Event sendEvent = events.expectRequiredAction("send_verify_email").detail("email", "test-user@localhost").assertEvent();
         String sessionId = sendEvent.getSessionId();
@@ -152,16 +148,12 @@ public class RequiredActionEmailVerificationTest {
 
         String body = (String) message.getContent();
 
-        Pattern p = Pattern.compile("(?s).*(http://[^\\s]*).*");
-        Matcher m = p.matcher(body);
-        m.matches();
-
         Event sendEvent = events.expectRequiredAction("send_verify_email").user(userId).detail("username", "verifyEmail").detail("email", "email").assertEvent();
         String sessionId = sendEvent.getSessionId();
 
         String mailCodeId = sendEvent.getDetails().get(Details.CODE_ID);
 
-        String verificationUrl = m.group(1);
+        String verificationUrl = MailUtil.getLink(body);
 
         driver.navigate().to(verificationUrl.trim());
 
@@ -194,13 +186,9 @@ public class RequiredActionEmailVerificationTest {
 
         String body = (String) message.getContent();
 
-        Pattern p = Pattern.compile("(?s).*(http://[^\\s]*).*");
-        Matcher m = p.matcher(body);
-        m.matches();
-
         events.expectRequiredAction("send_verify_email").session(sessionId).detail("email", "test-user@localhost").assertEvent(sendEvent);
 
-        String verificationUrl = m.group(1);
+        String verificationUrl = MailUtil.getLink(body);
 
         driver.navigate().to(verificationUrl.trim());
 

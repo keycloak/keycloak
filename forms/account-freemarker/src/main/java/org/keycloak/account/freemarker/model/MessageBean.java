@@ -21,7 +21,7 @@
  */
 package org.keycloak.account.freemarker.model;
 
-import org.keycloak.account.freemarker.FreeMarkerAccount;
+import org.keycloak.account.freemarker.FreeMarkerAccountProvider;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -30,9 +30,9 @@ public class MessageBean {
 
     private String summary;
 
-    private FreeMarkerAccount.MessageType type;
+    private FreeMarkerAccountProvider.MessageType type;
 
-    public MessageBean(String message, FreeMarkerAccount.MessageType type) {
+    public MessageBean(String message, FreeMarkerAccountProvider.MessageType type) {
         this.summary = message;
         this.type = type;
     }
@@ -46,15 +46,15 @@ public class MessageBean {
     }
 
     public boolean isSuccess() {
-        return FreeMarkerAccount.MessageType.SUCCESS.equals(this.type);
+        return FreeMarkerAccountProvider.MessageType.SUCCESS.equals(this.type);
     }
 
     public boolean isWarning() {
-        return FreeMarkerAccount.MessageType.WARNING.equals(this.type);
+        return FreeMarkerAccountProvider.MessageType.WARNING.equals(this.type);
     }
 
     public boolean isError() {
-        return FreeMarkerAccount.MessageType.ERROR.equals(this.type);
+        return FreeMarkerAccountProvider.MessageType.ERROR.equals(this.type);
     }
 
 }

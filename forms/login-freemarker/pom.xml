@@ -32,6 +32,12 @@
 			<version>${project.version}</version>
             <scope>provided</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.keycloak</groupId>
+			<artifactId>keycloak-email-api</artifactId>
+			<version>${project.version}</version>
+            <scope>provided</scope>
+		</dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-model-api</artifactId>

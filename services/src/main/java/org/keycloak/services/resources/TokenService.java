@@ -242,14 +242,14 @@ public class TokenService {
             case ACTIONS_REQUIRED:
                 err = new HashMap<String, String>();
                 err.put(OAuth2Constants.ERROR, "invalid_grant");
-                err.put(OAuth2Constants.ERROR_DESCRIPTION, "Account temporarily disabled");
+                err.put(OAuth2Constants.ERROR_DESCRIPTION, "AccountProvider temporarily disabled");
                 audit.error(Errors.USER_TEMPORARILY_DISABLED);
                 return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(err)
                         .build();
             case ACCOUNT_DISABLED:
                 err = new HashMap<String, String>();
                 err.put(OAuth2Constants.ERROR, "invalid_grant");
-                err.put(OAuth2Constants.ERROR_DESCRIPTION, "Account disabled");
+                err.put(OAuth2Constants.ERROR_DESCRIPTION, "AccountProvider disabled");
                 audit.error(Errors.USER_DISABLED);
                 return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(err)
                         .build();
@@ -340,7 +340,7 @@ public class TokenService {
             audit.detail(Details.REMEMBER_ME, "true");
         }
 
-        OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
+        OAuthFlows oauth = Flows.oauth(providerSession, realm, request, uriInfo, authManager, tokenManager);
 
         if (!checkSsl()) {
             return oauth.forwardToSecurityFailure("HTTPS required");
@@ -391,18 +391,18 @@ public class TokenService {
                 return oauth.processAccessCode(scopeParam, state, redirect, client, user, session, username, remember, "form", audit);
             case ACCOUNT_TEMPORARILY_DISABLED:
                 audit.error(Errors.USER_TEMPORARILY_DISABLED);
-                return Flows.forms(realm, uriInfo).setError(Messages.ACCOUNT_TEMPORARILY_DISABLED).setFormData(formData).createLogin();
+                return Flows.forms(providerSession, realm, uriInfo).setError(Messages.ACCOUNT_TEMPORARILY_DISABLED).setFormData(formData).createLogin();
             case ACCOUNT_DISABLED:
                 audit.error(Errors.USER_DISABLED);
-                return Flows.forms(realm, uriInfo).setError(Messages.ACCOUNT_DISABLED).setFormData(formData).createLogin();
+                return Flows.forms(providerSession, realm, uriInfo).setError(Messages.ACCOUNT_DISABLED).setFormData(formData).createLogin();
             case MISSING_TOTP:
-                return Flows.forms(realm, uriInfo).setFormData(formData).createLoginTotp();
+                return Flows.forms(providerSession, realm, uriInfo).setFormData(formData).createLoginTotp();
             case INVALID_USER:
                 audit.error(Errors.USER_NOT_FOUND);
-                return Flows.forms(realm, uriInfo).setError(Messages.INVALID_USER).setFormData(formData).createLogin();
+                return Flows.forms(providerSession, realm, uriInfo).setError(Messages.INVALID_USER).setFormData(formData).createLogin();
             default:
                 audit.error(Errors.INVALID_USER_CREDENTIALS);
-                return Flows.forms(realm, uriInfo).setError(Messages.INVALID_USER).setFormData(formData).createLogin();
+                return Flows.forms(providerSession, realm, uriInfo).setError(Messages.INVALID_USER).setFormData(formData).createLogin();
         }
     }
 
@@ -432,7 +432,7 @@ public class TokenService {
                 .detail(Details.EMAIL, email)
                 .detail(Details.REGISTER_METHOD, "form");
 
-        OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
+        OAuthFlows oauth = Flows.oauth(providerSession, realm, request, uriInfo, authManager, tokenManager);
 
         if (!realm.isEnabled()) {
             logger.warn("Realm not enabled");
@@ -477,7 +477,7 @@ public class TokenService {
 
         if (error != null) {
             audit.error(Errors.INVALID_REGISTRATION);
-            return Flows.forms(realm, uriInfo).setError(error).setFormData(formData).createRegistration();
+            return Flows.forms(providerSession, realm, uriInfo).setError(error).setFormData(formData).createRegistration();
         }
 
         AuthenticationProviderManager authenticationProviderManager = AuthenticationProviderManager.getManager(realm, providerSession);
@@ -485,7 +485,7 @@ public class TokenService {
         // Validate that user with this username doesn't exist in realm or any authentication provider
         if (realm.getUser(username) != null || authenticationProviderManager.getUser(username) != null) {
             audit.error(Errors.USERNAME_IN_USE);
-            return Flows.forms(realm, uriInfo).setError(Messages.USERNAME_EXISTS).setFormData(formData).createRegistration();
+            return Flows.forms(providerSession, realm, uriInfo).setError(Messages.USERNAME_EXISTS).setFormData(formData).createRegistration();
         }
 
         UserModel user = realm.addUser(username);
@@ -513,7 +513,7 @@ public class TokenService {
             // User already registered, but force him to update password
             if (!passwordUpdateSuccessful) {
                 user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
-                return Flows.forms(realm, uriInfo).setError(passwordUpdateError).createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
+                return Flows.forms(providerSession, realm, uriInfo).setError(passwordUpdateError).createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
             }
         }
 
@@ -722,7 +722,7 @@ public class TokenService {
 
         audit.event(Events.LOGIN).client(clientId).detail(Details.REDIRECT_URI, redirect).detail(Details.RESPONSE_TYPE, "code");
 
-        OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
+        OAuthFlows oauth = Flows.oauth(providerSession, realm, request, uriInfo, authManager, tokenManager);
 
         if (!checkSsl()) {
             return oauth.forwardToSecurityFailure("HTTPS required");
@@ -766,7 +766,7 @@ public class TokenService {
             return oauth.redirectError(client, "access_denied", state, redirect);
         }
         logger.info("createLogin() now...");
-        return Flows.forms(realm, uriInfo).createLogin();
+        return Flows.forms(providerSession, realm, uriInfo).createLogin();
     }
 
     @Path("registrations")
@@ -778,7 +778,7 @@ public class TokenService {
 
         audit.event(Events.REGISTER).client(clientId).detail(Details.REDIRECT_URI, redirect).detail(Details.RESPONSE_TYPE, "code");
 
-        OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
+        OAuthFlows oauth = Flows.oauth(providerSession, realm, request, uriInfo, authManager, tokenManager);
 
         if (!checkSsl()) {
             return oauth.forwardToSecurityFailure("HTTPS required");
@@ -816,7 +816,7 @@ public class TokenService {
 
         authManager.expireIdentityCookie(realm, uriInfo);
 
-        return Flows.forms(realm, uriInfo).createRegistration();
+        return Flows.forms(providerSession, realm, uriInfo).createRegistration();
     }
 
     @Path("logout")
@@ -868,7 +868,7 @@ public class TokenService {
     public Response processOAuth(final MultivaluedMap<String, String> formData) {
         audit.event(Events.LOGIN).detail(Details.RESPONSE_TYPE, "code");
 
-        OAuthFlows oauth = Flows.oauth(realm, request, uriInfo, authManager, tokenManager);
+        OAuthFlows oauth = Flows.oauth(providerSession, realm, request, uriInfo, authManager, tokenManager);
 
         if (!checkSsl()) {
             return oauth.forwardToSecurityFailure("HTTPS required");

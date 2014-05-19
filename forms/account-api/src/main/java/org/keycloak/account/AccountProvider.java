@@ -1,12 +1,41 @@
 package org.keycloak.account;
 
+import org.keycloak.audit.Event;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.provider.Provider;
+
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import java.util.List;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public interface AccountProvider {
+public interface AccountProvider extends Provider {
 
-    public Account createAccount(UriInfo uriInfo);
+    AccountProvider setUriInfo(UriInfo uriInfo);
 
+    Response createResponse(AccountPages page);
+
+    AccountProvider setError(String message);
+
+    AccountProvider setSuccess(String message);
+
+    AccountProvider setWarning(String message);
+
+    AccountProvider setUser(UserModel user);
+
+    AccountProvider setStatus(Response.Status status);
+
+    AccountProvider setRealm(RealmModel realm);
+
+    AccountProvider setReferrer(String[] referrer);
+
+    AccountProvider setEvents(List<Event> events);
+
+    AccountProvider setSessions(List<UserSessionModel> sessions);
+
+    AccountProvider setFeatures(boolean social, boolean audit, boolean passwordUpdateSupported);
 }
