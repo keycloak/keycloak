@@ -186,7 +186,8 @@ public class ModelToRepresentation {
     public static UserSessionRepresentation toRepresentation(UserSessionModel session) {
         UserSessionRepresentation rep = new UserSessionRepresentation();
         rep.setId(session.getId());
-        rep.setStart(((long)session.getStarted()) * 1000);
+        rep.setStart(((long)session.getStarted()) * 1000L);
+        rep.setLastAccess(((long)session.getLastSessionRefresh())* 1000L);
         rep.setUser(session.getUser().getLoginName());
         rep.setIpAddress(session.getIpAddress());
         for (ClientModel client : session.getClientAssociations()) {

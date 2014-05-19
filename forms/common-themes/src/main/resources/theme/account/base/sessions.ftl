@@ -12,6 +12,7 @@
         <tr>
             <td>IP</td>
             <td>Started</td>
+            <td>Last Access</td>
             <td>Expires</td>
             <td>Applications</td>
             <td>Clients</td>
@@ -23,6 +24,7 @@
             <tr>
                 <td>${session.ipAddress}</td>
                 <td>${session.started?datetime}</td>
+                <td>${session.lastAccess?datetime}</td>
                 <td>${session.expires?datetime}</td>
                 <td>
                     <ul style="list-style: none; ">
