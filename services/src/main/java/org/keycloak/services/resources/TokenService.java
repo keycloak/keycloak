@@ -945,6 +945,7 @@ public class TokenService {
     }
 
     public static boolean matchesRedirects(Set<String> validRedirects, String redirect) {
+        if (Constants.INSTALLED_APP_URN.equals(redirect)) return true;
         for (String validRedirect : validRedirects) {
             if (validRedirect.endsWith("*")) {
                 // strip off *
@@ -963,13 +964,16 @@ public class TokenService {
     public static String verifyRedirectUri(UriInfo uriInfo, String redirectUri, ClientModel client) {
         Set<String> validRedirects = client.getRedirectUris();
         if (redirectUri == null) {
-            return validRedirects.size() == 1 ? validRedirects.iterator().next() : null;
-        } else if (validRedirects.isEmpty()) {
-            if (client.isPublicClient()) {
-                logger.error("Client redirect uri must be registered for public client");
-                return null;
+            if (validRedirects.size() != 1) return null;
+            String validRedirect = validRedirects.iterator().next();
+            int idx = validRedirect.indexOf("/*");
+            if (idx > -1) {
+                validRedirect = validRedirect.substring(0, idx);
             }
-            return redirectUri;
+            return validRedirect;
+        } else if (validRedirects.isEmpty()) {
+            logger.error("Redirect URI is required for client: " + client.getClientId());
+            return null;
         } else {
             String r = redirectUri.indexOf('?') != -1 ? redirectUri.substring(0, redirectUri.indexOf('?')) : redirectUri;
             Set<String> resolveValidRedirects = resolveValidRedirects(uriInfo, validRedirects);

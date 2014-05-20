@@ -1,6 +1,15 @@
 <chapter id="Migration_from_older_versions">
     <title>Migration from older versions</title>
     <sect1>
+        <title>Migrating from 1.0 Alpha 4 to Beta 1</title>
+        <itemizedlist>
+            <listitem>
+                For all clients except bearer-only applications, you must specify at least one redirect uri.  Keycloak
+                will not allow you to log in unless you have specified a valid redirect uri for that application.
+            </listitem>
+        </itemizedlist>
+    </sect1>
+    <sect1>
         <title>Migrating from 1.0 Alpha 2 to Alpha 3</title>
         <itemizedlist>
             <listitem>

@@ -68,7 +68,7 @@ public class ProfileTest {
 
             ApplicationModel app = appRealm.getApplicationNameMap().get("test-app");
             appRealm.addScopeMapping(app, accountApp.getRole(AccountRoles.VIEW_PROFILE));
-
+            app.addRedirectUri("http://localhost:8081/app/*");
             app.addWebOrigin("http://localtest.me:8081");
 
             ClientModel thirdParty = appRealm.findClient("third-party");

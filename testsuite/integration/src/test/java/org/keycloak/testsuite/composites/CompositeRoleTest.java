@@ -88,6 +88,7 @@ public class CompositeRoleTest {
             final ApplicationModel realmComposite1Application = new ApplicationManager(manager).createApplication(realm, "REALM_COMPOSITE_1_APPLICATION");
             realmComposite1Application.setEnabled(true);
             realm.addScopeMapping(realmComposite1Application, realmComposite1);
+            realmComposite1Application.addRedirectUri("http://localhost:8081/app/*");
             realmComposite1Application.setBaseUrl("http://localhost:8081/app");
             realmComposite1Application.setManagementUrl("http://localhost:8081/app/logout");
             realmComposite1Application.setSecret("password");
@@ -95,6 +96,7 @@ public class CompositeRoleTest {
             final ApplicationModel realmRole1Application = new ApplicationManager(manager).createApplication(realm, "REALM_ROLE_1_APPLICATION");
             realmRole1Application.setEnabled(true);
             realm.addScopeMapping(realmRole1Application, realmRole1);
+            realmRole1Application.addRedirectUri("http://localhost:8081/app/*");
             realmRole1Application.setBaseUrl("http://localhost:8081/app");
             realmRole1Application.setManagementUrl("http://localhost:8081/app/logout");
             realmRole1Application.setSecret("password");
@@ -102,6 +104,7 @@ public class CompositeRoleTest {
 
             final ApplicationModel appRoleApplication = new ApplicationManager(manager).createApplication(realm, "APP_ROLE_APPLICATION");
             appRoleApplication.setEnabled(true);
+            appRoleApplication.addRedirectUri("http://localhost:8081/app/*");
             appRoleApplication.setBaseUrl("http://localhost:8081/app");
             appRoleApplication.setManagementUrl("http://localhost:8081/app/logout");
             appRoleApplication.setSecret("password");
@@ -123,6 +126,7 @@ public class CompositeRoleTest {
 
             final ApplicationModel appCompositeApplication = new ApplicationManager(manager).createApplication(realm, "APP_COMPOSITE_APPLICATION");
             appCompositeApplication.setEnabled(true);
+            appCompositeApplication.addRedirectUri("http://localhost:8081/app/*");
             appCompositeApplication.setBaseUrl("http://localhost:8081/app");
             appCompositeApplication.setManagementUrl("http://localhost:8081/app/logout");
             appCompositeApplication.setSecret("password");
