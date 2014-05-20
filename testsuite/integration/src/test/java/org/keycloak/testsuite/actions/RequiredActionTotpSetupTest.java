@@ -27,6 +27,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.audit.Details;
 import org.keycloak.audit.Event;
+import org.keycloak.audit.EventType;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -109,7 +110,7 @@ public class RequiredActionTotpSetupTest {
 
         totpPage.configure(totp.generate(totpPage.getTotpSecret()));
 
-        String sessionId = events.expectRequiredAction("update_totp").user(userId).detail(Details.USERNAME, "setupTotp").assertEvent().getSessionId();
+        String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, "setupTotp").assertEvent().getSessionId();
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
@@ -127,7 +128,7 @@ public class RequiredActionTotpSetupTest {
 
         totpPage.configure(totp.generate(totpSecret));
 
-        String sessionId = events.expectRequiredAction("update_totp").assertEvent().getSessionId();
+        String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).assertEvent().getSessionId();
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
@@ -164,7 +165,7 @@ public class RequiredActionTotpSetupTest {
         // After totp config, user should be on the app page
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectRequiredAction("update_totp").user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent();
+        events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent();
 
         Event loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent();
 
@@ -192,7 +193,7 @@ public class RequiredActionTotpSetupTest {
         // Remove google authentificator
         accountTotpPage.removeTotp();
 
-        events.expectAccount("remove_totp").user(userId).assertEvent();
+        events.expectAccount(EventType.REMOVE_TOTP).user(userId).assertEvent();
 
         // Logout
         oauth.openLogout();
@@ -206,7 +207,7 @@ public class RequiredActionTotpSetupTest {
         totpPage.assertCurrent();
         totpPage.configure(totp.generate(totpPage.getTotpSecret()));
 
-        String sessionId = events.expectRequiredAction("update_totp").user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent().getSessionId();
+        String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent().getSessionId();
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 

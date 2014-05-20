@@ -26,6 +26,7 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.audit.Details;
+import org.keycloak.audit.EventType;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
@@ -112,7 +113,7 @@ public class RequiredActionMultipleActionsTest {
     public String updatePassword(String sessionId) {
         changePasswordPage.changePassword("new-password", "new-password");
 
-        AssertEvents.ExpectedEvent expectedEvent = events.expectRequiredAction("update_password");
+        AssertEvents.ExpectedEvent expectedEvent = events.expectRequiredAction(EventType.UPDATE_PASSWORD);
         if (sessionId != null) {
             expectedEvent.session(sessionId);
         }
@@ -122,12 +123,12 @@ public class RequiredActionMultipleActionsTest {
     public String updateProfile(String sessionId) {
         updateProfilePage.update("New first", "New last", "new@email.com");
 
-        AssertEvents.ExpectedEvent expectedEvent = events.expectRequiredAction("update_profile");
+        AssertEvents.ExpectedEvent expectedEvent = events.expectRequiredAction(EventType.UPDATE_PROFILE);
         if (sessionId != null) {
             expectedEvent.session(sessionId);
         }
         sessionId = expectedEvent.assertEvent().getSessionId();
-        events.expectRequiredAction("update_email").session(sessionId).detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
+        events.expectRequiredAction(EventType.UPDATE_EMAIL).session(sessionId).detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
         return sessionId;
     }
 

@@ -31,7 +31,7 @@ import org.keycloak.audit.Audit;
 import org.keycloak.audit.AuditProvider;
 import org.keycloak.audit.Details;
 import org.keycloak.audit.Event;
-import org.keycloak.audit.Events;
+import org.keycloak.audit.EventType;
 import org.keycloak.authentication.AuthProviderStatus;
 import org.keycloak.authentication.AuthenticationProviderException;
 import org.keycloak.authentication.AuthenticationProviderManager;
@@ -95,8 +95,8 @@ public class AccountService {
 
     private static final Logger logger = Logger.getLogger(AccountService.class);
 
-    private static final String[] AUDIT_EVENTS = {Events.LOGIN, Events.LOGOUT, Events.REGISTER, Events.REMOVE_SOCIAL_LINK, Events.REMOVE_TOTP, Events.SEND_RESET_PASSWORD,
-            Events.SEND_VERIFY_EMAIL, Events.SOCIAL_LINK, Events.UPDATE_EMAIL, Events.UPDATE_PASSWORD, Events.UPDATE_PROFILE, Events.UPDATE_TOTP, Events.VERIFY_EMAIL};
+    private static final EventType[] AUDIT_EVENTS = {EventType.LOGIN, EventType.LOGOUT, EventType.REGISTER, EventType.REMOVE_SOCIAL_LINK, EventType.REMOVE_TOTP, EventType.SEND_RESET_PASSWORD,
+            EventType.SEND_VERIFY_EMAIL, EventType.SOCIAL_LINK, EventType.UPDATE_EMAIL, EventType.UPDATE_PASSWORD, EventType.UPDATE_PROFILE, EventType.UPDATE_TOTP, EventType.VERIFY_EMAIL};
 
     private static final Set<String> AUDIT_DETAILS = new HashSet<String>();
     static {
@@ -246,20 +246,6 @@ public class AccountService {
     public Response logPage() {
         if (auth != null) {
             List<Event> events = auditProvider.createQuery().event(AUDIT_EVENTS).user(auth.getUser().getId()).maxResults(30).getResultList();
-            for (Event e : events) {
-                e.setEvent(e.getEvent().replace('_', ' '));
-
-                Map<String, String> details = new HashMap<String, String>();
-                if (e.getDetails() != null) {
-                    Iterator<String> itr = e.getDetails().keySet().iterator();
-                    for (Map.Entry<String, String> d : e.getDetails().entrySet()) {
-                        if (AUDIT_DETAILS.contains(d.getKey())) {
-                            details.put(d.getKey().replace('_', ' '), d.getValue());
-                        }
-                    }
-                }
-                e.setDetails(details);
-            }
             account.setEvents(events);
         }
         return forwardToPage("log", AccountPages.LOG);
@@ -300,11 +286,11 @@ public class AccountService {
 
         user.setEmail(formData.getFirst("email"));
 
-        audit.event(Events.UPDATE_PROFILE).client(auth.getClient()).user(auth.getUser()).success();
+        audit.event(EventType.UPDATE_PROFILE).client(auth.getClient()).user(auth.getUser()).success();
 
         if (emailChanged) {
             user.setEmailVerified(false);
-            audit.clone().event(Events.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, email).success();
+            audit.clone().event(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, email).success();
         }
 
         return account.setSuccess("accountUpdated").createResponse(AccountPages.ACCOUNT);
@@ -322,7 +308,7 @@ public class AccountService {
         UserModel user = auth.getUser();
         user.setTotp(false);
 
-        audit.event(Events.REMOVE_TOTP).client(auth.getClient()).user(auth.getUser()).success();
+        audit.event(EventType.REMOVE_TOTP).client(auth.getClient()).user(auth.getUser()).success();
 
         return account.setSuccess("successTotpRemoved").createResponse(AccountPages.TOTP);
     }
@@ -371,7 +357,7 @@ public class AccountService {
 
         user.setTotp(true);
 
-        audit.event(Events.UPDATE_TOTP).client(auth.getClient()).user(auth.getUser()).success();
+        audit.event(EventType.UPDATE_TOTP).client(auth.getClient()).user(auth.getUser()).success();
 
         return account.setSuccess("successTotp").createResponse(AccountPages.TOTP);
     }
@@ -414,7 +400,7 @@ public class AccountService {
             return account.setError(ape.getMessage()).createResponse(AccountPages.PASSWORD);
         }
 
-        audit.event(Events.UPDATE_PASSWORD).client(auth.getClient()).user(auth.getUser()).success();
+        audit.event(EventType.UPDATE_PASSWORD).client(auth.getClient()).user(auth.getUser()).success();
 
         return account.setSuccess("accountPasswordUpdated").createResponse(AccountPages.PASSWORD);
     }
@@ -471,7 +457,7 @@ public class AccountService {
 
                         logger.debug("Social provider " + providerId + " removed successfully from user " + user.getLoginName());
 
-                        audit.event(Events.REMOVE_SOCIAL_LINK).client(auth.getClient()).user(auth.getUser())
+                        audit.event(EventType.REMOVE_SOCIAL_LINK).client(auth.getClient()).user(auth.getUser())
                                 .detail(Details.USERNAME, link.getSocialUserId() + "@" + link.getSocialProvider())
                                 .success();
 

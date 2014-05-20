@@ -8,6 +8,7 @@ import org.keycloak.Config;
 import org.keycloak.audit.AuditProvider;
 import org.keycloak.audit.AuditProviderFactory;
 import org.keycloak.audit.Event;
+import org.keycloak.audit.EventType;
 import org.keycloak.provider.ProviderFactory;
 
 import java.util.HashMap;
@@ -47,7 +48,7 @@ public abstract class AbstractAuditProviderTest {
 
     @Test
     public void save() {
-        provider.onEvent(create("event", "realmId", "clientId", "userId", "127.0.0.1", "error"));
+        provider.onEvent(create(EventType.LOGIN, "realmId", "clientId", "userId", "127.0.0.1", "error"));
     }
 
     @Test
@@ -55,23 +56,23 @@ public abstract class AbstractAuditProviderTest {
         long oldest = System.currentTimeMillis() - 30000;
         long newest = System.currentTimeMillis() + 30000;
 
-        provider.onEvent(create("event", "realmId", "clientId", "userId", "127.0.0.1", "error"));
-        provider.onEvent(create(newest, "event2", "realmId", "clientId", "userId", "127.0.0.1", "error"));
-        provider.onEvent(create(newest, "event2", "realmId", "clientId", "userId2", "127.0.0.1", "error"));
-        provider.onEvent(create("event", "realmId2", "clientId", "userId", "127.0.0.1", "error"));
-        provider.onEvent(create(oldest, "event", "realmId", "clientId2", "userId", "127.0.0.1", "error"));
-        provider.onEvent(create("event", "realmId", "clientId", "userId2", "127.0.0.1", "error"));
+        provider.onEvent(create(EventType.LOGIN, "realmId", "clientId", "userId", "127.0.0.1", "error"));
+        provider.onEvent(create(newest, EventType.REGISTER, "realmId", "clientId", "userId", "127.0.0.1", "error"));
+        provider.onEvent(create(newest, EventType.REGISTER, "realmId", "clientId", "userId2", "127.0.0.1", "error"));
+        provider.onEvent(create(EventType.LOGIN, "realmId2", "clientId", "userId", "127.0.0.1", "error"));
+        provider.onEvent(create(oldest, EventType.LOGIN, "realmId", "clientId2", "userId", "127.0.0.1", "error"));
+        provider.onEvent(create(EventType.LOGIN, "realmId", "clientId", "userId2", "127.0.0.1", "error"));
 
         provider.close();
         provider = factory.create(null);
 
         Assert.assertEquals(5, provider.createQuery().client("clientId").getResultList().size());
         Assert.assertEquals(5, provider.createQuery().realm("realmId").getResultList().size());
-        Assert.assertEquals(4, provider.createQuery().event("event").getResultList().size());
-        Assert.assertEquals(6, provider.createQuery().event("event", "event2").getResultList().size());
+        Assert.assertEquals(4, provider.createQuery().event(EventType.LOGIN).getResultList().size());
+        Assert.assertEquals(6, provider.createQuery().event(EventType.LOGIN, EventType.REGISTER).getResultList().size());
         Assert.assertEquals(4, provider.createQuery().user("userId").getResultList().size());
 
-        Assert.assertEquals(1, provider.createQuery().user("userId").event("event2").getResultList().size());
+        Assert.assertEquals(1, provider.createQuery().user("userId").event(EventType.REGISTER).getResultList().size());
 
         Assert.assertEquals(2, provider.createQuery().maxResults(2).getResultList().size());
         Assert.assertEquals(1, provider.createQuery().firstResult(5).getResultList().size());
@@ -82,11 +83,11 @@ public abstract class AbstractAuditProviderTest {
 
     @Test
     public void clear() {
-        provider.onEvent(create(System.currentTimeMillis() - 30000, "event", "realmId", "clientId", "userId", "127.0.0.1", "error"));
-        provider.onEvent(create(System.currentTimeMillis() - 20000, "event", "realmId", "clientId", "userId", "127.0.0.1", "error"));
-        provider.onEvent(create(System.currentTimeMillis(), "event", "realmId", "clientId", "userId", "127.0.0.1", "error"));
-        provider.onEvent(create(System.currentTimeMillis(), "event", "realmId", "clientId", "userId", "127.0.0.1", "error"));
-        provider.onEvent(create(System.currentTimeMillis() - 30000, "event", "realmId2", "clientId", "userId", "127.0.0.1", "error"));
+        provider.onEvent(create(System.currentTimeMillis() - 30000, EventType.LOGIN, "realmId", "clientId", "userId", "127.0.0.1", "error"));
+        provider.onEvent(create(System.currentTimeMillis() - 20000, EventType.LOGIN, "realmId", "clientId", "userId", "127.0.0.1", "error"));
+        provider.onEvent(create(System.currentTimeMillis(), EventType.LOGIN, "realmId", "clientId", "userId", "127.0.0.1", "error"));
+        provider.onEvent(create(System.currentTimeMillis(), EventType.LOGIN, "realmId", "clientId", "userId", "127.0.0.1", "error"));
+        provider.onEvent(create(System.currentTimeMillis() - 30000, EventType.LOGIN, "realmId2", "clientId", "userId", "127.0.0.1", "error"));
 
         provider.close();
         provider = factory.create(null);
@@ -98,11 +99,11 @@ public abstract class AbstractAuditProviderTest {
 
     @Test
     public void clearOld() {
-        provider.onEvent(create(System.currentTimeMillis() - 30000, "event", "realmId", "clientId", "userId", "127.0.0.1", "error"));
-        provider.onEvent(create(System.currentTimeMillis() - 20000, "event", "realmId", "clientId", "userId", "127.0.0.1", "error"));
-        provider.onEvent(create(System.currentTimeMillis(), "event", "realmId", "clientId", "userId", "127.0.0.1", "error"));
-        provider.onEvent(create(System.currentTimeMillis(), "event", "realmId", "clientId", "userId", "127.0.0.1", "error"));
-        provider.onEvent(create(System.currentTimeMillis() - 30000, "event", "realmId2", "clientId", "userId", "127.0.0.1", "error"));
+        provider.onEvent(create(System.currentTimeMillis() - 30000, EventType.LOGIN, "realmId", "clientId", "userId", "127.0.0.1", "error"));
+        provider.onEvent(create(System.currentTimeMillis() - 20000, EventType.LOGIN, "realmId", "clientId", "userId", "127.0.0.1", "error"));
+        provider.onEvent(create(System.currentTimeMillis(), EventType.LOGIN, "realmId", "clientId", "userId", "127.0.0.1", "error"));
+        provider.onEvent(create(System.currentTimeMillis(), EventType.LOGIN, "realmId", "clientId", "userId", "127.0.0.1", "error"));
+        provider.onEvent(create(System.currentTimeMillis() - 30000, EventType.LOGIN, "realmId2", "clientId", "userId", "127.0.0.1", "error"));
 
         provider.close();
         provider = factory.create(null);
@@ -112,11 +113,11 @@ public abstract class AbstractAuditProviderTest {
         Assert.assertEquals(3, provider.createQuery().getResultList().size());
     }
 
-    private Event create(String event, String realmId, String clientId, String userId, String ipAddress, String error) {
+    private Event create(EventType event, String realmId, String clientId, String userId, String ipAddress, String error) {
         return create(System.currentTimeMillis(), event, realmId, clientId, userId, ipAddress, error);
     }
 
-    private Event create(long time, String event, String realmId, String clientId, String userId, String ipAddress, String error) {
+    private Event create(long time, EventType event, String realmId, String clientId, String userId, String ipAddress, String error) {
         Event e = new Event();
         e.setTime(time);
         e.setEvent(event);

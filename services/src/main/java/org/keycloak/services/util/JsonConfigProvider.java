@@ -4,6 +4,8 @@ import org.codehaus.jackson.JsonNode;
 import org.keycloak.Config;
 import org.keycloak.util.StringPropertyReplacer;
 
+import java.util.ArrayList;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -60,6 +62,26 @@ public class JsonConfigProvider implements Config.ConfigProvider {
                 return defaultValue;
             }
             return StringPropertyReplacer.replaceProperties(n.getTextValue());
+        }
+
+        @Override
+        public String[] getArray(String key) {
+            if (config == null) {
+                return null;
+            }
+
+            JsonNode n = config.get(key);
+            if (n == null) {
+                return null;
+            } else if (n.isArray()) {
+                ArrayList<String> l = new ArrayList<String>();
+                for (JsonNode e : n) {
+                    l.add(StringPropertyReplacer.replaceProperties(e.getTextValue()));
+                }
+                return (String[]) l.toArray();
+            } else {
+               return new String[] { StringPropertyReplacer.replaceProperties(n.getTextValue()) };
+            }
         }
 
         @Override

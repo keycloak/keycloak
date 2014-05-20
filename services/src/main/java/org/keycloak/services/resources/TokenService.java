@@ -13,7 +13,7 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.audit.Audit;
 import org.keycloak.audit.Details;
 import org.keycloak.audit.Errors;
-import org.keycloak.audit.Events;
+import org.keycloak.audit.EventType;
 import org.keycloak.authentication.AuthenticationProviderException;
 import org.keycloak.authentication.AuthenticationProviderManager;
 import org.keycloak.jose.jws.JWSInput;
@@ -34,7 +34,6 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.ClientConnection;
-import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthenticationStatus;
@@ -212,7 +211,7 @@ public class TokenService {
             return createError("not_enabled", "Resource Owner Password Credentials Grant not enabled", Response.Status.FORBIDDEN);
         }
 
-        audit.event(Events.LOGIN).detail(Details.AUTH_METHOD, "oauth_credentials").detail(Details.RESPONSE_TYPE, "token");
+        audit.event(EventType.LOGIN).detail(Details.AUTH_METHOD, "oauth_credentials").detail(Details.RESPONSE_TYPE, "token");
 
         String username = form.getFirst(AuthenticationManager.FORM_USERNAME);
         if (username == null) {
@@ -294,7 +293,7 @@ public class TokenService {
             throw new NotAcceptableException("HTTPS required");
         }
 
-        audit.event(Events.REFRESH_TOKEN);
+        audit.event(EventType.REFRESH_TOKEN);
 
         ClientModel client = authorizeClient(authorizationHeader, form, audit);
         String refreshToken = form.getFirst(OAuth2Constants.REFRESH_TOKEN);
@@ -334,7 +333,7 @@ public class TokenService {
         boolean remember = rememberMe != null && rememberMe.equalsIgnoreCase("on");
         logger.debug("*** Remember me: " + remember);
 
-        audit.event(Events.LOGIN).client(clientId)
+        audit.event(EventType.LOGIN).client(clientId)
                 .detail(Details.REDIRECT_URI, redirect)
                 .detail(Details.RESPONSE_TYPE, "code")
                 .detail(Details.AUTH_METHOD, "form")
@@ -383,12 +382,14 @@ public class TokenService {
             authManager.expireRememberMeCookie(realm, uriInfo);
         }
 
+        UserModel user = KeycloakModelUtils.findUserByNameOrEmail(realm, username);
+        if (user != null) {
+            audit.user(user);
+        }
+
         switch (status) {
             case SUCCESS:
             case ACTIONS_REQUIRED:
-                UserModel user = KeycloakModelUtils.findUserByNameOrEmail(realm, username);
-                audit.user(user);
-
                 UserSessionModel session = realm.createUserSession(user, clientConnection.getRemoteAddr());
 		        audit.session(session);
 
@@ -429,7 +430,7 @@ public class TokenService {
         String username = formData.getFirst("username");
         String email = formData.getFirst("email");
 
-        audit.event(Events.REGISTER).client(clientId)
+        audit.event(EventType.REGISTER).client(clientId)
                 .detail(Details.REDIRECT_URI, redirect)
                 .detail(Details.RESPONSE_TYPE, "code")
                 .detail(Details.USERNAME, username)
@@ -545,7 +546,7 @@ public class TokenService {
             throw new NotAcceptableException("HTTPS required");
         }
 
-        audit.event(Events.CODE_TO_TOKEN);
+        audit.event(EventType.CODE_TO_TOKEN);
 
         if (!realm.isEnabled()) {
             audit.error(Errors.REALM_DISABLED);
@@ -724,7 +725,7 @@ public class TokenService {
                               final @QueryParam("scope") String scopeParam, final @QueryParam("state") String state, final @QueryParam("prompt") String prompt) {
         logger.info("TokenService.loginPage");
 
-        audit.event(Events.LOGIN).client(clientId).detail(Details.REDIRECT_URI, redirect).detail(Details.RESPONSE_TYPE, "code");
+        audit.event(EventType.LOGIN).client(clientId).detail(Details.REDIRECT_URI, redirect).detail(Details.RESPONSE_TYPE, "code");
 
         OAuthFlows oauth = Flows.oauth(providerSession, realm, request, uriInfo, authManager, tokenManager);
 
@@ -784,7 +785,7 @@ public class TokenService {
                                  final @QueryParam("scope") String scopeParam, final @QueryParam("state") String state) {
         logger.info("**********registerPage()");
 
-        audit.event(Events.REGISTER).client(clientId).detail(Details.REDIRECT_URI, redirect).detail(Details.RESPONSE_TYPE, "code");
+        audit.event(EventType.REGISTER).client(clientId).detail(Details.REDIRECT_URI, redirect).detail(Details.RESPONSE_TYPE, "code");
 
         OAuthFlows oauth = Flows.oauth(providerSession, realm, request, uriInfo, authManager, tokenManager);
 
@@ -833,7 +834,7 @@ public class TokenService {
     public Response logout(final @QueryParam("session_state") String sessionState, final @QueryParam("redirect_uri") String redirectUri) {
         // todo do we care if anybody can trigger this?
 
-        audit.event(Events.LOGOUT);
+        audit.event(EventType.LOGOUT);
         if (redirectUri != null) {
             audit.detail(Details.REDIRECT_URI, redirectUri);
         }
@@ -874,7 +875,7 @@ public class TokenService {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processOAuth(final MultivaluedMap<String, String> formData) {
-        audit.event(Events.LOGIN).detail(Details.RESPONSE_TYPE, "code");
+        audit.event(EventType.LOGIN).detail(Details.RESPONSE_TYPE, "code");
 
         OAuthFlows oauth = Flows.oauth(providerSession, realm, request, uriInfo, authManager, tokenManager);
 
