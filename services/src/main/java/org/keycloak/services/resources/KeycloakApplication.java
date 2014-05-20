@@ -84,12 +84,12 @@ public class KeycloakApplication extends Application {
         classes.add(JsResource.class);
         classes.add(WelcomeResource.class);
 
+        checkExportImportProvider();
+
         setupDefaultRealm(context.getContextPath());
 
         setupScheduledTasks(providerSessionFactory);
         importRealms(context);
-
-        checkExportImportProvider();
     }
 
     public String getContextPath() {
