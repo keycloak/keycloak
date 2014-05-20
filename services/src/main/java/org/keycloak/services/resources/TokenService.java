@@ -205,7 +205,11 @@ public class TokenService {
     public Response grantAccessToken(final @HeaderParam(HttpHeaders.AUTHORIZATION) String authorizationHeader,
                                      final MultivaluedMap<String, String> form) {
         if (!checkSsl()) {
-            throw new NotAcceptableException("HTTPS required");
+            return createError("https_required", "HTTPS required", Response.Status.FORBIDDEN);
+        }
+
+        if (!realm.isPasswordCredentialGrantAllowed()) {
+            return createError("not_enabled", "Resource Owner Password Credentials Grant not enabled", Response.Status.FORBIDDEN);
         }
 
         audit.event(Events.LOGIN).detail(Details.AUTH_METHOD, "oauth_credentials").detail(Details.RESPONSE_TYPE, "token");
@@ -224,12 +228,12 @@ public class TokenService {
 
         if ( (client instanceof ApplicationModel) && ((ApplicationModel)client).isBearerOnly()) {
             audit.error(Errors.NOT_ALLOWED);
-            throw new ForbiddenException("Bearer-only applications are not allowed to invoke grants/access");
+            return createError("not_allowed", "Bearer-only applications are not allowed to invoke grants/access", Response.Status.FORBIDDEN);
         }
 
         if (!realm.isEnabled()) {
             audit.error(Errors.REALM_DISABLED);
-            throw new UnauthorizedException("Disabled realm");
+            return createError("realm_disabled", "Realm is disabled", Response.Status.UNAUTHORIZED);
         }
 
         AuthenticationStatus authenticationStatus = authManager.authenticateForm(clientConnection, realm, form);
@@ -1012,6 +1016,15 @@ public class TokenService {
 
     private boolean checkSsl() {
         return realm.isSslNotRequired() || uriInfo.getBaseUri().getScheme().equals("https");
+    }
+
+    private Response createError(String error, String errorDescription, Response.Status status) {
+        Map<String, String> e = new HashMap<String, String>();
+        e.put(OAuth2Constants.ERROR, error);
+        if (errorDescription != null) {
+            e.put(OAuth2Constants.ERROR_DESCRIPTION, errorDescription);
+        }
+        return Response.status(status).entity(e).type("application/json").build();
     }
 
 }

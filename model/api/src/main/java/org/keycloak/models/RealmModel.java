@@ -29,6 +29,11 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
     boolean isRegistrationAllowed();
 
     void setRegistrationAllowed(boolean registrationAllowed);
+
+    boolean isPasswordCredentialGrantAllowed();
+
+    void setPasswordCredentialGrantAllowed(boolean passwordCredentialGrantAllowed);
+
     boolean isRememberMe();
 
     void setRememberMe(boolean rememberMe);

@@ -109,6 +109,17 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
+    public boolean isPasswordCredentialGrantAllowed() {
+        return realm.isPasswordCredentialGrantAllowed();
+    }
+
+    @Override
+    public void setPasswordCredentialGrantAllowed(boolean passwordCredentialGrantAllowed) {
+        realm.setPasswordCredentialGrantAllowed(passwordCredentialGrantAllowed);
+        updateRealm();
+    }
+
+    @Override
     public boolean isRegistrationAllowed() {
         return realm.isRegistrationAllowed();
     }
