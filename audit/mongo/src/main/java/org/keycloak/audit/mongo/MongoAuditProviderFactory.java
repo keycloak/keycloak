@@ -18,10 +18,6 @@ import java.util.Collections;
  */
 public class MongoAuditProviderFactory implements AuditProviderFactory {
 
-    private static final String MONGO_HOST = "keycloak.audit.mongo.host";
-    private static final String MONGO_PORT = "keycloak.audit.mongo.port";
-    private static final String MONGO_DB_NAME = "keycloak.audit.mongo.db";
-
     public static final String ID = "mongo";
     private MongoClient client;
     private DB db;

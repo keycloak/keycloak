@@ -1352,6 +1352,17 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
+    public String getEmailTheme() {
+        return realm.getEmailTheme();
+    }
+
+    @Override
+    public void setEmailTheme(String name) {
+        realm.setEmailTheme(name);
+        em.flush();
+    }
+
+    @Override
     public boolean isAuditEnabled() {
         return realm.isAuditEnabled();
     }

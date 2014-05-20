@@ -421,6 +421,17 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
+    public String getEmailTheme() {
+        return realm.getEmailTheme();
+    }
+
+    @Override
+    public void setEmailTheme(String name) {
+        realm.setEmailTheme(name);
+        updateRealm();
+    }
+
+    @Override
     public UserAdapter getUser(String name) {
         DBObject query = new QueryBuilder()
                 .and("loginName").is(name)

@@ -111,6 +111,18 @@
                             </div>
                         </div>
                     </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label" for="emailTheme">Email Theme</label>
+                        <div class="col-sm-4">
+                            <div class="select-kc">
+                                <select id="emailTheme"
+                                        ng-model="realm.emailTheme"
+                                        ng-options="o as o for o in serverInfo.themes.email">
+                                    <option value="" disabled selected>Select one...</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
                 </fieldset>
 
                 <div class="pull-right form-actions" data-ng-show="createRealm && access.manageRealm">

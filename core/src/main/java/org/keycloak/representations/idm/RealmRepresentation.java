@@ -57,6 +57,7 @@ public class RealmRepresentation {
     protected String loginTheme;
     protected String accountTheme;
     protected String adminTheme;
+    protected String emailTheme;
     protected boolean auditEnabled;
     protected long auditExpiration;
     protected List<String> auditListeners;
@@ -375,6 +376,14 @@ public class RealmRepresentation {
 
     public void setAdminTheme(String adminTheme) {
         this.adminTheme = adminTheme;
+    }
+
+    public String getEmailTheme() {
+        return emailTheme;
+    }
+
+    public void setEmailTheme(String emailTheme) {
+        this.emailTheme = emailTheme;
     }
 
     public Integer getNotBefore() {
