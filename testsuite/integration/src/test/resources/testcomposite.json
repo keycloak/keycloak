@@ -102,6 +102,9 @@
             "enabled": true,
             "baseUrl": "http://localhost:8081/app",
             "adminUrl": "http://localhost:8081/app/logout",
+            "redirectUris": [
+                "http://localhost:8081/app/*"
+            ],
             "secret": "password"
          },
         {
@@ -109,6 +112,9 @@
             "enabled": true,
             "baseUrl": "http://localhost:8081/app",
             "adminUrl": "http://localhost:8081/app/logout",
+            "redirectUris": [
+                "http://localhost:8081/app/*"
+            ],
             "secret": "password"
         },
         {
@@ -116,6 +122,9 @@
             "enabled": true,
             "baseUrl": "http://localhost:8081/app",
             "adminUrl": "http://localhost:8081/app/logout",
+            "redirectUris": [
+                "http://localhost:8081/app/*"
+            ],
             "secret": "password"
         },
         {
@@ -123,6 +132,9 @@
             "enabled": true,
             "baseUrl": "http://localhost:8081/app",
             "adminUrl": "http://localhost:8081/app/logout",
+            "redirectUris": [
+                "http://localhost:8081/app/*"
+            ],
             "secret": "password"
         }
     ],

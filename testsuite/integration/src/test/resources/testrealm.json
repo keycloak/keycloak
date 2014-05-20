@@ -29,6 +29,9 @@
         {
             "name" : "third-party",
             "enabled": true,
+            "redirectUris": [
+                "http://localhost:8081/app/*"
+            ],
             "secret": "password"
         }
     ],
@@ -53,6 +56,9 @@
             "name": "test-app",
             "enabled": true,
             "baseUrl": "http://localhost:8081/app",
+            "redirectUris": [
+                "http://localhost:8081/app/*"
+            ],
             "adminUrl": "http://localhost:8081/app/logout",
             "secret": "password"
          }
