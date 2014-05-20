@@ -946,7 +946,6 @@ public class TokenService {
     }
 
     public static boolean matchesRedirects(Set<String> validRedirects, String redirect) {
-        if (Constants.INSTALLED_APP_URN.equals(redirect)) return true;
         for (String validRedirect : validRedirects) {
             if (validRedirect.endsWith("*")) {
                 // strip off *
