@@ -70,6 +70,20 @@ public class Config {
         }
 
         @Override
+        public String[] getArray(String key) {
+            String value = get(key);
+            if (value != null) {
+                String[] a = value.split(",");
+                for (int i = 0; i < a.length; i++) {
+                    a[i] = a[i].trim();
+                }
+                return a;
+            } else {
+                return null;
+            }
+        }
+
+        @Override
         public Integer getInt(String key) {
             return getInt(key, null);
         }
@@ -112,6 +126,8 @@ public class Config {
         String get(String key);
 
         String get(String key, String defaultValue);
+
+        String[] getArray(String key);
 
         Integer getInt(String key);
 

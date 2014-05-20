@@ -6,9 +6,11 @@ import com.mongodb.DBObject;
 import org.keycloak.audit.AuditProvider;
 import org.keycloak.audit.Event;
 import org.keycloak.audit.EventQuery;
+import org.keycloak.audit.EventType;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -16,9 +18,11 @@ import java.util.Map;
 public class MongoAuditProvider implements AuditProvider {
 
     private DBCollection audit;
+    private Set<EventType> includedEvents;
 
-    public MongoAuditProvider(DBCollection audit) {
+    public MongoAuditProvider(DBCollection audit, Set<EventType> includedEvents) {
         this.audit = audit;
+        this.includedEvents = includedEvents;
     }
 
     @Override
@@ -46,7 +50,9 @@ public class MongoAuditProvider implements AuditProvider {
 
     @Override
     public void onEvent(Event event) {
-        audit.insert(convert(event));
+        if (includedEvents.contains(event.getEvent())) {
+            audit.insert(convert(event));
+        }
     }
 
     @Override
@@ -56,7 +62,7 @@ public class MongoAuditProvider implements AuditProvider {
     static DBObject convert(Event o) {
         BasicDBObject e = new BasicDBObject();
         e.put("time", o.getTime());
-        e.put("event", o.getEvent());
+        e.put("event", o.getEvent().toString());
         e.put("realmId", o.getRealmId());
         e.put("clientId", o.getClientId());
         e.put("userId", o.getUserId());
@@ -78,7 +84,7 @@ public class MongoAuditProvider implements AuditProvider {
     static Event convert(BasicDBObject o) {
         Event e = new Event();
         e.setTime(o.getLong("time"));
-        e.setEvent(o.getString("event"));
+        e.setEvent(EventType.valueOf(o.getString("event")));
         e.setRealmId(o.getString("realmId"));
         e.setClientId(o.getString("clientId"));
         e.setUserId(o.getString("userId"));

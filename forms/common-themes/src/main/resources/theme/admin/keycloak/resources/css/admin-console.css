@@ -829,3 +829,7 @@ legend .kc-icon-collapse {
 .action-div > i {
     cursor: pointer;
 }
+
+table table {
+    margin-bottom: 0 !important;
+}

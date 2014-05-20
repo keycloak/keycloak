@@ -8,10 +8,13 @@ import com.mongodb.WriteConcern;
 import org.keycloak.Config;
 import org.keycloak.audit.AuditProvider;
 import org.keycloak.audit.AuditProviderFactory;
+import org.keycloak.audit.EventType;
 import org.keycloak.provider.ProviderSession;
 
 import java.net.UnknownHostException;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -22,9 +25,11 @@ public class MongoAuditProviderFactory implements AuditProviderFactory {
     private MongoClient client;
     private DB db;
 
+    private Set<EventType> includedEvents = new HashSet<EventType>();
+
     @Override
     public AuditProvider create(ProviderSession providerSession) {
-        return new MongoAuditProvider(db.getCollection("audit"));
+        return new MongoAuditProvider(db.getCollection("audit"), includedEvents);
     }
 
     @Override
@@ -52,6 +57,24 @@ public class MongoAuditProviderFactory implements AuditProviderFactory {
             }
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);
+        }
+
+        String[] include = config.getArray("include-events");
+        if (include != null) {
+            for (String i : include) {
+                includedEvents.add(EventType.valueOf(i.toUpperCase()));
+            }
+        } else {
+            for (EventType i : EventType.values()) {
+                includedEvents.add(i);
+            }
+        }
+
+        String[] exclude = config.getArray("exclude-events");
+        if (exclude != null) {
+            for (String e : exclude) {
+                includedEvents.remove(EventType.valueOf(e.toUpperCase()));
+            }
         }
     }
 

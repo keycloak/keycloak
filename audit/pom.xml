@@ -17,6 +17,7 @@
 
     <modules>
         <module>api</module>
+        <module>email</module>
         <module>jpa</module>
         <module>jboss-logging</module>
         <module>mongo</module>

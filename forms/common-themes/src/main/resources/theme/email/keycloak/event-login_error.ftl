@@ -1,0 +1,1 @@
+Your password was changed on ${event.date} from ${event.ipAddress}. If this was not you, please contact an admin.

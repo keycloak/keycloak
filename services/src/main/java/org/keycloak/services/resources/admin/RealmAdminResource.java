@@ -7,6 +7,7 @@ import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.audit.AuditProvider;
 import org.keycloak.audit.Event;
 import org.keycloak.audit.EventQuery;
+import org.keycloak.audit.EventType;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
@@ -236,7 +237,7 @@ public class RealmAdminResource {
             query.client(client);
         }
         if (event != null) {
-            query.event(event);
+            query.event(EventType.valueOf(event));
         }
         if (user != null) {
             query.user(user);

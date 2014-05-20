@@ -26,7 +26,7 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.audit.Audit;
 import org.keycloak.audit.Details;
-import org.keycloak.audit.Events;
+import org.keycloak.audit.EventType;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -140,7 +140,7 @@ public class OAuthFlows {
 
             RequiredAction action = user.getRequiredActions().iterator().next();
             if (action.equals(RequiredAction.VERIFY_EMAIL)) {
-                audit.clone().event(Events.SEND_VERIFY_EMAIL).detail(Details.EMAIL, accessCode.getUser().getEmail()).success();
+                audit.clone().event(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, accessCode.getUser().getEmail()).success();
             }
 
             return Flows.forms(providerSession, realm, uriInfo).setAccessCode(accessCode.getId(), accessCode.getCode()).setUser(user)

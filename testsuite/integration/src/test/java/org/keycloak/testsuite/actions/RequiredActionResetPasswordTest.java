@@ -26,6 +26,7 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.audit.Event;
+import org.keycloak.audit.EventType;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
@@ -93,7 +94,7 @@ public class RequiredActionResetPasswordTest {
         changePasswordPage.assertCurrent();
         changePasswordPage.changePassword("new-password", "new-password");
 
-        String sessionId = events.expectRequiredAction("update_password").assertEvent().getSessionId();
+        String sessionId = events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent().getSessionId();
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 

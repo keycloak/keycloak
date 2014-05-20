@@ -4,7 +4,10 @@
     },
 
     "audit": {
-        "provider": "jpa"
+        "provider": "jpa",
+        "jpa": {
+            "exclude-events": [ "REFRESH_TOKEN" ]
+        }
     },
 
     "model": {

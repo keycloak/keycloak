@@ -5,9 +5,11 @@ import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import org.keycloak.audit.Event;
 import org.keycloak.audit.EventQuery;
+import org.keycloak.audit.EventType;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -25,8 +27,12 @@ public class MongoEventQuery implements EventQuery {
     }
 
     @Override
-    public EventQuery event(String... events) {
-        query.put("event", new BasicDBObject("$in", events));
+    public EventQuery event(EventType... events) {
+        List<String> eventStrings = new LinkedList<String>();
+        for (EventType e : events) {
+            eventStrings.add(e.toString());
+        }
+        query.put("event", new BasicDBObject("$in", eventStrings));
         return this;
     }
 

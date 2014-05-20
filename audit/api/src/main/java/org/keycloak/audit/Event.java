@@ -10,7 +10,7 @@ public class Event {
 
     private long time;
 
-    private String event;
+    private EventType event;
 
     private String realmId;
 
@@ -34,11 +34,11 @@ public class Event {
         this.time = time;
     }
 
-    public String getEvent() {
+    public EventType getEvent() {
         return event;
     }
 
-    public void setEvent(String event) {
+    public void setEvent(EventType event) {
         this.event = event;
     }
 

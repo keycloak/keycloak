@@ -75,7 +75,7 @@ public class Audit {
         return this;
     }
 
-    public Audit event(String e) {
+    public Audit event(EventType e) {
         event.setEvent(e);
         return this;
     }
@@ -108,6 +108,7 @@ public class Audit {
     }
 
     public void error(String error) {
+        event.setEvent(EventType.valueOf(event.getEvent().name() + "_ERROR"));
         event.setError(error);
         send();
     }

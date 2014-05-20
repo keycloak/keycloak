@@ -62,6 +62,11 @@
             <artifactId>keycloak-audit-jboss-logging</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-audit-email</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <!-- social -->
         <dependency>
             <groupId>org.keycloak</groupId>

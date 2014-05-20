@@ -3,10 +3,6 @@
         "realm": "keycloak-admin"
     },
 
-    "audit": {
-        "provider": "jpa"
-    },
-
     "model": {
         "provider": "jpa"
     },
