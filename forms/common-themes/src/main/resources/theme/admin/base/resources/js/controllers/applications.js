@@ -264,7 +264,7 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
 
     $scope.save = function() {
         if ($scope.create) {
-            if (!$scope.application.redirectUris || $scope.application.redirectUris.length == 0) {
+            if (!$scope.application.bearerOnly && (!$scope.application.redirectUris || $scope.application.redirectUris.length == 0)) {
                 Notifications.error("You must specify at least one redirect uri");
             } else {
                 Application.save({

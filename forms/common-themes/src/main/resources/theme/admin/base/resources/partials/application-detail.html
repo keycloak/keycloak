@@ -76,7 +76,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="form-group">
+                <div class="form-group" data-ng-show="!application.bearerOnly">
                     <label class="col-sm-2 control-label" for="baseUrl">Base URL</label>
                     <div class="col-sm-4">
                         <input class="form-control" type="text" name="baseUrl" id="baseUrl"
@@ -90,7 +90,7 @@
                                data-ng-model="application.adminUrl">
                     </div>
                 </div>
-                <div class="form-group">
+                <div class="form-group" data-ng-show="!application.bearerOnly">
                     <label class="col-sm-2 control-label" for="newWebOrigin">Web Origin</label>
                     <div class="col-sm-6">
                         <div ng-repeat="webOrigin in application.webOrigins" class="row kc-item-deletable">

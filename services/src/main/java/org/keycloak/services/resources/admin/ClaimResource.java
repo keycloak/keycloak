@@ -17,20 +17,24 @@ import javax.ws.rs.core.MediaType;
  */
 public class ClaimResource {
     protected ClientModel model;
+    protected RealmAuth auth;
 
-    public ClaimResource(ClientModel model) {
+    public ClaimResource(ClientModel model, RealmAuth auth) {
         this.model = model;
+        this.auth = auth;
     }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public ClaimRepresentation getClaims() {
+        auth.requireView();
         return ModelToRepresentation.toRepresentation(model);
     }
 
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     public void updateClaims(ClaimRepresentation rep) {
+        auth.requireManage();
         ClaimManager.setClaims(model, rep);
     }
 }

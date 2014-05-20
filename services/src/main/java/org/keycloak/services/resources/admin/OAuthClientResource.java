@@ -60,7 +60,7 @@ public class OAuthClientResource  {
 
     @Path("claims")
     public ClaimResource getClaimResource() {
-        return new ClaimResource(oauthClient);
+        return new ClaimResource(oauthClient, auth);
     }
 
 

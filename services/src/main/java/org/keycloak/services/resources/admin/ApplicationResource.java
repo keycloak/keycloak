@@ -75,7 +75,7 @@ public class ApplicationResource {
 
     @Path("claims")
     public ClaimResource getClaimResource() {
-        return new ClaimResource(application);
+        return new ClaimResource(application, auth);
     }
 
     @PUT
