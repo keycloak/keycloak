@@ -85,6 +85,12 @@ public class AuthorizationCodeTest {
 
     @Test
     public void authorizationRequestInstalledApp() throws IOException {
+        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                appRealm.getApplicationNameMap().get("test-app").addRedirectUri(Constants.INSTALLED_APP_URN);
+            }
+        });
         oauth.redirectUri(Constants.INSTALLED_APP_URN);
 
         oauth.doLogin("test-user@localhost", "password");
@@ -97,6 +103,13 @@ public class AuthorizationCodeTest {
 
         String codeId = events.expectLogin().detail(Details.REDIRECT_URI, Constants.INSTALLED_APP_URN).assertEvent().getDetails().get(Details.CODE_ID);
         Assert.assertEquals(codeId, new JWSInput(code).readContentAsString());
+
+        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                appRealm.getApplicationNameMap().get("test-app").removeRedirectUri(Constants.INSTALLED_APP_URN);
+            }
+        });
     }
 
     @Test
