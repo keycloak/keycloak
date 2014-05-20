@@ -222,6 +222,10 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
 
     void setAdminTheme(String name);
 
+    String getEmailTheme();
+
+    void setEmailTheme(String name);
+
     boolean hasScope(ClientModel client, RoleModel role);
 
     /**

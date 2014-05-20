@@ -194,6 +194,7 @@ public class RealmManager {
         if (rep.getLoginTheme() != null) realm.setLoginTheme(rep.getLoginTheme());
         if (rep.getAccountTheme() != null) realm.setAccountTheme(rep.getAccountTheme());
         if (rep.getAdminTheme() != null) realm.setAdminTheme(rep.getAdminTheme());
+        if (rep.getEmailTheme() != null) realm.setEmailTheme(rep.getEmailTheme());
 
         if (rep.getPasswordPolicy() != null) realm.setPasswordPolicy(new PasswordPolicy(rep.getPasswordPolicy()));
 
@@ -344,7 +345,8 @@ public class RealmManager {
         }
         if (rep.getLoginTheme() != null) newRealm.setLoginTheme(rep.getLoginTheme());
         if (rep.getAccountTheme() != null) newRealm.setAccountTheme(rep.getAccountTheme());
-        if (rep.getAdminTheme() != null) newRealm.setAdminTheme(rep.getAccountTheme());
+        if (rep.getAdminTheme() != null) newRealm.setAdminTheme(rep.getAdminTheme());
+        if (rep.getEmailTheme() != null) newRealm.setEmailTheme(rep.getEmailTheme());
 
         Map<String, UserModel> userMap = new HashMap<String, UserModel>();
 

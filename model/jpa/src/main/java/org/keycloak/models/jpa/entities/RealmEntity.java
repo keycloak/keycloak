@@ -75,6 +75,7 @@ public class RealmEntity {
     protected String loginTheme;
     protected String accountTheme;
     protected String adminTheme;
+    protected String emailTheme;
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true)
     @JoinTable(name="User_RequiredCreds")
@@ -358,6 +359,14 @@ public class RealmEntity {
 
     public void setAdminTheme(String adminTheme) {
         this.adminTheme = adminTheme;
+    }
+
+    public String getEmailTheme() {
+        return emailTheme;
+    }
+
+    public void setEmailTheme(String emailTheme) {
+        this.emailTheme = emailTheme;
     }
 
     public int getNotBefore() {

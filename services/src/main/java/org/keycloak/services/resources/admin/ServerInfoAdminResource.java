@@ -37,11 +37,11 @@ public class ServerInfoAdminResource {
     }
 
     private void setThemes(ServerInfoRepresentation info) {
-        Iterable<ThemeProvider> providers = ProviderLoader.load(ThemeProvider.class);
+        Set<ThemeProvider> themeProviders = providers.getAllProviders(ThemeProvider.class);
         info.themes = new HashMap<String, List<String>>();
         for (Theme.Type type : Theme.Type.values()) {
             List<String> themes = new LinkedList<String>();
-            for (ThemeProvider p : providers) {
+            for (ThemeProvider p : themeProviders) {
                 themes.addAll(p.nameSet(type));
             }
             Collections.sort(themes);
