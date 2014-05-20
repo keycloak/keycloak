@@ -41,6 +41,7 @@ public class RealmEntity {
     protected boolean enabled;
     protected boolean sslNotRequired;
     protected boolean registrationAllowed;
+    protected boolean passwordCredentialGrantAllowed;
     protected boolean verifyEmail;
     protected boolean resetPasswordAllowed;
     protected boolean social;
@@ -152,6 +153,14 @@ public class RealmEntity {
 
     public void setSslNotRequired(boolean sslNotRequired) {
         this.sslNotRequired = sslNotRequired;
+    }
+
+    public boolean isPasswordCredentialGrantAllowed() {
+        return passwordCredentialGrantAllowed;
+    }
+
+    public void setPasswordCredentialGrantAllowed(boolean passwordCredentialGrantAllowed) {
+        this.passwordCredentialGrantAllowed = passwordCredentialGrantAllowed;
     }
 
     public boolean isRegistrationAllowed() {

@@ -16,6 +16,7 @@ public class RealmEntity extends AbstractIdentifiableEntity {
     private boolean registrationAllowed;
     private boolean rememberMe;
     private boolean verifyEmail;
+    private boolean passwordCredentialGrantAllowed;
     private boolean resetPasswordAllowed;
     private boolean social;
     private boolean updateProfileOnInitialSocialLogin;
@@ -83,6 +84,14 @@ public class RealmEntity extends AbstractIdentifiableEntity {
 
     public void setSslNotRequired(boolean sslNotRequired) {
         this.sslNotRequired = sslNotRequired;
+    }
+
+    public boolean isPasswordCredentialGrantAllowed() {
+        return passwordCredentialGrantAllowed;
+    }
+
+    public void setPasswordCredentialGrantAllowed(boolean passwordCredentialGrantAllowed) {
+        this.passwordCredentialGrantAllowed = passwordCredentialGrantAllowed;
     }
 
     public boolean isRegistrationAllowed() {
