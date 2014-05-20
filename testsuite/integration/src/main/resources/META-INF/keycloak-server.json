@@ -17,7 +17,9 @@
 
     "theme": {
         "default": "keycloak",
-        "dir": "${keycloak.theme.dir}"
+        "folder": {
+            "dir": "${keycloak.theme.dir}"
+        }
     },
 
     "login-forms": {
