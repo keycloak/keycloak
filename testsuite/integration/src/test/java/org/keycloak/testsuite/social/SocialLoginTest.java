@@ -29,6 +29,7 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.audit.Details;
 import org.keycloak.audit.Event;
+import org.keycloak.audit.EventType;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -110,7 +111,7 @@ public class SocialLoginTest {
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        String userId = events.expect("register")
+        String userId = events.expect(EventType.REGISTER)
                 .user(AssertEvents.isUUID())
                 .detail(Details.EMAIL, "bob@builder.com")
                 .detail(Details.RESPONSE_TYPE, "code")
@@ -202,7 +203,7 @@ public class SocialLoginTest {
             Assert.assertEquals("Builder", profilePage.getLastName());
             Assert.assertEquals("bob@builder.com", profilePage.getEmail());
 
-            String userId = events.expect("register")
+            String userId = events.expect(EventType.REGISTER)
                     .user(AssertEvents.isUUID())
                     .detail(Details.EMAIL, "bob@builder.com")
                     .detail(Details.RESPONSE_TYPE, "code")
@@ -213,8 +214,8 @@ public class SocialLoginTest {
 
             profilePage.update("Dummy", "User", "dummy-user-reg@dummy-social");
 
-            events.expectRequiredAction("update_profile").user(userId).detail(Details.AUTH_METHOD, "social@dummy").detail(Details.USERNAME, "2@dummy").assertEvent();
-            events.expectRequiredAction("update_email").user(userId).detail(Details.AUTH_METHOD, "social@dummy").detail(Details.USERNAME, "2@dummy").detail(Details.PREVIOUS_EMAIL, "bob@builder.com").detail(Details.UPDATED_EMAIL, "dummy-user-reg@dummy-social").assertEvent();
+            events.expectRequiredAction(EventType.UPDATE_PROFILE).user(userId).detail(Details.AUTH_METHOD, "social@dummy").detail(Details.USERNAME, "2@dummy").assertEvent();
+            events.expectRequiredAction(EventType.UPDATE_EMAIL).user(userId).detail(Details.AUTH_METHOD, "social@dummy").detail(Details.USERNAME, "2@dummy").detail(Details.PREVIOUS_EMAIL, "bob@builder.com").detail(Details.UPDATED_EMAIL, "dummy-user-reg@dummy-social").assertEvent();
 
             Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 

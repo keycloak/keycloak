@@ -28,7 +28,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.audit.Audit;
 import org.keycloak.audit.Details;
 import org.keycloak.audit.Errors;
-import org.keycloak.audit.Events;
+import org.keycloak.audit.EventType;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -65,7 +65,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.net.URISyntaxException;
@@ -131,7 +130,7 @@ public class SocialResource {
         RealmModel realm = realmManager.getRealmByName(realmName);
 
         Audit audit = new AuditManager(realm, providers, clientConnection).createAudit()
-                .event(Events.LOGIN)
+                .event(EventType.LOGIN)
                 .detail(Details.RESPONSE_TYPE, "code")
                 .detail(Details.AUTH_METHOD, "social@" + provider.getId());
 
@@ -196,7 +195,7 @@ public class SocialResource {
         if (userId != null) {
             UserModel authenticatedUser = realm.getUserById(userId);
 
-            audit.event(Events.SOCIAL_LINK).user(userId);
+            audit.event(EventType.SOCIAL_LINK).user(userId);
 
             if (user != null) {
                 audit.error(Errors.SOCIAL_ID_IN_USE);
@@ -244,7 +243,7 @@ public class SocialResource {
 
             realm.addSocialLink(user, socialLink);
 
-            audit.clone().user(user).event(Events.REGISTER)
+            audit.clone().user(user).event(EventType.REGISTER)
                     .detail(Details.REGISTER_METHOD, "social@" + provider.getId())
                     .detail(Details.EMAIL, socialUser.getEmail())
                     .removeDetail("auth_method")
@@ -274,7 +273,7 @@ public class SocialResource {
         RealmModel realm = realmManager.getRealmByName(realmName);
 
         Audit audit = new AuditManager(realm, providers, clientConnection).createAudit()
-                .event(Events.LOGIN).client(clientId)
+                .event(EventType.LOGIN).client(clientId)
                 .detail(Details.REDIRECT_URI, redirectUri)
                 .detail(Details.RESPONSE_TYPE, "code")
                 .detail(Details.AUTH_METHOD, "social@" + providerId);

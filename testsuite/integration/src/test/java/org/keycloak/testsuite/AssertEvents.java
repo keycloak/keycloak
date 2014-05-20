@@ -12,6 +12,7 @@ import org.keycloak.audit.AuditListener;
 import org.keycloak.audit.AuditListenerFactory;
 import org.keycloak.audit.Details;
 import org.keycloak.audit.Event;
+import org.keycloak.audit.EventType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -110,12 +111,12 @@ public class AssertEvents implements TestRule, AuditListenerFactory {
         events.clear();
     }
 
-    public ExpectedEvent expectRequiredAction(String event) {
+    public ExpectedEvent expectRequiredAction(EventType event) {
         return expectLogin().event(event).session(isUUID());
     }
 
     public ExpectedEvent expectLogin() {
-        return expect("login")
+        return expect(EventType.LOGIN)
                 .detail(Details.CODE_ID, isCodeId())
                 .detail(Details.USERNAME, DEFAULT_USERNAME)
                 .detail(Details.RESPONSE_TYPE, "code")
@@ -125,7 +126,7 @@ public class AssertEvents implements TestRule, AuditListenerFactory {
     }
 
     public ExpectedEvent expectCodeToToken(String codeId, String sessionId) {
-        return expect("code_to_token")
+        return expect(EventType.CODE_TO_TOKEN)
                 .detail(Details.CODE_ID, codeId)
                 .detail(Details.TOKEN_ID, isUUID())
                 .detail(Details.REFRESH_TOKEN_ID, isUUID())
@@ -133,7 +134,7 @@ public class AssertEvents implements TestRule, AuditListenerFactory {
     }
 
     public ExpectedEvent expectRefresh(String refreshTokenId, String sessionId) {
-        return expect("refresh_token")
+        return expect(EventType.REFRESH_TOKEN)
                 .detail(Details.TOKEN_ID, isUUID())
                 .detail(Details.REFRESH_TOKEN_ID, refreshTokenId)
                 .detail(Details.UPDATED_REFRESH_TOKEN_ID, isUUID())
@@ -141,14 +142,14 @@ public class AssertEvents implements TestRule, AuditListenerFactory {
     }
 
     public ExpectedEvent expectLogout(String sessionId) {
-        return expect("logout").client((String) null)
+        return expect(EventType.LOGOUT).client((String) null)
                 .detail(Details.REDIRECT_URI, DEFAULT_REDIRECT_URI)
                 .session(sessionId);
     }
 
     public ExpectedEvent expectRegister(String username, String email) {
         UserRepresentation user = keycloak.getUser("test", username);
-        return expect("register")
+        return expect(EventType.REGISTER)
                 .user(user != null ? user.getId() : null)
                 .detail(Details.USERNAME, username)
                 .detail(Details.EMAIL, email)
@@ -157,11 +158,11 @@ public class AssertEvents implements TestRule, AuditListenerFactory {
                 .detail(Details.REDIRECT_URI, DEFAULT_REDIRECT_URI);
     }
 
-    public ExpectedEvent expectAccount(String event) {
+    public ExpectedEvent expectAccount(EventType event) {
         return expect(event).client("account");
     }
 
-    public ExpectedEvent expect(String event) {
+    public ExpectedEvent expect(EventType event) {
         return new ExpectedEvent()
                 .realm(DEFAULT_REALM)
                 .client(DEFAULT_CLIENT_ID)
@@ -253,7 +254,7 @@ public class AssertEvents implements TestRule, AuditListenerFactory {
             return this;
         }
 
-        public ExpectedEvent event(String e) {
+        public ExpectedEvent event(EventType e) {
             expected.setEvent(e);
             return this;
         }
@@ -291,6 +292,9 @@ public class AssertEvents implements TestRule, AuditListenerFactory {
         }
 
         public Event assertEvent(Event actual) {
+            if (expected.getError() != null && !expected.getEvent().toString().endsWith("_ERROR")) {
+                expected.setEvent(EventType.valueOf(expected.getEvent().toString() + "_ERROR"));
+            }
             Assert.assertEquals(expected.getEvent(), actual.getEvent());
             Assert.assertEquals(expected.getRealmId(), actual.getRealmId());
             Assert.assertEquals(expected.getClientId(), actual.getClientId());

@@ -2,6 +2,7 @@ package org.keycloak.audit.jpa;
 
 import org.keycloak.audit.Event;
 import org.keycloak.audit.EventQuery;
+import org.keycloak.audit.EventType;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
@@ -36,8 +37,12 @@ public class JpaEventQuery implements EventQuery {
     }
 
     @Override
-    public EventQuery event(String... events) {
-        predicates.add(root.get("event").in(events));
+    public EventQuery event(EventType... events) {
+        List<String> eventStrings = new LinkedList<String>();
+        for (EventType e : events) {
+            eventStrings.add(e.toString());
+        }
+        predicates.add(root.get("event").in(eventStrings));
         return this;
     }
 

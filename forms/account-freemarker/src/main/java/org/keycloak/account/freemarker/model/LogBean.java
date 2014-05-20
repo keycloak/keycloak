@@ -38,7 +38,7 @@ public class LogBean {
         }
 
         public String getEvent() {
-            return event.getEvent();
+            return event.getEvent().toString().toLowerCase().replace("_", " ");
         }
 
         public String getClient() {
@@ -51,8 +51,10 @@ public class LogBean {
 
         public List<DetailBean> getDetails() {
             List<DetailBean> details = new LinkedList<DetailBean>();
-            for (Map.Entry<String, String> e : event.getDetails().entrySet()) {
-                details.add(new DetailBean(e));
+            if (event.getDetails() != null) {
+                for (Map.Entry<String, String> e : event.getDetails().entrySet()) {
+                    details.add(new DetailBean(e));
+                }
             }
             return details;
         }
@@ -72,7 +74,7 @@ public class LogBean {
         }
 
         public String getValue() {
-            return entry.getValue();
+            return entry.getValue().replace("_", " ");
         }
 
     }

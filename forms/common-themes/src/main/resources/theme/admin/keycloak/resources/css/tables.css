@@ -1,3 +1,78 @@
+
+table tfoot tr .table-nav {
+    float: right;
+}
+table tfoot tr .table-nav a,
+table tfoot tr .table-nav button {
+    display: inline-block;
+    line-height: 22px;
+    border-left: 1px solid #d9d9d9;
+    border-right: none;
+    border-top: none;
+    border-bottom: none;
+    width: 3.5em;
+    background-color: #f3f3f3;
+    background-image: linear-gradient(top, #fafafa 0%, #ededed 100%);
+    background-image: -o-linear-gradient(top, #fafafa 0%, #ededed 100%);
+    background-image: -moz-linear-gradient(top, #fafafa 0%, #ededed 100%);
+    background-image: -webkit-linear-gradient(top, #fafafa 0%, #ededed 100%);
+    background-image: -ms-linear-gradient(top, #fafafa 0%, #ededed 100%);
+    background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0, #fafafa), color-stop(1, 0, #ededed));
+    text-indent: -99999em;
+    background-image: url(img/sprite-table-nav.png);
+    background-repeat: no-repeat;
+    background-position: left top;
+    vertical-align: top;
+}
+table tfoot tr .table-nav a.last,
+table tfoot tr .table-nav button.last {
+    background-position: top right;
+}
+table tfoot tr .table-nav a.prev,
+table tfoot tr .table-nav button.prev {
+    background-position: bottom left;
+}
+table tfoot tr .table-nav a.next,
+table tfoot tr .table-nav button.next {
+    background-position: bottom right;
+}
+table tfoot tr .table-nav a:hover,
+table tfoot tr .table-nav button:hover {
+    background-image: url(img/sprite-table-nav.png);
+    background-color: #eeeeee;
+}
+table tfoot tr .table-nav a:active,
+table tfoot tr .table-nav button:active {
+    box-shadow: 0 0 5px 2px rgba(0, 0, 0, 0.25) inset;
+}
+table tfoot tr .table-nav a.disabled,
+table tfoot tr .table-nav button:disabled {
+    opacity: 0.5;
+    filter: alpha(opacity=50);
+    cursor: default;
+}
+table tfoot tr .table-nav a.disabled:active,
+table tfoot tr .table-nav button:disabled:active {
+    box-shadow: none;
+}
+table tfoot tr .table-nav span {
+    font-size: 1.1em;
+    border-left: 1px solid #d9d9d9;
+    line-height: 2.18181818181818em;
+    display: inline-block;
+    padding: 0 1.36363636363636em;
+}
+
+
+td.audit-success {
+    background-color: #E4F1E1 !important;
+}
+
+td.audit-error {
+    background-color: #F8E7E7 !important;
+}
+
+
 /*
 table {
   width: 100%;
@@ -111,69 +186,6 @@ table tbody.selectable-rows tr.selected:hover td:first-child {
 table tfoot tr {
   border-top: 1px solid #cecece;
 }
-table tfoot tr .table-nav {
-  float: right;
-}
-table tfoot tr .table-nav a,
-table tfoot tr .table-nav button {
-  display: inline-block;
-  line-height: 22px;
-  border-left: 1px solid #d9d9d9;
-  border-right: none;
-  border-top: none;
-  border-bottom: none;
-  width: 3.5em;
-  background-color: #f3f3f3;
-  background-image: linear-gradient(top, #fafafa 0%, #ededed 100%);
-  background-image: -o-linear-gradient(top, #fafafa 0%, #ededed 100%);
-  background-image: -moz-linear-gradient(top, #fafafa 0%, #ededed 100%);
-  background-image: -webkit-linear-gradient(top, #fafafa 0%, #ededed 100%);
-  background-image: -ms-linear-gradient(top, #fafafa 0%, #ededed 100%);
-  background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0, #fafafa), color-stop(1, 0, #ededed));
-  text-indent: -99999em;
-  background-image: url(img/sprite-table-nav.png);
-  background-repeat: no-repeat;
-  background-position: left top;
-  vertical-align: top;
-}
-table tfoot tr .table-nav a.last,
-table tfoot tr .table-nav button.last {
-  background-position: top right;
-}
-table tfoot tr .table-nav a.prev,
-table tfoot tr .table-nav button.prev {
-  background-position: bottom left;
-}
-table tfoot tr .table-nav a.next,
-table tfoot tr .table-nav button.next {
-  background-position: bottom right;
-}
-table tfoot tr .table-nav a:hover,
-table tfoot tr .table-nav button:hover {
-  background-image: url(img/sprite-table-nav.png);
-  background-color: #eeeeee;
-}
-table tfoot tr .table-nav a:active,
-table tfoot tr .table-nav button:active {
-  box-shadow: 0 0 5px 2px rgba(0, 0, 0, 0.25) inset;
-}
-table tfoot tr .table-nav a.disabled,
-table tfoot tr .table-nav button:disabled {
-  opacity: 0.5;
-  filter: alpha(opacity=50);
-  cursor: default;
-}
-table tfoot tr .table-nav a.disabled:active,
-table tfoot tr .table-nav button:disabled:active {
-  box-shadow: none;
-}
-table tfoot tr .table-nav span {
-  font-size: 1.1em;
-  border-left: 1px solid #d9d9d9;
-  line-height: 2.18181818181818em;
-  display: inline-block;
-  padding: 0 1.36363636363636em;
-}
 
 .kc-table-actions > * {
     vertical-align: middle;
@@ -181,14 +193,6 @@ table tfoot tr .table-nav span {
 
 td .form-group {
     margin-bottom: 0;
-}
-
-td.audit-success {
-    background-color: #E4F1E1;
-}
-
-td.audit-error {
-    background-color: #F8E7E7;
 }
 
 .kc-table-actions .form-group {

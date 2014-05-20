@@ -7,7 +7,7 @@ import java.util.List;
  */
 public interface EventQuery {
 
-    public EventQuery event(String... events);
+    public EventQuery event(EventType... events);
 
     public EventQuery realm(String realmId);
 

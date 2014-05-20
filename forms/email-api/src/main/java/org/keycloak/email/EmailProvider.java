@@ -1,5 +1,6 @@
 package org.keycloak.email;
 
+import org.keycloak.audit.Event;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
@@ -12,6 +13,8 @@ public interface EmailProvider extends Provider {
     public EmailProvider setRealm(RealmModel realm);
 
     public EmailProvider setUser(UserModel user);
+
+    public void sendEvent(Event event) throws EmailException;
 
     public void sendPasswordReset(String link, long expirationInMinutes) throws EmailException;
 

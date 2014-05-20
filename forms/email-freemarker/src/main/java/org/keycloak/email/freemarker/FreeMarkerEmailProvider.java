@@ -1,8 +1,10 @@
 package org.keycloak.email.freemarker;
 
 import org.jboss.logging.Logger;
+import org.keycloak.audit.Event;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
+import org.keycloak.email.freemarker.beans.EventBean;
 import org.keycloak.freemarker.ExtendingThemeManager;
 import org.keycloak.freemarker.FreeMarkerUtil;
 import org.keycloak.freemarker.Theme;
@@ -45,6 +47,14 @@ public class FreeMarkerEmailProvider implements EmailProvider {
     public EmailProvider setUser(UserModel user) {
         this.user = user;
         return this;
+    }
+
+    @Override
+    public void sendEvent(Event event) throws EmailException {
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put("event", new EventBean(event));
+
+        send("passwordResetSubject", "event-" + event.getEvent().toString().toLowerCase() + ".ftl", attributes);
     }
 
     @Override

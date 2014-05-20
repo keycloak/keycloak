@@ -6,11 +6,13 @@ import org.jboss.logging.Logger;
 import org.keycloak.audit.AuditProvider;
 import org.keycloak.audit.Event;
 import org.keycloak.audit.EventQuery;
+import org.keycloak.audit.EventType;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
 import java.io.IOException;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -25,9 +27,11 @@ public class JpaAuditProvider implements AuditProvider {
 
     private EntityManager em;
     private EntityTransaction tx;
+    private Set<EventType> includedEvents;
 
-    public JpaAuditProvider(EntityManager em) {
+    public JpaAuditProvider(EntityManager em, Set<EventType> includedEvents) {
         this.em = em;
+        this.includedEvents = includedEvents;
     }
 
     @Override
@@ -55,8 +59,10 @@ public class JpaAuditProvider implements AuditProvider {
 
     @Override
     public void onEvent(Event event) {
-        beginTx();
-        em.persist(convert(event));
+        if (includedEvents.contains(event.getEvent())) {
+            beginTx();
+            em.persist(convert(event));
+        }
     }
 
     @Override
@@ -79,7 +85,7 @@ public class JpaAuditProvider implements AuditProvider {
         EventEntity e = new EventEntity();
         e.setId(UUID.randomUUID().toString());
         e.setTime(o.getTime());
-        e.setEvent(o.getEvent());
+        e.setEvent(o.getEvent().toString());
         e.setRealmId(o.getRealmId());
         e.setClientId(o.getClientId());
         e.setUserId(o.getUserId());
@@ -97,7 +103,7 @@ public class JpaAuditProvider implements AuditProvider {
     static Event convert(EventEntity o) {
         Event e = new Event();
         e.setTime(o.getTime());
-        e.setEvent(o.getEvent());
+        e.setEvent(EventType.valueOf(o.getEvent()));
         e.setRealmId(o.getRealmId());
         e.setClientId(o.getClientId());
         e.setUserId(o.getUserId());

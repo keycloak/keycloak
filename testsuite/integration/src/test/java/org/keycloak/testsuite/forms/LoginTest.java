@@ -94,7 +94,7 @@ public class LoginTest {
 
         Assert.assertEquals("Invalid username or password.", loginPage.getError());
 
-        events.expectLogin().user((String) null).session((String) null).error("invalid_user_credentials").detail(Details.USERNAME, "login-test").removeDetail(Details.CODE_ID).assertEvent();
+        events.expectLogin().user(userId).session((String) null).error("invalid_user_credentials").detail(Details.USERNAME, "login-test").removeDetail(Details.CODE_ID).assertEvent();
     }
 
     @Test

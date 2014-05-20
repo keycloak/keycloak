@@ -29,6 +29,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.audit.Details;
 import org.keycloak.audit.Event;
+import org.keycloak.audit.EventType;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
@@ -215,7 +216,7 @@ public class AccountTest {
 
         Assert.assertEquals("Your password has been updated", profilePage.getSuccess());
 
-        events.expectAccount("update_password").assertEvent();
+        events.expectAccount(EventType.UPDATE_PASSWORD).assertEvent();
 
         changePasswordPage.logout();
 
@@ -226,7 +227,7 @@ public class AccountTest {
 
         Assert.assertEquals("Invalid username or password.", loginPage.getError());
 
-        events.expectLogin().user((String) null).session((String) null).error("invalid_user_credentials").removeDetail(Details.CODE_ID).assertEvent();
+        events.expectLogin().session((String) null).error("invalid_user_credentials").removeDetail(Details.CODE_ID).assertEvent();
 
         loginPage.open();
         loginPage.login("test-user@localhost", "new-password");
@@ -260,7 +261,7 @@ public class AccountTest {
 
             Assert.assertEquals("Your password has been updated", profilePage.getSuccess());
 
-            events.expectAccount("update_password").assertEvent();
+            events.expectAccount(EventType.UPDATE_PASSWORD).assertEvent();
         } finally {
             keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
                 @Override
@@ -317,8 +318,8 @@ public class AccountTest {
         Assert.assertEquals("New last", profilePage.getLastName());
         Assert.assertEquals("new@email.com", profilePage.getEmail());
 
-        events.expectAccount("update_profile").assertEvent();
-        events.expectAccount("update_email").detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
+        events.expectAccount(EventType.UPDATE_PROFILE).assertEvent();
+        events.expectAccount(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
     }
 
     @Test
@@ -341,13 +342,13 @@ public class AccountTest {
 
         Assert.assertEquals("Google authenticator configured.", profilePage.getSuccess());
 
-        events.expectAccount("update_totp").assertEvent();
+        events.expectAccount(EventType.UPDATE_TOTP).assertEvent();
 
         Assert.assertTrue(driver.getPageSource().contains("pficon-delete"));
 
         totpPage.removeTotp();
 
-        events.expectAccount("remove_totp").assertEvent();
+        events.expectAccount(EventType.REMOVE_TOTP).assertEvent();
     }
 
     @Test
@@ -405,7 +406,7 @@ public class AccountTest {
             Iterator<List<String>> itr = logPage.getEvents().iterator();
             for (Event event : e) {
                 List<String> a = itr.next();
-                Assert.assertEquals(event.getEvent().replace('_', ' '), a.get(1));
+                Assert.assertEquals(event.getEvent().toString().replace('_', ' ').toLowerCase(), a.get(1));
                 Assert.assertEquals(event.getIpAddress(), a.get(2));
                 Assert.assertEquals(event.getClientId(), a.get(3));
             }

@@ -27,6 +27,7 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.audit.Details;
+import org.keycloak.audit.EventType;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.managers.RealmManager;
@@ -87,8 +88,8 @@ public class RequiredActionUpdateProfileTest {
 
         updateProfilePage.update("New first", "New last", "new@email.com");
 
-        String sessionId = events.expectRequiredAction("update_profile").assertEvent().getSessionId();
-        events.expectRequiredAction("update_email").session(sessionId).detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
+        String sessionId = events.expectRequiredAction(EventType.UPDATE_PROFILE).assertEvent().getSessionId();
+        events.expectRequiredAction(EventType.UPDATE_EMAIL).session(sessionId).detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 

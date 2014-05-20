@@ -27,7 +27,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.audit.Audit;
 import org.keycloak.audit.Details;
 import org.keycloak.audit.Errors;
-import org.keycloak.audit.Events;
+import org.keycloak.audit.EventType;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
 import org.keycloak.login.LoginFormsProvider;
@@ -136,10 +136,10 @@ public class RequiredActionsService {
         user.removeRequiredAction(RequiredAction.UPDATE_PROFILE);
         accessCode.getRequiredActions().remove(RequiredAction.UPDATE_PROFILE);
 
-        audit.clone().event(Events.UPDATE_PROFILE).success();
+        audit.clone().event(EventType.UPDATE_PROFILE).success();
         if (emailChanged) {
             user.setEmailVerified(false);
-            audit.clone().event(Events.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, email).success();
+            audit.clone().event(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, email).success();
         }
 
         return redirectOauth(user, accessCode);
@@ -178,7 +178,7 @@ public class RequiredActionsService {
         user.removeRequiredAction(RequiredAction.CONFIGURE_TOTP);
         accessCode.getRequiredActions().remove(RequiredAction.CONFIGURE_TOTP);
 
-        audit.clone().event(Events.UPDATE_TOTP).success();
+        audit.clone().event(EventType.UPDATE_TOTP).success();
 
         return redirectOauth(user, accessCode);
     }
@@ -225,7 +225,7 @@ public class RequiredActionsService {
             accessCode.getRequiredActions().remove(RequiredAction.UPDATE_PASSWORD);
         }
 
-        audit.clone().event(Events.UPDATE_PASSWORD).success();
+        audit.clone().event(EventType.UPDATE_PASSWORD).success();
 
         return redirectOauth(user, accessCode);
     }
@@ -250,7 +250,7 @@ public class RequiredActionsService {
             user.removeRequiredAction(RequiredAction.VERIFY_EMAIL);
             accessCode.getRequiredActions().remove(RequiredAction.VERIFY_EMAIL);
 
-            audit.clone().event(Events.VERIFY_EMAIL).detail(Details.EMAIL, accessCode.getUser().getEmail()).success();
+            audit.clone().event(EventType.VERIFY_EMAIL).detail(Details.EMAIL, accessCode.getUser().getEmail()).success();
 
             return redirectOauth(user, accessCode);
         } else {
@@ -260,7 +260,7 @@ public class RequiredActionsService {
             }
 
             initAudit(accessCode);
-            //audit.clone().event(Events.SEND_VERIFY_EMAIL).detail(Details.EMAIL, accessCode.getUser().getEmail()).success();
+            //audit.clone().event(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, accessCode.getUser().getEmail()).success();
 
             return Flows.forms(providerSession, realm, uriInfo).setAccessCode(accessCode.getId(), accessCode.getCode()).setUser(accessCode.getUser())
                     .createResponse(RequiredAction.VERIFY_EMAIL);
@@ -307,7 +307,7 @@ public class RequiredActionsService {
                     "Login requester not enabled.");
         }
 
-        audit.event(Events.SEND_RESET_PASSWORD).client(clientId)
+        audit.event(EventType.SEND_RESET_PASSWORD).client(clientId)
                 .detail(Details.REDIRECT_URI, redirect)
                 .detail(Details.RESPONSE_TYPE, "code")
                 .detail(Details.AUTH_METHOD, "form")
@@ -430,7 +430,7 @@ public class RequiredActionsService {
     }
 
     private void initAudit(AccessCodeEntry accessCode) {
-        audit.event(Events.LOGIN).client(accessCode.getClient())
+        audit.event(EventType.LOGIN).client(accessCode.getClient())
                 .user(accessCode.getUser())
                 .session(accessCode.getSessionState())
                 .detail(Details.CODE_ID, accessCode.getId())
