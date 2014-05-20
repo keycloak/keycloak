@@ -439,7 +439,7 @@
             <id>mongo</id>
             <activation>
                 <property>
-                    <name>keycloak.model</name>
+                    <name>keycloak.model.provider</name>
                     <value>mongo</value>
                 </property>
             </activation>

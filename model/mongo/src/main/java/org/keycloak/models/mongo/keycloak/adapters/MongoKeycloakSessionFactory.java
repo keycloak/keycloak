@@ -64,7 +64,7 @@ public class MongoKeycloakSessionFactory implements KeycloakSessionFactory {
         try {
             String host = config.get("host", ServerAddress.defaultHost());
             int port = config.getInt("port", ServerAddress.defaultPort());
-            String dbName = config.get("db", "keycloak-audit");
+            String dbName = config.get("db", "keycloak");
             boolean clearOnStartup = config.getBoolean("clearOnStartup", false);
 
             String user = config.get("user");
@@ -79,6 +79,8 @@ public class MongoKeycloakSessionFactory implements KeycloakSessionFactory {
             DB db = client.getDB(dbName);
 
             this.mongoStore = new MongoStoreImpl(db, clearOnStartup, MANAGED_ENTITY_TYPES);
+
+            logger.infof("Initialized mongo model. host: %s, port: %d, db: %s, clearOnStartup: %b", host, port, dbName, clearOnStartup);
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);
         }

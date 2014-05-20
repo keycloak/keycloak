@@ -38,6 +38,11 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>mongo-java-driver</artifactId>
             <scope>provided</scope>
@@ -85,9 +90,6 @@
                                 <keycloak.audit.mongo.db>${keycloak.audit.mongo.db}</keycloak.audit.mongo.db>
                                 <keycloak.audit.mongo.clearOnStartup>${keycloak.audit.mongo.clearOnStartup}</keycloak.audit.mongo.clearOnStartup>
                             </systemPropertyVariables>
-                            <dependenciesToScan>
-                                <dependency>org.keycloak:keycloak-model-tests</dependency>
-                            </dependenciesToScan>
                         </configuration>
                     </execution>
                     <execution>

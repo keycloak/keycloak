@@ -22,7 +22,7 @@ import java.util.Set;
  */
 public class ApplicationAdapter extends ClientAdapter<MongoApplicationEntity> implements ApplicationModel {
 
-    public ApplicationAdapter(RealmModel realm, MongoApplicationEntity applicationEntity, MongoStoreInvocationContext invContext) {
+    public ApplicationAdapter(RealmAdapter realm, MongoApplicationEntity applicationEntity, MongoStoreInvocationContext invContext) {
         super(realm, applicationEntity, invContext);
     }
 

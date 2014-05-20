@@ -10,7 +10,7 @@ import org.keycloak.models.mongo.keycloak.entities.MongoOAuthClientEntity;
  */
 public class OAuthClientAdapter extends ClientAdapter<MongoOAuthClientEntity> implements OAuthClientModel {
 
-    public OAuthClientAdapter(RealmModel realm, MongoOAuthClientEntity oauthClientEntity, MongoStoreInvocationContext invContext) {
+    public OAuthClientAdapter(RealmAdapter realm, MongoOAuthClientEntity oauthClientEntity, MongoStoreInvocationContext invContext) {
         super(realm, oauthClientEntity, invContext);
     }
 

@@ -7,7 +7,6 @@ import java.util.Set;
 
 import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
@@ -25,13 +24,13 @@ public class RoleAdapter extends AbstractMongoAdapter<MongoRoleEntity> implement
 
     private final MongoRoleEntity role;
     private RoleContainerModel roleContainer;
-    private RealmModel realm;
+    private RealmAdapter realm;
 
-    public RoleAdapter(RealmModel realm, MongoRoleEntity roleEntity, MongoStoreInvocationContext invContext) {
+    public RoleAdapter(RealmAdapter realm, MongoRoleEntity roleEntity, MongoStoreInvocationContext invContext) {
         this(realm, roleEntity, null, invContext);
     }
 
-    public RoleAdapter(RealmModel realm, MongoRoleEntity roleEntity, RoleContainerModel roleContainer, MongoStoreInvocationContext invContext) {
+    public RoleAdapter(RealmAdapter realm, MongoRoleEntity roleEntity, RoleContainerModel roleContainer, MongoStoreInvocationContext invContext) {
         super(invContext);
         this.role = roleEntity;
         this.roleContainer = roleContainer;

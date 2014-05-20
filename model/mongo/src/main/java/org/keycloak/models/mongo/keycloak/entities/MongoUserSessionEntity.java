@@ -1,7 +1,8 @@
 package org.keycloak.models.mongo.keycloak.entities;
 
-import com.mongodb.DBObject;
-import com.mongodb.QueryBuilder;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.keycloak.models.entities.AbstractIdentifiableEntity;
 import org.keycloak.models.mongo.api.MongoCollection;
 import org.keycloak.models.mongo.api.MongoIdentifiableEntity;
@@ -22,6 +23,8 @@ public class MongoUserSessionEntity extends AbstractIdentifiableEntity implement
     private int started;
 
     private int lastSessionRefresh;
+
+    private List<String> associatedClientIds = new ArrayList<String>();
 
     public String getRealmId() {
         return realmId;
@@ -63,13 +66,16 @@ public class MongoUserSessionEntity extends AbstractIdentifiableEntity implement
         this.lastSessionRefresh = lastSessionRefresh;
     }
 
+    public List<String> getAssociatedClientIds() {
+        return associatedClientIds;
+    }
+
+    public void setAssociatedClientIds(List<String> associatedClientIds) {
+        this.associatedClientIds = associatedClientIds;
+    }
+
     @Override
     public void afterRemove(MongoStoreInvocationContext context) {
-        // Remove all roles, which belongs to this application
-        DBObject query = new QueryBuilder()
-                .and("sessionId").is(getId())
-                .get();
-        context.getMongoStore().removeEntities(MongoClientUserSessionAssociationEntity.class, query, context);
     }
 
 }
