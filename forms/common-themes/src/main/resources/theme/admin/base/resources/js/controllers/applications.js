@@ -195,7 +195,7 @@ module.controller('ApplicationInstallationCtrl', function($scope, realm, applica
 
 });
 
-module.controller('ApplicationDetailCtrl', function($scope, realm, application, Application, $location, Dialog, Notifications) {
+module.controller('ApplicationDetailCtrl', function($scope, $document, realm, application, Application, $location, Dialog, Notifications) {
     console.log('ApplicationDetailCtrl');
 
     $scope.clientTypes = [
@@ -267,6 +267,17 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
             if (!$scope.application.bearerOnly && (!$scope.application.redirectUris || $scope.application.redirectUris.length == 0)) {
                 Notifications.error("You must specify at least one redirect uri");
             } else {
+                // automatically add redirects to web origins
+                var parser = $document.createElement('a');
+                var originSet = {};
+                for (var i = 0; i < $scope.application.redirectUris.length; i++) {
+                    parser.href = $scope.application.redirectUris[i];
+                    var origin = href.protocol + "//" + href.host;
+                    originSet[origin] = true;
+                }
+                for (var key in originSet) {
+                    $scope.application.webOrigins.push(key);
+                }
                 Application.save({
                     realm: realm.realm,
                     application: ''
