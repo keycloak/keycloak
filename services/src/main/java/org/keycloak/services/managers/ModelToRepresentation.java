@@ -81,6 +81,7 @@ public class ModelToRepresentation {
         rep.setSslNotRequired(realm.isSslNotRequired());
         rep.setPublicKey(realm.getPublicKeyPem());
         rep.setPrivateKey(realm.getPrivateKeyPem());
+        rep.setPasswordCredentialGrantAllowed(realm.isPasswordCredentialGrantAllowed());
         rep.setRegistrationAllowed(realm.isRegistrationAllowed());
         rep.setRememberMe(realm.isRememberMe());
         rep.setBruteForceProtected(realm.isBruteForceProtected());
@@ -103,6 +104,7 @@ public class ModelToRepresentation {
         rep.setAccountTheme(realm.getAccountTheme());
         rep.setLoginTheme(realm.getLoginTheme());
         rep.setAdminTheme(realm.getAdminTheme());
+        rep.setEmailTheme(realm.getEmailTheme());
         if (realm.getPasswordPolicy() != null) {
             rep.setPasswordPolicy(realm.getPasswordPolicy().toString());
         }

@@ -1,21 +1,11 @@
 package org.keycloak.testsuite.oauth;
 
-import net.iharder.Base64;
 import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.audit.Details;
 import org.keycloak.audit.Errors;
-import org.keycloak.audit.Event;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.AccessToken;
@@ -27,11 +17,6 @@ import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
-
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.util.LinkedList;
-import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
@@ -46,6 +31,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
             ApplicationModel app = appRealm.addApplication("resource-owner");
             app.setSecret("secret");
+            appRealm.setPasswordCredentialGrantAllowed(true);
         }
     });
 
@@ -94,6 +80,33 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
         assertEquals(accessToken.getSessionState(), refreshedRefreshToken.getSessionState());
 
         events.expectRefresh(refreshToken.getId(), refreshToken.getSessionState()).client("resource-owner").assertEvent();
+    }
+
+    @Test
+    public void grantAccessTokenNotEnabled() throws Exception {
+        try {
+            keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+                @Override
+                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                    appRealm.setPasswordCredentialGrantAllowed(false);
+                }
+            });
+
+            oauth.clientId("resource-owner");
+
+            OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "test-user@localhost", "password");
+
+            assertEquals(403, response.getStatusCode());
+            assertEquals("not_enabled", response.getError());
+
+        } finally {
+            keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+                @Override
+                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                    appRealm.setPasswordCredentialGrantAllowed(true);
+                }
+            });
+        }
     }
 
     @Test

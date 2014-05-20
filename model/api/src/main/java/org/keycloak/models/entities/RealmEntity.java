@@ -16,6 +16,7 @@ public class RealmEntity extends AbstractIdentifiableEntity {
     private boolean registrationAllowed;
     private boolean rememberMe;
     private boolean verifyEmail;
+    private boolean passwordCredentialGrantAllowed;
     private boolean resetPasswordAllowed;
     private boolean social;
     private boolean updateProfileOnInitialSocialLogin;
@@ -43,6 +44,7 @@ public class RealmEntity extends AbstractIdentifiableEntity {
     private String loginTheme;
     private String accountTheme;
     private String adminTheme;
+    private String emailTheme;
 
     // We are using names of defaultRoles (not ids)
     private List<String> defaultRoles = new ArrayList<String>();
@@ -82,6 +84,14 @@ public class RealmEntity extends AbstractIdentifiableEntity {
 
     public void setSslNotRequired(boolean sslNotRequired) {
         this.sslNotRequired = sslNotRequired;
+    }
+
+    public boolean isPasswordCredentialGrantAllowed() {
+        return passwordCredentialGrantAllowed;
+    }
+
+    public void setPasswordCredentialGrantAllowed(boolean passwordCredentialGrantAllowed) {
+        this.passwordCredentialGrantAllowed = passwordCredentialGrantAllowed;
     }
 
     public boolean isRegistrationAllowed() {
@@ -282,6 +292,14 @@ public class RealmEntity extends AbstractIdentifiableEntity {
 
     public void setAdminTheme(String adminTheme) {
         this.adminTheme = adminTheme;
+    }
+
+    public String getEmailTheme() {
+        return emailTheme;
+    }
+
+    public void setEmailTheme(String emailTheme) {
+        this.emailTheme = emailTheme;
     }
 
     public List<String> getDefaultRoles() {

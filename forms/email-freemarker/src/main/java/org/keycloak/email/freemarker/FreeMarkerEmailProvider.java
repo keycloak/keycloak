@@ -68,7 +68,7 @@ public class FreeMarkerEmailProvider implements EmailProvider {
     private void send(String subjectKey, String template, Map<String, Object> attributes) throws EmailException {
         try {
             ExtendingThemeManager themeManager = new ExtendingThemeManager(session);
-            Theme theme = themeManager.createTheme(realm.getAccountTheme(), Theme.Type.EMAIL);
+            Theme theme = themeManager.createTheme(realm.getEmailTheme(), Theme.Type.EMAIL);
 
             String subject =  theme.getMessages().getProperty(subjectKey);
             String body = FreeMarkerUtil.processTemplate(attributes, template, theme);

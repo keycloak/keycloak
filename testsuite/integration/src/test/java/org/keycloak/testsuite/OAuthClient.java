@@ -404,7 +404,8 @@ public class OAuthClient {
                 Assert.fail("Invalid content type");
             }
 
-            JSONObject responseJson = new JSONObject(IOUtils.toString(response.getEntity().getContent()));
+            String s = IOUtils.toString(response.getEntity().getContent());
+            JSONObject responseJson = new JSONObject(s);
 
             if (statusCode == 200) {
                 accessToken = responseJson.getString("access_token");

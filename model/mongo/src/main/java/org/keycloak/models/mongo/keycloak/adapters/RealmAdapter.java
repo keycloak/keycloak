@@ -109,6 +109,17 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
+    public boolean isPasswordCredentialGrantAllowed() {
+        return realm.isPasswordCredentialGrantAllowed();
+    }
+
+    @Override
+    public void setPasswordCredentialGrantAllowed(boolean passwordCredentialGrantAllowed) {
+        realm.setPasswordCredentialGrantAllowed(passwordCredentialGrantAllowed);
+        updateRealm();
+    }
+
+    @Override
     public boolean isRegistrationAllowed() {
         return realm.isRegistrationAllowed();
     }
@@ -417,6 +428,17 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     @Override
     public void setAdminTheme(String name) {
         realm.setAdminTheme(name);
+        updateRealm();
+    }
+
+    @Override
+    public String getEmailTheme() {
+        return realm.getEmailTheme();
+    }
+
+    @Override
+    public void setEmailTheme(String name) {
+        realm.setEmailTheme(name);
         updateRealm();
     }
 

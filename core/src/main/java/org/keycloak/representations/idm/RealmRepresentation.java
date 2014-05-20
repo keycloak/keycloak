@@ -20,6 +20,7 @@ public class RealmRepresentation {
     protected Integer accessCodeLifespanUserAction;
     protected Boolean enabled;
     protected Boolean sslNotRequired;
+    protected Boolean passwordCredentialGrantAllowed;
     protected Boolean registrationAllowed;
     protected Boolean rememberMe;
     protected Boolean verifyEmail;
@@ -57,6 +58,7 @@ public class RealmRepresentation {
     protected String loginTheme;
     protected String accountTheme;
     protected String adminTheme;
+    protected String emailTheme;
     protected boolean auditEnabled;
     protected long auditExpiration;
     protected List<String> auditListeners;
@@ -241,6 +243,14 @@ public class RealmRepresentation {
         this.publicKey = publicKey;
     }
 
+    public Boolean isPasswordCredentialGrantAllowed() {
+        return passwordCredentialGrantAllowed;
+    }
+
+    public void setPasswordCredentialGrantAllowed(Boolean passwordCredentialGrantAllowed) {
+        this.passwordCredentialGrantAllowed = passwordCredentialGrantAllowed;
+    }
+
     public Boolean isRegistrationAllowed() {
         return registrationAllowed;
     }
@@ -375,6 +385,14 @@ public class RealmRepresentation {
 
     public void setAdminTheme(String adminTheme) {
         this.adminTheme = adminTheme;
+    }
+
+    public String getEmailTheme() {
+        return emailTheme;
+    }
+
+    public void setEmailTheme(String emailTheme) {
+        this.emailTheme = emailTheme;
     }
 
     public Integer getNotBefore() {

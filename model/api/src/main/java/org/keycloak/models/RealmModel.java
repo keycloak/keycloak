@@ -29,6 +29,11 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
     boolean isRegistrationAllowed();
 
     void setRegistrationAllowed(boolean registrationAllowed);
+
+    boolean isPasswordCredentialGrantAllowed();
+
+    void setPasswordCredentialGrantAllowed(boolean passwordCredentialGrantAllowed);
+
     boolean isRememberMe();
 
     void setRememberMe(boolean rememberMe);
@@ -221,6 +226,10 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
     String getAdminTheme();
 
     void setAdminTheme(String name);
+
+    String getEmailTheme();
+
+    void setEmailTheme(String name);
 
     boolean hasScope(ClientModel client, RoleModel role);
 
