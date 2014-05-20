@@ -268,11 +268,11 @@ module.controller('ApplicationDetailCtrl', function($scope, $document, realm, ap
                 Notifications.error("You must specify at least one redirect uri");
             } else {
                 // automatically add redirects to web origins
-                var parser = $document.createElement('a');
+                var parser = document.createElement('a');
                 var originSet = {};
                 for (var i = 0; i < $scope.application.redirectUris.length; i++) {
                     parser.href = $scope.application.redirectUris[i];
-                    var origin = href.protocol + "//" + href.host;
+                    var origin = parser.protocol + "//" + parser.host;
                     originSet[origin] = true;
                 }
                 for (var key in originSet) {
