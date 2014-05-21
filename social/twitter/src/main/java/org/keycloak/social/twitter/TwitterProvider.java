@@ -48,10 +48,7 @@ public class TwitterProvider implements SocialProvider {
             Twitter twitter = new TwitterFactory().getInstance();
             twitter.setOAuthConsumer(config.getKey(), config.getSecret());
 
-            String redirectUri = config.getCallbackUrl();
-            redirectUri = redirectUri.replace("//localhost", "//127.0.0.1");
-
-            RequestToken requestToken = twitter.getOAuthRequestToken(redirectUri);
+            RequestToken requestToken = twitter.getOAuthRequestToken(config.getCallbackUrl());
 
             return AuthRequest.create(requestToken.getToken(), requestToken.getAuthenticationURL())
                     .setAttribute("token", requestToken.getToken()).setAttribute("tokenSecret", requestToken.getTokenSecret())
