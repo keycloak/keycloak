@@ -250,9 +250,11 @@ public class AdminConsole {
 
     @GET
     public Response getMainPage() throws URISyntaxException {
-        return Response.status(302).location(
-                AdminRoot.adminConsoleUrl(uriInfo).path("index.html").build(realm.getName())
-        ).build();
+        if (!uriInfo.getRequestUri().getPath().endsWith("/")) {
+            return Response.status(302).location(uriInfo.getRequestUriBuilder().path("/").build()).build();
+        } else {
+            return getResource("index.html");
+        }
     }
 
     @GET
