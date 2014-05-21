@@ -33,8 +33,6 @@
         <para>
             Twitter doesn't allow <literal>localhost</literal> in the redirect URI. To test on a local server
             replace <literal>localhost</literal> with <literal>127.0.0.1</literal>.
-            Twitter also restricts connection to TLS/SSL connections only, so you are required to use HTTPS to access
-            Keycloak to enable log in with Twitter.
         </para>
     </tip>
 </section>

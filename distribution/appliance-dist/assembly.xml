@@ -39,6 +39,13 @@
             </excludes>
         </fileSet>
         <fileSet>
+            <directory>${project.build.directory}/unpacked/deployments/auth-server.war/WEB-INF/classes/META-INF</directory>
+            <outputDirectory>keycloak/standalone/configuration</outputDirectory>
+            <includes>
+                <include>keycloak-server.json</include>
+            </includes>
+        </fileSet>
+        <fileSet>
             <directory>${project.build.directory}/unpacked/themes</directory>
             <outputDirectory>keycloak/standalone/configuration/themes</outputDirectory>
         </fileSet>

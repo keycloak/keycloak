@@ -33,7 +33,6 @@ public class DefaultProviderSessionFactory implements ProviderSessionFactory {
                 ProviderFactory factory = loadProviderFactory(spi, provider);
                 Config.Scope scope = Config.scope(spi.getName(), provider);
                 factory.init(scope);
-                log.debug("Initialized " + factory.getClass().getName() + " (config = " + scope + ")");
 
                 factories.put(factory.getId(), factory);
 
@@ -42,7 +41,6 @@ public class DefaultProviderSessionFactory implements ProviderSessionFactory {
                 for (ProviderFactory factory : ServiceLoader.load(spi.getProviderFactoryClass())) {
                     Config.Scope scope = Config.scope(spi.getName(), factory.getId());
                     factory.init(scope);
-                    log.debug("Initialized " + factory.getClass().getName() + " (config = " + scope + ")");
 
                     factories.put(factory.getId(), factory);
                 }
