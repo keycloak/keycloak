@@ -58,6 +58,8 @@ By default it's using database `keycloak` on localhost/27017 and it uses already
 
     mvn exec:java -Pkeycloak-server -Dkeycloak.model.provider=mongo -Dkeycloak.model.mongo.host=localhost -Dkeycloak.model.mongo.port=27017 -Dkeycloak.model.mongo.db=keycloak -Dkeycloak.model.mongo.clearOnStartup=false
 
+Note that if you are using Mongo model, it would mean that Mongo will be used for audit as well. You may need to use audit related properties for configuration of Mongo if you want to override default ones (For example keycloak.audit.mongo.host, keycloak.audit.mongo.port etc)
+
 TOTP codes
 ----------
 

@@ -299,6 +299,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     @Override
     public void setSsoSessionIdleTimeout(int seconds) {
         realm.setSsoSessionIdleTimeout(seconds);
+        updateRealm();
     }
 
     @Override
@@ -309,6 +310,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     @Override
     public void setSsoSessionMaxLifespan(int seconds) {
         realm.setSsoSessionMaxLifespan(seconds);
+        updateRealm();
     }
 
     @Override

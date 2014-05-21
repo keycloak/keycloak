@@ -2,26 +2,26 @@ package org.keycloak.models.mongo.keycloak.adapters;
 
 import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
+import org.jboss.logging.Logger;
+import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.entities.ClientEntity;
 import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
-import org.keycloak.models.mongo.keycloak.entities.MongoClientUserSessionAssociationEntity;
-import org.keycloak.models.mongo.keycloak.entities.MongoRealmEntity;
-import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
-import org.keycloak.models.mongo.keycloak.entities.MongoUserEntity;
+import org.keycloak.models.mongo.keycloak.entities.MongoApplicationEntity;
+import org.keycloak.models.mongo.keycloak.entities.MongoOAuthClientEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoUserSessionEntity;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class UserSessionAdapter extends AbstractMongoAdapter<MongoUserSessionEntity> implements UserSessionModel {
+
+    private static final Logger logger = Logger.getLogger(RealmAdapter.class);
 
     private MongoUserSessionEntity entity;
     private RealmAdapter realm;
@@ -46,6 +46,7 @@ public class UserSessionAdapter extends AbstractMongoAdapter<MongoUserSessionEnt
     @Override
     public void setId(String id) {
         entity.setId(id);
+        updateMongoEntity();
     }
 
     @Override
@@ -56,6 +57,7 @@ public class UserSessionAdapter extends AbstractMongoAdapter<MongoUserSessionEnt
     @Override
     public void setUser(UserModel user) {
         entity.setUser(user.getId());
+        updateMongoEntity();
     }
 
     @Override
@@ -66,6 +68,7 @@ public class UserSessionAdapter extends AbstractMongoAdapter<MongoUserSessionEnt
     @Override
     public void setIpAddress(String ipAddress) {
         entity.setIpAddress(ipAddress);
+        updateMongoEntity();
     }
 
     @Override
@@ -76,6 +79,7 @@ public class UserSessionAdapter extends AbstractMongoAdapter<MongoUserSessionEnt
     @Override
     public void setStarted(int started) {
         entity.setStarted(started);
+        updateMongoEntity();
     }
 
     @Override
@@ -86,58 +90,39 @@ public class UserSessionAdapter extends AbstractMongoAdapter<MongoUserSessionEnt
     @Override
     public void setLastSessionRefresh(int seconds) {
         entity.setLastSessionRefresh(seconds);
+        updateMongoEntity();
     }
 
     @Override
     public void associateClient(ClientModel client) {
-        List<ClientModel> clients = getClientAssociations();
-        for (ClientModel ass : clients) {
-            if (ass.getId().equals(client.getId())) return;
-        }
-
-        MongoClientUserSessionAssociationEntity association = new MongoClientUserSessionAssociationEntity();
-        association.setClientId(client.getId());
-        association.setSessionId(getId());
-
-        getMongoStore().insertEntity(association, invocationContext);
+        getMongoStore().pushItemToList(entity, "associatedClientIds", client.getId(), true, invocationContext);
     }
 
     @Override
     public List<ClientModel> getClientAssociations() {
-        DBObject query = new QueryBuilder()
-                .and("sessionId").is(getId())
-                .get();
-        List<MongoClientUserSessionAssociationEntity> associations = getMongoStore().loadEntities(MongoClientUserSessionAssociationEntity.class, query, invocationContext);
+        List<String> associatedClientIds = getMongoEntity().getAssociatedClientIds();
 
-        List<ClientModel> result = new ArrayList<ClientModel>();
-        for (MongoClientUserSessionAssociationEntity association : associations) {
-            ClientModel client = realm.findClientById(association.getClientId());
-            result.add(client);
+        List<ClientModel> clients = new ArrayList<ClientModel>();
+        for (String clientId : associatedClientIds) {
+            // Try application first
+            ClientModel client = realm.getApplicationById(clientId);
+
+            // And then OAuthClient
+            if (client == null) {
+                client = realm.getOAuthClientById(clientId);
+            }
+
+            if (client != null) {
+                clients.add(client);
+            } else {
+                logger.warnf("Not found associated client with Id: %s", clientId);
+            }
         }
-        return result;
+        return clients;
     }
 
     @Override
     public void removeAssociatedClient(ClientModel client) {
-        DBObject query = new QueryBuilder()
-                .and("sessionId").is(getId())
-                .and("clientId").is(client.getId())
-                .get();
-        getMongoStore().removeEntities(MongoClientUserSessionAssociationEntity.class, query, invocationContext);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
-
-        UserSessionAdapter that = (UserSessionAdapter) o;
-        return getId().equals(that.getId());
-    }
-
-    @Override
-    public int hashCode() {
-        return getId().hashCode();
+        getMongoStore().pullItemFromList(entity, "associatedClientIds", client.getId(), invocationContext);
     }
 }

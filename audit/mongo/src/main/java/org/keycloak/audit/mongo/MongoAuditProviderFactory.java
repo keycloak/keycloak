@@ -5,6 +5,7 @@ import com.mongodb.MongoClient;
 import com.mongodb.MongoCredential;
 import com.mongodb.ServerAddress;
 import com.mongodb.WriteConcern;
+import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.audit.AuditProvider;
 import org.keycloak.audit.AuditProviderFactory;
@@ -20,6 +21,8 @@ import java.util.Set;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class MongoAuditProviderFactory implements AuditProviderFactory {
+
+    protected static final Logger logger = Logger.getLogger(MongoAuditProviderFactory.class);
 
     public static final String ID = "mongo";
     private MongoClient client;
@@ -55,6 +58,8 @@ public class MongoAuditProviderFactory implements AuditProviderFactory {
             if (clearOnStartup) {
                 db.getCollection("audit").drop();
             }
+
+            logger.infof("Initialized mongo audit. host: %s, port: %d, db: %s, clearOnStartup: %b", host, port, dbName, clearOnStartup);
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);
         }
