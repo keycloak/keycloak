@@ -249,10 +249,12 @@ public class AccountService {
         if (auth != null) {
             List<Event> events = auditProvider.createQuery().event(AUDIT_EVENTS).user(auth.getUser().getId()).maxResults(30).getResultList();
             for (Event e : events) {
-                Iterator<Map.Entry<String, String>> itr = e.getDetails().entrySet().iterator();
-                while (itr.hasNext()) {
-                    if (!AUDIT_DETAILS.contains(itr.next().getKey())) {
-                        itr.remove();
+                if (e.getDetails() != null) {
+                    Iterator<Map.Entry<String, String>> itr = e.getDetails().entrySet().iterator();
+                    while (itr.hasNext()) {
+                        if (!AUDIT_DETAILS.contains(itr.next().getKey())) {
+                            itr.remove();
+                        }
                     }
                 }
             }
