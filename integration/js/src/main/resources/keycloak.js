@@ -532,7 +532,6 @@ var Keycloak = function (config) {
         }
 
         var src = getRealmUrl() + '/login-status-iframe.html?client_id=' + encodeURIComponent(kc.clientId);
-        console.log('iframe src='+ src);
         iframe.setAttribute('src', src );
         iframe.style.display = 'none';
         document.body.appendChild(iframe);
@@ -571,7 +570,6 @@ var Keycloak = function (config) {
             msg.callbackId = createCallbackId();
             loginIframe.callbackMap[msg.callbackId] = promise;
             var origin = loginIframe.iframeOrigin;
-            console.log('*** origin: ' + origin);
             loginIframe.iframe.contentWindow.postMessage(msg, origin);
         } else {
             promise.setSuccess();
@@ -612,8 +610,6 @@ var Keycloak = function (config) {
         }
 
         if (type == 'cordova') {
-            console.debug('Enabling Cordova support');
-
             return {
                 login: function(options) {
                     var promise = createPromise();
