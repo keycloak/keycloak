@@ -471,13 +471,13 @@
                                         <keycloak.model.mongo.host>${keycloak.model.mongo.host}</keycloak.model.mongo.host>
                                         <keycloak.model.mongo.port>${keycloak.model.mongo.port}</keycloak.model.mongo.port>
                                         <keycloak.model.mongo.db>${keycloak.model.mongo.db}</keycloak.model.mongo.db>
+                                        <keycloak.model.mongo.clearOnStartup>${keycloak.model.mongo.clearOnStartup}</keycloak.model.mongo.clearOnStartup>
 
                                         <keycloak.audit.provider>mongo</keycloak.audit.provider>
                                         <keycloak.audit.mongo.host>${keycloak.model.mongo.host}</keycloak.audit.mongo.host>
                                         <keycloak.audit.mongo.port>${keycloak.model.mongo.port}</keycloak.audit.mongo.port>
                                         <keycloak.audit.mongo.db>${keycloak.model.mongo.db}</keycloak.audit.mongo.db>
-
-                                        <keycloak.model.mongo.clearOnStartup>${keycloak.model.mongo.clearOnStartup}</keycloak.model.mongo.clearOnStartup>
+                                        <keycloak.audit.mongo.clearOnStartup>${keycloak.model.mongo.clearOnStartup}</keycloak.audit.mongo.clearOnStartup>
                                     </systemPropertyVariables>
                                 </configuration>
                             </execution>

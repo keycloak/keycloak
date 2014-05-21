@@ -9,7 +9,7 @@
           "host": "${keycloak.audit.mongo.host:127.0.0.1}",
           "port": "${keycloak.audit.mongo.port:27017}",
           "db": "${keycloak.audit.mongo.db:keycloak-audit}",
-          "clearOnStartup": "${keycloak.model.mongo.clearOnStartup:false}"
+          "clearOnStartup": "${keycloak.audit.mongo.clearOnStartup:false}"
         }
     },
 
