@@ -84,12 +84,12 @@ public class KeycloakApplication extends Application {
         classes.add(JsResource.class);
         classes.add(WelcomeResource.class);
 
+        checkExportImportProvider();
+
         setupDefaultRealm(context.getContextPath());
 
         setupScheduledTasks(providerSessionFactory);
         importRealms(context);
-
-        checkExportImportProvider();
     }
 
     public String getContextPath() {
@@ -108,7 +108,19 @@ public class KeycloakApplication extends Application {
 
     protected void loadConfig() {
         try {
-            URL config = Thread.currentThread().getContextClassLoader().getResource("META-INF/keycloak-server.json");
+            URL config = null;
+
+            String configDir = System.getProperty("jboss.server.config.dir");
+            if (configDir != null) {
+                File f = new File(configDir + File.separator + "keycloak-server.json");
+                if (f.isFile()) {
+                    config = f.toURI().toURL();
+                }
+            }
+
+            if (config == null) {
+                config = Thread.currentThread().getContextClassLoader().getResource("META-INF/keycloak-server.json");
+            }
 
             if (config != null) {
                 JsonNode node = new ObjectMapper().readTree(config);
@@ -116,6 +128,8 @@ public class KeycloakApplication extends Application {
 
                 log.info("Loaded config from " + config);
                 return;
+            } else {
+                log.warn("Config 'keycloak-server.json' not found");
             }
         } catch (IOException e) {
             throw new RuntimeException("Failed to load config", e);

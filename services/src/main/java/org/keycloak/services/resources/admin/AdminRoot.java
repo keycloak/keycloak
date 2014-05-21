@@ -64,7 +64,7 @@ public class AdminRoot {
     public Response masterRealmAdminConsoleRedirect() {
         RealmModel master = new RealmManager(session).getKeycloakAdminstrationRealm();
         return Response.status(302).location(
-                uriInfo.getBaseUriBuilder().path(AdminRoot.class).path(AdminRoot.class, "getAdminConsole").path("index.html").build(master.getName())
+                uriInfo.getBaseUriBuilder().path(AdminRoot.class).path(AdminRoot.class, "getAdminConsole").path("/").build(master.getName())
         ).build();
     }
 

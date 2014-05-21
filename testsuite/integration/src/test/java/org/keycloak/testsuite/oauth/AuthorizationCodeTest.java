@@ -113,6 +113,35 @@ public class AuthorizationCodeTest {
     }
 
     @Test
+    public void authorizationRequestInstalledAppCancel() throws IOException {
+        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                appRealm.getApplicationNameMap().get("test-app").addRedirectUri(Constants.INSTALLED_APP_URN);
+            }
+        });
+        oauth.redirectUri(Constants.INSTALLED_APP_URN);
+
+        oauth.openLoginForm();
+        driver.findElement(By.name("cancel")).click();
+
+        String title = driver.getTitle();
+        Assert.assertTrue(title.equals("Error error=access_denied"));
+
+        String error = driver.findElement(By.id(OAuth2Constants.ERROR)).getText();
+        Assert.assertEquals("access_denied", error);
+
+        events.expectLogin().error("rejected_by_user").user((String) null).session((String) null).removeDetail(Details.USERNAME).removeDetail(Details.CODE_ID).detail(Details.REDIRECT_URI, Constants.INSTALLED_APP_URN).assertEvent().getDetails().get(Details.CODE_ID);
+
+        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                appRealm.getApplicationNameMap().get("test-app").removeRedirectUri(Constants.INSTALLED_APP_URN);
+            }
+        });
+    }
+
+    @Test
     public void authorizationValidRedirectUri() throws IOException {
         keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
             @Override

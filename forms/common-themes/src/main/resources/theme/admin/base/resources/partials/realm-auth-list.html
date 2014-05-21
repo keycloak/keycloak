@@ -28,7 +28,14 @@
             <tr ng-repeat="authProvider in authenticationProviders">
                 <td><a href="#/realms/{{realm.realm}}/auth-settings/{{$index}}">{{authProvider.providerName|capitalize}}</a></td>
                 <td>{{authProvider.passwordUpdateSupported}}</td>
-                <td>{{authProvider.config}}</td>
+                <td>
+                    <table class="table table-striped table-bordered" data-ng-show="authProvider.config">
+                        <tr data-ng-repeat="(key, value) in authProvider.config">
+                            <td>{{key}}</td>
+                            <td>{{value}}</td>
+                        </tr>
+                    </table>
+                </td>
             </tr>
             <tr data-ng-show="!authenticationProviders || authenticationProviders.length == 0">
                 <td>No authentication providers available</td>

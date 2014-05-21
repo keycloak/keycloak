@@ -37,17 +37,13 @@
                     </div>
                 </div>
 
-                <div class="form-group clearfix block">
+                <div class="form-group clearfix block" data-ng-show="authProvider.providerName">
                     <label class="col-sm-2 control-label" for="passwordUpdateSupported">Password Update Supported</label>
                     <div class="col-sm-4">
                         <input ng-model="authProvider.passwordUpdateSupported" name="passwordUpdateSupported" id="passwordUpdateSupported" onoffswitch />
                     </div>
                 </div>
 
-            </fieldset>
-
-            <fieldset>
-                <legend data-ng-show="authProvider.providerName"><span class="text">{{authProvider.providerName|capitalize}}'s provider options</span></legend>
                 <div data-ng-repeat="option in authProviderOptionNames" class="form-group">
                     <label class="col-sm-2 control-label">{{option|capitalize}} </label>
 

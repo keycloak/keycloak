@@ -310,7 +310,7 @@ form .btn + .btn {
     background-color: #c7e5f0;
     border-color: #56bae0;
     font-weight: bold;
-    background-image: url(../img/icon-sidebar-active.svg);
+    background-image: url(../img/icon-sidebar-active.png);
     background-repeat: no-repeat;
     background-position: right center;
 }
@@ -522,7 +522,7 @@ legend .kc-icon-collapse {
 
 .header .navbar-primary li > .select-kc {
     background-color: #555A5E;
-    background-image: url("../img/sprite-arrow-down.svg");
+    background-image: url("../img/sprite-arrow-down.png");
     background-position: right -26px;
     background-repeat: no-repeat;
     border: 1px solid #676C6E;

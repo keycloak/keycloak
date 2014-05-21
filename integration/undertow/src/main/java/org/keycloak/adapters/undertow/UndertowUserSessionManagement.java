@@ -8,7 +8,6 @@ import io.undertow.server.session.SessionManager;
 import io.undertow.servlet.handlers.security.CachedAuthenticatedSessionHandler;
 import org.jboss.logging.Logger;
 
-import javax.servlet.http.HttpSession;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -62,9 +61,7 @@ public class UndertowUserSessionManagement implements SessionListener {
         return set;
     }
 
-    public synchronized void login(SessionManager manager, HttpSession session, String username, String keycloakSessionId) {
-        String sessionId = session.getId();
-
+    public synchronized void login(SessionManager manager, String sessionId, String username, String keycloakSessionId) {
         UserSessions sessions = userSessionMap.get(username);
         if (sessions == null) {
             sessions = new UserSessions();

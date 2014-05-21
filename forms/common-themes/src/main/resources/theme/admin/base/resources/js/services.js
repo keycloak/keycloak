@@ -2,8 +2,39 @@
 
 var module = angular.module('keycloak.services', [ 'ngResource', 'ngRoute' ]);
 
-module.service('Dialog', function($dialog) {
+module.service('Dialog', function($modal) {
 	var dialog = {};
+
+    var openDialog = function(title, message, btns) {
+        var controller = function($scope, $modalInstance, title, message, btns) {
+            $scope.title = title;
+            $scope.message = message;
+            $scope.btns = btns;
+
+            $scope.ok = function () {
+                $modalInstance.close();
+            };
+            $scope.cancel = function () {
+                $modalInstance.dismiss('cancel');
+            };
+        };
+
+        return $modal.open({
+            templateUrl: 'templates/kc-modal.html',
+            controller: controller,
+            resolve: {
+                title: function() {
+                    return title;
+                },
+                message: function() {
+                    return message;
+                },
+                btns: function() {
+                    return btns;
+                }
+            }
+        }).result;
+    }
 
 	var escapeHtml = function(str) {
 		var div = document.createElement('div');
@@ -13,64 +44,53 @@ module.service('Dialog', function($dialog) {
 
 	dialog.confirmDelete = function(name, type, success) {
 		var title = 'Delete ' + escapeHtml(type.charAt(0).toUpperCase() + type.slice(1));
-		var msg = '<span class="primary">Are you sure you want to permanently delete the ' + escapeHtml(type) + ' <strong>' + escapeHtml(name) + '</strong>?</span>';
-		var btns = [ {
-			result : 'cancel',
-			label : 'Cancel',
-            cssClass : 'btn btn-default'
-		}, {
-			result : 'ok',
-			label : 'Delete',
-			cssClass : 'btn btn-danger'
-		} ];
+		var msg = 'Are you sure you want to permanently delete the ' + type + ' ' + name + '?';
+        var btns = {
+            ok: {
+                label: 'Delete',
+                cssClass: 'btn btn-danger'
+            },
+            cancel: {
+                label: 'Cancel',
+                cssClass: 'btn btn-default'
+            }
+        }
 
-		$dialog.messageBox(title, msg, btns).open().then(function(result) {
-			if (result == "ok") {
-				success();
-			}
-		});
+        openDialog(title, msg, btns).then(success);
 	}
 
     dialog.confirmGenerateKeys = function(name, type, success) {
         var title = 'Generate new keys for realm';
-        var msg = '<span class="primary">Are you sure you want to permanently generate new keys for <strong>' + name + '</strong>?</span>';
-        var btns = [ {
-            result : 'cancel',
-            label : 'Cancel',
-            cssClass : 'btn btn-default'
-        }, {
-            result : 'ok',
-            label : 'Generate new keys',
-            cssClass : 'btn btn-danger'
-        } ];
-
-        $dialog.messageBox(title, msg, btns).open().then(function(result) {
-            if (result == "ok") {
-                success();
+        var msg = 'Are you sure you want to permanently generate new keys for ' + name + '?';
+        var btns = {
+            ok: {
+                label: 'Generate Keys',
+                cssClass: 'btn btn-danger'
+            },
+            cancel: {
+                label: 'Cancel',
+                cssClass: 'btn btn-default'
             }
-        });
+        }
+
+        openDialog(title, msg, btns).then(success);
     }
 
     dialog.confirm = function(title, message, success, cancel) {
         var title = title;
         var msg = '<span class="primary">' + message + '"</span>';
-        var btns = [ {
-            result : 'cancel',
-            label : 'Cancel',
-            cssClass : 'btn btn-default'
-        }, {
-            result : 'ok',
-            label : title,
-            cssClass : 'btn btn-danger'
-        } ];
-
-        $dialog.messageBox(title, msg, btns).open().then(function(result) {
-            if (result == "ok") {
-                success();
-            } else {
-                cancel && cancel();
+        var btns = {
+            ok: {
+                label: title,
+                cssClass: 'btn btn-danger'
+            },
+            cancel: {
+                label: 'Cancel',
+                cssClass: 'btn btn-default'
             }
-        });
+        }
+
+        openDialog(title, msg, btns).then(success).reject(cancel);
     }
 
 	return dialog

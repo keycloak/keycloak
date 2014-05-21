@@ -237,7 +237,7 @@ public class MongoStoreImpl implements MongoStore {
     public <T extends MongoIdentifiableEntity> T loadEntity(Class<T> type, String id, MongoStoreInvocationContext context) {
         // First look if we already read the object with this oid and type during this transaction. If yes, use it instead of DB lookup
         T cached = context.getLoadedEntity(type, id);
-        if (cached != null) return cached;
+        if (cached != null && type.isAssignableFrom(cached.getClass())) return cached;
 
         DBCollection dbCollection = getDBCollectionForType(type);
 

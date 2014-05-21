@@ -9,12 +9,11 @@ import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.entities.ClientEntity;
 import org.keycloak.models.mongo.api.MongoIdentifiableEntity;
 import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
-import org.keycloak.models.mongo.keycloak.entities.MongoClientUserSessionAssociationEntity;
+import org.keycloak.models.mongo.keycloak.entities.MongoUserSessionEntity;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -22,9 +21,9 @@ import org.keycloak.models.mongo.keycloak.entities.MongoClientUserSessionAssocia
 public class ClientAdapter<T extends MongoIdentifiableEntity> extends AbstractMongoAdapter<T> implements ClientModel {
 
     protected final T clientEntity;
-    private final RealmModel realm;
+    private final RealmAdapter realm;
 
-    public ClientAdapter(RealmModel realm, T clientEntity, MongoStoreInvocationContext invContext) {
+    public ClientAdapter(RealmAdapter realm, T clientEntity, MongoStoreInvocationContext invContext) {
         super(invContext);
         this.clientEntity = clientEntity;
         this.realm = realm;
@@ -154,7 +153,7 @@ public class ClientAdapter<T extends MongoIdentifiableEntity> extends AbstractMo
     }
 
     @Override
-    public RealmModel getRealm() {
+    public RealmAdapter getRealm() {
         return realm;
     }
 
@@ -172,14 +171,13 @@ public class ClientAdapter<T extends MongoIdentifiableEntity> extends AbstractMo
     @Override
     public Set<UserSessionModel> getUserSessions() {
         DBObject query = new QueryBuilder()
-                .and("clientId").is(getId())
+                .and("associatedClientIds").is(getId())
                 .get();
-        List<MongoClientUserSessionAssociationEntity> associations = getMongoStore().loadEntities(MongoClientUserSessionAssociationEntity.class, query, invocationContext);
+        List<MongoUserSessionEntity> sessions = getMongoStore().loadEntities(MongoUserSessionEntity.class, query, invocationContext);
 
         Set<UserSessionModel> result = new HashSet<UserSessionModel>();
-        for (MongoClientUserSessionAssociationEntity association : associations) {
-            UserSessionModel session = realm.getUserSession(association.getSessionId());
-            result.add(session);
+        for (MongoUserSessionEntity session : sessions) {
+            result.add(new UserSessionAdapter(session, realm, invocationContext));
         }
         return result;
 

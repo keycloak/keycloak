@@ -762,4 +762,49 @@ public class AdapterTest extends AbstractModelTest {
         assertNull(realmManager.getRealmByName("userSessions").getUserSession(userSession.getId()));
     }
 
+    @Test
+    public void userSessionAssociations() {
+        RealmModel realm = realmManager.createRealm("userSessions");
+        UserModel user = realm.addUser("userSessions1");
+        UserSessionModel userSession = realm.createUserSession(user, "127.0.0.1");
+
+        ApplicationModel app1 = realm.addApplication("app1");
+        ApplicationModel app2 = realm.addApplication("app2");
+        OAuthClientModel client1 = realm.addOAuthClient("client1");
+
+        Assert.assertEquals(0, userSession.getClientAssociations().size());
+
+        userSession.associateClient(app1);
+        userSession.associateClient(client1);
+
+        Assert.assertEquals(2, userSession.getClientAssociations().size());
+        Assert.assertTrue(app1.getUserSessions().contains(userSession));
+        Assert.assertFalse(app2.getUserSessions().contains(userSession));
+        Assert.assertTrue(client1.getUserSessions().contains(userSession));
+
+        commit();
+
+        // Refresh all
+        realm = realmManager.getRealm("userSessions");
+        userSession = realm.getUserSession(userSession.getId());
+        app1 = realm.getApplicationByName("app1");
+        client1 = realm.getOAuthClient("client1");
+
+        userSession.removeAssociatedClient(app1);
+        Assert.assertEquals(1, userSession.getClientAssociations().size());
+        Assert.assertEquals(client1, userSession.getClientAssociations().get(0));
+        Assert.assertFalse(app1.getUserSessions().contains(userSession));
+
+        commit();
+
+        // Refresh all
+        realm = realmManager.getRealm("userSessions");
+        userSession = realm.getUserSession(userSession.getId());
+        client1 = realm.getOAuthClient("client1");
+
+        userSession.removeAssociatedClient(client1);
+        Assert.assertEquals(0, userSession.getClientAssociations().size());
+        Assert.assertFalse(client1.getUserSessions().contains(userSession));
+    }
+
 }

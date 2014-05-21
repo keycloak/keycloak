@@ -186,6 +186,10 @@ ol#kc-totp-settings li:first-of-type {
     width: 125px;
 }
 
+.zocial:hover {
+    color: #fff !important;
+}
+
 .zocial.facebook,
 .zocial.github,
 .zocial.google,

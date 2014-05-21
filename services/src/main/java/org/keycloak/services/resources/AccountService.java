@@ -160,7 +160,9 @@ public class AccountService {
             }
         }
 
-        account.setFeatures(realm.isSocial(), auditProvider != null, passwordUpdateSupported);
+        boolean auditEnabled = auditProvider != null && realm.isAuditEnabled();
+
+        account.setFeatures(realm.isSocial(), auditEnabled, passwordUpdateSupported);
     }
 
     public static UriBuilder accountServiceBaseUrl(UriInfo uriInfo) {
@@ -246,6 +248,16 @@ public class AccountService {
     public Response logPage() {
         if (auth != null) {
             List<Event> events = auditProvider.createQuery().event(AUDIT_EVENTS).user(auth.getUser().getId()).maxResults(30).getResultList();
+            for (Event e : events) {
+                if (e.getDetails() != null) {
+                    Iterator<Map.Entry<String, String>> itr = e.getDetails().entrySet().iterator();
+                    while (itr.hasNext()) {
+                        if (!AUDIT_DETAILS.contains(itr.next().getKey())) {
+                            itr.remove();
+                        }
+                    }
+                }
+            }
             account.setEvents(events);
         }
         return forwardToPage("log", AccountPages.LOG);
@@ -560,7 +572,7 @@ public class AccountService {
         ApplicationModel application = realm.getApplicationByName(referrer);
         if (application != null) {
             if (referrerUri != null) {
-                referrerUri = TokenService.verifyRedirectUri(uriInfo, referrerUri, application);
+                referrerUri = TokenService.verifyRedirectUri(uriInfo, referrerUri, realm, application);
             } else {
                 referrerUri = ResolveRelative.resolveRelativeUri(uriInfo.getRequestUri(), application.getBaseUrl());
             }
@@ -571,7 +583,7 @@ public class AccountService {
         } else if (referrerUri != null) {
             ClientModel client = realm.getOAuthClient(referrer);
             if (client != null) {
-                referrerUri = TokenService.verifyRedirectUri(uriInfo, referrerUri, application);
+                referrerUri = TokenService.verifyRedirectUri(uriInfo, referrerUri, realm, application);
 
                 if (referrerUri != null) {
                     return new String[]{referrer, referrerUri};

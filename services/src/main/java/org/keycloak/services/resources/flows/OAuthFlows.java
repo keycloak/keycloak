@@ -86,34 +86,25 @@ public class OAuthFlows {
 
     public Response redirectAccessCode(AccessCodeEntry accessCode, UserSessionModel session, String state, String redirect, boolean rememberMe) {
         String code = accessCode.getCode();
-
-        if (Constants.INSTALLED_APP_URN.equals(redirect)) {
-            return Flows.forms(providerSession, realm, uriInfo).setAccessCode(accessCode.getId(), code).createCode();
-        } else {
-            UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam(OAuth2Constants.CODE, code);
-            log.debugv("redirectAccessCode: state: {0}", state);
-            if (state != null)
-                redirectUri.queryParam(OAuth2Constants.STATE, state);
-            Response.ResponseBuilder location = Response.status(302).location(redirectUri.build());
-            Cookie remember = request.getHttpHeaders().getCookies().get(AuthenticationManager.KEYCLOAK_REMEMBER_ME);
-            rememberMe = rememberMe || remember != null;
-            // refresh the cookies!
-            authManager.createLoginCookie(realm, accessCode.getUser(), session, uriInfo, rememberMe);
-            if (rememberMe) authManager.createRememberMeCookie(realm, uriInfo);
-            return location.build();
-        }
+        UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam(OAuth2Constants.CODE, code);
+        log.debugv("redirectAccessCode: state: {0}", state);
+        if (state != null)
+            redirectUri.queryParam(OAuth2Constants.STATE, state);
+        Response.ResponseBuilder location = Response.status(302).location(redirectUri.build());
+        Cookie remember = request.getHttpHeaders().getCookies().get(AuthenticationManager.KEYCLOAK_REMEMBER_ME);
+        rememberMe = rememberMe || remember != null;
+        // refresh the cookies!
+        authManager.createLoginCookie(realm, accessCode.getUser(), session, uriInfo, rememberMe);
+        if (rememberMe) authManager.createRememberMeCookie(realm, uriInfo);
+        return location.build();
     }
 
     public Response redirectError(ClientModel client, String error, String state, String redirect) {
-        if (Constants.INSTALLED_APP_URN.equals(redirect)) {
-            return Flows.forms(providerSession, realm, uriInfo).setError(error).createCode();
-        } else {
-            UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam(OAuth2Constants.ERROR, error);
-            if (state != null) {
-                redirectUri.queryParam(OAuth2Constants.STATE, state);
-            }
-            return Response.status(302).location(redirectUri.build()).build();
+        UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam(OAuth2Constants.ERROR, error);
+        if (state != null) {
+            redirectUri.queryParam(OAuth2Constants.STATE, state);
         }
+        return Response.status(302).location(redirectUri.build()).build();
     }
 
     public Response processAccessCode(String scopeParam, String state, String redirect, ClientModel client, UserModel user, UserSessionModel session, String username, boolean rememberMe, String authMethod, Audit audit) {

@@ -18,6 +18,7 @@ import org.keycloak.authentication.AuthenticationProviderException;
 import org.keycloak.authentication.AuthenticationProviderManager;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
+import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -42,6 +43,7 @@ import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.OAuthFlows;
+import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.Time;
@@ -363,7 +365,7 @@ public class TokenService {
             return oauth.forwardToSecurityFailure("Login requester not enabled.");
         }
 
-        redirect = verifyRedirectUri(uriInfo, redirect, client);
+        redirect = verifyRedirectUri(uriInfo, redirect, realm, client);
         if (redirect == null) {
             audit.error(Errors.INVALID_REDIRECT_URI);
             return oauth.forwardToSecurityFailure("Invalid redirect_uri.");
@@ -457,7 +459,7 @@ public class TokenService {
             return oauth.forwardToSecurityFailure("Login requester not enabled.");
         }
 
-        redirect = verifyRedirectUri(uriInfo, redirect, client);
+        redirect = verifyRedirectUri(uriInfo, redirect, realm, client);
         if (redirect == null) {
             audit.error(Errors.INVALID_REDIRECT_URI);
             return oauth.forwardToSecurityFailure("Invalid redirect_uri.");
@@ -754,7 +756,7 @@ public class TokenService {
             audit.error(Errors.NOT_ALLOWED);
             return oauth.forwardToSecurityFailure("Bearer-only applications are not allowed to initiate login");
         }
-        redirect = verifyRedirectUri(uriInfo, redirect, client);
+        redirect = verifyRedirectUri(uriInfo, redirect, realm, client);
         if (redirect == null) {
             audit.error(Errors.INVALID_REDIRECT_URI);
             return oauth.forwardToSecurityFailure("Invalid redirect_uri.");
@@ -811,7 +813,7 @@ public class TokenService {
             return oauth.forwardToSecurityFailure("Login requester not enabled.");
         }
 
-        redirect = verifyRedirectUri(uriInfo, redirect, client);
+        redirect = verifyRedirectUri(uriInfo, redirect, realm, client);
         if (redirect == null) {
             audit.error(Errors.INVALID_REDIRECT_URI);
             return oauth.forwardToSecurityFailure("Invalid redirect_uri.");
@@ -937,6 +939,17 @@ public class TokenService {
         return oauth.redirectAccessCode(accessCodeEntry, session, state, redirect);
     }
 
+    @Path("oauth/oob")
+    @GET
+    public Response installedAppUrnCallback(final @QueryParam("code") String code, final @QueryParam("error") String error, final @QueryParam("error_description") String errorDescription) {
+        LoginFormsProvider forms = Flows.forms(providerSession, realm, uriInfo);
+        if (code != null) {
+            return forms.setAccessCode(null, code).createCode();
+        } else {
+            return forms.setError(error).createCode();
+        }
+    }
+
     protected Response redirectAccessDenied(String redirect, String state) {
         UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam(OAuth2Constants.ERROR, "access_denied");
         if (state != null)
@@ -961,7 +974,7 @@ public class TokenService {
         return false;
     }
 
-    public static String verifyRedirectUri(UriInfo uriInfo, String redirectUri, ClientModel client) {
+    public static String verifyRedirectUri(UriInfo uriInfo, String redirectUri, RealmModel realm, ClientModel client) {
         Set<String> validRedirects = client.getRedirectUris();
         if (redirectUri == null) {
             if (validRedirects.size() != 1) return null;
@@ -970,10 +983,10 @@ public class TokenService {
             if (idx > -1) {
                 validRedirect = validRedirect.substring(0, idx);
             }
-            return validRedirect;
+            redirectUri = validRedirect;
         } else if (validRedirects.isEmpty()) {
             logger.error("Redirect URI is required for client: " + client.getClientId());
-            return null;
+            redirectUri = null;
         } else {
             String r = redirectUri.indexOf('?') != -1 ? redirectUri.substring(0, redirectUri.indexOf('?')) : redirectUri;
             Set<String> resolveValidRedirects = resolveValidRedirects(uriInfo, validRedirects);
@@ -996,7 +1009,13 @@ public class TokenService {
 
                 valid = matchesRedirects(resolveValidRedirects, r);
             }
-            return valid ? redirectUri : null;
+            redirectUri = valid ? redirectUri : null;
+        }
+
+        if (Constants.INSTALLED_APP_URN.equals(redirectUri)) {
+            return Urls.realmInstalledAppUrnCallback(uriInfo.getBaseUri(), realm.getName()).toString();
+        } else {
+            return redirectUri;
         }
     }
 

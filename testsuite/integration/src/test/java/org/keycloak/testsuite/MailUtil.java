@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.org.keycloak.testsuite.util;
+package org.keycloak.testsuite;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
