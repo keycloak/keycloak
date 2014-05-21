@@ -74,11 +74,11 @@ public class JsonConfigProvider implements Config.ConfigProvider {
             if (n == null) {
                 return null;
             } else if (n.isArray()) {
-                ArrayList<String> l = new ArrayList<String>();
-                for (JsonNode e : n) {
-                    l.add(StringPropertyReplacer.replaceProperties(e.getTextValue()));
+                String[] a = new String[n.size()];
+                for (int i = 0; i < a.length; i++) {
+                    a[i] = StringPropertyReplacer.replaceProperties(n.get(i).getTextValue());
                 }
-                return (String[]) l.toArray();
+                return a;
             } else {
                return new String[] { StringPropertyReplacer.replaceProperties(n.getTextValue()) };
             }
