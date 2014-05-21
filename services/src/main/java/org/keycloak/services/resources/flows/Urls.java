@@ -148,6 +148,10 @@ public class Urls {
         return tokenBase(baseUri).path(TokenService.class, "registerPage").build(realmId);
     }
 
+    public static URI realmInstalledAppUrnCallback(URI baseUri, String realmId) {
+        return tokenBase(baseUri).path(TokenService.class, "installedAppUrnCallback").build(realmId);
+    }
+
     public static URI realmOauthAction(URI baseUri, String realmId) {
         return tokenBase(baseUri).path(TokenService.class, "processOAuth").build(realmId);
     }

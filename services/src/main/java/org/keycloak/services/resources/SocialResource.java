@@ -122,6 +122,10 @@ public class SocialResource {
         Map<String, String[]> queryParams = getQueryParams();
 
         RequestDetails requestData = getRequestDetails(queryParams);
+        if (requestData == null) {
+            Flows.forms(providerSession, null, uriInfo).setError("Unexpected callback").createErrorPage();
+        }
+
         SocialProvider provider = SocialLoader.load(requestData.getProviderId());
 
         String realmName = requestData.getClientAttribute("realm");
@@ -296,7 +300,7 @@ public class SocialResource {
             logger.warn("Login requester not enabled.");
             return Flows.forms(providerSession, realm, uriInfo).setError("Login requester not enabled.").createErrorPage();
         }
-        redirectUri = TokenService.verifyRedirectUri(uriInfo, redirectUri, client);
+        redirectUri = TokenService.verifyRedirectUri(uriInfo, redirectUri, realm, client);
         if (redirectUri == null) {
             audit.error(Errors.INVALID_REDIRECT_URI);
             return Flows.forms(providerSession, realm, uriInfo).setError("Invalid redirect_uri.").createErrorPage();
