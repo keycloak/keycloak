@@ -7,7 +7,7 @@
         </div>
     </div>
 
-    <table class="table">
+    <table class="table table-striped table-bordered">
         <thead>
         <tr>
             <td>IP</td>
@@ -27,18 +27,14 @@
                 <td>${session.lastAccess?datetime}</td>
                 <td>${session.expires?datetime}</td>
                 <td>
-                    <ul style="list-style: none; ">
-                        <#list session.applications as app>
-                            <li>${app}</li>
-                        </#list>
-                    </ul>
+                    <#list session.applications as app>
+                        ${app}<br/>
+                    </#list>
                 </td>
                 <td>
-                    <ul style="list-style: none; ">
-                        <#list session.clients as client>
-                            <li>${client}</li>
-                        </#list>
-                    </ul>
+                    <#list session.clients as client>
+                        ${client}<br/>
+                    </#list>
                 </td>
             </tr>
         </#list>

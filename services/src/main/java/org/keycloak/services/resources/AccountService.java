@@ -160,7 +160,9 @@ public class AccountService {
             }
         }
 
-        account.setFeatures(realm.isSocial(), auditProvider != null, passwordUpdateSupported);
+        boolean auditEnabled = auditProvider != null && realm.isAuditEnabled();
+
+        account.setFeatures(realm.isSocial(), auditEnabled, passwordUpdateSupported);
     }
 
     public static UriBuilder accountServiceBaseUrl(UriInfo uriInfo) {
@@ -246,6 +248,14 @@ public class AccountService {
     public Response logPage() {
         if (auth != null) {
             List<Event> events = auditProvider.createQuery().event(AUDIT_EVENTS).user(auth.getUser().getId()).maxResults(30).getResultList();
+            for (Event e : events) {
+                Iterator<Map.Entry<String, String>> itr = e.getDetails().entrySet().iterator();
+                while (itr.hasNext()) {
+                    if (!AUDIT_DETAILS.contains(itr.next().getKey())) {
+                        itr.remove();
+                    }
+                }
+            }
             account.setEvents(events);
         }
         return forwardToPage("log", AccountPages.LOG);
