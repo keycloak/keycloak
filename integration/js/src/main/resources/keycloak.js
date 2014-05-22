@@ -29,6 +29,10 @@ var Keycloak = function (config) {
             if (initOptions.checkLoginIframeInterval) {
                 loginIframe.interval = initOptions.checkLoginIframeInterval;
             }
+
+            if (initOptions.onLoad === 'login-required') {
+                kc.loginRequired = true;
+            }
         }
 
         var promise = createPromise();
@@ -374,6 +378,9 @@ var Keycloak = function (config) {
         if (kc.token) {
             setToken(null, null);
             kc.onAuthLogout && kc.onAuthLogout();
+            if (kc.loginRequired) {
+                kc.login();
+            }
         }
     }
 
