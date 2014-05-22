@@ -77,8 +77,6 @@ module.service('Dialog', function($modal) {
     }
 
     dialog.confirm = function(title, message, success, cancel) {
-        var title = title;
-        var msg = '<span class="primary">' + message + '"</span>';
         var btns = {
             ok: {
                 label: title,
@@ -90,7 +88,7 @@ module.service('Dialog', function($modal) {
             }
         }
 
-        openDialog(title, msg, btns).then(success).reject(cancel);
+        openDialog(title, message, btns).then(success, cancel);
     }
 
 	return dialog
