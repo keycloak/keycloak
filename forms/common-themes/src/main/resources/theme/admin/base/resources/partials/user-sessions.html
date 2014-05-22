@@ -38,19 +38,18 @@
                 <td>{{session.ipAddress}}</td>
                 <td>{{session.start | date:'medium'}}</td>
                 <td>{{session.lastAccess | date:'medium'}}</td>
-                <td><ul style="list-style: none; ">
-                    <li data-ng-repeat="app in session.applications">
+                <td>
+                    <div data-ng-repeat="app in session.applications">
                         <a href="#/realms/{{realm.realm}}/applications/{{app}}/sessions">{{app}}</a>
-                    </li>
+                    </div>
                 </ul>
                 </td>
-                <td><ul style="list-style: none; ">
-                    <li data-ng-repeat="(clientId, clientName) in session.clients">
+                <td>
+                    <div data-ng-repeat="(clientId, clientName) in session.clients">
                         <a href="#/realms/{{realm.realm}}/oauth-clients/{{clientId}}">{{clientName}}</a>
-                    </li>
-                </ul>
+                    </div>
                 </td>
-                <td><a ng-click="logoutSession(session.id)">logout</a> </td>
+                <td><a href="" ng-click="logoutSession(session.id)">logout</a> </td>
             </tr>
             </tbody>
         </table>
