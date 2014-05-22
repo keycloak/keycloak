@@ -1,13 +1,13 @@
 <html>
 <head>
-    <script src="//localhost:8081/auth/js/keycloak.js"></script>
+    <script src="//localhost:8080/auth/js/keycloak.js"></script>
 </head>
 <body>
 
 <div>
     <button onclick="keycloak.login()">Login</button>
     <button onclick="keycloak.logout()">Logout</button>
-    <button onclick="refreshToken()">Refresh Token</button>
+    <button onclick="refreshToken(9999)">Refresh Token</button>
     <button onclick="refreshToken(30)">Refresh Token (if <30s validity)</button>
     <button onclick="loadProfile()">Get Profile</button>
     <button onclick="output(keycloak.tokenParsed)">Show Token</button>
