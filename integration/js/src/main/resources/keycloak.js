@@ -538,7 +538,7 @@ var Keycloak = function (config) {
             loginIframe.iframe = iframe;
         }
 
-        var src = getRealmUrl() + '/login-status-iframe.html?client_id=' + encodeURIComponent(kc.clientId);
+        var src = getRealmUrl() + '/login-status-iframe.html?client_id=' + encodeURIComponent(kc.clientId) + '&origin=' + window.location.origin;
         iframe.setAttribute('src', src );
         iframe.style.display = 'none';
         document.body.appendChild(iframe);
