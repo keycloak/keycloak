@@ -754,7 +754,11 @@ public class TokenService {
         }
         if ( (client instanceof ApplicationModel) && ((ApplicationModel)client).isBearerOnly()) {
             audit.error(Errors.NOT_ALLOWED);
-            return oauth.forwardToSecurityFailure("Bearer-only applications are not allowed to initiate login");
+            return oauth.forwardToSecurityFailure("Bearer-only applications are not allowed to initiate browser login");
+        }
+        if (client.isDirectGrantsOnly()) {
+            audit.error(Errors.NOT_ALLOWED);
+            return oauth.forwardToSecurityFailure("direct-grants-only clients are not allowed to initiate browser login");
         }
         redirect = verifyRedirectUri(uriInfo, redirect, realm, client);
         if (redirect == null) {

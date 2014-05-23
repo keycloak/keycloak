@@ -764,6 +764,20 @@ module.factory('OAuthClientRealmScopeMapping', function($resource) {
     });
 });
 
+module.factory('OAuthClientCompositeRealmScopeMapping', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/oauth-clients/:oauth/scope-mappings/realm/composite', {
+        realm : '@realm',
+        oauth : '@oauth'
+    });
+});
+
+module.factory('OAuthClientAvailableRealmScopeMapping', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/oauth-clients/:oauth/scope-mappings/realm/available', {
+        realm : '@realm',
+        oauth : '@oauth'
+    });
+});
+
 module.factory('OAuthClientApplicationScopeMapping', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/oauth-clients/:oauth/scope-mappings/applications/:targetApp', {
         realm : '@realm',
@@ -771,6 +785,24 @@ module.factory('OAuthClientApplicationScopeMapping', function($resource) {
         targetApp : '@targetApp'
     });
 });
+
+module.factory('OAuthClientCompositeApplicationScopeMapping', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/oauth-clients/:oauth/scope-mappings/applications/:targetApp/composite', {
+        realm : '@realm',
+        oauth : '@oauth',
+        targetApp : '@targetApp'
+    });
+});
+
+module.factory('OAuthClientAvailableApplicationScopeMapping', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/oauth-clients/:oauth/scope-mappings/applications/:targetApp/available', {
+        realm : '@realm',
+        oauth : '@oauth',
+        targetApp : '@targetApp'
+    });
+});
+
+
 
 module.factory('OAuthClientInstallation', function($resource) {
     var url = authUrl + '/admin/realms/:realm/oauth-clients/:oauth/installation';

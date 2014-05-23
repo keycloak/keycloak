@@ -18,7 +18,7 @@ import org.keycloak.models.mongo.keycloak.entities.MongoUserSessionEntity;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class ClientAdapter<T extends MongoIdentifiableEntity> extends AbstractMongoAdapter<T> implements ClientModel {
+public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends AbstractMongoAdapter<T> implements ClientModel {
 
     protected final T clientEntity;
     private final RealmAdapter realm;

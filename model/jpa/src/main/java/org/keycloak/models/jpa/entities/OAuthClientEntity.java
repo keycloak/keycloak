@@ -15,4 +15,13 @@ import javax.persistence.NamedQuery;
 })
 @Entity
 public class OAuthClientEntity extends ClientEntity {
+    protected boolean directGrantsOnly;
+
+    public boolean isDirectGrantsOnly() {
+        return directGrantsOnly;
+    }
+
+    public void setDirectGrantsOnly(boolean directGrantsOnly) {
+        this.directGrantsOnly = directGrantsOnly;
+    }
 }

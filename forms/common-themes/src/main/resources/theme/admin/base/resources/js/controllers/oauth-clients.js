@@ -77,16 +77,15 @@ module.controller('OAuthClientDetailCtrl', function($scope, realm, oauth, OAuthC
     $scope.realm = realm;
     $scope.create = !oauth.id;
 
-    $scope.clientTypes = [
+    $scope.accessTypes = [
         "confidential",
         "public"
     ];
 
-    $scope.changeClientType = function() {
-        console.log('Client Type: ' + $scope.clientType);
-        if ($scope.clientType == "confidential") {
+    $scope.changeAccessType = function() {
+        if ($scope.accessType == "confidential") {
             $scope.oauth.publicClient = false;
-        } else if ($scope.clientType == "public") {
+        } else if ($scope.accessType == "public") {
             $scope.oauth.publicClient = true;
         }
     };
@@ -94,15 +93,15 @@ module.controller('OAuthClientDetailCtrl', function($scope, realm, oauth, OAuthC
 
     if (!$scope.create) {
         $scope.oauth= angular.copy(oauth);
-        $scope.clientType = $scope.clientTypes[0];
+        $scope.accessType = $scope.accessTypes[0];
         if (oauth.publicClient) {
-            $scope.clientType = $scope.clientTypes[1];
+            $scope.accessType = $scope.accessTypes[1];
         }
     } else {
         $scope.oauth = { enabled: true };
         $scope.oauth.webOrigins = [];
         $scope.oauth.redirectUris = [];
-        $scope.clientType = $scope.clientTypes[0];
+        $scope.accessType = $scope.accessTypes[0];
     }
 
     $scope.$watch(function() {
@@ -133,7 +132,7 @@ module.controller('OAuthClientDetailCtrl', function($scope, realm, oauth, OAuthC
     }
 
     $scope.save = function() {
-        if (!$scope.oauth.redirectUris || $scope.oauth.redirectUris.length == 0) {
+        if (!$scope.oauth.directGrantsOnly && (!$scope.oauth.redirectUris || $scope.oauth.redirectUris.length == 0)) {
             Notifications.error("You must specify at least one redirect uri");
         } else {
             if ($scope.create) {
@@ -183,128 +182,89 @@ module.controller('OAuthClientDetailCtrl', function($scope, realm, oauth, OAuthC
 
 });
 
-module.controller('OAuthClientScopeMappingCtrl', function($scope, $http, realm, oauth, roles, applications, OAuthClientRealmScopeMapping, OAuthClientApplicationScopeMapping, ApplicationRole) {
+module.controller('OAuthClientScopeMappingCtrl', function($scope, $http, realm, oauth, applications,
+                                                          OAuthClientRealmScopeMapping, OAuthClientApplicationScopeMapping, ApplicationRole,
+                                                          OAuthClientAvailableRealmScopeMapping, OAuthClientAvailableApplicationScopeMapping,
+                                                          OAuthClientCompositeRealmScopeMapping, OAuthClientCompositeApplicationScopeMapping) {
     $scope.realm = realm;
     $scope.oauth = oauth;
-    $scope.realmRoles = angular.copy(roles);
     $scope.selectedRealmRoles = [];
     $scope.selectedRealmMappings = [];
     $scope.realmMappings = [];
     $scope.applications = applications;
     $scope.applicationRoles = [];
+    $scope.applicationComposite = [];
     $scope.selectedApplicationRoles = [];
     $scope.selectedApplicationMappings = [];
     $scope.applicationMappings = [];
+    $scope.dummymodel = [];
 
+    function updateRealmRoles() {
+        $scope.realmRoles = OAuthClientAvailableRealmScopeMapping.query({realm : realm.realm, oauth : oauth.id});
+        $scope.realmMappings = OAuthClientRealmScopeMapping.query({realm : realm.realm, oauth : oauth.id});
+        $scope.realmComposite = OAuthClientCompositeRealmScopeMapping.query({realm : realm.realm, oauth : oauth.id});
+    }
 
-
-    $scope.realmMappings = OAuthClientRealmScopeMapping.query({realm : realm.realm, oauth : oauth.id}, function(){
-        for (var i = 0; i < $scope.realmMappings.length; i++) {
-            var role = $scope.realmMappings[i];
-            for (var j = 0; j < $scope.realmRoles.length; j++) {
-                var realmRole = $scope.realmRoles[j];
-                if (realmRole.id == role.id) {
-                    var idx = $scope.realmRoles.indexOf(realmRole);
-                    if (idx != -1) {
-                        $scope.realmRoles.splice(idx, 1);
-                        break;
-                    }
-                }
-            }
+    function updateAppRoles() {
+        if ($scope.targetApp) {
+            console.debug($scope.targetApp.name);
+            $scope.applicationRoles = OAuthClientAvailableApplicationScopeMapping.query({realm : realm.realm, oauth : oauth.id, targetApp : $scope.targetApp.name});
+            $scope.applicationMappings = OAuthClientApplicationScopeMapping.query({realm : realm.realm, oauth : oauth.id, targetApp : $scope.targetApp.name});
+            $scope.applicationComposite = OAuthClientCompositeApplicationScopeMapping.query({realm : realm.realm, oauth : oauth.id, targetApp : $scope.targetApp.name});
+        } else {
+            $scope.applicationRoles = null;
+            $scope.applicationMappings = null;
+            $scope.applicationComposite = null;
         }
-    });
+    }
 
     $scope.addRealmRole = function() {
-        $http.post(authUrl + '/admin/realms/' + realm.realm + '/oauth-clients/' + oauth.id + '/scope-mappings/realm',
-                $scope.selectedRealmRoles).success(function() {
-                for (var i = 0; i < $scope.selectedRealmRoles.length; i++) {
-                    var role = $scope.selectedRealmRoles[i];
-                    var idx = $scope.realmRoles.indexOf($scope.selectedRealmRoles[i]);
-                    if (idx != -1) {
-                        $scope.realmRoles.splice(idx, 1);
-                        $scope.realmMappings.push(role);
-                    }
-                }
-                $scope.selectRealmRoles = [];
-            });
+        $http.post(authUrl + '/admin/realms/' + realm.realm + '/oauth-clients/' + oauth.id + '/scope-mappings/realm', $scope.selectedRealmRoles)
+            .success(updateRealmRoles);
     };
 
     $scope.deleteRealmRole = function() {
         $http.delete(authUrl + '/admin/realms/' + realm.realm + '/oauth-clients/' + oauth.id +  '/scope-mappings/realm',
-            {data : $scope.selectedRealmMappings, headers : {"content-type" : "application/json"}}).success(function() {
-                for (var i = 0; i < $scope.selectedRealmMappings.length; i++) {
-                    var role = $scope.selectedRealmMappings[i];
-                    var idx = $scope.realmMappings.indexOf($scope.selectedRealmMappings[i]);
-                    if (idx != -1) {
-                        $scope.realmMappings.splice(idx, 1);
-                        $scope.realmRoles.push(role);
-                    }
-                }
-                $scope.selectedRealmMappings = [];
-            });
+            {data : $scope.selectedRealmMappings, headers : {"content-type" : "application/json"}})
+            .success(updateRealmRoles);
     };
 
     $scope.addApplicationRole = function() {
         $http.post(authUrl + '/admin/realms/' + realm.realm + '/oauth-clients/' + oauth.id +  '/scope-mappings/applications/' + $scope.targetApp.name,
-                $scope.selectedApplicationRoles).success(function() {
-                for (var i = 0; i < $scope.selectedApplicationRoles.length; i++) {
-                    var role = $scope.selectedApplicationRoles[i];
-                    var idx = $scope.applicationRoles.indexOf($scope.selectedApplicationRoles[i]);
-                    if (idx != -1) {
-                        $scope.applicationRoles.splice(idx, 1);
-                        $scope.applicationMappings.push(role);
-                    }
-                }
-                $scope.selectedApplicationRoles = [];
-            });
+            $scope.selectedApplicationRoles).success(updateAppRoles);
     };
 
     $scope.deleteApplicationRole = function() {
         $http.delete(authUrl + '/admin/realms/' + realm.realm + '/oauth-clients/' + oauth.id +  '/scope-mappings/applications/' + $scope.targetApp.name,
-            {data : $scope.selectedApplicationMappings, headers : {"content-type" : "application/json"}}).success(function() {
-                for (var i = 0; i < $scope.selectedApplicationMappings.length; i++) {
-                    var role = $scope.selectedApplicationMappings[i];
-                    var idx = $scope.applicationMappings.indexOf($scope.selectedApplicationMappings[i]);
-                    if (idx != -1) {
-                        $scope.applicationMappings.splice(idx, 1);
-                        $scope.applicationRoles.push(role);
-                    }
-                }
-                $scope.selectedApplicationMappings = [];
-            });
+            {data : $scope.selectedApplicationMappings, headers : {"content-type" : "application/json"}}).success(updateAppRoles);
     };
-
 
     $scope.changeApplication = function() {
-        if ($scope.targetApp) {
-            $scope.applicationRoles = ApplicationRole.query({realm : realm.realm, application : $scope.targetApp.name}, function() {
-                    $scope.applicationMappings = OAuthClientApplicationScopeMapping.query({realm : realm.realm, oauth : oauth.id, targetApp : $scope.targetApp.name}, function(){
-                        for (var i = 0; i < $scope.applicationMappings.length; i++) {
-                            var role = $scope.applicationMappings[i];
-                            for (var j = 0; j < $scope.applicationRoles.length; j++) {
-                                var realmRole = $scope.applicationRoles[j];
-                                if (realmRole.id == role.id) {
-                                    var idx = $scope.applicationRoles.indexOf(realmRole);
-                                    if (idx != -1) {
-                                        $scope.applicationRoles.splice(idx, 1);
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                    });
-
-                }
-            );
-        } else {
-            $scope.targetApp = null;
-        }
+        updateAppRoles();
     };
 
+    $scope.addRealmRole = function() {
+        $http.post(authUrl + '/admin/realms/' + realm.realm + '/oauth-clients/' + oauth.id + '/scope-mappings/realm',
+            $scope.selectedRealmRoles).success(updateRealmRoles);
+    };
 
+    $scope.deleteRealmRole = function() {
+        $http.delete(authUrl + '/admin/realms/' + realm.realm + '/oauth-clients/' + oauth.id +  '/scope-mappings/realm',
+            {data : $scope.selectedRealmMappings, headers : {"content-type" : "application/json"}}).success(updateRealmRoles);
+    };
 
+    $scope.addApplicationRole = function() {
+        $http.post(authUrl + '/admin/realms/' + realm.realm + '/oauth-clients/' + oauth.id +  '/scope-mappings/applications/' + $scope.targetApp.name,
+            $scope.selectedApplicationRoles).success(updateAppRoles);
+    };
+
+    $scope.deleteApplicationRole = function() {
+        $http.delete(authUrl + '/admin/realms/' + realm.realm + '/oauth-clients/' + oauth.id +  '/scope-mappings/applications/' + $scope.targetApp.name,
+            {data : $scope.selectedApplicationMappings, headers : {"content-type" : "application/json"}}).success(updateAppRoles);
+    };
+
+    updateRealmRoles();
 });
-
 
 module.controller('OAuthClientInstallationCtrl', function($scope, realm, installation, oauth, OAuthClientInstallation, $routeParams) {
     $scope.realm = realm;

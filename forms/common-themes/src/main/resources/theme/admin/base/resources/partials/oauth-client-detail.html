@@ -41,18 +41,24 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label class="col-sm-2 control-label" for="clientType">Client Type</label>
+                    <label class="col-sm-2 control-label" for="accessType">Access Type</label>
                     <div class="col-sm-4">
                         <div class="select-kc">
-                            <select id="clientType"
-                                    ng-change="changeClientType()"
-                                    ng-model="clientType"
-                                    ng-options="cType for cType in clientTypes">
+                            <select id="accessType"
+                                    ng-change="changeAccessType()"
+                                    ng-model="accessType"
+                                    ng-options="aType for aType in accessTypes">
                             </select>
                         </div>
                     </div>
                 </div>
-                <div class="form-group">
+                <div class="form-group clearfix block">
+                    <label class="col-sm-2 control-label" for="directGrantsOnly">Direct Grants Only</label>
+                    <div class="col-sm-4">
+                        <input ng-model="oauth.directGrantsOnly" name="directGrantsOnly" id="directGrantsOnly" onoffswitch />
+                    </div>
+                </div>
+                <div class="form-group" data-ng-hide="oauth.directGrantsOnly">
                     <label class="col-sm-2 control-label" for="newRedirectUri">Redirect URI <span class="required" data-ng-show="create">*</span></label>
                     <div class="col-sm-4 multiple" ng-repeat="redirectUri in oauth.redirectUris">
                         <div class="input-group kc-item-deletable">
@@ -75,7 +81,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="form-group">
+                <div class="form-group" data-ng-hide="create">
                     <label class="col-sm-2 control-label" for="newWebOrigin">Web Origin</label>
                     <div class="col-sm-4 multiple" ng-repeat="webOrigin in oauth.webOrigins">
                         <div class="input-group kc-item-deletable">

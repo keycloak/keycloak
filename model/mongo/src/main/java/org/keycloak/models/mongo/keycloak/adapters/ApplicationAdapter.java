@@ -98,6 +98,17 @@ public class ApplicationAdapter extends ClientAdapter<MongoApplicationEntity> im
     }
 
     @Override
+    public boolean isDirectGrantsOnly() {
+        return false;  // applications can't be grant only
+    }
+
+    @Override
+    public void setDirectGrantsOnly(boolean flag) {
+        // applications can't be grant only
+    }
+
+
+    @Override
     public RoleAdapter getRole(String name) {
         DBObject query = new QueryBuilder()
                 .and("name").is(name)

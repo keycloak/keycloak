@@ -114,10 +114,12 @@ public class RealmManager {
         RoleModel adminRole;
         if (realm.getName().equals(Config.getAdminRealm())) {
             adminRole = realm.getRole(AdminRoles.ADMIN);
-            realm.addScopeMapping(adminConsole, adminRole);
         } else {
-            // security roles are defined in application for the realm.
+            String realmAdminApplicationName = getRealmAdminApplicationName(realm);
+            ApplicationModel realmAdminApp = realm.getApplicationByName(realmAdminApplicationName);
+            adminRole = realmAdminApp.getRole(AdminRoles.REALM_ADMIN);
         }
+        realm.addScopeMapping(adminConsole, adminRole);
     }
 
     public String getMasterRealmAdminApplicationName(RealmModel realm) {

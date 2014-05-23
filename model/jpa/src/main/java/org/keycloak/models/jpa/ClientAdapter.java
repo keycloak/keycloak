@@ -18,7 +18,7 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ClientAdapter implements ClientModel {
+public abstract class ClientAdapter implements ClientModel {
     protected ClientEntity entity;
     protected RealmModel realm;
     protected EntityManager em;

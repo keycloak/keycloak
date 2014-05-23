@@ -489,9 +489,6 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 applications : function(ApplicationListLoader) {
                     return ApplicationListLoader();
-                },
-                roles : function(RoleListLoader) {
-                    return RoleListLoader();
                 }
             },
             controller : 'ApplicationScopeMappingCtrl'
@@ -603,9 +600,6 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 applications : function(ApplicationListLoader) {
                     return ApplicationListLoader();
-                },
-                roles : function(RoleListLoader) {
-                    return RoleListLoader();
                 }
             },
             controller : 'OAuthClientScopeMappingCtrl'

@@ -54,6 +54,9 @@ public interface ClientModel {
     boolean isPublicClient();
     void setPublicClient(boolean flag);
 
+    boolean isDirectGrantsOnly();
+    void setDirectGrantsOnly(boolean flag);
+
     RealmModel getRealm();
 
     /**

@@ -198,7 +198,7 @@ module.controller('ApplicationInstallationCtrl', function($scope, realm, applica
 module.controller('ApplicationDetailCtrl', function($scope, realm, application, Application, $location, Dialog, Notifications) {
     console.log('ApplicationDetailCtrl');
 
-    $scope.clientTypes = [
+    $scope.accessTypes = [
         "confidential",
         "public",
         "bearer-only"
@@ -208,28 +208,27 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
     $scope.create = !application.name;
     if (!$scope.create) {
         $scope.application= angular.copy(application);
-        $scope.clientType = $scope.clientTypes[0];
+        $scope.accessType = $scope.accessTypes[0];
         if (application.bearerOnly) {
-            $scope.clientType = $scope.clientTypes[2];
+            $scope.accessType = $scope.accessTypes[2];
         } else if (application.publicClient) {
-            $scope.clientType = $scope.clientTypes[1];
+            $scope.accessType = $scope.accessTypes[1];
         }
     } else {
         $scope.application = { enabled: true };
         $scope.application.webOrigins = [];
         $scope.application.redirectUris = [];
-        $scope.clientType = $scope.clientTypes[0];
+        $scope.accessType = $scope.accessTypes[0];
     }
 
-    $scope.changeClientType = function() {
-        console.log('Client Type: ' + $scope.clientType);
-        if ($scope.clientType == "confidential") {
+    $scope.changeAccessType = function() {
+        if ($scope.accessType == "confidential") {
             $scope.application.bearerOnly = false;
             $scope.application.publicClient = false;
-        } else if ($scope.clientType == "public") {
+        } else if ($scope.accessType == "public") {
             $scope.application.bearerOnly = false;
             $scope.application.publicClient = true;
-        } else if ($scope.clientType == "bearer-only") {
+        } else if ($scope.accessType == "bearer-only") {
             $scope.application.bearerOnly = true;
             $scope.application.publicClient = false;
         }
@@ -267,6 +266,10 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
             Notifications.error("You must specify at least one redirect uri");
         } else {
             if ($scope.create) {
+                if ($scope.application.webOrigins.length == 0) {
+                    // let rest api put in default webOrigins
+                    $scope.application.webOrigins = null;
+                }
                 Application.save({
                     realm: realm.realm,
                     application: ''

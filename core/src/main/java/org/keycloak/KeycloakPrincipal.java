@@ -9,20 +9,20 @@ import java.security.Principal;
  */
 public class KeycloakPrincipal implements Principal, Serializable {
     protected final String name;
-    protected final String surrogate;
+    protected final KeycloakSecurityContext context;
 
-    public KeycloakPrincipal(String name, String surrogate) {
+    public KeycloakPrincipal(String name, KeycloakSecurityContext context) {
         this.name = name;
-        this.surrogate = surrogate;
+        this.context = context;
+    }
+
+    public KeycloakSecurityContext getKeycloakSecurityContext() {
+        return context;
     }
 
     @Override
     public String getName() {
         return name;
-    }
-
-    public String getSurrogate() {
-        return surrogate;
     }
 
     @Override
@@ -33,16 +33,13 @@ public class KeycloakPrincipal implements Principal, Serializable {
         KeycloakPrincipal that = (KeycloakPrincipal) o;
 
         if (!name.equals(that.name)) return false;
-        if (surrogate != null ? !surrogate.equals(that.surrogate) : that.surrogate != null) return false;
 
         return true;
     }
 
     @Override
     public int hashCode() {
-        int result = name.hashCode();
-        result = 31 * result + (surrogate != null ? surrogate.hashCode() : 0);
-        return result;
+        return name.hashCode();
     }
 
     @Override

@@ -27,6 +27,9 @@ public class AccessTokenResponse {
     @JsonProperty("not-before-policy")
     protected int notBeforePolicy;
 
+    @JsonProperty("session-state")
+    protected String sessionState;
+
     public String getToken() {
         return token;
     }
@@ -73,5 +76,13 @@ public class AccessTokenResponse {
 
     public void setNotBeforePolicy(int notBeforePolicy) {
         this.notBeforePolicy = notBeforePolicy;
+    }
+
+    public String getSessionState() {
+        return sessionState;
+    }
+
+    public void setSessionState(String sessionState) {
+        this.sessionState = sessionState;
     }
 }

@@ -4,6 +4,7 @@
     "accessTokenLifespan": 3000,
     "accessCodeLifespan": 10,
     "accessCodeLifespanUserAction": 6000,
+    "passwordCredentialGrantAllowed": true,
     "sslNotRequired": true,
     "registrationAllowed": false,
     "social": false,
@@ -17,6 +18,17 @@
             "enabled": true,
             "email" : "bburke@redhat.com",
             "firstName": "Bill",
+            "lastName": "Burke",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ]
+        },
+        {
+            "username" : "admin",
+            "enabled": true,
+            "email" : "admin@admin.com",
+            "firstName": "Admin",
             "lastName": "Burke",
             "credentials" : [
                 { "type" : "password",
@@ -40,6 +52,10 @@
         {
             "username": "bburke@redhat.com",
             "roles": ["user"]
+        },
+        {
+            "username": "admin",
+            "roles": ["user","admin"]
         }
     ],
     "scopeMappings": [
@@ -123,6 +139,13 @@
                 "http://localhost:8080/oauth-client-cdi/*"
             ],
             "secret": "password"
+        },
+        {
+            "name": "admin-client",
+            "enabled": true,
+            "publicClient": true,
+            "directGrantsOnly": true
+
         }
     ],
     "applicationRoleMappings": {
@@ -131,7 +154,22 @@
                 "username": "bburke@redhat.com",
                 "roles": ["manage-account"]
             }
+        ],
+        "realm-management": [
+            {
+                "username": "admin",
+                "roles": ["realm-admin"]
+            }
+        ]
+    },
+    "applicationScopeMappings": {
+        "realm-management": [
+            {
+                "client": "admin-client",
+                "roles": ["realm-admin"]
+            }
         ]
     }
+
 
 }
