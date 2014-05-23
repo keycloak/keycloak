@@ -10,10 +10,12 @@ var logout = function(){
 
 
 angular.element(document).ready(function ($http) {
+    console.log("*** here");
     var keycloakAuth = new Keycloak('keycloak.json');
     auth.loggedIn = false;
 
-    keycloakAuth.init('login-required').success(function () {
+    keycloakAuth.init({ onLoad: 'login-required' }).success(function () {
+        console.log('here login');
         auth.loggedIn = true;
         auth.authz = keycloakAuth;
         auth.logoutUrl = keycloakAuth.authServerUrl + "/realms/" + keycloakAuth.realm + "/tokens/logout?redirect_uri=http://localhost:8080/angular-product/index.html";
@@ -38,20 +40,20 @@ module.controller('GlobalCtrl', function($scope, $http) {
 
     };
     $scope.loadRoles = function() {
-        $http.query("http://localhost-auth:8080/auth/admin/realms/" + keycloakAuth.realm + "/roles").success(function(data) {
+        $http.get("http://localhost-auth:8080/auth/admin/realms/" + auth.authz.realm + "/roles").success(function(data) {
             $scope.roles = angular.fromJson(data);
 
         });
 
     };
     $scope.addRole = function() {
-        $http.post("http://localhost-auth:8080/auth/admin/realms/" + keycloakAuth.realm + "/roles", {name: 'stuff'}).success(function() {
+        $http.post("http://localhost-auth:8080/auth/admin/realms/" + auth.authz.realm + "/roles", {name: 'stuff'}).success(function() {
             $scope.loadRoles();
         });
 
     };
     $scope.deleteRole = function() {
-        $http.delete("http://localhost-auth:8080/auth/admin/realms/" + keycloakAuth.realm + "/roles/stuff").success(function() {
+        $http.delete("http://localhost-auth:8080/auth/admin/realms/" + auth.authz.realm + "/roles/stuff").success(function() {
             $scope.loadRoles();
         });
 

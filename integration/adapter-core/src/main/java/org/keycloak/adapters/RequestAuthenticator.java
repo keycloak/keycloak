@@ -88,8 +88,8 @@ public abstract class RequestAuthenticator {
     }
 
     protected void completeAuthentication(OAuthRequestAuthenticator oauth) {
-        final KeycloakPrincipal principal = new KeycloakPrincipal(oauth.getToken().getSubject(), null);
         RefreshableKeycloakSecurityContext session = new RefreshableKeycloakSecurityContext(deployment, oauth.getTokenString(), oauth.getToken(), oauth.getIdTokenString(), oauth.getIdToken(), oauth.getRefreshToken());
+        final KeycloakPrincipal principal = new KeycloakPrincipal(oauth.getToken().getSubject(), session);
         completeOAuthAuthentication(principal, session);
     }
 
@@ -98,8 +98,8 @@ public abstract class RequestAuthenticator {
     protected abstract boolean isCached();
 
     protected void completeAuthentication(BearerTokenRequestAuthenticator bearer) {
-        final KeycloakPrincipal principal = new KeycloakPrincipal(bearer.getToken().getSubject(), bearer.getSurrogate());
         RefreshableKeycloakSecurityContext session = new RefreshableKeycloakSecurityContext(deployment, bearer.getTokenString(), bearer.getToken(), null, null, null);
+        final KeycloakPrincipal principal = new KeycloakPrincipal(bearer.getToken().getSubject(), session);
         completeBearerAuthentication(principal, session);
     }
 
