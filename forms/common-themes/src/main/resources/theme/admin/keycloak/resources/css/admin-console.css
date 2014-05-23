@@ -642,6 +642,10 @@ legend .kc-icon-collapse {
 
 /* Left-Rigth selector form */
 
+.changing-selectors .select-title label {
+    text-align: left;
+}
+
 .changing-selectors .select-title {
     display: inline-block;
 }
