@@ -133,7 +133,7 @@ module.controller('OAuthClientDetailCtrl', function($scope, realm, oauth, OAuthC
     }
 
     $scope.save = function() {
-        if (!$scope.oauth.bearerOnly && (!$scope.oauth.redirectUris || $scope.oauth.redirectUris.length == 0)) {
+        if (!$scope.oauth.redirectUris || $scope.oauth.redirectUris.length == 0) {
             Notifications.error("You must specify at least one redirect uri");
         } else {
             if ($scope.create) {
