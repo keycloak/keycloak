@@ -158,12 +158,10 @@ public class AccountTest {
         });
     }
 
-    /*
     @Test
     public void forever() throws Exception{
         while (true) Thread.sleep(5000);
     }
-    */
 
     @Test
     public void returnToAppFromQueryParam() {

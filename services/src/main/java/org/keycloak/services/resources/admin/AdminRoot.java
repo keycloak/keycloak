@@ -1,6 +1,9 @@
 package org.keycloak.services.resources.admin;
 
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.spi.DefaultOptionsMethodException;
+import org.jboss.resteasy.spi.HttpRequest;
+import org.jboss.resteasy.spi.HttpResponse;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.jboss.resteasy.spi.UnauthorizedException;
@@ -17,10 +20,12 @@ import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.TokenManager;
+import org.keycloak.services.resources.Cors;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
@@ -38,6 +43,12 @@ public class AdminRoot {
 
     @Context
     protected UriInfo uriInfo;
+
+    @Context
+    protected HttpRequest request;
+
+    @Context
+    protected HttpResponse response;
 
     protected AppAuthManager authManager;
     protected TokenManager tokenManager;
@@ -127,7 +138,7 @@ public class AdminRoot {
         if (consoleApp == null) {
             throw new NotFoundException("Could not find admin console application");
         }
-        Auth auth = new Auth(realm, authResult.getUser(), consoleApp);
+        Auth auth = new Auth(realm, token, authResult.getUser(), consoleApp);
         return auth;
 
 
@@ -143,10 +154,18 @@ public class AdminRoot {
 
     @Path("realms")
     public RealmsAdminResource getRealmsAdmin(@Context final HttpHeaders headers) {
+        if (request.getHttpMethod().equalsIgnoreCase("OPTIONS")) {
+            Response response = Cors.add(request, Response.ok()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().build();
+            throw new WebApplicationException(response);
+        }
+
         Auth auth = authenticateRealmAdminRequest(headers);
         if (auth != null) {
             logger.info("authenticated admin access for: " + auth.getUser().getLoginName());
         }
+
+        Cors.add(request).allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().build(response);
+
         RealmsAdminResource adminResource = new RealmsAdminResource(auth, tokenManager);
         ResteasyProviderFactory.getInstance().injectProperties(adminResource);
         //resourceContext.initResource(adminResource);

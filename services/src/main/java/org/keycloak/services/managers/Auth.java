@@ -35,6 +35,15 @@ public class Auth {
         this.client = client;
     }
 
+    public Auth(RealmModel realm, AccessToken token, UserModel user, ClientModel client) {
+        this.cookie = false;
+        this.token = token;
+        this.realm = realm;
+
+        this.user = user;
+        this.client = client;
+    }
+
     public boolean isCookie() {
         return cookie;
     }
