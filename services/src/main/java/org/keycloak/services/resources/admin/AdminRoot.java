@@ -1,11 +1,15 @@
 package org.keycloak.services.resources.admin;
 
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.spi.DefaultOptionsMethodException;
+import org.jboss.resteasy.spi.HttpRequest;
+import org.jboss.resteasy.spi.HttpResponse;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.jboss.resteasy.spi.UnauthorizedException;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -17,10 +21,12 @@ import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.TokenManager;
+import org.keycloak.services.resources.Cors;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
@@ -38,6 +44,12 @@ public class AdminRoot {
 
     @Context
     protected UriInfo uriInfo;
+
+    @Context
+    protected HttpRequest request;
+
+    @Context
+    protected HttpResponse response;
 
     protected AppAuthManager authManager;
     protected TokenManager tokenManager;
@@ -101,7 +113,7 @@ public class AdminRoot {
     }
 
 
-    protected Auth authenticateRealmAdminRequest(HttpHeaders headers) {
+    protected AdminAuth authenticateRealmAdminRequest(HttpHeaders headers) {
         String tokenString = authManager.extractAuthorizationHeaderToken(headers);
         if (tokenString == null) throw new UnauthorizedException("Bearer");
         JWSInput input = new JWSInput(tokenString);
@@ -123,14 +135,13 @@ public class AdminRoot {
             throw new UnauthorizedException("Bearer");
         }
 
-        ApplicationModel consoleApp = realm.getApplicationByName(Constants.ADMIN_CONSOLE_APPLICATION);
-        if (consoleApp == null) {
-            throw new NotFoundException("Could not find admin console application");
+        ClientModel client = realm.findClient(token.getIssuedFor());
+        if (client == null) {
+            throw new NotFoundException("Could not find client for authorization");
+
         }
-        Auth auth = new Auth(realm, authResult.getUser(), consoleApp);
-        return auth;
 
-
+        return new AdminAuth(realm, authResult.getToken(), authResult.getUser(), client);
     }
 
     public static UriBuilder realmsUrl(UriInfo uriInfo) {
@@ -143,10 +154,19 @@ public class AdminRoot {
 
     @Path("realms")
     public RealmsAdminResource getRealmsAdmin(@Context final HttpHeaders headers) {
-        Auth auth = authenticateRealmAdminRequest(headers);
+        if (request.getHttpMethod().equalsIgnoreCase("OPTIONS")) {
+            logger.info("*** CORS ADMIN PREFLIGHT!!!!");
+            Response response = Cors.add(request, Response.ok()).preflight().allowedMethods("GET", "PUT", "POST", "DELETE").auth().build();
+            throw new WebApplicationException(response);
+        }
+
+        AdminAuth auth = authenticateRealmAdminRequest(headers);
         if (auth != null) {
             logger.info("authenticated admin access for: " + auth.getUser().getLoginName());
         }
+
+        Cors.add(request).allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().build(response);
+
         RealmsAdminResource adminResource = new RealmsAdminResource(auth, tokenManager);
         ResteasyProviderFactory.getInstance().injectProperties(adminResource);
         //resourceContext.initResource(adminResource);

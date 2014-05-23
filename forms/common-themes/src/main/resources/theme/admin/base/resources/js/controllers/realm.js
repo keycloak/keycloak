@@ -7,69 +7,69 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, WhoAmI, Current, $
     $scope.logout = logout;
 
     $scope.auth = Auth;
+    WhoAmI.get(function(data) {
+        Auth.user = data;
+        Auth.loggedIn = true;
 
-    WhoAmI.get(function(user) {
-        Auth.user = user;
-    });
+        function getAccess(role) {
+            if (!Current.realm) {
+                return false;
+            }
 
-    function getAccess(role) {
-        if (!Current.realm) {
+            var realmAccess = Auth.user['realm_access'];
+            if (realmAccess) {
+                realmAccess = realmAccess[Current.realm.realm];
+                if (realmAccess) {
+                    return realmAccess.indexOf(role) >= 0;
+                }
+            }
             return false;
         }
 
-        var realmAccess = Auth.user && Auth.user['realm_access'];
-        if (realmAccess) {
-            realmAccess = realmAccess[Current.realm.realm];
-            if (realmAccess) {
-                return realmAccess.indexOf(role) >= 0;
+        $scope.access = {
+            createRealm: data.createRealm,
+
+            get viewRealm() {
+                return getAccess('view-realm') || this.manageRealm;
+            },
+
+            get viewApplications() {
+                return getAccess('view-applications') || this.manageApplications;
+            },
+
+            get viewClients() {
+                return getAccess('view-clients') || this.manageClients;
+            },
+
+            get viewUsers() {
+                return getAccess('view-users') || this.manageClients;
+            },
+
+            get viewAudit() {
+                return getAccess('view-audit') || this.manageClients;
+            },
+
+            get manageRealm() {
+                return getAccess('manage-realm');
+            },
+
+            get manageApplications() {
+                return getAccess('manage-applications');
+            },
+
+            get manageClients() {
+                return getAccess('manage-clients');
+            },
+
+            get manageUsers() {
+                return getAccess('manage-users');
+            },
+
+            get manageAudit() {
+                return getAccess('manage-audit');
             }
         }
-        return false;
-    }
-
-    $scope.access = {
-        createRealm: Auth.user && Auth.user.createRealm,
-
-        get viewRealm() {
-            return getAccess('view-realm') || this.manageRealm;
-        },
-
-        get viewApplications() {
-            return getAccess('view-applications') || this.manageApplications;
-        },
-
-        get viewClients() {
-            return getAccess('view-clients') || this.manageClients;
-        },
-
-        get viewUsers() {
-            return getAccess('view-users') || this.manageClients;
-        },
-
-        get viewAudit() {
-            return getAccess('view-audit') || this.manageClients;
-        },
-
-        get manageRealm() {
-            return getAccess('manage-realm');
-        },
-
-        get manageApplications() {
-            return getAccess('manage-applications');
-        },
-
-        get manageClients() {
-            return getAccess('manage-clients');
-        },
-
-        get manageUsers() {
-            return getAccess('manage-users');
-        },
-
-        get manageAudit() {
-            return getAccess('manage-audit');
-        }
-    }
+    });
 
     $scope.$watch(function() {
         return $location.path();
@@ -114,7 +114,7 @@ module.controller('RealmDropdownCtrl', function($scope, Realm, Current, Auth, $l
 
     $scope.showNav = function() {
         var show = Current.realms.length > 0;
-        return Auth.user && show;
+        return Auth.loggedIn && show;
     }
     $scope.refresh = function() {
          Current.refresh();

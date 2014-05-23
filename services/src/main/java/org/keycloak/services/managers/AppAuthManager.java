@@ -3,7 +3,6 @@ package org.keycloak.services.managers;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.UnauthorizedException;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.provider.ProviderSession;
 
 import javax.ws.rs.core.Cookie;
@@ -21,18 +20,16 @@ public class AppAuthManager extends AuthenticationManager {
         super(providerSession);
     }
 
-    public AuthResult authenticateRequest(RealmModel realm, UriInfo uriInfo, HttpHeaders headers) {
-        AuthResult authResult = authenticateIdentityCookie(realm, uriInfo, headers);
-        if (authResult != null) {
-            Cookie remember = headers.getCookies().get(AuthenticationManager.KEYCLOAK_REMEMBER_ME);
-            boolean rememberMe = remember != null;
-            // refresh the cookies!
-            createLoginCookie(realm, authResult.getUser(), authResult.getSession(), uriInfo, rememberMe);
-            if (rememberMe) createRememberMeCookie(realm, uriInfo);
-            return authResult;
-        } else {
-            return authenticateBearerToken(realm, uriInfo, headers);
-        }
+    @Override
+    public AuthResult authenticateIdentityCookie(RealmModel realm, UriInfo uriInfo, HttpHeaders headers) {
+        AuthResult authResult = super.authenticateIdentityCookie(realm, uriInfo, headers);
+        if (authResult == null) return null;
+        Cookie remember = headers.getCookies().get(AuthenticationManager.KEYCLOAK_REMEMBER_ME);
+        boolean rememberMe = remember != null;
+        // refresh the cookies!
+        createLoginCookie(realm, authResult.getUser(), authResult.getSession(), uriInfo, rememberMe);
+        if (rememberMe) createRememberMeCookie(realm, uriInfo);
+        return authResult;
     }
 
     public String extractAuthorizationHeaderToken(HttpHeaders headers) {

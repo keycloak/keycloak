@@ -1,5 +1,5 @@
 {
-    "realm": "cors-realm",
+    "realm": "cors",
     "enabled": true,
     "accessTokenLifespan": 3000,
     "accessCodeLifespan": 10,
@@ -57,5 +57,22 @@
                 "http://localhost:8080"
             ]
         }
-    ]
+    ],
+    "applicationRoleMappings": {
+        "realm-management": [
+            {
+                "username": "bburke@redhat.com",
+                "roles": ["realm-admin"]
+            }
+        ]
+    },
+    "applicationScopeMappings": {
+        "realm-management": [
+            {
+                "client": "angular-product",
+                "roles": ["realm-admin"]
+            }
+        ]
+    }
+
 }

@@ -76,21 +76,21 @@
                         </div>
                     </div>
                 </div>
-                <div class="form-group" data-ng-show="!application.bearerOnly">
+                <div class="form-group" data-ng-show="!application.bearerOnly && !create">
                     <label class="col-sm-2 control-label" for="baseUrl">Base URL</label>
                     <div class="col-sm-4">
                         <input class="form-control" type="text" name="baseUrl" id="baseUrl"
                                data-ng-model="application.baseUrl">
                     </div>
                 </div>
-                <div class="form-group">
+                <div class="form-group" data-ng-hide="create">
                     <label class="col-sm-2 control-label" for="adminUrl">Admin URL</label>
                     <div class="col-sm-4">
                         <input class="form-control" type="text" name="adminUrl" id="adminUrl"
                                data-ng-model="application.adminUrl">
                     </div>
                 </div>
-                <div class="form-group" data-ng-show="!application.bearerOnly">
+                <div class="form-group" data-ng-show="!application.bearerOnly && !create">
                     <label class="col-sm-2 control-label" for="newWebOrigin">Web Origin</label>
                     <div class="col-sm-4 multiple" ng-repeat="webOrigin in application.webOrigins">
                         <div class="input-group kc-item-deletable">

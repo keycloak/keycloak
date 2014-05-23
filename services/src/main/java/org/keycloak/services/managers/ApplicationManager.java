@@ -80,6 +80,26 @@ public class ApplicationManager {
                 logger.debugv("Application: {0} webOrigin: {1}", resourceRep.getName(), webOrigin);
                 applicationModel.addWebOrigin(webOrigin);
             }
+        } else {
+            // add origins from redirect uris
+            if (resourceRep.getRedirectUris() != null) {
+                Set<String> origins = new HashSet<String>();
+                for (String redirectUri : resourceRep.getRedirectUris()) {
+                    logger.info("add redirectUri to origin: " + redirectUri);
+                    if (redirectUri.startsWith("http:")) {
+                        URI uri = URI.create(redirectUri);
+                        String origin = uri.getScheme() + "://" + uri.getHost();
+                        if (uri.getPort() != -1) {
+                            origin += ":" + uri.getPort();
+                        }
+                        logger.debugv("adding default application origin: {0}" , origin);
+                        origins.add(origin);
+                    }
+                }
+                if (origins.size() > 0) {
+                    applicationModel.setWebOrigins(origins);
+                }
+            }
         }
 
         if (resourceRep.getDefaultRoles() != null) {

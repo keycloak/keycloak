@@ -534,7 +534,7 @@ public class TokenService {
     @OPTIONS
     @Produces("application/json")
     public Response accessCodeToTokenPreflight() {
-        logger.info("cors request from: " + request.getHttpHeaders().getRequestHeaders().getFirst("Origin"));
+        logger.debugv("cors request from: {0}" , request.getHttpHeaders().getRequestHeaders().getFirst("Origin"));
         return Cors.add(request, Response.ok()).auth().preflight().build();
     }
 

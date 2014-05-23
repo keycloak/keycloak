@@ -103,7 +103,8 @@ public class RealmManager {
     }
 
     protected void setupAdminConsole(RealmModel realm) {
-        ApplicationModel adminConsole = new ApplicationManager(this).createApplication(realm, Constants.ADMIN_CONSOLE_APPLICATION);
+        ApplicationModel adminConsole = realm.getApplicationByName(Constants.ADMIN_CONSOLE_APPLICATION);
+        if (adminConsole == null) adminConsole = new ApplicationManager(this).createApplication(realm, Constants.ADMIN_CONSOLE_APPLICATION);
         String baseUrl = contextPath + "/admin/" + realm.getName() + "/console";
         adminConsole.setBaseUrl(baseUrl + "/index.html");
         adminConsole.setEnabled(true);
@@ -113,12 +114,10 @@ public class RealmManager {
         RoleModel adminRole;
         if (realm.getName().equals(Config.getAdminRealm())) {
             adminRole = realm.getRole(AdminRoles.ADMIN);
+            realm.addScopeMapping(adminConsole, adminRole);
         } else {
-            ApplicationModel realmApp = realm.getApplicationByName(getRealmAdminApplicationName(realm));
-            adminRole = realmApp.getRole(AdminRoles.REALM_ADMIN);
-
+            // security roles are defined in application for the realm.
         }
-        realm.addScopeMapping(adminConsole, adminRole);
     }
 
     public String getMasterRealmAdminApplicationName(RealmModel realm) {
@@ -265,7 +264,11 @@ public class RealmManager {
 
         ApplicationManager applicationManager = new ApplicationManager(new RealmManager(identitySession));
 
-        ApplicationModel realmAdminApp = applicationManager.createApplication(realm, getRealmAdminApplicationName(realm));
+        String realmAdminApplicationName = getRealmAdminApplicationName(realm);
+        ApplicationModel realmAdminApp = realm.getApplicationByName(realmAdminApplicationName);
+        if (realmAdminApp == null) {
+            realmAdminApp = applicationManager.createApplication(realm, realmAdminApplicationName);
+        }
         RoleModel adminRole = realmAdminApp.addRole(AdminRoles.REALM_ADMIN);
         realmAdminApp.setBearerOnly(true);
 

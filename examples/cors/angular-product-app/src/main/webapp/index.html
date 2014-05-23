@@ -34,6 +34,24 @@
             </tbody>
         </table>
     </div>
+    <div>
+        <h2><span>Realm Roles</span></h2>
+        <button type="submit" data-ng-click="loadRoles()">load Roles</button>
+        <button type="submit" data-ng-click="addRole()">Add Role</button>
+        <button type="submit" data-ng-click="deleteRole()">Delete Role</button>
+        <table class="table" data-ng-show="roles.length > 0">
+            <thead>
+            <tr>
+                <th>Role Listing</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr data-ng-repeat="r in roles">
+                <td>{{r.name}}</a></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
 </div>
 </body>
 </html>

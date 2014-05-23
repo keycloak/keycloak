@@ -29,10 +29,30 @@ angular.element(document).ready(function ($http) {
 
 module.controller('GlobalCtrl', function($scope, $http) {
     $scope.products = [];
+    $scope.roles = [];
     $scope.reloadData = function() {
         $http.get("http://localhost-db:8080/database/products").success(function(data) {
             $scope.products = angular.fromJson(data);
 
+        });
+
+    };
+    $scope.loadRoles = function() {
+        $http.query("http://localhost-auth:8080/auth/admin/realms/" + keycloakAuth.realm + "/roles").success(function(data) {
+            $scope.roles = angular.fromJson(data);
+
+        });
+
+    };
+    $scope.addRole = function() {
+        $http.post("http://localhost-auth:8080/auth/admin/realms/" + keycloakAuth.realm + "/roles", {name: 'stuff'}).success(function() {
+            $scope.loadRoles();
+        });
+
+    };
+    $scope.deleteRole = function() {
+        $http.delete("http://localhost-auth:8080/auth/admin/realms/" + keycloakAuth.realm + "/roles/stuff").success(function() {
+            $scope.loadRoles();
         });
 
     };

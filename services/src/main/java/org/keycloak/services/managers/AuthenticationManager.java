@@ -221,7 +221,7 @@ public class AuthenticationManager {
                 return null;
             }
 
-            return new AuthResult(user, session);
+            return new AuthResult(user, session, token);
         } catch (VerificationException e) {
             logger.info("Failed to verify identity token", e);
         }
@@ -361,10 +361,12 @@ public class AuthenticationManager {
     public class AuthResult {
         private final UserModel user;
         private final UserSessionModel session;
+        private final AccessToken token;
 
-        public AuthResult(UserModel user, UserSessionModel session) {
+        public AuthResult(UserModel user, UserSessionModel session, AccessToken token) {
             this.user = user;
             this.session = session;
+            this.token = token;
         }
 
         public UserSessionModel getSession() {
@@ -373,6 +375,10 @@ public class AuthenticationManager {
 
         public UserModel getUser() {
             return user;
+        }
+
+        public AccessToken getToken() {
+            return token;
         }
     }
 
