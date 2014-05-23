@@ -6,6 +6,7 @@ The following examples requires Wildfly 8.0.0, JBoss EAP 6.x, or JBoss AS 7.1.1.
 * Transferring identity and role mappings via a special bearer token (Skeleton Key Token).
 * Bearer token authentication and authorization of JAX-RS services
 * Obtaining bearer tokens via the OAuth2 protocol
+* Interact with the Keycloak Admin REST Api
 
 There are multiple WAR projects.  These will all run on the same WildFly instance, but pretend each one is running on a different
 machine on the network or Internet.
@@ -13,6 +14,7 @@ machine on the network or Internet.
 * **customer-app-js** A pure HTML/Javascript application that does remote login using OAuth2 browser redirects with the auth server
 * **customer-app-cli** A pure CLI application that does remote login using OAuth2 browser redirects with the auth server
 * **product-app** A WAR application that does remote login using OAuth2 browser redirects with the auth server
+* **admin-access-app** A WAR application that does remote REST login to admin console to obtain a list of realm roles from Admin REST API
 * **database-service** JAX-RS services authenticated by bearer tokens only. The customer and product app invoke on it to get data
 * **third-party** Simple WAR that obtain a bearer token using OAuth2 using browser redirects to the auth-server.
 * **third-party-cdi** Simple CDI/JSF WAR that obtain a bearer token using OAuth2 using browser redirects to the auth-server.
@@ -183,6 +185,16 @@ This will open a shell that lets you specify a few different commands. For examp
 The CLI example has two alternative methods for login. When a browser is available the CLI opens the login form in a browser, and will automatically retrieve the return code by starting a 
 temporary web server on a free port. If a browser is not available the URL to login is displayed on the CLI. The user can copy this URL to another computer that has a browser available. The code
 is displayed to the user after login and the user has to copy this code back to the application.
+
+Step 8: Admin REST API
+----------------------------------
+Keycloak has a Admin REST API.  This example shows an application making a remove direct login to Keycloak to obtain a token
+then using that token to access the Admin REST API.
+
+[http://localhost:8080/admin-access](http://localhost:8080/admin-access)
+
+If you are already logged in, you will not be asked for a username and password, but you will be redirected to
+an oauth grant page.  This page asks you if you want to grant certain permissions to the third-part app.
 
 Admin Console
 ==========================

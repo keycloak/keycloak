@@ -77,16 +77,15 @@ module.controller('OAuthClientDetailCtrl', function($scope, realm, oauth, OAuthC
     $scope.realm = realm;
     $scope.create = !oauth.id;
 
-    $scope.clientTypes = [
+    $scope.accessTypes = [
         "confidential",
         "public"
     ];
 
-    $scope.changeClientType = function() {
-        console.log('Client Type: ' + $scope.clientType);
-        if ($scope.clientType == "confidential") {
+    $scope.changeAccessType = function() {
+        if ($scope.accessType == "confidential") {
             $scope.oauth.publicClient = false;
-        } else if ($scope.clientType == "public") {
+        } else if ($scope.accessType == "public") {
             $scope.oauth.publicClient = true;
         }
     };
@@ -94,15 +93,15 @@ module.controller('OAuthClientDetailCtrl', function($scope, realm, oauth, OAuthC
 
     if (!$scope.create) {
         $scope.oauth= angular.copy(oauth);
-        $scope.clientType = $scope.clientTypes[0];
+        $scope.accessType = $scope.accessTypes[0];
         if (oauth.publicClient) {
-            $scope.clientType = $scope.clientTypes[1];
+            $scope.accessType = $scope.accessTypes[1];
         }
     } else {
         $scope.oauth = { enabled: true };
         $scope.oauth.webOrigins = [];
         $scope.oauth.redirectUris = [];
-        $scope.clientType = $scope.clientTypes[0];
+        $scope.accessType = $scope.accessTypes[0];
     }
 
     $scope.$watch(function() {
@@ -133,7 +132,7 @@ module.controller('OAuthClientDetailCtrl', function($scope, realm, oauth, OAuthC
     }
 
     $scope.save = function() {
-        if (!$scope.oauth.redirectUris || $scope.oauth.redirectUris.length == 0) {
+        if (!$scope.oauth.directGrantsOnly && (!$scope.oauth.redirectUris || $scope.oauth.redirectUris.length == 0)) {
             Notifications.error("You must specify at least one redirect uri");
         } else {
             if ($scope.create) {

@@ -453,6 +453,7 @@ public class TokenManager {
                 String encodedToken = new JWSBuilder().jsonContent(accessToken).rsa256(realm.getPrivateKey());
                 res.setToken(encodedToken);
                 res.setTokenType("bearer");
+                res.setSessionState(accessToken.getSessionState());
                 if (accessToken.getExpiration() != 0) {
                     res.setExpiresIn(accessToken.getExpiration() - Time.currentTime());
                 }

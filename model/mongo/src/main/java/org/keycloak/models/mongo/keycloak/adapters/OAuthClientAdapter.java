@@ -19,4 +19,14 @@ public class OAuthClientAdapter extends ClientAdapter<MongoOAuthClientEntity> im
         getMongoEntity().setName(id);
         updateMongoEntity();
     }
+
+    @Override
+    public boolean isDirectGrantsOnly() {
+        return getMongoEntity().isDirectGrantsOnly();
+    }
+
+    @Override
+    public void setDirectGrantsOnly(boolean flag) {
+        getMongoEntity().setDirectGrantsOnly(flag);
+    }
 }

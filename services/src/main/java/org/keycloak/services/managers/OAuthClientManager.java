@@ -51,6 +51,7 @@ public class OAuthClientManager {
         if (rep.getName() != null) model.setClientId(rep.getName());
         if (rep.isEnabled() != null) model.setEnabled(rep.isEnabled());
         if (rep.isPublicClient() != null) model.setPublicClient(rep.isPublicClient());
+        if (rep.isDirectGrantsOnly() != null) model.setDirectGrantsOnly(rep.isDirectGrantsOnly());
         if (rep.getClaims() != null) {
             ClaimManager.setClaims(model, rep.getClaims());
         }
@@ -84,6 +85,7 @@ public class OAuthClientManager {
         rep.setName(model.getClientId());
         rep.setEnabled(model.isEnabled());
         rep.setPublicClient(model.isPublicClient());
+        rep.setDirectGrantsOnly(model.isDirectGrantsOnly());
         Set<String> redirectUris = model.getRedirectUris();
         if (redirectUris != null) {
             rep.setRedirectUris(new LinkedList<String>(redirectUris));

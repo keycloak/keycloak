@@ -17,6 +17,7 @@ public class OAuthClientRepresentation {
     protected ClaimRepresentation claims;
     protected Integer notBefore;
     protected Boolean publicClient;
+    protected Boolean directGrantsOnly;
 
 
     public String getId() {
@@ -97,5 +98,13 @@ public class OAuthClientRepresentation {
 
     public void setPublicClient(Boolean publicClient) {
         this.publicClient = publicClient;
+    }
+
+    public Boolean isDirectGrantsOnly() {
+        return directGrantsOnly;
+    }
+
+    public void setDirectGrantsOnly(Boolean directGrantsOnly) {
+        this.directGrantsOnly = directGrantsOnly;
     }
 }
