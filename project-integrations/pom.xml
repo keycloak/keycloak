@@ -3,7 +3,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.0-beta-1-SNAPSHOT</version>
+        <version>1.0-beta-1-20150523</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <name>Third-party Integration Parent</name>
