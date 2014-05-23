@@ -1,6 +1,5 @@
 'use strict';
 
-var indexUrl = window.location.href;
 var consoleBaseUrl = window.location.href;
 consoleBaseUrl = consoleBaseUrl.substring(0, consoleBaseUrl.indexOf("/console"));
 consoleBaseUrl = consoleBaseUrl + "/console";
@@ -23,14 +22,12 @@ var loadingTimer = -1;
 
 angular.element(document).ready(function ($http) {
     var keycloakAuth = new Keycloak(configUrl);
-    auth.loggedIn = false;
 
     keycloakAuth.onAuthLogout = function() {
         location.reload();
     }
 
     keycloakAuth.init({ onLoad: 'login-required' }).success(function () {
-        auth.loggedIn = true;
         auth.authz = keycloakAuth;
         module.factory('Auth', function() {
             return auth;
