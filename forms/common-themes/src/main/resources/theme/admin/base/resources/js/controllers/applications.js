@@ -267,6 +267,10 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
             Notifications.error("You must specify at least one redirect uri");
         } else {
             if ($scope.create) {
+                if ($scope.application.webOrigins.length == 0) {
+                    // let rest api put in default webOrigins
+                    $scope.application.webOrigins = null;
+                }
                 Application.save({
                     realm: realm.realm,
                     application: ''
