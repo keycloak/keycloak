@@ -48,6 +48,17 @@
                                     ng-options="r.name for r in realmMappings">
                             </select>
                         </div>
+                        <div class="middle-buttons">
+                            -
+                        </div>
+                        <div class="select-title">
+                            <label class="control-label" for="realm-composite">Effective Roles</label>
+                            <select id="realm-composite" class="form-control" multiple size=5
+                                    ng-disabled="true"
+                                    ng-model="dummymodel"
+                                    ng-options="r.name for r in realmComposite">
+                            </select>
+                        </div>
                     </div>
                 </div>
             </fieldset>
@@ -90,6 +101,17 @@
                                     ng-multiple="true"
                                     ng-model="selectedApplicationMappings"
                                     ng-options="r.name for r in applicationMappings">
+                            </select>
+                        </div>
+                        <div class="middle-buttons">
+                            -
+                        </div>
+                        <div class="select-title">
+                            <label class="control-label" for="app-composite">Effective Roles</label>
+                            <select id="app-composite" class="form-control" multiple size=5
+                                    ng-disabled="true"
+                                    ng-model="dummymodel"
+                                    ng-options="r.name for r in applicationComposite">
                             </select>
                         </div>
                     </div>
