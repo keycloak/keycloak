@@ -20,7 +20,9 @@
 
     "theme": {
         "default": "keycloak",
-        "dir": "${jboss.server.config.dir}/themes"
+        "folder": {
+          "dir": "${jboss.server.config.dir}/themes"
+        }
     },
 
     "login-forms": {

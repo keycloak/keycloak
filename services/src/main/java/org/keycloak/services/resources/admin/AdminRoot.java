@@ -9,6 +9,7 @@ import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.jboss.resteasy.spi.UnauthorizedException;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -112,7 +113,7 @@ public class AdminRoot {
     }
 
 
-    protected Auth authenticateRealmAdminRequest(HttpHeaders headers) {
+    protected AdminAuth authenticateRealmAdminRequest(HttpHeaders headers) {
         String tokenString = authManager.extractAuthorizationHeaderToken(headers);
         if (tokenString == null) throw new UnauthorizedException("Bearer");
         JWSInput input = new JWSInput(tokenString);
@@ -134,14 +135,13 @@ public class AdminRoot {
             throw new UnauthorizedException("Bearer");
         }
 
-        ApplicationModel consoleApp = realm.getApplicationByName(Constants.ADMIN_CONSOLE_APPLICATION);
-        if (consoleApp == null) {
-            throw new NotFoundException("Could not find admin console application");
+        ClientModel client = realm.findClient(token.getIssuedFor());
+        if (client == null) {
+            throw new NotFoundException("Could not find client for authorization");
+
         }
-        Auth auth = new Auth(realm, token, authResult.getUser(), consoleApp);
-        return auth;
 
-
+        return new AdminAuth(realm, authResult.getToken(), authResult.getUser(), client);
     }
 
     public static UriBuilder realmsUrl(UriInfo uriInfo) {
@@ -155,11 +155,12 @@ public class AdminRoot {
     @Path("realms")
     public RealmsAdminResource getRealmsAdmin(@Context final HttpHeaders headers) {
         if (request.getHttpMethod().equalsIgnoreCase("OPTIONS")) {
-            Response response = Cors.add(request, Response.ok()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().build();
+            logger.info("*** CORS ADMIN PREFLIGHT!!!!");
+            Response response = Cors.add(request, Response.ok()).preflight().allowedMethods("GET", "PUT", "POST", "DELETE").auth().build();
             throw new WebApplicationException(response);
         }
 
-        Auth auth = authenticateRealmAdminRequest(headers);
+        AdminAuth auth = authenticateRealmAdminRequest(headers);
         if (auth != null) {
             logger.info("authenticated admin access for: " + auth.getUser().getLoginName());
         }

@@ -12,7 +12,7 @@
     </div>
     <div class="collapse navbar-collapse navbar-collapse-1">
     		<div class="container">
-		        <ul class="nav navbar-nav navbar-utility" data-ng-show="auth.loggedIn">
+		        <ul class="nav navbar-nav navbar-utility" data-ng-show="auth.user">
 		            <li class="dropdown">
 		                <a data-toggle="dropdown" class="dropdown-toggle" href="#">
 		                    <span class="pficon pficon-user"></span>
@@ -36,9 +36,9 @@
 		                    </li>
 		                </ul>
 		            </li>
-		            <li class="active pull-right" data-ng-show="auth.loggedIn && access.createRealm">
+		            <li class="active pull-right" data-ng-show="auth.user && access.createRealm">
 		                <a class="button primary" href="#/create/realm" data-ng-class="path[0] == 'create' && path[1] == 'realm' && 'active'"
-		                   data-ng-show="auth.loggedIn">Add Realm</a>
+		                   data-ng-show="auth.user">Add Realm</a>
 		            </li>
 		        </ul>
     		</div>

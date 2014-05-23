@@ -145,9 +145,16 @@ public class AccountService {
         account = providers.getProvider(AccountProvider.class).setRealm(realm).setUriInfo(uriInfo);
 
         boolean passwordUpdateSupported = false;
-        AuthenticationManager.AuthResult authResult = authManager.authenticateRequest(realm, uriInfo, headers);
+        AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(realm, uriInfo, headers);
         if (authResult != null) {
-            auth = new Auth(realm, authResult.getUser(), application);
+            auth = new Auth(realm, authResult.getToken(), authResult.getUser(), application, true);
+        } else {
+            authResult = authManager.authenticateBearerToken(realm, uriInfo, headers);
+            if (authResult != null) {
+                auth = new Auth(realm, authResult.getToken(), authResult.getUser(), application, false);
+            }
+        }
+        if (authResult != null) {
             if (authResult.getSession() != null) {
                 authResult.getSession().associateClient(application);
             }
@@ -208,7 +215,7 @@ public class AccountService {
         } else if (types.contains(MediaType.APPLICATION_JSON_TYPE)) {
             requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
 
-            return Cors.add(request, Response.ok(ModelToRepresentation.toRepresentation(auth.getUser()))).auth().allowedOrigins(auth.getClient()).build();
+            return Cors.add(request, Response.ok(ModelToRepresentation.toRepresentation(auth.getUser()))).auth().allowedOrigins(auth.getToken()).build();
         } else {
             return Response.notAcceptable(Variant.VariantListBuilder.newInstance().mediaTypes(MediaType.TEXT_HTML_TYPE, MediaType.APPLICATION_JSON_TYPE).build()).build();
         }

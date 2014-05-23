@@ -107,7 +107,7 @@ module.controller('UserSessionsCtrl', function($scope, realm, user, sessions, Us
     $scope.logoutAll = function() {
         UserLogout.save({realm : realm.realm, user: user.username}, function () {
             Notifications.success('Logged out user in all applications');
-            UserSessions.get({realm: realm.realm, user: user.username}, function(updated) {
+            UserSessions.query({realm: realm.realm, user: user.username}, function(updated) {
                 $scope.sessions = updated;
             })
         });
@@ -116,9 +116,9 @@ module.controller('UserSessionsCtrl', function($scope, realm, user, sessions, Us
     $scope.logoutSession = function(sessionId) {
         console.log('here in logoutSession');
         UserSessionLogout.delete({realm : realm.realm, session: sessionId}, function() {
-            Notifications.success('Logged out session');
-            UserSessions.get({realm: realm.realm, user: user.username}, function(updated) {
+            UserSessions.query({realm: realm.realm, user: user.username}, function(updated) {
                 $scope.sessions = updated;
+                Notifications.success('Logged out session');
             })
         });
     }

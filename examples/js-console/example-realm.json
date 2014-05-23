@@ -48,12 +48,12 @@
             "name": "js-console",
             "enabled": true,
             "publicClient": true,
-            "baseUrl": "http://localhost/js-console",
+            "baseUrl": "http://localhost:8080/js-console",
             "redirectUris": [
-                "http://localhost/js-console/*"
+                "http://localhost:8080/js-console/*"
             ],
             "webOrigins": [
-                "http://localhost"
+                "http://localhost:8080"
             ]
         }
     ],

@@ -151,7 +151,7 @@ public class ModelImporter {
             }
         }
 
-        logger.infof("%d roles imported: ", roles);
+        logger.infof("%d roles imported: ", roles.size());
         if (logger.isDebugEnabled()) {
             logger.debug("Imported roles: " + roles);
         }
@@ -225,7 +225,7 @@ public class ModelImporter {
             addScopes(realm, client, clientEntity);
         }
 
-        logger.infof("OAuth clients imported: " + clients);
+        logger.info("OAuth clients imported: " + clients);
     }
 
     protected ApplicationModel findApplicationById(KeycloakSession keycloakSession, String applicationId) {

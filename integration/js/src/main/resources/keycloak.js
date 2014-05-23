@@ -29,6 +29,10 @@ var Keycloak = function (config) {
             if (initOptions.checkLoginIframeInterval) {
                 loginIframe.interval = initOptions.checkLoginIframeInterval;
             }
+
+            if (initOptions.onLoad === 'login-required') {
+                kc.loginRequired = true;
+            }
         }
 
         var promise = createPromise();
@@ -374,6 +378,9 @@ var Keycloak = function (config) {
         if (kc.token) {
             setToken(null, null);
             kc.onAuthLogout && kc.onAuthLogout();
+            if (kc.loginRequired) {
+                kc.login();
+            }
         }
     }
 
@@ -531,7 +538,7 @@ var Keycloak = function (config) {
             loginIframe.iframe = iframe;
         }
 
-        var src = getRealmUrl() + '/login-status-iframe.html?client_id=' + encodeURIComponent(kc.clientId);
+        var src = getRealmUrl() + '/login-status-iframe.html?client_id=' + encodeURIComponent(kc.clientId) + '&origin=' + window.location.origin;
         iframe.setAttribute('src', src );
         iframe.style.display = 'none';
         document.body.appendChild(iframe);

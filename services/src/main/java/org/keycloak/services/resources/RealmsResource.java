@@ -2,6 +2,7 @@ package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.jboss.resteasy.spi.UnauthorizedException;
@@ -98,7 +99,8 @@ public class RealmsResource {
     @Produces(MediaType.TEXT_HTML)
     @NoCache
     public String getLoginStatusIframe(final @PathParam("realm") String name,
-                                       @QueryParam("client_id") String client_id) {
+                                       @QueryParam("client_id") String client_id,
+                                       @QueryParam("origin") String origin) {
         logger.info("getLoginStatusIframe");
         AuthenticationManager auth = new AuthenticationManager(providers);
 
@@ -116,31 +118,33 @@ public class RealmsResource {
 
         InputStream is = getClass().getClassLoader().getResourceAsStream("login-status-iframe.html");
         if (is == null) throw new NotFoundException("Could not find login-status-iframe.html ");
-        Set<String> redirectUris = TokenService.resolveValidRedirects(uriInfo, client.getRedirectUris());
-        String origin = null;
-        for (String redirect : redirectUris) {
 
-            int index = redirect.indexOf("://");
-            if (index == -1) continue;
-            index = redirect.indexOf('/', index + 3);
-            if (index == -1) {
-                origin = redirect;
-            } else {
-                origin = redirect.substring(0, index);
+        boolean valid = false;
+        for (String o : client.getWebOrigins()) {
+            if (o.equals("*") || o.equals(origin)) {
+                valid = true;
+                break;
             }
-            break;
-
         }
-        String file = null;
+
+        for (String r : TokenService.resolveValidRedirects(uriInfo, client.getRedirectUris())) {
+            r = r.substring(0, r.indexOf('/', 8));
+            if (r.equals(origin)) {
+                valid = true;
+                break;
+            }
+        }
+
+        if (!valid) {
+            throw new BadRequestException("Invalid origin");
+        }
+
         try {
-            file = StreamUtil.readString(is);
+            String file = StreamUtil.readString(is);
+            return file.replace("ORIGIN", origin);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        file = file.replace("ORIGIN", origin);
-        //System.out.println(file);
-        return file;
-
     }
 
     @Path("{realm}/tokens")

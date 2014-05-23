@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.keycloak.models.ClientModel;
@@ -18,6 +19,7 @@ import org.keycloak.util.CollectionUtil;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class Cors {
+    protected static final Logger logger = Logger.getLogger(Cors.class);
 
     public static final long DEFAULT_MAX_AGE = TimeUnit.HOURS.toSeconds(1);
     public static final String DEFAULT_ALLOW_METHODS = "GET, HEAD, OPTIONS";
@@ -128,15 +130,18 @@ public class Cors {
         return builder.build();
     }
     public void build(HttpResponse response) {
+        logger.info("build CORS");
         String origin = request.getHttpHeaders().getRequestHeaders().getFirst(ORIGIN_HEADER);
         if (origin == null) {
+            logger.info("No origin returning");
             return;
         }
 
         if (!preflight && (allowedOrigins == null || !allowedOrigins.contains(origin))) {
+            logger.info("!preflight and no origin");
             return;
         }
-
+        logger.info("build CORS headers and return");
         response.getOutputHeaders().add(ACCESS_CONTROL_ALLOW_ORIGIN, origin);
 
         if (allowedMethods != null) {

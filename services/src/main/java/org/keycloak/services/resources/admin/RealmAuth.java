@@ -19,10 +19,10 @@ public class RealmAuth {
         APPLICATION, CLIENT, USER, REALM, AUDIT
     }
 
-    private Auth auth;
+    private AdminAuth auth;
     private ApplicationModel realmAdminApp;
 
-    public RealmAuth(Auth auth, ApplicationModel realmAdminApp) {
+    public RealmAuth(AdminAuth auth, ApplicationModel realmAdminApp) {
         this.auth = auth;
         this.realmAdminApp = realmAdminApp;
     }

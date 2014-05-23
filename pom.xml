@@ -12,6 +12,8 @@
     <packaging>pom</packaging>
 
     <properties>
+        <bouncycastle.version>1.46</bouncycastle.version>
+        <jackson.version>1.9.12</jackson.version>
         <keycloak.apache.httpcomponents.version>4.1.2</keycloak.apache.httpcomponents.version>
         <resteasy.version>2.3.7.Final</resteasy.version>
         <resteasy.version.eap.6.3>2.3.7.Final</resteasy.version.eap.6.3>
@@ -33,6 +35,13 @@
         <slf4j.version>1.5.10</slf4j.version>
         <jboss.version>7.1.1.Final</jboss.version>
         <wildfly.version>8.0.0.Final</wildfly.version>
+        <servlet.api.30.version>1.0.1.Final</servlet.api.30.version>
+        <google.zxing.version>2.2</google.zxing.version>
+        <google.client.version>1.14.1-beta</google.client.version>
+        <winzipaes.version>1.0.1</winzipaes.version>
+        <freemarker.version>2.3.19</freemarker.version>
+        <twitter4j.version>3.0.5</twitter4j.version>
+        <selenium.version>2.35.0</selenium.version>
 
         <!-- maven-compiler-plugin -->
         <maven.compiler.target>1.6</maven.compiler.target>
@@ -109,12 +118,12 @@
             <dependency>
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcprov-jdk16</artifactId>
-                <version>1.46</version>
+                <version>${bouncycastle.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcmail-jdk16</artifactId>
-                <version>1.46</version>
+                <version>${bouncycastle.version}</version>
             </dependency>
             <dependency>
                 <groupId>net.iharder</groupId>
@@ -179,27 +188,27 @@
             <dependency>
                 <groupId>org.codehaus.jackson</groupId>
                 <artifactId>jackson-core-asl</artifactId>
-                <version>1.9.12</version>
+                <version>${jackson.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.codehaus.jackson</groupId>
                 <artifactId>jackson-mapper-asl</artifactId>
-                <version>1.9.12</version>
+                <version>${jackson.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.codehaus.jackson</groupId>
                 <artifactId>jackson-xc</artifactId>
-                <version>1.9.12</version>
+                <version>${jackson.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.codehaus.jackson</groupId>
                 <artifactId>jackson-jaxrs</artifactId>
-                <version>1.9.12</version>
+                <version>${jackson.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.spec.javax.servlet</groupId>
                 <artifactId>jboss-servlet-api_3.0_spec</artifactId>
-                <version>1.0.1.Final</version>
+                <version>${servlet.api.30.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.spec.javax.servlet</groupId>
@@ -282,19 +291,19 @@
             <dependency>
                 <groupId>com.google.api-client</groupId>
                 <artifactId>google-api-client</artifactId>
-                <version>1.14.1-beta</version>
+                <version>${google.client.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.freemarker</groupId>
                 <artifactId>freemarker</artifactId>
-                <version>2.3.19</version>
+                <version>${freemarker.version}</version>
             </dependency>
 
             <!-- Google+ -->
             <dependency>
                 <groupId>com.google.http-client</groupId>
                 <artifactId>google-http-client-jackson</artifactId>
-                <version>1.14.1-beta</version>
+                <version>${google.client.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.apis</groupId>
@@ -306,19 +315,19 @@
             <dependency>
                 <groupId>org.twitter4j</groupId>
                 <artifactId>twitter4j-core</artifactId>
-                <version>3.0.5</version>
+                <version>${twitter4j.version}</version>
             </dependency>
 
 			<!-- QR Code Generator -->
             <dependency>
       			<groupId>com.google.zxing</groupId>
       			<artifactId>core</artifactId>
-      			<version>2.2</version>
+      			<version>${google.zxing.version}</version>
 			</dependency>
             <dependency>
       			<groupId>com.google.zxing</groupId>
       			<artifactId>javase</artifactId>
-      			<version>2.2</version>
+      			<version>${google.zxing.version}</version>
 			</dependency>
 
 			<!-- Email Test Servers -->
@@ -332,19 +341,19 @@
             <dependency>
                 <groupId>de.idyl</groupId>
                 <artifactId>winzipaes</artifactId>
-                <version>1.0.1</version>
+                <version>${winzipaes.version}</version>
             </dependency>
 
 			<!-- Selenium -->
 			<dependency>
 				<groupId>org.seleniumhq.selenium</groupId>
 				<artifactId>selenium-java</artifactId>
-				<version>2.35.0</version>
+				<version>${selenium.version}</version>
   			</dependency>
 			<dependency>
 				<groupId>org.seleniumhq.selenium</groupId>
 				<artifactId>selenium-chrome-driver</artifactId>
-				<version>2.35.0</version>
+				<version>${selenium.version}</version>
                 <scope>test</scope>
 			</dependency>
             <dependency>

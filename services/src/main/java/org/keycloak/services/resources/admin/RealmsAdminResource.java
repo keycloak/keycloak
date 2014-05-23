@@ -46,10 +46,10 @@ import java.util.Map;
  */
 public class RealmsAdminResource {
     protected static final Logger logger = Logger.getLogger(RealmsAdminResource.class);
-    protected Auth auth;
+    protected AdminAuth auth;
     protected TokenManager tokenManager;
 
-    public RealmsAdminResource(Auth auth, TokenManager tokenManager) {
+    public RealmsAdminResource(AdminAuth auth, TokenManager tokenManager) {
         this.auth = auth;
         this.tokenManager = tokenManager;
     }
