@@ -263,10 +263,10 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
     }
 
     $scope.save = function() {
-        if ($scope.create) {
-            if (!$scope.application.bearerOnly && (!$scope.application.redirectUris || $scope.application.redirectUris.length == 0)) {
-                Notifications.error("You must specify at least one redirect uri");
-            } else {
+        if (!$scope.application.bearerOnly && (!$scope.application.redirectUris || $scope.application.redirectUris.length == 0)) {
+            Notifications.error("You must specify at least one redirect uri");
+        } else {
+            if ($scope.create) {
                 Application.save({
                     realm: realm.realm,
                     application: ''
@@ -277,16 +277,16 @@ module.controller('ApplicationDetailCtrl', function($scope, realm, application, 
                     $location.url("/realms/" + realm.realm + "/applications/" + id);
                     Notifications.success("The application has been created.");
                 });
+            } else {
+                Application.update({
+                    realm : realm.realm,
+                    application : application.name
+                }, $scope.application, function() {
+                    $scope.changed = false;
+                    application = angular.copy($scope.application);
+                    Notifications.success("Your changes have been saved to the application.");
+                });
             }
-        } else {
-            Application.update({
-                realm : realm.realm,
-                application : application.name
-            }, $scope.application, function() {
-                $scope.changed = false;
-                application = angular.copy($scope.application);
-                Notifications.success("Your changes have been saved to the application.");
-            });
         }
     };
 

@@ -133,25 +133,29 @@ module.controller('OAuthClientDetailCtrl', function($scope, realm, oauth, OAuthC
     }
 
     $scope.save = function() {
-        if ($scope.create) {
-            OAuthClient.save({
-                realm: realm.realm
-            }, $scope.oauth, function (data, headers) {
-                $scope.changed = false;
-                var l = headers().location;
-                var id = l.substring(l.lastIndexOf("/") + 1);
-                $location.url("/realms/" + realm.realm + "/oauth-clients/" + id);
-                Notifications.success("The oauth client has been created.");
-            });
+        if (!$scope.oauth.bearerOnly && (!$scope.oauth.redirectUris || $scope.oauth.redirectUris.length == 0)) {
+            Notifications.error("You must specify at least one redirect uri");
         } else {
-            OAuthClient.update({
-                realm : realm.realm,
-                id : oauth.id
-            }, $scope.oauth, function() {
-                $scope.changed = false;
-                oauth = angular.copy($scope.oauth);
-                Notifications.success("Your changes have been saved to the oauth client.");
-            });
+            if ($scope.create) {
+                OAuthClient.save({
+                    realm: realm.realm
+                }, $scope.oauth, function (data, headers) {
+                    $scope.changed = false;
+                    var l = headers().location;
+                    var id = l.substring(l.lastIndexOf("/") + 1);
+                    $location.url("/realms/" + realm.realm + "/oauth-clients/" + id);
+                    Notifications.success("The oauth client has been created.");
+                });
+            } else {
+                OAuthClient.update({
+                    realm : realm.realm,
+                    id : oauth.id
+                }, $scope.oauth, function() {
+                    $scope.changed = false;
+                    oauth = angular.copy($scope.oauth);
+                    Notifications.success("Your changes have been saved to the oauth client.");
+                });
+            }
         }
     };
 
