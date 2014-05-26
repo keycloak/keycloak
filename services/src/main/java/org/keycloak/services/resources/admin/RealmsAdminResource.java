@@ -74,7 +74,7 @@ public class RealmsAdminResource {
     @GET
     @NoCache
     @Produces("application/json")
-    public List<RealmRepresentation> getRealms() {
+     public List<RealmRepresentation> getRealms() {
         RealmManager realmManager = new RealmManager(session);
         List<RealmRepresentation> reps = new ArrayList<RealmRepresentation>();
         if (auth.getRealm().equals(realmManager.getKeycloakAdminstrationRealm())) {
@@ -89,6 +89,7 @@ public class RealmsAdminResource {
         logger.debug(("getRealms()"));
         return reps;
     }
+
 
     protected void addRealmRep(List<RealmRepresentation> reps, RealmModel realm, ApplicationModel realmManagementApplication) {
         if (auth.hasAppRole(realmManagementApplication, AdminRoles.MANAGE_REALM)) {

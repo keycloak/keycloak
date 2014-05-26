@@ -80,7 +80,7 @@ public class AdminRoot {
         ).build();
     }
 
-    @Path("index.html")
+    @Path("index.{hack:html}")
     @GET
     public Response masterRealmAdminConsoleRedirectHtml() {
         return masterRealmAdminConsoleRedirect();

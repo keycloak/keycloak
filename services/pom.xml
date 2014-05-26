@@ -197,5 +197,30 @@
             </plugin>
         </plugins>
     </build>
-
+    <reporting>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.7</version>
+                <reportSets>
+                    <reportSet>
+                        <configuration>
+                            <doclet>com.lunatech.doclets.jax.jaxrs.JAXRSDoclet</doclet>
+                            <docletArtifacts>
+                                <docletArtifact>
+                                    <groupId>com.lunatech.jax-doclets</groupId>
+                                    <artifactId>doclets</artifactId>
+                                    <version>0.10.0</version>
+                                </docletArtifact>
+                            </docletArtifacts>
+                        </configuration>
+                        <reports>
+                            <report>javadoc</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
+        </plugins>
+    </reporting>
 </project>
