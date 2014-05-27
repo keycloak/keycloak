@@ -4,8 +4,23 @@
         <title>Migrating from 1.0 Alpha 4 to Beta 1</title>
         <itemizedlist>
             <listitem>
+                DB Schema has changed.  We have added export of the database to Beta 1, but not the ability to import
+                the database from older versions. This will be supported in future releases.
+            </listitem>
+            <listitem>
                 For all clients except bearer-only applications, you must specify at least one redirect uri.  Keycloak
                 will not allow you to log in unless you have specified a valid redirect uri for that application.
+            </listitem>
+            <listitem>
+                Resource Owner Password Credentials flow is now disabled by default. It can be enabled by setting the toggle
+                for <literal>Direct Grant API</literal> <literal>ON</literal> under realm config in the admin console.
+            </listitem>
+            <listitem>
+                Configuration is now done through <literal>standalone/configuration/keycloak-server.json</literal>. This
+                should mainly affect those that use MongoDB.
+            </listitem>
+            <listitem>
+                JavaScript adapter has been refactored. See the <link linkend='javascript-adapter'>JavaScript adapter</link> section for more details.
             </listitem>
         </itemizedlist>
     </sect1>
