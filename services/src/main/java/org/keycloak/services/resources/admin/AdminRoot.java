@@ -122,6 +122,7 @@ public class AdminRoot {
      * @param name Realm name (not id!)
      * @return
      */
+    @Path("{realm}/console")
     public AdminConsole getAdminConsole(final @PathParam("realm") String name) {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = locateRealm(name, realmManager);
