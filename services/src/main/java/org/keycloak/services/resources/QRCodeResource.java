@@ -18,11 +18,23 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 /**
+ * Create a barcode image
+ *
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 @Path("/qrcode")
 public class QRCodeResource {
 
+    /**
+     * Create a bar code image
+     *
+     * @param contents
+     * @param size
+     * @return
+     * @throws ServletException
+     * @throws IOException
+     * @throws WriterException
+     */
     @GET
     @Produces("image/png")
     public Response createQrCode(@QueryParam("contents") String contents, @QueryParam("size") String size) throws ServletException, IOException, WriterException {

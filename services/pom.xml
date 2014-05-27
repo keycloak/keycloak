@@ -195,7 +195,58 @@
                     <target>${maven.compiler.target}</target>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.9.1</version>
+                <executions>
+                    <!--
+                    <execution>
+                        <id>generate-service-docs</id>
+                        <phase>generate-resources</phase>
+                        <configuration>
+                            <doclet>com.hypnoticocelot.jaxrs.doclet.ServiceDoclet</doclet>
+                            <docletArtifact>
+                                <groupId>com.hypnoticocelot</groupId>
+                                <artifactId>jaxrs-doclet</artifactId>
+                                <version>0.0.4-SNAPSHOT</version>
+                            </docletArtifact>
+                            <reportOutputDirectory>swagger</reportOutputDirectory>
+                            <useStandardDocletOptions>false</useStandardDocletOptions>
+                            <additionalparam>-apiVersion 1 -docBasePath /apidocs -apiBasePath /</additionalparam>
+                        </configuration>
+                        <goals>
+                            <goal>javadoc</goal>
+                        </goals>
+                    </execution>
+                    -->
+                    <execution>
+                        <id>generate-service-docs</id>
+                        <phase>generate-resources</phase>
+                        <configuration>
+                            <doclet>com.lunatech.doclets.jax.jaxrs.JAXRSDoclet</doclet>
+                            <docletArtifacts>
+                                <docletArtifact>
+                                    <groupId>com.lunatech.jax-doclets</groupId>
+                                    <artifactId>doclets</artifactId>
+                                    <version>0.10.0</version>
+                                </docletArtifact>
+                            </docletArtifacts>
+                            <detectOfflineLinks>false</detectOfflineLinks>
+                            <offlineLinks>
+                                <offlineLink>
+                                    <url>../javadocs</url>
+                                    <location>${project.basedir}/../target/site/apidocs</location>
+                                </offlineLink>
+                            </offlineLinks>
+                            <additionalparam>-disablejavascriptexample</additionalparam>
+                        </configuration>
+                        <goals>
+                            <goal>javadoc</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
-
 </project>

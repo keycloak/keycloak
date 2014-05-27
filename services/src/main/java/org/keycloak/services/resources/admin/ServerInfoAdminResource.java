@@ -26,6 +26,11 @@ public class ServerInfoAdminResource {
     @Context
     private ProviderSession providers;
 
+    /**
+     * Returns a list of themes, social providers, auth providers, and audit listeners available on this server
+     *
+     * @return
+     */
     @GET
     public ServerInfoRepresentation getInfo() {
         ServerInfoRepresentation info = new ServerInfoRepresentation();

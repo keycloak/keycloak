@@ -45,6 +45,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * Base resource class for managing one particular application of a realm.
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
@@ -73,11 +75,21 @@ public class ApplicationResource {
         auth.init(RealmAuth.Resource.APPLICATION);
     }
 
+    /**
+     * base path for managing allowed application claims
+     *
+     * @return
+     */
     @Path("claims")
     public ClaimResource getClaimResource() {
         return new ClaimResource(application, auth);
     }
 
+    /**
+     * Update the application.
+     * @param rep
+     * @return
+     */
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     public Response update(final ApplicationRepresentation rep) {
@@ -93,6 +105,11 @@ public class ApplicationResource {
     }
 
 
+    /**
+     * Get representation of the application.
+     *
+     * @return
+     */
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
@@ -104,6 +121,12 @@ public class ApplicationResource {
     }
 
 
+    /**
+     * Return keycloak.json file for this application to be used to configure the adapter of that application.
+     *
+     * @return
+     * @throws IOException
+     */
     @GET
     @NoCache
     @Path("installation/json")
@@ -118,6 +141,12 @@ public class ApplicationResource {
         return JsonSerialization.mapper.writerWithDefaultPrettyPrinter().writeValueAsString(rep);
     }
 
+    /**
+     * Return XML that can be included in the JBoss/Wildfly Keycloak subsystem to configure the adapter of that application.
+     *
+     * @return
+     * @throws IOException
+     */
     @GET
     @NoCache
     @Path("installation/jboss")
@@ -129,6 +158,10 @@ public class ApplicationResource {
         return applicationManager.toJBossSubsystemConfig(realm, application, getKeycloakApplication().getBaseUri(uriInfo));
     }
 
+    /**
+     * Delete this application.
+     *
+     */
     @DELETE
     @NoCache
     public void deleteApplication() {
@@ -137,6 +170,12 @@ public class ApplicationResource {
         realm.removeApplication(application.getId());
     }
 
+
+    /**
+     * Generates a new secret for this application
+     *
+     * @return
+     */
     @Path("client-secret")
     @POST
     @Produces("application/json")
@@ -150,6 +189,11 @@ public class ApplicationResource {
         return rep;
     }
 
+    /**
+     * Get the secret of this application
+     *
+     * @return
+     */
     @Path("client-secret")
     @GET
     @Produces("application/json")
@@ -162,7 +206,11 @@ public class ApplicationResource {
         return ModelToRepresentation.toRepresentation(model);
     }
 
-
+    /**
+     * Base path for managing the scope mappings for this application
+     *
+     * @return
+     */
     @Path("scope-mappings")
     public ScopeMappedResource getScopeMappedResource() {
         return new ScopeMappedResource(realm, auth, application, session);
@@ -173,6 +221,12 @@ public class ApplicationResource {
         return new RoleContainerResource(realm, auth, application);
     }
 
+    /**
+     * Returns set of allowed origin.  This is used for CORS requests.  Access tokens will have
+     * their allowedOrigins claim set to this value for tokens created for this application.
+     *
+     * @return
+     */
     @Path("allowed-origins")
     @GET
     @Produces("application/json")
@@ -183,6 +237,12 @@ public class ApplicationResource {
         return application.getWebOrigins();
     }
 
+    /**
+     * Change the set of allowed origins.   This is used for CORS requests.  Access tokens will have
+     * their allowedOrigins claim set to this value for tokens created for this application.
+     *
+     * @param allowedOrigins
+     */
     @Path("allowed-origins")
     @PUT
     @Consumes("application/json")
@@ -193,6 +253,12 @@ public class ApplicationResource {
         application.setWebOrigins(allowedOrigins);
     }
 
+    /**
+     * Remove set of allowed origins from current allowed origins list.  This is used for CORS requests.  Access tokens will have
+     * their allowedOrigins claim set to this value for tokens created for this application.
+     *
+     * @param allowedOrigins
+     */
     @Path("allowed-origins")
     @DELETE
     @Consumes("application/json")
@@ -205,6 +271,10 @@ public class ApplicationResource {
         }
     }
 
+    /**
+     * If the application has an admin URL, push the application's revocation policy to it.
+     *
+     */
     @Path("push-revocation")
     @POST
     public void pushRevocation() {
@@ -212,6 +282,12 @@ public class ApplicationResource {
         new ResourceAdminManager().pushApplicationRevocationPolicy(uriInfo.getRequestUri(), realm, application);
     }
 
+    /**
+     * If the application has an admin URL, query it directly for session stats.
+     *
+     * @param users whether to include users logged in.
+     * @return
+     */
     @Path("session-stats")
     @GET
     @NoCache
@@ -235,6 +311,15 @@ public class ApplicationResource {
         return stats;
     }
 
+    /**
+     * Number of user sessions associated with this application
+     *
+     * {
+     *     "count": number
+     * }
+     *
+     * @return
+     */
     @Path("session-count")
     @GET
     @NoCache
@@ -246,6 +331,11 @@ public class ApplicationResource {
         return map;
     }
 
+    /**
+     * Return a list of user sessions associated with this application
+     *
+     * @return
+     */
     @Path("user-sessions")
     @GET
     @NoCache
@@ -260,6 +350,10 @@ public class ApplicationResource {
         return sessions;
     }
 
+    /**
+     * If the application has an admin URL, invalidate all sessions associated with that application directly.
+     *
+     */
     @Path("logout-all")
     @POST
     public void logoutAll() {
@@ -267,6 +361,10 @@ public class ApplicationResource {
         new ResourceAdminManager().logoutApplication(uriInfo.getRequestUri(), realm, application, null, null);
     }
 
+    /**
+     * If the application has an admin URL, invalidate the sessions for a particular user directly.
+     *
+     */
     @Path("logout-user/{username}")
     @POST
     public void logout(final @PathParam("username") String username) {

@@ -42,6 +42,11 @@ public class RoleContainerResource extends RoleResource {
         this.roleContainer = roleContainer;
     }
 
+    /**
+     * List all roles for this realm or application
+     *
+     * @return
+     */
     @GET
     @NoCache
     @Produces("application/json")
@@ -56,6 +61,13 @@ public class RoleContainerResource extends RoleResource {
         return roles;
     }
 
+    /**
+     * Create a new role for this realm or application
+     *
+     * @param uriInfo
+     * @param rep
+     * @return
+     */
     @POST
     @Consumes("application/json")
     public Response createRole(final @Context UriInfo uriInfo, final RoleRepresentation rep) {
@@ -70,6 +82,12 @@ public class RoleContainerResource extends RoleResource {
         }
     }
 
+    /**
+     * Get a role by name
+     *
+     * @param roleName role's name (not id!)
+     * @return
+     */
     @Path("{role-name}")
     @GET
     @NoCache
@@ -84,6 +102,11 @@ public class RoleContainerResource extends RoleResource {
         return getRole(roleModel);
     }
 
+    /**
+     * Delete a role by name
+     *
+     * @param roleName role's name (not id!)
+     */
     @Path("{role-name}")
     @DELETE
     @NoCache
@@ -97,6 +120,13 @@ public class RoleContainerResource extends RoleResource {
         deleteRole(role);
     }
 
+    /**
+     * Update a role by name
+     *
+     * @param roleName role's name (not id!)
+     * @param rep
+     * @return
+     */
     @Path("{role-name}")
     @PUT
     @Consumes("application/json")
@@ -115,6 +145,12 @@ public class RoleContainerResource extends RoleResource {
         }
     }
 
+    /**
+     * Add a composite to this role
+     *
+     * @param roleName role's name (not id!)
+     * @param roles
+     */
     @Path("{role-name}/composites")
     @POST
     @Consumes("application/json")
@@ -128,6 +164,12 @@ public class RoleContainerResource extends RoleResource {
         addComposites(roles, role);
     }
 
+    /**
+     * List composites of this role
+     *
+     * @param roleName role's name (not id!)
+     * @return
+     */
     @Path("{role-name}/composites")
     @GET
     @NoCache
@@ -142,6 +184,12 @@ public class RoleContainerResource extends RoleResource {
         return getRoleComposites(role);
     }
 
+    /**
+     * Get realm-level roles of this role's composite
+     *
+     * @param roleName role's name (not id!)
+     * @return
+     */
     @Path("{role-name}/composites/realm")
     @GET
     @NoCache
@@ -156,6 +204,13 @@ public class RoleContainerResource extends RoleResource {
         return getRealmRoleComposites(role);
     }
 
+    /**
+     * An app-level roles for a specific app for this role's composite
+     *
+     * @param roleName role's name (not id!)
+     * @param appName
+     * @return
+     */
     @Path("{role-name}/composites/application/{app}")
     @GET
     @NoCache
@@ -172,6 +227,12 @@ public class RoleContainerResource extends RoleResource {
     }
 
 
+    /**
+     * Remove roles from this role's composite
+     *
+     * @param roleName role's name (not id!)
+     * @param roles roles to remove
+     */
     @Path("{role-name}/composites")
     @DELETE
     @Consumes("application/json")

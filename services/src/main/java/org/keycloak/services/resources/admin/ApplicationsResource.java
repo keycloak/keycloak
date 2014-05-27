@@ -27,6 +27,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * Base resource class for managing a realm's applications.
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
@@ -45,6 +47,11 @@ public class ApplicationsResource {
         auth.init(RealmAuth.Resource.APPLICATION);
     }
 
+    /**
+     * List of applications belonging to this realm.
+     *
+     * @return
+     */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
@@ -68,6 +75,13 @@ public class ApplicationsResource {
         return rep;
     }
 
+    /**
+     * Create a new application.  Application name must be unique!
+     *
+     * @param uriInfo
+     * @param rep
+     * @return
+     */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createApplication(final @Context UriInfo uriInfo, final ApplicationRepresentation rep) {
@@ -82,6 +96,12 @@ public class ApplicationsResource {
         }
     }
 
+    /**
+     * Base path for managing a specific application.
+     *
+     * @param name
+     * @return
+     */
     @Path("{app-name}")
     public ApplicationResource getApplication(final @PathParam("app-name") String name) {
         ApplicationModel applicationModel = realm.getApplicationByName(name);

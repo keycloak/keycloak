@@ -12,6 +12,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 /**
+ * Base resource class for managing allowed claims for an application or oauth client
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
@@ -24,6 +26,11 @@ public class ClaimResource {
         this.auth = auth;
     }
 
+    /**
+     * Get the claims a client is allowed to ask for
+     *
+     * @return
+     */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public ClaimRepresentation getClaims() {
@@ -31,6 +38,11 @@ public class ClaimResource {
         return ModelToRepresentation.toRepresentation(model);
     }
 
+    /**
+     * Set the cliams a client is allowed to ask for.
+     *
+     * @param rep
+     */
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     public void updateClaims(ClaimRepresentation rep) {

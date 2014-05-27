@@ -7,11 +7,18 @@ import javax.ws.rs.core.Response;
 import java.io.InputStream;
 
 /**
+ * Get keycloak.js file for javascript clients
+ *
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 @Path("/js")
 public class JsResource {
 
+    /**
+     * Get keycloak.js file for javascript clients
+     *
+     * @return
+     */
     @GET
     @Path("/keycloak.js")
     @Produces("text/javascript")

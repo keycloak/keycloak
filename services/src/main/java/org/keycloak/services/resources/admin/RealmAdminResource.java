@@ -41,6 +41,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * Base resource class for the admin REST api of one realm
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
@@ -72,6 +74,11 @@ public class RealmAdminResource {
         auth.init(RealmAuth.Resource.REALM);
     }
 
+    /**
+     * Base path for managing applications under this realm.
+     *
+     * @return
+     */
     @Path("applications")
     public ApplicationsResource getApplications() {
         ApplicationsResource applicationsResource = new ApplicationsResource(realm, auth);
@@ -80,6 +87,11 @@ public class RealmAdminResource {
         return applicationsResource;
     }
 
+    /**
+     * base path for managing oauth clients in this realm
+     *
+     * @return
+     */
     @Path("oauth-clients")
     public OAuthClientsResource getOAuthClients() {
         OAuthClientsResource oauth = new OAuthClientsResource(realm, auth, session);
@@ -88,11 +100,22 @@ public class RealmAdminResource {
         return oauth;
     }
 
+    /**
+     * base path for managing realm-level roles of this realm
+     *
+     * @return
+     */
     @Path("roles")
     public RoleContainerResource getRoleContainerResource() {
         return new RoleContainerResource(realm, auth, realm);
     }
 
+    /**
+     * Get the top-level representation of the realm.  It will not include nested information like User, Application, or OAuth
+     * Client representations.
+     *
+     * @return
+     */
     @GET
     @NoCache
     @Produces("application/json")
@@ -109,6 +132,13 @@ public class RealmAdminResource {
         }
     }
 
+    /**
+     * Update the top-level information of this realm.  Any user, roles, application, or oauth client information in the representation
+     * will be ignored.  This will only update top-level attributes of the realm.
+     *
+     * @param rep
+     * @return
+     */
     @PUT
     @Consumes("application/json")
     public Response updateRealm(final RealmRepresentation rep) {
@@ -123,6 +153,10 @@ public class RealmAdminResource {
         }
     }
 
+    /**
+     * Delete this realm.
+     *
+     */
     @DELETE
     public void deleteRealm() {
         auth.requireManage();
@@ -132,6 +166,11 @@ public class RealmAdminResource {
         }
     }
 
+    /**
+     * Base path for managing users in this realm.
+     *
+     * @return
+     */
     @Path("users")
     public UsersResource users() {
         UsersResource users = new UsersResource(providers, realm, auth, tokenManager);
@@ -140,6 +179,11 @@ public class RealmAdminResource {
         return users;
     }
 
+    /**
+     * Path for managing all realm-level or application-level roles defined in this realm by it's id.
+     *
+     * @return
+     */
     @Path("roles-by-id")
     public RoleByIdResource rolesById() {
         RoleByIdResource resource = new RoleByIdResource(realm, auth);
@@ -148,6 +192,10 @@ public class RealmAdminResource {
         return resource;
     }
 
+    /**
+     * Push the realm's revocation policy to any application that has an admin url associated with it.
+     *
+     */
     @Path("push-revocation")
     @POST
     public void pushRevocation() {
@@ -155,6 +203,11 @@ public class RealmAdminResource {
         new ResourceAdminManager().pushRealmRevocationPolicy(uriInfo.getRequestUri(), realm);
     }
 
+    /**
+     * Removes all user sessions.  Any application that has an admin url will also be told to invalidate any sessions
+     * they have.
+     *
+     */
     @Path("logout-all")
     @POST
     public void logoutAll() {
@@ -163,6 +216,12 @@ public class RealmAdminResource {
         new ResourceAdminManager().logoutAll(uriInfo.getRequestUri(), realm);
     }
 
+    /**
+     * Remove a specific user session. Any application that has an admin url will also be told to invalidate this
+     * particular session.
+     *
+     * @param sessionId
+     */
     @Path("sessions/{session}")
     @DELETE
     public void deleteSession(@PathParam("session") String sessionId) {
@@ -172,6 +231,12 @@ public class RealmAdminResource {
         new ResourceAdminManager().logoutSession(uriInfo.getRequestUri(), realm, session.getId());
     }
 
+    /**
+     * Returns a JSON map.  The key is the application name, the value is the number of sessions that currently are active
+     * with that application.  Only application's that actually have a session associated with them will be in this map.
+     *
+     * @return
+     */
     @Path("application-session-stats")
     @GET
     @NoCache
@@ -187,6 +252,12 @@ public class RealmAdminResource {
         return stats;
     }
 
+    /**
+     * Any application that has an admin URL will be asked directly how many sessions they have active and what users
+     * are involved with those sessions.
+     *
+     * @return
+     */
     @Path("session-stats")
     @GET
     @NoCache
@@ -203,6 +274,11 @@ public class RealmAdminResource {
         return stats;
     }
 
+    /**
+     * View the audit provider and how it is configured.
+     *
+     * @return
+     */
     @GET
     @Path("audit")
     @Produces("application/json")
@@ -212,6 +288,11 @@ public class RealmAdminResource {
         return ModelToRepresentation.toAuditReprensetation(realm);
     }
 
+    /**
+     * Change the audit provider and/or it's configuration
+     *
+     * @param rep
+     */
     @PUT
     @Path("audit")
     @Consumes("application/json")
@@ -222,6 +303,17 @@ public class RealmAdminResource {
         new RealmManager(session).updateRealmAudit(rep, realm);
     }
 
+    /**
+     * Query audit events.  Returns all events, or will query based on URL query parameters listed here
+     *
+     * @param client app or oauth client name
+     * @param event event type
+     * @param user user id
+     * @param ipAddress
+     * @param firstResult
+     * @param maxResults
+     * @return
+     */
     @Path("audit/events")
     @GET
     @NoCache
@@ -255,6 +347,10 @@ public class RealmAdminResource {
         return query.getResultList();
     }
 
+    /**
+     * Delete all audit events.
+     *
+     */
     @Path("audit/events")
     @DELETE
     public void clearAudit() {

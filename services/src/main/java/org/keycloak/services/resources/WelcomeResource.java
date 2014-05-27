@@ -20,6 +20,12 @@ public class WelcomeResource {
     @Context
     private UriInfo uriInfo;
 
+    /**
+     * Welcome page of Keycloak
+     *
+     * @return
+     * @throws URISyntaxException
+     */
     @GET
     @Produces("text/html")
     public Response getWelcomePage() throws URISyntaxException {
@@ -31,6 +37,12 @@ public class WelcomeResource {
         }
     }
 
+    /**
+     * Resources for welcome page
+     *
+     * @param name
+     * @return
+     */
     @GET
     @Path("/welcome-content/{name}")
     @Produces("text/html")

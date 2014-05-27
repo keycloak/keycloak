@@ -35,6 +35,8 @@ import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 
 /**
+ * Root resource for admin console and admin REST API
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
@@ -72,6 +74,12 @@ public class AdminRoot {
 
 
 
+
+    /**
+     * Convenience path to master realm admin console
+     *
+     * @return
+     */
     @GET
     public Response masterRealmAdminConsoleRedirect() {
         RealmModel master = new RealmManager(session).getKeycloakAdminstrationRealm();
@@ -80,7 +88,12 @@ public class AdminRoot {
         ).build();
     }
 
-    @Path("index.html")
+    /**
+     * Convenience path to master realm admin console
+     *
+     * @return
+     */
+    @Path("index.{html:html}") // expression is actually "index.html" but this is a hack to get around jax-doclet bug
     @GET
     public Response masterRealmAdminConsoleRedirectHtml() {
         return masterRealmAdminConsoleRedirect();
@@ -103,7 +116,12 @@ public class AdminRoot {
         return adminBaseUrl(base).path(AdminRoot.class, "getAdminConsole");
     }
 
-    @Path("{realm}/console")
+    /**
+     * path to realm admin console ui
+     *
+     * @param name Realm name (not id!)
+     * @return
+     */
     public AdminConsole getAdminConsole(final @PathParam("realm") String name) {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = locateRealm(name, realmManager);
@@ -152,6 +170,13 @@ public class AdminRoot {
         return adminBaseUrl(base).path(AdminRoot.class, "getRealmsAdmin");
     }
 
+
+    /**
+     * Base Path to realm admin REST interface
+     *
+     * @param headers
+     * @return
+     */
     @Path("realms")
     public RealmsAdminResource getRealmsAdmin(@Context final HttpHeaders headers) {
         if (request.getHttpMethod().equalsIgnoreCase("OPTIONS")) {
@@ -173,6 +198,12 @@ public class AdminRoot {
         return adminResource;
     }
 
+    /**
+     * General information about the server
+     *
+     * @param headers
+     * @return
+     */
     @Path("serverinfo")
     public ServerInfoAdminResource getServerInfo(@Context final HttpHeaders headers) {
         ServerInfoAdminResource adminResource = new ServerInfoAdminResource();

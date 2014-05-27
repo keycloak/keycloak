@@ -147,6 +147,11 @@ public class AdminConsole {
         }
     }
 
+    /**
+     * Adapter configuration for the admin console for this realm
+     *
+     * @return
+     */
     @Path("config")
     @GET
     @Produces("application/json")
@@ -160,6 +165,12 @@ public class AdminConsole {
 
     }
 
+    /**
+     * Permission information
+     *
+     * @param headers
+     * @return
+     */
     @Path("whoami")
     @GET
     @Produces("application/json")
@@ -231,6 +242,11 @@ public class AdminConsole {
         }
     }
 
+    /**
+     * Logout from the admin console
+     *
+     * @return
+     */
     @Path("logout")
     @GET
     @NoCache
@@ -248,6 +264,12 @@ public class AdminConsole {
 
     private static FileTypeMap mimeTypes = MimetypesFileTypeMap.getDefaultFileTypeMap();
 
+    /**
+     * Main page of this realm's admin console
+     *
+     * @return
+     * @throws URISyntaxException
+     */
     @GET
     public Response getMainPage() throws URISyntaxException {
         if (!uriInfo.getRequestUri().getPath().endsWith("/")) {
@@ -257,6 +279,11 @@ public class AdminConsole {
         }
     }
 
+    /**
+     * Javascript used by admin console
+     *
+     * @return
+     */
     @GET
     @Path("js/keycloak.js")
     @Produces("text/javascript")
@@ -270,7 +297,12 @@ public class AdminConsole {
         }
     }
 
-
+    /**
+     * Theme resources for this realm's admin console. (images, html files, etc..)
+     *
+     * @param path
+     * @return
+     */
     @GET
     @Path("{path:.+}")
     public Response getResource(@PathParam("path") String path) {

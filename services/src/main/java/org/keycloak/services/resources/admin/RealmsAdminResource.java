@@ -41,6 +41,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * Top level resource for Admin REST API
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
@@ -71,6 +73,12 @@ public class RealmsAdminResource {
     @Context
     protected KeycloakApplication keycloak;
 
+
+    /**
+     * Returns a list of realms.  This list is filtered based on what realms the caller is allowed to view.
+     *
+     * @return
+     */
     @GET
     @NoCache
     @Produces("application/json")
@@ -90,6 +98,7 @@ public class RealmsAdminResource {
         return reps;
     }
 
+
     protected void addRealmRep(List<RealmRepresentation> reps, RealmModel realm, ApplicationModel realmManagementApplication) {
         if (auth.hasAppRole(realmManagementApplication, AdminRoles.MANAGE_REALM)) {
             reps.add(ModelToRepresentation.toRepresentation(realm));
@@ -100,6 +109,13 @@ public class RealmsAdminResource {
         }
     }
 
+    /**
+     * Import a realm from a full representation of that realm.  Realm name must be unique.
+     *
+     * @param uriInfo
+     * @param rep JSON representation
+     * @return
+     */
     @POST
     @Consumes("application/json")
     public Response importRealm(@Context final UriInfo uriInfo, final RealmRepresentation rep) {
@@ -126,6 +142,15 @@ public class RealmsAdminResource {
         }
     }
 
+    /**
+     * Upload a realm from a uploaded JSON file.  The posted represenation is expected to be a multipart/form-data encapsulation
+     * of a JSON file.  The same format a browser would use when uploading a file.
+     *
+     * @param uriInfo
+     * @param input multipart/form data
+     * @return
+     * @throws IOException
+     */
     @POST
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public Response uploadRealm(@Context final UriInfo uriInfo, MultipartFormDataInput input) throws IOException {
@@ -177,7 +202,13 @@ public class RealmsAdminResource {
         }
     }
 
-
+    /**
+     * Base path for the admin REST API for one particular realm.
+     *
+     * @param headers
+     * @param name realm name (not id!)
+     * @return
+     */
     @Path("{realm}")
     public RealmAdminResource getRealmAdmin(@Context final HttpHeaders headers,
                                             @PathParam("realm") final String name) {

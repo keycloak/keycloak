@@ -58,6 +58,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * Base resource for managing users
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
@@ -91,6 +93,13 @@ public class UsersResource {
     protected KeycloakSession session;
 
 
+    /**
+     * Update the user
+     *
+     * @param username user name (not id!)
+     * @param rep
+     * @return
+     */
     @Path("{username}")
     @PUT
     @Consumes("application/json")
@@ -110,6 +119,13 @@ public class UsersResource {
         }
     }
 
+    /**
+     * Create a new user.  Must be a unique username!
+     *
+     * @param uriInfo
+     * @param rep
+     * @return
+     */
     @POST
     @Consumes("application/json")
     public Response createUser(final @Context UriInfo uriInfo, final UserRepresentation rep) {
@@ -153,6 +169,12 @@ public class UsersResource {
         }
     }
 
+    /**
+     * Get represenation of the user
+     *
+     * @param username username (not id!)
+     * @return
+     */
     @Path("{username}")
     @GET
     @NoCache
@@ -167,6 +189,15 @@ public class UsersResource {
         return ModelToRepresentation.toRepresentation(user);
     }
 
+    /**
+     * For each application with an admin URL, query them for the set of users logged in.  This not as reliable
+     * as getSessions().
+     *
+     * @See getSessions
+     *
+     * @param username
+     * @return
+     */
     @Path("{username}/session-stats")
     @GET
     @NoCache
@@ -188,6 +219,12 @@ public class UsersResource {
         return stats;
     }
 
+    /**
+     * List set of sessions associated with this user.
+     *
+     * @param username
+     * @return
+     */
     @Path("{username}/sessions")
     @GET
     @NoCache
@@ -208,6 +245,12 @@ public class UsersResource {
         return reps;
     }
 
+    /**
+     * List set of social logins associated with this user.
+     *
+     * @param username
+     * @return
+     */
     @Path("{username}/social-links")
     @GET
     @NoCache
@@ -227,6 +270,12 @@ public class UsersResource {
         return result;
     }
 
+    /**
+     * Remove all user sessions associated with this user.  And, for all applications that have an admin URL, tell
+     * them to invalidate the sessions for this particular user.
+     *
+     * @param username username (not id!)
+     */
     @Path("{username}/logout")
     @POST
     public void logout(final @PathParam("username") String username) {
@@ -241,7 +290,11 @@ public class UsersResource {
         new ResourceAdminManager().logoutUser(uriInfo.getRequestUri(), realm, user.getId(), null);
     }
 
-
+    /**
+     * delete this user
+     *
+     * @param username username (not id!)
+     */
     @Path("{username}")
     @DELETE
     @NoCache
@@ -251,6 +304,16 @@ public class UsersResource {
         realm.removeUser(username);
     }
 
+    /**
+     * Query list of users.  May pass in query criteria
+     *
+     * @param search string contained in username, first or last name, or email
+     * @param last
+     * @param first
+     * @param email
+     * @param username
+     * @return
+     */
     @GET
     @NoCache
     @Produces("application/json")
@@ -294,6 +357,12 @@ public class UsersResource {
         return results;
     }
 
+    /**
+     * Get role mappings for this user
+     *
+     * @param username username (not id!)
+     * @return
+     */
     @Path("{username}/role-mappings")
     @GET
     @Produces("application/json")
@@ -339,6 +408,12 @@ public class UsersResource {
         return all;
     }
 
+    /**
+     * Get realm-level role mappings for this user
+     *
+     * @param username username (not id!)
+     * @return
+     */
     @Path("{username}/role-mappings/realm")
     @GET
     @Produces("application/json")
@@ -359,6 +434,12 @@ public class UsersResource {
         return realmMappingsRep;
     }
 
+    /**
+     * Effective realm-level role mappings for this user.  Will recurse all composite roles to get this list.
+     *
+     * @param username username (not id!)
+     * @return
+     */
     @Path("{username}/role-mappings/realm/composite")
     @GET
     @Produces("application/json")
@@ -381,6 +462,12 @@ public class UsersResource {
         return realmMappingsRep;
     }
 
+    /**
+     * Realm-level roles that can be mapped to this user
+     *
+     * @param username username (not id!)
+     * @return
+     */
     @Path("{username}/role-mappings/realm/available")
     @GET
     @Produces("application/json")
@@ -397,6 +484,12 @@ public class UsersResource {
         return getAvailableRoles(user, available);
     }
 
+    /**
+     * Add realm-level role mappings
+     *
+     * @param username username (not id!)
+     * @param roles
+     */
     @Path("{username}/role-mappings/realm")
     @POST
     @Consumes("application/json")
@@ -420,6 +513,12 @@ public class UsersResource {
 
     }
 
+    /**
+     * Delete realm-level role mappings
+     *
+     * @param username username (not id!)
+     * @param roles
+     */
     @Path("{username}/role-mappings/realm")
     @DELETE
     @Consumes("application/json")
@@ -449,6 +548,13 @@ public class UsersResource {
         }
     }
 
+    /**
+     * Get application-level role mappings for this user for a specific app
+     *
+     * @param username username (not id!)
+     * @param appName app name (not id!)
+     * @return
+     */
     @Path("{username}/role-mappings/applications/{app}")
     @GET
     @Produces("application/json")
@@ -478,6 +584,13 @@ public class UsersResource {
         return mapRep;
     }
 
+    /**
+     * Get effective application-level role mappings.  This recurses any composite roles
+     *
+     * @param username username (not id!)
+     * @param appName app name (not id!)
+     * @return
+     */
     @Path("{username}/role-mappings/applications/{app}/composite")
     @GET
     @Produces("application/json")
@@ -507,6 +620,13 @@ public class UsersResource {
         return mapRep;
     }
 
+    /**
+     * Get available application-level roles that can be mapped to the user
+     *
+     * @param username username (not id!)
+     * @param appName app name (not id!)
+     * @return
+     */
     @Path("{username}/role-mappings/applications/{app}/available")
     @GET
     @Produces("application/json")
@@ -544,6 +664,13 @@ public class UsersResource {
         return mappings;
     }
 
+    /**
+     * Add applicaiton-level roles to the user role mapping.
+     *
+     * @param username username (not id!)
+     * @param appName app name (not id!)
+     * @param roles
+     */
     @Path("{username}/role-mappings/applications/{app}")
     @POST
     @Consumes("application/json")
@@ -572,6 +699,13 @@ public class UsersResource {
 
     }
 
+    /**
+     * Delete application-level roles from user role mapping.
+     *
+     * @param username username (not id!)
+     * @param appName app name (not id!)
+     * @param roles
+     */
     @Path("{username}/role-mappings/applications/{app}")
     @DELETE
     @Consumes("application/json")
@@ -610,6 +744,13 @@ public class UsersResource {
         }
     }
 
+    /**
+     *  Set up a temporary password for this user.  User will have to reset this temporary password when they log
+     *  in next.
+     *
+     * @param username username (not id!)
+     * @param pass temporary password
+     */
     @Path("{username}/reset-password")
     @PUT
     @Consumes("application/json")
@@ -629,6 +770,11 @@ public class UsersResource {
         user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
     }
 
+    /**
+     *
+     *
+     * @param username username (not id!)
+     */
     @Path("{username}/remove-totp")
     @PUT
     @Consumes("application/json")
@@ -643,6 +789,12 @@ public class UsersResource {
         user.setTotp(false);
     }
 
+    /**
+     * Send an email to the user with a link they can click to reset their password
+     *
+     * @param username username (not id!)
+     * @return
+     */
     @Path("{username}/reset-password-email")
     @PUT
     @Consumes("application/json")
