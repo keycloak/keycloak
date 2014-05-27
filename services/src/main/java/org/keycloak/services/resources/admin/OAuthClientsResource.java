@@ -50,6 +50,11 @@ public class OAuthClientsResource {
         auth.init(RealmAuth.Resource.CLIENT);
     }
 
+    /**
+     * Get a list of oauth clients in this realm.
+     *
+     * @return
+     */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
@@ -70,6 +75,13 @@ public class OAuthClientsResource {
         return rep;
     }
 
+    /**
+     * Create an oauth client
+     *
+     * @param uriInfo
+     * @param rep
+     * @return
+     */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createOAuthClient(final @Context UriInfo uriInfo, final OAuthClientRepresentation rep) {
@@ -84,6 +96,12 @@ public class OAuthClientsResource {
         }
     }
 
+    /**
+     * Base path to manage one specific oauth client
+     *
+     * @param id oauth client's id (not clientId!)
+     * @return
+     */
     @Path("{id}")
     public OAuthClientResource getOAuthClient(final @PathParam("id") String id) {
         auth.requireView();

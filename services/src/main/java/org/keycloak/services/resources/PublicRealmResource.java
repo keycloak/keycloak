@@ -13,6 +13,8 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.UriInfo;
 
 /**
+ * Resource class for public realm information
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
@@ -28,10 +30,15 @@ public class PublicRealmResource {
         this.realm = realm;
     }
 
+    /**
+     * Public information about the realm.
+     *
+     * @return
+     */
     @GET
     @NoCache
     @Produces("application/json")
-    public PublishedRealmRepresentation getRealm(@PathParam("realm") String id) {
+    public PublishedRealmRepresentation getRealm() {
         return realmRep(realm, uriInfo);
     }
 

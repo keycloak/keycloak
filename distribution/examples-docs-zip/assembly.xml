@@ -19,6 +19,10 @@
             <outputDirectory>docs/javadocs</outputDirectory>
         </fileSet>
         <fileSet>
+            <directory>../../services/target/site/apidocs</directory>
+            <outputDirectory>docs/rest-api</outputDirectory>
+        </fileSet>
+        <fileSet>
             <directory>../../docbook/target/docbook/publish/en-US</directory>
             <outputDirectory>docs/userguide</outputDirectory>
         </fileSet>

@@ -74,6 +74,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * Resource class for the oauth/openid connect token service
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
@@ -198,7 +200,23 @@ public class TokenService {
     }
 
 
-
+    /**
+     * Direct grant REST invocation.  One stop call to obtain an access token.
+     *
+     * If the client is a confidential client
+     * you must include the client-id (application name or oauth client name) and secret in an Basic Auth Authorization header.
+     *
+     * If the client is a public client, then you must include a "client_id" form parameter with the app's or oauth client's name.
+     *
+     * The realm must be configured to allow these types of auth requests.  (Direct Grant API in admin console Settings page)
+     *
+     *
+     * @See  <a href="http://tools.ietf.org/html/rfc6749#section-4.3">http://tools.ietf.org/html/rfc6749#section-4.3</a>
+     *
+     * @param authorizationHeader
+     * @param form
+     * @return @see org.keycloak.representations.AccessTokenResponse
+     */
     @Path("grants/access")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
@@ -284,6 +302,20 @@ public class TokenService {
         return Response.ok(res, MediaType.APPLICATION_JSON_TYPE).build();
     }
 
+    /**
+     * URL for making refresh token requests.
+     *
+     * @See <a href="http://tools.ietf.org/html/rfc6749#section-6">http://tools.ietf.org/html/rfc6749#section-6</a>
+     *
+     * If the client is a confidential client
+     * you must include the client-id (application name or oauth client name) and secret in an Basic Auth Authorization header.
+     *
+     * If the client is a public client, then you must include a "client_id" form parameter with the app's or oauth client's name.
+     *
+     * @param authorizationHeader
+     * @param form
+     * @return
+     */
     @Path("refresh")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
@@ -321,6 +353,16 @@ public class TokenService {
         return Cors.add(request, Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).auth().allowedOrigins(client).allowedMethods("POST").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
     }
 
+    /**
+     * URL called after login page.  YOU SHOULD NEVER INVOKE THIS DIRECTLY!
+     *
+     * @param clientId
+     * @param scopeParam
+     * @param state
+     * @param redirect
+     * @param formData
+     * @return
+     */
     @Path("auth/request/login")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
@@ -422,6 +464,16 @@ public class TokenService {
         return service;
     }
 
+    /**
+     * Registration
+     *
+     * @param clientId
+     * @param scopeParam
+     * @param state
+     * @param redirect
+     * @param formData
+     * @return
+     */
     @Path("registrations")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
@@ -530,6 +582,11 @@ public class TokenService {
         return processLogin(clientId, scopeParam, state, redirect, formData);
     }
 
+    /**
+     * CORS preflight path for access code to token
+     *
+     * @return
+     */
     @Path("access/codes")
     @OPTIONS
     @Produces("application/json")
@@ -538,6 +595,15 @@ public class TokenService {
         return Cors.add(request, Response.ok()).auth().preflight().build();
     }
 
+    /**
+     * URL invoked by adapter to turn an access code to access token
+     *
+     * @See <a href="http://tools.ietf.org/html/rfc6749#section-4.1">http://tools.ietf.org/html/rfc6749#section-4.1</a>
+     *
+     * @param authorizationHeader
+     * @param formData
+     * @return
+     */
     @Path("access/codes")
     @POST
     @Produces("application/json")
@@ -720,6 +786,20 @@ public class TokenService {
         return client;
     }
 
+    /**
+     * Login page.  Must be redirected to from the application or oauth client.
+     *
+     * @See <a href="http://tools.ietf.org/html/rfc6749#section-4.1">http://tools.ietf.org/html/rfc6749#section-4.1</a>
+     *
+     *
+     * @param responseType
+     * @param redirect
+     * @param clientId
+     * @param scopeParam
+     * @param state
+     * @param prompt
+     * @return
+     */
     @Path("login")
     @GET
     public Response loginPage(final @QueryParam("response_type") String responseType,
@@ -784,6 +864,16 @@ public class TokenService {
         return Flows.forms(providerSession, realm, uriInfo).createLogin();
     }
 
+    /**
+     * Registration page.  Must be redirected to from login page.
+     *
+     * @param responseType
+     * @param redirect
+     * @param clientId
+     * @param scopeParam
+     * @param state
+     * @return
+     */
     @Path("registrations")
     @GET
     public Response registerPage(final @QueryParam("response_type") String responseType,
@@ -834,6 +924,13 @@ public class TokenService {
         return Flows.forms(providerSession, realm, uriInfo).createRegistration();
     }
 
+    /**
+     * Logout user session.
+     *
+     * @param sessionState
+     * @param redirectUri
+     * @return
+     */
     @Path("logout")
     @GET
     @NoCache
@@ -877,6 +974,12 @@ public class TokenService {
         audit.user(user).session(session).success();
     }
 
+    /**
+     * OAuth grant page.  You should not invoked this directly!
+     *
+     * @param formData
+     * @return
+     */
     @Path("oauth/grant")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)

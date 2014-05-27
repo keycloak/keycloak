@@ -39,6 +39,12 @@ public class RoleByIdResource extends RoleResource {
         this.auth = auth;
     }
 
+    /**
+     * Get a specific role's representation
+     *
+     * @param id id of role
+     * @return
+     */
     @Path("{role-id}")
     @GET
     @NoCache
@@ -70,6 +76,11 @@ public class RoleByIdResource extends RoleResource {
         return roleModel;
     }
 
+    /**
+     * Delete this role
+     *
+     * @param id id of role
+     */
     @Path("{role-id}")
     @DELETE
     @NoCache
@@ -79,6 +90,12 @@ public class RoleByIdResource extends RoleResource {
         deleteRole(role);
     }
 
+    /**
+     * Update this role
+     *
+     * @param id id of role
+     * @param rep
+     */
     @Path("{role-id}")
     @PUT
     @Consumes("application/json")
@@ -88,6 +105,12 @@ public class RoleByIdResource extends RoleResource {
         updateRole(rep, role);
     }
 
+    /**
+     * Make this role a composite role by associating some child roles to it.
+     *
+     * @param id
+     * @param roles
+     */
     @Path("{role-id}/composites")
     @POST
     @Consumes("application/json")
@@ -97,6 +120,12 @@ public class RoleByIdResource extends RoleResource {
         addComposites(roles, role);
     }
 
+    /**
+     * If this role is a composite, return a set of its children
+     *
+     * @param id
+     * @return
+     */
     @Path("{role-id}/composites")
     @GET
     @NoCache
@@ -109,6 +138,12 @@ public class RoleByIdResource extends RoleResource {
         return getRoleComposites(role);
     }
 
+    /**
+     * Return a set of realm-level roles that are in the role's composite
+     *
+     * @param id
+     * @return
+     */
     @Path("{role-id}/composites/realm")
     @GET
     @NoCache
@@ -119,6 +154,13 @@ public class RoleByIdResource extends RoleResource {
         return getRealmRoleComposites(role);
     }
 
+    /**
+     * Return a set of application-level roles for a specific app that are in the role's composite
+     *
+     * @param id
+     * @param appName
+     * @return
+     */
     @Path("{role-id}/composites/applications/{app}")
     @GET
     @NoCache
@@ -130,7 +172,12 @@ public class RoleByIdResource extends RoleResource {
         return getApplicationRoleComposites(appName, role);
     }
 
-
+    /**
+     * Remove the listed set of roles from this role's composite
+     *
+     * @param id
+     * @param roles
+     */
     @Path("{role-id}/composites")
     @DELETE
     @Consumes("application/json")

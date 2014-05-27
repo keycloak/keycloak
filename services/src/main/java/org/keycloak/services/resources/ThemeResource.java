@@ -16,6 +16,8 @@ import javax.ws.rs.core.Response;
 import java.io.InputStream;
 
 /**
+ * Theme resource
+ *
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 @Path("/theme")
@@ -28,6 +30,14 @@ public class ThemeResource {
     @Context
     private ProviderSession providerSession;
 
+    /**
+     * Get theme content
+     *
+     * @param themType
+     * @param themeName
+     * @param path
+     * @return
+     */
     @GET
     @Path("/{themType}/{themeName}/{path:.*}")
     public Response getResource(@PathParam("themType") String themType, @PathParam("themeName") String themeName, @PathParam("path") String path) {

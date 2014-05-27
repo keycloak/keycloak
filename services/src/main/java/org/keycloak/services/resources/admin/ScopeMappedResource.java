@@ -28,6 +28,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * Base class for managing the scope mappings of a specific client (application or oauth).
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
@@ -44,6 +46,11 @@ public class ScopeMappedResource {
         this.session = session;
     }
 
+    /**
+     * Get all scope mappings for this client
+     *
+     * @return
+     */
     @GET
     @Produces("application/json")
     @NoCache
@@ -82,6 +89,11 @@ public class ScopeMappedResource {
         return all;
     }
 
+    /**
+     * Get list of realm-level roles associated with this client's scope.
+     *
+     * @return
+     */
     @Path("realm")
     @GET
     @Produces("application/json")
@@ -97,6 +109,11 @@ public class ScopeMappedResource {
         return realmMappingsRep;
     }
 
+    /**
+     * Get list of realm-level roles that are available to attach to this client's scope.
+     *
+     * @return
+     */
     @Path("realm/available")
     @GET
     @Produces("application/json")
@@ -117,6 +134,13 @@ public class ScopeMappedResource {
         return available;
     }
 
+    /**
+     * Get all effective realm-level roles that are associated with this client's scope.  What this does is recurse
+     * any composite roles associated with the client's scope and adds the roles to this lists.  The method is really
+     * to show a comprehensive total view of realm-level roles associated with the client.
+     *
+     * @return
+     */
     @Path("realm/composite")
     @GET
     @Produces("application/json")
@@ -136,6 +160,11 @@ public class ScopeMappedResource {
         return composite;
     }
 
+    /**
+     * Add a set of realm-level roles to the client's scope
+     *
+     * @param roles
+     */
     @Path("realm")
     @POST
     @Consumes("application/json")
@@ -153,6 +182,11 @@ public class ScopeMappedResource {
 
     }
 
+    /**
+     * Remove a set of realm-level roles from the client's scope
+     *
+     * @param roles
+     */
     @Path("realm")
     @DELETE
     @Consumes("application/json")
@@ -176,6 +210,12 @@ public class ScopeMappedResource {
         }
     }
 
+    /**
+     * Get the roles associated with a client's scope for a specific application.
+     *
+     * @param appName roles associated with client's scope for a specific application
+     * @return
+     */
     @Path("applications/{app}")
     @GET
     @Produces("application/json")
@@ -197,6 +237,12 @@ public class ScopeMappedResource {
         return mapRep;
     }
 
+    /**
+     * The available application-level roles that can be associated with the client's scope
+     *
+     * @param appName available roles for a specific application
+     * @return
+     */
     @Path("applications/{app}/available")
     @GET
     @Produces("application/json")
@@ -214,6 +260,12 @@ public class ScopeMappedResource {
         return getAvailable(roles);
     }
 
+    /**
+     * Get effective application roles that are associated with the client's scope for a specific application.
+     *
+     * @param appName effective roles for a specific app
+     * @return
+     */
     @Path("applications/{app}/composite")
     @GET
     @Produces("application/json")
@@ -231,6 +283,12 @@ public class ScopeMappedResource {
         return getComposite(roles);
     }
 
+    /**
+     * Add application-level roles to the client's scope
+     *
+     * @param appName
+     * @param roles
+     */
     @Path("applications/{app}")
     @POST
     @Consumes("application/json")
@@ -253,6 +311,12 @@ public class ScopeMappedResource {
 
     }
 
+    /**
+     * Remove application-level roles from the client's scope.
+     *
+     * @param appName
+     * @param roles
+     */
     @Path("applications/{app}")
     @DELETE
     @Consumes("application/json")

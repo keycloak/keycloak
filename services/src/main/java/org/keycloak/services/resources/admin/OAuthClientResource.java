@@ -30,6 +30,8 @@ import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 
 /**
+ * Base resource class for managing oauth clients
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
@@ -58,12 +60,22 @@ public class OAuthClientResource  {
         auth.init(RealmAuth.Resource.CLIENT);
     }
 
+    /**
+     * Base path for managing allowed oauth client claims
+     *
+     * @return
+     */
     @Path("claims")
     public ClaimResource getClaimResource() {
         return new ClaimResource(oauthClient, auth);
     }
 
-
+    /**
+     * Update the oauth client
+     *
+     * @param rep
+     * @return
+     */
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     public Response update(final OAuthClientRepresentation rep) {
@@ -78,7 +90,11 @@ public class OAuthClientResource  {
         }
     }
 
-
+    /**
+     * Get a representation of the oauth client
+     *
+     * @return
+     */
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
@@ -88,6 +104,12 @@ public class OAuthClientResource  {
         return OAuthClientManager.toRepresentation(oauthClient);
     }
 
+    /**
+     * Get an example keycloak.json file to use to configure the oauth client
+     *
+     * @return
+     * @throws IOException
+     */
     @GET
     @NoCache
     @Path("installation")
@@ -102,6 +124,10 @@ public class OAuthClientResource  {
         return JsonSerialization.mapper.writerWithDefaultPrettyPrinter().writeValueAsString(rep);
     }
 
+    /**
+     * Remove the OAuth Client
+     *
+     */
     @DELETE
     @NoCache
     public void deleteOAuthClient() {
@@ -110,6 +136,12 @@ public class OAuthClientResource  {
         realm.removeOAuthClient(oauthClient.getId());
     }
 
+
+    /**
+     * Generate a new client secret for the oauth client
+     *
+     * @return
+     */
     @Path("client-secret")
     @POST
     @Produces("application/json")
@@ -124,6 +156,11 @@ public class OAuthClientResource  {
         return rep;
     }
 
+    /**
+     * Get the secret of the oauth client
+     *
+     * @return
+     */
     @Path("client-secret")
     @GET
     @Produces("application/json")
@@ -136,6 +173,11 @@ public class OAuthClientResource  {
         return ModelToRepresentation.toRepresentation(model);
     }
 
+    /**
+     * Base path for managing the oauth client's scope
+     *
+     * @return
+     */
     @Path("scope-mappings")
     public ScopeMappedResource getScopeMappedResource() {
         return new ScopeMappedResource(realm, auth, oauthClient, session);
