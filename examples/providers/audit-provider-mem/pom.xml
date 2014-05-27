@@ -1,19 +1,33 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <parent>
-        <artifactId>keycloak-parent</artifactId>
+        <artifactId>examples-providers-pom</artifactId>
         <groupId>org.keycloak</groupId>
         <version>1.0-beta-1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-    <name>Examples</name>
+    <name>Audit Provider In-Mem Example</name>
     <description/>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>examples-pom</artifactId>
-    <packaging>pom</packaging>
+    <artifactId>audit-provider-mem-example</artifactId>
+    <packaging>jar</packaging>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-audit-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
 
     <build>
+        <finalName>audit-provider-mem-example</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -33,7 +47,5 @@
         </plugins>
     </build>
     <modules>
-        <module>demo-template</module>
-        <module>providers</module>
     </modules>
 </project>
