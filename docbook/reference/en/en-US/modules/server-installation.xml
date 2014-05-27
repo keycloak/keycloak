@@ -37,8 +37,10 @@ keycloak-appliance-dist-all-1.0-beta-1-SNAPSHOT/
             standalone.sh
             standalone.bat
             standalone/deployments/
-                                   auth-server.war/
-
+                auth-server.war/
+            standalone/configuration/
+                keycloak-server.json
+                themes/
     adapters/
         keycloak-as7-adapter-dist-1.0-beta-1-SNAPSHOT.zip
         keycloak-eap6-adapter-dist-1.0-beta-1-SNAPSHOT.zip
@@ -81,6 +83,9 @@ keycloak-war-dist-all-1.0-beta-1-SNAPSHOT/
     deployments/
         auth-server.war/
         keycloak-ds.xml
+    configuration/
+        keycloak-server.json
+        themes/
     adapters/
         keycloak-as7-adapter-dist-1.0-beta-1-SNAPSHOT.zip
         keycloak-eap6-adapter-dist-1.0-beta-1-SNAPSHOT.zip
@@ -90,8 +95,9 @@ keycloak-war-dist-all-1.0-beta-1-SNAPSHOT/
 </programlisting>
         </para>
         <para>
-            After unzipping this file, copy the <literal>deployments/</literal> directory into to the <literal>standalone/</literal>
-            of your JBoss or Wildfly distro.
+            After unzipping this file, copy everything in <literal>deployments</literal> directory into the
+            <literal>standalone/deployments</literal> of your JBoss or Wildfly distro. Also, copy everything in
+            <literal>configuration</literal> directory into the <literal>standalone/configuration</literal> directory.
         </para>
         <para>
 <programlisting>
@@ -101,11 +107,8 @@ keycloak-war-dist-all-1.0-beta-1-SNAPSHOT/
         </para>
         <para>
             After booting up the JBoss or Wildfly distro, you can then make sure it is installed properly
-            by logging into the admin console at<ulink
-                url="http://localhost:8080/auth/rest/admin/login">
-            http://localhost:8080/auth/rest/admin/login</ulink>.
-            Username: <emphasis>admin</emphasis>
-            Password: <emphasis>admin</emphasis>. Keycloak will then prompt you to
+            by logging into the admin console at<ulink url="http://localhost:8080/auth/admin">http://localhost:8080/auth/admin</ulink>.
+            Username: <emphasis>admin</emphasis>, Password: <emphasis>admin</emphasis>. Keycloak will then prompt you to
             enter in a new password.
         </para>
     </section>
@@ -248,20 +251,53 @@ keycloak-war-dist-all-1.0-beta-1-SNAPSHOT/
             <title>MongoDB based model</title>
             <para>
                 Keycloak provides <ulink url="http://www.mongodb.com">MongoDB</ulink> based model implementation, which means that your identity data will be saved
-                in MongoDB instead of traditional RDBMS. To setup it, you need to add few system properties when running Keycloak.
-                First you need to specify that you want to use <literal>mongo</literal> instead of default <literal>jpa</literal> model, and you may also specify
-                host, port and name of mongo database. So you can start keycloak with the command like this:
+                in MongoDB instead of traditional RDBMS. To configure Keycloak to use Mongo open <literal>standalone/configuration/keycloak-server.json</literal>
+                in your favourite editor, then change:
+
 <programlisting><![CDATA[
-./standalone.sh -Dkeycloak.model=mongo -Dkeycloak.model.mongo.host=localhost
--Dkeycloak.model.mongoport=27017 -Dkeycloak.model.mongo.db=keycloak
+"audit": {
+  "provider": "jpa",
+  "jpa": {
+    "exclude-events": [ "REFRESH_TOKEN" ]
+  }
+},
+
+"model": {
+  "provider": "jpa"
+},
 ]]></programlisting>
-                Note that when you install MongoDB on your laptop, it's usually on localhost/270717 by default. That's why properties
-                <literal>keycloak.model.mongo.host</literal> and <literal>keycloak.model.mongo.port</literal> are not mandatory, but they already have
-                default values <literal>localhost</literal> and <literal>27017</literal> . Similarly property <literal>keycloak.model.mongo.db</literal>
-                has default value <literal>keycloak</literal> for name of underlying database. So the example above could be simplified like:
-<programlisting><![CDATA[
-./standalone.sh -Dkeycloak.model=mongo
+
+                to:
+
+                <programlisting><![CDATA[
+"audit": {
+  "provider": "mongo",
+  "mongo": {
+    "exclude-events": [ "REFRESH_TOKEN" ],
+    "host": "<hostname>",
+    "port": <port>,
+    "user": "<user>",
+    "password": "<password>",
+    "db": "<db name>"
+  }
+},
+
+"model": {
+  "provider": "mongo",
+  "mongo": {
+    "host": "<hostname>",
+    "port": <port>,
+    "user": "<user>",
+    "password": "<password>",
+    "db": "<db name>"
+  }
+},
 ]]></programlisting>
+
+                All configuration options are optional. Default values for host and port are localhost and 27017. If
+                user and password are not specified Keycloak will connect unauthenticated to your MongoDB. Finally, default
+                values for db are keycloak for the model, and keycloak-audit for audit.
+
                 If you switch to Mongo model, it could be a good idea to remove RDBMS related stuff from your distribution to reduce startup time and memory footprint.
                 To do it, you need to:
                 <itemizedlist>
@@ -270,6 +306,7 @@ keycloak-war-dist-all-1.0-beta-1-SNAPSHOT/
                 </itemizedlist>
             </para>
         </section>
+
         <section>
             <title>AS7/EAP6.x Logging</title>
             <para>
@@ -278,7 +315,6 @@ keycloak-war-dist-all-1.0-beta-1-SNAPSHOT/
 <programlisting>
     WARN  [org.jboss.resteasy.core.ResourceLocator] (http-/127.0.0.1:8080-3)
                 Field providers of subresource xxx will not be injected according to spec
-
 </programlisting>
 
             <para>
