@@ -236,7 +236,6 @@
                             <offlineLinks>
                                 <offlineLink>
                                     <url>../javadocs</url>
-                                    <!-- <location>C:/Users/William/jboss/keycloak/p1b-repo/keycloak/target/site/apidocs</location> -->
                                     <location>${project.basedir}/../target/site/apidocs</location>
                                 </offlineLink>
                             </offlineLinks>
