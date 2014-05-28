@@ -22,6 +22,10 @@
             <listitem>
                 JavaScript adapter has been refactored. See the <link linkend='javascript-adapter'>JavaScript adapter</link> section for more details.
             </listitem>
+            <listitem>
+                The "Central Login Lifespan" setting no longer exists.  Please see the <link linkend='session-timeouts'>Session Timeout</link> section
+                for me details.
+            </listitem>
         </itemizedlist>
     </sect1>
     <sect1>

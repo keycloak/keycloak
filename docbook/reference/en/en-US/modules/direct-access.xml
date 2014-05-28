@@ -1,0 +1,128 @@
+<chapter id="direct-access-grants">
+    <title>Direct Access Grants</title>
+    <para>
+        Keycloak allows you to make direct REST invocations to obtain an access token.
+        (See <ulink url="http://tools.ietf.org/html/rfc6749#section-4.3">Resource Owner Password Credentials Grant</ulink>
+        from OAuth 2.0 spec).  To use it, Direct Access Grants must be allowed by your realm.  This is a configuration switch
+        in the admin console under Settings->General, specifically the "Direct Grant API" switch.  You must also have
+        registered a valid OAuth Client or Application to use as the "client_id" for this grant request.
+    </para>
+    <warning>
+        <para>
+            It is highly recommended that you do not use Direct Access Grants to write your own login pages for your application.
+            You will lose a lot of features that Keycloak has if you do this.  Specifically all the account management, remember me,
+            lost password, account reset features of Keycloak.  Instead, if you want to tailor the look and feel of Keycloak login
+            pages, you should create your own <link linkend="themes">theme</link>.
+        </para>
+        <para>
+            It is even highly recommended that you use the browser to log in for native mobile applications!  Android
+            and iPhone applications allow you to redirect to and from the browser.  You can use this to redirect the user
+            from your native mobile app to the web browser to perform login, then the browser will redirect back to your
+            native application.
+        </para>
+    </warning>
+
+
+    <para>
+        The REST URL to invoke on is <literal>/{keycloak-root}/realms/{realm-name}/tokens/grants/access</literal>.
+        Invoking on this URL is a POST request and requires you to post the username and credentials of the user you want
+        an access token for.  You must also pass along the "client_id" of the application or oauth client you are creating
+        an access token for.  This "client_id" is the application or oauth client name (not it's id!).  Depending on
+        whether your application/oauth client is <link linkend='access-types'>"public" or "confidential"</link>, you may also have to pass along
+        it's client secret as well.
+    </para>
+    <para>
+        For public applications or oauth client's, the POST invocation requires form parameters that contain the username,
+        credentials, and client_id of your application.  For example:
+<programlisting><![CDATA[
+    POST /auth/realms/demo/tokens/grants/access
+    Content-Type: application/x-www-form-urlencoded
+
+    username=bburke&password=geheim&client_id=customer-portal]]>
+</programlisting>
+        The response would be this <ulink url="http://tools.ietf.org/html/rfc6749#section-4.3.3">standard JSON document</ulink> from the OAuth 2.0 specification.
+<programlisting><![CDATA[
+HTTP/1.1 200 OK
+Content-Type: application/json;charset=UTF-8
+Cache-Control: no-store
+Pragma: no-cache
+
+{
+    "access_token":"2YotnFZFEjr1zCsicMWpAA",
+    "token_type":"bearer",
+    "expires_in":3600,
+    "refresh_token":"tGzv3JOkF0XG5Qx2TlKWIA",
+    "id_token":"tGzv3JOkF0XG5Qx2TlKWIA",
+    "session-state":"234234-234234-234234"
+}]]>
+</programlisting>
+    </para>
+    <para>
+        For confidential applications or oauth client's, you must create a Basic Auth <literal>Authorization</literal>
+        header that contains the client_id and client secret.  And pass in the form parameters for username and for
+        each user credential.  For example:
+<programlisting><![CDATA[
+    POST /auth/realms/demo/tokens/grants/access
+    Authorization: Basic atasdf023l2312023
+    Content-Type: application/x-www-form-urlencoded
+
+    username=bburke&password=geheim]]>
+</programlisting>
+
+    </para>
+    <para>
+        Here's a Java example using Apache HTTP Client and some Keycloak utility classes.:
+<programlisting><![CDATA[
+HttpClient client = new HttpClientBuilder()
+                .disableTrustManager().build();
+
+
+try {
+   HttpPost post = new HttpPost(
+           KeycloakUriBuilder.fromUri("http://localhost:8080/auth")
+           .path(ServiceUrlConstants.TOKEN_SERVICE_DIRECT_GRANT_PATH).build("demo"));
+   List <NameValuePair> formparams = new ArrayList <NameValuePair>();
+   formparams.add(new BasicNameValuePair("username", "bburke"));
+   formparams.add(new BasicNameValuePair("password", "password"));
+
+   if (isPublic()) { // if client is public access type
+       formparams.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, "customer-portal"));
+   } else {
+       String authorization = BasicAuthHelper.createHeader("customer-portal", "secret-secret-secret);
+       post.setHeader("Authorization", authorization);
+   }
+   UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");
+   post.setEntity(form);
+
+   HttpResponse response = client.execute(post);
+   int status = response.getStatusLine().getStatusCode();
+   HttpEntity entity = response.getEntity();
+   if (status != 200) {
+      throw new IOException("Bad status: " + status);
+   }
+   if (entity == null) {
+      throw new IOException("No Entity");
+   }
+   InputStream is = entity.getContent();
+   try {
+      AccessTokenResponse tokenResponse = JsonSerialization.readValue(is, AccessTokenResponse.class);
+   } finally {
+      try {
+          is.close();
+      } catch (IOException ignored) { }
+      }
+} finally {
+   client.getConnectionManager().shutdown();
+}
+]]>
+
+</programlisting>
+    </para>
+    <para>
+        Once you have the access token string, you can use it in REST HTTP bearer token authorized requests, i.e
+<programlisting>
+GET /my/rest/api
+Authorization: Bearer 2YotnFZFEjr1zCsicMWpAA
+</programlisting>
+    </para>
+</chapter>
