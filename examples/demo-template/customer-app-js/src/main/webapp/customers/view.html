@@ -22,25 +22,25 @@ User <b id="subject"></b> made this request.
     var keycloak = Keycloak('../keycloak.json');
 
     var loadData = function () {
-        document.getElementById('subject').innerText = keycloak.subject;
+        document.getElementById('subject').innerHTML = keycloak.subject;
 
         if (keycloak.idToken) {
-            document.getElementById('profileType').innerText = 'IDToken';
-            document.getElementById('username').innerText = keycloak.idToken.preferred_username;
-            document.getElementById('email').innerText = keycloak.idToken.email;
-            document.getElementById('name').innerText = keycloak.idToken.name;
-            document.getElementById('givenName').innerText = keycloak.idToken.given_name;
-            document.getElementById('familyName').innerText = keycloak.idToken.family_name;
+            document.getElementById('profileType').innerHTML = 'IDToken';
+            document.getElementById('username').innerHTML = keycloak.idToken.preferred_username;
+            document.getElementById('email').innerHTML = keycloak.idToken.email;
+            document.getElementById('name').innerHTML = keycloak.idToken.name;
+            document.getElementById('givenName').innerHTML = keycloak.idToken.given_name;
+            document.getElementById('familyName').innerHTML = keycloak.idToken.family_name;
         } else {
             keycloak.loadUserProfile(function() {
-                document.getElementById('profileType').innerText = 'Account Service';
-                document.getElementById('username').innerText = keycloak.profile.username;
-                document.getElementById('email').innerText = keycloak.profile.email;
-                document.getElementById('name').innerText = keycloak.profile.firstName + ' ' + keycloak.profile.lastName;
-                document.getElementById('givenName').innerText = keycloak.profile.firstName;
-                document.getElementById('familyName').innerText = keycloak.profile.lastName;
+                document.getElementById('profileType').innerHTML = 'Account Service';
+                document.getElementById('username').innerHTML = keycloak.profile.username;
+                document.getElementById('email').innerHTML = keycloak.profile.email;
+                document.getElementById('name').innerHTML = keycloak.profile.firstName + ' ' + keycloak.profile.lastName;
+                document.getElementById('givenName').innerHTML = keycloak.profile.firstName;
+                document.getElementById('familyName').innerHTML = keycloak.profile.lastName;
             }, function() {
-                document.getElementById('profileType').innerText = 'Failed to retrieve user details. Please enable claims or account role';
+                document.getElementById('profileType').innerHTML = 'Failed to retrieve user details. Please enable claims or account role';
             });
         }
 
