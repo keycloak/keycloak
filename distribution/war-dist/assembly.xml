@@ -24,12 +24,12 @@
             <outputDirectory>adapters</outputDirectory>
         </dependencySet>
         <dependencySet>
-            <unpack>false</unpack>
+            <unpack>true</unpack>
             <useTransitiveDependencies>false</useTransitiveDependencies>
             <includes>
                 <include>org.keycloak:keycloak-example-themes-dist:zip</include>
             </includes>
-            <outputDirectory>examples</outputDirectory>
+            <outputDirectory>configuration</outputDirectory>
         </dependencySet>
     </dependencySets>
     <!--

@@ -1,4 +1,4 @@
-<section>
+<section id="javascript-adapter">
     <title>Pure Client Javascript Adapter</title>
     <para>
         The Keycloak Server comes with a Javascript library you can use to secure pure HTML/Javascript applications.  It

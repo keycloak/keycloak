@@ -27,7 +27,7 @@
             Scroll down to the bottom of the page to find the
             <literal>Code Anything</literal>
             section. Insert
-            <literal>https://raw.github.com/keycloak/openshift-keycloak-cartridge/master/metadata/manifest.yml</literal>
+            <literal>http://cartreflect-claytondev.rhcloud.com/github/keycloak/openshift-keycloak-cartridge</literal>
             into the
             <literal>URL to a cartridge definition</literal>
             field and click on <literal>Next</literal>. Fill in the
@@ -44,7 +44,7 @@
         <title>Create Keycloak instance with the command-line tool</title>
         <para>
             Run the following command from a terminal:
-            <programlisting>rhc app create &lt;APPLICATION NAME&gt; https://raw.github.com/keycloak/openshift-keycloak-cartridge/master/metadata/manifest.yml</programlisting>
+            <programlisting>rhc app create &lt;APPLICATION NAME&gt; http://cartreflect-claytondev.rhcloud.com/github/keycloak/openshift-keycloak-cartridge</programlisting>
             Replace <literal>&lt;APPLICATION NAME&gt;</literal> with the name you want (for example keycloak).
         </para>
         <para>

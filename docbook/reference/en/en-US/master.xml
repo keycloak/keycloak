@@ -23,6 +23,10 @@
                 <!ENTITY Roles SYSTEM "modules/roles.xml">
                 <!ENTITY CORS SYSTEM "modules/cors.xml">
                 <!ENTITY Timeouts SYSTEM "modules/timeouts.xml">
+                <!ENTITY Audit SYSTEM "modules/audit.xml">
+                <!ENTITY Authentication SYSTEM "modules/authentication-spi.xml">
+                <!ENTITY Ldap SYSTEM "modules/ldap.xml">
+                <!ENTITY ExportImport SYSTEM "modules/export-import.xml">
                 ]>
 
 <book>
@@ -103,6 +107,10 @@ This one is short
     &Roles;
     &CORS;
     &Timeouts;
+    &Audit;
+    &Authentication;
+    &Ldap;
+    &ExportImport;
     &Migration;
 
 </book>

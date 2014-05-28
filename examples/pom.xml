@@ -22,17 +22,10 @@
                     <skip>true</skip>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>org.jboss.as.plugins</groupId>
-                <artifactId>jboss-as-maven-plugin</artifactId>
-                <version>7.1.1.Final</version>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
-            </plugin>
         </plugins>
     </build>
     <modules>
         <module>demo-template</module>
+        <module>providers</module>
     </modules>
 </project>

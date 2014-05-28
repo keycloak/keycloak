@@ -17,10 +17,29 @@
     </section>
 
     <section>
+        <title>Default themes</title>
+        <para>
+            Keycloak comes bundled with default themes in <literal>standalone/configuration/themes</literal>. It is
+            not recommended to edit these themes directly. Instead you should create a new theme to extend a default
+            theme. A good reference is to copy the keycloak themes as these extend the base theme to add styling.
+        </para>
+    </section>
+
+    <section>
         <title>Creating a theme</title>
         <para>
-            There are two types of themes in Keycloak, <literal>login</literal> and <literal>account</literal>. Login themes are used to customize the
-            login forms, while account themes are used to customize account management. A theme consists of:
+            There are several types of themes in Keycloak:
+            <itemizedlist>
+                <listitem>Account - Account management</listitem>
+                <listitem>Admin - Admin console</listitem>
+                <listitem>Common - Shared resources for themes</listitem>
+                <listitem>Email - Emails</listitem>
+                <listitem>Login - Login forms</listitem>
+            </itemizedlist>
+        </para>
+
+        <para>
+            A theme consists of:
             <itemizedlist>
                 <listitem><para><ulink url="http://freemarker.org">FreeMarker</ulink> templates</para></listitem>
                 <listitem><para>Stylesheets</para></listitem>
@@ -37,9 +56,9 @@
             templates.
         </para>
         <para>
-            To create a new theme, create a folder in <literal>.../standalone/configuration/themes/login</literal> or
-            <literal>.../standalone/configuration/themes/account</literal>. The name of the folder is the name of the theme.
-            Then create a file <literal>theme.properties</literal> inside the theme folder. The contents of the file should be:
+            To create a new theme, create a folder in <literal>.../standalone/configuration/themes/&lt; theme type&gt;</literal>.
+            The name of the folder is the name of the theme. Then create a file <literal>theme.properties</literal> inside the theme folder.
+            The contents of the file should be:
         </para>
         <programlisting>parent=base</programlisting>
         <para>
@@ -102,24 +121,6 @@
                 Keycloak uses <ulink url="http://freemarker.org">Freemarker Templates</ulink> in order to generate HTML.
                 These templates are defined in <literal>.ftl</literal> files and can be overriden from the base theme.
                 Check out the Freemarker website on how to form a template file.
-            </para>
-        </section>
-        <section>
-            <title>Full Example Templates</title>
-            <para>
-                Keycloak comes bundled with some default themes which you cannot view or modify.  The distribution
-                also contains full example templates which you can edit directly if you're running the Keycloak appliance
-                distro, or which you can install, if you're using the WAR distro.  The name of these full example themes
-                is <literal>template</literal> and they contain a complex example for generating all pages related
-                to login, error displaying, oauth grant pages, and user account management.
-            </para>
-            <para>
-                For the Keycloak Appliance Distro, these theme files are in the directories
-                <literal>${appliance-distro}/keycloak/standalone/configuration/themes/login/template</literal>
-                and <literal>${appliance-distro}/keycloak/standalone/configuration/themes/account/template</literal>.
-                For the WAR distro, there is a zip file in the examples directory called <literal>keycloak-example-themes-dist.zip</literal>
-                which you will need to unzip in the <literal>standalone/configuration</literal> or <literal>domain/configuration</literal>
-                directory if the JBoss or Wildfly instance you have deployed Keycloak server to.
             </para>
         </section>
     </section>

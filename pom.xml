@@ -539,6 +539,22 @@
                     <artifactId>embedmongo-maven-plugin</artifactId>
                     <version>0.1.10</version>
                 </plugin>
+                <plugin>
+                    <groupId>org.jboss.as.plugins</groupId>
+                    <artifactId>jboss-as-maven-plugin</artifactId>
+                    <version>7.5.Final</version>
+                    <configuration>
+                        <skip>true</skip>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.wildfly.plugins</groupId>
+                    <artifactId>wildfly-maven-plugin</artifactId>
+                    <version>1.0.1.Final</version>        
+                    <configuration>
+                        <skip>true</skip>
+                    </configuration>
+                </plugin>
             </plugins>
         </pluginManagement>
 

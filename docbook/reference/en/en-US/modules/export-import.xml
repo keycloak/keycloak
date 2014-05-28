@@ -1,0 +1,31 @@
+<chapter id="export-import">
+    <title>Export and Import</title>
+    <para>
+        Export/import is useful especially if you want to migrate your whole Keycloak database from one environment to another or migrate to different database (For example from MySQL to Oracle).
+        You can trigger export/import at startup of Keycloak server and it's configurable with System properties right now. The fact it's done at server startup means that no-one can access Keycloak UI or REST endpoints
+        and edit Keycloak database on the fly when export or import is in progress. Otherwise it could lead to inconsistent results.
+    </para>
+    <para>
+        You can export/import your database either to directory on local filesystem (useful just for testing purposes or if your filesystem is properly protected)
+        or to encrypted ZIP file on local filesystem. Encrypted ZIP is recommended as export contains many sensitive informations like passwords of your users (even if they are hashed),
+        but also their email addresses, and especially private keys of the realms.
+    </para>
+    <para>
+        So to export the content of your Keycloak database into encrypted ZIP, you can execute Keycloak server with the System properties like:
+        <programlisting><![CDATA[
+bin/standalone.sh -Dkeycloak.migration.action=export
+-Dkeycloak.migration.provider=zip -Dkeycloak.migration.zipFile=<FILE TO EXPORT TO>
+-Dkeycloak.migration.zipPassword=<PASSWORD TO DECRYPT EXPORT>
+]]></programlisting>
+        Then you can move or copy the encrypted ZIP file into second environment and you can trigger import from it into Keycloak server with the same command but use
+        <literal>-Dkeycloak.migration.action=import</literal> instead of <literal>export</literal> .
+    </para>
+    <para>
+        To export into unencrypted directory you can use:
+        <programlisting><![CDATA[
+bin/standalone.sh -Dkeycloak.migration.action=export
+-Dkeycloak.migration.provider=dir -Dkeycloak.migration.dir=<DIR TO EXPORT TO>
+]]></programlisting>
+        And similarly for import just use <literal>-Dkeycloak.migration.action=import</literal> instead of <literal>export</literal> .
+    </para>
+</chapter>
