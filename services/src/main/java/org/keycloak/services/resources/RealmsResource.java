@@ -128,7 +128,11 @@ public class RealmsResource {
         }
 
         for (String r : TokenService.resolveValidRedirects(uriInfo, client.getRedirectUris())) {
-            r = r.substring(0, r.indexOf('/', 8));
+            int i = r.indexOf('/', 8);
+            if (i != -1) {
+                r = r.substring(0, i);
+            }
+
             if (r.equals(origin)) {
                 valid = true;
                 break;

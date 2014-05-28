@@ -8,14 +8,11 @@
     <script type="text/javascript" charset="utf-8">
         var keycloak = new Keycloak();
 
-        keycloak.onReady = updateState;
         keycloak.onAuthSuccess = updateState;
         keycloak.onAuthRefreshSuccess = updateState;
         keycloak.onAuthLogout = updateState;
 
         function updateState() {
-            console.debug('Updating state');
-
             if (keycloak.authenticated) {
                 document.getElementById('authenticated').style.display = 'block';
                 document.getElementById('not-authenticated').style.display = 'none';
@@ -31,8 +28,6 @@
         }
 
         document.addEventListener("deviceready", function() {
-            console.debug('Device ready');
-
             keycloak.init({ onLoad: 'check-sso' });
         }, false);
     </script>
@@ -42,6 +37,7 @@
     <div>
         <button onclick="keycloak.logout()">Log out</button>
         <button onclick="keycloak.updateToken()">Refresh token</button>
+        <button onclick="keycloak.updateToken(9999)">Force Refresh token</button>
         <button onclick="keycloak.accountManagement()">Manage account</button>
     </div>
     <div>

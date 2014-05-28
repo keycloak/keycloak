@@ -617,6 +617,8 @@ var Keycloak = function (config) {
         }
 
         if (type == 'cordova') {
+            loginIframe.enable = false;
+
             return {
                 login: function(options) {
                     var promise = createPromise();
