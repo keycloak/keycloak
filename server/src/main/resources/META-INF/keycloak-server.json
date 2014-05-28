@@ -1,6 +1,6 @@
 {
     "admin": {
-        "realm": "keycloak-admin"
+        "realm": "master"
     },
 
     "audit": {

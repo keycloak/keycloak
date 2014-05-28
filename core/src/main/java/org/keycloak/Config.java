@@ -12,7 +12,7 @@ public class Config {
     }
 
     public static String getAdminRealm() {
-        return configProvider.scope("admin").get("realm", "keycloak-admin");
+        return configProvider.scope("admin").get("realm", "master");
     }
 
     public static String getProvider(String spi) {
