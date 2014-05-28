@@ -7,6 +7,7 @@
                 <!ENTITY OpenShift SYSTEM "modules/openshift.xml">
                 <!ENTITY AdminPermissions SYSTEM "modules/admin-permissions.xml">
                 <!ENTITY PerRealmAdminPermissions SYSTEM "modules/per-realm-admin-permissions.xml">
+                <!ENTITY AccessTypes SYSTEM "modules/access-types.xml">
                 <!ENTITY AdapterConfig SYSTEM "modules/adapter-config.xml">
                 <!ENTITY JBossAdapter SYSTEM "modules/jboss-adapter.xml">
                 <!ENTITY JavascriptAdapter SYSTEM "modules/javascript-adapter.xml">
@@ -21,9 +22,11 @@
                 <!ENTITY Migration SYSTEM "modules/MigrationFromOlderVersions.xml">
                 <!ENTITY Email SYSTEM "modules/email.xml">
                 <!ENTITY Roles SYSTEM "modules/roles.xml">
+                <!ENTITY DirectAccess SYSTEM "modules/direct-access.xml">
                 <!ENTITY CORS SYSTEM "modules/cors.xml">
                 <!ENTITY Timeouts SYSTEM "modules/timeouts.xml">
                 <!ENTITY Audit SYSTEM "modules/audit.xml">
+                <!ENTITY AdminApi SYSTEM "modules/admin-rest-api.xml">
                 <!ENTITY Authentication SYSTEM "modules/authentication-spi.xml">
                 <!ENTITY Ldap SYSTEM "modules/ldap.xml">
                 <!ENTITY ExportImport SYSTEM "modules/export-import.xml">
@@ -104,9 +107,12 @@ This one is short
         </para>
         &Email;
     </chapter>
+    &AccessTypes;
     &Roles;
+    &DirectAccess;
     &CORS;
     &Timeouts;
+    &AdminApi;
     &Audit;
     &Authentication;
     &Ldap;

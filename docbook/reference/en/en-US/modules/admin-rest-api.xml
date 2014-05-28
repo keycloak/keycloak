@@ -1,0 +1,17 @@
+<chapter id="admin-rest-api">
+    <title>Admin REST API</title>
+    <para>
+        The Keycloak Admin Console is implemented entirely with a fully functional REST admin API.  You can invoke this
+        REST API from your Java applications by obtaining an access token.  You must have the appropriate
+        permissions set up as describe in <xref linkend="admin-permissions" /> and <xref linkend="per-realm-admin-permissions" />
+    </para>
+    <para>
+        The documentation for this REST API is auto-generated and is contained in the distribution of keycloak under
+        the docs/rest-api/overview-index.html directory, or directly from the docs page at the keycloak website.
+    </para>
+    <para>
+        There are a number of examples that come with the keycloak distribution that show you how to invoke on this REST API.
+        <literal>examples/preconfigured-demo/admin-access-app</literal> shows you how to access this api from java.
+        <literal>examples/cors/angular-product-app</literal> shows you how to invoke on it from Javascript.
+    </para>
+</chapter>

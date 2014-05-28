@@ -1,40 +1,55 @@
 <chapter id="timeouts">
-    <title>Cookie Timeouts and Token Lifespans</title>
+    <title>Cookie settings, Session Timeouts, and Token Lifespans</title>
     <para>
-        If you go to the Settings->Token page of the Keycloak adminstration console there is a bunch of fine tuning
-        you can do as far as login session timeouts go.
+        Keycloak has a bunch of fine-grain settings to manage browser cookies, user login sessions, and token lifespans.
+        Sessions can be viewed and managed within the admin console for all users, and individually in the user's account
+        management pages.  This chapter goes over configuration options for cookies, sessions, and tokens.
     </para>
-    <para>
-        If you turn on the <literal>Remember Me</literal> switch in the admin console, your login pages will show a
-        "Remember Me" checkbox.  This will set the central login SSO cookie to be a persistent cookie rather than a session
-        cookie.  So, if you close your browser, you may still be logged in if you've checked the "Remember Me" checkbox.
-    </para>
-    <para>
-        The <literal>Central Login Lifespan</literal> sets how long a central login is valid for.  When you are redirected
-        to the Keycloak Server for authentication, and you have already logged in, the Keycloak Server will refresh the
-        cookie used to remember you by between visits.  So, the lifespan time is reset.  If you have "Remember Me"
-        set up, you may want to set this lifespan to be days, weeks, or even months.  Usually though you want it long
-        enough so users can browser various applications that are secured centrally by keycloak in one login session.
-    </para>
-    <para>
-        The <literal>Access Token Lifespan</literal> is how long an access token is valid for.  An access token contains everything
-        an application needs to authorize a client.  It contains roles allowed as well as other user information.  When
-        an access token expires, your application will attempt to refresh it using a refresh token that it obtained in the
-        initial login.  The value of this configuration option should be however long you feel comfortable with the
-        application not knowing if the user's permissions have changed.  This value is usually in minutes or hours.
-    </para>
-    <para>
-        The <literal>Refresh Token Lifespan</literal> is how long a refresh token is valid for.  The value of this is relative
-        to how comfortable you feel with how long you want an application's session to be valid.  This value is usually
-        measured in minutes or hours and should be longer than the Access Token Lifespan.
-    </para>
-    <para>
-        The <literal>Access Code Lifespan</literal> is how long an access code is valid for.  An access code is obtained
-        on the 1st leg of the OAuth 2.0 redirection protocol.  This should be a short time limit.  Usually seconds.
-    </para>
-    <para>
-        The <literal>Access Code Action Lifespan</literal> is how long a user is allowed to attempt a login.  When a user tries
-        to login, they may have to change their password, set up TOTP, or perform some other action before they are redirected
-        back to your application as an authentnicated user.  This value is relatively short and is usually measured in minutes.
-    </para>
+    <section>
+        <title>Remember Me</title>
+        <para>
+            If you go to the admin console page of Settings->General, you should see a <literal>Remember Me</literal> on/off switch.
+            Your realm sets a SSO cookie so that you only have to enter in your login credentials once.
+            This <literal>Remember Me</literal> admin config option, when turned on, will show a "Remember Me" checkbox on the user's login page.
+            If the user clicks this, the realm's SSO. cookie will be persistent.   This means that if the user closes their browser
+            they will still be logged in the next time they start up their browser.
+        </para>
+    </section>
+    <section id="session-timeouts">
+        <title>Session Timeouts</title>
+        <para>
+            If you go to the Sesions and Tokens->Token Settings page of the Keycloak adminstration console there is a bunch of fine tuning
+            you can do as far as login session timeouts go.
+        </para>
+        <para>
+            The <literal>SSO Session Idle Timeout</literal> is the idle time of a user session.  If there is no activity
+            in the user's session for this amount of time, the user session will be destroyed, and the user will become logged
+            out.  The idle time is refreshed with every action against the keycloak server for that session, i.e.: a user login,
+            SSO, a refresh token grant, etc.
+        </para>
+        <para>
+            The <literal>SSO Session Max Lifespan</literal> setting is the maximum time a user session is allowed to be alive.  This
+            max lifespan countdown starts from when the user first logs in and is never refreshed.  This works great with <literal>Remember Me</literal>
+            in that it allow you to force a relogin after a set timeframe.
+        </para>
+    </section>
+    <section>
+        <title>Token Timeouts</title>
+        <para>
+            The <literal>Access Token Lifespan</literal> is how long an access token is valid for.  An access token contains everything
+            an application needs to authorize a client.  It contains roles allowed as well as other user information.  When
+            an access token expires, your application will attempt to refresh it using a refresh token that it obtained in the
+            initial login.  The value of this configuration option should be however long you feel comfortable with the
+            application not knowing if the user's permissions have changed.  This value is usually in minutes.
+        </para>
+        <para>
+            The <literal>Access Code Lifespan</literal> is how long an access code is valid for.  An access code is obtained
+            on the 1st leg of the OAuth 2.0 redirection protocol.  This should be a short time limit.  Usually seconds.
+        </para>
+        <para>
+            The <literal>Access Code Action Lifespan</literal> is how long a user is allowed to attempt a login.  When a user tries
+            to login, they may have to change their password, set up TOTP, or perform some other action before they are redirected
+            back to your application as an authentnicated user.  This value is relatively short and is usually measured in minutes.
+        </para>
+    </section>
 </chapter>

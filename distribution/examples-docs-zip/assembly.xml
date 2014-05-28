@@ -15,6 +15,13 @@
             <outputDirectory></outputDirectory>
         </fileSet>
         <fileSet>
+            <directory>.</directory>
+            <includes>
+                <include>index.html</include>
+            </includes>
+            <outputDirectory>docs</outputDirectory>
+        </fileSet>
+        <fileSet>
             <directory>../../target/site/apidocs</directory>
             <outputDirectory>docs/javadocs</outputDirectory>
         </fileSet>
