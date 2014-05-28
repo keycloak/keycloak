@@ -33,7 +33,7 @@
         document.addEventListener("deviceready", function() {
             console.debug('Device ready');
 
-            keycloak.init('check-sso');
+            keycloak.init({ onLoad: 'check-sso' });
         }, false);
     </script>
 </head>
