@@ -17,7 +17,7 @@
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-installed</artifactId>
+            <artifactId>keycloak-installed-adapter</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>
