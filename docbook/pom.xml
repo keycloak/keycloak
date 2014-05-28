@@ -41,6 +41,13 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>org.jboss.maven.plugins</groupId>
                 <artifactId>maven-jdocbook-plugin</artifactId>
                 <version>2.3.8</version>
@@ -63,9 +70,9 @@
                 <configuration>
                     <sourceDocumentName>master.xml</sourceDocumentName>
                     <masterTranslation>en-US</masterTranslation>
-                    <sourceDirectory>reference/en</sourceDirectory>
+                    <sourceDirectory>${project.basedir}/reference/en</sourceDirectory>
                     <imageResource>
-                        <directory>reference/en</directory>
+                        <directory>${project.basedir}/reference/en</directory>
                         <includes>
                             <include>images/*</include>
                         </includes>

@@ -10,7 +10,7 @@
     <description/>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>integration-pom</artifactId>
+    <artifactId>keycloak-integration-pom</artifactId>
     <packaging>pom</packaging>
 
     <modules>

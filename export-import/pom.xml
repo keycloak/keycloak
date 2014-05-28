@@ -10,7 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
     <packaging>pom</packaging>
 
-    <artifactId>keycloak-export-import</artifactId>
+    <artifactId>keycloak-export-import-parent</artifactId>
     <name>Keycloak Export And Import</name>
     <description/>
 

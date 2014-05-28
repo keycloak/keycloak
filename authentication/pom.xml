@@ -11,7 +11,7 @@
     <modelVersion>4.0.0</modelVersion>
     <packaging>pom</packaging>
 
-    <artifactId>keycloak-authentication</artifactId>
+    <artifactId>keycloak-authentication-parent</artifactId>
     <name>Keycloak Authentication</name>
     <description />
 

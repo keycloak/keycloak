@@ -9,7 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>keycloak-installed</artifactId>
+    <artifactId>keycloak-installed-adapter</artifactId>
     <name>Keycloak Installed Application</name>
     <description/>
 

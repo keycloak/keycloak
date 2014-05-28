@@ -10,7 +10,7 @@
 	<modelVersion>4.0.0</modelVersion>
     <packaging>pom</packaging>
 
-	<artifactId>keycloak-forms</artifactId>
+	<artifactId>keycloak-forms-parent</artifactId>
 	<name>Keycloak Forms</name>
 	<description />
 
