@@ -6,6 +6,7 @@
                 <!ENTITY Installation SYSTEM "modules/server-installation.xml">
                 <!ENTITY OpenShift SYSTEM "modules/openshift.xml">
                 <!ENTITY AdminPermissions SYSTEM "modules/admin-permissions.xml">
+                <!ENTITY PerRealmAdminPermissions SYSTEM "modules/per-realm-admin-permissions.xml">
                 <!ENTITY AdapterConfig SYSTEM "modules/adapter-config.xml">
                 <!ENTITY JBossAdapter SYSTEM "modules/jboss-adapter.xml">
                 <!ENTITY JavascriptAdapter SYSTEM "modules/javascript-adapter.xml">
@@ -60,6 +61,7 @@ This one is short
     &Installation;
     &OpenShift;
     &AdminPermissions;
+    &PerRealmAdminPermissions;
     <chapter>
         <title>Adapters</title>
         <para>
