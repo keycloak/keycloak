@@ -480,7 +480,7 @@
                                         <keycloak.audit.mongo.port>${keycloak.model.mongo.port}</keycloak.audit.mongo.port>
                                         <keycloak.audit.mongo.db>${keycloak.model.mongo.db}</keycloak.audit.mongo.db>
                                         <keycloak.audit.mongo.clearOnStartup>${keycloak.model.mongo.clearOnStartup}</keycloak.audit.mongo.clearOnStartup>
-                                        <keycloak.audit.mongo.bindIp>${keycloak.audit.mongo.bindIp}</keycloak.audit.mongo.bindIp>
+                                        <keycloak.audit.mongo.bindIp>${keycloak.model.mongo.bindIp}</keycloak.audit.mongo.bindIp>
                                     </systemPropertyVariables>
                                 </configuration>
                             </execution>
