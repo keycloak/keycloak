@@ -449,6 +449,7 @@
                 <keycloak.model.mongo.port>27018</keycloak.model.mongo.port>
                 <keycloak.model.mongo.db>keycloak</keycloak.model.mongo.db>
                 <keycloak.model.mongo.clearOnStartup>true</keycloak.model.mongo.clearOnStartup>
+                <keycloak.model.mongo.bindIp>127.0.0.1</keycloak.model.mongo.bindIp>
             </properties>
 
             <build>
@@ -472,12 +473,14 @@
                                         <keycloak.model.mongo.port>${keycloak.model.mongo.port}</keycloak.model.mongo.port>
                                         <keycloak.model.mongo.db>${keycloak.model.mongo.db}</keycloak.model.mongo.db>
                                         <keycloak.model.mongo.clearOnStartup>${keycloak.model.mongo.clearOnStartup}</keycloak.model.mongo.clearOnStartup>
+                                        <keycloak.model.mongo.bindIp>${keycloak.model.mongo.bindIp}</keycloak.model.mongo.bindIp>
 
                                         <keycloak.audit.provider>mongo</keycloak.audit.provider>
                                         <keycloak.audit.mongo.host>${keycloak.model.mongo.host}</keycloak.audit.mongo.host>
                                         <keycloak.audit.mongo.port>${keycloak.model.mongo.port}</keycloak.audit.mongo.port>
                                         <keycloak.audit.mongo.db>${keycloak.model.mongo.db}</keycloak.audit.mongo.db>
                                         <keycloak.audit.mongo.clearOnStartup>${keycloak.model.mongo.clearOnStartup}</keycloak.audit.mongo.clearOnStartup>
+                                        <keycloak.audit.mongo.bindIp>${keycloak.model.mongo.bindIp}</keycloak.audit.mongo.bindIp>
                                     </systemPropertyVariables>
                                 </configuration>
                             </execution>
@@ -505,6 +508,7 @@
                                     <port>${keycloak.model.mongo.port}</port>
                                     <logging>file</logging>
                                     <logFile>${project.build.directory}/mongodb.log</logFile>
+                                    <bindIp>${keycloak.model.mongo.bindIp}</bindIp>
                                 </configuration>
                             </execution>
                             <execution>
