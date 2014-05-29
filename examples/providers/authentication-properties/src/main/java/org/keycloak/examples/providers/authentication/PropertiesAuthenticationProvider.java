@@ -62,7 +62,6 @@ public class PropertiesAuthenticationProvider implements AuthenticationProvider 
 
     @Override
     public boolean updateCredential(RealmModel realm, Map<String, String> configuration, String username, String password) throws AuthenticationProviderException {
-        // Just update in memory (Won't survive restart)
         log.info("Going to update password for user " + username + " in PropertiesAuthenticationProvider");
         properties.put(username, password);
         return true;
