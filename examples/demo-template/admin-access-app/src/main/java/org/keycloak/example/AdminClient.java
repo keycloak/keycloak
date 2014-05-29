@@ -8,19 +8,14 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicNameValuePair;
-import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.ServiceUrlConstants;
 import org.keycloak.adapters.HttpClientBuilder;
 import org.keycloak.representations.AccessTokenResponse;
-import org.keycloak.representations.IDToken;
-import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.KeycloakUriBuilder;
 
-import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -107,8 +102,8 @@ public class AdminClient {
 
         try {
             HttpGet get = new HttpGet(KeycloakUriBuilder.fromUri("http://localhost:8080/auth")
-                    .path(ServiceUrlConstants.TOKEN_SERVICE_LOGIN_PATH)
-                    .queryParam("session-state", res.getSessionState())
+                    .path(ServiceUrlConstants.TOKEN_SERVICE_LOGOUT_PATH)
+                    .queryParam("session_state", res.getSessionState())
                     .build("demo"));
             HttpResponse response = client.execute(get);
             HttpEntity entity = response.getEntity();
