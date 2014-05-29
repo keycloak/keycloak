@@ -59,6 +59,7 @@
         <keycloak.audit.mongo.port>27018</keycloak.audit.mongo.port>
         <keycloak.audit.mongo.db>keycloak</keycloak.audit.mongo.db>
         <keycloak.audit.mongo.clearOnStartup>true</keycloak.audit.mongo.clearOnStartup>
+        <keycloak.audit.mongo.bindIp>127.0.0.1</keycloak.audit.mongo.bindIp>
     </properties>
 
     <build>
@@ -89,6 +90,7 @@
                                 <keycloak.audit.mongo.port>${keycloak.audit.mongo.port}</keycloak.audit.mongo.port>
                                 <keycloak.audit.mongo.db>${keycloak.audit.mongo.db}</keycloak.audit.mongo.db>
                                 <keycloak.audit.mongo.clearOnStartup>${keycloak.audit.mongo.clearOnStartup}</keycloak.audit.mongo.clearOnStartup>
+                                <keycloak.audit.mongo.bindIp>${keycloak.model.mongo.bindIp}</keycloak.audit.mongo.bindIp>
                             </systemPropertyVariables>
                         </configuration>
                     </execution>
@@ -116,6 +118,7 @@
                             <port>${keycloak.audit.mongo.port}</port>
                             <logging>file</logging>
                             <logFile>${project.build.directory}/mongodb.log</logFile>
+                            <bindIp>${keycloak.audit.mongo.bindIp}</bindIp>
                         </configuration>
                     </execution>
                     <execution>
