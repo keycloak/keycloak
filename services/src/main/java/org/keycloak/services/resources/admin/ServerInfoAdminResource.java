@@ -1,6 +1,7 @@
 package org.keycloak.services.resources.admin;
 
 import org.keycloak.audit.AuditListener;
+import org.keycloak.freemarker.ExtendingThemeManager;
 import org.keycloak.freemarker.Theme;
 import org.keycloak.freemarker.ThemeProvider;
 import org.keycloak.provider.ProviderSession;
@@ -13,6 +14,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.core.Context;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -42,14 +44,13 @@ public class ServerInfoAdminResource {
     }
 
     private void setThemes(ServerInfoRepresentation info) {
-        Set<ThemeProvider> themeProviders = providers.getAllProviders(ThemeProvider.class);
+        ExtendingThemeManager themeManager = new ExtendingThemeManager(providers);
         info.themes = new HashMap<String, List<String>>();
+
         for (Theme.Type type : Theme.Type.values()) {
-            List<String> themes = new LinkedList<String>();
-            for (ThemeProvider p : themeProviders) {
-                themes.addAll(p.nameSet(type));
-            }
+            List<String> themes = new LinkedList<String>(themeManager.nameSet(type));
             Collections.sort(themes);
+
             info.themes.put(type.toString().toLowerCase(), themes);
         }
     }
