@@ -67,7 +67,7 @@
         },
         {
             "client": "customer-portal",
-            "roles": ["user"]
+            "roles": ["user", "admin" ]
         },
         {
             "client": "customer-portal-js",
@@ -79,7 +79,7 @@
         },
         {
             "client": "product-portal",
-            "roles": ["user"]
+            "roles": ["user", "admin" ]
         }
 
     ],
@@ -168,6 +168,10 @@
         "realm-management": [
             {
                 "client": "admin-client",
+                "roles": ["realm-admin"]
+            },
+            {
+                "client": "customer-portal",
                 "roles": ["realm-admin"]
             }
         ]
