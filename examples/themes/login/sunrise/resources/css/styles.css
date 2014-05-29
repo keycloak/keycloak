@@ -6,18 +6,18 @@ body {
     background-size: cover;
     background-repeat: no-repeat;
 
-    color: #ccc;
+    color: #fff;
     font-family: sans-serif;
+    text-shadow: 0px 0px 10px #000;
 }
 
 a {
     color: #fff;
-    text-decoration: none;
 }
 
-.content {
+div#kc-content {
     position: absolute;
-    top: 30%;
+    top: 20%;
     left: 50%;
     width: 550px;
     margin-left: -225px;
@@ -35,24 +35,17 @@ h2#kc-header {
     font-size: 80px;
 }
 
-div.app-form {
+div#kc-form {
     float: left;
     width: 350px;
 }
 
-div.app-form label {
+div#kc-form label {
     display: block;
     font-size: 16px;
 }
 
-div.social-login {
-    border-left: 1px solid rgba(255, 255, 255, 0.2);
-    float: right;
-    width: 150px;
-    padding: 20px 0 200px 40px;
-}
-
-div.info-area {
+div#info-area {
     position: fixed;
     bottom: 0;
     left: 0;
@@ -62,7 +55,7 @@ div.info-area {
     width: 100%;
 }
 
-div.info-area p {
+div#info-area p {
     margin-right: 30px;
     display: inline;
     text-shadow: none;
@@ -108,22 +101,17 @@ input[type=submit]:hover {
     background-color: rgba(255,255,255,0.8);
 }
 
-p.powered {
+div#kc-form-options div {
+    display: inline-block;
+    margin-right: 20px;
     font-size: 12px;
-    position: fixed;
-    top: 10px;
-    right: 10px;
-    margin: 0;
-    padding: 0;
-    text-shadow: none;
 }
 
-p.powered a {
-    color: #ccc;
-    text-decoration: none;
+div#kc-form-options div label {
+    font-size: 12px;
 }
 
-div.feedback {
+div#kc-feedback {
     box-shadow: 0px 0px 6px rgba(0,0,0,0.5);
     position: fixed;
     top: 0;
@@ -132,24 +120,23 @@ div.feedback {
     text-align: center;
 }
 
-div.success {
-    background-color: rgba(155,155,255,0.1);
-}
-
-div.warning {
-    background-color: rgba(255,175,0,0.1);
-}
-
-div.error {
-    background-color: rgba(255,0,0,0.1);
-}
-
-div.feedback p {
-    margin: 0;
+div#kc-feedback-wrapper {
     padding: 1em;
 }
 
-h1.kc-title {
+div.feedback-success {
+    background-color: rgba(155,155,255,0.1);
+}
+
+div.feedback-warning {
+    background-color: rgba(255,175,0,0.1);
+}
+
+div.feedback-error {
+    background-color: rgba(255,0,0,0.1);
+}
+
+div#kc-header {
     background-image: url('../img/logo.png');
     background-repeat: no-repeat;
     height: 500px;
@@ -161,25 +148,32 @@ h1.kc-title {
     text-indent: -9999px;
 }
 
+div#kc-registration {
+    margin-bottom: 20px;
+}
+
+div#social-login {
+    border-left: 1px solid rgba(255, 255, 255, 0.2);
+    float: right;
+    width: 150px;
+    padding: 20px 0 200px 40px;
+}
+
 div.social-login span {
     display: none;
 }
 
-div.social-login p {
-    display: none;
-}
-
-div.social-login ul {
+div#kc-social-providers ul {
     list-style: none;
     margin: 0;
     padding: 0;
 }
 
-div.social-login ul li {
+div#kc-social-providers ul li {
     margin-bottom: 20px;
 }
 
-div.social-login ul li span {
+div#kc-social-providers ul li span {
     display: inline;
     width: 100px;
 }
