@@ -123,28 +123,19 @@ next you must build and deploy
 ```
 cd preconfigured-demo
 mvn clean install
+```
+
+On EAP6/AS7 run:
+
+```
 mvn jboss-as:deploy
 ```
 
-Please note that jboss-as:deploy may fail on Wildfly distributions.  This is because Wildfly 8.0.0.Final has turned
-off a management interface.  You will hae to add this back in order to run the build.  Edit standalone/configuration/standalone.xml
+Or for WildFly run:
 
-Add the native-itnerface to <management> element's <management-interfaces>:
-
-    <management>
-        <management-interfaces>
-            <native-interface security-realm="ManagementRealm">
-                <socket-binding native="management-native"/>
-            </native-interface>
-            ...
-        </management-interfaces>
-    </management>
-
-Then add a socket port mapping for the management interface :
-
-    <socket-binding-group name="standard-sockets" default-interface="public" port-offset="${jboss.socket.binding.port-offset:0}">
-        <socket-binding name="management-native" interface="management" port="${jboss.management.native.port:9999}"/>
-
+```
+mvn wildfly:deploy
+```
 
 
 Step 5: Login and Observe Apps
