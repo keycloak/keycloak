@@ -27,12 +27,16 @@ public class MemEventQuery implements EventQuery {
         Iterator<Event> itr = this.events.iterator();
         while (itr.hasNext()) {
             Event next = itr.next();
+            boolean include = false;
             for (EventType e : events) {
                 if (next.getEvent().equals(e)) {
+                    include = true;
                     break;
                 }
             }
-            itr.remove();
+            if (!include) {
+                itr.remove();
+            }
         }
         return this;
     }
