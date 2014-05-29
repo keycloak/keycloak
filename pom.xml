@@ -8,7 +8,7 @@
     </description>
     <groupId>org.keycloak</groupId>
     <artifactId>keycloak-parent</artifactId>
-    <version>1.0-beta-1-SNAPSHOT</version>
+    <version>1.0-beta-1</version>
     <packaging>pom</packaging>
 
     <properties>
@@ -158,7 +158,7 @@
             <dependency>
                 <groupId>org.jboss.resteasy</groupId>
                 <artifactId>resteasy-client</artifactId>
-                <version>${resteasy.version}</version>
+                <version>${resteasy.version.latest}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.resteasy</groupId>
