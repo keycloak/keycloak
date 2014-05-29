@@ -20,6 +20,33 @@
                 <exclude name="**/README.md.overview"/>
             </fileset>
         </copy>
+        <copy todir="target/examples/providers" overwrite="true">
+            <fileset dir="../../examples/providers">
+                <exclude name="**/target/**"/>
+                <exclude name="**/*.iml"/>
+                <exclude name="**/*.unconfigured"/>
+                <exclude name="**/subsystem-config.xml"/>
+                <exclude name="**/README.md.overview"/>
+            </fileset>
+        </copy>
+        <copy todir="target/examples/js-console" overwrite="true">
+            <fileset dir="../../examples/js-console">
+                <exclude name="**/target/**"/>
+                <exclude name="**/*.iml"/>
+                <exclude name="**/*.unconfigured"/>
+                <exclude name="**/subsystem-config.xml"/>
+                <exclude name="**/README.md.overview"/>
+            </fileset>
+        </copy>
+        <copy todir="target/examples/themes" overwrite="true">
+            <fileset dir="../../examples/themes">
+                <exclude name="**/target/**"/>
+                <exclude name="**/*.iml"/>
+                <exclude name="**/*.unconfigured"/>
+                <exclude name="**/subsystem-config.xml"/>
+                <exclude name="**/README.md.overview"/>
+            </fileset>
+        </copy>
         <copy todir="target/examples/preconfigured-demo" overwrite="true">
             <fileset dir="../../examples/demo-template">
                 <exclude name="**/target/**"/>
