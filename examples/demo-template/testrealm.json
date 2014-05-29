@@ -74,6 +74,10 @@
             "roles": ["user"]
         },
         {
+            "client": "customer-portal-cli",
+            "roles": ["user"]
+        },
+        {
             "client": "angular-product",
             "roles": ["user"]
         },
