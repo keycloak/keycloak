@@ -7,69 +7,72 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, WhoAmI, Current, $
     $scope.logout = logout;
 
     $scope.auth = Auth;
-    WhoAmI.get(function(data) {
+
+    WhoAmI.get(function (data) {
         Auth.user = data;
         Auth.loggedIn = true;
+    });
 
-        function getAccess(role) {
-            if (!Current.realm) {
-                return false;
-            }
-
-            var realmAccess = Auth.user['realm_access'];
-            if (realmAccess) {
-                realmAccess = realmAccess[Current.realm.realm];
-                if (realmAccess) {
-                    return realmAccess.indexOf(role) >= 0;
-                }
-            }
+    function getAccess(role) {
+        if (!Current.realm) {
             return false;
         }
 
-        $scope.access = {
-            createRealm: data.createRealm,
-
-            get viewRealm() {
-                return getAccess('view-realm') || this.manageRealm;
-            },
-
-            get viewApplications() {
-                return getAccess('view-applications') || this.manageApplications;
-            },
-
-            get viewClients() {
-                return getAccess('view-clients') || this.manageClients;
-            },
-
-            get viewUsers() {
-                return getAccess('view-users') || this.manageClients;
-            },
-
-            get viewAudit() {
-                return getAccess('view-audit') || this.manageClients;
-            },
-
-            get manageRealm() {
-                return getAccess('manage-realm');
-            },
-
-            get manageApplications() {
-                return getAccess('manage-applications');
-            },
-
-            get manageClients() {
-                return getAccess('manage-clients');
-            },
-
-            get manageUsers() {
-                return getAccess('manage-users');
-            },
-
-            get manageAudit() {
-                return getAccess('manage-audit');
+        var realmAccess = Auth.user && Auth.user['realm_access'];
+        if (realmAccess) {
+            realmAccess = realmAccess[Current.realm.realm];
+            if (realmAccess) {
+                return realmAccess.indexOf(role) >= 0;
             }
         }
-    });
+        return false;
+    }
+
+    $scope.access = {
+        get createRealm() {
+            return Auth.user && Auth.user.createRealm;
+        },
+
+        get viewRealm() {
+            return getAccess('view-realm') || this.manageRealm;
+        },
+
+        get viewApplications() {
+            return getAccess('view-applications') || this.manageApplications;
+        },
+
+        get viewClients() {
+            return getAccess('view-clients') || this.manageClients;
+        },
+
+        get viewUsers() {
+            return getAccess('view-users') || this.manageClients;
+        },
+
+        get viewAudit() {
+            return getAccess('view-audit') || this.manageClients;
+        },
+
+        get manageRealm() {
+            return getAccess('manage-realm');
+        },
+
+        get manageApplications() {
+            return getAccess('manage-applications');
+        },
+
+        get manageClients() {
+            return getAccess('manage-clients');
+        },
+
+        get manageUsers() {
+            return getAccess('manage-users');
+        },
+
+        get manageAudit() {
+            return getAccess('manage-audit');
+        }
+    }
 
     $scope.$watch(function() {
         return $location.path();
