@@ -2,7 +2,7 @@
     <title>Master Admin Access Control</title>
     <para>
         You can create and manage multiple realms by logging into the <literal>master</literal> Keycloak admin console
-        at <literal>/{keycloak-root/admin/index.html</literal>
+        at <literal>/{keycloak-root}/admin/index.html</literal>
     </para>
     <para>
         Users in the Keycloak <literal>master</literal> realm can be granted permission to manage zero or more realms that are
