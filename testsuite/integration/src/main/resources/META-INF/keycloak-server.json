@@ -30,6 +30,7 @@
     "theme": {
         "default": "keycloak",
         "staticMaxAge": 2592000,
+        "cacheTemplates": "${keycloak.theme.cacheTemplates:true}",
         "folder": {
             "dir": "${keycloak.theme.dir}"
         }

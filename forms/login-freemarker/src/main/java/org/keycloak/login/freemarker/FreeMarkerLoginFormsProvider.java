@@ -64,6 +64,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     private MultivaluedMap<String, String> formData;
 
     private ProviderSession session;
+    private FreeMarkerUtil freeMarker;
     private RealmModel realm;
 
     private UserModel user;
@@ -72,8 +73,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
     private UriInfo uriInfo;
 
-    public FreeMarkerLoginFormsProvider(ProviderSession session) {
+    public FreeMarkerLoginFormsProvider(ProviderSession session, FreeMarkerUtil freeMarker) {
         this.session = session;
+        this.freeMarker = freeMarker;
     }
 
     public LoginFormsProvider setRealm(RealmModel realm) {
@@ -210,7 +212,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         }
 
         try {
-            String result = FreeMarkerUtil.processTemplate(attributes, Templates.getTemplate(page), theme);
+            String result = freeMarker.processTemplate(attributes, Templates.getTemplate(page), theme);
             return Response.status(status).type(MediaType.TEXT_HTML).entity(result).build();
         } catch (FreeMarkerException e) {
             logger.error("Failed to process template", e);
