@@ -36,6 +36,16 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-model-jpa</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-model-mongo</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-jaxrs</artifactId>
             <scope>provided</scope>
@@ -58,6 +68,10 @@
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>jaxrs-api</artifactId>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.iharder</groupId>
+            <artifactId>base64</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.jmeter</groupId>
@@ -116,7 +130,7 @@
                         <dependencies>
                             <dependency>
                                 <groupId>org.keycloak</groupId>
-                                <artifactId>keycloak-testsuite</artifactId>
+                                <artifactId>keycloak-testsuite-performance</artifactId>
                                 <version>${project.version}</version>
                                 <type>test-jar</type>
                             </dependency>
