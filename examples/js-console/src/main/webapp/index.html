@@ -60,12 +60,12 @@
         if (typeof data === 'object') {
             data = JSON.stringify(data, null, '  ');
         }
-        document.getElementById('output').innerText = data;
+        document.getElementById('output').innerHTML = data;
     }
 
     function event(event) {
-        var e = document.getElementById('events').innerText;
-        document.getElementById('events').innerText = new Date().toLocaleString() + "\t" + event + "\n" + e;
+        var e = document.getElementById('events').innerHTML;
+        document.getElementById('events').innerHTML = new Date().toLocaleString() + "\t" + event + "\n" + e;
     }
 
     var keycloak = Keycloak();
