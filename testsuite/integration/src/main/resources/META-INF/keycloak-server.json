@@ -29,6 +29,7 @@
 
     "theme": {
         "default": "keycloak",
+        "staticMaxAge": 2592000,
         "folder": {
             "dir": "${keycloak.theme.dir}"
         }
