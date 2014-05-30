@@ -30,6 +30,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
@@ -314,13 +315,17 @@ public class AdminConsole {
         }
 
         try {
-            //logger.info("getting resource: " + path + " uri: " + uriInfo.getRequestUri().toString());
             ExtendingThemeManager themeManager = new ExtendingThemeManager(providerSession);
             Theme theme = themeManager.createTheme(realm.getAdminTheme(), Theme.Type.ADMIN);
             InputStream resource = theme.getResourceAsStream(path);
             if (resource != null) {
                 String contentType = mimeTypes.getContentType(path);
-                return Response.ok(resource).type(contentType).build();
+
+                CacheControl cacheControl = new CacheControl();
+                cacheControl.setNoTransform(false);
+                cacheControl.setMaxAge(themeManager.getStaticMaxAge());
+
+                return Response.ok(resource).type(contentType).cacheControl(cacheControl).build();
             } else {
                 return Response.status(Response.Status.NOT_FOUND).build();
             }

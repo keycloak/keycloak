@@ -30,11 +30,13 @@ public class FreeMarkerEmailProvider implements EmailProvider {
     private static final Logger log = Logger.getLogger(FreeMarkerEmailProvider.class);
 
     private ProviderSession session;
+    private FreeMarkerUtil freeMarker;
     private RealmModel realm;
     private UserModel user;
 
-    public FreeMarkerEmailProvider(ProviderSession session) {
+    public FreeMarkerEmailProvider(ProviderSession session, FreeMarkerUtil freeMarker) {
         this.session = session;
+        this.freeMarker = freeMarker;
     }
 
     @Override
@@ -81,7 +83,7 @@ public class FreeMarkerEmailProvider implements EmailProvider {
             Theme theme = themeManager.createTheme(realm.getEmailTheme(), Theme.Type.EMAIL);
 
             String subject =  theme.getMessages().getProperty(subjectKey);
-            String body = FreeMarkerUtil.processTemplate(attributes, template, theme);
+            String body = freeMarker.processTemplate(attributes, template, theme);
 
             send(subject, body);
         } catch (Exception e) {

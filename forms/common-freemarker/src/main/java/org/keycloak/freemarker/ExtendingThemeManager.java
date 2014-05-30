@@ -22,6 +22,7 @@ public class ExtendingThemeManager implements ThemeProvider {
 
     private List<ThemeProvider> providers;
     private String defaultTheme;
+    private int staticMaxAge;
 
     public ExtendingThemeManager(ProviderSession providerSession) {
         providers = new LinkedList();
@@ -40,6 +41,11 @@ public class ExtendingThemeManager implements ThemeProvider {
         });
 
         this.defaultTheme = Config.scope("theme").get("default");
+        this.staticMaxAge = Config.scope("theme").getInt("staticMaxAge");
+    }
+
+    public int getStaticMaxAge() {
+        return staticMaxAge;
     }
 
     @Override

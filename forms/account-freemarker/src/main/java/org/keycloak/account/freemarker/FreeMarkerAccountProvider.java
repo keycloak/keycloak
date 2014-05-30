@@ -51,6 +51,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
     private boolean audit;
     private boolean passwordUpdateSupported;
     private ProviderSession session;
+    private FreeMarkerUtil freeMarker;
 
     public static enum MessageType {SUCCESS, WARNING, ERROR}
 
@@ -59,8 +60,9 @@ public class FreeMarkerAccountProvider implements AccountProvider {
     private String message;
     private MessageType messageType;
 
-    public FreeMarkerAccountProvider(ProviderSession session) {
+    public FreeMarkerAccountProvider(ProviderSession session, FreeMarkerUtil freeMarker) {
         this.session = session;
+        this.freeMarker = freeMarker;
     }
 
     public AccountProvider setUriInfo(UriInfo uriInfo) {
@@ -134,7 +136,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
         }
 
         try {
-            String result = FreeMarkerUtil.processTemplate(attributes, Templates.getTemplate(page), theme);
+            String result = freeMarker.processTemplate(attributes, Templates.getTemplate(page), theme);
             return Response.status(status).type(MediaType.TEXT_HTML).entity(result).build();
         } catch (FreeMarkerException e) {
             logger.error("Failed to process template", e);
