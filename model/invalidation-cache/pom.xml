@@ -4,13 +4,13 @@
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
         <version>1.0-beta-2-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
+        <relativePath>../../pom.xml</relativePath>
     </parent>
     <name>Model Parent</name>
     <description/>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>keycloak-model-pom</artifactId>
+    <artifactId>keycloak-invalidation-cache-model-pom</artifactId>
     <packaging>pom</packaging>
 
     <build>
@@ -25,11 +25,6 @@
         </plugins>
     </build>
     <modules>
-        <module>api</module>
-        <!-- <module>picketlink</module> -->
-        <module>jpa</module>
-        <module>mongo</module>
-        <module>invalidation-cache</module>
-        <module>tests</module>
+        <module>model-adapters</module>
     </modules>
 </project>
