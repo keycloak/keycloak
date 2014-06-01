@@ -20,6 +20,8 @@
 
     "theme": {
         "default": "keycloak",
+        "staticMaxAge": 2592000,
+        "cacheTemplates": true,
         "folder": {
           "dir": "${jboss.server.config.dir}/themes"
         }

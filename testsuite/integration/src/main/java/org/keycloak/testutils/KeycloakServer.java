@@ -131,6 +131,10 @@ public class KeycloakServer {
                 System.setProperty("keycloak.theme.dir", file(dir.getAbsolutePath(), "forms", "common-themes", "src", "main", "resources", "theme").getAbsolutePath());
             }
 
+            if (!System.getProperties().containsKey("keycloak.theme.cacheTemplates")) {
+                System.setProperty("keycloak.theme.cacheTemplates", "false");
+            }
+
             config.setResourcesHome(dir.getAbsolutePath());
         }
 
