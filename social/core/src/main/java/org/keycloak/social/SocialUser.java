@@ -34,12 +34,14 @@ public class SocialUser {
     }
 
     public void setName(String name) {
-        int i = name.lastIndexOf(' ');
-        if (i != -1) {
-            firstName  = name.substring(0, i);
-            lastName = name.substring(i + 1);
-        } else {
-            firstName = name;
+        if (name != null) {
+            int i = name.lastIndexOf(' ');
+            if (i != -1) {
+                firstName  = name.substring(0, i);
+                lastName = name.substring(i + 1);
+            } else {
+                firstName = name;
+            }
         }
     }
 
