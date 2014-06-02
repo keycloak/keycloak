@@ -73,6 +73,7 @@ public class CatalinaUserSessionManagement implements SessionListener, UserSessi
         keycloakSessionMap.put(keycloakSessionId, sessions);
         sessions.httpSessionToKeycloakSession.put(sessionId, keycloakSessionId);
         sessions.keycloakSessionToHttpSession.put(keycloakSessionId, sessionId);
+        sessions.sessions.put(sessionId, session);
         session.addSessionListener(this);
     }
 
