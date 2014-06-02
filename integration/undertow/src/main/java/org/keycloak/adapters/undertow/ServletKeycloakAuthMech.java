@@ -51,10 +51,20 @@ public class ServletKeycloakAuthMech implements AuthenticationMechanism {
     }
 
     protected ServletRequestAuthenticator createRequestAuthenticator(KeycloakDeployment deployment, HttpServerExchange exchange, SecurityContext securityContext, UndertowHttpFacade facade) {
-        int confidentialPort = 8443;
-        if (portManager != null) confidentialPort = portManager.getConfidentialPort(exchange);
+
+        int confidentialPort = getConfidentilPort(exchange);
         return new ServletRequestAuthenticator(facade, deployment,
                 confidentialPort, securityContext, exchange, userSessionManagement);
+    }
+
+    protected int getConfidentilPort(HttpServerExchange exchange) {
+        int confidentialPort = 8443;
+        if (exchange.getRequestScheme().equalsIgnoreCase("HTTPS")) {
+            confidentialPort = exchange.getHostPort();
+        } else if (portManager != null) {
+            confidentialPort = portManager.getConfidentialPort(exchange);
+        }
+        return confidentialPort;
     }
 
     @Override

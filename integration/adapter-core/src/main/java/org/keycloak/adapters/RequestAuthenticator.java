@@ -32,10 +32,6 @@ public abstract class RequestAuthenticator {
 
     public AuthOutcome authenticate() {
         log.info("--> authenticate()");
-        if (!facade.getRequest().isSecure() && deployment.isSslRequired()) {
-            log.warn("SSL is required to authenticate");
-            return AuthOutcome.FAILED;
-        }
         BearerTokenRequestAuthenticator bearer = createBearerTokenAuthenticator();
         log.info("try bearer");
         AuthOutcome outcome = bearer.authenticate(facade);
@@ -44,6 +40,7 @@ public abstract class RequestAuthenticator {
             log.info("Bearer FAILED");
             return AuthOutcome.FAILED;
         } else if (outcome == AuthOutcome.AUTHENTICATED) {
+            if (verifySSL()) return AuthOutcome.FAILED;
             completeAuthentication(bearer);
             log.info("Bearer AUTHENTICATED");
             return AuthOutcome.AUTHENTICATED;
@@ -55,6 +52,7 @@ public abstract class RequestAuthenticator {
 
         log.info("try oauth");
         if (isCached()) {
+            if (verifySSL()) return AuthOutcome.FAILED;
             log.info("AUTHENTICATED: was cached");
             return AuthOutcome.AUTHENTICATED;
         }
@@ -70,6 +68,8 @@ public abstract class RequestAuthenticator {
 
         }
 
+        if (verifySSL()) return AuthOutcome.FAILED;
+
         completeAuthentication(oauth);
 
         // redirect to strip out access code and state query parameters
@@ -79,6 +79,14 @@ public abstract class RequestAuthenticator {
 
         log.info("AUTHENTICATED");
         return AuthOutcome.AUTHENTICATED;
+    }
+
+    protected boolean verifySSL() {
+        if (!facade.getRequest().isSecure() && deployment.isSslRequired()) {
+            log.warn("SSL is required to authenticate");
+            return true;
+        }
+        return false;
     }
 
     protected abstract OAuthRequestAuthenticator createOAuthAuthenticator();

@@ -18,7 +18,7 @@
         <resteasy.version>2.3.7.Final</resteasy.version>
         <resteasy.version.eap.6.3>2.3.7.Final</resteasy.version.eap.6.3>
         <resteasy.version.latest>3.0.8.Final</resteasy.version.latest>
-        <undertow.version>1.0.0.Final</undertow.version>
+        <undertow.version>1.0.15.Final</undertow.version>
         <picketlink.version>2.6.0.CR2</picketlink.version>
         <picketbox.ldap.version>1.0.2.Final</picketbox.ldap.version>
         <mongo.driver.version>2.11.3</mongo.driver.version>
@@ -34,7 +34,7 @@
         <mysql.version>5.1.25</mysql.version>
         <slf4j.version>1.5.10</slf4j.version>
         <jboss.version>7.1.1.Final</jboss.version>
-        <wildfly.version>8.0.0.Final</wildfly.version>
+        <wildfly.version>8.1.0.Final</wildfly.version>
         <servlet.api.30.version>1.0.1.Final</servlet.api.30.version>
         <google.zxing.version>2.2</google.zxing.version>
         <google.client.version>1.14.1-beta</google.client.version>

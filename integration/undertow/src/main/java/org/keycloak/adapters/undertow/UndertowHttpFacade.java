@@ -6,6 +6,7 @@ import io.undertow.server.handlers.CookieImpl;
 import io.undertow.util.AttachmentKey;
 import io.undertow.util.Headers;
 import io.undertow.util.HttpString;
+import org.jboss.logging.Logger;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AuthChallenge;
 import org.keycloak.adapters.HttpFacade;
@@ -24,6 +25,7 @@ import java.util.Map;
  * @version $Revision: 1 $
  */
 public class UndertowHttpFacade implements HttpFacade {
+    private static final Logger log = Logger.getLogger(UndertowHttpFacade.class);
     public static final AttachmentKey<KeycloakSecurityContext> KEYCLOAK_SECURITY_CONTEXT_KEY = AttachmentKey.create(KeycloakSecurityContext.class);
 
     protected HttpServerExchange exchange;
@@ -41,7 +43,8 @@ public class UndertowHttpFacade implements HttpFacade {
 
         @Override
         public boolean isSecure() {
-            return exchange.getProtocol().toString().equalsIgnoreCase("https");
+            String protocol = exchange.getRequestScheme();
+            return protocol.equalsIgnoreCase("https");
         }
 
         @Override
