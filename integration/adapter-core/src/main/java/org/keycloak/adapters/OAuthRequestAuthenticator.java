@@ -242,7 +242,8 @@ public abstract class OAuthRequestAuthenticator {
     protected AuthChallenge resolveCode(String code) {
         // abort if not HTTPS
         if (deployment.isSslRequired() && !isRequestSecure()) {
-            log.error("SSL is required");
+
+            log.error("Adapter requires SSL. Request: " + facade.getRequest().getURI());
             return challenge(403);
         }
 

@@ -24,7 +24,8 @@ public class WildflyAuthenticationMechanism extends ServletKeycloakAuthMech {
 
     @Override
     protected ServletRequestAuthenticator createRequestAuthenticator(KeycloakDeployment deployment, HttpServerExchange exchange, SecurityContext securityContext, UndertowHttpFacade facade) {
+        int confidentialPort = getConfidentilPort(exchange);
         return new WildflyRequestAuthenticator(facade, deployment,
-                portManager.getConfidentialPort(exchange), securityContext, exchange, userSessionManagement);
+                confidentialPort, securityContext, exchange, userSessionManagement);
     }
 }
