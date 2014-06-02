@@ -173,7 +173,7 @@ public class KeycloakInstalled {
     }
 
     public String getTokenString(long minValidity, TimeUnit unit) throws VerificationException, IOException, ServerRequest.HttpFailure {
-        long expires = token.getExpiration() * 1000 - unit.toMillis(minValidity);
+        long expires = ((long) token.getExpiration()) * 1000 - unit.toMillis(minValidity);
         if (expires < System.currentTimeMillis()) {
             refreshToken();
         }
