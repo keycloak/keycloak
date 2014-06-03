@@ -57,6 +57,7 @@ var Keycloak = function (config) {
             } else if (initOptions) {
                 if (initOptions.token || initOptions.refreshToken) {
                     setToken(initOptions.token, initOptions.refreshToken);
+                    initPromise.setSuccess();
                 } else if (initOptions.onLoad) {
                     var options = {};
                     switch (initOptions.onLoad) {
