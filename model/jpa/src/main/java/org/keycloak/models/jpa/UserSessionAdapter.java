@@ -43,12 +43,12 @@ public class UserSessionAdapter implements UserSessionModel {
 
     @Override
     public UserModel getUser() {
-        return new UserAdapter(entity.getUser());
+        return realm.getUserById(entity.getUserId());
     }
 
     @Override
     public void setUser(UserModel user) {
-        entity.setUser(((UserAdapter) user).getUser());
+        entity.setUserId(user.getId());
     }
 
     @Override
@@ -89,8 +89,8 @@ public class UserSessionAdapter implements UserSessionModel {
         ClientUserSessionAssociationEntity association = new ClientUserSessionAssociationEntity();
         association.setClientId(client.getId());
         association.setSession(entity);
-        association.setUser(entity.getUser());
-        association.setRealm(((RealmAdapter)realm).getEntity());
+        association.setUserId(entity.getUserId());
+        association.setRealmId(realm.getId());
         em.persist(association);
         entity.getClients().add(association);
     }

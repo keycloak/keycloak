@@ -1,0 +1,245 @@
+/*
+ * JBoss, Home of Professional Open Source.
+ * Copyright 2012, Red Hat, Inc., and individual contributors
+ * as indicated by the @author tags. See the copyright.txt file in the
+ * distribution for a full listing of individual contributors.
+ *
+ * This is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This software is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
+package org.keycloak.testsuite.perf;
+
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.jboss.resteasy.client.jaxrs.ResteasyClient;
+import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
+import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Rule;
+import org.junit.Test;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.audit.Details;
+import org.keycloak.audit.Errors;
+import org.keycloak.audit.Event;
+import org.keycloak.representations.AccessToken;
+import org.keycloak.services.resources.TokenService;
+import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.Constants;
+import org.keycloak.testsuite.OAuthClient;
+import org.keycloak.testsuite.OAuthClient.AccessTokenResponse;
+import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.rule.KeycloakRule;
+import org.keycloak.testsuite.rule.WebResource;
+import org.keycloak.testsuite.rule.WebRule;
+import org.keycloak.util.BasicAuthHelper;
+import org.openqa.selenium.WebDriver;
+
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.Form;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
+
+import java.net.URI;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
+
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+
+/**
+ * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ */
+public class AccessTokenPerfTest {
+
+    @ClassRule
+    public static KeycloakRule keycloakRule = new KeycloakRule();
+
+    public static class BrowserLogin implements Runnable
+    {
+        @Override
+        public void run() {
+            WebDriver driver = WebRule.createWebDriver();
+            OAuthClient oauth = new OAuthClient(driver);
+            oauth.doLogin("test-user@localhost", "password");
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+            Assert.assertEquals(200, response.getStatusCode());
+            driver.close();
+
+        }
+    }
+
+    public static AtomicLong count = new AtomicLong(0);
+
+    public static class JaxrsClientLogin implements Runnable
+    {
+        ResteasyClient client;
+
+        private String baseUrl = Constants.AUTH_SERVER_ROOT;
+
+        private String realm = "test";
+
+        private String responseType = OAuth2Constants.CODE;
+
+        private String grantType = "authorization_code";
+
+        private String clientId = "test-app";
+
+        private String redirectUri = "http://localhost:8081/app/auth";
+
+
+        public JaxrsClientLogin() {
+            this.client = new ResteasyClientBuilder().build();
+        }
+
+        public String getLoginFormUrl(String state) {
+            UriBuilder b = TokenService.loginPageUrl(UriBuilder.fromUri(baseUrl));
+            if (responseType != null) {
+                b.queryParam(OAuth2Constants.RESPONSE_TYPE, responseType);
+            }
+            if (clientId != null) {
+                b.queryParam(OAuth2Constants.CLIENT_ID, clientId);
+            }
+            if (redirectUri != null) {
+                b.queryParam(OAuth2Constants.REDIRECT_URI, redirectUri);
+            }
+            if (state != null) {
+                b.queryParam(OAuth2Constants.STATE, state);
+            }
+            return b.build(realm).toString();
+        }
+
+        public String getProcessLoginUrl(String state) {
+            UriBuilder b = TokenService.processLoginUrl(UriBuilder.fromUri(baseUrl));
+            if (clientId != null) {
+                b.queryParam(OAuth2Constants.CLIENT_ID, clientId);
+            }
+            if (redirectUri != null) {
+                b.queryParam(OAuth2Constants.REDIRECT_URI, redirectUri);
+            }
+            if (state != null) {
+                b.queryParam(OAuth2Constants.STATE, state);
+            }
+            return b.build(realm).toString();
+        }
+
+
+        @Override
+        public void run() {
+            this.client = new ResteasyClientBuilder().build();
+            String state = "42";
+            Response response = client.target(getLoginFormUrl(state)).request().get();
+            URI uri = null;
+            if (200 == response.getStatus()) {
+                response.close();
+                Form form = new Form();
+                form.param("username", "test-user@localhost");
+                form.param("password", "password");
+                response = client.target(getProcessLoginUrl(state)).request().post(Entity.form(form));
+
+            }
+            Assert.assertEquals(302, response.getStatus());
+            uri = response.getLocation();
+            response.close();
+
+            Assert.assertNotNull(uri);
+            String code = getCode(uri);
+            Assert.assertNotNull(code);
+
+            Form form = new Form();
+            form.param(OAuth2Constants.GRANT_TYPE, grantType)
+                    .param(OAuth2Constants.CODE, code)
+                    .param(OAuth2Constants.REDIRECT_URI, redirectUri);
+
+            String authorization = BasicAuthHelper.createHeader(clientId, "password");
+
+            String res = client.target(TokenService.accessCodeToTokenUrl(UriBuilder.fromUri(baseUrl)).build(realm)).request()
+                    .header(HttpHeaders.AUTHORIZATION, authorization)
+                    .post(Entity.form(form), String.class);
+            count.incrementAndGet();
+            client.close();
+        }
+
+        public String getCode(URI uri) {
+            Map<String, String> m = new HashMap<String, String>();
+            List<NameValuePair> pairs = URLEncodedUtils.parse(uri, "UTF-8");
+            for (NameValuePair p : pairs) {
+                if (p.getName().equals("code")) return p.getValue();
+                m.put(p.getName(), p.getValue());
+            }
+            return null;
+        }
+
+
+        public void close()
+        {
+            client.close();
+        }
+    }
+
+    @Test
+    public void perfJaxrsClientLogin()
+    {
+        long ITERATIONS = 1;
+        JaxrsClientLogin login = new JaxrsClientLogin();
+        long start = System.currentTimeMillis();
+        for (int i = 0; i < ITERATIONS; i++) {
+            login.run();
+        }
+        long end = System.currentTimeMillis() - start;
+        System.out.println("took: " + end);
+    }
+
+    @Test
+    public void perfBrowserLogin() throws Exception
+    {
+        long ITERATIONS = 1;
+        long start = System.currentTimeMillis();
+        for (int i = 0; i < ITERATIONS; i++) {
+            new BrowserLogin().run();
+        }
+        long end = System.currentTimeMillis() - start;
+        System.out.println("took: " + end);
+    }
+
+    @Test
+    public void multiThread() throws Exception {
+        int num_threads = 1;
+        Thread[] threads = new Thread[num_threads];
+        for (int i = 0; i < num_threads; i++) {
+            threads[i] = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    perfJaxrsClientLogin();
+                }
+            });
+        }
+        long start = System.currentTimeMillis();
+        for (int i = 0; i < num_threads; i++) {
+            threads[i].start();
+        }
+        for (int i = 0; i < num_threads; i++) {
+            threads[i].join();
+        }
+        long end = System.currentTimeMillis() - start;
+        System.out.println(count.toString() + " took: " + end);
+        System.out.println(count.floatValue() / ((float)end) * 1000+ " logins/s");
+    }
+
+}

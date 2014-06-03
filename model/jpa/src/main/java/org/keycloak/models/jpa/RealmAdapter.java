@@ -950,7 +950,12 @@ public class RealmAdapter implements RealmModel {
     @Override
     public List<AuthenticationProviderModel> getAuthenticationProviders() {
         List<AuthenticationProviderEntity> entities = realm.getAuthenticationProviders();
-        Collections.sort(entities, new Comparator<AuthenticationProviderEntity>() {
+        List<AuthenticationProviderEntity> copy = new ArrayList<AuthenticationProviderEntity>();
+        for (AuthenticationProviderEntity entity : entities) {
+            copy.add(entity);
+
+        }
+        Collections.sort(copy, new Comparator<AuthenticationProviderEntity>() {
 
             @Override
             public int compare(AuthenticationProviderEntity o1, AuthenticationProviderEntity o2) {
@@ -959,7 +964,7 @@ public class RealmAdapter implements RealmModel {
 
         });
         List<AuthenticationProviderModel> result = new ArrayList<AuthenticationProviderModel>();
-        for (AuthenticationProviderEntity entity : entities) {
+        for (AuthenticationProviderEntity entity : copy) {
             result.add(new AuthenticationProviderModel(entity.getProviderName(), entity.isPasswordUpdateSupported(), entity.getConfig()));
         }
 
@@ -1420,8 +1425,8 @@ public class RealmAdapter implements RealmModel {
     @Override
     public UserSessionModel createUserSession(UserModel user, String ipAddress) {
         UserSessionEntity entity = new UserSessionEntity();
-        entity.setRealm(realm);
-        entity.setUser(((UserAdapter) user).getUser());
+        entity.setRealmId(realm.getId());
+        entity.setUserId(user.getId());
         entity.setIpAddress(ipAddress);
 
         int currentTime = Time.currentTime();
@@ -1442,7 +1447,7 @@ public class RealmAdapter implements RealmModel {
     @Override
     public List<UserSessionModel> getUserSessions(UserModel user) {
         List<UserSessionModel> sessions = new LinkedList<UserSessionModel>();
-        for (UserSessionEntity e : em.createNamedQuery("getUserSessionByUser", UserSessionEntity.class).setParameter("user", ((UserAdapter) user).getUser()).getResultList()) {
+        for (UserSessionEntity e : em.createNamedQuery("getUserSessionByUser", UserSessionEntity.class).setParameter("userId", user.getId()).getResultList()) {
             sessions.add(new UserSessionAdapter(em, this, e));
         }
         return sessions;
@@ -1455,8 +1460,8 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public void removeUserSessions() {
-        em.createNamedQuery("removeClientUserSessionByRealm").setParameter("realm", realm).executeUpdate();
-        em.createNamedQuery("removeRealmUserSessions").setParameter("realm", realm).executeUpdate();
+        em.createNamedQuery("removeClientUserSessionByRealm").setParameter("realmId", realm.getId()).executeUpdate();
+        em.createNamedQuery("removeRealmUserSessions").setParameter("realmId", realm.getId()).executeUpdate();
 
     }
 
@@ -1466,8 +1471,8 @@ public class RealmAdapter implements RealmModel {
     }
 
     private void removeUserSessions(UserEntity user) {
-        em.createNamedQuery("removeClientUserSessionByUser").setParameter("user", user).executeUpdate();
-        em.createNamedQuery("removeUserSessionByUser").setParameter("user", user).executeUpdate();
+        em.createNamedQuery("removeClientUserSessionByUser").setParameter("userId", user.getId()).executeUpdate();
+        em.createNamedQuery("removeUserSessionByUser").setParameter("userId", user.getId()).executeUpdate();
     }
 
     @Override

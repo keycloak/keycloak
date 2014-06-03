@@ -20,9 +20,9 @@ import java.util.Collection;
  */
 @Entity
 @NamedQueries({
-        @NamedQuery(name = "getUserSessionByUser", query = "select s from UserSessionEntity s where s.user = :user"),
-        @NamedQuery(name = "removeRealmUserSessions", query = "delete from UserSessionEntity s where s.realm = :realm"),
-        @NamedQuery(name = "removeUserSessionByUser", query = "delete from UserSessionEntity s where s.user = :user"),
+        @NamedQuery(name = "getUserSessionByUser", query = "select s from UserSessionEntity s where s.userId = :userId"),
+        @NamedQuery(name = "removeRealmUserSessions", query = "delete from UserSessionEntity s where s.realmId = :realmId"),
+        @NamedQuery(name = "removeUserSessionByUser", query = "delete from UserSessionEntity s where s.userId = :userId"),
         @NamedQuery(name = "getUserSessionExpired", query = "select s from UserSessionEntity s where s.started < :maxTime or s.lastSessionRefresh < :idleTime"),
         @NamedQuery(name = "removeUserSessionExpired", query = "delete from UserSessionEntity s where s.started < :maxTime or s.lastSessionRefresh < :idleTime")
 })
@@ -33,20 +33,18 @@ public class UserSessionEntity {
     @GeneratedValue(generator = "uuid_generator")
     private String id;
 
-    @ManyToOne
-    private UserEntity user;
+    // we use ids to avoid select for update contention
+    private String userId;
+    private String realmId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    private RealmEntity realm;
+    private String ipAddress;
 
-    String ipAddress;
+    private int started;
 
-    int started;
-
-    int lastSessionRefresh;
+    private int lastSessionRefresh;
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy="session")
-    Collection<ClientUserSessionAssociationEntity> clients = new ArrayList<ClientUserSessionAssociationEntity>();
+    private Collection<ClientUserSessionAssociationEntity> clients = new ArrayList<ClientUserSessionAssociationEntity>();
 
 
     public String getId() {
@@ -57,12 +55,21 @@ public class UserSessionEntity {
         this.id = id;
     }
 
-    public UserEntity getUser() {
-        return user;
+
+    public String getUserId() {
+        return userId;
     }
 
-    public void setUser(UserEntity user) {
-        this.user = user;
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    public String getRealmId() {
+        return realmId;
+    }
+
+    public void setRealmId(String realmId) {
+        this.realmId = realmId;
     }
 
     public String getIpAddress() {
@@ -97,11 +104,4 @@ public class UserSessionEntity {
         this.clients = clients;
     }
 
-    public RealmEntity getRealm() {
-        return realm;
-    }
-
-    public void setRealm(RealmEntity realm) {
-        this.realm = realm;
-    }
 }
