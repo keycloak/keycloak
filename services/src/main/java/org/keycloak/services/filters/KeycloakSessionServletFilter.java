@@ -13,6 +13,7 @@ import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 
 /**
@@ -29,7 +30,7 @@ public class KeycloakSessionServletFilter implements Filter {
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
         ProviderSessionFactory providerSessionFactory = (ProviderSessionFactory) servletRequest.getServletContext().getAttribute(ProviderSessionFactory.class.getName());
         ProviderSession providerSession = providerSessionFactory.createSession();
-
+        HttpServletRequest request = (HttpServletRequest)servletRequest;
         ResteasyProviderFactory.pushContext(ProviderSession.class, providerSession);
 
         KeycloakSession session = providerSession.getProvider(KeycloakSession.class);
@@ -52,7 +53,7 @@ public class KeycloakSessionServletFilter implements Filter {
         }
         catch (RuntimeException ex) {
             if (tx.isActive()) tx.rollback();
-            throw ex;
+            throw new RuntimeException("request path: " + request.getRequestURI(), ex);
         } finally {
             providerSession.close();
             ResteasyProviderFactory.clearContextData();

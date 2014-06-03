@@ -82,6 +82,7 @@ public class RealmEntity {
     @JoinTable(name="User_RequiredCreds")
     Collection<RequiredCredentialEntity> requiredCredentials = new ArrayList<RequiredCredentialEntity>();
 
+
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true)
     @JoinTable(name="AuthProviders")
     List<AuthenticationProviderEntity> authenticationProviders = new ArrayList<AuthenticationProviderEntity>();

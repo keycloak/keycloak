@@ -24,7 +24,7 @@ public class Pbkdf2PasswordEncoder {
     public static final String RNG_ALGORITHM = "SHA1PRNG";
 
     private static final int DERIVED_KEY_SIZE = 512;
-    private static final int ITERATIONS = 20000;
+    private static final int ITERATIONS = 1;
 
     private final int iterations;
     private byte[] salt;
