@@ -40,8 +40,8 @@ public class ExtendingThemeManager implements ThemeProvider {
             }
         });
 
-        this.defaultTheme = Config.scope("theme").get("default");
-        this.staticMaxAge = Config.scope("theme").getInt("staticMaxAge");
+        this.defaultTheme = Config.scope("theme").get("default", "keycloak");
+        this.staticMaxAge = Config.scope("theme").getInt("staticMaxAge", -1);
     }
 
     public int getStaticMaxAge() {
