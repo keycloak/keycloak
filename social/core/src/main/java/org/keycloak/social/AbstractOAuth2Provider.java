@@ -5,7 +5,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.social.utils.SimpleHttp;
 
 import java.io.IOException;
-import java.util.UUID;
+import java.net.URI;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -44,12 +44,14 @@ public abstract class AbstractOAuth2Provider implements SocialProvider {
     protected abstract SocialUser getProfile(String accessToken) throws SocialProviderException;
 
     @Override
-    public AuthRequest getAuthUrl(SocialProviderConfig config) throws SocialProviderException {
-        String state = UUID.randomUUID().toString();
-
-        return AuthRequest.create(state, getAuthUrl()).setQueryParam(CLIENT_ID, config.getKey())
-                .setQueryParam(RESPONSE_TYPE, CODE).setQueryParam(SCOPE, getScope())
-                .setQueryParam(REDIRECT_URI, config.getCallbackUrl()).setQueryParam(STATE, state).setAttribute(STATE, state).build();
+    public AuthRequest getAuthUrl(SocialProviderConfig config, String state) throws SocialProviderException {
+        return AuthRequest.create(getAuthUrl())
+                .setQueryParam(CLIENT_ID, config.getKey())
+                .setQueryParam(RESPONSE_TYPE, CODE)
+                .setQueryParam(SCOPE, getScope())
+                .setQueryParam(REDIRECT_URI, config.getCallbackUrl())
+                .setQueryParam(STATE, state)
+                .build();
     }
 
     @Override
@@ -65,10 +67,6 @@ public abstract class AbstractOAuth2Provider implements SocialProvider {
 
         try {
             String code = callback.getQueryParam(CODE);
-
-            if (!callback.getQueryParam(STATE).equals(callback.getAttribute(STATE))) {
-                throw new SocialProviderException("Invalid state");
-            }
 
             String response = SimpleHttp.doPost(getTokenUrl()).param(CODE, code).param(CLIENT_ID, config.getKey())
                     .param(CLIENT_SECRET, config.getSecret())

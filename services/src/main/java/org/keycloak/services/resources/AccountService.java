@@ -53,7 +53,6 @@ import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ModelToRepresentation;
-import org.keycloak.services.managers.SocialRequestManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Flows;
@@ -126,17 +125,15 @@ public class AccountService {
     private final AppAuthManager authManager;
     private final ApplicationModel application;
     private Audit audit;
-    private final SocialRequestManager socialRequestManager;
     private AccountProvider account;
     private Auth auth;
     private AuditProvider auditProvider;
 
-    public AccountService(RealmModel realm, ApplicationModel application, TokenManager tokenManager, SocialRequestManager socialRequestManager, Audit audit) {
+    public AccountService(RealmModel realm, ApplicationModel application, Audit audit) {
         this.realm = realm;
         this.application = application;
         this.audit = audit;
         this.authManager = new AppAuthManager(providers);
-        this.socialRequestManager = socialRequestManager;
     }
 
     public void init() {
@@ -502,11 +499,11 @@ public class AccountService {
                 String redirectUri = UriBuilder.fromUri(Urls.accountSocialPage(uriInfo.getBaseUri(), realm.getName())).build().toString();
 
                 try {
-                    return Flows.social(socialRequestManager, realm, uriInfo, provider)
-                            .putClientAttribute("realm", realm.getName())
-                            .putClientAttribute("clientId", Constants.ACCOUNT_MANAGEMENT_APP)
-                            .putClientAttribute(OAuth2Constants.STATE, UUID.randomUUID().toString()).putClientAttribute("redirectUri", redirectUri)
-                            .putClientAttribute("userId", user.getId())
+                    return Flows.social(realm, uriInfo, provider)
+                            .user(user)
+                            .putClientAttribute(OAuth2Constants.CLIENT_ID, Constants.ACCOUNT_MANAGEMENT_APP)
+                            .putClientAttribute(OAuth2Constants.STATE, UUID.randomUUID().toString())
+                            .putClientAttribute(OAuth2Constants.REDIRECT_URI, redirectUri)
                             .redirectToSocialProvider();
                 } catch (SocialProviderException spe) {
                     return account.setError(Messages.SOCIAL_REDIRECT_ERROR).createResponse(AccountPages.SOCIAL);

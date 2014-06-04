@@ -22,7 +22,6 @@
 package org.keycloak.social.twitter;
 
 import org.keycloak.social.AuthCallback;
-import org.keycloak.social.AuthRequest;
 import org.keycloak.social.SocialAccessDeniedException;
 import org.keycloak.social.SocialProvider;
 import org.keycloak.social.SocialProviderConfig;
@@ -46,7 +45,7 @@ public class TwitterProvider implements SocialProvider {
     }
 
     @Override
-    public AuthRequest getAuthUrl(SocialProviderConfig config, String state) throws SocialProviderException {
+    public URI getAuthUrl(SocialProviderConfig config, String state) throws SocialProviderException {
         try {
             Twitter twitter = new TwitterFactory().getInstance();
             twitter.setOAuthConsumer(config.getKey(), config.getSecret());
@@ -54,8 +53,9 @@ public class TwitterProvider implements SocialProvider {
             URI uri = new URI(config.getCallbackUrl() + "?state=" + state);
 
             RequestToken requestToken = twitter.getOAuthRequestToken(uri.toString());
-            return AuthRequest.create(requestToken.getAuthenticationURL())
-                    .setAttribute("token", requestToken.getToken()).setAttribute("tokenSecret", requestToken.getTokenSecret())
+
+            return UriBuilder.create(requestToken.getAuthenticationURL())
+                    //.setAttribute("token", requestToken.getToken()).setAttribute("tokenSecret", requestToken.getTokenSecret())
                     .build();
         } catch (Exception e) {
             throw new SocialProviderException(e);
@@ -77,12 +77,17 @@ public class TwitterProvider implements SocialProvider {
             Twitter twitter = new TwitterFactory().getInstance();
             twitter.setOAuthConsumer(config.getKey(), config.getSecret());
 
-            String token = callback.getQueryParam("oauth_token");
             String verifier = callback.getQueryParam("oauth_verifier");
+<<<<<<< Updated upstream
 
-            RequestToken requestToken = new RequestToken((String)callback.getAttribute("token"), (String)callback.getAttribute("tokenSecret"));
+            // TODO Get token and tokenSecret
+            //RequestToken requestToken = new RequestToken((String)callback.getAttribute("token"), (String)callback.getAttribute("tokenSecret"));
+            RequestToken requestToken = new RequestToken(null, null);
+=======
+            //RequestToken requestToken = new RequestToken((String)callback.getAttribute("token"), (String)callback.getAttribute("tokenSecret"));
+>>>>>>> Stashed changes
 
-            twitter.getOAuthAccessToken(requestToken, verifier);
+            twitter.getOAuthAccessToken(verifier);
             twitter4j.User twitterUser = twitter.verifyCredentials();
 
             SocialUser user = new SocialUser(Long.toString(twitterUser.getId()), twitterUser.getScreenName());

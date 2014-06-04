@@ -21,31 +21,52 @@
  */
 package org.keycloak.social;
 
-import java.util.Map;
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLEncoder;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class AuthCallback {
+public class UriBuilder {
 
-    private Map<String, String[]> queryParams;
-    private Map<String, String> attributes;
+    private StringBuilder sb;
 
-    public AuthCallback(Map<String, String[]> queryParams, Map<String, String> attributes) {
-        this.queryParams = queryParams;
-        this.attributes = attributes;
+    private char sep;
+
+    public static UriBuilder create(String path) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(path);
+
+        UriBuilder builder = new UriBuilder();
+        builder.sb = sb;
+        return builder;
     }
 
-    public String getQueryParam(String name) {
-        String[] value = queryParams.get(name);
-        if (value != null && value.length > 0) {
-            return value[0];
+    public UriBuilder setQueryParam(String name, String value) {
+        try {
+            if (sep == '?') {
+                sb.append(sep);
+                sep = '&';
+            } else {
+                sb.append(sep);
+            }
+            sb.append(URLEncoder.encode(name, "UTF-8"));
+            sb.append("=");
+            sb.append(URLEncoder.encode(value, "UTF-8"));
+            return this;
+        } catch (UnsupportedEncodingException e) {
+            throw new IllegalStateException(e);
         }
-        return null;
     }
 
-    public String getAttribute(String name) {
-        return attributes != null ? attributes.get(name) : null;
+    public URI build() {
+        try {
+            return new URI(sb.toString());
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException(e);
+        }
     }
 
 }

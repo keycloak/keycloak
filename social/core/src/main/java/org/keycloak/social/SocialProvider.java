@@ -29,7 +29,7 @@ public interface SocialProvider {
 
     String getId();
 
-    AuthRequest getAuthUrl(SocialProviderConfig config) throws SocialProviderException;
+    AuthRequest getAuthUrl(SocialProviderConfig config, String state) throws SocialProviderException;
 
     String getName();
 

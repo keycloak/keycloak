@@ -33,31 +33,22 @@ import java.util.Map;
  */
 public class AuthRequest {
 
-    private String id;
-
     private URI authUri;
 
     private Map<String, String> attributes;
 
-    public static AuthRequestBuilder create(String id, String path) {
+    public static AuthRequestBuilder create(String url) {
         AuthRequestBuilder req = new AuthRequestBuilder();
-        req.id = id;
 
         req.b = new StringBuilder();
-        req.b.append(path);
+        req.b.append(url);
 
-        req.attributes = new HashMap<String, String>();
         return req;
     }
 
-    private AuthRequest(String id, URI authUri, Map<String, String> attributes) {
-        this.id = id;
+    private AuthRequest(URI authUri, Map<String, String> attributes) {
         this.authUri = authUri;
         this.attributes = attributes;
-    }
-
-    public String getId() {
-        return id;
     }
 
     public URI getAuthUri() {
@@ -100,13 +91,16 @@ public class AuthRequest {
         }
 
         public AuthRequestBuilder setAttribute(String name, String value) {
+            if (attributes == null) {
+                attributes = new HashMap<String, String>();
+            }
             attributes.put(name, value);
             return this;
         }
 
         public AuthRequest build() {
             try {
-                return new AuthRequest(id, new URI(b.toString()), attributes);
+                return new AuthRequest(new URI(b.toString()), attributes);
             } catch (URISyntaxException e) {
                 throw new IllegalArgumentException(e);
             }
