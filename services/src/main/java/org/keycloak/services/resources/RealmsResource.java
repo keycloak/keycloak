@@ -18,7 +18,6 @@ import org.keycloak.services.managers.AuditManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.managers.SocialRequestManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.util.StreamUtil;
 
@@ -34,7 +33,6 @@ import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -68,11 +66,9 @@ public class RealmsResource {
     protected BruteForceProtector protector;
 
     protected TokenManager tokenManager;
-    protected SocialRequestManager socialRequestManager;
 
-    public RealmsResource(TokenManager tokenManager, SocialRequestManager socialRequestManager) {
+    public RealmsResource(TokenManager tokenManager) {
         this.tokenManager = tokenManager;
-        this.socialRequestManager = socialRequestManager;
     }
 
     public static UriBuilder realmBaseUrl(UriInfo uriInfo) {
@@ -183,7 +179,7 @@ public class RealmsResource {
         }
 
         Audit audit = new AuditManager(realm, providers, clientConnection).createAudit();
-        AccountService accountService = new AccountService(realm, application, tokenManager, socialRequestManager, audit);
+        AccountService accountService = new AccountService(realm, application, audit);
         ResteasyProviderFactory.getInstance().injectProperties(accountService);
         //resourceContext.initResource(accountService);
         accountService.init();

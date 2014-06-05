@@ -29,6 +29,8 @@ import org.keycloak.audit.Audit;
 import org.keycloak.audit.Details;
 import org.keycloak.audit.Errors;
 import org.keycloak.audit.EventType;
+import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -38,18 +40,17 @@ import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.services.ClientConnection;
 import org.keycloak.provider.ProviderSession;
+import org.keycloak.services.ClientConnection;
 import org.keycloak.services.managers.AuditManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.managers.SocialRequestManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.OAuthFlows;
 import org.keycloak.services.resources.flows.Urls;
+import org.keycloak.services.util.CookieHelper;
 import org.keycloak.social.AuthCallback;
-import org.keycloak.social.RequestDetails;
 import org.keycloak.social.SocialAccessDeniedException;
 import org.keycloak.social.SocialLoader;
 import org.keycloak.social.SocialProvider;
@@ -62,11 +63,13 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.List;
@@ -90,11 +93,6 @@ public class SocialResource {
     @Context
     private HttpRequest request;
 
-    /*
-    @Context
-    ResourceContext resourceContext;
-    */
-
     @Context
     protected ProviderSession providerSession;
 
@@ -107,35 +105,33 @@ public class SocialResource {
     @Context
     protected ClientConnection clientConnection;
 
-    private SocialRequestManager socialRequestManager;
-
     private TokenManager tokenManager;
 
-    public SocialResource(TokenManager tokenManager, SocialRequestManager socialRequestManager) {
+    public SocialResource(TokenManager tokenManager) {
         this.tokenManager = tokenManager;
-        this.socialRequestManager = socialRequestManager;
     }
 
     @GET
     @Path("callback")
-    public Response callback() throws URISyntaxException {
-        Map<String, String[]> queryParams = getQueryParams();
-
-        RequestDetails requestData = getRequestDetails(queryParams);
-        if (requestData == null) {
-            Flows.forms(providerSession, null, uriInfo).setError("Unexpected callback").createErrorPage();
+    public Response callback(@QueryParam("state") String encodedState) throws URISyntaxException, IOException {
+        State initialRequest;
+        try {
+            initialRequest = new JWSInput(encodedState).readJsonContent(State.class);
+        } catch (Throwable t) {
+            logger.warn("Invalid social callback", t);
+            return Flows.forms(providerSession, null, uriInfo).setError("Unexpected callback").createErrorPage();
         }
 
-        SocialProvider provider = SocialLoader.load(requestData.getProviderId());
+        SocialProvider provider = SocialLoader.load(initialRequest.getProvider());
 
-        String realmName = requestData.getClientAttribute("realm");
+        String realmName = initialRequest.getRealm();
 
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = realmManager.getRealmByName(realmName);
 
         Audit audit = new AuditManager(realm, providers, clientConnection).createAudit()
                 .event(EventType.LOGIN)
-                .detail(Details.RESPONSE_TYPE, "code")
+                .detail(Details.RESPONSE_TYPE, initialRequest.get(OAuth2Constants.RESPONSE_TYPE))
                 .detail(Details.AUTH_METHOD, "social@" + provider.getId());
 
         AuthenticationManager authManager = new AuthenticationManager(providers);
@@ -146,11 +142,11 @@ public class SocialResource {
             return oauth.forwardToSecurityFailure("Realm not enabled.");
         }
 
-        String clientId = requestData.getClientAttributes().get("clientId");
-        String redirectUri = requestData.getClientAttribute("redirectUri");
-        String scope = requestData.getClientAttributes().get(OAuth2Constants.SCOPE);
-        String state = requestData.getClientAttributes().get(OAuth2Constants.STATE);
-        String responseType = requestData.getClientAttribute("responseType");
+        String clientId = initialRequest.get(OAuth2Constants.CLIENT_ID);
+        String redirectUri = initialRequest.get(OAuth2Constants.REDIRECT_URI);
+        String scope = initialRequest.get(OAuth2Constants.SCOPE);
+        String state = initialRequest.get(OAuth2Constants.STATE);
+        String responseType = initialRequest.get(OAuth2Constants.RESPONSE_TYPE);
 
         audit.client(clientId).detail(Details.REDIRECT_URI, redirectUri);
 
@@ -164,12 +160,15 @@ public class SocialResource {
             return oauth.forwardToSecurityFailure("Login requester not enabled.");
         }
 
-        String key = realm.getSocialConfig().get(requestData.getProviderId() + ".key");
-        String secret = realm.getSocialConfig().get(requestData.getProviderId() + ".secret");
+        String key = realm.getSocialConfig().get(provider.getId() + ".key");
+        String secret = realm.getSocialConfig().get(provider.getId() + ".secret");
         String callbackUri = Urls.socialCallback(uriInfo.getBaseUri()).toString();
         SocialProviderConfig config = new SocialProviderConfig(key, secret, callbackUri);
 
-        AuthCallback callback = new AuthCallback(requestData.getSocialAttributes(), queryParams);
+        Map<String, String[]> queryParams = getQueryParams();
+        Map<String, String> attributes = getAttributes();
+
+        AuthCallback callback = new AuthCallback(queryParams, attributes);
 
         SocialUser socialUser;
         try {
@@ -195,7 +194,7 @@ public class SocialResource {
         UserModel user = realm.getUserBySocialLink(socialLink);
 
         // Check if user is already authenticated (this means linking social into existing user account)
-        String userId = requestData.getClientAttribute("userId");
+        String userId = initialRequest.getUser();
         if (userId != null) {
             UserModel authenticatedUser = realm.getUserById(userId);
 
@@ -307,32 +306,17 @@ public class SocialResource {
         }
 
         try {
-            return Flows.social(socialRequestManager, realm, uriInfo, provider)
-                    .putClientAttribute("realm", realmName)
-                    .putClientAttribute("clientId", clientId).putClientAttribute(OAuth2Constants.SCOPE, scope)
-                    .putClientAttribute(OAuth2Constants.STATE, state).putClientAttribute("redirectUri", redirectUri)
-                    .putClientAttribute("responseType", responseType).redirectToSocialProvider();
+            return Flows.social(realm, uriInfo, provider)
+                    .putClientAttribute(OAuth2Constants.CLIENT_ID, clientId)
+                    .putClientAttribute(OAuth2Constants.SCOPE, scope)
+                    .putClientAttribute(OAuth2Constants.STATE, state)
+                    .putClientAttribute(OAuth2Constants.REDIRECT_URI, redirectUri)
+                    .putClientAttribute(OAuth2Constants.RESPONSE_TYPE, responseType)
+                    .redirectToSocialProvider();
         } catch (Throwable t) {
             logger.error("Failed to redirect to social auth", t);
             return Flows.forms(providerSession, realm, uriInfo).setError("Failed to redirect to social auth").createErrorPage();
         }
-    }
-
-    private RequestDetails getRequestDetails(Map<String, String[]> queryParams) {
-        String requestId = null;
-        if (queryParams.containsKey(OAuth2Constants.STATE)) {
-            requestId =  queryParams.get(OAuth2Constants.STATE)[0];
-        } else if (queryParams.containsKey("oauth_token")) {
-            requestId = queryParams.get("oauth_token")[0];
-        } else if (queryParams.containsKey("denied")) {
-            requestId = queryParams.get("denied")[0];
-        }
-
-        if (requestId != null && socialRequestManager.isRequestId(requestId)) {
-            return socialRequestManager.retrieveData(requestId);
-        }
-
-        return null;
     }
 
     private Map<String, String[]> getQueryParams() {
@@ -341,6 +325,54 @@ public class SocialResource {
             queryParams.put(e.getKey(), e.getValue().toArray(new String[e.getValue().size()]));
         }
         return queryParams;
+    }
+
+    private Map<String, String> getAttributes() throws IOException {
+        Cookie cookie = headers.getCookies().get("KEYCLOAK_SOCIAL");
+        return cookie != null ? new JWSInput(cookie.getValue()).readJsonContent(HashMap.class) : null;
+    }
+
+    public static class State {
+        private String realm;
+        private String provider;
+        private String user;
+        private Map<String, String> attributes  = new HashMap<String, String>();
+
+        public String getRealm() {
+            return realm;
+        }
+
+        public void setRealm(String realm) {
+            this.realm = realm;
+        }
+
+        public String getProvider() {
+            return provider;
+        }
+
+        public void setProvider(String provider) {
+            this.provider = provider;
+        }
+
+        public String getUser() {
+            return user;
+        }
+
+        public void setUser(String user) {
+            this.user = user;
+        }
+
+        public Map<String, String> getAttributes() {
+            return attributes;
+        }
+
+        public String get(String key) {
+            return attributes.get(key);
+        }
+
+        public void set(String key, String value) {
+            attributes.put(key, value);
+        }
     }
 
 }

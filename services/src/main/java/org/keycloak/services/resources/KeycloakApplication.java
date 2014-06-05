@@ -17,7 +17,6 @@ import org.keycloak.services.DefaultProviderSessionFactory;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.managers.SocialRequestManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.resources.admin.AdminRoot;
 import org.keycloak.services.scheduled.ClearExpiredAuditEvents;
@@ -73,10 +72,9 @@ public class KeycloakApplication extends Application {
         context.setAttribute(ProviderSessionFactory.class.getName(), this.providerSessionFactory);
 
         TokenManager tokenManager = new TokenManager();
-        SocialRequestManager socialRequestManager = new SocialRequestManager();
 
-        singletons.add(new RealmsResource(tokenManager, socialRequestManager));
-        singletons.add(new SocialResource(tokenManager, socialRequestManager));
+        singletons.add(new RealmsResource(tokenManager));
+        singletons.add(new SocialResource(tokenManager));
         singletons.add(new AdminRoot(tokenManager));
         classes.add(SkeletonKeyContextResolver.class);
         classes.add(QRCodeResource.class);

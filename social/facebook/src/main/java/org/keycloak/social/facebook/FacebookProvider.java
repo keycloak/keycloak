@@ -2,8 +2,6 @@ package org.keycloak.social.facebook;
 
 import org.codehaus.jackson.JsonNode;
 import org.keycloak.social.AbstractOAuth2Provider;
-import org.keycloak.social.AuthRequest;
-import org.keycloak.social.SocialProviderConfig;
 import org.keycloak.social.SocialProviderException;
 import org.keycloak.social.SocialUser;
 import org.keycloak.social.utils.SimpleHttp;
@@ -61,11 +59,6 @@ public class FacebookProvider extends AbstractOAuth2Provider {
         } catch (Exception e) {
             throw new SocialProviderException(e);
         }
-    }
-
-    @Override
-    public AuthRequest getAuthUrl(SocialProviderConfig config) throws SocialProviderException {
-        return super.getAuthUrl(config);
     }
 
 }

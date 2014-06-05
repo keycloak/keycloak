@@ -1,37 +1,48 @@
 package org.keycloak.services.resources.flows;
 
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
-
+import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.RealmModel;
-import org.keycloak.services.managers.SocialRequestManager;
+import org.keycloak.models.UserModel;
+import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.services.resources.SocialResource;
+import org.keycloak.services.util.CookieHelper;
 import org.keycloak.social.AuthRequest;
-import org.keycloak.social.RequestDetails;
+import org.keycloak.social.UriBuilder;
 import org.keycloak.social.SocialProvider;
 import org.keycloak.social.SocialProviderConfig;
 import org.keycloak.social.SocialProviderException;
+
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
+import java.net.URI;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class SocialRedirectFlows {
 
-    private final SocialRequestManager socialRequestManager;
     private final RealmModel realm;
     private final UriInfo uriInfo;
     private final SocialProvider socialProvider;
-    private final RequestDetails.RequestDetailsBuilder socialRequestBuilder;
+    private final SocialResource.State state;
 
-    SocialRedirectFlows(SocialRequestManager socialRequestManager, RealmModel realm, UriInfo uriInfo, SocialProvider provider) {
-        this.socialRequestManager = socialRequestManager;
+    SocialRedirectFlows(RealmModel realm, UriInfo uriInfo, SocialProvider provider) {
         this.realm = realm;
         this.uriInfo = uriInfo;
-        this.socialRequestBuilder = RequestDetails.create(provider.getId());
         this.socialProvider = provider;
+
+        state = new SocialResource.State();
+        state.setRealm(realm.getName());
+        state.setProvider(provider.getId());
     }
 
-    public SocialRedirectFlows putClientAttribute(String name, String value) {
-        socialRequestBuilder.putClientAttribute(name, value);
+    public SocialRedirectFlows putClientAttribute(String key, String value) {
+        state.set(key, value);
+        return this;
+    }
+
+    public SocialRedirectFlows user(UserModel user) {
+        state.setUser(user.getId());
         return this;
     }
 
@@ -43,9 +54,21 @@ public class SocialRedirectFlows {
         String callbackUri = Urls.socialCallback(uriInfo.getBaseUri()).toString();
         SocialProviderConfig config = new SocialProviderConfig(key, secret, callbackUri);
 
-        AuthRequest authRequest = socialProvider.getAuthUrl(config);
-        RequestDetails socialRequest = socialRequestBuilder.putSocialAttributes(authRequest.getAttributes()).build();
-        socialRequestManager.addRequest(authRequest.getId(), socialRequest);
+        String encodedState = new JWSBuilder().jsonContent(state).rsa256(realm.getPrivateKey());
+
+        AuthRequest authRequest = socialProvider.getAuthUrl(config, encodedState);
+
+        if (authRequest.getAttributes() != null) {
+            String cookiePath = Urls.socialBase(uriInfo.getBaseUri()).build().getRawPath().toString();
+
+            String encoded = new JWSBuilder()
+                    .jsonContent(authRequest.getAttributes())
+                    .rsa256(realm.getPrivateKey());
+
+            CookieHelper.addCookie("KEYCLOAK_SOCIAL", encoded, cookiePath, null, null, -1, !realm.isSslNotRequired(), true);
+        }
+
         return Response.status(302).location(authRequest.getAuthUri()).build();
     }
+
 }
