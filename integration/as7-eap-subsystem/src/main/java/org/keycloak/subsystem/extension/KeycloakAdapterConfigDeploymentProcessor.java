@@ -70,7 +70,7 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
         if (webMetaData == null) return;
 
         LoginConfigMetaData loginConfig = webMetaData.getLoginConfig();
-        if (loginConfig != null && loginConfig.getAuthMethod().equalsIgnoreCase("KEYCLOAK")) {
+        if (loginConfig != null && "KEYCLOAK".equalsIgnoreCase(loginConfig.getAuthMethod())) {
             addValve(webMetaData);
         }
     }
