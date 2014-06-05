@@ -161,10 +161,6 @@
                                         <groupId>org.slf4j</groupId>
                                         <artifactId>slf4j-simple</artifactId>
                                     </exclusion>
-                                    <exclusion>
-                                        <groupId>commons-io</groupId>
-                                        <artifactId>commons-io</artifactId>
-                                    </exclusion>
                                 </exclusions>
                             </dependency>
                             <dependency>
