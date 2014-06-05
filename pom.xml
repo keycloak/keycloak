@@ -13,8 +13,8 @@
 
     <properties>
         <bouncycastle.version>1.46</bouncycastle.version>
-        <jackson.version>1.9.12</jackson.version>
-        <keycloak.apache.httpcomponents.version>4.1.2</keycloak.apache.httpcomponents.version>
+        <jackson.version>1.9.9</jackson.version>
+        <keycloak.apache.httpcomponents.version>4.2.1</keycloak.apache.httpcomponents.version>
         <resteasy.version>2.3.7.Final</resteasy.version>
         <resteasy.version.eap.6.3>2.3.7.Final</resteasy.version.eap.6.3>
         <resteasy.version.latest>3.0.8.Final</resteasy.version.latest>
@@ -35,13 +35,14 @@
         <slf4j.version>1.5.10</slf4j.version>
         <jboss.version>7.1.1.Final</jboss.version>
         <wildfly.version>8.1.0.Final</wildfly.version>
-        <servlet.api.30.version>1.0.1.Final</servlet.api.30.version>
+        <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
         <google.zxing.version>2.2</google.zxing.version>
         <google.client.version>1.14.1-beta</google.client.version>
         <winzipaes.version>1.0.1</winzipaes.version>
         <freemarker.version>2.3.20</freemarker.version>
         <twitter4j.version>3.0.5</twitter4j.version>
         <selenium.version>2.35.0</selenium.version>
+        <javax.mail.version>1.4.5</javax.mail.version>
 
         <!-- maven-compiler-plugin -->
         <maven.compiler.target>1.6</maven.compiler.target>
@@ -133,7 +134,7 @@
             <dependency>
                 <groupId>javax.mail</groupId>
                 <artifactId>mail</artifactId>
-                <version>1.4.7</version>
+                <version>${javax.mail.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.resteasy</groupId>
@@ -209,11 +210,6 @@
                 <groupId>org.jboss.spec.javax.servlet</groupId>
                 <artifactId>jboss-servlet-api_3.0_spec</artifactId>
                 <version>${servlet.api.30.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.spec.javax.servlet</groupId>
-                <artifactId>jboss-servlet-api_3.1_spec</artifactId>
-                <version>1.0.0.Beta1</version>
             </dependency>
             <dependency>
                 <groupId>org.picketlink</groupId>
