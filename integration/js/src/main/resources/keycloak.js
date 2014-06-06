@@ -245,16 +245,12 @@ var Keycloak = function (config) {
         }
 
         if (loginIframe.enable) {
-            if (loginIframe.enable) {
-                var iframePromise = checkLoginIframe();
-                iframePromise.success(function() {
-                    exec();
-                }).error(function() {
-                    promise.setError();
-                })
-            } else {
-                promise.setSuccess(false);
-            }
+            var iframePromise = checkLoginIframe();
+            iframePromise.success(function() {
+                exec();
+            }).error(function() {
+                promise.setError();
+            });
         } else {
             exec();
         }
