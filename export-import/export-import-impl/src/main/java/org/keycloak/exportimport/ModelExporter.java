@@ -255,7 +255,7 @@ public class ModelExporter {
                 userEntity.setRoleIds(roleIds);
 
                 // credentials
-                List<UserCredentialValueModel> credentials = realm.getCredentialsDirectly(userModel);
+                List<UserCredentialValueModel> credentials = userModel.getCredentialsDirectly();
                 List<CredentialEntity> credEntities = new ArrayList<CredentialEntity>();
                 for (UserCredentialValueModel credModel : credentials) {
                     CredentialEntity credEntity = new CredentialEntity();

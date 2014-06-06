@@ -64,7 +64,7 @@ public class ProfileTest {
             UserCredentialModel creds = new UserCredentialModel();
             creds.setType(CredentialRepresentation.PASSWORD);
             creds.setValue("password");
-            appRealm.updateCredential(user2, creds);
+            user2.updateCredential(creds);
 
             ApplicationModel app = appRealm.getApplicationNameMap().get("test-app");
             appRealm.addScopeMapping(app, accountApp.getRole(AccountRoles.VIEW_PROFILE));

@@ -72,7 +72,7 @@ public class ResetPasswordTest {
             creds.setType(CredentialRepresentation.PASSWORD);
             creds.setValue("password");
 
-            appRealm.updateCredential(user, creds);
+            user.updateCredential(creds);
             appRealm.setAuditListeners(Collections.singleton("dummy"));
         }
     }));

@@ -6,10 +6,12 @@ import com.mongodb.QueryBuilder;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.mongo.api.MongoStore;
 import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.mongo.impl.context.TransactionMongoStoreInvocationContext;
 import org.keycloak.models.mongo.keycloak.entities.MongoRealmEntity;
+import org.keycloak.models.mongo.keycloak.entities.MongoUserEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.ArrayList;
@@ -87,6 +89,48 @@ public class MongoKeycloakSession implements KeycloakSession {
 
         if (realm == null) return null;
         return new RealmAdapter(realm, invocationContext);
+    }
+
+    @Override
+    public UserModel getUserById(String id, String realmId) {
+        MongoUserEntity user = getMongoStore().loadEntity(MongoUserEntity.class, id, invocationContext);
+
+        // Check that it's user from this realm
+        if (user == null || !realmId.equals(user.getRealmId())) {
+            return null;
+        } else {
+            return new UserAdapter(user, invocationContext);
+        }
+    }
+
+    @Override
+    public UserModel getUserByUsername(String username, String realmId) {
+        DBObject query = new QueryBuilder()
+                .and("loginName").is(username)
+                .and("realmId").is(realmId)
+                .get();
+        MongoUserEntity user = getMongoStore().loadSingleEntity(MongoUserEntity.class, query, invocationContext);
+
+        if (user == null) {
+            return null;
+        } else {
+            return new UserAdapter(user, invocationContext);
+        }
+    }
+
+    @Override
+    public UserModel getUserByEmail(String email, String realmId) {
+        DBObject query = new QueryBuilder()
+                .and("email").is(email)
+                .and("realmId").is(realmId)
+                .get();
+        MongoUserEntity user = getMongoStore().loadSingleEntity(MongoUserEntity.class, query, invocationContext);
+
+        if (user == null) {
+            return null;
+        } else {
+            return new UserAdapter(user, invocationContext);
+        }
     }
 
     @Override

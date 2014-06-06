@@ -15,6 +15,9 @@ public interface KeycloakSession extends Provider {
     RealmModel createRealm(String id, String name);
     RealmModel getRealm(String id);
     RealmModel getRealmByName(String name);
+    UserModel getUserById(String id, String realmId);
+    UserModel getUserByUsername(String username, String realmId);
+    UserModel getUserByEmail(String email, String realmId);
     List<RealmModel> getRealms();
     boolean removeRealm(String id);
 

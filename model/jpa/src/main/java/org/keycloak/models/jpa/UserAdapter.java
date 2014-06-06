@@ -1,12 +1,21 @@
 package org.keycloak.models.jpa;
 
+import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.jpa.entities.CredentialEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
+import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
 
+import javax.persistence.EntityManager;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static org.keycloak.models.utils.Pbkdf2PasswordEncoder.getSalt;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -15,8 +24,10 @@ import java.util.Set;
 public class UserAdapter implements UserModel {
 
     protected UserEntity user;
+    protected EntityManager em;
 
-    public UserAdapter(UserEntity user) {
+    public UserAdapter(EntityManager em, UserEntity user) {
+        this.em = em;
         this.user = user;
     }
 
@@ -158,6 +169,78 @@ public class UserAdapter implements UserModel {
     @Override
     public void setNotBefore(int notBefore) {
         user.setNotBefore(notBefore);
+    }
+
+    @Override
+    public void updateCredential(UserCredentialModel cred) {
+        CredentialEntity credentialEntity = getCredentialEntity(user, cred.getType());
+
+        if (credentialEntity == null) {
+            credentialEntity = new CredentialEntity();
+            credentialEntity.setType(cred.getType());
+            credentialEntity.setDevice(cred.getDevice());
+            credentialEntity.setUser(user);
+            em.persist(credentialEntity);
+            user.getCredentials().add(credentialEntity);
+        }
+        if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
+            byte[] salt = getSalt();
+            credentialEntity.setValue(new Pbkdf2PasswordEncoder(salt).encode(cred.getValue()));
+            credentialEntity.setSalt(salt);
+        } else {
+            credentialEntity.setValue(cred.getValue());
+        }
+        credentialEntity.setDevice(cred.getDevice());
+        em.flush();
+    }
+
+    private CredentialEntity getCredentialEntity(UserEntity userEntity, String credType) {
+        for (CredentialEntity entity : userEntity.getCredentials()) {
+            if (entity.getType().equals(credType)) {
+                return entity;
+            }
+        }
+
+        return null;
+    }
+
+    @Override
+    public List<UserCredentialValueModel> getCredentialsDirectly() {
+        List<CredentialEntity> credentials = new ArrayList<CredentialEntity>(user.getCredentials());
+        List<UserCredentialValueModel> result = new ArrayList<UserCredentialValueModel>();
+
+        if (credentials != null) {
+            for (CredentialEntity credEntity : credentials) {
+                UserCredentialValueModel credModel = new UserCredentialValueModel();
+                credModel.setType(credEntity.getType());
+                credModel.setDevice(credEntity.getDevice());
+                credModel.setValue(credEntity.getValue());
+                credModel.setSalt(credEntity.getSalt());
+
+                result.add(credModel);
+            }
+        }
+
+        return result;
+    }
+
+    @Override
+    public void updateCredentialDirectly(UserCredentialValueModel credModel) {
+        CredentialEntity credentialEntity = getCredentialEntity(user, credModel.getType());
+
+        if (credentialEntity == null) {
+            credentialEntity = new CredentialEntity();
+            credentialEntity.setType(credModel.getType());
+            credentialEntity.setUser(user);
+            em.persist(credentialEntity);
+            user.getCredentials().add(credentialEntity);
+        }
+
+        credentialEntity.setValue(credModel.getValue());
+        credentialEntity.setSalt(credModel.getSalt());
+        credentialEntity.setDevice(credModel.getDevice());
+
+        em.flush();
     }
 
 

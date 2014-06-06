@@ -66,7 +66,7 @@ public abstract class AbstractModelAuthenticationProvider implements Authenticat
         cred.setType(CredentialRepresentation.PASSWORD);
         cred.setValue(password);
 
-        realm.updateCredential(user, cred);
+        user.updateCredential(cred);
         return true;
     }
 

@@ -22,14 +22,20 @@
 package org.keycloak.testsuite.perf;
 
 import org.apache.http.NameValuePair;
+import org.apache.http.client.CookieStore;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.cookie.Cookie;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
+import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient4Engine;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.adapters.HttpClientBuilder;
 import org.keycloak.audit.Details;
 import org.keycloak.audit.Errors;
 import org.keycloak.audit.Event;
@@ -53,6 +59,8 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 
 import java.net.URI;
+import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,15 +80,22 @@ public class AccessTokenPerfTest {
 
     public static class BrowserLogin implements Runnable
     {
+
+        private WebDriver driver;
+
+        public BrowserLogin() {
+            driver = WebRule.createWebDriver();
+        }
+
         @Override
         public void run() {
-            WebDriver driver = WebRule.createWebDriver();
+            driver.manage().deleteAllCookies();
             OAuthClient oauth = new OAuthClient(driver);
             oauth.doLogin("test-user@localhost", "password");
             String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
             AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
             Assert.assertEquals(200, response.getStatusCode());
-            driver.close();
+            count.incrementAndGet();
 
         }
     }
@@ -105,7 +120,30 @@ public class AccessTokenPerfTest {
 
 
         public JaxrsClientLogin() {
-            this.client = new ResteasyClientBuilder().build();
+            DefaultHttpClient httpClient = (DefaultHttpClient) new HttpClientBuilder().build();
+            httpClient.setCookieStore(new CookieStore() {
+                @Override
+                public void addCookie(Cookie cookie) {
+                    //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                @Override
+                public List<Cookie> getCookies() {
+                    return Collections.emptyList();
+                }
+
+                @Override
+                public boolean clearExpired(Date date) {
+                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                @Override
+                public void clear() {
+                    //To change body of implemented methods use File | Settings | File Templates.
+                }
+            });
+            ApacheHttpClient4Engine engine = new ApacheHttpClient4Engine(httpClient);
+            this.client = new ResteasyClientBuilder().httpEngine(engine).build();
         }
 
         public String getLoginFormUrl(String state) {
@@ -142,7 +180,7 @@ public class AccessTokenPerfTest {
 
         @Override
         public void run() {
-            this.client = new ResteasyClientBuilder().build();
+            //this.client = new ResteasyClientBuilder().build();
             String state = "42";
             Response response = client.target(getLoginFormUrl(state)).request().get();
             URI uri = null;
@@ -173,7 +211,7 @@ public class AccessTokenPerfTest {
                     .header(HttpHeaders.AUTHORIZATION, authorization)
                     .post(Entity.form(form), String.class);
             count.incrementAndGet();
-            client.close();
+            //client.close();
         }
 
         public String getCode(URI uri) {
@@ -196,7 +234,7 @@ public class AccessTokenPerfTest {
     @Test
     public void perfJaxrsClientLogin()
     {
-        long ITERATIONS = 1;
+        long ITERATIONS = 100;
         JaxrsClientLogin login = new JaxrsClientLogin();
         long start = System.currentTimeMillis();
         for (int i = 0; i < ITERATIONS; i++) {
@@ -207,12 +245,13 @@ public class AccessTokenPerfTest {
     }
 
     @Test
-    public void perfBrowserLogin() throws Exception
+    public void perfBrowserLogin()
     {
-        long ITERATIONS = 1;
+        long ITERATIONS = 100;
         long start = System.currentTimeMillis();
+        BrowserLogin login = new BrowserLogin();
         for (int i = 0; i < ITERATIONS; i++) {
-            new BrowserLogin().run();
+            login.run();
         }
         long end = System.currentTimeMillis() - start;
         System.out.println("took: " + end);
@@ -220,7 +259,7 @@ public class AccessTokenPerfTest {
 
     @Test
     public void multiThread() throws Exception {
-        int num_threads = 1;
+        int num_threads = 20;
         Thread[] threads = new Thread[num_threads];
         for (int i = 0; i < num_threads; i++) {
             threads[i] = new Thread(new Runnable() {

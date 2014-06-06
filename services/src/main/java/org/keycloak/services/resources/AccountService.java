@@ -402,7 +402,7 @@ public class AccountService {
         UserCredentialModel credentials = new UserCredentialModel();
         credentials.setType(CredentialRepresentation.TOTP);
         credentials.setValue(totpSecret);
-        realm.updateCredential(user, credentials);
+        user.updateCredential(credentials);
 
         user.setTotp(true);
 

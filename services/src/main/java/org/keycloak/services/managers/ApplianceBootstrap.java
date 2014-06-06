@@ -71,7 +71,7 @@ public class ApplianceBootstrap {
         UserCredentialModel password = new UserCredentialModel();
         password.setType(UserCredentialModel.PASSWORD);
         password.setValue("admin");
-        realm.updateCredential(adminUser, password);
+        adminUser.updateCredential(password);
         adminUser.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
 
         RoleModel adminRole = realm.getRole(AdminRoles.ADMIN);

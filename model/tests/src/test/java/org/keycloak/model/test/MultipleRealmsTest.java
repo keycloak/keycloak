@@ -37,8 +37,8 @@ public class MultipleRealmsTest extends AbstractModelTest {
         Assert.assertNotEquals(r1user1.getId(), r2user1.getId());
 
         // Test password
-        realm1.updateCredential(r1user1, UserCredentialModel.password("pass1"));
-        realm2.updateCredential(r2user1, UserCredentialModel.password("pass2"));
+        r1user1.updateCredential(UserCredentialModel.password("pass1"));
+        r2user1.updateCredential(UserCredentialModel.password("pass2"));
 
         Assert.assertTrue(realm1.validatePassword(r1user1, "pass1"));
         Assert.assertFalse(realm1.validatePassword(r1user1, "pass2"));

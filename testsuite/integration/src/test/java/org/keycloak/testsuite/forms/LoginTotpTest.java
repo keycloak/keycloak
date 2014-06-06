@@ -63,7 +63,7 @@ public class LoginTotpTest {
             UserCredentialModel credentials = new UserCredentialModel();
             credentials.setType(CredentialRepresentation.TOTP);
             credentials.setValue("totpSecret");
-            appRealm.updateCredential(user, credentials);
+            user.updateCredential(credentials);
 
             user.setTotp(true);
             appRealm.setAuditListeners(Collections.singleton("dummy"));

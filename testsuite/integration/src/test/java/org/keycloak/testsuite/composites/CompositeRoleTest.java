@@ -77,12 +77,12 @@ public class CompositeRoleTest {
 
             final UserModel realmComposite1User = realm.addUser("REALM_COMPOSITE_1_USER");
             realmComposite1User.setEnabled(true);
-            realm.updateCredential(realmComposite1User, UserCredentialModel.password("password"));
+            realmComposite1User.updateCredential(UserCredentialModel.password("password"));
             realm.grantRole(realmComposite1User, realmComposite1);
 
             final UserModel realmRole1User = realm.addUser("REALM_ROLE_1_USER");
             realmRole1User.setEnabled(true);
-            realm.updateCredential(realmRole1User, UserCredentialModel.password("password"));
+            realmRole1User.updateCredential(UserCredentialModel.password("password"));
             realm.grantRole(realmRole1User, realmRole1);
 
             final ApplicationModel realmComposite1Application = new ApplicationManager(manager).createApplication(realm, "REALM_COMPOSITE_1_APPLICATION");
@@ -116,12 +116,12 @@ public class CompositeRoleTest {
 
             final UserModel realmAppCompositeUser = realm.addUser("REALM_APP_COMPOSITE_USER");
             realmAppCompositeUser.setEnabled(true);
-            realm.updateCredential(realmAppCompositeUser, UserCredentialModel.password("password"));
+            realmAppCompositeUser.updateCredential(UserCredentialModel.password("password"));
             realm.grantRole(realmAppCompositeUser, realmAppCompositeRole);
 
             final UserModel realmAppRoleUser = realm.addUser("REALM_APP_ROLE_USER");
             realmAppRoleUser.setEnabled(true);
-            realm.updateCredential(realmAppRoleUser, UserCredentialModel.password("password"));
+            realmAppRoleUser.updateCredential(UserCredentialModel.password("password"));
             realm.grantRole(realmAppRoleUser, appRole2);
 
             final ApplicationModel appCompositeApplication = new ApplicationManager(manager).createApplication(realm, "APP_COMPOSITE_APPLICATION");
@@ -139,7 +139,7 @@ public class CompositeRoleTest {
 
             final UserModel appCompositeUser = realm.addUser("APP_COMPOSITE_USER");
             appCompositeUser.setEnabled(true);
-            realm.updateCredential(appCompositeUser, UserCredentialModel.password("password"));
+            appCompositeUser.updateCredential(UserCredentialModel.password("password"));
             realm.grantRole(appCompositeUser, realmAppCompositeRole);
             realm.grantRole(appCompositeUser, realmComposite1);
 

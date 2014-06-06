@@ -994,7 +994,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public boolean validatePassword(UserModel user, String password) {
-        for (CredentialEntity cred : ((UserAdapter) user).getUser().getCredentials()) {
+        for (UserCredentialValueModel cred : user.getCredentialsDirectly()) {
             if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
                 return new Pbkdf2PasswordEncoder(cred.getSalt()).verify(password, cred.getValue());
             }
@@ -1005,7 +1005,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     @Override
     public boolean validateTOTP(UserModel user, String password, String token) {
         if (!validatePassword(user, password)) return false;
-        for (CredentialEntity cred : ((UserAdapter) user).getUser().getCredentials()) {
+        for (UserCredentialValueModel cred : user.getCredentialsDirectly()) {
             if (cred.getType().equals(UserCredentialModel.TOTP)) {
                 return new TimeBasedOTP().validate(token, cred.getValue().getBytes());
             }
@@ -1014,74 +1014,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
 
-    @Override
-    public void updateCredential(UserModel user, UserCredentialModel cred) {
-        MongoUserEntity userEntity = ((UserAdapter) user).getUser();
-        CredentialEntity credentialEntity = getCredentialEntity(userEntity, cred.getType());
 
-        if (credentialEntity == null) {
-            credentialEntity = new CredentialEntity();
-            credentialEntity.setType(cred.getType());
-            credentialEntity.setDevice(cred.getDevice());
-            userEntity.getCredentials().add(credentialEntity);
-        }
-        if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
-            byte[] salt = Pbkdf2PasswordEncoder.getSalt();
-            credentialEntity.setValue(new Pbkdf2PasswordEncoder(salt).encode(cred.getValue()));
-            credentialEntity.setSalt(salt);
-        } else {
-            credentialEntity.setValue(cred.getValue());
-        }
-        credentialEntity.setDevice(cred.getDevice());
-
-        getMongoStore().updateEntity(userEntity, invocationContext);
-    }
-
-    private CredentialEntity getCredentialEntity(MongoUserEntity userEntity, String credType) {
-        for (CredentialEntity entity : userEntity.getCredentials()) {
-            if (entity.getType().equals(credType)) {
-                return entity;
-            }
-        }
-
-        return null;
-    }
-
-    @Override
-    public List<UserCredentialValueModel> getCredentialsDirectly(UserModel user) {
-        MongoUserEntity userEntity = ((UserAdapter) user).getUser();
-        List<CredentialEntity> credentials = userEntity.getCredentials();
-        List<UserCredentialValueModel> result = new ArrayList<UserCredentialValueModel>();
-        for (CredentialEntity credEntity : credentials) {
-            UserCredentialValueModel credModel = new UserCredentialValueModel();
-            credModel.setType(credEntity.getType());
-            credModel.setDevice(credEntity.getDevice());
-            credModel.setValue(credEntity.getValue());
-            credModel.setSalt(credEntity.getSalt());
-
-            result.add(credModel);
-        }
-
-        return result;
-    }
-
-    @Override
-    public void updateCredentialDirectly(UserModel user, UserCredentialValueModel credModel) {
-        MongoUserEntity userEntity = ((UserAdapter) user).getUser();
-        CredentialEntity credentialEntity = getCredentialEntity(userEntity, credModel.getType());
-
-        if (credentialEntity == null) {
-            credentialEntity = new CredentialEntity();
-            credentialEntity.setType(credModel.getType());
-            userEntity.getCredentials().add(credentialEntity);
-        }
-
-        credentialEntity.setValue(credModel.getValue());
-        credentialEntity.setSalt(credModel.getSalt());
-        credentialEntity.setDevice(credModel.getDevice());
-
-        getMongoStore().updateEntity(userEntity, invocationContext);
-    }
 
     @Override
     public UserModel getUserBySocialLink(SocialLinkModel socialLink) {

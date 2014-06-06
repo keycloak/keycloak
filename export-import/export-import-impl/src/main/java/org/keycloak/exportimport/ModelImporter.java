@@ -302,7 +302,7 @@ public class ModelImporter {
                     UserCredentialValueModel credModel = new UserCredentialValueModel();
                     this.propertiesManager.setBasicPropertiesToModel(credModel, credEntity);
 
-                    realm.updateCredentialDirectly(user, credModel);
+                    user.updateCredentialDirectly(credModel);
                 }
             }
         }

@@ -1,5 +1,6 @@
 package org.keycloak.models;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -59,6 +60,14 @@ public interface UserModel {
 
     int getNotBefore();
     void setNotBefore(int notBefore);
+
+    void updateCredential(UserCredentialModel cred);
+
+    List<UserCredentialValueModel> getCredentialsDirectly();
+
+    void updateCredentialDirectly(UserCredentialValueModel cred);
+
+
 
 
     public static enum RequiredAction {

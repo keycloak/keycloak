@@ -569,7 +569,7 @@ public class RealmManager {
         if (userRep.getCredentials() != null) {
             for (CredentialRepresentation cred : userRep.getCredentials()) {
                 UserCredentialModel credential = fromRepresentation(cred);
-                newRealm.updateCredential(user, credential);
+                user.updateCredential(credential);
             }
         }
         if (userRep.getAuthenticationLink() != null) {

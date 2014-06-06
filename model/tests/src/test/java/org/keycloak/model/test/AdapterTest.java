@@ -133,7 +133,7 @@ public class AdapterTest extends AbstractModelTest {
         UserCredentialModel cred = new UserCredentialModel();
         cred.setType(CredentialRepresentation.PASSWORD);
         cred.setValue("geheim");
-        realmModel.updateCredential(user, cred);
+        user.updateCredential(cred);
         Assert.assertTrue(realmModel.validatePassword(user, "geheim"));
     }
 
@@ -166,7 +166,7 @@ public class AdapterTest extends AbstractModelTest {
         UserCredentialModel cred = new UserCredentialModel();
         cred.setType(CredentialRepresentation.PASSWORD);
         cred.setValue("password");
-        realmModel.updateCredential(user, cred);
+        user.updateCredential(cred);
 
         commit();
 
@@ -208,7 +208,7 @@ public class AdapterTest extends AbstractModelTest {
         UserCredentialModel cred = new UserCredentialModel();
         cred.setType(CredentialRepresentation.PASSWORD);
         cred.setValue("password");
-        realmModel.updateCredential(user, cred);
+        user.updateCredential(cred);
 
         OAuthClientModel client = realmModel.addOAuthClient("client");
 

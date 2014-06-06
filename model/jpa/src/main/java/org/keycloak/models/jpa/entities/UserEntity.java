@@ -32,6 +32,7 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 @NamedQueries({
+        @NamedQuery(name="getRealmUserById", query="select u from UserEntity u where u.id = :id and u.realm = :realm"),
         @NamedQuery(name="getRealmUserByLoginName", query="select u from UserEntity u where u.loginName = :loginName and u.realm = :realm"),
         @NamedQuery(name="getRealmUserByEmail", query="select u from UserEntity u where u.email = :email and u.realm = :realm"),
         @NamedQuery(name="getRealmUserByLastName", query="select u from UserEntity u where u.lastName = :lastName and u.realm = :realm"),

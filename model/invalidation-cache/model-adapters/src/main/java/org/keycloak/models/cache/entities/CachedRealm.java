@@ -1,0 +1,295 @@
+package org.keycloak.models.cache.entities;
+
+import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.AuthenticationLinkModel;
+import org.keycloak.models.AuthenticationProviderModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.OAuthClientModel;
+import org.keycloak.models.PasswordPolicy;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredCredentialModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.SocialLinkModel;
+import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserCredentialValueModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.UsernameLoginFailureModel;
+import org.keycloak.models.entities.AuthenticationProviderEntity;
+import org.keycloak.models.entities.RequiredCredentialEntity;
+
+import java.io.Serializable;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+/**
+ * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @version $Revision: 1 $
+ */
+public class CachedRealm {
+
+    private String id;
+    private String name;
+    private boolean enabled;
+    private boolean sslNotRequired;
+    private boolean registrationAllowed;
+    private boolean rememberMe;
+    private boolean verifyEmail;
+    private boolean passwordCredentialGrantAllowed;
+    private boolean resetPasswordAllowed;
+    private boolean social;
+    private boolean updateProfileOnInitialSocialLogin;
+    //--- brute force settings
+    private boolean bruteForceProtected;
+    private int maxFailureWaitSeconds;
+    private int minimumQuickLoginWaitSeconds;
+    private int waitIncrementSeconds;
+    private long quickLoginCheckMilliSeconds;
+    private int maxDeltaTimeSeconds;
+    private int failureFactor;
+    //--- end brute force settings
+
+    private int ssoSessionIdleTimeout;
+    private int ssoSessionMaxLifespan;
+    private int accessTokenLifespan;
+    private int accessCodeLifespan;
+    private int accessCodeLifespanUserAction;
+    private int notBefore;
+    private PasswordPolicy passwordPolicy;
+
+    private String publicKeyPem;
+    private String privateKeyPem;
+
+    private String loginTheme;
+    private String accountTheme;
+    private String adminTheme;
+    private String emailTheme;
+
+    private List<RequiredCredentialModel> requiredCredentials = new ArrayList<RequiredCredentialModel>();
+    private List<AuthenticationProviderModel> authenticationProviders = new ArrayList<AuthenticationProviderModel>();
+
+    private Map<String, String> smtpConfig = new HashMap<String, String>();
+    private Map<String, String> socialConfig = new HashMap<String, String>();
+    private Map<String, String> ldapServerConfig = new HashMap<String, String>();
+
+    private boolean auditEnabled;
+    private long auditExpiration;
+    private Set<String> auditListeners = new HashSet<String>();
+
+    public CachedRealm() {
+    }
+
+    public CachedRealm(RealmModel model) {
+        id = model.getId();
+        name = model.getName();
+        enabled = model.isEnabled();
+        sslNotRequired = model.isSslNotRequired();
+        registrationAllowed = model.isRegistrationAllowed();
+        rememberMe = model.isRememberMe();
+        verifyEmail = model.isVerifyEmail();
+        passwordCredentialGrantAllowed = model.isPasswordCredentialGrantAllowed();
+        resetPasswordAllowed = model.isResetPasswordAllowed();
+        social = model.isSocial();
+        updateProfileOnInitialSocialLogin = model.isUpdateProfileOnInitialSocialLogin();
+        //--- brute force settings
+        bruteForceProtected = model.isBruteForceProtected();
+        maxFailureWaitSeconds = model.getMaxFailureWaitSeconds();
+        minimumQuickLoginWaitSeconds = model.getMinimumQuickLoginWaitSeconds();
+        waitIncrementSeconds = model.getWaitIncrementSeconds();
+        quickLoginCheckMilliSeconds = model.getQuickLoginCheckMilliSeconds();
+        maxDeltaTimeSeconds = model.getMaxDeltaTimeSeconds();
+        failureFactor = model.getFailureFactor();
+        //--- end brute force settings
+
+        ssoSessionIdleTimeout = model.getSsoSessionIdleTimeout();
+        ssoSessionMaxLifespan = model.getSsoSessionMaxLifespan();
+        accessTokenLifespan = model.getAccessTokenLifespan();
+        accessCodeLifespan = model.getAccessCodeLifespan();
+        accessCodeLifespanUserAction = model.getAccessCodeLifespanUserAction();
+        notBefore = model.getNotBefore();
+        passwordPolicy = model.getPasswordPolicy();
+
+        publicKeyPem = model.getPublicKeyPem();
+        privateKeyPem = model.getPrivateKeyPem();
+
+        loginTheme = model.getLoginTheme();
+        accountTheme = model.getAccountTheme();
+        adminTheme = model.getAdminTheme();
+        emailTheme = model.getEmailTheme();
+
+        requiredCredentials = model.getRequiredCredentials();
+        authenticationProviders = model.getAuthenticationProviders();
+
+        smtpConfig.putAll(model.getSmtpConfig());
+        socialConfig.putAll(model.getSocialConfig());
+        ldapServerConfig.putAll(model.getLdapServerConfig());
+
+        auditEnabled = model.isAuditEnabled();
+        auditExpiration = model.getAuditExpiration();
+        auditListeners.addAll(model.getAuditListeners());
+    }
+
+
+    public String getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public boolean isSslNotRequired() {
+        return sslNotRequired;
+    }
+
+    public boolean isRegistrationAllowed() {
+        return registrationAllowed;
+    }
+
+    public boolean isPasswordCredentialGrantAllowed() {
+        return passwordCredentialGrantAllowed;
+    }
+
+    public boolean isRememberMe() {
+        return this.rememberMe;
+    }
+
+    public boolean isBruteForceProtected() {
+        return bruteForceProtected;
+    }
+
+    public int getMaxFailureWaitSeconds() {
+        return this.maxFailureWaitSeconds;
+    }
+
+    public int getWaitIncrementSeconds() {
+        return this.waitIncrementSeconds;
+    }
+
+    public int getMinimumQuickLoginWaitSeconds() {
+        return this.minimumQuickLoginWaitSeconds;
+    }
+
+    public long getQuickLoginCheckMilliSeconds() {
+        return quickLoginCheckMilliSeconds;
+    }
+
+    public int getMaxDeltaTimeSeconds() {
+        return maxDeltaTimeSeconds;
+    }
+
+    public int getFailureFactor() {
+        return failureFactor;
+    }
+
+    public boolean isVerifyEmail() {
+        return verifyEmail;
+    }
+
+    public boolean isResetPasswordAllowed() {
+        return resetPasswordAllowed;
+    }
+
+    public int getSsoSessionIdleTimeout() {
+        return ssoSessionIdleTimeout;
+    }
+
+    public int getSsoSessionMaxLifespan() {
+        return ssoSessionMaxLifespan;
+    }
+
+    public int getAccessTokenLifespan() {
+        return accessTokenLifespan;
+    }
+
+    public int getAccessCodeLifespan() {
+        return accessCodeLifespan;
+    }
+
+    public int getAccessCodeLifespanUserAction() {
+        return accessCodeLifespanUserAction;
+    }
+
+    public String getPublicKeyPem() {
+        return publicKeyPem;
+    }
+
+    public String getPrivateKeyPem() {
+        return privateKeyPem;
+    }
+
+    public List<RequiredCredentialModel> getRequiredCredentials() {
+        return requiredCredentials;
+    }
+
+    public PasswordPolicy getPasswordPolicy() {
+        return passwordPolicy;
+    }
+
+    public boolean isSocial() {
+        return social;
+    }
+
+    public boolean isUpdateProfileOnInitialSocialLogin() {
+        return updateProfileOnInitialSocialLogin;
+    }
+
+    public Map<String, String> getSmtpConfig() {
+        return smtpConfig;
+    }
+
+    public Map<String, String> getSocialConfig() {
+        return socialConfig;
+    }
+
+    public Map<String, String> getLdapServerConfig() {
+        return ldapServerConfig;
+    }
+
+    public List<AuthenticationProviderModel> getAuthenticationProviders() {
+        return authenticationProviders;
+    }
+
+    public String getLoginTheme() {
+        return loginTheme;
+    }
+
+    public String getAccountTheme() {
+        return accountTheme;
+    }
+
+    public String getAdminTheme() {
+        return this.adminTheme;
+    }
+
+    public String getEmailTheme() {
+        return emailTheme;
+    }
+
+    public int getNotBefore() {
+        return notBefore;
+    }
+
+    public boolean isAuditEnabled() {
+        return auditEnabled;
+    }
+
+    public long getAuditExpiration() {
+        return auditExpiration;
+    }
+
+    public Set<String> getAuditListeners() {
+        return auditListeners;
+    }
+
+}

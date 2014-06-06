@@ -766,7 +766,7 @@ public class UsersResource {
         }
 
         UserCredentialModel cred = RealmManager.fromRepresentation(pass);
-        realm.updateCredential(user, cred);
+        user.updateCredential(cred);
         user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
     }
 

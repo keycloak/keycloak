@@ -429,7 +429,7 @@ public class RealmAdapter implements RealmModel {
         query.setParameter("realm", realm);
         List<UserEntity> results = query.getResultList();
         if (results.size() == 0) return null;
-        return new UserAdapter(results.get(0));
+        return new UserAdapter(em, results.get(0));
     }
 
     @Override
@@ -470,7 +470,7 @@ public class RealmAdapter implements RealmModel {
         query.setParameter("email", email);
         query.setParameter("realm", realm);
         List<UserEntity> results = query.getResultList();
-        return results.isEmpty() ? null : new UserAdapter(results.get(0));
+        return results.isEmpty() ? null : new UserAdapter(em, results.get(0));
     }
 
     @Override
@@ -479,7 +479,7 @@ public class RealmAdapter implements RealmModel {
 
         // Check if user belongs to this realm
         if (entity == null || !this.realm.equals(entity.getRealm())) return null;
-        return new UserAdapter(entity);
+        return new UserAdapter(em, entity);
     }
 
     @Override
@@ -495,7 +495,7 @@ public class RealmAdapter implements RealmModel {
         entity.setRealm(realm);
         em.persist(entity);
         em.flush();
-        UserModel userModel = new UserAdapter(entity);
+        UserModel userModel = new UserAdapter(em, entity);
 
         for (String r : getDefaultRoles()) {
             grantRole(userModel, getRole(r));
@@ -706,7 +706,7 @@ public class RealmAdapter implements RealmModel {
                     ", socialUserId=" + socialLink.getSocialUserId() + ", results=" + results);
         } else {
             UserEntity user = results.get(0);
-            return new UserAdapter(user);
+            return new UserAdapter(em, user);
         }
     }
 
@@ -808,7 +808,7 @@ public class RealmAdapter implements RealmModel {
         query.setParameter("realm", realm);
         List<UserEntity> results = query.getResultList();
         List<UserModel> users = new ArrayList<UserModel>();
-        for (UserEntity entity : results) users.add(new UserAdapter(entity));
+        for (UserEntity entity : results) users.add(new UserAdapter(em, entity));
         return users;
     }
 
@@ -819,7 +819,7 @@ public class RealmAdapter implements RealmModel {
         query.setParameter("search", "%" + search.toLowerCase() + "%");
         List<UserEntity> results = query.getResultList();
         List<UserModel> users = new ArrayList<UserModel>();
-        for (UserEntity entity : results) users.add(new UserAdapter(entity));
+        for (UserEntity entity : results) users.add(new UserAdapter(em, entity));
         return users;
     }
 
@@ -851,7 +851,7 @@ public class RealmAdapter implements RealmModel {
         TypedQuery<UserEntity> query = em.createQuery(q, UserEntity.class);
         List<UserEntity> results = query.getResultList();
         List<UserModel> users = new ArrayList<UserModel>();
-        for (UserEntity entity : results) users.add(new UserAdapter(entity));
+        for (UserEntity entity : results) users.add(new UserAdapter(em, entity));
         return users;
     }
 
@@ -1218,9 +1218,10 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public boolean validatePassword(UserModel user, String password) {
-        for (CredentialEntity cred : ((UserAdapter) user).getUser().getCredentials()) {
+        for (UserCredentialValueModel cred : user.getCredentialsDirectly()) {
             if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
                 return new Pbkdf2PasswordEncoder(cred.getSalt()).verify(password, cred.getValue());
+
             }
         }
         return false;
@@ -1229,87 +1230,12 @@ public class RealmAdapter implements RealmModel {
     @Override
     public boolean validateTOTP(UserModel user, String password, String token) {
         if (!validatePassword(user, password)) return false;
-        for (CredentialEntity cred : ((UserAdapter) user).getUser().getCredentials()) {
+        for (UserCredentialValueModel cred : user.getCredentialsDirectly()) {
             if (cred.getType().equals(UserCredentialModel.TOTP)) {
                 return new TimeBasedOTP().validate(token, cred.getValue().getBytes());
             }
         }
         return false;
-    }
-
-    @Override
-    public void updateCredential(UserModel user, UserCredentialModel cred) {
-        UserEntity userEntity = ((UserAdapter) user).getUser();
-        CredentialEntity credentialEntity = getCredentialEntity(userEntity, cred.getType());
-
-        if (credentialEntity == null) {
-            credentialEntity = new CredentialEntity();
-            credentialEntity.setType(cred.getType());
-            credentialEntity.setDevice(cred.getDevice());
-            credentialEntity.setUser(userEntity);
-            em.persist(credentialEntity);
-            userEntity.getCredentials().add(credentialEntity);
-        }
-        if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
-            byte[] salt = getSalt();
-            credentialEntity.setValue(new Pbkdf2PasswordEncoder(salt).encode(cred.getValue()));
-            credentialEntity.setSalt(salt);
-        } else {
-            credentialEntity.setValue(cred.getValue());
-        }
-        credentialEntity.setDevice(cred.getDevice());
-        em.flush();
-    }
-
-    private CredentialEntity getCredentialEntity(UserEntity userEntity, String credType) {
-        for (CredentialEntity entity : userEntity.getCredentials()) {
-            if (entity.getType().equals(credType)) {
-                return entity;
-            }
-        }
-
-        return null;
-    }
-
-    @Override
-    public List<UserCredentialValueModel> getCredentialsDirectly(UserModel user) {
-        UserEntity userEntity = ((UserAdapter) user).getUser();
-        List<CredentialEntity> credentials = new ArrayList<CredentialEntity>(userEntity.getCredentials());
-        List<UserCredentialValueModel> result = new ArrayList<UserCredentialValueModel>();
-
-        if (credentials != null) {
-            for (CredentialEntity credEntity : credentials) {
-                UserCredentialValueModel credModel = new UserCredentialValueModel();
-                credModel.setType(credEntity.getType());
-                credModel.setDevice(credEntity.getDevice());
-                credModel.setValue(credEntity.getValue());
-                credModel.setSalt(credEntity.getSalt());
-
-                result.add(credModel);
-            }
-        }
-
-        return result;
-    }
-
-    @Override
-    public void updateCredentialDirectly(UserModel user, UserCredentialValueModel credModel) {
-        UserEntity userEntity = ((UserAdapter) user).getUser();
-        CredentialEntity credentialEntity = getCredentialEntity(userEntity, credModel.getType());
-
-        if (credentialEntity == null) {
-            credentialEntity = new CredentialEntity();
-            credentialEntity.setType(credModel.getType());
-            credentialEntity.setUser(userEntity);
-            em.persist(credentialEntity);
-            userEntity.getCredentials().add(credentialEntity);
-        }
-
-        credentialEntity.setValue(credModel.getValue());
-        credentialEntity.setSalt(credModel.getSalt());
-        credentialEntity.setDevice(credModel.getDevice());
-
-        em.flush();
     }
 
     @Override

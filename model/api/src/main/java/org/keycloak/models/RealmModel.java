@@ -110,12 +110,6 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
 
     boolean validateTOTP(UserModel user, String password, String token);
 
-    void updateCredential(UserModel user, UserCredentialModel cred);
-
-    List<UserCredentialValueModel> getCredentialsDirectly(UserModel user);
-
-    void updateCredentialDirectly(UserModel user, UserCredentialValueModel cred);
-
     UserModel getUser(String name);
 
     UserModel getUserByEmail(String email);

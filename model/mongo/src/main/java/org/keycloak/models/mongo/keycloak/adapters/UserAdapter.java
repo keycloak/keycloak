@@ -1,12 +1,18 @@
 package org.keycloak.models.mongo.keycloak.adapters;
 
+import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.entities.CredentialEntity;
 import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.mongo.keycloak.entities.MongoUserEntity;
+import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -166,6 +172,72 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
     public void setTotp(boolean totp) {
         user.setTotp(totp);
         updateUser();
+    }
+
+    @Override
+    public void updateCredential(UserCredentialModel cred) {
+        CredentialEntity credentialEntity = getCredentialEntity(user, cred.getType());
+
+        if (credentialEntity == null) {
+            credentialEntity = new CredentialEntity();
+            credentialEntity.setType(cred.getType());
+            credentialEntity.setDevice(cred.getDevice());
+            user.getCredentials().add(credentialEntity);
+        }
+        if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
+            byte[] salt = Pbkdf2PasswordEncoder.getSalt();
+            credentialEntity.setValue(new Pbkdf2PasswordEncoder(salt).encode(cred.getValue()));
+            credentialEntity.setSalt(salt);
+        } else {
+            credentialEntity.setValue(cred.getValue());
+        }
+        credentialEntity.setDevice(cred.getDevice());
+
+        getMongoStore().updateEntity(user, invocationContext);
+    }
+
+    private CredentialEntity getCredentialEntity(MongoUserEntity userEntity, String credType) {
+        for (CredentialEntity entity : userEntity.getCredentials()) {
+            if (entity.getType().equals(credType)) {
+                return entity;
+            }
+        }
+
+        return null;
+    }
+
+    @Override
+    public List<UserCredentialValueModel> getCredentialsDirectly() {
+        List<CredentialEntity> credentials = user.getCredentials();
+        List<UserCredentialValueModel> result = new ArrayList<UserCredentialValueModel>();
+        for (CredentialEntity credEntity : credentials) {
+            UserCredentialValueModel credModel = new UserCredentialValueModel();
+            credModel.setType(credEntity.getType());
+            credModel.setDevice(credEntity.getDevice());
+            credModel.setValue(credEntity.getValue());
+            credModel.setSalt(credEntity.getSalt());
+
+            result.add(credModel);
+        }
+
+        return result;
+    }
+
+    @Override
+    public void updateCredentialDirectly(UserCredentialValueModel credModel) {
+        CredentialEntity credentialEntity = getCredentialEntity(user, credModel.getType());
+
+        if (credentialEntity == null) {
+            credentialEntity = new CredentialEntity();
+            credentialEntity.setType(credModel.getType());
+            user.getCredentials().add(credentialEntity);
+        }
+
+        credentialEntity.setValue(credModel.getValue());
+        credentialEntity.setSalt(credModel.getSalt());
+        credentialEntity.setDevice(credModel.getDevice());
+
+        getMongoStore().updateEntity(user, invocationContext);
     }
 
     protected void updateUser() {

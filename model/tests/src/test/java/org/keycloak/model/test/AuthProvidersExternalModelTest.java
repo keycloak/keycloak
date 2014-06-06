@@ -63,7 +63,7 @@ public class AuthProvidersExternalModelTest extends AbstractModelTest {
         UserCredentialModel credential = new UserCredentialModel();
         credential.setType(CredentialRepresentation.PASSWORD);
         credential.setValue("password");
-        realm1.updateCredential(john, credential);
+        john.updateCredential(credential);
 
         am = new AuthenticationManager(providerSession);
     }

@@ -73,6 +73,38 @@ public class JpaKeycloakSession implements KeycloakSession {
     }
 
     @Override
+    public UserModel getUserById(String id, String realmId) {
+        TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUserById", UserEntity.class);
+        query.setParameter("id", id);
+        RealmEntity realm = em.getReference(RealmEntity.class, realmId);
+        query.setParameter("realm", realm);
+        List<UserEntity> entities = query.getResultList();
+        if (entities.size() == 0) return null;
+        return new UserAdapter(em, entities.get(0));
+    }
+
+    @Override
+    public UserModel getUserByUsername(String username, String realmId) {
+        TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUserByLoginName", UserEntity.class);
+        query.setParameter("loginName", username);
+        RealmEntity realm = em.getReference(RealmEntity.class, realmId);
+        query.setParameter("realm", realm);
+        List<UserEntity> results = query.getResultList();
+        if (results.size() == 0) return null;
+        return new UserAdapter(em, results.get(0));
+    }
+
+    @Override
+    public UserModel getUserByEmail(String email, String realmId) {
+        TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUserByEmail", UserEntity.class);
+        query.setParameter("email", email);
+        RealmEntity realm = em.getReference(RealmEntity.class, realmId);
+        query.setParameter("realm", realm);
+        List<UserEntity> results = query.getResultList();
+        return results.isEmpty() ? null : new UserAdapter(em, results.get(0));
+    }
+
+    @Override
     public boolean removeRealm(String id) {
         RealmEntity realm = em.find(RealmEntity.class, id);
         if (realm == null) {
