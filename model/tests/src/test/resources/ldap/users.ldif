@@ -9,12 +9,12 @@ objectclass: top
 objectclass: organizationalUnit
 ou: People
 
-dn: uid=john,ou=People,dc=keycloak,dc=org
+dn: uid=johnkeycloak,ou=People,dc=keycloak,dc=org
 objectclass: top
 objectclass: uidObject
 objectclass: person
 objectclass: inetOrgPerson
-uid: john
+uid: johnkeycloak
 cn: John
 sn: Doe
 mail: john@email.org

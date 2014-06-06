@@ -17,7 +17,8 @@
         "baseDn": "dc=keycloak,dc=org",
         "userDnSuffix": "ou=People,dc=keycloak,dc=org",
         "bindDn": "uid=admin,ou=system",
-        "bindCredential": "secret"
+        "bindCredential": "secret",
+        "vendor": "other"
     },
     "socialProviders": {
         "google.key": "abc",

@@ -201,10 +201,11 @@ public class ImportTest extends AbstractModelTest {
 
         // Test ldap config
         Map<String, String> ldapConfig = realm.getLdapServerConfig();
-        Assert.assertTrue(ldapConfig.size() == 5);
+        Assert.assertTrue(ldapConfig.size() == 6);
         Assert.assertEquals("ldap://localhost:10389", ldapConfig.get("connectionUrl"));
         Assert.assertEquals("dc=keycloak,dc=org", ldapConfig.get("baseDn"));
         Assert.assertEquals("ou=People,dc=keycloak,dc=org", ldapConfig.get("userDnSuffix"));
+        Assert.assertEquals("other", ldapConfig.get("vendor"));
 
         // Test authentication providers
         List<AuthenticationProviderModel> authProviderModels = realm.getAuthenticationProviders();
