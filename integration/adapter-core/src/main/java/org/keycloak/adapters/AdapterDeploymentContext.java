@@ -280,13 +280,13 @@ public class AdapterDeploymentContext {
     protected KeycloakUriBuilder getBaseBuilder(HttpFacade facade, String base) {
         KeycloakUriBuilder builder = KeycloakUriBuilder.fromUri(base);
         URI request = URI.create(facade.getRequest().getURI());
-        String scheme = "http";
+        String scheme = request.getScheme();
         if (deployment.isSslRequired()) {
             scheme = "https";
-        }
-        if (!request.getScheme().equals(scheme) && request.getPort() != -1) {
-            log.error("request scheme: " + request.getScheme() + " ssl required: " + deployment.isSslRequired());
-            throw new RuntimeException("Can't resolve relative url from adapter config.");
+            if (!request.getScheme().equals(scheme) && request.getPort() != -1) {
+                log.error("request scheme: " + request.getScheme() + " ssl required: " + deployment.isSslRequired());
+                throw new RuntimeException("Can't resolve relative url from adapter config.");
+            }
         }
         builder.scheme(scheme);
         builder.host(request.getHost());
