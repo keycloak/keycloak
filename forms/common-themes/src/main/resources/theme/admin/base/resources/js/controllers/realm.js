@@ -902,6 +902,12 @@ module.controller('RealmSMTPSettingsCtrl', function($scope, Current, Realm, real
 module.controller('RealmLdapSettingsCtrl', function($scope, $location, Notifications, Realm, realm) {
     console.log('RealmLdapSettingsCtrl');
 
+    $scope.ldapVendors = [
+        { "id": "ad", "name": "Active Directory" },
+        { "id": "rhds", "name": "Red Hat Directory Server" },
+        { "id": "other", "name": "Other" }
+    ];
+
     $scope.realm = realm;
 
     var oldCopy = angular.copy($scope.realm);

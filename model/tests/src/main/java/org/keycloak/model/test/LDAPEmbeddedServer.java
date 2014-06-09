@@ -49,6 +49,7 @@ public class LDAPEmbeddedServer extends AbstractLDAPTest {
     protected boolean startEmbeddedLdapLerver = true;
     protected String bindDn = "uid=admin,ou=system";
     protected String bindCredential = "secret";
+    protected String vendor;
 
     public static String IDM_TEST_LDAP_CONNECTION_URL = "idm.test.ldap.connection.url";
     public static String IDM_TEST_LDAP_BASE_DN = "idm.test.ldap.base.dn";
@@ -59,6 +60,7 @@ public class LDAPEmbeddedServer extends AbstractLDAPTest {
     public static String IDM_TEST_LDAP_START_EMBEDDED_LDAP_SERVER = "idm.test.ldap.start.embedded.ldap.server";
     public static String IDM_TEST_LDAP_BIND_DN = "idm.test.ldap.bind.dn";
     public static String IDM_TEST_LDAP_BIND_CREDENTIAL = "idm.test.ldap.bind.credential";
+    public static String IDM_TEST_LDAP_VENDOR = "idm.test.ldap.vendor";
 
 
     public LDAPEmbeddedServer() {
@@ -85,6 +87,7 @@ public class LDAPEmbeddedServer extends AbstractLDAPTest {
         startEmbeddedLdapLerver = Boolean.parseBoolean(p.getProperty(IDM_TEST_LDAP_START_EMBEDDED_LDAP_SERVER, "true"));
         bindDn = p.getProperty(IDM_TEST_LDAP_BIND_DN, bindDn);
         bindCredential = p.getProperty(IDM_TEST_LDAP_BIND_CREDENTIAL, bindCredential);
+        vendor = p.getProperty(IDM_TEST_LDAP_VENDOR);
     }
 
     @Override
@@ -132,6 +135,7 @@ public class LDAPEmbeddedServer extends AbstractLDAPTest {
         ldapConfig.put(LdapConstants.BIND_DN, getBindDn());
         ldapConfig.put(LdapConstants.BIND_CREDENTIAL, getBindCredential());
         ldapConfig.put(LdapConstants.USER_DN_SUFFIX, getUserDnSuffix());
+        ldapConfig.put(LdapConstants.VENDOR, getVendor());
         realm.setLdapServerConfig(ldapConfig);
     }
 
@@ -200,6 +204,10 @@ public class LDAPEmbeddedServer extends AbstractLDAPTest {
 
     public String getBindCredential() {
         return bindCredential;
+    }
+
+    public String getVendor() {
+        return vendor;
     }
 
     @Override
