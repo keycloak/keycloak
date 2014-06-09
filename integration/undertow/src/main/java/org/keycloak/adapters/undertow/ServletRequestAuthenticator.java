@@ -10,20 +10,21 @@ import org.keycloak.adapters.KeycloakDeployment;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import org.keycloak.KeycloakPrincipal;
+import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @author Stan Silvert ssilvert@redhat.com (C) 2014 Red Hat Inc.
  * @version $Revision: 1 $
  */
 public class ServletRequestAuthenticator extends UndertowRequestAuthenticator {
 
-    protected UndertowUserSessionManagement userSessionManagement;
 
     public ServletRequestAuthenticator(HttpFacade facade, KeycloakDeployment deployment, int sslRedirectPort,
                                        SecurityContext securityContext, HttpServerExchange exchange,
                                        UndertowUserSessionManagement userSessionManagement) {
-        super(facade, deployment, sslRedirectPort, securityContext, exchange);
-        this.userSessionManagement = userSessionManagement;
+        super(facade, deployment, sslRedirectPort, securityContext, exchange, userSessionManagement);
     }
 
     @Override
@@ -68,5 +69,10 @@ public class ServletRequestAuthenticator extends UndertowRequestAuthenticator {
         session.setAttribute(KeycloakUndertowAccount.class.getName(), account);
         userSessionManagement.login(servletRequestContext.getDeployment().getSessionManager(), session.getId(), account.getPrincipal().getName(), account.getKeycloakSecurityContext().getToken().getSessionState());
 
+    }
+
+    @Override
+    protected KeycloakUndertowAccount createAccount(KeycloakPrincipal principal, RefreshableKeycloakSecurityContext session) {
+        return new KeycloakUndertowAccount(principal, session, deployment);
     }
 }

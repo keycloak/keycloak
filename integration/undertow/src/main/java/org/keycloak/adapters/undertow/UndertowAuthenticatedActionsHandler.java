@@ -12,6 +12,7 @@ import org.keycloak.adapters.KeycloakDeployment;
  * Bridge for authenticated Keycloak adapter actions
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @author Stan Silvert ssilvert@redhat.com (C) 2014 Red Hat Inc.
  * @version $Revision: 1 $
  */
 public class UndertowAuthenticatedActionsHandler implements HttpHandler {
@@ -33,7 +34,7 @@ public class UndertowAuthenticatedActionsHandler implements HttpHandler {
     }
 
 
-    protected UndertowAuthenticatedActionsHandler(AdapterDeploymentContext deploymentContext, HttpHandler next) {
+    public UndertowAuthenticatedActionsHandler(AdapterDeploymentContext deploymentContext, HttpHandler next) {
         this.deploymentContext = deploymentContext;
         this.next = next;
     }
