@@ -22,7 +22,7 @@ import java.util.Set;
  */
 public class ApplicationAdapter extends ClientAdapter<MongoApplicationEntity> implements ApplicationModel {
 
-    public ApplicationAdapter(RealmAdapter realm, MongoApplicationEntity applicationEntity, MongoStoreInvocationContext invContext) {
+    public ApplicationAdapter(RealmModel realm, MongoApplicationEntity applicationEntity, MongoStoreInvocationContext invContext) {
         super(realm, applicationEntity, invContext);
     }
 
@@ -156,19 +156,6 @@ public class ApplicationAdapter extends ClientAdapter<MongoApplicationEntity> im
             result.add(new RoleAdapter(getRealm(), role, this, invocationContext));
         }
 
-        return result;
-    }
-
-    @Override
-    public Set<RoleModel> getApplicationRoleMappings(UserModel user) {
-        Set<RoleModel> result = new HashSet<RoleModel>();
-        List<MongoRoleEntity> roles = MongoModelUtils.getAllRolesOfUser(user, invocationContext);
-
-        for (MongoRoleEntity role : roles) {
-            if (getId().equals(role.getApplicationId())) {
-                result.add(new RoleAdapter(getRealm(), role, this, invocationContext));
-            }
-        }
         return result;
     }
 

@@ -10,8 +10,7 @@
         <class>org.keycloak.models.jpa.entities.RealmEntity</class>
         <class>org.keycloak.models.jpa.entities.RequiredCredentialEntity</class>
         <class>org.keycloak.models.jpa.entities.AuthenticationProviderEntity</class>
-        <class>org.keycloak.models.jpa.entities.ApplicationRoleEntity</class>
-        <class>org.keycloak.models.jpa.entities.RealmRoleEntity</class>
+        <class>org.keycloak.models.jpa.entities.RoleEntity</class>
         <class>org.keycloak.models.jpa.entities.SocialLinkEntity</class>
         <class>org.keycloak.models.jpa.entities.AuthenticationLinkEntity</class>
         <class>org.keycloak.models.jpa.entities.UserEntity</class>

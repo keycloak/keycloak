@@ -1,13 +1,20 @@
 package org.keycloak.models.jpa;
 
+import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleContainerModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.entities.CredentialEntity;
+import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
+import org.keycloak.models.jpa.entities.UserRoleMappingEntity;
 import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
 
 import javax.persistence.EntityManager;
+import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -25,10 +32,12 @@ public class UserAdapter implements UserModel {
 
     protected UserEntity user;
     protected EntityManager em;
+    protected RealmModel realm;
 
-    public UserAdapter(EntityManager em, UserEntity user) {
+    public UserAdapter(RealmModel realm, EntityManager em, UserEntity user) {
         this.em = em;
         this.user = user;
+        this.realm = realm;
     }
 
     public UserEntity getUser() {
@@ -243,6 +252,90 @@ public class UserAdapter implements UserModel {
         em.flush();
     }
 
+    @Override
+    public boolean hasRole(RoleModel role) {
+        Set<RoleModel> roles = getRoleMappings();
+        if (roles.contains(role)) return true;
+
+        for (RoleModel mapping : roles) {
+            if (mapping.hasRole(role)) return true;
+        }
+        return false;
+    }
+
+    protected TypedQuery<UserRoleMappingEntity> getUserRoleMappingEntityTypedQuery(RoleModel role) {
+        TypedQuery<UserRoleMappingEntity> query = em.createNamedQuery("userHasRole", UserRoleMappingEntity.class);
+        query.setParameter("user", getUser());
+        RoleEntity roleEntity = em.getReference(RoleEntity.class, role.getId());
+        query.setParameter("role", roleEntity);
+        return query;
+    }
+
+    @Override
+    public void grantRole(RoleModel role) {
+        if (hasRole(role)) return;
+        UserRoleMappingEntity entity = new UserRoleMappingEntity();
+        entity.setUser(getUser());
+        RoleEntity roleEntity = em.getReference(RoleEntity.class, role.getId());
+        entity.setRole(roleEntity);
+        em.persist(entity);
+        em.flush();
+    }
+
+    @Override
+    public Set<RoleModel> getRealmRoleMappings() {
+        Set<RoleModel> roleMappings = getRoleMappings();
+
+        Set<RoleModel> realmRoles = new HashSet<RoleModel>();
+        for (RoleModel role : roleMappings) {
+            RoleContainerModel container = role.getContainer();
+            if (container instanceof RealmModel) {
+                realmRoles.add(role);
+            }
+        }
+        return realmRoles;
+    }
 
 
+    @Override
+    public Set<RoleModel> getRoleMappings() {
+        TypedQuery<UserRoleMappingEntity> query = em.createNamedQuery("userRoleMappings", UserRoleMappingEntity.class);
+        query.setParameter("user", getUser());
+        List<UserRoleMappingEntity> entities = query.getResultList();
+        Set<RoleModel> roles = new HashSet<RoleModel>();
+        for (UserRoleMappingEntity entity : entities) {
+            roles.add(realm.getRoleById(entity.getRole().getId()));
+        }
+        return roles;
+    }
+
+    @Override
+    public void deleteRoleMapping(RoleModel role) {
+        if (user == null || role == null) return;
+
+        TypedQuery<UserRoleMappingEntity> query = getUserRoleMappingEntityTypedQuery(role);
+        List<UserRoleMappingEntity> results = query.getResultList();
+        if (results.size() == 0) return;
+        for (UserRoleMappingEntity entity : results) {
+            em.remove(entity);
+        }
+        em.flush();
+    }
+
+    @Override
+    public Set<RoleModel> getApplicationRoleMappings(ApplicationModel app) {
+        Set<RoleModel> roleMappings = getRoleMappings();
+
+        Set<RoleModel> roles = new HashSet<RoleModel>();
+        for (RoleModel role : roleMappings) {
+            RoleContainerModel container = role.getContainer();
+            if (container instanceof ApplicationModel) {
+                ApplicationModel appModel = (ApplicationModel)container;
+                if (appModel.getId().equals(app.getId())) {
+                   roles.add(role);
+                }
+            }
+        }
+        return roles;
+    }
 }

@@ -1,14 +1,21 @@
 package org.keycloak.models.cache;
 
+import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.AuthenticationLinkModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
+import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.entities.CachedRealm;
+import org.keycloak.models.cache.entities.CachedRole;
 import org.keycloak.provider.ProviderSession;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -116,7 +123,7 @@ public class CacheKeycloakSession implements KeycloakSession {
         if (cached == null) {
             RealmModel model = getDelegate().getRealm(id);
             if (model == null) return null;
-            cached = new CachedRealm(model);
+            cached = new CachedRealm(cache, this, model);
         }
         return new RealmAdapter(cached, this);
     }
@@ -127,23 +134,23 @@ public class CacheKeycloakSession implements KeycloakSession {
         if (cached == null) {
             RealmModel model = getDelegate().getRealmByName(name);
             if (model == null) return null;
-            cached = new CachedRealm(model);
+            cached = new CachedRealm(cache, this, model);
         }
         return new RealmAdapter(cached, this);
     }
 
     @Override
-    public UserModel getUserById(String id, String realmId) {
+    public UserModel getUserById(String id, RealmModel realm) {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override
-    public UserModel getUserByUsername(String username, String realmId) {
+    public UserModel getUserByUsername(String username, RealmModel realm) {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override
-    public UserModel getUserByEmail(String email, String realmId) {
+    public UserModel getUserByEmail(String email, RealmModel realm) {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
@@ -172,5 +179,60 @@ public class CacheKeycloakSession implements KeycloakSession {
     @Override
     public void close() {
         if (sessionDelegate != null) sessionDelegate.close();
+    }
+
+    @Override
+    public UserModel getUserBySocialLink(SocialLinkModel socialLink, RealmModel realm) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public List<UserModel> getUsers(RealmModel realm) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public List<UserModel> searchForUser(String search, RealmModel realm) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public List<UserModel> searchForUserByAttributes(Map<String, String> attributes, RealmModel realm) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public Set<RoleModel> getRealmRoleMappings(UserModel user, RealmModel realm) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public Set<SocialLinkModel> getSocialLinks(UserModel user, RealmModel realm) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public SocialLinkModel getSocialLink(UserModel user, String socialProvider, RealmModel realm) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public AuthenticationLinkModel getAuthenticationLink(UserModel user, RealmModel realm) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public RoleModel getRoleById(String id, RealmModel realm) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public ApplicationModel getApplicationById(String id, RealmModel realm) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public OAuthClientModel getOAuthClientById(String id, RealmModel realm) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 }

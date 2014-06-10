@@ -97,7 +97,7 @@ public class MultipleRealmsTest extends AbstractModelTest {
         realm.addRole("role2");
 
         app1.addRole("app1Role1");
-        realm.addScopeMapping(app1, realm.getRole("role1"));
+        app1.addScopeMapping(realm.getRole("role1"));
 
         realm.addOAuthClient("cl1");
     }

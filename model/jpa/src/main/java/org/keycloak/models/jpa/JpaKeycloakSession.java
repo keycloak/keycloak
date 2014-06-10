@@ -10,6 +10,8 @@ import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -73,35 +75,35 @@ public class JpaKeycloakSession implements KeycloakSession {
     }
 
     @Override
-    public UserModel getUserById(String id, String realmId) {
+    public UserModel getUserById(String id, RealmModel realmModel) {
         TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUserById", UserEntity.class);
         query.setParameter("id", id);
-        RealmEntity realm = em.getReference(RealmEntity.class, realmId);
+        RealmEntity realm = em.getReference(RealmEntity.class, realmModel.getId());
         query.setParameter("realm", realm);
         List<UserEntity> entities = query.getResultList();
         if (entities.size() == 0) return null;
-        return new UserAdapter(em, entities.get(0));
+        return new UserAdapter(realmModel, em, entities.get(0));
     }
 
     @Override
-    public UserModel getUserByUsername(String username, String realmId) {
+    public UserModel getUserByUsername(String username, RealmModel realmModel) {
         TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUserByLoginName", UserEntity.class);
         query.setParameter("loginName", username);
-        RealmEntity realm = em.getReference(RealmEntity.class, realmId);
+        RealmEntity realm = em.getReference(RealmEntity.class, realmModel.getId());
         query.setParameter("realm", realm);
         List<UserEntity> results = query.getResultList();
         if (results.size() == 0) return null;
-        return new UserAdapter(em, results.get(0));
+        return new UserAdapter(realmModel, em, results.get(0));
     }
 
     @Override
-    public UserModel getUserByEmail(String email, String realmId) {
+    public UserModel getUserByEmail(String email, RealmModel realmModel) {
         TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUserByEmail", UserEntity.class);
         query.setParameter("email", email);
-        RealmEntity realm = em.getReference(RealmEntity.class, realmId);
+        RealmEntity realm = em.getReference(RealmEntity.class, realmModel.getId());
         query.setParameter("realm", realm);
         List<UserEntity> results = query.getResultList();
-        return results.isEmpty() ? null : new UserAdapter(em, results.get(0));
+        return results.isEmpty() ? null : new UserAdapter(realmModel, em, results.get(0));
     }
 
     @Override
@@ -143,5 +145,60 @@ public class JpaKeycloakSession implements KeycloakSession {
         for (RealmModel realm : realms) {
             removeRealm(realm.getId());
         }
+    }
+
+    @Override
+    public UserModel getUserBySocialLink(SocialLinkModel socialLink, RealmModel realm) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public List<UserModel> getUsers(RealmModel realm) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public List<UserModel> searchForUser(String search, RealmModel realm) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public List<UserModel> searchForUserByAttributes(Map<String, String> attributes, RealmModel realm) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public Set<RoleModel> getRealmRoleMappings(UserModel user, RealmModel realm) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public Set<SocialLinkModel> getSocialLinks(UserModel user, RealmModel realm) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public SocialLinkModel getSocialLink(UserModel user, String socialProvider, RealmModel realm) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public AuthenticationLinkModel getAuthenticationLink(UserModel user, RealmModel realm) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public RoleModel getRoleById(String id, RealmModel realm) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public ApplicationModel getApplicationById(String id, RealmModel realm) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public OAuthClientModel getOAuthClientById(String id, RealmModel realm) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 }

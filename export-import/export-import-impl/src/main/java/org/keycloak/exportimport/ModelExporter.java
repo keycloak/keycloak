@@ -247,7 +247,7 @@ public class ModelExporter {
                 userEntity.setAttributes(userModel.getAttributes());
 
                 // roleIds
-                Set<RoleModel> roles = realm.getRoleMappings(userModel);
+                Set<RoleModel> roles = userModel.getRoleMappings();
                 List<String> roleIds = new ArrayList<String>();
                 for (RoleModel role : roles) {
                     roleIds.add(role.getId());
@@ -298,7 +298,7 @@ public class ModelExporter {
     }
 
     private List<String> getScopeIds(ClientModel clientModel) {
-        Set<RoleModel> allScopes = clientModel.getRealm().getScopeMappings(clientModel);
+        Set<RoleModel> allScopes = clientModel.getScopeMappings();
         List<String> scopeIds = new ArrayList<String>();
         for (RoleModel role : allScopes) {
             scopeIds.add(role.getId());

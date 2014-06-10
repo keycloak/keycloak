@@ -10,7 +10,7 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMapperModel {
+public interface RealmModel extends RoleContainerModel {
 
     String getId();
 
@@ -205,10 +205,6 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
 
     void setAuthenticationProviders(List<AuthenticationProviderModel> authenticationProviders);
 
-    Set<RoleModel> getRealmRoleMappings(UserModel user);
-
-    Set<RoleModel> getRealmScopeMappings(ClientModel client);
-
     String getLoginTheme();
 
     void setLoginTheme(String name);
@@ -225,7 +221,6 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
 
     void setEmailTheme(String name);
 
-    boolean hasScope(ClientModel client, RoleModel role);
 
     /**
      * Time in seconds since epoc

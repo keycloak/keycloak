@@ -32,8 +32,6 @@ public interface ApplicationModel extends RoleContainerModel, ClientModel {
 
     void updateDefaultRoles(String[] defaultRoles);
 
-    Set<RoleModel> getApplicationRoleMappings(UserModel user);
-
     Set<RoleModel> getApplicationScopeMappings(ClientModel client);
 
     boolean isBearerOnly();

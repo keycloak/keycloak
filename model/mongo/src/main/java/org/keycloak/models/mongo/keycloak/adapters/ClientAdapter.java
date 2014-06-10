@@ -9,11 +9,14 @@ import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.entities.ClientEntity;
 import org.keycloak.models.mongo.api.MongoIdentifiableEntity;
 import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
+import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoUserSessionEntity;
+import org.keycloak.models.mongo.utils.MongoModelUtils;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -21,9 +24,9 @@ import org.keycloak.models.mongo.keycloak.entities.MongoUserSessionEntity;
 public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends AbstractMongoAdapter<T> implements ClientModel {
 
     protected final T clientEntity;
-    private final RealmAdapter realm;
+    private final RealmModel realm;
 
-    public ClientAdapter(RealmAdapter realm, T clientEntity, MongoStoreInvocationContext invContext) {
+    public ClientAdapter(RealmModel realm, T clientEntity, MongoStoreInvocationContext invContext) {
         super(invContext);
         this.clientEntity = clientEntity;
         this.realm = realm;
@@ -153,7 +156,7 @@ public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends A
     }
 
     @Override
-    public RealmAdapter getRealm() {
+    public RealmModel getRealm() {
         return realm;
     }
 
@@ -188,4 +191,59 @@ public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends A
         // todo, something more efficient like COUNT in JPAQL?
         return getUserSessions().size();
     }
+
+    @Override
+    public Set<RoleModel> getScopeMappings() {
+        Set<RoleModel> result = new HashSet<RoleModel>();
+        List<MongoRoleEntity> roles = MongoModelUtils.getAllScopesOfClient(this, invocationContext);
+
+        for (MongoRoleEntity role : roles) {
+            if (realm.getId().equals(role.getRealmId())) {
+                result.add(new RoleAdapter(realm, role, realm, invocationContext));
+            } else {
+                // Likely applicationRole, but we don't have this application yet
+                result.add(new RoleAdapter(realm, role, invocationContext));
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public Set<RoleModel> getRealmScopeMappings() {
+        Set<RoleModel> allScopes = getScopeMappings();
+
+        // Filter to retrieve just realm roles TODO: Maybe improve to avoid filter programmatically... Maybe have separate fields for realmRoles and appRoles on user?
+        Set<RoleModel> realmRoles = new HashSet<RoleModel>();
+        for (RoleModel role : allScopes) {
+            MongoRoleEntity roleEntity = ((RoleAdapter) role).getRole();
+
+            if (realm.getId().equals(roleEntity.getRealmId())) {
+                realmRoles.add(role);
+            }
+        }
+        return realmRoles;
+    }
+
+    @Override
+    public boolean hasScope(RoleModel role) {
+        Set<RoleModel> roles = getScopeMappings();
+        if (roles.contains(role)) return true;
+
+        for (RoleModel mapping : roles) {
+            if (mapping.hasRole(role)) return true;
+        }
+        return false;
+    }
+
+
+    @Override
+    public void addScopeMapping(RoleModel role) {
+        getMongoStore().pushItemToList(this.getMongoEntity(), "scopeIds", role.getId(), true, invocationContext);
+    }
+
+    @Override
+    public void deleteScopeMapping(RoleModel role) {
+        getMongoStore().pullItemFromList(this.getMongoEntity(), "scopeIds", role.getId(), invocationContext);
+    }
+
 }

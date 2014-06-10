@@ -75,11 +75,11 @@ public class ApplianceBootstrap {
         adminUser.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
 
         RoleModel adminRole = realm.getRole(AdminRoles.ADMIN);
-        realm.grantRole(adminUser, adminRole);
+        adminUser.grantRole(adminRole);
 
         ApplicationModel accountApp = realm.getApplicationNameMap().get(Constants.ACCOUNT_MANAGEMENT_APP);
         for (String r : accountApp.getDefaultRoles()) {
-            realm.grantRole(adminUser, accountApp.getRole(r));
+            adminUser.grantRole(accountApp.getRole(r));
         }
     }
 

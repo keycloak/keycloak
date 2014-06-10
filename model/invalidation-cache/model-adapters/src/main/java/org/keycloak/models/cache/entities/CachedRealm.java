@@ -1,29 +1,19 @@
 package org.keycloak.models.cache.entities;
 
 import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.AuthenticationLinkModel;
 import org.keycloak.models.AuthenticationProviderModel;
-import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.SocialLinkModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserCredentialValueModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.UsernameLoginFailureModel;
-import org.keycloak.models.entities.AuthenticationProviderEntity;
-import org.keycloak.models.entities.RequiredCredentialEntity;
+import org.keycloak.models.cache.KeycloakCache;
 
-import java.io.Serializable;
-import java.security.PrivateKey;
-import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -81,11 +71,16 @@ public class CachedRealm {
     private boolean auditEnabled;
     private long auditExpiration;
     private Set<String> auditListeners = new HashSet<String>();
+    private List<String> defaultRoles = new LinkedList<String>();
+    private Map<String, String> realmRoles = new HashMap<String, String>();
+    private Set<String> rolesById = new HashSet<String>();
+    private Map<String, String> applications = new HashMap<String, String>();
+    private Map<String, String> clients = new HashMap<String, String>();
 
     public CachedRealm() {
     }
 
-    public CachedRealm(RealmModel model) {
+    public CachedRealm(KeycloakCache cache, KeycloakSession delegate, RealmModel model) {
         id = model.getId();
         name = model.getName();
         enabled = model.isEnabled();
@@ -133,6 +128,30 @@ public class CachedRealm {
         auditEnabled = model.isAuditEnabled();
         auditExpiration = model.getAuditExpiration();
         auditListeners.addAll(model.getAuditListeners());
+        defaultRoles.addAll(model.getDefaultRoles());
+
+        for (RoleModel role : model.getRoles()) {
+            realmRoles.put(role.getName(), role.getId());
+            rolesById.add(role.getId());
+            CachedRole cachedRole = new CachedRealmRole(role);
+            cache.addCachedRole(cachedRole);
+        }
+
+        for (ApplicationModel app : model.getApplications()) {
+            applications.put(app.getName(), app.getId());
+            CachedApplication cachedApp = new CachedApplication(cache, delegate, model, app);
+            cache.addCachedApplication(cachedApp);
+            for (String roleId : cachedApp.getRoles().values()) {
+                rolesById.add(roleId);
+            }
+        }
+
+        for (OAuthClientModel client : model.getOAuthClients()) {
+            clients.put(client.getClientId(), client.getId());
+            CachedOAuthClient cachedApp = new CachedOAuthClient(cache, delegate, model, client);
+            cache.addCachedOAuthClient(cachedApp);
+        }
+
     }
 
 
@@ -142,6 +161,26 @@ public class CachedRealm {
 
     public String getName() {
         return name;
+    }
+
+    public List<String> getDefaultRoles() {
+        return defaultRoles;
+    }
+
+    public Map<String, String> getRealmRoles() {
+        return realmRoles;
+    }
+
+    public Set<String> getRolesById() {
+        return rolesById;
+    }
+
+    public Map<String, String> getApplications() {
+        return applications;
+    }
+
+    public Map<String, String> getClients() {
+        return clients;
     }
 
     public boolean isEnabled() {

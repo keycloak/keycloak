@@ -78,16 +78,16 @@ public class CompositeRoleTest {
             final UserModel realmComposite1User = realm.addUser("REALM_COMPOSITE_1_USER");
             realmComposite1User.setEnabled(true);
             realmComposite1User.updateCredential(UserCredentialModel.password("password"));
-            realm.grantRole(realmComposite1User, realmComposite1);
+            realmComposite1User.grantRole(realmComposite1);
 
             final UserModel realmRole1User = realm.addUser("REALM_ROLE_1_USER");
             realmRole1User.setEnabled(true);
             realmRole1User.updateCredential(UserCredentialModel.password("password"));
-            realm.grantRole(realmRole1User, realmRole1);
+            realmRole1User.grantRole(realmRole1);
 
             final ApplicationModel realmComposite1Application = new ApplicationManager(manager).createApplication(realm, "REALM_COMPOSITE_1_APPLICATION");
             realmComposite1Application.setEnabled(true);
-            realm.addScopeMapping(realmComposite1Application, realmComposite1);
+            realmComposite1Application.addScopeMapping(realmComposite1);
             realmComposite1Application.addRedirectUri("http://localhost:8081/app/*");
             realmComposite1Application.setBaseUrl("http://localhost:8081/app");
             realmComposite1Application.setManagementUrl("http://localhost:8081/app/logout");
@@ -95,7 +95,7 @@ public class CompositeRoleTest {
 
             final ApplicationModel realmRole1Application = new ApplicationManager(manager).createApplication(realm, "REALM_ROLE_1_APPLICATION");
             realmRole1Application.setEnabled(true);
-            realm.addScopeMapping(realmRole1Application, realmRole1);
+            realmRole1Application.addScopeMapping(realmRole1);
             realmRole1Application.addRedirectUri("http://localhost:8081/app/*");
             realmRole1Application.setBaseUrl("http://localhost:8081/app");
             realmRole1Application.setManagementUrl("http://localhost:8081/app/logout");
@@ -117,12 +117,12 @@ public class CompositeRoleTest {
             final UserModel realmAppCompositeUser = realm.addUser("REALM_APP_COMPOSITE_USER");
             realmAppCompositeUser.setEnabled(true);
             realmAppCompositeUser.updateCredential(UserCredentialModel.password("password"));
-            realm.grantRole(realmAppCompositeUser, realmAppCompositeRole);
+            realmAppCompositeUser.grantRole(realmAppCompositeRole);
 
             final UserModel realmAppRoleUser = realm.addUser("REALM_APP_ROLE_USER");
             realmAppRoleUser.setEnabled(true);
             realmAppRoleUser.updateCredential(UserCredentialModel.password("password"));
-            realm.grantRole(realmAppRoleUser, appRole2);
+            realmAppRoleUser.grantRole(appRole2);
 
             final ApplicationModel appCompositeApplication = new ApplicationManager(manager).createApplication(realm, "APP_COMPOSITE_APPLICATION");
             appCompositeApplication.setEnabled(true);
@@ -131,7 +131,7 @@ public class CompositeRoleTest {
             appCompositeApplication.setManagementUrl("http://localhost:8081/app/logout");
             appCompositeApplication.setSecret("password");
             final RoleModel appCompositeRole = appCompositeApplication.addRole("APP_COMPOSITE_ROLE");
-            realm.addScopeMapping(appCompositeApplication, appRole2);
+            appCompositeApplication.addScopeMapping(appRole2);
             appCompositeRole.addCompositeRole(realmRole1);
             appCompositeRole.addCompositeRole(realmRole2);
             appCompositeRole.addCompositeRole(realmRole3);
@@ -140,8 +140,8 @@ public class CompositeRoleTest {
             final UserModel appCompositeUser = realm.addUser("APP_COMPOSITE_USER");
             appCompositeUser.setEnabled(true);
             appCompositeUser.updateCredential(UserCredentialModel.password("password"));
-            realm.grantRole(appCompositeUser, realmAppCompositeRole);
-            realm.grantRole(appCompositeUser, realmComposite1);
+            appCompositeUser.grantRole(realmAppCompositeRole);
+            appCompositeUser.grantRole(realmComposite1);
 
             deployServlet("app", "/app", ApplicationServlet.class);
 

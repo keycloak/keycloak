@@ -210,7 +210,7 @@ public class SocialResource {
                 return oauth.forwardToSecurityFailure("User is disabled");
             }
 
-            if (!realm.hasRole(authenticatedUser, realm.getApplicationByName(Constants.ACCOUNT_MANAGEMENT_APP).getRole(AccountRoles.MANAGE_ACCOUNT))) {
+            if (!authenticatedUser.hasRole(realm.getApplicationByName(Constants.ACCOUNT_MANAGEMENT_APP).getRole(AccountRoles.MANAGE_ACCOUNT))) {
                 audit.error(Errors.NOT_ALLOWED);
                 return oauth.forwardToSecurityFailure("Insufficient permissions to link social account");
             }

@@ -455,7 +455,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         if (user == null) {
             return null;
         } else {
-            return new UserAdapter(user, invocationContext);
+            return new UserAdapter(this, user, invocationContext);
         }
     }
 
@@ -517,7 +517,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         if (user == null) {
             return null;
         } else {
-            return new UserAdapter(user, invocationContext);
+            return new UserAdapter(this, user, invocationContext);
         }
     }
 
@@ -529,7 +529,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         if (user == null || !getId().equals(user.getRealmId())) {
             return null;
         } else {
-            return new UserAdapter(user, invocationContext);
+            return new UserAdapter(this, user, invocationContext);
         }
     }
 
@@ -543,12 +543,12 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         UserAdapter userModel = addUserEntity(id, username);
 
         for (String r : getDefaultRoles()) {
-            grantRole(userModel, getRole(r));
+           userModel.grantRole(getRole(r));
         }
 
         for (ApplicationModel application : getApplications()) {
             for (String r : application.getDefaultRoles()) {
-                grantRole(userModel, application.getRole(r));
+                userModel.grantRole(application.getRole(r));
             }
         }
 
@@ -564,7 +564,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         userEntity.setRealmId(getId());
 
         getMongoStore().insertEntity(userEntity, invocationContext);
-        return new UserAdapter(userEntity, invocationContext);
+        return new UserAdapter(this, userEntity, invocationContext);
     }
 
     @Override
@@ -762,117 +762,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
-    public boolean hasRole(UserModel user, RoleModel role) {
-        Set<RoleModel> roles = getRoleMappings(user);
-        if (roles.contains(role)) return true;
-
-        for (RoleModel mapping : roles) {
-            if (mapping.hasRole(role)) return true;
-        }
-        return false;
-    }
-
-    @Override
-    public void grantRole(UserModel user, RoleModel role) {
-        MongoUserEntity userEntity = ((UserAdapter) user).getUser();
-        getMongoStore().pushItemToList(userEntity, "roleIds", role.getId(), true, invocationContext);
-    }
-
-    @Override
-    public Set<RoleModel> getRoleMappings(UserModel user) {
-        Set<RoleModel> result = new HashSet<RoleModel>();
-        List<MongoRoleEntity> roles = MongoModelUtils.getAllRolesOfUser(user, invocationContext);
-
-        for (MongoRoleEntity role : roles) {
-            if (getId().equals(role.getRealmId())) {
-                result.add(new RoleAdapter(this, role, this, invocationContext));
-            } else {
-                // Likely applicationRole, but we don't have this application yet
-                result.add(new RoleAdapter(this, role, invocationContext));
-            }
-        }
-        return result;
-    }
-
-    @Override
-    public Set<RoleModel> getRealmRoleMappings(UserModel user) {
-        Set<RoleModel> allRoles = getRoleMappings(user);
-
-        // Filter to retrieve just realm roles TODO: Maybe improve to avoid filter programmatically... Maybe have separate fields for realmRoles and appRoles on user?
-        Set<RoleModel> realmRoles = new HashSet<RoleModel>();
-        for (RoleModel role : allRoles) {
-            MongoRoleEntity roleEntity = ((RoleAdapter) role).getRole();
-
-            if (getId().equals(roleEntity.getRealmId())) {
-                realmRoles.add(role);
-            }
-        }
-        return realmRoles;
-    }
-
-    @Override
-    public void deleteRoleMapping(UserModel user, RoleModel role) {
-        if (user == null || role == null) return;
-
-        MongoUserEntity userEntity = ((UserAdapter) user).getUser();
-        getMongoStore().pullItemFromList(userEntity, "roleIds", role.getId(), invocationContext);
-    }
-
-    @Override
-    public Set<RoleModel> getScopeMappings(ClientModel client) {
-        Set<RoleModel> result = new HashSet<RoleModel>();
-        List<MongoRoleEntity> roles = MongoModelUtils.getAllScopesOfClient(client, invocationContext);
-
-        for (MongoRoleEntity role : roles) {
-            if (getId().equals(role.getRealmId())) {
-                result.add(new RoleAdapter(this, role, this, invocationContext));
-            } else {
-                // Likely applicationRole, but we don't have this application yet
-                result.add(new RoleAdapter(this, role, invocationContext));
-            }
-        }
-        return result;
-    }
-
-    @Override
-    public Set<RoleModel> getRealmScopeMappings(ClientModel client) {
-        Set<RoleModel> allScopes = getScopeMappings(client);
-
-        // Filter to retrieve just realm roles TODO: Maybe improve to avoid filter programmatically... Maybe have separate fields for realmRoles and appRoles on user?
-        Set<RoleModel> realmRoles = new HashSet<RoleModel>();
-        for (RoleModel role : allScopes) {
-            MongoRoleEntity roleEntity = ((RoleAdapter) role).getRole();
-
-            if (getId().equals(roleEntity.getRealmId())) {
-                realmRoles.add(role);
-            }
-        }
-        return realmRoles;
-    }
-
-    @Override
-    public boolean hasScope(ClientModel client, RoleModel role) {
-        Set<RoleModel> roles = getScopeMappings(client);
-        if (roles.contains(role)) return true;
-
-        for (RoleModel mapping : roles) {
-            if (mapping.hasRole(role)) return true;
-        }
-        return false;
-    }
-
-
-    @Override
-    public void addScopeMapping(ClientModel client, RoleModel role) {
-        getMongoStore().pushItemToList(((AbstractMongoAdapter) client).getMongoEntity(), "scopeIds", role.getId(), true, invocationContext);
-    }
-
-    @Override
-    public void deleteScopeMapping(ClientModel client, RoleModel role) {
-        getMongoStore().pullItemFromList(((AbstractMongoAdapter) client).getMongoEntity(), "scopeIds", role.getId(), invocationContext);
-    }
-
-    @Override
     public OAuthClientModel addOAuthClient(String name) {
         return this.addOAuthClient(null, name);
     }
@@ -1024,7 +913,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
                 .and("realmId").is(getId())
                 .get();
         MongoUserEntity userEntity = getMongoStore().loadSingleEntity(MongoUserEntity.class, query, invocationContext);
-        return userEntity == null ? null : new UserAdapter(userEntity, invocationContext);
+        return userEntity == null ? null : new UserAdapter(this, userEntity, invocationContext);
     }
 
     @Override
@@ -1196,7 +1085,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     protected List<UserModel> convertUserEntities(List<MongoUserEntity> userEntities) {
         List<UserModel> userModels = new ArrayList<UserModel>();
         for (MongoUserEntity user : userEntities) {
-            userModels.add(new UserAdapter(user, invocationContext));
+            userModels.add(new UserAdapter(this, user, invocationContext));
         }
         return userModels;
     }

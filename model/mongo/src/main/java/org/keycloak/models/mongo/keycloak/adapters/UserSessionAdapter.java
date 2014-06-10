@@ -5,6 +5,7 @@ import com.mongodb.QueryBuilder;
 import org.jboss.logging.Logger;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.entities.ClientEntity;
@@ -24,9 +25,9 @@ public class UserSessionAdapter extends AbstractMongoAdapter<MongoUserSessionEnt
     private static final Logger logger = Logger.getLogger(RealmAdapter.class);
 
     private MongoUserSessionEntity entity;
-    private RealmAdapter realm;
+    private RealmModel realm;
 
-    public UserSessionAdapter(MongoUserSessionEntity entity, RealmAdapter realm, MongoStoreInvocationContext invContext)
+    public UserSessionAdapter(MongoUserSessionEntity entity, RealmModel realm, MongoStoreInvocationContext invContext)
     {
         super(invContext);
         this.entity = entity;

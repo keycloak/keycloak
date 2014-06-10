@@ -1,11 +1,17 @@
 package org.keycloak.models.mongo.keycloak.adapters;
 
+import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.entities.CredentialEntity;
 import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
+import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoUserEntity;
+import org.keycloak.models.mongo.utils.MongoModelUtils;
 import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
 
 import java.util.ArrayList;
@@ -24,10 +30,12 @@ import java.util.Set;
 public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implements UserModel {
 
     private final MongoUserEntity user;
+    private final RealmModel realm;
 
-    public UserAdapter(MongoUserEntity userEntity, MongoStoreInvocationContext invContext) {
+    public UserAdapter(RealmModel realm, MongoUserEntity userEntity, MongoStoreInvocationContext invContext) {
         super(invContext);
         this.user = userEntity;
+        this.realm = realm;
     }
 
     @Override
@@ -248,6 +256,80 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
     public MongoUserEntity getMongoEntity() {
         return user;
     }
+
+    @Override
+    public boolean hasRole(RoleModel role) {
+        Set<RoleModel> roles = getRoleMappings();
+        if (roles.contains(role)) return true;
+
+        for (RoleModel mapping : roles) {
+            if (mapping.hasRole(role)) return true;
+        }
+        return false;
+    }
+
+    @Override
+    public void grantRole(RoleModel role) {
+        getMongoStore().pushItemToList(getUser(), "roleIds", role.getId(), true, invocationContext);
+    }
+
+    @Override
+    public Set<RoleModel> getRoleMappings() {
+        Set<RoleModel> result = new HashSet<RoleModel>();
+        List<MongoRoleEntity> roles = MongoModelUtils.getAllRolesOfUser(this, invocationContext);
+
+        for (MongoRoleEntity role : roles) {
+            if (realm.getId().equals(role.getRealmId())) {
+                result.add(new RoleAdapter(realm, role, realm, invocationContext));
+            } else {
+                // Likely applicationRole, but we don't have this application yet
+                result.add(new RoleAdapter(realm, role, invocationContext));
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public Set<RoleModel> getRealmRoleMappings() {
+        Set<RoleModel> allRoles = getRoleMappings();
+
+        // Filter to retrieve just realm roles TODO: Maybe improve to avoid filter programmatically... Maybe have separate fields for realmRoles and appRoles on user?
+        Set<RoleModel> realmRoles = new HashSet<RoleModel>();
+        for (RoleModel role : allRoles) {
+            MongoRoleEntity roleEntity = ((RoleAdapter) role).getRole();
+
+            if (realm.getId().equals(roleEntity.getRealmId())) {
+                realmRoles.add(role);
+            }
+        }
+        return realmRoles;
+    }
+
+    @Override
+    public void deleteRoleMapping(RoleModel role) {
+        if (user == null || role == null) return;
+
+        getMongoStore().pullItemFromList(getUser(), "roleIds", role.getId(), invocationContext);
+    }
+
+    @Override
+    public Set<RoleModel> getApplicationRoleMappings(ApplicationModel app) {
+        Set<RoleModel> result = new HashSet<RoleModel>();
+        List<MongoRoleEntity> roles = MongoModelUtils.getAllRolesOfUser(this, invocationContext);
+
+        for (MongoRoleEntity role : roles) {
+            if (app.getId().equals(role.getApplicationId())) {
+                result.add(new RoleAdapter(realm, role, app, invocationContext));
+            }
+        }
+        return result;
+    }
+
+
+
+
+
+
 
 
 

@@ -119,7 +119,7 @@ public class RealmManager {
             ApplicationModel realmAdminApp = realm.getApplicationByName(realmAdminApplicationName);
             adminRole = realmAdminApp.getRole(AdminRoles.REALM_ADMIN);
         }
-        realm.addScopeMapping(adminConsole, adminRole);
+        adminConsole.addScopeMapping(adminRole);
     }
 
     public String getMasterRealmAdminApplicationName(RealmModel realm) {
@@ -463,7 +463,7 @@ public class RealmManager {
                     if (role == null) {
                         role = newRealm.addRole(roleString.trim());
                     }
-                    newRealm.grantRole(user, role);
+                    user.grantRole(role);
                 }
             }
         }
@@ -476,7 +476,7 @@ public class RealmManager {
                         role = newRealm.addRole(roleString.trim());
                     }
                     ClientModel client = newRealm.findClient(scope.getClient());
-                    newRealm.addScopeMapping(client, role);
+                    client.addScopeMapping(role);
                 }
 
             }

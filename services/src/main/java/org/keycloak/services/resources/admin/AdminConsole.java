@@ -200,7 +200,7 @@ public class AdminConsole {
         boolean createRealm = false;
         if (realm.equals(masterRealm)) {
             logger.info("setting up realm access for a master realm user");
-            createRealm = masterRealm.hasRole(user, masterRealm.getRole(AdminRoles.CREATE_REALM));
+            createRealm = user.hasRole(masterRealm.getRole(AdminRoles.CREATE_REALM));
             addMasterRealmAccess(realm, user, realmAccess);
         } else {
             logger.info("setting up realm access for a realm user");
@@ -219,7 +219,7 @@ public class AdminConsole {
         ApplicationModel realmAdminApp = realm.getApplicationByName(realmManager.getRealmAdminApplicationName(realm));
         Set<RoleModel> roles = realmAdminApp.getRoles();
         for (RoleModel role : roles) {
-            if (!realm.hasRole(user, role)) continue;
+            if (!user.hasRole(role)) continue;
             if (!realmAdminAccess.containsKey(realm.getName())) {
                 realmAdminAccess.put(realm.getName(), new HashSet<String>());
             }
@@ -234,7 +234,7 @@ public class AdminConsole {
             ApplicationModel realmAdminApp = realm.getMasterAdminApp();
             Set<RoleModel> roles = realmAdminApp.getRoles();
             for (RoleModel role : roles) {
-                if (!masterRealm.hasRole(user, role)) continue;
+                if (!user.hasRole(role)) continue;
                 if (!realmAdminAccess.containsKey(realm.getName())) {
                     realmAdminAccess.put(realm.getName(), new HashSet<String>());
                 }

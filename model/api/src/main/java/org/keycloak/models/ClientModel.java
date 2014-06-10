@@ -57,6 +57,13 @@ public interface ClientModel {
     boolean isDirectGrantsOnly();
     void setDirectGrantsOnly(boolean flag);
 
+    Set<RoleModel> getScopeMappings();
+    void addScopeMapping(RoleModel role);
+    void deleteScopeMapping(RoleModel role);
+    Set<RoleModel> getRealmScopeMappings();
+    boolean hasScope(RoleModel role);
+
+
     RealmModel getRealm();
 
     /**

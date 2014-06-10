@@ -2,6 +2,7 @@ package org.keycloak.models.jpa;
 
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
@@ -100,10 +101,10 @@ public class ApplicationAdapter extends ClientAdapter implements ApplicationMode
 
     @Override
     public RoleModel getRole(String name) {
-        TypedQuery<ApplicationRoleEntity> query = em.createNamedQuery("getAppRoleByName", ApplicationRoleEntity.class);
+        TypedQuery<RoleEntity> query = em.createNamedQuery("getAppRoleByName", RoleEntity.class);
         query.setParameter("name", name);
         query.setParameter("application", entity);
-        List<ApplicationRoleEntity> roles = query.getResultList();
+        List<RoleEntity> roles = query.getResultList();
         if (roles.size() == 0) return null;
         return new RoleAdapter(realm, em, roles.get(0));
     }
@@ -115,10 +116,12 @@ public class ApplicationAdapter extends ClientAdapter implements ApplicationMode
 
     @Override
     public RoleModel addRole(String id, String name) {
-        ApplicationRoleEntity roleEntity = new ApplicationRoleEntity();
+        RoleEntity roleEntity = new RoleEntity();
         roleEntity.setId(id);
         roleEntity.setName(name);
         roleEntity.setApplication(applicationEntity);
+        roleEntity.setApplicationRole(true);
+        roleEntity.setRealmId(realm.getId());
         em.persist(roleEntity);
         applicationEntity.getRoles().add(roleEntity);
         em.flush();
@@ -133,9 +136,9 @@ public class ApplicationAdapter extends ClientAdapter implements ApplicationMode
         }
         if (!roleAdapter.getContainer().equals(this)) return false;
 
-        if (!(roleAdapter.getRole() instanceof ApplicationRoleEntity)) return false;
+        if (!roleAdapter.getRole().isApplicationRole()) return false;
 
-        ApplicationRoleEntity role = (ApplicationRoleEntity)roleAdapter.getRole();
+        RoleEntity role = roleAdapter.getRole();
 
         applicationEntity.getRoles().remove(role);
         applicationEntity.getDefaultRoles().remove(role);
@@ -153,7 +156,7 @@ public class ApplicationAdapter extends ClientAdapter implements ApplicationMode
     @Override
     public Set<RoleModel> getRoles() {
         Set<RoleModel> list = new HashSet<RoleModel>();
-        Collection<ApplicationRoleEntity> roles = applicationEntity.getRoles();
+        Collection<RoleEntity> roles = applicationEntity.getRoles();
         if (roles == null) return list;
         for (RoleEntity entity : roles) {
             list.add(new RoleAdapter(realm, em, entity));
@@ -162,27 +165,8 @@ public class ApplicationAdapter extends ClientAdapter implements ApplicationMode
     }
 
     @Override
-    public Set<RoleModel> getApplicationRoleMappings(UserModel user) {
-        Set<RoleModel> roleMappings = realm.getRoleMappings(user);
-
-        Set<RoleModel> appRoles = new HashSet<RoleModel>();
-        for (RoleModel role : roleMappings) {
-            RoleContainerModel container = role.getContainer();
-            if (container instanceof RealmModel) {
-            } else {
-                ApplicationModel app = (ApplicationModel)container;
-                if (app.getId().equals(getId())) {
-                   appRoles.add(role);
-                }
-            }
-        }
-
-        return appRoles;
-    }
-
-    @Override
     public Set<RoleModel> getApplicationScopeMappings(ClientModel client) {
-        Set<RoleModel> roleMappings = realm.getScopeMappings(client);
+        Set<RoleModel> roleMappings = client.getScopeMappings();
 
         Set<RoleModel> appRoles = new HashSet<RoleModel>();
         for (RoleModel role : roleMappings) {

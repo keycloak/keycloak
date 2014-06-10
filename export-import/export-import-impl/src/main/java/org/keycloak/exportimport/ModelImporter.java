@@ -207,7 +207,7 @@ public class ModelImporter {
     private void addScopes(RealmModel realm, ClientModel client, ClientEntity clientEntity) {
         for (String scopeId : clientEntity.getScopeIds()) {
             RoleModel scope = realm.getRoleById(scopeId);
-            realm.addScopeMapping(client, scope);
+            client.addScopeMapping(scope);
         }
     }
 
@@ -246,8 +246,8 @@ public class ModelImporter {
             UserModel user = realm.addUser(userEntity.getId(), userEntity.getLoginName());
 
             // We need to remove defaultRoles here as realm.addUser is automatically adding them. We may add them later during roles mapping processing
-            for (RoleModel role : realm.getRoleMappings(user)) {
-                realm.deleteRoleMapping(user, role);
+            for (RoleModel role : user.getRoleMappings()) {
+                user.deleteRoleMapping(role);
             }
 
             this.propertiesManager.setBasicPropertiesToModel(user, userEntity);
@@ -291,7 +291,7 @@ public class ModelImporter {
             if (userEntity.getRoleIds() != null) {
                 for (String roleId : userEntity.getRoleIds()) {
                     RoleModel role = realm.getRoleById(roleId);
-                    realm.grantRole(user, role);
+                    user.grantRole(role);
                 }
             }
 

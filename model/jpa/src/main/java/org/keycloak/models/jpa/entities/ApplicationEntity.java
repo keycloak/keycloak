@@ -34,7 +34,7 @@ public class ApplicationEntity extends ClientEntity {
     private boolean bearerOnly;
 
     @OneToMany(fetch = FetchType.EAGER, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "application")
-    Collection<ApplicationRoleEntity> roles = new ArrayList<ApplicationRoleEntity>();
+    Collection<RoleEntity> roles = new ArrayList<RoleEntity>();
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
     @JoinTable(name="ApplicationDefaultRoles")
@@ -64,11 +64,11 @@ public class ApplicationEntity extends ClientEntity {
         this.managementUrl = managementUrl;
     }
 
-    public Collection<ApplicationRoleEntity> getRoles() {
+    public Collection<RoleEntity> getRoles() {
         return roles;
     }
 
-    public void setRoles(Collection<ApplicationRoleEntity> roles) {
+    public void setRoles(Collection<RoleEntity> roles) {
         this.roles = roles;
     }
 
