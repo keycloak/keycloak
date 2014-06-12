@@ -11,6 +11,8 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public interface KeycloakSession extends Provider {
+    // Note: The reason there are so many query methods here is for layering a cache on top of an persistent KeycloakSession
+
     KeycloakTransaction getTransaction();
 
     RealmModel createRealm(String name);
@@ -25,11 +27,9 @@ public interface KeycloakSession extends Provider {
     List<UserModel> getUsers(RealmModel realm);
     List<UserModel> searchForUser(String search, RealmModel realm);
     List<UserModel> searchForUserByAttributes(Map<String, String> attributes, RealmModel realm);
-    Set<RoleModel> getRealmRoleMappings(UserModel user, RealmModel realm);
 
     Set<SocialLinkModel> getSocialLinks(UserModel user, RealmModel realm);
     SocialLinkModel getSocialLink(UserModel user, String socialProvider, RealmModel realm);
-    AuthenticationLinkModel getAuthenticationLink(UserModel user, RealmModel realm);
 
 
     RoleModel getRoleById(String id, RealmModel realm);

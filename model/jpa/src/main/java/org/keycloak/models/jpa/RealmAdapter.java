@@ -493,7 +493,8 @@ public class RealmAdapter implements RealmModel {
     }
 
     private void removeUser(UserEntity user) {
-        removeUserSessions(user);
+        em.createNamedQuery("removeClientUserSessionByUser").setParameter("userId", user.getId()).executeUpdate();
+        em.createNamedQuery("removeUserSessionByUser").setParameter("userId", user.getId()).executeUpdate();
 
         em.createQuery("delete from " + UserRoleMappingEntity.class.getSimpleName() + " where user = :user").setParameter("user", user).executeUpdate();
         em.createQuery("delete from " + SocialLinkEntity.class.getSimpleName() + " where user = :user").setParameter("user", user).executeUpdate();
@@ -733,55 +734,17 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public List<UserModel> getUsers() {
-        TypedQuery<UserEntity> query = em.createQuery("select u from UserEntity u where u.realm = :realm", UserEntity.class);
-        query.setParameter("realm", realm);
-        List<UserEntity> results = query.getResultList();
-        List<UserModel> users = new ArrayList<UserModel>();
-        for (UserEntity entity : results) users.add(new UserAdapter(this, em, entity));
-        return users;
+        return session.getUsers(this);
     }
 
     @Override
     public List<UserModel> searchForUser(String search) {
-        TypedQuery<UserEntity> query = em.createQuery("select u from UserEntity u where u.realm = :realm and ( lower(u.loginName) like :search or lower(concat(u.firstName, ' ', u.lastName)) like :search or u.email like :search )", UserEntity.class);
-        query.setParameter("realm", realm);
-        query.setParameter("search", "%" + search.toLowerCase() + "%");
-        List<UserEntity> results = query.getResultList();
-        List<UserModel> users = new ArrayList<UserModel>();
-        for (UserEntity entity : results) users.add(new UserAdapter(this, em, entity));
-        return users;
+        return session.searchForUser(search, this);
     }
 
     @Override
     public List<UserModel> searchForUserByAttributes(Map<String, String> attributes) {
-        StringBuilder builder = new StringBuilder("select u from UserEntity u");
-        boolean first = true;
-        for (Map.Entry<String, String> entry : attributes.entrySet()) {
-            String attribute = null;
-            if (entry.getKey().equals(UserModel.LOGIN_NAME)) {
-                attribute = "lower(loginName)";
-            } else if (entry.getKey().equalsIgnoreCase(UserModel.FIRST_NAME)) {
-                attribute = "lower(firstName)";
-            } else if (entry.getKey().equalsIgnoreCase(UserModel.LAST_NAME)) {
-                attribute = "lower(lastName)";
-            } else if (entry.getKey().equalsIgnoreCase(UserModel.EMAIL)) {
-                attribute = "lower(email)";
-            }
-            if (attribute == null) continue;
-            if (first) {
-                first = false;
-                builder.append(" where ");
-            } else {
-                builder.append(" and ");
-            }
-            builder.append(attribute).append(" like '%").append(entry.getValue().toLowerCase()).append("%'");
-        }
-        String q = builder.toString();
-        TypedQuery<UserEntity> query = em.createQuery(q, UserEntity.class);
-        List<UserEntity> results = query.getResultList();
-        List<UserModel> users = new ArrayList<UserModel>();
-        for (UserEntity entity : results) users.add(new UserAdapter(this, em, entity));
-        return users;
+        return session.searchForUserByAttributes(attributes, this);
     }
 
     @Override
@@ -825,11 +788,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public OAuthClientModel getOAuthClientById(String id) {
-        OAuthClientEntity client = em.find(OAuthClientEntity.class, id);
-
-        // Check if client belongs to this realm
-        if (client == null || !this.realm.getId().equals(client.getRealm().getId())) return null;
-        return new OAuthClientAdapter(this, client, em);
+        return session.getOAuthClientById(id, this);
     }
 
 
@@ -991,11 +950,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public RoleModel getRoleById(String id) {
-        RoleEntity entity = null;
-        entity = em.find(RoleEntity.class, id);
-        if (entity == null) return null;
-        if (!getId().equals(entity.getRealmId())) return null;
-        return new RoleAdapter(this, em, entity);
+        return session.getRoleById(id, this);
     }
 
     @Override
@@ -1143,66 +1098,38 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public UserSessionModel createUserSession(UserModel user, String ipAddress) {
-        UserSessionEntity entity = new UserSessionEntity();
-        entity.setRealmId(realm.getId());
-        entity.setUserId(user.getId());
-        entity.setIpAddress(ipAddress);
-
-        int currentTime = Time.currentTime();
-
-        entity.setStarted(currentTime);
-        entity.setLastSessionRefresh(currentTime);
-
-        em.persist(entity);
-        return new UserSessionAdapter(em, this, entity);
+        return session.createUserSession(this, user, ipAddress);
     }
 
     @Override
     public UserSessionModel getUserSession(String id) {
-        UserSessionEntity entity = em.find(UserSessionEntity.class, id);
-        return entity != null ? new UserSessionAdapter(em, this, entity) : null;
+        return session.getUserSession(id, this);
     }
 
     @Override
     public List<UserSessionModel> getUserSessions(UserModel user) {
-        List<UserSessionModel> sessions = new LinkedList<UserSessionModel>();
-        for (UserSessionEntity e : em.createNamedQuery("getUserSessionByUser", UserSessionEntity.class).setParameter("userId", user.getId()).getResultList()) {
-            sessions.add(new UserSessionAdapter(em, this, e));
-        }
-        return sessions;
+        return session.getUserSessions(user, this);
     }
 
     @Override
     public void removeUserSession(UserSessionModel session) {
-        em.remove(((UserSessionAdapter) session).getEntity());
+        this.session.removeUserSession(session);
     }
 
     @Override
     public void removeUserSessions() {
-        em.createNamedQuery("removeClientUserSessionByRealm").setParameter("realmId", realm.getId()).executeUpdate();
-        em.createNamedQuery("removeRealmUserSessions").setParameter("realmId", realm.getId()).executeUpdate();
+        session.removeUserSessions(this);
 
     }
 
     @Override
     public void removeUserSessions(UserModel user) {
-        removeUserSessions(((UserAdapter) user).getUser());
-    }
-
-    private void removeUserSessions(UserEntity user) {
-        em.createNamedQuery("removeClientUserSessionByUser").setParameter("userId", user.getId()).executeUpdate();
-        em.createNamedQuery("removeUserSessionByUser").setParameter("userId", user.getId()).executeUpdate();
+        session.removeUserSessions(this, user);
     }
 
     @Override
     public void removeExpiredUserSessions() {
-        TypedQuery<UserSessionEntity> query = em.createNamedQuery("getUserSessionExpired", UserSessionEntity.class)
-                .setParameter("maxTime", Time.currentTime() - getSsoSessionMaxLifespan())
-                .setParameter("idleTime", Time.currentTime() - getSsoSessionIdleTimeout());
-        List<UserSessionEntity> results = query.getResultList();
-        for (UserSessionEntity entity : results) {
-            em.remove(entity);
-        }
+        session.removeExpiredUserSessions(this);
     }
 
 }

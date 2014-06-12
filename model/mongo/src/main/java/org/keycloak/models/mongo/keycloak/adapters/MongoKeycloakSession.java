@@ -173,22 +173,12 @@ public class MongoKeycloakSession implements KeycloakSession {
     }
 
     @Override
-    public Set<RoleModel> getRealmRoleMappings(UserModel user, RealmModel realm) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
     public Set<SocialLinkModel> getSocialLinks(UserModel user, RealmModel realm) {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override
     public SocialLinkModel getSocialLink(UserModel user, String socialProvider, RealmModel realm) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public AuthenticationLinkModel getAuthenticationLink(UserModel user, RealmModel realm) {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 

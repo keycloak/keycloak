@@ -3,8 +3,10 @@ package org.keycloak.models.jpa;
 import org.keycloak.models.*;
 import org.keycloak.models.jpa.entities.*;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.util.Time;
 
 import javax.persistence.EntityManager;
+import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
@@ -169,22 +171,59 @@ public class JpaKeycloakSession implements KeycloakSession {
 
     @Override
     public List<UserModel> getUsers(RealmModel realm) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        TypedQuery<UserEntity> query = em.createQuery("select u from UserEntity u where u.realm = :realm", UserEntity.class);
+        RealmEntity realmEntity = em.getReference(RealmEntity.class, realm.getId());
+        query.setParameter("realm", realmEntity);
+        List<UserEntity> results = query.getResultList();
+        List<UserModel> users = new ArrayList<UserModel>();
+        for (UserEntity entity : results) users.add(new UserAdapter(realm, em, entity));
+        return users;
     }
 
     @Override
     public List<UserModel> searchForUser(String search, RealmModel realm) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        TypedQuery<UserEntity> query = em.createQuery("select u from UserEntity u where u.realm = :realm and ( lower(u.loginName) like :search or lower(concat(u.firstName, ' ', u.lastName)) like :search or u.email like :search )", UserEntity.class);
+        RealmEntity realmEntity = em.getReference(RealmEntity.class, realm.getId());
+        query.setParameter("realm", realmEntity);
+        query.setParameter("search", "%" + search.toLowerCase() + "%");
+        List<UserEntity> results = query.getResultList();
+        List<UserModel> users = new ArrayList<UserModel>();
+        for (UserEntity entity : results) users.add(new UserAdapter(realm, em, entity));
+        return users;
     }
 
     @Override
     public List<UserModel> searchForUserByAttributes(Map<String, String> attributes, RealmModel realm) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public Set<RoleModel> getRealmRoleMappings(UserModel user, RealmModel realm) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        StringBuilder builder = new StringBuilder("select u from UserEntity u");
+        boolean first = true;
+        for (Map.Entry<String, String> entry : attributes.entrySet()) {
+            String attribute = null;
+            if (entry.getKey().equals(UserModel.LOGIN_NAME)) {
+                attribute = "lower(loginName)";
+            } else if (entry.getKey().equalsIgnoreCase(UserModel.FIRST_NAME)) {
+                attribute = "lower(firstName)";
+            } else if (entry.getKey().equalsIgnoreCase(UserModel.LAST_NAME)) {
+                attribute = "lower(lastName)";
+            } else if (entry.getKey().equalsIgnoreCase(UserModel.EMAIL)) {
+                attribute = "lower(email)";
+            }
+            if (attribute == null) continue;
+            if (first) {
+                first = false;
+                builder.append(" where realm = :realm");
+            } else {
+                builder.append(" and ");
+            }
+            builder.append(attribute).append(" like '%").append(entry.getValue().toLowerCase()).append("%'");
+        }
+        String q = builder.toString();
+        TypedQuery<UserEntity> query = em.createQuery(q, UserEntity.class);
+        RealmEntity realmEntity = em.getReference(RealmEntity.class, realm.getId());
+        query.setParameter("realm", realmEntity);
+        List<UserEntity> results = query.getResultList();
+        List<UserModel> users = new ArrayList<UserModel>();
+        for (UserEntity entity : results) users.add(new UserAdapter(realm, em, entity));
+        return users;
     }
 
     private SocialLinkEntity findSocialLink(UserModel user, String socialProvider) {
@@ -217,13 +256,11 @@ public class JpaKeycloakSession implements KeycloakSession {
     }
 
     @Override
-    public AuthenticationLinkModel getAuthenticationLink(UserModel user, RealmModel realm) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
     public RoleModel getRoleById(String id, RealmModel realm) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        RoleEntity entity = em.find(RoleEntity.class, id);
+        if (entity == null) return null;
+        if (!realm.getId().equals(entity.getRealmId())) return null;
+        return new RoleAdapter(realm, em, entity);
     }
 
     @Override
@@ -237,7 +274,11 @@ public class JpaKeycloakSession implements KeycloakSession {
 
     @Override
     public OAuthClientModel getOAuthClientById(String id, RealmModel realm) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        OAuthClientEntity client = em.find(OAuthClientEntity.class, id);
+
+        // Check if client belongs to this realm
+        if (client == null || !realm.getId().equals(client.getRealm().getId())) return null;
+        return new OAuthClientAdapter(realm, client, em);
     }
 
     @Override
@@ -275,46 +316,82 @@ public class JpaKeycloakSession implements KeycloakSession {
 
     @Override
     public UserSessionModel createUserSession(RealmModel realm, UserModel user, String ipAddress) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        UserSessionEntity entity = new UserSessionEntity();
+        entity.setRealmId(realm.getId());
+        entity.setUserId(user.getId());
+        entity.setIpAddress(ipAddress);
+
+        int currentTime = Time.currentTime();
+
+        entity.setStarted(currentTime);
+        entity.setLastSessionRefresh(currentTime);
+
+        em.persist(entity);
+        return new UserSessionAdapter(em, realm, entity);
     }
 
     @Override
     public UserSessionModel getUserSession(String id, RealmModel realm) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        UserSessionEntity entity = em.find(UserSessionEntity.class, id);
+        return entity != null ? new UserSessionAdapter(em, realm, entity) : null;
     }
 
     @Override
     public List<UserSessionModel> getUserSessions(UserModel user, RealmModel realm) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        List<UserSessionModel> sessions = new LinkedList<UserSessionModel>();
+        for (UserSessionEntity e : em.createNamedQuery("getUserSessionByUser", UserSessionEntity.class)
+                .setParameter("userId", user.getId()).getResultList()) {
+            sessions.add(new UserSessionAdapter(em, realm, e));
+        }
+        return sessions;
     }
 
     @Override
     public Set<UserSessionModel> getUserSessions(RealmModel realm, ClientModel client) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        Set<UserSessionModel> list = new HashSet<UserSessionModel>();
+        TypedQuery<ClientUserSessionAssociationEntity> query = em.createNamedQuery("getClientUserSessionByClient", ClientUserSessionAssociationEntity.class);
+        String id = client.getId();
+        query.setParameter("clientId", id);
+        List<ClientUserSessionAssociationEntity> results = query.getResultList();
+        for (ClientUserSessionAssociationEntity entity : results) {
+            list.add(new UserSessionAdapter(em, realm, entity.getSession()));
+        }
+        return list;
     }
 
     @Override
     public int getActiveUserSessions(RealmModel realm, ClientModel client) {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        Query query = em.createNamedQuery("getActiveClientSessions");
+        query.setParameter("clientId", client.getId());
+        Object count = query.getSingleResult();
+        return ((Number)count).intValue();
     }
 
     @Override
     public void removeUserSession(UserSessionModel session) {
-        //To change body of implemented methods use File | Settings | File Templates.
+        em.remove(((UserSessionAdapter) session).getEntity());
     }
 
     @Override
     public void removeUserSessions(RealmModel realm, UserModel user) {
-        //To change body of implemented methods use File | Settings | File Templates.
+        em.createNamedQuery("removeClientUserSessionByUser").setParameter("userId", user.getId()).executeUpdate();
+        em.createNamedQuery("removeUserSessionByUser").setParameter("userId", user.getId()).executeUpdate();
     }
 
     @Override
     public void removeExpiredUserSessions(RealmModel realm) {
-        //To change body of implemented methods use File | Settings | File Templates.
+        TypedQuery<UserSessionEntity> query = em.createNamedQuery("getUserSessionExpired", UserSessionEntity.class)
+                .setParameter("maxTime", Time.currentTime() - realm.getSsoSessionMaxLifespan())
+                .setParameter("idleTime", Time.currentTime() - realm.getSsoSessionIdleTimeout());
+        List<UserSessionEntity> results = query.getResultList();
+        for (UserSessionEntity entity : results) {
+            em.remove(entity);
+        }
     }
 
     @Override
     public void removeUserSessions(RealmModel realm) {
-        //To change body of implemented methods use File | Settings | File Templates.
+        em.createNamedQuery("removeClientUserSessionByRealm").setParameter("realmId", realm.getId()).executeUpdate();
+        em.createNamedQuery("removeRealmUserSessions").setParameter("realmId", realm.getId()).executeUpdate();
     }
 }
