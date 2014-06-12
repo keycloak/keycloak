@@ -3,6 +3,7 @@ package org.keycloak.models.mongo.keycloak.adapters;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.AuthenticationLinkModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
@@ -33,11 +34,13 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
 
     private final MongoUserEntity user;
     private final RealmModel realm;
+    private final KeycloakSession session;
 
-    public UserAdapter(RealmModel realm, MongoUserEntity userEntity, MongoStoreInvocationContext invContext) {
+    public UserAdapter(KeycloakSession session, RealmModel realm, MongoUserEntity userEntity, MongoStoreInvocationContext invContext) {
         super(invContext);
         this.user = userEntity;
         this.realm = realm;
+        this.session = session;
     }
 
     @Override
@@ -282,10 +285,10 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
 
         for (MongoRoleEntity role : roles) {
             if (realm.getId().equals(role.getRealmId())) {
-                result.add(new RoleAdapter(realm, role, realm, invocationContext));
+                result.add(new RoleAdapter(session, realm, role, realm, invocationContext));
             } else {
                 // Likely applicationRole, but we don't have this application yet
-                result.add(new RoleAdapter(realm, role, invocationContext));
+                result.add(new RoleAdapter(session, realm, role, invocationContext));
             }
         }
         return result;
@@ -321,7 +324,7 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
 
         for (MongoRoleEntity role : roles) {
             if (app.getId().equals(role.getApplicationId())) {
-                result.add(new RoleAdapter(realm, role, app, invocationContext));
+                result.add(new RoleAdapter(session, realm, role, app, invocationContext));
             }
         }
         return result;

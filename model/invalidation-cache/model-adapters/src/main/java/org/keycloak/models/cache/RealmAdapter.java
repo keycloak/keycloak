@@ -894,7 +894,7 @@ public class RealmAdapter implements RealmModel {
     @Override
     public List<UsernameLoginFailureModel> getAllUserLoginFailures() {
         if (updated != null) return updated.getAllUserLoginFailures();
-        return cacheSession.getAllUserLoginFailures();
+        return cacheSession.getAllUserLoginFailures(this);
     }
 
     @Override

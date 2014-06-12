@@ -440,7 +440,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public List<UsernameLoginFailureModel> getAllUserLoginFailures() {
-        return session.getAllUserLoginFailures();
+        return session.getAllUserLoginFailures(this);
     }
 
     @Override

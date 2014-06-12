@@ -240,7 +240,7 @@ public class CacheKeycloakSession implements KeycloakSession {
     }
 
     @Override
-    public List<UsernameLoginFailureModel> getAllUserLoginFailures() {
+    public List<UsernameLoginFailureModel> getAllUserLoginFailures(RealmModel realm) {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 

@@ -40,7 +40,7 @@ public interface KeycloakSession extends Provider {
 
     UsernameLoginFailureModel getUserLoginFailure(String username, RealmModel realm);
     UsernameLoginFailureModel addUserLoginFailure(String username, RealmModel realm);
-    List<UsernameLoginFailureModel> getAllUserLoginFailures();
+    List<UsernameLoginFailureModel> getAllUserLoginFailures(RealmModel realm);
 
     UserSessionModel createUserSession(RealmModel realm, UserModel user, String ipAddress);
     UserSessionModel getUserSession(String id, RealmModel realm);

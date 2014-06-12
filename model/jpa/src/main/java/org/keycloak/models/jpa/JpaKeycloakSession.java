@@ -304,7 +304,7 @@ public class JpaKeycloakSession implements KeycloakSession {
     }
 
     @Override
-    public List<UsernameLoginFailureModel> getAllUserLoginFailures() {
+    public List<UsernameLoginFailureModel> getAllUserLoginFailures(RealmModel realm) {
         TypedQuery<UsernameLoginFailureEntity> query = em.createNamedQuery("getAllFailures", UsernameLoginFailureEntity.class);
         List<UsernameLoginFailureEntity> entities = query.getResultList();
         List<UsernameLoginFailureModel> models = new ArrayList<UsernameLoginFailureModel>();

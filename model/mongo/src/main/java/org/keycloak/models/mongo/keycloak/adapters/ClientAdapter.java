@@ -8,6 +8,7 @@ import java.util.Set;
 import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserSessionModel;
@@ -25,11 +26,13 @@ public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends A
 
     protected final T clientEntity;
     private final RealmModel realm;
+    protected  KeycloakSession session;
 
-    public ClientAdapter(RealmModel realm, T clientEntity, MongoStoreInvocationContext invContext) {
+    public ClientAdapter(KeycloakSession session, RealmModel realm, T clientEntity, MongoStoreInvocationContext invContext) {
         super(invContext);
         this.clientEntity = clientEntity;
         this.realm = realm;
+        this.session = session;
     }
 
     @Override
@@ -173,23 +176,12 @@ public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends A
 
     @Override
     public Set<UserSessionModel> getUserSessions() {
-        DBObject query = new QueryBuilder()
-                .and("associatedClientIds").is(getId())
-                .get();
-        List<MongoUserSessionEntity> sessions = getMongoStore().loadEntities(MongoUserSessionEntity.class, query, invocationContext);
-
-        Set<UserSessionModel> result = new HashSet<UserSessionModel>();
-        for (MongoUserSessionEntity session : sessions) {
-            result.add(new UserSessionAdapter(session, realm, invocationContext));
-        }
-        return result;
-
+        return session.getUserSessions(realm, this);
     }
 
     @Override
     public int getActiveUserSessions() {
-        // todo, something more efficient like COUNT in JPAQL?
-        return getUserSessions().size();
+        return session.getActiveUserSessions(realm, this);
     }
 
     @Override
@@ -199,10 +191,10 @@ public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends A
 
         for (MongoRoleEntity role : roles) {
             if (realm.getId().equals(role.getRealmId())) {
-                result.add(new RoleAdapter(realm, role, realm, invocationContext));
+                result.add(new RoleAdapter(session, realm, role, realm, invocationContext));
             } else {
                 // Likely applicationRole, but we don't have this application yet
-                result.add(new RoleAdapter(realm, role, invocationContext));
+                result.add(new RoleAdapter(session, realm, role, invocationContext));
             }
         }
         return result;

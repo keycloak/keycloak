@@ -8,6 +8,7 @@ import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.AuthenticationLinkModel;
 import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
@@ -64,10 +65,12 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     protected volatile transient PrivateKey privateKey;
 
     private volatile transient PasswordPolicy passwordPolicy;
+    private volatile transient KeycloakSession session;
 
-    public RealmAdapter(MongoRealmEntity realmEntity, MongoStoreInvocationContext invocationContext) {
+    public RealmAdapter(KeycloakSession session, MongoRealmEntity realmEntity, MongoStoreInvocationContext invocationContext) {
         super(invocationContext);
         this.realm = realmEntity;
+        this.session = session;
     }
 
     @Override
@@ -445,92 +448,34 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
-    public UserAdapter getUser(String name) {
-        DBObject query = new QueryBuilder()
-                .and("loginName").is(name)
-                .and("realmId").is(getId())
-                .get();
-        MongoUserEntity user = getMongoStore().loadSingleEntity(MongoUserEntity.class, query, invocationContext);
-
-        if (user == null) {
-            return null;
-        } else {
-            return new UserAdapter(this, user, invocationContext);
-        }
+    public UserModel getUser(String name) {
+        return session.getUserByUsername(name, this);
     }
 
     @Override
-    public UsernameLoginFailureAdapter getUserLoginFailure(String name) {
-        DBObject query = new QueryBuilder()
-                .and("username").is(name)
-                .and("realmId").is(getId())
-                .get();
-        MongoUsernameLoginFailureEntity user = getMongoStore().loadSingleEntity(MongoUsernameLoginFailureEntity.class, query, invocationContext);
-
-        if (user == null) {
-            return null;
-        } else {
-            return new UsernameLoginFailureAdapter(invocationContext, user);
-        }
+    public UsernameLoginFailureModel getUserLoginFailure(String name) {
+        return session.getUserLoginFailure(name, this);
     }
 
     @Override
-    public UsernameLoginFailureAdapter addUserLoginFailure(String username) {
-        UsernameLoginFailureAdapter userLoginFailure = getUserLoginFailure(username);
-        if (userLoginFailure != null) {
-            return userLoginFailure;
-        }
-
-        MongoUsernameLoginFailureEntity userEntity = new MongoUsernameLoginFailureEntity();
-        userEntity.setUsername(username);
-        userEntity.setRealmId(getId());
-
-        getMongoStore().insertEntity(userEntity, invocationContext);
-        return new UsernameLoginFailureAdapter(invocationContext, userEntity);
+    public UsernameLoginFailureModel addUserLoginFailure(String username) {
+        return session.addUserLoginFailure(username, this);
     }
+
 
     @Override
     public List<UsernameLoginFailureModel> getAllUserLoginFailures() {
-        DBObject query = new QueryBuilder()
-                .and("realmId").is(getId())
-                .get();
-        List<MongoUsernameLoginFailureEntity> failures = getMongoStore().loadEntities(MongoUsernameLoginFailureEntity.class, query, invocationContext);
-
-        List<UsernameLoginFailureModel> result = new ArrayList<UsernameLoginFailureModel>();
-
-        if (failures == null) return result;
-        for (MongoUsernameLoginFailureEntity failure : failures) {
-            result.add(new UsernameLoginFailureAdapter(invocationContext, failure));
-        }
-
-        return result;
+        return session.getAllUserLoginFailures(this);
     }
 
     @Override
     public UserModel getUserByEmail(String email) {
-        DBObject query = new QueryBuilder()
-                .and("email").is(email)
-                .and("realmId").is(getId())
-                .get();
-        MongoUserEntity user = getMongoStore().loadSingleEntity(MongoUserEntity.class, query, invocationContext);
-
-        if (user == null) {
-            return null;
-        } else {
-            return new UserAdapter(this, user, invocationContext);
-        }
+        return session.getUserByEmail(email, this);
     }
 
     @Override
     public UserModel getUserById(String id) {
-        MongoUserEntity user = getMongoStore().loadEntity(MongoUserEntity.class, id, invocationContext);
-
-        // Check that it's user from this realm
-        if (user == null || !getId().equals(user.getRealmId())) {
-            return null;
-        } else {
-            return new UserAdapter(this, user, invocationContext);
-        }
+        return session.getUserById(id, this);
     }
 
     @Override
@@ -564,7 +509,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         userEntity.setRealmId(getId());
 
         getMongoStore().insertEntity(userEntity, invocationContext);
-        return new UserAdapter(this, userEntity, invocationContext);
+        return new UserAdapter(session, this, userEntity, invocationContext);
     }
 
     @Override
@@ -586,7 +531,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         if (role == null) {
             return null;
         } else {
-            return new RoleAdapter(this, role, this, invocationContext);
+            return new RoleAdapter(session, this, role, this, invocationContext);
         }
     }
 
@@ -604,7 +549,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
         getMongoStore().insertEntity(roleEntity, invocationContext);
 
-        return new RoleAdapter(this, roleEntity, this, invocationContext);
+        return new RoleAdapter(session, this, roleEntity, this, invocationContext);
     }
 
     @Override
@@ -628,7 +573,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
         if (roles == null) return result;
         for (MongoRoleEntity role : roles) {
-            result.add(new RoleAdapter(this, role, this, invocationContext));
+            result.add(new RoleAdapter(session, this, role, this, invocationContext));
         }
 
         return result;
@@ -636,15 +581,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public RoleModel getRoleById(String id) {
-        MongoRoleEntity role = getMongoStore().loadEntity(MongoRoleEntity.class, id, invocationContext);
-        if (role == null) return null;
-        if (role.getRealmId() != null) {
-            if (!role.getRealmId().equals(this.getId())) return null;
-        } else {
-            ApplicationModel app = getApplicationById(role.getApplicationId());
-            if (app == null) return null;
-        }
-        return new RoleAdapter(this, role, null, invocationContext);
+        return session.getRoleById(id, this);
     }
 
     @Override
@@ -696,14 +633,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public ApplicationModel getApplicationById(String id) {
-        MongoApplicationEntity appData = getMongoStore().loadEntity(MongoApplicationEntity.class, id, invocationContext);
-
-        // Check if application belongs to this realm
-        if (appData == null || !getId().equals(appData.getRealmId())) {
-            return null;
-        }
-
-        return new ApplicationAdapter(this, appData, invocationContext);
+        return session.getApplicationById(id, this);
     }
 
     @Override
@@ -713,7 +643,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
                 .and("name").is(name)
                 .get();
         MongoApplicationEntity appEntity = getMongoStore().loadSingleEntity(MongoApplicationEntity.class, query, invocationContext);
-        return appEntity == null ? null : new ApplicationAdapter(this, appEntity, invocationContext);
+        return appEntity == null ? null : new ApplicationAdapter(session, this, appEntity, invocationContext);
     }
 
     @Override
@@ -734,7 +664,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
         List<ApplicationModel> result = new ArrayList<ApplicationModel>();
         for (MongoApplicationEntity appData : appDatas) {
-            result.add(new ApplicationAdapter(this, appData, invocationContext));
+            result.add(new ApplicationAdapter(session, this, appData, invocationContext));
         }
         return result;
     }
@@ -753,7 +683,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         appData.setEnabled(true);
         getMongoStore().insertEntity(appData, invocationContext);
 
-        return new ApplicationAdapter(this, appData, invocationContext);
+        return new ApplicationAdapter(session, this, appData, invocationContext);
     }
 
     @Override
@@ -774,7 +704,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         oauthClient.setName(name);
         getMongoStore().insertEntity(oauthClient, invocationContext);
 
-        return new OAuthClientAdapter(this, oauthClient, invocationContext);
+        return new OAuthClientAdapter(session, this, oauthClient, invocationContext);
     }
 
     @Override
@@ -789,17 +719,12 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
                 .and("name").is(name)
                 .get();
         MongoOAuthClientEntity oauthClient = getMongoStore().loadSingleEntity(MongoOAuthClientEntity.class, query, invocationContext);
-        return oauthClient == null ? null : new OAuthClientAdapter(this, oauthClient, invocationContext);
+        return oauthClient == null ? null : new OAuthClientAdapter(session, this, oauthClient, invocationContext);
     }
 
     @Override
     public OAuthClientModel getOAuthClientById(String id) {
-        MongoOAuthClientEntity clientEntity = getMongoStore().loadEntity(MongoOAuthClientEntity.class, id, invocationContext);
-
-        // Check if client belongs to this realm
-        if (clientEntity == null || !getId().equals(clientEntity.getRealmId())) return null;
-
-        return new OAuthClientAdapter(this, clientEntity, invocationContext);
+        return session.getOAuthClientById(id, this);
     }
 
     @Override
@@ -810,7 +735,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         List<MongoOAuthClientEntity> results = getMongoStore().loadEntities(MongoOAuthClientEntity.class, query, invocationContext);
         List<OAuthClientModel> list = new ArrayList<OAuthClientModel>();
         for (MongoOAuthClientEntity data : results) {
-            list.add(new OAuthClientAdapter(this, data, invocationContext));
+            list.add(new OAuthClientAdapter(session, this, data, invocationContext));
         }
         return list;
     }
@@ -907,36 +832,17 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public UserModel getUserBySocialLink(SocialLinkModel socialLink) {
-        DBObject query = new QueryBuilder()
-                .and("socialLinks.socialProvider").is(socialLink.getSocialProvider())
-                .and("socialLinks.socialUserId").is(socialLink.getSocialUserId())
-                .and("realmId").is(getId())
-                .get();
-        MongoUserEntity userEntity = getMongoStore().loadSingleEntity(MongoUserEntity.class, query, invocationContext);
-        return userEntity == null ? null : new UserAdapter(this, userEntity, invocationContext);
+        return session.getUserBySocialLink(socialLink, this);
     }
 
     @Override
     public Set<SocialLinkModel> getSocialLinks(UserModel user) {
-        MongoUserEntity userEntity = ((UserAdapter) user).getUser();
-        List<SocialLinkEntity> linkEntities = userEntity.getSocialLinks();
-
-        if (linkEntities == null) {
-            return Collections.EMPTY_SET;
-        }
-
-        Set<SocialLinkModel> result = new HashSet<SocialLinkModel>();
-        for (SocialLinkEntity socialLinkEntity : linkEntities) {
-            SocialLinkModel model = new SocialLinkModel(socialLinkEntity.getSocialProvider(), socialLinkEntity.getSocialUserId(), socialLinkEntity.getSocialUsername());
-            result.add(model);
-        }
-        return result;
+        return session.getSocialLinks(user, this);
     }
 
     @Override
     public SocialLinkModel getSocialLink(UserModel user, String socialProvider) {
-        SocialLinkEntity socialLinkEntity = findSocialLink(user, socialProvider);
-        return socialLinkEntity != null ? new SocialLinkModel(socialLinkEntity.getSocialProvider(), socialLinkEntity.getSocialUserId(), socialLinkEntity.getSocialUsername()) : null;
+        return session.getSocialLink(user, socialProvider, this);
     }
 
     @Override
@@ -990,82 +896,20 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public List<UserModel> getUsers() {
-        DBObject query = new QueryBuilder()
-                .and("realmId").is(getId())
-                .get();
-        List<MongoUserEntity> users = getMongoStore().loadEntities(MongoUserEntity.class, query, invocationContext);
-        return convertUserEntities(users);
+        return session.getUsers(this);
     }
 
     @Override
     public List<UserModel> searchForUser(String search) {
-        search = search.trim();
-        Pattern caseInsensitivePattern = Pattern.compile("(?i:" + search + ")");
+        return session.searchForUser(search, this);
 
-        QueryBuilder nameBuilder;
-        int spaceInd = search.lastIndexOf(" ");
-
-        // Case when we have search string like "ohn Bow". Then firstName must end with "ohn" AND lastName must start with "bow" (everything case-insensitive)
-        if (spaceInd != -1) {
-            String firstName = search.substring(0, spaceInd);
-            String lastName = search.substring(spaceInd + 1);
-            Pattern firstNamePattern = Pattern.compile("(?i:" + firstName + "$)");
-            Pattern lastNamePattern = Pattern.compile("(?i:^" + lastName + ")");
-            nameBuilder = new QueryBuilder().and(
-                    new QueryBuilder().put("firstName").regex(firstNamePattern).get(),
-                    new QueryBuilder().put("lastName").regex(lastNamePattern).get()
-            );
-        } else {
-            // Case when we have search without spaces like "foo". The firstName OR lastName could be "foo" (everything case-insensitive)
-            nameBuilder = new QueryBuilder().or(
-                    new QueryBuilder().put("firstName").regex(caseInsensitivePattern).get(),
-                    new QueryBuilder().put("lastName").regex(caseInsensitivePattern).get()
-            );
-        }
-
-        QueryBuilder builder = new QueryBuilder().and(
-                new QueryBuilder().and("realmId").is(getId()).get(),
-                new QueryBuilder().or(
-                        new QueryBuilder().put("loginName").regex(caseInsensitivePattern).get(),
-                        new QueryBuilder().put("email").regex(caseInsensitivePattern).get(),
-                        nameBuilder.get()
-
-                ).get()
-        );
-
-        List<MongoUserEntity> users = getMongoStore().loadEntities(MongoUserEntity.class, builder.get(), invocationContext);
-        return convertUserEntities(users);
     }
 
     @Override
     public List<UserModel> searchForUserByAttributes(Map<String, String> attributes) {
-        QueryBuilder queryBuilder = new QueryBuilder()
-                .and("realmId").is(getId());
-
-        for (Map.Entry<String, String> entry : attributes.entrySet()) {
-            if (entry.getKey().equals(UserModel.LOGIN_NAME)) {
-                queryBuilder.and("loginName").regex(Pattern.compile("(?i:" + entry.getValue() + "$)"));
-            } else if (entry.getKey().equalsIgnoreCase(UserModel.FIRST_NAME)) {
-                queryBuilder.and(UserModel.FIRST_NAME).regex(Pattern.compile("(?i:" + entry.getValue() + "$)"));
-
-            } else if (entry.getKey().equalsIgnoreCase(UserModel.LAST_NAME)) {
-                queryBuilder.and(UserModel.LAST_NAME).regex(Pattern.compile("(?i:" + entry.getValue() + "$)"));
-
-            } else if (entry.getKey().equalsIgnoreCase(UserModel.EMAIL)) {
-                queryBuilder.and(UserModel.EMAIL).regex(Pattern.compile("(?i:" + entry.getValue() + "$)"));
-            }
-        }
-        List<MongoUserEntity> users = getMongoStore().loadEntities(MongoUserEntity.class, queryBuilder.get(), invocationContext);
-        return convertUserEntities(users);
+        return session.searchForUserByAttributes(attributes, this);
     }
 
-    protected List<UserModel> convertUserEntities(List<MongoUserEntity> userEntities) {
-        List<UserModel> userModels = new ArrayList<UserModel>();
-        for (MongoUserEntity user : userEntities) {
-            userModels.add(new UserAdapter(this, user, invocationContext));
-        }
-        return userModels;
-    }
 
     @Override
     public Map<String, String> getSmtpConfig() {
@@ -1166,7 +1010,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     @Override
     public ApplicationModel getMasterAdminApp() {
         MongoApplicationEntity appData = getMongoStore().loadEntity(MongoApplicationEntity.class, realm.getAdminAppId(), invocationContext);
-        return appData != null ? new ApplicationAdapter(this, appData, invocationContext) : null;
+        return appData != null ? new ApplicationAdapter(session, this, appData, invocationContext) : null;
     }
 
     @Override
@@ -1182,70 +1026,37 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public UserSessionModel createUserSession(UserModel user, String ipAddress) {
-        MongoUserSessionEntity entity = new MongoUserSessionEntity();
-        entity.setRealmId(getId());
-        entity.setUser(user.getId());
-        entity.setIpAddress(ipAddress);
-
-        int currentTime = Time.currentTime();
-
-        entity.setStarted(currentTime);
-        entity.setLastSessionRefresh(currentTime);
-
-        getMongoStore().insertEntity(entity, invocationContext);
-        return new UserSessionAdapter(entity, this, invocationContext);
+        return session.createUserSession(this, user, ipAddress);
     }
 
     @Override
     public UserSessionModel getUserSession(String id) {
-        MongoUserSessionEntity entity = getMongoStore().loadEntity(MongoUserSessionEntity.class, id, invocationContext);
-        if (entity == null) {
-            return null;
-        } else {
-            return new UserSessionAdapter(entity, this, invocationContext);
-        }
+        return session.getUserSession(id, this);
     }
 
     @Override
     public List<UserSessionModel> getUserSessions(UserModel user) {
-        DBObject query = new BasicDBObject("user", user.getId());
-        List<UserSessionModel> sessions = new LinkedList<UserSessionModel>();
-        for (MongoUserSessionEntity e : getMongoStore().loadEntities(MongoUserSessionEntity.class, query, invocationContext)) {
-            sessions.add(new UserSessionAdapter(e, this, invocationContext));
-        }
-        return sessions;
+        return session.getUserSessions(user, this);
     }
 
     @Override
     public void removeUserSession(UserSessionModel session) {
-        getMongoStore().removeEntity(((UserSessionAdapter) session).getMongoEntity(), invocationContext);
+        this.session.removeUserSession(session);
     }
 
     @Override
     public void removeUserSessions(UserModel user) {
-        DBObject query = new BasicDBObject("user", user.getId());
-        getMongoStore().removeEntities(MongoUserSessionEntity.class, query, invocationContext);
+        this.session.removeUserSessions(this, user);
     }
 
     @Override
     public void removeUserSessions() {
-        DBObject query = new BasicDBObject("realmId", getId());
-        getMongoStore().removeEntities(MongoUserSessionEntity.class, query, invocationContext);
+        this.session.removeUserSessions(this);
     }
 
     @Override
     public void removeExpiredUserSessions() {
-        int currentTime = Time.currentTime();
-        DBObject query = new QueryBuilder()
-                .and("started").lessThan(currentTime - realm.getSsoSessionMaxLifespan())
-                .get();
-
-        getMongoStore().removeEntities(MongoUserSessionEntity.class, query, invocationContext);
-        query = new QueryBuilder()
-                .and("lastSessionRefresh").lessThan(currentTime - realm.getSsoSessionIdleTimeout())
-                .get();
-
-        getMongoStore().removeEntities(MongoUserSessionEntity.class, query, invocationContext);
+        this.session.removeExpiredUserSessions(this);
     }
 
 }
