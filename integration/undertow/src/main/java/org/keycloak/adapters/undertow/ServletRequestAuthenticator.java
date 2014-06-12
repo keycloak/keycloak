@@ -1,3 +1,19 @@
+/*
+ * Copyright 2014 Red Hat Inc. and/or its affiliates and other contributors
+ * as indicated by the @author tags. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
 package org.keycloak.adapters.undertow;
 
 import io.undertow.security.api.SecurityContext;
@@ -10,20 +26,21 @@ import org.keycloak.adapters.KeycloakDeployment;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import org.keycloak.KeycloakPrincipal;
+import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @author Stan Silvert ssilvert@redhat.com (C) 2014 Red Hat Inc.
  * @version $Revision: 1 $
  */
 public class ServletRequestAuthenticator extends UndertowRequestAuthenticator {
 
-    protected UndertowUserSessionManagement userSessionManagement;
 
     public ServletRequestAuthenticator(HttpFacade facade, KeycloakDeployment deployment, int sslRedirectPort,
                                        SecurityContext securityContext, HttpServerExchange exchange,
                                        UndertowUserSessionManagement userSessionManagement) {
-        super(facade, deployment, sslRedirectPort, securityContext, exchange);
-        this.userSessionManagement = userSessionManagement;
+        super(facade, deployment, sslRedirectPort, securityContext, exchange, userSessionManagement);
     }
 
     @Override
@@ -68,5 +85,10 @@ public class ServletRequestAuthenticator extends UndertowRequestAuthenticator {
         session.setAttribute(KeycloakUndertowAccount.class.getName(), account);
         userSessionManagement.login(servletRequestContext.getDeployment().getSessionManager(), session.getId(), account.getPrincipal().getName(), account.getKeycloakSecurityContext().getToken().getSessionState());
 
+    }
+
+    @Override
+    protected KeycloakUndertowAccount createAccount(KeycloakPrincipal principal, RefreshableKeycloakSecurityContext session) {
+        return new KeycloakUndertowAccount(principal, session, deployment);
     }
 }
