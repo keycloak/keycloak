@@ -67,6 +67,10 @@ public class PicketlinkAuthenticationProvider implements AuthenticationProvider 
         try {
             User picketlinkUser = new User(username);
             identityManager.add(picketlinkUser);
+
+            // Hack needed due to ActiveDirectory bug in Picketlink TODO: Remove once https://issues.jboss.org/browse/PLINK-485 fixed and updated in keycloak master
+            picketlinkUser = BasicModel.getUser(identityManager, picketlinkUser.getLoginName());
+
             return picketlinkUser.getId();
         } catch (IdentityManagementException ie) {
             throw convertIDMException(ie);

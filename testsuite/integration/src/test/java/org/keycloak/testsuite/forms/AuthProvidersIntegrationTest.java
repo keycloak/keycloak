@@ -62,7 +62,7 @@ public class AuthProvidersIntegrationTest {
 
             // Configure LDAP
             ldapRule.getEmbeddedServer().setupLdapInRealm(appRealm);
-            LdapTestUtils.setLdapPassword(providerSession, appRealm, "john", "password");
+            LdapTestUtils.setLdapPassword(providerSession, appRealm, "johnkeycloak", "password");
         }
     });
 
@@ -135,7 +135,7 @@ public class AuthProvidersIntegrationTest {
     @Test
     public void loginLdap() {
         loginPage.open();
-        loginPage.login("john", "password");
+        loginPage.login("johnkeycloak", "password");
 
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
@@ -186,20 +186,19 @@ public class AuthProvidersIntegrationTest {
     @Test
     public void passwordChangeLdap() throws Exception {
         changePasswordPage.open();
-        loginPage.login("john", "password");
+        loginPage.login("johnkeycloak", "password");
         changePasswordPage.changePassword("password", "new-password", "new-password");
 
         Assert.assertEquals("Your password has been updated", profilePage.getSuccess());
 
         changePasswordPage.logout();
 
-//        TODO: Disabled until https://issues.jboss.org/browse/PLINK-384 is released and updated
-//        loginPage.open();
-//        loginPage.login("john", "password");
-//        Assert.assertEquals("Invalid username or password.", loginPage.getError());
+        loginPage.open();
+        loginPage.login("johnkeycloak", "password");
+        Assert.assertEquals("Invalid username or password.", loginPage.getError());
 
         loginPage.open();
-        loginPage.login("john", "new-password");
+        loginPage.login("johnkeycloak", "new-password");
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
     }
 

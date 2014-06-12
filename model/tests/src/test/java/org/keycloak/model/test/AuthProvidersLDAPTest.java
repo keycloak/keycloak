@@ -75,23 +75,23 @@ public class AuthProvidersLDAPTest extends AbstractModelTest {
 
     @Test
     public void testLdapAuthentication() {
-        MultivaluedMap<String, String> formData = AuthProvidersExternalModelTest.createFormData("john", "password");
+        MultivaluedMap<String, String> formData = AuthProvidersExternalModelTest.createFormData("johnkeycloak", "password");
 
         // Set password of user in LDAP
-        LdapTestUtils.setLdapPassword(providerSession, realm, "john", "password");
+        LdapTestUtils.setLdapPassword(providerSession, realm, "johnkeycloak", "password");
 
         // Verify that user doesn't exists in realm2 and can't authenticate here
         Assert.assertEquals(AuthenticationManager.AuthenticationStatus.INVALID_USER, am.authenticateForm(null, realm, formData));
-        Assert.assertNull(realm.getUser("john"));
+        Assert.assertNull(realm.getUser("johnkeycloak"));
 
         // Add ldap authenticationProvider
         setupAuthenticationProviders();
 
         // Authenticate john and verify that now he exists in realm
         Assert.assertEquals(AuthenticationManager.AuthenticationStatus.SUCCESS, am.authenticateForm(null, realm, formData));
-        UserModel john = realm.getUser("john");
+        UserModel john = realm.getUser("johnkeycloak");
         Assert.assertNotNull(john);
-        Assert.assertEquals("john", john.getLoginName());
+        Assert.assertEquals("johnkeycloak", john.getLoginName());
         Assert.assertEquals("John", john.getFirstName());
         Assert.assertEquals("Doe", john.getLastName());
         Assert.assertEquals("john@email.org", john.getEmail());
@@ -119,7 +119,7 @@ public class AuthProvidersLDAPTest extends AbstractModelTest {
         Assert.assertEquals(AuthenticationManager.AuthenticationStatus.INVALID_USER, am.authenticateForm(null, realm, formData));
 
         // User exists in ldap
-        formData = AuthProvidersExternalModelTest.createFormData("john", "invalid");
+        formData = AuthProvidersExternalModelTest.createFormData("johnkeycloak", "invalid");
         Assert.assertEquals(AuthenticationManager.AuthenticationStatus.INVALID_CREDENTIALS, am.authenticateForm(null, realm, formData));
 
         // User exists in realm
@@ -142,23 +142,23 @@ public class AuthProvidersLDAPTest extends AbstractModelTest {
         // Add ldap
         setupAuthenticationProviders();
 
-        LdapTestUtils.setLdapPassword(providerSession, realm, "john", "password");
+        LdapTestUtils.setLdapPassword(providerSession, realm, "johnkeycloak", "password");
 
         // First authenticate successfully to sync john into realm
-        MultivaluedMap<String, String> formData = AuthProvidersExternalModelTest.createFormData("john", "password");
+        MultivaluedMap<String, String> formData = AuthProvidersExternalModelTest.createFormData("johnkeycloak", "password");
         Assert.assertEquals(AuthenticationManager.AuthenticationStatus.SUCCESS, am.authenticateForm(null, realm, formData));
 
         // Change credential and validate that user can authenticate
         AuthenticationProviderManager authProviderManager = AuthenticationProviderManager.getManager(realm, providerSession);
 
-        UserModel john = realm.getUser("john");
+        UserModel john = realm.getUser("johnkeycloak");
         try {
             Assert.assertTrue(authProviderManager.updatePassword(john, "password-updated"));
         } catch (AuthenticationProviderException ape) {
             ape.printStackTrace();
             Assert.fail("Error not expected");
         }
-        formData = AuthProvidersExternalModelTest.createFormData("john", "password-updated");
+        formData = AuthProvidersExternalModelTest.createFormData("johnkeycloak", "password-updated");
         Assert.assertEquals(AuthenticationManager.AuthenticationStatus.SUCCESS, am.authenticateForm(null, realm, formData));
 
         // Password updated just in LDAP, so validating directly in realm should fail
@@ -174,7 +174,7 @@ public class AuthProvidersLDAPTest extends AbstractModelTest {
             ape.printStackTrace();
             Assert.fail("Error not expected");
         }
-        formData = AuthProvidersExternalModelTest.createFormData("john", "password-updated2");
+        formData = AuthProvidersExternalModelTest.createFormData("johnkeycloak", "password-updated2");
         Assert.assertEquals(AuthenticationManager.AuthenticationStatus.INVALID_CREDENTIALS, am.authenticateForm(null, realm, formData));
     }
 
