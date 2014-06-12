@@ -2,6 +2,7 @@ package org.keycloak.models.cache;
 
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.AuthenticationLinkModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.OAuthClientModel;
@@ -9,6 +10,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.UsernameLoginFailureModel;
 import org.keycloak.models.cache.entities.CachedRealm;
 import org.keycloak.models.cache.entities.CachedRole;
 import org.keycloak.provider.ProviderSession;
@@ -234,5 +237,65 @@ public class CacheKeycloakSession implements KeycloakSession {
     @Override
     public OAuthClientModel getOAuthClientById(String id, RealmModel realm) {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public UsernameLoginFailureModel getUserLoginFailure(String username, RealmModel realm) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public UsernameLoginFailureModel addUserLoginFailure(String username, RealmModel realm) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public List<UsernameLoginFailureModel> getAllUserLoginFailures() {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public UserSessionModel createUserSession(RealmModel realm, UserModel user, String ipAddress) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public UserSessionModel getUserSession(String id, RealmModel realm) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public List<UserSessionModel> getUserSessions(UserModel user, RealmModel realm) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public Set<UserSessionModel> getUserSessions(RealmModel realm, ClientModel client) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public int getActiveUserSessions(RealmModel realm, ClientModel client) {
+        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public void removeUserSession(UserSessionModel session) {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public void removeUserSessions(RealmModel realm, UserModel user) {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public void removeExpiredUserSessions(RealmModel realm) {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public void removeUserSessions(RealmModel realm) {
+        //To change body of implemented methods use File | Settings | File Templates.
     }
 }

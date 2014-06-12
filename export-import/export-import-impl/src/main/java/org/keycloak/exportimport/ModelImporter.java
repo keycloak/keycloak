@@ -258,7 +258,7 @@ public class ModelImporter {
                 AuthenticationLinkModel authLinkModel = new AuthenticationLinkModel();
                 this.propertiesManager.setBasicPropertiesToModel(authLinkModel, authLinkEntity);
 
-                realm.setAuthenticationLink(user, authLinkModel);
+                user.setAuthenticationLink(authLinkModel);
             }
 
             // social links

@@ -38,6 +38,21 @@ public interface KeycloakSession extends Provider {
     List<RealmModel> getRealms();
     boolean removeRealm(String id);
 
+    UsernameLoginFailureModel getUserLoginFailure(String username, RealmModel realm);
+    UsernameLoginFailureModel addUserLoginFailure(String username, RealmModel realm);
+    List<UsernameLoginFailureModel> getAllUserLoginFailures();
+
+    UserSessionModel createUserSession(RealmModel realm, UserModel user, String ipAddress);
+    UserSessionModel getUserSession(String id, RealmModel realm);
+    List<UserSessionModel> getUserSessions(UserModel user, RealmModel realm);
+    Set<UserSessionModel> getUserSessions(RealmModel realm, ClientModel client);
+    int getActiveUserSessions(RealmModel realm, ClientModel client);
+    void removeUserSession(UserSessionModel session);
+    void removeUserSessions(RealmModel realm, UserModel user);
+    void removeExpiredUserSessions(RealmModel realm);
+    void removeUserSessions(RealmModel realm);
+
+
     void removeAllData();
 
     void close();

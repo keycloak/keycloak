@@ -97,7 +97,7 @@ public class AuthProvidersLDAPTest extends AbstractModelTest {
         Assert.assertEquals("john@email.org", john.getEmail());
 
         // Verify link exists
-        AuthenticationLinkModel authLink = realm.getAuthenticationLink(john);
+        AuthenticationLinkModel authLink = john.getAuthenticationLink();
         Assert.assertNotNull(authLink);
         Assert.assertEquals(authLink.getAuthProvider(), AuthProviderConstants.PROVIDER_NAME_PICKETLINK);
     }

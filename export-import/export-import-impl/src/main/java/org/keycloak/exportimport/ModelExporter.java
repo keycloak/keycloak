@@ -215,7 +215,7 @@ public class ModelExporter {
                 userEntity.setRealmId(realm.getId());
 
                 // authentication links
-                AuthenticationLinkModel authLink = realm.getAuthenticationLink(userModel);
+                AuthenticationLinkModel authLink = userModel.getAuthenticationLink();
                 if (authLink != null) {
                     AuthenticationLinkEntity authLinkEntity = new AuthenticationLinkEntity();
                     this.propertiesManager.setBasicPropertiesFromModel(authLink, authLinkEntity);

@@ -976,29 +976,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         return null;
     }
 
-    @Override
-    public AuthenticationLinkModel getAuthenticationLink(UserModel user) {
-        MongoUserEntity userEntity = ((UserAdapter) user).getUser();
-        AuthenticationLinkEntity authLinkEntity = userEntity.getAuthenticationLink();
-
-        if (authLinkEntity == null) {
-            return null;
-        } else {
-            return new AuthenticationLinkModel(authLinkEntity.getAuthProvider(), authLinkEntity.getAuthUserId());
-        }
-    }
-
-    @Override
-    public void setAuthenticationLink(UserModel user, AuthenticationLinkModel authenticationLink) {
-        MongoUserEntity userEntity = ((UserAdapter) user).getUser();
-        AuthenticationLinkEntity authLinkEntity = new AuthenticationLinkEntity();
-        authLinkEntity.setAuthProvider(authenticationLink.getAuthProvider());
-        authLinkEntity.setAuthUserId(authenticationLink.getAuthUserId());
-        userEntity.setAuthenticationLink(authLinkEntity);
-
-        getMongoStore().updateEntity(userEntity, invocationContext);
-    }
-
     protected void updateRealm() {
         super.updateMongoEntity();
     }

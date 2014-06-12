@@ -1,12 +1,14 @@
 package org.keycloak.models.jpa;
 
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.AuthenticationLinkModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.jpa.entities.AuthenticationLinkEntity;
 import org.keycloak.models.jpa.entities.CredentialEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
@@ -338,4 +340,24 @@ public class UserAdapter implements UserModel {
         }
         return roles;
     }
+
+    @Override
+    public AuthenticationLinkModel getAuthenticationLink() {
+        AuthenticationLinkEntity authLinkEntity = user.getAuthenticationLink();
+        return authLinkEntity == null ? null : new AuthenticationLinkModel(authLinkEntity.getAuthProvider(), authLinkEntity.getAuthUserId());
+    }
+
+    @Override
+    public void setAuthenticationLink(AuthenticationLinkModel authenticationLink) {
+        AuthenticationLinkEntity entity = new AuthenticationLinkEntity();
+        entity.setAuthProvider(authenticationLink.getAuthProvider());
+        entity.setAuthUserId(authenticationLink.getAuthUserId());
+
+        user.setAuthenticationLink(entity);
+        em.persist(entity);
+        em.persist(user);
+        em.flush();
+    }
+
+
 }

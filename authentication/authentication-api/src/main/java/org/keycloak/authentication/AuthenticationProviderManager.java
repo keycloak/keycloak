@@ -68,12 +68,12 @@ public class AuthenticationProviderManager {
     }
 
     public AuthProviderStatus validatePassword(UserModel user, String password) {
-        AuthenticationLinkModel authLink = realm.getAuthenticationLink(user);
+        AuthenticationLinkModel authLink = user.getAuthenticationLink();
         if (authLink == null) {
             // User not yet linked with any authenticationProvider. Find provider with biggest priority where he is and link
             AuthUser authUser = getUser(user.getLoginName());
             authLink = new AuthenticationLinkModel(authUser.getProviderName(), authUser.getId());
-            realm.setAuthenticationLink(user, authLink);
+            user.setAuthenticationLink(authLink);
             logger.infof("User '%s' linked with provider '%s'", authUser.getUsername(), authUser.getProviderName());
         }
 
@@ -98,7 +98,7 @@ public class AuthenticationProviderManager {
     }
 
     public boolean updatePassword(UserModel user, String password) throws AuthenticationProviderException {
-        AuthenticationLinkModel authLink = realm.getAuthenticationLink(user);
+        AuthenticationLinkModel authLink = user.getAuthenticationLink();
         if (authLink == null) {
             // Find provider with biggest priority where password update is supported. Then register user here and link him
             List<AuthenticationProviderModel> configuredProviders = getConfiguredProviderModels(realm);
@@ -111,7 +111,7 @@ public class AuthenticationProviderManager {
                             // Linking existing user supported just for "model" provider. In other cases throw exception
                             if (providerModel.getProviderName().equals(AuthenticationProviderModel.DEFAULT_PROVIDER.getProviderName())) {
                                 authLink = new AuthenticationLinkModel(providerModel.getProviderName(), authUser.getId());
-                                realm.setAuthenticationLink(user, authLink);
+                                user.setAuthenticationLink(authLink);
                                 logger.infof("User '%s' linked with provider '%s'", authUser.getUsername(), authUser.getProviderName());
                             } else {
                                 throw new AuthenticationProviderException("User " + authUser.getUsername() + " exists in provider "
@@ -120,7 +120,7 @@ public class AuthenticationProviderManager {
                         } else {
                             String userIdInProvider = delegate.registerUser(realm, providerModel.getConfig(), user.getLoginName());
                             authLink = new AuthenticationLinkModel(providerModel.getProviderName(), userIdInProvider);
-                            realm.setAuthenticationLink(user, authLink);
+                            user.setAuthenticationLink(authLink);
                             logger.infof("User '%s' registered in provider '%s' and linked", user.getLoginName(), providerModel.getProviderName());
                         }
                         break;

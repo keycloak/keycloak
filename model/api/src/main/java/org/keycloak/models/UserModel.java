@@ -67,6 +67,12 @@ public interface UserModel {
 
     void updateCredentialDirectly(UserCredentialValueModel cred);
 
+    AuthenticationLinkModel getAuthenticationLink();
+
+    void setAuthenticationLink(AuthenticationLinkModel authenticationLink);
+
+
+
     Set<RoleModel> getRealmRoleMappings();
     Set<RoleModel> getApplicationRoleMappings(ApplicationModel app);
     boolean hasRole(RoleModel role);

@@ -1,0 +1,209 @@
+package org.keycloak.models.cache;
+
+import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleContainerModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.cache.entities.CachedApplication;
+import org.keycloak.models.cache.entities.CachedClient;
+
+import java.util.HashSet;
+import java.util.Set;
+
+/**
+ * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @version $Revision: 1 $
+ */
+public abstract class ClientAdapter implements ClientModel {
+    protected CachedClient cachedClient;
+    protected CacheKeycloakSession cacheSession;
+    protected ClientModel updatedClient;
+    protected RealmModel cachedRealm;
+    protected KeycloakCache cache;
+
+    public ClientAdapter(RealmModel cachedRealm, CachedClient cached, KeycloakCache cache, CacheKeycloakSession cacheSession) {
+        this.cachedRealm = cachedRealm;
+        this.cache = cache;
+        this.cacheSession = cacheSession;
+        this.cachedClient = cached;
+    }
+
+    protected abstract void getDelegateForUpdate();
+
+    @Override
+    public String getId() {
+        if (updatedClient != null) return updatedClient.getId();
+        return cachedClient.getId();
+    }
+
+
+    @Override
+    public abstract String getClientId();
+
+    public long getAllowedClaimsMask() {
+        if (updatedClient != null) return updatedClient.getAllowedClaimsMask();
+        return cachedClient.getAllowedClaimsMask();
+    }
+
+    public void setAllowedClaimsMask(long mask) {
+        getDelegateForUpdate();
+        updatedClient.setAllowedClaimsMask(mask);
+    }
+
+    public Set<String> getWebOrigins() {
+        if (updatedClient != null) return updatedClient.getWebOrigins();
+        return cachedClient.getWebOrigins();
+    }
+
+    public void setWebOrigins(Set<String> webOrigins) {
+        getDelegateForUpdate();
+        updatedClient.setWebOrigins(webOrigins);
+    }
+
+    public void addWebOrigin(String webOrigin) {
+        getDelegateForUpdate();
+        updatedClient.addWebOrigin(webOrigin);
+    }
+
+    public void removeWebOrigin(String webOrigin) {
+        getDelegateForUpdate();
+        updatedClient.removeWebOrigin(webOrigin);
+    }
+
+    public Set<String> getRedirectUris() {
+        if (updatedClient != null) return updatedClient.getRedirectUris();
+        return cachedClient.getRedirectUris();
+    }
+
+    public void setRedirectUris(Set<String> redirectUris) {
+        getDelegateForUpdate();
+        updatedClient.setRedirectUris(redirectUris);
+    }
+
+    public void addRedirectUri(String redirectUri) {
+        getDelegateForUpdate();
+        updatedClient.addRedirectUri(redirectUri);
+    }
+
+    public void removeRedirectUri(String redirectUri) {
+        getDelegateForUpdate();
+        updatedClient.removeRedirectUri(redirectUri);
+    }
+
+    public boolean isEnabled() {
+        if (updatedClient != null) return updatedClient.isEnabled();
+        return cachedClient.isEnabled();
+    }
+
+    public void setEnabled(boolean enabled) {
+        getDelegateForUpdate();
+        updatedClient.setEnabled(enabled);
+    }
+
+    public boolean validateSecret(String secret) {
+        return secret.equals(getSecret());
+    }
+
+    public String getSecret() {
+        if (updatedClient != null) return updatedClient.getSecret();
+        return cachedClient.getSecret();
+    }
+
+    public void setSecret(String secret) {
+        getDelegateForUpdate();
+        updatedClient.setSecret(secret);
+    }
+
+    public boolean isPublicClient() {
+        if (updatedClient != null) return updatedClient.isPublicClient();
+        return cachedClient.isPublicClient();
+    }
+
+    public void setPublicClient(boolean flag) {
+        getDelegateForUpdate();
+        updatedClient.setPublicClient(flag);
+    }
+
+    public boolean isDirectGrantsOnly() {
+        if (updatedClient != null) return updatedClient.isDirectGrantsOnly();
+        return cachedClient.isDirectGrantsOnly();
+    }
+
+    public void setDirectGrantsOnly(boolean flag) {
+        getDelegateForUpdate();
+        updatedClient.setDirectGrantsOnly(flag);
+    }
+
+    public Set<RoleModel> getScopeMappings() {
+        if (updatedClient != null) return updatedClient.getScopeMappings();
+        Set<RoleModel> roles = new HashSet<RoleModel>();
+        for (String id : cachedClient.getScope()) {
+            roles.add(cacheSession.getRoleById(id, getRealm()));
+
+        }
+        return roles;
+    }
+
+    public void addScopeMapping(RoleModel role) {
+        getDelegateForUpdate();
+        updatedClient.addScopeMapping(role);
+    }
+
+    public void deleteScopeMapping(RoleModel role) {
+        getDelegateForUpdate();
+        updatedClient.deleteScopeMapping(role);
+    }
+
+    public Set<RoleModel> getRealmScopeMappings() {
+        Set<RoleModel> roleMappings = getScopeMappings();
+
+        Set<RoleModel> appRoles = new HashSet<RoleModel>();
+        for (RoleModel role : roleMappings) {
+            RoleContainerModel container = role.getContainer();
+            if (container instanceof RealmModel) {
+                if (((RealmModel) container).getId().equals(cachedRealm.getId())) {
+                    appRoles.add(role);
+                }
+            }
+        }
+
+        return appRoles;
+    }
+
+    public boolean hasScope(RoleModel role) {
+        if (updatedClient != null) return updatedClient.hasScope(role);
+        Set<RoleModel> roles = getScopeMappings();
+        if (roles.contains(role)) return true;
+
+        for (RoleModel mapping : roles) {
+            if (mapping.hasRole(role)) return true;
+        }
+        return false;
+    }
+
+    public RealmModel getRealm() {
+        return cachedRealm;
+    }
+
+    public int getNotBefore() {
+        if (updatedClient != null) return updatedClient.getNotBefore();
+        return cachedClient.getNotBefore();
+    }
+
+    public void setNotBefore(int notBefore) {
+        getDelegateForUpdate();
+        updatedClient.setNotBefore(notBefore);
+    }
+
+    public Set<UserSessionModel> getUserSessions() {
+        if (updatedClient != null) return updatedClient.getUserSessions();
+        return cacheSession.getUserSessions(cachedRealm, this);
+    }
+
+    public int getActiveUserSessions() {
+        if (updatedClient != null) return updatedClient.getActiveUserSessions();
+        return cacheSession.getActiveUserSessions(cachedRealm, this);
+    }
+}

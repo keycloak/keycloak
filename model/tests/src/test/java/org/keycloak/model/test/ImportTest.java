@@ -221,7 +221,7 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertTrue(authProv3.isPasswordUpdateSupported());
 
         // Test authentication linking
-        AuthenticationLinkModel authLink = realm.getAuthenticationLink(socialUser);
+        AuthenticationLinkModel authLink = socialUser.getAuthenticationLink();
         Assert.assertEquals(AuthProviderConstants.PROVIDER_NAME_PICKETLINK, authLink.getAuthProvider());
         Assert.assertEquals("myUser1", authLink.getAuthUserId());
     }

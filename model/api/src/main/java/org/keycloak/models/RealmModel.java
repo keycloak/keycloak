@@ -157,10 +157,6 @@ public interface RealmModel extends RoleContainerModel {
 
     boolean removeSocialLink(UserModel user, String socialProvider);
 
-    AuthenticationLinkModel getAuthenticationLink(UserModel user);
-
-    void setAuthenticationLink(UserModel user, AuthenticationLinkModel authenticationLink);
-
     boolean isSocial();
 
     void setSocial(boolean social);

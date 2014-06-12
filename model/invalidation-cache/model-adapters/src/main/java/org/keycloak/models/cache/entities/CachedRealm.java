@@ -60,6 +60,7 @@ public class CachedRealm {
     private String accountTheme;
     private String adminTheme;
     private String emailTheme;
+    private String masterAdminApp;
 
     private List<RequiredCredentialModel> requiredCredentials = new ArrayList<RequiredCredentialModel>();
     private List<AuthenticationProviderModel> authenticationProviders = new ArrayList<AuthenticationProviderModel>();
@@ -129,6 +130,7 @@ public class CachedRealm {
         auditExpiration = model.getAuditExpiration();
         auditListeners.addAll(model.getAuditListeners());
         defaultRoles.addAll(model.getDefaultRoles());
+        masterAdminApp = model.getMasterAdminApp().getId();
 
         for (RoleModel role : model.getRoles()) {
             realmRoles.put(role.getName(), role.getId());
@@ -157,6 +159,10 @@ public class CachedRealm {
 
     public String getId() {
         return id;
+    }
+
+    public String getMasterAdminApp() {
+        return masterAdminApp;
     }
 
     public String getName() {

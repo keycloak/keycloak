@@ -3,6 +3,7 @@ package org.keycloak.models.jpa;
 import org.keycloak.models.AuthenticationLinkModel;
 import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.UserCredentialValueModel;
@@ -63,9 +64,11 @@ public class RealmAdapter implements RealmModel {
     protected EntityManager em;
     protected volatile transient PublicKey publicKey;
     protected volatile transient PrivateKey privateKey;
+    protected KeycloakSession session;
     private PasswordPolicy passwordPolicy;
 
-    public RealmAdapter(EntityManager em, RealmEntity realm) {
+    public RealmAdapter(KeycloakSession session, EntityManager em, RealmEntity realm) {
+        this.session = session;
         this.em = em;
         this.realm = realm;
     }
@@ -422,62 +425,32 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public UserModel getUser(String name) {
-        TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUserByLoginName", UserEntity.class);
-        query.setParameter("loginName", name);
-        query.setParameter("realm", realm);
-        List<UserEntity> results = query.getResultList();
-        if (results.size() == 0) return null;
-        return new UserAdapter(this, em, results.get(0));
+        return session.getUserByUsername(name, this);
     }
 
     @Override
     public UsernameLoginFailureModel getUserLoginFailure(String username) {
-        String id = username + "-" + realm.getId();
-        UsernameLoginFailureEntity entity = em.find(UsernameLoginFailureEntity.class, id);
-        if (entity == null) return null;
-        return new UsernameLoginFailureAdapter(entity);
+        return session.getUserLoginFailure(username, this);
     }
 
     @Override
     public UsernameLoginFailureModel addUserLoginFailure(String username) {
-        UsernameLoginFailureModel model = getUserLoginFailure(username);
-        if (model != null) return model;
-        String id = username + "-" + realm.getId();
-        UsernameLoginFailureEntity entity = new UsernameLoginFailureEntity();
-        entity.setId(id);
-        entity.setUsername(username);
-        entity.setRealm(realm);
-        em.persist(entity);
-        return new UsernameLoginFailureAdapter(entity);
+        return session.addUserLoginFailure(username, this);
     }
 
     @Override
     public List<UsernameLoginFailureModel> getAllUserLoginFailures() {
-        TypedQuery<UsernameLoginFailureEntity> query = em.createNamedQuery("getAllFailures", UsernameLoginFailureEntity.class);
-        List<UsernameLoginFailureEntity> entities = query.getResultList();
-        List<UsernameLoginFailureModel> models = new ArrayList<UsernameLoginFailureModel>();
-        for (UsernameLoginFailureEntity entity : entities) {
-            models.add(new UsernameLoginFailureAdapter(entity));
-        }
-        return models;
+        return session.getAllUserLoginFailures();
     }
 
     @Override
     public UserModel getUserByEmail(String email) {
-        TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUserByEmail", UserEntity.class);
-        query.setParameter("email", email);
-        query.setParameter("realm", realm);
-        List<UserEntity> results = query.getResultList();
-        return results.isEmpty() ? null : new UserAdapter(this, em, results.get(0));
+        return session.getUserByEmail(email, this);
     }
 
     @Override
     public UserModel getUserById(String id) {
-        UserEntity entity = em.find(UserEntity.class, id);
-
-        // Check if user belongs to this realm
-        if (entity == null || !this.realm.equals(entity.getRealm())) return null;
-        return new UserAdapter(this, em, entity);
+        return session.getUserById(id, this);
     }
 
     @Override
@@ -678,11 +651,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public ApplicationModel getApplicationById(String id) {
-        ApplicationEntity app = em.find(ApplicationEntity.class, id);
-
-        // Check if application belongs to this realm
-        if (app == null || !this.realm.equals(app.getRealm())) return null;
-        return new ApplicationAdapter(this, em, app);
+        return session.getApplicationById(id, this);
     }
 
     @Override
@@ -692,38 +661,17 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public UserModel getUserBySocialLink(SocialLinkModel socialLink) {
-        TypedQuery<UserEntity> query = em.createNamedQuery("findUserByLinkAndRealm", UserEntity.class);
-        query.setParameter("realm", realm);
-        query.setParameter("socialProvider", socialLink.getSocialProvider());
-        query.setParameter("socialUserId", socialLink.getSocialUserId());
-        List<UserEntity> results = query.getResultList();
-        if (results.isEmpty()) {
-            return null;
-        } else if (results.size() > 1) {
-            throw new IllegalStateException("More results found for socialProvider=" + socialLink.getSocialProvider() +
-                    ", socialUserId=" + socialLink.getSocialUserId() + ", results=" + results);
-        } else {
-            UserEntity user = results.get(0);
-            return new UserAdapter(this, em, user);
-        }
+        return session.getUserBySocialLink(socialLink, this);
     }
 
     @Override
     public Set<SocialLinkModel> getSocialLinks(UserModel user) {
-        TypedQuery<SocialLinkEntity> query = em.createNamedQuery("findSocialLinkByUser", SocialLinkEntity.class);
-        query.setParameter("user", ((UserAdapter) user).getUser());
-        List<SocialLinkEntity> results = query.getResultList();
-        Set<SocialLinkModel> set = new HashSet<SocialLinkModel>();
-        for (SocialLinkEntity entity : results) {
-            set.add(new SocialLinkModel(entity.getSocialProvider(), entity.getSocialUserId(), entity.getSocialUsername()));
-        }
-        return set;
+        return session.getSocialLinks(user, this);
     }
 
     @Override
     public SocialLinkModel getSocialLink(UserModel user, String socialProvider) {
-        SocialLinkEntity entity = findSocialLink(user, socialProvider);
-        return (entity != null) ? new SocialLinkModel(entity.getSocialProvider(), entity.getSocialUserId(), entity.getSocialUsername()) : null;
+        return session.getSocialLink(user, socialProvider, this);
     }
 
     @Override
@@ -738,6 +686,16 @@ public class RealmAdapter implements RealmModel {
         em.flush();
     }
 
+    private SocialLinkEntity findSocialLink(UserModel user, String socialProvider) {
+        TypedQuery<SocialLinkEntity> query = em.createNamedQuery("findSocialLinkByUserAndProvider", SocialLinkEntity.class);
+        UserEntity userEntity = em.getReference(UserEntity.class, user.getId());
+        query.setParameter("user", userEntity);
+        query.setParameter("socialProvider", socialProvider);
+        List<SocialLinkEntity> results = query.getResultList();
+        return results.size() > 0 ? results.get(0) : null;
+    }
+
+
     @Override
     public boolean removeSocialLink(UserModel user, String socialProvider) {
         SocialLinkEntity entity = findSocialLink(user, socialProvider);
@@ -750,33 +708,6 @@ public class RealmAdapter implements RealmModel {
         }
     }
 
-    private SocialLinkEntity findSocialLink(UserModel user, String socialProvider) {
-        TypedQuery<SocialLinkEntity> query = em.createNamedQuery("findSocialLinkByUserAndProvider", SocialLinkEntity.class);
-        query.setParameter("user", ((UserAdapter) user).getUser());
-        query.setParameter("socialProvider", socialProvider);
-        List<SocialLinkEntity> results = query.getResultList();
-        return results.size() > 0 ? results.get(0) : null;
-    }
-
-    @Override
-    public AuthenticationLinkModel getAuthenticationLink(UserModel user) {
-        UserEntity userEntity = ((UserAdapter) user).getUser();
-        AuthenticationLinkEntity authLinkEntity = userEntity.getAuthenticationLink();
-        return authLinkEntity == null ? null : new AuthenticationLinkModel(authLinkEntity.getAuthProvider(), authLinkEntity.getAuthUserId());
-    }
-
-    @Override
-    public void setAuthenticationLink(UserModel user, AuthenticationLinkModel authenticationLink) {
-        AuthenticationLinkEntity entity = new AuthenticationLinkEntity();
-        entity.setAuthProvider(authenticationLink.getAuthProvider());
-        entity.setAuthUserId(authenticationLink.getAuthUserId());
-
-        UserEntity userEntity = ((UserAdapter) user).getUser();
-        userEntity.setAuthenticationLink(entity);
-        em.persist(entity);
-        em.persist(userEntity);
-        em.flush();
-    }
 
     @Override
     public boolean isSocial() {

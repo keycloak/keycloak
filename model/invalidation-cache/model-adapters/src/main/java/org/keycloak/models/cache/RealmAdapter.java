@@ -27,6 +27,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +50,13 @@ public class RealmAdapter implements RealmModel {
         this.cacheSession = cacheSession;
     }
 
+    protected void getDelegateForUpdate() {
+        if (updated == null) {
+            updated = cacheSession.getDelegate().getRealm(getId());
+            if (updated == null) throw new IllegalStateException("Not found in database");
+        }
+    }
+
     @Override
     public String getId() {
         if (updated != null) return updated.getId();
@@ -65,13 +73,6 @@ public class RealmAdapter implements RealmModel {
     public void setName(String name) {
         getDelegateForUpdate();
         updated.setName(name);
-    }
-
-    protected void getDelegateForUpdate() {
-        if (updated == null) {
-            updated = cacheSession.getDelegate().getRealm(getId());
-            if (updated == null) throw new IllegalStateException("Not found in database");
-        }
     }
 
     @Override
@@ -584,18 +585,6 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public AuthenticationLinkModel getAuthenticationLink(UserModel user) {
-        if (updated != null) return updated.getAuthenticationLink(user);
-        return cacheSession.getAuthenticationLink(user, this);
-    }
-
-    @Override
-    public void setAuthenticationLink(UserModel user, AuthenticationLinkModel authenticationLink) {
-        getDelegateForUpdate();
-        updated.setAuthenticationLink(user, authenticationLink);
-    }
-
-    @Override
     public boolean isSocial() {
         if (updated != null) return updated.isSocial();
         return cached.isSocial();
@@ -733,177 +722,250 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public String getLoginTheme() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        if (updated != null) return updated.getLoginTheme();
+        return cached.getLoginTheme();
     }
 
     @Override
     public void setLoginTheme(String name) {
-        //To change body of implemented methods use File | Settings | File Templates.
+        getDelegateForUpdate();
+        updated.setLoginTheme(name);
     }
 
     @Override
     public String getAccountTheme() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        if (updated != null) return updated.getAccountTheme();
+        return cached.getAccountTheme();
     }
 
     @Override
     public void setAccountTheme(String name) {
-        //To change body of implemented methods use File | Settings | File Templates.
+        getDelegateForUpdate();
+        updated.setAccountTheme(name);
     }
 
     @Override
     public String getAdminTheme() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        if (updated != null) return updated.getAdminTheme();
+        return cached.getAdminTheme();
     }
 
     @Override
     public void setAdminTheme(String name) {
-        //To change body of implemented methods use File | Settings | File Templates.
+        getDelegateForUpdate();
+        updated.setAdminTheme(name);
     }
 
     @Override
     public String getEmailTheme() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        if (updated != null) return updated.getEmailTheme();
+        return cached.getEmailTheme();
     }
 
     @Override
     public void setEmailTheme(String name) {
-        //To change body of implemented methods use File | Settings | File Templates.
+        getDelegateForUpdate();
+        updated.setEmailTheme(name);
     }
 
     @Override
     public int getNotBefore() {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        if (updated != null) return updated.getNotBefore();
+        return cached.getNotBefore();
     }
 
     @Override
     public void setNotBefore(int notBefore) {
-        //To change body of implemented methods use File | Settings | File Templates.
+        getDelegateForUpdate();
+        updated.setNotBefore(notBefore);
     }
 
     @Override
     public boolean removeRoleById(String id) {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        getDelegateForUpdate();
+        return updated.removeRoleById(id);
     }
 
     @Override
     public boolean isAuditEnabled() {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        if (updated != null) return updated.isAuditEnabled();
+        return cached.isAuditEnabled();
     }
 
     @Override
     public void setAuditEnabled(boolean enabled) {
-        //To change body of implemented methods use File | Settings | File Templates.
+        getDelegateForUpdate();
+        updated.setAuditEnabled(enabled);
     }
 
     @Override
     public long getAuditExpiration() {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        if (updated != null) return updated.getAuditExpiration();
+        return cached.getAuditExpiration();
     }
 
     @Override
     public void setAuditExpiration(long expiration) {
-        //To change body of implemented methods use File | Settings | File Templates.
+        getDelegateForUpdate();
+        updated.setAuditExpiration(expiration);
     }
 
     @Override
     public Set<String> getAuditListeners() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        if (updated != null) return updated.getAuditListeners();
+        return cached.getAuditListeners();
     }
 
     @Override
     public void setAuditListeners(Set<String> listeners) {
-        //To change body of implemented methods use File | Settings | File Templates.
+        getDelegateForUpdate();
+        updated.setAuditListeners(listeners);
     }
 
     @Override
     public ApplicationModel getMasterAdminApp() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        if (updated != null) return updated.getMasterAdminApp();
+        return getApplicationById(cached.getMasterAdminApp());
     }
 
     @Override
     public void setMasterAdminApp(ApplicationModel app) {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public UsernameLoginFailureModel getUserLoginFailure(String username) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public UsernameLoginFailureModel addUserLoginFailure(String username) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public List<UsernameLoginFailureModel> getAllUserLoginFailures() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public UserSessionModel createUserSession(UserModel user, String ipAddress) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public UserSessionModel getUserSession(String id) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public List<UserSessionModel> getUserSessions(UserModel user) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public void removeUserSession(UserSessionModel session) {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public void removeUserSessions(UserModel user) {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public void removeExpiredUserSessions() {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public ClientModel findClientById(String id) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public void removeUserSessions() {
-        //To change body of implemented methods use File | Settings | File Templates.
+        getDelegateForUpdate();
+        updated.setMasterAdminApp(app);
     }
 
     @Override
     public RoleModel getRole(String name) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        if (updated != null) return updated.getRole(name);
+        String id = cached.getRealmRoles().get(name);
+        if (id == null) return null;
+        return cacheSession.getRoleById(id, this);
     }
 
     @Override
     public RoleModel addRole(String name) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        getDelegateForUpdate();
+        return updated.addRole(name);
     }
 
     @Override
     public RoleModel addRole(String id, String name) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        getDelegateForUpdate();
+        return updated.addRole(id, name);
     }
 
     @Override
     public boolean removeRole(RoleModel role) {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        getDelegateForUpdate();
+        return updated.removeRole(role);
     }
 
     @Override
     public Set<RoleModel> getRoles() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        if (updated != null) return updated.getRoles();
+
+        Set<RoleModel> roles = new HashSet<RoleModel>();
+        for (String id : cached.getRealmRoles().values()) {
+            roles.add(cacheSession.getRoleById(id, this));
+        }
+        return roles;
     }
 
+    @Override
+    public ClientModel findClientById(String id) {
+        ClientModel model = getApplicationById(id);
+        if (model != null) return model;
+        return getOAuthClientById(id);
+    }
+
+
+    @Override
+    public UsernameLoginFailureModel getUserLoginFailure(String username) {
+        if (updated != null) return updated.getUserLoginFailure(username);
+        return cacheSession.getUserLoginFailure(username, this);
+    }
+
+    @Override
+    public UsernameLoginFailureModel addUserLoginFailure(String username) {
+        if (updated != null) return updated.addUserLoginFailure(username);
+        return cacheSession.addUserLoginFailure(username, this);
+    }
+
+    @Override
+    public List<UsernameLoginFailureModel> getAllUserLoginFailures() {
+        if (updated != null) return updated.getAllUserLoginFailures();
+        return cacheSession.getAllUserLoginFailures();
+    }
+
+    @Override
+    public UserSessionModel createUserSession(UserModel user, String ipAddress) {
+        if (updated != null) return updated.createUserSession(user, ipAddress);
+        return cacheSession.createUserSession(this, user, ipAddress);
+    }
+
+    @Override
+    public UserSessionModel getUserSession(String id) {
+        if (updated != null) return updated.getUserSession(id);
+        return cacheSession.getUserSession(id, this);
+    }
+
+    @Override
+    public List<UserSessionModel> getUserSessions(UserModel user) {
+        if (updated != null) return updated.getUserSessions(user);
+        return cacheSession.getUserSessions(user, this);
+    }
+
+    @Override
+    public void removeUserSession(UserSessionModel session) {
+        if (updated != null) {
+            updated.removeUserSession(session);
+        } else {
+            cacheSession.removeUserSession(session);
+
+        }
+    }
+
+    @Override
+    public void removeUserSessions(UserModel user) {
+        if (updated != null) {
+            updated.removeUserSessions(user);
+        } else {
+            cacheSession.removeUserSessions(this, user);
+
+        }
+    }
+
+    @Override
+    public void removeExpiredUserSessions() {
+        if (updated != null) {
+            updated.removeExpiredUserSessions();
+        } else {
+            cacheSession.removeExpiredUserSessions(this);
+
+        }
+    }
+
+    @Override
+    public void removeUserSessions() {
+        if (updated != null) {
+            updated.removeUserSessions();
+        } else {
+            cacheSession.removeUserSessions(this);
+
+        }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof RealmModel)) return false;
+
+        RealmModel that = (RealmModel) o;
+        return that.getId().equals(getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getId().hashCode();
+    }
 }

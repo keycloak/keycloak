@@ -575,7 +575,7 @@ public class RealmManager {
         if (userRep.getAuthenticationLink() != null) {
             AuthenticationLinkRepresentation link = userRep.getAuthenticationLink();
             AuthenticationLinkModel authLink = new AuthenticationLinkModel(link.getAuthProvider(), link.getAuthUserId());
-            newRealm.setAuthenticationLink(user, authLink);
+            user.setAuthenticationLink(authLink);
         }
         return user;
     }
