@@ -23,6 +23,10 @@
         }
     },
 
+    "modelCache": {
+        "provider": "${keycloak.model.cache.provider:simple}"
+    },
+
     "timer": {
         "provider": "basic"
     },

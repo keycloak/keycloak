@@ -12,7 +12,7 @@ public class CacheKeycloakSessionSpi implements Spi {
 
     @Override
     public String getName() {
-        return "cacheKeycloakSession";
+        return "modelCache";
     }
 
     @Override

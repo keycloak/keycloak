@@ -40,7 +40,7 @@ public class AbstractModelTest {
         providerSessionFactory = KeycloakApplication.createProviderSessionFactory();
 
         ProviderSession providerSession = providerSessionFactory.createSession();
-        KeycloakSession identitySession = providerSession.getProvider(CacheKeycloakSession.class);
+        KeycloakSession identitySession = providerSession.getProvider(CacheKeycloakSession.class, "simple");
         try {
             identitySession.getTransaction().begin();
             new ApplianceBootstrap().bootstrap(identitySession, "/auth");
@@ -59,7 +59,7 @@ public class AbstractModelTest {
     public void before() throws Exception {
         providerSession = providerSessionFactory.createSession();
 
-        identitySession = providerSession.getProvider(CacheKeycloakSession.class);
+        identitySession = providerSession.getProvider(CacheKeycloakSession.class, "simple");
         identitySession.getTransaction().begin();
         realmManager = new RealmManager(identitySession);
     }
@@ -70,7 +70,7 @@ public class AbstractModelTest {
         providerSession.close();
 
         providerSession = providerSessionFactory.createSession();
-        identitySession = providerSession.getProvider(CacheKeycloakSession.class);
+        identitySession = providerSession.getProvider(CacheKeycloakSession.class, "simple");
         try {
             identitySession.getTransaction().begin();
 
@@ -105,7 +105,7 @@ public class AbstractModelTest {
         providerSession.close();
 
         providerSession = providerSessionFactory.createSession();
-        identitySession = providerSession.getProvider(CacheKeycloakSession.class);
+        identitySession = providerSession.getProvider(CacheKeycloakSession.class, "simple");
         identitySession.getTransaction().begin();
         realmManager = new RealmManager(identitySession);
     }
