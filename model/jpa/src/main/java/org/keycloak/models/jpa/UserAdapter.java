@@ -282,6 +282,7 @@ public class UserAdapter implements UserModel {
         entity.setRole(roleEntity);
         em.persist(entity);
         em.flush();
+        em.detach(entity);
     }
 
     @Override
@@ -307,6 +308,7 @@ public class UserAdapter implements UserModel {
         Set<RoleModel> roles = new HashSet<RoleModel>();
         for (UserRoleMappingEntity entity : entities) {
             roles.add(realm.getRoleById(entity.getRole().getId()));
+            em.detach(entity);
         }
         return roles;
     }
@@ -358,6 +360,21 @@ public class UserAdapter implements UserModel {
         em.persist(user);
         em.flush();
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || !(o instanceof UserModel)) return false;
+
+        UserModel that = (UserModel) o;
+        return that.getId().equals(getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getId().hashCode();
+    }
+
 
 
 }

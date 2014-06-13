@@ -234,10 +234,11 @@ public class AccessTokenPerfTest {
     @Test
     public void perfJaxrsClientLogin()
     {
-        long ITERATIONS = 100;
+        long ITERATIONS = 10;
         JaxrsClientLogin login = new JaxrsClientLogin();
         long start = System.currentTimeMillis();
         for (int i = 0; i < ITERATIONS; i++) {
+            System.out.println("*************************");
             login.run();
         }
         long end = System.currentTimeMillis() - start;
@@ -247,7 +248,7 @@ public class AccessTokenPerfTest {
     @Test
     public void perfBrowserLogin()
     {
-        long ITERATIONS = 100;
+        long ITERATIONS = 10;
         long start = System.currentTimeMillis();
         BrowserLogin login = new BrowserLogin();
         for (int i = 0; i < ITERATIONS; i++) {
@@ -259,7 +260,7 @@ public class AccessTokenPerfTest {
 
     @Test
     public void multiThread() throws Exception {
-        int num_threads = 20;
+        int num_threads = 10;
         Thread[] threads = new Thread[num_threads];
         for (int i = 0; i < num_threads; i++) {
             threads[i] = new Thread(new Runnable() {

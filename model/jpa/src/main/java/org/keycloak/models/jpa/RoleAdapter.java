@@ -1,5 +1,6 @@
 package org.keycloak.models.jpa;
 
+import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
@@ -115,17 +116,14 @@ public class RoleAdapter implements RoleModel {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (o == null || !(o instanceof RoleModel)) return false;
 
-        RoleAdapter that = (RoleAdapter) o;
-
-        if (!role.getId().equals(that.role.getId())) return false;
-
-        return true;
+        RoleModel that = (RoleModel) o;
+        return that.getId().equals(getId());
     }
 
     @Override
     public int hashCode() {
-        return role.getId().hashCode();
+        return getId().hashCode();
     }
 }

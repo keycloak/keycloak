@@ -1,6 +1,7 @@
 package org.keycloak.models.jpa.entities;
 
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
@@ -28,7 +29,7 @@ public class CredentialEntity {
     protected String device;
     protected byte[] salt;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     protected UserEntity user;
 
     public String getValue() {

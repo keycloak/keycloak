@@ -29,6 +29,7 @@ public class OAuthClientAdapter extends ClientAdapter implements OAuthClientMode
     @Override
     protected void getDelegateForUpdate() {
         if (updated == null) {
+            cacheSession.registerOAuthClientInvalidation(getId());
             updatedClient = updated = cacheSession.getDelegate().getOAuthClientById(getId(), cachedRealm);
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
@@ -44,5 +45,20 @@ public class OAuthClientAdapter extends ClientAdapter implements OAuthClientMode
     public void setClientId(String id) {
         getDelegateForUpdate();
         updated.setClientId(id);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || !(o instanceof OAuthClientModel)) return false;
+
+        OAuthClientModel that = (OAuthClientModel) o;
+
+        return that.getId().equals(this.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getId().hashCode();
     }
 }

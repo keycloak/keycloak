@@ -1001,11 +1001,18 @@ public class RealmAdapter implements RealmModel {
         em.flush();
     }
 
+    @Override
     public boolean equals(Object o) {
-        if (o == null) return false;
-        if (!(o instanceof RealmAdapter)) return false;
-        RealmAdapter r = (RealmAdapter) o;
-        return r.getId().equals(getId());
+        if (this == o) return true;
+        if (o == null || !(o instanceof RealmModel)) return false;
+
+        RealmModel that = (RealmModel) o;
+        return that.getId().equals(getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getId().hashCode();
     }
 
     @Override

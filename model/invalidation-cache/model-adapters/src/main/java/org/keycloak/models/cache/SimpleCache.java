@@ -23,11 +23,17 @@ public class SimpleCache implements KeycloakCache {
 
     protected ConcurrentHashMap<String, CachedRealm> realmCache = new ConcurrentHashMap<String, CachedRealm>();
     protected ConcurrentHashMap<String, CachedRealm> realmCacheByName = new ConcurrentHashMap<String, CachedRealm>();
+    protected ConcurrentHashMap<String, CachedApplication> applicationCache = new ConcurrentHashMap<String, CachedApplication>();
+    protected ConcurrentHashMap<String, CachedOAuthClient> clientCache = new ConcurrentHashMap<String, CachedOAuthClient>();
+    protected ConcurrentHashMap<String, CachedRole> roleCache = new ConcurrentHashMap<String, CachedRole>();
 
     @Override
     public void clear() {
         realmCache.clear();
         realmCacheByName.clear();
+        applicationCache.clear();
+        clientCache.clear();
+        roleCache.clear();
     }
 
     @Override
@@ -51,7 +57,7 @@ public class SimpleCache implements KeycloakCache {
     @Override
     public void addCachedRealm(CachedRealm realm) {
         realmCache.put(realm.getId(), realm);
-        realmCache.put(realm.getName(), realm);
+        realmCacheByName.put(realm.getName(), realm);
 
     }
 
@@ -62,61 +68,66 @@ public class SimpleCache implements KeycloakCache {
 
     @Override
     public CachedApplication getApplication(String id) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return applicationCache.get(id);
     }
 
     @Override
     public void invalidateApplication(CachedApplication app) {
-        //To change body of implemented methods use File | Settings | File Templates.
+        applicationCache.remove(app.getId());
     }
 
     @Override
     public void addCachedApplication(CachedApplication app) {
-        //To change body of implemented methods use File | Settings | File Templates.
+        applicationCache.put(app.getId(), app);
     }
 
     @Override
     public void invalidateCachedApplicationById(String id) {
-        //To change body of implemented methods use File | Settings | File Templates.
+        applicationCache.remove(id);
     }
 
     @Override
     public CachedOAuthClient getOAuthClient(String id) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return clientCache.get(id);
     }
 
     @Override
     public void invalidateOAuthClient(CachedOAuthClient client) {
-        //To change body of implemented methods use File | Settings | File Templates.
+        clientCache.remove(client.getId());
     }
 
     @Override
     public void addCachedOAuthClient(CachedOAuthClient client) {
-        //To change body of implemented methods use File | Settings | File Templates.
+        clientCache.put(client.getId(), client);
     }
 
     @Override
     public void invalidateCachedOAuthClientById(String id) {
-        //To change body of implemented methods use File | Settings | File Templates.
+        clientCache.remove(id);
     }
 
     @Override
     public CachedRole getRole(String id) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return roleCache.get(id);
     }
 
     @Override
     public void invalidateRole(CachedRole role) {
-        //To change body of implemented methods use File | Settings | File Templates.
+        roleCache.remove(role);
+    }
+
+    @Override
+    public void invalidateRoleById(String id) {
+        roleCache.remove(id);
     }
 
     @Override
     public void addCachedRole(CachedRole role) {
-        //To change body of implemented methods use File | Settings | File Templates.
+        roleCache.put(role.getId(), role);
     }
 
     @Override
     public void invalidateCachedRoleById(String id) {
-        //To change body of implemented methods use File | Settings | File Templates.
+        roleCache.remove(id);
     }
 }

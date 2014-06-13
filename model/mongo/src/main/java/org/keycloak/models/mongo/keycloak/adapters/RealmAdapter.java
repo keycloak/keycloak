@@ -1059,4 +1059,19 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         this.session.removeExpiredUserSessions(this);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || !(o instanceof RealmModel)) return false;
+
+        RealmModel that = (RealmModel) o;
+        return that.getId().equals(getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getId().hashCode();
+    }
+
+
 }

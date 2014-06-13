@@ -52,6 +52,7 @@ public class RealmAdapter implements RealmModel {
 
     protected void getDelegateForUpdate() {
         if (updated == null) {
+            cacheSession.registerRealmInvalidation(getId());
             updated = cacheSession.getDelegate().getRealm(getId());
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
@@ -440,20 +441,8 @@ public class RealmAdapter implements RealmModel {
     @Override
     public RoleModel getRoleById(String id) {
         if (updated != null) return updated.getRoleById(id);
-        if (!cached.getRolesById().contains(id)) return null;
-        CachedRole cachedRole = cache.getRole(id);
-        if (cachedRole == null) {
-            RoleModel roleModel = cacheSession.getDelegate().getRoleById(id, this);
-            if (roleModel == null) return null;
-            if (roleModel.getContainer() instanceof ApplicationModel) {
-                cachedRole = new CachedApplicationRole(((ApplicationModel) roleModel.getContainer()).getId(), roleModel);
-                cache.addCachedRole(cachedRole);
-            } else {
-                cachedRole = new CachedRealmRole(roleModel);
-            }
-        }
-        return new RoleAdapter(cachedRole, cache, cacheSession, this);
-    }
+        return cacheSession.getRoleById(id, this);
+     }
 
     @Override
     public List<String> getDefaultRoles() {
@@ -519,17 +508,22 @@ public class RealmAdapter implements RealmModel {
     @Override
     public ApplicationModel addApplication(String name) {
         getDelegateForUpdate();
-        return updated.addApplication(name);
+        ApplicationModel app = updated.addApplication(name);
+        cacheSession.registerApplicationInvalidation(app.getId());
+        return app;
     }
 
     @Override
     public ApplicationModel addApplication(String id, String name) {
         getDelegateForUpdate();
-        return updated.addApplication(id, name);
+        ApplicationModel app =  updated.addApplication(id, name);
+        cacheSession.registerApplicationInvalidation(app.getId());
+        return app;
     }
 
     @Override
     public boolean removeApplication(String id) {
+        cacheSession.registerApplicationInvalidation(id);
         getDelegateForUpdate();
         return updated.removeApplication(id);
     }
@@ -629,13 +623,17 @@ public class RealmAdapter implements RealmModel {
     @Override
     public OAuthClientModel addOAuthClient(String name) {
         getDelegateForUpdate();
-        return updated.addOAuthClient(name);
+        OAuthClientModel client = updated.addOAuthClient(name);
+        cacheSession.registerOAuthClientInvalidation(client.getId());
+        return client;
     }
 
     @Override
     public OAuthClientModel addOAuthClient(String id, String name) {
         getDelegateForUpdate();
-        return updated.addOAuthClient(id, name);
+        OAuthClientModel client =  updated.addOAuthClient(id, name);
+        cacheSession.registerOAuthClientInvalidation(client.getId());
+        return client;
     }
 
     @Override
@@ -654,6 +652,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public boolean removeOAuthClient(String id) {
+        cacheSession.registerOAuthClientInvalidation(id);
         getDelegateForUpdate();
         return updated.removeOAuthClient(id);
     }
@@ -782,6 +781,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public boolean removeRoleById(String id) {
+        cacheSession.registerRoleInvalidation(id);
         getDelegateForUpdate();
         return updated.removeRoleById(id);
     }
@@ -845,17 +845,22 @@ public class RealmAdapter implements RealmModel {
     @Override
     public RoleModel addRole(String name) {
         getDelegateForUpdate();
-        return updated.addRole(name);
+        RoleModel role = updated.addRole(name);
+        cacheSession.registerRoleInvalidation(role.getId());
+        return role;
     }
 
     @Override
     public RoleModel addRole(String id, String name) {
         getDelegateForUpdate();
-        return updated.addRole(id, name);
+        RoleModel role =  updated.addRole(id, name);
+        cacheSession.registerRoleInvalidation(role.getId());
+        return role;
     }
 
     @Override
     public boolean removeRole(RoleModel role) {
+        cacheSession.registerRoleInvalidation(role.getId());
         getDelegateForUpdate();
         return updated.removeRole(role);
     }
@@ -866,7 +871,9 @@ public class RealmAdapter implements RealmModel {
 
         Set<RoleModel> roles = new HashSet<RoleModel>();
         for (String id : cached.getRealmRoles().values()) {
-            roles.add(cacheSession.getRoleById(id, this));
+            RoleModel roleById = cacheSession.getRoleById(id, this);
+            if (roleById == null) continue;
+            roles.add(roleById);
         }
         return roles;
     }
@@ -958,7 +965,7 @@ public class RealmAdapter implements RealmModel {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof RealmModel)) return false;
+        if (o == null || !(o instanceof RealmModel)) return false;
 
         RealmModel that = (RealmModel) o;
         return that.getId().equals(getId());

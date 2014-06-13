@@ -3,6 +3,7 @@ package org.keycloak.models.jpa.entities;
 import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
@@ -23,9 +24,9 @@ public class ScopeMappingEntity {
     @GenericGenerator(name="keycloak_generator", strategy="org.keycloak.models.jpa.utils.JpaIdGenerator")
     @GeneratedValue(generator = "keycloak_generator")
     protected String id;
-    @ManyToOne
+    @ManyToOne(fetch= FetchType.LAZY)
     protected ClientEntity client;
-    @ManyToOne
+    @ManyToOne(fetch= FetchType.LAZY)
     protected RoleEntity role;
 
     public String getId() {

@@ -1,5 +1,6 @@
 package org.keycloak.models.jpa;
 
+import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -37,4 +38,19 @@ public class OAuthClientAdapter extends ClientAdapter implements OAuthClientMode
     public void setDirectGrantsOnly(boolean flag) {
         oAuthClientEntity.setDirectGrantsOnly(flag);
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || !(o instanceof OAuthClientModel)) return false;
+
+        OAuthClientModel that = (OAuthClientModel) o;
+        return that.getId().equals(getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getId().hashCode();
+    }
+
 }

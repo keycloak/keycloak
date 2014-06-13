@@ -28,6 +28,7 @@ public class ApplicationAdapter extends ClientAdapter implements ApplicationMode
     @Override
     protected void getDelegateForUpdate() {
         if (updated == null) {
+            cacheSession.registerApplicationInvalidation(getId());
             updatedClient = updated = cacheSession.getDelegate().getApplicationById(getId(), cachedRealm);
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
@@ -40,7 +41,8 @@ public class ApplicationAdapter extends ClientAdapter implements ApplicationMode
 
     @Override
     public String getName() {
-        return getClientId();
+        if (updated != null) return updated.getName();
+        return cached.getName();
     }
 
     @Override
@@ -150,17 +152,22 @@ public class ApplicationAdapter extends ClientAdapter implements ApplicationMode
     @Override
     public RoleModel addRole(String name) {
         getDelegateForUpdate();
-        return updated.addRole(name);
+        RoleModel role = updated.addRole(name);
+        cacheSession.registerRoleInvalidation(role.getId());
+        return role;
     }
 
     @Override
     public RoleModel addRole(String id, String name) {
         getDelegateForUpdate();
-        return updated.addRole(id, name);
+        RoleModel role =  updated.addRole(id, name);
+        cacheSession.registerRoleInvalidation(role.getId());
+        return role;
     }
 
     @Override
     public boolean removeRole(RoleModel role) {
+        cacheSession.registerRoleInvalidation(role.getId());
         getDelegateForUpdate();
         return updated.removeRole(role);
     }
@@ -171,8 +178,25 @@ public class ApplicationAdapter extends ClientAdapter implements ApplicationMode
 
         Set<RoleModel> roles = new HashSet<RoleModel>();
         for (String id : cached.getRoles().values()) {
-            roles.add(cacheSession.getRoleById(id, cachedRealm));
+            RoleModel roleById = cacheSession.getRoleById(id, cachedRealm);
+            if (roleById == null) continue;
+            roles.add(roleById);
         }
         return roles;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || !(o instanceof ApplicationModel)) return false;
+
+        ApplicationModel that = (ApplicationModel) o;
+        return that.getId().equals(getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getId().hashCode();
+    }
+
 }

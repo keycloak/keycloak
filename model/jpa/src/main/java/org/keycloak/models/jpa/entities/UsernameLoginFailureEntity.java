@@ -1,6 +1,7 @@
 package org.keycloak.models.jpa.entities;
 
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
@@ -26,7 +27,7 @@ public class UsernameLoginFailureEntity {
     protected String lastIPFailure;
 
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     protected RealmEntity realm;
 
     public String getId() {
