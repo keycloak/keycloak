@@ -107,7 +107,7 @@ public class AuthenticationManagerTest extends AbstractModelTest {
         credential.setType(CredentialRepresentation.TOTP);
         credential.setValue(totpSecret);
 
-        realm.updateCredential(user, credential);
+        user.updateCredential(credential);
 
         user.setTotp(true);
 
@@ -175,7 +175,7 @@ public class AuthenticationManagerTest extends AbstractModelTest {
         credential.setType(CredentialRepresentation.PASSWORD);
         credential.setValue("password");
 
-        realm.updateCredential(user, credential);
+        user.updateCredential(credential);
 
         formData = new MultivaluedMapImpl<String, String>();
         formData.add("username", "test");

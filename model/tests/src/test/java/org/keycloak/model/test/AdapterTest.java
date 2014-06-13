@@ -133,7 +133,7 @@ public class AdapterTest extends AbstractModelTest {
         UserCredentialModel cred = new UserCredentialModel();
         cred.setType(CredentialRepresentation.PASSWORD);
         cred.setValue("geheim");
-        realmModel.updateCredential(user, cred);
+        user.updateCredential(cred);
         Assert.assertTrue(realmModel.validatePassword(user, "geheim"));
     }
 
@@ -154,11 +154,11 @@ public class AdapterTest extends AbstractModelTest {
         user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
 
         RoleModel testRole = realmModel.addRole("test");
-        realmModel.grantRole(user, testRole);
+        user.grantRole(testRole);
 
         ApplicationModel app = realmModel.addApplication("test-app");
         RoleModel appRole = app.addRole("test");
-        realmModel.grantRole(user, appRole);
+        user.grantRole(appRole);
 
         SocialLinkModel socialLink = new SocialLinkModel("google", "google1", user.getLoginName());
         realmModel.addSocialLink(user, socialLink);
@@ -166,7 +166,7 @@ public class AdapterTest extends AbstractModelTest {
         UserCredentialModel cred = new UserCredentialModel();
         cred.setType(CredentialRepresentation.PASSWORD);
         cred.setValue("password");
-        realmModel.updateCredential(user, cred);
+        user.updateCredential(cred);
 
         commit();
 
@@ -187,11 +187,11 @@ public class AdapterTest extends AbstractModelTest {
         ApplicationModel app = realmModel.addApplication("test-app");
 
         RoleModel appRole = app.addRole("test");
-        realmModel.grantRole(user, appRole);
-        realmModel.addScopeMapping(client, appRole);
+        user.grantRole(appRole);
+        client.addScopeMapping(appRole);
 
         RoleModel realmRole = realmModel.addRole("test");
-        realmModel.addScopeMapping(app, realmRole);
+        app.addScopeMapping(realmRole);
 
         Assert.assertTrue(realmModel.removeApplication(app.getId()));
         Assert.assertFalse(realmModel.removeApplication(app.getId()));
@@ -208,22 +208,22 @@ public class AdapterTest extends AbstractModelTest {
         UserCredentialModel cred = new UserCredentialModel();
         cred.setType(CredentialRepresentation.PASSWORD);
         cred.setValue("password");
-        realmModel.updateCredential(user, cred);
+        user.updateCredential(cred);
 
         OAuthClientModel client = realmModel.addOAuthClient("client");
 
         ApplicationModel app = realmModel.addApplication("test-app");
 
         RoleModel appRole = app.addRole("test");
-        realmModel.grantRole(user, appRole);
-        realmModel.addScopeMapping(client, appRole);
+        user.grantRole(appRole);
+        client.addScopeMapping(appRole);
 
         RoleModel realmRole = realmModel.addRole("test");
         RoleModel realmRole2 = realmModel.addRole("test2");
         realmRole.addCompositeRole(realmRole2);
         realmRole.addCompositeRole(appRole);
 
-        realmModel.addScopeMapping(app, realmRole);
+        app.addScopeMapping(realmRole);
 
         commit();
         realmModel = identitySession.getRealm("JUGGLER");
@@ -245,11 +245,11 @@ public class AdapterTest extends AbstractModelTest {
         ApplicationModel app = realmModel.addApplication("test-app");
 
         RoleModel appRole = app.addRole("test");
-        realmModel.grantRole(user, appRole);
-        realmModel.addScopeMapping(client, appRole);
+        user.grantRole(appRole);
+        client.addScopeMapping(appRole);
 
         RoleModel realmRole = realmModel.addRole("test");
-        realmModel.addScopeMapping(app, realmRole);
+        app.addScopeMapping(realmRole);
 
         commit();
         realmModel = identitySession.getRealm("JUGGLER");
@@ -436,8 +436,8 @@ public class AdapterTest extends AbstractModelTest {
         Assert.assertEquals(3, roles.size());
         UserModel user = realmModel.addUser("bburke");
         RoleModel realmUserRole = realmModel.getRole("user");
-        realmModel.grantRole(user, realmUserRole);
-        Assert.assertTrue(realmModel.hasRole(user, realmUserRole));
+        user.grantRole(realmUserRole);
+        Assert.assertTrue(user.hasRole(realmUserRole));
         RoleModel found = realmModel.getRoleById(realmUserRole.getId());
         assertNotNull(found);
         assertRolesEquals(found, realmUserRole);
@@ -455,35 +455,35 @@ public class AdapterTest extends AbstractModelTest {
         assertNotNull(found);
         assertRolesEquals(found, appBarRole);
 
-        realmModel.grantRole(user, appBarRole);
-        realmModel.grantRole(user, application.getRole("user"));
+        user.grantRole(appBarRole);
+        user.grantRole(application.getRole("user"));
 
-        roles = realmModel.getRealmRoleMappings(user);
+        roles = user.getRealmRoleMappings();
         Assert.assertEquals(roles.size(), 2);
         assertRolesContains(realmUserRole, roles);
-        Assert.assertTrue(realmModel.hasRole(user, realmUserRole));
+        Assert.assertTrue(user.hasRole(realmUserRole));
         // Role "foo" is default realm role
-        Assert.assertTrue(realmModel.hasRole(user, realmModel.getRole("foo")));
+        Assert.assertTrue(user.hasRole(realmModel.getRole("foo")));
 
-        roles = application.getApplicationRoleMappings(user);
+        roles = user.getApplicationRoleMappings(application);
         Assert.assertEquals(roles.size(), 2);
         assertRolesContains(application.getRole("user"), roles);
         assertRolesContains(appBarRole, roles);
-        Assert.assertTrue(realmModel.hasRole(user, appBarRole));
+        Assert.assertTrue(user.hasRole(appBarRole));
 
         // Test that application role 'user' don't clash with realm role 'user'
         Assert.assertNotEquals(realmModel.getRole("user").getId(), application.getRole("user").getId());
 
-        Assert.assertEquals(6, realmModel.getRoleMappings(user).size());
+        Assert.assertEquals(6, user.getRoleMappings().size());
 
         // Revoke some roles
-        realmModel.deleteRoleMapping(user, realmModel.getRole("foo"));
-        realmModel.deleteRoleMapping(user, appBarRole);
-        roles = realmModel.getRoleMappings(user);
+        user.deleteRoleMapping(realmModel.getRole("foo"));
+        user.deleteRoleMapping(appBarRole);
+        roles = user.getRoleMappings();
         Assert.assertEquals(4, roles.size());
         assertRolesContains(realmUserRole, roles);
         assertRolesContains(application.getRole("user"), roles);
-        Assert.assertFalse(realmModel.hasRole(user, appBarRole));
+        Assert.assertFalse(user.hasRole(appBarRole));
     }
 
     @Test
@@ -495,12 +495,12 @@ public class AdapterTest extends AbstractModelTest {
         RoleModel appRole = app1.addRole("app");
 
         ApplicationModel app2 = realmModel.addApplication("app2");
-        realmModel.addScopeMapping(app2, realmRole);
-        realmModel.addScopeMapping(app2, appRole);
+        app2.addScopeMapping(realmRole);
+        app2.addScopeMapping(appRole);
 
         OAuthClientModel client = realmModel.addOAuthClient("client");
-        realmModel.addScopeMapping(client, realmRole);
-        realmModel.addScopeMapping(client, appRole);
+        client.addScopeMapping(realmRole);
+        client.addScopeMapping(appRole);
 
         commit();
 
@@ -509,12 +509,12 @@ public class AdapterTest extends AbstractModelTest {
         app2 = realmModel.getApplicationByName("app2");
         client = realmModel.getOAuthClient("client");
 
-        Set<RoleModel> scopeMappings = realmModel.getScopeMappings(app2);
+        Set<RoleModel> scopeMappings = app2.getScopeMappings();
         Assert.assertEquals(2, scopeMappings.size());
         Assert.assertTrue(scopeMappings.contains(realmModel.getRole("realm")));
         Assert.assertTrue(scopeMappings.contains(app1.getRole("app")));
 
-        scopeMappings = realmModel.getScopeMappings(client);
+        scopeMappings = client.getScopeMappings();
         Assert.assertEquals(2, scopeMappings.size());
         Assert.assertTrue(scopeMappings.contains(realmModel.getRole("realm")));
         Assert.assertTrue(scopeMappings.contains(app1.getRole("app")));

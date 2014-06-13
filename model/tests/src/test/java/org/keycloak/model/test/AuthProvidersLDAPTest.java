@@ -97,7 +97,7 @@ public class AuthProvidersLDAPTest extends AbstractModelTest {
         Assert.assertEquals("john@email.org", john.getEmail());
 
         // Verify link exists
-        AuthenticationLinkModel authLink = realm.getAuthenticationLink(john);
+        AuthenticationLinkModel authLink = john.getAuthenticationLink();
         Assert.assertNotNull(authLink);
         Assert.assertEquals(authLink.getAuthProvider(), AuthProviderConstants.PROVIDER_NAME_PICKETLINK);
     }
@@ -112,7 +112,7 @@ public class AuthProvidersLDAPTest extends AbstractModelTest {
         UserCredentialModel credential = new UserCredentialModel();
         credential.setType(CredentialRepresentation.PASSWORD);
         credential.setValue("pass");
-        realm.updateCredential(realmUser, credential);
+        realmUser.updateCredential(credential);
 
         // User doesn't exists
         MultivaluedMap<String, String> formData = AuthProvidersExternalModelTest.createFormData("invalid", "invalid");

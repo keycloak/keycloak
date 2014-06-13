@@ -126,7 +126,7 @@ public class ApplicationManager {
                 if (role == null) {
                     role = applicationModel.addRole(roleString.trim());
                 }
-                realm.grantRole(user, role);
+                user.grantRole(role);
             }
         }
     }
@@ -139,7 +139,7 @@ public class ApplicationManager {
                     role = applicationModel.addRole(roleString.trim());
                 }
                 ClientModel client = realm.findClient(mapping.getClient());
-                realm.addScopeMapping(client, role);
+                client.addScopeMapping(role);
             }
         }
     }

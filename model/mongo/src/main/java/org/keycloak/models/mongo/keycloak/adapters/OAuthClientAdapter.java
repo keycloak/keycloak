@@ -1,5 +1,6 @@
 package org.keycloak.models.mongo.keycloak.adapters;
 
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
@@ -10,8 +11,8 @@ import org.keycloak.models.mongo.keycloak.entities.MongoOAuthClientEntity;
  */
 public class OAuthClientAdapter extends ClientAdapter<MongoOAuthClientEntity> implements OAuthClientModel {
 
-    public OAuthClientAdapter(RealmAdapter realm, MongoOAuthClientEntity oauthClientEntity, MongoStoreInvocationContext invContext) {
-        super(realm, oauthClientEntity, invContext);
+    public OAuthClientAdapter(KeycloakSession session, RealmModel realm, MongoOAuthClientEntity oauthClientEntity, MongoStoreInvocationContext invContext) {
+        super(session, realm, oauthClientEntity, invContext);
     }
 
     @Override

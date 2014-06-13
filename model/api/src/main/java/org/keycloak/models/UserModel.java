@@ -1,5 +1,6 @@
 package org.keycloak.models;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -59,6 +60,28 @@ public interface UserModel {
 
     int getNotBefore();
     void setNotBefore(int notBefore);
+
+    void updateCredential(UserCredentialModel cred);
+
+    List<UserCredentialValueModel> getCredentialsDirectly();
+
+    void updateCredentialDirectly(UserCredentialValueModel cred);
+
+    AuthenticationLinkModel getAuthenticationLink();
+
+    void setAuthenticationLink(AuthenticationLinkModel authenticationLink);
+
+
+
+    Set<RoleModel> getRealmRoleMappings();
+    Set<RoleModel> getApplicationRoleMappings(ApplicationModel app);
+    boolean hasRole(RoleModel role);
+    void grantRole(RoleModel role);
+    Set<RoleModel> getRoleMappings();
+    void deleteRoleMapping(RoleModel role);
+
+
+
 
 
     public static enum RequiredAction {

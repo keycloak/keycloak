@@ -157,7 +157,7 @@ public class AccountService {
             }
             account.setUser(auth.getUser());
 
-            AuthenticationLinkModel authLinkModel = realm.getAuthenticationLink(auth.getUser());
+            AuthenticationLinkModel authLinkModel = auth.getUser().getAuthenticationLink();
             if (authLinkModel != null) {
                 AuthenticationProviderModel authProviderModel = AuthenticationProviderManager.getConfiguredProviderModel(realm, authLinkModel.getAuthProvider());
                 passwordUpdateSupported = authProviderModel.isPasswordUpdateSupported();
@@ -402,7 +402,7 @@ public class AccountService {
         UserCredentialModel credentials = new UserCredentialModel();
         credentials.setType(CredentialRepresentation.TOTP);
         credentials.setValue(totpSecret);
-        realm.updateCredential(user, credentials);
+        user.updateCredential(credentials);
 
         user.setTotp(true);
 
@@ -513,7 +513,7 @@ public class AccountService {
                 if (link != null) {
 
                     // Removing last social provider is not possible if you don't have other possibility to authenticate
-                    if (realm.getSocialLinks(user).size() > 1 || realm.getAuthenticationLink(user) != null) {
+                    if (realm.getSocialLinks(user).size() > 1 || user.getAuthenticationLink() != null) {
                         realm.removeSocialLink(user, providerId);
 
                         logger.debug("Social provider " + providerId + " removed successfully from user " + user.getLoginName());

@@ -50,7 +50,7 @@ public class AccountSocialBean {
         }
 
         // Removing last social provider is not possible if you don't have other possibility to authenticate
-        this.removeLinkPossible = availableLinks > 1 || realm.getAuthenticationLink(user) != null;
+        this.removeLinkPossible = availableLinks > 1 || user.getAuthenticationLink() != null;
     }
 
     private SocialLinkModel getSocialLink(Set<SocialLinkModel> userSocialLinks, String socialProviderId) {

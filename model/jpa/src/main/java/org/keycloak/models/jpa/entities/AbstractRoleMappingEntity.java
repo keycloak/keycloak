@@ -1,5 +1,6 @@
 package org.keycloak.models.jpa.entities;
 
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
@@ -17,9 +18,9 @@ public class AbstractRoleMappingEntity {
     @GenericGenerator(name="keycloak_generator", strategy="org.keycloak.models.jpa.utils.JpaIdGenerator")
     @GeneratedValue(generator = "keycloak_generator")
     protected String id;
-    @ManyToOne
+    @ManyToOne(fetch= FetchType.LAZY)
     protected UserEntity user;
-    @ManyToOne
+    @ManyToOne(fetch= FetchType.LAZY)
     protected RoleEntity role;
 
     public String getId() {

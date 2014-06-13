@@ -104,7 +104,7 @@ public class AuthProvidersIntegrationTest {
         creds.setType(CredentialRepresentation.PASSWORD);
         creds.setValue(password);
 
-        realm.updateCredential(user, creds);
+        user.updateCredential(creds);
         return user;
     }
 

@@ -48,7 +48,7 @@ public class Auth {
 
     public boolean hasRealmRole(String role) {
         if (cookie) {
-            return realm.hasRole(user, realm.getRole(role));
+            return user.hasRole(realm.getRole(role));
         } else {
             AccessToken.Access access = token.getRealmAccess();
             return access != null && access.isUserInRole(role);
@@ -66,7 +66,7 @@ public class Auth {
 
     public boolean hasAppRole(ApplicationModel app, String role) {
         if (cookie) {
-            return realm.hasRole(user, app.getRole(role));
+            return user.hasRole(app.getRole(role));
         } else {
             AccessToken.Access access = token.getResourceAccess(app.getName());
             return access != null && access.isUserInRole(role);

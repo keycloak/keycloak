@@ -119,7 +119,7 @@ public class RealmManager {
             ApplicationModel realmAdminApp = realm.getApplicationByName(realmAdminApplicationName);
             adminRole = realmAdminApp.getRole(AdminRoles.REALM_ADMIN);
         }
-        realm.addScopeMapping(adminConsole, adminRole);
+        adminConsole.addScopeMapping(adminRole);
     }
 
     public String getMasterRealmAdminApplicationName(RealmModel realm) {
@@ -463,7 +463,7 @@ public class RealmManager {
                     if (role == null) {
                         role = newRealm.addRole(roleString.trim());
                     }
-                    newRealm.grantRole(user, role);
+                    user.grantRole(role);
                 }
             }
         }
@@ -476,7 +476,7 @@ public class RealmManager {
                         role = newRealm.addRole(roleString.trim());
                     }
                     ClientModel client = newRealm.findClient(scope.getClient());
-                    newRealm.addScopeMapping(client, role);
+                    client.addScopeMapping(role);
                 }
 
             }
@@ -569,13 +569,13 @@ public class RealmManager {
         if (userRep.getCredentials() != null) {
             for (CredentialRepresentation cred : userRep.getCredentials()) {
                 UserCredentialModel credential = fromRepresentation(cred);
-                newRealm.updateCredential(user, credential);
+                user.updateCredential(credential);
             }
         }
         if (userRep.getAuthenticationLink() != null) {
             AuthenticationLinkRepresentation link = userRep.getAuthenticationLink();
             AuthenticationLinkModel authLink = new AuthenticationLinkModel(link.getAuthProvider(), link.getAuthUserId());
-            newRealm.setAuthenticationLink(user, authLink);
+            user.setAuthenticationLink(authLink);
         }
         return user;
     }

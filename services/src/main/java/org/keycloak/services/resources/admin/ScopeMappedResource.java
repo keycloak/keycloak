@@ -58,7 +58,7 @@ public class ScopeMappedResource {
         auth.requireView();
 
         MappingsRepresentation all = new MappingsRepresentation();
-        Set<RoleModel> realmMappings = realm.getRealmScopeMappings(client);
+        Set<RoleModel> realmMappings = client.getRealmScopeMappings();
         if (realmMappings.size() > 0) {
             List<RoleRepresentation> realmRep = new ArrayList<RoleRepresentation>();
             for (RoleModel roleModel : realmMappings) {
@@ -101,7 +101,7 @@ public class ScopeMappedResource {
     public List<RoleRepresentation> getRealmScopeMappings() {
         auth.requireView();
 
-        Set<RoleModel> realmMappings = realm.getRealmScopeMappings(client);
+        Set<RoleModel> realmMappings = client.getRealmScopeMappings();
         List<RoleRepresentation> realmMappingsRep = new ArrayList<RoleRepresentation>();
         for (RoleModel roleModel : realmMappings) {
             realmMappingsRep.add(ModelToRepresentation.toRepresentation(roleModel));
@@ -128,7 +128,7 @@ public class ScopeMappedResource {
     private List<RoleRepresentation> getAvailable(Set<RoleModel> roles) {
         List<RoleRepresentation> available = new ArrayList<RoleRepresentation>();
         for (RoleModel roleModel : roles) {
-            if (realm.hasScope(client, roleModel)) continue;
+            if (client.hasScope(roleModel)) continue;
             available.add(ModelToRepresentation.toRepresentation(roleModel));
         }
         return available;
@@ -155,7 +155,7 @@ public class ScopeMappedResource {
     private List<RoleRepresentation> getComposite(Set<RoleModel> roles) {
         List<RoleRepresentation> composite = new ArrayList<RoleRepresentation>();
         for (RoleModel roleModel : roles) {
-            if (realm.hasScope(client, roleModel)) composite.add(ModelToRepresentation.toRepresentation(roleModel));
+            if (client.hasScope(roleModel)) composite.add(ModelToRepresentation.toRepresentation(roleModel));
         }
         return composite;
     }
@@ -176,7 +176,7 @@ public class ScopeMappedResource {
             if (roleModel == null) {
                 throw new NotFoundException("Role not found");
             }
-            realm.addScopeMapping(client, roleModel);
+            client.addScopeMapping(roleModel);
         }
 
 
@@ -194,9 +194,9 @@ public class ScopeMappedResource {
         auth.requireManage();
 
         if (roles == null) {
-            Set<RoleModel> roleModels = realm.getRealmScopeMappings(client);
+            Set<RoleModel> roleModels = client.getRealmScopeMappings();
             for (RoleModel roleModel : roleModels) {
-                realm.deleteScopeMapping(client, roleModel);
+                client.deleteScopeMapping(roleModel);
             }
 
         } else {
@@ -205,7 +205,7 @@ public class ScopeMappedResource {
                 if (roleModel == null) {
                     throw new NotFoundException("Role not found");
                 }
-                realm.deleteScopeMapping(client, roleModel);
+                client.deleteScopeMapping(roleModel);
             }
         }
     }
@@ -306,7 +306,7 @@ public class ScopeMappedResource {
             if (roleModel == null) {
                 throw new NotFoundException("Role not found");
             }
-            realm.addScopeMapping(client, roleModel);
+            client.addScopeMapping(roleModel);
         }
 
     }
@@ -332,7 +332,7 @@ public class ScopeMappedResource {
         if (roles == null) {
             Set<RoleModel> roleModels = app.getApplicationScopeMappings(client);
             for (RoleModel roleModel : roleModels) {
-                realm.deleteScopeMapping(client, roleModel);
+                client.deleteScopeMapping(roleModel);
             }
 
         } else {
@@ -341,7 +341,7 @@ public class ScopeMappedResource {
                 if (roleModel == null) {
                     throw new NotFoundException("Role not found");
                 }
-                realm.deleteScopeMapping(client, roleModel);
+                client.deleteScopeMapping(roleModel);
             }
         }
     }

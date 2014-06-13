@@ -63,7 +63,7 @@ public class AuthProvidersExternalModelTest extends AbstractModelTest {
         UserCredentialModel credential = new UserCredentialModel();
         credential.setType(CredentialRepresentation.PASSWORD);
         credential.setValue("password");
-        realm1.updateCredential(john, credential);
+        john.updateCredential(credential);
 
         am = new AuthenticationManager(providerSession);
     }
@@ -97,7 +97,7 @@ public class AuthProvidersExternalModelTest extends AbstractModelTest {
             Assert.assertEquals("john@email.org", john2.getEmail());
 
             // Verify link exists
-            AuthenticationLinkModel authLink = realm2.getAuthenticationLink(john2);
+            AuthenticationLinkModel authLink = john2.getAuthenticationLink();
             Assert.assertNotNull(authLink);
             Assert.assertEquals(authLink.getAuthProvider(), AuthProviderConstants.PROVIDER_NAME_EXTERNAL_MODEL);
             Assert.assertEquals(authLink.getAuthUserId(), realm1.getUser("john").getId());
@@ -115,7 +115,7 @@ public class AuthProvidersExternalModelTest extends AbstractModelTest {
         // Add john to realm2 and set authentication link
         UserModel john = realm2.addUser("john");
         john.setEnabled(true);
-        realm2.setAuthenticationLink(john, new AuthenticationLinkModel(AuthProviderConstants.PROVIDER_NAME_EXTERNAL_MODEL, realm1.getUser("john").getId()));
+        john.setAuthenticationLink(new AuthenticationLinkModel(AuthProviderConstants.PROVIDER_NAME_EXTERNAL_MODEL, realm1.getUser("john").getId()));
 
         try {
             // this is needed for externalModel provider

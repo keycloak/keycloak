@@ -61,7 +61,7 @@ public class LoginTest {
             creds.setType(CredentialRepresentation.PASSWORD);
             creds.setValue("password");
 
-            appRealm.updateCredential(user, creds);
+            user.updateCredential(creds);
         }
     });
 

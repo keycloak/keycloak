@@ -59,20 +59,20 @@ public class ProfileTest {
             UserModel user2 = appRealm.addUser("test-user-no-access@localhost");
             user2.setEnabled(true);
             for (String r : accountApp.getDefaultRoles()) {
-                appRealm.deleteRoleMapping(user2, accountApp.getRole(r));
+                user2.deleteRoleMapping(accountApp.getRole(r));
             }
             UserCredentialModel creds = new UserCredentialModel();
             creds.setType(CredentialRepresentation.PASSWORD);
             creds.setValue("password");
-            appRealm.updateCredential(user2, creds);
+            user2.updateCredential(creds);
 
             ApplicationModel app = appRealm.getApplicationNameMap().get("test-app");
-            appRealm.addScopeMapping(app, accountApp.getRole(AccountRoles.VIEW_PROFILE));
+            app.addScopeMapping(accountApp.getRole(AccountRoles.VIEW_PROFILE));
             app.addRedirectUri("http://localhost:8081/app/*");
             app.addWebOrigin("http://localtest.me:8081");
 
             ClientModel thirdParty = appRealm.findClient("third-party");
-            appRealm.addScopeMapping(thirdParty, accountApp.getRole(AccountRoles.VIEW_PROFILE));
+            thirdParty.addScopeMapping(accountApp.getRole(AccountRoles.VIEW_PROFILE));
         }
     });
 

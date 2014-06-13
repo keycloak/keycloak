@@ -45,7 +45,7 @@ public class AdminAuth {
     public boolean hasRealmRole(String role) {
         if (client instanceof ApplicationModel) {
             RoleModel roleModel = realm.getRole(role);
-            return realm.hasRole(user, roleModel) && realm.hasScope(client, roleModel);
+            return user.hasRole(roleModel) && client.hasScope(roleModel);
         } else {
             AccessToken.Access access = token.getRealmAccess();
             return access != null && access.isUserInRole(role);
@@ -64,7 +64,7 @@ public class AdminAuth {
     public boolean hasAppRole(ApplicationModel app, String role) {
         if (client instanceof ApplicationModel) {
             RoleModel roleModel = app.getRole(role);
-            return realm.hasRole(user, roleModel) && realm.hasScope(client, roleModel);
+            return user.hasRole(roleModel) && client.hasScope(roleModel);
         } else {
             AccessToken.Access access = token.getResourceAccess(app.getName());
             return access != null && access.isUserInRole(role);

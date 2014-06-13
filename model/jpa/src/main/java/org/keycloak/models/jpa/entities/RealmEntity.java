@@ -91,7 +91,7 @@ public class RealmEntity {
     Collection<ApplicationEntity> applications = new ArrayList<ApplicationEntity>();
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    Collection<RealmRoleEntity> roles = new ArrayList<RealmRoleEntity>();
+    Collection<RoleEntity> roles = new ArrayList<RoleEntity>();
 
     @ElementCollection
     @MapKeyColumn(name="name")
@@ -292,17 +292,17 @@ public class RealmEntity {
         this.applications = applications;
     }
 
-    public Collection<RealmRoleEntity> getRoles() {
+    public Collection<RoleEntity> getRoles() {
         return roles;
     }
 
-    public void setRoles(Collection<RealmRoleEntity> roles) {
+    public void setRoles(Collection<RoleEntity> roles) {
         this.roles = roles;
     }
 
-    public void addRole(RealmRoleEntity role) {
+    public void addRole(RoleEntity role) {
         if (roles == null) {
-            roles = new ArrayList<RealmRoleEntity>();
+            roles = new ArrayList<RoleEntity>();
         }
         roles.add(role);
     }

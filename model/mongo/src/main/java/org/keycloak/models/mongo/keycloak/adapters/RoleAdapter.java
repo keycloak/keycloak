@@ -7,6 +7,8 @@ import java.util.Set;
 
 import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
@@ -24,17 +26,19 @@ public class RoleAdapter extends AbstractMongoAdapter<MongoRoleEntity> implement
 
     private final MongoRoleEntity role;
     private RoleContainerModel roleContainer;
-    private RealmAdapter realm;
+    private RealmModel realm;
+    private KeycloakSession session;
 
-    public RoleAdapter(RealmAdapter realm, MongoRoleEntity roleEntity, MongoStoreInvocationContext invContext) {
-        this(realm, roleEntity, null, invContext);
+    public RoleAdapter(KeycloakSession session, RealmModel realm, MongoRoleEntity roleEntity, MongoStoreInvocationContext invContext) {
+        this(session, realm, roleEntity, null, invContext);
     }
 
-    public RoleAdapter(RealmAdapter realm, MongoRoleEntity roleEntity, RoleContainerModel roleContainer, MongoStoreInvocationContext invContext) {
+    public RoleAdapter(KeycloakSession session, RealmModel realm, MongoRoleEntity roleEntity, RoleContainerModel roleContainer, MongoStoreInvocationContext invContext) {
         super(invContext);
         this.role = roleEntity;
         this.roleContainer = roleContainer;
         this.realm = realm;
+        this.session = session;
     }
 
     @Override
@@ -96,7 +100,7 @@ public class RoleAdapter extends AbstractMongoAdapter<MongoRoleEntity> implement
 
         Set<RoleModel> set = new HashSet<RoleModel>();
         for (MongoRoleEntity childRole : childRoles) {
-            set.add(new RoleAdapter(realm, childRole, invocationContext));
+            set.add(new RoleAdapter(session, realm, childRole, invocationContext));
         }
         return set;
     }
@@ -110,13 +114,13 @@ public class RoleAdapter extends AbstractMongoAdapter<MongoRoleEntity> implement
                 if (realm == null) {
                     throw new IllegalStateException("Realm with id: " + role.getRealmId() + " doesn't exists");
                 }
-                roleContainer = new RealmAdapter(realm, invocationContext);
+                roleContainer = new RealmAdapter(session, realm, invocationContext);
             } else if (role.getApplicationId() != null) {
                 MongoApplicationEntity appEntity = getMongoStore().loadEntity(MongoApplicationEntity.class, role.getApplicationId(), invocationContext);
                 if (appEntity == null) {
                     throw new IllegalStateException("Application with id: " + role.getApplicationId() + " doesn't exists");
                 }
-                roleContainer = new ApplicationAdapter(realm, appEntity, invocationContext);
+                roleContainer = new ApplicationAdapter(session, realm, appEntity, invocationContext);
             } else {
                 throw new IllegalStateException("Both realmId and applicationId are null for role: " + this);
             }

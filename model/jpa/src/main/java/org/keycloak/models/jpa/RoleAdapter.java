@@ -3,8 +3,6 @@ package org.keycloak.models.jpa;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.jpa.entities.ApplicationRoleEntity;
-import org.keycloak.models.jpa.entities.RealmRoleEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
@@ -106,15 +104,12 @@ public class RoleAdapter implements RoleModel {
 
     @Override
     public RoleContainerModel getContainer() {
-        if (role instanceof ApplicationRoleEntity) {
-            ApplicationRoleEntity entity = (ApplicationRoleEntity)role;
-            return new ApplicationAdapter(realm, em, entity.getApplication());
-        } else if (role instanceof RealmRoleEntity) {
-            RealmRoleEntity entity = (RealmRoleEntity)role;
-            return new RealmAdapter(em, entity.getRealm());
+        if (role.isApplicationRole()) {
+            return realm.getApplicationById(role.getApplication().getId());
 
+        } else {
+            return realm;
         }
-        throw new IllegalStateException("Unknown role entity type");
     }
 
     @Override

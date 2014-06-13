@@ -161,10 +161,10 @@ public class TokenManager {
                 if (role == null) {
                     throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid realm role " + roleName);
                 }
-                if (!realm.hasRole(user, role)) {
+                if (!user.hasRole(role)) {
                     throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "User no long has permission for realm role: " + roleName);
                 }
-                if (!realm.hasScope(client, role)) {
+                if (!client.hasScope(role)) {
                     throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "Client no longer has realm scope: " + roleName);
                 }
             }
@@ -180,10 +180,10 @@ public class TokenManager {
                     if (role == null) {
                         throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token", "Unknown application role: " + roleName);
                     }
-                    if (!realm.hasRole(user, role)) {
+                    if (!user.hasRole(role)) {
                         throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "User no long has permission for application role " + roleName);
                     }
-                    if (clientApp != null && !clientApp.equals(app) && !realm.hasScope(client, role)) {
+                    if (clientApp != null && !clientApp.equals(app) && !client.hasScope(role)) {
                         throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "Client no longer has application scope" + roleName);
                     }
                 }
@@ -210,8 +210,8 @@ public class TokenManager {
     public AccessToken createClientAccessToken(String scopeParam, RealmModel realm, ClientModel client, UserModel user, UserSessionModel session, List<RoleModel> realmRolesRequested, MultivaluedMap<String, RoleModel> resourceRolesRequested) {
         // todo scopeParam is ignored until we figure out a scheme that fits with openid connect
 
-        Set<RoleModel> roleMappings = realm.getRoleMappings(user);
-        Set<RoleModel> scopeMappings = realm.getScopeMappings(client);
+        Set<RoleModel> roleMappings = user.getRoleMappings();
+        Set<RoleModel> scopeMappings = client.getScopeMappings();
         ApplicationModel clientApp = (client instanceof ApplicationModel) ? (ApplicationModel)client : null;
         Set<RoleModel> clientAppRoles = clientApp == null ? null : clientApp.getRoles();
         if (clientAppRoles != null) scopeMappings.addAll(clientAppRoles);

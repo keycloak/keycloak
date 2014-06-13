@@ -1,12 +1,30 @@
 package org.keycloak.models.jpa;
 
+import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.AuthenticationLinkModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleContainerModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.jpa.entities.AuthenticationLinkEntity;
+import org.keycloak.models.jpa.entities.CredentialEntity;
+import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
+import org.keycloak.models.jpa.entities.UserRoleMappingEntity;
+import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
 
+import javax.persistence.EntityManager;
+import javax.persistence.TypedQuery;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static org.keycloak.models.utils.Pbkdf2PasswordEncoder.getSalt;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -15,9 +33,13 @@ import java.util.Set;
 public class UserAdapter implements UserModel {
 
     protected UserEntity user;
+    protected EntityManager em;
+    protected RealmModel realm;
 
-    public UserAdapter(UserEntity user) {
+    public UserAdapter(RealmModel realm, EntityManager em, UserEntity user) {
+        this.em = em;
         this.user = user;
+        this.realm = realm;
     }
 
     public UserEntity getUser() {
@@ -160,6 +182,182 @@ public class UserAdapter implements UserModel {
         user.setNotBefore(notBefore);
     }
 
+    @Override
+    public void updateCredential(UserCredentialModel cred) {
+        CredentialEntity credentialEntity = getCredentialEntity(user, cred.getType());
+
+        if (credentialEntity == null) {
+            credentialEntity = new CredentialEntity();
+            credentialEntity.setType(cred.getType());
+            credentialEntity.setDevice(cred.getDevice());
+            credentialEntity.setUser(user);
+            em.persist(credentialEntity);
+            user.getCredentials().add(credentialEntity);
+        }
+        if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
+            byte[] salt = getSalt();
+            credentialEntity.setValue(new Pbkdf2PasswordEncoder(salt).encode(cred.getValue()));
+            credentialEntity.setSalt(salt);
+        } else {
+            credentialEntity.setValue(cred.getValue());
+        }
+        credentialEntity.setDevice(cred.getDevice());
+        em.flush();
+    }
+
+    private CredentialEntity getCredentialEntity(UserEntity userEntity, String credType) {
+        for (CredentialEntity entity : userEntity.getCredentials()) {
+            if (entity.getType().equals(credType)) {
+                return entity;
+            }
+        }
+
+        return null;
+    }
+
+    @Override
+    public List<UserCredentialValueModel> getCredentialsDirectly() {
+        List<CredentialEntity> credentials = new ArrayList<CredentialEntity>(user.getCredentials());
+        List<UserCredentialValueModel> result = new ArrayList<UserCredentialValueModel>();
+
+        if (credentials != null) {
+            for (CredentialEntity credEntity : credentials) {
+                UserCredentialValueModel credModel = new UserCredentialValueModel();
+                credModel.setType(credEntity.getType());
+                credModel.setDevice(credEntity.getDevice());
+                credModel.setValue(credEntity.getValue());
+                credModel.setSalt(credEntity.getSalt());
+
+                result.add(credModel);
+            }
+        }
+
+        return result;
+    }
+
+    @Override
+    public void updateCredentialDirectly(UserCredentialValueModel credModel) {
+        CredentialEntity credentialEntity = getCredentialEntity(user, credModel.getType());
+
+        if (credentialEntity == null) {
+            credentialEntity = new CredentialEntity();
+            credentialEntity.setType(credModel.getType());
+            credentialEntity.setUser(user);
+            em.persist(credentialEntity);
+            user.getCredentials().add(credentialEntity);
+        }
+
+        credentialEntity.setValue(credModel.getValue());
+        credentialEntity.setSalt(credModel.getSalt());
+        credentialEntity.setDevice(credModel.getDevice());
+
+        em.flush();
+    }
+
+    @Override
+    public boolean hasRole(RoleModel role) {
+        Set<RoleModel> roles = getRoleMappings();
+        if (roles.contains(role)) return true;
+
+        for (RoleModel mapping : roles) {
+            if (mapping.hasRole(role)) return true;
+        }
+        return false;
+    }
+
+    protected TypedQuery<UserRoleMappingEntity> getUserRoleMappingEntityTypedQuery(RoleModel role) {
+        TypedQuery<UserRoleMappingEntity> query = em.createNamedQuery("userHasRole", UserRoleMappingEntity.class);
+        query.setParameter("user", getUser());
+        RoleEntity roleEntity = em.getReference(RoleEntity.class, role.getId());
+        query.setParameter("role", roleEntity);
+        return query;
+    }
+
+    @Override
+    public void grantRole(RoleModel role) {
+        if (hasRole(role)) return;
+        UserRoleMappingEntity entity = new UserRoleMappingEntity();
+        entity.setUser(getUser());
+        RoleEntity roleEntity = em.getReference(RoleEntity.class, role.getId());
+        entity.setRole(roleEntity);
+        em.persist(entity);
+        em.flush();
+    }
+
+    @Override
+    public Set<RoleModel> getRealmRoleMappings() {
+        Set<RoleModel> roleMappings = getRoleMappings();
+
+        Set<RoleModel> realmRoles = new HashSet<RoleModel>();
+        for (RoleModel role : roleMappings) {
+            RoleContainerModel container = role.getContainer();
+            if (container instanceof RealmModel) {
+                realmRoles.add(role);
+            }
+        }
+        return realmRoles;
+    }
+
+
+    @Override
+    public Set<RoleModel> getRoleMappings() {
+        TypedQuery<UserRoleMappingEntity> query = em.createNamedQuery("userRoleMappings", UserRoleMappingEntity.class);
+        query.setParameter("user", getUser());
+        List<UserRoleMappingEntity> entities = query.getResultList();
+        Set<RoleModel> roles = new HashSet<RoleModel>();
+        for (UserRoleMappingEntity entity : entities) {
+            roles.add(realm.getRoleById(entity.getRole().getId()));
+        }
+        return roles;
+    }
+
+    @Override
+    public void deleteRoleMapping(RoleModel role) {
+        if (user == null || role == null) return;
+
+        TypedQuery<UserRoleMappingEntity> query = getUserRoleMappingEntityTypedQuery(role);
+        List<UserRoleMappingEntity> results = query.getResultList();
+        if (results.size() == 0) return;
+        for (UserRoleMappingEntity entity : results) {
+            em.remove(entity);
+        }
+        em.flush();
+    }
+
+    @Override
+    public Set<RoleModel> getApplicationRoleMappings(ApplicationModel app) {
+        Set<RoleModel> roleMappings = getRoleMappings();
+
+        Set<RoleModel> roles = new HashSet<RoleModel>();
+        for (RoleModel role : roleMappings) {
+            RoleContainerModel container = role.getContainer();
+            if (container instanceof ApplicationModel) {
+                ApplicationModel appModel = (ApplicationModel)container;
+                if (appModel.getId().equals(app.getId())) {
+                   roles.add(role);
+                }
+            }
+        }
+        return roles;
+    }
+
+    @Override
+    public AuthenticationLinkModel getAuthenticationLink() {
+        AuthenticationLinkEntity authLinkEntity = user.getAuthenticationLink();
+        return authLinkEntity == null ? null : new AuthenticationLinkModel(authLinkEntity.getAuthProvider(), authLinkEntity.getAuthUserId());
+    }
+
+    @Override
+    public void setAuthenticationLink(AuthenticationLinkModel authenticationLink) {
+        AuthenticationLinkEntity entity = new AuthenticationLinkEntity();
+        entity.setAuthProvider(authenticationLink.getAuthProvider());
+        entity.setAuthUserId(authenticationLink.getAuthUserId());
+
+        user.setAuthenticationLink(entity);
+        em.persist(entity);
+        em.persist(user);
+        em.flush();
+    }
 
 
 }

@@ -132,7 +132,7 @@ public class ExportImportPropertiesManager {
 
     public static class NonEmptyGetterCriteria implements PropertyCriteria {
 
-        private static final List<String> IGNORED_METHODS = Arrays.asList("getPasswordPolicy", "getAuthenticationProviders");
+        private static final List<String> IGNORED_METHODS = Arrays.asList("getPasswordPolicy", "getAuthenticationProviders", "getAuthenticationLink");
 
         @Override
         public boolean methodMatches(Method m) {

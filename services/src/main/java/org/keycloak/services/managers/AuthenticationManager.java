@@ -275,7 +275,7 @@ public class AuthenticationManager {
                 user.setFirstName(authUser.getFirstName());
                 user.setLastName(authUser.getLastName());
                 user.setEmail(authUser.getEmail());
-                realm.setAuthenticationLink(user, new AuthenticationLinkModel(authUser.getProviderName(), authUser.getId()));
+                user.setAuthenticationLink(new AuthenticationLinkModel(authUser.getProviderName(), authUser.getId()));
                 logger.info("User " + authUser.getUsername() + " created and linked with provider " + authUser.getProviderName());
             } else {
                 logger.warn("User " + username + " not found");

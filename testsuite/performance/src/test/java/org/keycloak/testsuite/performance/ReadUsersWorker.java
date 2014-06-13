@@ -91,13 +91,13 @@ public class ReadUsersWorker implements Worker {
 
             // Read roles of user in realm
             if (readRoles) {
-                realm.getRoleMappings(user);
+                user.getRoleMappings();
             }
 
             // Read scopes of user in realm
             if (readScopes) {
                 ClientModel client = realm.findClient(username);
-                realm.getScopeMappings(client);
+                client.getScopeMappings();
             }
 
             // Validate password (shoould be same as username)

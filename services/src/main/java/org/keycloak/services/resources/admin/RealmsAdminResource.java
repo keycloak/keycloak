@@ -198,7 +198,7 @@ public class RealmsAdminResource {
         ApplicationModel realmAdminApp = realm.getMasterAdminApp();
         for (String r : AdminRoles.ALL_REALM_ROLES) {
             RoleModel role = realmAdminApp.getRole(r);
-            adminRealm.grantRole(auth.getUser(), role);
+            auth.getUser().grantRole(role);
         }
     }
 

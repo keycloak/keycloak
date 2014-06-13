@@ -104,7 +104,7 @@ public class ImportTest extends AbstractModelTest {
 
         // Test role mappings
         UserModel admin = realm.getUser("admin");
-        Set<RoleModel> allRoles = realm.getRoleMappings(admin);
+        Set<RoleModel> allRoles = admin.getRoleMappings();
         Assert.assertEquals(5, allRoles.size());
         Assert.assertTrue(allRoles.contains(realm.getRole("admin")));
         Assert.assertTrue(allRoles.contains(application.getRole("app-admin")));
@@ -113,19 +113,19 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertTrue(allRoles.contains(accountApp.getRole(AccountRoles.MANAGE_ACCOUNT)));
 
         UserModel wburke = realm.getUser("wburke");
-        allRoles = realm.getRoleMappings(wburke);
+        allRoles = wburke.getRoleMappings();
         Assert.assertEquals(4, allRoles.size());
         Assert.assertFalse(allRoles.contains(realm.getRole("admin")));
         Assert.assertTrue(allRoles.contains(application.getRole("app-user")));
         Assert.assertTrue(allRoles.contains(otherApp.getRole("otherapp-user")));
 
-        Assert.assertEquals(0, realm.getRealmRoleMappings(wburke).size());
+        Assert.assertEquals(0, wburke.getRealmRoleMappings().size());
 
-        Set<RoleModel> realmRoles = realm.getRealmRoleMappings(admin);
+        Set<RoleModel> realmRoles = admin.getRealmRoleMappings();
         Assert.assertEquals(1, realmRoles.size());
         Assert.assertEquals("admin", realmRoles.iterator().next().getName());
 
-        Set<RoleModel> appRoles = application.getApplicationRoleMappings(admin);
+        Set<RoleModel> appRoles = admin.getApplicationRoleMappings(application);
         Assert.assertEquals(1, appRoles.size());
         Assert.assertEquals("app-admin", appRoles.iterator().next().getName());
 
@@ -136,12 +136,12 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertNotNull(oauthClient);
 
         // Test scope relationship
-        Set<RoleModel> allScopes = realm.getScopeMappings(oauthClient);
+        Set<RoleModel> allScopes = oauthClient.getScopeMappings();
         Assert.assertEquals(2, allScopes.size());
         Assert.assertTrue(allScopes.contains(realm.getRole("admin")));
         Assert.assertTrue(allScopes.contains(application.getRole("app-user")));
 
-        Set<RoleModel> realmScopes = realm.getRealmScopeMappings(oauthClient);
+        Set<RoleModel> realmScopes = oauthClient.getRealmScopeMappings();
         Assert.assertTrue(realmScopes.contains(realm.getRole("admin")));
 
         Set<RoleModel> appScopes = application.getApplicationScopeMappings(oauthClient);
@@ -222,7 +222,7 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertTrue(authProv3.isPasswordUpdateSupported());
 
         // Test authentication linking
-        AuthenticationLinkModel authLink = realm.getAuthenticationLink(socialUser);
+        AuthenticationLinkModel authLink = socialUser.getAuthenticationLink();
         Assert.assertEquals(AuthProviderConstants.PROVIDER_NAME_PICKETLINK, authLink.getAuthProvider());
         Assert.assertEquals("myUser1", authLink.getAuthUserId());
     }

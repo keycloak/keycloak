@@ -1,5 +1,6 @@
 package org.keycloak.models.jpa.entities;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -9,6 +10,9 @@ import javax.persistence.InheritanceType;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
+import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 import java.util.ArrayList;
@@ -21,16 +25,38 @@ import org.hibernate.annotations.GenericGenerator;
  * @version $Revision: 1 $
  */
 @Entity
-@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @Table(uniqueConstraints = {
-        @UniqueConstraint(columnNames = { "name", "application" }),
+        @UniqueConstraint(columnNames = { "name", "application"}),
         @UniqueConstraint(columnNames = { "name", "realm" })
+
 })
-public abstract class RoleEntity {
+@NamedQueries({
+        @NamedQuery(name="getAppRoleByName", query="select role from RoleEntity role where role.name = :name and role.application = :application"),
+        @NamedQuery(name="getRealmRoleByName", query="select role from RoleEntity role where role.applicationRole = false and role.name = :name and role.realm = :realm")
+})
+
+public class RoleEntity {
     @Id
+    @Column(name="id")
     private String id;
 
+    private String name;
     private String description;
+
+    // hax! couldn't get constraint to work properly
+    private String realmId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "realm")
+    private RealmEntity realm;
+
+    @Column(name="applicationRole")
+    private boolean applicationRole;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "application")
+    private ApplicationEntity application;
+
     @ManyToMany(fetch = FetchType.LAZY, cascade = {})
     @JoinTable(name = "CompositeRole", joinColumns = @JoinColumn(name = "composite"), inverseJoinColumns = @JoinColumn(name = "role"))
     private Collection<RoleEntity> compositeRoles = new ArrayList<RoleEntity>();
@@ -43,9 +69,21 @@ public abstract class RoleEntity {
         this.id = id;
     }
 
-    public abstract String getName();
+    public String getRealmId() {
+        return realmId;
+    }
 
-    public abstract void setName(String name);
+    public void setRealmId(String realmId) {
+        this.realmId = realmId;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
 
     public String getDescription() {
         return description;
@@ -61,6 +99,30 @@ public abstract class RoleEntity {
 
     public void setCompositeRoles(Collection<RoleEntity> compositeRoles) {
         this.compositeRoles = compositeRoles;
+    }
+
+    public boolean isApplicationRole() {
+        return applicationRole;
+    }
+
+    public void setApplicationRole(boolean applicationRole) {
+        this.applicationRole = applicationRole;
+    }
+
+    public RealmEntity getRealm() {
+        return realm;
+    }
+
+    public void setRealm(RealmEntity realm) {
+        this.realm = realm;
+    }
+
+    public ApplicationEntity getApplication() {
+        return application;
+    }
+
+    public void setApplication(ApplicationEntity application) {
+        this.application = application;
     }
 
     @Override

@@ -4,6 +4,7 @@ import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
@@ -22,8 +23,8 @@ import java.util.Set;
  */
 public class ApplicationAdapter extends ClientAdapter<MongoApplicationEntity> implements ApplicationModel {
 
-    public ApplicationAdapter(RealmAdapter realm, MongoApplicationEntity applicationEntity, MongoStoreInvocationContext invContext) {
-        super(realm, applicationEntity, invContext);
+    public ApplicationAdapter(KeycloakSession session, RealmModel realm, MongoApplicationEntity applicationEntity, MongoStoreInvocationContext invContext) {
+        super(session, realm, applicationEntity, invContext);
     }
 
     @Override
@@ -118,7 +119,7 @@ public class ApplicationAdapter extends ClientAdapter<MongoApplicationEntity> im
         if (role == null) {
             return null;
         } else {
-            return new RoleAdapter(getRealm(), role, invocationContext);
+            return new RoleAdapter(session, getRealm(), role, invocationContext);
         }
     }
 
@@ -136,7 +137,7 @@ public class ApplicationAdapter extends ClientAdapter<MongoApplicationEntity> im
 
         getMongoStore().insertEntity(roleEntity, invocationContext);
 
-        return new RoleAdapter(getRealm(), roleEntity, this, invocationContext);
+        return new RoleAdapter(session, getRealm(), roleEntity, this, invocationContext);
     }
 
     @Override
@@ -153,22 +154,9 @@ public class ApplicationAdapter extends ClientAdapter<MongoApplicationEntity> im
 
         Set<RoleModel> result = new HashSet<RoleModel>();
         for (MongoRoleEntity role : roles) {
-            result.add(new RoleAdapter(getRealm(), role, this, invocationContext));
+            result.add(new RoleAdapter(session, getRealm(), role, this, invocationContext));
         }
 
-        return result;
-    }
-
-    @Override
-    public Set<RoleModel> getApplicationRoleMappings(UserModel user) {
-        Set<RoleModel> result = new HashSet<RoleModel>();
-        List<MongoRoleEntity> roles = MongoModelUtils.getAllRolesOfUser(user, invocationContext);
-
-        for (MongoRoleEntity role : roles) {
-            if (getId().equals(role.getApplicationId())) {
-                result.add(new RoleAdapter(getRealm(), role, this, invocationContext));
-            }
-        }
         return result;
     }
 
@@ -179,7 +167,7 @@ public class ApplicationAdapter extends ClientAdapter<MongoApplicationEntity> im
 
         for (MongoRoleEntity role : roles) {
             if (getId().equals(role.getApplicationId())) {
-                result.add(new RoleAdapter(getRealm(), role, this, invocationContext));
+                result.add(new RoleAdapter(session, getRealm(), role, this, invocationContext));
             }
         }
         return result;

@@ -83,7 +83,7 @@ public class CreateUsersWorker implements Worker {
             UserCredentialModel password = new UserCredentialModel();
             password.setType(CredentialRepresentation.PASSWORD);
             password.setValue(username);
-            realm.updateCredential(user, password);
+            user.updateCredential(password);
         }
 
         // Creating some socialLinks

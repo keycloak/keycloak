@@ -8,12 +8,16 @@ import java.util.Set;
 import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.entities.ClientEntity;
 import org.keycloak.models.mongo.api.MongoIdentifiableEntity;
 import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
+import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoUserSessionEntity;
+import org.keycloak.models.mongo.utils.MongoModelUtils;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -21,12 +25,14 @@ import org.keycloak.models.mongo.keycloak.entities.MongoUserSessionEntity;
 public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends AbstractMongoAdapter<T> implements ClientModel {
 
     protected final T clientEntity;
-    private final RealmAdapter realm;
+    private final RealmModel realm;
+    protected  KeycloakSession session;
 
-    public ClientAdapter(RealmAdapter realm, T clientEntity, MongoStoreInvocationContext invContext) {
+    public ClientAdapter(KeycloakSession session, RealmModel realm, T clientEntity, MongoStoreInvocationContext invContext) {
         super(invContext);
         this.clientEntity = clientEntity;
         this.realm = realm;
+        this.session = session;
     }
 
     @Override
@@ -153,7 +159,7 @@ public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends A
     }
 
     @Override
-    public RealmAdapter getRealm() {
+    public RealmModel getRealm() {
         return realm;
     }
 
@@ -170,22 +176,66 @@ public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends A
 
     @Override
     public Set<UserSessionModel> getUserSessions() {
-        DBObject query = new QueryBuilder()
-                .and("associatedClientIds").is(getId())
-                .get();
-        List<MongoUserSessionEntity> sessions = getMongoStore().loadEntities(MongoUserSessionEntity.class, query, invocationContext);
-
-        Set<UserSessionModel> result = new HashSet<UserSessionModel>();
-        for (MongoUserSessionEntity session : sessions) {
-            result.add(new UserSessionAdapter(session, realm, invocationContext));
-        }
-        return result;
-
+        return session.getUserSessions(realm, this);
     }
 
     @Override
     public int getActiveUserSessions() {
-        // todo, something more efficient like COUNT in JPAQL?
-        return getUserSessions().size();
+        return session.getActiveUserSessions(realm, this);
     }
+
+    @Override
+    public Set<RoleModel> getScopeMappings() {
+        Set<RoleModel> result = new HashSet<RoleModel>();
+        List<MongoRoleEntity> roles = MongoModelUtils.getAllScopesOfClient(this, invocationContext);
+
+        for (MongoRoleEntity role : roles) {
+            if (realm.getId().equals(role.getRealmId())) {
+                result.add(new RoleAdapter(session, realm, role, realm, invocationContext));
+            } else {
+                // Likely applicationRole, but we don't have this application yet
+                result.add(new RoleAdapter(session, realm, role, invocationContext));
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public Set<RoleModel> getRealmScopeMappings() {
+        Set<RoleModel> allScopes = getScopeMappings();
+
+        // Filter to retrieve just realm roles TODO: Maybe improve to avoid filter programmatically... Maybe have separate fields for realmRoles and appRoles on user?
+        Set<RoleModel> realmRoles = new HashSet<RoleModel>();
+        for (RoleModel role : allScopes) {
+            MongoRoleEntity roleEntity = ((RoleAdapter) role).getRole();
+
+            if (realm.getId().equals(roleEntity.getRealmId())) {
+                realmRoles.add(role);
+            }
+        }
+        return realmRoles;
+    }
+
+    @Override
+    public boolean hasScope(RoleModel role) {
+        Set<RoleModel> roles = getScopeMappings();
+        if (roles.contains(role)) return true;
+
+        for (RoleModel mapping : roles) {
+            if (mapping.hasRole(role)) return true;
+        }
+        return false;
+    }
+
+
+    @Override
+    public void addScopeMapping(RoleModel role) {
+        getMongoStore().pushItemToList(this.getMongoEntity(), "scopeIds", role.getId(), true, invocationContext);
+    }
+
+    @Override
+    public void deleteScopeMapping(RoleModel role) {
+        getMongoStore().pullItemFromList(this.getMongoEntity(), "scopeIds", role.getId(), invocationContext);
+    }
+
 }

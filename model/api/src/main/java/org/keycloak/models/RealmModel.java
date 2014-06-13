@@ -10,7 +10,7 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMapperModel {
+public interface RealmModel extends RoleContainerModel {
 
     String getId();
 
@@ -110,12 +110,6 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
 
     boolean validateTOTP(UserModel user, String password, String token);
 
-    void updateCredential(UserModel user, UserCredentialModel cred);
-
-    List<UserCredentialValueModel> getCredentialsDirectly(UserModel user);
-
-    void updateCredentialDirectly(UserModel user, UserCredentialValueModel cred);
-
     UserModel getUser(String name);
 
     UserModel getUserByEmail(String email);
@@ -163,10 +157,6 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
 
     boolean removeSocialLink(UserModel user, String socialProvider);
 
-    AuthenticationLinkModel getAuthenticationLink(UserModel user);
-
-    void setAuthenticationLink(UserModel user, AuthenticationLinkModel authenticationLink);
-
     boolean isSocial();
 
     void setSocial(boolean social);
@@ -211,10 +201,6 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
 
     void setAuthenticationProviders(List<AuthenticationProviderModel> authenticationProviders);
 
-    Set<RoleModel> getRealmRoleMappings(UserModel user);
-
-    Set<RoleModel> getRealmScopeMappings(ClientModel client);
-
     String getLoginTheme();
 
     void setLoginTheme(String name);
@@ -231,7 +217,6 @@ public interface RealmModel extends RoleContainerModel, RoleMapperModel, ScopeMa
 
     void setEmailTheme(String name);
 
-    boolean hasScope(ClientModel client, RoleModel role);
 
     /**
      * Time in seconds since epoc
