@@ -1,6 +1,7 @@
 package org.keycloak.models;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -12,14 +13,16 @@ public class AuthenticationProviderModel {
 
     private String providerName;
     private boolean passwordUpdateSupported = true;
-    private Map<String, String> config;
+    private Map<String, String> config = new HashMap<String, String>();
 
     public AuthenticationProviderModel() {};
 
     public AuthenticationProviderModel(String providerName, boolean passwordUpdateSupported, Map<String, String> config) {
         this.providerName = providerName;
         this.passwordUpdateSupported = passwordUpdateSupported;
-        this.config = config;
+        if (config != null) {
+           this.config.putAll(config);
+        }
     }
 
     public String getProviderName() {

@@ -366,7 +366,7 @@ public class AccountTest {
 
     @Test
     public void viewLog() {
-        keycloakRule.configure(new KeycloakSetup() {
+        keycloakRule.update(new KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
                 appRealm.setAuditEnabled(true);
@@ -413,7 +413,7 @@ public class AccountTest {
         } catch (InterruptedException e) {
             e.printStackTrace();
         } finally {
-            keycloakRule.configure(new KeycloakSetup() {
+            keycloakRule.update(new KeycloakSetup() {
                 @Override
                 public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
                     appRealm.setAuditEnabled(false);

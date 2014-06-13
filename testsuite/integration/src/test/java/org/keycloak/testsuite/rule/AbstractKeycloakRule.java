@@ -10,6 +10,7 @@ import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.cache.CacheKeycloakSession;
 import org.keycloak.provider.ProviderSession;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -141,6 +142,13 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
         KeycloakSession session = providerSession.getProvider(KeycloakSession.class);
         session.getTransaction().begin();
         return providerSession;
+    }
+
+    public KeycloakSession startCacheSession() {
+        ProviderSession providerSession = server.getProviderSessionFactory().createSession();
+        KeycloakSession session = providerSession.getProvider(CacheKeycloakSession.class);
+        session.getTransaction().begin();
+        return session;
     }
 
     public void stopSession(ProviderSession session, boolean commit) {

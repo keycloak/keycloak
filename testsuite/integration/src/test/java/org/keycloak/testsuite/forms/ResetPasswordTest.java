@@ -184,7 +184,7 @@ public class ResetPasswordTest {
 
     @Test
     public void resetPasswordWithPasswordPolicy() throws IOException, MessagingException {
-        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
                 appRealm.setPasswordPolicy(new PasswordPolicy("length"));

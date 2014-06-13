@@ -150,7 +150,7 @@ public class AuthProvidersIntegrationTest {
     @Test
     public void passwordChangeExternalModel() {
         // Set password-policy for admin realm
-        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
                 adminstrationRealm.setPasswordPolicy(new PasswordPolicy("length(6)"));
@@ -174,7 +174,7 @@ public class AuthProvidersIntegrationTest {
             Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         } finally {
-            keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+            keycloakRule.update(new KeycloakRule.KeycloakSetup() {
                 @Override
                 public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
                     adminstrationRealm.setPasswordPolicy(new PasswordPolicy(null));

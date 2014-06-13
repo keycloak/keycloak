@@ -25,6 +25,7 @@ import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.cache.CacheKeycloakSession;
 import org.keycloak.provider.ProviderSession;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.ApplicationServlet;
@@ -79,6 +80,27 @@ public class KeycloakRule extends AbstractKeycloakRule {
             providerSession.close();
         }
     }
+
+    public void update(KeycloakSetup configurer) {
+        ProviderSession providerSession = server.getProviderSessionFactory().createSession();
+        KeycloakSession session = providerSession.getProvider(CacheKeycloakSession.class);
+        session.getTransaction().begin();
+
+        try {
+            RealmManager manager = new RealmManager(session);
+
+            RealmModel adminstrationRealm = manager.getRealm(Config.getAdminRealm());
+            RealmModel appRealm = manager.getRealm("test");
+
+            configurer.providerSession = providerSession;
+            configurer.config(manager, adminstrationRealm, appRealm);
+
+            session.getTransaction().commit();
+        } finally {
+            providerSession.close();
+        }
+    }
+
 
     public void removeUserSession(String sessionId) {
         ProviderSession providerSession = startSession();

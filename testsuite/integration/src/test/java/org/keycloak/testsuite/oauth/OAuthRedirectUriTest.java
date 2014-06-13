@@ -90,7 +90,7 @@ public class OAuthRedirectUriTest {
 
     @Test
     public void testNoParamMultipleValidUris() throws IOException {
-        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
                 appRealm.getApplicationNameMap().get("test-app").addRedirectUri("http://localhost:8081/app2");
@@ -104,7 +104,7 @@ public class OAuthRedirectUriTest {
             Assert.assertTrue(errorPage.isCurrent());
             Assert.assertEquals("Invalid redirect_uri.", errorPage.getError());
         } finally {
-            keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+            keycloakRule.update(new KeycloakRule.KeycloakSetup() {
                 @Override
                 public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
                     appRealm.getApplicationNameMap().get("test-app").removeRedirectUri("http://localhost:8081/app2");
@@ -115,7 +115,7 @@ public class OAuthRedirectUriTest {
 
     @Test
     public void testNoParamNoValidUris() throws IOException {
-        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
                 appRealm.getApplicationNameMap().get("test-app").removeRedirectUri("http://localhost:8081/app/*");
@@ -129,7 +129,7 @@ public class OAuthRedirectUriTest {
             Assert.assertTrue(errorPage.isCurrent());
             Assert.assertEquals("Invalid redirect_uri.", errorPage.getError());
         } finally {
-            keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+            keycloakRule.update(new KeycloakRule.KeycloakSetup() {
                 @Override
                 public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
                     appRealm.getApplicationNameMap().get("test-app").addRedirectUri("http://localhost:8081/app/*");
@@ -140,7 +140,7 @@ public class OAuthRedirectUriTest {
 
     @Test
     public void testNoValidUris() throws IOException {
-        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
                 appRealm.getApplicationNameMap().get("test-app").removeRedirectUri("http://localhost:8081/app/*");
@@ -154,7 +154,7 @@ public class OAuthRedirectUriTest {
             Assert.assertTrue(errorPage.isCurrent());
             Assert.assertEquals("Invalid redirect_uri.", errorPage.getError());
         } finally {
-            keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+            keycloakRule.update(new KeycloakRule.KeycloakSetup() {
                 @Override
                 public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
                     appRealm.getApplicationNameMap().get("test-app").addRedirectUri("http://localhost:8081/app/*");

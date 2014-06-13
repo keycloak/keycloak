@@ -17,6 +17,7 @@ public class SimpleCacheKeycloakSessionFactory implements CacheKeycloakSessionFa
 
     @Override
     public void init(Config.Scope config) {
+        config.get("");
 
     }
 
