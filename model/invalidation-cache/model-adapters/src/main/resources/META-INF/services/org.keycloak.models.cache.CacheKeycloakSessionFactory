@@ -1,0 +1,2 @@
+org.keycloak.models.cache.SimpleCacheKeycloakSessionFactory
+org.keycloak.models.cache.NoCacheKeycloakSessionFactory

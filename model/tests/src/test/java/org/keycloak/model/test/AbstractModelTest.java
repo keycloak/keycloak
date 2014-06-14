@@ -14,6 +14,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.Config;
+import org.keycloak.models.cache.CacheKeycloakSession;
+import org.keycloak.models.cache.SimpleCache;
 import org.keycloak.provider.ProviderSession;
 import org.keycloak.provider.ProviderSessionFactory;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -38,7 +40,7 @@ public class AbstractModelTest {
         providerSessionFactory = KeycloakApplication.createProviderSessionFactory();
 
         ProviderSession providerSession = providerSessionFactory.createSession();
-        KeycloakSession identitySession = providerSession.getProvider(KeycloakSession.class);
+        KeycloakSession identitySession = providerSession.getProvider(CacheKeycloakSession.class, "simple");
         try {
             identitySession.getTransaction().begin();
             new ApplianceBootstrap().bootstrap(identitySession, "/auth");
@@ -57,7 +59,7 @@ public class AbstractModelTest {
     public void before() throws Exception {
         providerSession = providerSessionFactory.createSession();
 
-        identitySession = providerSession.getProvider(KeycloakSession.class);
+        identitySession = providerSession.getProvider(CacheKeycloakSession.class, "simple");
         identitySession.getTransaction().begin();
         realmManager = new RealmManager(identitySession);
     }
@@ -68,7 +70,7 @@ public class AbstractModelTest {
         providerSession.close();
 
         providerSession = providerSessionFactory.createSession();
-        identitySession = providerSession.getProvider(KeycloakSession.class);
+        identitySession = providerSession.getProvider(CacheKeycloakSession.class, "simple");
         try {
             identitySession.getTransaction().begin();
 
@@ -103,7 +105,7 @@ public class AbstractModelTest {
         providerSession.close();
 
         providerSession = providerSessionFactory.createSession();
-        identitySession = providerSession.getProvider(KeycloakSession.class);
+        identitySession = providerSession.getProvider(CacheKeycloakSession.class, "simple");
         identitySession.getTransaction().begin();
         realmManager = new RealmManager(identitySession);
     }

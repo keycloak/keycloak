@@ -54,7 +54,7 @@ public class RealmEntity extends AbstractIdentifiableEntity {
 
     private Map<String, String> smtpConfig = new HashMap<String, String>();
     private Map<String, String> socialConfig = new HashMap<String, String>();
-    private Map<String, String> ldapServerConfig;
+    private Map<String, String> ldapServerConfig = new HashMap<String, String>();
 
     private boolean auditEnabled;
     private long auditExpiration;

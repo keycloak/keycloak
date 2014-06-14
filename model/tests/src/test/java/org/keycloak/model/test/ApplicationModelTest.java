@@ -51,7 +51,8 @@ public class ApplicationModelTest extends AbstractModelTest {
     public void persist() {
         RealmModel persisted = realmManager.getRealm(realm.getId());
 
-        assertEquals(application, persisted.getApplicationNameMap().get("app-name"));
+        ApplicationModel actual = persisted.getApplicationNameMap().get("app-name");
+        assertEquals(application, actual);
     }
 
     @Test

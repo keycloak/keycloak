@@ -85,7 +85,7 @@ public class AuthorizationCodeTest {
 
     @Test
     public void authorizationRequestInstalledApp() throws IOException {
-        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
                 appRealm.getApplicationNameMap().get("test-app").addRedirectUri(Constants.INSTALLED_APP_URN);
@@ -104,7 +104,7 @@ public class AuthorizationCodeTest {
         String codeId = events.expectLogin().detail(Details.REDIRECT_URI, Constants.INSTALLED_APP_URN).assertEvent().getDetails().get(Details.CODE_ID);
         Assert.assertEquals(codeId, new JWSInput(code).readContentAsString());
 
-        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
                 appRealm.getApplicationNameMap().get("test-app").removeRedirectUri(Constants.INSTALLED_APP_URN);
@@ -114,7 +114,7 @@ public class AuthorizationCodeTest {
 
     @Test
     public void authorizationRequestInstalledAppCancel() throws IOException {
-        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
                 appRealm.getApplicationNameMap().get("test-app").addRedirectUri(Constants.INSTALLED_APP_URN);
@@ -133,7 +133,7 @@ public class AuthorizationCodeTest {
 
         events.expectLogin().error("rejected_by_user").user((String) null).session((String) null).removeDetail(Details.USERNAME).removeDetail(Details.CODE_ID).detail(Details.REDIRECT_URI, Constants.INSTALLED_APP_URN).assertEvent().getDetails().get(Details.CODE_ID);
 
-        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
                 appRealm.getApplicationNameMap().get("test-app").removeRedirectUri(Constants.INSTALLED_APP_URN);
@@ -143,7 +143,7 @@ public class AuthorizationCodeTest {
 
     @Test
     public void authorizationValidRedirectUri() throws IOException {
-        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
                 appRealm.getApplicationByName("test-app").addRedirectUri(oauth.getRedirectUri());

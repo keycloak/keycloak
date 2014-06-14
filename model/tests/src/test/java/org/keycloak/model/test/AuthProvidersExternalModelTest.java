@@ -40,7 +40,7 @@ public class AuthProvidersExternalModelTest extends AbstractModelTest {
 
     @Before
     @Override
-    public void  before() throws Exception {
+    public void before() throws Exception {
         super.before();
 
         // Create 2 realms and user in realm1

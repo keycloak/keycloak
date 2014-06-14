@@ -2,8 +2,8 @@ package org.keycloak.services.filters;
 
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakTransaction;
+import org.keycloak.models.cache.CacheKeycloakSession;
 import org.keycloak.provider.ProviderSession;
 import org.keycloak.provider.ProviderSessionFactory;
 
@@ -33,7 +33,7 @@ public class KeycloakSessionServletFilter implements Filter {
         HttpServletRequest request = (HttpServletRequest)servletRequest;
         ResteasyProviderFactory.pushContext(ProviderSession.class, providerSession);
 
-        KeycloakSession session = providerSession.getProvider(KeycloakSession.class);
+        KeycloakSession session = providerSession.getProvider(CacheKeycloakSession.class);
         ResteasyProviderFactory.pushContext(KeycloakSession.class, session);
         KeycloakTransaction tx = session.getTransaction();
         ResteasyProviderFactory.pushContext(KeycloakTransaction.class, tx);

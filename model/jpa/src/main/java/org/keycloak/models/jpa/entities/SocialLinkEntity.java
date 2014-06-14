@@ -1,6 +1,7 @@
 package org.keycloak.models.jpa.entities;
 
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
@@ -25,10 +26,10 @@ public class SocialLinkEntity {
     @GeneratedValue(generator = "keycloak_generator")
     private String id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     private UserEntity user;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     protected RealmEntity realm;
 
     protected String socialProvider;

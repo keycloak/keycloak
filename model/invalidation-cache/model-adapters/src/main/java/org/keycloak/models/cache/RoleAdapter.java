@@ -32,6 +32,7 @@ public class RoleAdapter implements RoleModel {
 
     protected void getDelegateForUpdate() {
         if (updated == null) {
+            cacheSession.registerRoleInvalidation(getId());
             updated = cacheSession.getDelegate().getRoleById(getId(), realm);
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
@@ -118,4 +119,19 @@ public class RoleAdapter implements RoleModel {
         Set<RoleModel> visited = new HashSet<RoleModel>();
         return KeycloakModelUtils.searchFor(role, this, visited);
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || !(o instanceof RoleModel)) return false;
+
+        RoleModel that = (RoleModel) o;
+        return that.getId().equals(getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getId().hashCode();
+    }
+
 }

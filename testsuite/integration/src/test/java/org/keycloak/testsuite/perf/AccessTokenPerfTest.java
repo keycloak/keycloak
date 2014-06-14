@@ -238,6 +238,7 @@ public class AccessTokenPerfTest {
         JaxrsClientLogin login = new JaxrsClientLogin();
         long start = System.currentTimeMillis();
         for (int i = 0; i < ITERATIONS; i++) {
+            //System.out.println("*************************");
             login.run();
         }
         long end = System.currentTimeMillis() - start;

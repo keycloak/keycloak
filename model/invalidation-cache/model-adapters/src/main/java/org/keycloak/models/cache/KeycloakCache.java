@@ -47,4 +47,5 @@ public interface KeycloakCache {
     void invalidateCachedRoleById(String id);
 
 
+    void invalidateRoleById(String id);
 }

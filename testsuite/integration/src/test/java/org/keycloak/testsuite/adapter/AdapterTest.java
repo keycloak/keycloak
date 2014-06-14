@@ -33,6 +33,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.cache.CacheKeycloakSession;
 import org.keycloak.provider.ProviderSession;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.adapters.action.SessionStats;
@@ -186,11 +187,12 @@ public class AdapterTest {
         System.out.println(pageSource);
         Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
 
-        ProviderSession providerSession = keycloakRule.startSession();
-        RealmModel realm = providerSession.getProvider(KeycloakSession.class).getRealmByName("demo");
+        KeycloakSession keycloakSession = keycloakRule.startCacheSession();
+        RealmModel realm = keycloakSession.getRealmByName("demo");
         int originalIdle = realm.getSsoSessionIdleTimeout();
         realm.setSsoSessionIdleTimeout(1);
-        keycloakRule.stopSession(providerSession, true);
+        keycloakSession.getTransaction().commit();
+        keycloakSession.close();
 
         Thread.sleep(2000);
 
@@ -199,10 +201,11 @@ public class AdapterTest {
         driver.navigate().to("http://localhost:8081/product-portal");
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
 
-        providerSession = keycloakRule.startSession();
-        realm = providerSession.getProvider(KeycloakSession.class).getRealmByName("demo");
+        keycloakSession = keycloakRule.startCacheSession();
+        realm = keycloakSession.getRealmByName("demo");
         realm.setSsoSessionIdleTimeout(originalIdle);
-        keycloakRule.stopSession(providerSession, true);
+        keycloakSession.getTransaction().commit();
+        keycloakSession.close();
     }
 
     @Test
@@ -218,27 +221,30 @@ public class AdapterTest {
         System.out.println(pageSource);
         Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
 
-        ProviderSession providerSession = keycloakRule.startSession();
-        RealmModel realm = providerSession.getProvider(KeycloakSession.class).getRealmByName("demo");
+        KeycloakSession keycloakSession = keycloakRule.startCacheSession();
+        RealmModel realm = keycloakSession.getRealmByName("demo");
         int originalIdle = realm.getSsoSessionIdleTimeout();
         realm.setSsoSessionIdleTimeout(1);
-        keycloakRule.stopSession(providerSession, true);
+        keycloakSession.getTransaction().commit();
+        keycloakSession.close();
 
         Thread.sleep(2000);
 
-        providerSession = keycloakRule.startSession();
-        realm = providerSession.getProvider(KeycloakSession.class).getRealmByName("demo");
+        keycloakSession = keycloakRule.startCacheSession();
+        realm = keycloakSession.getRealmByName("demo");
         realm.removeExpiredUserSessions();
-        keycloakRule.stopSession(providerSession, true);
+        keycloakSession.getTransaction().commit();
+        keycloakSession.close();
 
         // test SSO
         driver.navigate().to("http://localhost:8081/product-portal");
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
 
-        providerSession = keycloakRule.startSession();
-        realm = providerSession.getProvider(KeycloakSession.class).getRealmByName("demo");
+        keycloakSession = keycloakRule.startCacheSession();
+        realm = keycloakSession.getRealmByName("demo");
         realm.setSsoSessionIdleTimeout(originalIdle);
-        keycloakRule.stopSession(providerSession, true);
+        keycloakSession.getTransaction().commit();
+        keycloakSession.close();
     }
 
     @Test
@@ -254,11 +260,12 @@ public class AdapterTest {
         System.out.println(pageSource);
         Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
 
-        ProviderSession providerSession = keycloakRule.startSession();
-        RealmModel realm = providerSession.getProvider(KeycloakSession.class).getRealmByName("demo");
+        KeycloakSession keycloakSession = keycloakRule.startCacheSession();
+        RealmModel realm = keycloakSession.getRealmByName("demo");
         int original = realm.getSsoSessionMaxLifespan();
         realm.setSsoSessionMaxLifespan(1);
-        keycloakRule.stopSession(providerSession, true);
+        keycloakSession.getTransaction().commit();
+        keycloakSession.close();
 
         Thread.sleep(2000);
 
@@ -267,9 +274,10 @@ public class AdapterTest {
         driver.navigate().to("http://localhost:8081/product-portal");
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
 
-        providerSession = keycloakRule.startSession();
-        realm = providerSession.getProvider(KeycloakSession.class).getRealmByName("demo");
+        keycloakSession = keycloakRule.startCacheSession();
+        realm = keycloakSession.getRealmByName("demo");
         realm.setSsoSessionMaxLifespan(original);
-        keycloakRule.stopSession(providerSession, true);
+        keycloakSession.getTransaction().commit();
+        keycloakSession.close();
     }
 }

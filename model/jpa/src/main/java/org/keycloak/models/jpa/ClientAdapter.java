@@ -204,6 +204,7 @@ public abstract class ClientAdapter implements ClientModel {
         Set<RoleModel> roles = new HashSet<RoleModel>();
         for (ScopeMappingEntity entity : entities) {
             roles.add(new RoleAdapter(realm, em, entity.getRole()));
+            em.detach(entity);
         }
         return roles;
     }
@@ -215,6 +216,8 @@ public abstract class ClientAdapter implements ClientModel {
         entity.setClient(getEntity());
         entity.setRole(((RoleAdapter) role).getRole());
         em.persist(entity);
+        em.flush();
+        em.detach(entity);
     }
 
     @Override

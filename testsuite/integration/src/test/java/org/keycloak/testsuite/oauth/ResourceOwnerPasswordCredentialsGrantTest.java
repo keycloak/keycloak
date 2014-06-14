@@ -85,7 +85,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
     @Test
     public void grantAccessTokenNotEnabled() throws Exception {
         try {
-            keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+            keycloakRule.update(new KeycloakRule.KeycloakSetup() {
                 @Override
                 public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
                     appRealm.setPasswordCredentialGrantAllowed(false);
@@ -100,7 +100,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest {
             assertEquals("not_enabled", response.getError());
 
         } finally {
-            keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+            keycloakRule.update(new KeycloakRule.KeycloakSetup() {
                 @Override
                 public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
                     appRealm.setPasswordCredentialGrantAllowed(true);

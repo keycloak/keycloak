@@ -131,7 +131,7 @@ public class ApplicationAdapter extends ClientAdapter implements ApplicationMode
     @Override
     public boolean removeRole(RoleModel roleModel) {
         RoleAdapter roleAdapter = (RoleAdapter)roleModel;
-        if (roleAdapter == null) {
+        if (roleModel == null) {
             return false;
         }
         if (!roleAdapter.getContainer().equals(this)) return false;
@@ -142,13 +142,13 @@ public class ApplicationAdapter extends ClientAdapter implements ApplicationMode
 
         applicationEntity.getRoles().remove(role);
         applicationEntity.getDefaultRoles().remove(role);
-
         em.createNativeQuery("delete from CompositeRole where role = :role").setParameter("role", role).executeUpdate();
         em.createQuery("delete from " + ScopeMappingEntity.class.getSimpleName() + " where role = :role").setParameter("role", role).executeUpdate();
         em.createQuery("delete from " + UserRoleMappingEntity.class.getSimpleName() + " where role = :role").setParameter("role", role).executeUpdate();
         role.setApplication(null);
         em.flush();
         em.remove(role);
+        em.flush();
 
         return true;
     }
@@ -244,12 +244,18 @@ public class ApplicationAdapter extends ClientAdapter implements ApplicationMode
         em.flush();
     }
 
+    @Override
     public boolean equals(Object o) {
-        if (o == null) return false;
-        if (o == this) return true;
-        if (!(o instanceof ApplicationAdapter)) return false;
-        ApplicationAdapter app = (ApplicationAdapter)o;
-        return app.getId().equals(getId());
+        if (this == o) return true;
+        if (o == null || !(o instanceof ApplicationModel)) return false;
+
+        ApplicationModel that = (ApplicationModel) o;
+        return that.getId().equals(getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getId().hashCode();
     }
 
     public String toString() {

@@ -126,4 +126,19 @@ public class UserSessionAdapter extends AbstractMongoAdapter<MongoUserSessionEnt
     public void removeAssociatedClient(ClientModel client) {
         getMongoStore().pullItemFromList(entity, "associatedClientIds", client.getId(), invocationContext);
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || !(o instanceof UserSessionModel)) return false;
+
+        UserSessionModel that = (UserSessionModel) o;
+        return that.getId().equals(getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getId().hashCode();
+    }
+
 }

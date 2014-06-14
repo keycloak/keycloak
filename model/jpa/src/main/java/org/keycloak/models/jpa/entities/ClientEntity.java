@@ -38,7 +38,7 @@ public abstract class ClientEntity {
     private int notBefore;
     private boolean publicClient;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "realm")
     protected RealmEntity realm;
 
