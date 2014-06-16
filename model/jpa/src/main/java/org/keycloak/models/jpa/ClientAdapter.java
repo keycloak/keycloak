@@ -198,13 +198,14 @@ public abstract class ClientAdapter implements ClientModel {
 
     @Override
     public Set<RoleModel> getScopeMappings() {
-        TypedQuery<ScopeMappingEntity> query = em.createNamedQuery("clientScopeMappings", ScopeMappingEntity.class);
+        TypedQuery<String> query = em.createNamedQuery("clientScopeMappingIds", String.class);
         query.setParameter("client", getEntity());
-        List<ScopeMappingEntity> entities = query.getResultList();
+        List<String> ids = query.getResultList();
         Set<RoleModel> roles = new HashSet<RoleModel>();
-        for (ScopeMappingEntity entity : entities) {
-            roles.add(new RoleAdapter(realm, em, entity.getRole()));
-            em.detach(entity);
+        for (String roleId : ids) {
+            RoleModel role = realm.getRoleById(roleId);
+            if (role == null) continue;
+            roles.add(role);
         }
         return roles;
     }
