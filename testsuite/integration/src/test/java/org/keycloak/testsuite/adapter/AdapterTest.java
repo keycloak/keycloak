@@ -55,6 +55,7 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.net.URL;
 import java.security.PublicKey;
@@ -279,5 +280,23 @@ public class AdapterTest {
         realm.setSsoSessionMaxLifespan(original);
         keycloakSession.getTransaction().commit();
         keycloakSession.close();
+    }
+
+    /**
+     * KEYCLOAK-518
+     * @throws Exception
+     */
+    @Test
+    public void testNullBearerToken() throws Exception {
+        Client client = ClientBuilder.newClient();
+        WebTarget target = client.target("http://localhost:8081/customer-db");
+        Response response = target.request().get();
+        Assert.assertEquals(401, response.getStatus());
+        response.close();
+        response = target.request().header(HttpHeaders.AUTHORIZATION, "Bearer null").get();
+        Assert.assertEquals(401, response.getStatus());
+        response.close();
+        client.close();
+
     }
 }

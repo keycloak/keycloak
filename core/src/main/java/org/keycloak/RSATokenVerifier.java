@@ -17,7 +17,12 @@ public class RSATokenVerifier {
     }
 
     public static AccessToken verifyToken(String tokenString, PublicKey realmKey, String realm, boolean checkActive) throws VerificationException {
-        JWSInput input = new JWSInput(tokenString);
+        JWSInput input = null;
+        try {
+            input = new JWSInput(tokenString);
+        } catch (Exception e) {
+            throw new VerificationException("Couldn't parse token", e);
+        }
         if (!isPublicKeyValid(input, realmKey)) throw new VerificationException("Invalid token signature.");
 
         AccessToken token;
