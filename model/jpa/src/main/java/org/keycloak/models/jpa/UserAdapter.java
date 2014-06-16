@@ -2,6 +2,7 @@ package org.keycloak.models.jpa;
 
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.AuthenticationLinkModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
@@ -302,13 +303,16 @@ public class UserAdapter implements UserModel {
 
     @Override
     public Set<RoleModel> getRoleMappings() {
-        TypedQuery<UserRoleMappingEntity> query = em.createNamedQuery("userRoleMappings", UserRoleMappingEntity.class);
+        // we query ids only as the role might be cached and following the @ManyToOne will result in a load
+        // even if we're getting just the id.
+        TypedQuery<String> query = em.createNamedQuery("userRoleMappingIds", String.class);
         query.setParameter("user", getUser());
-        List<UserRoleMappingEntity> entities = query.getResultList();
+        List<String> ids = query.getResultList();
         Set<RoleModel> roles = new HashSet<RoleModel>();
-        for (UserRoleMappingEntity entity : entities) {
-            roles.add(realm.getRoleById(entity.getRole().getId()));
-            em.detach(entity);
+        for (String roleId : ids) {
+            RoleModel roleById = realm.getRoleById(roleId);
+            if (roleById == null) continue;
+            roles.add(roleById);
         }
         return roles;
     }
