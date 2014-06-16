@@ -21,6 +21,7 @@
  */
 package org.keycloak.testsuite.adapter;
 
+import org.jboss.resteasy.util.BasicAuthHelper;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -52,11 +53,14 @@ import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.Form;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
+import java.net.URI;
 import java.net.URL;
 import java.security.PublicKey;
 import java.util.Map;
@@ -299,4 +303,28 @@ public class AdapterTest {
         client.close();
 
     }
+
+    /**
+     * KEYCLOAK-518
+     * @throws Exception
+     */
+    @Test
+    public void testBadUser() throws Exception {
+        Client client = ClientBuilder.newClient();
+        UriBuilder builder = UriBuilder.fromUri(org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT);
+        URI uri = TokenService.grantAccessTokenUrl(builder).build("demo");
+        WebTarget target = client.target(uri);
+        String header = BasicAuthHelper.createHeader("customer-portal", "password");
+        Form form = new Form();
+        form.param("username", "monkey@redhat.com")
+            .param("password", "password");
+        Response response = target.request()
+                .header(HttpHeaders.AUTHORIZATION, header)
+                .post(Entity.form(form));
+        Assert.assertEquals(400, response.getStatus());
+        response.close();
+        client.close();
+
+    }
+
 }
