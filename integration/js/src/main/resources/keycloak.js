@@ -531,7 +531,11 @@ var Keycloak = function (config) {
 
         iframe.onload = function() {
             var realmUrl = getRealmUrl();
-            loginIframe.iframeOrigin = realmUrl.substring(0, realmUrl.indexOf('/', 8));
+            if (realmUrl.charAt(0) === '/') {
+                loginIframe.iframeOrigin = window.location.origin;
+            } else {
+                loginIframe.iframeOrigin = realmUrl.substring(0, realmUrl.indexOf('/', 8));
+            }
             loginIframe.iframe = iframe;
         }
 
