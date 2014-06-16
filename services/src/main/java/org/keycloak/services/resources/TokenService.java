@@ -241,7 +241,7 @@ public class TokenService {
         audit.detail(Details.USERNAME, username);
 
         UserModel user = realm.getUser(username);
-        audit.user(user);
+        if (user != null) audit.user(user);
 
         ClientModel client = authorizeClient(authorizationHeader, form, audit);
 
