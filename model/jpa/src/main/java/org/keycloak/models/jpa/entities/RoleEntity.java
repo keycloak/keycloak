@@ -26,9 +26,7 @@ import org.hibernate.annotations.GenericGenerator;
  */
 @Entity
 @Table(uniqueConstraints = {
-        @UniqueConstraint(columnNames = { "name", "application"}),
-        @UniqueConstraint(columnNames = { "name", "realm" })
-
+        @UniqueConstraint(columnNames = { "name", "appRealmConstraint" })
 })
 @NamedQueries({
         @NamedQuery(name="getAppRoleByName", query="select role from RoleEntity role where role.name = :name and role.application = :application"),
@@ -56,6 +54,9 @@ public class RoleEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "application")
     private ApplicationEntity application;
+
+    // Hack to ensure that either name+application or name+realm are unique. Needed due to MS-SQL as it don't allow multiple NULL values in the column, which is part of constraint
+    private String appRealmConstraint;
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = {})
     @JoinTable(name = "CompositeRole", joinColumns = @JoinColumn(name = "composite"), inverseJoinColumns = @JoinColumn(name = "role"))
@@ -115,6 +116,7 @@ public class RoleEntity {
 
     public void setRealm(RealmEntity realm) {
         this.realm = realm;
+        this.appRealmConstraint = realm.getId();
     }
 
     public ApplicationEntity getApplication() {
@@ -123,6 +125,17 @@ public class RoleEntity {
 
     public void setApplication(ApplicationEntity application) {
         this.application = application;
+        if (application != null) {
+            this.appRealmConstraint = application.getId();
+        }
+    }
+
+    public String getAppRealmConstraint() {
+        return appRealmConstraint;
+    }
+
+    public void setAppRealmConstraint(String appRealmConstraint) {
+        this.appRealmConstraint = appRealmConstraint;
     }
 
     @Override
