@@ -222,7 +222,7 @@ module.factory('UserLogout', function($resource) {
     });
 });
 module.factory('UserSocialLinks', function($resource) {
-    return $resource(authUrl + '/rest/admin/realms/:realm/users/:user/social-links', {
+    return $resource(authUrl + '/admin/realms/:realm/users/:user/social-links', {
         realm : '@realm',
         user : '@user'
     });
