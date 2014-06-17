@@ -21,6 +21,7 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.services.resources.flows.Flows;
+import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -167,10 +168,8 @@ public class RealmsAdminResource {
         List<InputPart> inputParts = uploadForm.get("file");
 
         for (InputPart inputPart : inputParts) {
-            inputPart.setMediaType(MediaType.APPLICATION_JSON_TYPE);
-            RealmRepresentation rep = inputPart.getBody(new GenericType<RealmRepresentation>() {
-            });
-
+            // inputPart.getBody doesn't work as content-type is wrong, and inputPart.setMediaType is not supported on AS7 (RestEasy 2.3.2.Final)
+            RealmRepresentation rep = JsonSerialization.readValue(inputPart.getBodyAsString(), RealmRepresentation.class);
             RealmModel realm;
             try {
                 realm = realmManager.importRealm(rep);
