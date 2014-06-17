@@ -615,7 +615,7 @@ module.controller('RealmSocialCtrl', function($scope, realm, Realm, serverInfo, 
 
 });
 
-module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, $location, Dialog, Notifications, TimeUnit) {
+module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, $location, $route, Dialog, Notifications, TimeUnit) {
     console.log('RealmTokenDetailCtrl');
 
     $scope.realm = realm;
@@ -650,7 +650,6 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
         $scope.realm.accessCodeLifespanUserAction = TimeUnit.convert($scope.realm.accessCodeLifespanUserAction, from, to);
     });
 
-
     var oldCopy = angular.copy($scope.realm);
     $scope.changed = false;
 
@@ -674,16 +673,14 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
         realmCopy.accessCodeLifespan = TimeUnit.toSeconds($scope.realm.accessCodeLifespan, $scope.realm.accessCodeLifespanUnit)
         realmCopy.accessCodeLifespanUserAction = TimeUnit.toSeconds($scope.realm.accessCodeLifespanUserAction, $scope.realm.accessCodeLifespanUserActionUnit)
 
-        $scope.changed = false;
         Realm.update(realmCopy, function () {
-            $location.url("/realms/" + realm.realm + "/token-settings");
+            $route.reload();
             Notifications.success("The changes have been saved to the realm.");
         });
     };
 
     $scope.reset = function() {
-        $scope.realm = angular.copy(oldCopy);
-        $scope.changed = false;
+        $route.reload();
     };
 });
 
