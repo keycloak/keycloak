@@ -178,21 +178,23 @@ module.controller('ApplicationInstallationCtrl', function($scope, realm, applica
     $scope.changeFormat = function() {
         if ($scope.configFormat == "keycloak.json") {
             var url = ApplicationInstallation.url({ realm: $routeParams.realm, application: $routeParams.application });
-            var installation = $http.get(url).success(function(data) {
+            $http.get(url).success(function(data) {
                 var tmp = angular.fromJson(data);
                 $scope.installation = angular.toJson(tmp, true);
+                $scope.type = 'application/json';
             })
-            $scope.download = url;
         } else if ($scope.configFormat == "Wildfly/JBoss Subsystem XML") {
             var url = ApplicationInstallationJBoss.url({ realm: $routeParams.realm, application: $routeParams.application });
-            var installation = $http.get(url).success(function(data) {
+            $http.get(url).success(function(data) {
                 $scope.installation = data;
+                $scope.type = 'text/xml';
             })
-            $scope.download = url;
         }
-
     };
 
+    $scope.download = function() {
+        saveAs(new Blob([$scope.installation], { type: $scope.type }), 'keycloak.json');
+    }
 });
 
 module.controller('ApplicationDetailCtrl', function($scope, realm, application, Application, $location, Dialog, Notifications) {
