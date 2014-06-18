@@ -8,7 +8,9 @@ import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.MapKeyColumn;
+import javax.persistence.Table;
 
 import org.hibernate.annotations.GenericGenerator;
 
@@ -16,6 +18,7 @@ import org.hibernate.annotations.GenericGenerator;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @Entity
+@Table(name="AuthProviderEntity")
 public class AuthenticationProviderEntity {
 
     @Id
@@ -30,7 +33,9 @@ public class AuthenticationProviderEntity {
     @ElementCollection
     @MapKeyColumn(name="name")
     @Column(name="value")
-    @CollectionTable
+    @CollectionTable(name="AuthProviderEntity_cfg", joinColumns = {
+            @JoinColumn(name = "AuthProviderEntity_id")
+    })
     private Map<String, String> config;
 
     public String getId() {
