@@ -59,7 +59,7 @@ public class RoleEntity {
     private String appRealmConstraint;
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = {})
-    @JoinTable(name = "CompositeRole", joinColumns = @JoinColumn(name = "composite"), inverseJoinColumns = @JoinColumn(name = "role"))
+    @JoinTable(name = "CompositeRole", joinColumns = @JoinColumn(name = "composite"), inverseJoinColumns = @JoinColumn(name = "childRole"))
     private Collection<RoleEntity> compositeRoles = new ArrayList<RoleEntity>();
 
     public String getId() {

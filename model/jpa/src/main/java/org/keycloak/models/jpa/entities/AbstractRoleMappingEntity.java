@@ -3,6 +3,7 @@ package org.keycloak.models.jpa.entities;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.MappedSuperclass;
 
@@ -20,7 +21,9 @@ public class AbstractRoleMappingEntity {
     protected String id;
     @ManyToOne(fetch= FetchType.LAZY)
     protected UserEntity user;
+
     @ManyToOne(fetch= FetchType.LAZY)
+    @JoinColumn(name="roleId")
     protected RoleEntity role;
 
     public String getId() {
