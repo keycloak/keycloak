@@ -260,23 +260,6 @@
             <groupId>org.mongodb</groupId>
             <artifactId>mongo-java-driver</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.picketlink</groupId>
-            <artifactId>picketlink-common</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.picketlink</groupId>
-            <artifactId>picketlink-idm-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.picketlink</groupId>
-            <artifactId>picketlink-idm-impl</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.picketlink</groupId>
-            <artifactId>picketlink-idm-simple-schema</artifactId>
-        </dependency>
 
         <!-- export/import -->
         <dependency>
