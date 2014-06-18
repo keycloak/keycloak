@@ -337,153 +337,157 @@ keycloak-war-dist-all-1.0-beta-3-SNAPSHOT/
             <warning>
                 <para>
                     Keycloak is not set up by default to handle SSL/HTTPS in either the
-                    war distribution or appliance.  It is highly recommended that you enable it!
+                    war distribution or appliance.  It is highly recommended that you either enable SSL on the Keycloak server
+                    itself or on a reverse proxy in front of the Keycloak server.
                 </para>
             </warning>
+
             <para>
-                The following things need to be done
-                <itemizedlist>
-
-                    <listitem>
-                        Generate a self signed or third-party signed certificate and import it into a Java keystore
-                        using <literal>keytool</literal>.
-                    </listitem>
-
-                    <listitem>
-                        Enable JBoss or Wildfly to use this certificate and turn on SSL/HTTPS.
-                    </listitem>
-
-                    <listitem>
-                        Configure the Keycloak Server to enforce HTTPS connections.
-                    </listitem>
-                </itemizedlist>
+                First enable SSL on Keycloak or on a reverse proxy in front of Keycloak. Then configure the Keycloak Server to enforce HTTPS connections.
             </para>
+
             <section>
-                <title>Creating the Certificate and Java Keystore</title>
+                <title>Enable SSL on Keycloak</title>
                 <para>
-                    In order to allow HTTPS connections, you need to obtain a self signed or third-party signed certificate
-                    and import it into a Java keystore before you can enable HTTPS in the web container you are deploying
-                    the Keycloak Server to.
+                    The following things need to be done
+                    <itemizedlist>
+
+                        <listitem>
+                            Generate a self signed or third-party signed certificate and import it into a Java keystore
+                            using <literal>keytool</literal>.
+                        </listitem>
+
+                        <listitem>
+                            Enable JBoss or Wildfly to use this certificate and turn on SSL/HTTPS.
+                        </listitem>
+                    </itemizedlist>
                 </para>
                 <section>
-                    <title>Self Signed Certificate</title>
+                    <title>Creating the Certificate and Java Keystore</title>
                     <para>
-                        In development, you will probably not have a third party signed certificate available to test
-                        a Keycloak deployment so you'll need to generate a self-signed on.  Generate one is very easy
-                        to do with the <literal>keytool</literal> utility that comes with the Java jdk.
+                        In order to allow HTTPS connections, you need to obtain a self signed or third-party signed certificate
+                        and import it into a Java keystore before you can enable HTTPS in the web container you are deploying
+                        the Keycloak Server to.
+                    </para>
+                    <section>
+                        <title>Self Signed Certificate</title>
+                        <para>
+                            In development, you will probably not have a third party signed certificate available to test
+                            a Keycloak deployment so you'll need to generate a self-signed on.  Generate one is very easy
+                            to do with the <literal>keytool</literal> utility that comes with the Java jdk.
+                        </para>
+                        <para>
+    <programlisting>
+    $ keytool -genkey -alias localhost -keyalg RSA -keystore keycloak.jks -validity 10950
+        Enter keystore password: secret
+        Re-enter new password: secret
+        What is your first and last name?
+        [Unknown]:  localhost
+        What is the name of your organizational unit?
+        [Unknown]:  Keycloak
+        What is the name of your organization?
+        [Unknown]:  Red Hat
+        What is the name of your City or Locality?
+        [Unknown]:  Westford
+        What is the name of your State or Province?
+        [Unknown]:  MA
+        What is the two-letter country code for this unit?
+        [Unknown]:  US
+        Is CN=localhost, OU=Keycloak, O=Test, L=Westford, ST=MA, C=US correct?
+        [no]:  yes
+    </programlisting>
+                        </para>
+                        <para>
+                            You should answer the <literal>What is your first and last name?</literal> question with
+                            the DNS name of the machine you're installing the server on.  For testing purposes,
+                            <literal>localhost</literal> should be used.  After executing this command, the
+                            <literal>keycloak.jks</literal> file will be generated in the same directory as you executed
+                            the <literal>keytool</literal> command in.
+                        </para>
+                        <para>
+                            If you want a third-party signed certificate, but don't have one, you can obtain one for free
+                            at <ulink url="http://cacert.org">cacert.org</ulink>.  You'll have to do a little set up first
+                            before doing this though.
+                        </para>
+                        <para>
+                            The first thing to do is generate a Certificate Request:
+    <programlisting>
+    $ keytool -certreq -alias yourdomain -keystore keycloak.jks > keycloak.careq
+    </programlisting>
+                        </para>
+                        <para>
+                             Where <literal>yourdomain</literal> is a DNS name for which this certificate is generated for.
+                             Keytool generates the request:
+    <programlisting>
+    -----BEGIN NEW CERTIFICATE REQUEST-----
+    MIIC2jCCAcICAQAwZTELMAkGA1UEBhMCVVMxCzAJBgNVBAgTAk1BMREwDwYDVQQHEwhXZXN0Zm9y
+    ZDEQMA4GA1UEChMHUmVkIEhhdDEQMA4GA1UECxMHUmVkIEhhdDESMBAGA1UEAxMJbG9jYWxob3N0
+    MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAr7kck2TaavlEOGbcpi9c0rncY4HhdzmY
+    Ax2nZfq1eZEaIPqI5aTxwQZzzLDK9qbeAd8Ji79HzSqnRDxNYaZu7mAYhFKHgixsolE3o5Yfzbw1
+    29Rvy+eUVe+WZxv5oo9wolVVpdSINIMEL2LaFhtX/c1dqiqYVpfnvFshZQaIg2nL8juzZcBjj4as
+    H98gIS7khql/dkZKsw9NLvyxgJvp7PaXurX29fNf3ihG+oFrL22oFyV54BWWxXCKU/GPn61EGZGw
+    Ft2qSIGLdctpMD1aJR2bcnlhEjZKDksjQZoQ5YMXaAGkcYkG6QkgrocDE2YXDbi7GIdf9MegVJ35
+    2DQMpwIDAQABoDAwLgYJKoZIhvcNAQkOMSEwHzAdBgNVHQ4EFgQUQwlZJBA+fjiDdiVzaO9vrE/i
+    n2swDQYJKoZIhvcNAQELBQADggEBAC5FRvMkhal3q86tHPBYWBuTtmcSjs4qUm6V6f63frhveWHf
+    PzRrI1xH272XUIeBk0gtzWo0nNZnf0mMCtUBbHhhDcG82xolikfqibZijoQZCiGiedVjHJFtniDQ
+    9bMDUOXEMQ7gHZg5q6mJfNG9MbMpQaUVEEFvfGEQQxbiFK7hRWU8S23/d80e8nExgQxdJWJ6vd0X
+    MzzFK6j4Dj55bJVuM7GFmfdNC52pNOD5vYe47Aqh8oajHX9XTycVtPXl45rrWAH33ftbrS8SrZ2S
+    vqIFQeuLL3BaHwpl3t7j2lMWcK1p80laAxEASib/fAwrRHpLHBXRcq6uALUOZl4Alt8=
+    -----END NEW CERTIFICATE REQUEST-----
+     </programlisting>
+                        </para>
+                        <para>
+                            Send this ca request to your CA.  The CA will issue you a signed certificate and send it to you.
+                            Before you import your new cert, you must obtain and import the root certificate of the CA.
+                            You can download the cert from CA (ie.: root.crt) and import as follows:
+    <programlisting>
+    $ keytool -import -keystore keycloak.jks -file root.crt -alias root
+    </programlisting>
+                        </para>
+                        <para>
+                            Last step is import your new CA generated certificate to your keystore:
+    <programlisting>
+    $ keytool -import -alias yourdomain -keystore keycloak.jks -file your-certificate.cer
+    </programlisting>
+                        </para>
+                    </section>
+                </section>
+                <section>
+                    <title>Installing the keystore to WildFly</title>
+                    <para>
+                        Now that you have a Java keystore with the appropriate certificates, you need to configure your
+                        Wildfly installation to use it.  First step is to move the keystore file to a directory
+                        you can reference in configuration.  I like to put it in <literal>standalone/configuration</literal>.
+                        Then you need to edit <literal>standalone/configuration/standalone.xml</literal> to enable SSL/HTTPS.
                     </para>
                     <para>
-<programlisting>
-$ keytool -genkey -alias localhost -keyalg RSA -keystore keycloak.jks -validity 10950
-    Enter keystore password: secret
-    Re-enter new password: secret
-    What is your first and last name?
-    [Unknown]:  localhost
-    What is the name of your organizational unit?
-    [Unknown]:  Keycloak
-    What is the name of your organization?
-    [Unknown]:  Red Hat
-    What is the name of your City or Locality?
-    [Unknown]:  Westford
-    What is the name of your State or Province?
-    [Unknown]:  MA
-    What is the two-letter country code for this unit?
-    [Unknown]:  US
-    Is CN=localhost, OU=Keycloak, O=Test, L=Westford, ST=MA, C=US correct?
-    [no]:  yes
-</programlisting>
+                        To the <literal>security-realms</literal> element add:
+                        <programlisting><![CDATA[<security-realm name="UndertowRealm">
+        <server-identities>
+            <ssl>
+                <keystore path="keycloak.jks" relative-to="jboss.server.config.dir" keystore-password="secret" />
+            </ssl>
+        </server-identities>
+    </security-realm>]]></programlisting>
                     </para>
                     <para>
-                        You should answer the <literal>What is your first and last name?</literal> question with
-                        the DNS name of the machine you're installing the server on.  For testing purposes,
-                        <literal>localhost</literal> should be used.  After executing this command, the
-                        <literal>keycloak.jks</literal> file will be generated in the same directory as you executed
-                        the <literal>keytool</literal> command in.
+                        Find the element <literal>&lt;server name="default-server"&gt;</literal> (it's a child element of <literal>&lt;subsystem xmlns="urn:jboss:domain:undertow:1.0"&gt;</literal>) and add:
+                        <programlisting><![CDATA[<https-listener name="https" socket-binding="https" security-realm="UndertowRealm"/>
+    ]]></programlisting>
                     </para>
                     <para>
-                        If you want a third-party signed certificate, but don't have one, you can obtain one for free
-                        at <ulink url="http://cacert.org">cacert.org</ulink>.  You'll have to do a little set up first
-                        before doing this though.
-                    </para>
-                    <para>
-                        The first thing to do is generate a Certificate Request:
-<programlisting>
-$ keytool -certreq -alias yourdomain -keystore keycloak.jks > keycloak.careq
-</programlisting>
-                    </para>
-                    <para>
-                         Where <literal>yourdomain</literal> is a DNS name for which this certificate is generated for.
-                         Keytool generates the request:
-<programlisting>
------BEGIN NEW CERTIFICATE REQUEST-----
-MIIC2jCCAcICAQAwZTELMAkGA1UEBhMCVVMxCzAJBgNVBAgTAk1BMREwDwYDVQQHEwhXZXN0Zm9y
-ZDEQMA4GA1UEChMHUmVkIEhhdDEQMA4GA1UECxMHUmVkIEhhdDESMBAGA1UEAxMJbG9jYWxob3N0
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAr7kck2TaavlEOGbcpi9c0rncY4HhdzmY
-Ax2nZfq1eZEaIPqI5aTxwQZzzLDK9qbeAd8Ji79HzSqnRDxNYaZu7mAYhFKHgixsolE3o5Yfzbw1
-29Rvy+eUVe+WZxv5oo9wolVVpdSINIMEL2LaFhtX/c1dqiqYVpfnvFshZQaIg2nL8juzZcBjj4as
-H98gIS7khql/dkZKsw9NLvyxgJvp7PaXurX29fNf3ihG+oFrL22oFyV54BWWxXCKU/GPn61EGZGw
-Ft2qSIGLdctpMD1aJR2bcnlhEjZKDksjQZoQ5YMXaAGkcYkG6QkgrocDE2YXDbi7GIdf9MegVJ35
-2DQMpwIDAQABoDAwLgYJKoZIhvcNAQkOMSEwHzAdBgNVHQ4EFgQUQwlZJBA+fjiDdiVzaO9vrE/i
-n2swDQYJKoZIhvcNAQELBQADggEBAC5FRvMkhal3q86tHPBYWBuTtmcSjs4qUm6V6f63frhveWHf
-PzRrI1xH272XUIeBk0gtzWo0nNZnf0mMCtUBbHhhDcG82xolikfqibZijoQZCiGiedVjHJFtniDQ
-9bMDUOXEMQ7gHZg5q6mJfNG9MbMpQaUVEEFvfGEQQxbiFK7hRWU8S23/d80e8nExgQxdJWJ6vd0X
-MzzFK6j4Dj55bJVuM7GFmfdNC52pNOD5vYe47Aqh8oajHX9XTycVtPXl45rrWAH33ftbrS8SrZ2S
-vqIFQeuLL3BaHwpl3t7j2lMWcK1p80laAxEASib/fAwrRHpLHBXRcq6uALUOZl4Alt8=
------END NEW CERTIFICATE REQUEST-----
- </programlisting>
-                    </para>
-                    <para>
-                        Send this ca request to your CA.  The CA will issue you a signed certificate and send it to you.
-                        Before you import your new cert, you must obtain and import the root certificate of the CA.
-                        You can download the cert from CA (ie.: root.crt) and import as follows:
-<programlisting>
-$ keytool -import -keystore keycloak.jks -file root.crt -alias root
-</programlisting>
-                    </para>
-                    <para>
-                        Last step is import your new CA generated certificate to your keystore:
-<programlisting>
-$ keytool -import -alias yourdomain -keystore keycloak.jks -file your-certificate.cer
-</programlisting>
+                        Check the <ulink url="https://docs.jboss.org/author/display/WFLY8/Undertow+(web)+subsystem+configuration">Wildfly Undertow</ulink> documentation for more information on fine tuning the socket connections.
                     </para>
                 </section>
-            </section>
-            <section>
-                <title>Installing the keystore to WildFly</title>
-                <para>
-                    Now that you have a Java keystore with the appropriate certificates, you need to configure your
-                    Wildfly installation to use it.  First step is to move the keystore file to a directory
-                    you can reference in configuration.  I like to put it in <literal>standalone/configuration</literal>.
-                    Then you need to edit <literal>standalone/configuration/standalone.xml</literal> to enable SSL/HTTPS.
-                </para>
-                <para>
-                    To the <literal>security-realms</literal> element add:
-                    <programlisting><![CDATA[<security-realm name="UndertowRealm">
-    <server-identities>
-        <ssl>
-            <keystore path="keycloak.jks" relative-to="jboss.server.config.dir" keystore-password="secret" />
-        </ssl>
-    </server-identities>
-</security-realm>]]></programlisting>
-                </para>
-                <para>
-                    Find the element <literal>&lt;server name="default-server"&gt;</literal> (it's a child element of <literal>&lt;subsystem xmlns="urn:jboss:domain:undertow:1.0"&gt;</literal>) and add:
-                    <programlisting><![CDATA[<https-listener name="https" socket-binding="https" security-realm="UndertowRealm"/>
-]]></programlisting>
-                </para>
-                <para>
-                    Check the <ulink url="https://docs.jboss.org/author/display/WFLY8/Undertow+(web)+subsystem+configuration">Wildfly Undertow</ulink> documentation for more information on fine tuning the socket connections.
-                </para>
-            </section>
-            <section>
-                <title>Installing the keystore to JBoss EAP6/AS7</title>
-                <para>
-                    Now that you have a Java keystore with the appropriate certificates, you need to configure your
-                    JBoss EAP6/AS7 installation to use it.  First step is to move the keystore file to a directory
-                    you can reference in configuration.  I like to put it in <literal>standalone/configuration</literal>.
-                    Then you need to edit <literal>standalone/configuration/standalone.xml</literal> to enable SSL/HTTPS.
-                </para>
-                <para>
+                <section>
+                    <title>Installing the keystore to JBoss EAP6/AS7</title>
+                    <para>
+                        Now that you have a Java keystore with the appropriate certificates, you need to configure your
+                        JBoss EAP6/AS7 installation to use it.  First step is to move the keystore file to a directory
+                        you can reference in configuration.  I like to put it in <literal>standalone/configuration</literal>.
+                        Then you need to edit <literal>standalone/configuration/standalone.xml</literal> to enable SSL/HTTPS.
+                    </para>
+                    <para>
 <programlisting><![CDATA[<subsystem xmlns="urn:jboss:domain:web:1.1" default-virtual-server="default-host" native="false">
    <connector name="http" protocol="HTTP/1.1" scheme="http" socket-binding="http"  redirect-port="443" />
    <connector name="https" scheme="https" protocol="HTTP/1.1" socket-binding="https"
@@ -493,11 +497,46 @@ $ keytool -import -alias yourdomain -keystore keycloak.jks -file your-certificat
    </connector>
         ...
 </subsystem>]]></programlisting>
+                    </para>
+                    <para>
+                        Check the <ulink url="https://docs.jboss.org/author/display/AS71/SSL+setup+guide">JBoss</ulink> documentation for more information on fine tuning the socket connections.
+                    </para>
+                </section>
+            </section>
+
+            <section>
+                <title>Enable SSL on a Reverse Proxy</title>
+                <para>
+                    Follow the documentation for your web server to enable SSL and configure reverse proxy for Keycloak.
+                    It is important that you make sure the web server sets the <literal>X-Forwarded-For</literal> and
+                    <literal>X-Forwarded-Proto</literal> headers on the requests made to Keycloak. Next you need to enable
+                    <literal>proxy-address-forwarding</literal> on the Keycloak http connector. Assuming that your reverse
+                    proxy doesn't use port 8443 for SSL you also need to configure what port http traffic is redirected to.
+                    This is done by editing <literal>standalone/configuration/standalone.xml</literal>.
+                </para>
+                First add <literal>proxy-address-forwarding</literal> and <literal>redirect-socket</literal> to the <literal>http-listener</literal>
+                element:
+                <para>
+<programlisting><![CDATA[<subsystem xmlns="urn:jboss:domain:undertow:1.1">
+    ...
+    <http-listener name="default" socket-binding="http" proxy-address-forwarding="true" redirect-socket="proxy-https"/>
+    ...
+</subsystem>
+]]></programlisting>
+                Then add a new <literal>socket-binding</literal> element to the <literal>socket-binding-group</literal> element:
+<programlisting><![CDATA[
+<socket-binding-group name="standard-sockets" default-interface="public" port-offset="${jboss.socket.binding.port-offset:0}">
+    ...
+    <socket-binding name="proxy-https" port="443"/>
+    ...
+</socket-binding-group>
+]]></programlisting>
                 </para>
                 <para>
-                    Check the <ulink url="https://docs.jboss.org/author/display/AS71/SSL+setup+guide">JBoss</ulink> documentation for more information on fine tuning the socket connections.
+                    Check the <ulink url="https://docs.jboss.org/author/display/WFLY8/Undertow+(web)+subsystem+configuration">WildFly</ulink> documentation for more information.
                 </para>
             </section>
+
             <section>
                 <title>Enforce HTTPS For Server Connections</title>
                 <para>
@@ -519,6 +558,7 @@ $ keytool -import -alias yourdomain -keystore keycloak.jks -file your-certificat
 </web-app>]]></programlisting>
                 </para>
             </section>
+
             <section>
                 <title>Enforce HTTPS at Realm Level</title>
                 <para>
