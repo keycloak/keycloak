@@ -510,15 +510,26 @@ keycloak-war-dist-all-1.0-beta-3-SNAPSHOT/
                     Follow the documentation for your web server to enable SSL and configure reverse proxy for Keycloak.
                     It is important that you make sure the web server sets the <literal>X-Forwarded-For</literal> and
                     <literal>X-Forwarded-Proto</literal> headers on the requests made to Keycloak. Next you need to enable
-                    <literal>proxy-address-forwarding</literal> on the Keycloak http connector. This is done by editing
-                    <literal>standalone/configuration/standalone.xml</literal>.
+                    <literal>proxy-address-forwarding</literal> on the Keycloak http connector. Assuming that your reverse
+                    proxy doesn't use port 8443 for SSL you also need to configure what port http traffic is redirected to.
+                    This is done by editing <literal>standalone/configuration/standalone.xml</literal>.
                 </para>
+                First add <literal>proxy-address-forwarding</literal> and <literal>redirect-socket</literal> to the <literal>http-listener</literal>
+                element:
                 <para>
 <programlisting><![CDATA[<subsystem xmlns="urn:jboss:domain:undertow:1.1">
     ...
-    <http-listener name="default" socket-binding="http" proxy-address-forwarding="true"/>
+    <http-listener name="default" socket-binding="http" proxy-address-forwarding="true" redirect-socket="proxy-https"/>
     ...
 </subsystem>
+]]></programlisting>
+                Then add a new <literal>socket-binding</literal> element to the <literal>socket-binding-group</literal> element:
+<programlisting><![CDATA[
+<socket-binding-group name="standard-sockets" default-interface="public" port-offset="${jboss.socket.binding.port-offset:0}">
+    ...
+    <socket-binding name="proxy-https" port="443"/>
+    ...
+</socket-binding-group>
 ]]></programlisting>
                 </para>
                 <para>
