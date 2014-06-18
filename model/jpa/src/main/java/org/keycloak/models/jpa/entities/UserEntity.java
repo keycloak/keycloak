@@ -2,6 +2,7 @@ package org.keycloak.models.jpa.entities;
 
 import org.hibernate.annotations.GenericGenerator;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.CascadeType;
 import javax.persistence.CollectionTable;
@@ -42,7 +43,7 @@ import java.util.Set;
 @Entity
 @Table(uniqueConstraints = {
         @UniqueConstraint(columnNames = { "realm", "loginName" }),
-        @UniqueConstraint(columnNames = { "realm", "email" })
+        @UniqueConstraint(columnNames = { "realm", "emailConstraint" })
 })
 public class UserEntity {
     @Id
@@ -57,6 +58,8 @@ public class UserEntity {
     protected boolean emailVerified;
     protected int notBefore;
 
+    // Hack just to workaround the fact that on MS-SQL you can't have unique constraint with multiple NULL values TODO: Find better solution (like unique index with 'where' but that's proprietary)
+    protected String emailConstraint = KeycloakModelUtils.generateId();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "realm")
@@ -116,6 +119,7 @@ public class UserEntity {
 
     public void setEmail(String email) {
         this.email = email;
+        this.emailConstraint = email != null ? email : KeycloakModelUtils.generateId();
     }
 
     public boolean isEnabled() {
@@ -124,6 +128,14 @@ public class UserEntity {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public String getEmailConstraint() {
+        return emailConstraint;
+    }
+
+    public void setEmailConstraint(String emailConstraint) {
+        this.emailConstraint = emailConstraint;
     }
 
     public boolean isTotp() {

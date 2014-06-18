@@ -9,12 +9,14 @@ import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.Table;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 @Entity
+@Table(name = "ClientUserSessionAscEntity")
 @NamedQueries({
         @NamedQuery(name = "getAllClientUserSessions", query = "select s from ClientUserSessionAssociationEntity s"),
         @NamedQuery(name = "getClientUserSessionBySession", query = "select s from ClientUserSessionAssociationEntity s where s.session = :session"),
