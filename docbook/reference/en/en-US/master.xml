@@ -37,7 +37,7 @@
    <bookinfo>
       <title>Keycloak Reference Guide</title>
       <subtitle>SSO for Web Apps and REST Services</subtitle>
-      <releaseinfo>1.0-beta-3-SNAPSHOT</releaseinfo>
+      <releaseinfo>1.0-beta-3</releaseinfo>
    </bookinfo>
 
    <toc/>

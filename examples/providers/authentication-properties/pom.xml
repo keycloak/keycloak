@@ -3,7 +3,7 @@
     <parent>
         <artifactId>examples-providers-pom</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.0-beta-3-SNAPSHOT</version>
+        <version>1.0-beta-3</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <name>Properties Authentication Provider Example</name>
