@@ -8,11 +8,11 @@
         <itemizedlist>
 
             <listitem>
-                keycloak-appliance-dist-all-1.0-beta-3-SNAPSHOT.zip
+                keycloak-appliance-dist-all-1.0-beta-4-SNAPSHOT.zip
             </listitem>
 
             <listitem>
-                keycloak-war-dist-all-1.0-beta-3-SNAPSHOT.zip
+                keycloak-war-dist-all-1.0-beta-4-SNAPSHOT.zip
             </listitem>
 
         </itemizedlist>
@@ -31,7 +31,7 @@
 
         <para>
 <programlisting>
-keycloak-appliance-dist-all-1.0-beta-3-SNAPSHOT/
+keycloak-appliance-dist-all-1.0-beta-4-SNAPSHOT/
     keycloak/
         bin/
             standalone.sh
@@ -42,9 +42,9 @@ keycloak-appliance-dist-all-1.0-beta-3-SNAPSHOT/
                 keycloak-server.json
                 themes/
     adapters/
-        keycloak-as7-adapter-dist-1.0-beta-3-SNAPSHOT.zip
-        keycloak-eap6-adapter-dist-1.0-beta-3-SNAPSHOT.zip
-        keycloak-wildfly-adapter-dist-1.0-beta-3-SNAPSHOT.zip
+        keycloak-as7-adapter-dist-1.0-beta-4-SNAPSHOT.zip
+        keycloak-eap6-adapter-dist-1.0-beta-4-SNAPSHOT.zip
+        keycloak-wildfly-adapter-dist-1.0-beta-4-SNAPSHOT.zip
     examples/
     docs/
 </programlisting>
@@ -79,7 +79,7 @@ keycloak-appliance-dist-all-1.0-beta-3-SNAPSHOT/
         </para>
         <para>
 <programlisting>
-keycloak-war-dist-all-1.0-beta-3-SNAPSHOT/
+keycloak-war-dist-all-1.0-beta-4-SNAPSHOT/
     deployments/
         auth-server.war/
         keycloak-ds.xml
@@ -87,9 +87,9 @@ keycloak-war-dist-all-1.0-beta-3-SNAPSHOT/
         keycloak-server.json
         themes/
     adapters/
-        keycloak-as7-adapter-dist-1.0-beta-3-SNAPSHOT.zip
-        keycloak-eap6-adapter-dist-1.0-beta-3-SNAPSHOT.zip
-        keycloak-wildfly-adapter-dist-1.0-beta-3-SNAPSHOT.zip
+        keycloak-as7-adapter-dist-1.0-beta-4-SNAPSHOT.zip
+        keycloak-eap6-adapter-dist-1.0-beta-4-SNAPSHOT.zip
+        keycloak-wildfly-adapter-dist-1.0-beta-4-SNAPSHOT.zip
     examples/
     docs/
 </programlisting>
@@ -101,7 +101,7 @@ keycloak-war-dist-all-1.0-beta-3-SNAPSHOT/
         </para>
         <para>
 <programlisting>
-    $ cd keycloak-war-dist-all-1.0-beta-3-SNAPSHOT
+    $ cd keycloak-war-dist-all-1.0-beta-4-SNAPSHOT
     $ cp -r deployments $JBOSS_HOME/standalone
 </programlisting>
         </para>
