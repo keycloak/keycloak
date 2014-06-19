@@ -74,7 +74,6 @@ public class CachedRealm {
     private Set<String> auditListeners = new HashSet<String>();
     private List<String> defaultRoles = new LinkedList<String>();
     private Map<String, String> realmRoles = new HashMap<String, String>();
-    private Set<String> rolesById = new HashSet<String>();
     private Map<String, String> applications = new HashMap<String, String>();
     private Map<String, String> clients = new HashMap<String, String>();
 
@@ -134,7 +133,6 @@ public class CachedRealm {
 
         for (RoleModel role : model.getRoles()) {
             realmRoles.put(role.getName(), role.getId());
-            rolesById.add(role.getId());
             CachedRole cachedRole = new CachedRealmRole(role);
             cache.addCachedRole(cachedRole);
         }
@@ -143,9 +141,6 @@ public class CachedRealm {
             applications.put(app.getName(), app.getId());
             CachedApplication cachedApp = new CachedApplication(cache, delegate, model, app);
             cache.addCachedApplication(cachedApp);
-            for (String roleId : cachedApp.getRoles().values()) {
-                rolesById.add(roleId);
-            }
         }
 
         for (OAuthClientModel client : model.getOAuthClients()) {
@@ -175,10 +170,6 @@ public class CachedRealm {
 
     public Map<String, String> getRealmRoles() {
         return realmRoles;
-    }
-
-    public Set<String> getRolesById() {
-        return rolesById;
     }
 
     public Map<String, String> getApplications() {
