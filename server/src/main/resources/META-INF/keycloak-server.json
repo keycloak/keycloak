@@ -15,7 +15,7 @@
     },
 
     "modelCache": {
-        "provider": "${keycloak.model.cache.provider:simple}"
+        "provider": "${keycloak.model.cache.provider:none}"
     },
 
     "timer": {

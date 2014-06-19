@@ -48,6 +48,11 @@
     }
 
     function showExpires() {
+        if (!keycloak.tokenParsed) {
+            output("Not authenticated");
+            return;
+        }
+
         var o = 'Token Expires:\t\t' + new Date(keycloak.tokenParsed.exp * 1000).toLocaleString() + '\n';
         o += 'Token Expires in:\t' + Math.round(keycloak.tokenParsed.exp - new Date().getTime() / 1000) + ' seconds\n';
 

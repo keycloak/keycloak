@@ -4,7 +4,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>1.0-beta-3-SNAPSHOT</version>
+        <version>1.0-beta-4-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -94,12 +94,6 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-timer-basic</artifactId>
-            <version>${project.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-authentication-api</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>

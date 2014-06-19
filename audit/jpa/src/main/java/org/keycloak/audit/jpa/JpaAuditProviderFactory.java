@@ -5,6 +5,7 @@ import org.keycloak.audit.AuditProvider;
 import org.keycloak.audit.AuditProviderFactory;
 import org.keycloak.audit.EventType;
 import org.keycloak.provider.ProviderSession;
+import org.keycloak.util.JpaUtils;
 
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
@@ -28,7 +29,7 @@ public class JpaAuditProviderFactory implements AuditProviderFactory {
 
     @Override
     public void init(Config.Scope config) {
-        emf = Persistence.createEntityManagerFactory("jpa-keycloak-audit-store");
+        emf = Persistence.createEntityManagerFactory("jpa-keycloak-audit-store", JpaUtils.getHibernateProperties());
 
         String[] include = config.getArray("include-events");
         if (include != null) {

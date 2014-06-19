@@ -4,6 +4,7 @@ import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderSession;
+import org.keycloak.util.JpaUtils;
 
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
@@ -19,7 +20,7 @@ public class JpaKeycloakSessionFactory implements KeycloakSessionFactory {
 
     @Override
     public void init(Config.Scope config) {
-        emf = Persistence.createEntityManagerFactory("jpa-keycloak-identity-store", getHibernateProperties());
+        emf = Persistence.createEntityManagerFactory("jpa-keycloak-identity-store", JpaUtils.getHibernateProperties());
     }
 
     @Override
@@ -36,18 +37,4 @@ public class JpaKeycloakSessionFactory implements KeycloakSessionFactory {
     public void close() {
         emf.close();
     }
-
-    // Allows to override some properties in persistence.xml by system properties
-    protected Properties getHibernateProperties() {
-        Properties result = new Properties();
-
-        for (Object property : System.getProperties().keySet()) {
-            if (property.toString().startsWith("hibernate.")) {
-                String propValue = System.getProperty(property.toString());
-                result.put(property, propValue);
-            }
-        }
-        return result;
-    }
-
 }

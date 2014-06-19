@@ -51,9 +51,15 @@ public class PicketlinkAuthenticationProvider implements AuthenticationProvider 
 
         try {
             User picketlinkUser = BasicModel.getUser(identityManager, username);
-            return picketlinkUser == null ? null : new AuthUser(picketlinkUser.getId(), picketlinkUser.getLoginName(), getName())
+            if (picketlinkUser == null) {
+                return null;
+            }
+
+            String email = (picketlinkUser.getEmail() != null && picketlinkUser.getEmail().trim().length() > 0) ? picketlinkUser.getEmail() : null;
+
+            return new AuthUser(picketlinkUser.getId(), picketlinkUser.getLoginName(), getName())
                     .setName(picketlinkUser.getFirstName(), picketlinkUser.getLastName())
-                    .setEmail(picketlinkUser.getEmail())
+                    .setEmail(email)
                     .setProviderName(getName());
         } catch (IdentityManagementException ie) {
             throw convertIDMException(ie);
