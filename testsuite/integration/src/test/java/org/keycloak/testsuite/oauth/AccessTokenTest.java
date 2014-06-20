@@ -29,7 +29,9 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.audit.Details;
 import org.keycloak.audit.Errors;
 import org.keycloak.audit.Event;
+import org.keycloak.models.RealmModel;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.OAuthClient.AccessTokenResponse;
@@ -70,6 +72,13 @@ public class AccessTokenTest {
 
     @Test
     public void accessTokenRequest() throws Exception {
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                appRealm.setAccessCodeLifespan(1);
+            }
+        });
+
         oauth.doLogin("test-user@localhost", "password");
 
         Event loginEvent = events.expectLogin().assertEvent();
@@ -104,10 +113,21 @@ public class AccessTokenTest {
         Assert.assertEquals(oauth.verifyRefreshToken(response.getRefreshToken()).getId(), event.getDetails().get(Details.REFRESH_TOKEN_ID));
         Assert.assertEquals(sessionId, token.getSessionState());
 
+        Thread.sleep(2000);
         response = oauth.doAccessTokenRequest(code, "password");
         Assert.assertEquals(400, response.getStatusCode());
 
-        events.expectCodeToToken(codeId, null).error("invalid_code").removeDetail(Details.TOKEN_ID).removeDetail(Details.REFRESH_TOKEN_ID).client((String) null).user((String) null).assertEvent();
+        AssertEvents.ExpectedEvent expectedEvent = events.expectCodeToToken(codeId, null);
+        expectedEvent.error("invalid_code").removeDetail(Details.TOKEN_ID).removeDetail(Details.REFRESH_TOKEN_ID).client((String) null).user((String) null);
+        expectedEvent.assertEvent();
+
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                appRealm.setAccessCodeLifespan(60);
+            }
+        });
+
     }
 
     @Test

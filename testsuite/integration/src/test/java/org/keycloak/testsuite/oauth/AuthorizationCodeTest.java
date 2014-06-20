@@ -30,6 +30,7 @@ import org.keycloak.audit.Details;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
+import org.keycloak.representations.AccessCode;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
@@ -80,7 +81,8 @@ public class AuthorizationCodeTest {
         oauth.verifyCode(response.getCode());
 
         String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
-        Assert.assertEquals(codeId, new JWSInput(response.getCode()).readContentAsString());
+        AccessCode accessCode = new JWSInput(response.getCode()).readJsonContent(AccessCode.class);
+        Assert.assertEquals(codeId,accessCode.getId());
     }
 
     @Test
@@ -102,7 +104,8 @@ public class AuthorizationCodeTest {
         oauth.verifyCode(code);
 
         String codeId = events.expectLogin().detail(Details.REDIRECT_URI, Constants.INSTALLED_APP_URN).assertEvent().getDetails().get(Details.CODE_ID);
-        Assert.assertEquals(codeId, new JWSInput(code).readContentAsString());
+        AccessCode accessCode = new JWSInput(code).readJsonContent(AccessCode.class);
+        Assert.assertEquals(codeId,accessCode.getId());
 
         keycloakRule.update(new KeycloakRule.KeycloakSetup() {
             @Override
@@ -160,7 +163,8 @@ public class AuthorizationCodeTest {
         oauth.verifyCode(response.getCode());
 
         String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
-        Assert.assertEquals(codeId, new JWSInput(response.getCode()).readContentAsString());
+        AccessCode accessCode = new JWSInput(response.getCode()).readJsonContent(AccessCode.class);
+        Assert.assertEquals(codeId,accessCode.getId());
     }
 
     @Test
@@ -175,7 +179,8 @@ public class AuthorizationCodeTest {
         oauth.verifyCode(response.getCode());
 
         String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
-        Assert.assertEquals(codeId, new JWSInput(response.getCode()).readContentAsString());
+        AccessCode accessCode = new JWSInput(response.getCode()).readJsonContent(AccessCode.class);
+        Assert.assertEquals(codeId,accessCode.getId());
     }
 
 }

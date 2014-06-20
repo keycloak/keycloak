@@ -16,8 +16,6 @@ import org.keycloak.audit.Errors;
 import org.keycloak.audit.EventType;
 import org.keycloak.authentication.AuthenticationProviderException;
 import org.keycloak.authentication.AuthenticationProviderManager;
-import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
@@ -46,7 +44,6 @@ import org.keycloak.services.resources.flows.OAuthFlows;
 import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.util.BasicAuthHelper;
-import org.keycloak.util.Time;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -630,26 +627,9 @@ public class TokenService {
             throw new BadRequestException("Code not specified", Response.status(Response.Status.BAD_REQUEST).entity(error).type("application/json").build());
         }
 
-        JWSInput input = new JWSInput(code);
-        boolean verifiedCode = false;
-        try {
-            verifiedCode = RSAProvider.verify(input, realm.getPublicKey());
-        } catch (Exception ignored) {
-            logger.debug("Failed to verify signature", ignored);
-        }
-        if (!verifiedCode) {
-            Map<String, String> res = new HashMap<String, String>();
-            res.put(OAuth2Constants.ERROR, "invalid_grant");
-            res.put(OAuth2Constants.ERROR_DESCRIPTION, "Unable to verify code signature");
-            audit.error(Errors.INVALID_CODE);
-            return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res)
-                    .build();
-        }
-        String key = input.readContentAsString();
 
-        audit.detail(Details.CODE_ID, key);
 
-        AccessCodeEntry accessCode = tokenManager.pullAccessCode(key);
+        AccessCodeEntry accessCode = tokenManager.parseCode(code, realm);
         if (accessCode == null) {
             Map<String, String> res = new HashMap<String, String>();
             res.put(OAuth2Constants.ERROR, "invalid_grant");
@@ -658,12 +638,7 @@ public class TokenService {
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res)
                     .build();
         }
-
-        audit.user(accessCode.getUser());
-        audit.session(accessCode.getSessionState());
-
-        ClientModel client = authorizeClient(authorizationHeader, formData, audit);
-
+        audit.detail(Details.CODE_ID, accessCode.getCodeId());
         if (accessCode.isExpired()) {
             Map<String, String> res = new HashMap<String, String>();
             res.put(OAuth2Constants.ERROR, "invalid_grant");
@@ -680,6 +655,12 @@ public class TokenService {
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON_TYPE).entity(res)
                     .build();
         }
+
+        audit.user(accessCode.getUser());
+        audit.session(accessCode.getSessionState());
+
+        ClientModel client = authorizeClient(authorizationHeader, formData, audit);
+
         if (!client.getClientId().equals(accessCode.getClient().getClientId())) {
             Map<String, String> res = new HashMap<String, String>();
             res.put(OAuth2Constants.ERROR, "invalid_grant");
@@ -993,25 +974,13 @@ public class TokenService {
         }
 
         String code = formData.getFirst(OAuth2Constants.CODE);
-        JWSInput input = new JWSInput(code);
-        boolean verifiedCode = false;
-        try {
-            verifiedCode = RSAProvider.verify(input, realm.getPublicKey());
-        } catch (Exception ignored) {
-            logger.debug("Failed to verify signature", ignored);
-        }
-        if (!verifiedCode) {
-            audit.error(Errors.INVALID_CODE);
-            return oauth.forwardToSecurityFailure("Illegal access code.");
-        }
-        String key = input.readContentAsString();
-        audit.detail(Details.CODE_ID, key);
 
-        AccessCodeEntry accessCodeEntry = tokenManager.getAccessCode(key);
+        AccessCodeEntry accessCodeEntry = tokenManager.parseCode(code, realm);
         if (accessCodeEntry == null) {
             audit.error(Errors.INVALID_CODE);
             return oauth.forwardToSecurityFailure("Unknown access code.");
         }
+        audit.detail(Details.CODE_ID, accessCodeEntry.getCodeId());
 
         String redirect = accessCodeEntry.getRedirectUri();
         String state = accessCodeEntry.getState();
@@ -1021,7 +990,7 @@ public class TokenService {
                 .detail(Details.RESPONSE_TYPE, "code")
                 .detail(Details.AUTH_METHOD, accessCodeEntry.getAuthMethod())
                 .detail(Details.REDIRECT_URI, redirect)
-                .detail(Details.USERNAME, accessCodeEntry.getUsername());
+                .detail(Details.USERNAME, accessCodeEntry.getUsernameUsed());
 
         if (accessCodeEntry.isRememberMe()) {
             audit.detail(Details.REMEMBER_ME, "true");
@@ -1042,7 +1011,7 @@ public class TokenService {
 
         audit.success();
 
-        accessCodeEntry.setExpiration(Time.currentTime() + realm.getAccessCodeLifespan());
+        accessCodeEntry.resetExpiration();
         return oauth.redirectAccessCode(accessCodeEntry, session, state, redirect);
     }
 
@@ -1051,7 +1020,7 @@ public class TokenService {
     public Response installedAppUrnCallback(final @QueryParam("code") String code, final @QueryParam("error") String error, final @QueryParam("error_description") String errorDescription) {
         LoginFormsProvider forms = Flows.forms(providerSession, realm, uriInfo);
         if (code != null) {
-            return forms.setAccessCode(null, code).createCode();
+            return forms.setAccessCode(code).createCode();
         } else {
             return forms.setError(error).createCode();
         }

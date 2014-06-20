@@ -22,6 +22,7 @@
 package org.keycloak.services.resources.flows;
 
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.audit.Audit;
@@ -32,21 +33,29 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.provider.ProviderSession;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.TokenManager;
+import org.keycloak.util.MultivaluedHashMap;
 import org.keycloak.util.Time;
 
 import javax.ws.rs.core.Cookie;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -113,36 +122,57 @@ public class OAuthFlows {
 
         boolean isResource = client instanceof ApplicationModel;
         AccessCodeEntry accessCode = tokenManager.createAccessCode(scopeParam, state, redirect, realm, client, user, session);
-        accessCode.setUsername(username);
         accessCode.setRememberMe(rememberMe);
         accessCode.setAuthMethod(authMethod);
+        accessCode.setUsernameUsed(username);
 
         log.debugv("processAccessCode: isResource: {0}", isResource);
         log.debugv("processAccessCode: go to oauth page?: {0}",
-                (!isResource && (accessCode.getRealmRolesRequested().size() > 0 || accessCode.getResourceRolesRequested()
-                        .size() > 0)));
+                !isResource);
 
-        audit.detail(Details.CODE_ID, accessCode.getId());
+        audit.detail(Details.CODE_ID, accessCode.getCodeId());
 
         Set<RequiredAction> requiredActions = user.getRequiredActions();
         if (!requiredActions.isEmpty()) {
             accessCode.setRequiredActions(new HashSet<UserModel.RequiredAction>(requiredActions));
-            accessCode.setExpiration(Time.currentTime() + realm.getAccessCodeLifespanUserAction());
+            accessCode.resetExpiration();
 
             RequiredAction action = user.getRequiredActions().iterator().next();
             if (action.equals(RequiredAction.VERIFY_EMAIL)) {
                 audit.clone().event(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, accessCode.getUser().getEmail()).success();
             }
 
-            return Flows.forms(providerSession, realm, uriInfo).setAccessCode(accessCode.getId(), accessCode.getCode()).setUser(user)
+            return Flows.forms(providerSession, realm, uriInfo).setAccessCode(accessCode.getCode()).setUser(user)
                     .createResponse(action);
         }
 
-        if (!isResource
-                && (accessCode.getRealmRolesRequested().size() > 0 || accessCode.getResourceRolesRequested().size() > 0)) {
-            accessCode.setExpiration(Time.currentTime() + realm.getAccessCodeLifespanUserAction());
-            return Flows.forms(providerSession, realm, uriInfo).setAccessCode(accessCode.getId(), accessCode.getCode()).
-                    setAccessRequest(accessCode.getRealmRolesRequested(), accessCode.getResourceRolesRequested()).
+        if (!isResource) {
+            accessCode.resetExpiration();
+            List<RoleModel> realmRolesRequested = new LinkedList<RoleModel>();
+            MultivaluedMap<String, RoleModel> appRolesRequested = new MultivaluedMapImpl<String, RoleModel>();
+            if (accessCode.getToken().getRealmAccess() != null) {
+                if (accessCode.getToken().getRealmAccess().getRoles() != null) {
+                    for (String role : accessCode.getToken().getRealmAccess().getRoles()) {
+                        RoleModel roleModel = realm.getRole(role);
+                        if (roleModel != null) realmRolesRequested.add(roleModel);
+                    }
+                }
+            }
+            if (accessCode.getToken().getResourceAccess().size() > 0) {
+                for (Map.Entry<String, AccessToken.Access> entry : accessCode.getToken().getResourceAccess().entrySet()) {
+                    ApplicationModel app = realm.getApplicationByName(entry.getKey());
+                    if (app == null) continue;
+                    if (entry.getValue().getRoles() != null) {
+                        for (String role : entry.getValue().getRoles()) {
+                            RoleModel roleModel = app.getRole(role);
+                            if (roleModel != null) appRolesRequested.add(entry.getKey(), roleModel);
+                        }
+
+                    }
+                }
+            }
+            return Flows.forms(providerSession, realm, uriInfo).setAccessCode(accessCode.getCode()).
+                    setAccessRequest(realmRolesRequested, appRolesRequested).
                     setClient(client).createOAuthGrant();
         }
 
