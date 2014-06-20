@@ -174,8 +174,9 @@ public abstract class ClientAdapter implements ClientModel {
 
     public boolean hasScope(RoleModel role) {
         if (updatedClient != null) return updatedClient.hasScope(role);
+        if (cachedClient.getScope().contains(role.getId())) return true;
+
         Set<RoleModel> roles = getScopeMappings();
-        if (roles.contains(role)) return true;
 
         for (RoleModel mapping : roles) {
             if (mapping.hasRole(role)) return true;

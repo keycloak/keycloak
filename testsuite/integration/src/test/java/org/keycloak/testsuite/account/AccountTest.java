@@ -34,6 +34,7 @@ import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -144,7 +145,7 @@ public class AccountTest {
 
     @After
     public void after() {
-        keycloakRule.configure(new KeycloakSetup() {
+        keycloakRule.update(new KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel defaultRealm, RealmModel appRealm) {
                 UserModel user = appRealm.getUser("test-user@localhost");
@@ -239,7 +240,7 @@ public class AccountTest {
 
     @Test
     public void changePasswordWithPasswordPolicy() {
-        keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
             @Override
             public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
                 appRealm.setPasswordPolicy(new PasswordPolicy("length"));
@@ -263,11 +264,11 @@ public class AccountTest {
 
             events.expectAccount(EventType.UPDATE_PASSWORD).assertEvent();
         } finally {
-            keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
+            keycloakRule.update(new KeycloakRule.KeycloakSetup() {
                 @Override
                 public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
                     appRealm.setPasswordPolicy(new PasswordPolicy(null));
-                }
+               }
             });
         }
     }

@@ -254,7 +254,8 @@ public class MongoKeycloakSession implements KeycloakSession {
     }
 
     @Override
-    public Set<SocialLinkModel> getSocialLinks(UserModel user, RealmModel realm) {
+    public Set<SocialLinkModel> getSocialLinks(UserModel userModel, RealmModel realm) {
+        UserModel user = getUserById(userModel.getId(), realm);
         MongoUserEntity userEntity = ((UserAdapter) user).getUser();
         List<SocialLinkEntity> linkEntities = userEntity.getSocialLinks();
 
@@ -271,7 +272,8 @@ public class MongoKeycloakSession implements KeycloakSession {
         return result;
     }
 
-    private SocialLinkEntity findSocialLink(UserModel user, String socialProvider) {
+    private SocialLinkEntity findSocialLink(UserModel userModel, String socialProvider, RealmModel realm) {
+        UserModel user = getUserById(userModel.getId(), realm);
         MongoUserEntity userEntity = ((UserAdapter) user).getUser();
         List<SocialLinkEntity> linkEntities = userEntity.getSocialLinks();
         if (linkEntities == null) {
@@ -289,7 +291,7 @@ public class MongoKeycloakSession implements KeycloakSession {
 
     @Override
     public SocialLinkModel getSocialLink(UserModel user, String socialProvider, RealmModel realm) {
-        SocialLinkEntity socialLinkEntity = findSocialLink(user, socialProvider);
+        SocialLinkEntity socialLinkEntity = findSocialLink(user, socialProvider, realm);
         return socialLinkEntity != null ? new SocialLinkModel(socialLinkEntity.getSocialProvider(), socialLinkEntity.getSocialUserId(), socialLinkEntity.getSocialUsername()) : null;
     }
 

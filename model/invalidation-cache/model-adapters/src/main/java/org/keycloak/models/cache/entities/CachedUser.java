@@ -1,5 +1,7 @@
 package org.keycloak.models.cache.entities;
 
+import org.keycloak.models.AuthenticationLinkModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
@@ -18,32 +20,40 @@ import java.util.Set;
 public class CachedUser {
     private String id;
     private String loginName;
+    private String usernameKey;
     private String firstName;
     private String lastName;
     private String email;
+    private String emailKey;
     private boolean emailVerified;
     private int notBefore;
     private List<UserCredentialValueModel> credentials = new LinkedList<UserCredentialValueModel>();
     private boolean enabled;
     private boolean totp;
+    private AuthenticationLinkModel authenticationLink;
     private Map<String, String> attributes = new HashMap<String, String>();
     private Set<UserModel.RequiredAction> requiredActions = new HashSet<UserModel.RequiredAction>();
     private Set<String> roleMappings = new HashSet<String>();
 
 
-    public CachedUser(UserModel user) {
+    public CachedUser(RealmModel realm, UserModel user) {
         this.id = user.getId();
         this.loginName = user.getLoginName();
+        this.usernameKey = realm.getId() + "." + this.loginName;
         this.firstName = user.getFirstName();
         this.lastName = user.getLastName();
         this.attributes.putAll(user.getAttributes());
         this.email = user.getEmail();
+        if (this.email != null) {
+            this.emailKey = realm.getId() + "." + this.email;
+        }
         this.emailVerified = user.isEmailVerified();
         this.notBefore = user.getNotBefore();
         this.credentials.addAll(user.getCredentialsDirectly());
         this.enabled = user.isEnabled();
         this.totp = user.isTotp();
         this.requiredActions.addAll(user.getRequiredActions());
+        this.authenticationLink = user.getAuthenticationLink();
         for (RoleModel role : user.getRoleMappings()) {
             roleMappings.add(role.getId());
         }
@@ -55,6 +65,14 @@ public class CachedUser {
 
     public String getLoginName() {
         return loginName;
+    }
+
+    public String getUsernameKey() {
+        return usernameKey;
+    }
+
+    public String getEmailKey() {
+        return emailKey;
     }
 
     public String getFirstName() {
@@ -99,5 +117,9 @@ public class CachedUser {
 
     public Set<String> getRoleMappings() {
         return roleMappings;
+    }
+
+    public AuthenticationLinkModel getAuthenticationLink() {
+        return authenticationLink;
     }
 }

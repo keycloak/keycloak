@@ -17,6 +17,7 @@ import org.keycloak.models.cache.entities.CachedOAuthClient;
 import org.keycloak.models.cache.entities.CachedRealm;
 import org.keycloak.models.cache.entities.CachedRealmRole;
 import org.keycloak.models.cache.entities.CachedRole;
+import org.keycloak.models.cache.entities.CachedUser;
 import org.keycloak.provider.ProviderSession;
 
 import java.util.HashMap;
@@ -41,10 +42,12 @@ public class DefaultCacheKeycloakSession implements CacheKeycloakSession {
     protected Set<String> appInvalidations = new HashSet<String>();
     protected Set<String> roleInvalidations = new HashSet<String>();
     protected Set<String> clientInvalidations = new HashSet<String>();
+    protected Set<String> userInvalidations = new HashSet<String>();
     protected Map<String, RealmModel> managedRealms = new HashMap<String, RealmModel>();
     protected Map<String, ApplicationModel> managedApplications = new HashMap<String, ApplicationModel>();
     protected Map<String, OAuthClientModel> managedClients = new HashMap<String, OAuthClientModel>();
     protected Map<String, RoleModel> managedRoles = new HashMap<String, RoleModel>();
+    protected Map<String, UserModel> managedUsers = new HashMap<String, UserModel>();
 
     protected boolean clearAll;
 
@@ -88,6 +91,11 @@ public class DefaultCacheKeycloakSession implements CacheKeycloakSession {
         clientInvalidations.add(id);
     }
 
+    @Override
+    public void registerUserInvalidation(String id) {
+        userInvalidations.add(id);
+    }
+
     protected void runInvalidations() {
         for (String id : realmInvalidations) {
             cache.invalidateCachedRealmById(id);
@@ -100,6 +108,9 @@ public class DefaultCacheKeycloakSession implements CacheKeycloakSession {
         }
         for (String id : clientInvalidations) {
             cache.invalidateCachedOAuthClientById(id);
+        }
+        for (String id : userInvalidations) {
+            cache.invalidateCachedUserById(id);
         }
 
     }
@@ -210,17 +221,59 @@ public class DefaultCacheKeycloakSession implements CacheKeycloakSession {
 
     @Override
     public UserModel getUserById(String id, RealmModel realm) {
-        return getDelegate().getUserById(id, realm);
+        CachedUser cached = cache.getCachedUser(id);
+        if (cached == null) {
+            UserModel model = getDelegate().getUserById(id, realm);
+            if (model == null) return null;
+            if (userInvalidations.contains(id)) return model;
+            cached = new CachedUser(realm, model);
+            cache.addCachedUser(cached);
+        } else if (userInvalidations.contains(id)) {
+            return getDelegate().getUserById(id, realm);
+        } else if (managedUsers.containsKey(id)) {
+            return managedUsers.get(id);
+        }
+        UserAdapter adapter = new UserAdapter(cached, cache, this, realm);
+        managedUsers.put(id, adapter);
+        return adapter;
     }
 
     @Override
     public UserModel getUserByUsername(String username, RealmModel realm) {
-        return getDelegate().getUserByUsername(username, realm);
+        CachedUser cached = cache.getCachedUserByUsername(username, realm);
+        if (cached == null) {
+            UserModel model = getDelegate().getUserByUsername(username, realm);
+            if (model == null) return null;
+            if (userInvalidations.contains(model.getId())) return model;
+            cached = new CachedUser(realm, model);
+            cache.addCachedUser(cached);
+        } else if (userInvalidations.contains(cached.getId())) {
+            return getDelegate().getUserById(cached.getId(), realm);
+        } else if (managedUsers.containsKey(cached.getId())) {
+            return managedUsers.get(cached.getId());
+        }
+        UserAdapter adapter = new UserAdapter(cached, cache, this, realm);
+        managedUsers.put(cached.getId(), adapter);
+        return adapter;
     }
 
     @Override
     public UserModel getUserByEmail(String email, RealmModel realm) {
-        return getDelegate().getUserByEmail(email, realm);
+        CachedUser cached = cache.getCachedUserByEmail(email, realm);
+        if (cached == null) {
+            UserModel model = getDelegate().getUserByEmail(email, realm);
+            if (model == null) return null;
+            if (userInvalidations.contains(model.getId())) return model;
+            cached = new CachedUser(realm, model);
+            cache.addCachedUser(cached);
+        } else if (userInvalidations.contains(cached.getId())) {
+            return getDelegate().getUserByEmail(email, realm);
+        } else if (managedUsers.containsKey(cached.getId())) {
+            return managedUsers.get(cached.getId());
+        }
+        UserAdapter adapter = new UserAdapter(cached, cache, this, realm);
+        managedUsers.put(cached.getId(), adapter);
+        return adapter;
     }
 
     @Override
