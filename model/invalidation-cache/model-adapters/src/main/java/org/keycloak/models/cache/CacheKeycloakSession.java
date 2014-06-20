@@ -16,4 +16,6 @@ public interface CacheKeycloakSession extends KeycloakSession {
     void registerRoleInvalidation(String id);
 
     void registerOAuthClientInvalidation(String id);
+
+    void registerUserInvalidation(String id);
 }

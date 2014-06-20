@@ -857,18 +857,17 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
-    public boolean removeSocialLink(UserModel user, String socialProvider) {
-        SocialLinkEntity socialLinkEntity = findSocialLink(user, socialProvider);
+    public boolean removeSocialLink(UserModel userModel, String socialProvider) {
+        UserModel user = getUserById(userModel.getId());
+        MongoUserEntity userEntity = ((UserAdapter) user).getUser();
+        SocialLinkEntity socialLinkEntity = findSocialLink(userEntity, socialProvider);
         if (socialLinkEntity == null) {
             return false;
         }
-        MongoUserEntity userEntity = ((UserAdapter) user).getUser();
-
         return getMongoStore().pullItemFromList(userEntity, "socialLinks", socialLinkEntity, invocationContext);
     }
 
-    private SocialLinkEntity findSocialLink(UserModel user, String socialProvider) {
-        MongoUserEntity userEntity = ((UserAdapter) user).getUser();
+    private SocialLinkEntity findSocialLink(MongoUserEntity userEntity, String socialProvider) {
         List<SocialLinkEntity> linkEntities = userEntity.getSocialLinks();
         if (linkEntities == null) {
             return null;

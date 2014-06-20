@@ -278,4 +278,9 @@ public class NoCacheKeycloakSession implements CacheKeycloakSession {
     public void removeUserSessions(RealmModel realm) {
         getDelegate().removeUserSessions(realm);
     }
+
+    @Override
+    public void registerUserInvalidation(String id) {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
 }
