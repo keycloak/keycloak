@@ -248,7 +248,7 @@ public class AccessTokenPerfTest {
     @Test
     public void perfBrowserLogin()
     {
-        long ITERATIONS = 100;
+        long ITERATIONS = 3;
         long start = System.currentTimeMillis();
         BrowserLogin login = new BrowserLogin();
         for (int i = 0; i < ITERATIONS; i++) {
