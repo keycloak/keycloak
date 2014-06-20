@@ -16,6 +16,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.AccessCode;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
@@ -31,6 +32,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -42,6 +44,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class TokenManager {
     protected static final Logger logger = Logger.getLogger(TokenManager.class);
 
+    /*
     protected Map<String, AccessCodeEntry> accessCodeMap = new ConcurrentHashMap<String, AccessCodeEntry>();
 
     public void clearAccessCodes() {
@@ -54,6 +57,23 @@ public class TokenManager {
 
     public AccessCodeEntry pullAccessCode(String key) {
         return accessCodeMap.remove(key);
+    }
+    */
+
+    public AccessCodeEntry parseCode(String code, RealmModel realm) {
+        try {
+            JWSInput input = new JWSInput(code);
+            if (!RSAProvider.verify(input, realm.getPublicKey())) {
+                logger.error("Could not verify access code");
+                return null;
+            }
+            AccessCode accessCode = input.readJsonContent(AccessCode.class);
+            return new AccessCodeEntry(realm, accessCode);
+        } catch (Exception e) {
+            logger.error("error parsing access code", e);
+            return null;
+        }
+
     }
 
     public static void applyScope(RoleModel role, RoleModel scope, Set<RoleModel> visited, Set<RoleModel> requested) {
@@ -73,38 +93,25 @@ public class TokenManager {
 
 
     public AccessCodeEntry createAccessCode(String scopeParam, String state, String redirect, RealmModel realm, ClientModel client, UserModel user, UserSessionModel session) {
-        AccessCodeEntry code = createAccessCodeEntry(scopeParam, state, redirect, realm, client, user, session);
-        accessCodeMap.put(code.getId(), code);
-        return code;
+        return createAccessCodeEntry(scopeParam, state, redirect, realm, client, user, session);
     }
 
     private AccessCodeEntry createAccessCodeEntry(String scopeParam, String state, String redirect, RealmModel realm, ClientModel client, UserModel user, UserSessionModel session) {
-        AccessCodeEntry code = new AccessCodeEntry();
-        if (session != null) {
-            code.setSessionState(session.getId());
-        }
-
-        List<RoleModel> realmRolesRequested = code.getRealmRolesRequested();
-        MultivaluedMap<String, RoleModel> resourceRolesRequested = code.getResourceRolesRequested();
+        List<RoleModel> realmRolesRequested = new LinkedList<RoleModel>();
+        MultivaluedMap<String, RoleModel> resourceRolesRequested = new MultivaluedMapImpl<String, RoleModel>();
 
         AccessToken token = createClientAccessToken(scopeParam, realm, client, user, session, realmRolesRequested, resourceRolesRequested);
-        token.setSessionState(code.getSessionState());
-
-        code.setToken(token);
-        code.setRealm(realm);
+        if (session != null) token.setSessionState(session.getId());
+        AccessCode code = new AccessCode();
+        code.setId(UUID.randomUUID().toString() + System.currentTimeMillis());
+        code.setAccessToken(token);
+        code.setTimestamp(Time.currentTime());
         code.setExpiration(Time.currentTime() + realm.getAccessCodeLifespan());
-        code.setClient(client);
-        code.setUser(user);
         code.setState(state);
         code.setRedirectUri(redirect);
-        String accessCode = null;
-        try {
-            accessCode = new JWSBuilder().content(code.getId().getBytes("UTF-8")).rsa256(realm.getPrivateKey());
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
-        code.setCode(accessCode);
-        return code;
+        AccessCodeEntry entry = new AccessCodeEntry(realm, code);
+        return entry;
+
     }
 
     public AccessToken refreshAccessToken(UriInfo uriInfo, RealmModel realm, ClientModel client, String encodedRefreshToken, Audit audit) throws OAuthErrorException {

@@ -1,17 +1,20 @@
 package org.keycloak.services.managers;
 
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.AccessCode;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.util.Time;
 
 import javax.ws.rs.core.MultivaluedMap;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -21,141 +24,101 @@ import java.util.UUID;
 * @version $Revision: 1 $
 */
 public class AccessCodeEntry {
-    protected String id = UUID.randomUUID().toString() + System.currentTimeMillis();
-    protected String code;
-    protected String state;
-    protected String sessionState;
-    protected String redirectUri;
-    protected boolean rememberMe;
-    protected String authMethod;
-    protected String username;
-
-    protected int expiration;
+    protected AccessCode accessCode;
     protected RealmModel realm;
-    protected AccessToken token;
-    protected UserModel user;
-    protected Set<RequiredAction> requiredActions;
-    protected ClientModel client;
-    protected List<RoleModel> realmRolesRequested = new ArrayList<RoleModel>();
-    MultivaluedMap<String, RoleModel> resourceRolesRequested = new MultivaluedMapImpl<String, RoleModel>();
 
-    public boolean isExpired() {
-        return expiration != 0 && Time.currentTime() > expiration;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public RealmModel getRealm() {
-        return realm;
-    }
-
-    public void setRealm(RealmModel realm) {
+    public AccessCodeEntry(RealmModel realm, AccessCode accessCode) {
         this.realm = realm;
+        this.accessCode = accessCode;
     }
 
-    public String getCode() {
-        return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
-    }
-
-    public int getExpiration() {
-        return expiration;
-    }
-
-    public void setExpiration(int expiration) {
-        this.expiration = expiration;
-    }
-
-    public AccessToken getToken() {
-        return token;
-    }
-
-    public void setToken(AccessToken token) {
-        this.token = token;
-    }
-
-    public ClientModel getClient() {
-        return client;
-    }
-
-    public void setClient(ClientModel client) {
-        this.client = client;
+    public String getCodeId() {
+        return this.accessCode.getId();
     }
 
     public UserModel getUser() {
-        return user;
-    }
-
-    public void setUser(UserModel user) {
-        this.user = user;
-    }
-
-    public Set<RequiredAction> getRequiredActions() {
-        return requiredActions;
-    }
-
-    public void setRequiredActions(Set<RequiredAction> requiredActions) {
-        this.requiredActions = requiredActions;
-    }
-
-    public List<RoleModel> getRealmRolesRequested() {
-        return realmRolesRequested;
-    }
-
-    public MultivaluedMap<String, RoleModel> getResourceRolesRequested() {
-        return resourceRolesRequested;
-    }
-
-    public String getState() {
-        return state;
-    }
-
-    public void setState(String state) {
-        this.state = state;
+        return realm.getUserById(accessCode.getAccessToken().getSubject());
     }
 
     public String getSessionState() {
-        return sessionState;
+        return accessCode.getAccessToken().getSessionState();
     }
 
-    public void setSessionState(String sessionState) {
-        this.sessionState = sessionState;
+    public boolean isExpired() {
+        return accessCode.getExpiration() != 0 && Time.currentTime() > accessCode.getExpiration();
+    }
+
+    public AccessToken getToken() {
+        return accessCode.getAccessToken();
+    }
+
+    public ClientModel getClient() {
+        return realm.findClient(accessCode.getAccessToken().getIssuedFor());
+    }
+
+    public String getState() {
+        return accessCode.getState();
     }
 
     public String getRedirectUri() {
-        return redirectUri;
-    }
-
-    public void setRedirectUri(String redirectUri) {
-        this.redirectUri = redirectUri;
+        return accessCode.getRedirectUri();
     }
 
     public boolean isRememberMe() {
-        return rememberMe;
+        return accessCode.isRememberMe();
     }
 
-    public void setRememberMe(boolean rememberMe) {
-        this.rememberMe = rememberMe;
+    public void setRememberMe(boolean remember) {
+        accessCode.setRememberMe(remember);
     }
 
     public String getAuthMethod() {
-        return authMethod;
+        return accessCode.getAuthMethod();
+    }
+
+    public String getUsernameUsed() {
+        return accessCode.getUsernameUsed();
+    }
+
+    public void setUsernameUsed(String username) {
+        accessCode.setUsernameUsed(username);
+    }
+
+    public void resetExpiration() {
+        accessCode.setExpiration(Time.currentTime() + realm.getAccessCodeLifespan());
+
     }
 
     public void setAuthMethod(String authMethod) {
-        this.authMethod = authMethod;
+        accessCode.setAuthMethod(authMethod);
     }
 
-    public String getUsername() {
-        return username;
+    public Set<RequiredAction> getRequiredActions() {
+        Set<RequiredAction> set = new HashSet<RequiredAction>();
+        for (String action : accessCode.getRequiredActions()) {
+            set.add(RequiredAction.valueOf(action));
+
+        }
+        return set;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
+    public boolean hasRequiredAction(RequiredAction action) {
+        return accessCode.getRequiredActions().contains(action.toString());
+    }
+
+    public void removeRequiredAction(RequiredAction action) {
+        accessCode.getRequiredActions().remove(action.toString());
+    }
+
+    public void setRequiredActions(Set<RequiredAction> set) {
+        Set<String> newSet = new HashSet<String>();
+        for (RequiredAction action : set) {
+            newSet.add(action.toString());
+        }
+        accessCode.setRequiredActions(newSet);
+    }
+
+    public String getCode() {
+       return new JWSBuilder().jsonContent(accessCode).rsa256(realm.getPrivateKey());
     }
 }

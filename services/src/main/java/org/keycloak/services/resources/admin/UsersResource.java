@@ -825,11 +825,12 @@ public class UsersResource {
 
         AccessCodeEntry accessCode = tokenManager.createAccessCode(scope, state, redirect, realm, client, user, null);
         accessCode.setRequiredActions(requiredActions);
-        accessCode.setExpiration(Time.currentTime() + realm.getAccessCodeLifespanUserAction());
+        accessCode.setUsernameUsed(username);
+        accessCode.resetExpiration();
 
         try {
             UriBuilder builder = Urls.loginPasswordResetBuilder(uriInfo.getBaseUri());
-            builder.queryParam("key", accessCode.getId());
+            builder.queryParam("key", accessCode.getCode());
 
             String link = builder.build(realm.getName()).toString();
             long expiration = TimeUnit.SECONDS.toMinutes(realm.getAccessCodeLifespanUserAction());

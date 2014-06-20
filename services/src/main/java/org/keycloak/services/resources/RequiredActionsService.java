@@ -31,8 +31,6 @@ import org.keycloak.audit.EventType;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
 import org.keycloak.login.LoginFormsProvider;
-import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
@@ -52,7 +50,6 @@ import org.keycloak.services.resources.flows.Urls;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.authentication.AuthenticationProviderException;
 import org.keycloak.authentication.AuthenticationProviderManager;
-import org.keycloak.util.Time;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -134,7 +131,7 @@ public class RequiredActionsService {
         user.setEmail(email);
 
         user.removeRequiredAction(RequiredAction.UPDATE_PROFILE);
-        accessCode.getRequiredActions().remove(RequiredAction.UPDATE_PROFILE);
+        accessCode.removeRequiredAction(RequiredAction.UPDATE_PROFILE);
 
         audit.clone().event(EventType.UPDATE_PROFILE).success();
         if (emailChanged) {
@@ -176,7 +173,7 @@ public class RequiredActionsService {
         user.setTotp(true);
 
         user.removeRequiredAction(RequiredAction.CONFIGURE_TOTP);
-        accessCode.getRequiredActions().remove(RequiredAction.CONFIGURE_TOTP);
+        accessCode.removeRequiredAction(RequiredAction.CONFIGURE_TOTP);
 
         audit.clone().event(EventType.UPDATE_TOTP).success();
 
@@ -222,7 +219,7 @@ public class RequiredActionsService {
 
         user.removeRequiredAction(RequiredAction.UPDATE_PASSWORD);
         if (accessCode != null) {
-            accessCode.getRequiredActions().remove(RequiredAction.UPDATE_PASSWORD);
+            accessCode.removeRequiredAction(RequiredAction.UPDATE_PASSWORD);
         }
 
         audit.clone().event(EventType.UPDATE_PASSWORD).success();
@@ -235,9 +232,9 @@ public class RequiredActionsService {
     @GET
     public Response emailVerification() {
         if (uriInfo.getQueryParameters().containsKey("key")) {
-            AccessCodeEntry accessCode = tokenManager.getAccessCode(uriInfo.getQueryParameters().getFirst("key"));
+            AccessCodeEntry accessCode = tokenManager.parseCode(uriInfo.getQueryParameters().getFirst("key"), realm);
             if (accessCode == null || accessCode.isExpired()
-                    || !accessCode.getRequiredActions().contains(RequiredAction.VERIFY_EMAIL)) {
+                    || !accessCode.hasRequiredAction(RequiredAction.VERIFY_EMAIL)) {
                 return unauthorized();
             }
 
@@ -248,7 +245,7 @@ public class RequiredActionsService {
             user.setEmailVerified(true);
 
             user.removeRequiredAction(RequiredAction.VERIFY_EMAIL);
-            accessCode.getRequiredActions().remove(RequiredAction.VERIFY_EMAIL);
+            accessCode.removeRequiredAction(RequiredAction.VERIFY_EMAIL);
 
             audit.clone().event(EventType.VERIFY_EMAIL).detail(Details.EMAIL, accessCode.getUser().getEmail()).success();
 
@@ -262,7 +259,7 @@ public class RequiredActionsService {
             initAudit(accessCode);
             //audit.clone().event(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, accessCode.getUser().getEmail()).success();
 
-            return Flows.forms(providerSession, realm, uriInfo).setAccessCode(accessCode.getId(), accessCode.getCode()).setUser(accessCode.getUser())
+            return Flows.forms(providerSession, realm, uriInfo).setAccessCode(accessCode.getCode()).setUser(accessCode.getUser())
                     .createResponse(RequiredAction.VERIFY_EMAIL);
         }
     }
@@ -271,14 +268,14 @@ public class RequiredActionsService {
     @GET
     public Response passwordReset() {
         if (uriInfo.getQueryParameters().containsKey("key")) {
-            AccessCodeEntry accessCode = tokenManager.getAccessCode(uriInfo.getQueryParameters().getFirst("key"));
+            AccessCodeEntry accessCode = tokenManager.parseCode(uriInfo.getQueryParameters().getFirst("key"), realm);
             accessCode.setAuthMethod("form");
             if (accessCode == null || accessCode.isExpired()
-                    || !accessCode.getRequiredActions().contains(RequiredAction.UPDATE_PASSWORD)) {
+                    || !accessCode.hasRequiredAction(RequiredAction.UPDATE_PASSWORD)) {
                 return unauthorized();
             }
 
-            return Flows.forms(providerSession, realm, uriInfo).setAccessCode(accessCode.getId(), accessCode.getCode()).createResponse(RequiredAction.UPDATE_PASSWORD);
+            return Flows.forms(providerSession, realm, uriInfo).setAccessCode(accessCode.getCode()).createResponse(RequiredAction.UPDATE_PASSWORD);
         } else {
             return Flows.forms(providerSession, realm, uriInfo).createPasswordReset();
         }
@@ -330,20 +327,19 @@ public class RequiredActionsService {
 
             AccessCodeEntry accessCode = tokenManager.createAccessCode(scopeParam, state, redirect, realm, client, user, session);
             accessCode.setRequiredActions(requiredActions);
-            accessCode.setExpiration(Time.currentTime() + realm.getAccessCodeLifespanUserAction());
             accessCode.setAuthMethod("form");
-            accessCode.setUsername(username);
+            accessCode.setUsernameUsed(username);
 
             try {
                 UriBuilder builder = Urls.loginPasswordResetBuilder(uriInfo.getBaseUri());
-                builder.queryParam("key", accessCode.getId());
+                builder.queryParam("key", accessCode.getCode());
 
                 String link = builder.build(realm.getName()).toString();
                 long expiration = TimeUnit.SECONDS.toMinutes(realm.getAccessCodeLifespanUserAction());
 
                 providerSession.getProvider(EmailProvider.class).setRealm(realm).setUser(user).sendPasswordReset(link, expiration);
 
-                audit.user(user).detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, accessCode.getId()).success();
+                audit.user(user).detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, accessCode.getCodeId()).success();
             } catch (EmailException e) {
                 logger.error("Failed to send password reset email", e);
                 return Flows.forms(providerSession, realm, uriInfo).setError("emailSendError").createErrorPage();
@@ -360,31 +356,15 @@ public class RequiredActionsService {
             return null;
         }
 
-        JWSInput input = new JWSInput(code);
-        boolean verifiedCode = false;
-        try {
-            verifiedCode = RSAProvider.verify(input, realm.getPublicKey());
-        } catch (Exception ignored) {
-            logger.debug("getAccessCodeEntry code failed verification");
-            return null;
-        }
-
-        if (!verifiedCode) {
-            logger.debug("getAccessCodeEntry code failed verification2");
-            return null;
-        }
-
-        String key = input.readContentAsString();
-        AccessCodeEntry accessCodeEntry = tokenManager.getAccessCode(key);
+        AccessCodeEntry accessCodeEntry = tokenManager.parseCode(code, realm);
         if (accessCodeEntry == null) {
             logger.debug("getAccessCodeEntry access code entry null");
             return null;
         }
 
         if (accessCodeEntry.isExpired()) {
-            logger.debugv("getAccessCodeEntry: access code id: {0}", accessCodeEntry.getId());
-            logger.debugv("getAccessCodeEntry access code entry expired: {0}", accessCodeEntry.getExpiration());
-            logger.debugv("getAccessCodeEntry current time: {0}", Time.currentTime());
+            logger.debugv("getAccessCodeEntry: access code id: {0}", accessCodeEntry.getCodeId());
+            logger.debugv("getAccessCodeEntry access code entry expired");
             return null;
         }
 
@@ -407,11 +387,11 @@ public class RequiredActionsService {
 
         Set<RequiredAction> requiredActions = user.getRequiredActions();
         if (!requiredActions.isEmpty()) {
-            return Flows.forms(providerSession, realm, uriInfo).setAccessCode(accessCode.getId(), accessCode.getCode()).setUser(user)
+            return Flows.forms(providerSession, realm, uriInfo).setAccessCode(accessCode.getCode()).setUser(user)
                     .createResponse(requiredActions.iterator().next());
         } else {
             logger.debugv("redirectOauth: redirecting to: {0}", accessCode.getRedirectUri());
-            accessCode.setExpiration(Time.currentTime() + realm.getAccessCodeLifespan());
+            accessCode.resetExpiration();
 
             AuthenticationManager authManager = new AuthenticationManager(providerSession);
 
@@ -433,11 +413,11 @@ public class RequiredActionsService {
         audit.event(EventType.LOGIN).client(accessCode.getClient())
                 .user(accessCode.getUser())
                 .session(accessCode.getSessionState())
-                .detail(Details.CODE_ID, accessCode.getId())
+                .detail(Details.CODE_ID, accessCode.getCodeId())
                 .detail(Details.REDIRECT_URI, accessCode.getRedirectUri())
                 .detail(Details.RESPONSE_TYPE, "code")
                 .detail(Details.AUTH_METHOD, accessCode.getAuthMethod())
-                .detail(Details.USERNAME, accessCode.getUsername());
+                .detail(Details.USERNAME, accessCode.getUsernameUsed());
 
         if (accessCode.isRememberMe()) {
             audit.detail(Details.REMEMBER_ME, "true");
