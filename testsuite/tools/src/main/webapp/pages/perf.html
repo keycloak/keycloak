@@ -1,0 +1,67 @@
+<h1>Perf</h1>
+
+<fieldset>
+    <legend><span class="text">Jobs</span></legend>
+    <button data-ng-click="loadJobs()" class="btn btn-default">Refresh</button>
+    <button data-ng-click="clearJobs()" class="btn btn-default">Clear completed</button>
+
+    <table class="table table-striped table-bordered">
+        <thead>
+        <tr>
+            <th>Description</th>
+            <th>Error</th>
+            <th>Count</th>
+            <th>Total</th>
+            <th>Started</th>
+            <th>Completed</th>
+        </tr>
+        </thead>
+        <tr data-ng-repeat="j in jobs|reverse">
+            <td>{{j.description}}</td>
+            <td>{{j.error}}</td>
+            <td>{{j.count}}</td>
+            <td>{{j.total}}</td>
+            <td>{{j.started|date:'medium'}}</td>
+            <td>{{j.completed|date:'medium'}}</td>
+        </tr>
+    </table>
+</fieldset>
+
+<fieldset>
+    <legend><span class="text">Create users</span></legend>
+
+    <div class="alert alert-info"><span class="pficon pficon-info"></span> Create users with username <code>&lt;prefix&gt;-&lt;start&gt;</code> to <code>&lt;prefix&gt;-&lt;start + count&gt;</code> and optionally add role mappings for the specified realm roles.</div>
+
+    <form class="form-horizontal">
+        <div class="form-group">
+            <label class="control-label col-sm-1">Realm</label>
+            <input data-ng-model="createUsersData.realm" value="test">
+        </div>
+        <div class="form-group">
+            <label class="control-label col-sm-1">Count</label>
+            <input data-ng-model="createUsersData.count" type="number" min="1" max="100000">
+            <span>(number of users to create)</span>
+        </div>
+        <div class="form-group">
+            <label class="control-label col-sm-1">Batch</label>
+            <input data-ng-model="createUsersData.batch" type="number" min="1" max="100">
+            <span>(number of users to create in one transaction)</span>
+        </div>
+        <div class="form-group">
+            <label class="control-label col-sm-1">Start</label>
+            <input data-ng-model="createUsersData.start" type="number" min="0">
+        </div>
+        <div class="form-group">
+            <label class="control-label col-sm-1">Prefix</label>
+            <input data-ng-model="createUsersData.prefix" type="number" min="0">
+            <span>(optional, by default currentTimeMillis is used)</span>
+        </div>
+        <div class="form-group">
+            <label class="control-label col-sm-1">Roles</label>
+            <input data-ng-model="createUsersData.roles" type="number" min="0">
+            <span>(comma separated list of realm roles)</span>
+        </div>
+
+        <button data-ng-click="createUsers()" class="btn btn-default">Create</button>
+    </form>
+</fieldset>

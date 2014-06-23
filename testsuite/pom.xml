@@ -27,6 +27,7 @@
     <modules>
         <module>integration</module>
         <module>performance</module>
+        <module>tools</module>
     </modules>
 
 </project>

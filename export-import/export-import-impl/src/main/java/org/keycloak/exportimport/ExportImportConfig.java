@@ -35,6 +35,10 @@ public class ExportImportConfig {
         return System.getProperty(DIR);
     }
 
+    public static String setDir(String dir) {
+        return System.setProperty(DIR, dir);
+    }
+
     public static String getZipFile() {
         return System.getProperty(FILE);
     }

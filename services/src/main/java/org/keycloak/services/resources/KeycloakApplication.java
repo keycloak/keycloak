@@ -104,7 +104,7 @@ public class KeycloakApplication extends Application {
         return uriInfo.getBaseUriBuilder().replacePath(getContextPath()).build();
     }
 
-    protected void loadConfig() {
+    public static void loadConfig() {
         try {
             URL config = null;
 
