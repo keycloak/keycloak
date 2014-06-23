@@ -143,7 +143,7 @@ public class LDAPKeycloakCredentialHandler extends LDAPPlainTextPasswordCredenti
         }
     }
 
-    // TODO: remove later... It's needed just because LDAPIdentityStore.getBindingName, which always uses idProperty as first part of DN, but in AD it doesn't work as we may have idProperty 'sAMAccountName'
+    // TODO: remove later... It's needed just because LDAPIdentityStore.getBindingDN, which always uses idProperty as first part of DN, but in AD it doesn't work as we may have idProperty 'sAMAccountName'
     // but DN like: cn=John Doe,OU=foo,DC=bar
     protected String getDNOfUser(User user, IdentityManager identityManager, LDAPIdentityStore ldapStore, LDAPOperationManager operationManager) {
 

@@ -22,7 +22,6 @@ import static org.picketlink.common.constants.LDAPConstants.EQUAL;
  */
 public class KeycloakLDAPIdentityStore extends LDAPIdentityStore {
 
-    public static Method GET_BINDING_DN_METHOD;
     public static Method GET_OPERATION_MANAGER_METHOD;
     public static Method CREATE_SEARCH_FILTER_METHOD;
     public static Method EXTRACT_ATTRIBUTES_METHOD;
@@ -31,7 +30,6 @@ public class KeycloakLDAPIdentityStore extends LDAPIdentityStore {
     public static final String SAM_ACCOUNT_NAME = "sAMAccountName";
 
     static {
-        GET_BINDING_DN_METHOD = getMethodOnLDAPStore("getBindingDN", AttributedType.class);
         GET_OPERATION_MANAGER_METHOD = getMethodOnLDAPStore("getOperationManager");
         CREATE_SEARCH_FILTER_METHOD = getMethodOnLDAPStore("createIdentityTypeSearchFilter", IdentityQuery.class, LDAPMappingConfiguration.class);
         EXTRACT_ATTRIBUTES_METHOD = getMethodOnLDAPStore("extractAttributes", AttributedType.class, boolean.class);

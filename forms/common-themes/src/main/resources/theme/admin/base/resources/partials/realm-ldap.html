@@ -40,6 +40,9 @@
                     <div class="col-sm-4">
                         <input class="form-control" id="ldapConnectionUrl" type="text" ng-model="realm.ldapServer.connectionUrl" placeholder="LDAP connection URL" required>
                     </div>
+                    <div class="col-sm-4" data-ng-show="access.manageRealm">
+                        <a class="btn btn-primary" data-ng-click="testConnection()">Test connection</a>
+                    </div>
                 </div>
                 <div class="form-group clearfix">
                     <label class="col-sm-2 control-label" for="ldapBaseDn">Base DN <span class="required">*</span></label>
@@ -63,6 +66,9 @@
                     <label class="col-sm-2 control-label" for="ldapBindCredential">Bind Credential <span class="required">*</span></label>
                     <div class="col-sm-4">
                         <input class="form-control" id="ldapBindCredential" type="text" ng-model="realm.ldapServer.bindCredential" placeholder="LDAP Bind Credentials" required>
+                    </div>
+                    <div class="col-sm-4" data-ng-show="access.manageRealm">
+                        <a class="btn btn-primary" data-ng-click="testAuthentication()">Test authentication</a>
                     </div>
                 </div>
             </fieldset>

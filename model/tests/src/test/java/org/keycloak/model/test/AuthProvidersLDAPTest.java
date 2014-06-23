@@ -5,8 +5,6 @@ import java.util.Collections;
 
 import javax.ws.rs.core.MultivaluedMap;
 
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
@@ -78,7 +76,7 @@ public class AuthProvidersLDAPTest extends AbstractModelTest {
         MultivaluedMap<String, String> formData = AuthProvidersExternalModelTest.createFormData("johnkeycloak", "password");
 
         // Set password of user in LDAP
-        LdapTestUtils.setLdapPassword(providerSession, realm, "johnkeycloak", "password");
+        LDAPTestUtils.setLdapPassword(providerSession, realm, "johnkeycloak", "password");
 
         // Verify that user doesn't exists in realm2 and can't authenticate here
         Assert.assertEquals(AuthenticationManager.AuthenticationStatus.INVALID_USER, am.authenticateForm(null, realm, formData));
@@ -142,7 +140,7 @@ public class AuthProvidersLDAPTest extends AbstractModelTest {
         // Add ldap
         setupAuthenticationProviders();
 
-        LdapTestUtils.setLdapPassword(providerSession, realm, "johnkeycloak", "password");
+        LDAPTestUtils.setLdapPassword(providerSession, realm, "johnkeycloak", "password");
 
         // First authenticate successfully to sync john into realm
         MultivaluedMap<String, String> formData = AuthProvidersExternalModelTest.createFormData("johnkeycloak", "password");

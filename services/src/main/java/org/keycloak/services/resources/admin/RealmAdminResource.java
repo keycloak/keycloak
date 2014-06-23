@@ -17,6 +17,7 @@ import org.keycloak.provider.ProviderSession;
 import org.keycloak.representations.adapters.action.SessionStats;
 import org.keycloak.representations.idm.RealmAuditRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.managers.LDAPConnectionTestManager;
 import org.keycloak.services.managers.ModelToRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
@@ -358,5 +359,15 @@ public class RealmAdminResource {
 
         AuditProvider audit = providers.getProvider(AuditProvider.class);
         audit.clear(realm.getId());
+    }
+
+    @Path("testLDAPConnection")
+    @GET
+    public Response testLDAPConnection(@QueryParam("action") String action, @QueryParam("connectionUrl") String connectionUrl,
+                                       @QueryParam("bindDn") String bindDn, @QueryParam("bindCredential") String bindCredential) {
+        auth.init(RealmAuth.Resource.REALM).requireManage();
+
+        boolean result = new LDAPConnectionTestManager().testLDAP(action, connectionUrl, bindDn, bindCredential);
+        return result ? Response.noContent().build() : Flows.errors().error("LDAP test error", Response.Status.BAD_REQUEST);
     }
 }

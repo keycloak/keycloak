@@ -1,9 +1,9 @@
-package org.keycloak.picketlink.idm;
+package org.keycloak.models;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class LdapConstants {
+public class LDAPConstants {
 
     public static final String VENDOR = "vendor";
     public static final String VENDOR_RHDS = "rhds";

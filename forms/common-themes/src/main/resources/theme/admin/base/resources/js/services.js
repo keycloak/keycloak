@@ -180,6 +180,10 @@ module.factory('RealmAuditEvents', function($resource) {
     });
 });
 
+module.factory('RealmLDAPConnectionTester', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/testLDAPConnection');
+});
+
 module.factory('ServerInfo', function($resource) {
     return $resource(authUrl + '/admin/serverinfo');
 });

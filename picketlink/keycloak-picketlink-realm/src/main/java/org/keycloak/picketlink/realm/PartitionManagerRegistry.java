@@ -6,10 +6,10 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.jboss.logging.Logger;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.picketlink.idm.KeycloakLDAPIdentityStore;
 import org.keycloak.picketlink.idm.LDAPKeycloakCredentialHandler;
-import org.keycloak.picketlink.idm.LdapConstants;
 import org.picketlink.idm.PartitionManager;
 import org.picketlink.idm.config.AbstractIdentityStoreConfiguration;
 import org.picketlink.idm.config.IdentityConfiguration;
@@ -45,7 +45,7 @@ public class PartitionManagerRegistry {
         // Ldap config might have changed for the realm. In this case, we must re-initialize
         if (context == null || !ldapConfig.equals(context.config)) {
             logger.infof("Creating new partition manager for the realm: %s, LDAP Connection URL: %s, LDAP Base DN: %s, LDAP Vendor: %s", realm.getId(),
-                    ldapConfig.get(LdapConstants.CONNECTION_URL), ldapConfig.get(LdapConstants.BASE_DN), ldapConfig.get(LdapConstants.VENDOR));
+                    ldapConfig.get(LDAPConstants.CONNECTION_URL), ldapConfig.get(LDAPConstants.BASE_DN), ldapConfig.get(LDAPConstants.VENDOR));
             PartitionManager manager = createPartitionManager(ldapConfig);
             context = new PartitionManagerContext(ldapConfig, manager);
             partitionManagers.put(realm.getId(), context);
@@ -71,16 +71,16 @@ public class PartitionManagerRegistry {
         checkSystemProperty("com.sun.jndi.ldap.connect.pool.protocol", "plain");
         checkSystemProperty("com.sun.jndi.ldap.connect.pool.debug", "off");
 
-        String vendor = ldapConfig.get(LdapConstants.VENDOR);
+        String vendor = ldapConfig.get(LDAPConstants.VENDOR);
 
         // RHDS is using "nsuniqueid" as unique identifier instead of "entryUUID"
-        if (vendor != null && vendor.equals(LdapConstants.VENDOR_RHDS)) {
+        if (vendor != null && vendor.equals(LDAPConstants.VENDOR_RHDS)) {
             checkSystemProperty(LDAPIdentityStoreConfiguration.ENTRY_IDENTIFIER_ATTRIBUTE_NAME, "nsuniqueid");
         }
 
-        boolean activeDirectory = vendor != null && vendor.equals(LdapConstants.VENDOR_ACTIVE_DIRECTORY);
+        boolean activeDirectory = vendor != null && vendor.equals(LDAPConstants.VENDOR_ACTIVE_DIRECTORY);
 
-        String ldapLoginNameMapping = ldapConfig.get(LdapConstants.USERNAME_LDAP_ATTRIBUTE);
+        String ldapLoginNameMapping = ldapConfig.get(LDAPConstants.USERNAME_LDAP_ATTRIBUTE);
         if (ldapLoginNameMapping == null) {
             ldapLoginNameMapping = activeDirectory ? CN : UID;
         }
@@ -100,14 +100,14 @@ public class PartitionManagerRegistry {
                     .ldap()
                         .connectionProperties(connectionProps)
                         .addCredentialHandler(LDAPKeycloakCredentialHandler.class)
-                        .baseDN(ldapConfig.get(LdapConstants.BASE_DN))
-                        .bindDN(ldapConfig.get(LdapConstants.BIND_DN))
-                        .bindCredential(ldapConfig.get(LdapConstants.BIND_CREDENTIAL))
-                        .url(ldapConfig.get(LdapConstants.CONNECTION_URL))
+                        .baseDN(ldapConfig.get(LDAPConstants.BASE_DN))
+                        .bindDN(ldapConfig.get(LDAPConstants.BIND_DN))
+                        .bindCredential(ldapConfig.get(LDAPConstants.BIND_CREDENTIAL))
+                        .url(ldapConfig.get(LDAPConstants.CONNECTION_URL))
                         .activeDirectory(activeDirectory)
                         .supportAllFeatures()
                         .mapping(User.class)
-                            .baseDN(ldapConfig.get(LdapConstants.USER_DN_SUFFIX))
+                            .baseDN(ldapConfig.get(LDAPConstants.USER_DN_SUFFIX))
                             .objectClasses("inetOrgPerson", "organizationalPerson")
                             .attribute("loginName", ldapLoginNameMapping, true)
                             .attribute("firstName", ldapFirstNameMapping)
