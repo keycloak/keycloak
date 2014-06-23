@@ -1,15 +1,20 @@
 package org.keycloak.picketlink.realm;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.jboss.logging.Logger;
 import org.keycloak.models.RealmModel;
+import org.keycloak.picketlink.idm.KeycloakLDAPIdentityStore;
 import org.keycloak.picketlink.idm.LDAPKeycloakCredentialHandler;
 import org.keycloak.picketlink.idm.LdapConstants;
 import org.picketlink.idm.PartitionManager;
+import org.picketlink.idm.config.AbstractIdentityStoreConfiguration;
+import org.picketlink.idm.config.IdentityConfiguration;
 import org.picketlink.idm.config.IdentityConfigurationBuilder;
+import org.picketlink.idm.config.IdentityStoreConfiguration;
 import org.picketlink.idm.config.LDAPIdentityStoreConfiguration;
 import org.picketlink.idm.internal.DefaultPartitionManager;
 import org.picketlink.idm.model.basic.User;
@@ -104,7 +109,12 @@ public class PartitionManagerRegistry {
                             .attribute("lastName", ldapLastName)
                             .attribute("email", ldapEmail);
 
-        return new DefaultPartitionManager(builder.buildAll());
+        // Workaround to override the LDAPIdentityStore with our own :/
+        List<IdentityConfiguration> identityConfigs = builder.buildAll();
+        IdentityStoreConfiguration identityStoreConfig = identityConfigs.get(0).getStoreConfiguration().get(0);
+        ((AbstractIdentityStoreConfiguration)identityStoreConfig).setIdentityStoreType(KeycloakLDAPIdentityStore.class);
+
+        return new DefaultPartitionManager(identityConfigs);
     }
 
     private void checkSystemProperty(String name, String defaultValue) {
