@@ -905,14 +905,27 @@ module.controller('RealmLdapSettingsCtrl', function($scope, $location, Notificat
         { "id": "other", "name": "Other" }
     ];
 
+    $scope.usernameLDAPAttributes = [
+        "uid", "cn", "sAMAccountName"
+    ];
+
     $scope.realm = realm;
 
     var oldCopy = angular.copy($scope.realm);
     $scope.changed = false;
 
+    $scope.lastVendor = realm.ldapServer.vendor;
+
     $scope.$watch('realm', function() {
         if (!angular.equals($scope.realm, oldCopy)) {
             $scope.changed = true;
+        }
+
+        if (!angular.equals($scope.realm.ldapServer.vendor, $scope.lastVendor)) {
+            console.log("LDAP vendor changed");
+            $scope.lastVendor = $scope.realm.ldapServer.vendor;
+
+            $scope.realm.ldapServer.usernameLDAPAttribute = ($scope.lastVendor === "ad") ? "cn" : "uid";
         }
     }, true);
 
@@ -928,6 +941,7 @@ module.controller('RealmLdapSettingsCtrl', function($scope, $location, Notificat
     $scope.reset = function() {
         $scope.realm = angular.copy(oldCopy);
         $scope.changed = false;
+        $scope.lastVendor = $scope.realm.ldapServer.vendor;
     };
 });
 

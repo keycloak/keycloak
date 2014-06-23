@@ -80,13 +80,18 @@ public class PartitionManagerRegistry {
 
         boolean activeDirectory = vendor != null && vendor.equals(LdapConstants.VENDOR_ACTIVE_DIRECTORY);
 
-        // Try to compute properties based on LDAP server type, but still allow to override them through System properties TODO: Should allow better way than overriding from System properties. Perhaps init from XML?
-        String ldapLoginName = getNameOfLDAPAttribute("keycloak.ldap.idm.loginName", UID, CN, activeDirectory);
-        String ldapFirstName = getNameOfLDAPAttribute("keycloak.ldap.idm.firstName", CN, "givenName", activeDirectory);
-        String ldapLastName = getNameOfLDAPAttribute("keycloak.ldap.idm.lastName", SN, SN, activeDirectory);
-        String ldapEmail =  getNameOfLDAPAttribute("keycloak.ldap.idm.email", EMAIL, EMAIL, activeDirectory);
+        String ldapLoginNameMapping = ldapConfig.get(LdapConstants.USERNAME_LDAP_ATTRIBUTE);
+        if (ldapLoginNameMapping == null) {
+            ldapLoginNameMapping = activeDirectory ? CN : UID;
+        }
 
-        logger.infof("LDAP Attributes mapping: loginName: %s, firstName: %s, lastName: %s, email: %s", ldapLoginName, ldapFirstName, ldapLastName, ldapEmail);
+        // Try to compute properties based on LDAP server type, but still allow to override them through System properties TODO: Should allow better way than overriding from System properties. Perhaps init from XML?
+        ldapLoginNameMapping = getNameOfLDAPAttribute("keycloak.ldap.idm.loginName", ldapLoginNameMapping, ldapLoginNameMapping, activeDirectory);
+        String ldapFirstNameMapping = getNameOfLDAPAttribute("keycloak.ldap.idm.firstName", CN, "givenName", activeDirectory);
+        String ldapLastNameMapping = getNameOfLDAPAttribute("keycloak.ldap.idm.lastName", SN, SN, activeDirectory);
+        String ldapEmailMapping =  getNameOfLDAPAttribute("keycloak.ldap.idm.email", EMAIL, EMAIL, activeDirectory);
+
+        logger.infof("LDAP Attributes mapping: loginName: %s, firstName: %s, lastName: %s, email: %s", ldapLoginNameMapping, ldapFirstNameMapping, ldapLastNameMapping, ldapEmailMapping);
 
         // Use same mapping for User and Agent for now
         builder
@@ -104,10 +109,10 @@ public class PartitionManagerRegistry {
                         .mapping(User.class)
                             .baseDN(ldapConfig.get(LdapConstants.USER_DN_SUFFIX))
                             .objectClasses("inetOrgPerson", "organizationalPerson")
-                            .attribute("loginName", ldapLoginName, true)
-                            .attribute("firstName", ldapFirstName)
-                            .attribute("lastName", ldapLastName)
-                            .attribute("email", ldapEmail);
+                            .attribute("loginName", ldapLoginNameMapping, true)
+                            .attribute("firstName", ldapFirstNameMapping)
+                            .attribute("lastName", ldapLastNameMapping)
+                            .attribute("email", ldapEmailMapping);
 
         // Workaround to override the LDAPIdentityStore with our own :/
         List<IdentityConfiguration> identityConfigs = builder.buildAll();
