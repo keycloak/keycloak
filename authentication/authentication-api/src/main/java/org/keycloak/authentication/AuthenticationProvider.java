@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
 
 /**
@@ -36,11 +37,11 @@ public interface AuthenticationProvider extends Provider {
      *
      * @param realm
      * @param configuration
-     * @param username
+     * @param user Keycloak user, which will be registered on authentication provider side
      * @return ID of newly created user (For example ID from LDAP)
      * @throws AuthenticationProviderException if user creation couldn't happen
      */
-    String registerUser(RealmModel realm, Map<String, String> configuration, String username) throws AuthenticationProviderException;
+    String registerUser(RealmModel realm, Map<String, String> configuration, UserModel user) throws AuthenticationProviderException;
 
     /**
      * Standard Authentication flow
