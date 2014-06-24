@@ -16,7 +16,12 @@ public class Config {
     }
 
     public static String getProvider(String spi) {
-        return configProvider.getProvider(spi);
+        String provider = configProvider.getProvider(spi);
+        if (provider == null || provider.trim().equals("")) {
+            return null;
+        } else {
+            return provider;
+        }
     }
 
     public static Scope scope(String... scope) {
