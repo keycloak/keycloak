@@ -168,7 +168,7 @@ module.config([ '$routeProvider', function($routeProvider) {
                     return RealmLoader();
                 }
             },
-            controller : 'RealmLdapSettingsCtrl'
+            controller : 'RealmLDAPSettingsCtrl'
         })
         .when('/realms/:realm/audit', {
             templateUrl : 'partials/realm-audit.html',

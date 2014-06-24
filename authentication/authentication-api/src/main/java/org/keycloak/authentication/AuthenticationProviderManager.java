@@ -118,7 +118,7 @@ public class AuthenticationProviderManager {
                                         + authUser.getProviderName() + " but is not linked with model user");
                             }
                         } else {
-                            String userIdInProvider = delegate.registerUser(realm, providerModel.getConfig(), user.getLoginName());
+                            String userIdInProvider = delegate.registerUser(realm, providerModel.getConfig(), user);
                             authLink = new AuthenticationLinkModel(providerModel.getProviderName(), userIdInProvider);
                             user.setAuthenticationLink(authLink);
                             logger.infof("User '%s' registered in provider '%s' and linked", user.getLoginName(), providerModel.getProviderName());
@@ -143,7 +143,7 @@ public class AuthenticationProviderManager {
 
         String username = user.getLoginName();
 
-        // Update just those, which support password update
+        // Update just if password update is supported
         if (providerModel.isPasswordUpdateSupported()) {
             try {
                 AuthenticationProvider delegate = getProvider(providerName);

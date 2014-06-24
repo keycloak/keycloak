@@ -30,11 +30,14 @@ public abstract class AbstractModelAuthenticationProvider implements Authenticat
     }
 
     @Override
-    public String registerUser(RealmModel currentRealm, Map<String, String> config, String username) throws AuthenticationProviderException {
+    public String registerUser(RealmModel currentRealm, Map<String, String> config, UserModel user) throws AuthenticationProviderException {
         RealmModel realm = getRealm(currentRealm, config);
-        UserModel user = currentRealm.addUser(username);
-        user.setEnabled(true);
-        return user.getId();
+        UserModel newUser = realm.addUser(user.getLoginName());
+        newUser.setFirstName(user.getFirstName());
+        newUser.setLastName(user.getLastName());
+        newUser.setEmail(user.getEmail());
+        newUser.setEnabled(true);
+        return newUser.getId();
     }
 
     @Override

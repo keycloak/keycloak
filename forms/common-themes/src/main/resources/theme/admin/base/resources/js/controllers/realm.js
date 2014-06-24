@@ -896,8 +896,8 @@ module.controller('RealmSMTPSettingsCtrl', function($scope, Current, Realm, real
     }
 });
 
-module.controller('RealmLdapSettingsCtrl', function($scope, $location, Notifications, Realm, realm) {
-    console.log('RealmLdapSettingsCtrl');
+module.controller('RealmLDAPSettingsCtrl', function($scope, $location, Notifications, Realm, realm, RealmLDAPConnectionTester) {
+    console.log('RealmLDAPSettingsCtrl');
 
     $scope.ldapVendors = [
         { "id": "ad", "name": "Active Directory" },
@@ -905,14 +905,27 @@ module.controller('RealmLdapSettingsCtrl', function($scope, $location, Notificat
         { "id": "other", "name": "Other" }
     ];
 
+    $scope.usernameLDAPAttributes = [
+        "uid", "cn", "sAMAccountName"
+    ];
+
     $scope.realm = realm;
 
     var oldCopy = angular.copy($scope.realm);
     $scope.changed = false;
 
+    $scope.lastVendor = realm.ldapServer.vendor;
+
     $scope.$watch('realm', function() {
         if (!angular.equals($scope.realm, oldCopy)) {
             $scope.changed = true;
+        }
+
+        if (!angular.equals($scope.realm.ldapServer.vendor, $scope.lastVendor)) {
+            console.log("LDAP vendor changed");
+            $scope.lastVendor = $scope.realm.ldapServer.vendor;
+
+            $scope.realm.ldapServer.usernameLDAPAttribute = ($scope.lastVendor === "ad") ? "cn" : "uid";
         }
     }, true);
 
@@ -928,7 +941,36 @@ module.controller('RealmLdapSettingsCtrl', function($scope, $location, Notificat
     $scope.reset = function() {
         $scope.realm = angular.copy(oldCopy);
         $scope.changed = false;
+        $scope.lastVendor = $scope.realm.ldapServer.vendor;
     };
+
+    var initConnectionTest = function(testAction, ldapConfig) {
+        return {
+            action: testAction,
+            realm: $scope.realm.realm,
+            connectionUrl: ldapConfig.connectionUrl,
+            bindDn: ldapConfig.bindDn,
+            bindCredential: ldapConfig.bindCredential
+        };
+    };
+
+    $scope.testConnection = function() {
+        console.log('RealmLDAPSettingsCtrl: testConnection');
+        RealmLDAPConnectionTester.get(initConnectionTest("testConnection", $scope.realm.ldapServer), function() {
+            Notifications.success("LDAP connection successful.");
+        }, function() {
+            Notifications.error("Error when trying to connect to LDAP. See server.log for details.");
+        });
+    }
+
+    $scope.testAuthentication = function() {
+        console.log('RealmLDAPSettingsCtrl: testAuthentication');
+        RealmLDAPConnectionTester.get(initConnectionTest("testAuthentication", $scope.realm.ldapServer), function() {
+            Notifications.success("LDAP authentication successful.");
+        }, function() {
+            Notifications.error("LDAP authentication failed. See server.log for details");
+        });
+    }
 });
 
 module.controller('RealmAuthSettingsCtrl', function($scope, realm) {

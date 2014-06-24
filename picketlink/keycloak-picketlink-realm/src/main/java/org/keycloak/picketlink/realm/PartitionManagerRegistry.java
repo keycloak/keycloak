@@ -1,15 +1,20 @@
 package org.keycloak.picketlink.realm;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.jboss.logging.Logger;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
+import org.keycloak.picketlink.idm.KeycloakLDAPIdentityStore;
 import org.keycloak.picketlink.idm.LDAPKeycloakCredentialHandler;
-import org.keycloak.picketlink.idm.LdapConstants;
 import org.picketlink.idm.PartitionManager;
+import org.picketlink.idm.config.AbstractIdentityStoreConfiguration;
+import org.picketlink.idm.config.IdentityConfiguration;
 import org.picketlink.idm.config.IdentityConfigurationBuilder;
+import org.picketlink.idm.config.IdentityStoreConfiguration;
 import org.picketlink.idm.config.LDAPIdentityStoreConfiguration;
 import org.picketlink.idm.internal.DefaultPartitionManager;
 import org.picketlink.idm.model.basic.User;
@@ -40,7 +45,7 @@ public class PartitionManagerRegistry {
         // Ldap config might have changed for the realm. In this case, we must re-initialize
         if (context == null || !ldapConfig.equals(context.config)) {
             logger.infof("Creating new partition manager for the realm: %s, LDAP Connection URL: %s, LDAP Base DN: %s, LDAP Vendor: %s", realm.getId(),
-                    ldapConfig.get(LdapConstants.CONNECTION_URL), ldapConfig.get(LdapConstants.BASE_DN), ldapConfig.get(LdapConstants.VENDOR));
+                    ldapConfig.get(LDAPConstants.CONNECTION_URL), ldapConfig.get(LDAPConstants.BASE_DN), ldapConfig.get(LDAPConstants.VENDOR));
             PartitionManager manager = createPartitionManager(ldapConfig);
             context = new PartitionManagerContext(ldapConfig, manager);
             partitionManagers.put(realm.getId(), context);
@@ -66,22 +71,27 @@ public class PartitionManagerRegistry {
         checkSystemProperty("com.sun.jndi.ldap.connect.pool.protocol", "plain");
         checkSystemProperty("com.sun.jndi.ldap.connect.pool.debug", "off");
 
-        String vendor = ldapConfig.get(LdapConstants.VENDOR);
+        String vendor = ldapConfig.get(LDAPConstants.VENDOR);
 
         // RHDS is using "nsuniqueid" as unique identifier instead of "entryUUID"
-        if (vendor != null && vendor.equals(LdapConstants.VENDOR_RHDS)) {
+        if (vendor != null && vendor.equals(LDAPConstants.VENDOR_RHDS)) {
             checkSystemProperty(LDAPIdentityStoreConfiguration.ENTRY_IDENTIFIER_ATTRIBUTE_NAME, "nsuniqueid");
         }
 
-        boolean activeDirectory = vendor != null && vendor.equals(LdapConstants.VENDOR_ACTIVE_DIRECTORY);
+        boolean activeDirectory = vendor != null && vendor.equals(LDAPConstants.VENDOR_ACTIVE_DIRECTORY);
+
+        String ldapLoginNameMapping = ldapConfig.get(LDAPConstants.USERNAME_LDAP_ATTRIBUTE);
+        if (ldapLoginNameMapping == null) {
+            ldapLoginNameMapping = activeDirectory ? CN : UID;
+        }
 
         // Try to compute properties based on LDAP server type, but still allow to override them through System properties TODO: Should allow better way than overriding from System properties. Perhaps init from XML?
-        String ldapLoginName = getNameOfLDAPAttribute("keycloak.ldap.idm.loginName", UID, CN, activeDirectory);
-        String ldapFirstName = getNameOfLDAPAttribute("keycloak.ldap.idm.firstName", CN, "givenName", activeDirectory);
-        String ldapLastName = getNameOfLDAPAttribute("keycloak.ldap.idm.lastName", SN, SN, activeDirectory);
-        String ldapEmail =  getNameOfLDAPAttribute("keycloak.ldap.idm.email", EMAIL, EMAIL, activeDirectory);
+        ldapLoginNameMapping = getNameOfLDAPAttribute("keycloak.ldap.idm.loginName", ldapLoginNameMapping, ldapLoginNameMapping, activeDirectory);
+        String ldapFirstNameMapping = getNameOfLDAPAttribute("keycloak.ldap.idm.firstName", CN, "givenName", activeDirectory);
+        String ldapLastNameMapping = getNameOfLDAPAttribute("keycloak.ldap.idm.lastName", SN, SN, activeDirectory);
+        String ldapEmailMapping =  getNameOfLDAPAttribute("keycloak.ldap.idm.email", EMAIL, EMAIL, activeDirectory);
 
-        logger.infof("LDAP Attributes mapping: loginName: %s, firstName: %s, lastName: %s, email: %s", ldapLoginName, ldapFirstName, ldapLastName, ldapEmail);
+        logger.infof("LDAP Attributes mapping: loginName: %s, firstName: %s, lastName: %s, email: %s", ldapLoginNameMapping, ldapFirstNameMapping, ldapLastNameMapping, ldapEmailMapping);
 
         // Use same mapping for User and Agent for now
         builder
@@ -90,21 +100,26 @@ public class PartitionManagerRegistry {
                     .ldap()
                         .connectionProperties(connectionProps)
                         .addCredentialHandler(LDAPKeycloakCredentialHandler.class)
-                        .baseDN(ldapConfig.get(LdapConstants.BASE_DN))
-                        .bindDN(ldapConfig.get(LdapConstants.BIND_DN))
-                        .bindCredential(ldapConfig.get(LdapConstants.BIND_CREDENTIAL))
-                        .url(ldapConfig.get(LdapConstants.CONNECTION_URL))
+                        .baseDN(ldapConfig.get(LDAPConstants.BASE_DN))
+                        .bindDN(ldapConfig.get(LDAPConstants.BIND_DN))
+                        .bindCredential(ldapConfig.get(LDAPConstants.BIND_CREDENTIAL))
+                        .url(ldapConfig.get(LDAPConstants.CONNECTION_URL))
                         .activeDirectory(activeDirectory)
                         .supportAllFeatures()
                         .mapping(User.class)
-                            .baseDN(ldapConfig.get(LdapConstants.USER_DN_SUFFIX))
+                            .baseDN(ldapConfig.get(LDAPConstants.USER_DN_SUFFIX))
                             .objectClasses("inetOrgPerson", "organizationalPerson")
-                            .attribute("loginName", ldapLoginName, true)
-                            .attribute("firstName", ldapFirstName)
-                            .attribute("lastName", ldapLastName)
-                            .attribute("email", ldapEmail);
+                            .attribute("loginName", ldapLoginNameMapping, true)
+                            .attribute("firstName", ldapFirstNameMapping)
+                            .attribute("lastName", ldapLastNameMapping)
+                            .attribute("email", ldapEmailMapping);
 
-        return new DefaultPartitionManager(builder.buildAll());
+        // Workaround to override the LDAPIdentityStore with our own :/
+        List<IdentityConfiguration> identityConfigs = builder.buildAll();
+        IdentityStoreConfiguration identityStoreConfig = identityConfigs.get(0).getStoreConfiguration().get(0);
+        ((AbstractIdentityStoreConfiguration)identityStoreConfig).setIdentityStoreType(KeycloakLDAPIdentityStore.class);
+
+        return new DefaultPartitionManager(identityConfigs);
     }
 
     private void checkSystemProperty(String name, String defaultValue) {

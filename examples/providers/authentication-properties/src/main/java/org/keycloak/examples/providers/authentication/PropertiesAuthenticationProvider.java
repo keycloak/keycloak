@@ -11,6 +11,7 @@ import org.keycloak.authentication.AuthUser;
 import org.keycloak.authentication.AuthenticationProvider;
 import org.keycloak.authentication.AuthenticationProviderException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -45,9 +46,9 @@ public class PropertiesAuthenticationProvider implements AuthenticationProvider 
     }
 
     @Override
-    public String registerUser(RealmModel realm, Map<String, String> configuration, String username) throws AuthenticationProviderException {
+    public String registerUser(RealmModel realm, Map<String, String> configuration, UserModel user) throws AuthenticationProviderException {
         // Registration ignored
-        return username;
+        return user.getLoginName();
     }
 
     @Override

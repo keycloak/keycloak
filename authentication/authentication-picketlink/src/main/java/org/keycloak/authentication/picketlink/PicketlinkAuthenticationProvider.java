@@ -7,6 +7,7 @@ import org.keycloak.authentication.AuthUser;
 import org.keycloak.authentication.AuthenticationProvider;
 import org.keycloak.authentication.AuthenticationProviderException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.picketlink.IdentityManagerProvider;
 import org.picketlink.idm.IdentityManagementException;
 import org.picketlink.idm.IdentityManager;
@@ -67,16 +68,15 @@ public class PicketlinkAuthenticationProvider implements AuthenticationProvider 
     }
 
     @Override
-    public String registerUser(RealmModel realm, Map<String, String> configuration, String username) throws AuthenticationProviderException {
+    public String registerUser(RealmModel realm, Map<String, String> configuration, UserModel user) throws AuthenticationProviderException {
         IdentityManager identityManager = getIdentityManager(realm);
 
         try {
-            User picketlinkUser = new User(username);
+            User picketlinkUser = new User(user.getLoginName());
+            picketlinkUser.setFirstName(user.getFirstName());
+            picketlinkUser.setLastName(user.getLastName());
+            picketlinkUser.setEmail(user.getEmail());
             identityManager.add(picketlinkUser);
-
-            // Hack needed due to ActiveDirectory bug in Picketlink TODO: Remove once https://issues.jboss.org/browse/PLINK-485 fixed and updated in keycloak master
-            picketlinkUser = BasicModel.getUser(identityManager, picketlinkUser.getLoginName());
-
             return picketlinkUser.getId();
         } catch (IdentityManagementException ie) {
             throw convertIDMException(ie);

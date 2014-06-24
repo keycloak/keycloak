@@ -276,7 +276,7 @@ public class AuthenticationManager {
                 user.setLastName(authUser.getLastName());
                 user.setEmail(authUser.getEmail());
                 user.setAuthenticationLink(new AuthenticationLinkModel(authUser.getProviderName(), authUser.getId()));
-                logger.info("User " + authUser.getUsername() + " created and linked with provider " + authUser.getProviderName());
+                logger.info("User " + authUser.getUsername() + " created in Keycloak and linked with provider " + authUser.getProviderName());
             } else {
                 logger.warn("User " + username + " not found");
                 return AuthenticationStatus.INVALID_USER;

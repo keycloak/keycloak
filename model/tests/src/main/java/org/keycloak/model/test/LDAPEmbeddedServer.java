@@ -17,8 +17,8 @@ import javax.naming.NamingException;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
-import org.keycloak.picketlink.idm.LdapConstants;
 import org.picketbox.test.ldap.AbstractLDAPTest;
 
 /**
@@ -130,12 +130,12 @@ public class LDAPEmbeddedServer extends AbstractLDAPTest {
 
     public void setupLdapInRealm(RealmModel realm) {
         Map<String,String> ldapConfig = new HashMap<String,String>();
-        ldapConfig.put(LdapConstants.CONNECTION_URL, getConnectionUrl());
-        ldapConfig.put(LdapConstants.BASE_DN, getBaseDn());
-        ldapConfig.put(LdapConstants.BIND_DN, getBindDn());
-        ldapConfig.put(LdapConstants.BIND_CREDENTIAL, getBindCredential());
-        ldapConfig.put(LdapConstants.USER_DN_SUFFIX, getUserDnSuffix());
-        ldapConfig.put(LdapConstants.VENDOR, getVendor());
+        ldapConfig.put(LDAPConstants.CONNECTION_URL, getConnectionUrl());
+        ldapConfig.put(LDAPConstants.BASE_DN, getBaseDn());
+        ldapConfig.put(LDAPConstants.BIND_DN, getBindDn());
+        ldapConfig.put(LDAPConstants.BIND_CREDENTIAL, getBindCredential());
+        ldapConfig.put(LDAPConstants.USER_DN_SUFFIX, getUserDnSuffix());
+        ldapConfig.put(LDAPConstants.VENDOR, getVendor());
         realm.setLdapServerConfig(ldapConfig);
     }
 

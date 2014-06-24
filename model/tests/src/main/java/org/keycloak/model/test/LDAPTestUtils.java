@@ -12,7 +12,7 @@ import org.picketlink.idm.model.basic.User;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class LdapTestUtils {
+public class LDAPTestUtils {
 
     public static void setLdapPassword(ProviderSession providerSession, RealmModel realm, String username, String password) {
         // Update password directly in ldap. It's workaround, but LDIF import doesn't seem to work on windows for ApacheDS

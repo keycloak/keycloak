@@ -9,7 +9,7 @@ import org.junit.rules.RuleChain;
 import org.junit.rules.TestRule;
 import org.junit.runners.MethodSorters;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.model.test.LdapTestUtils;
+import org.keycloak.model.test.LDAPTestUtils;
 import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
@@ -62,7 +62,7 @@ public class AuthProvidersIntegrationTest {
 
             // Configure LDAP
             ldapRule.getEmbeddedServer().setupLdapInRealm(appRealm);
-            LdapTestUtils.setLdapPassword(providerSession, appRealm, "johnkeycloak", "password");
+            LDAPTestUtils.setLdapPassword(providerSession, appRealm, "johnkeycloak", "password");
         }
     });
 
