@@ -95,6 +95,10 @@ public class KeycloakServer {
     }
 
     public static void main(String[] args) throws Throwable {
+        bootstrapKeycloakServer(args);
+    }
+
+    public static KeycloakServer bootstrapKeycloakServer(String[] args) throws Throwable {
         KeycloakServerConfig config = new KeycloakServerConfig();
 
         for (int i = 0; i < args.length; i++) {
@@ -158,6 +162,8 @@ public class KeycloakServer {
                 keycloak.stop();
             }
         });
+
+        return keycloak;
     }
 
     private KeycloakServerConfig config;
