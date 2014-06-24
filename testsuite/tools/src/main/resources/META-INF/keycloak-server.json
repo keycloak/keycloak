@@ -15,7 +15,7 @@
     },
 
     "modelCache": {
-        "provider": "${keycloak.model.cache.provider:none}"
+        "provider": "${keycloak.model.cache.provider:simple}"
     },
 
     "timer": {
@@ -31,7 +31,7 @@
         }
     },
 
-    "login-forms": {
+    "login": {
         "provider": "freemarker"
     },
 

@@ -1,20 +1,17 @@
 package org.keycloak.services.resources.admin;
 
 import org.keycloak.audit.AuditListener;
+import org.keycloak.authentication.AuthenticationProvider;
 import org.keycloak.freemarker.ExtendingThemeManager;
 import org.keycloak.freemarker.Theme;
-import org.keycloak.freemarker.ThemeProvider;
-import org.keycloak.provider.ProviderSession;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.social.SocialProvider;
-import org.keycloak.authentication.AuthenticationProvider;
-import org.keycloak.authentication.AuthenticationProviderManager;
 import org.keycloak.util.ProviderLoader;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.core.Context;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -26,7 +23,7 @@ import java.util.Set;
 public class ServerInfoAdminResource {
 
     @Context
-    private ProviderSession providers;
+    private KeycloakSession session;
 
     /**
      * Returns a list of themes, social providers, auth providers, and audit listeners available on this server
@@ -44,7 +41,7 @@ public class ServerInfoAdminResource {
     }
 
     private void setThemes(ServerInfoRepresentation info) {
-        ExtendingThemeManager themeManager = new ExtendingThemeManager(providers);
+        ExtendingThemeManager themeManager = new ExtendingThemeManager(session);
         info.themes = new HashMap<String, List<String>>();
 
         for (Theme.Type type : Theme.Type.values()) {
@@ -65,7 +62,7 @@ public class ServerInfoAdminResource {
 
     private void setAuthProviders(ServerInfoRepresentation info) {
         info.authProviders = new HashMap<String, List<String>>();
-        Iterable<AuthenticationProvider> authProviders = providers.getAllProviders(AuthenticationProvider.class);
+        Iterable<AuthenticationProvider> authProviders = session.getAllProviders(AuthenticationProvider.class);
         for (AuthenticationProvider authProvider : authProviders) {
             info.authProviders.put(authProvider.getName(), authProvider.getAvailableOptions());
         }
@@ -74,7 +71,7 @@ public class ServerInfoAdminResource {
     private void setAuditListeners(ServerInfoRepresentation info) {
         info.auditListeners = new LinkedList<String>();
 
-        Set<String> providers = this.providers.listProviderIds(AuditListener.class);
+        Set<String> providers = session.listProviderIds(AuditListener.class);
         if (providers != null) {
             info.auditListeners.addAll(providers);
         }

@@ -3,7 +3,7 @@ package org.keycloak.theme;
 import org.keycloak.Config;
 import org.keycloak.freemarker.ThemeProvider;
 import org.keycloak.freemarker.ThemeProviderFactory;
-import org.keycloak.provider.ProviderSession;
+import org.keycloak.models.KeycloakSession;
 
 import java.io.File;
 
@@ -15,7 +15,7 @@ public class FolderThemeProviderFactory implements ThemeProviderFactory {
     private FolderThemeProvider themeProvider;
 
     @Override
-    public ThemeProvider create(ProviderSession providerSession) {
+    public ThemeProvider create(KeycloakSession sessions) {
         return themeProvider;
     }
 

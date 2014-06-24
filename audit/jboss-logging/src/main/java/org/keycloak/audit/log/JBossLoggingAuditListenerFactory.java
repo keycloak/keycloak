@@ -4,7 +4,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.audit.AuditListener;
 import org.keycloak.audit.AuditListenerFactory;
-import org.keycloak.provider.ProviderSession;
+import org.keycloak.models.KeycloakSession;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -16,7 +16,7 @@ public class JBossLoggingAuditListenerFactory implements AuditListenerFactory {
     private static final Logger logger = Logger.getLogger("org.keycloak.audit");
 
     @Override
-    public AuditListener create(ProviderSession providerSession) {
+    public AuditListener create(KeycloakSession session) {
         return new JBossLoggingAuditListener(logger);
     }
 

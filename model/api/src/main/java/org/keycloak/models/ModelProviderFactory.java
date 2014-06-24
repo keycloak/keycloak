@@ -1,10 +1,10 @@
 package org.keycloak.models;
 
+import org.keycloak.provider.ProviderFactory;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface KeycloakSessionFactory {
-    KeycloakSession create();
-    void close();
+public interface ModelProviderFactory extends ProviderFactory<ModelProvider> {
 }

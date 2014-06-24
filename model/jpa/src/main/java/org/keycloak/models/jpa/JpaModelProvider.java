@@ -20,10 +20,13 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class JpaKeycloakSession implements KeycloakSession {
+public class JpaModelProvider implements ModelProvider {
+    private final KeycloakSession session;
     protected EntityManager em;
 
-    public JpaKeycloakSession(EntityManager em) {
+    public JpaModelProvider(KeycloakSession session, EntityManager em) {
+        this.session = session;
+        this.em = em;
         this.em = PersistenceExceptionConverter.create(em);
     }
 
@@ -44,14 +47,14 @@ public class JpaKeycloakSession implements KeycloakSession {
         realm.setId(id);
         em.persist(realm);
         em.flush();
-        return new RealmAdapter(this, em, realm);
+        return new RealmAdapter(session, em, realm);
     }
 
     @Override
     public RealmModel getRealm(String id) {
         RealmEntity realm = em.find(RealmEntity.class, id);
         if (realm == null) return null;
-        return new RealmAdapter(this, em, realm);
+        return new RealmAdapter(session, em, realm);
     }
 
     @Override
@@ -60,7 +63,7 @@ public class JpaKeycloakSession implements KeycloakSession {
         List<RealmEntity> entities = query.getResultList();
         List<RealmModel> realms = new ArrayList<RealmModel>();
         for (RealmEntity entity : entities) {
-            realms.add(new RealmAdapter(this, em, entity));
+            realms.add(new RealmAdapter(session, em, entity));
         }
         return realms;
     }
@@ -74,7 +77,7 @@ public class JpaKeycloakSession implements KeycloakSession {
         if (entities.size() > 1) throw new IllegalStateException("Should not be more than one realm with same name");
         RealmEntity realm = query.getResultList().get(0);
         if (realm == null) return null;
-        return new RealmAdapter(this, em, realm);
+        return new RealmAdapter(session, em, realm);
     }
 
     @Override
@@ -116,7 +119,7 @@ public class JpaKeycloakSession implements KeycloakSession {
             return false;
         }
 
-        RealmAdapter adapter = new RealmAdapter(this, em, realm);
+        RealmAdapter adapter = new RealmAdapter(session, em, realm);
         adapter.removeUserSessions();
         for (ApplicationEntity a : new LinkedList<ApplicationEntity>(realm.getApplications())) {
             adapter.removeApplication(a.getId());

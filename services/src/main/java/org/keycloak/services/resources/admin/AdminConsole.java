@@ -8,7 +8,6 @@ import org.jboss.resteasy.spi.HttpResponse;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.freemarker.ExtendingThemeManager;
 import org.keycloak.freemarker.Theme;
-import org.keycloak.freemarker.ThemeProvider;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
@@ -16,7 +15,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.provider.ProviderSession;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.ApplicationManager;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -73,9 +71,6 @@ public class AdminConsole {
     protected Providers providers;
 
     @Context
-    protected ProviderSession providerSession;
-
-    @Context
     protected KeycloakApplication keycloak;
 
     protected AppAuthManager authManager;
@@ -83,7 +78,7 @@ public class AdminConsole {
 
     public AdminConsole(RealmModel realm) {
         this.realm = realm;
-        this.authManager = new AppAuthManager(providerSession);
+        this.authManager = new AppAuthManager(session);
     }
 
     public static class WhoAmI {
@@ -315,7 +310,7 @@ public class AdminConsole {
         }
 
         try {
-            ExtendingThemeManager themeManager = new ExtendingThemeManager(providerSession);
+            ExtendingThemeManager themeManager = new ExtendingThemeManager(session);
             Theme theme = themeManager.createTheme(realm.getAdminTheme(), Theme.Type.ADMIN);
             InputStream resource = theme.getResourceAsStream(path);
             if (resource != null) {

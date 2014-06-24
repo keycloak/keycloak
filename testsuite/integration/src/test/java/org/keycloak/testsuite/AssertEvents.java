@@ -14,11 +14,11 @@ import org.keycloak.audit.Details;
 import org.keycloak.audit.Event;
 import org.keycloak.audit.EventType;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.provider.ProviderSession;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.rule.KeycloakRule;
@@ -173,7 +173,7 @@ public class AssertEvents implements TestRule, AuditListenerFactory {
     }
 
     @Override
-    public AuditListener create(ProviderSession providerSession) {
+    public AuditListener create(KeycloakSession session) {
         return new AuditListener() {
             @Override
             public void onEvent(Event event) {

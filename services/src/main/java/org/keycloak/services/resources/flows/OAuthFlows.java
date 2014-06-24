@@ -30,28 +30,24 @@ import org.keycloak.audit.Details;
 import org.keycloak.audit.EventType;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.provider.ProviderSession;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.TokenManager;
-import org.keycloak.util.MultivaluedHashMap;
-import org.keycloak.util.Time;
 
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -66,7 +62,7 @@ public class OAuthFlows {
 
     private static final Logger log = Logger.getLogger(OAuthFlows.class);
 
-    private final ProviderSession providerSession;
+    private final KeycloakSession session;
 
     private final RealmModel realm;
 
@@ -78,9 +74,9 @@ public class OAuthFlows {
 
     private final TokenManager tokenManager;
 
-    OAuthFlows(ProviderSession providerSession, RealmModel realm, HttpRequest request, UriInfo uriInfo, AuthenticationManager authManager,
+    OAuthFlows(KeycloakSession session, RealmModel realm, HttpRequest request, UriInfo uriInfo, AuthenticationManager authManager,
             TokenManager tokenManager) {
-        this.providerSession = providerSession;
+        this.session = session;
         this.realm = realm;
         this.request = request;
         this.uriInfo = uriInfo;
@@ -142,7 +138,7 @@ public class OAuthFlows {
                 audit.clone().event(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, accessCode.getUser().getEmail()).success();
             }
 
-            return Flows.forms(providerSession, realm, uriInfo).setAccessCode(accessCode.getCode()).setUser(user)
+            return Flows.forms(this.session, realm, uriInfo).setAccessCode(accessCode.getCode()).setUser(user)
                     .createResponse(action);
         }
 
@@ -171,7 +167,7 @@ public class OAuthFlows {
                     }
                 }
             }
-            return Flows.forms(providerSession, realm, uriInfo).setAccessCode(accessCode.getCode()).
+            return Flows.forms(this.session, realm, uriInfo).setAccessCode(accessCode.getCode()).
                     setAccessRequest(realmRolesRequested, appRolesRequested).
                     setClient(client).createOAuthGrant();
         }
@@ -185,7 +181,7 @@ public class OAuthFlows {
     }
 
     public Response forwardToSecurityFailure(String message) {
-        return Flows.forms(providerSession, realm, uriInfo).setError(message).createErrorPage();
+        return Flows.forms(session, realm, uriInfo).setError(message).createErrorPage();
     }
 
     private void isTotpConfigurationRequired(UserModel user) {

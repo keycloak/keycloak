@@ -1,12 +1,10 @@
 package org.keycloak.test.tools.jobs;
 
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.cache.CacheKeycloakSession;
-import org.keycloak.provider.ProviderSession;
-import org.keycloak.provider.ProviderSessionFactory;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.test.tools.PerfTools;
 
@@ -19,16 +17,16 @@ import java.io.StringWriter;
 public class CreateUsers implements Runnable {
 
     private PerfTools.Job job;
-    private final ProviderSessionFactory providerSessionFactory;
+    private final KeycloakSessionFactory sessionFactory;
     private final String realmName;
     private int start;
     private int count;
     private String prefix;
     private String[] roles;
 
-    public CreateUsers(PerfTools.Job job, ProviderSessionFactory providerSessionFactory, String realmName, int start, int count, String prefix, String[] roles) {
+    public CreateUsers(PerfTools.Job job, KeycloakSessionFactory sessionFactory, String realmName, int start, int count, String prefix, String[] roles) {
         this.job = job;
-        this.providerSessionFactory = providerSessionFactory;
+        this.sessionFactory = sessionFactory;
         this.realmName = realmName;
         this.start = start;
         this.count = count;
@@ -40,10 +38,8 @@ public class CreateUsers implements Runnable {
     public void run() {
         job.start();
 
-        ProviderSession providerSession = providerSessionFactory.createSession();
+        KeycloakSession session = sessionFactory.create();
         try {
-            KeycloakSession session = providerSession.getProvider(CacheKeycloakSession.class);
-
             session.getTransaction().begin();
 
             RealmModel realm = new RealmManager(session).getRealmByName(realmName);
@@ -74,7 +70,7 @@ public class CreateUsers implements Runnable {
             t.printStackTrace(new PrintWriter(sw));
             job.setError(sw.toString());
         } finally {
-            providerSession.close();
+            session.close();
         }
     }
 

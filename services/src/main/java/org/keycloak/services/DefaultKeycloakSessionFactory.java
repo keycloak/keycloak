@@ -2,10 +2,10 @@ package org.keycloak.services;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
-import org.keycloak.provider.ProviderSession;
-import org.keycloak.provider.ProviderSessionFactory;
 import org.keycloak.provider.Spi;
 
 import java.util.HashMap;
@@ -14,9 +14,9 @@ import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
 
-public class DefaultProviderSessionFactory implements ProviderSessionFactory {
+public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory {
 
-    private static final Logger log = Logger.getLogger(DefaultProviderSessionFactory.class);
+    private static final Logger log = Logger.getLogger(DefaultKeycloakSessionFactory.class);
 
     private Map<Class<? extends Provider>, String> provider = new HashMap<Class<? extends Provider>, String>();
     private Map<Class<? extends Provider>, Map<String, ProviderFactory>> factoriesMap = new HashMap<Class<? extends Provider>, Map<String, ProviderFactory>>();
@@ -66,8 +66,12 @@ public class DefaultProviderSessionFactory implements ProviderSessionFactory {
         throw new RuntimeException("Failed to find provider " + id + " for " + spi.getName());
     }
 
-    public ProviderSession createSession() {
-        return new DefaultProviderSession(this);
+    public KeycloakSession create() {
+        return new DefaultKeycloakSession(this);
+    }
+
+    <T extends Provider> String getDefaultProvider(Class<T> clazz) {
+        return provider.get(clazz);
     }
 
     <T extends Provider> ProviderFactory<T> getProviderFactory(Class<T> clazz) {

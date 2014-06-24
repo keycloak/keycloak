@@ -30,7 +30,7 @@ public class CreateRealmsWorker implements Worker {
     private boolean createRequiredCredentials;
 
     @Override
-    public void setup(int workerId, KeycloakSession identitySession) {
+    public void setup(int workerId, KeycloakSession session) {
         offset = PerfTestUtils.readSystemProperty("keycloak.perf.createRealms.realms.offset", Integer.class);
         appsPerRealm = PerfTestUtils.readSystemProperty("keycloak.perf.createRealms.appsPerRealm", Integer.class);
         rolesPerRealm = PerfTestUtils.readSystemProperty("keycloak.perf.createRealms.rolesPerRealm", Integer.class);
@@ -51,10 +51,10 @@ public class CreateRealmsWorker implements Worker {
     }
 
     @Override
-    public void run(SampleResult result, KeycloakSession identitySession) {
+    public void run(SampleResult result, KeycloakSession session) {
         int realmNumber = realmCounter.getAndIncrement();
         String realmName = PerfTestUtils.getRealmName(realmNumber);
-        RealmManager realmManager = new RealmManager(identitySession);
+        RealmManager realmManager = new RealmManager(session);
         RealmModel realm = realmManager.createRealm(realmName, realmName);
 
         // Add roles

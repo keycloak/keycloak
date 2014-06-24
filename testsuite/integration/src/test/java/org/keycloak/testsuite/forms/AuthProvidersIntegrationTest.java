@@ -62,7 +62,7 @@ public class AuthProvidersIntegrationTest {
 
             // Configure LDAP
             ldapRule.getEmbeddedServer().setupLdapInRealm(appRealm);
-            LDAPTestUtils.setLdapPassword(providerSession, appRealm, "johnkeycloak", "password");
+            LDAPTestUtils.setLdapPassword(session, appRealm, "johnkeycloak", "password");
         }
     });
 

@@ -1,15 +1,14 @@
 package org.keycloak.authentication.model;
 
+import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.authentication.AuthProviderConstants;
+import org.keycloak.authentication.AuthenticationProviderException;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.authentication.AuthProviderConstants;
-import org.keycloak.authentication.AuthenticationProviderException;
-import org.keycloak.provider.ProviderSession;
 
 /**
  * AbstractModelAuthenticationProvider, which delegates authentication operations to different (external) realm
@@ -18,7 +17,7 @@ import org.keycloak.provider.ProviderSession;
  */
 public class ExternalModelAuthenticationProvider extends AbstractModelAuthenticationProvider {
 
-    public ExternalModelAuthenticationProvider(ProviderSession providerSession) {
+    public ExternalModelAuthenticationProvider() {
     }
 
     @Override

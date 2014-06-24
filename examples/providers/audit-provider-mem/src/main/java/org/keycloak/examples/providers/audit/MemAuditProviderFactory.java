@@ -5,7 +5,7 @@ import org.keycloak.audit.AuditProvider;
 import org.keycloak.audit.AuditProviderFactory;
 import org.keycloak.audit.Event;
 import org.keycloak.audit.EventType;
-import org.keycloak.provider.ProviderSession;
+import org.keycloak.models.KeycloakSession;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -23,7 +23,7 @@ public class MemAuditProviderFactory implements AuditProviderFactory {
     private Set<EventType> excludedEvents;
 
     @Override
-    public AuditProvider create(ProviderSession providerSession) {
+    public AuditProvider create(KeycloakSession session) {
         return new MemAuditProvider(events, excludedEvents);
     }
 

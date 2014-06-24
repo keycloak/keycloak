@@ -8,9 +8,8 @@ import org.keycloak.freemarker.ExtendingThemeManager;
 import org.keycloak.freemarker.FreeMarkerException;
 import org.keycloak.freemarker.FreeMarkerUtil;
 import org.keycloak.freemarker.Theme;
-import org.keycloak.freemarker.ThemeProvider;
-import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.login.LoginFormsPages;
+import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.login.freemarker.model.CodeBean;
 import org.keycloak.login.freemarker.model.LoginBean;
 import org.keycloak.login.freemarker.model.MessageBean;
@@ -22,10 +21,10 @@ import org.keycloak.login.freemarker.model.SocialBean;
 import org.keycloak.login.freemarker.model.TotpBean;
 import org.keycloak.login.freemarker.model.UrlBean;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.provider.ProviderSession;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Urls;
 
@@ -62,7 +61,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
     private MultivaluedMap<String, String> formData;
 
-    private ProviderSession session;
+    private KeycloakSession session;
     private FreeMarkerUtil freeMarker;
     private RealmModel realm;
 
@@ -72,7 +71,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
     private UriInfo uriInfo;
 
-    public FreeMarkerLoginFormsProvider(ProviderSession session, FreeMarkerUtil freeMarker) {
+    public FreeMarkerLoginFormsProvider(KeycloakSession session, FreeMarkerUtil freeMarker) {
         this.session = session;
         this.freeMarker = freeMarker;
     }

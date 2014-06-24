@@ -8,16 +8,15 @@ import org.keycloak.email.freemarker.beans.EventBean;
 import org.keycloak.freemarker.ExtendingThemeManager;
 import org.keycloak.freemarker.FreeMarkerUtil;
 import org.keycloak.freemarker.Theme;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.provider.ProviderSession;
 
 import javax.mail.Message;
 import javax.mail.Session;
 import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -29,12 +28,12 @@ public class FreeMarkerEmailProvider implements EmailProvider {
 
     private static final Logger log = Logger.getLogger(FreeMarkerEmailProvider.class);
 
-    private ProviderSession session;
+    private KeycloakSession session;
     private FreeMarkerUtil freeMarker;
     private RealmModel realm;
     private UserModel user;
 
-    public FreeMarkerEmailProvider(ProviderSession session, FreeMarkerUtil freeMarker) {
+    public FreeMarkerEmailProvider(KeycloakSession session, FreeMarkerUtil freeMarker) {
         this.session = session;
         this.freeMarker = freeMarker;
     }

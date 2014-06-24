@@ -1,17 +1,8 @@
 package org.keycloak.models.cache;
 
-import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleContainerModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.cache.entities.CachedApplication;
 import org.keycloak.models.cache.entities.CachedOAuthClient;
-
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -21,7 +12,7 @@ public class OAuthClientAdapter extends ClientAdapter implements OAuthClientMode
     protected OAuthClientModel updated;
     protected CachedOAuthClient cached;
 
-    public OAuthClientAdapter(RealmModel cachedRealm, CachedOAuthClient cached, CacheKeycloakSession cacheSession, KeycloakCache cache) {
+    public OAuthClientAdapter(RealmModel cachedRealm, CachedOAuthClient cached, CacheModelProvider cacheSession, KeycloakCache cache) {
         super(cachedRealm, cached, cache, cacheSession);
         this.cached = cached;
     }

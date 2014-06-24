@@ -4,7 +4,7 @@ import org.keycloak.Config;
 import org.keycloak.audit.AuditProvider;
 import org.keycloak.audit.AuditProviderFactory;
 import org.keycloak.audit.EventType;
-import org.keycloak.provider.ProviderSession;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.util.JpaUtils;
 
 import javax.persistence.EntityManagerFactory;
@@ -23,7 +23,7 @@ public class JpaAuditProviderFactory implements AuditProviderFactory {
     private Set<EventType> includedEvents = new HashSet<EventType>();
 
     @Override
-    public AuditProvider create(ProviderSession providerSession) {
+    public AuditProvider create(KeycloakSession session) {
         return new JpaAuditProvider(emf.createEntityManager(), includedEvents);
     }
 

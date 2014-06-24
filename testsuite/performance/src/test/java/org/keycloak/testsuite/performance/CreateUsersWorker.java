@@ -36,7 +36,7 @@ public class CreateUsersWorker implements Worker {
     private int socialLinksPerUserCount;
 
     @Override
-    public void setup(int workerId, KeycloakSession identitySession) {
+    public void setup(int workerId, KeycloakSession session) {
         realmsOffset = PerfTestUtils.readSystemProperty("keycloak.perf.createUsers.realms.offset", Integer.class);
         addBasicUserAttributes = PerfTestUtils.readSystemProperty("keycloak.perf.createUsers.addBasicUserAttributes", Boolean.class);
         addDefaultRoles = PerfTestUtils.readSystemProperty("keycloak.perf.createUsers.addDefaultRoles", Boolean.class);
@@ -57,9 +57,9 @@ public class CreateUsersWorker implements Worker {
     }
 
     @Override
-    public void run(SampleResult result, KeycloakSession identitySession) {
+    public void run(SampleResult result, KeycloakSession session) {
         // We need to obtain realm first
-        RealmModel realm = identitySession.getRealm(realmId);
+        RealmModel realm = session.getRealm(realmId);
         if (realm == null) {
             throw new IllegalStateException("Realm '" + realmId + "' not found");
         }

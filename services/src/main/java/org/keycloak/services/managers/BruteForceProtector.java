@@ -6,8 +6,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UsernameLoginFailureModel;
-import org.keycloak.provider.ProviderSession;
-import org.keycloak.provider.ProviderSessionFactory;
 import org.keycloak.services.ClientConnection;
 
 import java.util.ArrayList;
@@ -27,7 +25,7 @@ public class BruteForceProtector implements Runnable {
 
     protected volatile boolean run = true;
     protected int maxDeltaTimeSeconds = 60 * 60 * 12; // 12 hours
-    protected ProviderSessionFactory factory;
+    protected KeycloakSessionFactory factory;
     protected CountDownLatch shutdownLatch = new CountDownLatch(1);
 
     protected volatile long failures;
@@ -75,7 +73,7 @@ public class BruteForceProtector implements Runnable {
         }
     }
 
-    public BruteForceProtector(ProviderSessionFactory factory) {
+    public BruteForceProtector(KeycloakSessionFactory factory) {
         this.factory = factory;
     }
 
@@ -163,8 +161,7 @@ public class BruteForceProtector implements Runnable {
                         events.add(take);
                         queue.drainTo(events, TRANSACTION_SIZE);
                         Collections.sort(events); // we sort to avoid deadlock due to ordered updates.  Maybe I'm overthinking this.
-                        ProviderSession providerSession = factory.createSession();
-                        KeycloakSession session = providerSession.getProvider(KeycloakSession.class);
+                        KeycloakSession session = factory.create();
                         session.getTransaction().begin();
                         try {
                             for (LoginEvent event : events) {
@@ -185,7 +182,7 @@ public class BruteForceProtector implements Runnable {
                                 }
                             }
                             events.clear();
-                            providerSession.close();
+                            session.close();
                         }
                     } catch (Exception e) {
                         logger.error("Failed processing event", e);

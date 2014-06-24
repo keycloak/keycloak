@@ -10,7 +10,7 @@ import org.keycloak.provider.Spi;
 public class LoginFormsSpi implements Spi {
     @Override
     public String getName() {
-        return "login-forms";
+        return "login";
     }
 
     @Override

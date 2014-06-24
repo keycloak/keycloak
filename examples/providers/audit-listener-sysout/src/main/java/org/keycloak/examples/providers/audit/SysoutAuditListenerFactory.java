@@ -4,7 +4,7 @@ import org.keycloak.Config;
 import org.keycloak.audit.AuditListener;
 import org.keycloak.audit.AuditListenerFactory;
 import org.keycloak.audit.EventType;
-import org.keycloak.provider.ProviderSession;
+import org.keycloak.models.KeycloakSession;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -17,7 +17,7 @@ public class SysoutAuditListenerFactory implements AuditListenerFactory {
     private Set<EventType> excludedEvents;
 
     @Override
-    public AuditListener create(ProviderSession providerSession) {
+    public AuditListener create(KeycloakSession session) {
         return new SysoutAuditListener(excludedEvents);
     }
 

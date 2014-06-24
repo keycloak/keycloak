@@ -4,6 +4,7 @@ import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
+import org.keycloak.models.ModelProvider;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -11,16 +12,7 @@ import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UsernameLoginFailureModel;
-import org.keycloak.models.cache.entities.CachedApplication;
-import org.keycloak.models.cache.entities.CachedApplicationRole;
-import org.keycloak.models.cache.entities.CachedOAuthClient;
-import org.keycloak.models.cache.entities.CachedRealm;
-import org.keycloak.models.cache.entities.CachedRealmRole;
-import org.keycloak.models.cache.entities.CachedRole;
-import org.keycloak.provider.ProviderSession;
 
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -29,30 +21,30 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class NoCacheKeycloakSession implements CacheKeycloakSession {
-    protected ProviderSession providerSession;
-    protected KeycloakSession sessionDelegate;
+public class NoCacheModelProvider implements CacheModelProvider {
+    protected KeycloakSession session;
+    protected ModelProvider delegate;
     protected KeycloakTransaction transactionDelegate;
     protected boolean transactionActive;
     protected boolean setRollbackOnly;
 
-    public NoCacheKeycloakSession(ProviderSession providerSession) {
-        this.providerSession = providerSession;
+    public NoCacheModelProvider(KeycloakSession session) {
+        this.session = session;
     }
 
     @Override
-    public KeycloakSession getDelegate() {
+    public ModelProvider getDelegate() {
         if (!transactionActive) throw new IllegalStateException("Cannot access delegate without a transaction");
-        if (sessionDelegate != null) return sessionDelegate;
-        sessionDelegate = providerSession.getProvider(KeycloakSession.class);
-        transactionDelegate = sessionDelegate.getTransaction();
+        if (delegate != null) return delegate;
+        delegate = session.getProvider(ModelProvider.class);
+        transactionDelegate = delegate.getTransaction();
         if (!transactionDelegate.isActive()) {
             transactionDelegate.begin();
             if (setRollbackOnly) {
                 transactionDelegate.setRollbackOnly();
             }
         }
-        return sessionDelegate;
+        return delegate;
     }
 
     @Override
@@ -81,9 +73,9 @@ public class NoCacheKeycloakSession implements CacheKeycloakSession {
 
             @Override
             public void commit() {
-                if (sessionDelegate == null) return;
+                if (delegate == null) return;
                 try {
-                    sessionDelegate.getTransaction().commit();
+                    delegate.getTransaction().commit();
                 } finally {
                 }
             }
@@ -91,9 +83,9 @@ public class NoCacheKeycloakSession implements CacheKeycloakSession {
             @Override
             public void rollback() {
                 setRollbackOnly = true;
-                if (sessionDelegate == null) return;
+                if (delegate == null) return;
                 try {
-                    sessionDelegate.getTransaction().rollback();
+                    delegate.getTransaction().rollback();
                 } finally {
                 }
             }
@@ -101,8 +93,8 @@ public class NoCacheKeycloakSession implements CacheKeycloakSession {
             @Override
             public void setRollbackOnly() {
                 setRollbackOnly = true;
-                if (sessionDelegate == null) return;
-                sessionDelegate.getTransaction().setRollbackOnly();
+                if (delegate == null) return;
+                delegate.getTransaction().setRollbackOnly();
                 setRollbackOnly = true;
             }
 
@@ -171,7 +163,7 @@ public class NoCacheKeycloakSession implements CacheKeycloakSession {
 
     @Override
     public void close() {
-        if (sessionDelegate != null) sessionDelegate.close();
+        if (delegate != null) delegate.close();
     }
 
     @Override

@@ -9,11 +9,10 @@ import org.keycloak.Config;
 import org.keycloak.SkeletonKeyContextResolver;
 import org.keycloak.exportimport.ExportImportProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
-import org.keycloak.provider.ProviderSession;
-import org.keycloak.provider.ProviderSessionFactory;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.services.DefaultProviderSessionFactory;
+import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.RealmManager;
@@ -54,22 +53,22 @@ public class KeycloakApplication extends Application {
     protected Set<Object> singletons = new HashSet<Object>();
     protected Set<Class<?>> classes = new HashSet<Class<?>>();
 
-    protected ProviderSessionFactory providerSessionFactory;
+    protected KeycloakSessionFactory sessionFactory;
     protected String contextPath;
 
     public KeycloakApplication(@Context ServletContext context, @Context Dispatcher dispatcher) {
         loadConfig();
 
-        this.providerSessionFactory = createProviderSessionFactory();
+        this.sessionFactory = createSessionFactory();
 
         dispatcher.getDefaultContextObjects().put(KeycloakApplication.class, this);
         this.contextPath = context.getContextPath();
-        BruteForceProtector protector = new BruteForceProtector(providerSessionFactory);
+        BruteForceProtector protector = new BruteForceProtector(sessionFactory);
         dispatcher.getDefaultContextObjects().put(BruteForceProtector.class, protector);
         ResteasyProviderFactory.pushContext(BruteForceProtector.class, protector); // for injection
         protector.start();
         context.setAttribute(BruteForceProtector.class.getName(), protector);
-        context.setAttribute(ProviderSessionFactory.class.getName(), this.providerSessionFactory);
+        context.setAttribute(KeycloakSessionFactory.class.getName(), this.sessionFactory);
 
         TokenManager tokenManager = new TokenManager();
 
@@ -86,7 +85,7 @@ public class KeycloakApplication extends Application {
 
         setupDefaultRealm(context.getContextPath());
 
-        setupScheduledTasks(providerSessionFactory);
+        setupScheduledTasks(sessionFactory);
         importRealms(context);
     }
 
@@ -135,25 +134,25 @@ public class KeycloakApplication extends Application {
     }
 
     protected void setupDefaultRealm(String contextPath) {
-        new ApplianceBootstrap().bootstrap(providerSessionFactory, contextPath);
+        new ApplianceBootstrap().bootstrap(sessionFactory, contextPath);
     }
 
-    public static DefaultProviderSessionFactory createProviderSessionFactory() {
-        DefaultProviderSessionFactory factory = new DefaultProviderSessionFactory();
+    public static KeycloakSessionFactory createSessionFactory() {
+        DefaultKeycloakSessionFactory factory = new DefaultKeycloakSessionFactory();
         factory.init();
         return factory;
     }
 
-    public static void setupScheduledTasks(final ProviderSessionFactory providerSessionFactory) {
+    public static void setupScheduledTasks(final KeycloakSessionFactory sessionFactory) {
         long interval = Config.scope("scheduled").getLong("interval", 60L) * 1000;
 
-        TimerProvider timer = providerSessionFactory.createSession().getProvider(TimerProvider.class);
-        timer.schedule(new ScheduledTaskRunner(providerSessionFactory, new ClearExpiredAuditEvents()), interval);
-        timer.schedule(new ScheduledTaskRunner(providerSessionFactory, new ClearExpiredUserSessions()), interval);
+        TimerProvider timer = sessionFactory.create().getProvider(TimerProvider.class);
+        timer.schedule(new ScheduledTaskRunner(sessionFactory, new ClearExpiredAuditEvents()), interval);
+        timer.schedule(new ScheduledTaskRunner(sessionFactory, new ClearExpiredUserSessions()), interval);
     }
 
-    public ProviderSessionFactory getProviderSessionFactory() {
-        return providerSessionFactory;
+    public KeycloakSessionFactory getSessionFactory() {
+        return sessionFactory;
     }
 
     @Override
@@ -201,8 +200,7 @@ public class KeycloakApplication extends Application {
     }
 
     public void importRealm(RealmRepresentation rep, String from) {
-        ProviderSession providerSession = providerSessionFactory.createSession();
-        KeycloakSession session = providerSession.getProvider(KeycloakSession.class);
+        KeycloakSession session = sessionFactory.create();
         try {
             session.getTransaction().begin();
             RealmManager manager = new RealmManager(session);
@@ -225,7 +223,7 @@ public class KeycloakApplication extends Application {
 
             session.getTransaction().commit();
         } finally {
-            providerSession.close();
+            session.close();
         }
     }
 
@@ -242,7 +240,7 @@ public class KeycloakApplication extends Application {
 
         if (providers.hasNext()) {
             ExportImportProvider exportImport = providers.next();
-            exportImport.checkExportImport(providerSessionFactory);
+            exportImport.checkExportImport(sessionFactory);
         } else {
             log.warn("No ExportImportProvider found!");
         }

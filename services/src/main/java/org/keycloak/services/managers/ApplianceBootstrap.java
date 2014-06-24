@@ -1,22 +1,20 @@
 package org.keycloak.services.managers;
 
-import java.util.Arrays;
-
 import org.jboss.logging.Logger;
+import org.keycloak.Config;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.AuthenticationProviderModel;
-import org.keycloak.Config;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.provider.ProviderSession;
-import org.keycloak.provider.ProviderSessionFactory;
 import org.keycloak.representations.idm.CredentialRepresentation;
 
+import java.util.Arrays;
 import java.util.Collections;
 
 /**
@@ -27,16 +25,15 @@ public class ApplianceBootstrap {
 
     private static final Logger logger = Logger.getLogger(ApplianceBootstrap.class);
 
-    public void bootstrap(ProviderSessionFactory factory, String contextPath) {
-        ProviderSession providerSession = factory.createSession();
-        KeycloakSession session = providerSession.getProvider(KeycloakSession.class);
+    public void bootstrap(KeycloakSessionFactory sessionFactory, String contextPath) {
+        KeycloakSession session = sessionFactory.create();
         session.getTransaction().begin();
 
         try {
             bootstrap(session, contextPath);
             session.getTransaction().commit();
         } finally {
-            providerSession.close();
+            session.close();
         }
     }
 

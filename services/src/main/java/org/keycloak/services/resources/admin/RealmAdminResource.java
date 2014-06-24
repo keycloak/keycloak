@@ -13,7 +13,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.provider.ProviderSession;
 import org.keycloak.representations.adapters.action.SessionStats;
 import org.keycloak.representations.idm.RealmAuditRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -53,16 +52,8 @@ public class RealmAdminResource {
     protected RealmModel realm;
     private TokenManager tokenManager;
 
-    /*
-    @Context
-    protected ResourceContext resourceContext;
-    */
-
     @Context
     protected KeycloakSession session;
-
-    @Context
-    protected ProviderSession providers;
 
     @Context
     protected UriInfo uriInfo;
@@ -174,7 +165,7 @@ public class RealmAdminResource {
      */
     @Path("users")
     public UsersResource users() {
-        UsersResource users = new UsersResource(providers, realm, auth, tokenManager);
+        UsersResource users = new UsersResource(realm, auth, tokenManager);
         ResteasyProviderFactory.getInstance().injectProperties(users);
         //resourceContext.initResource(users);
         return users;
@@ -323,7 +314,7 @@ public class RealmAdminResource {
                                 @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult, @QueryParam("max") Integer maxResults) {
         auth.init(RealmAuth.Resource.AUDIT).requireView();
 
-        AuditProvider audit = providers.getProvider(AuditProvider.class);
+        AuditProvider audit = session.getProvider(AuditProvider.class);
 
         EventQuery query = audit.createQuery().realm(realm.getId());
         if (client != null) {
@@ -357,7 +348,7 @@ public class RealmAdminResource {
     public void clearAudit() {
         auth.init(RealmAuth.Resource.AUDIT).requireManage();
 
-        AuditProvider audit = providers.getProvider(AuditProvider.class);
+        AuditProvider audit = session.getProvider(AuditProvider.class);
         audit.clear(realm.getId());
     }
 

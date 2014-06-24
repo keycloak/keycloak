@@ -16,12 +16,12 @@ public class ModelSpi implements Spi {
 
     @Override
     public Class<? extends Provider> getProviderClass() {
-        return KeycloakSession.class;
+        return ModelProvider.class;
     }
 
     @Override
     public Class<? extends ProviderFactory> getProviderFactoryClass() {
-        return KeycloakSessionFactory.class;
+        return ModelProviderFactory.class;
     }
 
 }

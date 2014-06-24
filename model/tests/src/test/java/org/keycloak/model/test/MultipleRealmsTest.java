@@ -49,8 +49,8 @@ public class MultipleRealmsTest extends AbstractModelTest {
         Assert.assertEquals(2, realm1.searchForUser("user").size());
 
         commit();
-        realm1 = identitySession.getRealm("id1");
-        realm2 = identitySession.getRealm("id2");
+        realm1 = session.getRealm("id1");
+        realm2 = session.getRealm("id2");
 
         realm1.removeUser("user1");
         realm1.removeUser("user2");
@@ -60,10 +60,10 @@ public class MultipleRealmsTest extends AbstractModelTest {
 
     @Test
     public void testGetById() {
-        Assert.assertEquals(realm1, identitySession.getRealm("id1"));
-        Assert.assertEquals(realm1, identitySession.getRealmByName("realm1"));
-        Assert.assertEquals(realm2, identitySession.getRealm("id2"));
-        Assert.assertEquals(realm2, identitySession.getRealmByName("realm2"));
+        Assert.assertEquals(realm1, session.getRealm("id1"));
+        Assert.assertEquals(realm1, session.getRealmByName("realm1"));
+        Assert.assertEquals(realm2, session.getRealm("id2"));
+        Assert.assertEquals(realm2, session.getRealmByName("realm2"));
 
         ApplicationModel r1app1 = realm1.getApplicationByName("app1");
         ApplicationModel r1app2 = realm1.getApplicationByName("app2");

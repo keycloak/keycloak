@@ -5,9 +5,8 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.cache.entities.CachedApplication;
-import org.keycloak.models.cache.entities.CachedClient;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -20,7 +19,7 @@ public class ApplicationAdapter extends ClientAdapter implements ApplicationMode
     protected ApplicationModel updated;
     protected CachedApplication cached;
 
-    public ApplicationAdapter(RealmModel cachedRealm, CachedApplication cached, CacheKeycloakSession cacheSession, KeycloakCache cache) {
+    public ApplicationAdapter(RealmModel cachedRealm, CachedApplication cached, CacheModelProvider cacheSession, KeycloakCache cache) {
         super(cachedRealm, cached, cache, cacheSession);
         this.cached = cached;
     }

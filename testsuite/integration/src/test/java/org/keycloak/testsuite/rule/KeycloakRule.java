@@ -25,8 +25,6 @@ import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.cache.CacheKeycloakSession;
-import org.keycloak.provider.ProviderSession;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.ApplicationServlet;
 
@@ -62,8 +60,7 @@ public class KeycloakRule extends AbstractKeycloakRule {
     }
 
     public void configure(KeycloakSetup configurer) {
-        ProviderSession providerSession = server.getProviderSessionFactory().createSession();
-        KeycloakSession session = providerSession.getProvider(KeycloakSession.class);
+        KeycloakSession session = server.getSessionFactory().create();
         session.getTransaction().begin();
 
         try {
@@ -72,18 +69,17 @@ public class KeycloakRule extends AbstractKeycloakRule {
             RealmModel adminstrationRealm = manager.getRealm(Config.getAdminRealm());
             RealmModel appRealm = manager.getRealm("test");
 
-            configurer.providerSession = providerSession;
+            configurer.session = session;
             configurer.config(manager, adminstrationRealm, appRealm);
 
             session.getTransaction().commit();
         } finally {
-            providerSession.close();
+            session.close();
         }
     }
 
     public void update(KeycloakSetup configurer) {
-        ProviderSession providerSession = server.getProviderSessionFactory().createSession();
-        KeycloakSession session = providerSession.getProvider(CacheKeycloakSession.class);
+        KeycloakSession session = server.getSessionFactory().create();
         session.getTransaction().begin();
 
         try {
@@ -92,28 +88,28 @@ public class KeycloakRule extends AbstractKeycloakRule {
             RealmModel adminstrationRealm = manager.getRealm(Config.getAdminRealm());
             RealmModel appRealm = manager.getRealm("test");
 
-            configurer.providerSession = providerSession;
+            configurer.session = session;
             configurer.config(manager, adminstrationRealm, appRealm);
 
             session.getTransaction().commit();
         } finally {
-            providerSession.close();
+            session.close();
         }
     }
 
 
     public void removeUserSession(String sessionId) {
-        ProviderSession providerSession = startSession();
-        RealmModel realm = providerSession.getProvider(KeycloakSession.class).getRealm("test");
-        UserSessionModel session = realm.getUserSession(sessionId);
-        assertNotNull(session);
-        realm.removeUserSession(session);
-        stopSession(providerSession, true);
+        KeycloakSession session = startSession();
+        RealmModel realm = session.getRealm("test");
+        UserSessionModel userSession = realm.getUserSession(sessionId);
+        assertNotNull(userSession);
+        realm.removeUserSession(userSession);
+        stopSession(session, true);
     }
 
     public abstract static class KeycloakSetup {
 
-        protected ProviderSession providerSession;
+        protected KeycloakSession session;
 
         public abstract void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm);
 

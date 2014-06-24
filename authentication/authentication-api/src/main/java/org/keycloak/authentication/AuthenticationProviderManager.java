@@ -1,17 +1,16 @@
 package org.keycloak.authentication;
 
+import org.jboss.logging.Logger;
+import org.keycloak.models.AuthenticationLinkModel;
+import org.keycloak.models.AuthenticationProviderModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.jboss.logging.Logger;
-import org.keycloak.models.AuthenticationLinkModel;
-import org.keycloak.models.AuthenticationProviderModel;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.provider.ProviderSession;
-import org.keycloak.util.ProviderLoader;
 
 /**
  * Access point to authentication SPI. It finds configured and available {@link AuthenticationProvider} instances for current realm
@@ -28,8 +27,8 @@ public class AuthenticationProviderManager {
     private final RealmModel realm;
     private final Map<String, AuthenticationProvider> delegates;
 
-    public static AuthenticationProviderManager getManager(RealmModel realm, ProviderSession providerSession) {
-        Iterable<AuthenticationProvider> providers = providerSession.getAllProviders(AuthenticationProvider.class);
+    public static AuthenticationProviderManager getManager(RealmModel realm, KeycloakSession session) {
+        Iterable<AuthenticationProvider> providers = session.getAllProviders(AuthenticationProvider.class);
 
         Map<String, AuthenticationProvider> providersMap = new HashMap<String, AuthenticationProvider>();
         for (AuthenticationProvider provider : providers) {

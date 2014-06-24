@@ -8,7 +8,7 @@
     },
 
     "modelCache": {
-        "provider": "${keycloak.model.cache.provider:none}"
+        "provider": "${keycloak.model.cache.provider:simple}"
     },
 
     "timer": {

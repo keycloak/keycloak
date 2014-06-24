@@ -5,9 +5,8 @@ import org.keycloak.exportimport.io.ExportImportIOProvider;
 import org.keycloak.exportimport.io.ExportWriter;
 import org.keycloak.exportimport.io.ImportReader;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakTransaction;
-import org.keycloak.provider.ProviderSession;
-import org.keycloak.provider.ProviderSessionFactory;
 import org.keycloak.util.ProviderLoader;
 
 /**
@@ -21,7 +20,7 @@ public class ExportImportProviderImpl implements ExportImportProvider {
     public static final String ACTION_IMPORT = "import";
 
     @Override
-    public void checkExportImport(ProviderSessionFactory providerSessionFactory) {
+    public void checkExportImport(KeycloakSessionFactory sessionFactory) {
         String exportImportAction = ExportImportConfig.getAction();
 
         boolean export = false;
@@ -35,8 +34,7 @@ public class ExportImportProviderImpl implements ExportImportProvider {
         }
 
         if (export || importt) {
-            ProviderSession providerSession = providerSessionFactory.createSession();
-            KeycloakSession session = providerSession.getProvider(KeycloakSession.class);
+            KeycloakSession session = sessionFactory.create();
             KeycloakTransaction transaction = session.getTransaction();
             try {
                 transaction.begin();
@@ -64,7 +62,7 @@ public class ExportImportProviderImpl implements ExportImportProvider {
                 }
                 throw new RuntimeException(e);
             } finally {
-                providerSession.close();
+                session.close();
             }
         }
     }

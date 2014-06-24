@@ -1,13 +1,13 @@
 package org.keycloak.models.cache;
 
-import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelProvider;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface CacheKeycloakSession extends KeycloakSession {
-    KeycloakSession getDelegate();
+public interface CacheModelProvider extends ModelProvider {
+    ModelProvider getDelegate();
 
     void registerRealmInvalidation(String id);
 

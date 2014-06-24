@@ -7,7 +7,8 @@ import com.mongodb.ServerAddress;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.ModelProvider;
+import org.keycloak.models.ModelProviderFactory;
 import org.keycloak.models.entities.AuthenticationLinkEntity;
 import org.keycloak.models.entities.AuthenticationProviderEntity;
 import org.keycloak.models.entities.CredentialEntity;
@@ -22,7 +23,6 @@ import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoUserEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoUserSessionEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoUsernameLoginFailureEntity;
-import org.keycloak.provider.ProviderSession;
 
 import java.net.UnknownHostException;
 import java.util.Collections;
@@ -32,8 +32,8 @@ import java.util.Collections;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class MongoKeycloakSessionFactory implements KeycloakSessionFactory {
-    protected static final Logger logger = Logger.getLogger(MongoKeycloakSessionFactory.class);
+public class MongoModelProviderFactory implements ModelProviderFactory {
+    protected static final Logger logger = Logger.getLogger(MongoModelProviderFactory.class);
 
     private static final Class<?>[] MANAGED_ENTITY_TYPES = (Class<?>[]) new Class<?>[]{
             MongoRealmEntity.class,
@@ -88,8 +88,8 @@ public class MongoKeycloakSessionFactory implements KeycloakSessionFactory {
     }
 
     @Override
-    public KeycloakSession create(ProviderSession providerSession) {
-        return new MongoKeycloakSession(mongoStore);
+    public ModelProvider create(KeycloakSession session) {
+        return new MongoModelProvider(session, mongoStore);
     }
 
     @Override

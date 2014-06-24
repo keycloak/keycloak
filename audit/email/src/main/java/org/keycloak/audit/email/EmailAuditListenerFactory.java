@@ -6,7 +6,6 @@ import org.keycloak.audit.AuditListenerFactory;
 import org.keycloak.audit.EventType;
 import org.keycloak.email.EmailProvider;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.provider.ProviderSession;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -25,10 +24,9 @@ public class EmailAuditListenerFactory implements AuditListenerFactory {
     private Set<EventType> includedEvents = new HashSet<EventType>();
 
     @Override
-    public AuditListener create(ProviderSession providerSession) {
-        KeycloakSession keycloakSession = providerSession.getProvider(KeycloakSession.class);
-        EmailProvider emailProvider = providerSession.getProvider(EmailProvider.class);
-        return new EmailAuditListener(keycloakSession, emailProvider, includedEvents);
+    public AuditListener create(KeycloakSession session) {
+        EmailProvider emailProvider = session.getProvider(EmailProvider.class);
+        return new EmailAuditListener(session, emailProvider, includedEvents);
     }
 
     @Override

@@ -10,7 +10,7 @@ import org.keycloak.Config;
 import org.keycloak.audit.AuditProvider;
 import org.keycloak.audit.AuditProviderFactory;
 import org.keycloak.audit.EventType;
-import org.keycloak.provider.ProviderSession;
+import org.keycloak.models.KeycloakSession;
 
 import java.net.UnknownHostException;
 import java.util.Collections;
@@ -31,7 +31,7 @@ public class MongoAuditProviderFactory implements AuditProviderFactory {
     private Set<EventType> includedEvents = new HashSet<EventType>();
 
     @Override
-    public AuditProvider create(ProviderSession providerSession) {
+    public AuditProvider create(KeycloakSession session) {
         return new MongoAuditProvider(db.getCollection("audit"), includedEvents);
     }
 

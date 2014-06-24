@@ -2,8 +2,8 @@ package org.keycloak.services.managers;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.UnauthorizedException;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.provider.ProviderSession;
 
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
@@ -16,8 +16,8 @@ import javax.ws.rs.core.UriInfo;
 public class AppAuthManager extends AuthenticationManager {
     protected static Logger logger = Logger.getLogger(AppAuthManager.class);
 
-    public AppAuthManager(ProviderSession providerSession) {
-        super(providerSession);
+    public AppAuthManager(KeycloakSession session) {
+        super(session);
     }
 
     @Override
