@@ -17,11 +17,25 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-testsuite-integration</artifactId>
             <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.jboss.spec.javax.servlet</groupId>
+                    <artifactId>jboss-servlet-api_3.0_spec</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-testsuite-tools</artifactId>
             <version>${project.version}</version>
+            <type>war</type>
+        </dependency>
+
+        <!-- Needed by undertow -->
+        <dependency>
+            <groupId>org.jboss.spec.javax.servlet</groupId>
+            <artifactId>jboss-servlet-api_3.1_spec</artifactId>
+            <version>1.0.0.Final</version>
         </dependency>
 
         <!-- Resteasy deps specified here as we want latest version of them -->

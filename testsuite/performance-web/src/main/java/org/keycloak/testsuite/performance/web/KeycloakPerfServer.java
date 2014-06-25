@@ -4,9 +4,11 @@ import java.io.InputStream;
 
 import javax.servlet.DispatcherType;
 
+import io.undertow.server.handlers.resource.ClassPathResourceManager;
 import io.undertow.servlet.Servlets;
 import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.FilterInfo;
+import io.undertow.servlet.api.MimeMapping;
 import io.undertow.servlet.api.ServletInfo;
 import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
 import org.jboss.resteasy.spi.ResteasyDeployment;
@@ -76,9 +78,11 @@ public class KeycloakPerfServer {
         deploymentInfo.setContextPath("/perf-app");
 
         ServletInfo servlet = new ServletInfo("PerfAppServlet", PerfAppServlet.class);
-        servlet.addMapping("/*");
+        servlet.addMapping("/perf-servlet");
 
         deploymentInfo.addServlet(servlet);
+
+        deploymentInfo.setResourceManager(new ClassPathResourceManager(getClass().getClassLoader()));
 
         keycloakServer.getServer().deploy(deploymentInfo);
 
