@@ -36,6 +36,12 @@
                     </div>
                 </div>
                 <div class="form-group clearfix">
+                    <label class="col-sm-2 control-label" for="userObjectClasses">User Object Classes <span class="required">*</span></label>
+                    <div class="col-sm-4">
+                        <input class="form-control" id="userObjectClasses" type="text" ng-model="realm.ldapServer.userObjectClasses" placeholder="LDAP User Object Classes (div. by comma)" required>
+                    </div>
+                </div>
+                <div class="form-group clearfix">
                     <label class="col-sm-2 control-label" for="ldapConnectionUrl">Connection URL <span class="required">*</span></label>
                     <div class="col-sm-4">
                         <input class="form-control" id="ldapConnectionUrl" type="text" ng-model="realm.ldapServer.connectionUrl" placeholder="LDAP connection URL" required>
