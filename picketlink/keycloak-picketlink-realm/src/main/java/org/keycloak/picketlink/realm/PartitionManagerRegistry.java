@@ -91,6 +91,8 @@ public class PartitionManagerRegistry {
         String ldapLastNameMapping = getNameOfLDAPAttribute("keycloak.ldap.idm.lastName", SN, SN, activeDirectory);
         String ldapEmailMapping =  getNameOfLDAPAttribute("keycloak.ldap.idm.email", EMAIL, EMAIL, activeDirectory);
 
+        String[] userObjectClasses = getUserObjectClasses(ldapConfig);
+
         logger.infof("LDAP Attributes mapping: loginName: %s, firstName: %s, lastName: %s, email: %s", ldapLoginNameMapping, ldapFirstNameMapping, ldapLastNameMapping, ldapEmailMapping);
 
         // Use same mapping for User and Agent for now
@@ -108,7 +110,7 @@ public class PartitionManagerRegistry {
                         .supportAllFeatures()
                         .mapping(User.class)
                             .baseDN(ldapConfig.get(LDAPConstants.USER_DN_SUFFIX))
-                            .objectClasses("inetOrgPerson", "organizationalPerson")
+                            .objectClasses(userObjectClasses)
                             .attribute("loginName", ldapLoginNameMapping, true)
                             .attribute("firstName", ldapFirstNameMapping)
                             .attribute("lastName", ldapLastNameMapping)
@@ -136,6 +138,21 @@ public class PartitionManagerRegistry {
         }
 
         return activeDirectory ? defaultAttrNameInActiveDirectory : defaultAttrName;
+    }
+
+    // Parse array of strings like [ "inetOrgPerson", "organizationalPerson" ] from the string like: "inetOrgPerson, organizationalPerson"
+    private String[] getUserObjectClasses(Map<String,String> ldapConfig) {
+        String objClassesCfg = ldapConfig.get(LDAPConstants.USER_OBJECT_CLASSES);
+        String objClassesStr = (objClassesCfg != null && objClassesCfg.length() > 0) ? objClassesCfg.trim() : "inetOrgPerson, organizationalPerson";
+
+        String[] objectClasses = objClassesStr.split(",");
+
+        // Trim them
+        String[] userObjectClasses = new String[objectClasses.length];
+        for (int i=0 ; i<objectClasses.length ; i++) {
+            userObjectClasses[i] = objectClasses[i].trim();
+        }
+        return userObjectClasses;
     }
 
     private class PartitionManagerContext {

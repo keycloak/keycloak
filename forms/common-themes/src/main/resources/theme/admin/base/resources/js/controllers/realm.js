@@ -925,7 +925,13 @@ module.controller('RealmLDAPSettingsCtrl', function($scope, $location, Notificat
             console.log("LDAP vendor changed");
             $scope.lastVendor = $scope.realm.ldapServer.vendor;
 
-            $scope.realm.ldapServer.usernameLDAPAttribute = ($scope.lastVendor === "ad") ? "cn" : "uid";
+            if ($scope.lastVendor === "ad") {
+                $scope.realm.ldapServer.usernameLDAPAttribute = "cn";
+                $scope.realm.ldapServer.userObjectClasses = "person, organizationalPerson";
+            } else {
+                $scope.realm.ldapServer.usernameLDAPAttribute = "uid";
+                $scope.realm.ldapServer.userObjectClasses = "inetOrgPerson, organizationalPerson";
+            }
         }
     }, true);
 
