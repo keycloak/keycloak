@@ -78,7 +78,7 @@ public class KeycloakPerfServer {
         deploymentInfo.setContextPath("/perf-app");
 
         ServletInfo servlet = new ServletInfo("PerfAppServlet", PerfAppServlet.class);
-        servlet.addMapping("/perf-servlet");
+        servlet.addMapping("/perf-servlet/*");
 
         deploymentInfo.addServlet(servlet);
 

@@ -59,7 +59,7 @@
             "redirectUris": [
                 "http://localhost:8081/perf-app/*"
             ],
-            "adminUrl": "http://localhost:8081/perf-app/logout",
+            "adminUrl": "http://localhost:8081/perf-app/perf-servlet",
             "secret": "password"
          }
     ],

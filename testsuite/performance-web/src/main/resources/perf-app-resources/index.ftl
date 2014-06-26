@@ -19,30 +19,30 @@
 
     <p>
       <#if code??>
-        Code: ${code}
+        <b>Code Available</b><br>
+        Code=${code} <br>
         <hr />
       </#if>
 
       <#if accessToken??>
-        <b>accessToken: </b> ${accessToken}
-        <br />
-        <pre style="background-color: #ddd; border: 1px solid #ccc; padding: 10px;" id="accessTokenParsed"></pre>
+        <b>Access Token Available</b><br>
+        AccessToken=${accessToken} <br>
+        Username=${accessTokenParsed.preferredUsername} <br>
+        SessionState=${accessTokenParsed.sessionState}  <br>
+        Expiration=${accessTokenExpiration} <br>
         <hr />
-
-        <script>
-          updateElementWithToken("${accessToken}", "accessTokenParsed");
-        </script>
       </#if>
 
       <#if refreshToken??>
-        <b>refreshToken:  </b> ${refreshToken}
-        <br />
-        <pre style="background-color: #ddd; border: 1px solid #ccc; padding: 10px;" id="refreshTokenParsed"></pre>
+        <b>Refresh token available</b><br>
+        RefreshToken=${refreshToken} <br>
+        Expiration=${refreshTokenExpiration} <br>
         <hr />
+      </#if>
 
-        <script>
-          updateElementWithToken("${refreshToken}", "refreshTokenParsed");
-        </script>
+      <#if actionDone??>
+        RequestAction=${actionDone}
+        <hr />
       </#if>
 
     </p>

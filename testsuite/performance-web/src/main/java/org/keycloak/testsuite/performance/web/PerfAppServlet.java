@@ -15,8 +15,10 @@ import freemarker.cache.ClassTemplateLoader;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
+import org.keycloak.adapters.AdapterConstants;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
+import org.keycloak.util.Time;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -43,6 +45,7 @@ public class PerfAppServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         resp.setContentType("text/html");
         String action = req.getParameter("action");
+        String actionDone = null;
 
         if (action != null) {
             if (action.equals("code")) {
@@ -50,8 +53,10 @@ public class PerfAppServlet extends HttpServlet {
                 return;
             } else if (action.equals("exchangeCode")) {
                 exchangeCodeForToken(req, resp);
+                actionDone = "Token retrieved";
             } else if (action.equals("refresh")) {
                 refreshToken(req, resp);
+                actionDone = "Token refreshed";
             } else if (action.equals("logout")) {
                 logoutRedirect(req, resp);
                 return;
@@ -61,11 +66,20 @@ public class PerfAppServlet extends HttpServlet {
         String code = req.getParameter("code");
         if (code != null) {
             req.getSession().setAttribute("code", code);
+            actionDone = "Code retrieved";
         }
 
-        String freemarkerRedirect = freemarkerRedirect(req, resp);
+        String freemarkerRedirect = freemarkerRedirect(req, resp, actionDone);
         resp.getWriter().println(freemarkerRedirect);
         resp.getWriter().flush();
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        if (req.getRequestURI().endsWith(AdapterConstants.K_LOGOUT)) {
+            // System.out.println("Logout callback triggered");
+            resp.setStatus(204);
+        }
     }
 
     protected void keycloakLoginRedirect(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -77,32 +91,60 @@ public class PerfAppServlet extends HttpServlet {
         String code = (String)req.getSession().getAttribute("code");
         OAuthClient.AccessTokenResponse atResponse = oauthClient.doAccessTokenRequest(code, "password");
 
-        String accessToken = atResponse.getAccessToken();
-        String refreshToken = atResponse.getRefreshToken();
-        req.getSession().setAttribute("accessToken", accessToken);
-        req.getSession().setAttribute("refreshToken", refreshToken);
+        updateTokensInSession(req, atResponse);
     }
 
     protected void refreshToken(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String refreshToken = (String)req.getSession().getAttribute("refreshToken");
         OAuthClient.AccessTokenResponse atResponse = oauthClient.doRefreshTokenRequest(refreshToken, "password");
 
+        updateTokensInSession(req, atResponse);
+    }
+
+    private void updateTokensInSession(HttpServletRequest req, OAuthClient.AccessTokenResponse atResponse) {
         String accessToken = atResponse.getAccessToken();
-        refreshToken = atResponse.getRefreshToken();
+        String refreshToken = atResponse.getRefreshToken();
+        AccessToken accessTokenParsed = oauthClient.verifyToken(accessToken);
+        RefreshToken refreshTokenParsed = oauthClient.verifyRefreshToken(refreshToken);
         req.getSession().setAttribute("accessToken", accessToken);
         req.getSession().setAttribute("refreshToken", refreshToken);
+        req.getSession().setAttribute("accessTokenParsed", accessTokenParsed);
+        req.getSession().setAttribute("refreshTokenParsed", refreshTokenParsed);
     }
 
     protected void logoutRedirect(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        String sessionState = null;
+        AccessToken accessTokenParsed = (AccessToken)req.getSession().getAttribute("accessTokenParsed");
+        if (accessTokenParsed != null) {
+            sessionState = accessTokenParsed.getSessionState();
+        }
 
+        // Invalidate http session
+        req.getSession(false).invalidate();
+
+        String logoutURL = oauthClient.getLogoutUrl(oauthClient.getRedirectUri(), sessionState);
+        resp.sendRedirect(logoutURL);
     }
 
-    private String freemarkerRedirect(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    private String freemarkerRedirect(HttpServletRequest req, HttpServletResponse resp, String actionDone) throws ServletException, IOException {
+        AccessToken accessTokenParsed = (AccessToken)req.getSession().getAttribute("accessTokenParsed");
+        RefreshToken refreshTokenParsed = (RefreshToken)req.getSession().getAttribute("refreshTokenParsed");
+
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put("requestURI", req.getRequestURI());
         attributes.put("code",  req.getSession().getAttribute("code"));
         attributes.put("accessToken",  req.getSession().getAttribute("accessToken"));
         attributes.put("refreshToken",  req.getSession().getAttribute("refreshToken"));
+        attributes.put("accessTokenParsed",  accessTokenParsed);
+        attributes.put("refreshTokenParsed",  refreshTokenParsed);
+        attributes.put("actionDone", actionDone);
+
+        if (accessTokenParsed != null) {
+            attributes.put("accessTokenExpiration", Time.toDate(accessTokenParsed.getExpiration()).toString());
+        }
+        if (refreshTokenParsed != null) {
+            attributes.put("refreshTokenExpiration", Time.toDate(refreshTokenParsed.getExpiration()).toString());
+        }
 
         try {
             Writer out = new StringWriter();
