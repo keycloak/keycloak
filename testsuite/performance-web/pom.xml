@@ -28,7 +28,7 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-testsuite-tools</artifactId>
             <version>${project.version}</version>
-            <type>war</type>
+            <classifier>classes</classifier>
         </dependency>
 
         <!-- Needed by undertow -->
