@@ -16,9 +16,9 @@
     },
     "users" : [
         {
-            "username" : "test-user@localhost",
+            "username" : "test@localhost",
             "enabled": true,
-            "email" : "test-user@localhost",
+            "email" : "test@localhost",
             "credentials" : [
                 { "type" : "password",
                   "value" : "password" }
@@ -37,7 +37,7 @@
     ],
     "roleMappings": [
         {
-            "username": "test-user@localhost",
+            "username": "test@localhost",
             "roles": ["user"]
         }
     ],
@@ -92,7 +92,7 @@
     "applicationRoleMappings": {
         "perf-app": [
             {
-                "username": "test-user@localhost",
+                "username": "test@localhost",
                 "roles": ["customer-user"]
             }
         ]
