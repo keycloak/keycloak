@@ -7,17 +7,18 @@
 <table class="table table-striped table-bordered">
     <thead>
     <tr>
-        <th>From</th>
+        <th>Date</th>
         <th>To</th>
+        <th>From</th>
         <th>Subject</th>
         <th>Body</th>
     </tr>
     </thead>
     <tr data-ng-repeat="m in messages|reverse">
-        <td>{{m.from}}</td>
+        <td>{{m.date|date:'medium'}}</td>
         <td>{{m.to}}</td>
+        <td>{{m.from}}</td>
         <td>{{m.subject}}</td>
         <td><pre>{{m.body}}</pre></td>
-        <td>{{m.date|date:'medium'}}</td>
     </tr>
 </table>
