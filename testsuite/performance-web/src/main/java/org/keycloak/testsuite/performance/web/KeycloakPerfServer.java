@@ -24,6 +24,13 @@ public class KeycloakPerfServer {
     private KeycloakServer keycloakServer;
 
     public static void main(String[] args) throws Throwable {
+        // TODO: should be better than programmatic setup here, but don't copy persistence.xml again...
+        System.setProperty("hibernate.hbm2ddl.auto", "update");
+
+        if (System.getProperty("undertowWorkerThreads") == null) {
+            System.setProperty("undertowWorkerThreads", "256");
+        }
+
         KeycloakServer keycloakServer = KeycloakServer.bootstrapKeycloakServer(args);
         System.out.println("Keycloak server bootstrapped");
 

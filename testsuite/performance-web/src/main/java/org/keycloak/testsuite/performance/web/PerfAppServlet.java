@@ -113,16 +113,10 @@ public class PerfAppServlet extends HttpServlet {
     }
 
     protected void logoutRedirect(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String sessionState = null;
-        AccessToken accessTokenParsed = (AccessToken)req.getSession().getAttribute("accessTokenParsed");
-        if (accessTokenParsed != null) {
-            sessionState = accessTokenParsed.getSessionState();
-        }
-
         // Invalidate http session
         req.getSession(false).invalidate();
 
-        String logoutURL = oauthClient.getLogoutUrl(oauthClient.getRedirectUri(), sessionState);
+        String logoutURL = oauthClient.getLogoutUrl(oauthClient.getRedirectUri(), null);
         resp.sendRedirect(logoutURL);
     }
 

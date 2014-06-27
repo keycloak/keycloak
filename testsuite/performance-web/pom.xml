@@ -88,6 +88,30 @@
             <artifactId>resteasy-undertow</artifactId>
             <version>${resteasy.version.latest}</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.apache.jmeter</groupId>
+            <artifactId>ApacheJMeter_java</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bcprov-jdk15on</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bcmail-jdk15on</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bcmail-jdk15</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.tika</groupId>
+                    <artifactId>tika-parsers</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -116,5 +140,109 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+
+        <profile>
+            <id>keycloak-perf-server</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <configuration>
+                            <mainClass>org.keycloak.testsuite.performance.web.KeycloakPerfServer</mainClass>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>performance-test</id>
+
+            <properties>
+                <host>localhost</host>
+                <port>8081</port>
+                <userPrefix>user</userPrefix>
+                <concurrentUsers>50</concurrentUsers>
+                <iterationsPerUser>50</iterationsPerUser>
+                <refreshTokenRequestsPerIteration>2</refreshTokenRequestsPerIteration>
+            </properties>
+
+            <build>
+                <plugins>
+
+                    <plugin>
+                        <groupId>com.lazerycode.jmeter</groupId>
+                        <artifactId>jmeter-maven-plugin</artifactId>
+                        <configuration>
+                            <suppressJMeterOutput>false</suppressJMeterOutput>
+                            <propertiesSystem>
+                                <host>${host}</host>
+                                <port>${port}</port>
+                                <userPrefix>${userPrefix}</userPrefix>
+                                <concurrentUsers>${concurrentUsers}</concurrentUsers>
+                                <iterationsPerUser>${iterationsPerUser}</iterationsPerUser>
+                                <refreshTokenRequestsPerIteration>${refreshTokenRequestsPerIteration}</refreshTokenRequestsPerIteration>
+                            </propertiesSystem>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>jmeter-tests</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>jmeter</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <dependencies>
+                        </dependencies>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>com.lazerycode.jmeter</groupId>
+                        <artifactId>jmeter-analysis-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>jmeter-tests-analyze</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>analyze</goal>
+                                </goals>
+                                <configuration>
+                                    <source>${project.build.directory}/jmeter/results/*.jtl</source>
+                                    <targetDirectory>${project.build.directory}/jmeter/results</targetDirectory>
+                                    <preserveDirectories>false</preserveDirectories>
+
+                                    <requestGroups>
+                                        <requestGroup>
+                                            <name>aggregatedRequests</name>
+                                            <pattern>* request</pattern>
+                                        </requestGroup>
+                                        <requestGroup>
+                                            <name>codes</name>
+                                            <pattern>**/perf-app/perf-servlet?code=*</pattern>
+                                        </requestGroup>
+                                    </requestGroups>
+
+                                    <writers>
+                                        <com.lazerycode.jmeter.analyzer.writer.SummaryTextToStdOutWriter/>
+                                        <!--<com.lazerycode.jmeter.analyzer.writer.SummaryTextToFileWriter/>-->
+                                        <com.lazerycode.jmeter.analyzer.writer.HtmlWriter/>
+                                        <!--<com.lazerycode.jmeter.analyzer.writer.DetailsToCsvWriter/>-->
+                                        <com.lazerycode.jmeter.analyzer.writer.DetailsToHtmlWriter/>
+                                        <com.lazerycode.jmeter.analyzer.writer.ChartWriter/>
+                                    </writers>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                </plugins>
+            </build>
+        </profile>
+
+    </profiles>
 
 </project>
