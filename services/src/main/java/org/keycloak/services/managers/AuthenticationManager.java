@@ -111,12 +111,13 @@ public class AuthenticationManager {
         CookieHelper.addCookie(KEYCLOAK_IDENTITY_COOKIE, encoded, cookiePath, null, null, maxAge, secureOnly, true);
         //builder.cookie(new NewCookie(cookieName, encoded, cookiePath, null, null, maxAge, secureOnly));// todo httponly , true);
 
-        String sessionCookieValue = realm.getName() + "-" + user.getId();
+        String sessionCookieValue = realm.getName() + "/" + user.getId();
         if (session != null) {
-            sessionCookieValue += "-" + session.getId();
+            sessionCookieValue += "/" + session.getId();
         }
         // THIS SHOULD NOT BE A HTTPONLY COOKIE!  It is used for OpenID Connect Iframe Session support!
-        CookieHelper.addCookie(KEYCLOAK_SESSION_COOKIE, sessionCookieValue, cookiePath, null, null, maxAge, secureOnly, false);
+        // Max age should be set to the max lifespan of the session as it's used to invalidate old-sessions on re-login
+        CookieHelper.addCookie(KEYCLOAK_SESSION_COOKIE, sessionCookieValue, cookiePath, null, null, realm.getSsoSessionMaxLifespan(), secureOnly, false);
 
     }
 
