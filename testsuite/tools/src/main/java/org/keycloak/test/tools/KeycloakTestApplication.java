@@ -5,6 +5,8 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.services.resources.KeycloakApplication;
 
 import javax.servlet.ServletContext;
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContextListener;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Context;
 import java.util.HashSet;
@@ -19,6 +21,8 @@ public class KeycloakTestApplication extends Application {
     protected Set<Class<?>> classes = new HashSet<Class<?>>();
     protected Set<Object> singletons = new HashSet<Object>();
 
+    static Mail mail = new Mail();
+
     public KeycloakTestApplication(@Context ServletContext context, @Context Dispatcher dispatcher) {
         KeycloakApplication.loadConfig();
 
@@ -27,6 +31,7 @@ public class KeycloakTestApplication extends Application {
         context.setAttribute(KeycloakSessionFactory.class.getName(), this.sessionFactory);
 
         singletons.add(new PerfTools(sessionFactory));
+        singletons.add(mail);
     }
 
     @Override

@@ -26,7 +26,7 @@
     </welcome-file-list>
 
     <listener>
-        <listener-class>org.keycloak.services.listeners.KeycloakSessionDestroyListener</listener-class>
+        <listener-class>org.keycloak.test.tools.DestroyListener</listener-class>
     </listener>
 
     <filter>
@@ -52,6 +52,11 @@
     <servlet-mapping>
         <servlet-name>Keycloak REST Interface</servlet-name>
         <url-pattern>/perf/*</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>Keycloak REST Interface</servlet-name>
+        <url-pattern>/mail/*</url-pattern>
     </servlet-mapping>
 
     <!--
