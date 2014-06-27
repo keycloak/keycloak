@@ -224,6 +224,13 @@ public class RequiredActionsService {
 
         audit.clone().event(EventType.UPDATE_PASSWORD).success();
 
+        // Password reset through email won't have an associated session
+        if (accessCode.getSessionState() == null) {
+            UserSessionModel userSession = realm.createUserSession(realm.getUserById(accessCode.getUser().getId()), clientConnection.getRemoteAddr());
+            accessCode.getToken().setSessionState(userSession.getId());
+            audit.session(userSession);
+        }
+
         return redirectOauth(user, accessCode);
     }
 
@@ -322,10 +329,7 @@ public class RequiredActionsService {
             Set<RequiredAction> requiredActions = new HashSet<RequiredAction>(user.getRequiredActions());
             requiredActions.add(RequiredAction.UPDATE_PASSWORD);
 
-            UserSessionModel session = realm.createUserSession(user, clientConnection.getRemoteAddr());
-            audit.session(session);
-
-            AccessCodeEntry accessCode = tokenManager.createAccessCode(scopeParam, state, redirect, realm, client, user, session);
+            AccessCodeEntry accessCode = tokenManager.createAccessCode(scopeParam, state, redirect, realm, client, user, null);
             accessCode.setRequiredActions(requiredActions);
             accessCode.setAuthMethod("form");
             accessCode.setUsernameUsed(username);
