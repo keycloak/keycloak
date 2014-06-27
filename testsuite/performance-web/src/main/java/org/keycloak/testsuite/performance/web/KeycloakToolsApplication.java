@@ -8,7 +8,7 @@ import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Context;
 
 import org.jboss.resteasy.core.Dispatcher;
-import org.keycloak.provider.ProviderSessionFactory;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.test.tools.PerfTools;
 
 /**
@@ -18,14 +18,14 @@ import org.keycloak.test.tools.PerfTools;
  */
 public class KeycloakToolsApplication extends Application {
 
-    protected ProviderSessionFactory providerSessionFactory;
+    protected KeycloakSessionFactory keycloakSessionFactory;
     protected Set<Class<?>> classes = new HashSet<Class<?>>();
     protected Set<Object> singletons = new HashSet<Object>();
 
     public KeycloakToolsApplication(@Context ServletContext context, @Context Dispatcher dispatcher) {
-        this.providerSessionFactory = ProviderSessionFactoryHolder.getProviderSessionFactory();
-        context.setAttribute(ProviderSessionFactory.class.getName(), this.providerSessionFactory);
-        singletons.add(new PerfTools(providerSessionFactory));
+        this.keycloakSessionFactory = KeycloakSessionFactoryHolder.getKeycloakSessionFactory();
+        context.setAttribute(KeycloakSessionFactory.class.getName(), this.keycloakSessionFactory);
+        singletons.add(new PerfTools(keycloakSessionFactory));
     }
 
     @Override

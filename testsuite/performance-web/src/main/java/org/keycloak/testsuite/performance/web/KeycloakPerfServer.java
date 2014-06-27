@@ -8,7 +8,6 @@ import io.undertow.server.handlers.resource.ClassPathResourceManager;
 import io.undertow.servlet.Servlets;
 import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.FilterInfo;
-import io.undertow.servlet.api.MimeMapping;
 import io.undertow.servlet.api.ServletInfo;
 import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
 import org.jboss.resteasy.spi.ResteasyDeployment;
@@ -28,7 +27,7 @@ public class KeycloakPerfServer {
         KeycloakServer keycloakServer = KeycloakServer.bootstrapKeycloakServer(args);
         System.out.println("Keycloak server bootstrapped");
 
-        ProviderSessionFactoryHolder.setProviderSessionFactory(keycloakServer.getProviderSessionFactory());
+        KeycloakSessionFactoryHolder.setKeycloakSessionFactory(keycloakServer.getSessionFactory());
         new KeycloakPerfServer(keycloakServer).start();
     }
 

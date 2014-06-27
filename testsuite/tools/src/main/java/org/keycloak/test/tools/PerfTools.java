@@ -113,9 +113,9 @@ public class PerfTools {
     // Same as createUsers, but dynamically compute "start" (Next available user)
     @GET
     @Path("{realm}/create-available-users")
-    public Response createAvailableUsers(@PathParam("realm") String realmName, @QueryParam("count") Integer count, @QueryParam("batch") Integer batch, @QueryParam("prefix") String prefix, @QueryParam("roles") String roles) throws InterruptedException {
+    public void createAvailableUsers(@PathParam("realm") String realmName, @QueryParam("count") Integer count, @QueryParam("batch") Integer batch, @QueryParam("prefix") String prefix, @QueryParam("roles") String roles) throws InterruptedException {
         int start = getUsersCount(realmName, prefix);
-        return createUsers(realmName, count, batch, start, prefix, roles);
+        createUsers(realmName, count, batch, start, prefix, roles);
     }
 
     private int getUsersCount(String realmName, String prefix) {
