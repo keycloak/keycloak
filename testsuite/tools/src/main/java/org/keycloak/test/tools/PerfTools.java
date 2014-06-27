@@ -65,7 +65,7 @@ public class PerfTools {
 
     @GET
     @Path("{realm}/create-users")
-    public Response createUsers(@PathParam("realm") String realmName, @QueryParam("count") Integer count, @QueryParam("batch") Integer batch, @QueryParam("start") Integer start, @QueryParam("prefix") String prefix, @QueryParam("roles") String roles) throws InterruptedException {
+    public void createUsers(@PathParam("realm") String realmName, @QueryParam("count") Integer count, @QueryParam("batch") Integer batch, @QueryParam("start") Integer start, @QueryParam("prefix") String prefix, @QueryParam("roles") String roles) throws InterruptedException {
         if (count == null) {
             count = 1;
         }
@@ -88,8 +88,6 @@ public class PerfTools {
             int c = s + batch <= (start + count) ? batch : (start + count) - s;
             executor.submit(new CreateUsers(job, sessionFactory, realmName, s, c, prefix, rolesArray));
         }
-
-        return Response.noContent().build();
     }
 
     @GET

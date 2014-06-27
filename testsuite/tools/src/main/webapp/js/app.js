@@ -7,6 +7,10 @@ module.config([ '$routeProvider', function ($routeProvider) {
             templateUrl: 'pages/perf.html',
             controller: 'PerfCtrl'
         })
+        .when('/mail', {
+            templateUrl: 'pages/mail.html',
+            controller: 'MailCtrl'
+        })
         .otherwise({
             templateUrl: 'pages/home.html'
         });
@@ -45,5 +49,26 @@ module.controller('PerfCtrl', function ($scope, $resource) {
     }
 
     $scope.loadJobs();
+
+});
+
+module.controller('MailCtrl', function ($scope, $resource) {
+
+    $scope.start = function() {
+        $resource('/keycloak-tools/mail/start').get({}, function(status) {
+            $scope.status = status;
+        });
+    }
+
+    $scope.stop = function() {
+        $resource('/keycloak-tools/mail/stop').get({}, function(status) {
+            $scope.status = status;
+        });
+    }
+    $scope.loadMessages = function() {
+        $scope.messages = $resource('/keycloak-tools/mail/messages').query();
+    }
+
+    $scope.status = $resource('/keycloak-tools/mail/status').get();
 
 });

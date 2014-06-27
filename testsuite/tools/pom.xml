@@ -15,6 +15,19 @@
     <description/>
 
     <dependencies>
+
+        <dependency>
+            <groupId>com.icegreen</groupId>
+            <artifactId>greenmail</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-core</artifactId>
