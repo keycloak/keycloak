@@ -3,11 +3,9 @@ package org.keycloak.test.tools;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.ExportImportProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.provider.ProviderSession;
-import org.keycloak.provider.ProviderSessionFactory;
-import org.keycloak.services.managers.RealmManager;
 import org.keycloak.test.tools.jobs.CreateUsers;
 import org.keycloak.util.ProviderLoader;
 
@@ -24,7 +22,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -36,15 +33,15 @@ public class PerfTools {
 
     private ExecutorService executor = Executors.newFixedThreadPool(20);
 
-    private final ProviderSessionFactory providerSessionFactory;
+    private final KeycloakSessionFactory sessionFactory;
 
     @Context
     private KeycloakSession session;
 
     private List<Job> jobs = new LinkedList<Job>();
 
-    public PerfTools(ProviderSessionFactory providerSessionFactory) {
-        this.providerSessionFactory = providerSessionFactory;
+    public PerfTools(KeycloakSessionFactory sessionFactory) {
+        this.sessionFactory = sessionFactory;
     }
 
     @GET
@@ -89,7 +86,7 @@ public class PerfTools {
 
         for (int s = start; s < (start + count); s += batch) {
             int c = s + batch <= (start + count) ? batch : (start + count) - s;
-            executor.submit(new CreateUsers(job, providerSessionFactory, realmName, s, c, prefix, rolesArray));
+            executor.submit(new CreateUsers(job, sessionFactory, realmName, s, c, prefix, rolesArray));
         }
 
         return Response.noContent().build();
@@ -115,7 +112,7 @@ public class PerfTools {
 
         if (providers.hasNext()) {
             ExportImportProvider exportImport = providers.next();
-            exportImport.checkExportImport(providerSessionFactory);
+            exportImport.checkExportImport(sessionFactory);
         } else {
             throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
         }

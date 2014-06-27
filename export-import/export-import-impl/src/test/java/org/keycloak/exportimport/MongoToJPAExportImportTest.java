@@ -2,7 +2,7 @@ package org.keycloak.exportimport;
 
 import org.junit.Assert;
 import org.keycloak.exportimport.io.zip.EncryptedZIPIOProvider;
-import org.keycloak.provider.ProviderSessionFactory;
+import org.keycloak.models.KeycloakSessionFactory;
 
 import java.io.File;
 
@@ -26,7 +26,7 @@ public class MongoToJPAExportImportTest extends ExportImportTestBase {
     }
 
     @Override
-    protected void exportModel(ProviderSessionFactory factory) {
+    protected void exportModel(KeycloakSessionFactory factory) {
         ExportImportConfig.setAction(ExportImportProviderImpl.ACTION_EXPORT);
         ExportImportConfig.setProvider(EncryptedZIPIOProvider.PROVIDER_ID);
         File zipFile = getZipFile();
@@ -41,7 +41,7 @@ public class MongoToJPAExportImportTest extends ExportImportTestBase {
     }
 
     @Override
-    protected void importModel(ProviderSessionFactory factory) {
+    protected void importModel(KeycloakSessionFactory factory) {
         ExportImportConfig.setAction(ExportImportProviderImpl.ACTION_IMPORT);
         ExportImportConfig.setProvider(EncryptedZIPIOProvider.PROVIDER_ID);
         File zipFile = getZipFile();

@@ -54,7 +54,7 @@ public class ProfileTest {
             user.setAttribute("key1", "value1");
             user.setAttribute("key2", "value2");
 
-            ApplicationModel accountApp = appRealm.getApplicationNameMap().get(org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_APP);
+            ApplicationModel accountApp = appRealm.getApplicationByName(org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_APP);
 
             UserModel user2 = appRealm.addUser("test-user-no-access@localhost");
             user2.setEnabled(true);
@@ -66,7 +66,7 @@ public class ProfileTest {
             creds.setValue("password");
             user2.updateCredential(creds);
 
-            ApplicationModel app = appRealm.getApplicationNameMap().get("test-app");
+            ApplicationModel app = appRealm.getApplicationByName("test-app");
             app.addScopeMapping(accountApp.getRole(AccountRoles.VIEW_PROFILE));
             app.addRedirectUri("http://localhost:8081/app/*");
             app.addWebOrigin("http://localtest.me:8081");

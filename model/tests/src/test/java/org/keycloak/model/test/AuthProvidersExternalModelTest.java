@@ -65,7 +65,7 @@ public class AuthProvidersExternalModelTest extends AbstractModelTest {
         credential.setValue("password");
         john.updateCredential(credential);
 
-        am = new AuthenticationManager(providerSession);
+        am = new AuthenticationManager(session);
     }
 
 
@@ -85,7 +85,7 @@ public class AuthProvidersExternalModelTest extends AbstractModelTest {
 
         try {
             // this is needed for externalModel provider
-            ResteasyProviderFactory.pushContext(KeycloakSession.class, identitySession);
+            ResteasyProviderFactory.pushContext(KeycloakSession.class, session);
 
             // Authenticate john in realm2 and verify that now he exists here.
             Assert.assertEquals(AuthenticationManager.AuthenticationStatus.SUCCESS, am.authenticateForm(null, realm2, formData));
@@ -119,10 +119,10 @@ public class AuthProvidersExternalModelTest extends AbstractModelTest {
 
         try {
             // this is needed for externalModel provider
-            ResteasyProviderFactory.pushContext(KeycloakSession.class, identitySession);
+            ResteasyProviderFactory.pushContext(KeycloakSession.class, session);
 
             // Change credential via realm2 and validate that they are changed also in realm1
-            AuthenticationProviderManager authProviderManager = AuthenticationProviderManager.getManager(realm2, providerSession);
+            AuthenticationProviderManager authProviderManager = AuthenticationProviderManager.getManager(realm2, session);
             try {
                 Assert.assertTrue(authProviderManager.updatePassword(john, "password-updated"));
             } catch (AuthenticationProviderException ape) {

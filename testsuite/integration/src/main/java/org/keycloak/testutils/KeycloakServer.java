@@ -31,10 +31,9 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
 import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.provider.ProviderSession;
-import org.keycloak.provider.ProviderSessionFactory;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.filters.ClientConnectionFilter;
 import org.keycloak.services.filters.KeycloakSessionServletFilter;
@@ -163,7 +162,7 @@ public class KeycloakServer {
 
     private KeycloakServerConfig config;
 
-    private ProviderSessionFactory providerSessionFactory;
+    private KeycloakSessionFactory sessionFactory;
 
     private UndertowJaxrsServer server;
 
@@ -175,8 +174,8 @@ public class KeycloakServer {
         this.config = config;
     }
 
-    public ProviderSessionFactory getProviderSessionFactory() {
-        return providerSessionFactory;
+    public KeycloakSessionFactory getSessionFactory() {
+        return sessionFactory;
     }
 
     public UndertowJaxrsServer getServer() {
@@ -189,8 +188,7 @@ public class KeycloakServer {
     }
 
     public void importRealm(RealmRepresentation rep) {
-        ProviderSession providerSession = providerSessionFactory.createSession();
-        KeycloakSession session = providerSession.getProvider(KeycloakSession.class);
+        KeycloakSession session = sessionFactory.create();;
         session.getTransaction().begin();
 
         try {
@@ -213,13 +211,12 @@ public class KeycloakServer {
 
             session.getTransaction().commit();
         } finally {
-            providerSession.close();
+            session.close();
         }
     }
 
     protected void setupDevConfig() {
-        ProviderSession providerSession = providerSessionFactory.createSession();
-        KeycloakSession session = providerSession.getProvider(KeycloakSession.class);
+        KeycloakSession session = sessionFactory.create();
         session.getTransaction().begin();
 
         try {
@@ -231,7 +228,7 @@ public class KeycloakServer {
 
             session.getTransaction().commit();
         } finally {
-            providerSession.close();
+            session.close();
         }
     }
 
@@ -263,7 +260,7 @@ public class KeycloakServer {
 
         server.deploy(di);
 
-        providerSessionFactory = ((KeycloakApplication) deployment.getApplication()).getProviderSessionFactory();
+        sessionFactory = ((KeycloakApplication) deployment.getApplication()).getSessionFactory();
 
         setupDevConfig();
 
@@ -284,7 +281,7 @@ public class KeycloakServer {
     }
 
     public void stop() {
-        providerSessionFactory.close();
+        sessionFactory.close();
         server.stop();
 
         info("Stopped Keycloak");

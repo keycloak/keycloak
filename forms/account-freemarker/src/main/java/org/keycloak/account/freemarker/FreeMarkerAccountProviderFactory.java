@@ -4,9 +4,7 @@ import org.keycloak.Config;
 import org.keycloak.account.AccountProvider;
 import org.keycloak.account.AccountProviderFactory;
 import org.keycloak.freemarker.FreeMarkerUtil;
-import org.keycloak.provider.ProviderSession;
-
-import javax.ws.rs.core.UriInfo;
+import org.keycloak.models.KeycloakSession;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -16,8 +14,8 @@ public class FreeMarkerAccountProviderFactory implements AccountProviderFactory 
     private FreeMarkerUtil freeMarker;
 
     @Override
-    public AccountProvider create(ProviderSession providerSession) {
-        return new FreeMarkerAccountProvider(providerSession, freeMarker);
+    public AccountProvider create(KeycloakSession session) {
+        return new FreeMarkerAccountProvider(session, freeMarker);
     }
 
     @Override

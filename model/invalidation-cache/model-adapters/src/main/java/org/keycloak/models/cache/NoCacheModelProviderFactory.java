@@ -1,16 +1,16 @@
 package org.keycloak.models.cache;
 
 import org.keycloak.Config;
-import org.keycloak.provider.ProviderSession;
+import org.keycloak.models.KeycloakSession;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class NoCacheKeycloakSessionFactory implements CacheKeycloakSessionFactory {
+public class NoCacheModelProviderFactory implements CacheModelProviderFactory {
     @Override
-    public CacheKeycloakSession create(ProviderSession providerSession) {
-        return new NoCacheKeycloakSession(providerSession);
+    public CacheModelProvider create(KeycloakSession session) {
+        return new NoCacheModelProvider(session);
     }
 
     @Override

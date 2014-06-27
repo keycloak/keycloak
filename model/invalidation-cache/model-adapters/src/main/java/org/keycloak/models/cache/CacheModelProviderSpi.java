@@ -8,7 +8,7 @@ import org.keycloak.provider.Spi;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class CacheKeycloakSessionSpi implements Spi {
+public class CacheModelProviderSpi implements Spi {
 
     @Override
     public String getName() {
@@ -17,11 +17,11 @@ public class CacheKeycloakSessionSpi implements Spi {
 
     @Override
     public Class<? extends Provider> getProviderClass() {
-        return CacheKeycloakSession.class;
+        return CacheModelProvider.class;
     }
 
     @Override
     public Class<? extends ProviderFactory> getProviderFactoryClass() {
-        return CacheKeycloakSessionFactory.class;
+        return CacheModelProviderFactory.class;
     }
 }

@@ -6,8 +6,6 @@ import org.apache.jmeter.samplers.SampleResult;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakTransaction;
-import org.keycloak.provider.ProviderSession;
-import org.keycloak.provider.ProviderSessionFactory;
 import org.keycloak.services.resources.KeycloakApplication;
 
 import java.util.concurrent.Callable;
@@ -20,18 +18,18 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class BaseJMeterPerformanceTest extends AbstractJavaSamplerClient {
 
 
-    private static FutureTask<ProviderSessionFactory> factoryProvider = new FutureTask<ProviderSessionFactory>(new Callable() {
+    private static FutureTask<KeycloakSessionFactory> factoryProvider = new FutureTask<KeycloakSessionFactory>(new Callable() {
 
         @Override
-        public ProviderSessionFactory call() throws Exception {
-            return KeycloakApplication.createProviderSessionFactory();
+        public KeycloakSessionFactory call() throws Exception {
+            return KeycloakApplication.createSessionFactory();
         }
 
     });
     private static AtomicInteger counter = new AtomicInteger();
 
-    private ProviderSessionFactory factory;
-    // private KeycloakSession identitySession;
+    private KeycloakSessionFactory factory;
+    // private KeycloakSession session;
     private Worker worker;
     private boolean setupSuccess = false;
 
@@ -44,14 +42,13 @@ public class BaseJMeterPerformanceTest extends AbstractJavaSamplerClient {
         worker = getWorker();
 
         factory = getFactory();
-        ProviderSession providerSession = factory.createSession();
-        KeycloakSession identitySession = providerSession.getProvider(KeycloakSession.class);
-        KeycloakTransaction transaction = identitySession.getTransaction();
+        KeycloakSession session = factory.create();
+        KeycloakTransaction transaction = session.getTransaction();
         transaction.begin();
 
         int workerId = counter.getAndIncrement();
         try {
-            worker.setup(workerId, identitySession);
+            worker.setup(workerId, session);
             setupSuccess = true;
         } finally {
             if (setupSuccess) {
@@ -59,11 +56,11 @@ public class BaseJMeterPerformanceTest extends AbstractJavaSamplerClient {
             } else {
                 transaction.rollback();
             }
-            providerSession.close();
+            session.close();
         }
     }
 
-    private static ProviderSessionFactory getFactory() {
+    private static KeycloakSessionFactory getFactory() {
         factoryProvider.run();
         try {
             return factoryProvider.get();
@@ -101,13 +98,12 @@ public class BaseJMeterPerformanceTest extends AbstractJavaSamplerClient {
             return result;
         }
 
-        ProviderSession providerSession = factory.createSession();
-        KeycloakSession identitySession = providerSession.getProvider(KeycloakSession.class);
-        KeycloakTransaction transaction = identitySession.getTransaction();
+        KeycloakSession session = factory.create();
+        KeycloakTransaction transaction = session.getTransaction();
         try {
             transaction.begin();
 
-            worker.run(result, identitySession);
+            worker.run(result, session);
 
             result.setResponseCodeOK();
             transaction.commit();
@@ -118,7 +114,7 @@ public class BaseJMeterPerformanceTest extends AbstractJavaSamplerClient {
         } finally {
             result.sampleEnd();
             result.setSuccessful(true);
-            providerSession.close();
+            session.close();
         }
 
         return result;

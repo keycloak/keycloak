@@ -8,9 +8,9 @@ import org.keycloak.models.KeycloakSession;
  */
 public interface Worker {
 
-    void setup(int workerId, KeycloakSession identitySession);
+    void setup(int workerId, KeycloakSession session);
 
-    void run(SampleResult result, KeycloakSession identitySession);
+    void run(SampleResult result, KeycloakSession session);
 
     void tearDown();
 

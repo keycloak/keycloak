@@ -1,6 +1,5 @@
 package org.keycloak.models.jpa;
 
-import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;

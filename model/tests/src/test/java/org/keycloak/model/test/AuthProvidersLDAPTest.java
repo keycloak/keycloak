@@ -68,7 +68,7 @@ public class AuthProvidersLDAPTest extends AbstractModelTest {
         realm.addRequiredCredential(CredentialRepresentation.PASSWORD);
         this.embeddedServer.setupLdapInRealm(realm);
 
-        am = new AuthenticationManager(providerSession);
+        am = new AuthenticationManager(session);
     }
 
     @Test
@@ -76,7 +76,7 @@ public class AuthProvidersLDAPTest extends AbstractModelTest {
         MultivaluedMap<String, String> formData = AuthProvidersExternalModelTest.createFormData("johnkeycloak", "password");
 
         // Set password of user in LDAP
-        LDAPTestUtils.setLdapPassword(providerSession, realm, "johnkeycloak", "password");
+        LDAPTestUtils.setLdapPassword(session, realm, "johnkeycloak", "password");
 
         // Verify that user doesn't exists in realm2 and can't authenticate here
         Assert.assertEquals(AuthenticationManager.AuthenticationStatus.INVALID_USER, am.authenticateForm(null, realm, formData));
@@ -140,14 +140,14 @@ public class AuthProvidersLDAPTest extends AbstractModelTest {
         // Add ldap
         setupAuthenticationProviders();
 
-        LDAPTestUtils.setLdapPassword(providerSession, realm, "johnkeycloak", "password");
+        LDAPTestUtils.setLdapPassword(session, realm, "johnkeycloak", "password");
 
         // First authenticate successfully to sync john into realm
         MultivaluedMap<String, String> formData = AuthProvidersExternalModelTest.createFormData("johnkeycloak", "password");
         Assert.assertEquals(AuthenticationManager.AuthenticationStatus.SUCCESS, am.authenticateForm(null, realm, formData));
 
         // Change credential and validate that user can authenticate
-        AuthenticationProviderManager authProviderManager = AuthenticationProviderManager.getManager(realm, providerSession);
+        AuthenticationProviderManager authProviderManager = AuthenticationProviderManager.getManager(realm, session);
 
         UserModel john = realm.getUser("johnkeycloak");
         try {

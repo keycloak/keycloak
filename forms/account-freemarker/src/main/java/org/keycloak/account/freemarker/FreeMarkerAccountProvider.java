@@ -17,11 +17,10 @@ import org.keycloak.freemarker.ExtendingThemeManager;
 import org.keycloak.freemarker.FreeMarkerException;
 import org.keycloak.freemarker.FreeMarkerUtil;
 import org.keycloak.freemarker.Theme;
-import org.keycloak.freemarker.ThemeProvider;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.provider.ProviderSession;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -50,7 +49,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
     private boolean social;
     private boolean audit;
     private boolean passwordUpdateSupported;
-    private ProviderSession session;
+    private KeycloakSession session;
     private FreeMarkerUtil freeMarker;
 
     public static enum MessageType {SUCCESS, WARNING, ERROR}
@@ -60,7 +59,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
     private String message;
     private MessageType messageType;
 
-    public FreeMarkerAccountProvider(ProviderSession session, FreeMarkerUtil freeMarker) {
+    public FreeMarkerAccountProvider(KeycloakSession session, FreeMarkerUtil freeMarker) {
         this.session = session;
         this.freeMarker = freeMarker;
     }

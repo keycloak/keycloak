@@ -1,7 +1,6 @@
 package org.keycloak.services.listeners;
 
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.provider.ProviderSessionFactory;
 import org.keycloak.services.managers.BruteForceProtector;
 
 import javax.servlet.ServletContextEvent;
@@ -22,15 +21,10 @@ public class KeycloakSessionDestroyListener implements ServletContextListener {
         if (protector != null) {
             protector.shutdown();
         }
-        ProviderSessionFactory providerSessionFactory = (ProviderSessionFactory) sce.getServletContext().getAttribute(ProviderSessionFactory.class.getName());
-        KeycloakSessionFactory kcSessionFactory = (KeycloakSessionFactory) sce.getServletContext().getAttribute(KeycloakSessionFactory.class.getName());
-        if (providerSessionFactory != null) {
-            providerSessionFactory.close();
+        KeycloakSessionFactory sessionFactory = (KeycloakSessionFactory) sce.getServletContext().getAttribute(KeycloakSessionFactory.class.getName());
+        if (sessionFactory != null) {
+            sessionFactory.close();
         }
-        if (kcSessionFactory != null) {
-            kcSessionFactory.close();
-        }
-
     }
 
 }

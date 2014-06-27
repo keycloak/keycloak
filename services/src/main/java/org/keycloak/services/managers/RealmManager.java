@@ -53,7 +53,7 @@ import java.util.Map;
 public class RealmManager {
     protected static final Logger logger = Logger.getLogger(RealmManager.class);
 
-    protected KeycloakSession identitySession;
+    protected KeycloakSession session;
     protected String contextPath = "";
 
     public String getContextPath() {
@@ -64,8 +64,8 @@ public class RealmManager {
         this.contextPath = contextPath;
     }
 
-    public RealmManager(KeycloakSession identitySession) {
-        this.identitySession = identitySession;
+    public RealmManager(KeycloakSession session) {
+        this.session = session;
     }
 
     public RealmModel getKeycloakAdminstrationRealm() {
@@ -73,11 +73,11 @@ public class RealmManager {
     }
 
     public RealmModel getRealm(String id) {
-        return identitySession.getRealm(id);
+        return session.getRealm(id);
     }
 
     public RealmModel getRealmByName(String name) {
-        return identitySession.getRealmByName(name);
+        return session.getRealmByName(name);
     }
 
     public RealmModel createRealm(String name) {
@@ -86,7 +86,7 @@ public class RealmManager {
 
     public RealmModel createRealm(String id, String name) {
         if (id == null) id = KeycloakModelUtils.generateId();
-        RealmModel realm = identitySession.createRealm(id, name);
+        RealmModel realm = session.createRealm(id, name);
         realm.setName(name);
 
         // setup defaults
@@ -144,7 +144,7 @@ public class RealmManager {
     }
 
     public boolean removeRealm(RealmModel realm) {
-        boolean removed = identitySession.removeRealm(realm.getId());
+        boolean removed = session.removeRealm(realm.getId());
         if (removed) {
             getKeycloakAdminstrationRealm().removeApplication(realm.getMasterAdminApp().getId());
         }
@@ -245,11 +245,11 @@ public class RealmManager {
             RoleModel createRealmRole = realm.addRole(AdminRoles.CREATE_REALM);
             adminRole.addCompositeRole(createRealmRole);
         } else {
-            adminRealm = identitySession.getRealmByName(Config.getAdminRealm());
+            adminRealm = session.getRealmByName(Config.getAdminRealm());
             adminRole = adminRealm.getRole(AdminRoles.ADMIN);
         }
 
-        ApplicationManager applicationManager = new ApplicationManager(new RealmManager(identitySession));
+        ApplicationManager applicationManager = new ApplicationManager(new RealmManager(session));
 
         ApplicationModel realmAdminApp = applicationManager.createApplication(adminRealm, getMasterRealmAdminApplicationName(realm));
         realmAdminApp.setBearerOnly(true);
@@ -264,7 +264,7 @@ public class RealmManager {
     private void setupRealmAdminManagement(RealmModel realm) {
         if (realm.getName().equals(Config.getAdminRealm())) { return; } // don't need to do this for master realm
 
-        ApplicationManager applicationManager = new ApplicationManager(new RealmManager(identitySession));
+        ApplicationManager applicationManager = new ApplicationManager(new RealmManager(session));
 
         String realmAdminApplicationName = getRealmAdminApplicationName(realm);
         ApplicationModel realmAdminApp = realm.getApplicationByName(realmAdminApplicationName);

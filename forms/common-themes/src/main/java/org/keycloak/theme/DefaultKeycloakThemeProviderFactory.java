@@ -3,7 +3,7 @@ package org.keycloak.theme;
 import org.keycloak.Config;
 import org.keycloak.freemarker.ThemeProvider;
 import org.keycloak.freemarker.ThemeProviderFactory;
-import org.keycloak.provider.ProviderSession;
+import org.keycloak.models.KeycloakSession;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -13,7 +13,7 @@ public class DefaultKeycloakThemeProviderFactory implements ThemeProviderFactory
     private DefaultKeycloakThemeProvider themeProvider;
 
     @Override
-    public ThemeProvider create(ProviderSession providerSession) {
+    public ThemeProvider create(KeycloakSession session) {
         return themeProvider;
     }
 

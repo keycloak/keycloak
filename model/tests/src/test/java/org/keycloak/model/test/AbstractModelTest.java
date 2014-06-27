@@ -1,89 +1,81 @@
 package org.keycloak.model.test;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Set;
-
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.Config;
-import org.keycloak.models.cache.CacheKeycloakSession;
-import org.keycloak.models.cache.SimpleCache;
-import org.keycloak.provider.ProviderSession;
-import org.keycloak.provider.ProviderSessionFactory;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.util.JsonSerialization;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Set;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class AbstractModelTest {
 
-    protected static ProviderSessionFactory providerSessionFactory;
+    protected static KeycloakSessionFactory sessionFactory;
 
-    protected KeycloakSession identitySession;
+    protected KeycloakSession session;
     protected RealmManager realmManager;
-    protected ProviderSession providerSession;
 
     @BeforeClass
     public static void beforeClass() {
-        providerSessionFactory = KeycloakApplication.createProviderSessionFactory();
+        sessionFactory = KeycloakApplication.createSessionFactory();
 
-        ProviderSession providerSession = providerSessionFactory.createSession();
-        KeycloakSession identitySession = providerSession.getProvider(CacheKeycloakSession.class, "simple");
+        KeycloakSession session = sessionFactory.create();
         try {
-            identitySession.getTransaction().begin();
-            new ApplianceBootstrap().bootstrap(identitySession, "/auth");
-            identitySession.getTransaction().commit();
+            session.getTransaction().begin();
+            new ApplianceBootstrap().bootstrap(session, "/auth");
+            session.getTransaction().commit();
         } finally {
-            providerSession.close();
+            session.close();
         }
     }
 
     @AfterClass
     public static void afterClass() {
-        providerSessionFactory.close();
+        sessionFactory.close();
     }
 
     @Before
     public void before() throws Exception {
-        providerSession = providerSessionFactory.createSession();
-
-        identitySession = providerSession.getProvider(CacheKeycloakSession.class, "simple");
-        identitySession.getTransaction().begin();
-        realmManager = new RealmManager(identitySession);
+        session = sessionFactory.create();
+        session.getTransaction().begin();
+        realmManager = new RealmManager(session);
     }
 
     @After
     public void after() throws Exception {
-        identitySession.getTransaction().commit();
-        providerSession.close();
+        session.getTransaction().commit();
+        session.close();
 
-        providerSession = providerSessionFactory.createSession();
-        identitySession = providerSession.getProvider(CacheKeycloakSession.class, "simple");
+        session = sessionFactory.create();
         try {
-            identitySession.getTransaction().begin();
+            session.getTransaction().begin();
 
-            RealmManager rm = new RealmManager(identitySession);
-            for (RealmModel realm : identitySession.getRealms()) {
+            RealmManager rm = new RealmManager(session);
+            for (RealmModel realm : session.getRealms()) {
                 if (!realm.getName().equals(Config.getAdminRealm())) {
                     rm.removeRealm(realm);
                 }
             }
 
-            identitySession.getTransaction().commit();
+            session.getTransaction().commit();
         } finally {
-            providerSession.close();
+            session.close();
         }
 
     }
@@ -94,20 +86,19 @@ public class AbstractModelTest {
 
     protected void commit(boolean rollback) {
         if (rollback) {
-            identitySession.getTransaction().rollback();
+            session.getTransaction().rollback();
         } else {
-            identitySession.getTransaction().commit();
+            session.getTransaction().commit();
         }
         resetSession();
     }
 
     protected void resetSession() {
-        providerSession.close();
+        session.close();
 
-        providerSession = providerSessionFactory.createSession();
-        identitySession = providerSession.getProvider(CacheKeycloakSession.class, "simple");
-        identitySession.getTransaction().begin();
-        realmManager = new RealmManager(identitySession);
+        session = sessionFactory.create();
+        session.getTransaction().begin();
+        realmManager = new RealmManager(session);
     }
 
     public static RealmRepresentation loadJson(String path) throws IOException {

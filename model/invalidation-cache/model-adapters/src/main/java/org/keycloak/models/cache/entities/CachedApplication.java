@@ -3,6 +3,7 @@ package org.keycloak.models.cache.entities;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelProvider;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
@@ -28,7 +29,7 @@ public class CachedApplication extends CachedClient {
     private boolean bearerOnly;
     private Map<String, String> roles = new HashMap<String, String>();
 
-    public CachedApplication(KeycloakCache cache, KeycloakSession delegate, RealmModel realm, ApplicationModel model) {
+    public CachedApplication(KeycloakCache cache, ModelProvider delegate, RealmModel realm, ApplicationModel model) {
         super(cache, delegate, realm, model);
         surrogateAuthRequired = model.isSurrogateAuthRequired();
         managementUrl = model.getManagementUrl();

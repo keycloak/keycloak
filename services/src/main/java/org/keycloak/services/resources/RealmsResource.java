@@ -12,7 +12,6 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.provider.ProviderSession;
 import org.keycloak.services.ClientConnection;
 import org.keycloak.services.managers.AuditManager;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -57,9 +56,6 @@ public class RealmsResource {
     protected KeycloakSession session;
 
     @Context
-    protected ProviderSession providers;
-
-    @Context
     protected ClientConnection clientConnection;
 
     @Context
@@ -98,7 +94,7 @@ public class RealmsResource {
                                        @QueryParam("client_id") String client_id,
                                        @QueryParam("origin") String origin) {
         logger.info("getLoginStatusIframe");
-        AuthenticationManager auth = new AuthenticationManager(providers);
+        AuthenticationManager auth = new AuthenticationManager(session);
 
         //logger.info("getting login-status-iframe.html for client_id: " + client_id);
         RealmManager realmManager = new RealmManager(session);
@@ -151,8 +147,8 @@ public class RealmsResource {
     public TokenService getTokenService(final @PathParam("realm") String name) {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = locateRealm(name, realmManager);
-        Audit audit = new AuditManager(realm, providers, clientConnection).createAudit();
-        AuthenticationManager authManager = new AuthenticationManager(providers, protector);
+        Audit audit = new AuditManager(realm, session, clientConnection).createAudit();
+        AuthenticationManager authManager = new AuthenticationManager(session, protector);
         TokenService tokenService = new TokenService(realm, tokenManager, audit, authManager);
         ResteasyProviderFactory.getInstance().injectProperties(tokenService);
         //resourceContext.initResource(tokenService);
@@ -178,7 +174,7 @@ public class RealmsResource {
             throw new NotFoundException("account management not enabled");
         }
 
-        Audit audit = new AuditManager(realm, providers, clientConnection).createAudit();
+        Audit audit = new AuditManager(realm, session, clientConnection).createAudit();
         AccountService accountService = new AccountService(realm, application, audit);
         ResteasyProviderFactory.getInstance().injectProperties(accountService);
         //resourceContext.initResource(accountService);

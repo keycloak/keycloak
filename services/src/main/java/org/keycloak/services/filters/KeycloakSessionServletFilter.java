@@ -2,10 +2,8 @@ package org.keycloak.services.filters;
 
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakTransaction;
-import org.keycloak.models.cache.CacheKeycloakSession;
-import org.keycloak.provider.ProviderSession;
-import org.keycloak.provider.ProviderSessionFactory;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -28,16 +26,16 @@ public class KeycloakSessionServletFilter implements Filter {
 
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
-        ProviderSessionFactory providerSessionFactory = (ProviderSessionFactory) servletRequest.getServletContext().getAttribute(ProviderSessionFactory.class.getName());
-        ProviderSession providerSession = providerSessionFactory.createSession();
         HttpServletRequest request = (HttpServletRequest)servletRequest;
-        ResteasyProviderFactory.pushContext(ProviderSession.class, providerSession);
 
-        KeycloakSession session = providerSession.getProvider(CacheKeycloakSession.class);
+        KeycloakSessionFactory sessionFactory = (KeycloakSessionFactory) servletRequest.getServletContext().getAttribute(KeycloakSessionFactory.class.getName());
+        KeycloakSession session = sessionFactory.create();
         ResteasyProviderFactory.pushContext(KeycloakSession.class, session);
+
         KeycloakTransaction tx = session.getTransaction();
         ResteasyProviderFactory.pushContext(KeycloakTransaction.class, tx);
         tx.begin();
+
         try {
             filterChain.doFilter(servletRequest, servletResponse);
             if (tx.isActive()) {
@@ -55,7 +53,7 @@ public class KeycloakSessionServletFilter implements Filter {
             if (tx.isActive()) tx.rollback();
             throw new RuntimeException("request path: " + request.getRequestURI(), ex);
         } finally {
-            providerSession.close();
+            session.close();
             ResteasyProviderFactory.clearContextData();
         }
 

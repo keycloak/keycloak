@@ -1,27 +1,23 @@
 package org.keycloak.services.managers;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpResponse;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.VerificationException;
-import org.keycloak.audit.Audit;
+import org.keycloak.authentication.AuthProviderStatus;
+import org.keycloak.authentication.AuthUser;
+import org.keycloak.authentication.AuthenticationProviderManager;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.AuthenticationLinkModel;
-import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.provider.ProviderSession;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.ClientConnection;
 import org.keycloak.services.resources.RealmsResource;
-import org.keycloak.authentication.AuthProviderStatus;
-import org.keycloak.authentication.AuthUser;
-import org.keycloak.authentication.AuthenticationProviderManager;
 import org.keycloak.services.util.CookieHelper;
 import org.keycloak.util.Time;
 
@@ -29,7 +25,6 @@ import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.NewCookie;
-import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.HashSet;
@@ -50,15 +45,15 @@ public class AuthenticationManager {
     public static final String KEYCLOAK_SESSION_COOKIE = "KEYCLOAK_SESSION";
     public static final String KEYCLOAK_REMEMBER_ME = "KEYCLOAK_REMEMBER_ME";
 
-    protected ProviderSession providerSession;
+    protected KeycloakSession session;
     protected BruteForceProtector protector;
 
-    public AuthenticationManager(ProviderSession providerSession) {
-        this.providerSession = providerSession;
+    public AuthenticationManager(KeycloakSession session) {
+        this.session = session;
     }
 
-    public AuthenticationManager(ProviderSession providerSession, BruteForceProtector protector) {
-        this.providerSession = providerSession;
+    public AuthenticationManager(KeycloakSession session, BruteForceProtector protector) {
+        this.session = session;
         this.protector = protector;
     }
 
@@ -267,7 +262,7 @@ public class AuthenticationManager {
     protected AuthenticationStatus authenticateInternal(RealmModel realm, MultivaluedMap<String, String> formData, String username) {
         UserModel user = KeycloakModelUtils.findUserByNameOrEmail(realm, username);
         if (user == null) {
-            AuthUser authUser = AuthenticationProviderManager.getManager(realm, providerSession).getUser(username);
+            AuthUser authUser = AuthenticationProviderManager.getManager(realm, session).getUser(username);
             if (authUser != null) {
                 // Create new user and link him with authentication provider
                 user = realm.addUser(authUser.getUsername());
@@ -314,7 +309,7 @@ public class AuthenticationManager {
             } else {
                 logger.debug("validating password for user: " + username);
 
-                AuthProviderStatus authStatus = AuthenticationProviderManager.getManager(realm, providerSession).validatePassword(user, password);
+                AuthProviderStatus authStatus = AuthenticationProviderManager.getManager(realm, session).validatePassword(user, password);
                 if (authStatus == AuthProviderStatus.INVALID_CREDENTIALS) {
                     logger.debug("invalid password for user: " + username);
                     return AuthenticationStatus.INVALID_CREDENTIALS;

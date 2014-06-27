@@ -4,7 +4,7 @@ import org.keycloak.Config;
 import org.keycloak.freemarker.FreeMarkerUtil;
 import org.keycloak.login.LoginFormsProvider;
 import org.keycloak.login.LoginFormsProviderFactory;
-import org.keycloak.provider.ProviderSession;
+import org.keycloak.models.KeycloakSession;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -14,8 +14,8 @@ public class FreeMarkerLoginFormsProviderFactory implements LoginFormsProviderFa
     private FreeMarkerUtil freeMarker;
 
     @Override
-    public LoginFormsProvider create(ProviderSession providerSession) {
-        return new FreeMarkerLoginFormsProvider(providerSession, freeMarker);
+    public LoginFormsProvider create(KeycloakSession session) {
+        return new FreeMarkerLoginFormsProvider(session, freeMarker);
     }
 
     @Override

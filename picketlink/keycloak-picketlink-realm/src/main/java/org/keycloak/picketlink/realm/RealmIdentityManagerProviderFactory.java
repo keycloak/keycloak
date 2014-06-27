@@ -1,9 +1,9 @@
 package org.keycloak.picketlink.realm;
 
 import org.keycloak.Config;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.picketlink.IdentityManagerProvider;
 import org.keycloak.picketlink.IdentityManagerProviderFactory;
-import org.keycloak.provider.ProviderSession;
 import org.picketlink.idm.PartitionManager;
 
 /**
@@ -16,7 +16,7 @@ public class RealmIdentityManagerProviderFactory implements IdentityManagerProvi
     private PartitionManagerRegistry partitionManagerRegistry;
 
     @Override
-    public IdentityManagerProvider create(ProviderSession providerSession) {
+    public IdentityManagerProvider create(KeycloakSession session) {
         return new RealmIdentityManagerProvider(partitionManagerRegistry);
     }
 

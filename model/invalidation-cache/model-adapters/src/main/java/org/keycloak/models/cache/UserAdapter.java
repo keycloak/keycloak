@@ -23,10 +23,10 @@ public class UserAdapter implements UserModel {
     protected UserModel updated;
     protected CachedUser cached;
     protected KeycloakCache cache;
-    protected CacheKeycloakSession cacheSession;
+    protected CacheModelProvider cacheSession;
     protected RealmModel realm;
 
-    public UserAdapter(CachedUser cached, KeycloakCache cache, CacheKeycloakSession session, RealmModel realm) {
+    public UserAdapter(CachedUser cached, KeycloakCache cache, CacheModelProvider session, RealmModel realm) {
         this.cached = cached;
         this.cache = cache;
         this.cacheSession = session;

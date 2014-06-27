@@ -4,7 +4,6 @@ import org.jboss.resteasy.core.Dispatcher;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.provider.ProviderSession;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
 
@@ -23,8 +22,8 @@ public class UpsSecurityApplication extends KeycloakApplication {
     @Override
     protected void setupDefaultRealm(String contextPath) {
         super.setupDefaultRealm(contextPath);
-        ProviderSession providerSession = providerSessionFactory.createSession();
-        KeycloakSession session = providerSession.getProvider(KeycloakSession.class);
+
+        KeycloakSession session = sessionFactory.create();
         session.getTransaction().begin();
 
         // disable master realm by deleting the admin user.
@@ -35,7 +34,7 @@ public class UpsSecurityApplication extends KeycloakApplication {
             if (admin != null) master.removeUser(admin.getLoginName());
             session.getTransaction().commit();
         } finally {
-            providerSession.close();
+            session.close();
         }
 
     }

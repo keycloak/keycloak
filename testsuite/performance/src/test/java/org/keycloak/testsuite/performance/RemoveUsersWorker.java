@@ -27,12 +27,12 @@ public class RemoveUsersWorker implements Worker {
     private int realmsOffset;
 
     @Override
-    public void setup(int workerId, KeycloakSession identitySession) {
+    public void setup(int workerId, KeycloakSession session) {
         realmsOffset = PerfTestUtils.readSystemProperty("keycloak.perf.removeUsers.realms.offset", Integer.class);
 
         int realmNumber = realmsOffset + workerId;
         String realmId = PerfTestUtils.getRealmName(realmNumber);
-        realm = identitySession.getRealm(realmId);
+        realm = session.getRealm(realmId);
         if (realm == null) {
             throw new IllegalStateException("Realm '" + realmId + "' not found");
         }
@@ -41,7 +41,7 @@ public class RemoveUsersWorker implements Worker {
     }
 
     @Override
-    public void run(SampleResult result, KeycloakSession identitySession) {
+    public void run(SampleResult result, KeycloakSession session) {
         throw new IllegalStateException("Not yet supported");
         /*
         int userNumber = ++userCounterInRealm;

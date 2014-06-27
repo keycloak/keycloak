@@ -164,9 +164,9 @@ public class AuthenticationManagerTest extends AbstractModelTest {
         realm.setAccessTokenLifespan(1000);
         realm.addRequiredCredential(CredentialRepresentation.PASSWORD);
         realm.setAuthenticationProviders(Arrays.asList(AuthenticationProviderModel.DEFAULT_PROVIDER));
-        protector = new BruteForceProtector(providerSessionFactory);
+        protector = new BruteForceProtector(sessionFactory);
         protector.start();
-        am = new AuthenticationManager(providerSession, protector);
+        am = new AuthenticationManager(session, protector);
 
         user = realm.addUser("test");
         user.setEnabled(true);

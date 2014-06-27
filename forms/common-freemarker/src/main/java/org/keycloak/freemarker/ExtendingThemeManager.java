@@ -1,7 +1,7 @@
 package org.keycloak.freemarker;
 
 import org.keycloak.Config;
-import org.keycloak.provider.ProviderSession;
+import org.keycloak.models.KeycloakSession;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,10 +24,10 @@ public class ExtendingThemeManager implements ThemeProvider {
     private String defaultTheme;
     private int staticMaxAge;
 
-    public ExtendingThemeManager(ProviderSession providerSession) {
+    public ExtendingThemeManager(KeycloakSession session) {
         providers = new LinkedList();
 
-        for (ThemeProvider p : providerSession.getAllProviders(ThemeProvider.class)) {
+        for (ThemeProvider p : session.getAllProviders(ThemeProvider.class)) {
             if (!p.getClass().equals(ExtendingThemeManager.class)) {
                 providers.add(p);
             }

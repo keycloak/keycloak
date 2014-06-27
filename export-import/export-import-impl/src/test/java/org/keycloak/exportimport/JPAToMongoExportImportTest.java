@@ -1,7 +1,7 @@
 package org.keycloak.exportimport;
 
 import org.keycloak.exportimport.io.directory.TmpDirExportImportIOProvider;
-import org.keycloak.provider.ProviderSessionFactory;
+import org.keycloak.models.KeycloakSessionFactory;
 
 /**
  * Test for full export of data from JPA and import them to Mongo. Using "directory" provider
@@ -21,14 +21,14 @@ public class JPAToMongoExportImportTest extends ExportImportTestBase {
     }
 
     @Override
-    protected void exportModel(ProviderSessionFactory factory) {
+    protected void exportModel(KeycloakSessionFactory factory) {
         ExportImportConfig.setAction(ExportImportProviderImpl.ACTION_EXPORT);
         ExportImportConfig.setProvider(TmpDirExportImportIOProvider.PROVIDER_ID);
         getExportImportProvider().checkExportImport(factory);
     }
 
     @Override
-    protected void importModel(ProviderSessionFactory factory) {
+    protected void importModel(KeycloakSessionFactory factory) {
         ExportImportConfig.setAction(ExportImportProviderImpl.ACTION_IMPORT);
         ExportImportConfig.setProvider(TmpDirExportImportIOProvider.PROVIDER_ID);
         getExportImportProvider().checkExportImport(factory);

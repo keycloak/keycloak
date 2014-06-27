@@ -6,9 +6,8 @@ import org.junit.Test;
 import org.keycloak.model.test.AbstractModelTest;
 import org.keycloak.model.test.ImportTest;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
-import org.keycloak.provider.ProviderSession;
-import org.keycloak.provider.ProviderSessionFactory;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.RealmManager;
@@ -22,10 +21,9 @@ import java.util.Iterator;
  */
 public abstract class ExportImportTestBase {
 
-    protected ProviderSessionFactory factory;
+    protected KeycloakSessionFactory factory;
 
-    protected ProviderSession providerSession;
-    protected KeycloakSession identitySession;
+    protected KeycloakSession session;
     protected RealmManager realmManager;
 
     @After
@@ -37,17 +35,17 @@ public abstract class ExportImportTestBase {
     public void testExportImport() throws Exception {
         // Init JPA model
         System.setProperty("keycloak.model.provider", getExportModelProvider());
-        factory = KeycloakApplication.createProviderSessionFactory();
+        factory = KeycloakApplication.createSessionFactory();
 
         // Bootstrap admin realm
         beginTransaction();
-        new ApplianceBootstrap().bootstrap(identitySession, "/auth");
+        new ApplianceBootstrap().bootstrap(session, "/auth");
         commitTransaction();
 
         // Classic import of realm to JPA model
         beginTransaction();
         RealmRepresentation rep = AbstractModelTest.loadJson("testrealm.json");
-        realmManager = new RealmManager(identitySession);
+        realmManager = new RealmManager(session);
         RealmModel realm = realmManager.createRealm("demo", rep.getRealm());
         realmManager.importRealm(rep, realm);
 
@@ -57,7 +55,7 @@ public abstract class ExportImportTestBase {
         exportModel(factory);
 
         beginTransaction();
-        realm = identitySession.getRealm("demo");
+        realm = session.getRealm("demo");
         String wburkeId = realm.getUser("wburke").getId();
         String appId = realm.getApplicationByName("Application").getId();
 
@@ -67,14 +65,14 @@ public abstract class ExportImportTestBase {
 
         // Bootstrap mongo session and factory
         System.setProperty("keycloak.model.provider", getImportModelProvider());
-        factory = KeycloakApplication.createProviderSessionFactory();
+        factory = KeycloakApplication.createSessionFactory();
 
         // Full import of previous export into mongo
         importModel(factory);
 
         // Verify it's imported in mongo (reusing ImportTest)
         beginTransaction();
-        RealmModel importedRealm = identitySession.getRealm("demo");
+        RealmModel importedRealm = session.getRealm("demo");
         System.out.println("Exported realm: " + realm + ", Imported realm: " + importedRealm);
 
         Assert.assertEquals(wburkeId, importedRealm.getUser("wburke").getId());
@@ -90,20 +88,19 @@ public abstract class ExportImportTestBase {
 
     protected abstract String getImportModelProvider();
 
-    protected abstract void exportModel(ProviderSessionFactory factory);
+    protected abstract void exportModel(KeycloakSessionFactory factory);
 
-    protected abstract void importModel(ProviderSessionFactory factory);
+    protected abstract void importModel(KeycloakSessionFactory factory);
 
     protected void beginTransaction() {
-        providerSession = factory.createSession();
-        identitySession = providerSession.getProvider(KeycloakSession.class);
-        identitySession.getTransaction().begin();
-        realmManager = new RealmManager(identitySession);
+        session = factory.create();
+        session.getTransaction().begin();
+        realmManager = new RealmManager(session);
     }
 
     protected void commitTransaction() {
-        identitySession.getTransaction().commit();
-        providerSession.close();
+        session.getTransaction().commit();
+        session.close();
     }
 
     protected ExportImportProvider getExportImportProvider() {

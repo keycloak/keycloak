@@ -1,7 +1,7 @@
 package org.keycloak.test.tools;
 
 import org.jboss.resteasy.core.Dispatcher;
-import org.keycloak.provider.ProviderSessionFactory;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.services.resources.KeycloakApplication;
 
 import javax.servlet.ServletContext;
@@ -15,18 +15,18 @@ import java.util.Set;
  */
 public class KeycloakTestApplication extends Application {
 
-    protected ProviderSessionFactory providerSessionFactory;
+    protected KeycloakSessionFactory sessionFactory;
     protected Set<Class<?>> classes = new HashSet<Class<?>>();
     protected Set<Object> singletons = new HashSet<Object>();
 
     public KeycloakTestApplication(@Context ServletContext context, @Context Dispatcher dispatcher) {
         KeycloakApplication.loadConfig();
 
-        this.providerSessionFactory = KeycloakApplication.createProviderSessionFactory();
+        this.sessionFactory = KeycloakApplication.createSessionFactory();
 
-        context.setAttribute(ProviderSessionFactory.class.getName(), this.providerSessionFactory);
+        context.setAttribute(KeycloakSessionFactory.class.getName(), this.sessionFactory);
 
-        singletons.add(new PerfTools(providerSessionFactory));
+        singletons.add(new PerfTools(sessionFactory));
     }
 
     @Override

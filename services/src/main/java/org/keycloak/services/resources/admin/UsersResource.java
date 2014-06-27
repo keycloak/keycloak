@@ -17,7 +17,6 @@ import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.provider.ProviderSession;
 import org.keycloak.representations.adapters.action.UserStats;
 import org.keycloak.representations.idm.ApplicationMappingsRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -68,30 +67,23 @@ public class UsersResource {
 
     protected RealmModel realm;
 
-    private ProviderSession providerSession;
     private RealmAuth auth;
+
     private TokenManager tokenManager;
 
-    public UsersResource(ProviderSession providerSession, RealmModel realm, RealmAuth auth, TokenManager tokenManager) {
-        this.providerSession = providerSession;
+    @Context
+    protected UriInfo uriInfo;
+
+    @Context
+    protected KeycloakSession session;
+
+    public UsersResource(RealmModel realm, RealmAuth auth, TokenManager tokenManager) {
         this.auth = auth;
         this.realm = realm;
         this.tokenManager = tokenManager;
 
         auth.init(RealmAuth.Resource.USER);
     }
-
-    @Context
-    protected UriInfo uriInfo;
-
-    /*
-    @Context
-    protected ResourceContext resourceContext;
-    */
-
-    @Context
-    protected KeycloakSession session;
-
 
     /**
      * Update the user
@@ -835,7 +827,7 @@ public class UsersResource {
             String link = builder.build(realm.getName()).toString();
             long expiration = TimeUnit.SECONDS.toMinutes(realm.getAccessCodeLifespanUserAction());
 
-            providerSession.getProvider(EmailProvider.class).setRealm(realm).setUser(user).sendPasswordReset(link, expiration);
+            session.getProvider(EmailProvider.class).setRealm(realm).setUser(user).sendPasswordReset(link, expiration);
 
             return Response.ok().build();
         } catch (EmailException e) {

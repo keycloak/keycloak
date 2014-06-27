@@ -8,6 +8,7 @@ import org.keycloak.models.AuthenticationLinkModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
+import org.keycloak.models.ModelProvider;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -41,12 +42,16 @@ import java.util.regex.Pattern;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class MongoKeycloakSession implements KeycloakSession {
+public class MongoModelProvider implements ModelProvider {
 
     private final MongoStoreInvocationContext invocationContext;
     private final MongoKeycloakTransaction transaction;
+    private final KeycloakSession session;
+    private final MongoStore mongoStore;
 
-    public MongoKeycloakSession(MongoStore mongoStore) {
+    public MongoModelProvider(KeycloakSession session, MongoStore mongoStore) {
+        this.session = session;
+        this.mongoStore = mongoStore;
         // this.invocationContext = new SimpleMongoStoreInvocationContext(mongoStore);
         this.invocationContext = new TransactionMongoStoreInvocationContext(mongoStore);
         this.transaction = new MongoKeycloakTransaction(invocationContext);
@@ -80,13 +85,13 @@ public class MongoKeycloakSession implements KeycloakSession {
 
         getMongoStore().insertEntity(newRealm, invocationContext);
 
-        return new RealmAdapter(this, newRealm, invocationContext);
+        return new RealmAdapter(session, newRealm, invocationContext);
     }
 
     @Override
     public RealmModel getRealm(String id) {
         MongoRealmEntity realmEntity = getMongoStore().loadEntity(MongoRealmEntity.class, id, invocationContext);
-        return realmEntity != null ? new RealmAdapter(this, realmEntity, invocationContext) : null;
+        return realmEntity != null ? new RealmAdapter(session, realmEntity, invocationContext) : null;
     }
 
     @Override
@@ -96,7 +101,7 @@ public class MongoKeycloakSession implements KeycloakSession {
 
         List<RealmModel> results = new ArrayList<RealmModel>();
         for (MongoRealmEntity realmEntity : realms) {
-            results.add(new RealmAdapter(this, realmEntity, invocationContext));
+            results.add(new RealmAdapter(session, realmEntity, invocationContext));
         }
         return results;
     }
@@ -109,7 +114,7 @@ public class MongoKeycloakSession implements KeycloakSession {
         MongoRealmEntity realm = getMongoStore().loadSingleEntity(MongoRealmEntity.class, query, invocationContext);
 
         if (realm == null) return null;
-        return new RealmAdapter(this, realm, invocationContext);
+        return new RealmAdapter(session, realm, invocationContext);
     }
 
     @Override
@@ -120,7 +125,7 @@ public class MongoKeycloakSession implements KeycloakSession {
         if (user == null || !realm.getId().equals(user.getRealmId())) {
             return null;
         } else {
-            return new UserAdapter(this, realm, user, invocationContext);
+            return new UserAdapter(session, realm, user, invocationContext);
         }
     }
 
@@ -135,7 +140,7 @@ public class MongoKeycloakSession implements KeycloakSession {
         if (user == null) {
             return null;
         } else {
-            return new UserAdapter(this, realm, user, invocationContext);
+            return new UserAdapter(session, realm, user, invocationContext);
         }
     }
 
@@ -150,7 +155,7 @@ public class MongoKeycloakSession implements KeycloakSession {
         if (user == null) {
             return null;
         } else {
-            return new UserAdapter(this, realm, user, invocationContext);
+            return new UserAdapter(session, realm, user, invocationContext);
         }
     }
 
@@ -171,13 +176,13 @@ public class MongoKeycloakSession implements KeycloakSession {
                 .and("realmId").is(realm.getId())
                 .get();
         MongoUserEntity userEntity = getMongoStore().loadSingleEntity(MongoUserEntity.class, query, invocationContext);
-        return userEntity == null ? null : new UserAdapter(this, realm, userEntity, invocationContext);
+        return userEntity == null ? null : new UserAdapter(session, realm, userEntity, invocationContext);
     }
 
     protected List<UserModel> convertUserEntities(RealmModel realm, List<MongoUserEntity> userEntities) {
         List<UserModel> userModels = new ArrayList<UserModel>();
         for (MongoUserEntity user : userEntities) {
-            userModels.add(new UserAdapter(this, realm, user, invocationContext));
+            userModels.add(new UserAdapter(session, realm, user, invocationContext));
         }
         return userModels;
     }
@@ -301,7 +306,7 @@ public class MongoKeycloakSession implements KeycloakSession {
         if (role == null) return null;
         if (role.getRealmId() != null && !role.getRealmId().equals(realm.getId())) return null;
         if (role.getApplicationId() != null && realm.getApplicationById(role.getApplicationId()) == null) return null;
-        return new RoleAdapter(this, realm, role, null, invocationContext);
+        return new RoleAdapter(session, realm, role, null, invocationContext);
     }
 
     @Override
@@ -313,7 +318,7 @@ public class MongoKeycloakSession implements KeycloakSession {
             return null;
         }
 
-        return new ApplicationAdapter(this, realm, appData, invocationContext);
+        return new ApplicationAdapter(session, realm, appData, invocationContext);
     }
 
     @Override
@@ -323,7 +328,7 @@ public class MongoKeycloakSession implements KeycloakSession {
         // Check if client belongs to this realm
         if (clientEntity == null || !realm.getId().equals(clientEntity.getRealmId())) return null;
 
-        return new OAuthClientAdapter(this, realm, clientEntity, invocationContext);
+        return new OAuthClientAdapter(session, realm, clientEntity, invocationContext);
     }
 
     @Override

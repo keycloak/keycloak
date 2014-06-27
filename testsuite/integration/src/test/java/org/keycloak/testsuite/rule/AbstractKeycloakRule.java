@@ -10,8 +10,6 @@ import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.cache.CacheKeycloakSession;
-import org.keycloak.provider.ProviderSession;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.ModelToRepresentation;
@@ -39,29 +37,28 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
     }
 
     public UserRepresentation getUser(String realm, String name) {
-        ProviderSession providerSession = server.getProviderSessionFactory().createSession();
-        KeycloakSession session = providerSession.getProvider(KeycloakSession.class);
+        KeycloakSession session = server.getSessionFactory().create();
+        session.getTransaction().begin();
         try {
             UserModel user = session.getRealmByName(realm).getUser(name);
             return user != null ? ModelToRepresentation.toRepresentation(user) : null;
         } finally {
-            providerSession.close();
+            session.close();
         }
     }
 
     public UserRepresentation getUserById(String realm, String id) {
-        ProviderSession providerSession = server.getProviderSessionFactory().createSession();
-        KeycloakSession session = providerSession.getProvider(KeycloakSession.class);
+        KeycloakSession session = server.getSessionFactory().create();
+        session.getTransaction().begin();
         try {
             return ModelToRepresentation.toRepresentation(session.getRealmByName(realm).getUserById(id));
         } finally {
-            providerSession.close();
+            session.close();
         }
     }
 
     protected void setupKeycloak() {
-        ProviderSession providerSession = server.getProviderSessionFactory().createSession();
-        KeycloakSession session = providerSession.getProvider(KeycloakSession.class);
+        KeycloakSession session = server.getSessionFactory().create();
         session.getTransaction().begin();
 
         try {
@@ -73,7 +70,7 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
 
             session.getTransaction().commit();
         } finally {
-            providerSession.close();
+            session.close();
         }
     }
 
@@ -137,23 +134,15 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
         return JsonSerialization.readValue(bytes, RealmRepresentation.class);
     }
 
-    public ProviderSession startSession() {
-        ProviderSession providerSession = server.getProviderSessionFactory().createSession();
-        KeycloakSession session = providerSession.getProvider(KeycloakSession.class);
-        session.getTransaction().begin();
-        return providerSession;
-    }
-
-    public KeycloakSession startCacheSession() {
-        ProviderSession providerSession = server.getProviderSessionFactory().createSession();
-        KeycloakSession session = providerSession.getProvider(CacheKeycloakSession.class);
+    public KeycloakSession startSession() {
+        KeycloakSession session = server.getSessionFactory().create();
         session.getTransaction().begin();
         return session;
     }
 
-    public void stopSession(ProviderSession session, boolean commit) {
+    public void stopSession(KeycloakSession session, boolean commit) {
         if (commit) {
-            session.getProvider(KeycloakSession.class).getTransaction().commit();
+            session.getTransaction().commit();
         }
         session.close();
     }

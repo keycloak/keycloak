@@ -39,7 +39,7 @@ public class ReadUsersWorker implements Worker {
     private int iterationNumber;
 
     @Override
-    public void setup(int workerId, KeycloakSession identitySession) {
+    public void setup(int workerId, KeycloakSession session) {
         realmsOffset = PerfTestUtils.readSystemProperty("keycloak.perf.readUsers.realms.offset", Integer.class);
         readUsersPerIteration = PerfTestUtils.readSystemProperty("keycloak.perf.readUsers.readUsersPerIteration", Integer.class);
         countOfUsersPerRealm = PerfTestUtils.readSystemProperty("keycloak.perf.readUsers.countOfUsersPerRealm", Integer.class);
@@ -66,9 +66,9 @@ public class ReadUsersWorker implements Worker {
     }
 
     @Override
-    public void run(SampleResult result, KeycloakSession identitySession) {
+    public void run(SampleResult result, KeycloakSession session) {
         // We need to obtain realm first
-        RealmModel realm = identitySession.getRealm(realmId);
+        RealmModel realm = session.getRealm(realmId);
         if (realm == null) {
             throw new IllegalStateException("Realm '" + realmId + "' not found");
         }

@@ -41,19 +41,18 @@ import org.keycloak.models.AuthenticationLinkModel;
 import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.TimeBasedOTP;
-import org.keycloak.provider.ProviderSession;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ModelToRepresentation;
-import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.OAuthRedirect;
@@ -79,7 +78,6 @@ import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.core.Variant;
 import java.net.URI;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -120,7 +118,7 @@ public class AccountService {
     private UriInfo uriInfo;
 
     @Context
-    private ProviderSession providers;
+    private KeycloakSession session;
 
     private final AppAuthManager authManager;
     private final ApplicationModel application;
@@ -133,13 +131,13 @@ public class AccountService {
         this.realm = realm;
         this.application = application;
         this.audit = audit;
-        this.authManager = new AppAuthManager(providers);
+        this.authManager = new AppAuthManager(session);
     }
 
     public void init() {
-        auditProvider = providers.getProvider(AuditProvider.class);
+        auditProvider = session.getProvider(AuditProvider.class);
 
-        account = providers.getProvider(AccountProvider.class).setRealm(realm).setUriInfo(uriInfo);
+        account = session.getProvider(AccountProvider.class).setRealm(realm).setUriInfo(uriInfo);
 
         boolean passwordUpdateSupported = false;
         AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(realm, uriInfo, headers);
@@ -183,7 +181,7 @@ public class AccountService {
             try {
                 require(AccountRoles.MANAGE_ACCOUNT);
             } catch (ForbiddenException e) {
-                return Flows.forms(providers, realm, uriInfo).setError("No access").createErrorPage();
+                return Flows.forms(session, realm, uriInfo).setError("No access").createErrorPage();
             }
 
             String[] referrer = getReferrer();
@@ -445,7 +443,7 @@ public class AccountService {
             return account.setError(Messages.INVALID_PASSWORD_CONFIRM).createResponse(AccountPages.PASSWORD);
         }
 
-        AuthenticationProviderManager authProviderManager = AuthenticationProviderManager.getManager(realm, providers);
+        AuthenticationProviderManager authProviderManager = AuthenticationProviderManager.getManager(realm, session);
         if (Validation.isEmpty(password)) {
             return account.setError(Messages.MISSING_PASSWORD).createResponse(AccountPages.PASSWORD);
         } else if (authProviderManager.validatePassword(user, password) != AuthProviderStatus.SUCCESS) {

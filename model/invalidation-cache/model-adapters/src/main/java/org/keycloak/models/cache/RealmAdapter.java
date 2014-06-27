@@ -1,7 +1,6 @@
 package org.keycloak.models.cache;
 
 import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.AuthenticationLinkModel;
 import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.OAuthClientModel;
@@ -15,17 +14,13 @@ import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UsernameLoginFailureModel;
-import org.keycloak.models.cache.entities.CachedApplicationRole;
 import org.keycloak.models.cache.entities.CachedRealm;
-import org.keycloak.models.cache.entities.CachedRealmRole;
-import org.keycloak.models.cache.entities.CachedRole;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
 import org.keycloak.models.utils.TimeBasedOTP;
 
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -39,13 +34,13 @@ import java.util.Set;
  */
 public class RealmAdapter implements RealmModel {
     protected CachedRealm cached;
-    protected CacheKeycloakSession cacheSession;
+    protected CacheModelProvider cacheSession;
     protected RealmModel updated;
     protected KeycloakCache cache;
     protected volatile transient PublicKey publicKey;
     protected volatile transient PrivateKey privateKey;
 
-    public RealmAdapter(CachedRealm cached, CacheKeycloakSession cacheSession) {
+    public RealmAdapter(CachedRealm cached, CacheModelProvider cacheSession) {
         this.cached = cached;
         this.cacheSession = cacheSession;
     }
