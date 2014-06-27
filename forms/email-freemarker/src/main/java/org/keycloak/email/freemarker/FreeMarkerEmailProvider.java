@@ -17,6 +17,7 @@ import javax.mail.Session;
 import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -130,6 +131,7 @@ public class FreeMarkerEmailProvider implements EmailProvider {
             msg.setSubject(subject);
             msg.setText(body);
             msg.saveChanges();
+            msg.setSentDate(new Date());
 
             Transport transport = session.getTransport("smtp");
             if (auth) {
