@@ -389,9 +389,9 @@ var Keycloak = function (config) {
         if (token) {
             kc.token = token;
             kc.tokenParsed = JSON.parse(decodeURIComponent(escape(window.atob( token.split('.')[1] ))));
-            var sessionId = kc.realm + '-' + kc.tokenParsed.sub;
+            var sessionId = kc.realm + '/' + kc.tokenParsed.sub;
             if (kc.tokenParsed.session_state) {
-                sessionId = sessionId + '-' + kc.tokenParsed.session_state;
+                sessionId = sessionId + '/' + kc.tokenParsed.session_state;
             }
             kc.sessionId = sessionId;
             kc.authenticated = true;

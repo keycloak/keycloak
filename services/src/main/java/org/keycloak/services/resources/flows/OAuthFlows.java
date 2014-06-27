@@ -99,6 +99,19 @@ public class OAuthFlows {
         Response.ResponseBuilder location = Response.status(302).location(redirectUri.build());
         Cookie remember = request.getHttpHeaders().getCookies().get(AuthenticationManager.KEYCLOAK_REMEMBER_ME);
         rememberMe = rememberMe || remember != null;
+
+        Cookie sessionCookie = request.getHttpHeaders().getCookies().get(AuthenticationManager.KEYCLOAK_SESSION_COOKIE);
+        if (sessionCookie != null) {
+            String oldSessionId = sessionCookie.getValue().split("/")[2];
+            if (!oldSessionId.equals(session.getId())) {
+                UserSessionModel oldSession = realm.getUserSession(oldSessionId);
+                if (oldSession != null) {
+                    log.debugv("Removing old user session: session: {0}", oldSessionId);
+                    realm.removeUserSession(oldSession);
+                }
+            }
+        }
+
         // refresh the cookies!
         authManager.createLoginCookie(realm, accessCode.getUser(), session, uriInfo, rememberMe);
         if (rememberMe) authManager.createRememberMeCookie(realm, uriInfo);
