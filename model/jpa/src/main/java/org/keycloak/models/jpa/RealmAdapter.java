@@ -527,7 +527,8 @@ public class RealmAdapter implements RealmModel {
                 return;
             }
         }
-        entities.add(((RoleAdapter) role).getRole());
+        RoleEntity roleEntity = RoleAdapter.toRoleEntity(role, em);
+        entities.add(roleEntity);
         em.flush();
     }
 
@@ -924,7 +925,7 @@ public class RealmAdapter implements RealmModel {
         }
         if (!role.getContainer().equals(this)) return false;
 
-        RoleEntity roleEntity = ((RoleAdapter) role).getRole();
+        RoleEntity roleEntity = RoleAdapter.toRoleEntity(role, em);
         realm.getRoles().remove(role);
         realm.getDefaultRoles().remove(role);
 
