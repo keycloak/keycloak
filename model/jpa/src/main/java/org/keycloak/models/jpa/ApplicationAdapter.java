@@ -130,15 +130,14 @@ public class ApplicationAdapter extends ClientAdapter implements ApplicationMode
 
     @Override
     public boolean removeRole(RoleModel roleModel) {
-        RoleAdapter roleAdapter = (RoleAdapter)roleModel;
         if (roleModel == null) {
             return false;
         }
-        if (!roleAdapter.getContainer().equals(this)) return false;
+        if (!roleModel.getContainer().equals(this)) return false;
 
-        if (!roleAdapter.getRole().isApplicationRole()) return false;
+        RoleEntity role = RoleAdapter.toRoleEntity(roleModel, em);
+        if (!role.isApplicationRole()) return false;
 
-        RoleEntity role = roleAdapter.getRole();
 
         applicationEntity.getRoles().remove(role);
         applicationEntity.getDefaultRoles().remove(role);
@@ -209,7 +208,8 @@ public class ApplicationAdapter extends ClientAdapter implements ApplicationMode
                 return;
             }
         }
-        entities.add(((RoleAdapter) role).getRole());
+        RoleEntity roleEntity = RoleAdapter.toRoleEntity(role, em);
+        entities.add(roleEntity);
         em.flush();
     }
 

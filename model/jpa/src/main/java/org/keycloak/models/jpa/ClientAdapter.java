@@ -7,6 +7,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.jpa.entities.ClientEntity;
 import org.keycloak.models.jpa.entities.ClientUserSessionAssociationEntity;
+import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.jpa.entities.ScopeMappingEntity;
 
 import javax.persistence.EntityManager;
@@ -215,7 +216,8 @@ public abstract class ClientAdapter implements ClientModel {
         if (hasScope(role)) return;
         ScopeMappingEntity entity = new ScopeMappingEntity();
         entity.setClient(getEntity());
-        entity.setRole(((RoleAdapter) role).getRole());
+        RoleEntity roleEntity = RoleAdapter.toRoleEntity(role, em);
+        entity.setRole(roleEntity);
         em.persist(entity);
         em.flush();
         em.detach(entity);
@@ -223,7 +225,7 @@ public abstract class ClientAdapter implements ClientModel {
 
     @Override
     public void deleteScopeMapping(RoleModel role) {
-        TypedQuery<ScopeMappingEntity> query = getRealmScopeMappingQuery((RoleAdapter) role);
+        TypedQuery<ScopeMappingEntity> query = getRealmScopeMappingQuery(role);
         List<ScopeMappingEntity> results = query.getResultList();
         if (results.size() == 0) return;
         for (ScopeMappingEntity entity : results) {
@@ -231,10 +233,11 @@ public abstract class ClientAdapter implements ClientModel {
         }
     }
 
-    protected TypedQuery<ScopeMappingEntity> getRealmScopeMappingQuery(RoleAdapter role) {
+    protected TypedQuery<ScopeMappingEntity> getRealmScopeMappingQuery(RoleModel role) {
         TypedQuery<ScopeMappingEntity> query = em.createNamedQuery("hasScope", ScopeMappingEntity.class);
         query.setParameter("client", getEntity());
-        query.setParameter("role", ((RoleAdapter) role).getRole());
+        RoleEntity roleEntity = RoleAdapter.toRoleEntity(role, em);
+        query.setParameter("role", roleEntity);
         return query;
     }
 

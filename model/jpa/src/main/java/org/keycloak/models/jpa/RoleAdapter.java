@@ -66,7 +66,7 @@ public class RoleAdapter implements RoleModel {
 
     @Override
     public void addCompositeRole(RoleModel role) {
-        RoleEntity entity = ((RoleAdapter)role).getRole();
+        RoleEntity entity = RoleAdapter.toRoleEntity(role, em);
         for (RoleEntity composite : getRole().getCompositeRoles()) {
             if (composite.equals(entity)) return;
         }
@@ -76,7 +76,7 @@ public class RoleAdapter implements RoleModel {
 
     @Override
     public void removeCompositeRole(RoleModel role) {
-        RoleEntity entity = ((RoleAdapter)role).getRole();
+        RoleEntity entity = RoleAdapter.toRoleEntity(role, em);
         Iterator<RoleEntity> it = getRole().getCompositeRoles().iterator();
         while (it.hasNext()) {
             if (it.next().equals(entity)) it.remove();
@@ -124,5 +124,12 @@ public class RoleAdapter implements RoleModel {
     @Override
     public int hashCode() {
         return getId().hashCode();
+    }
+
+    public static RoleEntity toRoleEntity(RoleModel model, EntityManager em) {
+        if (model instanceof RoleAdapter) {
+            return ((RoleAdapter)model).getRole();
+        }
+        return em.getReference(RoleEntity.class, model.getId());
     }
 }
