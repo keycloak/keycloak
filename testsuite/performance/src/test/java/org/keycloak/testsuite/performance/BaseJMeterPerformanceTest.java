@@ -3,9 +3,12 @@ package org.keycloak.testsuite.performance;
 import org.apache.jmeter.protocol.java.sampler.AbstractJavaSamplerClient;
 import org.apache.jmeter.protocol.java.sampler.JavaSamplerContext;
 import org.apache.jmeter.samplers.SampleResult;
+import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakTransaction;
+import org.keycloak.models.RealmModel;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
 
 import java.util.concurrent.Callable;
@@ -22,7 +25,34 @@ public class BaseJMeterPerformanceTest extends AbstractJavaSamplerClient {
 
         @Override
         public KeycloakSessionFactory call() throws Exception {
-            return KeycloakApplication.createSessionFactory();
+            KeycloakSessionFactory factory = KeycloakApplication.createSessionFactory();
+
+            // TODO: Workaround due to bouncycastle classpath issues. Should be fixed properly
+            // new ApplianceBootstrap().bootstrap(factory, "/auth");
+            bootstrapAdminRealm(factory, "/auth");
+
+            return factory;
+        }
+
+        private void bootstrapAdminRealm(KeycloakSessionFactory factory, String contextPath) {
+            KeycloakSession keycloakSession = factory.create();
+            keycloakSession.getTransaction().begin();
+
+            try {
+                String adminRealmName = Config.getAdminRealm();
+                if (keycloakSession.getRealm(adminRealmName) == null) {
+
+                    RealmManager manager = new RealmManager(keycloakSession);
+                    manager.setContextPath(contextPath);
+                    RealmModel realm = manager.createRealm(adminRealmName, adminRealmName);
+                    realm.setName(adminRealmName);
+                    realm.setEnabled(true);
+                }
+
+                keycloakSession.getTransaction().commit();
+            } finally {
+                keycloakSession.close();
+            }
         }
 
     });
@@ -42,6 +72,7 @@ public class BaseJMeterPerformanceTest extends AbstractJavaSamplerClient {
         worker = getWorker();
 
         factory = getFactory();
+        getLogger().info("Retrieved factory: " + factory);
         KeycloakSession session = factory.create();
         KeycloakTransaction transaction = session.getTransaction();
         transaction.begin();

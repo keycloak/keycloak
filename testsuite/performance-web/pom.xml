@@ -1,0 +1,248 @@
+<?xml version="1.0"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <parent>
+        <artifactId>keycloak-testsuite-pom</artifactId>
+        <groupId>org.keycloak</groupId>
+        <version>1.0-beta-4-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>keycloak-testsuite-performance-web</artifactId>
+    <name>Keycloak TestSuite for Web Performance</name>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-testsuite-integration</artifactId>
+            <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.jboss.spec.javax.servlet</groupId>
+                    <artifactId>jboss-servlet-api_3.0_spec</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-testsuite-tools</artifactId>
+            <version>${project.version}</version>
+            <classifier>classes</classifier>
+        </dependency>
+
+        <!-- Needed by undertow -->
+        <dependency>
+            <groupId>org.jboss.spec.javax.servlet</groupId>
+            <artifactId>jboss-servlet-api_3.1_spec</artifactId>
+            <version>1.0.0.Final</version>
+        </dependency>
+
+        <!-- Resteasy deps specified here as we want latest version of them -->
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>jaxrs-api</artifactId>
+            <version>${resteasy.version.latest}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-jaxrs</artifactId>
+            <version>${resteasy.version.latest}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-simple</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-client</artifactId>
+            <version>${resteasy.version.latest}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-crypto</artifactId>
+            <version>${resteasy.version.latest}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-multipart-provider</artifactId>
+            <version>${resteasy.version.latest}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-jackson-provider</artifactId>
+            <version>${resteasy.version.latest}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-undertow</artifactId>
+            <version>${resteasy.version.latest}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.jmeter</groupId>
+            <artifactId>ApacheJMeter_java</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bcprov-jdk15on</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bcmail-jdk15on</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bcmail-jdk15</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.tika</groupId>
+                    <artifactId>tika-parsers</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <configuration>
+                    <workingDirectory>${project.basedir}</workingDirectory>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+
+        <profile>
+            <id>keycloak-perf-server</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <configuration>
+                            <mainClass>org.keycloak.testsuite.performance.web.KeycloakPerfServer</mainClass>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>performance-test</id>
+
+            <properties>
+                <host>localhost</host>
+                <port>8081</port>
+                <userPrefix>user</userPrefix>
+                <concurrentUsers>50</concurrentUsers>
+                <iterationsPerUser>50</iterationsPerUser>
+                <refreshTokenRequestsPerIteration>2</refreshTokenRequestsPerIteration>
+            </properties>
+
+            <build>
+                <plugins>
+
+                    <plugin>
+                        <groupId>com.lazerycode.jmeter</groupId>
+                        <artifactId>jmeter-maven-plugin</artifactId>
+                        <configuration>
+                            <suppressJMeterOutput>false</suppressJMeterOutput>
+                            <propertiesSystem>
+                                <host>${host}</host>
+                                <port>${port}</port>
+                                <userPrefix>${userPrefix}</userPrefix>
+                                <concurrentUsers>${concurrentUsers}</concurrentUsers>
+                                <iterationsPerUser>${iterationsPerUser}</iterationsPerUser>
+                                <refreshTokenRequestsPerIteration>${refreshTokenRequestsPerIteration}</refreshTokenRequestsPerIteration>
+                            </propertiesSystem>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>jmeter-tests</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>jmeter</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <dependencies>
+                        </dependencies>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>com.lazerycode.jmeter</groupId>
+                        <artifactId>jmeter-analysis-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>jmeter-tests-analyze</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>analyze</goal>
+                                </goals>
+                                <configuration>
+                                    <source>${project.build.directory}/jmeter/results/*.jtl</source>
+                                    <targetDirectory>${project.build.directory}/jmeter/results</targetDirectory>
+                                    <preserveDirectories>false</preserveDirectories>
+
+                                    <requestGroups>
+                                        <requestGroup>
+                                            <name>aggregatedRequests</name>
+                                            <pattern>* request</pattern>
+                                        </requestGroup>
+                                        <requestGroup>
+                                            <name>codes</name>
+                                            <pattern>**/perf-app/perf-servlet?code=*</pattern>
+                                        </requestGroup>
+                                    </requestGroups>
+
+                                    <writers>
+                                        <com.lazerycode.jmeter.analyzer.writer.SummaryTextToStdOutWriter/>
+                                        <!--<com.lazerycode.jmeter.analyzer.writer.SummaryTextToFileWriter/>-->
+                                        <com.lazerycode.jmeter.analyzer.writer.HtmlWriter/>
+                                        <!--<com.lazerycode.jmeter.analyzer.writer.DetailsToCsvWriter/>-->
+                                        <com.lazerycode.jmeter.analyzer.writer.DetailsToHtmlWriter/>
+                                        <com.lazerycode.jmeter.analyzer.writer.ChartWriter/>
+                                    </writers>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                </plugins>
+            </build>
+        </profile>
+
+    </profiles>
+
+</project>

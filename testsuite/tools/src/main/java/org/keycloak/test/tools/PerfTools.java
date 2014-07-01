@@ -17,9 +17,12 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
+
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -96,6 +99,33 @@ public class PerfTools {
         RealmModel realm = session.getRealmByName(realmName);
         for (UserModel user : realm.getUsers()) {
             realm.removeUser(user.getLoginName());
+        }
+    }
+
+
+    @GET
+    @Path("{realm}/get-users-count")
+    public Response getUsersCountReq(@PathParam("realm") String realmName, @QueryParam("prefix") String prefix) {
+        int usersCount = getUsersCount(realmName, prefix);
+        return Response.ok(String.valueOf(usersCount)).build();
+    }
+
+    // Same as createUsers, but dynamically compute "start" (Next available user)
+    @GET
+    @Path("{realm}/create-available-users")
+    public void createAvailableUsers(@PathParam("realm") String realmName, @QueryParam("count") Integer count, @QueryParam("batch") Integer batch, @QueryParam("prefix") String prefix, @QueryParam("roles") String roles) throws InterruptedException {
+        int start = getUsersCount(realmName, prefix);
+        createUsers(realmName, count, batch, start, prefix, roles);
+    }
+
+    private int getUsersCount(String realmName, String prefix) {
+        RealmModel realm = session.getRealmByName(realmName);
+
+        // TODO: method for count on model
+        if (prefix == null) {
+            return realm.getUsers().size();
+        } else {
+            return realm.searchForUser(prefix).size();
         }
     }
 

@@ -59,6 +59,7 @@ public class KeycloakServer {
     public static class KeycloakServerConfig {
         private String host = "localhost";
         private int port = 8081;
+        private int workerThreads = Math.max(Runtime.getRuntime().availableProcessors(), 2) * 8;
         private String resourcesHome;
 
         public String getHost() {
@@ -84,6 +85,14 @@ public class KeycloakServer {
         public void setResourcesHome(String resourcesHome) {
             this.resourcesHome = resourcesHome;
         }
+
+        public int getWorkerThreads() {
+            return workerThreads;
+        }
+
+        public void setWorkerThreads(int workerThreads) {
+            this.workerThreads = workerThreads;
+        }
     }
 
     public static <T> T loadJson(InputStream is, Class<T> type) {
@@ -95,6 +104,10 @@ public class KeycloakServer {
     }
 
     public static void main(String[] args) throws Throwable {
+        bootstrapKeycloakServer(args);
+    }
+
+    public static KeycloakServer bootstrapKeycloakServer(String[] args) throws Throwable {
         KeycloakServerConfig config = new KeycloakServerConfig();
 
         for (int i = 0; i < args.length; i++) {
@@ -137,6 +150,10 @@ public class KeycloakServer {
             config.setResourcesHome(dir.getAbsolutePath());
         }
 
+        if (System.getProperties().containsKey("undertowWorkerThreads")) {
+            int undertowWorkerThreads = Integer.parseInt(System.getProperty("undertowWorkerThreads"));
+            config.setWorkerThreads(undertowWorkerThreads);
+        }
 
         final KeycloakServer keycloak = new KeycloakServer(config);
         keycloak.sysout = true;
@@ -158,6 +175,8 @@ public class KeycloakServer {
                 keycloak.stop();
             }
         });
+
+        return keycloak;
     }
 
     private KeycloakServerConfig config;
@@ -238,7 +257,10 @@ public class KeycloakServer {
         ResteasyDeployment deployment = new ResteasyDeployment();
         deployment.setApplicationClass(KeycloakApplication.class.getName());
 
-        Builder builder = Undertow.builder().addListener(config.getPort(), config.getHost());
+        Builder builder = Undertow.builder()
+                .addHttpListener(config.getPort(), config.getHost())
+                .setWorkerThreads(config.getWorkerThreads())
+                .setIoThreads(config.getWorkerThreads() / 8);
 
         server = new UndertowJaxrsServer().start(builder);
 

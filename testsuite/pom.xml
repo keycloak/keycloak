@@ -28,6 +28,7 @@
         <module>integration</module>
         <module>performance</module>
         <module>tools</module>
+        <module>performance-web</module>
     </modules>
 
 </project>
