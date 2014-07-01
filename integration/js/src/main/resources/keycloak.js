@@ -53,7 +53,9 @@
                 var callback = parseCallback(window.location.search);
 
                 if (callback) {
-                    window.history.replaceState({}, null, location.protocol + '//' + location.host + location.pathname + (callback.fragment ? '#' + callback.fragment : ''));
+                    if (!(initOptions.skipReplaceState === false)) {
+                        window.history.replaceState({}, null, location.protocol + '//' + location.host + location.pathname + (callback.fragment ? '#' + callback.fragment : ''));
+                    }
                     processCallback(callback, initPromise);
                     return;
                 } else if (initOptions) {
