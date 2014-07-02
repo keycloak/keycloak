@@ -26,7 +26,7 @@
         <jboss-logging-tools.version>1.2.0.Beta1</jboss-logging-tools.version>
         <hibernate.javax.persistence.version>1.0.1.Final</hibernate.javax.persistence.version>
         <hibernate.entitymanager.version>4.0.1.Final</hibernate.entitymanager.version>
-        <h2.version>1.3.161</h2.version>
+        <h2.version>1.3.168</h2.version>
         <mysql.version>5.1.29</mysql.version>
         <postgresql.version>9.3-1100-jdbc41</postgresql.version>
         <dom4j.version>1.6.1</dom4j.version>
