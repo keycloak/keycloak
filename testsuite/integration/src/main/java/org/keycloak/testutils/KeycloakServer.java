@@ -201,6 +201,10 @@ public class KeycloakServer {
         return server;
     }
 
+    public KeycloakServerConfig getConfig() {
+        return config;
+    }
+
     public void importRealm(InputStream realm) {
         RealmRepresentation rep = loadJson(realm, RealmRepresentation.class);
         importRealm(rep);

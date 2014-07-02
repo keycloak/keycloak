@@ -85,6 +85,7 @@ public class KeycloakPerfServer {
 
         ServletInfo servlet = new ServletInfo("PerfAppServlet", PerfAppServlet.class);
         servlet.addMapping("/perf-servlet/*");
+        servlet.addInitParam(PerfAppServlet.BASE_URL_INIT_PARAM, "http://" + keycloakServer.getConfig().getHost() + ":" + keycloakServer.getConfig().getPort());
 
         deploymentInfo.addServlet(servlet);
 

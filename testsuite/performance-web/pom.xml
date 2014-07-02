@@ -216,11 +216,11 @@
                                     <preserveDirectories>false</preserveDirectories>
 
                                     <requestGroups>
-                                        <requestGroup>
+                                        <requestGroup implementation="com.lazerycode.jmeter.analyzer.config.RequestGroup">
                                             <name>aggregatedRequests</name>
                                             <pattern>* request</pattern>
                                         </requestGroup>
-                                        <requestGroup>
+                                        <requestGroup implementation="com.lazerycode.jmeter.analyzer.config.RequestGroup">
                                             <name>codes</name>
                                             <pattern>**/perf-app/perf-servlet?code=*</pattern>
                                         </requestGroup>
