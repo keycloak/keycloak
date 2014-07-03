@@ -177,6 +177,47 @@ public class AdapterTest {
     }
 
     @Test
+    public void testServletRequestLogout() throws Exception {
+        // test login to customer-portal which does a bearer request to customer-db
+        driver.navigate().to("http://localhost:8081/customer-portal");
+        System.out.println("Current url: " + driver.getCurrentUrl());
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+        loginPage.login("bburke@redhat.com", "password");
+        System.out.println("Current url: " + driver.getCurrentUrl());
+        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/customer-portal");
+        String pageSource = driver.getPageSource();
+        System.out.println(pageSource);
+        Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
+
+        // test SSO
+        driver.navigate().to("http://localhost:8081/product-portal");
+        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/product-portal");
+        pageSource = driver.getPageSource();
+        System.out.println(pageSource);
+        Assert.assertTrue(pageSource.contains("iPhone") && pageSource.contains("iPad"));
+
+        // back
+        driver.navigate().to("http://localhost:8081/customer-portal");
+        System.out.println("Current url: " + driver.getCurrentUrl());
+        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:8081/customer-portal");
+        pageSource = driver.getPageSource();
+        System.out.println(pageSource);
+        Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
+        // test logout
+
+        driver.navigate().to("http://localhost:8081/customer-portal/logout");
+
+
+
+        driver.navigate().to("http://localhost:8081/customer-portal");
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+        driver.navigate().to("http://localhost:8081/product-portal");
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
+
+
+    }
+
+    @Test
     public void testLoginSSOIdle() throws Exception {
         // test login to customer-portal which does a bearer request to customer-db
         driver.navigate().to("http://localhost:8081/customer-portal");

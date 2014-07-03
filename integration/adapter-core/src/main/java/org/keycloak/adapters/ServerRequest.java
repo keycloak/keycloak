@@ -5,6 +5,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicNameValuePair;
 import org.keycloak.OAuth2Constants;
@@ -18,6 +19,7 @@ import org.keycloak.util.StreamUtil;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +46,21 @@ public class ServerRequest {
         public String getError() {
             return error;
         }
+    }
+
+    public static void invokeLogout(KeycloakDeployment deployment, String sessionId) throws IOException, HttpFailure {
+        URI uri = deployment.getLogoutUrl().clone().queryParam("session_state", sessionId).build();
+        HttpGet logout = new HttpGet(uri);
+        HttpResponse response = deployment.getClient().execute(logout);
+        int status = response.getStatusLine().getStatusCode();
+        HttpEntity entity = response.getEntity();
+        if (status != 200) {
+            error(status, entity);
+        }
+        if (entity == null) {
+            return;
+        }
+        entity.getContent().close();
     }
 
     public static AccessTokenResponse invokeAccessCodeToToken(KeycloakDeployment deployment, String code, String redirectUri) throws HttpFailure, IOException {

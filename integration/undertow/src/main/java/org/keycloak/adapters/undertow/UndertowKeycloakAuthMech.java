@@ -17,12 +17,22 @@
 package org.keycloak.adapters.undertow;
 
 import io.undertow.security.api.AuthenticationMechanism;
+import io.undertow.security.api.NotificationReceiver;
 import io.undertow.security.api.SecurityContext;
+import io.undertow.security.api.SecurityNotification;
 import io.undertow.server.HttpServerExchange;
+import io.undertow.server.session.Session;
 import io.undertow.util.AttachmentKey;
+import io.undertow.util.Sessions;
+import org.jboss.logging.Logger;
+import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.AuthChallenge;
 import org.keycloak.adapters.AuthOutcome;
 import org.keycloak.adapters.RequestAuthenticator;
+import org.keycloak.adapters.ServerRequest;
+
+import java.io.IOException;
+
 import static org.keycloak.adapters.undertow.ServletKeycloakAuthMech.KEYCLOAK_CHALLENGE_ATTACHMENT_KEY;
 
 /**
@@ -31,7 +41,13 @@ import static org.keycloak.adapters.undertow.ServletKeycloakAuthMech.KEYCLOAK_CH
  * @author Stan Silvert ssilvert@redhat.com (C) 2014 Red Hat Inc.
  */
 public abstract class UndertowKeycloakAuthMech implements AuthenticationMechanism {
+    private static final Logger log = Logger.getLogger(UndertowKeycloakAuthMech.class);
     public static final AttachmentKey<AuthChallenge> KEYCLOAK_CHALLENGE_ATTACHMENT_KEY = AttachmentKey.create(AuthChallenge.class);
+    protected AdapterDeploymentContext deploymentContext;
+
+    public UndertowKeycloakAuthMech(AdapterDeploymentContext deploymentContext) {
+        this.deploymentContext = deploymentContext;
+    }
 
     @Override
     public ChallengeResult sendChallenge(HttpServerExchange exchange, SecurityContext securityContext) {
@@ -45,12 +61,36 @@ public abstract class UndertowKeycloakAuthMech implements AuthenticationMechanis
         return new ChallengeResult(false);
     }
 
+    protected void registerNotifications(SecurityContext securityContext) {
+
+        final NotificationReceiver logoutReceiver = new NotificationReceiver() {
+            @Override
+            public void handleNotification(SecurityNotification notification) {
+                if (notification.getEventType() != SecurityNotification.EventType.LOGGED_OUT) return;
+                Session session = Sessions.getSession(notification.getExchange());
+                if (session == null) return;
+                KeycloakUndertowAccount account = (KeycloakUndertowAccount)session.getAttribute(KeycloakUndertowAccount.class.getName());
+                if (account == null) return;
+                session.removeAttribute(KeycloakUndertowAccount.class.getName());
+                String sessionId = account.getKeycloakSecurityContext().getToken().getSessionState();
+                try {
+                    ServerRequest.invokeLogout(deploymentContext.getDeployment(), sessionId);
+                } catch (Exception e) {
+                    log.error("failed to invoke remote logout", e);
+                }
+            }
+        };
+
+        securityContext.registerNotificationReceiver(logoutReceiver);
+    }
+
     /**
      * Call this inside your authenticate method.
      */
-    protected AuthenticationMechanismOutcome keycloakAuthenticate(HttpServerExchange exchange, RequestAuthenticator authenticator) {
+    protected AuthenticationMechanismOutcome keycloakAuthenticate(HttpServerExchange exchange, SecurityContext securityContext, RequestAuthenticator authenticator) {
         AuthOutcome outcome = authenticator.authenticate();
         if (outcome == AuthOutcome.AUTHENTICATED) {
+            registerNotifications(securityContext);
             return AuthenticationMechanismOutcome.AUTHENTICATED;
         }
         AuthChallenge challenge = authenticator.getChallenge();

@@ -24,6 +24,14 @@ public class CustomerServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        PrintWriter pw = resp.getWriter();
+        if (req.getRequestURI().toString().endsWith("logout")) {
+            resp.setStatus(200);
+            pw.println("ok");
+            pw.flush();
+            req.logout();
+            return;
+        }
         KeycloakSecurityContext context = (KeycloakSecurityContext)req.getAttribute(KeycloakSecurityContext.class.getName());
         Client client = ClientBuilder.newClient();
 
@@ -36,7 +44,6 @@ public class CustomerServlet extends HttpServlet {
                                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + context.getTokenString())
                                 .get(String.class);
             resp.setContentType("text/html");
-            PrintWriter pw = resp.getWriter();
             pw.println(html);
             pw.flush();
         } finally {
