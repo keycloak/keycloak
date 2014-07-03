@@ -16,17 +16,16 @@
         <jackson.version>1.9.9</jackson.version>
         <keycloak.apache.httpcomponents.version>4.2.1</keycloak.apache.httpcomponents.version>
         <resteasy.version>2.3.7.Final</resteasy.version>
-        <resteasy.version.eap.6.3>2.3.7.Final</resteasy.version.eap.6.3>
         <resteasy.version.latest>3.0.8.Final</resteasy.version.latest>
         <undertow.version>1.0.15.Final</undertow.version>
         <picketlink.version>2.6.0.CR5</picketlink.version>
         <picketbox.ldap.version>1.0.2.Final</picketbox.ldap.version>
         <mongo.driver.version>2.11.3</mongo.driver.version>
-        <jboss.logging.version>3.1.1.GA</jboss.logging.version>
+        <jboss.logging.version>3.1.4.GA</jboss.logging.version>
         <jboss-logging-tools.version>1.2.0.Beta1</jboss-logging-tools.version>
         <hibernate.javax.persistence.version>1.0.1.Final</hibernate.javax.persistence.version>
         <hibernate.entitymanager.version>4.0.1.Final</hibernate.entitymanager.version>
-        <h2.version>1.3.161</h2.version>
+        <h2.version>1.3.168</h2.version>
         <mysql.version>5.1.29</mysql.version>
         <postgresql.version>9.3-1100-jdbc41</postgresql.version>
         <dom4j.version>1.6.1</dom4j.version>
