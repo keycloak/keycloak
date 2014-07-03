@@ -683,7 +683,8 @@ public class RealmAdapter implements RealmModel {
         entity.setSocialProvider(socialLink.getSocialProvider());
         entity.setSocialUserId(socialLink.getSocialUserId());
         entity.setSocialUsername(socialLink.getSocialUsername());
-        entity.setUser(((UserAdapter) user).getUser());
+        UserEntity userEntity = em.getReference(UserEntity.class, user.getId());
+        entity.setUser(userEntity);
         em.persist(entity);
         em.flush();
     }
