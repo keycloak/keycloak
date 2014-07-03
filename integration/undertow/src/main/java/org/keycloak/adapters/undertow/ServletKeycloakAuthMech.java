@@ -16,12 +16,23 @@
  */
 package org.keycloak.adapters.undertow;
 
+import io.undertow.security.api.NotificationReceiver;
 import io.undertow.security.api.SecurityContext;
+import io.undertow.security.api.SecurityNotification;
 import io.undertow.server.HttpServerExchange;
+import io.undertow.server.session.Session;
 import io.undertow.servlet.api.ConfidentialPortManager;
+import io.undertow.servlet.handlers.ServletRequestContext;
+import io.undertow.util.Sessions;
+import org.jboss.logging.Logger;
+import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.RequestAuthenticator;
+import org.keycloak.adapters.ServerRequest;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -29,13 +40,13 @@ import org.keycloak.adapters.RequestAuthenticator;
  * @version $Revision: 1 $
  */
 public class ServletKeycloakAuthMech extends UndertowKeycloakAuthMech {
+    private static final Logger log = Logger.getLogger(ServletKeycloakAuthMech.class);
 
-    protected AdapterDeploymentContext deploymentContext;
     protected UndertowUserSessionManagement userSessionManagement;
     protected ConfidentialPortManager portManager;
 
     public ServletKeycloakAuthMech(AdapterDeploymentContext deploymentContext, UndertowUserSessionManagement userSessionManagement, ConfidentialPortManager portManager) {
-        this.deploymentContext = deploymentContext;
+        super(deploymentContext);
         this.userSessionManagement = userSessionManagement;
         this.portManager = portManager;
     }
@@ -50,8 +61,39 @@ public class ServletKeycloakAuthMech extends UndertowKeycloakAuthMech {
 
         RequestAuthenticator authenticator = createRequestAuthenticator(deployment, exchange, securityContext, facade);
 
-        return super.keycloakAuthenticate(exchange, authenticator);
+        return keycloakAuthenticate(exchange, securityContext, authenticator);
     }
+
+    @Override
+    protected void registerNotifications(SecurityContext securityContext) {
+
+        final NotificationReceiver logoutReceiver = new NotificationReceiver() {
+            @Override
+            public void handleNotification(SecurityNotification notification) {
+                if (notification.getEventType() != SecurityNotification.EventType.LOGGED_OUT) return;
+                final ServletRequestContext servletRequestContext = notification.getExchange().getAttachment(ServletRequestContext.ATTACHMENT_KEY);
+                HttpServletRequest req = (HttpServletRequest) servletRequestContext.getServletRequest();
+                req.removeAttribute(KeycloakUndertowAccount.class.getName());
+                req.removeAttribute(KeycloakSecurityContext.class.getName());
+                HttpSession session = req.getSession(false);
+                if (session == null) return;
+                KeycloakUndertowAccount account = (KeycloakUndertowAccount)session.getAttribute(KeycloakUndertowAccount.class.getName());
+                if (account == null) return;
+                session.removeAttribute(KeycloakSecurityContext.class.getName());
+                session.removeAttribute(KeycloakUndertowAccount.class.getName());
+                String sessionId = account.getKeycloakSecurityContext().getToken().getSessionState();
+                try {
+                    ServerRequest.invokeLogout(deploymentContext.getDeployment(), sessionId);
+                } catch (Exception e) {
+                    log.error("failed to invoke remote logout", e);
+                }
+            }
+        };
+
+        securityContext.registerNotificationReceiver(logoutReceiver);
+    }
+
+
 
     protected RequestAuthenticator createRequestAuthenticator(KeycloakDeployment deployment, HttpServerExchange exchange, SecurityContext securityContext, UndertowHttpFacade facade) {
 

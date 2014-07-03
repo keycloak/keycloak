@@ -5,6 +5,7 @@ import org.apache.catalina.Lifecycle;
 import org.apache.catalina.LifecycleEvent;
 import org.apache.catalina.LifecycleException;
 import org.apache.catalina.LifecycleListener;
+import org.apache.catalina.Session;
 import org.apache.catalina.authenticator.FormAuthenticator;
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
@@ -21,6 +22,7 @@ import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.PreAuthActionsHandler;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
+import org.keycloak.adapters.ServerRequest;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -52,6 +54,24 @@ public class KeycloakAuthenticatorValve extends FormAuthenticator implements Lif
         StandardContext standardContext = (StandardContext) context;
         standardContext.addLifecycleListener(this);
         cache = false;
+    }
+
+    @Override
+    public void logout(Request request) throws ServletException {
+        KeycloakSecurityContext ksc = (KeycloakSecurityContext)request.getAttribute(KeycloakSecurityContext.class.getName());
+        if (ksc != null) {
+            request.removeAttribute(KeycloakSecurityContext.class.getName());
+            Session session = request.getSessionInternal(false);
+            if (session != null) {
+                session.removeNote(KeycloakSecurityContext.class.getName());
+                try {
+                    ServerRequest.invokeLogout(deploymentContext.getDeployment(), ksc.getToken().getSessionState());
+                } catch (Exception e) {
+                    log.error("failed to invoke remote logout", e);
+                }
+            }
+        }
+        super.logout(request);
     }
 
     @Override
