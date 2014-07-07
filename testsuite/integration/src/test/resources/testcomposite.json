@@ -22,7 +22,8 @@
             "credentials" : [
                 { "type" : "password",
                     "value" : "password" }
-            ]
+            ],
+            "realmRoles": [ "REALM_COMPOSITE_1" ]
         },
         {
             "username" : "REALM_ROLE_1_USER",
@@ -31,7 +32,8 @@
             "credentials" : [
                 { "type" : "password",
                     "value" : "password" }
-            ]
+            ],
+            "realmRoles": ["REALM_ROLE_1"]
         },
         {
             "username" : "REALM_APP_COMPOSITE_USER",
@@ -40,7 +42,8 @@
             "credentials" : [
                 { "type" : "password",
                     "value" : "password" }
-            ]
+            ],
+            "realmRoles": ["REALM_APP_COMPOSITE_ROLE"]
         },
         {
             "username" : "REALM_APP_ROLE_USER",
@@ -49,7 +52,10 @@
             "credentials" : [
                 { "type" : "password",
                     "value" : "password" }
-            ]
+            ],
+            "applicationRoles": {
+                "APP_ROLE_APPLICATION": [ "APP_ROLE_2" ]
+            }
         },
         {
             "username" : "APP_COMPOSITE_USER",
@@ -58,7 +64,8 @@
             "credentials" : [
                 { "type" : "password",
                     "value" : "password" }
-            ]
+            ],
+            "realmRoles": ["REALM_APP_COMPOSITE_ROLE", "REALM_COMPOSITE_1"]
         }
     ],
     "oauthClients" : [
@@ -66,24 +73,6 @@
             "name" : "third-party",
             "enabled": true,
             "secret": "password"
-        }
-    ],
-    "roleMappings": [
-        {
-            "username": "REALM_COMPOSITE_1_USER",
-            "roles": ["REALM_COMPOSITE_1"]
-        },
-        {
-            "username": "REALM_ROLE_1_USER",
-            "roles": ["REALM_ROLE_1"]
-        },
-        {
-            "username": "REALM_APP_COMPOSITE_USER",
-            "roles": ["REALM_APP_COMPOSITE_ROLE"]
-        },
-        {
-            "username": "APP_COMPOSITE_USER",
-            "roles": ["REALM_APP_COMPOSITE_ROLE", "REALM_COMPOSITE_1"]
         }
     ],
     "scopeMappings": [
@@ -199,14 +188,6 @@
 
     },
 
-    "applicationRoleMappings": {
-        "APP_ROLE_APPLICATION": [
-            {
-                "username": "REALM_APP_ROLE_USER",
-                "roles": ["APP_ROLE_2"]
-            }
-        ]
-    },
     "applicationScopeMappings": {
         "APP_ROLE_APPLICATION": [
             {

@@ -13,13 +13,12 @@
         {
             "username" : "bburke@redhat.com",
             "enabled": true,
-            "attributes" : {
-                "email" : "bburke@redhat.com"
-            },
+            "email" : "bburke@redhat.com",
             "credentials" : [
                 { "type" : "Password",
-                    "value" : "password" }
-            ]
+                  "value" : "password" }
+            ],
+            "realmRoles": [ "user" ]
         }
     ],
     "oauthClients" : [
@@ -42,12 +41,6 @@
         ]
     },
 
-    "roleMappings": [
-        {
-            "username": "bburke@redhat.com",
-            "roles": ["user"]
-        }
-    ],
     "scopeMappings": [
         {
             "client": "third-party",

@@ -20,8 +20,12 @@
             "email" : "test-user@localhost",
             "credentials" : [
                 { "type" : "password",
-                    "value" : "password" }
-            ]
+                  "value" : "password" }
+            ],
+            "realmRoles": [ "test-user@localhost" ],
+            "applicationRoles": {
+                "test-app": ["customer-user"]
+            }
         }
     ],
     "oauthClients" : [
@@ -32,12 +36,6 @@
                 "http://localhost:8081/app/*"
             ],
             "secret": "password"
-        }
-    ],
-    "roleMappings": [
-        {
-            "username": "test-user@localhost",
-            "roles": ["user"]
         }
     ],
     "scopeMappings": [
@@ -88,14 +86,6 @@
 
     },
 
-    "applicationRoleMappings": {
-        "test-app": [
-            {
-                "username": "test-user@localhost",
-                "roles": ["customer-user"]
-            }
-        ]
-    },
     "applicationScopeMappings": {
         "test-app": [
             {

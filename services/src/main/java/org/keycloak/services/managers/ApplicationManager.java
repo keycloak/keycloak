@@ -115,19 +115,18 @@ public class ApplicationManager {
         return applicationModel;
     }
 
-    public void createRoleMappings(RealmModel realm, ApplicationModel applicationModel, List<UserRoleMappingRepresentation> mappings) {
-        for (UserRoleMappingRepresentation mapping : mappings) {
-            UserModel user = realm.getUser(mapping.getUsername());
+    public void createRoleMappings(ApplicationModel applicationModel, UserModel user, List<String> roleNames) {
+        for (String roleName : roleNames) {
             if (user == null) {
                 throw new RuntimeException("User not found");
             }
-            for (String roleString : mapping.getRoles()) {
-                RoleModel role = applicationModel.getRole(roleString.trim());
-                if (role == null) {
-                    role = applicationModel.addRole(roleString.trim());
-                }
-                user.grantRole(role);
+
+            RoleModel role = applicationModel.getRole(roleName.trim());
+            if (role == null) {
+                role = applicationModel.addRole(roleName.trim());
             }
+            user.grantRole(role);
+
         }
     }
 

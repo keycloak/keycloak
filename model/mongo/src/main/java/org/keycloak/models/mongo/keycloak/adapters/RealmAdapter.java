@@ -481,20 +481,22 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public UserAdapter addUser(String username) {
-        return this.addUser(null, username);
+        return this.addUser(null, username, true);
     }
 
     @Override
-    public UserAdapter addUser(String id, String username) {
+    public UserAdapter addUser(String id, String username, boolean addDefaultRoles) {
         UserAdapter userModel = addUserEntity(id, username);
 
-        for (String r : getDefaultRoles()) {
-           userModel.grantRole(getRole(r));
-        }
+        if (addDefaultRoles) {
+            for (String r : getDefaultRoles()) {
+                userModel.grantRole(getRole(r));
+            }
 
-        for (ApplicationModel application : getApplications()) {
-            for (String r : application.getDefaultRoles()) {
-                userModel.grantRole(application.getRole(r));
+            for (ApplicationModel application : getApplications()) {
+                for (String r : application.getDefaultRoles()) {
+                    userModel.grantRole(application.getRole(r));
+                }
             }
         }
 

@@ -21,7 +21,12 @@
             "credentials" : [
                 { "type" : "password",
                   "value" : "password" }
-            ]
+            ],
+            "realmRoles": [ "user" ],
+            "applicationRoles": {
+                "perf-app": [ "customer-user" ],
+                "account": [ "view-account", "manage-account" ]
+            }
         }
     ],
     "oauthClients" : [
@@ -32,12 +37,6 @@
                 "/app/*"
             ],
             "secret": "password"
-        }
-    ],
-    "roleMappings": [
-        {
-            "username": "test@localhost",
-            "roles": ["user"]
         }
     ],
     "scopeMappings": [
@@ -102,14 +101,6 @@
 
     },
 
-    "applicationRoleMappings": {
-        "perf-app": [
-            {
-                "username": "test@localhost",
-                "roles": ["customer-user"]
-            }
-        ]
-    },
     "applicationScopeMappings": {
         "perf-app": [
             {

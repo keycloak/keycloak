@@ -15,8 +15,12 @@
             "lastName": "User",
             "credentials" : [
                 { "type" : "password",
-                    "value" : "password" }
-            ]
+                  "value" : "password" }
+            ],
+            "realmRoles": [ "user" ],
+            "applicationRoles": {
+                "account": ["view-profile", "manage-account"]
+            }
         }
     ],
     "roles" : {
@@ -31,12 +35,6 @@
             }
         ]
     },
-    "roleMappings": [
-        {
-            "username": "user",
-            "roles": ["user"]
-        }
-    ],
     "scopeMappings": [
         {
             "client": "js-console",
@@ -57,14 +55,6 @@
             ]
         }
     ],
-    "applicationRoleMappings": {
-        "account": [
-            {
-                "username": "user",
-                "roles": ["view-profile", "manage-account"]
-            }
-        ]
-    },
     "applicationScopeMappings": {
         "account": [
             {

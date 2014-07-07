@@ -22,7 +22,11 @@
             "credentials" : [
                 { "type" : "password",
                     "value" : "password" }
-            ]
+            ],
+            "realmRoles": [ "user" ],
+            "applicationRoles": {
+                "account": [ "manage-account" ]
+            }
         },
         {
             "username" : "admin",
@@ -35,7 +39,13 @@
             ],
             "requiredActions": [
                 "UPDATE_PASSWORD"
-            ]
+            ],
+            "realmRoles": [ "user","admin" ],
+            "applicationRoles": {
+                "realm-management": [ "realm-admin" ],
+                "account": [ "manage-account" ]
+            }
+
         }
     ],
     "roles" : {
@@ -50,16 +60,6 @@
             }
         ]
     },
-    "roleMappings": [
-        {
-            "username": "bburke@redhat.com",
-            "roles": ["user"]
-        },
-        {
-            "username": "admin",
-            "roles": ["user", "admin"]
-        }
-    ],
     "scopeMappings": [
         {
             "client": "unified-push-server",
@@ -77,24 +77,6 @@
                 "/aerogear-ups/*"
             ]
         }
-    ],
-    "applicationRoleMappings": {
-        "account": [
-            {
-                "username": "bburke@redhat.com",
-                "roles": ["manage-account"]
-            },
-            {
-                "username": "admin",
-                "roles": ["manage-account"]
-            }
-        ],
-        "realm-management": [
-            {
-                "username": "admin",
-                "roles": ["realm-admin"]
-            }
-        ]
-    }
+    ]
 
 }

@@ -29,7 +29,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.ScopeMappingRepresentation;
 import org.keycloak.representations.idm.SocialLinkRepresentation;
-import org.keycloak.representations.idm.SocialMappingRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserRoleMappingRepresentation;
 
@@ -355,8 +354,6 @@ public class RealmManager {
         if (rep.getAdminTheme() != null) newRealm.setAdminTheme(rep.getAdminTheme());
         if (rep.getEmailTheme() != null) newRealm.setEmailTheme(rep.getEmailTheme());
 
-        Map<String, UserModel> userMap = new HashMap<String, UserModel>();
-
         if (rep.getRequiredCredentials() != null) {
             for (String requiredCred : rep.getRequiredCredentials()) {
                 addRequiredCredential(newRealm, requiredCred);
@@ -366,13 +363,6 @@ public class RealmManager {
         }
 
         if (rep.getPasswordPolicy() != null) newRealm.setPasswordPolicy(new PasswordPolicy(rep.getPasswordPolicy()));
-
-        if (rep.getUsers() != null) {
-            for (UserRepresentation userRep : rep.getUsers()) {
-                UserModel user = createUser(newRealm, userRep);
-                userMap.put(user.getUsername(), user);
-            }
-        }
 
         if (rep.getApplications() != null) {
             Map<String, ApplicationModel> appMap = createApplications(rep, newRealm);
@@ -428,20 +418,10 @@ public class RealmManager {
             createOAuthClients(rep, newRealm);
         }
 
-        // Now that all possible users and applications are created (users, apps, and oauth clients), do role mappings and scope mappings
+
+        // Now that all possible roles and applications are created, create scope mappings
 
         Map<String, ApplicationModel> appMap = newRealm.getApplicationNameMap();
-
-        if (rep.getApplicationRoleMappings() != null) {
-            ApplicationManager manager = new ApplicationManager(this);
-            for (Map.Entry<String, List<UserRoleMappingRepresentation>> entry : rep.getApplicationRoleMappings().entrySet()) {
-                ApplicationModel app = appMap.get(entry.getKey());
-                if (app == null) {
-                    throw new RuntimeException("Unable to find application role mappings for app: " + entry.getKey());
-                }
-                manager.createRoleMappings(newRealm, app, entry.getValue());
-            }
-        }
 
         if (rep.getApplicationScopeMappings() != null) {
             ApplicationManager manager = new ApplicationManager(this);
@@ -451,20 +431,6 @@ public class RealmManager {
                     throw new RuntimeException("Unable to find application role mappings for app: " + entry.getKey());
                 }
                 manager.createScopeMappings(newRealm, app, entry.getValue());
-            }
-        }
-
-
-        if (rep.getRoleMappings() != null) {
-            for (UserRoleMappingRepresentation mapping : rep.getRoleMappings()) {
-                UserModel user = userMap.get(mapping.getUsername());
-                for (String roleString : mapping.getRoles()) {
-                    RoleModel role = newRealm.getRole(roleString.trim());
-                    if (role == null) {
-                        role = newRealm.addRole(roleString.trim());
-                    }
-                    user.grantRole(role);
-                }
             }
         }
 
@@ -479,16 +445,6 @@ public class RealmManager {
                     client.addScopeMapping(role);
                 }
 
-            }
-        }
-
-        if (rep.getSocialMappings() != null) {
-            for (SocialMappingRepresentation socialMapping : rep.getSocialMappings()) {
-                UserModel user = userMap.get(socialMapping.getUsername());
-                for (SocialLinkRepresentation link : socialMapping.getSocialLinks()) {
-                    SocialLinkModel mappingModel = new SocialLinkModel(link.getSocialProvider(), link.getSocialUserId(), link.getSocialUsername());
-                    newRealm.addSocialLink(user, mappingModel);
-                }
             }
         }
 
@@ -509,6 +465,14 @@ public class RealmManager {
         }  else {
             List<AuthenticationProviderModel> authProviderModels = Arrays.asList(AuthenticationProviderModel.DEFAULT_PROVIDER);
             newRealm.setAuthenticationProviders(authProviderModels);
+        }
+
+        // create users and their role mappings and social mappings
+
+        if (rep.getUsers() != null) {
+            for (UserRepresentation userRep : rep.getUsers()) {
+                UserModel user = createUser(newRealm, userRep, appMap);
+            }
         }
     }
 
@@ -550,8 +514,8 @@ public class RealmManager {
     }
 
 
-    public UserModel createUser(RealmModel newRealm, UserRepresentation userRep) {
-        UserModel user = newRealm.addUser(userRep.getUsername());
+    public UserModel createUser(RealmModel newRealm, UserRepresentation userRep, Map<String, ApplicationModel> appMap) {
+        UserModel user = newRealm.addUser(userRep.getId(), userRep.getUsername(), false);
         user.setEnabled(userRep.isEnabled());
         user.setEmail(userRep.getEmail());
         user.setFirstName(userRep.getFirstName());
@@ -576,6 +540,31 @@ public class RealmManager {
             AuthenticationLinkRepresentation link = userRep.getAuthenticationLink();
             AuthenticationLinkModel authLink = new AuthenticationLinkModel(link.getAuthProvider(), link.getAuthUserId());
             user.setAuthenticationLink(authLink);
+        }
+        if (userRep.getSocialLinks() != null) {
+            for (SocialLinkRepresentation socialLink : userRep.getSocialLinks()) {
+                SocialLinkModel mappingModel = new SocialLinkModel(socialLink.getSocialProvider(), socialLink.getSocialUserId(), socialLink.getSocialUsername());
+                newRealm.addSocialLink(user, mappingModel);
+            }
+        }
+        if (userRep.getRealmRoles() != null) {
+            for (String roleString : userRep.getRealmRoles()) {
+                RoleModel role = newRealm.getRole(roleString.trim());
+                if (role == null) {
+                    role = newRealm.addRole(roleString.trim());
+                }
+                user.grantRole(role);
+            }
+        }
+        if (userRep.getApplicationRoles() != null) {
+            ApplicationManager manager = new ApplicationManager(this);
+            for (Map.Entry<String, List<String>> entry : userRep.getApplicationRoles().entrySet()) {
+                ApplicationModel app = appMap.get(entry.getKey());
+                if (app == null) {
+                    throw new RuntimeException("Unable to find application role mappings for app: " + entry.getKey());
+                }
+                manager.createRoleMappings(app, user, entry.getValue());
+            }
         }
         return user;
     }
