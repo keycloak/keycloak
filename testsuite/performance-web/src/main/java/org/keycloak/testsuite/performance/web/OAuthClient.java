@@ -42,7 +42,7 @@ import org.keycloak.util.BasicAuthHelper;
  */
 public class OAuthClient {
 
-    private String baseUrl = "http://localhost:8081/auth";
+    private String baseUrl;
 
     private String realm = "perf-realm";
 
@@ -52,16 +52,19 @@ public class OAuthClient {
 
     private String clientId = "perf-app";
 
-    private String redirectUri = "http://localhost:8081/perf-app/perf-servlet";
+    private String redirectUri;
 
     private String state = "123";
 
     private PublicKey realmPublicKey;
 
-    public OAuthClient() {
+    public OAuthClient(String baseUrl) {
         try {
             JSONObject realmJson = new JSONObject(IOUtils.toString(getClass().getResourceAsStream("/perfrealm.json")));
             realmPublicKey = PemUtils.decodePublicKey(realmJson.getString("publicKey"));
+
+            this.baseUrl = (baseUrl != null) ? baseUrl + "/auth" : "http://localhost:8081/auth";
+            this.redirectUri = baseUrl + "/perf-app/perf-servlet";
         } catch (Exception e) {
             throw new RuntimeException("Failed to retrieve realm public key", e);
         }
