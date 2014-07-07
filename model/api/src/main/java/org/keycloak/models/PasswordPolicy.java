@@ -52,9 +52,26 @@ public class PasswordPolicy {
                 list.add(new UpperCase(args));
             } else if (name.equals(SpecialChars.NAME)) {
                 list.add(new SpecialChars(args));
+            } else if (name.equals(HashIterations.NAME)) {
+                list.add(new HashIterations(args));
             }
         }
         return list;
+    }
+
+    /**
+     *
+     * @return -1 if no hash iterations setting
+     */
+    public int getHashIterations() {
+        if (policies == null) return -1;
+        for (Policy p : policies) {
+            if (p instanceof HashIterations) {
+                return ((HashIterations)p).iterations;
+            }
+
+        }
+        return -1;
     }
 
     public String validate(String password) {
@@ -69,6 +86,20 @@ public class PasswordPolicy {
 
     private static interface Policy {
         public String validate(String password);
+    }
+
+    private static class HashIterations implements Policy {
+        private static final String NAME = "hashIterations";
+        private int iterations;
+
+        public HashIterations(String[] args) {
+            iterations = intArg(NAME, 1, args);
+        }
+
+        @Override
+        public String validate(String password) {
+            return null;
+        }
     }
 
     private static class Length implements Policy {

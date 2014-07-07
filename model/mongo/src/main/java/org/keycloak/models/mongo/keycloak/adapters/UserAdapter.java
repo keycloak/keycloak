@@ -4,6 +4,7 @@ import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.AuthenticationLinkModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
@@ -189,8 +190,15 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
         }
         if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
             byte[] salt = Pbkdf2PasswordEncoder.getSalt();
-            credentialEntity.setValue(new Pbkdf2PasswordEncoder(salt).encode(cred.getValue()));
+            int hashIterations = 1;
+            PasswordPolicy policy = realm.getPasswordPolicy();
+            if (policy != null) {
+                hashIterations = policy.getHashIterations();
+                if (hashIterations == -1) hashIterations = 1;
+            }
+            credentialEntity.setValue(new Pbkdf2PasswordEncoder(salt).encode(cred.getValue(), hashIterations));
             credentialEntity.setSalt(salt);
+            credentialEntity.setHashIterations(hashIterations);
         } else {
             credentialEntity.setValue(cred.getValue());
         }
@@ -219,6 +227,7 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
             credModel.setDevice(credEntity.getDevice());
             credModel.setValue(credEntity.getValue());
             credModel.setSalt(credEntity.getSalt());
+            credModel.setHashIterations(credEntity.getHashIterations());
 
             result.add(credModel);
         }
@@ -239,6 +248,8 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
         credentialEntity.setValue(credModel.getValue());
         credentialEntity.setSalt(credModel.getSalt());
         credentialEntity.setDevice(credModel.getDevice());
+        credentialEntity.setHashIterations(credModel.getHashIterations());
+
 
         getMongoStore().updateEntity(user, invocationContext);
     }

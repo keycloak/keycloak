@@ -3,6 +3,7 @@ package org.keycloak.models.cache;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.CredentialValidation;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
@@ -380,13 +381,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public boolean validatePassword(UserModel user, String password) {
-        for (UserCredentialValueModel cred : user.getCredentialsDirectly()) {
-            if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
-                return new Pbkdf2PasswordEncoder(cred.getSalt()).verify(password, cred.getValue());
-
-            }
-        }
-        return false;
+        return CredentialValidation.validatePassword(this, user, password);
     }
 
     @Override

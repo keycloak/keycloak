@@ -9,6 +9,7 @@ public class CredentialEntity {
     private String value;
     private String device;
     private byte[] salt;
+    private int hashIterations;
 
     public String getType() {
         return type;
@@ -40,5 +41,13 @@ public class CredentialEntity {
 
     public void setSalt(byte[] salt) {
         this.salt = salt;
+    }
+
+    public int getHashIterations() {
+        return hashIterations;
+    }
+
+    public void setHashIterations(int hashIterations) {
+        this.hashIterations = hashIterations;
     }
 }

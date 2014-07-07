@@ -8,6 +8,7 @@ import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.AuthenticationLinkModel;
 import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.CredentialValidation;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
@@ -808,12 +809,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public boolean validatePassword(UserModel user, String password) {
-        for (UserCredentialValueModel cred : user.getCredentialsDirectly()) {
-            if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
-                return new Pbkdf2PasswordEncoder(cred.getSalt()).verify(password, cred.getValue());
-            }
-        }
-        return false;
+        return CredentialValidation.validatePassword(this, user, password);
     }
 
     @Override

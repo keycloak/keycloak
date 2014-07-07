@@ -28,6 +28,7 @@ public class CredentialEntity {
     protected String value;
     protected String device;
     protected byte[] salt;
+    protected int hashIterations;
 
     @ManyToOne(fetch = FetchType.LAZY)
     protected UserEntity user;
@@ -80,5 +81,11 @@ public class CredentialEntity {
         this.salt = salt;
     }
 
+    public int getHashIterations() {
+        return hashIterations;
+    }
 
+    public void setHashIterations(int hashIterations) {
+        this.hashIterations = hashIterations;
+    }
 }
