@@ -89,7 +89,7 @@ public class AuthProvidersLDAPTest extends AbstractModelTest {
         Assert.assertEquals(AuthenticationManager.AuthenticationStatus.SUCCESS, am.authenticateForm(null, realm, formData));
         UserModel john = realm.getUser("johnkeycloak");
         Assert.assertNotNull(john);
-        Assert.assertEquals("johnkeycloak", john.getLoginName());
+        Assert.assertEquals("johnkeycloak", john.getUsername());
         Assert.assertEquals("John", john.getFirstName());
         Assert.assertEquals("Doe", john.getLastName());
         Assert.assertEquals("john@email.org", john.getEmail());

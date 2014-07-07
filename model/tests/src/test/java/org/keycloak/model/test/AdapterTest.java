@@ -169,7 +169,7 @@ public class AdapterTest extends AbstractModelTest {
         RoleModel appRole = app.addRole("test");
         user.grantRole(appRole);
 
-        SocialLinkModel socialLink = new SocialLinkModel("google", "google1", user.getLoginName());
+        SocialLinkModel socialLink = new SocialLinkModel("google", "google1", user.getUsername());
         realmModel.addSocialLink(user, socialLink);
 
         UserCredentialModel cred = new UserCredentialModel();
@@ -321,7 +321,7 @@ public class AdapterTest extends AbstractModelTest {
         {
             ArrayList<String> users = new ArrayList<String>();
             for (UserModel u : adapter.searchUsers("ole alver", realmModel)) {
-                users.add(u.getLoginName());
+                users.add(u.getUsername());
             }
             String[] usernames = users.toArray(new String[users.size()]);
             Arrays.sort(usernames);
@@ -634,7 +634,7 @@ public class AdapterTest extends AbstractModelTest {
         realmManager.getRealmByName("JUGGLER1").addUser("user2");
         commit();
         try {
-            realmManager.getRealmByName("JUGGLER1").getUser("user2").setLoginName("user1");
+            realmManager.getRealmByName("JUGGLER1").getUser("user2").setUsername("user1");
             commit();
             Assert.fail("Expected exception");
         } catch (ModelDuplicateException e) {

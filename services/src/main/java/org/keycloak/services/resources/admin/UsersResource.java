@@ -127,7 +127,7 @@ public class UsersResource {
             UserModel user = realm.addUser(rep.getUsername());
             updateUserFromRep(user, rep);
 
-            return Response.created(uriInfo.getAbsolutePathBuilder().path(user.getLoginName()).build()).build();
+            return Response.created(uriInfo.getAbsolutePathBuilder().path(user.getUsername()).build()).build();
         } catch (ModelDuplicateException e) {
             return Flows.errors().exists("User exists with same username or email");
         }
@@ -277,8 +277,6 @@ public class UsersResource {
             throw new NotFoundException("User not found");
         }
         realm.removeUserSessions(user);
-        // set notBefore so that user will be forced to log in.
-        user.setNotBefore(Time.currentTime());
         new ResourceAdminManager().logoutUser(uriInfo.getRequestUri(), realm, user.getId(), null);
     }
 

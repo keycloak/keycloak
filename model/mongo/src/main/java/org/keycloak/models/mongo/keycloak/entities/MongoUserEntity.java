@@ -14,7 +14,7 @@ import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
  */
 @MongoCollection(collectionName = "users")
 @MongoIndexes({
-        @MongoIndex(fields = { "realmId", "loginName" }, unique = true),
+        @MongoIndex(fields = { "realmId", "username" }, unique = true),
         @MongoIndex(fields = { "emailIndex" }, unique = true, sparse = true),
 })
 public class MongoUserEntity extends UserEntity implements MongoIdentifiableEntity {

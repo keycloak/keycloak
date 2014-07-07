@@ -211,7 +211,7 @@ public class ModelExporter {
 
                 this.propertiesManager.setBasicPropertiesFromModel(userModel, userEntity);
 
-                userEntity.setLoginName(userModel.getLoginName());
+                userEntity.setUsername(userModel.getUsername());
                 userEntity.setRealmId(realm.getId());
 
                 // authentication links

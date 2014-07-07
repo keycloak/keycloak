@@ -22,7 +22,7 @@ public class AccountBean {
     }
 
     public String getUsername() {
-        return user.getLoginName();
+        return user.getUsername();
     }
 
     public String getEmail() {

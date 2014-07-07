@@ -16,9 +16,9 @@ public interface UserModel {
 
     String getId();
 
-    String getLoginName();
+    String getUsername();
 
-    void setLoginName(String loginName);
+    void setUsername(String username);
 
     boolean isEnabled();
 
@@ -57,9 +57,6 @@ public interface UserModel {
     void setEmailVerified(boolean verified);
 
     void setTotp(boolean totp);
-
-    int getNotBefore();
-    void setNotBefore(int notBefore);
 
     void updateCredential(UserCredentialModel cred);
 

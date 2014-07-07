@@ -19,14 +19,13 @@ import java.util.Set;
  */
 public class CachedUser {
     private String id;
-    private String loginName;
+    private String username;
     private String usernameKey;
     private String firstName;
     private String lastName;
     private String email;
     private String emailKey;
     private boolean emailVerified;
-    private int notBefore;
     private List<UserCredentialValueModel> credentials = new LinkedList<UserCredentialValueModel>();
     private boolean enabled;
     private boolean totp;
@@ -38,8 +37,8 @@ public class CachedUser {
 
     public CachedUser(RealmModel realm, UserModel user) {
         this.id = user.getId();
-        this.loginName = user.getLoginName();
-        this.usernameKey = realm.getId() + "." + this.loginName;
+        this.username = user.getUsername();
+        this.usernameKey = realm.getId() + "." + this.username;
         this.firstName = user.getFirstName();
         this.lastName = user.getLastName();
         this.attributes.putAll(user.getAttributes());
@@ -48,7 +47,6 @@ public class CachedUser {
             this.emailKey = realm.getId() + "." + this.email;
         }
         this.emailVerified = user.isEmailVerified();
-        this.notBefore = user.getNotBefore();
         this.credentials.addAll(user.getCredentialsDirectly());
         this.enabled = user.isEnabled();
         this.totp = user.isTotp();
@@ -63,8 +61,8 @@ public class CachedUser {
         return id;
     }
 
-    public String getLoginName() {
-        return loginName;
+    public String getUsername() {
+        return username;
     }
 
     public String getUsernameKey() {
@@ -89,10 +87,6 @@ public class CachedUser {
 
     public boolean isEmailVerified() {
         return emailVerified;
-    }
-
-    public int getNotBefore() {
-        return notBefore;
     }
 
     public List<UserCredentialValueModel> getCredentials() {

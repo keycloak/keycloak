@@ -47,15 +47,15 @@ public class UserAdapter implements UserModel {
     }
 
     @Override
-    public String getLoginName() {
-        if (updated != null) return updated.getLoginName();
-        return cached.getLoginName();
+    public String getUsername() {
+        if (updated != null) return updated.getUsername();
+        return cached.getUsername();
     }
 
     @Override
-    public void setLoginName(String loginName) {
+    public void setUsername(String username) {
         getDelegateForUpdate();
-        updated.setLoginName(loginName);
+        updated.setUsername(username);
     }
 
     @Override
@@ -170,18 +170,6 @@ public class UserAdapter implements UserModel {
     public void setTotp(boolean totp) {
         getDelegateForUpdate();
         updated.setTotp(totp);
-    }
-
-    @Override
-    public int getNotBefore() {
-        if (updated != null) return updated.getNotBefore();
-        return cached.getNotBefore();
-    }
-
-    @Override
-    public void setNotBefore(int notBefore) {
-        getDelegateForUpdate();
-        updated.setNotBefore(notBefore);
     }
 
     @Override

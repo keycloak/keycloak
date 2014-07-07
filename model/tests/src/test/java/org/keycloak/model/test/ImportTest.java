@@ -173,7 +173,7 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertTrue(facebookFound && twitterFound && googleFound);
 
         UserModel foundSocialUser = realm.getUserBySocialLink(new SocialLinkModel("facebook", "facebook1", "fbuser1"));
-        Assert.assertEquals(foundSocialUser.getLoginName(), socialUser.getLoginName());
+        Assert.assertEquals(foundSocialUser.getUsername(), socialUser.getUsername());
         Assert.assertNull(realm.getUserBySocialLink(new SocialLinkModel("facebook", "not-existing", "not-existing")));
 
         SocialLinkModel foundSocialLink = realm.getSocialLink(socialUser, "facebook");

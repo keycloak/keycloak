@@ -70,7 +70,7 @@ public class AuthenticationProviderManager {
         AuthenticationLinkModel authLink = user.getAuthenticationLink();
         if (authLink == null) {
             // User not yet linked with any authenticationProvider. Find provider with biggest priority where he is and link
-            AuthUser authUser = getUser(user.getLoginName());
+            AuthUser authUser = getUser(user.getUsername());
             authLink = new AuthenticationLinkModel(authUser.getProviderName(), authUser.getId());
             user.setAuthenticationLink(authLink);
             logger.infof("User '%s' linked with provider '%s'", authUser.getUsername(), authUser.getProviderName());
@@ -85,10 +85,10 @@ public class AuthenticationProviderManager {
         }
 
         try {
-            checkCorrectAuthLink(delegate, providerModel, authLink, user.getLoginName());
+            checkCorrectAuthLink(delegate, providerModel, authLink, user.getUsername());
 
-            AuthProviderStatus currentResult = delegate.validatePassword(realm, providerModel.getConfig(), user.getLoginName(), password);
-            logger.debugf("Authentication provider '%s' finished with '%s' for authentication of '%s'", delegate.getName(), currentResult.toString(), user.getLoginName());
+            AuthProviderStatus currentResult = delegate.validatePassword(realm, providerModel.getConfig(), user.getUsername(), password);
+            logger.debugf("Authentication provider '%s' finished with '%s' for authentication of '%s'", delegate.getName(), currentResult.toString(), user.getUsername());
             return currentResult;
         } catch (AuthenticationProviderException ape) {
             logger.warn(ape.getMessage(), ape);
@@ -105,7 +105,7 @@ public class AuthenticationProviderManager {
                 if (providerModel.isPasswordUpdateSupported()) {
                     AuthenticationProvider delegate = getProvider(providerModel.getProviderName());
                     if (delegate != null) {
-                        AuthUser authUser = delegate.getUser(realm, providerModel.getConfig(), user.getLoginName());
+                        AuthUser authUser = delegate.getUser(realm, providerModel.getConfig(), user.getUsername());
                         if (authUser != null) {
                             // Linking existing user supported just for "model" provider. In other cases throw exception
                             if (providerModel.getProviderName().equals(AuthenticationProviderModel.DEFAULT_PROVIDER.getProviderName())) {
@@ -120,7 +120,7 @@ public class AuthenticationProviderManager {
                             String userIdInProvider = delegate.registerUser(realm, providerModel.getConfig(), user);
                             authLink = new AuthenticationLinkModel(providerModel.getProviderName(), userIdInProvider);
                             user.setAuthenticationLink(authLink);
-                            logger.infof("User '%s' registered in provider '%s' and linked", user.getLoginName(), providerModel.getProviderName());
+                            logger.infof("User '%s' registered in provider '%s' and linked", user.getUsername(), providerModel.getProviderName());
                         }
                         break;
                     }
@@ -128,7 +128,7 @@ public class AuthenticationProviderManager {
             }
 
             if (authLink == null) {
-                logger.warnf("No providers found where password update is supported for user '%s'", user.getLoginName());
+                logger.warnf("No providers found where password update is supported for user '%s'", user.getUsername());
                 return false;
             }
         }
@@ -140,7 +140,7 @@ public class AuthenticationProviderManager {
             return false;
         }
 
-        String username = user.getLoginName();
+        String username = user.getUsername();
 
         // Update just if password update is supported
         if (providerModel.isPasswordUpdateSupported()) {
@@ -152,7 +152,7 @@ public class AuthenticationProviderManager {
 
                 checkCorrectAuthLink(delegate, providerModel, authLink, username);
 
-                if (delegate.updateCredential(realm,providerModel.getConfig(), user.getLoginName(), password)) {
+                if (delegate.updateCredential(realm,providerModel.getConfig(), user.getUsername(), password)) {
                     logger.debugf("Updated password in authentication provider '%s' for user '%s'", providerName, username);
                     return true;
                 } else {

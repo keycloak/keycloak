@@ -69,7 +69,7 @@ public class AuthenticationManager {
         if (session == null) return;
         UserModel user = session.getUser();
 
-        logger.infov("Logging out: {0} ({1})", user.getLoginName(), session.getId());
+        logger.infov("Logging out: {0} ({1})", user.getUsername(), session.getId());
 
         realm.removeUserSession(session);
         expireIdentityCookie(realm, uriInfo);
@@ -202,11 +202,6 @@ public class AuthenticationManager {
             UserModel user = realm.getUserById(token.getSubject());
             if (user == null || !user.isEnabled() ) {
                 logger.info("Unknown user in identity token");
-                return null;
-            }
-
-            if (token.getIssuedAt() < user.getNotBefore()) {
-                logger.info("Stale cookie");
                 return null;
             }
 
@@ -343,7 +338,7 @@ public class AuthenticationManager {
 
     private boolean checkEnabled(UserModel user) {
         if (!user.isEnabled()) {
-            logger.warn("AccountProvider is disabled, contact admin. " + user.getLoginName());
+            logger.warn("AccountProvider is disabled, contact admin. " + user.getUsername());
             return false;
         } else {
             return true;

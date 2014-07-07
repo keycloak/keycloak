@@ -33,7 +33,7 @@ public class MultipleRealmsTest extends AbstractModelTest {
     public void testUsers() {
         UserModel r1user1 = realm1.getUser("user1");
         UserModel r2user1 = realm2.getUser("user1");
-        Assert.assertEquals(r1user1.getLoginName(), r2user1.getLoginName());
+        Assert.assertEquals(r1user1.getUsername(), r2user1.getUsername());
         Assert.assertNotEquals(r1user1.getId(), r2user1.getId());
 
         // Test password

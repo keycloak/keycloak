@@ -50,7 +50,7 @@ public class MongoRoleEntity extends RoleEntity implements MongoIdentifiableEnti
 
         List<MongoUserEntity> users = mongoStore.loadEntities(MongoUserEntity.class, query, invContext);
         for (MongoUserEntity user : users) {
-            logger.info("Removing role " + getName() + " from user " + user.getLoginName());
+            logger.info("Removing role " + getName() + " from user " + user.getUsername());
             mongoStore.pullItemFromList(user, "roleIds", getId(), invContext);
         }
 
@@ -61,7 +61,7 @@ public class MongoRoleEntity extends RoleEntity implements MongoIdentifiableEnti
 
         users = mongoStore.loadEntities(MongoUserEntity.class, query, invContext);
         for (MongoUserEntity user : users) {
-            logger.info("Removing scope " + getName() + " from user " + user.getLoginName());
+            logger.info("Removing scope " + getName() + " from user " + user.getUsername());
             mongoStore.pullItemFromList(user, "scopeIds", getId(), invContext);
         }
 
