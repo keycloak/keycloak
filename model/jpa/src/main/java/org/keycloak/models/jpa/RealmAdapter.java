@@ -623,7 +623,8 @@ public class RealmAdapter implements RealmModel {
         ApplicationModel application = getApplicationById(id);
         if (application == null) return false;
 
-        ((ApplicationAdapter)application).deleteUserSessionAssociation();
+        em.createNamedQuery("removeClientUserSessionByClient").setParameter("clientId", application.getId()).executeUpdate();
+
         for (RoleModel role : application.getRoles()) {
             application.removeRole(role);
         }
