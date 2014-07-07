@@ -29,18 +29,25 @@ import org.junit.Test;
 import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.adapters.action.SessionStats;
+import org.keycloak.representations.idm.ApplicationRepresentation;
+import org.keycloak.representations.idm.AuthenticationProviderRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.managers.ClaimManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.resources.TokenService;
 import org.keycloak.services.resources.admin.AdminRoot;
+import org.keycloak.services.resources.admin.ApplicationResource;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.adapter.CustomerDatabaseServlet;
 import org.keycloak.testsuite.adapter.CustomerServlet;
@@ -67,7 +74,11 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.security.PublicKey;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Tests Undertow Adapter
@@ -115,6 +126,7 @@ public class AdminAPITest {
         UriBuilder authBase = UriBuilder.fromUri("http://localhost:8081/auth");
         WebTarget adminRealms = client.target(AdminRoot.realmsUrl(authBase));
         String realmName = rep.getRealm();
+        WebTarget realmTarget = adminRealms.path(realmName);
 
 
         // create with just name, enabled, and id, just like admin console
@@ -126,10 +138,45 @@ public class AdminAPITest {
             Assert.assertEquals(201, response.getStatus());
             response.close();
         }
+        // todo test with full import with initial create
+        RealmRepresentation storedRealm = realmTarget.request().get(RealmRepresentation.class);
+        checkRealmRep(newRep, storedRealm);
+
+        Response updateResponse = realmTarget.request().put(Entity.json(rep));
+        Assert.assertEquals(204, updateResponse.getStatus());
+        updateResponse.close();
+        storedRealm = realmTarget.request().get(RealmRepresentation.class);
+        checkRealmRep(rep, storedRealm);
+
+        if (rep.getApplications() != null) {
+            WebTarget applicationsTarget = realmTarget.path("applications");
+            for (ApplicationRepresentation appRep : rep.getApplications()) {
+                ApplicationRepresentation newApp = new ApplicationRepresentation();
+                if (appRep.getId() != null) newApp.setId(appRep.getId());
+                newApp.setName(appRep.getName());
+                if (appRep.getSecret() != null) {
+                    newApp.setSecret(appRep.getSecret());
+                }
+                Response appCreateResponse = applicationsTarget.request().post(Entity.json(newApp));
+                Assert.assertEquals(201, appCreateResponse.getStatus());
+                appCreateResponse.close();
+                WebTarget appTarget = applicationsTarget.path(appRep.getName());
+                CredentialRepresentation cred = appTarget.path("client-secret").request().get(CredentialRepresentation.class);
+                if (appRep.getSecret() != null) Assert.assertEquals(appRep.getSecret(), cred.getValue());
+                CredentialRepresentation newCred = appTarget.path("client-secret").request().post(null, CredentialRepresentation.class);
+                Assert.assertNotEquals(newCred.getValue(), cred.getValue());
+
+                Response appUpdateResponse = appTarget.request().put(Entity.json(appRep));
+                Assert.assertEquals(204, appUpdateResponse.getStatus());
+                appUpdateResponse.close();
 
 
+                ApplicationRepresentation storedApp = appTarget.request().get(ApplicationRepresentation.class);
 
+                checkAppUpdate(appRep, storedApp);
 
+            }
+        }
 
         // delete realm
         {
@@ -138,6 +185,142 @@ public class AdminAPITest {
             response.close();
 
         }
+        client.close();
+    }
+
+    protected void checkAppUpdate(ApplicationRepresentation appRep, ApplicationRepresentation storedApp) {
+        if (appRep.getName() != null) Assert.assertEquals(appRep.getName(), storedApp.getName());
+        if (appRep.isEnabled() != null) Assert.assertEquals(appRep.isEnabled(), storedApp.isEnabled());
+        if (appRep.isBearerOnly() != null) Assert.assertEquals(appRep.isBearerOnly(), storedApp.isBearerOnly());
+        if (appRep.isPublicClient() != null) Assert.assertEquals(appRep.isPublicClient(), storedApp.isPublicClient());
+        if (appRep.getAdminUrl() != null) Assert.assertEquals(appRep.getAdminUrl(), storedApp.getAdminUrl());
+        if (appRep.getBaseUrl() != null) Assert.assertEquals(appRep.getBaseUrl(), storedApp.getBaseUrl());
+        if (appRep.isSurrogateAuthRequired() != null) Assert.assertEquals(appRep.isSurrogateAuthRequired(), storedApp.isSurrogateAuthRequired());
+
+        if (appRep.getNotBefore() != null) {
+            Assert.assertEquals(appRep.getNotBefore(), storedApp.getNotBefore());
+        }
+        if (appRep.getDefaultRoles() != null) {
+            Set<String> set = new HashSet<String>();
+            for (String val : appRep.getDefaultRoles()) {
+                set.add(val);
+            }
+            Set<String> storedSet = new HashSet<String>();
+            for (String val : storedApp.getDefaultRoles()) {
+                storedSet.add(val);
+            }
+
+            Assert.assertEquals(set, storedSet);
+        }
+
+        List<String> redirectUris = appRep.getRedirectUris();
+        if (redirectUris != null) {
+            Set<String> set = new HashSet<String>();
+            for (String val : appRep.getRedirectUris()) {
+                set.add(val);
+            }
+            Set<String> storedSet = new HashSet<String>();
+            for (String val : storedApp.getRedirectUris()) {
+                storedSet.add(val);
+            }
+
+            Assert.assertEquals(set, storedSet);
+        }
+
+        List<String> webOrigins = appRep.getWebOrigins();
+        if (webOrigins != null) {
+            Set<String> set = new HashSet<String>();
+            for (String val : appRep.getWebOrigins()) {
+                set.add(val);
+            }
+            Set<String> storedSet = new HashSet<String>();
+            for (String val : storedApp.getWebOrigins()) {
+                storedSet.add(val);
+            }
+
+            Assert.assertEquals(set, storedSet);
+        }
+
+        if (appRep.getClaims() != null) {
+            Assert.assertEquals(appRep.getClaims(), storedApp.getClaims());
+        }
+    }
+
+    protected void checkRealmRep(RealmRepresentation rep, RealmRepresentation storedRealm) {
+        if (rep.getId() != null) {
+            Assert.assertEquals(rep.getId(), storedRealm.getId());
+        }
+        if (rep.getRealm() != null) {
+            Assert.assertEquals(rep.getRealm(), storedRealm.getRealm());
+        }
+        if (rep.isEnabled() != null) Assert.assertEquals(rep.isEnabled(), storedRealm.isEnabled());
+        if (rep.isSocial() != null) Assert.assertEquals(rep.isSocial(), storedRealm.isSocial());
+        if (rep.isBruteForceProtected() != null) Assert.assertEquals(rep.isBruteForceProtected(), storedRealm.isBruteForceProtected());
+        if (rep.getMaxFailureWaitSeconds() != null) Assert.assertEquals(rep.getMaxFailureWaitSeconds(), storedRealm.getMaxFailureWaitSeconds());
+        if (rep.getMinimumQuickLoginWaitSeconds() != null) Assert.assertEquals(rep.getMinimumQuickLoginWaitSeconds(), storedRealm.getMinimumQuickLoginWaitSeconds());
+        if (rep.getWaitIncrementSeconds() != null) Assert.assertEquals(rep.getWaitIncrementSeconds(), storedRealm.getWaitIncrementSeconds());
+        if (rep.getQuickLoginCheckMilliSeconds() != null) Assert.assertEquals(rep.getQuickLoginCheckMilliSeconds(), storedRealm.getQuickLoginCheckMilliSeconds());
+        if (rep.getMaxDeltaTimeSeconds() != null) Assert.assertEquals(rep.getMaxDeltaTimeSeconds(), storedRealm.getMaxDeltaTimeSeconds());
+        if (rep.getFailureFactor() != null) Assert.assertEquals(rep.getFailureFactor(), storedRealm.getFailureFactor());
+        if (rep.isPasswordCredentialGrantAllowed() != null) Assert.assertEquals(rep.isPasswordCredentialGrantAllowed(), storedRealm.isPasswordCredentialGrantAllowed());
+        if (rep.isRegistrationAllowed() != null) Assert.assertEquals(rep.isRegistrationAllowed(), storedRealm.isRegistrationAllowed());
+        if (rep.isRememberMe() != null) Assert.assertEquals(rep.isRememberMe(), storedRealm.isRememberMe());
+        if (rep.isVerifyEmail() != null) Assert.assertEquals(rep.isVerifyEmail(), storedRealm.isVerifyEmail());
+        if (rep.isResetPasswordAllowed() != null) Assert.assertEquals(rep.isResetPasswordAllowed(), storedRealm.isResetPasswordAllowed());
+        if (rep.isUpdateProfileOnInitialSocialLogin() != null)
+            Assert.assertEquals(rep.isUpdateProfileOnInitialSocialLogin(), storedRealm.isUpdateProfileOnInitialSocialLogin());
+        if (rep.isSslNotRequired() != null) Assert.assertEquals(rep.isSslNotRequired(), storedRealm.isSslNotRequired());
+        if (rep.getAccessCodeLifespan() != null) Assert.assertEquals(rep.getAccessCodeLifespan(), storedRealm.getAccessCodeLifespan());
+        if (rep.getAccessCodeLifespanUserAction() != null)
+            Assert.assertEquals(rep.getAccessCodeLifespanUserAction(), storedRealm.getAccessCodeLifespanUserAction());
+        if (rep.getNotBefore() != null) Assert.assertEquals(rep.getNotBefore(), storedRealm.getNotBefore());
+        if (rep.getAccessTokenLifespan() != null) Assert.assertEquals(rep.getAccessTokenLifespan(), storedRealm.getAccessTokenLifespan());
+        if (rep.getSsoSessionIdleTimeout() != null) Assert.assertEquals(rep.getSsoSessionIdleTimeout(), storedRealm.getSsoSessionIdleTimeout());
+        if (rep.getSsoSessionMaxLifespan() != null) Assert.assertEquals(rep.getSsoSessionMaxLifespan(), storedRealm.getSsoSessionMaxLifespan());
+        if (rep.getRequiredCredentials() != null) {
+            Assert.assertNotNull(storedRealm.getRequiredCredentials());
+            for (String cred : rep.getRequiredCredentials()) {
+                Assert.assertTrue(storedRealm.getRequiredCredentials().contains(cred));
+            }
+        }
+        if (rep.getLoginTheme() != null) Assert.assertEquals(rep.getLoginTheme(), storedRealm.getLoginTheme());
+        if (rep.getAccountTheme() != null) Assert.assertEquals(rep.getAccountTheme(), storedRealm.getAccountTheme());
+        if (rep.getAdminTheme() != null) Assert.assertEquals(rep.getAdminTheme(), storedRealm.getAdminTheme());
+        if (rep.getEmailTheme() != null) Assert.assertEquals(rep.getEmailTheme(), storedRealm.getEmailTheme());
+
+        if (rep.getPasswordPolicy() != null) Assert.assertEquals(rep.getPasswordPolicy(), storedRealm.getPasswordPolicy());
+
+        if (rep.getDefaultRoles() != null) {
+            Assert.assertNotNull(storedRealm.getDefaultRoles());
+            for (String role : rep.getDefaultRoles()) {
+                Assert.assertTrue(storedRealm.getDefaultRoles().contains(role));
+            }
+        }
+
+        if (rep.getSmtpServer() != null) {
+            Assert.assertEquals(rep.getSmtpServer(), storedRealm.getSmtpServer());
+        }
+
+        if (rep.getSocialProviders() != null) {
+            Assert.assertEquals(rep.getSocialProviders(), storedRealm.getSocialProviders());
+        }
+
+        if (rep.getLdapServer() != null) {
+            Assert.assertEquals(rep.getLdapServer(), storedRealm.getLdapServer());
+        }
+        if (rep.getAuthenticationProviders() != null) {
+            Set<AuthenticationProviderRepresentation> set = new HashSet<AuthenticationProviderRepresentation>();
+            for (AuthenticationProviderRepresentation authRep : rep.getAuthenticationProviders()) {
+                set.add(authRep);
+            }
+            Set<AuthenticationProviderRepresentation> storedSet = new HashSet<AuthenticationProviderRepresentation>();
+            if (storedRealm.getAuthenticationProviders() != null) {
+                for (AuthenticationProviderRepresentation authRep : storedRealm.getAuthenticationProviders()) {
+                    storedSet.add(authRep);
+                }
+            }
+            Assert.assertEquals(set, storedSet);
+         }
     }
 
     protected void testCreateRealm(String path) {
@@ -148,6 +331,10 @@ public class AdminAPITest {
 
     @Test
     public void testAdminApi() {
+        RealmRepresentation empty = new RealmRepresentation();
+        empty.setEnabled(true);
+        empty.setRealm("empty");
+        testCreateRealm(empty);
         testCreateRealm("/admin-test/testrealm.json");
     }
 

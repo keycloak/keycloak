@@ -34,4 +34,23 @@ public class AuthenticationProviderRepresentation {
     public void setConfig(Map<String, String> config) {
         this.config = config;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        AuthenticationProviderRepresentation that = (AuthenticationProviderRepresentation) o;
+
+        if (passwordUpdateSupported != that.passwordUpdateSupported) return false;
+        if (config != null ? !config.equals(that.config) : that.config != null) return false;
+        if (!providerName.equals(that.providerName)) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return providerName.hashCode();
+    }
 }
