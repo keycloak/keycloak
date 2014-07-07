@@ -174,16 +174,6 @@ public class UserAdapter implements UserModel {
     }
 
     @Override
-    public int getNotBefore() {
-        return user.getNotBefore();
-    }
-
-    @Override
-    public void setNotBefore(int notBefore) {
-        user.setNotBefore(notBefore);
-    }
-
-    @Override
     public void updateCredential(UserCredentialModel cred) {
         CredentialEntity credentialEntity = getCredentialEntity(user, cred.getType());
 

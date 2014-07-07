@@ -205,11 +205,6 @@ public class AuthenticationManager {
                 return null;
             }
 
-            if (token.getIssuedAt() < user.getNotBefore()) {
-                logger.info("Stale cookie");
-                return null;
-            }
-
             UserSessionModel session = realm.getUserSession(token.getSessionState());
             if (!isSessionValid(realm, session)) {
                 if (session != null) logout(realm, session, uriInfo);
