@@ -49,13 +49,13 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
     }
 
     @Override
-    public String getLoginName() {
-        return user.getLoginName();
+    public String getUsername() {
+        return user.getUsername();
     }
 
     @Override
-    public void setLoginName(String loginName) {
-        user.setLoginName(loginName);
+    public void setUsername(String username) {
+        user.setUsername(username);
         updateUser();
     }
 

@@ -16,9 +16,9 @@ public interface UserModel {
 
     String getId();
 
-    String getLoginName();
+    String getUsername();
 
-    void setLoginName(String loginName);
+    void setUsername(String username);
 
     boolean isEnabled();
 

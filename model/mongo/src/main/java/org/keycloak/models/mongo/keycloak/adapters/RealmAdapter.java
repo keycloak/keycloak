@@ -503,7 +503,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     protected UserAdapter addUserEntity(String id, String username) {
         MongoUserEntity userEntity = new MongoUserEntity();
         userEntity.setId(id);
-        userEntity.setLoginName(username);
+        userEntity.setUsername(username);
         // Compatibility with JPA model, which has user disabled by default
         // userEntity.setEnabled(true);
         userEntity.setRealmId(getId());
@@ -515,7 +515,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     @Override
     public boolean removeUser(String name) {
         DBObject query = new QueryBuilder()
-                .and("loginName").is(name)
+                .and("username").is(name)
                 .and("realmId").is(getId())
                 .get();
         return getMongoStore().removeEntities(MongoUserEntity.class, query, invocationContext);

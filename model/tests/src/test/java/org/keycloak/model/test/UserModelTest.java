@@ -111,7 +111,7 @@ public class UserModelTest extends AbstractModelTest {
     }
 
     public static void assertEquals(UserModel expected, UserModel actual) {
-        Assert.assertEquals(expected.getLoginName(), actual.getLoginName());
+        Assert.assertEquals(expected.getUsername(), actual.getUsername());
         Assert.assertEquals(expected.getFirstName(), actual.getFirstName());
         Assert.assertEquals(expected.getLastName(), actual.getLastName());
         Assert.assertArrayEquals(expected.getRequiredActions().toArray(), actual.getRequiredActions().toArray());

@@ -830,7 +830,7 @@ public class TokenService {
             UserModel user = authResult.getUser();
             UserSessionModel session = authResult.getSession();
 
-            logger.debug(user.getLoginName() + " already logged in.");
+            logger.debug(user.getUsername() + " already logged in.");
             audit.user(user).session(session).detail(Details.AUTH_METHOD, "sso");
             return oauth.processAccessCode(scopeParam, state, redirect, client, user, session, null, false, "sso", audit);
         }

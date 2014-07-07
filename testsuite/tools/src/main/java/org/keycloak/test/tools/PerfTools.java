@@ -98,7 +98,7 @@ public class PerfTools {
     public void deleteUsers(@PathParam("realm") String realmName) {
         RealmModel realm = session.getRealmByName(realmName);
         for (UserModel user : realm.getUsers()) {
-            realm.removeUser(user.getLoginName());
+            realm.removeUser(user.getUsername());
         }
     }
 

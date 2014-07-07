@@ -243,7 +243,7 @@ public class ModelImporter {
         List<UserEntity> users = this.importReader.readEntities(fileName, UserEntity.class);
         for (UserEntity userEntity : users) {
             RealmModel realm = session.getRealm(userEntity.getRealmId());
-            UserModel user = realm.addUser(userEntity.getId(), userEntity.getLoginName());
+            UserModel user = realm.addUser(userEntity.getId(), userEntity.getUsername());
 
             // We need to remove defaultRoles here as realm.addUser is automatically adding them. We may add them later during roles mapping processing
             for (RoleModel role : user.getRoleMappings()) {

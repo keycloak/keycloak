@@ -72,7 +72,7 @@ public class PicketlinkAuthenticationProvider implements AuthenticationProvider 
         IdentityManager identityManager = getIdentityManager(realm);
 
         try {
-            User picketlinkUser = new User(user.getLoginName());
+            User picketlinkUser = new User(user.getUsername());
             picketlinkUser.setFirstName(user.getFirstName());
             picketlinkUser.setLastName(user.getLastName());
             picketlinkUser.setEmail(user.getEmail());

@@ -381,7 +381,7 @@ public class RequiredActionsService {
     }
 
     private UserModel getUser(AccessCodeEntry accessCode) {
-        return realm.getUser(accessCode.getUser().getLoginName());
+        return realm.getUser(accessCode.getUser().getUsername());
     }
 
     private Response redirectOauth(UserModel user, AccessCodeEntry accessCode) {

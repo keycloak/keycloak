@@ -132,7 +132,7 @@ public class MongoModelProvider implements ModelProvider {
     @Override
     public UserModel getUserByUsername(String username, RealmModel realm) {
         DBObject query = new QueryBuilder()
-                .and("loginName").is(username)
+                .and("username").is(username)
                 .and("realmId").is(realm.getId())
                 .get();
         MongoUserEntity user = getMongoStore().loadSingleEntity(MongoUserEntity.class, query, invocationContext);
@@ -226,7 +226,7 @@ public class MongoModelProvider implements ModelProvider {
         QueryBuilder builder = new QueryBuilder().and(
                 new QueryBuilder().and("realmId").is(realm.getId()).get(),
                 new QueryBuilder().or(
-                        new QueryBuilder().put("loginName").regex(caseInsensitivePattern).get(),
+                        new QueryBuilder().put("username").regex(caseInsensitivePattern).get(),
                         new QueryBuilder().put("email").regex(caseInsensitivePattern).get(),
                         nameBuilder.get()
 
@@ -243,7 +243,7 @@ public class MongoModelProvider implements ModelProvider {
 
         for (Map.Entry<String, String> entry : attributes.entrySet()) {
             if (entry.getKey().equals(UserModel.LOGIN_NAME)) {
-                queryBuilder.and("loginName").regex(Pattern.compile("(?i:" + entry.getValue() + "$)"));
+                queryBuilder.and("username").regex(Pattern.compile("(?i:" + entry.getValue() + "$)"));
             } else if (entry.getKey().equalsIgnoreCase(UserModel.FIRST_NAME)) {
                 queryBuilder.and(UserModel.FIRST_NAME).regex(Pattern.compile("(?i:" + entry.getValue() + "$)"));
 

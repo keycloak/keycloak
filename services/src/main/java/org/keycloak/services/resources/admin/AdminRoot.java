@@ -182,7 +182,7 @@ public class AdminRoot {
 
         AdminAuth auth = authenticateRealmAdminRequest(headers);
         if (auth != null) {
-            logger.info("authenticated admin access for: " + auth.getUser().getLoginName());
+            logger.info("authenticated admin access for: " + auth.getUser().getUsername());
         }
 
         Cors.add(request).allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().build(response);

@@ -212,7 +212,7 @@ public class SocialResource {
             }
 
             realm.addSocialLink(authenticatedUser, socialLink);
-            logger.debug("Social provider " + provider.getId() + " linked with user " + authenticatedUser.getLoginName());
+            logger.debug("Social provider " + provider.getId() + " linked with user " + authenticatedUser.getUsername());
 
             audit.success();
             return Response.status(302).location(UriBuilder.fromUri(redirectUri).build()).build();

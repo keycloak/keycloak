@@ -93,8 +93,8 @@ public class JpaModelProvider implements ModelProvider {
 
     @Override
     public UserModel getUserByUsername(String username, RealmModel realmModel) {
-        TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUserByLoginName", UserEntity.class);
-        query.setParameter("loginName", username);
+        TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUserByUsername", UserEntity.class);
+        query.setParameter("username", username);
         RealmEntity realm = em.getReference(RealmEntity.class, realmModel.getId());
         query.setParameter("realm", realm);
         List<UserEntity> results = query.getResultList();
@@ -130,7 +130,7 @@ public class JpaModelProvider implements ModelProvider {
         }
 
         for (UserEntity u : em.createQuery("from UserEntity u where u.realm = :realm", UserEntity.class).setParameter("realm", realm).getResultList()) {
-            adapter.removeUser(u.getLoginName());
+            adapter.removeUser(u.getUsername());
         }
 
         em.remove(realm);
@@ -185,7 +185,7 @@ public class JpaModelProvider implements ModelProvider {
 
     @Override
     public List<UserModel> searchForUser(String search, RealmModel realm) {
-        TypedQuery<UserEntity> query = em.createQuery("select u from UserEntity u where u.realm = :realm and ( lower(u.loginName) like :search or lower(concat(u.firstName, ' ', u.lastName)) like :search or u.email like :search )", UserEntity.class);
+        TypedQuery<UserEntity> query = em.createQuery("select u from UserEntity u where u.realm = :realm and ( lower(u.username) like :search or lower(concat(u.firstName, ' ', u.lastName)) like :search or u.email like :search )", UserEntity.class);
         RealmEntity realmEntity = em.getReference(RealmEntity.class, realm.getId());
         query.setParameter("realm", realmEntity);
         query.setParameter("search", "%" + search.toLowerCase() + "%");
@@ -202,7 +202,7 @@ public class JpaModelProvider implements ModelProvider {
         for (Map.Entry<String, String> entry : attributes.entrySet()) {
             String attribute = null;
             if (entry.getKey().equals(UserModel.LOGIN_NAME)) {
-                attribute = "lower(loginName)";
+                attribute = "lower(username)";
             } else if (entry.getKey().equalsIgnoreCase(UserModel.FIRST_NAME)) {
                 attribute = "lower(firstName)";
             } else if (entry.getKey().equalsIgnoreCase(UserModel.LAST_NAME)) {

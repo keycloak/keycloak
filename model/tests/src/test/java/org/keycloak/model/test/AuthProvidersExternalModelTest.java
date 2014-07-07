@@ -91,7 +91,7 @@ public class AuthProvidersExternalModelTest extends AbstractModelTest {
             Assert.assertEquals(AuthenticationManager.AuthenticationStatus.SUCCESS, am.authenticateForm(null, realm2, formData));
             UserModel john2 = realm2.getUser("john");
             Assert.assertNotNull(john2);
-            Assert.assertEquals("john", john2.getLoginName());
+            Assert.assertEquals("john", john2.getUsername());
             Assert.assertEquals("John", john2.getFirstName());
             Assert.assertEquals("Doe", john2.getLastName());
             Assert.assertEquals("john@email.org", john2.getEmail());
