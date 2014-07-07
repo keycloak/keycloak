@@ -11,6 +11,7 @@ public class UserCredentialValueModel {
     private String value;
     private String device;
     private byte[] salt;
+    private int hashIterations;
 
     public String getType() {
         return type;
@@ -42,5 +43,13 @@ public class UserCredentialValueModel {
 
     public void setSalt(byte[] salt) {
         this.salt = salt;
+    }
+
+    public int getHashIterations() {
+        return hashIterations;
+    }
+
+    public void setHashIterations(int iterations) {
+        this.hashIterations = iterations;
     }
 }

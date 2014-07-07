@@ -908,6 +908,7 @@ module.factory('PasswordPolicy', function() {
     var p = {};
 
     p.policyMessages = {
+        hashIterations: "Number of hashing iterations.  Default is 1.  Recommended is 50000.",
         length:         "Minimal password length (integer type). Default value is 8.",
         digits:         "Minimal number (integer type) of digits in password. Default value is 1.",
         lowerCase:      "Minimal number (integer type) of lowercase characters in password. Default value is 1.",
@@ -916,6 +917,7 @@ module.factory('PasswordPolicy', function() {
     }
 
     p.allPolicies = [
+        { name: 'hashIterations', value: 1 },
         { name: 'length', value: 8 },
         { name: 'digits', value: 1 },
         { name: 'lowerCase', value: 1 },

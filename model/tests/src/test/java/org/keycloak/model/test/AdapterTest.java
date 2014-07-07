@@ -8,11 +8,13 @@ import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.OAuthClientModel;
+import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -135,6 +137,13 @@ public class AdapterTest extends AbstractModelTest {
         cred.setValue("geheim");
         user.updateCredential(cred);
         Assert.assertTrue(realmModel.validatePassword(user, "geheim"));
+        List<UserCredentialValueModel> creds = user.getCredentialsDirectly();
+        Assert.assertEquals(creds.get(0).getHashIterations(), 1);
+        realmModel.setPasswordPolicy( new PasswordPolicy("hashIterations(200)"));
+        Assert.assertTrue(realmModel.validatePassword(user, "geheim"));
+        creds = user.getCredentialsDirectly();
+        Assert.assertEquals(creds.get(0).getHashIterations(), 200);
+        realmModel.setPasswordPolicy( new PasswordPolicy("hashIterations(1)"));
     }
 
     @Test

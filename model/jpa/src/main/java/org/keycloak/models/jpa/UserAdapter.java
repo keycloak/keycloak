@@ -3,6 +3,7 @@ package org.keycloak.models.jpa;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.AuthenticationLinkModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
@@ -197,8 +198,15 @@ public class UserAdapter implements UserModel {
         }
         if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
             byte[] salt = getSalt();
-            credentialEntity.setValue(new Pbkdf2PasswordEncoder(salt).encode(cred.getValue()));
+            int hashIterations = 1;
+            PasswordPolicy policy = realm.getPasswordPolicy();
+            if (policy != null) {
+                hashIterations = policy.getHashIterations();
+                if (hashIterations == -1) hashIterations = 1;
+            }
+            credentialEntity.setValue(new Pbkdf2PasswordEncoder(salt).encode(cred.getValue(), hashIterations));
             credentialEntity.setSalt(salt);
+            credentialEntity.setHashIterations(hashIterations);
         } else {
             credentialEntity.setValue(cred.getValue());
         }
@@ -228,6 +236,7 @@ public class UserAdapter implements UserModel {
                 credModel.setDevice(credEntity.getDevice());
                 credModel.setValue(credEntity.getValue());
                 credModel.setSalt(credEntity.getSalt());
+                credModel.setHashIterations(credEntity.getHashIterations());
 
                 result.add(credModel);
             }
@@ -251,6 +260,7 @@ public class UserAdapter implements UserModel {
         credentialEntity.setValue(credModel.getValue());
         credentialEntity.setSalt(credModel.getSalt());
         credentialEntity.setDevice(credModel.getDevice());
+        credentialEntity.setHashIterations(credModel.getHashIterations());
 
         em.flush();
     }

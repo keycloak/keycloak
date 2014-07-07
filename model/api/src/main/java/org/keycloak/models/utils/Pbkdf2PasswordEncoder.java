@@ -43,7 +43,7 @@ public class Pbkdf2PasswordEncoder {
      * @param rawPassword The password used as a master key to derive into a session key
      * @return encoded password in Base64
      */
-    public String encode(String rawPassword) {
+    public String encode(String rawPassword, int iterations) {
 
         String encodedPassword;
 
@@ -59,6 +59,10 @@ public class Pbkdf2PasswordEncoder {
         return encodedPassword;
     }
 
+    public String encode(String rawPassword) {
+        return encode(rawPassword, iterations);
+    }
+
     /**
      * Encode the password provided and compare with the hash stored into the database
      * @param rawPassword The password provided
@@ -67,6 +71,16 @@ public class Pbkdf2PasswordEncoder {
      */
     public boolean verify(String rawPassword, String encodedPassword) {
         return encode(rawPassword).equals(encodedPassword);
+    }
+
+    /**
+     * Encode the password provided and compare with the hash stored into the database
+     * @param rawPassword The password provided
+     * @param encodedPassword Encoded hash stored into the database
+     * @return true if the password is valid, otherwise false for invalid credentials
+     */
+    public boolean verify(String rawPassword, String encodedPassword, int iterations) {
+        return encode(rawPassword, iterations).equals(encodedPassword);
     }
 
     /**
