@@ -52,7 +52,11 @@
                     "type": "password",
                     "value": "userpassword"
                 }
-            ]
+            ],
+            "applicationRoles": {
+                "Application": [ "app-user" ],
+                "OtherApp": [  "otherapp-user" ]
+            }
         },
         {
             "username": "loginclient",
@@ -72,7 +76,12 @@
                     "type": "password",
                     "value": "adminpassword"
                 }
-            ]
+            ],
+            "realmRoles": [ "admin" ],
+            "applicationRoles": {
+                "Application": [ "app-admin" ],
+                "OtherApp": [  "otherapp-admin" ]
+            }
         },
         {
             "username": "mySocialUser",
@@ -80,12 +89,7 @@
             "authenticationLink": {
                 "authProvider": "picketlink",
                 "authUserId": "myUser1"
-            }
-        }
-    ],
-    "socialMappings": [
-        {
-            "username": "mySocialUser",
+            },
             "socialLinks": [
                 {
                     "socialProvider": "facebook",
@@ -148,40 +152,12 @@
             ]
         }
     },
-    "roleMappings": [
-        {
-            "username": "admin",
-            "roles": ["admin"]
-        }
-    ],
     "scopeMappings": [
         {
             "client": "oauthclient",
             "roles": ["admin"]
         }
     ],
-    "applicationRoleMappings": {
-        "Application": [
-            {
-                "username": "wburke",
-                "roles": ["app-user"]
-            },
-            {
-                "username": "admin",
-                "roles": ["app-admin"]
-            }
-        ],
-        "OtherApp": [
-            {
-                "username": "wburke",
-                "roles": ["otherapp-user"]
-            },
-            {
-                "username": "admin",
-                "roles": ["otherapp-admin"]
-            }
-        ]
-    },
     "applicationScopeMappings": {
         "Application": [
             {

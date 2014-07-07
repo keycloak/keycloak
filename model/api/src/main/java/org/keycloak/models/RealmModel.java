@@ -116,7 +116,7 @@ public interface RealmModel extends RoleContainerModel {
 
     UserModel getUserById(String name);
 
-    UserModel addUser(String id, String username);
+    UserModel addUser(String id, String username, boolean addDefaultRoles);
 
     UserModel addUser(String username);
 

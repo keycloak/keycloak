@@ -44,11 +44,8 @@ public class RealmRepresentation {
     protected Set<String> requiredCredentials;
     protected String passwordPolicy;
     protected List<UserRepresentation> users;
-    protected List<UserRoleMappingRepresentation> roleMappings;
     protected List<ScopeMappingRepresentation> scopeMappings;
-    protected Map<String, List<UserRoleMappingRepresentation>> applicationRoleMappings;
     protected Map<String, List<ScopeMappingRepresentation>> applicationScopeMappings;
-    protected List<SocialMappingRepresentation> socialMappings;
     protected List<ApplicationRepresentation> applications;
     protected List<OAuthClientRepresentation> oauthClients;
     protected Map<String, String> socialProviders;
@@ -151,18 +148,6 @@ public class RealmRepresentation {
         this.ssoSessionMaxLifespan = ssoSessionMaxLifespan;
     }
 
-    public List<UserRoleMappingRepresentation> getRoleMappings() {
-        return roleMappings;
-    }
-
-    public UserRoleMappingRepresentation roleMapping(String username) {
-        UserRoleMappingRepresentation mapping = new UserRoleMappingRepresentation();
-        mapping.setUsername(username);
-        if (roleMappings == null) roleMappings = new ArrayList<UserRoleMappingRepresentation>();
-        roleMappings.add(mapping);
-        return mapping;
-    }
-
     public List<ScopeMappingRepresentation> getScopeMappings() {
         return scopeMappings;
     }
@@ -172,18 +157,6 @@ public class RealmRepresentation {
         mapping.setClient(username);
         if (scopeMappings == null) scopeMappings = new ArrayList<ScopeMappingRepresentation>();
         scopeMappings.add(mapping);
-        return mapping;
-    }
-
-    public List<SocialMappingRepresentation> getSocialMappings() {
-        return socialMappings;
-    }
-
-    public SocialMappingRepresentation socialMapping(String username) {
-        SocialMappingRepresentation mapping = new SocialMappingRepresentation();
-        mapping.setUsername(username);
-        if (socialMappings == null) socialMappings = new ArrayList<SocialMappingRepresentation>();
-        socialMappings.add(mapping);
         return mapping;
     }
 
@@ -337,14 +310,6 @@ public class RealmRepresentation {
 
     public void setOauthClients(List<OAuthClientRepresentation> oauthClients) {
         this.oauthClients = oauthClients;
-    }
-
-    public Map<String, List<UserRoleMappingRepresentation>> getApplicationRoleMappings() {
-        return applicationRoleMappings;
-    }
-
-    public void setApplicationRoleMappings(Map<String, List<UserRoleMappingRepresentation>> applicationRoleMappings) {
-        this.applicationRoleMappings = applicationRoleMappings;
     }
 
     public Map<String, List<ScopeMappingRepresentation>> getApplicationScopeMappings() {

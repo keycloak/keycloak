@@ -105,16 +105,14 @@ public class ImportTest extends AbstractModelTest {
         // Test role mappings
         UserModel admin = realm.getUser("admin");
         Set<RoleModel> allRoles = admin.getRoleMappings();
-        Assert.assertEquals(5, allRoles.size());
+        Assert.assertEquals(3, allRoles.size());
         Assert.assertTrue(allRoles.contains(realm.getRole("admin")));
         Assert.assertTrue(allRoles.contains(application.getRole("app-admin")));
         Assert.assertTrue(allRoles.contains(otherApp.getRole("otherapp-admin")));
-        Assert.assertTrue(allRoles.contains(accountApp.getRole(AccountRoles.VIEW_PROFILE)));
-        Assert.assertTrue(allRoles.contains(accountApp.getRole(AccountRoles.MANAGE_ACCOUNT)));
 
         UserModel wburke = realm.getUser("wburke");
         allRoles = wburke.getRoleMappings();
-        Assert.assertEquals(4, allRoles.size());
+        Assert.assertEquals(2, allRoles.size());
         Assert.assertFalse(allRoles.contains(realm.getRole("admin")));
         Assert.assertTrue(allRoles.contains(application.getRole("app-user")));
         Assert.assertTrue(allRoles.contains(otherApp.getRole("otherapp-user")));

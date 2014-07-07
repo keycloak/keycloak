@@ -456,11 +456,15 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public UserModel addUser(String username) {
-        return this.addUser(KeycloakModelUtils.generateId(), username);
+        return this.addUser(KeycloakModelUtils.generateId(), username, true);
     }
 
     @Override
-    public UserModel addUser(String id, String username) {
+    public UserModel addUser(String id, String username, boolean addDefaultRoles) {
+        if (id == null) {
+            id = KeycloakModelUtils.generateId();
+        }
+
         UserEntity entity = new UserEntity();
         entity.setId(id);
         entity.setUsername(username);
@@ -469,13 +473,15 @@ public class RealmAdapter implements RealmModel {
         em.flush();
         UserModel userModel = new UserAdapter(this, em, entity);
 
-        for (String r : getDefaultRoles()) {
-            userModel.grantRole(getRole(r));
-        }
+        if (addDefaultRoles) {
+            for (String r : getDefaultRoles()) {
+                userModel.grantRole(getRole(r));
+            }
 
-        for (ApplicationModel application : getApplications()) {
-            for (String r : application.getDefaultRoles()) {
-                userModel.grantRole(application.getRole(r));
+            for (ApplicationModel application : getApplications()) {
+                for (String r : application.getDefaultRoles()) {
+                    userModel.grantRole(application.getRole(r));
+                }
             }
         }
 

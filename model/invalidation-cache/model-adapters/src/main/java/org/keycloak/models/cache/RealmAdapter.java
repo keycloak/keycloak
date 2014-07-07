@@ -411,9 +411,9 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public UserModel addUser(String id, String username) {
+    public UserModel addUser(String id, String username, boolean addDefaultRoles) {
         getDelegateForUpdate();
-        return updated.addUser(id, username);
+        return updated.addUser(id, username, addDefaultRoles);
     }
 
     @Override

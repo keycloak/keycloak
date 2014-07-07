@@ -21,7 +21,11 @@
             "credentials" : [
                 { "type" : "password",
                     "value" : "password" }
-            ]
+            ],
+            "realmRoles": [ "user" ],
+            "applicationRoles": {
+                "account": [ "manage-account" ]
+            }
         }
     ],
     "roles" : {
@@ -36,12 +40,6 @@
             }
         ]
     },
-    "roleMappings": [
-        {
-            "username": "bburke@redhat.com",
-            "roles": ["user"]
-        }
-    ],
     "scopeMappings": [
         {
             "client": "third-party",
@@ -107,14 +105,5 @@
             ],
             "secret": "password"
         }
-    ],
-    "applicationRoleMappings": {
-        "account": [
-            {
-                "username": "bburke@redhat.com",
-                "roles": ["manage-account"]
-            }
-        ]
-    }
-
+    ]
 }
