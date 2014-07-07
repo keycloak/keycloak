@@ -53,13 +53,13 @@ public class UserAdapter implements UserModel {
     }
 
     @Override
-    public String getLoginName() {
-        return user.getLoginName();
+    public String getUsername() {
+        return user.getUsername();
     }
 
     @Override
-    public void setLoginName(String loginName) {
-        user.setLoginName(loginName);
+    public void setUsername(String username) {
+        user.setUsername(username);
     }
 
     @Override

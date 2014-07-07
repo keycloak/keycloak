@@ -38,7 +38,7 @@ public class ModelToRepresentation {
     public static UserRepresentation toRepresentation(UserModel user) {
         UserRepresentation rep = new UserRepresentation();
         rep.setId(user.getId());
-        rep.setUsername(user.getLoginName());
+        rep.setUsername(user.getUsername());
         rep.setLastName(user.getLastName());
         rep.setFirstName(user.getFirstName());
         rep.setEmail(user.getEmail());
@@ -190,7 +190,7 @@ public class ModelToRepresentation {
         rep.setId(session.getId());
         rep.setStart(((long)session.getStarted()) * 1000L);
         rep.setLastAccess(((long)session.getLastSessionRefresh())* 1000L);
-        rep.setUser(session.getUser().getLoginName());
+        rep.setUser(session.getUser().getUsername());
         rep.setIpAddress(session.getIpAddress());
         for (ClientModel client : session.getClientAssociations()) {
             if (client instanceof ApplicationModel) {

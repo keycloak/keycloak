@@ -35,21 +35,21 @@ import java.util.Set;
  */
 @NamedQueries({
         @NamedQuery(name="getRealmUserById", query="select u from UserEntity u where u.id = :id and u.realm = :realm"),
-        @NamedQuery(name="getRealmUserByLoginName", query="select u from UserEntity u where u.loginName = :loginName and u.realm = :realm"),
+        @NamedQuery(name="getRealmUserByUsername", query="select u from UserEntity u where u.username = :username and u.realm = :realm"),
         @NamedQuery(name="getRealmUserByEmail", query="select u from UserEntity u where u.email = :email and u.realm = :realm"),
         @NamedQuery(name="getRealmUserByLastName", query="select u from UserEntity u where u.lastName = :lastName and u.realm = :realm"),
         @NamedQuery(name="getRealmUserByFirstLastName", query="select u from UserEntity u where u.firstName = :first and u.lastName = :last and u.realm = :realm")
 })
 @Entity
 @Table(uniqueConstraints = {
-        @UniqueConstraint(columnNames = { "realm", "loginName" }),
+        @UniqueConstraint(columnNames = { "realm", "username" }),
         @UniqueConstraint(columnNames = { "realm", "emailConstraint" })
 })
 public class UserEntity {
     @Id
     protected String id;
 
-    protected String loginName;
+    protected String username;
     protected String firstName;
     protected String lastName;
     protected String email;
@@ -89,12 +89,12 @@ public class UserEntity {
         this.id = id;
     }
 
-    public String getLoginName() {
-        return loginName;
+    public String getUsername() {
+        return username;
     }
 
-    public void setLoginName(String loginName) {
-        this.loginName = loginName;
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public String getFirstName() {

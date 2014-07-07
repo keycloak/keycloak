@@ -462,7 +462,7 @@ public class RealmAdapter implements RealmModel {
     public UserModel addUser(String id, String username) {
         UserEntity entity = new UserEntity();
         entity.setId(id);
-        entity.setLoginName(username);
+        entity.setUsername(username);
         entity.setRealm(realm);
         em.persist(entity);
         em.flush();
@@ -483,8 +483,8 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public boolean removeUser(String name) {
-        TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUserByLoginName", UserEntity.class);
-        query.setParameter("loginName", name);
+        TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUserByUsername", UserEntity.class);
+        query.setParameter("username", name);
         query.setParameter("realm", realm);
         List<UserEntity> results = query.getResultList();
         if (results.size() == 0) return false;

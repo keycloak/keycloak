@@ -185,7 +185,7 @@ public class AdminConsole {
                 displayName = displayName != null ? displayName + " " + user.getLastName() : user.getLastName();
             }
         } else {
-            displayName = user.getLoginName();
+            displayName = user.getUsername();
         }
 
         RealmModel masterRealm = getAdminstrationRealm(realmManager);

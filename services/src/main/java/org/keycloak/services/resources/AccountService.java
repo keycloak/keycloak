@@ -514,7 +514,7 @@ public class AccountService {
                     if (realm.getSocialLinks(user).size() > 1 || user.getAuthenticationLink() != null) {
                         realm.removeSocialLink(user, providerId);
 
-                        logger.debug("Social provider " + providerId + " removed successfully from user " + user.getLoginName());
+                        logger.debug("Social provider " + providerId + " removed successfully from user " + user.getUsername());
 
                         audit.event(EventType.REMOVE_SOCIAL_LINK).client(auth.getClient()).user(auth.getUser())
                                 .detail(Details.USERNAME, link.getSocialUserId() + "@" + link.getSocialProvider())

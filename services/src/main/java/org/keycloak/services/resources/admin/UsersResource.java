@@ -127,7 +127,7 @@ public class UsersResource {
             UserModel user = realm.addUser(rep.getUsername());
             updateUserFromRep(user, rep);
 
-            return Response.created(uriInfo.getAbsolutePathBuilder().path(user.getLoginName()).build()).build();
+            return Response.created(uriInfo.getAbsolutePathBuilder().path(user.getUsername()).build()).build();
         } catch (ModelDuplicateException e) {
             return Flows.errors().exists("User exists with same username or email");
         }

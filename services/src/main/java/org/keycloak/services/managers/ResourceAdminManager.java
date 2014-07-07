@@ -79,7 +79,7 @@ public class ResourceAdminManager {
                     for (Map.Entry<String, UserStats> entry : stats.getUsers().entrySet()) {
                         UserModel user = realm.getUserById(entry.getKey());
                         if (user == null) continue;
-                        newUsers.put(user.getLoginName(), entry.getValue());
+                        newUsers.put(user.getUsername(), entry.getValue());
 
                     }
                     stats.setUsers(newUsers);

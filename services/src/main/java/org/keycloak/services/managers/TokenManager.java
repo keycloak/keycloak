@@ -262,7 +262,7 @@ public class TokenManager {
 
     public void initClaims(IDToken token, ClientModel model, UserModel user) {
         if (ClaimMask.hasUsername(model.getAllowedClaimsMask())) {
-            token.setPreferredUsername(user.getLoginName());
+            token.setPreferredUsername(user.getUsername());
         }
         if (ClaimMask.hasEmail(model.getAllowedClaimsMask())) {
             token.setEmail(user.getEmail());
@@ -284,7 +284,7 @@ public class TokenManager {
         token.subject(user.getId());
         token.audience(realm.getName());
         token.issuedNow();
-        token.issuedFor(client.getLoginName());
+        token.issuedFor(client.getUsername());
         token.issuer(realm.getName());
         if (realm.getAccessTokenLifespan() > 0) {
             token.expiration(Time.currentTime() + realm.getAccessTokenLifespan());

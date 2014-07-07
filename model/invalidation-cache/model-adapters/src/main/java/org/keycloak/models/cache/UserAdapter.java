@@ -47,15 +47,15 @@ public class UserAdapter implements UserModel {
     }
 
     @Override
-    public String getLoginName() {
-        if (updated != null) return updated.getLoginName();
-        return cached.getLoginName();
+    public String getUsername() {
+        if (updated != null) return updated.getUsername();
+        return cached.getUsername();
     }
 
     @Override
-    public void setLoginName(String loginName) {
+    public void setUsername(String username) {
         getDelegateForUpdate();
-        updated.setLoginName(loginName);
+        updated.setUsername(username);
     }
 
     @Override

@@ -370,7 +370,7 @@ public class RealmManager {
         if (rep.getUsers() != null) {
             for (UserRepresentation userRep : rep.getUsers()) {
                 UserModel user = createUser(newRealm, userRep);
-                userMap.put(user.getLoginName(), user);
+                userMap.put(user.getUsername(), user);
             }
         }
 

@@ -48,7 +48,7 @@ public class PropertiesAuthenticationProvider implements AuthenticationProvider 
     @Override
     public String registerUser(RealmModel realm, Map<String, String> configuration, UserModel user) throws AuthenticationProviderException {
         // Registration ignored
-        return user.getLoginName();
+        return user.getUsername();
     }
 
     @Override

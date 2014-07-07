@@ -11,7 +11,7 @@ import org.keycloak.models.UserModel;
  */
 public class UserEntity extends AbstractIdentifiableEntity {
 
-    private String loginName;
+    private String username;
     private String firstName;
     private String lastName;
     private String email;
@@ -30,12 +30,12 @@ public class UserEntity extends AbstractIdentifiableEntity {
     private List<SocialLinkEntity> socialLinks;
     private AuthenticationLinkEntity authenticationLink;
 
-    public String getLoginName() {
-        return loginName;
+    public String getUsername() {
+        return username;
     }
 
-    public void setLoginName(String loginName) {
-        this.loginName = loginName;
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public String getFirstName() {
