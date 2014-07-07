@@ -20,11 +20,12 @@
             "email" : "test-user@localhost",
             "credentials" : [
                 { "type" : "password",
-                  "value" : "password" }
+                    "value" : "password" }
             ],
-            "realmRoles": [ "test-user@localhost" ],
+            "realmRoles": ["user"],
             "applicationRoles": {
-                "test-app": ["customer-user"]
+                "test-app": [ "customer-user" ],
+                "account": [ "view-profile", "manage-account" ]
             }
         }
     ],
@@ -58,7 +59,7 @@
             ],
             "adminUrl": "http://localhost:8081/app/logout",
             "secret": "password"
-         }
+        }
     ],
     "roles" : {
         "realm" : [
