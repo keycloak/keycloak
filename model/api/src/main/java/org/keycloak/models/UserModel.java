@@ -58,9 +58,6 @@ public interface UserModel {
 
     void setTotp(boolean totp);
 
-    int getNotBefore();
-    void setNotBefore(int notBefore);
-
     void updateCredential(UserCredentialModel cred);
 
     List<UserCredentialValueModel> getCredentialsDirectly();

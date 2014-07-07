@@ -277,8 +277,6 @@ public class UsersResource {
             throw new NotFoundException("User not found");
         }
         realm.removeUserSessions(user);
-        // set notBefore so that user will be forced to log in.
-        user.setNotBefore(Time.currentTime());
         new ResourceAdminManager().logoutUser(uriInfo.getRequestUri(), realm, user.getId(), null);
     }
 

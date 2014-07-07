@@ -56,7 +56,6 @@ public class UserEntity {
     protected boolean enabled;
     protected boolean totp;
     protected boolean emailVerified;
-    protected int notBefore;
 
     // Hack just to workaround the fact that on MS-SQL you can't have unique constraint with multiple NULL values TODO: Find better solution (like unique index with 'where' but that's proprietary)
     protected String emailConstraint = KeycloakModelUtils.generateId();
@@ -194,11 +193,4 @@ public class UserEntity {
         this.authenticationLink = authenticationLink;
     }
 
-    public int getNotBefore() {
-        return notBefore;
-    }
-
-    public void setNotBefore(int notBefore) {
-        this.notBefore = notBefore;
-    }
 }

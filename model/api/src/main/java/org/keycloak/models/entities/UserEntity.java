@@ -18,7 +18,6 @@ public class UserEntity extends AbstractIdentifiableEntity {
     private boolean emailVerified;
     private boolean totp;
     private boolean enabled;
-    private int notBefore;
 
     private String realmId;
 
@@ -84,14 +83,6 @@ public class UserEntity extends AbstractIdentifiableEntity {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
-    }
-
-    public int getNotBefore() {
-        return notBefore;
-    }
-
-    public void setNotBefore(int notBefore) {
-        this.notBefore = notBefore;
     }
 
     public String getRealmId() {

@@ -173,18 +173,6 @@ public class UserAdapter implements UserModel {
     }
 
     @Override
-    public int getNotBefore() {
-        if (updated != null) return updated.getNotBefore();
-        return cached.getNotBefore();
-    }
-
-    @Override
-    public void setNotBefore(int notBefore) {
-        getDelegateForUpdate();
-        updated.setNotBefore(notBefore);
-    }
-
-    @Override
     public void updateCredential(UserCredentialModel cred) {
         getDelegateForUpdate();
         updated.updateCredential(cred);

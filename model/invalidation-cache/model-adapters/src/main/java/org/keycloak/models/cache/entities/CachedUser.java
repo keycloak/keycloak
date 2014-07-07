@@ -26,7 +26,6 @@ public class CachedUser {
     private String email;
     private String emailKey;
     private boolean emailVerified;
-    private int notBefore;
     private List<UserCredentialValueModel> credentials = new LinkedList<UserCredentialValueModel>();
     private boolean enabled;
     private boolean totp;
@@ -48,7 +47,6 @@ public class CachedUser {
             this.emailKey = realm.getId() + "." + this.email;
         }
         this.emailVerified = user.isEmailVerified();
-        this.notBefore = user.getNotBefore();
         this.credentials.addAll(user.getCredentialsDirectly());
         this.enabled = user.isEnabled();
         this.totp = user.isTotp();
@@ -89,10 +87,6 @@ public class CachedUser {
 
     public boolean isEmailVerified() {
         return emailVerified;
-    }
-
-    public int getNotBefore() {
-        return notBefore;
     }
 
     public List<UserCredentialValueModel> getCredentials() {

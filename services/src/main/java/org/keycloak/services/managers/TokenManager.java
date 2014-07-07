@@ -155,7 +155,7 @@ public class TokenManager {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Unmatching clients", "Unmatching clients");
         }
 
-        if (refreshToken.getIssuedAt() < client.getNotBefore() || refreshToken.getIssuedAt() < user.getNotBefore()) {
+        if (refreshToken.getIssuedAt() < client.getNotBefore()) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale refresh token");
         }
 

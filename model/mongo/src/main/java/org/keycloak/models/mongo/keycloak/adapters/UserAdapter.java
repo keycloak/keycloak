@@ -71,16 +71,6 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
     }
 
     @Override
-    public int getNotBefore() {
-        return user.getNotBefore();
-    }
-
-    @Override
-    public void setNotBefore(int notBefore) {
-        user.setNotBefore(notBefore);
-    }
-
-    @Override
     public String getFirstName() {
         return user.getFirstName();
     }
