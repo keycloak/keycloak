@@ -292,13 +292,6 @@ public class DefaultCacheModelProvider implements CacheModelProvider {
     }
 
     @Override
-    public void removeAllData() {
-        cache.clear();
-        getDelegate().removeAllData();
-        clearAll = true;
-    }
-
-    @Override
     public void close() {
         if (delegate != null) delegate.close();
     }

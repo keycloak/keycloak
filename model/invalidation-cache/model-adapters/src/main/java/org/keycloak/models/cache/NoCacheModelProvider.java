@@ -157,11 +157,6 @@ public class NoCacheModelProvider implements CacheModelProvider {
     }
 
     @Override
-    public void removeAllData() {
-        getDelegate().removeAllData();
-    }
-
-    @Override
     public void close() {
         if (delegate != null) delegate.close();
     }

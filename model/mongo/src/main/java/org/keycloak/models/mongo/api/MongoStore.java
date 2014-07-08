@@ -41,8 +41,4 @@ public interface MongoStore {
 
     <S> boolean pullItemFromList(MongoIdentifiableEntity entity, String listPropertyName, S itemToPull, MongoStoreInvocationContext context);
 
-    /**
-     * Completely remove all data from DB
-     */
-    void removeAllEntities();
 }

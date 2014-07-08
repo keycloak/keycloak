@@ -52,8 +52,5 @@ public interface ModelProvider extends Provider {
     void removeExpiredUserSessions(RealmModel realm);
     void removeUserSessions(RealmModel realm);
 
-
-    void removeAllData();
-
     void close();
 }

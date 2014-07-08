@@ -417,13 +417,6 @@ public class MongoStoreImpl implements MongoStore {
         }
     }
 
-    @Override
-    public void removeAllEntities() {
-        Set<Class<?>> managedTypes = this.entityInfoCache.keySet();
-        Class<? extends MongoEntity>[] arrayTemplate = (Class<? extends MongoEntity>[])new Class<?>[0];
-        this.clearManagedCollections(managedTypes.toArray(arrayTemplate));
-    }
-
     // Possibility to add user-defined mappers
     public void addAppObjectConverter(Mapper<?, ?> mapper) {
         mapperRegistry.addAppObjectMapper(mapper);

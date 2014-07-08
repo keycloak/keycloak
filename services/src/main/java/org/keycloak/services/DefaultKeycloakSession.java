@@ -235,11 +235,6 @@ public class DefaultKeycloakSession implements KeycloakSession {
         model.removeUserSessions(realm);
     }
 
-    @Override
-    public void removeAllData() {
-        model.removeAllData();
-    }
-
     public void close() {
         for (Provider p : providers.values()) {
             p.close();

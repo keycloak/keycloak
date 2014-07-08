@@ -52,9 +52,6 @@ public class ModelImporter {
         this.importReader = importReader;
         this.propertiesManager = new ExportImportPropertiesManager();
 
-        // Delete all the data from current model
-        session.removeAllData();
-
         importRealms(session, "realms.json");
         importApplications(session, "applications.json");
         importRoles(session, "roles.json");

@@ -246,10 +246,6 @@ public class HybridModelProvider implements ModelProvider {
     }
 
     @Override
-    public void removeAllData() {
-    }
-
-    @Override
     public void close() {
     }
 

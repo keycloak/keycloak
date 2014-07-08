@@ -60,8 +60,5 @@ public interface KeycloakSession {
     void removeExpiredUserSessions(RealmModel realm);
     void removeUserSessions(RealmModel realm);
 
-
-    void removeAllData();
-
     void close();
 }
