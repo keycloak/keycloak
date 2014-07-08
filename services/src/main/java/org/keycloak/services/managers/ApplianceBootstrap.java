@@ -8,6 +8,7 @@ import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.ModelProvider;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
@@ -39,7 +40,7 @@ public class ApplianceBootstrap {
 
     public void bootstrap(KeycloakSession session, String contextPath) {
         String adminRealmName = Config.getAdminRealm();
-        if (session.getRealm(adminRealmName) != null) {
+        if (session.getModel().getRealm(adminRealmName) != null) {
             return;
         }
 

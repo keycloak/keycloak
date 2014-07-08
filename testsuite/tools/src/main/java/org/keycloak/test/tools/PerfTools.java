@@ -170,7 +170,7 @@ public class PerfTools {
     }
 
     private int getUsersCount(String realmName, String prefix) {
-        RealmModel realm = session.getRealmByName(realmName);
+        RealmModel realm = session.getModel().getRealmByName(realmName);
 
         // TODO: method for count on model
         if (prefix == null) {

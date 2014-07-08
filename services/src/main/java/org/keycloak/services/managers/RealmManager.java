@@ -10,6 +10,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.Config;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelProvider;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
@@ -53,6 +54,7 @@ public class RealmManager {
     protected static final Logger logger = Logger.getLogger(RealmManager.class);
 
     protected KeycloakSession session;
+    protected ModelProvider model;
     protected String contextPath = "";
 
     public String getContextPath() {
@@ -65,6 +67,7 @@ public class RealmManager {
 
     public RealmManager(KeycloakSession session) {
         this.session = session;
+        this.model = session.getModel();
     }
 
     public RealmModel getKeycloakAdminstrationRealm() {
@@ -72,11 +75,11 @@ public class RealmManager {
     }
 
     public RealmModel getRealm(String id) {
-        return session.getRealm(id);
+        return model.getRealm(id);
     }
 
     public RealmModel getRealmByName(String name) {
-        return session.getRealmByName(name);
+        return model.getRealmByName(name);
     }
 
     public RealmModel createRealm(String name) {
@@ -85,7 +88,7 @@ public class RealmManager {
 
     public RealmModel createRealm(String id, String name) {
         if (id == null) id = KeycloakModelUtils.generateId();
-        RealmModel realm = session.createRealm(id, name);
+        RealmModel realm = model.createRealm(id, name);
         realm.setName(name);
 
         // setup defaults
@@ -143,7 +146,7 @@ public class RealmManager {
     }
 
     public boolean removeRealm(RealmModel realm) {
-        boolean removed = session.removeRealm(realm.getId());
+        boolean removed = model.removeRealm(realm.getId());
         if (removed) {
             getKeycloakAdminstrationRealm().removeApplication(realm.getMasterAdminApp().getId());
         }
@@ -244,7 +247,7 @@ public class RealmManager {
             RoleModel createRealmRole = realm.addRole(AdminRoles.CREATE_REALM);
             adminRole.addCompositeRole(createRealmRole);
         } else {
-            adminRealm = session.getRealmByName(Config.getAdminRealm());
+            adminRealm = model.getRealmByName(Config.getAdminRealm());
             adminRole = adminRealm.getRole(AdminRoles.ADMIN);
         }
 

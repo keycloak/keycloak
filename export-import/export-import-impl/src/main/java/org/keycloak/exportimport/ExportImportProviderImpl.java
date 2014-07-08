@@ -41,11 +41,11 @@ public class ExportImportProviderImpl implements ExportImportProvider {
 
                 if (export) {
                     ExportWriter exportWriter = getProvider().getExportWriter();
-                    new ModelExporter().exportModel(session, exportWriter);
+                    new ModelExporter().exportModel(session.getModel(), exportWriter);
                     logger.infof("Export finished successfully");
                 } else {
                     ImportReader importReader = getProvider().getImportReader();
-                    new ModelImporter().importModel(session, importReader);
+                    new ModelImporter().importModel(session.getModel(), importReader);
                     logger.infof("Import finished successfully");
                 }
 

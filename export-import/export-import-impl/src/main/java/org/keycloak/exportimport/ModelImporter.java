@@ -15,6 +15,7 @@ import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelProvider;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
@@ -47,31 +48,31 @@ public class ModelImporter {
     private ImportReader importReader;
     private ExportImportPropertiesManager propertiesManager;
 
-    public void importModel(KeycloakSession session, ImportReader importReader) {
+    public void importModel(ModelProvider model, ImportReader importReader) {
         // Initialize needed objects
         this.importReader = importReader;
         this.propertiesManager = new ExportImportPropertiesManager();
 
-        importRealms(session, "realms.json");
-        importApplications(session, "applications.json");
-        importRoles(session, "roles.json");
+        importRealms(model, "realms.json");
+        importApplications(model, "applications.json");
+        importRoles(model, "roles.json");
 
         // Now we have all realms,applications and roles filled. So fill other objects (default roles, scopes etc)
-        importRealmsStep2(session, "realms.json");
-        importApplicationsStep2(session, "applications.json");
+        importRealmsStep2(model, "realms.json");
+        importApplicationsStep2(model, "applications.json");
 
-        importOAuthClients(session, "oauthClients.json");
-        importUsers(session, "users.json");
-        importUserFailures(session, "userFailures.json");
+        importOAuthClients(model, "oauthClients.json");
+        importUsers(model, "users.json");
+        importUserFailures(model, "userFailures.json");
 
         this.importReader.closeImportReader();
     }
 
-    protected void importRealms(KeycloakSession session, String fileName) {
+    protected void importRealms(ModelProvider model, String fileName) {
         List<RealmEntity> realms =  this.importReader.readEntities(fileName, RealmEntity.class);
 
         for (RealmEntity realmEntity : realms) {
-            RealmModel realm = session.createRealm(realmEntity.getId(), realmEntity.getName());
+            RealmModel realm = model.createRealm(realmEntity.getId(), realmEntity.getName());
 
             this.propertiesManager.setBasicPropertiesToModel(realm, realmEntity);
 
@@ -100,10 +101,10 @@ public class ModelImporter {
         logger.infof("Realms imported: " + realms);
     }
 
-    protected void importApplications(KeycloakSession session, String fileName) {
+    protected void importApplications(ModelProvider model, String fileName) {
         List<ApplicationEntity> apps =  this.importReader.readEntities(fileName, ApplicationEntity.class);
         for (ApplicationEntity appEntity : apps) {
-            RealmModel realm = session.getRealm(appEntity.getRealmId());
+            RealmModel realm = model.getRealm(appEntity.getRealmId());
             ApplicationModel app = realm.addApplication(appEntity.getId(), appEntity.getName());
 
             this.propertiesManager.setBasicPropertiesToModel(app , appEntity);
@@ -114,7 +115,7 @@ public class ModelImporter {
         logger.infof("Applications imported: " + apps);
     }
 
-    protected void importRoles(KeycloakSession session, String fileName) {
+    protected void importRoles(ModelProvider model, String fileName) {
         // helper map for composite roles
         Map<String, RoleEntity> rolesMap = new HashMap<String, RoleEntity>();
 
@@ -122,10 +123,10 @@ public class ModelImporter {
         for (RoleEntity roleEntity : roles) {
             RoleModel role = null;
             if (roleEntity.getRealmId() != null) {
-                RealmModel realm = session.getRealm(roleEntity.getRealmId());
+                RealmModel realm = model.getRealm(roleEntity.getRealmId());
                 role = realm.addRole(roleEntity.getId(), roleEntity.getName());
             } else if (roleEntity.getApplicationId() != null) {
-                ApplicationModel app = findApplicationById(session, roleEntity.getApplicationId());
+                ApplicationModel app = findApplicationById(model, roleEntity.getApplicationId());
                 role = app.addRole(roleEntity.getId(), roleEntity.getName());
             } else {
                 throw new IllegalStateException("Role " + roleEntity.getId() + " doesn't have realmId nor applicationId");
@@ -137,7 +138,7 @@ public class ModelImporter {
         }
 
         // All roles were added. Fill composite roles now
-        for (RealmModel realm : session.getRealms()) {
+        for (RealmModel realm : model.getRealms()) {
 
             // realm roles
             fillCompositeRoles(rolesMap, realm, realm);
@@ -169,12 +170,12 @@ public class ModelImporter {
         }
     }
 
-    protected void importRealmsStep2(KeycloakSession session, String fileName) {
+    protected void importRealmsStep2(ModelProvider model, String fileName) {
         List<RealmEntity> realms =  this.importReader.readEntities(fileName, RealmEntity.class);
-        RealmModel adminRealm = session.getRealm(Config.getAdminRealm());
+        RealmModel adminRealm = model.getRealm(Config.getAdminRealm());
 
         for (RealmEntity realmEntity : realms) {
-            RealmModel realm = session.getRealm(realmEntity.getId());
+            RealmModel realm = model.getRealm(realmEntity.getId());
 
             // admin app
             String adminAppId = realmEntity.getAdminAppId();
@@ -187,10 +188,10 @@ public class ModelImporter {
         }
     }
 
-    protected void importApplicationsStep2(KeycloakSession session, String fileName) {
+    protected void importApplicationsStep2(ModelProvider model, String fileName) {
         List<ApplicationEntity> apps =  this.importReader.readEntities(fileName, ApplicationEntity.class);
         for (ApplicationEntity appEntity : apps) {
-            RealmModel realm = session.getRealm(appEntity.getRealmId());
+            RealmModel realm = model.getRealm(appEntity.getRealmId());
             ApplicationModel application = realm.getApplicationById(appEntity.getId());
 
             // Default roles
@@ -208,10 +209,10 @@ public class ModelImporter {
         }
     }
 
-    protected void importOAuthClients(KeycloakSession session, String fileName) {
+    protected void importOAuthClients(ModelProvider model, String fileName) {
         List<OAuthClientEntity> clients =  this.importReader.readEntities(fileName, OAuthClientEntity.class);
         for (OAuthClientEntity clientEntity : clients) {
-            RealmModel realm = session.getRealm(clientEntity.getRealmId());
+            RealmModel realm = model.getRealm(clientEntity.getRealmId());
             OAuthClientModel client = realm.addOAuthClient(clientEntity.getId(), clientEntity.getName());
 
             this.propertiesManager.setBasicPropertiesToModel(client, clientEntity);
@@ -225,8 +226,8 @@ public class ModelImporter {
         logger.info("OAuth clients imported: " + clients);
     }
 
-    protected ApplicationModel findApplicationById(KeycloakSession session, String applicationId) {
-        for (RealmModel realm : session.getRealms()) {
+    protected ApplicationModel findApplicationById(ModelProvider model, String applicationId) {
+        for (RealmModel realm : model.getRealms()) {
             ApplicationModel appModel = realm.getApplicationById(applicationId);
             if (appModel != null) {
                 return appModel;
@@ -236,10 +237,10 @@ public class ModelImporter {
         return null;
     }
 
-    public void importUsers(KeycloakSession session, String fileName) {
+    public void importUsers(ModelProvider model, String fileName) {
         List<UserEntity> users = this.importReader.readEntities(fileName, UserEntity.class);
         for (UserEntity userEntity : users) {
-            RealmModel realm = session.getRealm(userEntity.getRealmId());
+            RealmModel realm = model.getRealm(userEntity.getRealmId());
             UserModel user = realm.addUser(userEntity.getId(), userEntity.getUsername(), false);
 
             // We need to remove defaultRoles here as realm.addUser is automatically adding them. We may add them later during roles mapping processing
@@ -310,16 +311,16 @@ public class ModelImporter {
         }
     }
 
-    public void importUserFailures(KeycloakSession session, String fileName) {
+    public void importUserFailures(ModelProvider model, String fileName) {
         List<UsernameLoginFailureEntity> userFailures = this.importReader.readEntities(fileName, UsernameLoginFailureEntity.class);
         for (UsernameLoginFailureEntity entity : userFailures) {
-            RealmModel realm = session.getRealm(entity.getRealmId());
-            UsernameLoginFailureModel model = realm.addUserLoginFailure(entity.getUsername());
+            RealmModel realm = model.getRealm(entity.getRealmId());
+            UsernameLoginFailureModel loginFailureModel = realm.addUserLoginFailure(entity.getUsername());
 
-            this.propertiesManager.setBasicPropertiesToModel(model , entity);
+            this.propertiesManager.setBasicPropertiesToModel(loginFailureModel , entity);
 
             for (int i=0 ; i<entity.getNumFailures() ; i++) {
-                model.incrementFailures();
+                loginFailureModel.incrementFailures();
             }
         }
     }

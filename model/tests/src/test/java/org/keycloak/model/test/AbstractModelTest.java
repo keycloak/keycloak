@@ -8,6 +8,7 @@ import org.junit.BeforeClass;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.ModelProvider;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -30,6 +31,7 @@ public class AbstractModelTest {
 
     protected KeycloakSession session;
     protected RealmManager realmManager;
+    protected ModelProvider model;
 
     @BeforeClass
     public static void beforeClass() {
@@ -54,6 +56,7 @@ public class AbstractModelTest {
     public void before() throws Exception {
         session = sessionFactory.create();
         session.getTransaction().begin();
+        model = session.getModel();
         realmManager = new RealmManager(session);
     }
 
@@ -65,9 +68,10 @@ public class AbstractModelTest {
         session = sessionFactory.create();
         try {
             session.getTransaction().begin();
+            model = session.getModel();
 
             RealmManager rm = new RealmManager(session);
-            for (RealmModel realm : session.getRealms()) {
+            for (RealmModel realm : model.getRealms()) {
                 if (!realm.getName().equals(Config.getAdminRealm())) {
                     rm.removeRealm(realm);
                 }
@@ -98,6 +102,7 @@ public class AbstractModelTest {
 
         session = sessionFactory.create();
         session.getTransaction().begin();
+        model = session.getModel();
         realmManager = new RealmManager(session);
     }
 

@@ -100,7 +100,7 @@ public class KeycloakRule extends AbstractKeycloakRule {
 
     public void removeUserSession(String sessionId) {
         KeycloakSession session = startSession();
-        RealmModel realm = session.getRealm("test");
+        RealmModel realm = session.getModel().getRealm("test");
         UserSessionModel userSession = realm.getUserSession(sessionId);
         assertNotNull(userSession);
         realm.removeUserSession(userSession);

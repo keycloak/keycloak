@@ -12,6 +12,7 @@ import org.keycloak.models.AuthenticationLinkModel;
 import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelProvider;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
@@ -43,24 +44,24 @@ public class ModelExporter {
     private ExportWriter exportWriter;
     private ExportImportPropertiesManager propertiesManager;
 
-    public void exportModel(KeycloakSession session, ExportWriter exportWriter) {
+    public void exportModel(ModelProvider model, ExportWriter exportWriter) {
         // Initialize needed objects
         this.exportWriter = exportWriter;
         this.propertiesManager = new ExportImportPropertiesManager();
 
         // Create separate files for "realms", "applications", "oauthClients", "roles" and finally "users". Users may be done in more files (pagination)
-        exportRealms(session, "realms.json");
-        exportApplications(session, "applications.json");
-        exportOAuthClients(session, "oauthClients.json");
-        exportRoles(session, "roles.json");
-        exportUsers(session, "users.json");
-        exportUserFailures(session, "userFailures.json");
+        exportRealms(model, "realms.json");
+        exportApplications(model, "applications.json");
+        exportOAuthClients(model, "oauthClients.json");
+        exportRoles(model, "roles.json");
+        exportUsers(model, "users.json");
+        exportUserFailures(model, "userFailures.json");
 
         this.exportWriter.closeExportWriter();
     }
 
-    protected void exportRealms(KeycloakSession session, String fileName) {
-        List<RealmModel> realms = session.getRealms();
+    protected void exportRealms(ModelProvider model, String fileName) {
+        List<RealmModel> realms = model.getRealms();
 
         // Convert models to entities, which will be written into JSON file
         List<RealmEntity> result = new LinkedList<RealmEntity>();
@@ -106,8 +107,8 @@ public class ModelExporter {
         logger.infof("Realms exported: " + result);
     }
 
-    protected void exportApplications(KeycloakSession session, String fileName) {
-        List<ApplicationModel> allApplications = getAllApplications(session);
+    protected void exportApplications(ModelProvider model, String fileName) {
+        List<ApplicationModel> allApplications = getAllApplications(model);
 
         List<ApplicationEntity> result = new LinkedList<ApplicationEntity>();
         for (ApplicationModel appModel : allApplications) {
@@ -129,8 +130,8 @@ public class ModelExporter {
         logger.infof("Applications exported: " + result);
     }
 
-    protected void exportOAuthClients(KeycloakSession session, String fileName) {
-        List<RealmModel> realms = session.getRealms();
+    protected void exportOAuthClients(ModelProvider model, String fileName) {
+        List<RealmModel> realms = model.getRealms();
         List<OAuthClientModel> allClients = new ArrayList<OAuthClientModel>();
         for (RealmModel realmModel : realms) {
             allClients.addAll(realmModel.getOAuthClients());
@@ -156,8 +157,8 @@ public class ModelExporter {
         logger.infof("OAuth clients exported: " + result);
     }
 
-    protected void exportRoles(KeycloakSession session, String fileName) {
-        List<RoleModel> allRoles = getAllRoles(session);
+    protected void exportRoles(ModelProvider model, String fileName) {
+        List<RoleModel> allRoles = getAllRoles(model);
 
         List<RoleEntity> result = new LinkedList<RoleEntity>();
         for (RoleModel roleModel : allRoles) {
@@ -198,8 +199,8 @@ public class ModelExporter {
         }
     }
 
-    protected void exportUsers(KeycloakSession session, String fileName) {
-        List<RealmModel> realms = session.getRealms();
+    protected void exportUsers(ModelProvider model, String fileName) {
+        List<RealmModel> realms = model.getRealms();
         List<UserEntity> result = new LinkedList<UserEntity>();
 
         for (RealmModel realm : realms) {
@@ -277,8 +278,8 @@ public class ModelExporter {
 
 
      // Does it makes sense to export user failures ?
-    protected void exportUserFailures(KeycloakSession session, String fileName) {
-        List<RealmModel> realms = session.getRealms();
+    protected void exportUserFailures(ModelProvider model, String fileName) {
+        List<RealmModel> realms = model.getRealms();
         List<UsernameLoginFailureModel> allFailures = new ArrayList<UsernameLoginFailureModel>();
         for (RealmModel realmModel : realms) {
             allFailures.addAll(realmModel.getAllUserLoginFailures());
@@ -306,8 +307,8 @@ public class ModelExporter {
         return scopeIds;
     }
 
-    private List<ApplicationModel> getAllApplications(KeycloakSession session) {
-        List<RealmModel> realms = session.getRealms();
+    private List<ApplicationModel> getAllApplications(ModelProvider model) {
+        List<RealmModel> realms = model.getRealms();
         List<ApplicationModel> allApplications = new ArrayList<ApplicationModel>();
         for (RealmModel realmModel : realms) {
             allApplications.addAll(realmModel.getApplications());
@@ -315,15 +316,15 @@ public class ModelExporter {
         return allApplications;
     }
 
-    private List<RoleModel> getAllRoles(KeycloakSession session) {
+    private List<RoleModel> getAllRoles(ModelProvider model) {
         List<RoleModel> allRoles = new ArrayList<RoleModel>();
 
-        List<RealmModel> realms = session.getRealms();
+        List<RealmModel> realms = model.getRealms();
         for (RealmModel realmModel : realms) {
             allRoles.addAll(realmModel.getRoles());
         }
 
-        List<ApplicationModel> allApplications = getAllApplications(session);
+        List<ApplicationModel> allApplications = getAllApplications(model);
         for (ApplicationModel appModel : allApplications) {
             allRoles.addAll(appModel.getRoles());
         }
