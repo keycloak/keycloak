@@ -1,0 +1,3 @@
+org.keycloak.models.realms.RealmSpi
+org.keycloak.models.sessions.SessionSpi
+org.keycloak.models.users.UserSpi

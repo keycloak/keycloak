@@ -11,11 +11,23 @@
     },
 
     "model": {
-        "provider": "jpa"
+        "provider": "hybrid"
     },
 
     "modelCache": {
         "provider": "${keycloak.model.cache.provider:}"
+    },
+
+    "modelRealms": {
+        "provider": "jpa"
+    },
+
+    "modelUsers": {
+        "provider": "jpa"
+    },
+
+    "modelSessions": {
+        "provider": "mem"
     },
 
     "timer": {
