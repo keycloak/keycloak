@@ -4,21 +4,23 @@
     version="1.0">
     <persistence-unit name="jpa-keycloak-identity-store" transaction-type="RESOURCE_LOCAL">
         <jta-data-source>java:jboss/datasources/ExampleDS</jta-data-source>
-        <class>org.keycloak.models.jpa.entities.ApplicationEntity</class>
-        <class>org.keycloak.models.jpa.entities.CredentialEntity</class>
-        <class>org.keycloak.models.jpa.entities.OAuthClientEntity</class>
-        <class>org.keycloak.models.jpa.entities.RealmEntity</class>
-        <class>org.keycloak.models.jpa.entities.RequiredCredentialEntity</class>
-        <class>org.keycloak.models.jpa.entities.AuthenticationProviderEntity</class>
-        <class>org.keycloak.models.jpa.entities.RoleEntity</class>
-        <class>org.keycloak.models.jpa.entities.SocialLinkEntity</class>
-        <class>org.keycloak.models.jpa.entities.AuthenticationLinkEntity</class>
-        <class>org.keycloak.models.jpa.entities.UserEntity</class>
-        <class>org.keycloak.models.jpa.entities.UserSessionEntity</class>
-        <class>org.keycloak.models.jpa.entities.ClientUserSessionAssociationEntity</class>
-        <class>org.keycloak.models.jpa.entities.UsernameLoginFailureEntity</class>
-        <class>org.keycloak.models.jpa.entities.UserRoleMappingEntity</class>
-        <class>org.keycloak.models.jpa.entities.ScopeMappingEntity</class>
+
+        <class>org.keycloak.models.realms.jpa.entities.ApplicationEntity</class>
+        <class>org.keycloak.models.realms.jpa.entities.OAuthClientEntity</class>
+        <class>org.keycloak.models.realms.jpa.entities.RealmEntity</class>
+        <class>org.keycloak.models.realms.jpa.entities.RequiredCredentialEntity</class>
+        <class>org.keycloak.models.realms.jpa.entities.AuthenticationProviderEntity</class>
+        <class>org.keycloak.models.realms.jpa.entities.RoleEntity</class>
+        <class>org.keycloak.models.realms.jpa.entities.ScopeMappingEntity</class>
+
+        <class>org.keycloak.models.users.jpa.entities.UserAttributeEntity</class>
+        <class>org.keycloak.models.users.jpa.entities.UserCredentialEntity</class>
+        <class>org.keycloak.models.users.jpa.entities.UserRoleMappingEntity</class>
+        <class>org.keycloak.models.users.jpa.entities.UserEntity</class>
+
+        <class>org.keycloak.models.sessions.jpa.entities.ClientUserSessionAssociationEntity</class>
+        <class>org.keycloak.models.sessions.jpa.entities.UsernameLoginFailureEntity</class>
+        <class>org.keycloak.models.sessions.jpa.entities.UserSessionEntity</class>
 
         <exclude-unlisted-classes>true</exclude-unlisted-classes>
 
@@ -26,7 +28,7 @@
             <property name="hibernate.hbm2ddl.auto" value="update" />
         </properties>
     </persistence-unit>
-	
+
     <persistence-unit name="jpa-keycloak-audit-store" transaction-type="RESOURCE_LOCAL">
         <jta-data-source>java:jboss/datasources/ExampleDS</jta-data-source>
         <class>org.keycloak.audit.jpa.EventEntity</class>
@@ -37,5 +39,4 @@
             <property name="hibernate.hbm2ddl.auto" value="update" />
         </properties>
     </persistence-unit>
-	
 </persistence>

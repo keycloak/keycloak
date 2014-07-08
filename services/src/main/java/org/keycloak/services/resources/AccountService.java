@@ -48,6 +48,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
@@ -220,7 +221,15 @@ public class AccountService {
         } else if (types.contains(MediaType.APPLICATION_JSON_TYPE)) {
             requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
 
-            return Cors.add(request, Response.ok(ModelToRepresentation.toRepresentation(auth.getUser()))).auth().allowedOrigins(auth.getToken()).build();
+            UserRepresentation rep = ModelToRepresentation.toRepresentation(auth.getUser());
+            Iterator<String> itr = rep.getAttributes().keySet().iterator();
+            while (itr.hasNext()) {
+                if (itr.next().startsWith("keycloak.")) {
+                    itr.remove();
+                }
+            }
+
+            return Cors.add(request, Response.ok(rep)).auth().allowedOrigins(auth.getToken()).build();
         } else {
             return Response.notAcceptable(Variant.VariantListBuilder.newInstance().mediaTypes(MediaType.TEXT_HTML_TYPE, MediaType.APPLICATION_JSON_TYPE).build()).build();
         }
