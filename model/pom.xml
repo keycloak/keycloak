@@ -27,8 +27,6 @@
     <modules>
         <module>api</module>
         <module>invalidation-cache</module>
-        <!-- <module>picketlink</module> -->
-        <module>jpa</module>
         <module>mongo</module>
         <module>tests</module>
 
