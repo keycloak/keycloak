@@ -1,15 +1,14 @@
 package org.keycloak.models.mongo.keycloak.adapters;
 
-import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
 import org.jboss.logging.Logger;
 import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.AuthenticationLinkModel;
 import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.CredentialValidation;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelProvider;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
@@ -21,9 +20,7 @@ import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UsernameLoginFailureModel;
-import org.keycloak.models.entities.AuthenticationLinkEntity;
 import org.keycloak.models.entities.AuthenticationProviderEntity;
-import org.keycloak.models.entities.CredentialEntity;
 import org.keycloak.models.entities.RequiredCredentialEntity;
 import org.keycloak.models.entities.SocialLinkEntity;
 import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
@@ -32,13 +29,8 @@ import org.keycloak.models.mongo.keycloak.entities.MongoOAuthClientEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRealmEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoUserEntity;
-import org.keycloak.models.mongo.keycloak.entities.MongoUserSessionEntity;
-import org.keycloak.models.mongo.keycloak.entities.MongoUsernameLoginFailureEntity;
-import org.keycloak.models.mongo.utils.MongoModelUtils;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
 import org.keycloak.models.utils.TimeBasedOTP;
-import org.keycloak.util.Time;
 
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -47,11 +39,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -61,6 +51,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     private static final Logger logger = Logger.getLogger(RealmAdapter.class);
 
     private final MongoRealmEntity realm;
+    private final ModelProvider model;
 
     protected volatile transient PublicKey publicKey;
     protected volatile transient PrivateKey privateKey;
@@ -72,6 +63,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         super(invocationContext);
         this.realm = realmEntity;
         this.session = session;
+        this.model = session.getModel();
     }
 
     @Override
@@ -450,33 +442,33 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public UserModel getUser(String name) {
-        return session.getUserByUsername(name, this);
+        return model.getUserByUsername(name, this);
     }
 
     @Override
     public UsernameLoginFailureModel getUserLoginFailure(String name) {
-        return session.getUserLoginFailure(name, this);
+        return model.getUserLoginFailure(name, this);
     }
 
     @Override
     public UsernameLoginFailureModel addUserLoginFailure(String username) {
-        return session.addUserLoginFailure(username, this);
+        return model.addUserLoginFailure(username, this);
     }
 
 
     @Override
     public List<UsernameLoginFailureModel> getAllUserLoginFailures() {
-        return session.getAllUserLoginFailures(this);
+        return model.getAllUserLoginFailures(this);
     }
 
     @Override
     public UserModel getUserByEmail(String email) {
-        return session.getUserByEmail(email, this);
+        return model.getUserByEmail(email, this);
     }
 
     @Override
     public UserModel getUserById(String id) {
-        return session.getUserById(id, this);
+        return model.getUserById(id, this);
     }
 
     @Override
@@ -584,7 +576,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public RoleModel getRoleById(String id) {
-        return session.getRoleById(id, this);
+        return model.getRoleById(id, this);
     }
 
     @Override
@@ -636,7 +628,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public ApplicationModel getApplicationById(String id) {
-        return session.getApplicationById(id, this);
+        return model.getApplicationById(id, this);
     }
 
     @Override
@@ -727,7 +719,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public OAuthClientModel getOAuthClientById(String id) {
-        return session.getOAuthClientById(id, this);
+        return model.getOAuthClientById(id, this);
     }
 
     @Override
@@ -830,17 +822,17 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public UserModel getUserBySocialLink(SocialLinkModel socialLink) {
-        return session.getUserBySocialLink(socialLink, this);
+        return model.getUserBySocialLink(socialLink, this);
     }
 
     @Override
     public Set<SocialLinkModel> getSocialLinks(UserModel user) {
-        return session.getSocialLinks(user, this);
+        return model.getSocialLinks(user, this);
     }
 
     @Override
     public SocialLinkModel getSocialLink(UserModel user, String socialProvider) {
-        return session.getSocialLink(user, socialProvider, this);
+        return model.getSocialLink(user, socialProvider, this);
     }
 
     @Override
@@ -893,18 +885,18 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public List<UserModel> getUsers() {
-        return session.getUsers(this);
+        return model.getUsers(this);
     }
 
     @Override
     public List<UserModel> searchForUser(String search) {
-        return session.searchForUser(search, this);
+        return model.searchForUser(search, this);
 
     }
 
     @Override
     public List<UserModel> searchForUserByAttributes(Map<String, String> attributes) {
-        return session.searchForUserByAttributes(attributes, this);
+        return model.searchForUserByAttributes(attributes, this);
     }
 
 
@@ -1023,37 +1015,37 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public UserSessionModel createUserSession(UserModel user, String ipAddress) {
-        return session.createUserSession(this, user, ipAddress);
+        return model.createUserSession(this, user, ipAddress);
     }
 
     @Override
     public UserSessionModel getUserSession(String id) {
-        return session.getUserSession(id, this);
+        return model.getUserSession(id, this);
     }
 
     @Override
     public List<UserSessionModel> getUserSessions(UserModel user) {
-        return session.getUserSessions(user, this);
+        return model.getUserSessions(user, this);
     }
 
     @Override
     public void removeUserSession(UserSessionModel session) {
-        this.session.removeUserSession(session);
+        this.model.removeUserSession(session);
     }
 
     @Override
     public void removeUserSessions(UserModel user) {
-        this.session.removeUserSessions(this, user);
+        this.model.removeUserSessions(this, user);
     }
 
     @Override
     public void removeUserSessions() {
-        this.session.removeUserSessions(this);
+        this.model.removeUserSessions(this);
     }
 
     @Override
     public void removeExpiredUserSessions() {
-        this.session.removeExpiredUserSessions(this);
+        this.model.removeExpiredUserSessions(this);
     }
 
     @Override

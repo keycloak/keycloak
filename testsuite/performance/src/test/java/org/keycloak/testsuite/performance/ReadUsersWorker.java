@@ -68,7 +68,7 @@ public class ReadUsersWorker implements Worker {
     @Override
     public void run(SampleResult result, KeycloakSession session) {
         // We need to obtain realm first
-        RealmModel realm = session.getRealm(realmId);
+        RealmModel realm = session.getModel().getRealm(realmId);
         if (realm == null) {
             throw new IllegalStateException("Realm '" + realmId + "' not found");
         }

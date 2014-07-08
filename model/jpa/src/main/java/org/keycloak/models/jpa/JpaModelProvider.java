@@ -145,15 +145,6 @@ public class JpaModelProvider implements ModelProvider {
     }
 
     @Override
-    public void removeAllData() {
-        // Should be sufficient to delete all realms. Rest data should be removed in cascade
-        List<RealmModel> realms = getRealms();
-        for (RealmModel realm : realms) {
-            removeRealm(realm.getId());
-        }
-    }
-
-    @Override
     public UserModel getUserBySocialLink(SocialLinkModel socialLink, RealmModel realm) {
         TypedQuery<UserEntity> query = em.createNamedQuery("findUserByLinkAndRealm", UserEntity.class);
         RealmEntity realmEntity = em.getReference(RealmEntity.class, realm.getId());

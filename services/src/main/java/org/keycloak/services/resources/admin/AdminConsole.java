@@ -12,6 +12,7 @@ import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelProvider;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
@@ -224,7 +225,7 @@ public class AdminConsole {
     }
 
     private void addMasterRealmAccess(RealmModel masterRealm, UserModel user, Map<String, Set<String>> realmAdminAccess) {
-        List<RealmModel> realms = session.getRealms();
+        List<RealmModel> realms = session.getModel().getRealms();
         for (RealmModel realm : realms) {
             ApplicationModel realmAdminApp = realm.getMasterAdminApp();
             Set<RoleModel> roles = realmAdminApp.getRoles();

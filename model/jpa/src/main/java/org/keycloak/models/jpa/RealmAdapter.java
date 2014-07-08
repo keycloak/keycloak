@@ -6,6 +6,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.CredentialValidation;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ModelProvider;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserSessionModel;
@@ -66,10 +67,12 @@ public class RealmAdapter implements RealmModel {
     protected volatile transient PublicKey publicKey;
     protected volatile transient PrivateKey privateKey;
     protected KeycloakSession session;
+    protected ModelProvider model;
     private PasswordPolicy passwordPolicy;
 
     public RealmAdapter(KeycloakSession session, EntityManager em, RealmEntity realm) {
         this.session = session;
+        this.model = session.getModel();
         this.em = em;
         this.realm = realm;
     }
@@ -426,32 +429,32 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public UserModel getUser(String name) {
-        return session.getUserByUsername(name, this);
+        return model.getUserByUsername(name, this);
     }
 
     @Override
     public UsernameLoginFailureModel getUserLoginFailure(String username) {
-        return session.getUserLoginFailure(username, this);
+        return model.getUserLoginFailure(username, this);
     }
 
     @Override
     public UsernameLoginFailureModel addUserLoginFailure(String username) {
-        return session.addUserLoginFailure(username, this);
+        return model.addUserLoginFailure(username, this);
     }
 
     @Override
     public List<UsernameLoginFailureModel> getAllUserLoginFailures() {
-        return session.getAllUserLoginFailures(this);
+        return model.getAllUserLoginFailures(this);
     }
 
     @Override
     public UserModel getUserByEmail(String email) {
-        return session.getUserByEmail(email, this);
+        return model.getUserByEmail(email, this);
     }
 
     @Override
     public UserModel getUserById(String id) {
-        return session.getUserById(id, this);
+        return model.getUserById(id, this);
     }
 
     @Override
@@ -661,7 +664,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public ApplicationModel getApplicationById(String id) {
-        return session.getApplicationById(id, this);
+        return model.getApplicationById(id, this);
     }
 
     @Override
@@ -671,17 +674,17 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public UserModel getUserBySocialLink(SocialLinkModel socialLink) {
-        return session.getUserBySocialLink(socialLink, this);
+        return model.getUserBySocialLink(socialLink, this);
     }
 
     @Override
     public Set<SocialLinkModel> getSocialLinks(UserModel user) {
-        return session.getSocialLinks(user, this);
+        return model.getSocialLinks(user, this);
     }
 
     @Override
     public SocialLinkModel getSocialLink(UserModel user, String socialProvider) {
-        return session.getSocialLink(user, socialProvider, this);
+        return model.getSocialLink(user, socialProvider, this);
     }
 
     @Override
@@ -744,17 +747,17 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public List<UserModel> getUsers() {
-        return session.getUsers(this);
+        return model.getUsers(this);
     }
 
     @Override
     public List<UserModel> searchForUser(String search) {
-        return session.searchForUser(search, this);
+        return model.searchForUser(search, this);
     }
 
     @Override
     public List<UserModel> searchForUserByAttributes(Map<String, String> attributes) {
-        return session.searchForUserByAttributes(attributes, this);
+        return model.searchForUserByAttributes(attributes, this);
     }
 
     @Override
@@ -798,7 +801,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public OAuthClientModel getOAuthClientById(String id) {
-        return session.getOAuthClientById(id, this);
+        return model.getOAuthClientById(id, this);
     }
 
 
@@ -960,7 +963,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public RoleModel getRoleById(String id) {
-        return session.getRoleById(id, this);
+        return model.getRoleById(id, this);
     }
 
     @Override
@@ -1105,38 +1108,38 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public UserSessionModel createUserSession(UserModel user, String ipAddress) {
-        return session.createUserSession(this, user, ipAddress);
+        return model.createUserSession(this, user, ipAddress);
     }
 
     @Override
     public UserSessionModel getUserSession(String id) {
-        return session.getUserSession(id, this);
+        return model.getUserSession(id, this);
     }
 
     @Override
     public List<UserSessionModel> getUserSessions(UserModel user) {
-        return session.getUserSessions(user, this);
+        return model.getUserSessions(user, this);
     }
 
     @Override
     public void removeUserSession(UserSessionModel session) {
-        this.session.removeUserSession(session);
+        this.model.removeUserSession(session);
     }
 
     @Override
     public void removeUserSessions() {
-        session.removeUserSessions(this);
+        model.removeUserSessions(this);
 
     }
 
     @Override
     public void removeUserSessions(UserModel user) {
-        session.removeUserSessions(this, user);
+        model.removeUserSessions(this, user);
     }
 
     @Override
     public void removeExpiredUserSessions() {
-        session.removeExpiredUserSessions(this);
+        model.removeExpiredUserSessions(this);
     }
 
 }

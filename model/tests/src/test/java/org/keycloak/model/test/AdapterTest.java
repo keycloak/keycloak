@@ -94,7 +94,7 @@ public class AdapterTest extends AbstractModelTest {
         realmModel.getId();
 
         commit();
-        List<RealmModel> realms = session.getRealms();
+        List<RealmModel> realms = model.getRealms();
         Assert.assertEquals(realms.size(), 2);
     }
 
@@ -179,7 +179,7 @@ public class AdapterTest extends AbstractModelTest {
 
         commit();
 
-        realmModel = session.getRealm("JUGGLER");
+        realmModel = model.getRealm("JUGGLER");
         Assert.assertTrue(realmModel.removeUser("bburke"));
         Assert.assertFalse(realmModel.removeUser("bburke"));
         assertNull(realmModel.getUser("bburke"));
@@ -235,7 +235,7 @@ public class AdapterTest extends AbstractModelTest {
         app.addScopeMapping(realmRole);
 
         commit();
-        realmModel = session.getRealm("JUGGLER");
+        realmModel = model.getRealm("JUGGLER");
 
         Assert.assertTrue(realmManager.removeRealm(realmModel));
         Assert.assertFalse(realmManager.removeRealm(realmModel));
@@ -261,7 +261,7 @@ public class AdapterTest extends AbstractModelTest {
         app.addScopeMapping(realmRole);
 
         commit();
-        realmModel = session.getRealm("JUGGLER");
+        realmModel = model.getRealm("JUGGLER");
         app = realmModel.getApplicationByName("test-app");
 
         Assert.assertTrue(realmModel.removeRoleById(realmRole.getId()));
@@ -513,7 +513,7 @@ public class AdapterTest extends AbstractModelTest {
 
         commit();
 
-        realmModel = session.getRealmByName("JUGGLER");
+        realmModel = model.getRealmByName("JUGGLER");
         app1 = realmModel.getApplicationByName("app1");
         app2 = realmModel.getApplicationByName("app2");
         client = realmModel.getOAuthClient("client");

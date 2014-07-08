@@ -68,11 +68,6 @@ public class MongoModelProvider implements ModelProvider {
     }
 
     @Override
-    public void removeAllData() {
-        getMongoStore().removeAllEntities();
-    }
-
-    @Override
     public RealmModel createRealm(String name) {
         return createRealm(KeycloakModelUtils.generateId(), name);
     }

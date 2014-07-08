@@ -7,6 +7,7 @@ import org.keycloak.audit.EventType;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelProvider;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
@@ -20,11 +21,13 @@ public class EmailAuditListener implements AuditListener {
     private static final Logger log = Logger.getLogger(EmailAuditListener.class);
 
     private KeycloakSession session;
+    private ModelProvider model;
     private EmailProvider emailProvider;
     private Set<EventType> includedEvents;
 
     public EmailAuditListener(KeycloakSession session, EmailProvider emailProvider, Set<EventType> includedEvents) {
         this.session = session;
+        this.model = session.getModel();
         this.emailProvider = emailProvider;
         this.includedEvents = includedEvents;
     }
@@ -33,7 +36,7 @@ public class EmailAuditListener implements AuditListener {
     public void onEvent(Event event) {
         if (includedEvents.contains(event.getEvent())) {
             if (event.getRealmId() != null && event.getUserId() != null) {
-                RealmModel realm = session.getRealm(event.getRealmId());
+                RealmModel realm = model.getRealm(event.getRealmId());
                 UserModel user = realm.getUserById(event.getUserId());
                 if (user != null && user.getEmail() != null && user.isEmailVerified()) {
                     try {
