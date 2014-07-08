@@ -10,29 +10,5 @@ import org.keycloak.models.KeycloakSessionFactory;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @Ignore
-public class JPAToMongoExportImportTest extends ExportImportTestBase {
-
-    @Override
-    protected String getExportModelProvider() {
-        return "jpa";
-    }
-
-    @Override
-    protected String getImportModelProvider() {
-        return "mongo";
-    }
-
-    @Override
-    protected void exportModel(KeycloakSessionFactory factory) {
-        ExportImportConfig.setAction(ExportImportProviderImpl.ACTION_EXPORT);
-        ExportImportConfig.setProvider(TmpDirExportImportIOProvider.PROVIDER_ID);
-        getExportImportProvider().checkExportImport(factory);
-    }
-
-    @Override
-    protected void importModel(KeycloakSessionFactory factory) {
-        ExportImportConfig.setAction(ExportImportProviderImpl.ACTION_IMPORT);
-        ExportImportConfig.setProvider(TmpDirExportImportIOProvider.PROVIDER_ID);
-        getExportImportProvider().checkExportImport(factory);
-    }
+public class JPAToMongoExportImportTest {
 }

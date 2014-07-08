@@ -1,4 +1,4 @@
-package org.keycloak.services.managers;
+package org.keycloak.models.utils;
 
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.AuthenticationProviderModel;
@@ -13,9 +13,11 @@ import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.AuthenticationProviderRepresentation;
 import org.keycloak.representations.idm.ClaimRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.OAuthClientRepresentation;
 import org.keycloak.representations.idm.RealmAuditRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -29,6 +31,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -199,6 +202,55 @@ public class ModelToRepresentation {
                 rep.getClients().put(client.getId(), client.getClientId());
             }
         }
+        return rep;
+    }
+
+    public static ApplicationRepresentation toRepresentation(ApplicationModel applicationModel) {
+        ApplicationRepresentation rep = new ApplicationRepresentation();
+        rep.setId(applicationModel.getId());
+        rep.setName(applicationModel.getName());
+        rep.setEnabled(applicationModel.isEnabled());
+        rep.setAdminUrl(applicationModel.getManagementUrl());
+        rep.setPublicClient(applicationModel.isPublicClient());
+        rep.setBearerOnly(applicationModel.isBearerOnly());
+        rep.setSurrogateAuthRequired(applicationModel.isSurrogateAuthRequired());
+        rep.setBaseUrl(applicationModel.getBaseUrl());
+        rep.setNotBefore(applicationModel.getNotBefore());
+
+        Set<String> redirectUris = applicationModel.getRedirectUris();
+        if (redirectUris != null) {
+            rep.setRedirectUris(new LinkedList<String>(redirectUris));
+        }
+
+        Set<String> webOrigins = applicationModel.getWebOrigins();
+        if (webOrigins != null) {
+            rep.setWebOrigins(new LinkedList<String>(webOrigins));
+        }
+
+        if (!applicationModel.getDefaultRoles().isEmpty()) {
+            rep.setDefaultRoles(applicationModel.getDefaultRoles().toArray(new String[0]));
+        }
+
+        return rep;
+    }
+
+    public static OAuthClientRepresentation toRepresentation(OAuthClientModel model) {
+        OAuthClientRepresentation rep = new OAuthClientRepresentation();
+        rep.setId(model.getId());
+        rep.setName(model.getClientId());
+        rep.setEnabled(model.isEnabled());
+        rep.setPublicClient(model.isPublicClient());
+        rep.setDirectGrantsOnly(model.isDirectGrantsOnly());
+        Set<String> redirectUris = model.getRedirectUris();
+        if (redirectUris != null) {
+            rep.setRedirectUris(new LinkedList<String>(redirectUris));
+        }
+
+        Set<String> webOrigins = model.getWebOrigins();
+        if (webOrigins != null) {
+            rep.setWebOrigins(new LinkedList<String>(webOrigins));
+        }
+        rep.setNotBefore(model.getNotBefore());
         return rep;
     }
 }

@@ -12,7 +12,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.managers.ModelToRepresentation;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testutils.KeycloakServer;
 import org.keycloak.util.JsonSerialization;
@@ -145,5 +145,14 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
             session.getTransaction().commit();
         }
         session.close();
+    }
+
+    public void restartServer() {
+        try {
+            server.stop();
+            server.start();
+        } catch (Throwable t) {
+            throw new RuntimeException(t);
+        }
     }
 }

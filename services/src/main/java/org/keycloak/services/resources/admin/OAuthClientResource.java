@@ -8,9 +8,10 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
-import org.keycloak.services.managers.ModelToRepresentation;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.services.managers.OAuthClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
@@ -82,9 +83,8 @@ public class OAuthClientResource  {
     public Response update(final OAuthClientRepresentation rep) {
         auth.requireManage();
 
-        OAuthClientManager manager = new OAuthClientManager(realm);
         try {
-            manager.update(rep, oauthClient);
+            RepresentationToModel.updateOAuthClient(rep, oauthClient);
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
             return Flows.errors().exists("Client " + rep.getName() + " already exists");
@@ -102,7 +102,7 @@ public class OAuthClientResource  {
     public OAuthClientRepresentation getOAuthClient() {
         auth.requireView();
 
-        return OAuthClientManager.toRepresentation(oauthClient);
+        return ModelToRepresentation.toRepresentation(oauthClient);
     }
 
     /**
@@ -118,7 +118,7 @@ public class OAuthClientResource  {
     public String getInstallation() throws IOException {
         auth.requireView();
 
-        OAuthClientManager manager = new OAuthClientManager(realm);
+        OAuthClientManager manager = new OAuthClientManager();
         Object rep = manager.toInstallationRepresentation(realm, oauthClient, getApplication().getBaseUri(uriInfo));
 
         // TODO Temporary solution to pretty-print

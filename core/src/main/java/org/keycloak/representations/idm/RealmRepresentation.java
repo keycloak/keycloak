@@ -423,4 +423,28 @@ public class RealmRepresentation {
     public void setFailureFactor(Integer failureFactor) {
         this.failureFactor = failureFactor;
     }
+
+    public boolean isAuditEnabled() {
+        return auditEnabled;
+    }
+
+    public void setAuditEnabled(boolean auditEnabled) {
+        this.auditEnabled = auditEnabled;
+    }
+
+    public long getAuditExpiration() {
+        return auditExpiration;
+    }
+
+    public void setAuditExpiration(long auditExpiration) {
+        this.auditExpiration = auditExpiration;
+    }
+
+    public List<String> getAuditListeners() {
+        return auditListeners;
+    }
+
+    public void setAuditListeners(List<String> auditListeners) {
+        this.auditListeners = auditListeners;
+    }
 }

@@ -1,7 +1,7 @@
 package org.keycloak.test.tools;
 
 import org.keycloak.exportimport.ExportImportConfig;
-import org.keycloak.exportimport.ExportImportProvider;
+import org.keycloak.exportimport.ExportProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
@@ -231,10 +231,10 @@ public class PerfTools {
         ExportImportConfig.setProvider("dir");
         ExportImportConfig.setDir(dir);
 
-        Iterator<ExportImportProvider> providers = ProviderLoader.load(ExportImportProvider.class).iterator();
+        Iterator<ExportProvider> providers = ProviderLoader.load(ExportProvider.class).iterator();
 
         if (providers.hasNext()) {
-            ExportImportProvider exportImport = providers.next();
+            ExportProvider exportImport = providers.next();
             exportImport.checkExportImport(sessionFactory);
         } else {
             throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);

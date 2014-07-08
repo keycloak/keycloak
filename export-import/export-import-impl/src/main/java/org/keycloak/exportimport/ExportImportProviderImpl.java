@@ -12,14 +12,13 @@ import org.keycloak.util.ProviderLoader;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class ExportImportProviderImpl implements ExportImportProvider {
+public class ExportImportProviderImpl  {
 
     private static final Logger logger = Logger.getLogger(ExportImportProviderImpl.class);
 
     public static final String ACTION_EXPORT = "export";
     public static final String ACTION_IMPORT = "import";
 
-    @Override
     public void checkExportImport(KeycloakSessionFactory sessionFactory) {
         String exportImportAction = ExportImportConfig.getAction();
 

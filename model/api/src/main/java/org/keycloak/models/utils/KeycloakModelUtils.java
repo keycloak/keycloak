@@ -3,6 +3,9 @@ package org.keycloak.models.utils;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.security.Key;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Set;
@@ -10,8 +13,11 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.bouncycastle.openssl.PEMWriter;
+import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.util.PemUtils;
 
@@ -63,6 +69,23 @@ public final class KeycloakModelUtils {
         }
         String s = writer.toString();
         return PemUtils.removeBeginEnd(s);
+    }
+
+    public static void generateRealmKeys(RealmModel realm) {
+        KeyPair keyPair = null;
+        try {
+            keyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+        realm.setPrivateKey(keyPair.getPrivate());
+        realm.setPublicKey(keyPair.getPublic());
+    }
+
+    public static UserCredentialModel generateSecret(ClientModel app) {
+        UserCredentialModel secret = UserCredentialModel.generateSecret();
+        app.setSecret(secret.getValue());
+        return secret;
     }
 
     /**

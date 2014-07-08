@@ -8,6 +8,8 @@ import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.services.managers.ApplicationManager;
 import org.keycloak.services.managers.RealmManager;
@@ -60,12 +62,11 @@ public class ApplicationsResource {
 
         List<ApplicationRepresentation> rep = new ArrayList<ApplicationRepresentation>();
         List<ApplicationModel> applicationModels = realm.getApplications();
-        ApplicationManager resourceManager = new ApplicationManager(new RealmManager(session));
 
         boolean view = auth.hasView();
         for (ApplicationModel applicationModel : applicationModels) {
             if (view) {
-                rep.add(resourceManager.toRepresentation(applicationModel));
+                rep.add(ModelToRepresentation.toRepresentation(applicationModel));
             } else {
                 ApplicationRepresentation app = new ApplicationRepresentation();
                 app.setName(applicationModel.getName());
@@ -87,9 +88,8 @@ public class ApplicationsResource {
     public Response createApplication(final @Context UriInfo uriInfo, final ApplicationRepresentation rep) {
         auth.requireManage();
 
-        ApplicationManager resourceManager = new ApplicationManager(new RealmManager(session));
         try {
-            ApplicationModel applicationModel = resourceManager.createApplication(realm, rep);
+            ApplicationModel applicationModel = RepresentationToModel.createApplication(realm, rep);
             return Response.created(uriInfo.getAbsolutePathBuilder().path(applicationModel.getName()).build()).build();
         } catch (ModelDuplicateException e) {
             return Flows.errors().exists("Application " + rep.getName() + " already exists");
