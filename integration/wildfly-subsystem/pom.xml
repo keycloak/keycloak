@@ -65,18 +65,22 @@
         <dependency>
             <groupId>org.wildfly</groupId>
             <artifactId>wildfly-controller</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.wildfly</groupId>
             <artifactId>wildfly-server</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.wildfly</groupId>
             <artifactId>wildfly-ee</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.wildfly</groupId>
             <artifactId>wildfly-undertow</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss.logging</groupId>
