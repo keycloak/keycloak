@@ -17,15 +17,32 @@
 	</dependencies>
 
 	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<configuration>
-                                    <source>${maven.compiler.source}</source>
-                                    <target>${maven.compiler.target}</target>
-				</configuration>
-			</plugin>
+        <plugins>
+            <plugin>
+                <groupId>com.samaxes.maven</groupId>
+                <artifactId>minify-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>min-js</id>
+                        <phase>compile</phase>
+                        <configuration>
+                            <charset>utf-8</charset>
+                            <webappSourceDir>${basedir}/src/main/resources</webappSourceDir>
+                            <jsSourceDir>.</jsSourceDir>
+                            <jsSourceFiles>
+                                <jsSourceFile>keycloak.js</jsSourceFile>
+                            </jsSourceFiles>
+
+                            <webappTargetDir>${project.build.directory}/classes</webappTargetDir>
+                            <jsTargetDir>.</jsTargetDir>
+                            <jsFinalFile>keycloak.js</jsFinalFile>
+                        </configuration>
+                        <goals>
+                            <goal>minify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
 		</plugins>
 	</build>
 
