@@ -23,7 +23,9 @@ public interface KeycloakSession {
 
     <T extends Provider> Set<T> getAllProviders(Class<T> clazz);
 
-    ModelProvider getModel();
+    ModelProvider model();
+
+    UserSessionProvider sessions();
 
     void close();
 

@@ -63,7 +63,7 @@ public class ModelImporter {
 
         importOAuthClients(model, "oauthClients.json");
         importUsers(model, "users.json");
-        importUserFailures(model, "userFailures.json");
+//        importUserFailures(model, "userFailures.json");
 
         this.importReader.closeImportReader();
     }
@@ -311,17 +311,17 @@ public class ModelImporter {
         }
     }
 
-    public void importUserFailures(ModelProvider model, String fileName) {
-        List<UsernameLoginFailureEntity> userFailures = this.importReader.readEntities(fileName, UsernameLoginFailureEntity.class);
-        for (UsernameLoginFailureEntity entity : userFailures) {
-            RealmModel realm = model.getRealm(entity.getRealmId());
-            UsernameLoginFailureModel loginFailureModel = realm.addUserLoginFailure(entity.getUsername());
-
-            this.propertiesManager.setBasicPropertiesToModel(loginFailureModel , entity);
-
-            for (int i=0 ; i<entity.getNumFailures() ; i++) {
-                loginFailureModel.incrementFailures();
-            }
-        }
-    }
+//    public void importUserFailures(ModelProvider model, String fileName) {
+//        List<UsernameLoginFailureEntity> userFailures = this.importReader.readEntities(fileName, UsernameLoginFailureEntity.class);
+//        for (UsernameLoginFailureEntity entity : userFailures) {
+//            RealmModel realm = model.getRealm(entity.getRealmId());
+//            UsernameLoginFailureModel loginFailureModel = realm.addUserLoginFailure(entity.getUsername());
+//
+//            this.propertiesManager.setBasicPropertiesToModel(loginFailureModel , entity);
+//
+//            for (int i=0 ; i<entity.getNumFailures() ; i++) {
+//                loginFailureModel.incrementFailures();
+//            }
+//        }
+//    }
 }

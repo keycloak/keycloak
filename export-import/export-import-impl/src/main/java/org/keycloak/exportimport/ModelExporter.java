@@ -55,7 +55,7 @@ public class ModelExporter {
         exportOAuthClients(model, "oauthClients.json");
         exportRoles(model, "roles.json");
         exportUsers(model, "users.json");
-        exportUserFailures(model, "userFailures.json");
+//        exportUserFailures(model, "userFailures.json");
 
         this.exportWriter.closeExportWriter();
     }
@@ -278,25 +278,25 @@ public class ModelExporter {
 
 
      // Does it makes sense to export user failures ?
-    protected void exportUserFailures(ModelProvider model, String fileName) {
-        List<RealmModel> realms = model.getRealms();
-        List<UsernameLoginFailureModel> allFailures = new ArrayList<UsernameLoginFailureModel>();
-        for (RealmModel realmModel : realms) {
-            allFailures.addAll(realmModel.getAllUserLoginFailures());
-        }
-
-        List<UsernameLoginFailureEntity> result = new LinkedList<UsernameLoginFailureEntity>();
-        for (UsernameLoginFailureModel failureModel : allFailures) {
-            UsernameLoginFailureEntity failureEntity = new UsernameLoginFailureEntity();
-            this.propertiesManager.setBasicPropertiesFromModel(failureModel, failureEntity);
-            result.add(failureEntity);
-
-            failureEntity.setUsername(failureModel.getUsername());
-            failureEntity.setNumFailures(failureModel.getNumFailures());
-        }
-
-        this.exportWriter.writeEntities(fileName, result);
-    }
+//    protected void exportUserFailures(ModelProvider model, String fileName) {
+//        List<RealmModel> realms = model.getRealms();
+//        List<UsernameLoginFailureModel> allFailures = new ArrayList<UsernameLoginFailureModel>();
+//        for (RealmModel realmModel : realms) {
+//            allFailures.addAll(realmModel.getAllUserLoginFailures());
+//        }
+//
+//        List<UsernameLoginFailureEntity> result = new LinkedList<UsernameLoginFailureEntity>();
+//        for (UsernameLoginFailureModel failureModel : allFailures) {
+//            UsernameLoginFailureEntity failureEntity = new UsernameLoginFailureEntity();
+//            this.propertiesManager.setBasicPropertiesFromModel(failureModel, failureEntity);
+//            result.add(failureEntity);
+//
+//            failureEntity.setUsername(failureModel.getUsername());
+//            failureEntity.setNumFailures(failureModel.getNumFailures());
+//        }
+//
+//        this.exportWriter.writeEntities(fileName, result);
+//    }
 
     private List<String> getScopeIds(ClientModel clientModel) {
         Set<RoleModel> allScopes = clientModel.getScopeMappings();

@@ -27,14 +27,16 @@
     <modules>
         <module>api</module>
         <module>invalidation-cache</module>
+        <module>jpa</module>
         <module>mongo</module>
         <module>tests</module>
 
-        <module>hybrid</module>
-        <module>realms-jpa</module>
-        <module>users-jpa</module>
         <module>sessions-mem</module>
-        <module>sessions-jpa</module>
-        <module>tests-hybrid</module>
+
+        <!--<module>hybrid</module>-->
+        <!--<module>realms-jpa</module>-->
+        <!--<module>users-jpa</module>-->
+        <!--<module>sessions-jpa</module>-->
+        <!--<module>tests-hybrid</module>-->
     </modules>
 </project>

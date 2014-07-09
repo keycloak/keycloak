@@ -21,43 +21,26 @@
  */
 package org.keycloak.testsuite.admin;
 
-import org.jboss.resteasy.util.BasicAuthHelper;
 import org.junit.Assert;
 import org.junit.ClassRule;
-import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.Config;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.adapters.action.SessionStats;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.AuthenticationProviderRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.services.managers.ClaimManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.TokenManager;
-import org.keycloak.services.resources.TokenService;
 import org.keycloak.services.resources.admin.AdminRoot;
-import org.keycloak.services.resources.admin.ApplicationResource;
-import org.keycloak.testsuite.OAuthClient;
-import org.keycloak.testsuite.adapter.CustomerDatabaseServlet;
-import org.keycloak.testsuite.adapter.CustomerServlet;
-import org.keycloak.testsuite.adapter.ProductServlet;
-import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
-import org.keycloak.testsuite.rule.WebResource;
-import org.keycloak.testsuite.rule.WebRule;
 import org.keycloak.testutils.KeycloakServer;
-import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -65,19 +48,12 @@ import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientRequestFilter;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Form;
-import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URL;
-import java.security.PublicKey;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -90,9 +66,7 @@ public class AdminAPITest {
     @ClassRule
     public static AbstractKeycloakRule keycloakRule = new AbstractKeycloakRule() {
         @Override
-        protected void configure(RealmManager manager, RealmModel adminRealm) {
-
-
+        protected void configure(KeycloakSession session, RealmManager manager, RealmModel adminRealm) {
         }
     };
 
@@ -105,7 +79,7 @@ public class AdminAPITest {
             ApplicationModel adminConsole = adminRealm.getApplicationByName(Constants.ADMIN_CONSOLE_APPLICATION);
             TokenManager tm = new TokenManager();
             UserModel admin = adminRealm.getUser("admin");
-            UserSessionModel userSession = adminRealm.createUserSession(admin, null);
+            UserSessionModel userSession = session.sessions().createUserSession(adminRealm, admin, null);
             AccessToken token = tm.createClientAccessToken(null, adminRealm, adminConsole, admin, userSession);
             return tm.encodeToken(adminRealm, token);
         } finally {

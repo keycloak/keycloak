@@ -2,9 +2,11 @@ package org.keycloak.services.managers;
 
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.annotate.JsonPropertyOrder;
+import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserSessionProvider;
 import org.keycloak.representations.adapters.config.BaseRealmConfig;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
@@ -22,10 +24,16 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class OAuthClientManager {
+
+    private RealmManager realmManager;
     protected RealmModel realm;
 
     public OAuthClientManager(RealmModel realm) {
         this.realm = realm;
+    }
+
+    public OAuthClientManager(RealmManager realmManager) {
+        this.realmManager = realmManager;
     }
 
     public UserCredentialModel generateSecret(OAuthClientModel app) {
@@ -45,6 +53,18 @@ public class OAuthClientManager {
         OAuthClientModel model = create(rep.getName());
         update(rep, model);
         return model;
+    }
+
+    public boolean removeClient(RealmModel realm, OAuthClientModel client) {
+        if (realm.removeOAuthClient(client.getId())) {
+            UserSessionProvider sessions = realmManager.getSession().sessions();
+            if (sessions != null) {
+                realmManager.getSession().sessions().onClientRemoved(realm, client);
+            }
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public void update(OAuthClientRepresentation rep, OAuthClientModel model) {

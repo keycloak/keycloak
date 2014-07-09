@@ -12,6 +12,7 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
 import org.keycloak.services.managers.ModelToRepresentation;
 import org.keycloak.services.managers.OAuthClientManager;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.util.JsonSerialization;
@@ -133,7 +134,7 @@ public class OAuthClientResource  {
     public void deleteOAuthClient() {
         auth.requireManage();
 
-        realm.removeOAuthClient(oauthClient.getId());
+        new OAuthClientManager(new RealmManager(session)).removeClient(realm, oauthClient);
     }
 
 

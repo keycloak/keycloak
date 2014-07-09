@@ -55,7 +55,7 @@ public abstract class ExportImportTestBase {
         exportModel(factory);
 
         beginTransaction();
-        realm = session.getModel().getRealm("demo");
+        realm = session.model().getRealm("demo");
         String wburkeId = realm.getUser("wburke").getId();
         String appId = realm.getApplicationByName("Application").getId();
 
@@ -72,7 +72,7 @@ public abstract class ExportImportTestBase {
 
         // Verify it's imported in mongo (reusing ImportTest)
         beginTransaction();
-        RealmModel importedRealm = session.getModel().getRealm("demo");
+        RealmModel importedRealm = session.model().getRealm("demo");
         System.out.println("Exported realm: " + realm + ", Imported realm: " + importedRealm);
 
         Assert.assertEquals(wburkeId, importedRealm.getUser("wburke").getId());

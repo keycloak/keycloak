@@ -75,7 +75,4 @@ public interface ClientModel {
 
     void setNotBefore(int notBefore);
 
-    Set<UserSessionModel> getUserSessions();
-
-    int getActiveUserSessions();
 }

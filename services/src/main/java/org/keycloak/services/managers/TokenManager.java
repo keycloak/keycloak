@@ -11,6 +11,7 @@ import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClaimMask;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
@@ -26,14 +27,12 @@ import org.keycloak.util.Time;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Stateful object that creates tokens and manages oauth access codes
@@ -43,22 +42,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class TokenManager {
     protected static final Logger logger = Logger.getLogger(TokenManager.class);
-
-    /*
-    protected Map<String, AccessCodeEntry> accessCodeMap = new ConcurrentHashMap<String, AccessCodeEntry>();
-
-    public void clearAccessCodes() {
-        accessCodeMap.clear();
-    }
-
-    public AccessCodeEntry getAccessCode(String key) {
-        return accessCodeMap.get(key);
-    }
-
-    public AccessCodeEntry pullAccessCode(String key) {
-        return accessCodeMap.remove(key);
-    }
-    */
 
     public AccessCodeEntry parseCode(String code, RealmModel realm) {
         try {
@@ -114,7 +97,7 @@ public class TokenManager {
 
     }
 
-    public AccessToken refreshAccessToken(UriInfo uriInfo, RealmModel realm, ClientModel client, String encodedRefreshToken, Audit audit) throws OAuthErrorException {
+    public AccessToken refreshAccessToken(KeycloakSession session, UriInfo uriInfo, RealmModel realm, ClientModel client, String encodedRefreshToken, Audit audit) throws OAuthErrorException {
         JWSInput jws = new JWSInput(encodedRefreshToken);
         RefreshToken refreshToken = null;
         try {
@@ -144,10 +127,10 @@ public class TokenManager {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "User disabled", "User disabled");
         }
 
-        UserSessionModel session = realm.getUserSession(refreshToken.getSessionState());
+        UserSessionModel userSession = session.sessions().getUserSession(realm, refreshToken.getSessionState());
         int currentTime = Time.currentTime();
-        if (!AuthenticationManager.isSessionValid(realm, session)) {
-            AuthenticationManager.logout(realm, session, uriInfo);
+        if (!AuthenticationManager.isSessionValid(realm, userSession)) {
+            AuthenticationManager.logout(session, realm, userSession, uriInfo);
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Session not active", "Session not active");
         }
 
@@ -198,13 +181,13 @@ public class TokenManager {
             }
         }
 
-        AccessToken accessToken = initToken(realm, client, user, session);
+        AccessToken accessToken = initToken(realm, client, user, userSession);
         accessToken.setRealmAccess(refreshToken.getRealmAccess());
         accessToken.setResourceAccess(refreshToken.getResourceAccess());
 
         // only refresh session if next token refresh will be after idle timeout
-        if (currentTime + realm.getAccessTokenLifespan() > session.getLastSessionRefresh() + realm.getSsoSessionIdleTimeout()) {
-            session.setLastSessionRefresh(currentTime);
+        if (currentTime + realm.getAccessTokenLifespan() > userSession.getLastSessionRefresh() + realm.getSsoSessionIdleTimeout()) {
+            userSession.setLastSessionRefresh(currentTime);
         }
 
         return accessToken;

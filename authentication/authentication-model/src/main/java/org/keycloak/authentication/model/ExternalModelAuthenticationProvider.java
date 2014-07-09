@@ -20,7 +20,7 @@ public class ExternalModelAuthenticationProvider extends AbstractModelAuthentica
     private ModelProvider model;
 
     public ExternalModelAuthenticationProvider(KeycloakSession session) {
-        this.model = session.getModel();
+        this.model = session.model();
     }
 
     @Override

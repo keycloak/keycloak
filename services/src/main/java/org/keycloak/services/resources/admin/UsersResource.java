@@ -30,9 +30,9 @@ import org.keycloak.services.managers.ModelToRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.managers.TokenManager;
+import org.keycloak.services.managers.UserManager;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.Urls;
-import org.keycloak.util.Time;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -228,7 +228,7 @@ public class UsersResource {
         if (user == null) {
             throw new NotFoundException("User not found");
         }
-        List<UserSessionModel> sessions = realm.getUserSessions(user);
+        List<UserSessionModel> sessions = session.sessions().getUserSessions(realm, user);
         List<UserSessionRepresentation> reps = new ArrayList<UserSessionRepresentation>();
         for (UserSessionModel session : sessions) {
             UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(session);
@@ -276,7 +276,7 @@ public class UsersResource {
         if (user == null) {
             throw new NotFoundException("User not found");
         }
-        realm.removeUserSessions(user);
+        session.sessions().removeUserSessions(realm, user);
         new ResourceAdminManager().logoutUser(uriInfo.getRequestUri(), realm, user.getId(), null);
     }
 
@@ -291,7 +291,12 @@ public class UsersResource {
     public void deleteUser(final @PathParam("username") String username) {
         auth.requireManage();
 
-        realm.removeUser(username);
+        UserModel user = realm.getUser(username);
+        if (user == null) {
+            throw new NotFoundException("User not found");
+        }
+
+        new UserManager(session).removeUser(realm, user);
     }
 
     /**

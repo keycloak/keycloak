@@ -3,6 +3,7 @@ package org.keycloak.services;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.ModelProvider;
+import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.cache.CacheModelProvider;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
@@ -75,8 +76,13 @@ public class DefaultKeycloakSession implements KeycloakSession {
         return providers;
     }
 
-    public ModelProvider getModel() {
+    public ModelProvider model() {
         return model;
+    }
+
+    @Override
+    public UserSessionProvider sessions() {
+        return getProvider(UserSessionProvider.class);
     }
 
     public void close() {

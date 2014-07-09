@@ -3,7 +3,6 @@ package org.keycloak.testsuite.performance;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jorphan.logging.LoggingManager;
 import org.apache.log.Logger;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SocialLinkModel;
@@ -68,7 +67,7 @@ public class ReadUsersWorker implements Worker {
     @Override
     public void run(SampleResult result, KeycloakSession session) {
         // We need to obtain realm first
-        RealmModel realm = session.getModel().getRealm(realmId);
+        RealmModel realm = session.model().getRealm(realmId);
         if (realm == null) {
             throw new IllegalStateException("Realm '" + realmId + "' not found");
         }

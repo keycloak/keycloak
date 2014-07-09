@@ -23,6 +23,10 @@
         }
     },
 
+    "userSessions": {
+        "provider" : "mem"
+    },
+
     "modelCache": {
         "provider": "${keycloak.model.cache.provider:simple}"
     },

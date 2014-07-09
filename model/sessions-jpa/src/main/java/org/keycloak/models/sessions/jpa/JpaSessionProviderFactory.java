@@ -29,7 +29,7 @@ public class JpaSessionProviderFactory implements SessionProviderFactory {
 
     @Override
     public SessionProvider create(KeycloakSession session) {
-        return new JpaSessionProvider(emf.createEntityManager());
+        return new JpaUserSessionProvider(emf.createEntityManager());
     }
 
     @Override

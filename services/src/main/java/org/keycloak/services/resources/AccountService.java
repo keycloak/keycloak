@@ -132,7 +132,7 @@ public class AccountService {
         this.realm = realm;
         this.application = application;
         this.audit = audit;
-        this.authManager = new AppAuthManager(session);
+        this.authManager = new AppAuthManager();
     }
 
     public void init() {
@@ -141,11 +141,11 @@ public class AccountService {
         account = session.getProvider(AccountProvider.class).setRealm(realm).setUriInfo(uriInfo);
 
         boolean passwordUpdateSupported = false;
-        AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(realm, uriInfo, headers);
+        AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm, uriInfo, headers);
         if (authResult != null) {
             auth = new Auth(realm, authResult.getToken(), authResult.getUser(), application, true);
         } else {
-            authResult = authManager.authenticateBearerToken(realm, uriInfo, headers);
+            authResult = authManager.authenticateBearerToken(session, realm, uriInfo, headers);
             if (authResult != null) {
                 auth = new Auth(realm, authResult.getToken(), authResult.getUser(), application, false);
             }
@@ -288,7 +288,7 @@ public class AccountService {
     @GET
     public Response sessionsPage() {
         if (auth != null) {
-            account.setSessions(realm.getUserSessions(auth.getUser()));
+            account.setSessions(session.sessions().getUserSessions(realm, auth.getUser()));
         }
         return forwardToPage("sessions", AccountPages.SESSIONS);
     }
@@ -369,7 +369,7 @@ public class AccountService {
         require(AccountRoles.MANAGE_ACCOUNT);
 
         UserModel user = auth.getUser();
-        realm.removeUserSessions(user);
+        session.sessions().removeUserSessions(realm, user);
 
         return Response.seeOther(Urls.accountSessionsPage(uriInfo.getBaseUri(), realm.getName())).build();
     }

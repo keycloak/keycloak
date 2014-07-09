@@ -6,7 +6,6 @@ import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.jboss.resteasy.util.GenericType;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
@@ -15,7 +14,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.ForbiddenException;
-import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.ModelToRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.TokenManager;
@@ -87,7 +85,7 @@ public class RealmsAdminResource {
         RealmManager realmManager = new RealmManager(session);
         List<RealmRepresentation> reps = new ArrayList<RealmRepresentation>();
         if (auth.getRealm().equals(realmManager.getKeycloakAdminstrationRealm())) {
-            List<RealmModel> realms = session.getModel().getRealms();
+            List<RealmModel> realms = session.model().getRealms();
             for (RealmModel realm : realms) {
                 addRealmRep(reps, realm, realm.getMasterAdminApp());
             }

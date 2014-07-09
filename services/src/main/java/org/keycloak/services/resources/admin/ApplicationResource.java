@@ -167,7 +167,7 @@ public class ApplicationResource {
     public void deleteApplication() {
         auth.requireManage();
 
-        realm.removeApplication(application.getId());
+        new ApplicationManager(new RealmManager(session)).removeApplication(realm, application);
     }
 
 
@@ -327,7 +327,7 @@ public class ApplicationResource {
     public Map<String, Integer> getApplicationSessionCount() {
         auth.requireView();
         Map<String, Integer> map = new HashMap<String, Integer>();
-        map.put("count", application.getActiveUserSessions());
+        map.put("count", session.sessions().getActiveUserSessions(application.getRealm(), application));
         return map;
     }
 
@@ -343,8 +343,8 @@ public class ApplicationResource {
     public List<UserSessionRepresentation> getUserSessions() {
         auth.requireView();
         List<UserSessionRepresentation> sessions = new ArrayList<UserSessionRepresentation>();
-        for (UserSessionModel session : application.getUserSessions()) {
-            UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(session);
+        for (UserSessionModel userSession : session.sessions().getUserSessions(application.getRealm(), application)) {
+            UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(userSession);
             sessions.add(rep);
         }
         return sessions;

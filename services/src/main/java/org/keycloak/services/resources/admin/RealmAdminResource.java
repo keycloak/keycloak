@@ -204,7 +204,7 @@ public class RealmAdminResource {
     @POST
     public void logoutAll() {
         auth.requireManage();
-        realm.removeUserSessions();
+        session.sessions().removeUserSessions(realm);
         new ResourceAdminManager().logoutAll(uriInfo.getRequestUri(), realm);
     }
 
@@ -217,10 +217,10 @@ public class RealmAdminResource {
     @Path("sessions/{session}")
     @DELETE
     public void deleteSession(@PathParam("session") String sessionId) {
-        UserSessionModel session = realm.getUserSession(sessionId);
-        if (session == null) throw new NotFoundException("Sesssion not found");
-        realm.removeUserSession(session);
-        new ResourceAdminManager().logoutSession(uriInfo.getRequestUri(), realm, session.getId());
+        UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
+        if (userSession == null) throw new NotFoundException("Sesssion not found");
+        session.sessions().removeUserSession(realm, userSession);
+        new ResourceAdminManager().logoutSession(uriInfo.getRequestUri(), realm, userSession.getId());
     }
 
     /**
@@ -236,10 +236,10 @@ public class RealmAdminResource {
     public Map<String, Integer> getApplicationSessionStats() {
         auth.requireView();
         Map<String, Integer> stats = new HashMap<String, Integer>();
-        for (ApplicationModel applicationModel : realm.getApplications()) {
-            int size = applicationModel.getActiveUserSessions();
+        for (ApplicationModel application : realm.getApplications()) {
+            int size = session.sessions().getActiveUserSessions(application.getRealm(), application);
             if (size == 0) continue;
-            stats.put(applicationModel.getName(), size);
+            stats.put(application.getName(), size);
         }
         return stats;
     }

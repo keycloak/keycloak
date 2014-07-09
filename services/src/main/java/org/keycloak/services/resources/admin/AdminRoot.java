@@ -55,7 +55,7 @@ public class AdminRoot {
 
     public AdminRoot(TokenManager tokenManager) {
         this.tokenManager = tokenManager;
-        this.authManager = new AppAuthManager(null);
+        this.authManager = new AppAuthManager();
     }
 
     public static UriBuilder adminBaseUrl(UriInfo uriInfo) {
@@ -142,7 +142,7 @@ public class AdminRoot {
         if (realm == null) {
             throw new UnauthorizedException("Unknown realm in token");
         }
-        AuthenticationManager.AuthResult authResult = authManager.authenticateBearerToken(realm, uriInfo, headers);
+        AuthenticationManager.AuthResult authResult = authManager.authenticateBearerToken(session, realm, uriInfo, headers);
         if (authResult == null) {
             logger.debug("Token not valid");
             throw new UnauthorizedException("Bearer");

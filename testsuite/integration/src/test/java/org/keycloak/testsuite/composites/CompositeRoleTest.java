@@ -28,6 +28,7 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.AuthenticationProviderModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
@@ -56,7 +57,7 @@ public class CompositeRoleTest {
     @ClassRule
     public static AbstractKeycloakRule keycloakRule = new AbstractKeycloakRule(){
         @Override
-        protected void configure(RealmManager manager, RealmModel adminRealm) {
+        protected void configure(KeycloakSession session, RealmManager manager, RealmModel adminRealm) {
             RealmModel realm = manager.createRealm("Test");
             manager.generateRealmKeys(realm);
             realmPublicKey = realm.getPublicKey();

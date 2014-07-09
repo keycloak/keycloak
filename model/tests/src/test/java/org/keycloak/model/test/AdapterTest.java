@@ -17,6 +17,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.UserSessionProvider;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.OAuthClientManager;
 import org.keycloak.services.managers.RealmManager;
@@ -730,90 +731,6 @@ public class AdapterTest extends AbstractModelTest {
         }
 
         resetSession();
-    }
-
-    @Test
-    public void userSessions() throws InterruptedException {
-        realmManager.createRealm("userSessions");
-        realmManager.getRealmByName("userSessions").setSsoSessionIdleTimeout(5);
-
-        UserModel user = realmManager.getRealmByName("userSessions").addUser("userSessions1");
-
-        UserSessionModel userSession = realmManager.getRealmByName("userSessions").createUserSession(user, "127.0.0.1");
-        commit();
-
-        assertNotNull(realmManager.getRealmByName("userSessions").getUserSession(userSession.getId()));
-        commit();
-
-        realmManager.getRealmByName("userSessions").removeUserSession(realmManager.getRealmByName("userSessions").getUserSession(userSession.getId()));
-        commit();
-
-        assertNull(realmManager.getRealmByName("userSessions").getUserSession(userSession.getId()));
-
-        userSession = realmManager.getRealmByName("userSessions").createUserSession(user, "127.0.0.1");
-        commit();
-
-        realmManager.getRealmByName("userSessions").removeUserSessions(user);
-        commit();
-
-        assertNull(realmManager.getRealmByName("userSessions").getUserSession(userSession.getId()));
-
-        realmManager.getRealmByName("userSessions").setSsoSessionIdleTimeout(1);
-
-        userSession = realmManager.getRealmByName("userSessions").createUserSession(user, "127.0.0.1");
-        commit();
-
-        Thread.sleep(2000);
-
-        realmManager.getRealmByName("userSessions").removeExpiredUserSessions();
-        commit();
-
-        assertNull(realmManager.getRealmByName("userSessions").getUserSession(userSession.getId()));
-    }
-
-    @Test
-    public void userSessionAssociations() {
-        RealmModel realm = realmManager.createRealm("userSessions");
-        UserModel user = realm.addUser("userSessions1");
-        UserSessionModel userSession = realm.createUserSession(user, "127.0.0.1");
-
-        ApplicationModel app1 = realm.addApplication("app1");
-        ApplicationModel app2 = realm.addApplication("app2");
-        OAuthClientModel client1 = realm.addOAuthClient("client1");
-
-        Assert.assertEquals(0, userSession.getClientAssociations().size());
-
-        userSession.associateClient(app1);
-        userSession.associateClient(client1);
-
-        Assert.assertEquals(2, userSession.getClientAssociations().size());
-        Assert.assertTrue(app1.getUserSessions().contains(userSession));
-        Assert.assertFalse(app2.getUserSessions().contains(userSession));
-        Assert.assertTrue(client1.getUserSessions().contains(userSession));
-
-        commit();
-
-        // Refresh all
-        realm = realmManager.getRealm("userSessions");
-        userSession = realm.getUserSession(userSession.getId());
-        app1 = realm.getApplicationByName("app1");
-        client1 = realm.getOAuthClient("client1");
-
-        userSession.removeAssociatedClient(app1);
-        Assert.assertEquals(1, userSession.getClientAssociations().size());
-        Assert.assertEquals(client1, userSession.getClientAssociations().get(0));
-        Assert.assertFalse(app1.getUserSessions().contains(userSession));
-
-        commit();
-
-        // Refresh all
-        realm = realmManager.getRealm("userSessions");
-        userSession = realm.getUserSession(userSession.getId());
-        client1 = realm.getOAuthClient("client1");
-
-        userSession.removeAssociatedClient(client1);
-        Assert.assertEquals(0, userSession.getClientAssociations().size());
-        Assert.assertFalse(client1.getUserSessions().contains(userSession));
     }
 
 }

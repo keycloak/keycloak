@@ -199,53 +199,6 @@ public class HybridModelProvider implements ModelProvider {
     }
 
     @Override
-    public UserSessionModel createUserSession(RealmModel realm, UserModel user, String ipAddress) {
-        return mappings.wrap(realm, sessions().createUserSession(realm.getId(), KeycloakModelUtils.generateId(), user.getId(), ipAddress));
-    }
-
-    @Override
-    public UserSessionModel getUserSession(String id, RealmModel realm) {
-        return mappings.wrap(realm, sessions().getUserSession(id, realm.getId()));
-    }
-
-    @Override
-    public List<UserSessionModel> getUserSessions(UserModel user, RealmModel realm) {
-        return mappings.wrapSessions(realm, sessions().getUserSessionsByUser(user.getId(), realm.getId()));
-    }
-
-    @Override
-    public Set<UserSessionModel> getUserSessions(RealmModel realm, ClientModel client) {
-        return mappings.wrapSessions(realm, sessions().getUserSessionsByClient(realm.getId(), client.getClientId()));
-    }
-
-    @Override
-    public int getActiveUserSessions(RealmModel realm, ClientModel client) {
-        return sessions().getActiveUserSessions(realm.getId(), client.getClientId());
-    }
-
-    @Override
-    public void removeUserSession(UserSessionModel session) {
-        sessions().removeUserSession(mappings.unwrap(session));
-    }
-
-    @Override
-    public void removeUserSessions(RealmModel realm, UserModel user) {
-        sessions().removeUserSessions(realm.getId(), user.getId());
-    }
-
-    @Override
-    public void removeExpiredUserSessions(RealmModel realm) {
-        long refreshTimeout = Time.currentTime() - realm.getSsoSessionIdleTimeout();
-        long sessionTimeout = Time.currentTime() - realm.getSsoSessionMaxLifespan();
-        sessions().removeExpiredUserSessions(realm.getId(), refreshTimeout, sessionTimeout);
-    }
-
-    @Override
-    public void removeUserSessions(RealmModel realm) {
-        sessions().removeUserSessions(realm.getId());
-    }
-
-    @Override
     public void close() {
     }
 

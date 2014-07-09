@@ -1,16 +1,16 @@
-package org.keycloak.models.sessions.mem;
+package org.keycloak.models.sessions.mem.entities;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class LoginFailureKey {
+public class UserSessionKey {
 
     private final String realm;
-    private final String username;
+    private final String id;
 
-    public LoginFailureKey(String realm, String username) {
+    public UserSessionKey(String realm, String id) {
         this.realm = realm;
-        this.username = username;
+        this.id = id;
     }
 
     @Override
@@ -18,10 +18,10 @@ public class LoginFailureKey {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        LoginFailureKey key = (LoginFailureKey) o;
+        UserSessionKey key = (UserSessionKey) o;
 
         if (realm != null ? !realm.equals(key.realm) : key.realm != null) return false;
-        if (username != null ? !username.equals(key.username) : key.username != null) return false;
+        if (id != null ? !id.equals(key.id) : key.id != null) return false;
 
         return true;
     }
@@ -29,7 +29,7 @@ public class LoginFailureKey {
     @Override
     public int hashCode() {
         int result = realm != null ? realm.hashCode() : 0;
-        result = 31 * result + (username != null ? username.hashCode() : 0);
+        result = 31 * result + (id != null ? id.hashCode() : 0);
         return result;
     }
 

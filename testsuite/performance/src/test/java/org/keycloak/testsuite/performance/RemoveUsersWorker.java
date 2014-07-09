@@ -32,7 +32,7 @@ public class RemoveUsersWorker implements Worker {
 
         int realmNumber = realmsOffset + workerId;
         String realmId = PerfTestUtils.getRealmName(realmNumber);
-        realm = session.getModel().getRealm(realmId);
+        realm = session.model().getRealm(realmId);
         if (realm == null) {
             throw new IllegalStateException("Realm '" + realmId + "' not found");
         }
