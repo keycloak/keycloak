@@ -14,7 +14,7 @@
     },
 
     "model": {
-        "provider": "${keycloak.model.provider:hybrid}",
+        "provider": "${keycloak.model.provider:jpa}",
         "mongo": {
           "host": "${keycloak.model.mongo.host:127.0.0.1}",
           "port": "${keycloak.model.mongo.port:27017}",
@@ -25,18 +25,6 @@
 
     "modelCache": {
         "provider": "${keycloak.model.cache.provider:simple}"
-    },
-
-    "modelRealms": {
-        "provider": "jpa"
-    },
-
-    "modelUsers": {
-        "provider": "jpa"
-    },
-
-    "modelSessions": {
-        "provider": "mem"
     },
 
     "timer": {
