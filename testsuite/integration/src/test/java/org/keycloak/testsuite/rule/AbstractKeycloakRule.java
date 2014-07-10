@@ -40,7 +40,7 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
         KeycloakSession session = server.getSessionFactory().create();
         session.getTransaction().begin();
         try {
-            UserModel user = session.getModel().getRealmByName(realm).getUser(name);
+            UserModel user = session.model().getRealmByName(realm).getUser(name);
             return user != null ? ModelToRepresentation.toRepresentation(user) : null;
         } finally {
             session.close();
@@ -51,7 +51,7 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
         KeycloakSession session = server.getSessionFactory().create();
         session.getTransaction().begin();
         try {
-            return ModelToRepresentation.toRepresentation(session.getModel().getRealmByName(realm).getUserById(id));
+            return ModelToRepresentation.toRepresentation(session.model().getRealmByName(realm).getUserById(id));
         } finally {
             session.close();
         }
@@ -66,7 +66,7 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
 
             RealmModel adminstrationRealm = manager.getRealm(Config.getAdminRealm());
 
-            configure(manager, adminstrationRealm);
+            configure(session, manager, adminstrationRealm);
 
             session.getTransaction().commit();
         } finally {
@@ -74,7 +74,7 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
         }
     }
 
-    protected void configure(RealmManager manager, RealmModel adminRealm) {
+    protected void configure(KeycloakSession session, RealmManager manager, RealmModel adminRealm) {
 
     }
 

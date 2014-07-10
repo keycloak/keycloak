@@ -56,7 +56,7 @@ public class AbstractModelTest {
     public void before() throws Exception {
         session = sessionFactory.create();
         session.getTransaction().begin();
-        model = session.getModel();
+        model = session.model();
         realmManager = new RealmManager(session);
     }
 
@@ -68,7 +68,7 @@ public class AbstractModelTest {
         session = sessionFactory.create();
         try {
             session.getTransaction().begin();
-            model = session.getModel();
+            model = session.model();
 
             RealmManager rm = new RealmManager(session);
             for (RealmModel realm : model.getRealms()) {
@@ -102,7 +102,7 @@ public class AbstractModelTest {
 
         session = sessionFactory.create();
         session.getTransaction().begin();
-        model = session.getModel();
+        model = session.model();
         realmManager = new RealmManager(session);
     }
 

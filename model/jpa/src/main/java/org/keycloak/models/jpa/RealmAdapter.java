@@ -1,17 +1,21 @@
 package org.keycloak.models.jpa;
 
-import org.keycloak.models.AuthenticationLinkModel;
+import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.CredentialValidation;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.RoleContainerModel;
+import org.keycloak.models.OAuthClientModel;
+import org.keycloak.models.PasswordPolicy;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredCredentialModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.SocialLinkModel;
+import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
-import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.UsernameLoginFailureModel;
 import org.keycloak.models.jpa.entities.ApplicationEntity;
-import org.keycloak.models.jpa.entities.AuthenticationLinkEntity;
 import org.keycloak.models.jpa.entities.AuthenticationProviderEntity;
 import org.keycloak.models.jpa.entities.OAuthClientEntity;
 import org.keycloak.models.jpa.entities.RealmEntity;
@@ -20,26 +24,12 @@ import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.jpa.entities.ScopeMappingEntity;
 import org.keycloak.models.jpa.entities.SocialLinkEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
-import org.keycloak.models.jpa.entities.UserSessionEntity;
 import org.keycloak.models.jpa.entities.UserRoleMappingEntity;
-import org.keycloak.models.jpa.entities.UsernameLoginFailureEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.models.utils.Pbkdf2PasswordEncoder;
-import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.OAuthClientModel;
-import org.keycloak.models.PasswordPolicy;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RequiredCredentialModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.SocialLinkModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.TimeBasedOTP;
-import org.keycloak.util.Time;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
-
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.ArrayList;
@@ -49,12 +39,9 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import static org.keycloak.models.utils.Pbkdf2PasswordEncoder.*;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -426,32 +413,17 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public UserModel getUser(String name) {
-        return session.getUserByUsername(name, this);
-    }
-
-    @Override
-    public UsernameLoginFailureModel getUserLoginFailure(String username) {
-        return session.getUserLoginFailure(username, this);
-    }
-
-    @Override
-    public UsernameLoginFailureModel addUserLoginFailure(String username) {
-        return session.addUserLoginFailure(username, this);
-    }
-
-    @Override
-    public List<UsernameLoginFailureModel> getAllUserLoginFailures() {
-        return session.getAllUserLoginFailures(this);
+        return session.model().getUserByUsername(name, this);
     }
 
     @Override
     public UserModel getUserByEmail(String email) {
-        return session.getUserByEmail(email, this);
+        return session.model().getUserByEmail(email, this);
     }
 
     @Override
     public UserModel getUserById(String id) {
-        return session.getUserById(id, this);
+        return session.model().getUserById(id, this);
     }
 
     @Override
@@ -500,9 +472,6 @@ public class RealmAdapter implements RealmModel {
     }
 
     private void removeUser(UserEntity user) {
-        em.createNamedQuery("removeClientUserSessionByUser").setParameter("userId", user.getId()).executeUpdate();
-        em.createNamedQuery("removeUserSessionByUser").setParameter("userId", user.getId()).executeUpdate();
-
         em.createQuery("delete from " + UserRoleMappingEntity.class.getSimpleName() + " where user = :user").setParameter("user", user).executeUpdate();
         em.createQuery("delete from " + SocialLinkEntity.class.getSimpleName() + " where user = :user").setParameter("user", user).executeUpdate();
         if (user.getAuthenticationLink() != null) {
@@ -629,8 +598,6 @@ public class RealmAdapter implements RealmModel {
         ApplicationModel application = getApplicationById(id);
         if (application == null) return false;
 
-        em.createNamedQuery("removeClientUserSessionByClient").setParameter("clientId", application.getId()).executeUpdate();
-
         for (RoleModel role : application.getRoles()) {
             application.removeRole(role);
         }
@@ -661,7 +628,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public ApplicationModel getApplicationById(String id) {
-        return session.getApplicationById(id, this);
+        return session.model().getApplicationById(id, this);
     }
 
     @Override
@@ -671,17 +638,17 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public UserModel getUserBySocialLink(SocialLinkModel socialLink) {
-        return session.getUserBySocialLink(socialLink, this);
+        return session.model().getUserBySocialLink(socialLink, this);
     }
 
     @Override
     public Set<SocialLinkModel> getSocialLinks(UserModel user) {
-        return session.getSocialLinks(user, this);
+        return session.model().getSocialLinks(user, this);
     }
 
     @Override
     public SocialLinkModel getSocialLink(UserModel user, String socialProvider) {
-        return session.getSocialLink(user, socialProvider, this);
+        return session.model().getSocialLink(user, socialProvider, this);
     }
 
     @Override
@@ -744,17 +711,17 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public List<UserModel> getUsers() {
-        return session.getUsers(this);
+        return session.model().getUsers(this);
     }
 
     @Override
     public List<UserModel> searchForUser(String search) {
-        return session.searchForUser(search, this);
+        return session.model().searchForUser(search, this);
     }
 
     @Override
     public List<UserModel> searchForUserByAttributes(Map<String, String> attributes) {
-        return session.searchForUserByAttributes(attributes, this);
+        return session.model().searchForUserByAttributes(attributes, this);
     }
 
     @Override
@@ -778,7 +745,6 @@ public class RealmAdapter implements RealmModel {
     public boolean removeOAuthClient(String id) {
         OAuthClientModel oauth = getOAuthClientById(id);
         if (oauth == null) return false;
-        ((OAuthClientAdapter)oauth).deleteUserSessionAssociation();
         OAuthClientEntity client = (OAuthClientEntity) ((OAuthClientAdapter) oauth).getEntity();
         em.createQuery("delete from " + ScopeMappingEntity.class.getSimpleName() + " where client = :client").setParameter("client", client).executeUpdate();
         em.remove(client);
@@ -798,7 +764,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public OAuthClientModel getOAuthClientById(String id) {
-        return session.getOAuthClientById(id, this);
+        return session.model().getOAuthClientById(id, this);
     }
 
 
@@ -960,7 +926,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public RoleModel getRoleById(String id) {
-        return session.getRoleById(id, this);
+        return session.model().getRoleById(id, this);
     }
 
     @Override
@@ -1101,42 +1067,6 @@ public class RealmAdapter implements RealmModel {
     public void setMasterAdminApp(ApplicationModel app) {
         realm.setMasterAdminApp(((ApplicationAdapter) app).getJpaEntity());
         em.flush();
-    }
-
-    @Override
-    public UserSessionModel createUserSession(UserModel user, String ipAddress) {
-        return session.createUserSession(this, user, ipAddress);
-    }
-
-    @Override
-    public UserSessionModel getUserSession(String id) {
-        return session.getUserSession(id, this);
-    }
-
-    @Override
-    public List<UserSessionModel> getUserSessions(UserModel user) {
-        return session.getUserSessions(user, this);
-    }
-
-    @Override
-    public void removeUserSession(UserSessionModel session) {
-        this.session.removeUserSession(session);
-    }
-
-    @Override
-    public void removeUserSessions() {
-        session.removeUserSessions(this);
-
-    }
-
-    @Override
-    public void removeUserSessions(UserModel user) {
-        session.removeUserSessions(this, user);
-    }
-
-    @Override
-    public void removeExpiredUserSessions() {
-        session.removeExpiredUserSessions(this);
     }
 
 }

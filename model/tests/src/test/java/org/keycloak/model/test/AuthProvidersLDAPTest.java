@@ -68,7 +68,7 @@ public class AuthProvidersLDAPTest extends AbstractModelTest {
         realm.addRequiredCredential(CredentialRepresentation.PASSWORD);
         this.embeddedServer.setupLdapInRealm(realm);
 
-        am = new AuthenticationManager(session);
+        am = new AuthenticationManager();
     }
 
     @Test
@@ -79,14 +79,14 @@ public class AuthProvidersLDAPTest extends AbstractModelTest {
         LDAPTestUtils.setLdapPassword(session, realm, "johnkeycloak", "password");
 
         // Verify that user doesn't exists in realm2 and can't authenticate here
-        Assert.assertEquals(AuthenticationManager.AuthenticationStatus.INVALID_USER, am.authenticateForm(null, realm, formData));
+        Assert.assertEquals(AuthenticationManager.AuthenticationStatus.INVALID_USER, am.authenticateForm(session, null, realm, formData));
         Assert.assertNull(realm.getUser("johnkeycloak"));
 
         // Add ldap authenticationProvider
         setupAuthenticationProviders();
 
         // Authenticate john and verify that now he exists in realm
-        Assert.assertEquals(AuthenticationManager.AuthenticationStatus.SUCCESS, am.authenticateForm(null, realm, formData));
+        Assert.assertEquals(AuthenticationManager.AuthenticationStatus.SUCCESS, am.authenticateForm(session, null, realm, formData));
         UserModel john = realm.getUser("johnkeycloak");
         Assert.assertNotNull(john);
         Assert.assertEquals("johnkeycloak", john.getUsername());
@@ -114,25 +114,25 @@ public class AuthProvidersLDAPTest extends AbstractModelTest {
 
         // User doesn't exists
         MultivaluedMap<String, String> formData = AuthProvidersExternalModelTest.createFormData("invalid", "invalid");
-        Assert.assertEquals(AuthenticationManager.AuthenticationStatus.INVALID_USER, am.authenticateForm(null, realm, formData));
+        Assert.assertEquals(AuthenticationManager.AuthenticationStatus.INVALID_USER, am.authenticateForm(session, null, realm, formData));
 
         // User exists in ldap
         formData = AuthProvidersExternalModelTest.createFormData("johnkeycloak", "invalid");
-        Assert.assertEquals(AuthenticationManager.AuthenticationStatus.INVALID_CREDENTIALS, am.authenticateForm(null, realm, formData));
+        Assert.assertEquals(AuthenticationManager.AuthenticationStatus.INVALID_CREDENTIALS, am.authenticateForm(session, null, realm, formData));
 
         // User exists in realm
         formData = AuthProvidersExternalModelTest.createFormData("realmUser", "invalid");
-        Assert.assertEquals(AuthenticationManager.AuthenticationStatus.INVALID_CREDENTIALS, am.authenticateForm(null, realm, formData));
+        Assert.assertEquals(AuthenticationManager.AuthenticationStatus.INVALID_CREDENTIALS, am.authenticateForm(session, null, realm, formData));
 
         // User disabled
         realmUser.setEnabled(false);
         formData = AuthProvidersExternalModelTest.createFormData("realmUser", "pass");
-        Assert.assertEquals(AuthenticationManager.AuthenticationStatus.ACCOUNT_DISABLED, am.authenticateForm(null, realm, formData));
+        Assert.assertEquals(AuthenticationManager.AuthenticationStatus.ACCOUNT_DISABLED, am.authenticateForm(session, null, realm, formData));
 
         // Successful authentication
         realmUser.setEnabled(true);
         formData = AuthProvidersExternalModelTest.createFormData("realmUser", "pass");
-        Assert.assertEquals(AuthenticationManager.AuthenticationStatus.SUCCESS, am.authenticateForm(null, realm, formData));
+        Assert.assertEquals(AuthenticationManager.AuthenticationStatus.SUCCESS, am.authenticateForm(session, null, realm, formData));
     }
 
     @Test
@@ -144,7 +144,7 @@ public class AuthProvidersLDAPTest extends AbstractModelTest {
 
         // First authenticate successfully to sync john into realm
         MultivaluedMap<String, String> formData = AuthProvidersExternalModelTest.createFormData("johnkeycloak", "password");
-        Assert.assertEquals(AuthenticationManager.AuthenticationStatus.SUCCESS, am.authenticateForm(null, realm, formData));
+        Assert.assertEquals(AuthenticationManager.AuthenticationStatus.SUCCESS, am.authenticateForm(session, null, realm, formData));
 
         // Change credential and validate that user can authenticate
         AuthenticationProviderManager authProviderManager = AuthenticationProviderManager.getManager(realm, session);
@@ -157,7 +157,7 @@ public class AuthProvidersLDAPTest extends AbstractModelTest {
             Assert.fail("Error not expected");
         }
         formData = AuthProvidersExternalModelTest.createFormData("johnkeycloak", "password-updated");
-        Assert.assertEquals(AuthenticationManager.AuthenticationStatus.SUCCESS, am.authenticateForm(null, realm, formData));
+        Assert.assertEquals(AuthenticationManager.AuthenticationStatus.SUCCESS, am.authenticateForm(session, null, realm, formData));
 
         // Password updated just in LDAP, so validating directly in realm should fail
         Assert.assertFalse(realm.validatePassword(john, "password-updated"));
@@ -173,7 +173,7 @@ public class AuthProvidersLDAPTest extends AbstractModelTest {
             Assert.fail("Error not expected");
         }
         formData = AuthProvidersExternalModelTest.createFormData("johnkeycloak", "password-updated2");
-        Assert.assertEquals(AuthenticationManager.AuthenticationStatus.INVALID_CREDENTIALS, am.authenticateForm(null, realm, formData));
+        Assert.assertEquals(AuthenticationManager.AuthenticationStatus.INVALID_CREDENTIALS, am.authenticateForm(session, null, realm, formData));
     }
 
     /**

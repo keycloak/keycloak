@@ -10,6 +10,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionProvider;
 import org.keycloak.representations.adapters.config.BaseRealmConfig;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -148,6 +149,18 @@ public class ApplicationManager {
         generateSecret(app);
 
         return app;
+    }
+
+    public boolean removeApplication(RealmModel realm, ApplicationModel application) {
+        if (realm.removeApplication(application.getId())) {
+            UserSessionProvider sessions = realmManager.getSession().sessions();
+            if (sessions != null) {
+                sessions.onClientRemoved(realm, application);
+            }
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public UserCredentialModel generateSecret(ApplicationModel app) {

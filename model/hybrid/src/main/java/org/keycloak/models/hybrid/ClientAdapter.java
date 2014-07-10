@@ -181,16 +181,6 @@ public abstract class ClientAdapter implements ClientModel {
     }
 
     @Override
-    public Set<UserSessionModel> getUserSessions() {
-        return provider.mappings().wrapSessions(getRealm(), provider.sessions().getUserSessionsByClient(client.getRealm().getId(), client.getId()));
-    }
-
-    @Override
-    public int getActiveUserSessions() {
-        return provider.sessions().getActiveUserSessions(client.getRealm().getId(), client.getId());
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!this.getClass().equals(o.getClass())) return false;

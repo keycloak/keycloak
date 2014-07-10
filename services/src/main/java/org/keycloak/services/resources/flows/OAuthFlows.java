@@ -42,7 +42,6 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.AccessCodeEntry;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.TokenManager;
-import org.keycloak.services.util.CookieHelper;
 
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.MultivaluedMap;
@@ -90,7 +89,7 @@ public class OAuthFlows {
     }
 
 
-    public Response redirectAccessCode(AccessCodeEntry accessCode, UserSessionModel session, String state, String redirect, boolean rememberMe) {
+    public Response redirectAccessCode(AccessCodeEntry accessCode, UserSessionModel userSession, String state, String redirect, boolean rememberMe) {
         String code = accessCode.getCode();
         UriBuilder redirectUri = UriBuilder.fromUri(redirect).queryParam(OAuth2Constants.CODE, code);
         log.debugv("redirectAccessCode: state: {0}", state);
@@ -103,17 +102,17 @@ public class OAuthFlows {
         Cookie sessionCookie = request.getHttpHeaders().getCookies().get(AuthenticationManager.KEYCLOAK_SESSION_COOKIE);
         if (sessionCookie != null) {
             String oldSessionId = sessionCookie.getValue().split("/")[2];
-            if (!oldSessionId.equals(session.getId())) {
-                UserSessionModel oldSession = realm.getUserSession(oldSessionId);
+            if (!oldSessionId.equals(userSession.getId())) {
+                UserSessionModel oldSession = session.sessions().getUserSession(realm, oldSessionId);
                 if (oldSession != null) {
                     log.debugv("Removing old user session: session: {0}", oldSessionId);
-                    realm.removeUserSession(oldSession);
+                    session.sessions().removeUserSession(realm, oldSession);
                 }
             }
         }
 
         // refresh the cookies!
-        authManager.createLoginCookie(realm, accessCode.getUser(), session, uriInfo, rememberMe);
+        authManager.createLoginCookie(realm, accessCode.getUser(), userSession, uriInfo, rememberMe);
         if (rememberMe) authManager.createRememberMeCookie(realm, uriInfo);
         return location.build();
     }

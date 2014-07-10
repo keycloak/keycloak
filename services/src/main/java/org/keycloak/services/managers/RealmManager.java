@@ -19,6 +19,7 @@ import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
+import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.AuthenticationLinkRepresentation;
@@ -31,7 +32,6 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.ScopeMappingRepresentation;
 import org.keycloak.representations.idm.SocialLinkRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.representations.idm.UserRoleMappingRepresentation;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -67,7 +67,11 @@ public class RealmManager {
 
     public RealmManager(KeycloakSession session) {
         this.session = session;
-        this.model = session.getModel();
+        this.model = session.model();
+    }
+
+    public KeycloakSession getSession() {
+        return session;
     }
 
     public RealmModel getKeycloakAdminstrationRealm() {
@@ -148,7 +152,12 @@ public class RealmManager {
     public boolean removeRealm(RealmModel realm) {
         boolean removed = model.removeRealm(realm.getId());
         if (removed) {
-            getKeycloakAdminstrationRealm().removeApplication(realm.getMasterAdminApp().getId());
+            new ApplicationManager(this).removeApplication(getKeycloakAdminstrationRealm(), realm.getMasterAdminApp());
+
+            UserSessionProvider sessions = session.sessions();
+            if (sessions != null) {
+                sessions.onRealmRemoved(realm);
+            }
         }
         return removed;
     }

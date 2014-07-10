@@ -21,11 +21,11 @@ import java.util.Set;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class JpaSessionProvider implements SessionProvider {
+public class JpaUserSessionProvider implements SessionProvider {
 
     protected final EntityManager em;
 
-    public JpaSessionProvider(EntityManager em) {
+    public JpaUserSessionProvider(EntityManager em) {
         this.em = PersistenceExceptionConverter.create(em);
     }
 

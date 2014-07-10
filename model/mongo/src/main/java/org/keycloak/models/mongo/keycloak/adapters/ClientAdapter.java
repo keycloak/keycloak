@@ -5,7 +5,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelProvider;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.entities.ClientEntity;
 import org.keycloak.models.mongo.api.MongoIdentifiableEntity;
 import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
@@ -32,7 +31,7 @@ public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends A
         this.clientEntity = clientEntity;
         this.realm = realm;
         this.session = session;
-        this.model = session.getModel();
+        this.model = session.model();
     }
 
     @Override
@@ -172,16 +171,6 @@ public abstract class ClientAdapter<T extends MongoIdentifiableEntity> extends A
     public void setNotBefore(int notBefore) {
         getMongoEntityAsClient().setNotBefore(notBefore);
         updateMongoEntity();
-    }
-
-    @Override
-    public Set<UserSessionModel> getUserSessions() {
-        return model.getUserSessions(realm, this);
-    }
-
-    @Override
-    public int getActiveUserSessions() {
-        return model.getActiveUserSessions(realm, this);
     }
 
     @Override

@@ -28,6 +28,7 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -71,7 +72,7 @@ public class RelativeUriAdapterTest {
     @ClassRule
     public static AbstractKeycloakRule keycloakRule = new AbstractKeycloakRule(){
         @Override
-        protected void configure(RealmManager manager, RealmModel adminRealm) {
+        protected void configure(KeycloakSession session, RealmManager manager, RealmModel adminRealm) {
             RealmRepresentation representation = KeycloakServer.loadJson(getClass().getResourceAsStream("/adapter-test/demorealm-relative.json"), RealmRepresentation.class);
             RealmModel realm = manager.importRealm(representation);
 
@@ -86,8 +87,8 @@ public class RelativeUriAdapterTest {
             ApplicationModel adminConsole = adminRealm.getApplicationByName(Constants.ADMIN_CONSOLE_APPLICATION);
             TokenManager tm = new TokenManager();
             UserModel admin = adminRealm.getUser("admin");
-            UserSessionModel session = adminRealm.createUserSession(admin, null);
-            AccessToken token = tm.createClientAccessToken(null, adminRealm, adminConsole, admin, session);
+            UserSessionModel userSession = session.sessions().createUserSession(adminRealm, admin, null);
+            AccessToken token = tm.createClientAccessToken(null, adminRealm, adminConsole, admin, userSession);
             adminToken = tm.encodeToken(adminRealm, token);
 
         }

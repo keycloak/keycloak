@@ -226,7 +226,7 @@ public class RequiredActionsService {
 
         // Password reset through email won't have an associated session
         if (accessCode.getSessionState() == null) {
-            UserSessionModel userSession = realm.createUserSession(realm.getUserById(accessCode.getUser().getId()), clientConnection.getRemoteAddr());
+            UserSessionModel userSession = session.sessions().createUserSession(realm, realm.getUserById(accessCode.getUser().getId()), clientConnection.getRemoteAddr());
             accessCode.getToken().setSessionState(userSession.getId());
             audit.session(userSession);
         }
@@ -299,7 +299,7 @@ public class RequiredActionsService {
         String redirect = uriInfo.getQueryParameters().getFirst(OAuth2Constants.REDIRECT_URI);
         String clientId = uriInfo.getQueryParameters().getFirst(OAuth2Constants.CLIENT_ID);
 
-        AuthenticationManager authManager = new AuthenticationManager(session);
+        AuthenticationManager authManager = new AuthenticationManager();
 
         ClientModel client = realm.findClient(clientId);
         if (client == null) {
@@ -397,19 +397,19 @@ public class RequiredActionsService {
             logger.debugv("redirectOauth: redirecting to: {0}", accessCode.getRedirectUri());
             accessCode.resetExpiration();
 
-            AuthenticationManager authManager = new AuthenticationManager(session);
+            AuthenticationManager authManager = new AuthenticationManager();
 
-            UserSessionModel session = realm.getUserSession(accessCode.getSessionState());
-            if (!AuthenticationManager.isSessionValid(realm, session)) {
-                AuthenticationManager.logout(realm, session, uriInfo);
+            UserSessionModel userSession = session.sessions().getUserSession(realm, accessCode.getSessionState());
+            if (!AuthenticationManager.isSessionValid(realm, userSession)) {
+                AuthenticationManager.logout(session, realm, userSession, uriInfo);
                 return Flows.oauth(this.session, realm, request, uriInfo, authManager, tokenManager).redirectError(accessCode.getClient(), "access_denied", accessCode.getState(), accessCode.getRedirectUri());
             }
-            audit.session(session);
+            audit.session(userSession);
 
             audit.success();
 
             return Flows.oauth(this.session, realm, request, uriInfo, authManager, tokenManager).redirectAccessCode(accessCode,
-                    session, accessCode.getState(), accessCode.getRedirectUri());
+                    userSession, accessCode.getState(), accessCode.getRedirectUri());
         }
     }
 

@@ -40,7 +40,7 @@ public class BaseJMeterPerformanceTest extends AbstractJavaSamplerClient {
 
             try {
                 String adminRealmName = Config.getAdminRealm();
-                if (keycloakSession.getModel().getRealm(adminRealmName) == null) {
+                if (keycloakSession.model().getRealm(adminRealmName) == null) {
 
                     RealmManager manager = new RealmManager(keycloakSession);
                     manager.setContextPath(contextPath);

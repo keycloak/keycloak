@@ -196,13 +196,4 @@ public abstract class ClientAdapter implements ClientModel {
         updatedClient.setNotBefore(notBefore);
     }
 
-    public Set<UserSessionModel> getUserSessions() {
-        if (updatedClient != null) return updatedClient.getUserSessions();
-        return cacheSession.getUserSessions(cachedRealm, this);
-    }
-
-    public int getActiveUserSessions() {
-        if (updatedClient != null) return updatedClient.getActiveUserSessions();
-        return cacheSession.getActiveUserSessions(cachedRealm, this);
-    }
 }

@@ -27,7 +27,7 @@ public class EmailAuditListener implements AuditListener {
 
     public EmailAuditListener(KeycloakSession session, EmailProvider emailProvider, Set<EventType> includedEvents) {
         this.session = session;
-        this.model = session.getModel();
+        this.model = session.model();
         this.emailProvider = emailProvider;
         this.includedEvents = includedEvents;
     }

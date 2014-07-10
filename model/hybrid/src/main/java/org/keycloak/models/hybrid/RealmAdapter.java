@@ -729,36 +729,6 @@ public class RealmAdapter implements RealmModel {
     }
 
     @Override
-    public UserSessionModel createUserSession(UserModel user, String ipAddress) {
-        return provider.createUserSession(this, user, ipAddress);
-    }
-
-    @Override
-    public UserSessionModel getUserSession(String id) {
-        return provider.getUserSession(id, this);
-    }
-
-    @Override
-    public List<UserSessionModel> getUserSessions(UserModel user) {
-        return provider.getUserSessions(user, this);
-    }
-
-    @Override
-    public void removeUserSession(UserSessionModel session) {
-        provider.removeUserSession(session);
-    }
-
-    @Override
-    public void removeUserSessions(UserModel user) {
-        provider.removeUserSessions(this, user);
-    }
-
-    @Override
-    public void removeExpiredUserSessions() {
-        provider.removeExpiredUserSessions(this);
-    }
-
-    @Override
     public ClientModel findClientById(String id) {
         Application application = provider.realms().getApplicationById(id, realm.getId());
         if (application != null) {
@@ -771,11 +741,6 @@ public class RealmAdapter implements RealmModel {
         }
 
         return null;
-    }
-
-    @Override
-    public void removeUserSessions() {
-        provider.removeUserSessions(this);
     }
 
     @Override

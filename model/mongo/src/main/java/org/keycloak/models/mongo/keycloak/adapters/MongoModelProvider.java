@@ -325,138 +325,138 @@ public class MongoModelProvider implements ModelProvider {
 
         return new OAuthClientAdapter(session, realm, clientEntity, invocationContext);
     }
+//
+//    @Override
+//    public UsernameLoginFailureModel getUserLoginFailure(String username, RealmModel realm) {
+//        DBObject query = new QueryBuilder()
+//                .and("username").is(username)
+//                .and("realmId").is(realm.getId())
+//                .get();
+//        MongoUsernameLoginFailureEntity user = getMongoStore().loadSingleEntity(MongoUsernameLoginFailureEntity.class, query, invocationContext);
+//
+//        if (user == null) {
+//            return null;
+//        } else {
+//            return new UsernameLoginFailureAdapter(invocationContext, user);
+//        }
+//    }
+//
+//    @Override
+//    public UsernameLoginFailureModel addUserLoginFailure(String username, RealmModel realm) {
+//        UsernameLoginFailureModel userLoginFailure = getUserLoginFailure(username, realm);
+//        if (userLoginFailure != null) {
+//            return userLoginFailure;
+//        }
+//
+//        MongoUsernameLoginFailureEntity userEntity = new MongoUsernameLoginFailureEntity();
+//        userEntity.setUsername(username);
+//        userEntity.setRealmId(realm.getId());
+//
+//        getMongoStore().insertEntity(userEntity, invocationContext);
+//        return new UsernameLoginFailureAdapter(invocationContext, userEntity);
+//    }
+//
+//    @Override
+//    public List<UsernameLoginFailureModel> getAllUserLoginFailures(RealmModel realm) {
+//        DBObject query = new QueryBuilder()
+//                .and("realmId").is(realm.getId())
+//                .get();
+//        List<MongoUsernameLoginFailureEntity> failures = getMongoStore().loadEntities(MongoUsernameLoginFailureEntity.class, query, invocationContext);
+//
+//        List<UsernameLoginFailureModel> result = new ArrayList<UsernameLoginFailureModel>();
+//
+//        if (failures == null) return result;
+//        for (MongoUsernameLoginFailureEntity failure : failures) {
+//            result.add(new UsernameLoginFailureAdapter(invocationContext, failure));
+//        }
+//
+//        return result;
+//    }
 
-    @Override
-    public UsernameLoginFailureModel getUserLoginFailure(String username, RealmModel realm) {
-        DBObject query = new QueryBuilder()
-                .and("username").is(username)
-                .and("realmId").is(realm.getId())
-                .get();
-        MongoUsernameLoginFailureEntity user = getMongoStore().loadSingleEntity(MongoUsernameLoginFailureEntity.class, query, invocationContext);
-
-        if (user == null) {
-            return null;
-        } else {
-            return new UsernameLoginFailureAdapter(invocationContext, user);
-        }
-    }
-
-    @Override
-    public UsernameLoginFailureModel addUserLoginFailure(String username, RealmModel realm) {
-        UsernameLoginFailureModel userLoginFailure = getUserLoginFailure(username, realm);
-        if (userLoginFailure != null) {
-            return userLoginFailure;
-        }
-
-        MongoUsernameLoginFailureEntity userEntity = new MongoUsernameLoginFailureEntity();
-        userEntity.setUsername(username);
-        userEntity.setRealmId(realm.getId());
-
-        getMongoStore().insertEntity(userEntity, invocationContext);
-        return new UsernameLoginFailureAdapter(invocationContext, userEntity);
-    }
-
-    @Override
-    public List<UsernameLoginFailureModel> getAllUserLoginFailures(RealmModel realm) {
-        DBObject query = new QueryBuilder()
-                .and("realmId").is(realm.getId())
-                .get();
-        List<MongoUsernameLoginFailureEntity> failures = getMongoStore().loadEntities(MongoUsernameLoginFailureEntity.class, query, invocationContext);
-
-        List<UsernameLoginFailureModel> result = new ArrayList<UsernameLoginFailureModel>();
-
-        if (failures == null) return result;
-        for (MongoUsernameLoginFailureEntity failure : failures) {
-            result.add(new UsernameLoginFailureAdapter(invocationContext, failure));
-        }
-
-        return result;
-    }
-
-    @Override
-    public UserSessionModel createUserSession(RealmModel realm, UserModel user, String ipAddress) {
-        MongoUserSessionEntity entity = new MongoUserSessionEntity();
-        entity.setRealmId(realm.getId());
-        entity.setUser(user.getId());
-        entity.setIpAddress(ipAddress);
-
-        int currentTime = Time.currentTime();
-
-        entity.setStarted(currentTime);
-        entity.setLastSessionRefresh(currentTime);
-
-        getMongoStore().insertEntity(entity, invocationContext);
-        return new UserSessionAdapter(entity, realm, invocationContext);
-    }
-
-    @Override
-    public UserSessionModel getUserSession(String id, RealmModel realm) {
-        MongoUserSessionEntity entity = getMongoStore().loadEntity(MongoUserSessionEntity.class, id, invocationContext);
-        if (entity == null) {
-            return null;
-        } else {
-            return new UserSessionAdapter(entity, realm, invocationContext);
-        }
-    }
-
-    @Override
-    public List<UserSessionModel> getUserSessions(UserModel user, RealmModel realm) {
-        DBObject query = new BasicDBObject("user", user.getId());
-        List<UserSessionModel> sessions = new LinkedList<UserSessionModel>();
-        for (MongoUserSessionEntity e : getMongoStore().loadEntities(MongoUserSessionEntity.class, query, invocationContext)) {
-            sessions.add(new UserSessionAdapter(e, realm, invocationContext));
-        }
-        return sessions;
-    }
-
-    @Override
-    public Set<UserSessionModel> getUserSessions(RealmModel realm, ClientModel client) {
-        DBObject query = new QueryBuilder()
-                .and("associatedClientIds").is(client.getId())
-                .get();
-        List<MongoUserSessionEntity> sessions = getMongoStore().loadEntities(MongoUserSessionEntity.class, query, invocationContext);
-
-        Set<UserSessionModel> result = new HashSet<UserSessionModel>();
-        for (MongoUserSessionEntity session : sessions) {
-            result.add(new UserSessionAdapter(session, realm, invocationContext));
-        }
-        return result;
-    }
-
-    @Override
-    public int getActiveUserSessions(RealmModel realm, ClientModel client) {
-        return getUserSessions(realm, client).size();
-    }
-
-    @Override
-    public void removeUserSession(UserSessionModel session) {
-        getMongoStore().removeEntity(((UserSessionAdapter) session).getMongoEntity(), invocationContext);
-    }
-
-    @Override
-    public void removeUserSessions(RealmModel realm, UserModel user) {
-        DBObject query = new BasicDBObject("user", user.getId());
-        getMongoStore().removeEntities(MongoUserSessionEntity.class, query, invocationContext);
-    }
-
-    @Override
-    public void removeUserSessions(RealmModel realm) {
-        DBObject query = new BasicDBObject("realmId", realm.getId());
-        getMongoStore().removeEntities(MongoUserSessionEntity.class, query, invocationContext);
-    }
-
-    @Override
-    public void removeExpiredUserSessions(RealmModel realm) {
-        int currentTime = Time.currentTime();
-        DBObject query = new QueryBuilder()
-                .and("started").lessThan(currentTime - realm.getSsoSessionMaxLifespan())
-                .get();
-
-        getMongoStore().removeEntities(MongoUserSessionEntity.class, query, invocationContext);
-        query = new QueryBuilder()
-                .and("lastSessionRefresh").lessThan(currentTime - realm.getSsoSessionIdleTimeout())
-                .get();
-
-        getMongoStore().removeEntities(MongoUserSessionEntity.class, query, invocationContext);
-    }
+//    @Override
+//    public UserSessionModel createUserSession(RealmModel realm, UserModel user, String ipAddress) {
+//        MongoUserSessionEntity entity = new MongoUserSessionEntity();
+//        entity.setRealmId(realm.getId());
+//        entity.setUser(user.getId());
+//        entity.setIpAddress(ipAddress);
+//
+//        int currentTime = Time.currentTime();
+//
+//        entity.setStarted(currentTime);
+//        entity.setLastSessionRefresh(currentTime);
+//
+//        getMongoStore().insertEntity(entity, invocationContext);
+//        return new UserSessionAdapter(entity, realm, invocationContext);
+//    }
+//
+//    @Override
+//    public UserSessionModel getUserSession(String id, RealmModel realm) {
+//        MongoUserSessionEntity entity = getMongoStore().loadEntity(MongoUserSessionEntity.class, id, invocationContext);
+//        if (entity == null) {
+//            return null;
+//        } else {
+//            return new UserSessionAdapter(entity, realm, invocationContext);
+//        }
+//    }
+//
+//    @Override
+//    public List<UserSessionModel> getUserSessions(UserModel user, RealmModel realm) {
+//        DBObject query = new BasicDBObject("user", user.getId());
+//        List<UserSessionModel> sessions = new LinkedList<UserSessionModel>();
+//        for (MongoUserSessionEntity e : getMongoStore().loadEntities(MongoUserSessionEntity.class, query, invocationContext)) {
+//            sessions.add(new UserSessionAdapter(e, realm, invocationContext));
+//        }
+//        return sessions;
+//    }
+//
+//    @Override
+//    public Set<UserSessionModel> getUserSessions(RealmModel realm, ClientModel client) {
+//        DBObject query = new QueryBuilder()
+//                .and("associatedClientIds").is(client.getId())
+//                .get();
+//        List<MongoUserSessionEntity> sessions = getMongoStore().loadEntities(MongoUserSessionEntity.class, query, invocationContext);
+//
+//        Set<UserSessionModel> result = new HashSet<UserSessionModel>();
+//        for (MongoUserSessionEntity session : sessions) {
+//            result.add(new UserSessionAdapter(session, realm, invocationContext));
+//        }
+//        return result;
+//    }
+//
+//    @Override
+//    public int getActiveUserSessions(RealmModel realm, ClientModel client) {
+//        return getUserSessions(realm, client).size();
+//    }
+//
+//    @Override
+//    public void removeUserSession(UserSessionModel session) {
+//        getMongoStore().removeEntity(((UserSessionAdapter) session).getMongoEntity(), invocationContext);
+//    }
+//
+//    @Override
+//    public void removeUserSessions(RealmModel realm, UserModel user) {
+//        DBObject query = new BasicDBObject("user", user.getId());
+//        getMongoStore().removeEntities(MongoUserSessionEntity.class, query, invocationContext);
+//    }
+//
+//    @Override
+//    public void removeUserSessions(RealmModel realm) {
+//        DBObject query = new BasicDBObject("realmId", realm.getId());
+//        getMongoStore().removeEntities(MongoUserSessionEntity.class, query, invocationContext);
+//    }
+//
+//    @Override
+//    public void removeExpiredUserSessions(RealmModel realm) {
+//        int currentTime = Time.currentTime();
+//        DBObject query = new QueryBuilder()
+//                .and("started").lessThan(currentTime - realm.getSsoSessionMaxLifespan())
+//                .get();
+//
+//        getMongoStore().removeEntities(MongoUserSessionEntity.class, query, invocationContext);
+//        query = new QueryBuilder()
+//                .and("lastSessionRefresh").lessThan(currentTime - realm.getSsoSessionIdleTimeout())
+//                .get();
+//
+//        getMongoStore().removeEntities(MongoUserSessionEntity.class, query, invocationContext);
+//    }
 }

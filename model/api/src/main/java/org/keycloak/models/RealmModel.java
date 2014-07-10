@@ -165,10 +165,6 @@ public interface RealmModel extends RoleContainerModel {
 
     void setUpdateProfileOnInitialSocialLogin(boolean updateProfileOnInitialSocialLogin);
 
-    UsernameLoginFailureModel getUserLoginFailure(String username);
-    UsernameLoginFailureModel addUserLoginFailure(String username);
-    List<UsernameLoginFailureModel> getAllUserLoginFailures();
-
     List<UserModel> getUsers();
 
     List<UserModel> searchForUser(String search);
@@ -245,19 +241,6 @@ public interface RealmModel extends RoleContainerModel {
 
     void setMasterAdminApp(ApplicationModel app);
 
-    UserSessionModel createUserSession(UserModel user, String ipAddress);
-
-    UserSessionModel getUserSession(String id);
-
-    List<UserSessionModel> getUserSessions(UserModel user);
-
-    void removeUserSession(UserSessionModel session);
-
-    void removeUserSessions(UserModel user);
-
-    void removeExpiredUserSessions();
-
     ClientModel findClientById(String id);
 
-    void removeUserSessions();
 }

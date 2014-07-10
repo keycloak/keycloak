@@ -1,14 +1,24 @@
 package org.keycloak.models.jpa;
 
-import org.keycloak.models.*;
-import org.keycloak.models.jpa.entities.*;
+import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakTransaction;
+import org.keycloak.models.ModelProvider;
+import org.keycloak.models.OAuthClientModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.SocialLinkModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.jpa.entities.ApplicationEntity;
+import org.keycloak.models.jpa.entities.OAuthClientEntity;
+import org.keycloak.models.jpa.entities.RealmEntity;
+import org.keycloak.models.jpa.entities.RoleEntity;
+import org.keycloak.models.jpa.entities.SocialLinkEntity;
+import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.util.Time;
 
 import javax.persistence.EntityManager;
-import javax.persistence.Query;
 import javax.persistence.TypedQuery;
-import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -120,7 +130,6 @@ public class JpaModelProvider implements ModelProvider {
         }
 
         RealmAdapter adapter = new RealmAdapter(session, em, realm);
-        adapter.removeUserSessions();
         for (ApplicationEntity a : new LinkedList<ApplicationEntity>(realm.getApplications())) {
             adapter.removeApplication(a.getId());
         }
@@ -134,7 +143,6 @@ public class JpaModelProvider implements ModelProvider {
         }
 
         em.remove(realm);
-
         return true;
     }
 
@@ -142,15 +150,6 @@ public class JpaModelProvider implements ModelProvider {
     public void close() {
         if (em.getTransaction().isActive()) em.getTransaction().rollback();
         if (em.isOpen()) em.close();
-    }
-
-    @Override
-    public void removeAllData() {
-        // Should be sufficient to delete all realms. Rest data should be removed in cascade
-        List<RealmModel> realms = getRealms();
-        for (RealmModel realm : realms) {
-            removeRealm(realm.getId());
-        }
     }
 
     @Override
@@ -284,117 +283,4 @@ public class JpaModelProvider implements ModelProvider {
         return new OAuthClientAdapter(realm, client, em);
     }
 
-    @Override
-    public UsernameLoginFailureModel getUserLoginFailure(String username, RealmModel realm) {
-        String id = username + "-" + realm.getId();
-        UsernameLoginFailureEntity entity = em.find(UsernameLoginFailureEntity.class, id);
-        if (entity == null) return null;
-        return new UsernameLoginFailureAdapter(entity);
-    }
-
-    @Override
-    public UsernameLoginFailureModel addUserLoginFailure(String username, RealmModel realm) {
-        UsernameLoginFailureModel model = getUserLoginFailure(username, realm);
-        if (model != null) return model;
-        String id = username + "-" + realm.getId();
-        UsernameLoginFailureEntity entity = new UsernameLoginFailureEntity();
-        entity.setId(id);
-        entity.setUsername(username);
-        RealmEntity realmEntity = em.getReference(RealmEntity.class, realm.getId());
-        entity.setRealm(realmEntity);
-        em.persist(entity);
-        return new UsernameLoginFailureAdapter(entity);
-    }
-
-    @Override
-    public List<UsernameLoginFailureModel> getAllUserLoginFailures(RealmModel realm) {
-        TypedQuery<UsernameLoginFailureEntity> query = em.createNamedQuery("getAllFailures", UsernameLoginFailureEntity.class);
-        List<UsernameLoginFailureEntity> entities = query.getResultList();
-        List<UsernameLoginFailureModel> models = new ArrayList<UsernameLoginFailureModel>();
-        for (UsernameLoginFailureEntity entity : entities) {
-            models.add(new UsernameLoginFailureAdapter(entity));
-        }
-        return models;
-    }
-
-    @Override
-    public UserSessionModel createUserSession(RealmModel realm, UserModel user, String ipAddress) {
-        UserSessionEntity entity = new UserSessionEntity();
-        entity.setRealmId(realm.getId());
-        entity.setUserId(user.getId());
-        entity.setIpAddress(ipAddress);
-
-        int currentTime = Time.currentTime();
-
-        entity.setStarted(currentTime);
-        entity.setLastSessionRefresh(currentTime);
-
-        em.persist(entity);
-        return new UserSessionAdapter(em, realm, entity);
-    }
-
-    @Override
-    public UserSessionModel getUserSession(String id, RealmModel realm) {
-        UserSessionEntity entity = em.find(UserSessionEntity.class, id);
-        return entity != null ? new UserSessionAdapter(em, realm, entity) : null;
-    }
-
-    @Override
-    public List<UserSessionModel> getUserSessions(UserModel user, RealmModel realm) {
-        List<UserSessionModel> sessions = new LinkedList<UserSessionModel>();
-        for (UserSessionEntity e : em.createNamedQuery("getUserSessionByUser", UserSessionEntity.class)
-                .setParameter("userId", user.getId()).getResultList()) {
-            sessions.add(new UserSessionAdapter(em, realm, e));
-        }
-        return sessions;
-    }
-
-    @Override
-    public Set<UserSessionModel> getUserSessions(RealmModel realm, ClientModel client) {
-        Set<UserSessionModel> list = new HashSet<UserSessionModel>();
-        TypedQuery<ClientUserSessionAssociationEntity> query = em.createNamedQuery("getClientUserSessionByClient", ClientUserSessionAssociationEntity.class);
-        String id = client.getId();
-        query.setParameter("clientId", id);
-        List<ClientUserSessionAssociationEntity> results = query.getResultList();
-        for (ClientUserSessionAssociationEntity entity : results) {
-            list.add(new UserSessionAdapter(em, realm, entity.getSession()));
-        }
-        return list;
-    }
-
-    @Override
-    public int getActiveUserSessions(RealmModel realm, ClientModel client) {
-        Query query = em.createNamedQuery("getActiveClientSessions");
-        query.setParameter("clientId", client.getId());
-        Object count = query.getSingleResult();
-        return ((Number)count).intValue();
-    }
-
-    @Override
-    public void removeUserSession(UserSessionModel session) {
-        em.remove(((UserSessionAdapter) session).getEntity());
-    }
-
-    @Override
-    public void removeUserSessions(RealmModel realm, UserModel user) {
-        em.createNamedQuery("removeClientUserSessionByUser").setParameter("userId", user.getId()).executeUpdate();
-        em.createNamedQuery("removeUserSessionByUser").setParameter("userId", user.getId()).executeUpdate();
-    }
-
-    @Override
-    public void removeExpiredUserSessions(RealmModel realm) {
-        TypedQuery<UserSessionEntity> query = em.createNamedQuery("getUserSessionExpired", UserSessionEntity.class)
-                .setParameter("maxTime", Time.currentTime() - realm.getSsoSessionMaxLifespan())
-                .setParameter("idleTime", Time.currentTime() - realm.getSsoSessionIdleTimeout());
-        List<UserSessionEntity> results = query.getResultList();
-        for (UserSessionEntity entity : results) {
-            em.remove(entity);
-        }
-    }
-
-    @Override
-    public void removeUserSessions(RealmModel realm) {
-        em.createNamedQuery("removeClientUserSessionByRealm").setParameter("realmId", realm.getId()).executeUpdate();
-        em.createNamedQuery("removeRealmUserSessions").setParameter("realmId", realm.getId()).executeUpdate();
-    }
 }

@@ -94,7 +94,7 @@ public class RealmsResource {
                                        @QueryParam("client_id") String client_id,
                                        @QueryParam("origin") String origin) {
         logger.info("getLoginStatusIframe");
-        AuthenticationManager auth = new AuthenticationManager(session);
+        AuthenticationManager auth = new AuthenticationManager();
 
         //logger.info("getting login-status-iframe.html for client_id: " + client_id);
         RealmManager realmManager = new RealmManager(session);
@@ -103,7 +103,7 @@ public class RealmsResource {
         if (client == null) {
             throw new NotFoundException("could not find client: " + client_id);
         }
-        AuthenticationManager.AuthResult result = auth.authenticateIdentityCookie(realm, uriInfo, headers);
+        AuthenticationManager.AuthResult result = auth.authenticateIdentityCookie(session, realm, uriInfo, headers);
         if (result == null) {
             throw new UnauthorizedException("not logged in, can't get page");
         }
@@ -148,7 +148,7 @@ public class RealmsResource {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = locateRealm(name, realmManager);
         Audit audit = new AuditManager(realm, session, clientConnection).createAudit();
-        AuthenticationManager authManager = new AuthenticationManager(session, protector);
+        AuthenticationManager authManager = new AuthenticationManager(protector);
         TokenService tokenService = new TokenService(realm, tokenManager, audit, authManager);
         ResteasyProviderFactory.getInstance().injectProperties(tokenService);
         //resourceContext.initResource(tokenService);

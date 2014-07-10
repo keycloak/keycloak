@@ -13,7 +13,7 @@ public class ClearExpiredAuditEvents implements ScheduledTask {
     public void run(KeycloakSession session) {
         AuditProvider audit = session.getProvider(AuditProvider.class);
         if (audit != null) {
-            for (RealmModel realm : session.getModel().getRealms()) {
+            for (RealmModel realm : session.model().getRealms()) {
                 if (realm.isAuditEnabled() && realm.getAuditExpiration() > 0) {
                     long olderThan = System.currentTimeMillis() - realm.getAuditExpiration() * 1000;
                     audit.clear(realm.getId(), olderThan);

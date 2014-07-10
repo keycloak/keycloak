@@ -18,7 +18,6 @@ import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UsernameLoginFailureModel;
 import org.keycloak.models.entities.AuthenticationProviderEntity;
 import org.keycloak.models.entities.RequiredCredentialEntity;
@@ -63,7 +62,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         super(invocationContext);
         this.realm = realmEntity;
         this.session = session;
-        this.model = session.getModel();
+        this.model = session.model();
     }
 
     @Override
@@ -443,22 +442,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     @Override
     public UserModel getUser(String name) {
         return model.getUserByUsername(name, this);
-    }
-
-    @Override
-    public UsernameLoginFailureModel getUserLoginFailure(String name) {
-        return model.getUserLoginFailure(name, this);
-    }
-
-    @Override
-    public UsernameLoginFailureModel addUserLoginFailure(String username) {
-        return model.addUserLoginFailure(username, this);
-    }
-
-
-    @Override
-    public List<UsernameLoginFailureModel> getAllUserLoginFailures() {
-        return model.getAllUserLoginFailures(this);
     }
 
     @Override
@@ -1011,41 +994,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     @Override
     public MongoRealmEntity getMongoEntity() {
         return realm;
-    }
-
-    @Override
-    public UserSessionModel createUserSession(UserModel user, String ipAddress) {
-        return model.createUserSession(this, user, ipAddress);
-    }
-
-    @Override
-    public UserSessionModel getUserSession(String id) {
-        return model.getUserSession(id, this);
-    }
-
-    @Override
-    public List<UserSessionModel> getUserSessions(UserModel user) {
-        return model.getUserSessions(user, this);
-    }
-
-    @Override
-    public void removeUserSession(UserSessionModel session) {
-        this.model.removeUserSession(session);
-    }
-
-    @Override
-    public void removeUserSessions(UserModel user) {
-        this.model.removeUserSessions(this, user);
-    }
-
-    @Override
-    public void removeUserSessions() {
-        this.model.removeUserSessions(this);
-    }
-
-    @Override
-    public void removeExpiredUserSessions() {
-        this.model.removeExpiredUserSessions(this);
     }
 
     @Override
