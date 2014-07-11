@@ -10,4 +10,5 @@ public interface KeycloakTransaction {
     void rollback();
     void setRollbackOnly();
     boolean getRollbackOnly();
-    boolean isActive();}
+    boolean isActive();
+}

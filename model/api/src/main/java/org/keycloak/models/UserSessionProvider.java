@@ -12,12 +12,10 @@ import java.util.Set;
  */
 public interface UserSessionProvider extends Provider {
 
-    KeycloakTransaction getTransaction();
-
     UserSessionModel createUserSession(RealmModel realm, UserModel user, String ipAddress);
     UserSessionModel getUserSession(RealmModel realm, String id);
     List<UserSessionModel> getUserSessions(RealmModel realm, UserModel user);
-    Set<UserSessionModel> getUserSessions(RealmModel realm, ClientModel client);
+    List<UserSessionModel> getUserSessions(RealmModel realm, ClientModel client);
     int getActiveUserSessions(RealmModel realm, ClientModel client);
     void removeUserSession(RealmModel realm, UserSessionModel session);
     void removeUserSessions(RealmModel realm, UserModel user);

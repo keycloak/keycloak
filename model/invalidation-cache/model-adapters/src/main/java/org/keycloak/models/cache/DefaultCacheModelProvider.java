@@ -34,7 +34,6 @@ public class DefaultCacheModelProvider implements CacheModelProvider {
     protected KeycloakCache cache;
     protected KeycloakSession session;
     protected ModelProvider delegate;
-    protected KeycloakTransaction transactionDelegate;
     protected boolean transactionActive;
     protected boolean setRollbackOnly;
 
@@ -54,6 +53,8 @@ public class DefaultCacheModelProvider implements CacheModelProvider {
     public DefaultCacheModelProvider(KeycloakCache cache, KeycloakSession session) {
         this.cache = cache;
         this.session = session;
+
+        session.getTransaction().enlist(getTransaction());
     }
 
     @Override
@@ -61,13 +62,6 @@ public class DefaultCacheModelProvider implements CacheModelProvider {
         if (!transactionActive) throw new IllegalStateException("Cannot access delegate without a transaction");
         if (delegate != null) return delegate;
         delegate = session.getProvider(ModelProvider.class);
-        transactionDelegate = delegate.getTransaction();
-        if (!transactionDelegate.isActive()) {
-            transactionDelegate.begin();
-            if (setRollbackOnly) {
-                transactionDelegate.setRollbackOnly();
-            }
-        }
         return delegate;
     }
 
@@ -115,8 +109,7 @@ public class DefaultCacheModelProvider implements CacheModelProvider {
 
     }
 
-    @Override
-    public KeycloakTransaction getTransaction() {
+    private KeycloakTransaction getTransaction() {
         return new KeycloakTransaction() {
             @Override
             public void begin() {
@@ -126,32 +119,20 @@ public class DefaultCacheModelProvider implements CacheModelProvider {
             @Override
             public void commit() {
                 if (delegate == null) return;
-                try {
-                    delegate.getTransaction().commit();
-                    if (clearAll) {
-                        cache.clear();
-                    }
-                } finally {
-                    runInvalidations();
+                if (clearAll) {
+                    cache.clear();
                 }
+                runInvalidations();
             }
 
             @Override
             public void rollback() {
                 setRollbackOnly = true;
-                if (delegate == null) return;
-                try {
-                    delegate.getTransaction().rollback();
-                } finally {
-                    runInvalidations();
-                }
+                runInvalidations();
             }
 
             @Override
             public void setRollbackOnly() {
-                setRollbackOnly = true;
-                if (delegate == null) return;
-                delegate.getTransaction().setRollbackOnly();
                 setRollbackOnly = true;
             }
 

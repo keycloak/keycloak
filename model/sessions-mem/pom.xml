@@ -24,12 +24,7 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-model-api</artifactId>
             <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-tests</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 

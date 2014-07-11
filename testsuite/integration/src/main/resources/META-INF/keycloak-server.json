@@ -4,27 +4,15 @@
     },
 
     "audit": {
-        "provider": "${keycloak.audit.provider,keycloak.model.provider:jpa}",
-        "mongo": {
-          "host": "${keycloak.audit.mongo.host:127.0.0.1}",
-          "port": "${keycloak.audit.mongo.port:27017}",
-          "db": "${keycloak.audit.mongo.db:keycloak-audit}",
-          "clearOnStartup": "${keycloak.audit.mongo.clearOnStartup:false}"
-        }
+        "provider": "${keycloak.audit.provider,keycloak.model.provider:jpa}"
     },
 
     "model": {
-        "provider": "${keycloak.model.provider:jpa}",
-        "mongo": {
-          "host": "${keycloak.model.mongo.host:127.0.0.1}",
-          "port": "${keycloak.model.mongo.port:27017}",
-          "db": "${keycloak.model.mongo.db:keycloak}",
-          "clearOnStartup": "${keycloak.model.mongo.clearOnStartup:false}"
-        }
+        "provider": "${keycloak.model.provider:jpa}"
     },
 
     "userSessions": {
-        "provider" : "mem"
+        "provider" : "${keycloak.userSessions.provider:mem}"
     },
 
     "modelCache": {
@@ -58,5 +46,15 @@
 
     "scheduled": {
         "interval": 900
+    },
+
+    "connectionsMongo": {
+        "default": {
+            "host": "${keycloak.model.mongo.host:127.0.0.1}",
+            "port": "${keycloak.model.mongo.port:27017}",
+            "db": "${keycloak.model.mongo.db:keycloak}",
+            "clearOnStartup": "${keycloak.model.mongo.clearOnStartup:false}"
+        }
     }
+
 }

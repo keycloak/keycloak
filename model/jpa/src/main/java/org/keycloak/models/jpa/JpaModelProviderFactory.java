@@ -1,13 +1,12 @@
 package org.keycloak.models.jpa;
 
 import org.keycloak.Config;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelProvider;
 import org.keycloak.models.ModelProviderFactory;
-import org.keycloak.util.JpaUtils;
 
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
+import javax.persistence.EntityManager;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -15,11 +14,8 @@ import javax.persistence.Persistence;
  */
 public class JpaModelProviderFactory implements ModelProviderFactory {
 
-    protected EntityManagerFactory emf;
-
     @Override
     public void init(Config.Scope config) {
-        emf = Persistence.createEntityManagerFactory("jpa-keycloak-identity-store", JpaUtils.getHibernateProperties());
     }
 
     @Override
@@ -29,12 +25,12 @@ public class JpaModelProviderFactory implements ModelProviderFactory {
 
     @Override
     public ModelProvider create(KeycloakSession session) {
-        return new JpaModelProvider(session, emf.createEntityManager());
+        EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+        return new JpaModelProvider(session, em);
     }
 
     @Override
     public void close() {
-        emf.close();
     }
 
 }

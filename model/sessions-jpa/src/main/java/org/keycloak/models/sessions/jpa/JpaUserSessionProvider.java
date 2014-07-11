@@ -1,36 +1,38 @@
 package org.keycloak.models.sessions.jpa;
 
-import org.keycloak.models.KeycloakTransaction;
-import org.keycloak.models.sessions.LoginFailure;
-import org.keycloak.models.sessions.Session;
-import org.keycloak.models.sessions.SessionProvider;
-import org.keycloak.models.sessions.jpa.entities.ClientUserSessionAssociationEntity;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.UsernameLoginFailureModel;
 import org.keycloak.models.sessions.jpa.entities.UserSessionEntity;
 import org.keycloak.models.sessions.jpa.entities.UsernameLoginFailureEntity;
 import org.keycloak.util.Time;
 
 import javax.persistence.EntityManager;
-import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class JpaUserSessionProvider implements SessionProvider {
+public class JpaUserSessionProvider implements UserSessionProvider {
+
+    protected final KeycloakSession session;
 
     protected final EntityManager em;
 
-    public JpaUserSessionProvider(EntityManager em) {
-        this.em = PersistenceExceptionConverter.create(em);
+    public JpaUserSessionProvider(KeycloakSession session, EntityManager em) {
+        this.session = session;
+        this.em = em;
     }
 
     @Override
-    public LoginFailure getUserLoginFailure(String username, String realm) {
+    public UsernameLoginFailureModel getUserLoginFailure(RealmModel realm, String username) {
         String id = username + "-" + realm;
         UsernameLoginFailureEntity entity = em.find(UsernameLoginFailureEntity.class, id);
         if (entity == null) return null;
@@ -38,23 +40,21 @@ public class JpaUserSessionProvider implements SessionProvider {
     }
 
     @Override
-    public LoginFailure addUserLoginFailure(String username, String realm) {
-        LoginFailure model = getUserLoginFailure(username, realm);
+    public UsernameLoginFailureModel addUserLoginFailure(RealmModel realm, String username) {
+        UsernameLoginFailureModel model = getUserLoginFailure(realm, username);
         if (model != null) return model;
-        String id = username + "-" + realm;
         UsernameLoginFailureEntity entity = new UsernameLoginFailureEntity();
-        entity.setId(id);
         entity.setUsername(username);
-        entity.setRealm(realm);
+        entity.setRealmId(realm.getId());
         em.persist(entity);
         return new UsernameLoginFailureAdapter(entity);
     }
 
     @Override
-    public List<LoginFailure> getAllUserLoginFailures(String realm) {
+    public List<UsernameLoginFailureModel> getAllUserLoginFailures(RealmModel realm) {
         TypedQuery<UsernameLoginFailureEntity> query = em.createNamedQuery("getAllFailures", UsernameLoginFailureEntity.class);
         List<UsernameLoginFailureEntity> entities = query.getResultList();
-        List<LoginFailure> models = new ArrayList<LoginFailure>();
+        List<UsernameLoginFailureModel> models = new ArrayList<UsernameLoginFailureModel>();
         for (UsernameLoginFailureEntity entity : entities) {
             models.add(new UsernameLoginFailureAdapter(entity));
         }
@@ -62,10 +62,10 @@ public class JpaUserSessionProvider implements SessionProvider {
     }
 
     @Override
-    public Session createUserSession(String realm, String id, String user, String ipAddress) {
+    public UserSessionModel createUserSession(RealmModel realm, UserModel user, String ipAddress) {
         UserSessionEntity entity = new UserSessionEntity();
-        entity.setRealmId(realm);
-        entity.setUserId(user);
+        entity.setRealmId(realm.getId());
+        entity.setUserId(user.getId());
         entity.setIpAddress(ipAddress);
 
         int currentTime = Time.currentTime();
@@ -74,82 +74,110 @@ public class JpaUserSessionProvider implements SessionProvider {
         entity.setLastSessionRefresh(currentTime);
 
         em.persist(entity);
-        return new UserSessionAdapter(em, realm, entity);
+        return new UserSessionAdapter(session, em, realm, entity);
     }
 
     @Override
-    public Session getUserSession(String id, String realm) {
+    public UserSessionModel getUserSession(RealmModel realm, String id) {
         UserSessionEntity entity = em.find(UserSessionEntity.class, id);
-        return entity != null ? new UserSessionAdapter(em, realm, entity) : null;
+        return entity != null ? new UserSessionAdapter(session, em, realm, entity) : null;
     }
 
     @Override
-    public List<Session> getUserSessionsByUser(String user, String realm) {
-        List<Session> sessions = new LinkedList<Session>();
-        for (UserSessionEntity e : em.createNamedQuery("getUserSessionByUser", UserSessionEntity.class)
-                .setParameter("userId", user).getResultList()) {
-            sessions.add(new UserSessionAdapter(em, realm, e));
+    public List<UserSessionModel> getUserSessions(RealmModel realm, UserModel user) {
+        List<UserSessionModel> sessions = new LinkedList<UserSessionModel>();
+        TypedQuery<UserSessionEntity> query = em.createNamedQuery("getUserSessionByUser", UserSessionEntity.class)
+                .setParameter("realmId", realm.getId())
+                .setParameter("userId", user.getId());
+        for (UserSessionEntity e : query.getResultList()) {
+            sessions.add(new UserSessionAdapter(session, em, realm, e));
         }
         return sessions;
     }
 
     @Override
-    public Set<Session> getUserSessionsByClient(String realm, String client) {
-        Set<Session> list = new HashSet<Session>();
-        TypedQuery<ClientUserSessionAssociationEntity> query = em.createNamedQuery("getClientUserSessionByClient", ClientUserSessionAssociationEntity.class);
-        query.setParameter("clientId", client);
-        List<ClientUserSessionAssociationEntity> results = query.getResultList();
-        for (ClientUserSessionAssociationEntity entity : results) {
-            list.add(new UserSessionAdapter(em, realm, entity.getSession()));
+    public List<UserSessionModel> getUserSessions(RealmModel realm, ClientModel client) {
+        List<UserSessionModel> list = new LinkedList<UserSessionModel>();
+        TypedQuery<UserSessionEntity> query = em.createNamedQuery("getUserSessionByClient", UserSessionEntity.class)
+                .setParameter("realmId", realm.getId())
+                .setParameter("clientId", client.getClientId());
+        for (UserSessionEntity entity : query.getResultList()) {
+            list.add(new UserSessionAdapter(session, em, realm, entity));
         }
         return list;
     }
 
     @Override
-    public int getActiveUserSessions(String realm, String client) {
-        Query query = em.createNamedQuery("getActiveClientSessions");
-        query.setParameter("clientId", client);
-        Object count = query.getSingleResult();
+    public int getActiveUserSessions(RealmModel realm, ClientModel client) {
+        Object count = em.createNamedQuery("getActiveUserSessionByClient")
+                .setParameter("realmId", realm.getId())
+                .setParameter("clientId", client.getClientId())
+                .getSingleResult();
         return ((Number)count).intValue();
     }
 
     @Override
-    public void removeUserSession(Session session) {
-        em.remove(((UserSessionAdapter) session).getEntity());
-    }
-
-    @Override
-    public void removeUserSessions(String realm, String user) {
-        em.createNamedQuery("removeClientUserSessionByUser").setParameter("userId", user).executeUpdate();
-        em.createNamedQuery("removeUserSessionByUser").setParameter("userId", user).executeUpdate();
-    }
-
-    @Override
-    public void removeExpiredUserSessions(String realm, long refreshTimeout, long sessionTimeout) {
-        TypedQuery<UserSessionEntity> query = em.createNamedQuery("getUserSessionExpired", UserSessionEntity.class)
-                .setParameter("maxTime", sessionTimeout)
-                .setParameter("idleTime", refreshTimeout);
-        List<UserSessionEntity> results = query.getResultList();
-        for (UserSessionEntity entity : results) {
+    public void removeUserSession(RealmModel realm, UserSessionModel session) {
+        UserSessionEntity entity = em.find(UserSessionEntity.class, session.getId());
+        if (entity != null) {
             em.remove(entity);
         }
     }
 
     @Override
-    public void removeUserSessions(String realm) {
-        em.createNamedQuery("removeClientUserSessionByRealm").setParameter("realmId", realm).executeUpdate();
-        em.createNamedQuery("removeRealmUserSessions").setParameter("realmId", realm).executeUpdate();
+    public void removeUserSessions(RealmModel realm, UserModel user) {
+        em.createNamedQuery("removeClientUserSessionByUser")
+                .setParameter("realmId", realm.getId())
+                .setParameter("userId", user.getId())
+                .executeUpdate();
+        em.createNamedQuery("removeUserSessionByUser")
+                .setParameter("realmId", realm.getId())
+                .setParameter("userId", user.getId())
+                .executeUpdate();
     }
 
     @Override
-    public KeycloakTransaction getTransaction() {
-        return new JpaKeycloakTransaction(em);
+    public void removeExpiredUserSessions(RealmModel realm) {
+        int maxTime = Time.currentTime() - realm.getSsoSessionMaxLifespan();
+        int idleTime = Time.currentTime() - realm.getSsoSessionIdleTimeout();
+
+        em.createNamedQuery("removeClientUserSessionByExpired")
+                .setParameter("realmId", realm.getId())
+                .setParameter("maxTime", maxTime)
+                .setParameter("idleTime", idleTime)
+                .executeUpdate();
+        em.createNamedQuery("removeUserSessionByExpired")
+                .setParameter("realmId", realm.getId())
+                .setParameter("maxTime", maxTime)
+                .setParameter("idleTime", idleTime)
+                .executeUpdate();
+    }
+
+    @Override
+    public void removeUserSessions(RealmModel realm) {
+        em.createNamedQuery("removeClientUserSessionByRealm").setParameter("realmId", realm.getId()).executeUpdate();
+        em.createNamedQuery("removeUserSessionByRealm").setParameter("realmId", realm.getId()).executeUpdate();
+    }
+
+    @Override
+    public void onRealmRemoved(RealmModel realm) {
+        removeUserSessions(realm);
+        em.createNamedQuery("removeLoginFailuresByRealm").setParameter("realmId", realm.getId()).executeUpdate();
+    }
+
+    @Override
+    public void onClientRemoved(RealmModel realm, ClientModel client) {
+        em.createNamedQuery("removeClientUserSessionByClient").setParameter("realmId", realm.getId()).setParameter("clientId", client.getClientId()).executeUpdate();
+    }
+
+    @Override
+    public void onUserRemoved(RealmModel realm, UserModel user) {
+        removeUserSessions(realm, user);
+        em.createNamedQuery("removeLoginFailuresByUser").setParameter("username", user.getUsername()).executeUpdate();
     }
 
     @Override
     public void close() {
-        if (em.getTransaction().isActive()) em.getTransaction().rollback();
-        if (em.isOpen()) em.close();
     }
 
 }

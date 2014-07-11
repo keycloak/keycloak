@@ -37,12 +37,6 @@ public class JpaModelProvider implements ModelProvider {
     public JpaModelProvider(KeycloakSession session, EntityManager em) {
         this.session = session;
         this.em = em;
-        this.em = PersistenceExceptionConverter.create(em);
-    }
-
-    @Override
-    public KeycloakTransaction getTransaction() {
-        return new JpaKeycloakTransaction(em);
     }
 
     @Override
@@ -148,8 +142,6 @@ public class JpaModelProvider implements ModelProvider {
 
     @Override
     public void close() {
-        if (em.getTransaction().isActive()) em.getTransaction().rollback();
-        if (em.isOpen()) em.close();
     }
 
     @Override

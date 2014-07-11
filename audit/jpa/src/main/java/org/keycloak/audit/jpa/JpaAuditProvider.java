@@ -41,44 +41,28 @@ public class JpaAuditProvider implements AuditProvider {
 
     @Override
     public void clear() {
-        beginTx();
         em.createQuery("delete from EventEntity").executeUpdate();
     }
 
     @Override
     public void clear(String realmId) {
-        beginTx();
         em.createQuery("delete from EventEntity where realmId = :realmId").setParameter("realmId", realmId).executeUpdate();
     }
 
     @Override
     public void clear(String realmId, long olderThan) {
-        beginTx();
         em.createQuery("delete from EventEntity where realmId = :realmId and time < :time").setParameter("realmId", realmId).setParameter("time", olderThan).executeUpdate();
     }
 
     @Override
     public void onEvent(Event event) {
         if (includedEvents.contains(event.getEvent())) {
-            beginTx();
             em.persist(convert(event));
         }
     }
 
     @Override
     public void close() {
-        if (tx != null) {
-            tx.commit();
-        }
-
-        em.close();
-    }
-
-    private void beginTx() {
-        if (tx == null) {
-            tx = em.getTransaction();
-            tx.begin();
-        }
     }
 
     static EventEntity convert(Event o) {

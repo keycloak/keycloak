@@ -1,19 +1,15 @@
 package org.keycloak.audit.mongo;
 
-import com.mongodb.DB;
-import com.mongodb.MongoClient;
-import com.mongodb.MongoCredential;
-import com.mongodb.ServerAddress;
+import com.mongodb.DBCollection;
 import com.mongodb.WriteConcern;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.audit.AuditProvider;
 import org.keycloak.audit.AuditProviderFactory;
 import org.keycloak.audit.EventType;
+import org.keycloak.connections.mongo.MongoConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 
-import java.net.UnknownHostException;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -25,45 +21,21 @@ public class MongoAuditProviderFactory implements AuditProviderFactory {
     protected static final Logger logger = Logger.getLogger(MongoAuditProviderFactory.class);
 
     public static final String ID = "mongo";
-    private MongoClient client;
-    private DB db;
 
     private Set<EventType> includedEvents = new HashSet<EventType>();
 
     @Override
     public AuditProvider create(KeycloakSession session) {
-        return new MongoAuditProvider(db.getCollection("audit"), includedEvents);
+        MongoConnectionProvider connection = session.getProvider(MongoConnectionProvider.class);
+
+        DBCollection collection = connection.getDB().getCollection("audit");
+        collection.setWriteConcern(WriteConcern.UNACKNOWLEDGED);
+
+        return new MongoAuditProvider(collection, includedEvents);
     }
 
     @Override
     public void init(Config.Scope config) {
-        try {
-            String host = config.get("host", ServerAddress.defaultHost());
-            int port = config.getInt("port", ServerAddress.defaultPort());
-            String dbName = config.get("db", "keycloak-audit");
-            boolean clearOnStartup = config.getBoolean("clearOnStartup", false);
-
-            String user = config.get("user");
-            String password = config.get("password");
-            if (user != null && password != null) {
-                MongoCredential credential = MongoCredential.createMongoCRCredential(user, dbName, password.toCharArray());
-                client = new MongoClient(new ServerAddress(host, port), Collections.singletonList(credential));
-            } else {
-                client = new MongoClient(host, port);
-            }
-
-            client.setWriteConcern(WriteConcern.UNACKNOWLEDGED);
-            db = client.getDB(dbName);
-
-            if (clearOnStartup) {
-                db.getCollection("audit").drop();
-            }
-
-            logger.infof("Initialized mongo audit. host: %s, port: %d, db: %s, clearOnStartup: %b", host, port, dbName, clearOnStartup);
-        } catch (UnknownHostException e) {
-            throw new RuntimeException(e);
-        }
-
         String[] include = config.getArray("include-events");
         if (include != null) {
             for (String i : include) {
@@ -85,7 +57,6 @@ public class MongoAuditProviderFactory implements AuditProviderFactory {
 
     @Override
     public void close() {
-        client.close();
     }
 
     @Override

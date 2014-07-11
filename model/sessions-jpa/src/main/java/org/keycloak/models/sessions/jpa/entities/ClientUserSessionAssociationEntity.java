@@ -1,15 +1,14 @@
 package org.keycloak.models.sessions.jpa.entities;
 
-import org.hibernate.annotations.GenericGenerator;
-
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.IdClass;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
+import java.io.Serializable;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -18,37 +17,20 @@ import javax.persistence.Table;
 @Entity
 @Table(name = "ClientUserSessionAscEntity")
 @NamedQueries({
-        @NamedQuery(name = "getAllClientUserSessions", query = "select s from ClientUserSessionAssociationEntity s"),
-        @NamedQuery(name = "getClientUserSessionBySession", query = "select s from ClientUserSessionAssociationEntity s where s.session = :session"),
-        @NamedQuery(name = "getClientUserSessionByClient", query = "select s from ClientUserSessionAssociationEntity s where s.clientId = :clientId"),
-        @NamedQuery(name = "getActiveClientSessions", query = "select COUNT(s) from ClientUserSessionAssociationEntity s where s.clientId = :clientId"),
-        @NamedQuery(name = "removeClientUserSessionByClient", query = "delete from ClientUserSessionAssociationEntity s where s.clientId = :clientId"),
-        @NamedQuery(name = "removeClientUserSessionByUser", query = "delete from ClientUserSessionAssociationEntity s where s.userId = :userId"),
-        @NamedQuery(name = "removeClientUserSessionByRealm", query = "delete from ClientUserSessionAssociationEntity s where s.realmId = :realmId")})
+        @NamedQuery(name = "removeClientUserSessionByRealm", query = "delete from ClientUserSessionAssociationEntity a where a.session IN (select s from UserSessionEntity s where s.realmId = :realmId)"),
+        @NamedQuery(name = "removeClientUserSessionByUser", query = "delete from ClientUserSessionAssociationEntity a where a.session IN (select s from UserSessionEntity s where s.realmId = :realmId and s.userId = :userId)"),
+        @NamedQuery(name = "removeClientUserSessionByClient", query = "delete from ClientUserSessionAssociationEntity a where a.clientId = :clientId and a.session IN (select s from UserSessionEntity s where s.realmId = :realmId)"),
+        @NamedQuery(name = "removeClientUserSessionByExpired", query = "delete from ClientUserSessionAssociationEntity a where a.session IN (select s from UserSessionEntity s where s.realmId = :realmId and (s.started < :maxTime or s.lastSessionRefresh < :idleTime))")
+})
+@IdClass(ClientUserSessionAssociationEntity.Key.class)
 public class ClientUserSessionAssociationEntity {
+
     @Id
-    @GenericGenerator(name="uuid_generator", strategy="org.keycloak.models.sessions.jpa.utils.JpaIdGenerator")
-    @GeneratedValue(generator = "uuid_generator")
-    private String id;
+    @ManyToOne(fetch = FetchType.LAZY)
+    protected UserSessionEntity session;
 
-    // we use ids to avoid select for update contention
-    private String userId;
-    private String realmId;
-
-    @ManyToOne(fetch= FetchType.LAZY)
-    private UserSessionEntity session;
-
-
-
-    private String clientId;
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
+    @Id
+    protected String clientId;
 
     public UserSessionEntity getSession() {
         return session;
@@ -66,19 +48,46 @@ public class ClientUserSessionAssociationEntity {
         this.clientId = clientId;
     }
 
-    public String getUserId() {
-        return userId;
+    public static class Key implements Serializable {
+
+        private String clientId;
+        private UserSessionEntity session;
+
+        public Key() {
+        }
+
+        public Key(String clientId, UserSessionEntity session) {
+            this.clientId = clientId;
+            this.session = session;
+        }
+
+        public String getClientId() {
+            return clientId;
+        }
+
+        public UserSessionEntity getSession() {
+            return session;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Key key = (Key) o;
+
+            if (clientId != null ? !clientId.equals(key.clientId) : key.clientId != null) return false;
+            if (session != null ? !session.equals(key.session) : key.session != null) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = clientId != null ? clientId.hashCode() : 0;
+            result = 31 * result + (session != null ? session.hashCode() : 0);
+            return result;
+        }
     }
 
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
-
-    public String getRealmId() {
-        return realmId;
-    }
-
-    public void setRealmId(String realmId) {
-        this.realmId = realmId;
-    }
 }

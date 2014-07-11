@@ -1,18 +1,18 @@
 package org.keycloak.models.mongo.utils;
 
-import java.util.Collections;
-import java.util.List;
-
 import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
+import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.entities.ClientEntity;
-import org.keycloak.models.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.mongo.keycloak.adapters.ClientAdapter;
 import org.keycloak.models.mongo.keycloak.adapters.UserAdapter;
 import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoUserEntity;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

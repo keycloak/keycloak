@@ -15,11 +15,9 @@ import org.keycloak.models.sessions.mem.entities.UsernameLoginFailureKey;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.util.Time;
 
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -30,7 +28,6 @@ public class MemUserSessionProvider implements UserSessionProvider {
     private final KeycloakSession session;
     private final ConcurrentHashMap<UserSessionKey, UserSessionEntity> sessions;
     private final ConcurrentHashMap<UsernameLoginFailureKey, UsernameLoginFailureEntity> loginFailures;
-    private DummyKeycloakTransaction tx;
 
     public MemUserSessionProvider(KeycloakSession session, ConcurrentHashMap<UserSessionKey, UserSessionEntity> sessions, ConcurrentHashMap<UsernameLoginFailureKey, UsernameLoginFailureEntity> loginFailures) {
         this.session = session;
@@ -55,13 +52,13 @@ public class MemUserSessionProvider implements UserSessionProvider {
 
         sessions.put(new UserSessionKey(realm.getId(), id), entity);
 
-        return new UserSessionAdapter(session, entity);
+        return new UserSessionAdapter(session, realm, entity);
     }
 
     @Override
     public UserSessionModel getUserSession(RealmModel realm, String id) {
         UserSessionEntity entity = sessions.get(new UserSessionKey(realm.getId(), id));
-        return entity != null ? new UserSessionAdapter(session, entity) : null;
+        return entity != null ? new UserSessionAdapter(session, realm, entity) : null;
     }
 
     @Override
@@ -69,18 +66,18 @@ public class MemUserSessionProvider implements UserSessionProvider {
         List<UserSessionModel> userSessions = new LinkedList<UserSessionModel>();
         for (UserSessionEntity s : sessions.values()) {
             if (s.getRealm().equals(realm.getId()) && s.getUser().equals(user.getId())) {
-                userSessions.add(new UserSessionAdapter(session, s));
+                userSessions.add(new UserSessionAdapter(session, realm, s));
             }
         }
         return userSessions;
     }
 
     @Override
-    public Set<UserSessionModel> getUserSessions(RealmModel realm, ClientModel client) {
-        Set<UserSessionModel> clientSessions = new HashSet<UserSessionModel>();
+    public List<UserSessionModel> getUserSessions(RealmModel realm, ClientModel client) {
+        List<UserSessionModel> clientSessions = new LinkedList<UserSessionModel>();
         for (UserSessionEntity s : sessions.values()) {
             if (s.getRealm().equals(realm.getId()) && s.getClients().contains(client.getClientId())) {
-                clientSessions.add(new UserSessionAdapter(session, s));
+                clientSessions.add(new UserSessionAdapter(session, realm, s));
             }
         }
         return clientSessions;
@@ -195,50 +192,7 @@ public class MemUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
-    public KeycloakTransaction getTransaction() {
-        if (tx == null) {
-            tx = new DummyKeycloakTransaction();
-        }
-        return tx;
-    }
-
-    @Override
     public void close() {
-    }
-
-    public static class DummyKeycloakTransaction implements KeycloakTransaction {
-
-        public boolean rollBackOnly;
-        public boolean active;
-
-        @Override
-        public void begin() {
-            this.active = true;
-        }
-
-        @Override
-        public void commit() {
-        }
-
-        @Override
-        public void rollback() {
-        }
-
-        @Override
-        public void setRollbackOnly() {
-            this.rollBackOnly = true;
-        }
-
-        @Override
-        public boolean getRollbackOnly() {
-            return rollBackOnly;
-        }
-
-        @Override
-        public boolean isActive() {
-            return active;
-        }
-
     }
 
 }

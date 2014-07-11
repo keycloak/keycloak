@@ -11,9 +11,8 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public interface KeycloakSession {
-    // Note: The reason there are so many query methods here is for layering a cache on top of an persistent KeycloakSession
 
-    KeycloakTransaction getTransaction();
+    KeycloakTransactionManager getTransaction();
 
     <T extends Provider> T getProvider(Class<T> clazz);
 
@@ -43,5 +42,4 @@ public interface KeycloakSession {
 
     void close();
 
-    void enlist(KeycloakTransaction transaction);
 }
