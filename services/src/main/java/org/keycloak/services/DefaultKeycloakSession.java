@@ -141,6 +141,11 @@ public class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @Override
+    public void enlist(KeycloakTransaction transaction) {
+        managedTransactions.add(transaction);
+    }
+
+    @Override
     public ModelProvider model() {
         if (!transaction.isActive()) throw new IllegalStateException("Transaction is not active");
         if (model == null) {

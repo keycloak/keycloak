@@ -43,4 +43,5 @@ public interface KeycloakSession {
 
     void close();
 
+    void enlist(KeycloakTransaction transaction);
 }
