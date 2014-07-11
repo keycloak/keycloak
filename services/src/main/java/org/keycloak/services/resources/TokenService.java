@@ -99,8 +99,6 @@ public class TokenService {
     @Context
     protected KeycloakSession session;
     @Context
-    protected KeycloakTransaction transaction;
-    @Context
     protected ClientConnection clientConnection;
 
     /*

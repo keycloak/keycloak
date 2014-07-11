@@ -23,8 +23,22 @@ public interface KeycloakSession {
 
     <T extends Provider> Set<T> getAllProviders(Class<T> clazz);
 
+    /**
+     * Returns a managed provider instance.  Will start a provider transaction.  This transaction is managed by the KeycloakSession
+     * transaction.
+     *
+     * @return
+     * @throws IllegalStateException if transaction is not active
+     */
     ModelProvider model();
 
+    /**
+     * Returns a managed provider instance.  Will start a provider transaction.  This transaction is managed by the KeycloakSession
+     * transaction.
+     *
+     * @return
+     * @throws IllegalStateException if transaction is not active
+     */
     UserSessionProvider sessions();
 
     void close();

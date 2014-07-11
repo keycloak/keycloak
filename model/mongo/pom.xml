@@ -53,7 +53,13 @@
             <artifactId>mongo-java-driver</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-model-sessions-mem</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
 
+        </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-model-tests</artifactId>
