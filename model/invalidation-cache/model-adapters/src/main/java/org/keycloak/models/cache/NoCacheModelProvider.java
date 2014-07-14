@@ -24,9 +24,9 @@ import java.util.Set;
 public class NoCacheModelProvider implements CacheModelProvider {
     protected KeycloakSession session;
     protected ModelProvider delegate;
-    protected KeycloakTransaction transactionDelegate;
-    protected boolean transactionActive;
-    protected boolean setRollbackOnly;
+//    protected KeycloakTransaction transactionDelegate;
+//    protected boolean transactionActive;
+//    protected boolean setRollbackOnly;
 
     public NoCacheModelProvider(KeycloakSession session) {
         this.session = session;
@@ -34,16 +34,16 @@ public class NoCacheModelProvider implements CacheModelProvider {
 
     @Override
     public ModelProvider getDelegate() {
-        if (!transactionActive) throw new IllegalStateException("Cannot access delegate without a transaction");
+//        if (!transactionActive) throw new IllegalStateException("Cannot access delegate without a transaction");
         if (delegate != null) return delegate;
         delegate = session.getProvider(ModelProvider.class);
-        transactionDelegate = delegate.getTransaction();
-        if (!transactionDelegate.isActive()) {
-            transactionDelegate.begin();
-            if (setRollbackOnly) {
-                transactionDelegate.setRollbackOnly();
-            }
-        }
+//        transactionDelegate = delegate.getTransaction();
+//        if (!transactionDelegate.isActive()) {
+//            transactionDelegate.begin();
+//            if (setRollbackOnly) {
+//                transactionDelegate.setRollbackOnly();
+//            }
+//        }
         return delegate;
     }
 
@@ -61,53 +61,6 @@ public class NoCacheModelProvider implements CacheModelProvider {
 
     @Override
     public void registerOAuthClientInvalidation(String id) {
-    }
-
-    @Override
-    public KeycloakTransaction getTransaction() {
-        return new KeycloakTransaction() {
-            @Override
-            public void begin() {
-                transactionActive = true;
-            }
-
-            @Override
-            public void commit() {
-                if (delegate == null) return;
-                try {
-                    delegate.getTransaction().commit();
-                } finally {
-                }
-            }
-
-            @Override
-            public void rollback() {
-                setRollbackOnly = true;
-                if (delegate == null) return;
-                try {
-                    delegate.getTransaction().rollback();
-                } finally {
-                }
-            }
-
-            @Override
-            public void setRollbackOnly() {
-                setRollbackOnly = true;
-                if (delegate == null) return;
-                delegate.getTransaction().setRollbackOnly();
-                setRollbackOnly = true;
-            }
-
-            @Override
-            public boolean getRollbackOnly() {
-                return setRollbackOnly;
-            }
-
-            @Override
-            public boolean isActive() {
-                return transactionActive;
-            }
-        };
     }
 
     @Override

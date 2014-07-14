@@ -16,6 +16,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class MemUserSessionProviderFactory implements UserSessionProviderFactory {
 
+    public static final String ID = "mem";
+
     private ConcurrentHashMap<UserSessionKey, UserSessionEntity> sessions = new ConcurrentHashMap<UserSessionKey, UserSessionEntity>();
 
     private ConcurrentHashMap<UsernameLoginFailureKey, UsernameLoginFailureEntity> loginFailures = new ConcurrentHashMap<UsernameLoginFailureKey, UsernameLoginFailureEntity>();
@@ -37,7 +39,7 @@ public class MemUserSessionProviderFactory implements UserSessionProviderFactory
 
     @Override
     public String getId() {
-        return "mem";
+        return ID;
     }
 
 }

@@ -1,6 +1,7 @@
 package org.keycloak.exportimport;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.keycloak.exportimport.io.zip.EncryptedZIPIOProvider;
 import org.keycloak.models.KeycloakSessionFactory;
 
@@ -11,6 +12,7 @@ import java.io.File;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@Ignore
 public class MongoToJPAExportImportTest extends ExportImportTestBase {
 
     private static final String zipFile = "keycloak-export.zip";

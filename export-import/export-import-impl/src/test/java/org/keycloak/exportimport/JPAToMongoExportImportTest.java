@@ -1,5 +1,6 @@
 package org.keycloak.exportimport;
 
+import org.junit.Ignore;
 import org.keycloak.exportimport.io.directory.TmpDirExportImportIOProvider;
 import org.keycloak.models.KeycloakSessionFactory;
 
@@ -8,6 +9,7 @@ import org.keycloak.models.KeycloakSessionFactory;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@Ignore
 public class JPAToMongoExportImportTest extends ExportImportTestBase {
 
     @Override

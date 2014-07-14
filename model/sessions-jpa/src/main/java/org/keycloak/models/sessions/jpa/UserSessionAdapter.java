@@ -1,7 +1,10 @@
 package org.keycloak.models.sessions.jpa;
 
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.sessions.Session;
 import org.keycloak.models.sessions.jpa.entities.ClientUserSessionAssociationEntity;
 import org.keycloak.models.sessions.jpa.entities.UserSessionEntity;
 
@@ -12,16 +15,18 @@ import java.util.List;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class UserSessionAdapter implements Session {
+public class UserSessionAdapter implements UserSessionModel {
 
-    private String realm;
+    private KeycloakSession session;
+    private RealmModel realm;
     private UserSessionEntity entity;
     private EntityManager em;
 
-    public UserSessionAdapter(EntityManager em, String realm, UserSessionEntity entity) {
+    public UserSessionAdapter(KeycloakSession session, EntityManager em, RealmModel realm, UserSessionEntity entity) {
+        this.session = session;
+        this.realm = realm;
         this.entity = entity;
         this.em = em;
-        this.realm = realm;
     }
 
     public UserSessionEntity getEntity() {
@@ -39,13 +44,13 @@ public class UserSessionAdapter implements Session {
     }
 
     @Override
-    public String getUser() {
-        return entity.getUserId();
+    public UserModel getUser() {
+        return realm.getUserById(entity.getUserId());
     }
 
     @Override
-    public void setUser(String user) {
-        entity.setUserId(user);
+    public void setUser(UserModel user) {
+        entity.setUserId(user.getId());
     }
 
     @Override
@@ -79,29 +84,28 @@ public class UserSessionAdapter implements Session {
     }
 
     @Override
-    public void associateClient(String client) {
+    public void associateClient(ClientModel client) {
         for (ClientUserSessionAssociationEntity ass : entity.getClients()) {
-            if (ass.getClientId().equals(client)) return;
+            if (ass.getClientId().equals(client.getClientId())) return;
         }
+
         ClientUserSessionAssociationEntity association = new ClientUserSessionAssociationEntity();
-        association.setClientId(client);
+        association.setClientId(client.getClientId());
         association.setSession(entity);
-        association.setUserId(entity.getUserId());
-        association.setRealmId(realm);
         em.persist(association);
         entity.getClients().add(association);
     }
 
     @Override
-    public void removeAssociatedClient(String client) {
-        em.createNamedQuery("removeClientUserSessionByClient").setParameter("clientId", client).executeUpdate();
+    public void removeAssociatedClient(ClientModel client) {
+        em.createNamedQuery("removeClientUserSessionByClient").setParameter("clientId", client.getClientId()).executeUpdate();
     }
 
     @Override
-    public List<String> getClientAssociations() {
-        List<String> clients = new ArrayList<String>();
+    public List<ClientModel> getClientAssociations() {
+        List<ClientModel> clients = new ArrayList<ClientModel>();
         for (ClientUserSessionAssociationEntity association : entity.getClients()) {
-            clients.add(association.getClientId());
+            clients.add(realm.findClient(association.getClientId()));
         }
         return clients;
     }
@@ -119,4 +123,5 @@ public class UserSessionAdapter implements Session {
     public int hashCode() {
         return getId().hashCode();
     }
+
 }

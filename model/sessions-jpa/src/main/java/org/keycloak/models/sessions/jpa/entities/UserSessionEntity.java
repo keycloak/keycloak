@@ -18,32 +18,31 @@ import java.util.Collection;
  */
 @Entity
 @NamedQueries({
-        @NamedQuery(name = "getUserSessionByUser", query = "select s from UserSessionEntity s where s.userId = :userId"),
-        @NamedQuery(name = "removeRealmUserSessions", query = "delete from UserSessionEntity s where s.realmId = :realmId"),
-        @NamedQuery(name = "removeUserSessionByUser", query = "delete from UserSessionEntity s where s.userId = :userId"),
-        @NamedQuery(name = "getUserSessionExpired", query = "select s from UserSessionEntity s where s.started < :maxTime or s.lastSessionRefresh < :idleTime"),
-        @NamedQuery(name = "removeUserSessionExpired", query = "delete from UserSessionEntity s where s.started < :maxTime or s.lastSessionRefresh < :idleTime")
+        @NamedQuery(name = "getUserSessionByUser", query = "select s from UserSessionEntity s where s.realmId = :realmId and s.userId = :userId"),
+        @NamedQuery(name = "getUserSessionByClient", query = "select s from UserSessionEntity s join s.clients c where s.realmId = :realmId and c.clientId = :clientId"),
+        @NamedQuery(name = "getActiveUserSessionByClient", query = "select count(s) from UserSessionEntity s join s.clients c where s.realmId = :realmId and c.clientId = :clientId"),
+        @NamedQuery(name = "removeUserSessionByRealm", query = "delete from UserSessionEntity s where s.realmId = :realmId"),
+        @NamedQuery(name = "removeUserSessionByUser", query = "delete from UserSessionEntity s where s.realmId = :realmId and s.userId = :userId"),
+        @NamedQuery(name = "removeUserSessionByExpired", query = "delete from UserSessionEntity s where s.realmId = :realmId and (s.started < :maxTime or s.lastSessionRefresh < :idleTime)")
 })
 public class UserSessionEntity {
 
     @Id
     @GenericGenerator(name="uuid_generator", strategy="org.keycloak.models.sessions.jpa.utils.JpaIdGenerator")
     @GeneratedValue(generator = "uuid_generator")
-    private String id;
+    protected String id;
 
-    // we use ids to avoid select for update contention
-    private String userId;
-    private String realmId;
+    protected String userId;
+    protected String realmId;
 
-    private String ipAddress;
+    protected String ipAddress;
 
-    private int started;
+    protected int started;
 
-    private int lastSessionRefresh;
+    protected int lastSessionRefresh;
 
-    @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy="session")
-    private Collection<ClientUserSessionAssociationEntity> clients = new ArrayList<ClientUserSessionAssociationEntity>();
-
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="session")
+    protected Collection<ClientUserSessionAssociationEntity> clients = new ArrayList<ClientUserSessionAssociationEntity>();
 
     public String getId() {
         return id;
@@ -52,7 +51,6 @@ public class UserSessionEntity {
     public void setId(String id) {
         this.id = id;
     }
-
 
     public String getUserId() {
         return userId;
@@ -96,10 +94,6 @@ public class UserSessionEntity {
 
     public Collection<ClientUserSessionAssociationEntity> getClients() {
         return clients;
-    }
-
-    public void setClients(Collection<ClientUserSessionAssociationEntity> clients) {
-        this.clients = clients;
     }
 
 }

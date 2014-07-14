@@ -3,9 +3,11 @@ package org.keycloak.models.sessions.jpa.entities;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
+import javax.persistence.IdClass;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import java.io.Serializable;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -14,27 +16,22 @@ import javax.persistence.NamedQuery;
 @Entity
 @NamedQueries({
         @NamedQuery(name="getAllFailures", query="select failure from UsernameLoginFailureEntity failure"),
+        @NamedQuery(name = "removeLoginFailuresByRealm", query = "delete from UsernameLoginFailureEntity f where f.realmId = :realmId"),
+        @NamedQuery(name = "removeLoginFailuresByUser", query = "delete from UsernameLoginFailureEntity f where f.realmId = :realmId and f.username = :username")
 })
+@IdClass(UsernameLoginFailureEntity.Key.class)
 public class UsernameLoginFailureEntity {
-    // we manually set the id to be username-realmid
-    // we may have a concurrent creation of the same login failure entry that we want to avoid
+
     @Id
-    protected String id;
     protected String username;
+
+    @Id
+    protected String realmId;
+
     protected int failedLoginNotBefore;
     protected int numFailures;
     protected long lastFailure;
     protected String lastIPFailure;
-
-    protected String realm;
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
 
     public String getUsername() {
         return username;
@@ -76,11 +73,36 @@ public class UsernameLoginFailureEntity {
         this.lastIPFailure = lastIPFailure;
     }
 
-    public String getRealm() {
-        return realm;
+    public String getRealmId() {
+        return realmId;
     }
 
-    public void setRealm(String realm) {
-        this.realm = realm;
+    public void setRealmId(String realmId) {
+        this.realmId = realmId;
     }
+
+    public static class Key implements Serializable {
+
+        private String realmId;
+
+        private String username;
+
+        public Key() {
+        }
+
+        public Key(String realmId, String username) {
+            this.realmId = realmId;
+            this.username = username;
+        }
+
+        public String getRealmId() {
+            return realmId;
+        }
+
+        public String getUsername() {
+            return username;
+        }
+
+    }
+
 }

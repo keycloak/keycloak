@@ -58,7 +58,6 @@ public class SSOTest {
     @WebResource
     protected OAuthClient oauth;
 
-
     @WebResource
     protected WebDriver driver;
 

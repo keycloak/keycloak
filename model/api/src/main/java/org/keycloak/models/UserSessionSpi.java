@@ -9,9 +9,11 @@ import org.keycloak.provider.Spi;
  */
 public class UserSessionSpi implements Spi {
 
+    public static final String NAME = "userSessions";
+
     @Override
     public String getName() {
-        return "userSessions";
+        return NAME;
     }
 
     @Override

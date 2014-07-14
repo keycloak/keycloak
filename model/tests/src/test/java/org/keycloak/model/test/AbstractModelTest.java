@@ -98,6 +98,10 @@ public class AbstractModelTest {
     }
 
     protected void resetSession() {
+        if (session.getTransaction().isActive()) {
+            session.getTransaction().rollback();
+        }
+
         session.close();
 
         session = sessionFactory.create();

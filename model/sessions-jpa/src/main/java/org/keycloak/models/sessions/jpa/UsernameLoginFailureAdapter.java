@@ -1,13 +1,13 @@
 package org.keycloak.models.sessions.jpa;
 
-import org.keycloak.models.sessions.LoginFailure;
+import org.keycloak.models.UsernameLoginFailureModel;
 import org.keycloak.models.sessions.jpa.entities.UsernameLoginFailureEntity;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UsernameLoginFailureAdapter implements LoginFailure
+public class UsernameLoginFailureAdapter implements UsernameLoginFailureModel
 {
    protected UsernameLoginFailureEntity user;
 

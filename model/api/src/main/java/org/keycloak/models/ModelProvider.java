@@ -13,8 +13,6 @@ import java.util.Set;
 public interface ModelProvider extends Provider {
     // Note: The reason there are so many query methods here is for layering a cache on top of an persistent KeycloakSession
 
-    KeycloakTransaction getTransaction();
-
     RealmModel createRealm(String name);
     RealmModel createRealm(String id, String name);
     RealmModel getRealm(String id);

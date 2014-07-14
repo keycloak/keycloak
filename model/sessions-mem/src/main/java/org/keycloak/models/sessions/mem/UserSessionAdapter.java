@@ -17,19 +17,14 @@ public class UserSessionAdapter implements UserSessionModel {
 
     private final KeycloakSession session;
 
+    private final RealmModel realm;
+
     private final UserSessionEntity entity;
 
-    public UserSessionAdapter(KeycloakSession session, UserSessionEntity entity) {
+    public UserSessionAdapter(KeycloakSession session, RealmModel realm, UserSessionEntity entity) {
         this.session = session;
+        this.realm = realm;
         this.entity = entity;
-    }
-
-    public RealmModel getRealm() {
-        return session.model().getRealm(entity.getRealm());
-    }
-
-    public void setRealm(RealmModel realm) {
-        entity.setRealm(realm.getId());
     }
 
     public String getId() {
@@ -41,7 +36,7 @@ public class UserSessionAdapter implements UserSessionModel {
     }
 
     public UserModel getUser() {
-        return session.model().getUserById(entity.getUser(), getRealm());
+        return realm.getUserById(entity.getUser());
     }
 
     public void setUser(UserModel user) {
@@ -79,13 +74,8 @@ public class UserSessionAdapter implements UserSessionModel {
         }
     }
 
-    public List<String> getClientIds() {
-        return entity.getClients();
-    }
-
     @Override
     public List<ClientModel> getClientAssociations() {
-        RealmModel realm = getRealm();
         List<ClientModel> models = new LinkedList<ClientModel>();
         for (String clientId : entity.getClients()) {
             models.add(realm.findClient(clientId));
