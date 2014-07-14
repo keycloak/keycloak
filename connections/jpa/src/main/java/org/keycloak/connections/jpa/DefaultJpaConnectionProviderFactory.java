@@ -13,10 +13,13 @@ import javax.persistence.Persistence;
  */
 public class DefaultJpaConnectionProviderFactory implements JpaConnectionProviderFactory {
 
-    private EntityManagerFactory emf;
+    private volatile EntityManagerFactory emf;
+    private String unitName;
 
     @Override
     public JpaConnectionProvider create(KeycloakSession session) {
+        lazyInit();
+
         EntityManager em = emf.createEntityManager();
         em = PersistenceExceptionConverter.create(em);
         session.getTransaction().enlist(new JpaKeycloakTransaction(em));
@@ -25,7 +28,9 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
 
     @Override
     public void close() {
-        emf.close();
+        if (emf != null) {
+            emf.close();
+        }
     }
 
     @Override
@@ -35,8 +40,17 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
 
     @Override
     public void init(Config.Scope config) {
-        String unitName = config.get("unitName", "jpa-keycloak-identity-store");
-        emf = Persistence.createEntityManagerFactory(unitName, JpaUtils.getHibernateProperties());
+        unitName = config.get("unitName", "jpa-keycloak-identity-store");
+    }
+
+    private void lazyInit() {
+        if (emf == null) {
+            synchronized (this) {
+                if (emf == null) {
+                    emf = Persistence.createEntityManagerFactory(unitName, JpaUtils.getHibernateProperties());
+                }
+            }
+        }
     }
 
 }

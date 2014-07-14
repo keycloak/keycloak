@@ -10,6 +10,7 @@ import org.keycloak.connections.mongo.api.MongoStore;
 import org.keycloak.connections.mongo.impl.MongoStoreImpl;
 import org.keycloak.connections.mongo.impl.context.TransactionMongoStoreInvocationContext;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.util.JpaUtils;
 
 import java.util.Collections;
 
@@ -36,13 +37,16 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
 
     private static final Logger logger = Logger.getLogger(DefaultMongoConnectionFactoryProvider.class);
 
-    private MongoClient client;
+    private volatile MongoClient client;
 
     private MongoStore mongoStore;
     private DB db;
+    private Config.Scope config;
 
     @Override
     public MongoConnectionProvider create(KeycloakSession session) {
+        lazyInit();
+
         TransactionMongoStoreInvocationContext invocationContext = new TransactionMongoStoreInvocationContext(mongoStore);
         session.getTransaction().enlist(new MongoKeycloakTransaction(invocationContext));
         return new DefaultMongoConnectionProvider(db, mongoStore, invocationContext);
@@ -50,28 +54,38 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
 
     @Override
     public void init(Config.Scope config) {
-        try {
-            String host = config.get("host", ServerAddress.defaultHost());
-            int port = config.getInt("port", ServerAddress.defaultPort());
-            String dbName = config.get("db", "keycloak");
-            boolean clearOnStartup = config.getBoolean("clearOnStartup", false);
+        this.config = config;
+    }
 
-            String user = config.get("user");
-            String password = config.get("password");
-            if (user != null && password != null) {
-                MongoCredential credential = MongoCredential.createMongoCRCredential(user, dbName, password.toCharArray());
-                client = new MongoClient(new ServerAddress(host, port), Collections.singletonList(credential));
-            } else {
-                client = new MongoClient(host, port);
+    private void lazyInit() {
+        if (client == null) {
+            synchronized (this) {
+                if (client == null) {
+                    try {
+                        String host = config.get("host", ServerAddress.defaultHost());
+                        int port = config.getInt("port", ServerAddress.defaultPort());
+                        String dbName = config.get("db", "keycloak");
+                        boolean clearOnStartup = config.getBoolean("clearOnStartup", false);
+
+                        String user = config.get("user");
+                        String password = config.get("password");
+                        if (user != null && password != null) {
+                            MongoCredential credential = MongoCredential.createMongoCRCredential(user, dbName, password.toCharArray());
+                            client = new MongoClient(new ServerAddress(host, port), Collections.singletonList(credential));
+                        } else {
+                            client = new MongoClient(host, port);
+                        }
+
+                        this.db = client.getDB(dbName);
+
+                        this.mongoStore = new MongoStoreImpl(db, clearOnStartup, getManagedEntities());
+
+                        logger.infof("Initialized mongo model. host: %s, port: %d, db: %s, clearOnStartup: %b", host, port, dbName, clearOnStartup);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                }
             }
-
-            this.db = client.getDB(dbName);
-
-            this.mongoStore = new MongoStoreImpl(db, clearOnStartup, getManagedEntities());
-
-            logger.infof("Initialized mongo model. host: %s, port: %d, db: %s, clearOnStartup: %b", host, port, dbName, clearOnStartup);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
         }
     }
 
@@ -85,7 +99,9 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
 
     @Override
     public void close() {
-        client.close();
+        if (client != null) {
+            client.close();
+        }
     }
 
     @Override
