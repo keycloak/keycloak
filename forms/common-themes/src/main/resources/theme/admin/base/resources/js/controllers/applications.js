@@ -44,20 +44,48 @@ module.controller('ApplicationCredentialsCtrl', function($scope, $location, real
 });
 
 module.controller('ApplicationSessionsCtrl', function($scope, realm, sessionCount, application,
-                                                      ApplicationUserSessions,
-                                                    $location, Dialog, Notifications) {
+                                                      ApplicationUserSessions) {
     $scope.realm = realm;
     $scope.count = sessionCount.count;
     $scope.sessions = [];
     $scope.application = application;
+
+    $scope.page = 0;
+
+    $scope.query = {
+        realm : realm.realm,
+        application: $scope.application.name,
+        max : 5,
+        first : 0
+    }
+
+    $scope.firstPage = function() {
+        $scope.query.first = 0;
+        if ($scope.query.first < 0) {
+            $scope.query.first = 0;
+        }
+        $scope.loadUsers();
+    }
+
+    $scope.previousPage = function() {
+        $scope.query.first -= parseInt($scope.query.max);
+        if ($scope.query.first < 0) {
+            $scope.query.first = 0;
+        }
+        $scope.loadUsers();
+    }
+
+    $scope.nextPage = function() {
+        $scope.query.first += parseInt($scope.query.max);
+        $scope.loadUsers();
+    }
 
     $scope.toDate = function(val) {
         return new Date(val);
     };
 
     $scope.loadUsers = function() {
-        ApplicationUserSessions.query({ realm : realm.realm, application: $scope.application.name }, function(updated) {
-            $scope.count = updated.length;
+        ApplicationUserSessions.query($scope.query, function(updated) {
             $scope.sessions = updated;
         })
     };

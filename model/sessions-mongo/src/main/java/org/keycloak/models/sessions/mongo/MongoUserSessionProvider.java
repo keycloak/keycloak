@@ -84,9 +84,26 @@ public class MongoUserSessionProvider implements UserSessionProvider {
         return result;
     }
 
+    public List<UserSessionModel> getUserSessions(RealmModel realm, ClientModel client, int firstResult, int maxResults) {
+        DBObject query = new QueryBuilder()
+                .and("associatedClientIds").is(client.getId())
+                .get();
+        DBObject sort = new BasicDBObject("started", 1).append("id", 1);
+
+        List<MongoUserSessionEntity> sessions = mongoStore.loadEntities(MongoUserSessionEntity.class, query, sort, invocationContext, firstResult, maxResults);
+        List<UserSessionModel> result = new LinkedList<UserSessionModel>();
+        for (MongoUserSessionEntity session : sessions) {
+            result.add(new UserSessionAdapter(session, realm, invocationContext));
+        }
+        return result;
+    }
+
     @Override
     public int getActiveUserSessions(RealmModel realm, ClientModel client) {
-        return getUserSessions(realm, client).size();
+        DBObject query = new QueryBuilder()
+                .and("associatedClientIds").is(client.getId())
+                .get();
+        return mongoStore.countEntities(MongoUserSessionEntity.class, query, invocationContext);
     }
 
     @Override

@@ -31,6 +31,10 @@ public interface MongoStore {
 
     <T extends MongoIdentifiableEntity> List<T> loadEntities(Class<T> type, DBObject query, MongoStoreInvocationContext context);
 
+    <T extends MongoIdentifiableEntity> List<T> loadEntities(Class<T> type, DBObject query, DBObject sort, MongoStoreInvocationContext context, int firstResult, int maxResults);
+
+    <T extends MongoIdentifiableEntity> int countEntities(Class<T> type, DBObject query, MongoStoreInvocationContext context);
+
     boolean removeEntity(MongoIdentifiableEntity entity, MongoStoreInvocationContext context);
 
     boolean removeEntity(Class<? extends MongoIdentifiableEntity> type, String id, MongoStoreInvocationContext context);
