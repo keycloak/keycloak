@@ -280,6 +280,29 @@ public class MongoStoreImpl implements MongoStore {
         return convertCursor(type, cursor, context);
     }
 
+    @Override
+    public <T extends MongoIdentifiableEntity> List<T> loadEntities(Class<T> type, DBObject query, DBObject sort, MongoStoreInvocationContext context, int firstResult, int maxResults) {
+        // First we should execute all pending tasks before searching DB
+        context.beforeDBSearch(type);
+
+        DBCollection dbCollection = getDBCollectionForType(type);
+        DBCursor cursor = dbCollection.find(query);
+        cursor.skip(firstResult);
+        cursor.limit(maxResults);
+        if (sort != null) {
+            cursor.sort(sort);
+        }
+
+        return convertCursor(type, cursor, context);
+    }
+
+    public <T extends MongoIdentifiableEntity> int countEntities(Class<T> type, DBObject query, MongoStoreInvocationContext context) {
+        context.beforeDBSearch(type);
+
+        DBCollection dbCollection = getDBCollectionForType(type);
+        DBCursor cursor = dbCollection.find(query);
+        return cursor.size();
+    }
 
     @Override
     public boolean removeEntity(MongoIdentifiableEntity entity, MongoStoreInvocationContext context) {

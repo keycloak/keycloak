@@ -15,6 +15,8 @@ import org.keycloak.models.sessions.mem.entities.UsernameLoginFailureKey;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.util.Time;
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -80,7 +82,19 @@ public class MemUserSessionProvider implements UserSessionProvider {
                 clientSessions.add(new UserSessionAdapter(session, realm, s));
             }
         }
+        Collections.sort(clientSessions, new UserSessionSort());
         return clientSessions;
+    }
+
+    @Override
+    public List<UserSessionModel> getUserSessions(RealmModel realm, ClientModel client, int firstResult, int maxResults) {
+        List<UserSessionModel> userSessions = getUserSessions(realm, client);
+        if (firstResult > userSessions.size()) {
+            return Collections.emptyList();
+        }
+
+        int toIndex = (firstResult + maxResults) < userSessions.size() ? firstResult + maxResults : userSessions.size();
+        return userSessions.subList(firstResult, toIndex);
     }
 
     @Override
@@ -193,6 +207,19 @@ public class MemUserSessionProvider implements UserSessionProvider {
 
     @Override
     public void close() {
+    }
+
+    private class UserSessionSort implements Comparator<UserSessionModel> {
+
+        @Override
+        public int compare(UserSessionModel o1, UserSessionModel o2) {
+            int r = o1.getStarted() - o2.getStarted();
+            if (r == 0) {
+                return o1.getId().compareTo(o2.getId());
+            } else {
+                return r;
+            }
+        }
     }
 
 }

@@ -4,6 +4,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -113,6 +114,40 @@ public class UserSessionProviderTest {
     }
 
     @Test
+    public void testGetByClientPaginated() {
+        for (int i = 0; i < 25; i++) {
+            UserSessionModel userSession = session.sessions().createUserSession(realm, realm.getUser("user1"), "127.0.0." + i);
+            userSession.setStarted(Time.currentTime() + i);
+            userSession.associateClient(realm.findClient("test-app"));
+        }
+
+        resetSession();
+
+        assertPaginatedSession(realm, realm.findClient("test-app"), 0, 1, 1);
+        assertPaginatedSession(realm, realm.findClient("test-app"), 0, 10, 10);
+        assertPaginatedSession(realm, realm.findClient("test-app"), 10, 10, 10);
+        assertPaginatedSession(realm, realm.findClient("test-app"), 20, 10, 5);
+        assertPaginatedSession(realm, realm.findClient("test-app"), 30, 10, 0);
+    }
+
+    private void assertPaginatedSession(RealmModel realm, ClientModel client, int start, int max, int expectedSize) {
+        List<UserSessionModel> sessions = session.sessions().getUserSessions(realm, client, start, max);
+        String[] actualIps = new String[sessions.size()];
+        for (int i = 0; i < actualIps.length; i++) {
+            actualIps[i] = sessions.get(i).getIpAddress();
+        }
+
+        String[] expectedIps = new String[expectedSize];
+        for (int i = 0; i < expectedSize; i++) {
+            expectedIps[i] = "127.0.0." + (i + start);
+        }
+
+        assertArrayEquals(expectedIps, actualIps);
+    }
+
+
+
+    @Test
     public void testGetCountByClient() {
         createSessions();
 
@@ -175,5 +210,4 @@ public class UserSessionProviderTest {
 
         assertArrayEquals(clients, actualClients);
     }
-
 }
