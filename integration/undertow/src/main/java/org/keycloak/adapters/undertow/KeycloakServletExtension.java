@@ -99,12 +99,14 @@ public class KeycloakServletExtension implements ServletExtension {
         InputStream is = getConfigInputStream(servletContext);
         KeycloakDeployment deployment = null;
         if (is == null) {
-            throw new RuntimeException("Unable to find realm config in /WEB-INF/keycloak.json or in keycloak subsystem.");
+            log.warn("No adapter configuration.  Keycloak is unconfigured and will deny all requests.");
+            deployment = new KeycloakDeployment();
         } else {
             deployment = KeycloakDeploymentBuilder.build(is);
 
         }
         AdapterDeploymentContext deploymentContext = new AdapterDeploymentContext(deployment);
+        servletContext.setAttribute(AdapterDeploymentContext.class.getName(), deploymentContext);
         UndertowUserSessionManagement userSessionManagement = new UndertowUserSessionManagement();
         final ServletKeycloakAuthMech mech = createAuthenticationMechanism(deploymentInfo, deploymentContext, userSessionManagement);
 
