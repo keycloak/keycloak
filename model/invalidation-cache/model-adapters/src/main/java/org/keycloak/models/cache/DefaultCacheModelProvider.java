@@ -54,7 +54,7 @@ public class DefaultCacheModelProvider implements CacheModelProvider {
         this.cache = cache;
         this.session = session;
 
-        session.getTransaction().enlist(getTransaction());
+        session.getTransaction().enlistAfterCompletion(getTransaction());
     }
 
     @Override

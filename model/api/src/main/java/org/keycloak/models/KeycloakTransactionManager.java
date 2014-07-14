@@ -7,5 +7,6 @@ package org.keycloak.models;
 public interface KeycloakTransactionManager extends KeycloakTransaction {
 
     void enlist(KeycloakTransaction transaction);
+    void enlistAfterCompletion(KeycloakTransaction transaction);
 
 }

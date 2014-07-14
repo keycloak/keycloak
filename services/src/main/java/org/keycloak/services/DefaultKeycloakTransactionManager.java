@@ -12,6 +12,7 @@ import java.util.List;
 public class DefaultKeycloakTransactionManager implements KeycloakTransactionManager {
 
     private List<KeycloakTransaction> transactions = new LinkedList<KeycloakTransaction>();
+    private List<KeycloakTransaction> afterCompletion = new LinkedList<KeycloakTransaction>();
     private boolean active;
     private boolean rollback;
 
@@ -22,6 +23,15 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
         }
 
         transactions.add(transaction);
+    }
+
+    @Override
+    public void enlistAfterCompletion(KeycloakTransaction transaction) {
+        if (active && !transaction.isActive()) {
+            transaction.begin();
+        }
+
+        afterCompletion.add(transaction);
     }
 
     @Override
@@ -47,6 +57,14 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
                 exception = exception == null ? e : exception;
             }
         }
+        for (KeycloakTransaction tx : afterCompletion) {
+            try {
+                tx.commit();
+            } catch (RuntimeException e) {
+                exception = exception == null ? e : exception;
+            }
+        }
+
         if (exception != null) {
             throw exception;
         }
@@ -56,6 +74,13 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
     public void rollback() {
         RuntimeException exception = null;
         for (KeycloakTransaction tx : transactions) {
+            try {
+                tx.rollback();
+            } catch (RuntimeException e) {
+                exception = exception != null ? e : exception;
+            }
+        }
+        for (KeycloakTransaction tx : afterCompletion) {
             try {
                 tx.rollback();
             } catch (RuntimeException e) {
