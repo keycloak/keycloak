@@ -8,7 +8,7 @@ import org.keycloak.models.KeycloakSession;
  * @version $Revision: 1 $
  */
 public class SimpleCacheModelProviderFactory implements CacheModelProviderFactory {
-    protected KeycloakCache cache = new SimpleCache();
+    protected RealmCache cache = new SimpleRealmCache();
 
     @Override
     public CacheModelProvider create(KeycloakSession session) {

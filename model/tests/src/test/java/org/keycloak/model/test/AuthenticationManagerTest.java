@@ -168,7 +168,7 @@ public class AuthenticationManagerTest extends AbstractModelTest {
         protector.start();
         am = new AuthenticationManager(protector);
 
-        user = realm.addUser("test");
+        user = realmManager.getSession().users().addUser(realm, "test");
         user.setEnabled(true);
 
         UserCredentialModel credential = new UserCredentialModel();

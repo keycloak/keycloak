@@ -130,7 +130,7 @@ public class OAuthFlows {
         isEmailVerificationRequired(user);
 
         boolean isResource = client instanceof ApplicationModel;
-        AccessCodeEntry accessCode = tokenManager.createAccessCode(scopeParam, state, redirect, realm, client, user, session);
+        AccessCodeEntry accessCode = tokenManager.createAccessCode(scopeParam, state, redirect, this.session, realm, client, user, session);
         accessCode.setRememberMe(rememberMe);
         accessCode.setAuthMethod(authMethod);
         accessCode.setUsernameUsed(username);

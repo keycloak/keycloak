@@ -11,6 +11,7 @@ import org.junit.runners.MethodSorters;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.model.test.LDAPTestUtils;
 import org.keycloak.models.AuthenticationProviderModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
@@ -47,8 +48,8 @@ public class AuthProvidersIntegrationTest {
 
         @Override
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-            addUser(appRealm, "mary", "mary@test.com", "password-app");
-            addUser(adminstrationRealm, "mary-admin", "mary@admin.com", "password-admin");
+            addUser(manager.getSession(), appRealm, "mary", "mary@test.com", "password-app");
+            addUser(manager.getSession(), adminstrationRealm, "mary-admin", "mary@admin.com", "password-admin");
 
             AuthenticationProviderModel modelProvider = new AuthenticationProviderModel(AuthProviderConstants.PROVIDER_NAME_MODEL, false, Collections.EMPTY_MAP);
             AuthenticationProviderModel picketlinkProvider = new AuthenticationProviderModel(AuthProviderConstants.PROVIDER_NAME_PICKETLINK, true, Collections.EMPTY_MAP);
@@ -95,8 +96,8 @@ public class AuthProvidersIntegrationTest {
     @WebResource
     protected AccountPasswordPage changePasswordPage;
 
-    private static UserModel addUser(RealmModel realm, String username, String email, String password) {
-        UserModel user = realm.addUser(username);
+    private static UserModel addUser(KeycloakSession session, RealmModel realm, String username, String email, String password) {
+        UserModel user = session.users().addUser(realm, username);
         user.setEmail(email);
         user.setEnabled(true);
 

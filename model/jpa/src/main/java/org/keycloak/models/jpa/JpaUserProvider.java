@@ -39,7 +39,6 @@ public class JpaUserProvider implements UserProvider {
     public JpaUserProvider(KeycloakSession session, EntityManager em) {
         this.session = session;
         this.em = em;
-        this.em = PersistenceExceptionConverter.create(em);
     }
 
     @Override
@@ -99,6 +98,34 @@ public class JpaUserProvider implements UserProvider {
     }
 
     @Override
+    public void addSocialLink(RealmModel realm, UserModel user, SocialLinkModel socialLink) {
+        SocialLinkEntity entity = new SocialLinkEntity();
+        RealmEntity realmEntity = em.getReference(RealmEntity.class, realm.getId());
+        entity.setRealm(realmEntity);
+        entity.setSocialProvider(socialLink.getSocialProvider());
+        entity.setSocialUserId(socialLink.getSocialUserId());
+        entity.setSocialUsername(socialLink.getSocialUsername());
+        UserEntity userEntity = em.getReference(UserEntity.class, user.getId());
+        entity.setUser(userEntity);
+        em.persist(entity);
+        em.flush();
+    }
+
+    @Override
+    public boolean removeSocialLink(RealmModel realm, UserModel user, String socialProvider) {
+        SocialLinkEntity entity = findSocialLink(user, socialProvider);
+        if (entity != null) {
+            em.remove(entity);
+            em.flush();
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+
+
+    @Override
     public void preRemove(RealmModel realm) {
         TypedQuery<UserEntity> query = em.createQuery("select u from UserEntity u where u.realm = :realm", UserEntity.class);
         RealmEntity realmEntity = em.getReference(RealmEntity.class, realm.getId());
@@ -112,12 +139,6 @@ public class JpaUserProvider implements UserProvider {
     public void preRemove(RoleModel role) {
         RoleEntity roleEntity = em.getReference(RoleEntity.class, role.getId());
         em.createQuery("delete from " + UserRoleMappingEntity.class.getSimpleName() + " where role = :role").setParameter("role", roleEntity).executeUpdate();
-    }
-
-
-    @Override
-    public KeycloakTransaction getTransaction() {
-        return new JpaKeycloakTransaction(em);
     }
 
     @Override
@@ -154,8 +175,6 @@ public class JpaUserProvider implements UserProvider {
 
      @Override
     public void close() {
-        if (em.getTransaction().isActive()) em.getTransaction().rollback();
-        if (em.isOpen()) em.close();
     }
 
     @Override

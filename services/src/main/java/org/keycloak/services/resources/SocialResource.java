@@ -182,12 +182,12 @@ public class SocialResource {
         audit.detail(Details.USERNAME, socialUser.getId() + "@" + provider.getId());
 
         SocialLinkModel socialLink = new SocialLinkModel(provider.getId(), socialUser.getId(), socialUser.getUsername());
-        UserModel user = realm.getUserBySocialLink(socialLink);
+        UserModel user = session.users().getUserBySocialLink(socialLink, realm);
 
         // Check if user is already authenticated (this means linking social into existing user account)
         String userId = initialRequest.getUser();
         if (userId != null) {
-            UserModel authenticatedUser = realm.getUserById(userId);
+            UserModel authenticatedUser = session.users().getUserById(userId, realm);
 
             audit.event(EventType.SOCIAL_LINK).user(userId);
 
@@ -211,7 +211,7 @@ public class SocialResource {
                 return oauth.forwardToSecurityFailure("Unknown redirectUri");
             }
 
-            realm.addSocialLink(authenticatedUser, socialLink);
+            session.users().addSocialLink(realm, authenticatedUser, socialLink);
             logger.debug("Social provider " + provider.getId() + " linked with user " + authenticatedUser.getUsername());
 
             audit.success();
@@ -225,7 +225,7 @@ public class SocialResource {
                 return oauth.forwardToSecurityFailure("Registration not allowed");
             }
 
-            user = realm.addUser(KeycloakModelUtils.generateId());
+            user = session.users().addUser(realm, KeycloakModelUtils.generateId());
             user.setEnabled(true);
             user.setFirstName(socialUser.getFirstName());
             user.setLastName(socialUser.getLastName());
@@ -235,7 +235,7 @@ public class SocialResource {
                 user.addRequiredAction(UserModel.RequiredAction.UPDATE_PROFILE);
             }
 
-            realm.addSocialLink(user, socialLink);
+            session.users().addSocialLink(realm, user, socialLink);
 
             audit.clone().user(user).event(EventType.REGISTER)
                     .detail(Details.REGISTER_METHOD, "social@" + provider.getId())

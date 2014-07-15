@@ -54,7 +54,7 @@ public class RequiredActionMultipleActionsTest {
 
         @Override
         public void config(RealmManager manager, RealmModel defaultRealm, RealmModel appRealm) {
-            UserModel user = appRealm.getUser("test-user@localhost");
+            UserModel user = manager.getSession().users().getUserByUsername("test-user@localhost", appRealm);
             user.addRequiredAction(RequiredAction.UPDATE_PROFILE);
             user.addRequiredAction(RequiredAction.UPDATE_PASSWORD);
         }

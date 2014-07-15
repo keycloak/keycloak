@@ -17,10 +17,9 @@ import java.util.Map;
  */
 public class ExternalModelAuthenticationProvider extends AbstractModelAuthenticationProvider {
 
-    private ModelProvider model;
 
     public ExternalModelAuthenticationProvider(KeycloakSession session) {
-        this.model = session.model();
+        super(session);
     }
 
     @Override
@@ -40,7 +39,7 @@ public class ExternalModelAuthenticationProvider extends AbstractModelAuthentica
             throw new AuthenticationProviderException("Option '" + AuthProviderConstants.EXTERNAL_REALM_ID + "' not specified in configuration");
         }
 
-        RealmModel realm = model.getRealm(realmId);
+        RealmModel realm = keycloakSession.model().getRealm(realmId);
         if (realm == null) {
             throw new AuthenticationProviderException("Realm with id '" + realmId + "' doesn't exists");
         }

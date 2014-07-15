@@ -57,7 +57,7 @@ public class CompositeRolesModelTest extends AbstractModelTest {
         Set<RoleModel> requestedRoles = new HashSet<RoleModel>();
 
         RealmModel realm = realmManager.getRealm("Test");
-        UserModel user = realm.getUser(username);
+        UserModel user = realmManager.getSession().users().getUserByUsername(username, realm);
         ApplicationModel application = realm.getApplicationByName(applicationName);
 
         Set<RoleModel> roleMappings = user.getRoleMappings();

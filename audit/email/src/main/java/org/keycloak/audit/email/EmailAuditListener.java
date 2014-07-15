@@ -37,7 +37,7 @@ public class EmailAuditListener implements AuditListener {
         if (includedEvents.contains(event.getEvent())) {
             if (event.getRealmId() != null && event.getUserId() != null) {
                 RealmModel realm = model.getRealm(event.getRealmId());
-                UserModel user = realm.getUserById(event.getUserId());
+                UserModel user = session.users().getUserById(event.getUserId(), realm);
                 if (user != null && user.getEmail() != null && user.isEmailVerified()) {
                     try {
                         emailProvider.setRealm(realm).setUser(user).sendEvent(event);

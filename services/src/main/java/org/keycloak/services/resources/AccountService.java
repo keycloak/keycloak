@@ -516,12 +516,12 @@ public class AccountService {
                     return account.setError(Messages.SOCIAL_REDIRECT_ERROR).createResponse(AccountPages.SOCIAL);
                 }
             case REMOVE:
-                SocialLinkModel link = realm.getSocialLink(user, providerId);
+                SocialLinkModel link = session.users().getSocialLink(user, providerId, realm);
                 if (link != null) {
 
                     // Removing last social provider is not possible if you don't have other possibility to authenticate
-                    if (realm.getSocialLinks(user).size() > 1 || user.getAuthenticationLink() != null) {
-                        realm.removeSocialLink(user, providerId);
+                    if (session.users().getSocialLinks(user, realm).size() > 1 || user.getAuthenticationLink() != null) {
+                        session.users().removeSocialLink(realm, user, providerId);
 
                         logger.debug("Social provider " + providerId + " removed successfully from user " + user.getUsername());
 

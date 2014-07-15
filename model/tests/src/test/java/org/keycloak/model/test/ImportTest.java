@@ -10,6 +10,7 @@ import org.keycloak.models.AuthenticationLinkModel;
 import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
@@ -50,7 +51,7 @@ public class ImportTest extends AbstractModelTest {
         commit();
 
         realm = realmManager.getRealm("demo");
-        assertDataImportedInRealm(realm);
+        assertDataImportedInRealm(realmManager.getSession(), realm);
 
         commit();
 
@@ -59,7 +60,7 @@ public class ImportTest extends AbstractModelTest {
     }
 
     // Moved to static method, so it's possible to test this from other places too (for example export-import tests)
-    public static void assertDataImportedInRealm(RealmModel realm) {
+    public static void assertDataImportedInRealm(KeycloakSession session, RealmModel realm) {
         Assert.assertTrue(realm.isVerifyEmail());
 
         Assert.assertFalse(realm.isUpdateProfileOnInitialSocialLogin());
@@ -72,9 +73,9 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertNotNull(realm.getRole("foo"));
         Assert.assertNotNull(realm.getRole("bar"));
 
-        UserModel user = realm.getUser("loginclient");
+        UserModel user = session.users().getUserByUsername("loginclient", realm);
         Assert.assertNotNull(user);
-        Assert.assertEquals(0, realm.getSocialLinks(user).size());
+        Assert.assertEquals(0,  session.users().getSocialLinks(user, realm).size());
 
         List<ApplicationModel> resources = realm.getApplications();
         for (ApplicationModel app : resources) {
@@ -103,14 +104,14 @@ public class ImportTest extends AbstractModelTest {
 
 
         // Test role mappings
-        UserModel admin = realm.getUser("admin");
+        UserModel admin =  session.users().getUserByUsername("admin", realm);
         Set<RoleModel> allRoles = admin.getRoleMappings();
         Assert.assertEquals(3, allRoles.size());
         Assert.assertTrue(allRoles.contains(realm.getRole("admin")));
         Assert.assertTrue(allRoles.contains(application.getRole("app-admin")));
         Assert.assertTrue(allRoles.contains(otherApp.getRole("otherapp-admin")));
 
-        UserModel wburke = realm.getUser("wburke");
+        UserModel wburke =  session.users().getUserByUsername("wburke", realm);
         allRoles = wburke.getRoleMappings();
         Assert.assertEquals(2, allRoles.size());
         Assert.assertFalse(allRoles.contains(realm.getRole("admin")));
@@ -147,8 +148,8 @@ public class ImportTest extends AbstractModelTest {
 
 
         // Test social linking
-        UserModel socialUser = realm.getUser("mySocialUser");
-        Set<SocialLinkModel> socialLinks = realm.getSocialLinks(socialUser);
+        UserModel socialUser = session.users().getUserByUsername("mySocialUser", realm);
+        Set<SocialLinkModel> socialLinks = session.users().getSocialLinks(socialUser, realm);
         Assert.assertEquals(3, socialLinks.size());
         boolean facebookFound = false;
         boolean googleFound = false;
@@ -170,19 +171,19 @@ public class ImportTest extends AbstractModelTest {
         }
         Assert.assertTrue(facebookFound && twitterFound && googleFound);
 
-        UserModel foundSocialUser = realm.getUserBySocialLink(new SocialLinkModel("facebook", "facebook1", "fbuser1"));
+        UserModel foundSocialUser = session.users().getUserBySocialLink(new SocialLinkModel("facebook", "facebook1", "fbuser1"), realm);
         Assert.assertEquals(foundSocialUser.getUsername(), socialUser.getUsername());
-        Assert.assertNull(realm.getUserBySocialLink(new SocialLinkModel("facebook", "not-existing", "not-existing")));
+        Assert.assertNull(session.users().getUserBySocialLink(new SocialLinkModel("facebook", "not-existing", "not-existing"), realm));
 
-        SocialLinkModel foundSocialLink = realm.getSocialLink(socialUser, "facebook");
+        SocialLinkModel foundSocialLink = session.users().getSocialLink(socialUser, "facebook", realm);
         Assert.assertEquals("facebook1", foundSocialLink.getSocialUserId());
         Assert.assertEquals("fbuser1", foundSocialLink.getSocialUsername());
         Assert.assertEquals("facebook", foundSocialLink.getSocialProvider());
 
         // Test removing social link
-        Assert.assertTrue(realm.removeSocialLink(socialUser, "facebook"));
-        Assert.assertNull(realm.getSocialLink(socialUser, "facebook"));
-        Assert.assertFalse(realm.removeSocialLink(socialUser, "facebook"));
+        Assert.assertTrue(session.users().removeSocialLink(realm, socialUser, "facebook"));
+        Assert.assertNull(session.users().getSocialLink(socialUser, "facebook", realm));
+        Assert.assertFalse(session.users().removeSocialLink(realm, socialUser, "facebook"));
 
         // Test smtp config
         Map<String, String> smtpConfig = realm.getSmtpConfig();

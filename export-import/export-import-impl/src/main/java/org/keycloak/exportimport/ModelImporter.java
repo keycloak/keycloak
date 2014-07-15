@@ -24,6 +24,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
 import org.keycloak.models.UsernameLoginFailureModel;
 import org.keycloak.models.entities.ApplicationEntity;
 import org.keycloak.models.entities.AuthenticationLinkEntity;
@@ -48,7 +49,7 @@ public class ModelImporter {
     private ImportReader importReader;
     private ExportImportPropertiesManager propertiesManager;
 
-    public void importModel(ModelProvider model, ImportReader importReader) {
+    public void importModel(UserProvider userModel, ModelProvider model, ImportReader importReader) {
         // Initialize needed objects
         this.importReader = importReader;
         this.propertiesManager = new ExportImportPropertiesManager();
@@ -62,7 +63,7 @@ public class ModelImporter {
         importApplicationsStep2(model, "applications.json");
 
         importOAuthClients(model, "oauthClients.json");
-        importUsers(model, "users.json");
+        importUsers(userModel, model, "users.json");
 //        importUserFailures(model, "userFailures.json");
 
         this.importReader.closeImportReader();
@@ -237,11 +238,11 @@ public class ModelImporter {
         return null;
     }
 
-    public void importUsers(ModelProvider model, String fileName) {
+    public void importUsers(UserProvider userModel, ModelProvider model, String fileName) {
         List<UserEntity> users = this.importReader.readEntities(fileName, UserEntity.class);
         for (UserEntity userEntity : users) {
             RealmModel realm = model.getRealm(userEntity.getRealmId());
-            UserModel user = realm.addUser(userEntity.getId(), userEntity.getUsername(), false);
+            UserModel user = userModel.addUser(realm, userEntity.getId(), userEntity.getUsername(), false);
 
             // We need to remove defaultRoles here as realm.addUser is automatically adding them. We may add them later during roles mapping processing
             for (RoleModel role : user.getRoleMappings()) {
@@ -266,7 +267,7 @@ public class ModelImporter {
                     SocialLinkModel socialLink = new SocialLinkModel();
                     this.propertiesManager.setBasicPropertiesToModel(socialLink, socialLinkEntity);
 
-                    realm.addSocialLink(user, socialLink);
+                    userModel.addSocialLink(realm, user, socialLink);
                 }
             }
 

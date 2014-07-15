@@ -37,16 +37,16 @@ public class UserSessionProviderTest {
     public void before() {
         session = kc.startSession();
         realm = session.model().getRealm("test");
-        realm.addUser("user1");
-        realm.addUser("user2");
+        session.users().addUser(realm, "user1");
+        session.users().addUser(realm, "user2");
     }
 
     @After
     public void after() {
         resetSession();
         session.sessions().removeUserSessions(realm);
-        realm.removeUser("user1");
-        realm.removeUser("user2");
+        session.users().removeUser(realm, "user1");
+        session.users().removeUser(realm, "user2");
         kc.stopSession(session, true);
     }
 
@@ -55,27 +55,27 @@ public class UserSessionProviderTest {
         int started = Time.currentTime();
         UserSessionModel[] sessions = createSessions();
 
-        assertSession(session.sessions().getUserSession(realm, sessions[0].getId()), realm.getUser("user1"), "127.0.0.1", started, started, "test-app", "third-party");
-        assertSession(session.sessions().getUserSession(realm, sessions[1].getId()), realm.getUser("user1"), "127.0.0.2", started, started, "test-app");
-        assertSession(session.sessions().getUserSession(realm, sessions[2].getId()), realm.getUser("user2"), "127.0.0.3", started, started);
+        assertSession(session.sessions().getUserSession(realm, sessions[0].getId()),  session.users().getUserByUsername("user1", realm), "127.0.0.1", started, started, "test-app", "third-party");
+        assertSession(session.sessions().getUserSession(realm, sessions[1].getId()),  session.users().getUserByUsername("user1", realm), "127.0.0.2", started, started, "test-app");
+        assertSession(session.sessions().getUserSession(realm, sessions[2].getId()), session.users().getUserByUsername("user2", realm), "127.0.0.3", started, started);
     }
 
     @Test
     public void testGetUserSessions() {
         UserSessionModel[] sessions = createSessions();
 
-        assertSessions(session.sessions().getUserSessions(realm, realm.getUser("user1")), sessions[0], sessions[1]);
-        assertSessions(session.sessions().getUserSessions(realm, realm.getUser("user2")), sessions[2]);
+        assertSessions(session.sessions().getUserSessions(realm, session.users().getUserByUsername("user1", realm)), sessions[0], sessions[1]);
+        assertSessions(session.sessions().getUserSessions(realm, session.users().getUserByUsername("user2", realm)), sessions[2]);
     }
 
     @Test
     public void testRemoveUserSessionsByUser() {
         createSessions();
-        session.sessions().removeUserSessions(realm, realm.getUser("user1"));
+        session.sessions().removeUserSessions(realm, session.users().getUserByUsername("user1", realm));
         resetSession();
 
-        assertTrue(session.sessions().getUserSessions(realm, realm.getUser("user1")).isEmpty());
-        assertFalse(session.sessions().getUserSessions(realm, realm.getUser("user2")).isEmpty());
+        assertTrue(session.sessions().getUserSessions(realm, session.users().getUserByUsername("user1", realm)).isEmpty());
+        assertFalse(session.sessions().getUserSessions(realm, session.users().getUserByUsername("user2", realm)).isEmpty());
     }
 
     @Test
@@ -84,8 +84,8 @@ public class UserSessionProviderTest {
         session.sessions().removeUserSessions(realm);
         resetSession();
 
-        assertTrue(session.sessions().getUserSessions(realm, realm.getUser("user1")).isEmpty());
-        assertTrue(session.sessions().getUserSessions(realm, realm.getUser("user2")).isEmpty());
+        assertTrue(session.sessions().getUserSessions(realm, session.users().getUserByUsername("user1", realm)).isEmpty());
+        assertTrue(session.sessions().getUserSessions(realm, session.users().getUserByUsername("user2", realm)).isEmpty());
     }
 
     @Test
@@ -116,7 +116,7 @@ public class UserSessionProviderTest {
     @Test
     public void testGetByClientPaginated() {
         for (int i = 0; i < 25; i++) {
-            UserSessionModel userSession = session.sessions().createUserSession(realm, realm.getUser("user1"), "127.0.0." + i);
+            UserSessionModel userSession = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "127.0.0." + i);
             userSession.setStarted(Time.currentTime() + i);
             userSession.associateClient(realm.findClient("test-app"));
         }
@@ -157,14 +157,14 @@ public class UserSessionProviderTest {
 
     private UserSessionModel[] createSessions() {
         UserSessionModel[] sessions = new UserSessionModel[4];
-        sessions[0] = session.sessions().createUserSession(realm, realm.getUser("user1"), "127.0.0.1");
+        sessions[0] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "127.0.0.1");
         sessions[0].associateClient(realm.findClient("test-app"));
         sessions[0].associateClient(realm.findClient("third-party"));
 
-        sessions[1] = session.sessions().createUserSession(realm, realm.getUser("user1"), "127.0.0.2");
+        sessions[1] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "127.0.0.2");
         sessions[1].associateClient(realm.findClient("test-app"));
 
-        sessions[2] = session.sessions().createUserSession(realm, realm.getUser("user2"), "127.0.0.3");
+        sessions[2] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user2", realm), "127.0.0.3");
 
         resetSession();
 

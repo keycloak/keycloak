@@ -42,4 +42,5 @@ public interface KeycloakSession {
 
     void close();
 
+    UserProvider users();
 }

@@ -2,6 +2,8 @@ package org.keycloak.models.cache;
 
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.AuthenticationLinkModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelProvider;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
@@ -22,21 +24,21 @@ import java.util.Set;
 public class UserAdapter implements UserModel {
     protected UserModel updated;
     protected CachedUser cached;
-    protected KeycloakCache cache;
-    protected CacheModelProvider cacheSession;
+    protected CacheUserProvider userProviderCache;
+    protected KeycloakSession keycloakSession;
     protected RealmModel realm;
 
-    public UserAdapter(CachedUser cached, KeycloakCache cache, CacheModelProvider session, RealmModel realm) {
+    public UserAdapter(CachedUser cached, CacheUserProvider userProvider, KeycloakSession keycloakSession, RealmModel realm) {
         this.cached = cached;
-        this.cache = cache;
-        this.cacheSession = session;
+        this.userProviderCache = userProvider;
+        this.keycloakSession = keycloakSession;
         this.realm = realm;
     }
 
     protected void getDelegateForUpdate() {
         if (updated == null) {
-            cacheSession.registerUserInvalidation(getId());
-            updated = cacheSession.getDelegate().getUserById(getId(), realm);
+            userProviderCache.registerUserInvalidation(realm, getId());
+            updated = userProviderCache.getDelegate().getUserById(getId(), realm);
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
     }
@@ -257,7 +259,13 @@ public class UserAdapter implements UserModel {
         if (updated != null) return updated.getRoleMappings();
         Set<RoleModel> roles = new HashSet<RoleModel>();
         for (String id : cached.getRoleMappings()) {
-            roles.add(cacheSession.getRoleById(id, realm));
+            RoleModel roleById = keycloakSession.model().getRoleById(id, realm);
+            if (roleById == null) {
+                // chance that role was removed, so just delete to persistence and get user invalidated
+                getDelegateForUpdate();
+                return updated.getRoleMappings();
+            }
+            roles.add(roleById);
 
         }
         return roles;

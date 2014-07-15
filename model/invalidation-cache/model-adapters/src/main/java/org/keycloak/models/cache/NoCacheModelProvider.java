@@ -84,21 +84,6 @@ public class NoCacheModelProvider implements CacheModelProvider {
     }
 
     @Override
-    public UserModel getUserById(String id, RealmModel realm) {
-        return getDelegate().getUserById(id, realm);
-    }
-
-    @Override
-    public UserModel getUserByUsername(String username, RealmModel realm) {
-        return getDelegate().getUserByUsername(username, realm);
-    }
-
-    @Override
-    public UserModel getUserByEmail(String email, RealmModel realm) {
-        return getDelegate().getUserByEmail(email, realm);
-    }
-
-    @Override
     public List<RealmModel> getRealms() {
         // we don't cache this for now
         return getDelegate().getRealms();
@@ -112,36 +97,6 @@ public class NoCacheModelProvider implements CacheModelProvider {
     @Override
     public void close() {
         if (delegate != null) delegate.close();
-    }
-
-    @Override
-    public UserModel getUserBySocialLink(SocialLinkModel socialLink, RealmModel realm) {
-        return getDelegate().getUserBySocialLink(socialLink, realm);
-    }
-
-    @Override
-    public List<UserModel> getUsers(RealmModel realm) {
-        return getDelegate().getUsers(realm);
-    }
-
-    @Override
-    public List<UserModel> searchForUser(String search, RealmModel realm) {
-        return getDelegate().searchForUser(search, realm);
-    }
-
-    @Override
-    public List<UserModel> searchForUserByAttributes(Map<String, String> attributes, RealmModel realm) {
-        return getDelegate().searchForUserByAttributes(attributes, realm);
-    }
-
-    @Override
-    public Set<SocialLinkModel> getSocialLinks(UserModel user, RealmModel realm) {
-        return getDelegate().getSocialLinks(user, realm);
-    }
-
-    @Override
-    public SocialLinkModel getSocialLink(UserModel user, String socialProvider, RealmModel realm) {
-        return getDelegate().getSocialLink(user, socialProvider, realm);
     }
 
     @Override

@@ -174,9 +174,9 @@ public class PerfTools {
 
         // TODO: method for count on model
         if (prefix == null) {
-            return realm.getUsers().size();
+            return session.users().getUsers(realm).size();
         } else {
-            return realm.searchForUser(prefix).size();
+            return session.users().searchForUser(prefix, realm).size();
         }
     }
 

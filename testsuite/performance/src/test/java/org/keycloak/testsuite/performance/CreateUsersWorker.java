@@ -68,7 +68,7 @@ public class CreateUsersWorker implements Worker {
 
         String username = PerfTestUtils.getUsername(userNumber);
 
-        UserModel user = realm.addUser(username);
+        UserModel user = session.users().addUser(realm, username);
 
         // Add basic user attributes (NOTE: Actually backend is automatically upgraded during each setter call)
         if (addBasicUserAttributes) {
@@ -97,7 +97,7 @@ public class CreateUsersWorker implements Worker {
             }
 
             SocialLinkModel socialLink = new SocialLinkModel(socialProvider, username, username);
-            realm.addSocialLink(user, socialLink);
+            session.users().addSocialLink(realm, user, socialLink);
         }
 
         log.info("Finished creation of user " + username + " in realm: " + realm.getId());

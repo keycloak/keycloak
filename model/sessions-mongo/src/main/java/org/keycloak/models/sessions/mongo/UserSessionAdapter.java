@@ -3,6 +3,7 @@ package org.keycloak.models.sessions.mongo;
 import org.jboss.logging.Logger;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -20,12 +21,14 @@ public class UserSessionAdapter extends AbstractMongoAdapter<MongoUserSessionEnt
 
     private MongoUserSessionEntity entity;
     private RealmModel realm;
+    private KeycloakSession keycloakSession;
 
-    public UserSessionAdapter(MongoUserSessionEntity entity, RealmModel realm, MongoStoreInvocationContext invContext)
+    public UserSessionAdapter(KeycloakSession keycloakSession, MongoUserSessionEntity entity, RealmModel realm, MongoStoreInvocationContext invContext)
     {
         super(invContext);
         this.entity = entity;
         this.realm = realm;
+        this.keycloakSession = keycloakSession;
     }
 
     @Override
@@ -46,7 +49,7 @@ public class UserSessionAdapter extends AbstractMongoAdapter<MongoUserSessionEnt
 
     @Override
     public UserModel getUser() {
-        return realm.getUserById(entity.getUser());
+        return keycloakSession.users().getUserById(entity.getUser(), realm);
     }
 
     @Override

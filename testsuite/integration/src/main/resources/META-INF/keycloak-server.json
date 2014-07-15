@@ -11,6 +11,10 @@
         "provider": "${keycloak.model.provider:jpa}"
     },
 
+    "user": {
+        "provider": "${keycloak.user.provider:jpa}"
+    },
+
     "userSessions": {
         "provider" : "${keycloak.userSessions.provider:mem}"
     },

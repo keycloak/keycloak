@@ -48,7 +48,7 @@ public class ProfileTest {
     public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakRule.KeycloakSetup() {
         @Override
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-            UserModel user = appRealm.getUser("test-user@localhost");
+            UserModel user = manager.getSession().users().getUserByUsername("test-user@localhost", appRealm);
             user.setFirstName("First");
             user.setLastName("Last");
             user.setAttribute("key1", "value1");
@@ -56,7 +56,7 @@ public class ProfileTest {
 
             ApplicationModel accountApp = appRealm.getApplicationByName(org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_APP);
 
-            UserModel user2 = appRealm.addUser("test-user-no-access@localhost");
+            UserModel user2 = manager.getSession().users().addUser(appRealm, "test-user-no-access@localhost");
             user2.setEnabled(true);
             for (String r : accountApp.getDefaultRoles()) {
                 user2.deleteRoleMapping(accountApp.getRole(r));

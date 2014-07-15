@@ -21,6 +21,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
 import org.keycloak.models.UsernameLoginFailureModel;
 import org.keycloak.models.entities.ApplicationEntity;
 import org.keycloak.models.entities.AuthenticationLinkEntity;
@@ -44,7 +45,7 @@ public class ModelExporter {
     private ExportWriter exportWriter;
     private ExportImportPropertiesManager propertiesManager;
 
-    public void exportModel(ModelProvider model, ExportWriter exportWriter) {
+    public void exportModel(UserProvider userProvider, ModelProvider model, ExportWriter exportWriter) {
         // Initialize needed objects
         this.exportWriter = exportWriter;
         this.propertiesManager = new ExportImportPropertiesManager();
@@ -54,7 +55,7 @@ public class ModelExporter {
         exportApplications(model, "applications.json");
         exportOAuthClients(model, "oauthClients.json");
         exportRoles(model, "roles.json");
-        exportUsers(model, "users.json");
+        exportUsers(userProvider, model, "users.json");
 //        exportUserFailures(model, "userFailures.json");
 
         this.exportWriter.closeExportWriter();
@@ -199,12 +200,12 @@ public class ModelExporter {
         }
     }
 
-    protected void exportUsers(ModelProvider model, String fileName) {
+    protected void exportUsers(UserProvider userProvider, ModelProvider model, String fileName) {
         List<RealmModel> realms = model.getRealms();
         List<UserEntity> result = new LinkedList<UserEntity>();
 
         for (RealmModel realm : realms) {
-            List<UserModel> userModels = realm.getUsers();
+            List<UserModel> userModels = userProvider.getUsers(realm);
             for (UserModel userModel : userModels) {
                 UserEntity userEntity = new UserEntity();
                 userEntity.setId(userModel.getId());
@@ -225,7 +226,7 @@ public class ModelExporter {
                 }
 
                 // social links
-                Set<SocialLinkModel> socialLinks = realm.getSocialLinks(userModel);
+                Set<SocialLinkModel> socialLinks = userProvider.getSocialLinks(userModel, realm);
                 if (socialLinks != null && !socialLinks.isEmpty()) {
                     List<SocialLinkEntity> socialLinkEntities = new ArrayList<SocialLinkEntity>();
                     for (SocialLinkModel socialLink : socialLinks) {

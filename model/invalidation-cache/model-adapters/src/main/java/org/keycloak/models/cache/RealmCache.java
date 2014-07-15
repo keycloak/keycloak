@@ -11,7 +11,7 @@ import org.keycloak.models.cache.entities.CachedUser;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface KeycloakCache {
+public interface RealmCache {
     void clear();
 
     CachedRealm getCachedRealm(String id);
@@ -51,16 +51,4 @@ public interface KeycloakCache {
 
     void invalidateRoleById(String id);
 
-    CachedUser getCachedUser(String id);
-
-    void invalidateCachedUser(CachedUser user);
-
-    void addCachedUser(CachedUser user);
-
-    CachedUser getCachedUserByUsername(String name, RealmModel realm);
-    CachedUser getCachedUserByEmail(String name, RealmModel realm);
-
-    void invalidedCachedUserById(String id);
-
-    void invalidateCachedUserById(String id);
 }

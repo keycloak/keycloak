@@ -110,18 +110,6 @@ public interface RealmModel extends RoleContainerModel {
 
     boolean validateTOTP(UserModel user, String password, String token);
 
-    UserModel getUser(String name);
-
-    UserModel getUserByEmail(String email);
-
-    UserModel getUserById(String name);
-
-    UserModel addUser(String id, String username, boolean addDefaultRoles);
-
-    UserModel addUser(String username);
-
-    boolean removeUser(String name);
-
     RoleModel getRoleById(String id);
 
     List<String> getDefaultRoles();
@@ -147,16 +135,6 @@ public interface RealmModel extends RoleContainerModel {
 
     void updateRequiredCredentials(Set<String> creds);
 
-    UserModel getUserBySocialLink(SocialLinkModel socialLink);
-
-    Set<SocialLinkModel> getSocialLinks(UserModel user);
-
-    SocialLinkModel getSocialLink(UserModel user, String socialProvider);
-
-    void addSocialLink(UserModel user, SocialLinkModel socialLink);
-
-    boolean removeSocialLink(UserModel user, String socialProvider);
-
     boolean isSocial();
 
     void setSocial(boolean social);
@@ -164,12 +142,6 @@ public interface RealmModel extends RoleContainerModel {
     boolean isUpdateProfileOnInitialSocialLogin();
 
     void setUpdateProfileOnInitialSocialLogin(boolean updateProfileOnInitialSocialLogin);
-
-    List<UserModel> getUsers();
-
-    List<UserModel> searchForUser(String search);
-
-    List<UserModel> searchForUserByAttributes(Map<String, String> attributes);
 
     OAuthClientModel addOAuthClient(String name);
 

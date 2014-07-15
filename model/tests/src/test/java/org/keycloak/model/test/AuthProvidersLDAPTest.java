@@ -80,14 +80,14 @@ public class AuthProvidersLDAPTest extends AbstractModelTest {
 
         // Verify that user doesn't exists in realm2 and can't authenticate here
         Assert.assertEquals(AuthenticationManager.AuthenticationStatus.INVALID_USER, am.authenticateForm(session, null, realm, formData));
-        Assert.assertNull(realm.getUser("johnkeycloak"));
+        Assert.assertNull(session.users().getUserByUsername("johnkeycloak", realm));
 
         // Add ldap authenticationProvider
         setupAuthenticationProviders();
 
         // Authenticate john and verify that now he exists in realm
         Assert.assertEquals(AuthenticationManager.AuthenticationStatus.SUCCESS, am.authenticateForm(session, null, realm, formData));
-        UserModel john = realm.getUser("johnkeycloak");
+        UserModel john = session.users().getUserByUsername("johnkeycloak", realm);
         Assert.assertNotNull(john);
         Assert.assertEquals("johnkeycloak", john.getUsername());
         Assert.assertEquals("John", john.getFirstName());
@@ -103,9 +103,8 @@ public class AuthProvidersLDAPTest extends AbstractModelTest {
     @Test
     public void testLdapInvalidAuthentication() {
         setupAuthenticationProviders();
-
         // Add some user and password to realm
-        UserModel realmUser = realm.addUser("realmUser");
+        UserModel realmUser = session.users().addUser(realm, "realmUser");
         realmUser.setEnabled(true);
         UserCredentialModel credential = new UserCredentialModel();
         credential.setType(CredentialRepresentation.PASSWORD);
@@ -149,7 +148,7 @@ public class AuthProvidersLDAPTest extends AbstractModelTest {
         // Change credential and validate that user can authenticate
         AuthenticationProviderManager authProviderManager = AuthenticationProviderManager.getManager(realm, session);
 
-        UserModel john = realm.getUser("johnkeycloak");
+        UserModel john = session.users().getUserByUsername("johnkeycloak", realm);
         try {
             Assert.assertTrue(authProviderManager.updatePassword(john, "password-updated"));
         } catch (AuthenticationProviderException ape) {

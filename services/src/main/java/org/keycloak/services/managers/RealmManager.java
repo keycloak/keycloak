@@ -244,6 +244,8 @@ public class RealmManager {
         }
     }
 
+
+
     private void setupMasterAdminManagement(RealmModel realm) {
         RealmModel adminRealm;
         RoleModel adminRole;
@@ -527,7 +529,7 @@ public class RealmManager {
 
 
     public UserModel createUser(RealmModel newRealm, UserRepresentation userRep, Map<String, ApplicationModel> appMap) {
-        UserModel user = newRealm.addUser(userRep.getId(), userRep.getUsername(), false);
+        UserModel user = session.users().addUser(newRealm, userRep.getId(), userRep.getUsername(), false);
         user.setEnabled(userRep.isEnabled());
         user.setEmail(userRep.getEmail());
         user.setFirstName(userRep.getFirstName());
@@ -556,7 +558,7 @@ public class RealmManager {
         if (userRep.getSocialLinks() != null) {
             for (SocialLinkRepresentation socialLink : userRep.getSocialLinks()) {
                 SocialLinkModel mappingModel = new SocialLinkModel(socialLink.getSocialProvider(), socialLink.getSocialUserId(), socialLink.getSocialUsername());
-                newRealm.addSocialLink(user, mappingModel);
+                session.users().addSocialLink(newRealm, user, mappingModel);
             }
         }
         if (userRep.getRealmRoles() != null) {
@@ -603,7 +605,7 @@ public class RealmManager {
         if (searchString == null) {
             return Collections.emptyList();
         }
-        return realmModel.searchForUser(searchString.trim());
+        return session.users().searchForUser(searchString.trim(), realmModel);
     }
 
     public void addRequiredCredential(RealmModel newRealm, String requiredCred) {

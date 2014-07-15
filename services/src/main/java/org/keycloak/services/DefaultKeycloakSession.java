@@ -7,6 +7,7 @@ import org.keycloak.models.ModelProvider;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.cache.CacheModelProvider;
+import org.keycloak.models.cache.CacheUserProvider;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 
@@ -24,6 +25,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
     private final Map<Integer, Provider> providers = new HashMap<Integer, Provider>();
     private final DefaultKeycloakTransactionManager transactionManager;
     private ModelProvider model;
+    private UserProvider userModel;
     private UserSessionProvider sessionProvider;
 
     public DefaultKeycloakSession(DefaultKeycloakSessionFactory factory) {
@@ -36,6 +38,14 @@ public class DefaultKeycloakSession implements KeycloakSession {
             return getProvider(CacheModelProvider.class);
         } else {
             return getProvider(ModelProvider.class);
+        }
+    }
+
+    private UserProvider getUserProvider() {
+        if (factory.getDefaultProvider(CacheUserProvider.class) != null) {
+            return getProvider(CacheUserProvider.class);
+        } else {
+            return getProvider(UserProvider.class);
         }
     }
 
@@ -89,6 +99,14 @@ public class DefaultKeycloakSession implements KeycloakSession {
             model = getModelProvider();
         }
         return model;
+    }
+
+    @Override
+    public UserProvider users() {
+        if (userModel == null) {
+            userModel = getUserProvider();
+        }
+        return userModel;
     }
 
     @Override

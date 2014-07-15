@@ -56,7 +56,7 @@ public abstract class ExportImportTestBase {
 
         beginTransaction();
         realm = session.model().getRealm("demo");
-        String wburkeId = realm.getUser("wburke").getId();
+        String wburkeId = session.users().getUserByUsername("wburke", realm).getId();
         String appId = realm.getApplicationByName("Application").getId();
 
         // Commit transaction and close JPA now
@@ -75,9 +75,9 @@ public abstract class ExportImportTestBase {
         RealmModel importedRealm = session.model().getRealm("demo");
         System.out.println("Exported realm: " + realm + ", Imported realm: " + importedRealm);
 
-        Assert.assertEquals(wburkeId, importedRealm.getUser("wburke").getId());
+        Assert.assertEquals(wburkeId, session.users().getUserByUsername("wburke", importedRealm).getId());
         Assert.assertEquals(appId, importedRealm.getApplicationByName("Application").getId());
-        ImportTest.assertDataImportedInRealm(importedRealm);
+        ImportTest.assertDataImportedInRealm(session, importedRealm);
 
         // Commit and close Mongo
         commitTransaction();

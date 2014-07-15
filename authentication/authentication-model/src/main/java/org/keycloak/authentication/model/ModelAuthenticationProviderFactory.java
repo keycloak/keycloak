@@ -13,7 +13,7 @@ public class ModelAuthenticationProviderFactory implements AuthenticationProvide
 
     @Override
     public AuthenticationProvider create(KeycloakSession session) {
-        return new ModelAuthenticationProvider();
+        return new ModelAuthenticationProvider(session);
     }
 
     @Override

@@ -196,7 +196,7 @@ public class AuthenticationManager {
                 }
             }
 
-            UserModel user = realm.getUserById(token.getSubject());
+            UserModel user = session.users().getUserById(token.getSubject(), realm);
             if (user == null || !user.isEnabled() ) {
                 logger.info("Unknown user in identity token");
                 return null;
@@ -253,12 +253,12 @@ public class AuthenticationManager {
     }
 
     protected AuthenticationStatus authenticateInternal(KeycloakSession session, RealmModel realm, MultivaluedMap<String, String> formData, String username) {
-        UserModel user = KeycloakModelUtils.findUserByNameOrEmail(realm, username);
+        UserModel user = KeycloakModelUtils.findUserByNameOrEmail(session, realm, username);
         if (user == null) {
             AuthUser authUser = AuthenticationProviderManager.getManager(realm, session).getUser(username);
             if (authUser != null) {
                 // Create new user and link him with authentication provider
-                user = realm.addUser(authUser.getUsername());
+                user = session.users().addUser(realm, authUser.getUsername());
                 user.setEnabled(true);
                 user.setFirstName(authUser.getFirstName());
                 user.setLastName(authUser.getLastName());

@@ -78,7 +78,7 @@ public class AdminAPITest {
             RealmModel adminRealm = manager.getRealm(Config.getAdminRealm());
             ApplicationModel adminConsole = adminRealm.getApplicationByName(Constants.ADMIN_CONSOLE_APPLICATION);
             TokenManager tm = new TokenManager();
-            UserModel admin = adminRealm.getUser("admin");
+            UserModel admin = session.users().getUserByUsername("admin", adminRealm);
             UserSessionModel userSession = session.sessions().createUserSession(adminRealm, admin, null);
             AccessToken token = tm.createClientAccessToken(null, adminRealm, adminConsole, admin, userSession);
             return tm.encodeToken(adminRealm, token);

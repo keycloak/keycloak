@@ -12,7 +12,7 @@ public class OAuthClientAdapter extends ClientAdapter implements OAuthClientMode
     protected OAuthClientModel updated;
     protected CachedOAuthClient cached;
 
-    public OAuthClientAdapter(RealmModel cachedRealm, CachedOAuthClient cached, CacheModelProvider cacheSession, KeycloakCache cache) {
+    public OAuthClientAdapter(RealmModel cachedRealm, CachedOAuthClient cached, CacheModelProvider cacheSession, RealmCache cache) {
         super(cachedRealm, cached, cache, cacheSession);
         this.cached = cached;
     }

@@ -4,6 +4,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
@@ -16,7 +17,8 @@ public class UserModelTest extends AbstractModelTest {
     @Test
     public void persistUser() {
         RealmModel realm = realmManager.createRealm("original");
-        UserModel user = realm.addUser("user");
+        KeycloakSession session = realmManager.getSession();
+        UserModel user = session.users().addUser(realm, "user");
         user.setFirstName("first-name");
         user.setLastName("last-name");
         user.setEmail("email");
@@ -24,11 +26,13 @@ public class UserModelTest extends AbstractModelTest {
         user.addRequiredAction(RequiredAction.CONFIGURE_TOTP);
         user.addRequiredAction(RequiredAction.UPDATE_PASSWORD);
 
-        UserModel persisted = realmManager.getRealm(realm.getId()).getUser("user");
+        RealmModel searchRealm = realmManager.getRealm(realm.getId());
+        UserModel persisted = session.users().getUserByUsername("user", searchRealm);
 
         assertEquals(user, persisted);
 
-        UserModel persisted2 = realmManager.getRealm(realm.getId()).getUserById(user.getId());
+        searchRealm = realmManager.getRealm(realm.getId());
+        UserModel persisted2 =  session.users().getUserById(user.getId(), searchRealm);
         assertEquals(user, persisted2);
     }
     
@@ -72,7 +76,8 @@ public class UserModelTest extends AbstractModelTest {
     @Test
     public void testUserRequiredActions() throws Exception {
         RealmModel realm = realmManager.createRealm("original");
-        UserModel user = realm.addUser("user");
+        KeycloakSession session = realmManager.getSession();
+        UserModel user = session.users().addUser(realm, "user");
 
         Assert.assertTrue(user.getRequiredActions().isEmpty());
 
@@ -80,32 +85,32 @@ public class UserModelTest extends AbstractModelTest {
         String id = realm.getId();
         commit();
         realm = realmManager.getRealm(id);
-        user = realm.getUser("user");
+        user = session.users().getUserByUsername("user", realm);
 
         Assert.assertEquals(1, user.getRequiredActions().size());
         Assert.assertTrue(user.getRequiredActions().contains(RequiredAction.CONFIGURE_TOTP));
 
         user.addRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP);
-        user = realm.getUser("user");
+        user = session.users().getUserByUsername("user", realm);
 
         Assert.assertEquals(1, user.getRequiredActions().size());
         Assert.assertTrue(user.getRequiredActions().contains(RequiredAction.CONFIGURE_TOTP));
 
         user.addRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL);
-        user = realm.getUser("user");
+        user = session.users().getUserByUsername("user", realm);
 
         Assert.assertEquals(2, user.getRequiredActions().size());
         Assert.assertTrue(user.getRequiredActions().contains(RequiredAction.CONFIGURE_TOTP));
         Assert.assertTrue(user.getRequiredActions().contains(RequiredAction.VERIFY_EMAIL));
 
         user.removeRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP);
-        user = realm.getUser("user");
+        user = session.users().getUserByUsername("user", realm);
 
         Assert.assertEquals(1, user.getRequiredActions().size());
         Assert.assertTrue(user.getRequiredActions().contains(RequiredAction.VERIFY_EMAIL));
 
         user.removeRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL);
-        user = realm.getUser("user");
+        user = session.users().getUserByUsername("user", realm);
 
         Assert.assertTrue(user.getRequiredActions().isEmpty());
     }

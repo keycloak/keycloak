@@ -18,17 +18,6 @@ public interface ModelProvider extends Provider {
     RealmModel getRealm(String id);
     RealmModel getRealmByName(String name);
 
-    UserModel getUserById(String id, RealmModel realm);
-    UserModel getUserByUsername(String username, RealmModel realm);
-    UserModel getUserByEmail(String email, RealmModel realm);
-    UserModel getUserBySocialLink(SocialLinkModel socialLink, RealmModel realm);
-    List<UserModel> getUsers(RealmModel realm);
-    List<UserModel> searchForUser(String search, RealmModel realm);
-    List<UserModel> searchForUserByAttributes(Map<String, String> attributes, RealmModel realm);
-
-    Set<SocialLinkModel> getSocialLinks(UserModel user, RealmModel realm);
-    SocialLinkModel getSocialLink(UserModel user, String socialProvider, RealmModel realm);
-
     RoleModel getRoleById(String id, RealmModel realm);
     ApplicationModel getApplicationById(String id, RealmModel realm);
     OAuthClientModel getOAuthClientById(String id, RealmModel realm);

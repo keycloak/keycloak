@@ -301,7 +301,7 @@ public class ApplicationResource {
             if (users) stats.setUsers(new HashMap<String, UserStats>());
             return stats;
         }
-        SessionStats stats = new ResourceAdminManager().getSessionStats(uriInfo.getRequestUri(), realm, application, users);
+        SessionStats stats = new ResourceAdminManager().getSessionStats(uriInfo.getRequestUri(), session, realm, application, users);
         if (stats == null) {
             logger.info("app returned null stats");
         } else {
@@ -371,7 +371,7 @@ public class ApplicationResource {
     @POST
     public void logout(final @PathParam("username") String username) {
         auth.requireManage();
-        UserModel user = realm.getUser(username);
+        UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }

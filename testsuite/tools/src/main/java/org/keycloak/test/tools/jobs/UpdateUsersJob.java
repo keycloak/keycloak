@@ -29,18 +29,18 @@ public class UpdateUsersJob extends UsersJob {
         RealmModel realm = new RealmManager(session).getRealmByName(realmName);
 
         // TODO: pagination
-        List<UserModel> users = (prefix==null) ? realm.getUsers() : realm.searchForUser(prefix);
+        List<UserModel> users = (prefix==null) ? session.users().getUsers(realm) : session.users().searchForUser(prefix, realm);
         users = users.subList(start, start + count);
 
         this.users = users.iterator();
     }
 
     @Override
-    protected void runIteration(RealmModel realm, Map<String, ApplicationModel> apps, Set<RoleModel> realmRoles, Map<String, Set<RoleModel>> appRoles, int counter) {
+    protected void runIteration(KeycloakSession session, RealmModel realm, Map<String, ApplicationModel> apps, Set<RoleModel> realmRoles, Map<String, Set<RoleModel>> appRoles, int counter) {
         String username = users.next().getUsername();
 
         // Remove all role mappings first
-        UserModel user = realm.getUser(username);
+        UserModel user = session.users().getUserByUsername(username, realm);
         Set<RoleModel> currRoles = user.getRoleMappings();
         for (RoleModel role : currRoles) {
             user.deleteRoleMapping(role);

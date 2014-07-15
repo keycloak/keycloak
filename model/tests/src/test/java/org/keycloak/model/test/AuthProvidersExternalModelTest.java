@@ -54,7 +54,7 @@ public class AuthProvidersExternalModelTest extends AbstractModelTest {
         realm1.setAuthenticationProviders(Arrays.asList(AuthenticationProviderModel.DEFAULT_PROVIDER));
         realm2.setAuthenticationProviders(Arrays.asList(AuthenticationProviderModel.DEFAULT_PROVIDER));
 
-        UserModel john = realm1.addUser("john");
+        UserModel john = realmManager.getSession().users().addUser(realm1, "john");
         john.setEnabled(true);
         john.setFirstName("John");
         john.setLastName("Doe");
@@ -78,7 +78,7 @@ public class AuthProvidersExternalModelTest extends AbstractModelTest {
 
         // Verify that user doesn't exists in realm2 and can't authenticate here
         Assert.assertEquals(AuthenticationManager.AuthenticationStatus.INVALID_USER, am.authenticateForm(session, null, realm2, formData));
-        Assert.assertNull(realm2.getUser("john"));
+        Assert.assertNull(realmManager.getSession().users().getUserByUsername("john", realm2));
 
         // Add externalModel authenticationProvider into realm2 and point to realm1
         setupAuthenticationProviders();
@@ -89,7 +89,7 @@ public class AuthProvidersExternalModelTest extends AbstractModelTest {
 
             // Authenticate john in realm2 and verify that now he exists here.
             Assert.assertEquals(AuthenticationManager.AuthenticationStatus.SUCCESS, am.authenticateForm(session, null, realm2, formData));
-            UserModel john2 = realm2.getUser("john");
+            UserModel john2 = realmManager.getSession().users().getUserByUsername("john", realm2);
             Assert.assertNotNull(john2);
             Assert.assertEquals("john", john2.getUsername());
             Assert.assertEquals("John", john2.getFirstName());
@@ -100,7 +100,7 @@ public class AuthProvidersExternalModelTest extends AbstractModelTest {
             AuthenticationLinkModel authLink = john2.getAuthenticationLink();
             Assert.assertNotNull(authLink);
             Assert.assertEquals(authLink.getAuthProvider(), AuthProviderConstants.PROVIDER_NAME_EXTERNAL_MODEL);
-            Assert.assertEquals(authLink.getAuthUserId(), realm1.getUser("john").getId());
+            Assert.assertEquals(authLink.getAuthUserId(), realmManager.getSession().users().getUserByUsername("john", realm1).getId());
         } finally {
             ResteasyProviderFactory.clearContextData();
         }
@@ -113,9 +113,9 @@ public class AuthProvidersExternalModelTest extends AbstractModelTest {
         setupAuthenticationProviders();
 
         // Add john to realm2 and set authentication link
-        UserModel john = realm2.addUser("john");
+        UserModel john = realmManager.getSession().users().addUser(realm2, "john");
         john.setEnabled(true);
-        john.setAuthenticationLink(new AuthenticationLinkModel(AuthProviderConstants.PROVIDER_NAME_EXTERNAL_MODEL, realm1.getUser("john").getId()));
+        john.setAuthenticationLink(new AuthenticationLinkModel(AuthProviderConstants.PROVIDER_NAME_EXTERNAL_MODEL, realmManager.getSession().users().getUserByUsername("john", realm1).getId()));
 
         try {
             // this is needed for externalModel provider

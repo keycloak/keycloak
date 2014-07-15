@@ -1,2 +1,3 @@
 org.keycloak.models.ModelSpi
 org.keycloak.models.UserSessionSpi
+org.keycloak.models.UserSpi

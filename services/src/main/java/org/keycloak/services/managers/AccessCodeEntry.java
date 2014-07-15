@@ -3,6 +3,7 @@ package org.keycloak.services.managers;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
@@ -26,10 +27,12 @@ import java.util.UUID;
 public class AccessCodeEntry {
     protected AccessCode accessCode;
     protected RealmModel realm;
+    KeycloakSession keycloakSession;
 
-    public AccessCodeEntry(RealmModel realm, AccessCode accessCode) {
+    public AccessCodeEntry(KeycloakSession keycloakSession, RealmModel realm, AccessCode accessCode) {
         this.realm = realm;
         this.accessCode = accessCode;
+        this.keycloakSession = keycloakSession;
     }
 
     public String getCodeId() {
@@ -37,7 +40,7 @@ public class AccessCodeEntry {
     }
 
     public UserModel getUser() {
-        return realm.getUserById(accessCode.getAccessToken().getSubject());
+        return keycloakSession.users().getUserById(accessCode.getAccessToken().getSubject(), realm);
     }
 
     public String getSessionState() {

@@ -43,7 +43,7 @@ import java.util.UUID;
 public class TokenManager {
     protected static final Logger logger = Logger.getLogger(TokenManager.class);
 
-    public AccessCodeEntry parseCode(String code, RealmModel realm) {
+    public AccessCodeEntry parseCode(String code, KeycloakSession session, RealmModel realm) {
         try {
             JWSInput input = new JWSInput(code);
             if (!RSAProvider.verify(input, realm.getPublicKey())) {
@@ -51,7 +51,7 @@ public class TokenManager {
                 return null;
             }
             AccessCode accessCode = input.readJsonContent(AccessCode.class);
-            return new AccessCodeEntry(realm, accessCode);
+            return new AccessCodeEntry(session, realm, accessCode);
         } catch (Exception e) {
             logger.error("error parsing access code", e);
             return null;
@@ -75,11 +75,11 @@ public class TokenManager {
 
 
 
-    public AccessCodeEntry createAccessCode(String scopeParam, String state, String redirect, RealmModel realm, ClientModel client, UserModel user, UserSessionModel session) {
-        return createAccessCodeEntry(scopeParam, state, redirect, realm, client, user, session);
+    public AccessCodeEntry createAccessCode(String scopeParam, String state, String redirect, KeycloakSession keycloakSession, RealmModel realm, ClientModel client, UserModel user, UserSessionModel session) {
+        return createAccessCodeEntry(scopeParam, state, redirect, keycloakSession, realm, client, user, session);
     }
 
-    private AccessCodeEntry createAccessCodeEntry(String scopeParam, String state, String redirect, RealmModel realm, ClientModel client, UserModel user, UserSessionModel session) {
+    private AccessCodeEntry createAccessCodeEntry(String scopeParam, String state, String redirect, KeycloakSession keycloakSession, RealmModel realm, ClientModel client, UserModel user, UserSessionModel session) {
         List<RoleModel> realmRolesRequested = new LinkedList<RoleModel>();
         MultivaluedMap<String, RoleModel> resourceRolesRequested = new MultivaluedMapImpl<String, RoleModel>();
 
@@ -92,7 +92,7 @@ public class TokenManager {
         code.setExpiration(Time.currentTime() + realm.getAccessCodeLifespan());
         code.setState(state);
         code.setRedirectUri(redirect);
-        AccessCodeEntry entry = new AccessCodeEntry(realm, code);
+        AccessCodeEntry entry = new AccessCodeEntry(keycloakSession, realm, code);
         return entry;
 
     }
@@ -118,7 +118,7 @@ public class TokenManager {
 
         audit.user(refreshToken.getSubject()).session(refreshToken.getSessionState()).detail(Details.REFRESH_TOKEN_ID, refreshToken.getId());
 
-        UserModel user = realm.getUserById(refreshToken.getSubject());
+        UserModel user = session.users().getUserById(refreshToken.getSubject(), realm);
         if (user == null) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token", "Unknown user");
         }

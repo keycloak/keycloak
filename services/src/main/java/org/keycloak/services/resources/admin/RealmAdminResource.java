@@ -260,7 +260,7 @@ public class RealmAdminResource {
         Map<String, SessionStats> stats = new HashMap<String, SessionStats>();
         for (ApplicationModel applicationModel : realm.getApplications()) {
             if (applicationModel.getManagementUrl() == null) continue;
-            SessionStats appStats = new ResourceAdminManager().getSessionStats(uriInfo.getRequestUri(), realm, applicationModel, false);
+            SessionStats appStats = new ResourceAdminManager().getSessionStats(uriInfo.getRequestUri(), this.session, realm, applicationModel, false);
             stats.put(applicationModel.getName(), appStats);
         }
         return stats;

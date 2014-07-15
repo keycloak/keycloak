@@ -19,11 +19,11 @@ public class RoleAdapter implements RoleModel {
 
     protected RoleModel updated;
     protected CachedRole cached;
-    protected KeycloakCache cache;
+    protected RealmCache cache;
     protected CacheModelProvider cacheSession;
     protected RealmModel realm;
 
-    public RoleAdapter(CachedRole cached, KeycloakCache cache, CacheModelProvider session, RealmModel realm) {
+    public RoleAdapter(CachedRole cached, RealmCache cache, CacheModelProvider session, RealmModel realm) {
         this.cached = cached;
         this.cache = cache;
         this.cacheSession = session;

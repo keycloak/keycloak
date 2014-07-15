@@ -10,6 +10,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.bouncycastle.openssl.PEMWriter;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
@@ -92,10 +93,10 @@ public final class KeycloakModelUtils {
      * @param username username or email of user
      * @return found user
      */
-    public static UserModel findUserByNameOrEmail(RealmModel realm, String username) {
-        UserModel user = realm.getUser(username);
+    public static UserModel findUserByNameOrEmail(KeycloakSession session, RealmModel realm, String username) {
+        UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null && username.contains("@")) {
-            user = realm.getUserByEmail(username);
+            user =  session.users().getUserByEmail(username, realm);
         }
         return user;
     }

@@ -70,7 +70,7 @@ public abstract class UsersJob implements Runnable {
             }
 
             for (int i = start; i < (start + count); i++) {
-                runIteration(realm, apps, realmRoles, appRoles, i);
+                runIteration(session, realm, apps, realmRoles, appRoles, i);
                 job.increment();
             }
 
@@ -86,7 +86,7 @@ public abstract class UsersJob implements Runnable {
 
     protected abstract void before(KeycloakSession keycloakSession);
 
-    protected abstract void runIteration(RealmModel realm, Map<String, ApplicationModel> apps, Set<RoleModel> realmRoles, Map<String, Set<RoleModel>> appRoles, int counter);
+    protected abstract void runIteration(KeycloakSession session, RealmModel realm, Map<String, ApplicationModel> apps, Set<RoleModel> realmRoles, Map<String, Set<RoleModel>> appRoles, int counter);
 
     protected RoleModel findRole(Set<RoleModel> roles, String roleName) {
         for (RoleModel role : roles) {

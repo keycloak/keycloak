@@ -45,7 +45,7 @@ public class UserSessionAdapter implements UserSessionModel {
 
     @Override
     public UserModel getUser() {
-        return realm.getUserById(entity.getUserId());
+        return session.users().getUserById(entity.getUserId(), realm);
     }
 
     @Override
