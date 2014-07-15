@@ -9,7 +9,6 @@ import java.util.List;
 public class OAuthClientRepresentation {
     protected String id;
     protected String name;
-    protected String baseUrl;
     protected List<String> redirectUris;
     protected List<String> webOrigins;
     protected Boolean enabled;
@@ -42,14 +41,6 @@ public class OAuthClientRepresentation {
 
     public void setEnabled(Boolean enabled) {
         this.enabled = enabled;
-    }
-
-    public String getBaseUrl() {
-        return baseUrl;
-    }
-
-    public void setBaseUrl(String baseUrl) {
-        this.baseUrl = baseUrl;
     }
 
     public List<String> getRedirectUris() {

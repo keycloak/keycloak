@@ -1,13 +1,5 @@
 package org.keycloak.model.test;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.ws.rs.core.MultivaluedMap;
-
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.junit.Assert;
@@ -15,6 +7,9 @@ import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+import org.keycloak.authentication.AuthProviderConstants;
+import org.keycloak.authentication.AuthenticationProviderException;
+import org.keycloak.authentication.AuthenticationProviderManager;
 import org.keycloak.models.AuthenticationLinkModel;
 import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.KeycloakSession;
@@ -24,9 +19,13 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.authentication.AuthProviderConstants;
-import org.keycloak.authentication.AuthenticationProviderException;
-import org.keycloak.authentication.AuthenticationProviderManager;
+
+import javax.ws.rs.core.MultivaluedMap;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

@@ -20,7 +20,11 @@
     },
 
     "modelCache": {
-        "provider": "${keycloak.model.cache.provider:simple}"
+        "provider": "${keycloak.model.cache.provider:mem}"
+    },
+
+    "userCache": {
+        "provider": "${keycloak.user.cache.provider:mem}"
     },
 
     "timer": {

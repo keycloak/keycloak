@@ -5,8 +5,8 @@ import org.keycloak.models.users.Credentials;
 import org.keycloak.models.users.User;
 import org.keycloak.models.users.jpa.entities.UserAttributeEntity;
 import org.keycloak.models.users.jpa.entities.UserCredentialEntity;
-import org.keycloak.models.users.jpa.entities.UserRoleMappingEntity;
 import org.keycloak.models.users.jpa.entities.UserEntity;
+import org.keycloak.models.users.jpa.entities.UserRoleMappingEntity;
 
 import javax.persistence.EntityManager;
 import java.util.ArrayList;

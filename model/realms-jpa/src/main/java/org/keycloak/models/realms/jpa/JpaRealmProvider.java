@@ -1,15 +1,15 @@
 package org.keycloak.models.realms.jpa;
 
+import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.realms.Application;
-import org.keycloak.models.realms.RealmProvider;
 import org.keycloak.models.realms.OAuthClient;
 import org.keycloak.models.realms.Realm;
+import org.keycloak.models.realms.RealmProvider;
 import org.keycloak.models.realms.Role;
 import org.keycloak.models.realms.jpa.entities.ApplicationEntity;
 import org.keycloak.models.realms.jpa.entities.OAuthClientEntity;
 import org.keycloak.models.realms.jpa.entities.RealmEntity;
 import org.keycloak.models.realms.jpa.entities.RoleEntity;
-import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;

@@ -3,7 +3,6 @@ package org.keycloak.models.hybrid;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.realms.Client;
 
 import java.util.Set;

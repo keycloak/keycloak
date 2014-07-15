@@ -4,8 +4,6 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.connections.mongo.MongoConnectionProvider;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelProvider;
-import org.keycloak.models.ModelProviderFactory;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserProviderFactory;
 

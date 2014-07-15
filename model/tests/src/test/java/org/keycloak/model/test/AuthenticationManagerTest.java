@@ -18,7 +18,6 @@ import org.keycloak.services.managers.AuthenticationManager.AuthenticationStatus
 import org.keycloak.services.managers.BruteForceProtector;
 
 import javax.ws.rs.core.MultivaluedMap;
-
 import java.util.Arrays;
 import java.util.UUID;
 

@@ -11,23 +11,14 @@ import org.keycloak.models.ModelProvider;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.SocialLinkModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.entities.SocialLinkEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoApplicationEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoOAuthClientEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRealmEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
-import org.keycloak.models.mongo.keycloak.entities.MongoUserEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Pattern;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

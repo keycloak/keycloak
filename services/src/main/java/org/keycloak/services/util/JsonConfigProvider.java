@@ -4,8 +4,6 @@ import org.codehaus.jackson.JsonNode;
 import org.keycloak.Config;
 import org.keycloak.util.StringPropertyReplacer;
 
-import java.util.ArrayList;
-
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */

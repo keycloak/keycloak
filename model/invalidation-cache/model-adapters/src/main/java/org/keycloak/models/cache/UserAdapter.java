@@ -3,7 +3,6 @@ package org.keycloak.models.cache;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.AuthenticationLinkModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelProvider;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;

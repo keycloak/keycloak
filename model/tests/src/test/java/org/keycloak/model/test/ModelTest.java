@@ -4,13 +4,10 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.services.managers.ModelToRepresentation;
 
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
 
 public class ModelTest extends AbstractModelTest {
 

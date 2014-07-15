@@ -1,15 +1,12 @@
 package org.keycloak.models.hybrid;
 
-import org.keycloak.models.realms.Application;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.realms.Application;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**

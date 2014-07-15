@@ -1,7 +1,6 @@
 package org.keycloak.services;
 
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.KeycloakTransactionManager;
 import org.keycloak.models.ModelProvider;
 import org.keycloak.models.UserProvider;

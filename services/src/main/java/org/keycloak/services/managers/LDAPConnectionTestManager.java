@@ -1,15 +1,11 @@
 package org.keycloak.services.managers;
 
-import java.util.Hashtable;
-import java.util.Map;
+import org.jboss.logging.Logger;
 
 import javax.naming.Context;
 import javax.naming.NamingException;
 import javax.naming.ldap.InitialLdapContext;
-
-import org.jboss.logging.Logger;
-import org.keycloak.models.LDAPConstants;
-import org.keycloak.models.RealmModel;
+import java.util.Hashtable;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

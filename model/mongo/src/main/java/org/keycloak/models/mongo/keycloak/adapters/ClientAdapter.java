@@ -1,13 +1,13 @@
 package org.keycloak.models.mongo.keycloak.adapters;
 
+import org.keycloak.connections.mongo.api.MongoIdentifiableEntity;
+import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelProvider;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.entities.ClientEntity;
-import org.keycloak.connections.mongo.api.MongoIdentifiableEntity;
-import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
 import org.keycloak.models.mongo.utils.MongoModelUtils;
 

@@ -2,13 +2,12 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
-import org.keycloak.models.Constants;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.services.managers.ModelToRepresentation;
 import org.keycloak.services.resources.flows.Flows;
 
 import javax.ws.rs.Consumes;

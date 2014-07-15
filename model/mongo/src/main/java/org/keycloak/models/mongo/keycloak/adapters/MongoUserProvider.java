@@ -1,26 +1,18 @@
 package org.keycloak.models.mongo.keycloak.adapters;
 
-import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
 import org.keycloak.connections.mongo.api.MongoStore;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelProvider;
-import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.entities.SocialLinkEntity;
-import org.keycloak.models.mongo.keycloak.entities.MongoApplicationEntity;
-import org.keycloak.models.mongo.keycloak.entities.MongoOAuthClientEntity;
-import org.keycloak.models.mongo.keycloak.entities.MongoRealmEntity;
-import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoUserEntity;
-import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;

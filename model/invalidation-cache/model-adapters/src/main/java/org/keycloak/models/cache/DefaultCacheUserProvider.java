@@ -215,6 +215,9 @@ public class DefaultCacheUserProvider implements CacheUserProvider {
 
     @Override
     public boolean removeUser(RealmModel realm, String name) {
+        UserModel user = getUserByUsername(name, realm);
+        if (user == null) return false;
+        registerUserInvalidation(realm, user.getId());
         return getDelegate().removeUser(realm, name);
     }
 

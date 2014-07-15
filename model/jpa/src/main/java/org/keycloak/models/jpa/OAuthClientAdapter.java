@@ -1,14 +1,10 @@
 package org.keycloak.models.jpa;
 
-import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.entities.OAuthClientEntity;
 
 import javax.persistence.EntityManager;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

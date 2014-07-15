@@ -1,16 +1,16 @@
 package org.keycloak.model.test;
 
+import org.junit.Assert;
+import org.junit.Test;
+import org.keycloak.authentication.AuthProviderConstants;
+import org.keycloak.models.AuthenticationProviderModel;
+import org.keycloak.models.RealmModel;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.junit.Assert;
-import org.junit.Test;
-import org.keycloak.models.AuthenticationProviderModel;
-import org.keycloak.models.RealmModel;
-import org.keycloak.authentication.AuthProviderConstants;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

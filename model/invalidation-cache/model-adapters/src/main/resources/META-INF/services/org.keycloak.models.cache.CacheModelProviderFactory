@@ -1,2 +1,2 @@
-org.keycloak.models.cache.SimpleCacheModelProviderFactory
+org.keycloak.models.cache.MemoryCacheModelProviderFactory
 org.keycloak.models.cache.NoCacheModelProviderFactory

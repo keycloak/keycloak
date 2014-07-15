@@ -1,8 +1,8 @@
 package org.keycloak.models.users.jpa;
 
 import org.hibernate.exception.ConstraintViolationException;
-import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ModelException;
 
 import javax.persistence.EntityExistsException;
 import javax.persistence.EntityManager;

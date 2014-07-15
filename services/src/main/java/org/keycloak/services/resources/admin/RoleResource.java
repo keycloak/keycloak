@@ -4,8 +4,8 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.services.managers.ModelToRepresentation;
 
 import java.util.Collections;
 import java.util.HashSet;

@@ -6,7 +6,8 @@ import org.junit.Test;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.services.managers.ApplicationManager;
 
@@ -57,10 +58,10 @@ public class ApplicationModelTest extends AbstractModelTest {
 
     @Test
     public void json() {
-        ApplicationRepresentation representation = appManager.toRepresentation(application);
+        ApplicationRepresentation representation = ModelToRepresentation.toRepresentation(application);
 
         RealmModel realm = realmManager.createRealm("copy");
-        ApplicationModel copy = appManager.createApplication(realm, representation);
+        ApplicationModel copy = RepresentationToModel.createApplication(realm, representation);
 
         assertEquals(application, copy);
     }

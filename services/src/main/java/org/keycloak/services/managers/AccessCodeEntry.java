@@ -1,24 +1,17 @@
 package org.keycloak.services.managers;
 
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessCode;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.util.Time;
 
-import javax.ws.rs.core.MultivaluedMap;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 
 /**
 * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

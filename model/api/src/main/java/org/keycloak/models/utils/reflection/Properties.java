@@ -1,7 +1,5 @@
 package org.keycloak.models.utils.reflection;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 
 /**

@@ -2,7 +2,6 @@ package org.keycloak.model.test;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;

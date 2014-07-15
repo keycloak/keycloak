@@ -5,7 +5,6 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.Constants;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
@@ -16,10 +15,8 @@ import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.services.managers.OAuthClientManager;
 import org.keycloak.services.managers.RealmManager;
 
 import java.util.ArrayList;
@@ -151,8 +148,9 @@ public class AdapterTest extends AbstractModelTest {
     public void testOAuthClient() throws Exception {
         test1CreateRealm();
 
-        OAuthClientModel oauth = new OAuthClientManager(realmModel).create("oauth-client");
-        oauth = realmModel.getOAuthClient("oauth-client");
+        RepresentationToModel.createOAuthClient(null, "oauth-client", realmModel);
+        OAuthClientModel oauth = realmModel.getOAuthClient("oauth-client");
+        Assert.assertNotNull(oauth);
     }
 
     @Test

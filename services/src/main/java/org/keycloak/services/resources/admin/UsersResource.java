@@ -17,6 +17,8 @@ import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.adapters.action.UserStats;
 import org.keycloak.representations.idm.ApplicationMappingsRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -26,7 +28,6 @@ import org.keycloak.representations.idm.SocialLinkRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.services.managers.AccessCodeEntry;
-import org.keycloak.services.managers.ModelToRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.managers.TokenManager;
@@ -760,7 +761,7 @@ public class UsersResource {
             throw new BadRequestException("No password provided");
         }
 
-        UserCredentialModel cred = RealmManager.fromRepresentation(pass);
+        UserCredentialModel cred = RepresentationToModel.convertCredential(pass);
         user.updateCredential(cred);
         user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
     }

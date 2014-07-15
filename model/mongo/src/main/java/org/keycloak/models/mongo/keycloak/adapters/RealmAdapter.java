@@ -15,18 +15,15 @@ import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.entities.AuthenticationProviderEntity;
 import org.keycloak.models.entities.RequiredCredentialEntity;
-import org.keycloak.models.entities.SocialLinkEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoApplicationEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoOAuthClientEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRealmEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
-import org.keycloak.models.mongo.keycloak.entities.MongoUserEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.TimeBasedOTP;
 
@@ -858,7 +855,8 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public void setMasterAdminApp(ApplicationModel app) {
-        realm.setAdminAppId(app.getId());
+        String adminAppId = app != null ? app.getId() : null;
+        realm.setAdminAppId(adminAppId);
         updateRealm();
     }
 

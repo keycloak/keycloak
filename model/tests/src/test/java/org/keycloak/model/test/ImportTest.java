@@ -4,7 +4,7 @@ import org.junit.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-import org.keycloak.models.AccountRoles;
+import org.keycloak.authentication.AuthProviderConstants;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.AuthenticationLinkModel;
 import org.keycloak.models.AuthenticationProviderModel;
@@ -18,7 +18,6 @@ import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.authentication.AuthProviderConstants;
 
 import java.util.List;
 import java.util.Map;

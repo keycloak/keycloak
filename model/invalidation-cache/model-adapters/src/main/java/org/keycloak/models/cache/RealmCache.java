@@ -1,11 +1,9 @@
 package org.keycloak.models.cache;
 
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.cache.entities.CachedApplication;
 import org.keycloak.models.cache.entities.CachedOAuthClient;
 import org.keycloak.models.cache.entities.CachedRealm;
 import org.keycloak.models.cache.entities.CachedRole;
-import org.keycloak.models.cache.entities.CachedUser;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

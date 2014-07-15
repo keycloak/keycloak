@@ -10,11 +10,9 @@ import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UsernameLoginFailureModel;
 import org.keycloak.models.jpa.entities.ApplicationEntity;
 import org.keycloak.models.jpa.entities.AuthenticationProviderEntity;
 import org.keycloak.models.jpa.entities.OAuthClientEntity;
@@ -607,7 +605,7 @@ public class RealmAdapter implements RealmModel {
     public boolean removeOAuthClient(String id) {
         OAuthClientModel oauth = getOAuthClientById(id);
         if (oauth == null) return false;
-        OAuthClientEntity client = (OAuthClientEntity) ((OAuthClientAdapter) oauth).getEntity();
+        OAuthClientEntity client = em.getReference(OAuthClientEntity.class, oauth.getId());
         em.createQuery("delete from " + ScopeMappingEntity.class.getSimpleName() + " where client = :client").setParameter("client", client).executeUpdate();
         em.remove(client);
         return true;
@@ -926,7 +924,8 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public void setMasterAdminApp(ApplicationModel app) {
-        realm.setMasterAdminApp(((ApplicationAdapter) app).getJpaEntity());
+        ApplicationEntity appEntity = app!=null ? em.getReference(ApplicationEntity.class, app.getId()) : null;
+        realm.setMasterAdminApp(appEntity);
         em.flush();
     }
 

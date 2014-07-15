@@ -7,7 +7,6 @@ import org.keycloak.models.ModelProvider;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.SocialLinkModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.entities.CachedApplication;
 import org.keycloak.models.cache.entities.CachedApplicationRole;
@@ -15,7 +14,6 @@ import org.keycloak.models.cache.entities.CachedOAuthClient;
 import org.keycloak.models.cache.entities.CachedRealm;
 import org.keycloak.models.cache.entities.CachedRealmRole;
 import org.keycloak.models.cache.entities.CachedRole;
-import org.keycloak.models.cache.entities.CachedUser;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -202,8 +200,22 @@ public class DefaultCacheModelProvider implements CacheModelProvider {
     @Override
     public boolean removeRealm(String id) {
         cache.invalidateCachedRealmById(id);
+
+        RealmModel realm = getDelegate().getRealm(id);
+        Set<RoleModel> realmRoles = null;
+        if (realm != null) {
+            realmRoles = realm.getRoles();
+        }
+
         boolean didIt = getDelegate().removeRealm(id);
         realmInvalidations.add(id);
+
+        // TODO: Temporary workaround to invalidate cached realm roles
+        if (didIt && realmRoles != null) {
+            for (RoleModel role : realmRoles) {
+                roleInvalidations.add(role.getId());
+            }
+        }
 
         return didIt;
     }

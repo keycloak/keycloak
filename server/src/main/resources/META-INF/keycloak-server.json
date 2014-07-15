@@ -14,12 +14,20 @@
         "provider": "jpa"
     },
 
+    "user": {
+        "provider": "${keycloak.user.provider:jpa}"
+    },
+
     "userSessions": {
-        "provider" : "mem"
+        "provider" : "${keycloak.userSessions.provider:mem}"
     },
 
     "modelCache": {
-        "provider": "${keycloak.model.cache.provider:}"
+        "provider": "${keycloak.model.cache.provider:mem}"
+    },
+
+    "userCache": {
+        "provider": "${keycloak.user.cache.provider:mem}"
     },
 
     "timer": {

@@ -1,9 +1,9 @@
 package org.keycloak.services.resources.admin;
 
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ClaimRepresentation;
-import org.keycloak.services.managers.ClaimManager;
-import org.keycloak.services.managers.ModelToRepresentation;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -47,6 +47,6 @@ public class ClaimResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public void updateClaims(ClaimRepresentation rep) {
         auth.requireManage();
-        ClaimManager.setClaims(model, rep);
+        RepresentationToModel.setClaims(model, rep);
     }
 }
