@@ -226,7 +226,7 @@ public class SimpleCache implements KeycloakCache {
 
     @Override
     public void invalidateRole(CachedRole role) {
-        roleCache.remove(role);
+        roleCache.remove(role.getId());
     }
 
     @Override

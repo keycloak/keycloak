@@ -986,7 +986,8 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public void setMasterAdminApp(ApplicationModel app) {
-        realm.setAdminAppId(app.getId());
+        String adminAppId = app != null ? app.getId() : null;
+        realm.setAdminAppId(adminAppId);
         updateRealm();
     }
 

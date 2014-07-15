@@ -17,11 +17,14 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.exportimport.Strategy;
+import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelProvider;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -43,7 +46,7 @@ public class ImportUtils {
      */
     public static RealmModel importRealm(KeycloakSession session, RealmRepresentation rep, Strategy strategy) {
         String realmName = rep.getRealm();
-        ModelProvider model = session.getModel();
+        ModelProvider model = session.model();
         RealmModel realm = model.getRealmByName(realmName);
 
         if (realm != null) {
@@ -52,6 +55,9 @@ public class ImportUtils {
                 return realm;
             } else {
                 logger.infof("Realm '%s' already exists. Removing it before import", realmName);
+                if (Config.getAdminRealm().equals(realm.getId())) {
+                    realm.setMasterAdminApp(null);
+                }
                 model.removeRealm(realm.getId());
             }
         }
@@ -73,13 +79,48 @@ public class ImportUtils {
             RealmModel adminRealm = realm;
             for (RealmModel currentRealm : model.getRealms()) {
                 ApplicationModel masterApp = adminRealm.getApplicationByName(ExportImportUtils.getMasterRealmAdminApplicationName(currentRealm));
-                currentRealm.setMasterAdminApp(masterApp);
+                if (masterApp != null) {
+                    currentRealm.setMasterAdminApp(masterApp);
+                }  else {
+                    setupMasterAdminManagement(model, currentRealm);
+                }
             }
         } else {
             // Need to refresh masterApp for current realm
             RealmModel adminRealm = model.getRealm(adminRealmId);
             ApplicationModel masterApp = adminRealm.getApplicationByName(ExportImportUtils.getMasterRealmAdminApplicationName(realm));
-            realm.setMasterAdminApp(masterApp);
+            if (masterApp != null) {
+                realm.setMasterAdminApp(masterApp);
+            }  else {
+                setupMasterAdminManagement(model, realm);
+            }
+        }
+    }
+
+    // TODO: We need method here, so we are able to refresh masterAdmin applications after import. Should be RealmManager moved to model/api instead?
+    public static void setupMasterAdminManagement(ModelProvider model, RealmModel realm) {
+        RealmModel adminRealm;
+        RoleModel adminRole;
+
+        if (realm.getName().equals(Config.getAdminRealm())) {
+            adminRealm = realm;
+
+            adminRole = realm.addRole(AdminRoles.ADMIN);
+
+            RoleModel createRealmRole = realm.addRole(AdminRoles.CREATE_REALM);
+            adminRole.addCompositeRole(createRealmRole);
+        } else {
+            adminRealm = model.getRealmByName(Config.getAdminRealm());
+            adminRole = adminRealm.getRole(AdminRoles.ADMIN);
+        }
+
+        ApplicationModel realmAdminApp = KeycloakModelUtils.createApplication(adminRealm, ExportImportUtils.getMasterRealmAdminApplicationName(realm));
+        realmAdminApp.setBearerOnly(true);
+        realm.setMasterAdminApp(realmAdminApp);
+
+        for (String r : AdminRoles.ALL_REALM_ROLES) {
+            RoleModel role = realmAdminApp.addRole(r);
+            adminRole.addCompositeRole(role);
         }
     }
 
@@ -119,7 +160,7 @@ public class ImportUtils {
 
     // Assuming that it's invoked inside transaction
     public static void importUsersFromStream(KeycloakSession session, String realmName, ObjectMapper mapper, InputStream is) throws IOException {
-        ModelProvider model = session.getModel();
+        ModelProvider model = session.model();
         JsonFactory factory = mapper.getJsonFactory();
         JsonParser parser = factory.createJsonParser(is);
         try {

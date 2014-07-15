@@ -3,6 +3,7 @@ package org.keycloak.exportimport;
 import java.io.IOException;
 
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.Provider;
 
 /**
@@ -10,7 +11,7 @@ import org.keycloak.provider.Provider;
  */
 public interface ImportProvider extends Provider {
 
-    void importModel(KeycloakSession session, Strategy strategy) throws IOException;
+    void importModel(KeycloakSessionFactory factory, Strategy strategy) throws IOException;
 
-    void importRealm(KeycloakSession session, String realmName, Strategy strategy) throws IOException;
+    void importRealm(KeycloakSessionFactory factory, String realmName, Strategy strategy) throws IOException;
 }

@@ -31,10 +31,7 @@ public class ApplicationManager {
     }
 
     public ApplicationModel createApplication(RealmModel realm, String name) {
-        ApplicationModel app = realm.addApplication(name);
-        KeycloakModelUtils.generateSecret(app);
-
-        return app;
+        return KeycloakModelUtils.createApplication(realm, name);
     }
 
     public boolean removeApplication(RealmModel realm, ApplicationModel application) {

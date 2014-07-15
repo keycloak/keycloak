@@ -11,8 +11,8 @@ import org.keycloak.provider.Provider;
  */
 public interface ExportProvider extends Provider {
 
-    void exportModel(KeycloakSession session) throws IOException;
+    void exportModel(KeycloakSessionFactory factory) throws IOException;
 
-    void exportRealm(KeycloakSession session, String realmName) throws IOException;
+    void exportRealm(KeycloakSessionFactory factory, String realmName) throws IOException;
 
 }

@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.RealmModel;
 
@@ -13,17 +14,17 @@ import org.keycloak.models.RealmModel;
 public class ExportImportUtils {
 
     /**
-     * Wrap given runnable job into KeycloakTransaction. Assumption is that session already exists and it doesn't need to be closed when finished
+     * Wrap given runnable job into KeycloakTransaction.
      *
-     * @param session
+     * @param factory
      * @param job
      */
-    public static void runJobInTransaction(KeycloakSession session, ExportImportJob job) throws IOException {
+    public static void runJobInTransaction(KeycloakSessionFactory factory, ExportImportJob job) throws IOException {
+        KeycloakSession session = factory.create();
         KeycloakTransaction tx = session.getTransaction();
         try {
             tx.begin();
-
-            job.run();
+            job.run(session);
 
             if (tx.isActive()) {
                 if (tx.getRollbackOnly()) {
@@ -36,6 +37,7 @@ public class ExportImportUtils {
             if (tx.isActive()) {
                 tx.rollback();
             }
+            session.close();
         }
     }
 

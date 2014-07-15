@@ -2,6 +2,7 @@ package org.keycloak.services.managers;
 
 import org.jboss.logging.Logger;
 import org.keycloak.exportimport.util.ExportImportUtils;
+import org.keycloak.exportimport.util.ImportUtils;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ApplicationModel;
@@ -143,32 +144,9 @@ public class RealmManager {
         }
     }
 
+    // Should be RealmManager moved to model/api instead of referencing methods this way?
     private void setupMasterAdminManagement(RealmModel realm) {
-        RealmModel adminRealm;
-        RoleModel adminRole;
-
-        if (realm.getName().equals(Config.getAdminRealm())) {
-            adminRealm = realm;
-
-            adminRole = realm.addRole(AdminRoles.ADMIN);
-
-            RoleModel createRealmRole = realm.addRole(AdminRoles.CREATE_REALM);
-            adminRole.addCompositeRole(createRealmRole);
-        } else {
-            adminRealm = model.getRealmByName(Config.getAdminRealm());
-            adminRole = adminRealm.getRole(AdminRoles.ADMIN);
-        }
-
-        ApplicationManager applicationManager = new ApplicationManager(new RealmManager(session));
-
-        ApplicationModel realmAdminApp = applicationManager.createApplication(adminRealm, ExportImportUtils.getMasterRealmAdminApplicationName(realm));
-        realmAdminApp.setBearerOnly(true);
-        realm.setMasterAdminApp(realmAdminApp);
-
-        for (String r : AdminRoles.ALL_REALM_ROLES) {
-            RoleModel role = realmAdminApp.addRole(r);
-            adminRole.addCompositeRole(role);
-        }
+        ImportUtils.setupMasterAdminManagement(model, realm);
     }
 
     private void setupRealmAdminManagement(RealmModel realm) {

@@ -17,6 +17,7 @@ import org.keycloak.exportimport.util.ExportImportJob;
 import org.keycloak.exportimport.util.ExportImportUtils;
 import org.keycloak.exportimport.util.ImportUtils;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.util.JsonSerialization;
 
@@ -46,19 +47,19 @@ public class ZipImportProvider implements ImportProvider {
     }
 
     @Override
-    public void importModel(KeycloakSession session, Strategy strategy) throws IOException {
+    public void importModel(KeycloakSessionFactory factory, Strategy strategy) throws IOException {
         for (ExtZipEntry entry : this.decrypter.getEntryList()) {
             String entryName = entry.getName();
             if (entryName.endsWith("-realm.json")) {
                 // Parse "foo" from "foo-realm.json"
                 String realmName = entryName.substring(0, entryName.length() - 11);
-                importRealm(session, realmName, strategy);
+                importRealm(factory, realmName, strategy);
             }
         }
     }
 
     @Override
-    public void importRealm(final KeycloakSession session, final String realmName, final Strategy strategy) throws IOException {
+    public void importRealm(KeycloakSessionFactory factory, final String realmName, final Strategy strategy) throws IOException {
         try {
             // Import realm first
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -66,10 +67,10 @@ public class ZipImportProvider implements ImportProvider {
             ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
             final RealmRepresentation realmRep = JsonSerialization.mapper.readValue(bis, RealmRepresentation.class);
 
-            ExportImportUtils.runJobInTransaction(session, new ExportImportJob() {
+            ExportImportUtils.runJobInTransaction(factory, new ExportImportJob() {
 
                 @Override
-                public void run() throws IOException {
+                public void run(KeycloakSession session) throws IOException {
                     ImportUtils.importRealm(session, realmRep, strategy);
                 }
 
@@ -84,10 +85,10 @@ public class ZipImportProvider implements ImportProvider {
                     this.decrypter.extractEntry(entry, bos, this.password);
                     final ByteArrayInputStream bis2 = new ByteArrayInputStream(bos.toByteArray());
 
-                    ExportImportUtils.runJobInTransaction(session, new ExportImportJob() {
+                    ExportImportUtils.runJobInTransaction(factory, new ExportImportJob() {
 
                         @Override
-                        public void run() throws IOException {
+                        public void run(KeycloakSession session) throws IOException {
                             ImportUtils.importUsersFromStream(session, realmName, JsonSerialization.mapper, bis2);
                         }
                     });

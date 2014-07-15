@@ -35,10 +35,10 @@ public class ExportImportManager {
 
                     if (realmName == null) {
                         logger.info("Full model export requested");
-                        exportProvider.exportModel(session);
+                        exportProvider.exportModel(sessionFactory);
                     } else {
                         logger.infof("Export of realm '%s' requested", realmName);
-                        exportProvider.exportRealm(session, realmName);
+                        exportProvider.exportRealm(sessionFactory, realmName);
                     }
                     logger.info("Export finished successfully");
                 } else {
@@ -46,10 +46,10 @@ public class ExportImportManager {
                     Strategy strategy = ExportImportConfig.getStrategy();
                     if (realmName == null) {
                         logger.infof("Full model import requested. Strategy: %s", strategy.toString());
-                        importProvider.importModel(session, strategy);
+                        importProvider.importModel(sessionFactory, strategy);
                     } else {
                         logger.infof("Import of realm '%s' requested. Strategy: %s", realmName, strategy.toString());
-                        importProvider.importRealm(session, realmName, strategy);
+                        importProvider.importRealm(sessionFactory, realmName, strategy);
                     }
                     logger.info("Import finished successfully");
                 }

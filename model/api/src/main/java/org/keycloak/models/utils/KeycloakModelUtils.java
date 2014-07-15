@@ -88,6 +88,13 @@ public final class KeycloakModelUtils {
         return secret;
     }
 
+    public static ApplicationModel createApplication(RealmModel realm, String name) {
+        ApplicationModel app = realm.addApplication(name);
+        generateSecret(app);
+
+        return app;
+    }
+
     /**
      * Deep search if given role is descendant of composite role
      *

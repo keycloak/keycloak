@@ -2,6 +2,8 @@ package org.keycloak.exportimport.util;
 
 import java.io.IOException;
 
+import org.keycloak.models.KeycloakSession;
+
 /**
  * Task to be executed inside transaction
  *
@@ -9,5 +11,5 @@ import java.io.IOException;
  */
 public interface ExportImportJob {
 
-    public void run() throws IOException;
+    public void run(KeycloakSession session) throws IOException;
 }

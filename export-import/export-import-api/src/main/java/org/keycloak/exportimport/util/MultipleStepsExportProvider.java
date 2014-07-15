@@ -7,6 +7,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.ExportProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -19,36 +20,36 @@ public abstract class MultipleStepsExportProvider implements ExportProvider {
     protected final Logger logger = Logger.getLogger(getClass());
 
     @Override
-    public void exportModel(final KeycloakSession session) throws IOException {
+    public void exportModel(KeycloakSessionFactory factory) throws IOException {
         final RealmsHolder holder = new RealmsHolder();
 
         // Import users into same file with realm
-        ExportImportUtils.runJobInTransaction(session, new ExportImportJob() {
+        ExportImportUtils.runJobInTransaction(factory, new ExportImportJob() {
 
             @Override
-            public void run() {
-                List<RealmModel> realms = session.getModel().getRealms();
+            public void run(KeycloakSession session) {
+                List<RealmModel> realms = session.model().getRealms();
                 holder.realms = realms;
             }
 
         });
 
         for (RealmModel realm : holder.realms) {
-            exportRealm(session, realm.getName());
+            exportRealm(factory, realm.getName());
         }
     }
 
     @Override
-    public void exportRealm(final KeycloakSession session, final String realmName) throws IOException {
+    public void exportRealm(KeycloakSessionFactory factory, final String realmName) throws IOException {
         final int usersPerFile = ExportImportConfig.getUsersPerFile();
         final UsersHolder usersHolder = new UsersHolder();
         final boolean exportUsersIntoSameFile = usersPerFile < 0;
 
-        ExportImportUtils.runJobInTransaction(session, new ExportImportJob() {
+        ExportImportUtils.runJobInTransaction(factory, new ExportImportJob() {
 
             @Override
-            public void run() throws IOException {
-                RealmModel realm = session.getModel().getRealmByName(realmName);
+            public void run(KeycloakSession session) throws IOException {
+                RealmModel realm = session.model().getRealmByName(realmName);
                 RealmRepresentation rep = ExportUtils.exportRealm(realm, exportUsersIntoSameFile);
                 writeRealm(realmName + "-realm.json", rep);
                 logger.info("Realm '" + realmName + "' - data exported");
@@ -76,11 +77,11 @@ public abstract class MultipleStepsExportProvider implements ExportProvider {
                     usersHolder.currentPageEnd = usersHolder.totalCount;
                 }
 
-                ExportImportUtils.runJobInTransaction(session, new ExportImportJob() {
+                ExportImportUtils.runJobInTransaction(factory, new ExportImportJob() {
 
                     @Override
-                    public void run() throws IOException {
-                        RealmModel realm = session.getModel().getRealmByName(realmName);
+                    public void run(KeycloakSession session) throws IOException {
+                        RealmModel realm = session.model().getRealmByName(realmName);
                         // TODO: pagination
                         List<UserModel> users = realm.getUsers();
                         usersHolder.users = users.subList(usersHolder.currentPageStart, usersHolder.currentPageEnd);

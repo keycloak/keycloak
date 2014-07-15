@@ -20,6 +20,9 @@ public class OAuthClientManager {
 
     private RealmManager realmManager;
 
+    public OAuthClientManager() {
+    }
+
     public OAuthClientManager(RealmManager realmManager) {
         this.realmManager = realmManager;
     }
