@@ -33,6 +33,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.managers.ApplicationManager;
 import org.keycloak.services.managers.RealmManager;
@@ -59,7 +60,7 @@ public class CompositeRoleTest {
         @Override
         protected void configure(KeycloakSession session, RealmManager manager, RealmModel adminRealm) {
             RealmModel realm = manager.createRealm("Test");
-            manager.generateRealmKeys(realm);
+            KeycloakModelUtils.generateRealmKeys(realm);
             realmPublicKey = realm.getPublicKey();
             realm.setSsoSessionIdleTimeout(3000);
             realm.setAccessTokenLifespan(10000);

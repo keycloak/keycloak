@@ -6,6 +6,7 @@ import org.apache.log.Logger;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
 
@@ -77,9 +78,9 @@ public class CreateRealmsWorker implements Worker {
 
         // Add required credentials
         if (createRequiredCredentials) {
-            realmManager.addRequiredCredential(realm, CredentialRepresentation.PASSWORD);
-            realmManager.addRequiredCredential(realm, CredentialRepresentation.TOTP);
-            realmManager.addRequiredCredential(realm, CredentialRepresentation.CLIENT_CERT);
+            RepresentationToModel.addRequiredCredential(realm, CredentialRepresentation.PASSWORD);
+            RepresentationToModel.addRequiredCredential(realm, CredentialRepresentation.TOTP);
+            RepresentationToModel.addRequiredCredential(realm, CredentialRepresentation.CLIENT_CERT);
         }
 
         log.info("Finished creation of realm " + realmName);

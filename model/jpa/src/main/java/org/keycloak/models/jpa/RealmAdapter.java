@@ -745,7 +745,7 @@ public class RealmAdapter implements RealmModel {
     public boolean removeOAuthClient(String id) {
         OAuthClientModel oauth = getOAuthClientById(id);
         if (oauth == null) return false;
-        OAuthClientEntity client = (OAuthClientEntity) ((OAuthClientAdapter) oauth).getEntity();
+        OAuthClientEntity client = em.getReference(OAuthClientEntity.class, oauth.getId());
         em.createQuery("delete from " + ScopeMappingEntity.class.getSimpleName() + " where client = :client").setParameter("client", client).executeUpdate();
         em.remove(client);
         return true;
@@ -1065,7 +1065,8 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public void setMasterAdminApp(ApplicationModel app) {
-        realm.setMasterAdminApp(((ApplicationAdapter) app).getJpaEntity());
+        ApplicationEntity appEntity = app!=null ? em.getReference(ApplicationEntity.class, app.getId()) : null;
+        realm.setMasterAdminApp(appEntity);
         em.flush();
     }
 

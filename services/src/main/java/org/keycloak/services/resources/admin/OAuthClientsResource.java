@@ -8,6 +8,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
 import org.keycloak.services.managers.OAuthClientManager;
 import org.keycloak.services.resources.flows.Flows;
@@ -65,7 +67,7 @@ public class OAuthClientsResource {
         boolean view = auth.hasView();
         for (OAuthClientModel oauth : oauthModels) {
             if (view) {
-                rep.add(OAuthClientManager.toRepresentation(oauth));
+                rep.add(ModelToRepresentation.toRepresentation(oauth));
             } else {
                 OAuthClientRepresentation client = new OAuthClientRepresentation();
                 client.setName(oauth.getClientId());
@@ -87,9 +89,8 @@ public class OAuthClientsResource {
     public Response createOAuthClient(final @Context UriInfo uriInfo, final OAuthClientRepresentation rep) {
         auth.requireManage();
 
-        OAuthClientManager resourceManager = new OAuthClientManager(realm);
         try {
-            OAuthClientModel oauth = resourceManager.create(rep);
+            OAuthClientModel oauth = RepresentationToModel.createOAuthClient(rep, realm);
             return Response.created(uriInfo.getAbsolutePathBuilder().path(oauth.getId()).build()).build();
         } catch (ModelDuplicateException e) {
             return Flows.errors().exists("Client " + rep.getName() + " already exists");

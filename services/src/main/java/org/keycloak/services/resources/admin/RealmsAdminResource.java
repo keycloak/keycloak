@@ -14,7 +14,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.ForbiddenException;
-import org.keycloak.services.managers.ModelToRepresentation;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.TokenManager;
 import org.keycloak.services.resources.KeycloakApplication;

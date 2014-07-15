@@ -266,8 +266,22 @@ public class DefaultCacheModelProvider implements CacheModelProvider {
     @Override
     public boolean removeRealm(String id) {
         cache.invalidateCachedRealmById(id);
+
+        RealmModel realm = getDelegate().getRealm(id);
+        Set<RoleModel> realmRoles = null;
+        if (realm != null) {
+            realmRoles = realm.getRoles();
+        }
+
         boolean didIt = getDelegate().removeRealm(id);
         realmInvalidations.add(id);
+
+        // TODO: Temporary workaround to invalidate cached realm roles
+        if (didIt && realmRoles != null) {
+            for (RoleModel role : realmRoles) {
+                roleInvalidations.add(role.getId());
+            }
+        }
 
         return didIt;
     }

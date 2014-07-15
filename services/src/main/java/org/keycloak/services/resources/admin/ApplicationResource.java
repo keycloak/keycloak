@@ -10,13 +10,15 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.adapters.action.SessionStats;
 import org.keycloak.representations.adapters.action.UserStats;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.services.managers.ApplicationManager;
-import org.keycloak.services.managers.ModelToRepresentation;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.resources.KeycloakApplication;
@@ -97,7 +99,7 @@ public class ApplicationResource {
 
         ApplicationManager applicationManager = new ApplicationManager(new RealmManager(session));
         try {
-            applicationManager.updateApplication(rep, application);
+            RepresentationToModel.updateApplication(rep, application);
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
             return Flows.errors().exists("Application " + rep.getName() + " already exists");
@@ -116,8 +118,7 @@ public class ApplicationResource {
     public ApplicationRepresentation getApplication() {
         auth.requireView();
 
-        ApplicationManager applicationManager = new ApplicationManager(new RealmManager(session));
-        return applicationManager.toRepresentation(application);
+        return ModelToRepresentation.toRepresentation(application);
     }
 
 
@@ -184,7 +185,7 @@ public class ApplicationResource {
         auth.requireManage();
 
         logger.debug("regenerateSecret");
-        UserCredentialModel cred = new ApplicationManager().generateSecret(application);
+        UserCredentialModel cred = KeycloakModelUtils.generateSecret(application);
         CredentialRepresentation rep = ModelToRepresentation.toRepresentation(cred);
         return rep;
     }

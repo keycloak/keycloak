@@ -53,7 +53,7 @@ import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.ModelToRepresentation;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.flows.Flows;
 import org.keycloak.services.resources.flows.OAuthRedirect;
