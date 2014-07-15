@@ -40,7 +40,7 @@ public class ApplianceBootstrap {
 
     public void bootstrap(KeycloakSession session, String contextPath) {
         String adminRealmName = Config.getAdminRealm();
-        if (session.model().getRealm(adminRealmName) != null) {
+        if (session.realms().getRealm(adminRealmName) != null) {
             return;
         }
 

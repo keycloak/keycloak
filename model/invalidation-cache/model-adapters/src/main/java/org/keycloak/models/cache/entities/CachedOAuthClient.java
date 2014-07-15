@@ -1,6 +1,6 @@
 package org.keycloak.models.cache.entities;
 
-import org.keycloak.models.ModelProvider;
+import org.keycloak.models.RealmProvider;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.cache.RealmCache;
@@ -10,7 +10,7 @@ import org.keycloak.models.cache.RealmCache;
  * @version $Revision: 1 $
  */
 public class CachedOAuthClient extends CachedClient {
-    public CachedOAuthClient(RealmCache cache, ModelProvider delegate, RealmModel realm, OAuthClientModel model) {
+    public CachedOAuthClient(RealmCache cache, RealmProvider delegate, RealmModel realm, OAuthClientModel model) {
         super(cache, delegate, realm, model);
 
     }

@@ -8,7 +8,7 @@ import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelProvider;
+import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
@@ -32,7 +32,7 @@ public class RealmManager {
     protected static final Logger logger = Logger.getLogger(RealmManager.class);
 
     protected KeycloakSession session;
-    protected ModelProvider model;
+    protected RealmProvider model;
     protected String contextPath = "";
 
     public String getContextPath() {
@@ -45,7 +45,7 @@ public class RealmManager {
 
     public RealmManager(KeycloakSession session) {
         this.session = session;
-        this.model = session.model();
+        this.model = session.realms();
     }
 
     public KeycloakSession getSession() {

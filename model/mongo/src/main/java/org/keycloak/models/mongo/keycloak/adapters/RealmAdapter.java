@@ -9,7 +9,7 @@ import org.keycloak.models.AuthenticationProviderModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.CredentialValidation;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelProvider;
+import org.keycloak.models.RealmProvider;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
@@ -46,7 +46,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     private static final Logger logger = Logger.getLogger(RealmAdapter.class);
 
     private final MongoRealmEntity realm;
-    private final ModelProvider model;
+    private final RealmProvider model;
 
     protected volatile transient PublicKey publicKey;
     protected volatile transient PrivateKey privateKey;
@@ -58,7 +58,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         super(invocationContext);
         this.realm = realmEntity;
         this.session = session;
-        this.model = session.model();
+        this.model = session.realms();
     }
 
     @Override

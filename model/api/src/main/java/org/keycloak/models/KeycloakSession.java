@@ -27,7 +27,7 @@ public interface KeycloakSession {
      * @return
      * @throws IllegalStateException if transaction is not active
      */
-    ModelProvider model();
+    RealmProvider realms();
 
     /**
      * Returns a managed provider instance.  Will start a provider transaction.  This transaction is managed by the KeycloakSession

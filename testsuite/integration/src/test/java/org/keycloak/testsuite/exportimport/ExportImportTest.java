@@ -1,30 +1,5 @@
 package org.keycloak.testsuite.exportimport;
 
-import java.io.File;
-import java.util.Properties;
-
-import org.junit.Assert;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.rules.ExternalResource;
-import org.junit.rules.RuleChain;
-import org.junit.rules.TestRule;
-import org.keycloak.Config;
-import org.keycloak.exportimport.ExportImportConfig;
-import org.keycloak.exportimport.dir.DirExportProvider;
-import org.keycloak.exportimport.dir.DirExportProviderFactory;
-import org.keycloak.exportimport.singlefile.SingleFileExportProviderFactory;
-import org.keycloak.exportimport.zip.ZipExportProviderFactory;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelProvider;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserProvider;
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.services.managers.RealmManager;
-import org.keycloak.testsuite.rule.KeycloakRule;
-
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */

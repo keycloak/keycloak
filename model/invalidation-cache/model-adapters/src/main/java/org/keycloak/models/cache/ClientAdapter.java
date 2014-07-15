@@ -15,12 +15,12 @@ import java.util.Set;
  */
 public abstract class ClientAdapter implements ClientModel {
     protected CachedClient cachedClient;
-    protected CacheModelProvider cacheSession;
+    protected CacheRealmProvider cacheSession;
     protected ClientModel updatedClient;
     protected RealmModel cachedRealm;
     protected RealmCache cache;
 
-    public ClientAdapter(RealmModel cachedRealm, CachedClient cached, RealmCache cache, CacheModelProvider cacheSession) {
+    public ClientAdapter(RealmModel cachedRealm, CachedClient cached, RealmCache cache, CacheRealmProvider cacheSession) {
         this.cachedRealm = cachedRealm;
         this.cache = cache;
         this.cacheSession = cacheSession;

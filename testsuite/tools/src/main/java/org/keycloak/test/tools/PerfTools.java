@@ -2,7 +2,6 @@ package org.keycloak.test.tools;
 
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.ExportImportManager;
-import org.keycloak.exportimport.ExportProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
@@ -11,14 +10,12 @@ import org.keycloak.test.tools.jobs.DeleteUsersJob;
 import org.keycloak.test.tools.jobs.UpdateUsersJob;
 import org.keycloak.test.tools.jobs.UsersJob;
 import org.keycloak.test.tools.jobs.UsersJobInitializer;
-import org.keycloak.util.ProviderLoader;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 
@@ -171,7 +168,7 @@ public class PerfTools {
     }
 
     private int getUsersCount(String realmName, String prefix) {
-        RealmModel realm = session.model().getRealmByName(realmName);
+        RealmModel realm = session.realms().getRealmByName(realmName);
 
         // TODO: method for count on model
         if (prefix == null) {

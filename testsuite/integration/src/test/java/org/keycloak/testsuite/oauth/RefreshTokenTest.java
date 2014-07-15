@@ -183,7 +183,7 @@ public class RefreshTokenTest {
         String refreshId = oauth.verifyRefreshToken(tokenResponse.getRefreshToken()).getId();
 
         KeycloakSession session = keycloakRule.startSession();
-        RealmModel realm = session.model().getRealmByName("test");
+        RealmModel realm = session.realms().getRealmByName("test");
         UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
         int last = userSession.getLastSessionRefresh();
         session.getTransaction().commit();
@@ -199,7 +199,7 @@ public class RefreshTokenTest {
         Assert.assertEquals(200, tokenResponse.getStatusCode());
 
         session = keycloakRule.startSession();
-        realm = session.model().getRealmByName("test");
+        realm = session.realms().getRealmByName("test");
         userSession = session.sessions().getUserSession(realm, sessionId);
         int next = userSession.getLastSessionRefresh();
         session.getTransaction().commit();
@@ -211,7 +211,7 @@ public class RefreshTokenTest {
 
 
         session = keycloakRule.startSession();
-        realm = session.model().getRealmByName("test");
+        realm = session.realms().getRealmByName("test");
         int lastAccessTokenLifespan = realm.getAccessTokenLifespan();
         realm.setAccessTokenLifespan(100000);
         session.getTransaction().commit();
@@ -221,7 +221,7 @@ public class RefreshTokenTest {
         tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "password");
 
         session = keycloakRule.startSession();
-        realm = session.model().getRealmByName("test");
+        realm = session.realms().getRealmByName("test");
         userSession = session.sessions().getUserSession(realm, sessionId);
         next = userSession.getLastSessionRefresh();
         session.getTransaction().commit();
@@ -231,7 +231,7 @@ public class RefreshTokenTest {
         Assert.assertThat(next, allOf(greaterThan(last), lessThan(last + 6)));
 
         session = keycloakRule.startSession();
-        realm = session.model().getRealmByName("test");
+        realm = session.realms().getRealmByName("test");
         int originalIdle = realm.getSsoSessionIdleTimeout();
         realm.setSsoSessionIdleTimeout(1);
         session.getTransaction().commit();
@@ -249,7 +249,7 @@ public class RefreshTokenTest {
         events.expectRefresh(refreshId, sessionId).error(Errors.INVALID_TOKEN);
 
         session = keycloakRule.startSession();
-        realm = session.model().getRealmByName("test");
+        realm = session.realms().getRealmByName("test");
         realm.setSsoSessionIdleTimeout(originalIdle);
         realm.setAccessTokenLifespan(lastAccessTokenLifespan);
         session.getTransaction().commit();
@@ -274,7 +274,7 @@ public class RefreshTokenTest {
         String refreshId = oauth.verifyRefreshToken(tokenResponse.getRefreshToken()).getId();
 
         KeycloakSession session = keycloakRule.startSession();
-        RealmModel realm = session.model().getRealmByName("test");
+        RealmModel realm = session.realms().getRealmByName("test");
         int maxLifespan = realm.getSsoSessionMaxLifespan();
         realm.setSsoSessionMaxLifespan(1);
         session.getTransaction().commit();
@@ -289,7 +289,7 @@ public class RefreshTokenTest {
         assertNull(tokenResponse.getRefreshToken());
 
         session = keycloakRule.startSession();
-        realm = session.model().getRealmByName("test");
+        realm = session.realms().getRealmByName("test");
         realm.setSsoSessionMaxLifespan(maxLifespan);
         session.getTransaction().commit();
         session.close();

@@ -40,7 +40,7 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
         KeycloakSession session = server.getSessionFactory().create();
         session.getTransaction().begin();
         try {
-            RealmModel realmByName = session.model().getRealmByName(realm);
+            RealmModel realmByName = session.realms().getRealmByName(realm);
             UserModel user = session.users().getUserByUsername(name, realmByName);
             return user != null ? ModelToRepresentation.toRepresentation(user) : null;
         } finally {
@@ -52,7 +52,7 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
         KeycloakSession session = server.getSessionFactory().create();
         session.getTransaction().begin();
         try {
-            RealmModel realmByName = session.model().getRealmByName(realm);
+            RealmModel realmByName = session.realms().getRealmByName(realm);
             return ModelToRepresentation.toRepresentation(session.users().getUserById(id, realmByName));
         } finally {
             session.close();

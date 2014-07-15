@@ -2,7 +2,7 @@ package org.keycloak.models.cache.entities;
 
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.AuthenticationProviderModel;
-import org.keycloak.models.ModelProvider;
+import org.keycloak.models.RealmProvider;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
@@ -80,7 +80,7 @@ public class CachedRealm {
     public CachedRealm() {
     }
 
-    public CachedRealm(RealmCache cache, ModelProvider delegate, RealmModel model) {
+    public CachedRealm(RealmCache cache, RealmProvider delegate, RealmModel model) {
         id = model.getId();
         name = model.getName();
         enabled = model.isEnabled();

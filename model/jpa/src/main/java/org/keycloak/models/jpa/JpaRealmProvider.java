@@ -2,7 +2,7 @@ package org.keycloak.models.jpa;
 
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelProvider;
+import org.keycloak.models.RealmProvider;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -22,11 +22,11 @@ import java.util.List;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class JpaModelProvider implements ModelProvider {
+public class JpaRealmProvider implements RealmProvider {
     private final KeycloakSession session;
     protected EntityManager em;
 
-    public JpaModelProvider(KeycloakSession session, EntityManager em) {
+    public JpaRealmProvider(KeycloakSession session, EntityManager em) {
         this.session = session;
         this.em = em;
     }

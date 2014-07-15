@@ -3,7 +3,7 @@ package org.keycloak.models.cache;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
-import org.keycloak.models.ModelProvider;
+import org.keycloak.models.RealmProvider;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -25,10 +25,10 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class DefaultCacheModelProvider implements CacheModelProvider {
+public class DefaultCacheRealmProvider implements CacheRealmProvider {
     protected RealmCache cache;
     protected KeycloakSession session;
-    protected ModelProvider delegate;
+    protected RealmProvider delegate;
     protected boolean transactionActive;
     protected boolean setRollbackOnly;
 
@@ -45,7 +45,7 @@ public class DefaultCacheModelProvider implements CacheModelProvider {
 
     protected boolean clearAll;
 
-    public DefaultCacheModelProvider(RealmCache cache, KeycloakSession session) {
+    public DefaultCacheRealmProvider(RealmCache cache, KeycloakSession session) {
         this.cache = cache;
         this.session = session;
 
@@ -53,10 +53,10 @@ public class DefaultCacheModelProvider implements CacheModelProvider {
     }
 
     @Override
-    public ModelProvider getDelegate() {
+    public RealmProvider getDelegate() {
         if (!transactionActive) throw new IllegalStateException("Cannot access delegate without a transaction");
         if (delegate != null) return delegate;
-        delegate = session.getProvider(ModelProvider.class);
+        delegate = session.getProvider(RealmProvider.class);
         return delegate;
     }
 

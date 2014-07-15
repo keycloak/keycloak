@@ -36,7 +36,7 @@ public class UserSessionProviderTest {
     @Before
     public void before() {
         session = kc.startSession();
-        realm = session.model().getRealm("test");
+        realm = session.realms().getRealm("test");
         session.users().addUser(realm, "user1");
         session.users().addUser(realm, "user2");
     }
@@ -174,7 +174,7 @@ public class UserSessionProviderTest {
     private void resetSession() {
         kc.stopSession(session, true);
         session = kc.startSession();
-        realm = session.model().getRealm("test");
+        realm = session.realms().getRealm("test");
     }
 
     public void assertSessions(List<UserSessionModel> actualSessions, UserSessionModel... expectedSessions) {

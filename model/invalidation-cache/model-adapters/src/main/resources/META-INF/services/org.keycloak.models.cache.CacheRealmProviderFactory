@@ -1,0 +1,2 @@
+org.keycloak.models.cache.MemoryCacheRealmProviderFactory
+org.keycloak.models.cache.NoCacheRealmProviderFactory

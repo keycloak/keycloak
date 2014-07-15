@@ -3,7 +3,6 @@ package org.keycloak.authentication.model;
 import org.keycloak.authentication.AuthProviderConstants;
 import org.keycloak.authentication.AuthenticationProviderException;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelProvider;
 import org.keycloak.models.RealmModel;
 
 import java.util.Arrays;
@@ -39,7 +38,7 @@ public class ExternalModelAuthenticationProvider extends AbstractModelAuthentica
             throw new AuthenticationProviderException("Option '" + AuthProviderConstants.EXTERNAL_REALM_ID + "' not specified in configuration");
         }
 
-        RealmModel realm = keycloakSession.model().getRealm(realmId);
+        RealmModel realm = keycloakSession.realms().getRealm(realmId);
         if (realm == null) {
             throw new AuthenticationProviderException("Realm with id '" + realmId + "' doesn't exists");
         }

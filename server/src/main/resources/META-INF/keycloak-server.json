@@ -10,7 +10,7 @@
         }
     },
 
-    "model": {
+    "realm": {
         "provider": "jpa"
     },
 
@@ -22,8 +22,8 @@
         "provider" : "${keycloak.userSessions.provider:mem}"
     },
 
-    "modelCache": {
-        "provider": "${keycloak.model.cache.provider:mem}"
+    "realmCache": {
+        "provider": "${keycloak.realm.cache.provider:mem}"
     },
 
     "userCache": {

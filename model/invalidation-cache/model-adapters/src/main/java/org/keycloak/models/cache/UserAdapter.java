@@ -258,7 +258,7 @@ public class UserAdapter implements UserModel {
         if (updated != null) return updated.getRoleMappings();
         Set<RoleModel> roles = new HashSet<RoleModel>();
         for (String id : cached.getRoleMappings()) {
-            RoleModel roleById = keycloakSession.model().getRoleById(id, realm);
+            RoleModel roleById = keycloakSession.realms().getRoleById(id, realm);
             if (roleById == null) {
                 // chance that role was removed, so just delete to persistence and get user invalidated
                 getDelegateForUpdate();

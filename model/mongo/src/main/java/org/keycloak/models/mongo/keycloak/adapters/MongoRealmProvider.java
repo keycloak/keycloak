@@ -7,7 +7,7 @@ import org.keycloak.connections.mongo.api.MongoStore;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelProvider;
+import org.keycloak.models.RealmProvider;
 import org.keycloak.models.OAuthClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -23,13 +23,13 @@ import java.util.List;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class MongoModelProvider implements ModelProvider {
+public class MongoRealmProvider implements RealmProvider {
 
     private final MongoStoreInvocationContext invocationContext;
     private final KeycloakSession session;
     private final MongoStore mongoStore;
 
-    public MongoModelProvider(KeycloakSession session, MongoStore mongoStore, MongoStoreInvocationContext invocationContext) {
+    public MongoRealmProvider(KeycloakSession session, MongoStore mongoStore, MongoStoreInvocationContext invocationContext) {
         this.session = session;
         this.mongoStore = mongoStore;
         this.invocationContext = invocationContext;

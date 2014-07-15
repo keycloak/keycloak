@@ -31,13 +31,13 @@ import java.util.Set;
  */
 public class RealmAdapter implements RealmModel {
     protected CachedRealm cached;
-    protected CacheModelProvider cacheSession;
+    protected CacheRealmProvider cacheSession;
     protected RealmModel updated;
     protected RealmCache cache;
     protected volatile transient PublicKey publicKey;
     protected volatile transient PrivateKey privateKey;
 
-    public RealmAdapter(CachedRealm cached, CacheModelProvider cacheSession) {
+    public RealmAdapter(CachedRealm cached, CacheRealmProvider cacheSession) {
         this.cached = cached;
         this.cacheSession = cacheSession;
     }

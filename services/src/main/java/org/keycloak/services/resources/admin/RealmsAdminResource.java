@@ -85,7 +85,7 @@ public class RealmsAdminResource {
         RealmManager realmManager = new RealmManager(session);
         List<RealmRepresentation> reps = new ArrayList<RealmRepresentation>();
         if (auth.getRealm().equals(realmManager.getKeycloakAdminstrationRealm())) {
-            List<RealmModel> realms = session.model().getRealms();
+            List<RealmModel> realms = session.realms().getRealms();
             for (RealmModel realm : realms) {
                 addRealmRep(reps, realm, realm.getMasterAdminApp());
             }

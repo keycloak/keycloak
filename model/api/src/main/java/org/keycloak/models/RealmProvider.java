@@ -8,7 +8,7 @@ import java.util.List;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface ModelProvider extends Provider {
+public interface RealmProvider extends Provider {
     // Note: The reason there are so many query methods here is for layering a cache on top of an persistent KeycloakSession
 
     RealmModel createRealm(String name);

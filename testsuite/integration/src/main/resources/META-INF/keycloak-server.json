@@ -7,8 +7,8 @@
         "provider": "${keycloak.audit.provider,keycloak.model.provider:jpa}"
     },
 
-    "model": {
-        "provider": "${keycloak.model.provider:jpa}"
+    "realm": {
+        "provider": "${keycloak.realm.provider:jpa}"
     },
 
     "user": {
@@ -19,8 +19,8 @@
         "provider" : "${keycloak.userSessions.provider:mem}"
     },
 
-    "modelCache": {
-        "provider": "${keycloak.model.cache.provider:mem}"
+    "realmCache": {
+        "provider": "${keycloak.realm.cache.provider:mem}"
     },
 
     "userCache": {

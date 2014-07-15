@@ -554,7 +554,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public ApplicationModel getApplicationById(String id) {
-        return session.model().getApplicationById(id, this);
+        return session.realms().getApplicationById(id, this);
     }
 
     @Override
@@ -624,7 +624,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public OAuthClientModel getOAuthClientById(String id) {
-        return session.model().getOAuthClientById(id, this);
+        return session.realms().getOAuthClientById(id, this);
     }
 
 
@@ -785,7 +785,7 @@ public class RealmAdapter implements RealmModel {
 
     @Override
     public RoleModel getRoleById(String id) {
-        return session.model().getRoleById(id, this);
+        return session.realms().getRoleById(id, this);
     }
 
     @Override

@@ -2,17 +2,13 @@ package org.keycloak.exportimport.util;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.codehaus.jackson.JsonEncoding;
 import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.JsonToken;
-import org.codehaus.jackson.io.SerializedString;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
@@ -20,10 +16,9 @@ import org.keycloak.exportimport.Strategy;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ApplicationModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelProvider;
+import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -46,7 +41,7 @@ public class ImportUtils {
      */
     public static RealmModel importRealm(KeycloakSession session, RealmRepresentation rep, Strategy strategy) {
         String realmName = rep.getRealm();
-        ModelProvider model = session.model();
+        RealmProvider model = session.realms();
         RealmModel realm = model.getRealmByName(realmName);
 
         if (realm != null) {
@@ -72,7 +67,7 @@ public class ImportUtils {
         return realm;
     }
 
-    private static void refreshMasterAdminApps(ModelProvider model, RealmModel realm) {
+    private static void refreshMasterAdminApps(RealmProvider model, RealmModel realm) {
         String adminRealmId = Config.getAdminRealm();
         if (adminRealmId.equals(realm.getId())) {
             // We just imported master realm. All 'masterAdminApps' need to be refreshed
@@ -98,7 +93,7 @@ public class ImportUtils {
     }
 
     // TODO: We need method here, so we are able to refresh masterAdmin applications after import. Should be RealmManager moved to model/api instead?
-    public static void setupMasterAdminManagement(ModelProvider model, RealmModel realm) {
+    public static void setupMasterAdminManagement(RealmProvider model, RealmModel realm) {
         RealmModel adminRealm;
         RoleModel adminRole;
 
@@ -160,7 +155,7 @@ public class ImportUtils {
 
     // Assuming that it's invoked inside transaction
     public static void importUsersFromStream(KeycloakSession session, String realmName, ObjectMapper mapper, InputStream is) throws IOException {
-        ModelProvider model = session.model();
+        RealmProvider model = session.realms();
         JsonFactory factory = mapper.getJsonFactory();
         JsonParser parser = factory.createJsonParser(is);
         try {
@@ -200,7 +195,7 @@ public class ImportUtils {
         }
     }
 
-    private static void importUsers(KeycloakSession session, ModelProvider model, String realmName, List<UserRepresentation> userReps) {
+    private static void importUsers(KeycloakSession session, RealmProvider model, String realmName, List<UserRepresentation> userReps) {
         RealmModel realm = model.getRealmByName(realmName);
         Map<String, ApplicationModel> apps = realm.getApplicationNameMap();
         for (UserRepresentation user : userReps) {
