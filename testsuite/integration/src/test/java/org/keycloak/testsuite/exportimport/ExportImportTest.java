@@ -5,8 +5,6 @@ import java.util.Properties;
 
 import org.junit.Assert;
 import org.junit.ClassRule;
-import org.junit.FixMethodOrder;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExternalResource;
 import org.junit.rules.RuleChain;
@@ -25,7 +23,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.rule.KeycloakRule;
-import org.keycloak.testutils.KeycloakServer;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -39,7 +36,7 @@ public class ExportImportTest {
 
         @Override
         protected void before() throws Throwable {
-                if (System.getProperty("hibernate.connection.url") == null) {
+            if (System.getProperty("hibernate.connection.url") == null) {
                 String baseExportImportDir = getExportImportTestDirectory();
 
                 File oldDBFile = new File(baseExportImportDir, "keycloakDB.h2.db");
@@ -64,6 +61,29 @@ public class ExportImportTest {
         }
     };
 
+    // We want data to be persisted among server restarts
+    private static ExternalResource mongoRule = new ExternalResource() {
+
+        private static final String MONGO_CLEAR_ON_STARTUP_PROP_NAME = "keycloak.model.mongo.clearOnStartup";
+        private String previousMongoClearOnStartup;
+
+        @Override
+        protected void before() throws Throwable {
+            previousMongoClearOnStartup = System.getProperty(MONGO_CLEAR_ON_STARTUP_PROP_NAME);
+            System.setProperty(MONGO_CLEAR_ON_STARTUP_PROP_NAME, "false");
+        }
+
+        @Override
+        protected void after() {
+            if (previousMongoClearOnStartup != null) {
+                System.setProperty(MONGO_CLEAR_ON_STARTUP_PROP_NAME, "false");
+            } else {
+                System.getProperties().remove(MONGO_CLEAR_ON_STARTUP_PROP_NAME);
+            }
+        }
+
+    };
+
     private static KeycloakRule keycloakRule = new KeycloakRule( new KeycloakRule.KeycloakSetup() {
 
         @Override
@@ -79,9 +99,10 @@ public class ExportImportTest {
     @ClassRule
     public static TestRule chain = RuleChain
             .outerRule(hibernateSetupRule)
+            .around(mongoRule)
             .around(keycloakRule);
 
-    //@Test
+    @Test
     public void testDirFullExportImport() throws Throwable {
         ExportImportConfig.setProvider(DirExportProviderFactory.PROVIDER_ID);
         String targetDirPath = getExportImportTestDirectory() + File.separator + "dirExport";
@@ -95,7 +116,7 @@ public class ExportImportTest {
         Assert.assertEquals(4, new File(targetDirPath).listFiles().length);
     }
 
-    //@Test
+    @Test
     public void testDirRealmExportImport() throws Throwable {
         ExportImportConfig.setProvider(DirExportProviderFactory.PROVIDER_ID);
         String targetDirPath = getExportImportTestDirectory() + File.separator + "dirRealmExport";
@@ -118,7 +139,7 @@ public class ExportImportTest {
         testFullExportImport();
     }
 
-    //@Test
+    @Test
     public void testSingleFileRealmExportImport() throws Throwable {
         ExportImportConfig.setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
         String targetFilePath = getExportImportTestDirectory() + File.separator + "singleFile-realm.json";
@@ -127,7 +148,7 @@ public class ExportImportTest {
         testRealmExportImport();
     }
 
-    //@Test
+    @Test
     public void testZipFullExportImport() throws Throwable {
         ExportImportConfig.setProvider(ZipExportProviderFactory.PROVIDER_ID);
         String zipFilePath = getExportImportTestDirectory() + File.separator + "export-full.zip";
@@ -139,7 +160,7 @@ public class ExportImportTest {
         testFullExportImport();
     }
 
-    //@Test
+    @Test
     public void testZipRealmExportImport() throws Throwable {
         ExportImportConfig.setProvider(ZipExportProviderFactory.PROVIDER_ID);
         String zipFilePath = getExportImportTestDirectory() + File.separator + "export-realm.zip";

@@ -167,7 +167,12 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-export-import-impl</artifactId>
+            <artifactId>keycloak-export-import-dir</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-export-import-single-file</artifactId>
             <version>${project.version}</version>
         </dependency>
 

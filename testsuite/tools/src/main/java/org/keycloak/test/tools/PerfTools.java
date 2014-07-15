@@ -1,6 +1,7 @@
 package org.keycloak.test.tools;
 
 import org.keycloak.exportimport.ExportImportConfig;
+import org.keycloak.exportimport.ExportImportManager;
 import org.keycloak.exportimport.ExportProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -231,14 +232,7 @@ public class PerfTools {
         ExportImportConfig.setProvider("dir");
         ExportImportConfig.setDir(dir);
 
-        Iterator<ExportProvider> providers = ProviderLoader.load(ExportProvider.class).iterator();
-
-        if (providers.hasNext()) {
-            ExportProvider exportImport = providers.next();
-            exportImport.checkExportImport(sessionFactory);
-        } else {
-            throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
-        }
+        new ExportImportManager().checkExportImport(sessionFactory);
     }
 
     public static class JobRepresentation {
