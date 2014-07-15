@@ -14,6 +14,10 @@
         "provider": "jpa"
     },
 
+    "userSessions": {
+        "provider" : "mem"
+    },
+
     "modelCache": {
         "provider": "${keycloak.model.cache.provider:}"
     },
@@ -27,7 +31,7 @@
         "staticMaxAge": 2592000,
         "cacheTemplates": true,
         "folder": {
-          "dir": "${jboss.server.config.dir}/themes"
+            "dir": "${jboss.server.config.dir}/themes"
         }
     },
 
